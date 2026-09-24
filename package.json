@@ -10,6 +10,9 @@
     "node": ">=24"
   },
   "scripts": {
+    "typecheck": "npm run typecheck -w @gogospend/contracts && npm run typecheck -w gogospend-api",
+    "typecheck:app": "npm run typecheck -w gogospend-app",
+    "test:api": "npm run test -w gogospend-api",
     "diff:api-spend": "diff -r vendor/gogocash-apps-api-spend apps/api/src/spend || true",
     "diff:app-spend": "diff -r vendor/gogocash-apps-app-spend apps/app/src/spend || true"
   }

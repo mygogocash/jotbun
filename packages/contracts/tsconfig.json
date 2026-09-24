@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    // Standalone-typecheck config. Keep everything here erasable TS
+    // (no enums/namespaces/decorators) so any consumer toolchain
+    // (Metro/Babel, SWC-test transforms) can strip types without
+    // semantic transforms.
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    // The barrel names internal files with explicit .ts extensions so the
+    // API's Node runtime can load this package without a build step.
+    "allowImportingTsExtensions": true,
+    "target": "ES2021",
+    "strict": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "skipLibCheck": true
+  },
+  "include": ["src"]
+}

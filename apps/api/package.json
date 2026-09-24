@@ -1,0 +1,77 @@
+{
+  "name": "gogospend-api",
+  "version": "0.1.0",
+  "description": "GoGoSpend standalone spend-diary API (NestJS). Extracted from gogocash-monorepo apps/api/src/spend.",
+  "private": true,
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "swc src -d dist --strip-leading-paths",
+    "start": "node dist/main",
+    "start:dev": "node --watch dist/main",
+    "typecheck": "tsc --noEmit",
+    "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --maxWorkers=2 --workerIdleMemoryLimit=1GB"
+  },
+  "dependencies": {
+    "@gogospend/contracts": "0.1.0",
+    "@nestjs/common": "^12.0.1",
+    "@nestjs/core": "^12.0.1",
+    "@nestjs/jwt": "^12.0.1",
+    "@nestjs/mongoose": "^12.0.0",
+    "@nestjs/platform-express": "^12.0.1",
+    "@nestjs/schedule": "^12.0.1",
+    "@nestjs/swagger": "^12.0.1",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "dotenv": "^17.4.2",
+    "exceljs": "^4.4.0",
+    "express": "^5.1.0",
+    "firebase-admin": "^14.4.0",
+    "helmet": "^8.3.0",
+    "jsqr": "^1.4.0",
+    "mongoose": "^9.9.5",
+    "multer": "^2.3.0",
+    "reflect-metadata": "^0.2.0",
+    "rxjs": "^7.8.2",
+    "sharp": "^0.35.4",
+    "tesseract.js": "^7.0.0"
+  },
+  "devDependencies": {
+    "@swc/cli": "^0.8.1",
+    "@swc/core": "^1.16.2",
+    "@swc/jest": "^0.2.39",
+    "@types/express": "^5.0.0",
+    "@types/jest": "^30.0.0",
+    "@types/multer": "^2.2.0",
+    "@types/node": "^26.5.1",
+    "@types/supertest": "^7.2.1",
+    "jest": "^30.5.1",
+    "supertest": "^7.0.0",
+    "typescript": "^7.0.2"
+  },
+  "jest": {
+    "moduleFileExtensions": ["js", "json", "ts", "tsx"],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": [
+        "@swc/jest",
+        {
+          "jsc": {
+            "parser": { "syntax": "typescript", "decorators": true },
+            "transform": { "legacyDecorator": true, "decoratorMetadata": true },
+            "target": "es2021",
+            "keepClassNames": true,
+            "baseUrl": ".",
+            "paths": { "src/*": ["./src/*"] }
+          }
+        }
+      ]
+    },
+    "transformIgnorePatterns": ["node_modules/(?!(jose|jwks-rsa)/)"],
+    "moduleNameMapper": { "^src/(.*)$": "<rootDir>/$1" },
+    "testEnvironment": "node"
+  }
+}
