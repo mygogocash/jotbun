@@ -1,0 +1,16 @@
+{
+  "name": "gogospend",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "diff:api-spend": "diff -r vendor/gogocash-apps-api-spend apps/api/src/spend || true",
+    "diff:app-spend": "diff -r vendor/gogocash-apps-app-spend apps/app/src/spend || true"
+  }
+}

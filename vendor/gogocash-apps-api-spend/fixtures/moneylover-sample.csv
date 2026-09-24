@@ -1,0 +1,4 @@
+Display Name,Category,Amount,Currency,Account,Note,Date,Exclude Report,Id
+Pad Thai,Food & Beverage,-120.00,THB,Cash,Lunch,15/08/2026,False,ml-1
+Salary,Income,2000.00,THB,Bank,August,01/08/2026,False,ml-2
+Internal move,Transfer,-50.00,THB,Cash,To bank,02/08/2026,True,ml-3
