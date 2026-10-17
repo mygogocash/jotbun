@@ -26,6 +26,8 @@ export const MESSAGES = Object.freeze({
   INTERNAL: 'The recovery operation failed.',
   INVENTORY_SOURCE_FAILED: 'A recovery inventory source failed; the inventory is incomplete.',
   KEY_SOURCE_PLAINTEXT_FILE: 'Key material must not come from an ordinary file; use a pipe or managed configuration.',
+  KEY_SOURCE_TERMINAL: 'Key material must not be typed at a terminal; use a pipe or managed configuration.',
+  RESTORE_DATA_CLASS_MISMATCH: 'A production or non-synthetic backup cannot be restored into a non-production target.',
   LOCAL_DATABASE_UNAVAILABLE: 'The local PostgreSQL on 127.0.0.1:55432 is unreachable; start it with `npm run db:v1:up`.',
   REHEARSAL_CHECK_FAILED: 'A rehearsal check did not hold.',
   NON_PRODUCTION_REAL_DATA: 'Non-production recovery copies must contain synthetic data only.',
@@ -45,13 +47,22 @@ export const MESSAGES = Object.freeze({
   RETENTION_VIOLATION: 'A recoverable copy breaks the 7-day retention rule.',
 });
 
-const SAFE_TEXT = /^[A-Za-z0-9_.-]{1,96}$/;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/;
+// Only shapes the tooling itself emits: UPPER_SNAKE codes, lower-case
+// identifiers (names, UUIDs, 32-hex key ids) and backup-set ids. Mixed-case
+// base64-like strings and hex longer than a key id are refused, so key or
+// digest material cannot pass even if a caller hands it over.
+const SAFE_TEXT = [/^[A-Z][A-Z0-9_]{0,63}$/, /^[a-z0-9][a-z0-9_.-]{0,63}$/, /^bk_\d{8}T\d{6}Z_[0-9a-f]{6}(\.objects)?$/];
+const LONG_HEX = /^[0-9a-f]{33,}$/;
+
+function isSafeText(value) {
+  return ISO_DATE.test(value) || (!LONG_HEX.test(value) && SAFE_TEXT.some((pattern) => pattern.test(value)));
+}
 
 function safeValue(value, depth) {
   if (typeof value === 'number') return Number.isFinite(value) ? value : null;
   if (typeof value === 'boolean' || value === null) return value;
-  if (typeof value === 'string') return SAFE_TEXT.test(value) || ISO_DATE.test(value) ? value : '[redacted]';
+  if (typeof value === 'string') return isSafeText(value) ? value : '[redacted]';
   if (Array.isArray(value) && depth < 3) return value.slice(0, 50).map((entry) => safeValue(entry, depth + 1));
   if (value && typeof value === 'object' && depth < 3 && Object.getPrototypeOf(value) === Object.prototype) {
     return safeDetails(value, depth + 1);
@@ -91,7 +102,7 @@ export function asOpsError(error, fallback) {
 export function createOpsLog(write = (line) => process.stderr.write(`${line}\n`)) {
   return {
     event(name, fields = {}) {
-      write(JSON.stringify({ at: new Date().toISOString(), event: SAFE_TEXT.test(name) ? name : 'event', ...safeDetails(fields) }));
+      write(JSON.stringify({ at: new Date().toISOString(), event: /^[a-z][a-z0-9_]{0,63}$/.test(name) ? name : 'event', ...safeDetails(fields) }));
     },
   };
 }
@@ -100,6 +111,11 @@ export const silentLog = Object.freeze({ event() {} });
 
 export function isLoopbackHost(host) {
   return host === '127.0.0.1' || host === '::1' || host === 'localhost';
+}
+
+/** A loopback IP literal (no name to resolve, no socket path). */
+export function isLoopbackAddress(host) {
+  return typeof host === 'string' && (host === '::1' || /^127\.(25[0-5]|2[0-4]\d|1?\d?\d)\.(25[0-5]|2[0-4]\d|1?\d?\d)\.(25[0-5]|2[0-4]\d|1?\d?\d)$/.test(host));
 }
 
 export function isoDate(value) {

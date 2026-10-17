@@ -6,13 +6,21 @@
 // backups being restored. A restore reads every marker and erases the matching
 // accounts in the private copy before anything could serve it.
 //
-// ErasureMarker (stored record; exactly these keys, nothing else):
+// ErasureMarker (stored record; these keys only, nothing else):
 //   marker_id        lower-case UUID
 //   account_id       internal account UUID (opaque; never reused)
 //   subject_lookups  1–32 keyed lookups, base64url HMAC-SHA256 (43 chars), one
 //                    per provider alias: deriveSubjectLookup(key, issuer, subject)
 //   lookup_key_id    32 hex chars: SubjectLookupKey.id of the key that made them
 //   recorded_at      ISO-8601 UTC time the marker was durably written
+//   purged_at        optional, ISO-8601 or null: when P5 verified the last
+//                    server-side copy of the account's rows and objects was
+//                    purged. Until it is set the marker can never be cleared
+//                    (recovery-inventory.mjs canClearMarker).
+//   blocked_until    optional, ISO-8601 or null: the end of the account's
+//                    blocked-principal hold as P5 last set it. A restore
+//                    replays it; absent or null means no end (permanent until
+//                    P5's tooling lifts it).
 // No email, name, raw subject, token, amount or other financial value.
 //
 // ErasureMarkerSource (what P5 supplies to restores):
@@ -22,7 +30,7 @@
 //                              read failure (never [] for "could not read")
 //   lookupKey(): Promise<SubjectLookupKey>    throws/undefined if key custody is
 //                              unavailable
-import { createHmac, randomBytes } from 'node:crypto';
+import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { inspect } from 'node:util';
 
 import { OpsError } from './ops-safety.mjs';
@@ -33,7 +41,13 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const LOOKUP = /^[A-Za-z0-9_-]{43}$/;
 const KEY_ID = /^[0-9a-f]{32}$/;
 const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/;
-const MARKER_KEYS = ['account_id', 'lookup_key_id', 'marker_id', 'recorded_at', 'subject_lookups'];
+const REQUIRED_KEYS = ['account_id', 'lookup_key_id', 'marker_id', 'recorded_at', 'subject_lookups'];
+const OPTIONAL_KEYS = ['blocked_until', 'purged_at'];
+
+/** gogospend_principal_digest(issuer, subject) as hex: sha256(issuer 0x00 subject). */
+export function principalDigest(issuer, subject) {
+  return createHash('sha256').update(Buffer.concat([Buffer.from(issuer, 'utf8'), Buffer.from([0]), Buffer.from(subject, 'utf8')])).digest('hex');
+}
 
 /** The registry's keyed lookup for one provider alias. P5 must use exactly this. */
 export function deriveSubjectLookup(keyBytes, issuer, subject) {
@@ -76,11 +90,15 @@ export class SubjectLookupKey {
   }
 }
 
+const isIso = (value) => typeof value === 'string' && ISO.test(value) && Number.isFinite(Date.parse(value));
+
 export function isValidMarker(marker) {
   if (!marker || typeof marker !== 'object' || Array.isArray(marker)) return false;
-  if (Object.keys(marker).sort().join(',') !== MARKER_KEYS.join(',')) return false;
-  return UUID.test(marker.marker_id) && UUID.test(marker.account_id) && KEY_ID.test(marker.lookup_key_id)
-    && typeof marker.recorded_at === 'string' && ISO.test(marker.recorded_at) && Number.isFinite(Date.parse(marker.recorded_at))
+  const keys = Object.keys(marker);
+  if (!REQUIRED_KEYS.every((key) => keys.includes(key)) || !keys.every((key) => REQUIRED_KEYS.includes(key) || OPTIONAL_KEYS.includes(key))) return false;
+  if (!OPTIONAL_KEYS.every((key) => marker[key] === undefined || marker[key] === null || isIso(marker[key]))) return false;
+  if (isIso(marker.purged_at) && Date.parse(marker.purged_at) < Date.parse(marker.recorded_at)) return false;
+  return UUID.test(marker.marker_id) && UUID.test(marker.account_id) && KEY_ID.test(marker.lookup_key_id) && isIso(marker.recorded_at)
     && Array.isArray(marker.subject_lookups) && marker.subject_lookups.length >= 1 && marker.subject_lookups.length <= 32
     && marker.subject_lookups.every((lookup) => typeof lookup === 'string' && LOOKUP.test(lookup));
 }
@@ -138,32 +156,64 @@ export function hostedMarkerSource() {
 }
 
 /**
- * Accounts in the restored copy that markers erase. A marker matches its own
- * account id, and any alias whose keyed lookup it lists if that alias was
- * created no later than the marker (an older backup can hold an alias that
- * later moved accounts; a later sign-up with the same subject is a new person
- * record and is kept).
+ * What the markers erase in the restored copy:
+ * - each marker's own account, and any account holding an alias whose keyed
+ *   lookup the marker lists if that alias was created no later than the marker
+ *   (an older backup can hold an alias that later moved accounts; a later
+ *   sign-up with the same subject is a new person record and is kept);
+ * - `principalDigests`: every alias of those accounts, for the tables keyed by
+ *   principal digest (event receipts, reconcile checks, …);
+ * - `blocks`: those aliases re-blocked with the block end their marker
+ *   records. Several markers on one account: no end wins, else the latest.
+ *   An end already past adds no block.
  */
-export function planErasure(identities, markers, lookupKey, existingAccountIds) {
+export function planErasure(identities, markers, lookupKey, existingAccountIds, now = new Date()) {
   const existing = new Set(existingAccountIds);
-  const erase = new Set();
+  const byLookup = new Map();
+  const byAccount = new Map();
+  for (const identity of identities) {
+    const entry = { ...identity, createdAt: Date.parse(identity.created_at) };
+    const lookup = lookupKey.lookup(identity.issuer, identity.subject);
+    byLookup.set(lookup, [...(byLookup.get(lookup) ?? []), entry]);
+    byAccount.set(identity.account_id, [...(byAccount.get(identity.account_id) ?? []), entry]);
+  }
+  // TODO(P5): a marker without blocked_until re-blocks with no end, which
+  // also stops that person signing up again until P5's tooling lifts the block.
+  // P5 should set blocked_until on the marker whenever it ends or shortens the
+  // hold, so a restore replays the same state.
+  const blockEnd = new Map();
+  const erase = (accountId, marker) => {
+    const until = marker.blocked_until ?? null;
+    const previous = blockEnd.has(accountId) ? blockEnd.get(accountId) : undefined;
+    blockEnd.set(accountId, previous === null || until === null ? null : previous === undefined || Date.parse(until) > Date.parse(previous) ? until : previous);
+  };
   let applied = 0;
-  const lookups = identities.map((identity) => ({ ...identity, lookup: lookupKey.lookup(identity.issuer, identity.subject), createdAt: Date.parse(identity.created_at) }));
   for (const marker of markers) {
-    const wanted = new Set(marker.subject_lookups);
     const recordedAt = Date.parse(marker.recorded_at);
     let hit = existing.has(marker.account_id);
-    if (hit) erase.add(marker.account_id);
-    for (const identity of lookups) {
-      if (Number.isFinite(identity.createdAt) && identity.createdAt <= recordedAt && wanted.has(identity.lookup)) {
-        erase.add(identity.account_id);
-        hit = true;
+    if (hit) erase(marker.account_id, marker);
+    for (const lookup of marker.subject_lookups) {
+      for (const identity of byLookup.get(lookup) ?? []) {
+        if (Number.isFinite(identity.createdAt) && identity.createdAt <= recordedAt) {
+          erase(identity.account_id, marker);
+          hit = true;
+        }
       }
     }
     if (hit) applied += 1;
   }
+  const principalDigests = [];
+  const blocks = [];
+  const nowMs = new Date(now).getTime();
+  for (const [accountId, until] of blockEnd) {
+    for (const identity of byAccount.get(accountId) ?? []) {
+      const digest = principalDigest(identity.issuer, identity.subject);
+      principalDigests.push(digest);
+      if (until === null || Date.parse(until) > nowMs) blocks.push({ digest, until });
+    }
+  }
   // Every marker's own account id is erased too, present or not: deleting an
   // absent id is a no-op, and the after-check then covers it as well.
-  const accountIds = new Set([...erase, ...markers.map((marker) => marker.account_id)]);
-  return { accountIds: [...accountIds].sort(), accountsErased: erase.size, applied, notPresent: markers.length - applied };
+  const accountIds = new Set([...blockEnd.keys(), ...markers.map((marker) => marker.account_id)]);
+  return { accountIds: [...accountIds].sort(), accountsErased: blockEnd.size, applied, notPresent: markers.length - applied, principalDigests: principalDigests.sort(), blocks };
 }

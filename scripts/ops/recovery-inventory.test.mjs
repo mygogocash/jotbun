@@ -3,7 +3,7 @@
 // marker becomes clearable only once every copy that could hold the erased
 // principal has expired. Hermetic: no Docker, provider or network access.
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readdir, readFile, rm, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
@@ -134,22 +134,45 @@ test('report names hosted sources as SKIPPED and is not complete', async () => {
   assert.equal(report.copies.length, 1);
 });
 
-test('a marker is clearable only after every copy taken before the erasure has expired', async () => {
-  const marker = { recorded_at: at(-2 * DAY) };
-  const sources = [
-    staticSource('a', [
-      copy({ id: 'before_1', created_at: at(-3 * DAY), expires_at: at(4 * DAY) }),
-      copy({ id: 'before_2', created_at: at(-4 * DAY), expires_at: at(3 * DAY) }),
-      copy({ id: 'after', created_at: at(-DAY), expires_at: at(6 * DAY) }),
-    ]),
+// P5 records the marker first and purges later: a backup taken between the
+// two still holds the account, so clearing keys on the purge, not the marker.
+test('a marker is clearable only after every copy taken before the purge completed has expired', async () => {
+  const H = 3_600_000;
+  const T = NOW.getTime() - 6 * DAY - 3 * H;
+  const iso = (ms) => new Date(ms).toISOString();
+  const marker = { recorded_at: iso(T), purged_at: iso(T + 20 * H) };
+  const all = [
+    copy({ id: 'bk_before', created_at: iso(T - 22 * H), expires_at: iso(T - 22 * H + 7 * DAY) }),
+    copy({ id: 'bk_in_purge_window', created_at: iso(T + 2 * H), expires_at: iso(T + 2 * H + 7 * DAY) }),
+    copy({ id: 'bk_after_purge', created_at: iso(T + 21 * H), expires_at: iso(T + 21 * H + 7 * DAY) }),
   ];
-  const inventory = new RecoveryInventory({ now: () => NOW, sources });
-  assert.equal(await inventory.markerClearableAt(marker), at(4 * DAY));
-  assert.equal(await inventory.canClearMarker(marker), false);
-  const later = new RecoveryInventory({ now: () => new Date(NOW.getTime() + 4 * DAY), sources: [staticSource('a', [copy({ id: 'after', created_at: at(-DAY), expires_at: at(6 * DAY) })])] });
+  const liveAt = (time) => new RecoveryInventory({ now: () => new Date(time), sources: [staticSource('recovery-store', all.filter((entry) => Date.parse(entry.expires_at) > time))] });
+  // bk_before has expired; bk_in_purge_window still holds the account for ~23 h.
+  const now = liveAt(NOW.getTime());
+  assert.equal(await now.markerClearableAt(marker), iso(T + 2 * H + 7 * DAY));
+  assert.equal(await now.canClearMarker(marker), false);
+  const later = liveAt(T + 2 * H + 7 * DAY + 1000);
   assert.equal(await later.canClearMarker(marker), true);
-  const incomplete = new RecoveryInventory({ now: () => new Date(NOW.getTime() + 4 * DAY), sources: [staticSource('a', [])], skipped: HOSTED_INVENTORY_SKIPPED });
+  const incomplete = new RecoveryInventory({ now: () => new Date(T + 8 * DAY), sources: [staticSource('a', [])], skipped: HOSTED_INVENTORY_SKIPPED });
   assert.equal(await incomplete.canClearMarker(marker), false);
+});
+
+test('a marker whose purge is not recorded as complete is never clearable', async () => {
+  const marker = { recorded_at: at(-30 * DAY) };
+  const inventory = new RecoveryInventory({ now: () => NOW, sources: [staticSource('a', [])] });
+  assert.equal(await inventory.markerClearableAt(marker), null);
+  assert.equal(await inventory.canClearMarker(marker), false);
+  assert.equal(await inventory.canClearMarker({ ...marker, purged_at: null }), false);
+});
+
+test('point-in-time history holds a purged account until the purge itself leaves the window', async () => {
+  const marker = { recorded_at: at(-3 * DAY), purged_at: at(-2 * DAY) };
+  // A rolling 7-day window: its oldest point expires now, but the points just
+  // before the purge stay restorable until purge + 7 days.
+  const history = copy({ id: 'pitr_window', kind: 'database_history', created_at: at(-7 * DAY + 60_000), expires_at: at(60_000) });
+  const inventory = new RecoveryInventory({ now: () => NOW, sources: [staticSource('neon-history', [history])] });
+  assert.equal(await inventory.markerClearableAt(marker), at(5 * DAY));
+  assert.equal(await inventory.canClearMarker(marker), false);
 });
 
 async function withStoreDir(fn) {
@@ -198,5 +221,70 @@ test('expired local backups are pruned by the 7-day lifecycle', async () => {
     const ids = (await store.list()).map((manifest) => manifest.id);
     assert.deepEqual(ids, [fresh.backup_id]);
     assert.ok(!ids.includes(old.backup_id));
+  });
+});
+
+async function editManifest(dir, id, edit) {
+  const path = join(dir, `${id}.manifest.json`);
+  const manifest = JSON.parse(await readFile(path, 'utf8'));
+  edit(manifest);
+  await writeFile(path, JSON.stringify(manifest));
+}
+
+test('retention uses the backup id time, not editable manifest dates', async () => {
+  await withStoreDir(async (dir) => {
+    const key = RecoveryKey.generate();
+    const store = localRecoveryStore({ dir });
+    const common = { attachments: memoryAttachmentSource(new Map()), store, key, environment: 'non_production', synthetic: true };
+    const old = await runDailyBackup({ ...common, database: fakeDump('old'), now: new Date(NOW.getTime() - 30 * DAY) });
+    // A store writer without the key makes the 30-day-old set look fresh.
+    await editManifest(dir, old.backup_id, (manifest) => {
+      manifest.created_at = new Date(NOW.getTime() - 3_600_000).toISOString();
+      manifest.expires_at = new Date(NOW.getTime() + 6 * DAY).toISOString();
+    });
+    const listed = await new RecoveryInventory({ now: () => NOW, sources: [recoveryStoreSource(store)] }).enumerate().catch((error) => error);
+    assert.equal(listed.code, 'RETENTION_VIOLATION');
+    assert.ok(listed.details.violations.some((violation) => violation.id === old.backup_id && violation.reason === 'past_expiry'));
+    const fresh = await runDailyBackup({ ...common, database: fakeDump('new'), now: NOW });
+    assert.equal(fresh.pruned, 1);
+    assert.deepEqual((await store.list()).map((manifest) => manifest.id), [fresh.backup_id]);
+  });
+});
+
+test('an unverifiable manifest is a violation for a key holder, and its file time also bounds retention', async () => {
+  await withStoreDir(async (dir) => {
+    const key = RecoveryKey.generate();
+    const writer = localRecoveryStore({ dir });
+    const set = await runDailyBackup({ database: fakeDump('x'), attachments: memoryAttachmentSource(new Map()), store: writer, key, now: new Date(NOW.getTime() - DAY), environment: 'non_production', synthetic: true });
+    await editManifest(dir, set.backup_id, (manifest) => {
+      manifest.expires_at = new Date(NOW.getTime() + 5 * DAY).toISOString();
+    });
+    const keyed = localRecoveryStore({ dir, key });
+    const error = await new RecoveryInventory({ now: () => NOW, sources: [recoveryStoreSource(keyed)] }).enumerate().catch((failure) => failure);
+    assert.equal(error.code, 'RETENTION_VIOLATION');
+    assert.ok(error.details.violations.some((violation) => violation.id === set.backup_id && violation.reason === 'manifest_unverified'));
+    // Files older than the id claims: an unverified set falls back to them.
+    const old = new Date(NOW.getTime() - 9 * DAY);
+    for (const name of await readdir(dir)) if (name.startsWith(set.backup_id)) await utimes(join(dir, name), old, old);
+    assert.equal(await keyed.prune(NOW), 1);
+    assert.deepEqual(await readdir(dir), []);
+  });
+});
+
+test('files the store does not recognise are violations and are pruned by age', async () => {
+  await withStoreDir(async (dir) => {
+    const store = localRecoveryStore({ dir });
+    const names = ['bk_20260801T000000Z_abcdef.db.enc.bak', 'manual-copy.dump', 'bk_20260801T000000Z_abcdef.manifest.json.old'];
+    for (const name of names) await writeFile(join(dir, name), 'x', { mode: 0o600 });
+    const error = await new RecoveryInventory({ now: () => NOW, sources: [recoveryStoreSource(store)] }).enumerate().catch((failure) => failure);
+    assert.equal(error.code, 'RETENTION_VIOLATION');
+    assert.equal(error.details.violations.length, 3);
+    for (const violation of error.details.violations) assert.equal(violation.reason, 'unaccounted_file');
+    assert.equal(await store.prune(new Date()), 0);
+    assert.equal((await readdir(dir)).length, 3, 'young unknown files are kept and flagged');
+    const old = new Date(Date.now() - 8 * DAY);
+    for (const name of names) await utimes(join(dir, name), old, old);
+    await store.prune(new Date());
+    assert.deepEqual(await readdir(dir), []);
   });
 });

@@ -17,12 +17,12 @@ import { createHash, randomBytes } from 'node:crypto';
 import { createReadStream, lstatSync, mkdirSync, openSync, closeSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { open } from 'node:fs/promises';
 import { isAbsolute, join, relative } from 'node:path';
-import { Readable, Transform } from 'node:stream';
+import { pipeline as pipelineStreams, Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { pathToFileURL } from 'node:url';
 
 import { asOpsError, createOpsLog, OpsError, parseArgs, REPO_ROOT, RETENTION_LIMIT_MS, runCli, silentLog } from './ops-safety.mjs';
-import { encryptStream, manifestMac, readRecoveryKeyFromFd, RecoveryKey } from './recovery-crypto.mjs';
+import { encryptStream, manifestMac, readRecoveryKeyFromFd, RecoveryKey, verifyManifestMac } from './recovery-crypto.mjs';
 
 export const RETENTION_MS = RETENTION_LIMIT_MS;
 export const LOCAL_CONTAINER = 'gogospend-postgres-v1-local';
@@ -30,6 +30,7 @@ const LOCAL_ADMIN = 'gogospend_local_admin';
 const DATABASE_NAME = /^[a-z][a-z0-9_]{0,62}$/;
 const BACKUP_ID = /^bk_\d{8}T\d{6}Z_[0-9a-f]{6}$/;
 const PART_FILE = /^(bk_\d{8}T\d{6}Z_[0-9a-f]{6})\.(db|objects)\.enc$/;
+export const LEDGER_FILE = 'restore-copies.json';
 const MAX_OBJECT_BYTES = 64 * 1024 * 1024;
 const OBJECT_REF = /^[A-Za-z0-9][A-Za-z0-9._/-]{0,511}$/;
 
@@ -65,14 +66,43 @@ function hashing() {
   return { stream, result: () => ({ bytes, sha256: hash.digest('hex') }) };
 }
 
+/** The time encoded in a backup id (`bk_YYYYMMDDTHHMMSSZ_xxxxxx`). */
+export function backupIdTime(id) {
+  const match = /^bk_(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z_[0-9a-f]{6}$/.exec(id ?? '');
+  return match ? Date.parse(`${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}:${match[6]}Z`) : Number.NaN;
+}
+
+/**
+ * Retention dates for a backup set that a store writer cannot stretch: the
+ * oldest of the id's time and the manifest's claimed creation, plus the file
+ * times whenever the manifest is not verified with the key. A verified
+ * manifest may shorten retention below 7 days; nothing lengthens it.
+ */
+export function effectiveDates(manifest, { verified, fileTimes = [] } = {}) {
+  const claimed = Date.parse(manifest?.created_at);
+  let created = Math.min(backupIdTime(manifest?.id), Number.isFinite(claimed) ? claimed : Infinity);
+  if (verified !== true) created = Math.min(created, ...fileTimes);
+  if (!Number.isFinite(created)) return null;
+  const claimedRetention = Date.parse(manifest?.expires_at) - claimed;
+  const retention = verified === true && claimedRetention > 0 ? Math.min(claimedRetention, RETENTION_LIMIT_MS) : RETENTION_LIMIT_MS;
+  return { created_at: new Date(created).toISOString(), expires_at: new Date(created + retention).toISOString() };
+}
+
+const STRAY_AGE_MS = { partial: 24 * 3_600_000, orphan: RETENTION_LIMIT_MS, unknown: RETENTION_LIMIT_MS };
+
 /**
  * The isolated local recovery store: `<id>.db.enc`, `<id>.objects.enc` and a
- * MAC'd `<id>.manifest.json`, all 0600. The hosted equivalent (a private R2
- * recovery scope with a 7-day lifecycle rule) is SKIPPED until E1.
+ * MAC'd `<id>.manifest.json`, all 0600, plus the restore-copy ledger. With the
+ * recovery key it verifies every manifest; without it, retention falls back to
+ * file times as well. Every other entry is a stray (partial write, part without
+ * a manifest, or unknown file): the inventory reports it and prune removes it
+ * by age. The hosted equivalent (a private R2 recovery scope with a 7-day
+ * lifecycle rule) is SKIPPED until E1.
  */
-export function localRecoveryStore({ dir }) {
+export function localRecoveryStore({ dir, key } = {}) {
   const root = assertIsolatedDirectory(dir);
   const path = (name) => join(root, name);
+  const mtime = (name) => lstatSync(path(name)).mtime.getTime();
 
   function readManifest(name) {
     try {
@@ -87,11 +117,22 @@ export function localRecoveryStore({ dir }) {
     const names = readdirSync(root);
     const manifests = names.filter((name) => name.endsWith('.manifest.json')).map(readManifest).filter(Boolean);
     const ids = new Set(manifests.map((manifest) => manifest.id));
-    const orphans = names
-      .filter((name) => (PART_FILE.test(name) && !ids.has(PART_FILE.exec(name)[1])) || (name.endsWith('.manifest.json') && !readManifest(name)) || name.endsWith('.partial'))
-      .map((name) => ({ name, modified_at: statSync(path(name)).mtime.toISOString() }));
-    manifests.sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at));
-    return { manifests, orphans };
+    const sets = manifests.map((manifest) => {
+      const files = names.filter((name) => name.startsWith(`${manifest.id}.`) && !name.endsWith('.partial'));
+      const verified = key instanceof RecoveryKey ? manifest.key_id === key.id && verifyManifestMac(key, manifest) : null;
+      return { id: manifest.id, manifest, verified, environment: manifest.environment, synthetic: manifest.synthetic === true, ...effectiveDates(manifest, { verified, fileTimes: files.map(mtime) }) };
+    }).filter((set) => set.created_at);
+    const strays = [];
+    for (const name of names) {
+      if (name === LEDGER_FILE) continue;
+      const part = PART_FILE.exec(name);
+      if (name.endsWith('.manifest.json') && readManifest(name)) continue;
+      if (part && ids.has(part[1])) continue;
+      const kind = name.endsWith('.partial') ? 'partial' : part || name.endsWith('.manifest.json') ? 'orphan' : 'unknown';
+      strays.push({ name, kind, modified_at: new Date(mtime(name)).toISOString() });
+    }
+    sets.sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at) || a.id.localeCompare(b.id));
+    return { sets, strays };
   }
 
   return {
@@ -129,22 +170,32 @@ export function localRecoveryStore({ dir }) {
       for (const name of readdirSync(root)) if (name.startsWith(`${id}.`)) rmSync(path(name), { force: true });
     },
 
+    /** Raw manifests, oldest first by their retention dates (never trusted on their own). */
     async list() {
-      return scan().manifests;
+      return scan().sets.map((set) => set.manifest);
     },
 
-    async orphans() {
-      return scan().orphans;
+    /** Backup sets with retention dates a store writer cannot stretch, and `verified` (null without the key). */
+    async sets() {
+      return scan().sets.map(({ manifest: _manifest, ...set }) => set);
+    },
+
+    /** Entries that are not part of a complete backup set (partial, orphan, unknown). */
+    async strays() {
+      return scan().strays;
     },
 
     async get(id) {
       return BACKUP_ID.test(id ?? '') ? readManifest(`${id}.manifest.json`) : null;
     },
 
-    /** Opens a part; the stream fails with BACKUP_INTEGRITY if its size or digest differs from the manifest. */
+    /**
+     * Opens a part; the stream fails with BACKUP_INTEGRITY if its size or
+     * digest differs from the manifest. Destroying the returned stream closes
+     * the file.
+     */
     openPart(manifest, part) {
       const expected = manifest?.parts?.[part];
-      const file = `${manifest?.id}.${part}.enc`;
       if (!expected || !BACKUP_ID.test(manifest.id)) throw new OpsError('BACKUP_MISSING');
       const digest = hashing();
       const checked = new Transform({
@@ -156,25 +207,24 @@ export function localRecoveryStore({ dir }) {
           callback(actual.bytes === expected.bytes && actual.sha256 === expected.sha256 ? undefined : new OpsError('BACKUP_INTEGRITY'));
         },
       });
-      const source = createReadStream(path(file));
-      source.on('error', () => checked.destroy(new OpsError('BACKUP_MISSING')));
-      return source.pipe(digest.stream).pipe(checked);
+      // pipeline (not pipe) so that destroying `checked` also closes the file.
+      // Callers turn any non-OpsError from here into BACKUP_INTEGRITY.
+      return pipelineStreams(createReadStream(path(`${manifest.id}.${part}.enc`)), digest.stream, checked, () => undefined);
     },
 
-    /** The 7-day lifecycle: removes expired sets, and orphans/partials past the same window. */
+    /** The 7-day lifecycle: expired sets by their retention dates, strays by file age. Returns sets removed. */
     async prune(now) {
       const cutoff = new Date(now).getTime();
       let removed = 0;
-      const { manifests, orphans } = scan();
-      for (const manifest of manifests) {
-        if (!(Date.parse(manifest.expires_at) > cutoff)) {
-          await this.discard(manifest.id);
+      const { sets, strays } = scan();
+      for (const set of sets) {
+        if (!(Date.parse(set.expires_at) > cutoff)) {
+          await this.discard(set.id);
           removed += 1;
         }
       }
-      for (const orphan of orphans) {
-        const age = cutoff - Date.parse(orphan.modified_at);
-        if (age >= (orphan.name.endsWith('.partial') ? 24 * 3_600_000 : RETENTION_LIMIT_MS)) rmSync(path(orphan.name), { force: true });
+      for (const stray of strays) {
+        if (cutoff - Date.parse(stray.modified_at) >= STRAY_AGE_MS[stray.kind]) rmSync(path(stray.name), { recursive: true, force: true });
       }
       return removed;
     },

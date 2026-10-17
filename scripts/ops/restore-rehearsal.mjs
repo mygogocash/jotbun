@@ -17,9 +17,9 @@ import { randomBytes } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 import { pathToFileURL } from 'node:url';
 
-import { readAttachmentBundle } from './backup.mjs';
+import { effectiveDates, readAttachmentBundle } from './backup.mjs';
 import { loadErasureMarkers, planErasure } from './erasure-markers.mjs';
-import { asOpsError, createOpsLog, isLoopbackHost, OpsError, parseArgs, RETENTION_LIMIT_MS, runCli, silentLog } from './ops-safety.mjs';
+import { asOpsError, createOpsLog, isLoopbackAddress, isLoopbackHost, OpsError, parseArgs, RETENTION_LIMIT_MS, runCli, silentLog } from './ops-safety.mjs';
 import { decryptStream, RecoveryKey, verifyManifestMac } from './recovery-crypto.mjs';
 
 export const SERVING_DATABASES = Object.freeze(['gogospend_v1', 'postgres', 'template0', 'template1', 'neondb']);
@@ -27,11 +27,15 @@ const RESTORE_DATABASE = /^gogospend_restore_[a-z0-9]{8,32}$/;
 const ADAPTER_KINDS = Object.freeze(['local-docker', 'memory']);
 const LABEL = /^[A-Za-z0-9_.-]{1,64}$/;
 const DEFAULT_RESTORE_COPY_TTL_MS = 24 * 60 * 60 * 1000;
+const CLOCK_SKEW_MS = 5 * 60 * 1000;
 
 /**
  * A rehearsal target must say it is not serving, isolated and non-production,
  * be a loopback adapter this file knows, and name a fresh disposable
- * `gogospend_restore_*` database. Hosted targets wait for E1.
+ * `gogospend_restore_*` database. Hosted targets wait for E1. These declared
+ * fields are only the first gate: restoreRehearsal also checks the endpoint the
+ * adapter really connects to, the adapter refuses an existing database, and
+ * the new database admits no login but the rehearsal's own (local adapter).
  */
 export function assertRestoreTarget(target) {
   if (!target || typeof target !== 'object') throw new OpsError('RESTORE_TARGET_NOT_ISOLATED');
@@ -44,16 +48,50 @@ export function assertRestoreTarget(target) {
   }
 }
 
-/** Newest backup (or the named one) whose key, MAC and expiry all hold. */
+/** Why a manifest cannot be restored, or null when it can. */
+function backupProblem(manifest, key, now) {
+  if (manifest.key_id !== key.id) return 'RECOVERY_KEY_MISMATCH';
+  if (!verifyManifestMac(key, manifest)) return 'BACKUP_INTEGRITY';
+  const dates = effectiveDates(manifest, { verified: true });
+  if (!dates || Date.parse(manifest.expires_at) - Date.parse(manifest.created_at) > RETENTION_LIMIT_MS) return 'BACKUP_INTEGRITY';
+  // A key holder's clock error or a planted future date: never "newest".
+  if (Date.parse(manifest.created_at) > now.getTime() + CLOCK_SKEW_MS) return 'BACKUP_INTEGRITY';
+  if (!(now.getTime() < Date.parse(dates.expires_at))) return 'BACKUP_EXPIRED';
+  return null;
+}
+
+/**
+ * The named backup, or with `latest` the newest one that verifies: a planted,
+ * unverifiable or future-dated manifest is skipped rather than blocking every
+ * restore. If none qualifies the most telling reason is reported.
+ */
 async function selectBackup(store, backupId, key, now) {
-  const manifest = backupId === 'latest' ? (await store.list()).at(-1) ?? null : await store.get(backupId);
-  if (!manifest) throw new OpsError('BACKUP_MISSING');
-  if (manifest.key_id !== key.id) throw new OpsError('RECOVERY_KEY_MISMATCH');
-  if (!verifyManifestMac(key, manifest)) throw new OpsError('BACKUP_INTEGRITY');
-  const expires = Date.parse(manifest.expires_at);
-  if (!(expires - Date.parse(manifest.created_at) <= RETENTION_LIMIT_MS)) throw new OpsError('BACKUP_INTEGRITY');
-  if (!(now.getTime() < expires)) throw new OpsError('BACKUP_EXPIRED');
-  return manifest;
+  const candidates = backupId === 'latest' ? [...(await store.list())].reverse() : [await store.get(backupId)].filter(Boolean);
+  if (candidates.length === 0) throw new OpsError('BACKUP_MISSING');
+  const problems = new Set();
+  for (const manifest of candidates) {
+    const problem = backupProblem(manifest, key, now);
+    if (!problem) return manifest;
+    problems.add(problem);
+  }
+  throw new OpsError(['RECOVERY_KEY_MISMATCH', 'BACKUP_INTEGRITY', 'BACKUP_EXPIRED'].find((code) => problems.has(code)) ?? 'BACKUP_MISSING');
+}
+
+/** Real data (production, or not marked synthetic) never goes into a non-production target. */
+function assertDataClass(manifest, target) {
+  const real = manifest.environment !== 'non_production' || manifest.synthetic !== true;
+  if (real && target.environment !== 'production') throw new OpsError('RESTORE_DATA_CLASS_MISMATCH');
+}
+
+/** The host the adapter will really connect to must be a loopback address. */
+function assertRestorerEndpoint(restorer) {
+  let endpoint;
+  try {
+    endpoint = restorer.endpoint();
+  } catch {
+    throw new OpsError('RESTORE_TARGET_NOT_ISOLATED');
+  }
+  if (!isLoopbackAddress(endpoint?.host)) throw new OpsError('RESTORE_TARGET_NOT_ISOLATED');
 }
 
 /** Decrypted part; a store or authentication failure ends the stream with an OpsError. */
@@ -68,7 +106,11 @@ function openDecrypted(store, manifest, part, key) {
     fail(error);
     decrypt.destroy(state.failure);
   });
-  decrypt.on('error', fail);
+  // An authentication failure stops reading and closes the backup file.
+  decrypt.on('error', (error) => {
+    fail(error);
+    source.destroy();
+  });
   source.pipe(decrypt);
   return state;
 }
@@ -89,13 +131,15 @@ export async function restoreRehearsal(input = {}) {
   const startedAt = performance.now();
   const now = new Date(nowInput);
   assertRestoreTarget(target);
-  if (!restorer || restorer.kind !== target.kind) throw new OpsError('RESTORE_TARGET_NOT_ISOLATED');
+  if (!restorer || restorer.kind !== target.kind || typeof restorer.endpoint !== 'function') throw new OpsError('RESTORE_TARGET_NOT_ISOLATED');
+  assertRestorerEndpoint(restorer);
   if (!(recoveryKey instanceof RecoveryKey)) throw new OpsError('RECOVERY_KEY_CUSTODY_MISSING');
   if (!ledger || typeof ledger.record !== 'function' || typeof ledger.markDropped !== 'function') throw new OpsError('RESTORE_LEDGER_MISSING');
   if (!(restoreCopyTtlMs > 0 && restoreCopyTtlMs <= RETENTION_LIMIT_MS)) throw new OpsError('RETENTION_EXCEEDS_LIMIT');
   const registry = await loadErasureMarkers(markers);
   if (!store) throw new OpsError('BACKUP_MISSING');
   const manifest = await selectBackup(store, backupId, recoveryKey, now);
+  assertDataClass(manifest, target);
 
   const rehearsalId = `rh_${randomBytes(4).toString('hex')}`;
   log.event('restore_started', { rehearsal_id: rehearsalId, backup_id: manifest.id, markers: registry.markers.length });
@@ -127,10 +171,11 @@ export async function restoreRehearsal(input = {}) {
       const identities = await restorer.identities(target);
       const markerAccounts = [...new Set(registry.markers.map((marker) => marker.account_id))];
       const existing = await restorer.existingAccounts(target, markerAccounts);
-      return planErasure(identities, registry.markers, registry.lookupKey, existing);
+      return planErasure(identities, registry.markers, registry.lookupKey, existing, now);
     });
-    const erased = await phase('ERASURE_NOT_APPLIED', () => restorer.applyErasure(target, { accountIds: plan.accountIds }));
-    const remaining = await phase('ERASURE_NOT_APPLIED', () => restorer.ownerRows(target, plan.accountIds));
+    const erasure = { accountIds: plan.accountIds, principalDigests: plan.principalDigests, blocks: plan.blocks };
+    const erased = await phase('ERASURE_NOT_APPLIED', () => restorer.applyErasure(target, erasure));
+    const remaining = await phase('ERASURE_NOT_APPLIED', () => restorer.ownerRows(target, erasure));
     if (remaining.length > 0) throw new OpsError('ERASURE_NOT_APPLIED', { tables: remaining.map((entry) => entry.table) });
 
     const validationStart = performance.now();
