@@ -199,16 +199,13 @@ test('a gateway error page is "unavailable" (maybe committed), never a definite 
 
 test('a sign-out during a command retry stops resending', async () => {
   replies.push({ status: 0, drop: true }, { status: 201, body: ACK });
-  let calls = 0;
   const switching = createSpendV1Resources(createV1Transport({
     baseUrl,
     client: { platform: 'ios', version: '1.2.3' },
     credentials: {
       getAccessToken: async () => 'access-token',
-      getSessionSnapshot: () => {
-        calls += 1;
-        return calls === 1 ? { binding: 'b'.repeat(43), epoch: 1 } : { binding: null, epoch: 2 };
-      },
+      // Signed out once the first attempt reached the server (its response is lost).
+      getSessionSnapshot: () => (seen.length === 0 ? { binding: 'b'.repeat(43), epoch: 1 } : { binding: null, epoch: 2 }),
     },
   }));
   const error = await outcome(() => switching.createWallet({ id: WALLET.id, name: 'Cash', opening_minor: '0', tracking_start: '2026-09-01' }, randomUUID()));

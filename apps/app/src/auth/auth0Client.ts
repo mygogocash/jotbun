@@ -1,79 +1,71 @@
-// The Auth0 port the session uses. A native adapter maps the reviewed SDK
-// (Credentials Manager, Universal Login with PKCE) onto it once E1/E2 settle
-// the tenant, SDK version and callback domain; until then no adapter is
-// installed and the app stays signed out. Never holds an M2M secret.
+// The native (iOS/Android) Auth0 adapter. It maps the reviewed SDK
+// (Credentials Manager, Universal Login with PKCE) onto the port once E1/E2
+// settle the tenant, SDK version and callback domain; until then no SDK is
+// passed and the port reports real sign-in unsupported. Metro uses
+// auth0Client.web.ts on the web, which has the same exports. Never holds an
+// M2M secret.
+import { AuthCancelled, AuthUnavailable, unsupportedAuth0Port } from './auth0Port.ts';
+import type { Auth0Port, Auth0SdkLike, PendingCredentials } from './auth0Port.ts';
 
-/** An authorization was cancelled by the user (not an error to retry). */
-export class AuthCancelled extends Error {
-  constructor() {
-    super('Sign-in was cancelled.');
-    this.name = 'AuthCancelled';
-  }
-}
-
-export interface Auth0Port {
-  readonly supported: boolean;
-  /** Universal Login (PKCE); stores credentials in the SDK's Credentials Manager. Throws AuthCancelled. */
-  authorize(): Promise<void>;
-  /** A fresh ID token carrying `nonce` (the server challenge), for bootstrap or a purpose proof. Throws AuthCancelled. */
-  authorizeWithNonce(nonce: string, options?: { maxAgeSeconds?: number }): Promise<string>;
-  /** The current access token, refreshed by the SDK when needed; null when there are no usable credentials. */
-  accessToken(): Promise<string | null>;
-  /** Forces one refresh (after a 401); false when the refresh grant is gone. */
-  refresh(): Promise<boolean>;
-  hasCredentials(): Promise<boolean>;
-  /** Clears the SDK session and stored credentials. */
-  clearSession(): Promise<void>;
-}
-
-/**
- * The subset of the reviewed native SDK (react-native-auth0's shape) the port
- * needs. The SDK itself is installed and configured only with E1/E2 approval
- * (tenant, callback domain, version); this mapping is what it plugs into.
- */
-export type Auth0SdkLike = {
-  webAuth: {
-    authorize(parameters: { scope: string; audience: string; nonce?: string; maxAge?: number }): Promise<{ idToken: string }>;
-    clearSession(): Promise<void>;
-  };
-  credentialsManager: {
-    getCredentials(scope?: string, minTtl?: number, parameters?: Record<string, unknown>, forceRefresh?: boolean): Promise<{ accessToken: string }>;
-    saveCredentials(credentials: unknown): Promise<void>;
-    hasValidCredentials(minTtl?: number): Promise<boolean>;
-    clearCredentials(): Promise<void>;
-  };
-};
+export { AuthCancelled, AuthUnavailable } from './auth0Port.ts';
+export type { Auth0Port, Auth0SdkLike, PendingCredentials } from './auth0Port.ts';
 
 const SCOPE = 'openid profile email offline_access';
+
+const describe = (error: unknown): string => {
+  if (typeof error !== 'object' || error === null) return String(error);
+  const { code, type, name, message } = error as { code?: unknown; type?: unknown; name?: unknown; message?: unknown };
+  return [code, type, name, message].filter((part) => typeof part === 'string').join(' ');
+};
 const isCancel = (error: unknown) => {
   const code = (error as { code?: unknown; name?: unknown }).code ?? (error as { name?: unknown }).name;
   return typeof code === 'string' && /cancel/i.test(code);
 };
+/**
+ * Auth0 could not be reached (offline, timeout): not a denial. Anything else
+ * (no credentials, invalid_grant, an unknown SDK error) is a denial, which
+ * locks without erasing and can be lifted by a later hydrate or refresh. The
+ * SDK's exact error codes are checked again when the SDK is wired (E1/E2).
+ */
+const isUnreachable = (error: unknown) => /network|offline|internet|timed? ?out|unreachable|NSURLErrorDomain/i.test(describe(error));
 
 /** Maps the native SDK onto the port: PKCE Universal Login, the Credentials Manager (device-protected), forced refresh. */
-export function createAuth0Port(sdk: Auth0SdkLike, audience: string): Auth0Port {
-  const login = async (parameters: { nonce?: string; maxAge?: number }) => {
+export function createAuth0Port(sdk: Auth0SdkLike | null, audience: string): Auth0Port {
+  if (!sdk) return unsupportedAuth0Port('Real sign-in is not configured in this build.');
+  // A login never stores anything: its credentials stay pending until the
+  // server accepted them (saveCredentials), so a cancelled or refused login
+  // and a purpose proof leave the session's own credentials untouched.
+  const login = async (parameters: { nonce?: string; additionalParameters?: Record<string, string> }) => {
     try {
-      const credentials = await sdk.webAuth.authorize({ scope: SCOPE, audience, ...parameters });
-      await sdk.credentialsManager.saveCredentials(credentials);
-      return credentials;
+      return await sdk.webAuth.authorize({ scope: SCOPE, audience, ...parameters });
     } catch (error) {
       if (isCancel(error)) throw new AuthCancelled();
+      if (isUnreachable(error)) throw new AuthUnavailable();
       throw error;
     }
   };
   return {
     supported: true,
-    async authorize() {
-      await login({});
+    async authorize(): Promise<PendingCredentials> {
+      const credentials = await login({});
+      return { accessToken: credentials.accessToken, idToken: credentials.idToken, credentials };
     },
     async authorizeWithNonce(nonce, options) {
-      return (await login({ nonce, ...(options?.maxAgeSeconds !== undefined ? { maxAge: options.maxAgeSeconds } : {}) })).idToken;
+      // Sent as explicit authorize parameters (max_age, and prompt=login for a
+      // fresh login) rather than the typed maxAge, which a native bridge may
+      // drop when it is 0.
+      const maxAge = options?.maxAgeSeconds;
+      const fresh = maxAge === undefined ? undefined : { max_age: String(maxAge), ...(maxAge === 0 ? { prompt: 'login' } : {}) };
+      return (await login({ nonce, ...(fresh ? { additionalParameters: fresh } : {}) })).idToken;
+    },
+    async saveCredentials(pending) {
+      await sdk.credentialsManager.saveCredentials(pending.credentials);
     },
     async accessToken() {
       try {
         return (await sdk.credentialsManager.getCredentials()).accessToken;
-      } catch {
+      } catch (error) {
+        if (isUnreachable(error)) throw new AuthUnavailable();
         return null;
       }
     },
@@ -81,7 +73,8 @@ export function createAuth0Port(sdk: Auth0SdkLike, audience: string): Auth0Port 
       try {
         await sdk.credentialsManager.getCredentials(undefined, 0, {}, true);
         return true;
-      } catch {
+      } catch (error) {
+        if (isUnreachable(error)) throw new AuthUnavailable();
         return false;
       }
     },

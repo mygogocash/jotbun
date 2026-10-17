@@ -1055,3 +1055,93 @@ Observed, not changed (pre-existing):
   - On devices: the offline-launch, airplane-mode, account-switch and remount journeys; VoiceOver and TalkBack announcements; the notification channel and provisional delivery.
   - The sign-out confirmation UI waits for visual approval.
 - **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (437), test:db PASS (397), test:app PASS (16), test:unit PASS (173), test:render PASS (60), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
+
+## Review fixes for F5
+
+- **F5 review** (commit `f627fad`): five majors, four minors and some nits. The reviewer's probes (`f5.probe.test.ts`) showed:
+  - a failed account switch leaving B's SDK credentials beside A's binding;
+  - server-ended sessions never leaving `active`;
+  - offline token reads locking the session;
+  - sign-in racing hydrate and sign-out.
+
+  Six mutants survived the F5 suite.
+- **Fixed, with tests that failed first.**
+  - RED: 36 of 46 tests in `sessionMachine.test.ts` and `sessionEpoch.test.ts` failed, all on assertions (`f5fix-red-unit.log`). They ran against compile-safe seams: new port and request options typed but unused, stub stores. Ten held already: the four earlier transport tests, hydration, serialized token reads, the token-only, 401-after-change and lost-command mutant checks, and the pinned test.
+  - GREEN: 46 of 46.
+  - The probes became tests on a shared fake device (`auth/testing/fakeDevice.ts`). It is the native SDK's shape behind the real adapter, so a login that is stored too early shows up as SDK credentials.
+  - **Major — the bootstrap login was not fresh.**
+    - The nonce login now asks for `max_age=0`. The old test that pinned "no max age" now pins 0.
+    - `REAUTH_REQUIRED` from bootstrap is its own outcome (`SignInOutcome` `reauth_required`), not `failed`.
+  - **Major — server-ended sessions never reached the provider.**
+    - After its one allowed refresh, the transport reports 401 `SESSION_REQUIRED` and `REAUTH_REQUIRED` on bound routes, and 403 `ACCOUNT_UNAVAILABLE`, through `V1Credentials.sessionEnded`. Each report carries the epoch the request was sent under.
+    - The seam (`v1SessionCredentials`, used by `sharedV1.ts`) forwards it to the provider. The provider ignores any report that isn't for the current epoch.
+    - `SESSION_REQUIRED` and `REAUTH_REQUIRED` move the session to `reauth_required`, which is now reachable. The account and its drafts stay.
+    - `ACCOUNT_UNAVAILABLE` signs out locally.
+    - A stale `SESSION_REQUIRED` for A that arrives after a switch to B is dropped by the transport, and the provider would ignore it anyway.
+    - Not reported: requests with their own credentials, token-only routes, and a refused purpose proof (new `proof: true` option).
+  - **Major — interactive logins overwrote the stored SDK credentials.**
+    - The port's `authorize()` now returns the new credentials without storing them (`PendingCredentials`). The challenge and bootstrap carry that login's own token (new transport option `credentials`).
+    - The login is stored only after the server accepted it: the binding first, then `saveCredentials`. If the SDK save fails, the previous binding goes back (or the store is cleared) and the new binding is revoked.
+    - `authorizeWithNonce` never stores anything, so a purpose proof can't replace the active session's credentials.
+    - A sign-in from an existing session (a switch, or after a lock or a server-ended session) runs beside it: `bootstrapped` is accepted from `active`, `locked` and `reauth_required`. A cancelled or failed switch leaves the same snapshot, the same epoch and A's credentials. A cold start resumes A with A's token.
+  - **Major — sign-in, sign-out and hydrate raced.**
+    - They now run one at a time through a queue. A second sign-in joins the first. A sign-in during hydrate waits for it, so the binding store and the session agree.
+    - A sign-out wins at once. It moves the epoch even from `bootstrap_pending` (`signed_out` always starts a new epoch unless already signed out), and supersedes the running and queued flows.
+    - A superseded flow checks after every await and stores nothing. A bootstrap result that arrives too late is revoked with its own login.
+    - Refused transitions have no side effects. A sign-in that can't start does nothing. Hydrate while `active` or `reauth_required` reads nothing and moves nothing.
+  - **Major — a network error was treated as a denial.**
+    - The adapter now throws `AuthUnavailable` for network or timeout failures, and returns null or false only for denials (no credentials, `invalid_grant`, unknown errors).
+    - The provider never locks on `AuthUnavailable`. The transport turns a credential read or refresh that rejects into a `network` outcome, so the S4 diary resolver recalls the known account instead of closing the diary (new test through the real resolver).
+    - A lock lifts through `hydrate()` (from `locked` it tries a forced refresh) or `refreshAfterUnauthorized()` once the credentials work, with the same epoch (`token_refreshed` now moves `locked` to `active`).
+  - **Minor — sign-out.**
+    - Revokes the session's binding and the stored binding with the SDK's own token, also from `locked`, where the seam shows no binding.
+    - Waits for a running commit or forced refresh before clearing the SDK.
+    - Revokes before clearing.
+    - Dispatches `signed_out` first, so the session ends even if `bindings.clear()` throws. The error is then reported.
+  - **Minor — refresh per expired token.**
+    - After a 401, the transport first re-reads the token. If another request already renewed it, the request is resent with the new token and no second refresh (PROBE-7).
+    - The provider never hands out a read that started before a refresh (a token generation), and a read during a refresh waits for it (PROBE-8).
+  - **Minor — `maxAge` 0 may be dropped by the native bridge.** A fresh login sends `max_age` and `prompt=login` as explicit `additionalParameters`, not as the typed `maxAge`. `auth0-native-proof.md` says to verify this (exactly once on the authorize URL) when the SDK is wired.
+  - **Minor — plan deviations.**
+    - `sessionStore.ts` adds the SecureStore binding store (`WHEN_UNLOCKED_THIS_DEVICE_ONLY`, exact `{accountId, binding}`, malformed reads as nothing). It also adds the epoch store.
+    - The epoch is persisted, 64 at a time, topped up halfway, so a launch starts above anything an earlier launch handed out (70 identity changes, then a new launch).
+    - `auth0Client.ts` and `auth0Client.web.ts` now export the same names (`createAuth0Port(sdk | null, audience)`, `AuthCancelled`, `AuthUnavailable`). Shared types are in `auth0Port.ts`. A native build without an SDK is unsupported, like the web.
+  - **Nits:**
+    - Hydrate while `active` no longer moves the epoch.
+    - `installCredentialProvider` unsubscribes the replaced provider.
+    - The `deviceSync.ts` comment now describes the per-token refresh and the server-ended reports.
+    - The bootstrap binding validator accepts exactly the server's 43-character base64url (`SESSION_BINDING`).
+    - `reauthenticate` refuses `bootstrap` at runtime before any call.
+    - `reauth_required` keeps the identity and the epoch, as the docs said.
+  - **Pinned test** `return_to_a_does_not_accept_old_a_response` now drives the real provider, seam and transport. A request goes out as A, the user switches to B and back to A with the very same binding, and then A's first response arrives. That response is never applied, and the whole session, seam and view state is equal before and after it. It passed at once, because the transport's final epoch check already held.
+- **Mutants:** 52 applied one at a time and restored (`f5fix-mutate.py`, `f5fix-mutants.log`). All 52 are killed, including the reviewer's six survivors:
+  - the epoch ignoring binding changes;
+  - the binding sent on token-only routes (now tested from a bound session);
+  - the epoch checks around the refresh;
+  - sign-out clearing the SDK before revoking;
+  - the seam exposing the binding while locked;
+  - the network-retry epoch check.
+
+  The first pass left five survivors:
+  - three were redundant epoch checks around the refresh, each followed by another check after one more await. They are now collapsed into one check after the re-read and one after the refresh.
+  - two needed tests: a read during a refresh, and the rollback when the new login can't be stored.
+
+  Three tests were added for these: those two, and a session change during the first token read sending nothing. Each fails with its mutant applied. Final count: 49 of 49.
+- **Test update outside F5:** `spend/v1/resources.test.ts` "a sign-out during a command retry stops resending" changed the epoch on the second snapshot read. The transport now checks the epoch right after reading the token, so a request never goes out with one identity's binding and another's token. The fake now signs out once the first attempt reached the server. The test still fails with the retry check removed (M8).
+- **Not changed (recorded):**
+  - **`REAUTH_REQUIRED` on a proof-carrying command** (`proof: true`) refuses the proof, not the session. F4's `authorizePurpose` uses that code for a stale or missing proof. No app command carries a proof yet.
+  - **A successful switch** does not revoke the previous account's binding. It is replaced locally and expires after 7 idle days; revoking it amounts to signing A out, which is a product decision.
+  - **A bootstrap response the transport dropped** (the epoch moved) can't be revoked, because its binding is never seen. Without the user's token it is unusable, and it expires after 7 idle days. A late result the provider does see is revoked.
+  - **Unknown SDK errors** count as denials: they lock, and the lock lifts later. Only network or timeout failures count as unreachable. The real codes are checked when the SDK is wired.
+  - **An unreadable binding store** at hydrate starts signed out (nothing erased). An unreadable epoch store starts at 0.
+  - **`ACCOUNT_UNAVAILABLE`** signs out without revoking, because the server already refuses that binding.
+  - **The root wiring** (call `hydrate()` at launch and on foreground) waits for the SDK (E1). It is in the proof procedure.
+  - **`AuthSessionProvider.tsx`** stays replaced by `installCredentialProvider`, as recorded for F5.
+- **SKIPPED** (needs E1/E2; see `auth0-native-proof.md`):
+  - the SDK install;
+  - `max_age`/`prompt` on the real authorize URL;
+  - the SDK's error codes;
+  - SecureStore accessibility on devices;
+  - offline launch and offline token reads on iOS and Android builds;
+  - every tenant check.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (437), test:db PASS (397), test:app PASS (28), test:unit PASS (206), test:render PASS (60), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. This run left no test databases behind; one older `gogospend_test_*` database from another process was left alone.

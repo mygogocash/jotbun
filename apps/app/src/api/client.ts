@@ -73,11 +73,16 @@ export function createMobileApiClient(options: {
 
 /** What the session layer (F5) exposes to the transport. */
 export type V1SessionSnapshot = { binding: string | null; epoch: number };
+/** A v1 refusal that means the server ended the session (F5). */
+export type V1SessionEnd = { code: 'SESSION_REQUIRED' | 'REAUTH_REQUIRED' | 'ACCOUNT_UNAVAILABLE'; epoch: number };
 export type V1Credentials = {
+  /** null: no usable session. A rejection means the token can't be read right now (offline): a `network` outcome. */
   getAccessToken(): Promise<string | null>;
   getSessionSnapshot(): V1SessionSnapshot;
-  /** One serialized token refresh after a 401 (F5); false when the session cannot be renewed. */
+  /** One serialized token refresh after a 401 (F5); false when the session cannot be renewed; a rejection is a `network` outcome. */
   refreshAfterUnauthorized?(): Promise<boolean>;
+  /** The server ended the session the request was sent under (F5); `epoch` is the epoch it was sent under. */
+  sessionEnded?(event: V1SessionEnd): void;
 };
 export type V1ClientVersion = { platform: 'ios' | 'android'; version: string };
 
@@ -128,6 +133,14 @@ export type V1RequestOptions<T> = {
   text?: boolean;
   /** Token-only routes (challenge, bootstrap, proof): no application binding is sent or required. */
   tokenOnly?: boolean;
+  /**
+   * This request's own credentials instead of the session's: a pending
+   * sign-in's access token, or a binding being revoked at sign-out. Never
+   * refreshed, and never reported as the session ending.
+   */
+  credentials?: { accessToken: string; binding?: string };
+  /** The command carries a purpose proof: REAUTH_REQUIRED refuses that proof, not the session. */
+  proof?: boolean;
   /**
    * false: one attempt only, never resent after a lost response (the outbox
    * decides; a hidden resend could commit and then be reported as refused).
@@ -181,6 +194,12 @@ const unauthenticated = (payload: unknown) => {
   const code = payload && typeof payload === 'object' ? (payload as { code?: unknown }).code : undefined;
   return code === undefined || code === 'UNAUTHENTICATED';
 };
+/** The refusals that mean the server ended the session (binding gone or expired, re-authentication needed, account unavailable). */
+const sessionEnd = (status: number, code: string): V1SessionEnd['code'] | null => {
+  if (status === 401 && (code === 'SESSION_REQUIRED' || code === 'REAUTH_REQUIRED')) return code;
+  if (status === 403 && code === 'ACCOUNT_UNAVAILABLE') return code;
+  return null;
+};
 const NETWORK_RETRIES = 2;
 
 /**
@@ -189,8 +208,13 @@ const NETWORK_RETRIES = 2;
  * Idempotency-Key, `X-GoGoSpend-Command-Schema` and If-Match when versioned.
  * A command whose response is lost is resent as the same immutable request
  * (same key, same body). A response that arrives after the session epoch
- * changed (sign-out, account switch, new binding) is dropped. Responses must
- * pass the caller's exact DTO validator; nothing is coerced.
+ * changed (sign-out, account switch, new binding) is dropped, and nothing is
+ * resent or refreshed once it moved. A 401 for an expired token is refreshed
+ * at most once per request, and not at all when another request already
+ * renewed the token it was sent with. A session the server ended is reported
+ * to the credentials with the epoch the request was sent under. A token that
+ * can't be read right now (offline) is a `network` outcome, never a sign-out.
+ * Responses must pass the caller's exact DTO validator; nothing is coerced.
  */
 export function createV1Transport(options: {
   baseUrl: string;
@@ -212,6 +236,7 @@ export function createV1Transport(options: {
   const baseUrl = options.baseUrl.replace(/\/+$/, '');
   const fetchImpl = options.fetchImpl ?? fetch;
   const timeoutMs = options.timeoutMs ?? 20_000;
+  const credentials = options.credentials;
 
   async function once(url: string, init: RequestInit): Promise<{ status: number; payload: unknown; readable: boolean; text: string }> {
     const controller = new AbortController();
@@ -234,19 +259,42 @@ export function createV1Transport(options: {
     }
   }
 
+  // The session's credentials can be unreadable for a moment (offline): an outage, not a sign-out.
+  const readToken = async (): Promise<string | null> => {
+    try {
+      return await credentials.getAccessToken();
+    } catch {
+      throw new V1Error('network', 0, 'NETWORK_ERROR');
+    }
+  };
+  const refresh = async (): Promise<boolean> => {
+    try {
+      return (await credentials.refreshAfterUnauthorized?.()) ?? false;
+    } catch {
+      throw new V1Error('network', 0, 'NETWORK_ERROR');
+    }
+  };
+
   return {
     async request<T>(method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE', path: string, request: V1RequestOptions<T>): Promise<T> {
       if (!path.startsWith('/v1/') || path.includes('\\') || path.includes('//')) throw new V1Error('invalid', 0, 'INVALID_PATH');
       if (!options.client) throw new V1Error('unsupported_platform', 0, 'CLIENT_UNSUPPORTED');
-      const before = options.credentials.getSessionSnapshot();
-      const token = await options.credentials.getAccessToken();
-      if (!token || (!before.binding && !request.tokenOnly)) throw new V1Error('signed_out', 401, 'SESSION_REQUIRED');
+      const before = credentials.getSessionSnapshot();
+      const stillCurrent = () => {
+        if (credentials.getSessionSnapshot().epoch !== before.epoch) throw new V1Error('session_changed', 0, 'SESSION_CHANGED');
+      };
+      // This request's own credentials (a pending sign-in, a binding being revoked) or the session's.
+      const own = request.credentials;
+      const token = own ? own.accessToken : await readToken();
+      stillCurrent();
+      const binding = request.tokenOnly ? null : own ? (own.binding ?? null) : before.binding;
+      if (!token || (!binding && !request.tokenOnly)) throw new V1Error('signed_out', 401, 'SESSION_REQUIRED');
       const headers: Record<string, string> = {
         Accept: 'application/json',
         Authorization: `Bearer ${token}`,
         'X-GoGoSpend-Client': `${options.client.platform}/${options.client.version}`,
       };
-      if (!request.tokenOnly && before.binding) headers['X-GoGoSpend-Session'] = before.binding;
+      if (binding) headers['X-GoGoSpend-Session'] = binding;
       if (request.body !== undefined) headers['Content-Type'] = 'application/json';
       if (request.command) {
         headers['Idempotency-Key'] = request.command.id;
@@ -266,22 +314,27 @@ export function createV1Transport(options: {
             const lost = error instanceof V1Error && error.outcome === 'network';
             if (!lost || !request.command || request.resendLost === false || attempt >= NETWORK_RETRIES) throw error;
             await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
-            if (options.credentials.getSessionSnapshot().epoch !== before.epoch) throw new V1Error('session_changed', 0, 'SESSION_CHANGED');
+            stillCurrent();
           }
         }
       };
       let result = await send();
-      // An expired access token (401 UNAUTHENTICATED): one serialized refresh
-      // and one resend of the same body and key - never for 426 or other refusals.
-      if (result.status === 401 && unauthenticated(result.payload) && options.credentials.refreshAfterUnauthorized) {
-        if (options.credentials.getSessionSnapshot().epoch !== before.epoch) throw new V1Error('session_changed', 0, 'SESSION_CHANGED');
-        const renewed = (await options.credentials.refreshAfterUnauthorized()) ? await options.credentials.getAccessToken() : null;
-        if (options.credentials.getSessionSnapshot().epoch !== before.epoch) throw new V1Error('session_changed', 0, 'SESSION_CHANGED');
+      // An expired access token (401 UNAUTHENTICATED): one resend of the same
+      // body and key, with the token another request already renewed or after
+      // one serialized refresh - never for 426, other refusals or a request's
+      // own credentials, and never once the session changed.
+      if (!own && result.status === 401 && unauthenticated(result.payload) && credentials.refreshAfterUnauthorized) {
+        let renewed = await readToken();
+        stillCurrent();
+        if (renewed === token) {
+          renewed = (await refresh()) ? await readToken() : null;
+          stillCurrent();
+        }
         if (!renewed) throw new V1Error('signed_out', 401, 'UNAUTHENTICATED');
         headers.Authorization = `Bearer ${renewed}`;
         result = await send();
       }
-      if (options.credentials.getSessionSnapshot().epoch !== before.epoch) throw new V1Error('session_changed', 0, 'SESSION_CHANGED');
+      stillCurrent();
       const { status, payload, readable, text } = result;
       if (status >= 200 && status <= 299 && request.text) {
         if (!request.validate(text)) throw new V1Error('invalid_response', status, 'INVALID_RESPONSE');
@@ -293,6 +346,13 @@ export function createV1Transport(options: {
         const code = typeof problem.code === 'string' && PROBLEM_CODE.test(problem.code) ? problem.code : `HTTP_${status}`;
         const fields = problem.fields && typeof problem.fields === 'object' ? (problem.fields as Record<string, string>) : undefined;
         const retryAfterSeconds = typeof problem.retry_after_seconds === 'number' ? problem.retry_after_seconds : undefined;
+        // The server ended the session this request was sent under. Not for a
+        // request's own credentials or a token-only route (a sign-in handles
+        // those), nor for a refused purpose proof (the proof, not the session).
+        const ended = sessionEnd(status, code);
+        if (ended && !own && !request.tokenOnly && !(ended === 'REAUTH_REQUIRED' && request.proof)) {
+          credentials.sessionEnded?.({ code: ended, epoch: before.epoch });
+        }
         throw new V1Error(outcomeFor(status, code), status, code, { fields, current: problem.current, retryAfterSeconds });
       }
       if (!request.validate(payload)) throw new V1Error('invalid_response', status, 'INVALID_RESPONSE');
