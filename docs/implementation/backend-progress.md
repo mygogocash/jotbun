@@ -1511,3 +1511,145 @@ Observed, not changed (pre-existing):
 - **Shared registration points combined:** the handler registry (export and `import_expire`), the module list, the contracts index, `schema.ts` (`importUploads`), the journal and the plan table.
 - **Full gate on the merged tree:** typecheck PASS, typecheck:app PASS, test:api PASS (553), test:db PASS (482), test:app PASS, test:unit PASS, test:render PASS (60), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS.
 - **Leftover databases:** two `gogospend_test_*` databases belonged to the running P6a worktree. A third is from an exited process of unknown origin; it was left alone.
+
+## P2b: quarantined files to a reviewable preview (local work)
+
+- **Migration `0015_import_candidates`** (built on `0753ae7`; P5's `0015_privacy` is already integrated, so this becomes `0016` at merge):
+  - `import_previews`: one row per parsed import, keyed by the import's job id (cascades from `import_uploads` and `accounts`):
+    - status `ready`, `rejected` (file-level issue codes, no candidates) or `expired`;
+    - layout, file issue codes, candidate and review counts;
+    - exact expense/income/transfer totals, which the routine computes from the stored candidates;
+    - the sanitized image key and size, `review_revision` (starts at 1), and `expires_at` 7 days after parsing.
+  - `import_candidates`: one row per source row, unique `(job_id, source_row_id)` and `(job_id, ordinal)`. Every field is nullable.
+  - CHECKs enforce M3's rules: a positive amount within the cap, a date from 1970, and labels/merchant/note within 80/120/500 code points without control characters. Issue arrays have a fixed shape (validated by immutable SQL functions). A row may skip review only when it has a date, type, amount and wallet and no issue.
+  - Owner-read RLS on both tables. No login can write them directly: the worker has no grant at all, and the app can only SELECT.
+  - Worker routines (all check a current lease, the job kind, and an active account at the job's generation):
+    - `gogospend_import_parse_source` returns the quarantine parts in order, with each part's and the whole file's size and SHA-256. It returns nothing once the raw file has expired.
+    - `gogospend_record_import_preview` runs inside P1's fenced completion transaction. An image must be this lease's own published `import_image` object, and ordinals must be exactly 1..n. It queues one `import_expire` job with `stage: "preview"`, due at `expires_at`.
+    - `gogospend_expire_import_preview` deletes the candidates when due, marks the preview `expired` and makes an unattached image due.
+  - App routine: `gogospend_import_parse_failure` returns the owner's failed parse job's error code.
+  - The `jobs` policies are untouched. Preview expiry reuses the `import_expire` kind, which the worker login already cannot insert.
+- **Contract** (`packages/contracts/src/v1/imports.ts`): `IMPORT_PARSE_LIMITS`, the 30 s / 120 s deadlines, the 512 MiB budget, the 7-day and 24-hour TTLs, statuses, layouts, fields, file and row issue codes, `ImportCandidate`, `ImportIssue`, `ImportDuplicateAdvice`, `ImportPreviewSummary`, `ImportPreview`, `importIssueMessageKey` and a strict `isImportPreview`.
+- **Route:** `GET /v1/imports/:id/preview` (`bound_session`). Another account's id, an unknown id and a malformed id all get the same 404. Before parsing it reports `queued`/`parsing`. A failed parse job reports `failed` with `quarantine_unavailable` or `parse_failed`. The response never contains an object key.
+- **Duplicate advice** is computed in the owner's read snapshot, so the worker never reads financial records. It names (at most 5 per row):
+  - the owner's active records with the same date, type and amount;
+  - other rows of the same file with the same date, type, amount, wallet, merchant and note.
+
+  Nothing is dropped, merged or marked.
+- **Parsing** (`src/imports/parsers/`, run only inside a child process):
+  - **Amounts** (`amount.ts`): exact text → BigInt satang.
+    - Accepted: ASCII or Thai digits, `.` as the only decimal point, `,` only as 3-digit grouping, a sign as `+`, `-`, U+2212 or accounting parentheses, and ฿/THB/บาท.
+    - Refused, each with its own code: excess precision (extra decimals unless they are zeros), ambiguous commas or decimal commas, other currencies, exponents and spaces, zero, and anything over ฿999,999,999.99.
+    - A test fails if `amount.ts`, `csv.ts` or `table.ts` ever contains `Number(`, `parseFloat`, `Math.round` or `toFixed`.
+  - **Dates** (`date.ts`): ISO, `y/m/d`, `d/m/y` or `m/d/y`, and Thai and English month names. A Buddhist year (2400 or later) is converted *before* the calendar check, so 29/02/2567 is 2024-02-29 and 29/02/2566 is invalid.
+    - The day/month order is never assumed. A file proves it (a first part over 12 means day-first, a second part over 12 means month-first, and both is a conflict). Otherwise the known layouts use their day-first convention, and a generic file's dates whose two parts are both 12 or less are `ambiguous_date`.
+    - Two-digit years are ambiguous. An instant with a zone is placed on its Bangkok day.
+    - Dates before 1970 or after today (Bangkok) are refused.
+    - Excel serials use exact integer arithmetic, in the 1900 or 1904 system.
+  - **CSV** (`csv.ts`): comma-separated RFC 4180, sliced, never built a character at a time.
+    - The read stops at once on a cell over 10,000 characters (quoted or not), more than 100 filled columns or 1,000 cells in a record, or more than 5,001 non-blank records.
+    - A stray or unbalanced quote is `malformed_csv`.
+    - Text is UTF-8; otherwise Windows-874 (Thai), the legacy fallback, which is reported as `legacy_encoding`.
+  - **XLSX** (`zip.ts`, `xml.ts`, `xlsx.ts`): the project's own strict ZIP reader on `node:zlib` and its own XML tokenizer. No workbook library touches an upload.
+    - ZIP: at most 1,000 entries and 50 MiB of declared sizes. Every entry is inflated once with `maxOutputLength` = its declared size + 1, and its size and CRC-32 must match.
+    - ZIP refusals: ZIP64, multiple disks, encryption, other compression methods, path-like or duplicate names, overlapping entries, and a local header that disagrees with the directory.
+    - XML: a DOCTYPE, any entity beyond the five predefined ones, mismatched tags and nesting deeper than 64 are refused.
+    - Refused workbooks: macros (a VBA project, a macro-enabled content type, macro or dialog sheets), any formula, external references (link parts, connections, query tables, an external relationship, a defined name pointing into another workbook), more than one worksheet with a value, and an unsupported sheet type.
+    - Numbers keep their stored `<v>` text, and date-formatted numbers become ISO dates.
+  - **Table → candidates** (`table.ts`): the header is matched against known Thai/English column names. This ports the legacy Meowjot, Money Lover and Spendee layouts, plus a generic date/amount layout.
+    - Unknown columns, including id-like ones (`owner_id`, `wallet_id`, …), are ignored and reported once as `unmapped_columns`. Two columns for one field is `ambiguous_columns`.
+    - Each non-blank row becomes `row:<record or worksheet row number>`.
+    - The type comes from a keyword, or from the sign only in the layouts that sign their amounts. A contradiction is `type_conflict`.
+    - The wallet comes only from a wallet column. The Meowjot payment channel is not used.
+    - A currency other than THB nulls the amount.
+    - Rows the source marked excluded are kept and flagged.
+    - Transfers need review (no supported layout names a destination wallet).
+    - Text over the M2/M3 limits becomes null with `text_too_long`. The legacy importer's guessed defaults (`Other`, `Cash`, today's date, "expense" for slips) are not ported.
+  - **Images** (`image.ts`, `receipt.ts`): sharp reads the header first.
+    - The format must match the declaration (`image_format_mismatch`). Over 20 MP is `image_too_large`, decided before any pixel is decoded.
+    - The image is then decoded under libvips' own pixel limit, auto-oriented and re-encoded in the same format (JPEG/WebP quality 85, PNG lossless).
+    - EXIF, XMP, IPTC and ICC are dropped, and the result is re-checked. An animated image keeps its first frame.
+    - The image becomes one `image:1` candidate with every field null and `receipt_fields_unread`.
+- **Child process** (`parser-runner.ts`; `parsers/table-child.ts` for CSV/XLSX, `parsers/image-child.ts` for images):
+  - `node --permission` with read access only to the child's own directory; the image child also gets the sharp package directories and `--allow-addons`.
+  - No network, child processes, workers, WASI, inspector or file writes. `--disallow-code-generation-from-strings`, `--disable-proto=throw`, and a 256 MiB V8 heap.
+  - The environment is exactly `TZ=UTC`, and only the stdio pipes are open.
+  - SIGKILL at the 30 s deadline, on the job's abort signal (a lost lease or a stopping worker) or past a 32 MiB output cap. The runner waits for the exit, so a killed child is always reaped.
+  - Stderr is drained and never logged.
+  - Every field of the child's JSON is validated again. A table file can never yield an image, and an image must be its declared format by magic bytes.
+  - Children run from source (Node type stripping) in tests and from `dist` (CommonJS) in production. `.swcrc` now rewrites the children's `.ts` import specifiers to `.js`.
+- **Parse handler** (`parse-handler.ts`, registered as `import_parse`):
+  1. It reads the source. Nothing (another lease, a changed account, an expired raw file, or under 5 minutes left) fails terminally as `import_unavailable`, and nothing is read.
+  2. It verifies every part and the whole file against the registry and the upload record: `quarantine_corrupt` or `quarantine_missing` (terminal), or `storage_unavailable` (retryable).
+  3. It runs the child and normalizes text with M2/M3's `normalizeName`, `normalizeMerchant` and `normalizeNote`. A value that does not fit becomes null with `invalid_text` or `text_too_long`.
+  4. It reserves, PUTs and publishes the sanitized image (purpose `import_image`, 24 hours) and records the preview, all in one `finishWithObjects`.
+  - A file-level refusal, a timeout (`parse_timeout`), a crash or protocol violation (`parse_failed`), and output or memory over budget (`parse_resource_limit`, from the child's own peak-RSS report) each record a `rejected` preview and complete the job. They are visible and never retried.
+  - A cancelled job or a lost lease records and publishes nothing; the sweep deletes a late image. Cancellation by expiry, deletion or the merged P2a maintenance pass is handled the same way.
+- **P1 change:** `ObjectPublicationService` maps purposes to the job kind allowed to publish them (`import_image` ← `import_parse`). `reserveKey` and the orphan sweep cover the new purpose.
+- **Dependencies:** none added. The lockfile is unchanged.
+  - Uploads are parsed only by the project's own CSV/ZIP/XML/XLSX code on Node built-ins, and by `sharp` 0.35.5. Sharp was already a dependency: Apache-2.0, no install script, prebuilt `@img/sharp-*` packages bundling libvips 8.18.7 (LGPL-3.0), and dependencies `detect-libc` 2.1.2, `semver` 7.8.5 and `@img/colour` 1.1.0.
+  - `exceljs` (which has a moderate advisory through `uuid`, unbounded expansion and its own XML handling), `jszip`, `unzipper`, `jsqr` and `tesseract.js` stay in the legacy path only and never see an upload.
+  - `npm audit --omit=dev`: 28 (9 moderate, 19 high), all pre-existing (Expo/Metro/React Native tooling, `node-forge`, `braces`/`micromatch`, `exceljs`→`uuid`). None is in sharp or its dependencies.
+  - Full `npm audit`: 47 (28 moderate, 19 high), unchanged by this task.
+- **Budget evidence** (built children, this Mac; maxRSS as the child reports it):
+  - a 12 MiB CSV of 5,000 rows × 100 columns: 141 MiB, 0.3 s;
+  - 5,000 rows with 400-character notes: 66 MiB;
+  - an 11 MiB noisy 20 MP JPEG: 194 MiB, 0.7 s;
+  - a 5,000 × 4,000 PNG: checked under 512 MiB in the spec.
+  - A ZIP entry that claims 10 bytes but inflates to 512 MiB is refused with the child under 256 MiB.
+  - All are well inside the 30 s deadline and the 512 MiB budget.
+- **RED → GREEN** (assertion-level RED against compile-safe seams, no module errors). The seams were stub parsers, a runner that never spawned, a handler that only completed its job, a preview query returning null, and a migration with the real tables and stub routine bodies.
+  - `npm run test -w gogospend-api -- --runTestsByPath src/imports/parser-runner.spec.ts`: RED 112 of 142 failed. The 30 that held were refusal cases whose expected code matched a stub's fixed answer, the validator's refusals and a fixture check. GREEN 142 of 142. With the mutation-driven additions below, the final run is 149 of 149.
+  - `npm run test:db -w gogospend-api -- --runTestsByPath src/imports/import-preview.integration.spec.ts`: RED 19 of 20 failed (the Drizzle drift check held). GREEN 20 of 20; the final run is 22 of 22, stable over 2 more runs together with P2a's spec (47 of 47).
+  - Pinned `parsing_has_no_financial_side_effect`: `transactionCountAfterParse` equals `transactionCountBeforeUpload`. Wallets, categories, change log and receipts are unchanged, and reading the preview changes nothing.
+  - Before the recorded RED, two tests threw instead of asserting (a null validator result, an empty probe report); they now assert first. GREEN also fixed a fixture: PNG may store XMP compressed, so the "markers present" precondition checks metadata.
+- **Mutation checks** (copy, mutate, run the focused tests, restore; checksums verified afterwards). 32 mutants were run, and all are killed. Six first survived because another layer caught them: float money, the CSV reader's row bound, the ZIP inflate cap, external hyperlinks, a plain DOCTYPE, and the per-part registry digest. A dedicated test was added for each, and all six then failed as intended. The killed guards:
+  - **Money and dates:** float money arithmetic, excess precision, the Buddhist leap check on the wrong year, an assumed day-first order.
+  - **Columns:** a wallet guessed from the payment channel, unknown columns mapped.
+  - **CSV:** cell, row and column bounds (both tokenizers), stray quotes.
+  - **ZIP:** the declared budget, the inflate cap, the entry count.
+  - **Workbooks:** formulas, VBA, external links, a second worksheet, DOCTYPE.
+  - **Images:** the pixel limit, kept metadata.
+  - **Child process:** an inherited environment, the permission model, the deadline kill, untrusted output.
+  - **Handler and SQL:** the digest check, the memory budget, duplicate advice, the SQL issue-shape and review CHECKs, the preview expiry due date.
+  - The deadline-kill mutant left its spinning probe running and Jest waiting. That probe (my process) was killed by PID.
+- **Deviations, for review:**
+  - Extra files:
+    - `parsers/{protocol,child-io,csv,zip,xml,table,table-child,image-child}.ts`;
+    - `fixtures/synthetic-parse.ts` (ZIP/XLSX/CSV/image builders);
+    - `fixtures/probes/*` (test-only child entries that run with the real flags).
+  - `ImportPreview` adds `summary` (layout, counts, exact totals, image size).
+  - Issues are top-level `{code, source_row_id, field}`.
+  - The candidate's direction is named `type`, as in `TransactionDto`.
+  - Wallet and category are the file's labels. P3 maps them to ids.
+  - A whole-file refusal or a child failure is a recorded `rejected` preview with a completed job, not a failed job. Unreadable quarantine fails the job.
+  - `WorkerDeps` gains `pool` (the jobs login). P2a's spec now runs only the expiry handler, and three other specs pass the pool.
+  - The preview returns all ≤5,000 candidates in one response; there is no paging yet.
+  - CSV accepts commas only. Animated images are flattened to their first frame, not refused (no fixture could produce one).
+- **SKIPPED:**
+  - **OCR:** `tesseract.js` downloads language data at runtime and no pinned model assets exist in the build.
+  - **QR reading:** `jsqr` is present, but no QR fixture can be generated without a new dependency.
+  - Receipts therefore yield a review-only candidate.
+  - **Hosted:** real R2 for the sanitized image (P1's hosted gate).
+  - **Container proof (P6b), not shown on macOS:**
+    - the 512 MiB limit as a container limit (locally: a 256 MiB V8 heap plus the child's RSS report);
+    - sharp's libc detection under `--permission` on Linux.
+  - Native code (libvips) runs outside Node's permission model. The scrubbed, permission-limited child is not a complete exploit sandbox, and parser exposure still needs the dependency/security gate.
+  - The client review UI and copy (P3).
+  - `dev:v1` was not run: it would migrate `gogospend_v1`.
+- **Notes for P2c, P3 and P5:**
+  - **P2c:**
+    - A sanitized image lives at `import_image/<account>/<import>/<lease>/image.<jpg|png|webp>`, published for 24 hours, with `import_previews.image_key/width/height`.
+    - Retaining it must re-register or copy it before that deadline. The 7-day preview expiry also makes `import_image` rows due.
+    - Only an `import_parse` lease can reserve that purpose.
+  - **P3:**
+    - Candidates are keyed `(job_id, source_row_id)` with `ordinal`. `review_revision` starts at `1`.
+    - The app login has SELECT only on both tables, so row patches need P3's own routines.
+    - `review_required = false` still needs label → id mapping.
+    - An expired preview has no candidates.
+  - **P5:**
+    - Both tables cascade from `accounts` (previews also from `import_uploads`).
+    - The sanitized image is in the publication registry.
+    - The privacy-step registration (`defaultPrivacySteps()`) is added at merge.
+    - Expired preview rows keep only codes, counts and totals until their upload row is purged.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (702), test:db PASS (504), test:app PASS (28), test:unit PASS (215), test:render PASS (60), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test database or login of mine was left behind. The two `gogospend_test_*` databases seen (one migrated only to `0014`, one empty) are not from this branch and were left alone.

@@ -4,7 +4,9 @@
 //                              publication registry; no financial reads);
 //   LEASED_READ_DATABASE_URL - member of gogospend_leased_read only (account
 //                              reads through lease-validating routines).
-// One job at a time (CPU parser concurrency one). Periodically sweeps
+// One job at a time (CPU parser concurrency one). Import files are parsed in
+// a separate child process per job (imports/parser-runner.ts) that receives
+// none of this process's settings: its environment is TZ only. Periodically sweeps
 // unpublished, expired and orphaned objects (export files at their 24-hour
 // expiry), applies the 30-day change retention, and reports - counts only -
 // failed jobs, queued kinds no handler here runs and export objects whose
@@ -49,7 +51,7 @@ async function main(): Promise<void> {
     await assertLoginRoles(readPool, ['gogospend_leased_read'], 'LEASED_READ_DATABASE_URL');
     const jobs = new JobRepository(jobsPool);
     const publication = new ObjectPublicationService(jobsPool, store);
-    const handlers = buildHandlers({ jobs, reader: new LeasedAccountRead(readPool), store, publication });
+    const handlers = buildHandlers({ jobs, reader: new LeasedAccountRead(readPool), store, publication, pool: jobsPool });
     const retention = new SyncRetention(jobsPool);
     let maintaining = false;
     const maintain = async () => {

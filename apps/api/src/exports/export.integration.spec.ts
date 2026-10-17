@@ -46,7 +46,7 @@ let publication: ObjectPublicationService;
 let worker: JobWorker;
 let service: ExportService;
 
-const deps = () => ({ jobs, reader, store, publication });
+const deps = () => ({ jobs, reader, store, publication, pool: jobsPool });
 
 /** Raw response bytes (the CSV starts with a byte order mark that text decoding could hide). */
 const binary = (res: unknown, done: (error: Error | null, body: Buffer) => void) => {
