@@ -1215,3 +1215,60 @@ Observed, not changed (pre-existing):
   - the hosted inventory sources (`neon-history`, `neon-branches`, `neon-snapshots`, `r2-recovery-objects`);
   - `--target isolated-synthetic`.
 - **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (448), test:db PASS (426), test:app PASS (16), test:unit PASS (173), test:render PASS (60), test:dev PASS (7), test:ops PASS (59), build PASS, export:web PASS, `git diff --check` PASS. No rehearsal or restore database was left behind. One `gogospend_test_*` database seen afterwards was created before this gate's database suite started and belongs to another worktree's run.
+
+## Review fixes for P6a
+
+- **P6a review** (commit `f9cb77f`, merged as `57f5321`): one major, seven minors, nits and five surviving mutants. The reviewer's probes are reproduced below.
+- **Fixed, with tests that failed first.**
+  - RED: 17 of 77 failed (`p6afix-red.log`), on assertions or on the old code's own refusals:
+    - the extended marker was refused as `ERASURE_MARKER_INVALID`;
+    - a planted manifest made `latest` refuse with `BACKUP_INTEGRITY`.
+
+    The Docker rehearsal test failed on its new checks.
+  - GREEN: then all passed. Added afterwards, not RED-first, once the first mutation run showed the gaps: an authentic final record sealed after the real one, a part swapped in from another backup with the same key, and a cleanup job for a marker account whose row is gone. Now 78 of 78 (`npm run test:ops`).
+  - **Major — markers could be cleared while a copy still held the account** (`canClearMarker`, probe C).
+    - P5 writes the marker first and purges later, so a backup taken in between was ignored.
+    - Markers gain an optional `purged_at`, which P5 sets once the purge is verified.
+    - A marker is clearable only with `purged_at`, a complete inventory and every copy taken at or before `purged_at` expired. A point-in-time history window counts until `purged_at` + its window.
+    - Without `purged_at` it is never clearable. The old test, which asserted the wrong rule, is replaced.
+  - **Minor — isolation was self-declared, and `?host=` bypassed the loopback check** (probe A).
+    - The local adapter resolves its connection the way `pg` does: URL host, `host=` parameter, `PGHOST`/`PGPORT`, socket path. On every connection it requires a loopback IP and port 55432, the container `pg_dump`/`pg_restore` run in.
+    - `restoreRehearsal` refuses a restorer whose real `endpoint()` is not loopback, before any read.
+  - **Minor — the restore target was readable by any login.** A new database has `CONNECT` and `TEMPORARY` revoked from PUBLIC at creation, so only superusers can open it. The adapter checks this again after `pg_restore`, before anything reads the copy, and the rehearsal checks that no non-superuser role can connect.
+  - **Minor — retention trusted manifest dates** (probe B).
+    - Prune and the inventory now date a set by the oldest of its id time and the manifest's claim. Unless the manifest verifies with the key, the set's file times count too, and retention is the full 7 days.
+    - With the key (`localRecoveryStore({dir, key})`, inventory `--key-fd`), a manifest that fails its MAC is a `manifest_unverified` violation.
+    - The 30-day-old set in probe B is now pruned.
+  - **Minor — unknown files were invisible** (probe G). Every entry in the store is a set's file, the ledger, a partial (a copy bounded at 24 h) or a stray. A part without a manifest, an unreadable manifest or an unknown file is an `unaccounted_file` violation, pruned 7 days after its last change.
+  - **Minor — principal-digest rows survived erasure.** The restore now deletes and checks rows keyed by the erased aliases' digests in every table with a `principal_digest` column except `blocked_principals`: `auth_event_receipts` (whose account link was already NULL), `security_reconcile_checks`, `auth_sessions` and `reauth_challenges`. The runbook says P5's purge must match.
+  - **Minor — a real-data copy could go into a non-production target.** A production or non-synthetic backup is refused (`RESTORE_DATA_CLASS_MISMATCH`) before anything is created.
+  - **Minor — re-blocking was always permanent.**
+    - Markers gain an optional `blocked_until`, which the restore replays: no end stays permanent, an end already past adds no block, and an existing permanent hold stays.
+    - A `TODO(P5)` and the runbook say P5 must set it whenever it ends or shortens a hold, since a permanent block also stops that person signing up again.
+  - **Nits:**
+    - `latest` falls back past an unverifiable or future-dated manifest (5-minute skew) instead of refusing; with nothing usable it reports the most telling reason.
+    - A decryption failure destroys the read stream, and `openPart` uses `pipeline`, so the backup file is closed.
+    - The key reader refuses a terminal (`KEY_SOURCE_TERMINAL`).
+    - `planErasure` indexes aliases by lookup and by account.
+  - **Log filter tightened.** Details and log fields now keep only UPPER_SNAKE codes, lower-case identifiers (names, UUIDs, 32-hex key ids), backup-set ids, ISO dates, counts and booleans. A 43-character base64url key, mixed-case tokens and hex longer than a key id are redacted. A test scans raw logs, filtered logs and receipts for the recovery key and its derived MAC key in five encodings.
+  - **Docker paths in the gate.** `test:ops` now includes `local-rehearsal.test.mjs`. It runs the end-to-end rehearsal on the local server, which now also seeds event receipts and reconcile checks, and records one marker with a block end. It asserts re-blocking, block-end replay, erased jobs gone, digest rows gone, the kept receipt kept, and no PUBLIC or role `CONNECT`. If the server is unreachable the test is skipped with that reason; `GOGOSPEND_OPS_REQUIRE_DB=1` (used in this gate) makes that a failure.
+- **Mutants:** 41 of 43 fail the suite (`p6afix-mutants.log`, all three test files, Docker required). This includes:
+  - the reviewer's survivors: C2 (final flag dropped from the nonce), D1 (pg_dump's non-zero exit ignored), A1 (attachment SHA-256 ignored), L1 (MAC key logged), T5 (local loopback check removed);
+  - E4 and E5 (re-blocking and the non-cascading deletes) through the Docker test;
+  - each fix above.
+
+  Two survive and are equivalent:
+  - C4, dropping the header from the AAD: every header byte is either checked (magic, key id) or feeds the file key and nonce (salt, prefix).
+  - L2, logging the restore error's text: every error has already been turned into a fixed-message `OpsError` by then.
+- **Reviewer probes rerun on this tree:**
+  - B: the old set is pruned, and the later read of its part fails because it is gone.
+  - C: without `purged_at`, `canClearMarker` is false.
+  - G: the 60-day-old unknown files are pruned.
+  - A replays only the old URL check inline; the adapter test covers its three URLs, plus a non-loopback host and `PGHOST`.
+- **Interface changes** (no caller outside `scripts/ops` yet):
+  - restorers add `endpoint()`;
+  - `applyErasure` and `ownerRows` take `{accountIds, principalDigests, blocks}`;
+  - the store adds `sets()` and `strays()`, replacing `orphans()`, and takes an optional `key`;
+  - `planErasure` takes `now`.
+- **SKIPPED:** unchanged from P6a (hosted PITR and backup RPO/RTO, Neon/R2 adapters, the hosted registry and hosted inventory sources; E1 not authorized).
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (448), test:db PASS (426), test:app PASS (16), test:unit PASS (173), test:render PASS (60), test:dev PASS (7), test:ops PASS (78, Docker rehearsal included with `GOGOSPEND_OPS_REQUIRE_DB=1`), build PASS, export:web PASS, `git diff --check` PASS. No rehearsal or restore database was left behind. Two `gogospend_test_*` databases seen afterwards were created before this gate's database suite started, by processes that no longer exist (other worktrees' runs).

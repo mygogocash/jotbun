@@ -7,7 +7,7 @@
 // object storage (the Docker rehearsal is `npm run ops:rehearsal:local`).
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
+import { createCipheriv, createHash, randomUUID } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import { chmod, mkdtemp, open, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -20,7 +20,7 @@ import { inspect } from 'node:util';
 import { findRecoveryCredentialNames, localDockerDump, localRecoveryStore, memoryAttachmentSource, runDailyBackup } from './backup.mjs';
 import { SubjectLookupKey, memoryMarkerSource } from './erasure-markers.mjs';
 import { createOpsLog, OpsError } from './ops-safety.mjs';
-import { decryptStream, encryptStream, readRecoveryKeyFromFd, RecoveryKey } from './recovery-crypto.mjs';
+import { decryptStream, encryptStream, manifestMac, readRecoveryKeyFromFd, RecoveryKey } from './recovery-crypto.mjs';
 import { localRestoreLedger } from './recovery-inventory.mjs';
 import { restoreRehearsal } from './restore-rehearsal.mjs';
 
@@ -46,9 +46,22 @@ const ACCOUNT = {
 const SUBJECT = { kept: 'apple|kept-0001', erased: 'apple|erased-0002', folded: 'auth0|linked-0004', reborn: 'apple|reborn-0005' };
 
 // The synthetic "database": a JSON dump the memory restorer understands.
-function syntheticDatabase() {
+// Principal digests follow gogospend_principal_digest: sha256(issuer 0x00 subject).
+function digestOf(subject) {
+  return createHash('sha256').update(Buffer.concat([Buffer.from(ISSUER), Buffer.from([0]), Buffer.from(subject)])).digest('hex');
+}
+
+function objectBytes(ref) {
+  return Buffer.from(`jpeg ${ref}`);
+}
+
+function syntheticDatabase({ padding = 0 } = {}) {
   const identity = (who, created) => ({ issuer: ISSUER, subject: SUBJECT[who], account_id: ACCOUNT[who], created_at: created });
   const txn = (who, n) => ({ account_id: ACCOUNT[who], id: randomUUID(), amount_minor: SYNTHETIC_AMOUNT, note: `${CANARY} ${SYNTHETIC_BAHT} #${n}` });
+  const ref = (who, name) => {
+    const path = `receipt/${ACCOUNT[who]}/${name}.jpg`;
+    return { account_id: ACCOUNT[who], ref: path, sha256: createHash('sha256').update(objectBytes(path)).digest('hex') };
+  };
   return {
     tables: {
       accounts: Object.keys(ACCOUNT).map((who) => ({ id: ACCOUNT[who] })),
@@ -60,33 +73,48 @@ function syntheticDatabase() {
         identity('reborn', '2026-10-16T12:00:00.000Z'),
       ],
       transactions: [txn('kept', 1), txn('kept', 2), txn('erased', 1), txn('folded', 1), txn('reborn', 1)],
-      attachment_refs: [
-        { account_id: ACCOUNT.kept, ref: `receipt/${ACCOUNT.kept}/r1.jpg` },
-        { account_id: ACCOUNT.erased, ref: `receipt/${ACCOUNT.erased}/r2.jpg` },
-        { account_id: ACCOUNT.folded, ref: `receipt/${ACCOUNT.folded}/r3.jpg` },
+      attachment_refs: [ref('kept', 'r1'), ref('erased', 'r2'), ref('folded', 'r3')],
+      // Principal-digest tables: an event receipt whose account link was set
+      // to NULL, and a reconcile check keyed by digest alone.
+      auth_event_receipts: [
+        { principal_digest: digestOf(SUBJECT.kept), account_id: ACCOUNT.kept },
+        { principal_digest: digestOf(SUBJECT.erased), account_id: null },
+        { principal_digest: digestOf(SUBJECT.folded), account_id: ACCOUNT.folded },
       ],
+      security_reconcile_checks: [{ principal_digest: digestOf(SUBJECT.erased) }, { principal_digest: digestOf(SUBJECT.reborn) }],
+      // No foreign key to accounts: cleanup jobs outlive their account, so a
+      // backup taken mid-purge can hold one for an account row already gone.
+      jobs: [{ account_id: ACCOUNT.kept }, { account_id: '0c000000-0000-4000-8000-00000000000c' }],
       blocked_principals: [],
+      ...(padding ? { padding: [{ text: 'p'.repeat(padding) }] } : {}),
     },
   };
 }
 
-function objectsFor(database, { omit = [] } = {}) {
-  return new Map(database.tables.attachment_refs.filter(({ ref }) => !omit.includes(ref)).map(({ ref }) => [ref, Buffer.from(`jpeg ${ref}`)]));
+function objectsFor(database, { omit = [], corrupt = [] } = {}) {
+  return new Map(database.tables.attachment_refs
+    .filter(({ ref }) => !omit.includes(ref))
+    .map(({ ref }) => [ref, corrupt.includes(ref) ? Buffer.from(`altered ${ref}`) : objectBytes(ref)]));
 }
 
 function jsonDump(value) {
   return { label: 'synthetic-json', dump: () => ({ stream: Readable.from([Buffer.from(JSON.stringify(value))]), done: Promise.resolve() }) };
 }
 
-function memoryRestorer({ failRestore, skipErasure } = {}) {
+// Accepts the plan object (accountIds, principalDigests, blocks) or, from older
+// callers, a bare account-id list.
+function memoryRestorer({ failRestore, skipErasure, skipDigests, host = '127.0.0.1' } = {}) {
   const calls = [];
   const databases = new Map();
   const dropped = new Map();
+  const digestTables = new Set(['auth_event_receipts', 'security_reconcile_checks']);
   const owned = (table, row) => (table === 'accounts' ? row.id : row.account_id);
+  const planOf = (plan) => (Array.isArray(plan) ? { accountIds: plan, principalDigests: [] } : plan);
   return {
     kind: 'memory',
     calls,
     dropped,
+    endpoint: () => ({ host }),
     async create(target) {
       calls.push(['create', target.database]);
       if (databases.has(target.database)) throw new Error('exists');
@@ -106,27 +134,33 @@ function memoryRestorer({ failRestore, skipErasure } = {}) {
       const present = new Set(databases.get(target.database).tables.accounts.map((row) => row.id));
       return accountIds.filter((id) => present.has(id));
     },
-    async applyErasure(target, plan) {
+    async applyErasure(target, rawPlan) {
+      const plan = planOf(rawPlan);
       calls.push(['applyErasure', plan.accountIds.length]);
       if (skipErasure) return { principalsBlocked: 0 };
       const { tables } = databases.get(target.database);
       const ids = new Set(plan.accountIds);
-      const blocked = tables.account_identities.filter((identity) => ids.has(identity.account_id));
-      for (const identity of blocked) tables.blocked_principals.push({ principal: `${identity.issuer}\0${identity.subject}` });
+      const digests = new Set(skipDigests ? [] : plan.principalDigests ?? []);
+      const blocks = plan.blocks ?? tables.account_identities.filter((identity) => ids.has(identity.account_id)).map((identity) => ({ digest: digestOf(identity.subject), until: null }));
+      for (const block of blocks) tables.blocked_principals.push({ principal_digest: block.digest, blocked_until: block.until });
       for (const [name, rows] of Object.entries(tables)) {
-        if (name !== 'blocked_principals') tables[name] = rows.filter((row) => !ids.has(owned(name, row)));
+        if (name === 'blocked_principals') continue;
+        tables[name] = rows.filter((row) => !ids.has(owned(name, row)) && !(digestTables.has(name) && digests.has(row.principal_digest)));
       }
-      return { principalsBlocked: blocked.length };
+      return { principalsBlocked: blocks.length };
     },
-    async ownerRows(target, accountIds) {
-      const ids = new Set(accountIds);
+    async ownerRows(target, rawPlan) {
+      const plan = planOf(rawPlan);
+      const ids = new Set(plan.accountIds);
+      const digests = new Set(plan.principalDigests ?? []);
       const { tables } = databases.get(target.database);
       return Object.entries(tables)
-        .map(([table, rows]) => ({ table, rows: rows.filter((row) => ids.has(owned(table, row))).length }))
+        .filter(([table]) => table !== 'blocked_principals')
+        .map(([table, rows]) => ({ table, rows: rows.filter((row) => ids.has(owned(table, row)) || (digestTables.has(table) && digests.has(row.principal_digest))).length }))
         .filter((entry) => entry.rows > 0);
     },
     async attachmentReferences(target) {
-      return databases.get(target.database).tables.attachment_refs.map(({ account_id, ref }) => ({ account_id, ref }));
+      return databases.get(target.database).tables.attachment_refs.map(({ account_id, ref, sha256 }) => ({ account_id, ref, sha256 }));
     },
     async drop(target) {
       calls.push(['drop', target.database]);
@@ -183,21 +217,23 @@ async function withDir(fn) {
 // One encrypted backup set of the synthetic database, plus markers for the
 // erased account (by id), the folded alias (by subject) and an account that
 // is not in the backup at all.
-async function scenario(dir, { omitObjects = [], backupAt = BACKUP_AT, database = syntheticDatabase() } = {}) {
-  const key = RecoveryKey.generate();
+async function scenario(dir, {
+  omitObjects = [], corruptObjects = [], backupAt = BACKUP_AT, database = syntheticDatabase(), environment = 'non_production', synthetic = true,
+  erasedExtras = {}, foldedExtras = {}, key = RecoveryKey.generate(),
+} = {}) {
   const lookupKey = SubjectLookupKey.generate();
   const store = localRecoveryStore({ dir });
   const backup = await runDailyBackup({
-    database: jsonDump(database), attachments: memoryAttachmentSource(objectsFor(database, { omit: omitObjects })),
-    store, key, now: backupAt, environment: 'non_production', synthetic: true,
+    database: jsonDump(database), attachments: memoryAttachmentSource(objectsFor(database, { omit: omitObjects, corrupt: corruptObjects })),
+    store, key, now: backupAt, environment, synthetic,
   });
-  const marker = (accountId, subjects, recordedAt) => ({
+  const marker = (accountId, subjects, recordedAt, extras = {}) => ({
     marker_id: randomUUID(), account_id: accountId, subject_lookups: subjects.map((subject) => lookupKey.lookup(ISSUER, subject)),
-    lookup_key_id: lookupKey.id, recorded_at: recordedAt,
+    lookup_key_id: lookupKey.id, recorded_at: recordedAt, ...extras,
   });
   const markers = [
-    marker(ACCOUNT.erased, [SUBJECT.erased], '2026-10-16T20:00:00.000Z'),
-    marker('0f000000-0000-4000-8000-00000000000f', [SUBJECT.folded, SUBJECT.reborn], '2026-10-16T06:00:00.000Z'),
+    marker(ACCOUNT.erased, [SUBJECT.erased], '2026-10-16T20:00:00.000Z', erasedExtras),
+    marker('0f000000-0000-4000-8000-00000000000f', [SUBJECT.folded, SUBJECT.reborn], '2026-10-16T06:00:00.000Z', foldedExtras),
     marker('0c000000-0000-4000-8000-00000000000c', ['apple|never-backed-up'], '2026-10-16T21:00:00.000Z'),
   ];
   return { key, lookupKey, store, backup, markers, ledger: localRestoreLedger({ dir }) };
@@ -237,9 +273,159 @@ test('restore_reapplies_external_erasure_registry', async () => {
     const restored = restorer.dropped.get('gogospend_restore_0a1b2c3d').tables;
     assert.deepEqual(restored.accounts.map((row) => row.id).sort(), [ACCOUNT.kept, ACCOUNT.reborn]);
     assert.equal(restored.transactions.filter((row) => row.account_id === ACCOUNT.kept).length, 2);
-    assert.equal(restored.blocked_principals.length, 2);
+    // No marker records a block end, so both erased aliases are blocked with
+    // no end (see m7 / P5 TODO in erasure-markers.mjs).
+    assert.deepEqual(restored.blocked_principals.map((row) => `${row.principal_digest}:${row.blocked_until}`).sort(), [`${digestOf(SUBJECT.erased)}:null`, `${digestOf(SUBJECT.folded)}:null`].sort());
+    // Principal-digest rows of erased aliases go too, including the receipt
+    // whose account link was already NULL.
+    assert.deepEqual(restored.auth_event_receipts.map((row) => row.principal_digest), [digestOf(SUBJECT.kept)]);
+    assert.deepEqual(restored.security_reconcile_checks.map((row) => row.principal_digest), [digestOf(SUBJECT.reborn)]);
+    // A marker's account id is erased even when its account row is gone.
+    assert.deepEqual(restored.jobs.map((row) => row.account_id), [ACCOUNT.kept]);
     assertLeaksNothing(receipt, lines.join('\n'));
     for (const subject of Object.values(SUBJECT)) assert.ok(!JSON.stringify(receipt).includes(subject));
+    for (const subject of Object.values(SUBJECT)) assert.ok(!JSON.stringify(receipt).includes(digestOf(subject)));
+  });
+});
+
+test('principal-digest rows left behind block the serving switch', async () => {
+  await withDir(async (dir) => {
+    const s = await scenario(dir);
+    const restorer = memoryRestorer({ skipDigests: true });
+    const error = await rejectsWith(restoreRehearsal(input(s, { restorer })), 'ERASURE_NOT_APPLIED');
+    assert.ok(error.details.tables.includes('auth_event_receipts'));
+    assert.ok(error.details.tables.includes('security_reconcile_checks'));
+    assert.deepEqual(restorer.calls.at(-1), ['drop', 'gogospend_restore_0a1b2c3d']);
+  });
+});
+
+test('re-blocking replays the block end each marker records', async () => {
+  await withDir(async (dir) => {
+    const s = await scenario(dir, {
+      erasedExtras: { blocked_until: '2026-10-01T00:00:00.000Z', purged_at: '2026-10-16T22:00:00.000Z' },
+      foldedExtras: { blocked_until: '2026-10-20T00:00:00.000Z' },
+    });
+    const restorer = memoryRestorer();
+    const receipt = await restoreRehearsal(input(s, { restorer }));
+    const restored = restorer.dropped.get('gogospend_restore_0a1b2c3d').tables;
+    // The erased alias's block already ended; the folded alias stays blocked until its recorded end.
+    assert.deepEqual(restored.blocked_principals.map((row) => `${row.principal_digest}:${row.blocked_until}`), [`${digestOf(SUBJECT.folded)}:2026-10-20T00:00:00.000Z`]);
+    assert.equal(receipt.principals_blocked, 1);
+    assert.equal(receipt.accounts_erased, 2);
+    assert.equal(restored.accounts.some((row) => row.id === ACCOUNT.erased), false);
+  });
+});
+
+test('a real-data backup is never restored into a non-production target', async () => {
+  for (const [environment, synthetic] of [['production', false], ['production', true], ['non_production', false]]) {
+    await withDir(async (dir) => {
+      const s = environment === 'non_production'
+        ? await scenario(dir)
+        : await scenario(dir, { environment, synthetic });
+      if (environment === 'non_production') {
+        // A non-synthetic non-production backup cannot be written; plant one
+        // with a valid MAC, as a key holder could.
+        const name = (await readdir(dir)).find((file) => file.endsWith('.manifest.json'));
+        const manifest = JSON.parse(await readFile(join(dir, name), 'utf8'));
+        manifest.synthetic = false;
+        manifest.mac = manifestMac(s.key, manifest);
+        await writeFile(join(dir, name), JSON.stringify(manifest));
+      }
+      const restorer = memoryRestorer();
+      await rejectsWith(restoreRehearsal(input(s, { restorer })), 'RESTORE_DATA_CLASS_MISMATCH');
+      assert.deepEqual(restorer.calls, []);
+    });
+  }
+});
+
+test('the isolation check uses the endpoint the restorer will really use', async () => {
+  await withDir(async (dir) => {
+    const s = await scenario(dir);
+    for (const restorer of [memoryRestorer({ host: '10.0.0.5' }), memoryRestorer({ host: 'db.prod.invalid' }), memoryRestorer({ host: '/var/run/postgresql' }), { ...memoryRestorer(), endpoint: undefined }]) {
+      await rejectsWith(restoreRehearsal(input(s, { restorer })), 'RESTORE_TARGET_NOT_ISOLATED');
+      assert.deepEqual(restorer.calls, []);
+    }
+  });
+});
+
+const ADMIN_URL_ENV = 'GOGOSPEND_TEST_ADMIN_URL';
+async function withAdminUrl(value, extraEnv, fn) {
+  const saved = { [ADMIN_URL_ENV]: process.env[ADMIN_URL_ENV], ...Object.fromEntries(Object.keys(extraEnv).map((name) => [name, process.env[name]])) };
+  if (value === undefined) delete process.env[ADMIN_URL_ENV];
+  else process.env[ADMIN_URL_ENV] = value;
+  Object.assign(process.env, extraEnv);
+  try {
+    return await fn();
+  } finally {
+    for (const [name, previous] of Object.entries(saved)) {
+      if (previous === undefined) delete process.env[name];
+      else process.env[name] = previous;
+    }
+  }
+}
+
+test('the local adapter refuses any connection whose real host is not loopback, before connecting', async () => {
+  const { localDockerRestorer } = await import('./local-postgres.mjs');
+  const target = { database: 'gogospend_restore_0a1b2c3d' };
+  for (const [url, env] of [
+    ['postgres://u:p@127.0.0.1:55432/postgres?host=db.prod.invalid', {}],
+    ['postgres://u:p@localhost/postgres?host=10.1.2.3&port=5432', {}],
+    ['postgres://u:p@127.0.0.1/postgres?host=%2Fvar%2Frun%2Fother', {}],
+    ['postgres://u:p@10.0.0.9:5432/postgres', {}],
+    ['postgres:///postgres', { PGHOST: '10.1.2.3' }],
+  ]) {
+    await withAdminUrl(url, env, async () => {
+      const restorer = localDockerRestorer();
+      assert.throws(() => restorer.endpoint(), (error) => error.code === 'RESTORE_TARGET_NOT_ISOLATED', url);
+      await rejectsWith(restorer.create(target), 'RESTORE_TARGET_NOT_ISOLATED');
+      await rejectsWith(restorer.ownerRows(target, { accountIds: [], principalDigests: [] }), 'RESTORE_TARGET_NOT_ISOLATED');
+    });
+  }
+  await withAdminUrl(undefined, {}, async () => {
+    assert.deepEqual(localDockerRestorer().endpoint(), { host: '127.0.0.1', port: 55432 });
+  });
+});
+
+test('a retained attachment whose bytes changed blocks the serving switch', async () => {
+  await withDir(async (dir) => {
+    const s = await scenario(dir, { corruptObjects: [`receipt/${ACCOUNT.kept}/r1.jpg`] });
+    const restorer = memoryRestorer();
+    const error = await rejectsWith(restoreRehearsal(input(s, { restorer })), 'ATTACHMENT_REFERENCES_MISSING');
+    assert.equal(error.details.missing, 1);
+  });
+});
+
+test('latest falls back past a planted future-dated or unverifiable manifest', async () => {
+  await withDir(async (dir) => {
+    const s = await scenario(dir);
+    const name = `${s.backup.backup_id}.manifest.json`;
+    const real = JSON.parse(await readFile(join(dir, name), 'utf8'));
+    // A store writer without the key plants a newer set (bad MAC) and a
+    // future-dated one; neither may block or hijack the restore.
+    for (const [id, created] of [['bk_20261017T020000Z_aaaaaa', '2026-10-17T02:00:00.000Z'], ['bk_20991231T000000Z_bbbbbb', '2099-12-31T00:00:00.000Z']]) {
+      const planted = { ...real, id, created_at: created, expires_at: new Date(Date.parse(created) + 6 * DAY).toISOString() };
+      await writeFile(join(dir, `${id}.manifest.json`), JSON.stringify(planted), { mode: 0o600 });
+      for (const part of ['db', 'objects']) await writeFile(join(dir, `${id}.${part}.enc`), await readFile(join(dir, `${s.backup.backup_id}.${part}.enc`)), { mode: 0o600 });
+    }
+    const receipt = await restoreRehearsal(input(s));
+    assert.equal(receipt.backup.id, s.backup.backup_id);
+    // A future-dated set that does verify (a key holder's clock error) is skipped too.
+    const future = { ...real, id: 'bk_20991231T000000Z_cccccc', created_at: '2099-12-31T00:00:00.000Z', expires_at: '2100-01-06T00:00:00.000Z' };
+    future.mac = manifestMac(s.key, future);
+    await writeFile(join(dir, `${future.id}.manifest.json`), JSON.stringify(future), { mode: 0o600 });
+    assert.equal((await restoreRehearsal(input(s))).backup.id, s.backup.backup_id);
+  });
+});
+
+test('a decryption failure closes the backup file it was reading', async () => {
+  const openDescriptors = async () => (await readdir('/dev/fd')).length;
+  await withDir(async (dir) => {
+    const s = await scenario(dir, { database: syntheticDatabase({ padding: 4 * 1024 * 1024 }) });
+    await corrupt(dir, '.db.enc', (bytes) => { bytes[200] ^= 0x01; return bytes; });
+    const before = await openDescriptors();
+    await rejectsWith(restoreRehearsal(input(s)), 'BACKUP_INTEGRITY');
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    assert.ok(await openDescriptors() <= before, 'a descriptor stayed open after the failed restore');
   });
 });
 
@@ -483,6 +669,15 @@ test('the recovery key is refused from a plaintext file and accepted from a pipe
   });
 });
 
+test('the recovery key is refused from a terminal', async () => {
+  const handle = await open('/dev/null', 'r');
+  try {
+    assert.throws(() => readRecoveryKeyFromFd(handle.fd, { isatty: () => true }), (error) => error.code === 'KEY_SOURCE_TERMINAL');
+  } finally {
+    await handle.close();
+  }
+});
+
 test('the encrypted stream round-trips exactly and refuses another key', async () => {
   const key = RecoveryKey.generate();
   const plain = Buffer.concat([Buffer.from(CANARY), Buffer.alloc(200_000, 7)]);
@@ -502,6 +697,39 @@ test('the encrypted stream round-trips exactly and refuses another key', async (
   await rejectsWith(drain(sealed.subarray(0, header + 3 * record)), 'BACKUP_INTEGRITY');
   await rejectsWith(drain(sealed.subarray(0, header)), 'BACKUP_INTEGRITY');
   await rejectsWith(drain(Buffer.concat([sealed, sealed.subarray(header)])), 'BACKUP_INTEGRITY');
+  // Cut at a record boundary and mark the last kept record final: the final
+  // flag is bound into the nonce, so the forged flag fails authentication.
+  const forged = Buffer.from(sealed.subarray(0, header + 2 * record));
+  forged.writeUInt32BE((forged.readUInt32BE(header + record) | 0x8000_0000) >>> 0, header + record);
+  await rejectsWith(drain(forged), 'BACKUP_INTEGRITY');
+  // Clearing the real final record's flag fails the same way.
+  const unflagged = Buffer.from(sealed);
+  const last = header + 3 * record;
+  unflagged.writeUInt32BE(unflagged.readUInt32BE(last) & 0x7fff_ffff, last);
+  await rejectsWith(drain(unflagged), 'BACKUP_INTEGRITY');
+  // An authentic final record sealed after the real final one (as a key
+  // holder could write) is still refused: nothing may follow the final record.
+  const fileKey = key.derive(sealed.subarray(24, 56), Buffer.from('gogospend-recovery-stream-v1'));
+  const nonce = Buffer.concat([sealed.subarray(56, 63), Buffer.from([0, 0, 0, 4, 1])]);
+  const cipher = createCipheriv('aes-256-gcm', fileKey, nonce);
+  cipher.setAAD(sealed.subarray(0, header));
+  const body = Buffer.concat([cipher.update(Buffer.from('smuggled after the end')), cipher.final()]);
+  const length = Buffer.alloc(4);
+  length.writeUInt32BE((body.length | 0x8000_0000) >>> 0);
+  await rejectsWith(drain(Buffer.concat([sealed, length, body, cipher.getAuthTag()])), 'BACKUP_INTEGRITY');
+});
+
+test('a part swapped in from another backup made with the same key is refused', async () => {
+  await withDir(async (dir) => {
+    const s = await scenario(dir);
+    const other = { ...syntheticDatabase(), tables: { ...syntheticDatabase().tables, accounts: [{ id: ACCOUNT.kept }] } };
+    const second = await runDailyBackup({ database: jsonDump(other), attachments: memoryAttachmentSource(objectsFor(other)), store: s.store, key: s.key, now: new Date(BACKUP_AT.getTime() + 60_000), environment: 'non_production', synthetic: true });
+    // Both parts are authentic ciphertext; only the manifest's digest tells them apart.
+    await writeFile(join(dir, `${s.backup.backup_id}.db.enc`), await readFile(join(dir, `${second.backup_id}.db.enc`)));
+    const restorer = memoryRestorer();
+    await rejectsWith(restoreRehearsal(input(s, { restorer, backupId: s.backup.backup_id })), 'BACKUP_INTEGRITY');
+    assert.equal(restorer.calls.some(([step]) => step === 'applyErasure'), false);
+  });
 });
 
 function keyForms(bytes) {
@@ -534,6 +762,58 @@ test('a dump failure leaves no partial copy and leaks no credentials or amounts'
     assertLeaksNothing(error, lines.join('\n'));
     assert.deepEqual(await readdir(dir), []);
   });
+});
+
+test('a dump that streams fully but exits non-zero is not stored', async () => {
+  await withDir(async (dir) => {
+    const store = localRecoveryStore({ dir });
+    const exitedBadly = { label: 'synthetic', dump: () => ({ stream: Readable.from([Buffer.from('{"complete-looking":true}')]), done: Promise.reject(new OpsError('BACKUP_DUMP_FAILED', { exit_code: 1 })) }) };
+    await rejectsWith(runDailyBackup({ database: exitedBadly, attachments: memoryAttachmentSource(new Map()), store, key: RecoveryKey.generate(), now: NOW, environment: 'non_production', synthetic: true }), 'BACKUP_DUMP_FAILED');
+    assert.deepEqual(await readdir(dir), []);
+    // The same through the local dump adapter: full stdout, then exit 1.
+    const spawnImpl = () => {
+      const child = new EventEmitter();
+      child.stdout = Readable.from([Buffer.from('PGDMP complete-looking archive')]);
+      child.stderr = Readable.from([]);
+      child.stdout.on('end', () => setImmediate(() => child.emit('close', 1)));
+      return child;
+    };
+    await rejectsWith(runDailyBackup({ database: localDockerDump({ database: 'gogospend_rehearsal_src_0a1b2c3d', spawnImpl }), attachments: memoryAttachmentSource(new Map()), store, key: RecoveryKey.generate(), now: NOW, environment: 'non_production', synthetic: true }), 'BACKUP_DUMP_FAILED');
+    assert.deepEqual(await readdir(dir), []);
+  });
+});
+
+test('logs and receipts never carry the recovery key or anything derived from it', async () => {
+  await withDir(async (dir) => {
+    const bytes = Buffer.alloc(32, 0x5a);
+    const key = RecoveryKey.fromBytes(bytes);
+    const macKey = key.derive(Buffer.alloc(32), Buffer.from('gogospend-recovery-manifest-v1'));
+    const { lines, log } = capture();
+    const opsLines = [];
+    const opsLog = createOpsLog((line) => opsLines.push(line));
+    const both = { event: (name, fields) => { log.event(name, fields); opsLog.event(name, fields); } };
+    const s = await scenario(dir, { key });
+    const backupReceipt = await runDailyBackup({ database: jsonDump(syntheticDatabase()), attachments: memoryAttachmentSource(objectsFor(syntheticDatabase())), store: s.store, key, now: new Date(BACKUP_AT.getTime() + 60_000), environment: 'non_production', synthetic: true, log: both });
+    const receipt = await restoreRehearsal(input(s, { log: both }));
+    const text = [JSON.stringify(backupReceipt), JSON.stringify(receipt), ...lines, ...opsLines].join('\n');
+    for (const material of [bytes, macKey]) for (const form of keyForms(material)) assert.ok(!text.includes(form), 'key material in a log or receipt');
+  });
+});
+
+test('the log filter refuses key-shaped values but keeps the identifiers it needs', () => {
+  const lines = [];
+  const log = createOpsLog((line) => lines.push(line));
+  const secret = Buffer.alloc(32, 0x3c).toString('base64url');
+  log.event('backup_written', {
+    mac_key: secret, raw_hex: Buffer.alloc(32, 0x3c).toString('hex'), mixed: 'AbCdEfGhIjKlMnOpQrStUv0123456789',
+    backup_id: 'bk_20261017T094000Z_f0b306', copy_id: 'bk_20261017T094000Z_f0b306.objects', key_id: '2f011ef0adb0ffe1efbb328af9734388',
+    rehearsal_id: 'rh_c94a3bc9', code: 'BACKUP_INTEGRITY', table: 'auth_event_receipts', account: ACCOUNT.kept, at: NOW.toISOString(),
+  });
+  const logged = JSON.parse(lines[0]);
+  assert.equal(logged.mac_key, '[redacted]');
+  assert.equal(logged.raw_hex, '[redacted]');
+  assert.equal(logged.mixed, '[redacted]');
+  for (const field of ['backup_id', 'copy_id', 'key_id', 'rehearsal_id', 'code', 'table', 'account', 'at']) assert.notEqual(logged[field], '[redacted]', field);
 });
 
 test('an attachment copy failure leaves no partial copy and leaks nothing', async () => {

@@ -7,14 +7,15 @@
 // silently shorter list. Hosted sources are pluggable adapters; until E1 they
 // are listed as SKIPPED and the report says it is incomplete.
 //
-//   node scripts/ops/recovery-inventory.mjs --recovery-dir <dir>
+//   node scripts/ops/recovery-inventory.mjs --recovery-dir <dir> [--key-fd N]
 //   (prints the report; exit 3 while hosted sources are SKIPPED, 1 on a violation)
 import { closeSync, existsSync, openSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import { assertIsolatedDirectory, localRecoveryStore } from './backup.mjs';
+import { assertIsolatedDirectory, LEDGER_FILE, localRecoveryStore } from './backup.mjs';
 import { isoDate, OpsError, parseArgs, RETENTION_LIMIT_MS, runCli, silentLog } from './ops-safety.mjs';
+import { readRecoveryKeyFromFd } from './recovery-crypto.mjs';
 
 export const COPY_KINDS = Object.freeze(['database_history', 'database_branch', 'manual_snapshot', 'logical_backup', 'object_backup', 'restore_copy']);
 
@@ -37,6 +38,9 @@ function sourceName(source) {
 /** Returns {copy} or {reason}; reasons name the rule, never the data. */
 function checkCopy(entry, source, now) {
   const id = COPY_ID.test(entry?.id ?? '') ? entry.id : null;
+  // A source can name something it holds but cannot account for (a stray
+  // file, an unverifiable manifest): always a violation.
+  if (entry?.unaccounted === 'unaccounted_file' || entry?.unaccounted === 'manifest_unverified') return { id: id ?? 'invalid', reason: entry.unaccounted };
   if (!id || !COPY_KINDS.includes(entry.kind) || !['production', 'non_production'].includes(entry.environment)) return { id: id ?? 'invalid', reason: 'invalid_copy' };
   const createdAt = isoDate(entry.created_at);
   if (!createdAt) return { id, reason: 'invalid_copy' };
@@ -105,20 +109,36 @@ export class RecoveryInventory {
   }
 
   /**
-   * When the last copy that could still hold the marker's principal (any copy
-   * taken at or before the marker was recorded) expires.
+   * When the last copy that could still hold the marker's account expires, or
+   * null while P5 has not recorded the purge as complete (`purged_at`). P5
+   * writes the marker first and purges later, so every copy taken up to the
+   * purge can hold the account, not just copies older than the marker. A
+   * point-in-time history window keeps the pre-purge state restorable until
+   * the purge itself leaves the window.
    */
   async markerClearableAt(marker) {
-    const recordedAt = isoDate(marker?.recorded_at);
-    if (!recordedAt) throw new OpsError('ERASURE_MARKER_INVALID');
-    const holding = (await this.enumerate()).filter((copy) => copy.created_at <= recordedAt);
-    return holding.reduce((latest, copy) => (latest > copy.expires_at ? latest : copy.expires_at), recordedAt);
+    if (!isoDate(marker?.recorded_at)) throw new OpsError('ERASURE_MARKER_INVALID');
+    const purgedAt = isoDate(marker?.purged_at);
+    if (!purgedAt) return null;
+    const purged = Date.parse(purgedAt);
+    const now = new Date(this.#now()).getTime();
+    let latest = purged;
+    for (const copy of await this.enumerate()) {
+      const created = Date.parse(copy.created_at);
+      if (created > purged) continue;
+      const expires = copy.kind === 'database_history'
+        ? Math.min(purged, now) + (Date.parse(copy.expires_at) - created)
+        : Date.parse(copy.expires_at);
+      latest = Math.max(latest, expires);
+    }
+    return new Date(latest).toISOString();
   }
 
-  /** Only with a complete inventory (no SKIPPED source) and after markerClearableAt. */
+  /** Only with a complete inventory (no SKIPPED source), a recorded purge, and after markerClearableAt. */
   async canClearMarker(marker) {
     if (this.#skipped.length > 0) return false;
-    return new Date(this.#now()).toISOString() >= (await this.markerClearableAt(marker));
+    const clearableAt = await this.markerClearableAt(marker);
+    return clearableAt !== null && new Date(this.#now()).toISOString() >= clearableAt;
   }
 }
 
@@ -126,20 +146,32 @@ export function staticSource(name, copies) {
   return { name, async list() { return copies; } };
 }
 
-/** Local recovery store: each backup set is a logical backup plus an object backup. */
+function strayId(name) {
+  const id = name.replace(/[^A-Za-z0-9_.-]/g, '_').slice(0, 96);
+  return id.length > 0 ? id : 'stray';
+}
+
+/**
+ * Local recovery store: each backup set is a logical backup plus an object
+ * backup, dated by the store's retention dates (not the manifest's claims).
+ * With the key, a manifest that fails its MAC is a violation. A partial write
+ * is a copy bounded by its 24-hour cleanup; any other stray is a violation.
+ */
 export function recoveryStoreSource(store) {
   return {
     name: 'recovery-store',
     async list() {
       const copies = [];
-      for (const manifest of await store.list()) {
-        const common = { environment: manifest.environment, synthetic: manifest.synthetic, created_at: manifest.created_at, expires_at: manifest.expires_at };
-        copies.push({ id: manifest.id, kind: 'logical_backup', ...common }, { id: `${manifest.id}.objects`, kind: 'object_backup', ...common });
+      for (const set of await store.sets()) {
+        const common = { environment: set.environment, synthetic: set.synthetic, created_at: set.created_at, expires_at: set.expires_at };
+        const unaccounted = set.verified === false ? { unaccounted: 'manifest_unverified' } : {};
+        copies.push({ id: set.id, kind: 'logical_backup', ...common, ...unaccounted }, { id: `${set.id}.objects`, kind: 'object_backup', ...common, ...unaccounted });
       }
-      // A part without a readable manifest has no known expiry: a violation
-      // until the store's lifecycle removes it.
-      for (const orphan of await store.orphans()) {
-        copies.push({ id: orphan.name, kind: 'logical_backup', environment: 'production', synthetic: false, created_at: orphan.modified_at, expires_at: null });
+      for (const stray of await store.strays()) {
+        const modified = Date.parse(stray.modified_at);
+        copies.push(stray.kind === 'partial'
+          ? { id: strayId(stray.name), kind: 'logical_backup', environment: 'production', synthetic: false, created_at: stray.modified_at, expires_at: new Date(modified + 24 * 3_600_000).toISOString() }
+          : { id: strayId(stray.name), unaccounted: 'unaccounted_file' });
       }
       return copies;
     },
@@ -162,7 +194,7 @@ export function restoreLedgerSource(ledger) {
  */
 export function localRestoreLedger({ dir }) {
   const root = assertIsolatedDirectory(dir);
-  const path = join(root, 'restore-copies.json');
+  const path = join(root, LEDGER_FILE);
   const read = () => (existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : []);
   const write = (entries) => {
     const temp = `${path}.partial`;
@@ -195,11 +227,13 @@ export function localRestoreLedger({ dir }) {
 }
 
 async function main() {
-  const args = parseArgs(process.argv.slice(2), { 'recovery-dir': /^\/[A-Za-z0-9._/-]{1,512}$/ });
+  const args = parseArgs(process.argv.slice(2), { 'recovery-dir': /^\/[A-Za-z0-9._/-]{1,512}$/, 'key-fd': /^([3-9]|[1-9][0-9])$/ });
   if (!args['recovery-dir']) throw new OpsError('ARGUMENT_REFUSED');
   const dir = args['recovery-dir'];
+  // With --key-fd every manifest's MAC is checked as well.
+  const key = args['key-fd'] === undefined ? undefined : readRecoveryKeyFromFd(Number(args['key-fd']));
   const inventory = new RecoveryInventory({
-    sources: [recoveryStoreSource(localRecoveryStore({ dir })), restoreLedgerSource(localRestoreLedger({ dir }))],
+    sources: [recoveryStoreSource(localRecoveryStore({ dir, key })), restoreLedgerSource(localRestoreLedger({ dir }))],
     skipped: HOSTED_INVENTORY_SKIPPED,
   });
   const report = await inventory.report();

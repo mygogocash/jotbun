@@ -19,60 +19,97 @@ SKIPPED restore rehearsal blocks beta readiness (P6b).
 Commands:
 
 ```sh
-npm run test:ops               # hermetic safety tests (no Docker, no provider)
-npm run ops:rehearsal:local    # end-to-end rehearsal on the local Docker PostgreSQL 17
+npm run test:ops               # safety tests, plus the Docker rehearsal when the local server is up
+npm run ops:rehearsal:local    # the end-to-end rehearsal on its own, printing its receipt
 node scripts/ops/backup.mjs --target local --database <name> --recovery-dir <abs dir> --key-fd 3 --synthetic 3< <(your-secret-manager read …)
-node scripts/ops/recovery-inventory.mjs --recovery-dir <abs dir>   # exit 3 while hosted sources are SKIPPED
+node scripts/ops/recovery-inventory.mjs --recovery-dir <abs dir> [--key-fd 3]   # exit 3 while hosted sources are SKIPPED
 node scripts/ops/restore-rehearsal.mjs --target isolated-synthetic # hosted: refuses, exit 3 (SKIPPED)
 ```
+
+`npm run test:ops` runs `local-rehearsal.test.mjs` against the local Docker
+PostgreSQL. If that server is unreachable the test is skipped and the runner
+prints the reason; set `GOGOSPEND_OPS_REQUIRE_DB=1` to make it a failure.
 
 ## Rules the tooling enforces
 
 - **Retention.** Every recoverable copy expires at most 7 days after it was
-  taken: backup sets (`expires_at = created_at + 7 d`, MAC'd), restore-created
-  databases (default 24 h), and every hosted copy once its adapter exists. The
-  inventory refuses a copy with no expiry, more than 7 days of retention, an
-  expiry more than 7 days away, a copy still listed after its expiry, and a
-  non-production copy that is not synthetic. The local store prunes expired
-  sets after each backup; a part without a readable manifest is itself a
-  violation until pruned.
+  taken: backup sets, restore-created databases (default 24 h), and every
+  hosted copy once its adapter exists. The inventory refuses a copy with no
+  expiry, more than 7 days of retention, an expiry more than 7 days away, a
+  copy still listed after its expiry, and a non-production copy that is not
+  synthetic.
+- **Retention dates a store writer cannot stretch.** A backup set's creation
+  time is the oldest of the time in its id (`bk_YYYYMMDDTHHMMSSZ_…`) and the
+  manifest's `created_at`. Unless the manifest verifies with the recovery key,
+  the oldest of its files' modification times also counts and retention is the
+  full 7 days. A verified manifest may shorten retention, never lengthen it.
+  Prune and the inventory use these dates, not the manifest's own claims. With
+  the key (`--key-fd`), a manifest that fails its MAC is a violation
+  (`manifest_unverified`).
+- **Nothing unaccounted for.** Every entry in the store directory is a backup
+  set's file, the restore ledger, a partial write (a copy that the store
+  removes after 24 h) or a stray. A part without a manifest, an unreadable
+  manifest or an unknown file is an `unaccounted_file` violation, and prune
+  removes it 7 days after its last modification.
+- **Clearing an erasure marker.** P5 records the marker first and purges
+  later, so a backup taken in between still holds the account. A marker is
+  clearable only when:
+  - it carries `purged_at`;
+  - the inventory is complete (no SKIPPED source);
+  - every copy taken at or before `purged_at` has expired. A point-in-time
+    history window counts as holding the pre-purge state until
+    `purged_at` + its window.
+
+  `canClearMarker` / `markerClearableAt` implement this; without `purged_at`
+  the answer is "never".
 - **Fail closed.** A source that cannot be listed fails the whole inventory
-  (`INVENTORY_SOURCE_FAILED`), never a shorter list. The report has
-  `complete: false` while any source is SKIPPED, and an erasure marker may be
-  cleared only from a complete inventory, after the last copy taken at or
-  before the marker has expired (`canClearMarker`).
+  (`INVENTORY_SOURCE_FAILED`), never a shorter list.
 - **No plaintext at rest.** `pg_dump` output and attachments go through the
   authenticated stream straight into 0600 files in an owner-only (0700)
   directory outside the repository. Restores stream decrypted records into
   `pg_restore` over a pipe. Nothing secret is in an argument; tool stderr is
-  discarded.
+  discarded. A decryption failure closes the backup file it was reading.
 - **Key custody.** The recovery key comes from an inherited descriptor (a pipe
   from a secret manager), never an ordinary file (`KEY_SOURCE_PLAINTEXT_FILE`),
-  an argument, stdout or an environment variable. CLIs refuse any secret-shaped
-  or unknown argument without echoing it (`ARGUMENT_REFUSED`, exit 2).
+  a terminal (`KEY_SOURCE_TERMINAL`), an argument, stdout or an environment
+  variable. CLIs refuse any secret-shaped or unknown argument without echoing
+  it (`ARGUMENT_REFUSED`, exit 2).
 - **The API holds no recovery authority.** The API, security worker and job
   worker environments (`apps/api/.env*.example`) and `apps/api/src` contain no
   recovery-key, recovery-store or erasure-registry credential name, and the API
   never imports `scripts/ops` (`restore-safety.test.mjs` checks both). Backups,
   restores and the registry run as a separate operator/cron role.
-- **Redaction.** Every failure is an `OpsError` with a fixed code and message;
-  details and log fields keep only short identifiers, counts and dates. Tests
-  inject synthetic connection strings, access keys and baht/satang values into
-  dump, attachment, registry, inventory and restore failures and assert they
-  appear in no error, log line or receipt.
+- **Redaction.** Every failure is an `OpsError` with a fixed code and message.
+  Error details and log fields keep only:
+  - UPPER_SNAKE codes;
+  - lower-case identifiers (names, UUIDs, 32-hex key ids);
+  - backup-set ids;
+  - ISO dates, counts and booleans.
+
+  Mixed-case base64-like values and hex longer than a key id are replaced with
+  `[redacted]`. Tests inject synthetic connection strings, access keys and
+  baht/satang values into every failure path, and scan logs and receipts for
+  the recovery key and its derived MAC key in hex/base64/base64url.
 
 ## Stream format
 
 `GGSREC01 | key id (16) | salt (32) | nonce prefix (7)`, then records of at most
 64 KiB: `u32 length (high bit = final) | AES-256-GCM ciphertext | tag`. The file
 key is HKDF-SHA256(recovery key, salt); each nonce is `prefix | u32 counter |
-final flag` and the header is the AAD. Reordering, truncation (including at a
-record boundary), appending, a flipped final flag or another file's header all
-fail with `BACKUP_INTEGRITY`, and no record's plaintext is released before its
-tag is verified. A different key fails with `RECOVERY_KEY_MISMATCH`. The
-manifest (expiry, sizes, SHA-256 of each part) carries an HMAC under a key
-derived from the recovery key, so a store writer without the key cannot extend
-an expiry.
+final flag` and the header is the AAD. Each of these fails with
+`BACKUP_INTEGRITY`, and no record's plaintext is released before its tag is
+verified:
+- reordering records;
+- truncation, including at a record boundary with the last kept record's flag
+  forged to final;
+- anything after the final record, even an authentic one;
+- a cleared final flag;
+- another file's header.
+
+A different key fails with `RECOVERY_KEY_MISMATCH`. The manifest (expiry, and
+the size and SHA-256 of each part) carries an HMAC under a key derived from the
+recovery key. A store writer without the key therefore cannot extend an expiry
+or swap in a part from another backup made with the same key.
 
 ## Restore rehearsal: order of operations
 
@@ -80,39 +117,61 @@ an expiry.
    non-production environment, a loopback adapter and a fresh
    `gogospend_restore_*` name. `gogospend_v1`, `postgres`, the templates and
    `neondb` are serving names. `kind: "hosted"` is SKIPPED until E1.
-2. Refuse without the restore-copy ledger, recovery-key custody, or a complete,
+2. Check the endpoint the adapter will really use (`restorer.endpoint()`) is a
+   loopback IP. The local adapter resolves its connection exactly as `pg`
+   does: URL host, a `host=` query parameter, `PGHOST`/`PGPORT`, or a socket
+   path. It requires 127.0.0.0/8 or ::1 on port 55432, the container that
+   `pg_dump`/`pg_restore` run in, and checks this on every connection. The
+   declared target fields are only the first gate.
+3. Refuse without the restore-copy ledger, recovery-key custody, or a complete,
    independent, correctly keyed erasure registry (below). Nothing has been read
    or created yet.
-3. Select the named or newest backup; check its key id, manifest MAC and expiry
+4. Select the named backup, or with `latest` the newest set that verifies. A
+   planted, unverifiable or future-dated manifest is skipped, so it cannot block
+   or hijack restores. Check key id, manifest MAC and expiry
    (`BACKUP_MISSING`, `RECOVERY_KEY_MISMATCH`, `BACKUP_INTEGRITY`,
    `BACKUP_EXPIRED`).
-4. Record the restore-created copy in the ledger (it is a recoverable copy),
-   create the private database (never an existing one) and stream the restore.
-   The local adapter then reapplies 0001's database-level hardening (`REVOKE
-   TEMPORARY … FROM PUBLIC`), which a per-database dump does not carry.
-5. Reapply erasure markers: erase each marker's account, and every account with
-   an alias whose keyed lookup the marker lists if that alias was created no
-   later than the marker (an older backup can hold an alias that was later
-   linked elsewhere; a later sign-up with the same subject is kept). In one
-   transaction: block every alias of those accounts in `blocked_principals`,
-   delete rows from `account_id` tables that do not follow `accounts` (jobs,
-   object publications), then delete the accounts (owned rows cascade).
-6. Prove it: every `public` table with an `account_id` column, and `accounts`,
-   must have no row for an erased id (`erased_owner_rows`, else
-   `ERASURE_NOT_APPLIED`).
-7. Every retained attachment reference must resolve, with a matching SHA-256,
+5. Refuse a backup that is production or not synthetic into a non-production
+   target (`RESTORE_DATA_CLASS_MISMATCH`). Restoring real data needs a hosted,
+   isolated production-class target (E1/E3), which does not exist yet.
+6. Record the restore-created copy in the ledger (it is a recoverable copy).
+   Then create the private database, never an existing one. `CONNECT` and
+   `TEMPORARY` are revoked from PUBLIC at creation, so only superusers can open
+   it, and that is checked again after `pg_restore`. No serving login can read
+   the copy before erasure is applied.
+7. Reapply erasure markers. A marker erases its own account, and every account
+   with an alias whose keyed lookup it lists if that alias was created no later
+   than the marker. (An older backup can hold an alias that was later linked
+   elsewhere; a later sign-up with the same subject is kept.) In one
+   transaction:
+   - re-block every alias of those accounts in `blocked_principals` with the
+     block end the marker records (none = no end; an end already past adds no
+     block; an existing permanent hold stays);
+   - delete rows keyed by those aliases' principal digests
+     (`auth_event_receipts`, `security_reconcile_checks`, `auth_sessions`,
+     `reauth_challenges`: every `public` table with a `principal_digest` column
+     except `blocked_principals`);
+   - delete rows from `account_id` tables that do not follow `accounts` (jobs,
+     object publications);
+   - delete the accounts (owned rows cascade).
+8. Prove it. There must be no row for an erased account in `accounts`, in any
+   `public` table with an `account_id` column (this includes a marker's account
+   id whose account row is already gone), or in any principal-digest table
+   above (`erased_owner_rows`, else `ERASURE_NOT_APPLIED`).
+9. Every retained attachment reference must resolve, with a matching SHA-256,
    in the backup's attachment copy (`missing_retained_objects`, else
    `ATTACHMENT_REFERENCES_MISSING`). A schema with attachment tables but no
    reference query is refused (`ATTACHMENT_VALIDATOR_MISSING`); P2c supplies
    the query.
-8. Never switch traffic. The receipt says `ready_for_serving_switch` and
-   `serving_switch: "not_performed"`. Drop the target (always on failure) and
-   mark it dropped in the ledger.
+10. Never switch traffic. The receipt says `ready_for_serving_switch` and
+    `serving_switch: "not_performed"`. Drop the target (always on failure) and
+    mark it dropped in the ledger.
 
 A serving switch after a real restore is a separate, explicitly authorized
 release step (P6b/E3). It must also restore what a logical dump does not carry:
 roles and their attributes, `CONNECT` grants for the serving logins, and any
-database-level settings; then rerun this rehearsal's checks on the target.
+database-level settings, including 0001's `REVOKE TEMPORARY … FROM PUBLIC`.
+Then it reruns this rehearsal's checks on the target.
 
 ## The erasure-marker contract (for P5)
 
@@ -123,41 +182,60 @@ restored:
 
 ```text
 { marker_id: uuid, account_id: uuid, subject_lookups: [base64url HMAC-SHA256 …],
-  lookup_key_id: 32 hex, recorded_at: ISO-8601 UTC }
+  lookup_key_id: 32 hex, recorded_at: ISO-8601 UTC,
+  purged_at?: ISO-8601 | null, blocked_until?: ISO-8601 | null }
 ```
 
-- Exactly these keys: no email, name, raw subject, token or financial value
-  (`ERASURE_MARKER_INVALID` otherwise).
+- Only these keys: no email, name, raw subject, token or financial value
+  (`ERASURE_MARKER_INVALID` otherwise). `purged_at` cannot be earlier than
+  `recorded_at`.
 - `subject_lookups` has 1–32 entries, one per provider alias, each
   `deriveSubjectLookup(lookupKey, issuer, subject)` =
   HMAC-SHA256(key, `gogospend-erasure-subject-v1\0<issuer>\0<subject>`).
 - `lookup_key_id` is `SubjectLookupKey.id` of the registry lookup key.
+- **`purged_at`**: P5 sets it when it has verified that the last server-side
+  copy of the account's rows and objects was purged. Until then the marker can
+  never be cleared.
+- **`blocked_until`**: P5 sets it whenever it ends or shortens the account's
+  blocked-principal hold, and a restore replays it. Absent or null means no
+  end, which also stops that person signing up again until P5's tooling lifts
+  the block (a `TODO(P5)` in `erasure-markers.mjs`).
+- P5's purge must remove the same principal-digest rows as step 7 (event
+  receipts, reconcile checks, sessions, challenges) and keep only the
+  `blocked_principals` hold. If P5 decides to keep any of them, the restore's
+  purge and check must be changed to match.
 - The registry is supplied to restores as an `ErasureMarkerSource`:
-  `{ independent: true, location, listMarkers(), lookupKey() }`. `listMarkers`
-  returns the complete set and throws on any failure (never `[]` for "could not
-  read"); `lookupKey` returns a `SubjectLookupKey` or throws when custody is
-  unavailable. A missing registry, `independent !== true`, an unreadable
-  registry, missing key custody or a marker made with another key each refuse
-  the restore before any data is read.
-- Markers are cleared only by `canClearMarker` on a complete inventory.
+  `{ independent: true, location, listMarkers(), lookupKey() }`.
+  - `listMarkers` returns the complete set and throws on any failure (never
+    `[]` for "could not read").
+  - `lookupKey` returns a `SubjectLookupKey`, or throws when custody is
+    unavailable.
+  - Each of these refuses the restore before any data is read: a missing
+    registry, `independent !== true`, an unreadable registry, missing key
+    custody, or a marker made with another key.
+- Markers are not signed; the registry should be append-only (object lock or
+  versioning) so that a marker cannot be quietly removed.
 
 ## Local rehearsal
 
-`npm run ops:rehearsal:local` (needs the local container; it starts it like
-`npm run test:db`):
+`npm run ops:rehearsal:local` (and the Docker test in `npm run test:ops`):
 
 1. creates `gogospend_rehearsal_src_<random>`, applies the migrations and seeds
-   three synthetic accounts (alias, wallet, category, three expenses, a queued
-   job, one retained-attachment reference in the stand-in table
-   `rehearsal_attachment_refs` until P2c exists);
+   three synthetic accounts. Each has an alias, a wallet, a category, three
+   expenses, a queued job, a verified provider-event receipt, a reconcile
+   check, and one retained-attachment reference in the stand-in table
+   `rehearsal_attachment_refs` (until P2c exists);
 2. takes an encrypted backup with an in-memory key (or `--key-fd N`);
-3. records markers (one by account id, one by a linked alias only, one for an
-   account the backup never held), then deletes two accounts in the source;
+3. records markers (one by account id with no block end, one by a linked alias
+   only with a block end, one for an account the backup never held), then
+   deletes two accounts in the source;
 4. refuses `gogospend_v1` as a serving target before connecting;
 5. restores the pre-deletion backup into `gogospend_restore_<random>`, reapplies
-   the markers and checks: no erased-owner rows, both erased aliases blocked,
-   the kept account byte-identical, its attachment present, `TEMPORARY`
-   revoked from PUBLIC;
+   the markers and checks:
+   - no erased-owner row, no erased job, no erased principal-digest row;
+   - both erased aliases blocked, with the recorded block end replayed;
+   - the kept account byte-identical, with its event receipt and attachment;
+   - no PUBLIC or non-superuser `CONNECT` and no PUBLIC `TEMPORARY`;
 6. tampers one ciphertext byte and proves the restore is refused with
    `BACKUP_INTEGRITY` and its target is gone;
 7. drops every database it created and deletes its temporary recovery
@@ -170,11 +248,14 @@ It prints a JSON result whose `receipt` is the redacted `RestoreReceipt`.
 With exact authority for an isolated synthetic Neon project and private R2
 recovery/attachment/control scopes, and the keys in managed configuration:
 
-- implement the hosted adapters behind the same interfaces (dump through
-  managed configuration, R2 recovery store with a 7-day lifecycle rule,
-  attachment copy, R2 erasure registry, Neon history/branch/snapshot inventory
-  sources and a branch restore target); configure seven-day PITR only on the
-  authorized resource;
+- implement the hosted adapters behind the same interfaces:
+  - dump through managed configuration;
+  - an R2 recovery store with a 7-day lifecycle rule;
+  - the attachment copy and the R2 erasure registry;
+  - Neon history, branch and snapshot inventory sources;
+  - a branch restore target whose `endpoint()` is checked like the local one;
+
+  configure seven-day PITR only on the authorized resource;
 - run `node scripts/ops/restore-rehearsal.mjs --target isolated-synthetic`:
   restore a pre-deletion backup, reapply markers, prove deleted principal and
   financial rows absent and retained attachments available;

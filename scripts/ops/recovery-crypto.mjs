@@ -13,6 +13,7 @@
 import { createCipheriv, createDecipheriv, createHmac, hkdfSync, randomBytes, timingSafeEqual } from 'node:crypto';
 import { fstatSync, readSync } from 'node:fs';
 import { Transform } from 'node:stream';
+import { isatty as ttyCheck } from 'node:tty';
 import { inspect } from 'node:util';
 
 import { OpsError } from './ops-safety.mjs';
@@ -72,10 +73,11 @@ function sleepMs(ms) {
 
 /**
  * Reads the recovery key from an inherited descriptor (a pipe from a secret
- * manager, e.g. `3< <(op read …)`). An ordinary file is refused: a key must
- * not sit in plaintext on disk. Accepts 32 raw bytes or base64/base64url text.
+ * manager, e.g. `3< <(op read …)`). An ordinary file is refused (a key must
+ * not sit in plaintext on disk), and so is a terminal (it would be typed and
+ * echoed). Accepts 32 raw bytes or base64/base64url text.
  */
-export function readRecoveryKeyFromFd(fd) {
+export function readRecoveryKeyFromFd(fd, { isatty = ttyCheck } = {}) {
   let info;
   try {
     info = fstatSync(fd);
@@ -83,6 +85,7 @@ export function readRecoveryKeyFromFd(fd) {
     throw new OpsError('RECOVERY_KEY_CUSTODY_MISSING');
   }
   if (info.isFile()) throw new OpsError('KEY_SOURCE_PLAINTEXT_FILE');
+  if (isatty(fd)) throw new OpsError('KEY_SOURCE_TERMINAL');
   if (info.isDirectory()) throw new OpsError('RECOVERY_KEY_INVALID');
   const buffer = Buffer.alloc(256);
   let length = 0;
