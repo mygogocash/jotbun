@@ -1287,3 +1287,106 @@ Observed, not changed (pre-existing):
 - **Migration:** renumbered from `0011_exports` to `0013_exports`, after F6b (`0011`) and F6c (`0012`). Journal and plan table are updated.
 - **Journal test:** now checks the journal against the `.sql` files on disk, with the integrated prefix `0001`–`0013` pinned by name.
 - **Full gate on the merged tree:** typecheck PASS, typecheck:app PASS, test:api PASS (480), test:db PASS (453), test:app PASS (16), test:unit PASS (182), test:render PASS (60), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. The two `gogospend_test_*` databases seen belonged to parallel worktrees' running suites.
+
+## P5: retention and resumable account erasure (local work; P5 not complete)
+
+- **Status:** built and tested locally (synthetic issuer, scripted Auth0 maintenance gateway and the loopback Management API fake, local PostgreSQL, memory object store). P5 is **not complete**: the hosted proofs (primary Apple revocation through Auth0's managed deletion, active-server deletion within 24 hours, real R2 deletion, the independent registry store and its key custody) are SKIPPED until E1/E2, and so is the E2 privacy screen. No production data was deleted.
+- **Migration `NNNN_privacy`** (the next free number at integration; see the master-plan table):
+  - `deletion_requests`: one per erased account, no foreign key (it outlives the account). It holds the initiating device's binding digest, principal digest and client (its lost-response receipt) and when each stage finished: marker → provider → objects → purge (CHECKs keep the order). Routines only. The initiator columns are null for an erasure re-queued after a restore.
+  - `erasure_registry.erasure_markers` in its own schema, usable only by the new group role `gogospend_erasure_registry` (INSERT and SELECT: append-only). Each row is exactly P6a's marker contract (`marker_id`, `account_id`, keyed `subject_lookups`, `lookup_key_id`, `recorded_at`).
+  - `account_deletion` is a security job kind. The jobs RLS policies are recreated with every security kind (`auth0_link_identities` included, per the integration note) and with the app-only kinds (`sync_snapshot`, `export`, `import_parse`, `import_expire`) refused to the worker's INSERT. P1's `gogospend_cancel_account_jobs` is replaced so it never cancels security kinds, including this one.
+  - `command_receipts.request_digest`/`digest_key_id` are nullable (dropped together).
+  - New indexes for purges by entity, deleted records, export age, finished jobs and reconcile-check age.
+- **Routines:**
+  - `gogospend_request_deletion` (app; owner transaction, under the account lock). It sets the account to `deleting`, moves the session and lifecycle generations and `reauth_after`, revokes every binding, holds every alias as `deleted` (replacing a pending global-logout hold, whose revocation job then completes as superseded), cancels every open account job, and records the request and its job (20 attempts).
+  - `gogospend_deletion_receipt` (bootstrap).
+  - Lease-checked worker routines (security): `gogospend_deletion_progress`, `_identities`, `_client_ids`, `_mark`, `_objects` and `_purge`, plus `gogospend_deletion_backlog`.
+  - `gogospend_purge_entities` (internal): a purged tombstone in a new change group, earlier change rows of those entities deleted, `pruned_through` moved over them, and snapshots built before dropped (their objects become due).
+  - Retention (jobs): `gogospend_retention_purge_candidates`/`_account`, `gogospend_drop_receipt_digests`, `gogospend_prune_security_records`, `gogospend_prune_finished_jobs` and `gogospend_prune_deletion_requests`.
+  - `gogospend_reapply_erasure` (granted to no role; for P6a's restore operator).
+  - S1's `gogospend_prune_account` is replaced: a change that was an entity's head when an earlier pass moved the retention line, and was superseded later, was never removed. It now is, once its successor is past the cutoff.
+- **API:** `PrivacyModule`:
+  - `POST /v1/me/deletion` (`recent_proof`; Idempotency-Key = the `deletion` proof's command id; 202 `{request_id, status: "accepted"}`). `DeletionService.request(ctx, proofId, commandId)` takes the lock, re-checks the session, consumes the proof and calls the routine in one transaction.
+  - `POST /v1/auth/deletion-receipt` (`token_only`; the old binding header and `{command_id}`) answers only the initiating device: `accepted` or `completed`, otherwise 404.
+  - New contract types and validators in `v1/privacy.ts`.
+- **Deletion worker** (`npm run worker:deletion`, `privacy/deletion-worker.ts`):
+  - A security registry (`HandlerRegistry({ security: true })`, new) runs `DeletionHandler.run(lease)` through P1's `JobWorker` with heartbeats.
+  - Logins: `DATABASE_URL` in `gogospend_jobs` + `gogospend_security`; the registry login and lookup key are read from an inherited descriptor (`--registry-fd`), never an environment variable, so the API and worker environments carry no registry credential name (P6a's rule; checked with its scanner's pattern).
+  - Stages, each idempotent and recorded:
+    1. the registry marker, on every run before anything destructive;
+    2. per alias: revoke grants, delete the user and confirm it is gone (new `confirmDeleted` on `Auth0MaintenanceClient`, behind a new `IdentityErasureGateway` interface);
+    3. objects: published ones deleted now; reservations of cancelled publishers waited for until their final deadline (new `JobRepository.defer`), then swept with orphans;
+    4. registered erasure steps;
+    5. the purge, which also completes the job.
+  - Every alias stays blocked until one hour past provider verification; a later sign-in with the same login is a new, empty account.
+  - The worker logs open, over-20-hour and failed deletions (counts only).
+- **Retention** (`RetentionHandler`, run by the job worker's maintenance pass in place of the direct `SyncRetention` call):
+  - deleted records 30 days after deletion (row, earlier payloads, older snapshots; the head becomes `purged`);
+  - export requests 30 days after the request;
+  - S1's change log and manifests;
+  - receipt digests after the 30-day outbox lifetime (a replay is then 409, never re-run; status still answers);
+  - provider-event receipts and reconcile checks after 30 days, expired challenges, and lapsed `deleted` holds;
+  - finished jobs after 30 days (failed ones stay);
+  - completed deletion requests 30 days after their purge.
+- **Extension point:** `privacy/privacy-steps.ts`, the one place P2a–P3 register `retention` and `erasure` steps (`defaultPrivacySteps`), with the contract written at its top and in [retention.md](../operations/retention.md):
+  - owned tables cascade from `accounts`, or are listed in `ERASURE_HANDLED_TABLES` (a test fails otherwise);
+  - objects go through P1's publication registry (purpose in `PUBLICATION_PURPOSES`);
+  - synced records are purged with `gogospend_purge_entities`.
+- **Mobile** (`apps/app/src/spend/v1/deletion.ts`, logic only):
+  - `requestAccountDeletion`, `submitDeletionRequest` and `confirmDeletionRequest` give `cancelled`, `reauth_required`, `unconfirmed` (resend the same request), `accepted` (response or receipt) or `denied` (refused with no receipt).
+  - `settleDeviceCopy` erases the device copy only after `accepted`, locks it (keeping drafts) after `denied`, and otherwise leaves it.
+  - An ordinary auth or network error never erases or implies deletion.
+- **Integration notes folded in** (coordinator, while working): the registry follows P6a's marker contract and `listMarkers()` throws rather than returning `[]`; the reapply routine is given to P6a, with the recommendation in [deletion.md](../operations/deletion.md) to use it instead of deleting rows directly, which would lose in-progress provider cleanup; erasure **does** purge `auth_event_receipts` and reconcile checks of the erased principals.
+- **RED against compile-safe seams** (SQL routine bodies stubbed, S1's prune left unreplaced, a do-nothing `DeletionHandler.run`, `confirmDeleted` always done, a client journey that always answers `unconfirmed`; real tables, contracts and tests; no module errors):
+  - `npm run test:db -w gogospend-api -- --runTestsByPath src/privacy/deletion.integration.spec.ts src/privacy/retention.integration.spec.ts src/storage/deletion-publication.integration.spec.ts`: 23 of 33 failed, all on assertions. The 10 that held pin structure that the seams did not stub: registry isolation for four role sets, the append-only registry, the account-table catalog, a generic login not seeing deletion jobs, a wrong proof requesting nothing, the restore window, and a failing retention step reported.
+  - `npm run test -w gogospend-api -- --runTestsByPath src/auth/auth0-management.client.spec.ts src/privacy/privacy-steps.spec.ts`: 1 of 18 failed (`confirmDeleted`). `privacy-steps.spec.ts` (steps, security registry, lookup-key derivation against P6a's formula, descriptor settings) was written against the real code.
+  - `npm run test:unit -w gogospend-app -- src/spend/v1/deletion.test.ts`: 5 of 6 failed (`ERR_ASSERTION`).
+  - One RED test first failed with a `TypeError` (a missing job row); it now asserts the row first. Stage assertions were tightened from `not.toBeNull()` to `toBeInstanceOf(Date)` after one test passed against the seams because the request row was missing.
+- **GREEN:** the same commands give 33 of 33 (47 of 47 with `migrations.integration.spec.ts`), 18 of 18 (27 of 27 with `migrations.spec.ts`) and 6 of 6.
+  - Pinned `failed_erasure_marker_blocks_destructive_cleanup`: with the registry failing, `destructiveCalls` is 0 and `cleanupComplete` is false. The job is queued as `registry_unavailable`, and finishes once the registry is back.
+  - Also pinned: `purged_transactions_are_not_resurrected_by_receipts`.
+  - **Covered** (deletion):
+    - every binding dead at once, including a second device;
+    - aliases held, publishers cancelled, the cleanup intent recorded, and nothing destroyed at request time;
+    - a lost acceptance: the identical resend is 401 and only the initiating device's receipt confirms it, then reports `completed`;
+    - a save waiting behind the deletion on the lock writes nothing;
+    - an export queued before the deletion is cancelled;
+    - the full erasure: a P6a-shaped keyed marker with no raw subject; revoke → delete → confirm per alias; the published file deleted now; no row left in any table with an `account_id` except the deletion's own bookkeeping; event receipts and reconcile checks gone; the hold kept for an hour;
+    - crashes after the registry write, during provider deletion (and with the user still present), and after identity removal (a stale challenge's bootstrap is refused and no account is re-created; the retry makes no provider call; after the hold lapses the same login gets a new, empty account);
+    - a provider outage stays pending, fails visibly after its attempts, shows in the backlog as failed and overdue, and resumes after the runbook's requeue;
+    - registered erasure steps run before the purge, and a failing one stops it;
+    - restore reapply.
+  - **Covered** (publication): a worker lease cannot publish after the deletion; a late PUT (worker crashed mid-PUT) makes the job defer to the publisher's deadline, with no purge before it, and is then swept; an object written after the final sweep is removed by the next global sweep; a failing storage delete keeps the deletion pending.
+  - **Covered** (retention): undo within 30 days, with records counting again; tombstones in deltas, older cursors getting 410 and earlier snapshots dropped; export purge; a held account lock skipped then purged; dropped digests; security records, jobs, holds and requests aging out; the S1 fix.
+- **Mutants:** 12 of 12 killed, each applied to a copy-restored file and run against its spec (`p5-mutants.log` in the session scratchpad):
+  - registry failure ignored;
+  - provider deletion not confirmed;
+  - objects marked swept without waiting;
+  - holds lifted at purge;
+  - request not cancelling publishers;
+  - receipt answering any binding;
+  - purge keeping earlier payloads;
+  - purge not moving `pruned_through`;
+  - a digest-less receipt replaying;
+  - S1's old prune;
+  - the device erasing on an unknown outcome;
+  - a refusal counted as accepted.
+- **Deviations, for review:**
+  - **Not an M1 command.** The deletion request is a lifecycle transition like global logout (nothing is synced for an account that is going away), and its lost response is answered by the extra receipt route.
+  - **Registry contract.** `ErasureRegistry.record` takes `{issuer, subject}` aliases (the registry holds the lookup key) and returns the stored marker; there is `listMarkers()` instead of a `has()`.
+  - **Separate deletion worker.** It runs in its own process rather than inside the security worker.
+  - **Purge groups.** Purge change groups carry a derived command id and no receipt or audit row.
+  - **Export requests** are purged (not only aged out).
+  - **Blocked principals lapse:** a deleted principal's hold lapses an hour after verification instead of lasting forever.
+  - **Rate budget.** The receipt route shares the token-only per-principal and per-address budget.
+- **SKIPPED:**
+  - **Hosted** (E1/E2): the checklist in [deletion.md](../operations/deletion.md).
+  - **E2:** the privacy screen and its copy (no UI or locale strings added).
+  - **Later tasks:** the P2a–P3 retention and erasure steps (registration point only).
+  - **Local dev:** a manual `npm run dev:v1` run. The local `gogospend_v1` database was not touched and will apply the privacy migration on its next start.
+- **Risks:**
+  - Until the registry is placed outside the main database, a main-database restore can roll markers back; P6a must refuse such a placement (`independent: true`).
+  - At integration, P2a's `import_uploads` must cascade from `accounts` or be listed in `ERASURE_HANDLED_TABLES`, and its quarantine purpose must be in `PUBLICATION_PURPOSES` for the erasure sweep to list it.
+  - A deferral uses one of the job's 20 attempts.
+  - A very large account is purged in one transaction.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (37 suites, 487 tests), test:db PASS (34 suites, 486 tests), test:app PASS (16), test:unit PASS (188), test:render PASS (60), test:dev PASS (7), build PASS (the built API loads `dist/privacy/*` and the new contract exports; the deletion worker refuses to start without `--registry-fd`), export:web PASS, `git diff --check` PASS. The first seam run, whose migration failed, left three empty test databases (no handle to drop them); they were dropped. The two other `gogospend_test_*` databases seen afterwards were not from these runs and were left alone.

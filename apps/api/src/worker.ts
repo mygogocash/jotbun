@@ -6,7 +6,9 @@
 //                              reads through lease-validating routines).
 // One job at a time (CPU parser concurrency one). Periodically sweeps
 // unpublished, expired and orphaned objects (export files at their 24-hour
-// expiry), applies the 30-day change retention, and reports - counts only -
+// expiry), runs P5's retention steps (privacy/privacy-steps.ts: purged
+// records, change log, receipt digests, security records, finished jobs,
+// completed deletion requests), and reports - counts only -
 // failed jobs, queued kinds no handler here runs and export objects whose
 // deletion is overdue. Never logs payloads,
 // object keys or error text. See apps/api/.env.jobs-worker.example.
@@ -19,9 +21,9 @@ import { buildHandlers } from './jobs/handlers';
 import { JobRepository } from './jobs/job.repository';
 import { JobWorker } from './jobs/worker';
 import { assertLoginRoles } from './jobs/worker-login';
+import { RetentionHandler } from './privacy/retention-handler';
 import { ObjectPublicationService } from './storage/object-publication.service';
 import { objectStoreFromEnv } from './storage/object-store-config';
-import { SyncRetention } from './sync/sync-retention';
 
 function sweepMinutes(value: string | undefined): number {
   const minutes = Number(value ?? 15);
@@ -50,7 +52,7 @@ async function main(): Promise<void> {
     const jobs = new JobRepository(jobsPool);
     const publication = new ObjectPublicationService(jobsPool, store);
     const handlers = buildHandlers({ jobs, reader: new LeasedAccountRead(readPool), store, publication });
-    const retention = new SyncRetention(jobsPool);
+    const retention = new RetentionHandler(jobsPool);
     let maintaining = false;
     const maintain = async () => {
       // A slow sweep must not overlap the next one.
@@ -71,10 +73,13 @@ async function main(): Promise<void> {
         console.error(`job worker: export cleanup check failed (${error instanceof Error ? error.name : 'unknown'})`);
       }
       try {
-        const pruned = await retention.prune();
-        if (pruned > 0) console.log(`job worker: applied change retention to ${pruned} account(s)`);
+        const report = await retention.run();
+        const removed = Object.entries(report.counts).filter(([, n]) => n > 0);
+        if (removed.length > 0) console.log(`job worker: retention ${removed.map(([step, n]) => `${step}=${n}`).join(' ')}`);
+        // Alert on this line: a retention step keeps failing.
+        if (report.failed.length > 0) console.error(`job worker: retention step(s) failed: ${report.failed.join(' ')}`);
       } catch (error) {
-        console.error(`job worker: change retention failed (${error instanceof Error ? error.name : 'unknown'})`);
+        console.error(`job worker: retention failed (${error instanceof Error ? error.name : 'unknown'})`);
       }
       try {
         const handled = new Set(handlers.kinds());

@@ -135,5 +135,10 @@ export {
   isExportRequestSnapshot,
   isExportDto,
   isExportGrant,
+  DELETION_TARGET_HOURS,
+  DELETION_RECEIPT_PATH,
+  DELETION_RECEIPT_STATUSES,
+  isDeletionAccepted,
+  isDeletionReceipt,
 } from "./v1/privacy.ts";
-export type { ExportStatus, ExportFilter, ExportRequest, ExportRequestSnapshot, ExportDto, ExportGrant, ExportCsvColumn } from "./v1/privacy.ts";
+export type { ExportStatus, ExportFilter, ExportRequest, ExportRequestSnapshot, ExportDto, ExportGrant, ExportCsvColumn, DeletionReceiptStatus, DeletionRequest, DeletionAccepted, DeletionReceiptRequest, DeletionReceipt } from "./v1/privacy.ts";

@@ -8,7 +8,7 @@ import { GROUP_ROLES, createTestDatabase } from '../testing/postgres-harness';
 import type { GroupRole, TestDatabase } from '../testing/postgres-harness';
 import { poolConfigFromUrl } from './database-config';
 import { MIGRATIONS_FOLDER, readJournal, runMigrations } from './migrations';
-import { accountIdentities, accountSyncState, accounts, authEventReceipts, authSessions, blockedPrincipals, securityReconcileChecks, consents, policyVersions, rateLimitBuckets, reauthChallenges, jobs, commandReceipts, entityChanges, entityHeads, auditEvents, wallets, categories, transactions, monthlyBudgets, budgetCategoryLimits, objectPublications, snapshotManifests, snapshotChunks, exportsTable } from './schema';
+import { accountIdentities, accountSyncState, accounts, authEventReceipts, authSessions, blockedPrincipals, securityReconcileChecks, consents, policyVersions, rateLimitBuckets, reauthChallenges, jobs, commandReceipts, entityChanges, entityHeads, auditEvents, wallets, categories, transactions, monthlyBudgets, budgetCategoryLimits, objectPublications, snapshotManifests, snapshotChunks, exportsTable, deletionRequests, erasureMarkers } from './schema';
 
 const ISSUER = 'https://gogospend-test.example/';
 const ACCOUNT_A = '0192f0c1-7b3a-7c3e-9d4f-00000000000a';
@@ -118,13 +118,13 @@ describe('migrations', () => {
   });
 
   it('Drizzle definitions match the migrated columns', async () => {
-    for (const table of [accounts, accountIdentities, accountSyncState, rateLimitBuckets, policyVersions, consents, blockedPrincipals, authEventReceipts, securityReconcileChecks, reauthChallenges, authSessions, jobs, commandReceipts, entityChanges, entityHeads, auditEvents, wallets, categories, transactions, monthlyBudgets, budgetCategoryLimits, objectPublications, snapshotManifests, snapshotChunks, exportsTable]) {
+    for (const table of [accounts, accountIdentities, accountSyncState, rateLimitBuckets, policyVersions, consents, blockedPrincipals, authEventReceipts, securityReconcileChecks, reauthChallenges, authSessions, jobs, commandReceipts, entityChanges, entityHeads, auditEvents, wallets, categories, transactions, monthlyBudgets, budgetCategoryLimits, objectPublications, snapshotManifests, snapshotChunks, exportsTable, deletionRequests, erasureMarkers]) {
       const config = getTableConfig(table);
       const result = await db.admin((client) =>
         client.query<{ column_name: string; is_nullable: string }>(
           `SELECT column_name, is_nullable FROM information_schema.columns
-            WHERE table_schema = 'public' AND table_name = $1 ORDER BY column_name`,
-          [config.name],
+            WHERE table_schema = $2 AND table_name = $1 ORDER BY column_name`,
+          [config.name, config.schema ?? 'public'],
         ),
       );
       const fromDatabase = result.rows.map((row) => [row.column_name, row.is_nullable === 'NO']);

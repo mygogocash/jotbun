@@ -153,6 +153,49 @@ export function isExportDto(value: unknown): value is ExportDto {
   );
 }
 
+/**
+ * P5 account deletion.
+ *
+ * `POST /v1/me/deletion` (recent proof: a bound session plus a fresh
+ * `deletion` proof whose command id is the request's `Idempotency-Key`) asks
+ * for the account to be erased and answers `202 DeletionAccepted`. When it
+ * returns, the account is `deleting`: every binding on every device is dead,
+ * every sign-in method is held, and server-side erasure runs on its own
+ * (target: active server data within `DELETION_TARGET_HOURS`); no later
+ * sign-in or polling is needed. Accepted is not completed.
+ *
+ * A retry after a lost response cannot succeed (the binding is dead): it gets
+ * 401 SESSION_REQUIRED. Only the initiating device can then ask
+ * `POST DELETION_RECEIPT_PATH` (token only, with its old binding header and
+ * the command id) whether that request was accepted - `DeletionReceipt`, or
+ * 404 when it never was. Any other 401/403/network outcome is an ordinary
+ * error: it never means the account was deleted.
+ */
+export const DELETION_TARGET_HOURS = 24;
+export const DELETION_RECEIPT_PATH = "/v1/auth/deletion-receipt";
+export const DELETION_RECEIPT_STATUSES = ["accepted", "completed"] as const;
+export type DeletionReceiptStatus = (typeof DELETION_RECEIPT_STATUSES)[number];
+
+/** POST /v1/me/deletion body. */
+export type DeletionRequest = { proof_id: string };
+/** POST /v1/me/deletion answer (202). */
+export type DeletionAccepted = { request_id: string; status: "accepted" };
+/** POST DELETION_RECEIPT_PATH body. */
+export type DeletionReceiptRequest = { command_id: string };
+/** `accepted` while erasure runs; `completed` once the account's server data is purged. */
+export type DeletionReceipt = { request_id: string; status: DeletionReceiptStatus };
+
+export function isDeletionAccepted(value: unknown): value is DeletionAccepted {
+  return isObject(value) && hasExactly(value, ["request_id", "status"]) && isUuid(value.request_id) && value.status === "accepted";
+}
+
+export function isDeletionReceipt(value: unknown): value is DeletionReceipt {
+  return (
+    isObject(value) && hasExactly(value, ["request_id", "status"]) && isUuid(value.request_id) &&
+    DELETION_RECEIPT_STATUSES.includes(value.status as DeletionReceiptStatus)
+  );
+}
+
 export function isExportGrant(value: unknown): value is ExportGrant {
   return (
     isObject(value) && hasExactly(value, ["url", "expires_at"]) &&

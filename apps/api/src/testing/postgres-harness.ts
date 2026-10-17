@@ -9,7 +9,7 @@ import { Client, Pool } from 'pg';
 import { isLoopbackHost, poolConfigFromUrl } from '../database/database-config';
 import { runMigrations } from '../database/migrations';
 
-export const GROUP_ROLES = ['gogospend_app', 'gogospend_bootstrap', 'gogospend_jobs', 'gogospend_security', 'gogospend_leased_read'] as const;
+export const GROUP_ROLES = ['gogospend_app', 'gogospend_bootstrap', 'gogospend_jobs', 'gogospend_security', 'gogospend_leased_read', 'gogospend_erasure_registry'] as const;
 export type GroupRole = (typeof GROUP_ROLES)[number];
 
 const DEFAULT_ADMIN_URL = 'postgres://gogospend_local_admin:gogospend-local-only@127.0.0.1:55432/postgres';

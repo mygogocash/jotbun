@@ -90,7 +90,7 @@ Migration integration is serial:
 | next free | P2b | candidates, preview issues |
 | next free | P2c | `attachments`, `transaction_attachments` |
 | next free | P3 | frozen selections, per-row progress with unique `(job_id, source_row_id)` |
-| next free | P5 | deletion requests, retention schedule |
+| `0014_privacy` | P5 | `deletion_requests` (stage receipts; outlives the account), the maintenance-only `erasure_registry.erasure_markers` schema and role, the `account_deletion` security job kind, deletion and restore-reapply routines, retention routines (record purge with `purged` tombstones, receipt digests, security records, finished jobs), nullable receipt digests; renumbered at integration if another migration lands first |
 
 F1, F5, M5, S2–S4 and P6a/P6b add no migration; F6c needed routines (no tables) and took `0012`. Numbers follow the order tasks are actually integrated: F6b was deferred with its hosted proof, so M1–M4 took `0005`–`0008` and P1 took `0009` (17 October 2026). Every later migration, including F6b's and any F6c needs, takes the next free number when it is integrated and updates this table in the same diff. Generate/review the matching Drizzle metadata in this order; parallel feature writers must not independently rewrite the migration journal.
 
