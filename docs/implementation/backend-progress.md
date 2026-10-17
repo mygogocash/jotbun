@@ -116,3 +116,54 @@ Observed, not changed (pre-existing):
   - The review fixes changed `0002`, so the still-empty local database was recreated once more (0 accounts, 0 identities) and re-checked with the same result.
   - Until the migrations are committed and frozen, editing one means recreating the local dev database. That is the edited-migration guard working as intended.
 - **Not proven here:** no Auth0 tenant, native client or real token was used (E1/E2). This proves cryptographic validation and route rules against a synthetic issuer only, not tenant or native behaviour.
+
+## F4 — identity bootstrap, session bindings, proofs and policies (local server work; F4 not complete)
+
+- **Status:** the server side is built and tested locally with a synthetic issuer and Management API. F4 is **not complete**: its native bootstrap spike is BLOCKED on E1 (non-production Auth0 tenant, native client, connections, read-profile credentials) and E2 (iOS identifiers, callback domain). The challenge/proof contract is **provisional** until the spike passes or the founder decides. See [auth0-bootstrap-spike.md](auth0-bootstrap-spike.md).
+- **Migration `0003_sessions_policies`:**
+  - **Tables:** `auth_sessions` (binding digest only), `reauth_challenges` (nonce digest only), `blocked_principals`, `policy_versions` and `consents`. Provider principals are stored only as `sha256(issuer ‖ 0x00 ‖ subject)`.
+  - **Routines:** four `SECURITY DEFINER` routines with `search_path = pg_catalog` and schema-qualified names, all revoked from `PUBLIC`:
+    - `gogospend_issue_challenge` and `gogospend_bootstrap`: issue a challenge, then serialize on the principal, consume the challenge, create the account once, take the common account lock, re-read the account and issue the session;
+    - `gogospend_prove_challenge`: completes a non-bootstrap challenge;
+    - `gogospend_resolve_session`: checks the binding on every private request.
+  - **App access:** `gogospend_app` gets only `resolve_session`, published `policy_versions`, its own `consents`, and its own proven challenges (to consume them).
+- **Server:**
+  - `POST /v1/auth/challenges`, `/v1/auth/bootstrap` and `/v1/auth/proofs` are `token_only` and send `Cache-Control: no-store`; `GET /v1/me` needs a bound session.
+  - `GET /v1/policies` is public; `POST /v1/me/policy-acceptances` and `PUT /v1/me/privacy-preferences` need a bound session.
+  - `authorizePurpose(tx, ctx, proofId, commandId, purpose)` consumes a fresh proof (≤5 minutes, newer than `reauth_after`) inside the command's owner transaction. A `purpose` argument was added to the planned signature.
+  - The SQL session resolver and policy gate replace F3's fail-closed defaults.
+  - The access-token and ID-token verifiers now share one JWKS cache and outage back-off (`Auth0KeySource`).
+- **Lost bootstrap response:** a retry with the same challenge returns `409 CHALLENGE_USED` (recoverable: request a new challenge). The undisclosed binding expires unused after 5 minutes. A proof can be completed once (a second attempt is `CHALLENGE_USED`) and consumed once (a second attempt is `REAUTH_REQUIRED`).
+- **Policy semantics:**
+  - For each kind, the latest published *required* version must be accepted; non-required versions never block. Future-dated versions are invisible and cannot be accepted.
+  - With nothing required published, current-policy routes return 503 (`errors.policy_unpublished`) rather than an acceptance prompt.
+  - Reads, export (`recent_proof`) and the acceptance endpoint itself stay reachable while acceptance is pending.
+  - Analytics is off by default.
+- **Contract changes:**
+  - New problem codes: `PROOF_INVALID`, `CHALLENGE_USED`, `REAUTH_REQUIRED`, `ACCOUNT_UNAVAILABLE` and `POLICY_ACCEPTANCE_REQUIRED`.
+  - New types: `BootstrapRequest`, `ProofRequest` and `ProofResult`, plus `v1/policies.ts` (`POLICY_KINDS`, `PolicyVersionDto`, `PolicyAcceptanceRequest`, `PrivacyPreferences`, `MeDto`).
+  - F3's `PolicyGate` now returns `accepted | pending | unpublished`.
+- **Deviation:** no `accounts/account-identities.repository.ts`, since principal resolution happens inside the SQL routines. Policies live in their own `PoliciesModule`.
+- **RED against seams:** a decode-only proof verifier, a trust-all profile client, routine stubs and an always-accepted policy gate.
+  - Unit specs: 25 of 38 failed. Integration specs: 27 of 38 failed. All on assertions, with no module errors.
+  - The pinned `concurrent_bootstrap_has_one_account` received 2 accounts.
+- **GREEN:** `npm run test -w gogospend-api -- --runTestsByPath src/auth/oidc-proof-verifier.spec.ts src/auth/auth0-profile.client.spec.ts src/auth/auth-bootstrap.service.spec.ts` → 38 of 38. `npm run test:db -w gogospend-api -- --runTestsByPath src/auth/auth-bootstrap.integration.spec.ts src/policies/policy.integration.spec.ts` → 38 of 38, stable over 3 repeated runs.
+- **Test correction:** a deleted account's open challenges are removed with it (foreign-key cascade), so the stale-challenge attempt is `PROOF_INVALID`. The test now also asserts that a new challenge is refused (`ACCOUNT_UNAVAILABLE`) and that no account is recreated.
+- **End to end (HTTP, synthetic issuer and Management API):** challenge → bootstrap → `GET /v1/me` returns the account UUID, `active`, no pending policies and analytics off. An ID token used as Bearer is 401; a bootstrap retry is 409. No access token, ID token, binding, nonce or subject appeared in captured logs.
+- **Independent review:** no blocker. It confirmed one account per concurrent first sign-in, refusal of replayed or cross-principal challenges, no ID/access-token confusion, and database permissions. Fixed, with tests that failed first (5 unit and 8 integration failures, all on assertions; the deadlock test failed by actually deadlocking):
+  - **A non-required policy update locked out new users.** Terms v1 required plus v2 non-required left new users unable to ever satisfy v1, whose text is never served. A required version is now satisfied by accepting it or any later version, and the version presented is the latest published one, the same text `GET /v1/policies` serves.
+  - **The block check ran before the account lock.** A hold written under the lock while a bootstrap waited still let it issue a session. The check now runs under the lock.
+  - **Profile lookups before the challenge was checked.** Invented challenge IDs each cost an Auth0 Management API lookup. A read-only pre-check (`gogospend_check_challenge`: open / used / invalid) now runs first. A spent challenge still returns the recoverable 409, so lost-response recovery is unchanged.
+  - **Lock-order deadlock.** Bootstrap locked the challenge before the account, opposite to deletion. Bootstrap now takes an existing account's lock first and re-reads the identity after waiting. The test races a deletion and asserts a refusal with no deadlock.
+  - **Nits fixed:**
+    - Every v1 response is `Cache-Control: no-store` by default.
+    - Database connection failures map to 503, not 500.
+    - Published policies are cached for 60 seconds, so public reads cannot drive database load.
+    - The app role lost all direct access to challenge rows; proofs are consumed only through `gogospend_consume_proof`.
+    - Consents have a foreign key to the policy version.
+    - Management tokens are fetched single-flight.
+    - Writes stay `unpublished` until a required terms version **and** a privacy policy are published. This rule is a founder decision recorded in `PolicyService`.
+  - Race tests were stable over 4 repeated runs.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (28 suites, 360 tests), test:db PASS (7 suites, 101 tests), test:app PASS, test:unit PASS, test:render PASS, test:dev PASS, build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
+- **Manual `npm run dev:v1`:** migrations including `0003` applied. `GET /v1/policies` returned `[]` (nothing published, nothing invented) with `no-store`, and a challenge request without a token returned 401.
+- **Local dev:** without `AUTH0_PROFILE_LINK_CLIENT_ID/SECRET`, bootstrap returns 503 by design.

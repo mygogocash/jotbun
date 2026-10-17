@@ -54,12 +54,14 @@ const resolver: SessionResolver = {
     return binding === BINDING ? { accountId: ACCOUNT, subject: identity.subject, clientId: identity.clientId, bindingId: 'binding-1', sessionGeneration: 3 } : null;
   },
 };
-const policies: PolicyGate & { accepted: boolean; broken: boolean } = {
+const policies: PolicyGate & { accepted: boolean; broken: boolean; published: boolean } = {
   accepted: false,
   broken: false,
-  async hasAcceptedCurrentPolicy() {
+  published: true,
+  async currentPolicyState() {
     if (this.broken) throw new Error('policy store unreachable');
-    return this.accepted;
+    if (!this.published) return 'unpublished';
+    return this.accepted ? 'accepted' : 'pending';
   },
 };
 const PRINCIPAL = 'https://tenant.example/\u0000auth0|user';
@@ -88,6 +90,7 @@ beforeEach(() => {
   verifier.unavailable = false;
   policies.accepted = false;
   policies.broken = false;
+  policies.published = true;
   limiter.deny = null;
   consumed.length = 0;
   resolverCalls = 0;
@@ -158,9 +161,16 @@ describe('access classes', () => {
     const send = () => request(app.getHttpServer()).post('/v1/fixture/write').set({ ...CLIENT, ...BEARER, 'x-gogospend-session': BINDING });
     const denied = await send();
     expect(denied.status).toBe(403);
-    expect(denied.body.code).toBe('FORBIDDEN');
+    expect(denied.body.code).toBe('POLICY_ACCEPTANCE_REQUIRED');
     policies.accepted = true;
     expect((await send()).status).toBe(201);
+  });
+
+  it('current_policy is unavailable, not an acceptance prompt, while no required policy is published', async () => {
+    policies.published = false;
+    const res = await request(app.getHttpServer()).post('/v1/fixture/write').set({ ...CLIENT, ...BEARER, 'x-gogospend-session': BINDING });
+    expect(res.status).toBe(503);
+    expect(res.body).toMatchObject({ code: 'SERVICE_UNAVAILABLE', message_key: 'errors.policy_unpublished' });
   });
 
   it('recent_proof stays reachable without newly required terms but still needs a binding', async () => {

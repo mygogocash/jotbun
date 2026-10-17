@@ -14,6 +14,8 @@ class ProbeController {
   @Get('items/:id') @Access('public') item(@Param('id') id: string) { return { length: id.length }; }
   @Post('echo') @Access('public') echo(@Body() body: Record<string, unknown>) { return { keys: Object.keys(body ?? {}) }; }
   @Get('boom') @Access('public') boom() { throw new Error('SECRET_INTERNAL postgres://user:SECRET_PASSWORD@db.example/db'); }
+  @Get('db-down') @Access('public') dbDown() { throw Object.assign(new Error('connect ECONNREFUSED 127.0.0.1:5432'), { code: 'ECONNREFUSED' }); }
+  @Get('db-restarting') @Access('public') dbRestarting() { throw Object.assign(new Error('terminating connection due to administrator command'), { code: '57P01' }); }
   @Post('amount') @Access('public') amount(@Body() body: { amount_minor?: unknown }) { return { amount: parseMinor(body.amount_minor, { allowZero: false, allowNegative: false }, 'amount_minor').toString() }; }
 }
 
@@ -66,6 +68,18 @@ describe('safe request logging', () => {
 });
 
 describe('problem responses', () => {
+  it.each(['/v1/probe/db-down', '/v1/probe/db-restarting'])('reports a database outage on %s as 503, not 500', async (path) => {
+    const res = await request(app.getHttpServer()).get(path);
+    expect(res.status).toBe(503);
+    expect(res.body.code).toBe('SERVICE_UNAVAILABLE');
+    expect(JSON.stringify(res.body)).not.toContain('ECONNREFUSED');
+  });
+
+  it('marks every v1 response as not cacheable by default', async () => {
+    expect((await request(app.getHttpServer()).get('/v1/probe/items/1')).headers['cache-control']).toBe('no-store');
+    expect((await request(app.getHttpServer()).get('/v1/nothing-here')).headers['cache-control']).toBe('no-store');
+  });
+
   it('hides internal errors behind INTERNAL_ERROR', async () => {
     const res = await request(app.getHttpServer()).get('/v1/probe/boom');
     expect(res.status).toBe(500);

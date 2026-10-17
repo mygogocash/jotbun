@@ -75,7 +75,7 @@ describe('AuthModule wiring', () => {
     expect((await request(app.getHttpServer()).post('/v1/wired/challenge').set({ ...CLIENT, authorization: `Bearer ${forged}` })).status).toBe(401);
   });
 
-  it('keeps bound routes closed until F4 provides session lookup', async () => {
+  it('refuses a binding that no session was issued for', async () => {
     const res = await request(app.getHttpServer())
       .get('/v1/wired/private')
       .set({ ...CLIENT, authorization: `Bearer ${await issuer.accessToken()}`, 'x-gogospend-session': 'b'.repeat(43) });

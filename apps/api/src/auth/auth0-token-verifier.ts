@@ -1,7 +1,9 @@
 import type { ApiIdentity } from '@gogospend/contracts';
-import { createRemoteJWKSet, errors, jwtVerify } from 'jose';
+import { jwtVerify } from 'jose';
 
 import { isLoopbackHost } from '../database/database-config';
+import { Auth0KeySource } from './auth0-key-source';
+import type { JwksOptions } from './auth0-key-source';
 
 export type Auth0Config = {
   issuer: string;
@@ -25,16 +27,12 @@ export interface TokenVerifier {
   verifyApiAccessToken(token: string): Promise<ApiIdentity>;
 }
 
-export type JwksOptions = { timeoutMs?: number; cooldownMs?: number; cacheMaxAgeMs?: number };
-
 // Real Auth0 access tokens are a few KB at most.
-const MAX_TOKEN_LENGTH = 8192;
-const CLOCK_TOLERANCE_SECONDS = 30;
+export const MAX_TOKEN_LENGTH = 8192;
+export const CLOCK_TOLERANCE_SECONDS = 30;
 // The tenant target is 5 minutes; anything over 15 minutes is a
 // misconfiguration and would weaken how quickly a blocked user loses access.
 const MAX_TOKEN_LIFETIME_SECONDS = 15 * 60;
-// After a key-source failure, answer `unavailable` without refetching.
-const KEY_SOURCE_BACKOFF_MS = 5_000;
 
 /**
  * Verifies Auth0 API access tokens: RS256 only, signature from the pinned
@@ -44,26 +42,20 @@ const KEY_SOURCE_BACKOFF_MS = 5_000;
  * `unavailable`, so it fails closed without looking like a bad token.
  */
 export class Auth0TokenVerifier implements TokenVerifier {
-  private readonly jwks: ReturnType<typeof createRemoteJWKSet>;
-  private keySourceDownUntil = 0;
+  private readonly keys: Auth0KeySource;
 
-  constructor(private readonly config: Auth0Config, options: JwksOptions = {}) {
-    this.jwks = createRemoteJWKSet(new URL('.well-known/jwks.json', config.issuer), {
-      timeoutDuration: options.timeoutMs ?? 5_000,
-      // At most one refetch per cooldown for unknown key ids.
-      cooldownDuration: options.cooldownMs ?? 30_000,
-      cacheMaxAge: options.cacheMaxAgeMs ?? 10 * 60_000,
-    });
+  constructor(private readonly config: Auth0Config, keys: Auth0KeySource | JwksOptions = {}) {
+    this.keys = keys instanceof Auth0KeySource ? keys : new Auth0KeySource(config.issuer, keys);
   }
 
   async verifyApiAccessToken(token: string): Promise<ApiIdentity> {
     if (typeof token !== 'string' || token.length === 0 || token.length > MAX_TOKEN_LENGTH || token.split('.').length !== 3) {
       throw new TokenVerificationError('invalid');
     }
-    if (Date.now() < this.keySourceDownUntil) throw new TokenVerificationError('unavailable');
+    if (this.keys.isBackingOff()) throw new TokenVerificationError('unavailable');
     let payload: Awaited<ReturnType<typeof jwtVerify>>['payload'];
     try {
-      ({ payload } = await jwtVerify(token, this.jwks, {
+      ({ payload } = await jwtVerify(token, this.keys.getKey, {
         issuer: this.config.issuer,
         audience: this.config.audience,
         algorithms: ['RS256'],
@@ -72,11 +64,7 @@ export class Auth0TokenVerifier implements TokenVerifier {
         requiredClaims: ['sub', 'exp', 'iat'],
       }));
     } catch (error) {
-      if (isKeySourceFailure(error)) {
-        this.keySourceDownUntil = Date.now() + KEY_SOURCE_BACKOFF_MS;
-        throw new TokenVerificationError('unavailable');
-      }
-      throw new TokenVerificationError('invalid');
+      throw new TokenVerificationError(this.keys.isUnavailable(error) ? 'unavailable' : 'invalid');
     }
     // azp wins when present; client_id (RFC 9068) is used only when azp is absent.
     const clientId = payload.azp === undefined ? payload.client_id : payload.azp;
@@ -103,14 +91,6 @@ export class Auth0TokenVerifier implements TokenVerifier {
     const scopes = typeof payload.scope === 'string' ? payload.scope.split(' ').filter(Boolean) : [];
     return { issuer: this.config.issuer, subject, clientId, scopes };
   }
-}
-
-/** JWKS timeout, network failure, a non-200/unparseable response, or a body that is not a JWKS. */
-function isKeySourceFailure(error: unknown): boolean {
-  if (error instanceof errors.JWKSTimeout || error instanceof errors.JWKSInvalid) return true;
-  // fetch() reports network failures as TypeError; token parsing never reaches it.
-  if (error instanceof TypeError) return true;
-  return error instanceof errors.JOSEError && error.constructor === errors.JOSEError;
 }
 
 /**

@@ -9,12 +9,23 @@ import { ClientVersionGuard, MIN_CLIENT_VERSIONS, minimumClientVersionsFromEnv }
 import type { MinimumClientVersions } from '../common/client-version.guard';
 import { PostgresRateLimiter, RATE_LIMITER, chargeBeforeSession, chargeSession, rateLimitKeyFromEnv } from '../common/shared-rate-limit';
 import type { RateLimiter } from '../common/shared-rate-limit';
+import { AccountLifecycleService } from '../accounts/account-lifecycle.service';
 import { DatabaseModule } from '../database/database.module';
 import { PG_POOL } from '../database/database.service';
+import { PoliciesModule } from '../policies/policies.module';
+import { PolicyService } from '../policies/policy.service';
+import { AuthBootstrapService } from './auth-bootstrap.service';
+import { AuthController } from './auth.controller';
 import { Auth0AccessTokenGuard } from './auth0-access-token.guard';
+import { Auth0KeySource } from './auth0-key-source';
+import { AUTH0_PROFILE_GATEWAY, profileGatewayFromEnv } from './auth0-profile.client';
 import { Auth0TokenVerifier, TOKEN_VERIFIER, auth0ConfigFromEnv } from './auth0-token-verifier';
-import { ApplicationSessionGuard, NoPolicyGate, NoSessionResolver, POLICY_GATE, SESSION_RESOLVER } from './application-session.guard';
+import type { Auth0Config } from './auth0-token-verifier';
+import { ApplicationSessionGuard, POLICY_GATE, SESSION_RESOLVER } from './application-session.guard';
 import { ROUTE_SCOPES_METADATA } from './auth-route.decorator';
+import { OidcProofVerifier } from './oidc-proof-verifier';
+import { ReauthenticationService } from './reauthentication.service';
+import { SqlSessionResolver } from './session.repository';
 import { requestContext } from './request-context';
 import { routeAccessOf } from './route-policy';
 
@@ -59,16 +70,26 @@ export class V1AccessGuard implements CanActivate {
   }
 }
 
+const AUTH0_CONFIG = Symbol('AUTH0_CONFIG');
+
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, PoliciesModule],
+  controllers: [AuthController],
   providers: [
-    { provide: TOKEN_VERIFIER, useFactory: () => new Auth0TokenVerifier(auth0ConfigFromEnv(process.env)) },
+    { provide: AUTH0_CONFIG, useFactory: () => auth0ConfigFromEnv(process.env) },
+    // One JWKS cache and outage back-off for access tokens and ID-token proofs.
+    { provide: Auth0KeySource, inject: [AUTH0_CONFIG], useFactory: (config: Auth0Config) => new Auth0KeySource(config.issuer) },
+    { provide: TOKEN_VERIFIER, inject: [AUTH0_CONFIG, Auth0KeySource], useFactory: (config: Auth0Config, keys: Auth0KeySource) => new Auth0TokenVerifier(config, keys) },
+    { provide: OidcProofVerifier, inject: [AUTH0_CONFIG, Auth0KeySource], useFactory: (config: Auth0Config, keys: Auth0KeySource) => new OidcProofVerifier(config.issuer, keys) },
+    // Read-profile client only; it never receives maintenance (deletion/revocation) credentials.
+    { provide: AUTH0_PROFILE_GATEWAY, useFactory: () => profileGatewayFromEnv(process.env) },
     { provide: MIN_CLIENT_VERSIONS, useFactory: () => minimumClientVersionsFromEnv(process.env) },
     { provide: RATE_LIMITER, inject: [PG_POOL], useFactory: (pool: Pool) => new PostgresRateLimiter(pool, rateLimitKeyFromEnv(process.env)) },
-    // F4 replaces these with SQL-backed implementations; until then bound
-    // and current-policy routes fail closed.
-    { provide: SESSION_RESOLVER, useClass: NoSessionResolver },
-    { provide: POLICY_GATE, useClass: NoPolicyGate },
+    { provide: SESSION_RESOLVER, useClass: SqlSessionResolver },
+    { provide: POLICY_GATE, useExisting: PolicyService },
+    ReauthenticationService,
+    AuthBootstrapService,
+    AccountLifecycleService,
     Auth0AccessTokenGuard,
     ApplicationSessionGuard,
     { provide: APP_GUARD, useClass: V1AccessGuard },

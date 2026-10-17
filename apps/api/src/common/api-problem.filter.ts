@@ -48,6 +48,18 @@ const STATUS_CODES: Partial<Record<number, ApiErrorCode>> = {
   [HttpStatus.SERVICE_UNAVAILABLE]: 'SERVICE_UNAVAILABLE',
 };
 
+// Network failures reaching PostgreSQL, and SQLSTATE classes 08 (connection
+// exception), 53 (insufficient resources) and 57P (operator intervention).
+const UNAVAILABLE_NETWORK_CODES = new Set(['ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'EHOSTUNREACH', 'ENOTFOUND', 'EPIPE']);
+
+function isDatabaseUnavailable(exception: unknown): boolean {
+  const code = (exception as { code?: unknown } | null)?.code;
+  if (typeof code !== 'string') {
+    return exception instanceof Error && /Connection terminated|timeout exceeded when trying to connect/i.test(exception.message);
+  }
+  return UNAVAILABLE_NETWORK_CODES.has(code) || /^(08|53)[0-9A-Z]{3}$|^57P0[1-3]$/.test(code);
+}
+
 /**
  * Every v1 error becomes an ApiProblem. Unexpected errors are 500
  * INTERNAL_ERROR with no detail in the response, and only the error class
@@ -67,6 +79,10 @@ export class ApiProblemFilter implements ExceptionFilter {
       sendProblem(req, res, HttpStatus.UNPROCESSABLE_ENTITY, exception.code as ApiErrorCode, {
         fields: { [exception.field ?? 'body']: exception.code },
       });
+      return;
+    }
+    if (isDatabaseUnavailable(exception)) {
+      sendProblem(req, res, HttpStatus.SERVICE_UNAVAILABLE, 'SERVICE_UNAVAILABLE', { retryAfterSeconds: 5 });
       return;
     }
     if (exception instanceof HttpException) {

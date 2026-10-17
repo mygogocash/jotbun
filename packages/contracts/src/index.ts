@@ -54,10 +54,21 @@ export type {
   ReauthPurpose,
   AuthChallengeRequest,
   AuthChallenge,
+  BootstrapRequest,
   BootstrapResult,
+  ProofRequest,
+  ProofResult,
   ClientPlatform,
   ClientVersion,
 } from "./v1/auth.ts";
+export { POLICY_KINDS } from "./v1/policies.ts";
+export type {
+  PolicyKind,
+  PolicyVersionDto,
+  PolicyAcceptanceRequest,
+  PrivacyPreferences,
+  MeDto,
+} from "./v1/policies.ts";
 export {
   MINOR_AMOUNT_MAX,
   parseMinor,

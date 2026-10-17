@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import type { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
+import type { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 
 import { AuthModule } from '../auth/auth.module';
@@ -43,6 +44,12 @@ export function configureV1App(app: INestApplication): void {
   const http = app as NestExpressApplication;
   http.set('trust proxy', trustProxyHopsFromEnv(process.env.TRUST_PROXY_HOPS));
   http.use(requestContextMiddleware);
+  // v1 responses carry private or credential-bearing data; nothing is cacheable
+  // unless a route says otherwise.
+  http.use((_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('Cache-Control', 'no-store');
+    next();
+  });
   http.use(safeRequestLogger);
   http.use(helmet());
   // Master plan: 2 MiB v1 JSON cap; routes may set stricter limits.

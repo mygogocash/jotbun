@@ -11,9 +11,14 @@ import type { RouteAccess } from './route-policy';
 export interface SessionResolver {
   resolve(identity: ApiIdentity, binding: string): Promise<SessionContext | null>;
 }
-/** Whether the session's account accepted the current required policy; F4 implements it. */
+/**
+ * The session's standing against the current required policies:
+ * `accepted`, `pending` (a required version awaits acceptance) or
+ * `unpublished` (nothing required is published, so writes cannot proceed).
+ */
+export type PolicyState = 'accepted' | 'pending' | 'unpublished';
 export interface PolicyGate {
-  hasAcceptedCurrentPolicy(session: SessionContext): Promise<boolean>;
+  currentPolicyState(session: SessionContext): Promise<PolicyState>;
 }
 
 export const SESSION_RESOLVER = Symbol('SESSION_RESOLVER');
@@ -26,10 +31,10 @@ export class NoSessionResolver implements SessionResolver {
   }
 }
 
-/** Until F4 ships, no policy counts as accepted: current-policy routes fail closed. */
+/** Without a policy store nothing counts as published: current-policy routes fail closed. */
 export class NoPolicyGate implements PolicyGate {
-  async hasAcceptedCurrentPolicy(): Promise<boolean> {
-    return false;
+  async currentPolicyState(): Promise<PolicyState> {
+    return 'unpublished';
   }
 }
 
@@ -69,16 +74,21 @@ export class ApplicationSessionGuard {
     return this.resolve(identity, binding);
   }
 
-  /** current_policy routes need the current required policy accepted; a policy-store failure is 503. */
+  /**
+   * current_policy routes need every current required policy accepted.
+   * Nothing published is never implicit acceptance: it is 503, so clients do
+   * not loop asking the user to accept a policy that does not exist.
+   */
   async assertPolicy(access: RouteAccess, session: SessionContext | undefined): Promise<void> {
     if (access !== 'current_policy') return;
-    let accepted: boolean;
+    if (!session) throw new ProblemException(401, 'SESSION_REQUIRED');
+    let state: PolicyState;
     try {
-      // Missing policy configuration is never implicit acceptance (NoPolicyGate denies).
-      accepted = session !== undefined && (await this.policies.hasAcceptedCurrentPolicy(session));
+      state = await this.policies.currentPolicyState(session);
     } catch {
       throw new ProblemException(503, 'SERVICE_UNAVAILABLE', { retryAfterSeconds: 5 });
     }
-    if (!accepted) throw new ProblemException(403, 'FORBIDDEN', { messageKey: 'errors.policy_acceptance_required' });
+    if (state === 'unpublished') throw new ProblemException(503, 'SERVICE_UNAVAILABLE', { messageKey: 'errors.policy_unpublished' });
+    if (state === 'pending') throw new ProblemException(403, 'POLICY_ACCEPTANCE_REQUIRED');
   }
 }

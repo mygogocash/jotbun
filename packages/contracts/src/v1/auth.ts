@@ -24,10 +24,27 @@ export type AuthChallenge = {
   expires_at: string;
 };
 
+/** The ID token is accepted only here and at /v1/auth/proofs, never as a Bearer credential. */
+export type BootstrapRequest = {
+  challenge_id: string;
+  id_token: string;
+};
+
 export type BootstrapResult = {
   account_id: string;
   binding: string;
   session_generation: number;
+};
+
+/** Completes a non-bootstrap challenge; the proof is then consumed by its command. */
+export type ProofRequest = {
+  challenge_id: string;
+  id_token: string;
+};
+
+export type ProofResult = {
+  proof_id: string;
+  expires_at: string;
 };
 
 export const CLIENT_PLATFORMS = ["ios", "android"] as const;
