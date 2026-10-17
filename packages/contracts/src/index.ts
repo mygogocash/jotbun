@@ -28,6 +28,8 @@ export type {
 export {
   COMMAND_OUTCOMES,
   ENTITY_STATES,
+  MAX_CHANGE_GROUP_BYTES,
+  MAX_COMMAND_STATUS_IDS,
   V1_HEADERS,
 } from "./v1/common.ts";
 export type {
@@ -40,6 +42,11 @@ export type {
   CommandOutcome,
   EntityState,
   CommandAck,
+  EntityChange,
+  CommittedChangeGroup,
+  CommandStatusRequest,
+  CommandStatus,
+  CommandStatusResponse,
 } from "./v1/common.ts";
 export { API_ERROR_CODES, ContractValidationError } from "./v1/errors.ts";
 export type { ApiErrorCode, ApiProblem } from "./v1/errors.ts";

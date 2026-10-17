@@ -69,14 +69,17 @@ export class PolicyService implements PolicyGate {
    * today only terms.)
    */
   async currentPolicyState(session: SessionContext): Promise<PolicyState> {
-    return this.db.withOwnerTransaction(session, async (tx) => {
-      const [{ configured }] = await tx.query<{ configured: boolean }>(
-        `SELECT EXISTS (SELECT 1 FROM policy_versions WHERE kind = 'terms' AND required)
-            AND EXISTS (SELECT 1 FROM policy_versions WHERE kind = 'privacy') AS configured`,
-      );
-      if (!configured) return 'unpublished';
-      return (await this.pending(tx)).length === 0 ? 'accepted' : 'pending';
-    });
+    return this.db.withOwnerTransaction(session, (tx) => this.stateIn(tx));
+  }
+
+  /** The same check inside an existing owner transaction (the command executor, under the account lock). */
+  async stateIn(tx: OwnerTx): Promise<PolicyState> {
+    const [{ configured }] = await tx.query<{ configured: boolean }>(
+      `SELECT EXISTS (SELECT 1 FROM policy_versions WHERE kind = 'terms' AND required)
+          AND EXISTS (SELECT 1 FROM policy_versions WHERE kind = 'privacy') AS configured`,
+    );
+    if (!configured) return 'unpublished';
+    return (await this.pending(tx)).length === 0 ? 'accepted' : 'pending';
   }
 
   /** Records acceptance of a published version; repeating it changes nothing. */

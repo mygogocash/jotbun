@@ -29,6 +29,13 @@
       "when": 1792195204000,
       "tag": "0004_jobs_security",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792195205000,
+      "tag": "0005_commands",
+      "breakpoints": true
     }
   ]
 }

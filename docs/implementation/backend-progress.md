@@ -193,3 +193,34 @@ Observed, not changed (pre-existing):
 - **Test corrections:** each revocation test now clears the queue first, so one test's pending cleanup cannot be counted by another. The global-logout response is 202, not the 201 first written, because provider cleanup is still pending.
 - **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (29 suites, 370 tests), test:db PASS (9 suites, 119 tests), test:app PASS, test:unit PASS, test:render PASS (3), test:dev PASS, build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
 - **Tenant/native proof:** SKIPPED (E1/E2 not authorized). Checklist in the runbook.
+
+## M1 — common command transaction and revision protocol
+
+- **Migration `0005_commands`** (owner RLS on all four tables):
+  - `command_receipts`, keyed by (account, command id): kind, schema version, a salted request digest, entity, id and version, outcome, state and revision. No amounts, notes, names or DTOs.
+  - `entity_changes`: the committed change log, one group per command under one revision, ordered by ordinal. Snapshots are the only entity data in it.
+  - `entity_heads`: each entity's latest version and state, so later commands and status lookups see deleted or purged entities without reconstructing data.
+  - `audit_events`: command kind, session id, client id and up to 8 short codes. The app can insert but not read it.
+  - **App access:** append-only. `entity_heads` can be updated only on version, state and revision.
+- **Server:**
+  - `CommandExecutor.run(ctx, input, mutate)` follows the planned order: account lock → `assertActiveSession` → current-policy re-check (unless the kind is exempt) → receipt replay or `409 IDEMPOTENCY_MISMATCH` → schema check (`422 COMMAND_SCHEMA_UNSUPPORTED`, nothing reserved) → mutation → change group, receipt and audit row → one commit.
+  - `ChangeWriter.append` validates each snapshot against its entity's registered DTO validator, enforces the 1 MiB group budget (`413 COMMAND_TOO_LARGE`), allocates the revision under the lock, and refuses any head that does not move forward or that leaves `purged`.
+  - `CommandRegistry`: domain modules register entities and command kinds with outcome, accepted schema versions and policy class.
+  - `commandHeaders` reads `Idempotency-Key`, `X-GoGoSpend-Command-Schema` (missing or malformed becomes 0, which no command accepts) and `If-Match: "n"`.
+  - `requireLiveEntity` returns `404 NOT_FOUND`, `409 ENTITY_DELETED` or `410 ENTITY_PURGED`.
+  - `POST /v1/commands/status` (bound session; 1–100 lower-case UUIDs) returns `unknown` or the original acknowledgement with the entity's current state. Another account's ids look unknown.
+  - `PolicyService.stateIn(tx)` and `assertPolicyAccepted` are shared by the guard and the executor.
+  - New contract types: `EntityChange`, `CommittedChangeGroup`, `CommandStatus*`, `MAX_CHANGE_GROUP_BYTES` and `MAX_COMMAND_STATUS_IDS`.
+- **Deviations:**
+  - `MutationResult` gained an optional `audit` (short codes) for M2's opening-balance corrections.
+  - The registry is an extra file, `command-registry.ts`.
+  - `entity_heads` is an extra table beyond the planned command/change/audit tables; it backs status and `ENTITY_*` without reading domain tables.
+  - The receipt digest is sha256 salted with account and command id rather than a keyed HMAC, so rotating a server key cannot break 30-day replays. Receipts outlive purged payloads, so P5 should drop digests after the outbox lifetime.
+- **Fixture domain:** `testing/command-fixtures.ts` creates `fixture_purchases` in the disposable test database only, with the same owner RLS shape as real tables. It also provides `startV1App` for HTTP specs.
+- **RED against seams** (an executor that only ran the mutation, empty receipts, a change writer returning `0` and a permissive entity check): 24 of 46 database tests failed on behaviour, with no module errors. The pinned `same_command_executes_once_after_lost_response` received 2 executions. One seam failure hung `afterAll` and left a test database; the commit-order test now releases its barrier in `finally`, and the leftover database was dropped.
+- **GREEN:** `npm run test:db -w gogospend-api -- --runTestsByPath src/commands/command-executor.integration.spec.ts src/commands/command-status.integration.spec.ts src/database/migrations.integration.spec.ts` → 46 of 46. Executor spec stable over 3 repeated runs (19 of 19). `src/commands/command-protocol.spec.ts` → 20 of 20; it covers header, digest and registry rules and was written against the real helpers (not RED first).
+- **Concurrency proofs** (real connections and barriers):
+  - five concurrent same-key requests run the mutation once;
+  - a command that waited behind a deletion committed first gets `403 ACCOUNT_UNAVAILABLE` with no mutation;
+  - a second command blocks until the first commits, and revisions follow commit order.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (30 suites, 390 tests), test:db PASS (11 suites, 151 tests), test:app PASS, test:unit PASS, test:render PASS (3), test:dev PASS, build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.

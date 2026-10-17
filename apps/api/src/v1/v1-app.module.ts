@@ -6,6 +6,7 @@ import type { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 
 import { AuthModule } from '../auth/auth.module';
+import { CommandsModule } from '../commands/commands.module';
 import { requestContextMiddleware } from '../auth/request-context';
 import { assertRoutesClassified } from '../auth/route-policy';
 import { jsonBody } from '../common/json-body';
@@ -19,7 +20,7 @@ import { DatabaseService } from '../database/database.service';
  * (v1-isolation.spec.ts).
  */
 @Module({
-  imports: [DatabaseModule, AuthModule],
+  imports: [DatabaseModule, AuthModule, CommandsModule],
 })
 export class V1AppModule {}
 

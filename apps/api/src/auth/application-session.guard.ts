@@ -21,6 +21,12 @@ export interface PolicyGate {
   currentPolicyState(session: SessionContext): Promise<PolicyState>;
 }
 
+/** Turns a non-accepted policy state into its problem (writes and the command executor). */
+export function assertPolicyAccepted(state: PolicyState): void {
+  if (state === 'unpublished') throw new ProblemException(503, 'SERVICE_UNAVAILABLE', { messageKey: 'errors.policy_unpublished' });
+  if (state === 'pending') throw new ProblemException(403, 'POLICY_ACCEPTANCE_REQUIRED');
+}
+
 export const SESSION_RESOLVER = Symbol('SESSION_RESOLVER');
 export const POLICY_GATE = Symbol('POLICY_GATE');
 
@@ -88,7 +94,6 @@ export class ApplicationSessionGuard {
     } catch {
       throw new ProblemException(503, 'SERVICE_UNAVAILABLE', { retryAfterSeconds: 5 });
     }
-    if (state === 'unpublished') throw new ProblemException(503, 'SERVICE_UNAVAILABLE', { messageKey: 'errors.policy_unpublished' });
-    if (state === 'pending') throw new ProblemException(403, 'POLICY_ACCEPTANCE_REQUIRED');
+    assertPolicyAccepted(state);
   }
 }

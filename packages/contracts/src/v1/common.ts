@@ -58,6 +58,46 @@ export type CommandAck = {
   entity_state: EntityState;
 };
 
+/** One entity's state after a command; `snapshot` is its persisted DTO (null once purged). */
+export type EntityChange = {
+  entity: string;
+  id: string;
+  version: number;
+  state: EntityState;
+  snapshot: unknown | null;
+};
+
+/** Everything one command committed, under one account revision. Sync never splits a group. */
+export type CommittedChangeGroup = {
+  revision: Revision;
+  command_id: string;
+  changes: readonly EntityChange[];
+};
+
+/** A serialized group above this is rejected before commit (`COMMAND_TOO_LARGE`). */
+export const MAX_CHANGE_GROUP_BYTES = 1024 * 1024;
+
+/** POST /v1/commands/status: at most this many command ids per request. */
+export const MAX_COMMAND_STATUS_IDS = 100;
+
+export type CommandStatusRequest = {
+  command_ids: string[];
+};
+
+/**
+ * `unknown`: never committed for this account (safe to resend the same
+ * immutable command). `known`: the original acknowledgement, with
+ * `entity_state` reporting the entity's current state (deleted/purged
+ * entities are reported, never reconstructed).
+ */
+export type CommandStatus =
+  | { command_id: string; state: "unknown" }
+  | { command_id: string; state: "known"; ack: CommandAck };
+
+export type CommandStatusResponse = {
+  statuses: CommandStatus[];
+};
+
 /** Lower-case request header names used by v1. */
 export const V1_HEADERS = {
   idempotencyKey: "idempotency-key",

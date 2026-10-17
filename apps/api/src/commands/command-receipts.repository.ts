@@ -1,0 +1,64 @@
+import { Injectable } from '@nestjs/common';
+import type { CommandAck, CommandOutcome, CommandStatus, EntityState } from '@gogospend/contracts';
+
+import type { OwnerTx } from '../database/owner-transaction';
+
+export type StoredReceipt = { ack: CommandAck; digest: Buffer };
+export type NewReceipt = { ack: CommandAck; kind: string; schemaVersion: number; digest: Buffer; entity: string };
+
+type ReceiptRow = { command_id: string; entity_id: string; entity_version: number; revision: string; outcome: CommandOutcome; entity_state: EntityState };
+
+const toAck = (row: ReceiptRow): CommandAck => ({
+  command_id: row.command_id,
+  entity_id: row.entity_id,
+  version: row.entity_version,
+  committed_revision: row.revision,
+  outcome: row.outcome,
+  entity_state: row.entity_state,
+});
+
+/**
+ * Command receipts: the idempotency record and compact acknowledgement for
+ * each (account, command id). Rows hold a salted digest and ids, never
+ * payload values. Owner RLS scopes every read.
+ */
+@Injectable()
+export class CommandReceiptRepository {
+  /** Call under the account lock, so a concurrent same-key command's receipt is visible. */
+  async find(tx: OwnerTx, commandId: string): Promise<StoredReceipt | null> {
+    const [row] = await tx.query<ReceiptRow & { request_digest: Buffer }>(
+      `SELECT command_id, entity_id, entity_version, revision::text, outcome, entity_state, request_digest
+         FROM command_receipts WHERE command_id = $1`,
+      [commandId],
+    );
+    return row ? { ack: toAck(row), digest: row.request_digest } : null;
+  }
+
+  async insert(tx: OwnerTx, receipt: NewReceipt): Promise<void> {
+    const { ack } = receipt;
+    await tx.query(
+      `INSERT INTO command_receipts (account_id, command_id, kind, schema_version, request_digest, entity, entity_id, entity_version, outcome, entity_state, revision)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      [tx.accountId, ack.command_id, receipt.kind, receipt.schemaVersion, receipt.digest, receipt.entity, ack.entity_id, ack.version, ack.outcome, ack.entity_state, ack.committed_revision],
+    );
+  }
+
+  /**
+   * Status for up to 100 command ids, in request order: the original
+   * acknowledgement with the entity's current state, or `unknown`.
+   */
+  async lookup(tx: OwnerTx, ids: readonly string[]): Promise<CommandStatus[]> {
+    const rows = await tx.query<ReceiptRow>(
+      `SELECT r.command_id, r.entity_id, r.entity_version, r.revision::text, r.outcome, coalesce(h.state, r.entity_state) AS entity_state
+         FROM command_receipts r
+         LEFT JOIN entity_heads h ON h.account_id = r.account_id AND h.entity = r.entity AND h.entity_id = r.entity_id
+        WHERE r.command_id = ANY($1::uuid[])`,
+      [ids],
+    );
+    const known = new Map(rows.map((row) => [row.command_id, toAck(row)]));
+    return ids.map((id) => {
+      const ack = known.get(id);
+      return ack ? { command_id: id, state: 'known' as const, ack } : { command_id: id, state: 'unknown' as const };
+    });
+  }
+}

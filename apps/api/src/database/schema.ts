@@ -140,6 +140,73 @@ export const authSessions = pgTable('auth_sessions', {
   revokedAt: instant('revoked_at'),
 });
 
+export const COMMAND_OUTCOME_VALUES = ['created', 'updated', 'deleted', 'restored', 'archived', 'unarchived', 'accepted'] as const;
+export const ENTITY_STATE_VALUES = ['active', 'deleted', 'purged'] as const;
+
+export const commandReceipts = pgTable(
+  'command_receipts',
+  {
+    accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+    commandId: uuid('command_id').notNull(),
+    kind: text('kind').notNull(),
+    schemaVersion: integer('schema_version').notNull(),
+    requestDigest: bytea('request_digest').notNull(),
+    entity: text('entity').notNull(),
+    entityId: uuid('entity_id').notNull(),
+    entityVersion: integer('entity_version').notNull(),
+    outcome: text('outcome', { enum: COMMAND_OUTCOME_VALUES }).notNull(),
+    entityState: text('entity_state', { enum: ENTITY_STATE_VALUES }).notNull(),
+    revision: bigint('revision', { mode: 'bigint' }).notNull(),
+    committedAt: instant('committed_at').notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.accountId, table.commandId] })],
+);
+
+export const entityChanges = pgTable(
+  'entity_changes',
+  {
+    accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+    revision: bigint('revision', { mode: 'bigint' }).notNull(),
+    ordinal: integer('ordinal').notNull(),
+    commandId: uuid('command_id').notNull(),
+    entity: text('entity').notNull(),
+    entityId: uuid('entity_id').notNull(),
+    version: integer('version').notNull(),
+    state: text('state', { enum: ENTITY_STATE_VALUES }).notNull(),
+    snapshot: jsonb('snapshot'),
+    committedAt: instant('committed_at').notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.accountId, table.revision, table.ordinal] })],
+);
+
+export const entityHeads = pgTable(
+  'entity_heads',
+  {
+    accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+    entity: text('entity').notNull(),
+    entityId: uuid('entity_id').notNull(),
+    version: integer('version').notNull(),
+    state: text('state', { enum: ENTITY_STATE_VALUES }).notNull(),
+    revision: bigint('revision', { mode: 'bigint' }).notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.accountId, table.entity, table.entityId] })],
+);
+
+export const auditEvents = pgTable(
+  'audit_events',
+  {
+    accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+    revision: bigint('revision', { mode: 'bigint' }).notNull(),
+    commandId: uuid('command_id').notNull(),
+    kind: text('kind').notNull(),
+    sessionId: uuid('session_id').notNull(),
+    clientId: text('client_id').notNull(),
+    metadata: jsonb('metadata').notNull().default({}),
+    createdAt: instant('created_at').notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.accountId, table.revision] })],
+);
+
 export const schema = {
   accounts,
   accountIdentities,
@@ -151,4 +218,8 @@ export const schema = {
   reauthChallenges,
   authSessions,
   jobs,
+  commandReceipts,
+  entityChanges,
+  entityHeads,
+  auditEvents,
 };
