@@ -1,7 +1,7 @@
 import * as Application from 'expo-application';
 import { Platform } from 'react-native';
 
-import { getSession, getV1SessionSnapshot } from '@mobile/auth/session';
+import { getCredentialProvider, getV1AccessToken, getV1SessionSnapshot } from '@mobile/auth/session';
 import { getMobileEnv } from '@mobile/config/env';
 import { createSpendV1Resources, createSyncResources } from '@mobile/spend/v1/resources';
 import type { SpendV1Resources } from '@mobile/spend/v1/resources';
@@ -31,8 +31,9 @@ function sharedTransport(): V1Transport {
     baseUrl: getMobileEnv().v1ApiUrl,
     client: v1ClientVersion(),
     credentials: {
-      getAccessToken: async () => getSession()?.access_token ?? null,
+      getAccessToken: getV1AccessToken,
       getSessionSnapshot: getV1SessionSnapshot,
+      refreshAfterUnauthorized: async () => (await getCredentialProvider()?.refreshAfterUnauthorized()) ?? false,
     },
   });
   return transport;

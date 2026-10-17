@@ -76,6 +76,8 @@ export type V1SessionSnapshot = { binding: string | null; epoch: number };
 export type V1Credentials = {
   getAccessToken(): Promise<string | null>;
   getSessionSnapshot(): V1SessionSnapshot;
+  /** One serialized token refresh after a 401 (F5); false when the session cannot be renewed. */
+  refreshAfterUnauthorized?(): Promise<boolean>;
 };
 export type V1ClientVersion = { platform: 'ios' | 'android'; version: string };
 
@@ -124,6 +126,8 @@ export type V1RequestOptions<T> = {
   command?: V1CommandHeaders;
   /** Hand the raw response text to `validate` (e.g. to check a digest) instead of parsed JSON. */
   text?: boolean;
+  /** Token-only routes (challenge, bootstrap, proof): no application binding is sent or required. */
+  tokenOnly?: boolean;
   /**
    * false: one attempt only, never resent after a lost response (the outbox
    * decides; a hidden resend could commit and then be reported as refused).
@@ -172,6 +176,11 @@ function outcomeFor(status: number, code: string): V1Outcome {
 }
 
 const PROBLEM_CODE = /^[A-Z][A-Z0-9_]{0,63}$/;
+/** A 401 that a token refresh can fix (not REAUTH_REQUIRED, SESSION_REQUIRED or an unavailable account). */
+const unauthenticated = (payload: unknown) => {
+  const code = payload && typeof payload === 'object' ? (payload as { code?: unknown }).code : undefined;
+  return code === undefined || code === 'UNAUTHENTICATED';
+};
 const NETWORK_RETRIES = 2;
 
 /**
@@ -231,13 +240,13 @@ export function createV1Transport(options: {
       if (!options.client) throw new V1Error('unsupported_platform', 0, 'CLIENT_UNSUPPORTED');
       const before = options.credentials.getSessionSnapshot();
       const token = await options.credentials.getAccessToken();
-      if (!token || !before.binding) throw new V1Error('signed_out', 401, 'SESSION_REQUIRED');
+      if (!token || (!before.binding && !request.tokenOnly)) throw new V1Error('signed_out', 401, 'SESSION_REQUIRED');
       const headers: Record<string, string> = {
         Accept: 'application/json',
         Authorization: `Bearer ${token}`,
-        'X-GoGoSpend-Session': before.binding,
         'X-GoGoSpend-Client': `${options.client.platform}/${options.client.version}`,
       };
+      if (!request.tokenOnly && before.binding) headers['X-GoGoSpend-Session'] = before.binding;
       if (request.body !== undefined) headers['Content-Type'] = 'application/json';
       if (request.command) {
         headers['Idempotency-Key'] = request.command.id;
@@ -245,20 +254,32 @@ export function createV1Transport(options: {
         if (request.command.ifMatch !== undefined) headers['If-Match'] = `"${request.command.ifMatch}"`;
       }
       // Serialized once, so every retry sends byte-identical content.
-      const init: RequestInit = { method, headers, body: request.body === undefined ? undefined : JSON.stringify(request.body) };
-      let result: { status: number; payload: unknown; readable: boolean; text: string } | undefined;
-      for (let attempt = 0; ; attempt += 1) {
-        try {
-          result = await once(`${baseUrl}${path}`, init);
-          break;
-        } catch (error) {
-          // Only a command may be resent blindly, and only as itself, and
-          // never once the session changed; a read is retried from the screen.
-          const lost = error instanceof V1Error && error.outcome === 'network';
-          if (!lost || !request.command || request.resendLost === false || attempt >= NETWORK_RETRIES) throw error;
-          await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
-          if (options.credentials.getSessionSnapshot().epoch !== before.epoch) throw new V1Error('session_changed', 0, 'SESSION_CHANGED');
+      const body = request.body === undefined ? undefined : JSON.stringify(request.body);
+      const send = async (): Promise<{ status: number; payload: unknown; readable: boolean; text: string }> => {
+        const init: RequestInit = { method, headers, body };
+        for (let attempt = 0; ; attempt += 1) {
+          try {
+            return await once(`${baseUrl}${path}`, init);
+          } catch (error) {
+            // Only a command may be resent blindly, and only as itself, and
+            // never once the session changed; a read is retried from the screen.
+            const lost = error instanceof V1Error && error.outcome === 'network';
+            if (!lost || !request.command || request.resendLost === false || attempt >= NETWORK_RETRIES) throw error;
+            await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+            if (options.credentials.getSessionSnapshot().epoch !== before.epoch) throw new V1Error('session_changed', 0, 'SESSION_CHANGED');
+          }
         }
+      };
+      let result = await send();
+      // An expired access token (401 UNAUTHENTICATED): one serialized refresh
+      // and one resend of the same body and key - never for 426 or other refusals.
+      if (result.status === 401 && unauthenticated(result.payload) && options.credentials.refreshAfterUnauthorized) {
+        if (options.credentials.getSessionSnapshot().epoch !== before.epoch) throw new V1Error('session_changed', 0, 'SESSION_CHANGED');
+        const renewed = (await options.credentials.refreshAfterUnauthorized()) ? await options.credentials.getAccessToken() : null;
+        if (options.credentials.getSessionSnapshot().epoch !== before.epoch) throw new V1Error('session_changed', 0, 'SESSION_CHANGED');
+        if (!renewed) throw new V1Error('signed_out', 401, 'UNAUTHENTICATED');
+        headers.Authorization = `Bearer ${renewed}`;
+        result = await send();
       }
       if (options.credentials.getSessionSnapshot().epoch !== before.epoch) throw new V1Error('session_changed', 0, 'SESSION_CHANGED');
       const { status, payload, readable, text } = result;

@@ -1,4 +1,5 @@
 import type { V1SessionSnapshot } from '../api/client.ts';
+import type { CredentialProvider } from './credentialProvider.ts';
 
 /**
  * The public session seam, kept until F5's credential provider replaces it.
@@ -28,5 +29,30 @@ export function setSession(next: SpendSession | null): void {
   for (const listener of listeners) listener();
 }
 export function getV1SessionSnapshot(): V1SessionSnapshot {
+  if (provider) {
+    const current = provider.getSessionSnapshot();
+    return { binding: current.state === 'active' ? current.binding : null, epoch: current.epoch };
+  }
   return { binding: session?.binding ?? null, epoch };
+}
+
+// F5: once the native SDK is configured, the credential provider owns the
+// session; the legacy seam above stays only until every caller has moved.
+let provider: CredentialProvider | null = null;
+
+export function installCredentialProvider(next: CredentialProvider | null): void {
+  provider = next;
+  for (const listener of listeners) listener();
+  next?.subscribe(() => {
+    for (const listener of listeners) listener();
+  });
+}
+
+export function getCredentialProvider(): CredentialProvider | null {
+  return provider;
+}
+
+/** The access token for v1 requests: the provider's (serialized SDK refresh), or the legacy seam's. */
+export function getV1AccessToken(): Promise<string | null> {
+  return provider ? provider.getAccessToken() : Promise.resolve(session?.access_token ?? null);
 }

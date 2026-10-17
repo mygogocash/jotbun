@@ -956,3 +956,51 @@ Observed, not changed (pre-existing):
   - `pendingAdjustmentMinor` stays an expense total. `deriveDisplayedTotals` (S4) is the full model.
   - The transport still parses chunk JSON once before text mode returns it.
 - **Full gate after the fixes:** typecheck PASS, typecheck:app PASS, test:api PASS (437), test:db PASS (397), test:app PASS (11), test:unit PASS (132), test:render PASS (48), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
+
+## F5: native session (local work)
+
+- **Session state machine** (`apps/app/src/auth/sessionMachine.ts`):
+  - States: `signed_out`, `hydrating`, `authenticating`, `bootstrap_pending`, `active`, `locked` and `reauth_required`.
+  - The epoch moves exactly when the account or binding changes (sign-in, switch, new binding, sign-out), never on a token refresh. A lock keeps the identity and the epoch.
+  - While hydrating or authenticating there is no account, so nothing from a previous account can show.
+  - An event that makes no sense in the current state changes nothing.
+- **Credential provider** (`credentialProvider.ts`): serialized token reads and forced refreshes (one SDK call however many callers). A failed refresh locks and keeps the binding, and a cancelled sign-in restores the stored state.
+  - **Sign-in** follows F4's provisional contract:
+    1. Universal Login;
+    2. a `bootstrap` challenge;
+    3. an ID token carrying the challenge nonce;
+    4. `/v1/auth/bootstrap`;
+    5. the binding saved.
+  - **Sign-out** revokes the device's binding, clears the SDK and the stored binding, and moves the epoch.
+- **Purpose proofs** (`reauthentication.ts`): a challenge for the purpose and command, a fresh login (`max_age=0`) with the nonce, then `/v1/auth/proofs`. Cancelling gives no proof.
+- **Transport** (`api/client.ts`):
+  - **401 handling:** a 401 `UNAUTHENTICATED` allows one serialized refresh, through the new `refreshAfterUnauthorized` credential hook, and one resend of the same body and key. A second 401 signs out. 426, `REAUTH_REQUIRED` and `ACCOUNT_UNAVAILABLE` are never refreshed.
+  - **Token-only routes:** a new `tokenOnly` option for challenge, bootstrap and proof sends no binding.
+  - **Auth API:** `createAuthApi` (`authApi.ts`) covers those routes with strict response validators; the ID token goes only in request bodies.
+- **Adapters:** `auth0Client.ts` maps the native SDK's shape onto the port: PKCE Universal Login, the Credentials Manager, forced refresh, and cancellations as `AuthCancelled`. `auth0Client.web.ts` reports real sign-in unsupported. The session seam (`session.ts`) accepts an installed provider: the shared transport takes its token, binding, epoch and refresh, and the auth guard counts `active`, `locked` and `reauth_required` as signed in. The legacy seam stays until callers move. `EXPO_PUBLIC_AUTH0_DOMAIN`, `_CLIENT_ID` and `_AUDIENCE` are public settings, empty by default, so the app stays signed out.
+- **RED → GREEN** (`npm run test:unit -w gogospend-app -- src/auth/sessionMachine.test.ts src/api/sessionEpoch.test.ts`):
+  - RED: 10 of 14 failed against seams. Four held already: a token renewed mid-request keeps its response, a session change drops a response, a 426 is never refreshed, and the web port is unsupported.
+  - GREEN: 14 of 14.
+  - Two tests were added after the code, for coverage: the SDK mapping, and an installed provider driving the shared seam.
+  - **Covered:**
+    - epoch rules, including A → sign-out → B and a new binding on the same account;
+    - hydration without a flash;
+    - one SDK call for concurrent token reads and refreshes;
+    - a refresh failure locking without erasing;
+    - the bootstrap order and nonce;
+    - cancel keeping the stored binding;
+    - sign-out;
+    - purpose proofs;
+    - one refresh and one identical resend per 401;
+    - A → B → A responses dropped;
+    - token-only routes.
+- **SKIPPED** (`docs/implementation/auth0-native-proof.md`):
+  - **Needs E1** (tenant, native application, API, connections): the native SDK install and its config plugin, and iOS/Android development builds.
+  - **Needs E2** (bundle identifier, callback domain): PKCE callback and logout, nonce injection, refresh rotation, cold start, device-protected storage.
+  - **Waits for approved visuals:** Universal Login UX states and Thai/English prompts.
+  - F5 stays incomplete, and F4's contract stays provisional.
+- **Deviations:**
+  - The native adapter is `createAuth0Port` over a structural SDK type in `auth0Client.ts`, because no SDK is installed.
+  - `AuthSessionProvider.tsx` is replaced by `installCredentialProvider`, since nothing can be installed before E1.
+  - `authApi.ts` is an extra file.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (437), test:db PASS (397), test:app PASS (16), test:unit PASS (148), test:render PASS (48), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
