@@ -698,3 +698,53 @@ Observed, not changed (pre-existing):
   - **Snapshot reuse:** a request reused from a ready snapshot isn't recorded under its idempotency key. A retry with the same key after the one-hour window gets a fresh snapshot, which is harmless.
   - **Wide groups:** paging over heads of 500-wide groups costs about 6× more. Revisit if wide imports (P3) make it matter.
 - **Full gate after the fixes:** typecheck PASS, typecheck:app PASS, test:api PASS (437), test:db PASS (397), test:app PASS (11), test:unit PASS (35), test:render PASS (38), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases or logins left behind.
+
+## S2: encrypted per-account local storage (local work)
+
+- **Dependencies and config:**
+  - `expo-sqlite ~58.0.13` and `expo-file-system ~58.0.9` are added to the app, at the SDK's pinned versions; npm left install scripts unapproved, as before.
+  - `app.json` adds `["expo-sqlite", { "useSQLCipher": true }]` and `android.allowBackup: false`. `expo config --type introspect` shows `expo.sqlite.useSQLCipher=true` and `android:allowBackup="false"` in the generated manifest.
+- **Ports** (`apps/app/src/storage/types.ts`): `SqlDatabase` (exec, run, all, an exclusive `transaction`, close), `DiaryFiles` (keyed open, exists, delete), `KeyStore`, `OutboxCommand`, `PendingEntry`, and the errors `DiaryLocked`, `DiaryKeyRejected`, `StaleEpochError` and `DiarySchemaTooNew`.
+- **Test adapter** (`storage/testing/nodeSqlite.ts`): Node's built-in SQLite on temporary files, so the tests run the device's SQL, STRICT constraints and transactions. Keying is simulated (a file refuses any key but its own), and fault injection can fail any statement halfway through.
+- **Schema** (`migrations.ts`, version 1 via `PRAGMA user_version`): `diary_meta` (owner, cursor, applied revision), `confirmed_entities` (tombstones kept, purged rows keep no snapshot), `confirmed_wallet_totals`, `pending_entries` and `outbox`, kept apart. Amounts stay exact integer strings. Each migration and its version bump run in one transaction, and a diary from a newer version is refused.
+- **`AccountDatabase.open`:**
+  - **One diary per account:** a separate file per account (`diary-<account>.db`) with its own key.
+  - **Locked, never replaced:** a missing key (file present) or a rejected key gives `DiaryLocked`, never an empty replacement. Recovery is an explicit `discard`.
+  - **Owner check:** a diary recorded for another account is refused.
+  - **Epoch binding:** stores are bound to the session epoch (F5's `getV1SessionSnapshot().epoch`) at open.
+- **`DiaryStore`** (`diaryRepository.ts`):
+  - `savePending`: the draft and its outbox command in one transaction. The command must be this account's unsent create of exactly that entry.
+  - `applyChangeGroups`: whole groups, versions forward only, tombstones kept and purged data dropped. It recomputes wallet totals with BigInt by the server's balance rule and stores the cursor and applied revision, all in one transaction. Out-of-order or already-applied groups and invalid changes are refused before anything is written.
+  - `replaceConfirmed`: swaps the confirmed state, totals and cursor at a high-water mark and never touches drafts or the outbox.
+  - `readOutbox` and `readState`.
+  - `lock`: closes the store and keeps the data.
+  - `eraseAfterConfirmation`: deletes the file and key.
+  - The epoch is checked before every operation and again just before each commit, so an old session's write fails and a write racing a switch rolls back.
+- **Key store** (`keyStore.ts`): a random 256-bit key per account in SecureStore (`gogospend.diary.v1.<account>`, `WHEN_UNLOCKED_THIS_DEVICE_ONLY`). A malformed stored value is an error.
+- **Device side:**
+  - `database.ts` uses SQLCipher. It refuses without `cipher_version`, keys with a raw hex key, checks the key with a first read, and sets `temp_store = MEMORY`.
+  - `database.web.ts` refuses: web keeps no diary.
+  - `deviceDiary.ts` wires it all together.
+  - `native-storage-proof.ts` is the device harness, and `docs/implementation/sqlcipher-device-proof.md` gives its procedure.
+- **RED → GREEN** (`npm run test:unit -w gogospend-app -- src/storage/accountDatabase.test.ts src/storage/diaryRepository.test.ts src/storage/keyStore.test.ts`):
+  - RED: 21 of 21 failed against seams, with no module errors.
+  - GREEN: 21 of 21.
+  - One test's fault pattern was narrowed to the cursor write before GREEN, so the injected failure lands after the records are applied (the "halfway" case).
+  - One locked-store test used two different drafts. It now uses one, and lock checks now run before validation.
+  - Pinned `failed_snapshot_swap_preserves_cursor_and_outbox`: the second confirmed insert of a replacement fails, and the cursor, outbox and whole state equal what they were before.
+  - Also covered:
+    - a draft and its command persist both or neither;
+    - deltas plus a cursor write that fails halfway roll back to the previous state;
+    - overlapping entity ids in two accounts stay separate;
+    - missing and rejected keys lock;
+    - migration rollback;
+    - a newer schema is refused;
+    - a write from A → B → A's old store is refused, and one racing an epoch move is rolled back;
+    - erase is per account;
+    - no column looks like a token, binding or secret.
+- **Native and device checks: SKIPPED.** Encryption at rest, restart after a process kill, migration rollback, key invalidation, backup exclusion and sign-out/account switch all need iOS and Android development builds. iOS backup exclusion still needs a native step (no Expo API sets `NSURLIsExcludedFromBackupKey`). Until then a backup can hold the encrypted file but never its key, so a restore opens locked.
+- **Deviations:**
+  - The native adapter is `database.ts`, not `database.native.ts`, so `tsc` resolves the extensionless import. Metro still picks `database.web.ts` on web.
+  - `types.ts` and the `testing/` helpers are extra files.
+  - Nothing in the app uses the diary yet. S3/S4 wire the outbox and the **Saved on device** state, including the save error when a local commit fails.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (437), test:db PASS (397), test:app PASS (11), test:unit PASS (56), test:render PASS (38), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
