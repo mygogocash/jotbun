@@ -8,7 +8,10 @@ import { View } from 'react-native';
 
 import { useCopy } from '@mobile/i18n/useCopy';
 import { AmountInputError, formatMinor, parseAmountInput } from '@mobile/spend/v1/money';
+import { deriveDisplayedTotals } from '@mobile/spend/v1/pendingTotals';
+import { useDiaryView, useSpendDiary } from '@mobile/spend/v1/SpendDiaryContext';
 import { useSpendV1 } from '@mobile/spend/v1/SpendV1Context';
+import { SyncStatus } from '@mobile/sync/SyncStatus';
 import { byId, monthOf, recordView, todayInBangkok, walletsTotal } from '@mobile/spend/v1/viewModels';
 import { Text } from '@mobile/theme/AppText';
 import { useTheme } from '@mobile/theme/ThemeProvider';
@@ -25,6 +28,8 @@ export function HomeScreen({ now }: { now?: Date }) {
   const { colors } = useTheme();
   const today = todayInBangkok(now ?? new Date());
   const month = monthOf(today);
+  const diary = useSpendDiary();
+  const diaryView = useDiaryView();
 
   const loaded = useLoad(async () => {
     const [categories, wallets, summary, recent] = await Promise.all([
@@ -49,8 +54,14 @@ export function HomeScreen({ now }: { now?: Date }) {
   const total = formatMinor(walletsTotal(wallets), locale);
   const moneyIn = formatMinor(summary.income_minor, locale);
   const moneyOut = formatMinor(summary.expense_minor, locale);
+  // Drafts on this device this month, not yet acknowledged: shown apart from confirmed money.
+  const waiting = diaryView.outbox.filter((command) => command.state !== 'acknowledged' && monthOf(command.payload.occurred_on) === month).map((command) => command.payload);
+  const pending = deriveDisplayedTotals({ income_minor: summary.income_minor, expense_minor: summary.expense_minor, balance_minor: summary.balance_minor, by_wallet: summary.by_wallet }, waiting).pendingAdjustment;
+  const pendingOut = pending.expense_minor === '0' ? null : tc('Waiting to sync: money out {amount}', { amount: formatMinor(pending.expense_minor, locale) });
+  const pendingIn = pending.income_minor === '0' ? null : tc('Waiting to sync: money in {amount}', { amount: formatMinor(pending.income_minor, locale) });
   return (
     <Frame title={tc('GoGoSpend')}>
+      {diary ? <SyncStatus view={diaryView} onRetry={() => void diary.retry()} /> : null}
       <Card>
         <Text style={{ color: colors.muted }}>{tc('Total balance')}</Text>
         <Text accessibilityLabel={`${tc('Total balance')} ${total}`} style={{ color: colors.ink, fontSize: 34, fontWeight: '700' }}>{total}</Text>
@@ -58,6 +69,8 @@ export function HomeScreen({ now }: { now?: Date }) {
           <Text accessibilityLabel={`${tc('Money in')} ${moneyIn}`} style={{ color: colors.ink }}>{`${tc('Money in')} ${moneyIn}`}</Text>
           <Text accessibilityLabel={`${tc('Money out')} ${moneyOut}`} style={{ color: colors.ink }}>{`${tc('Money out')} ${moneyOut}`}</Text>
         </View>
+        {pendingIn ? <Text accessibilityLabel={pendingIn} style={{ color: colors.muted }}>{pendingIn}</Text> : null}
+        {pendingOut ? <Text accessibilityLabel={pendingOut} style={{ color: colors.muted }}>{pendingOut}</Text> : null}
       </Card>
       <Card>
         <Text accessibilityRole="header" style={{ color: colors.ink, fontWeight: '700' }}>{tc('Wallets')}</Text>

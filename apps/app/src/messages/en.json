@@ -390,5 +390,22 @@
   "spendV1ChangedNow": "This entry changed on another device. It now reads {amount}.",
   "spendV1ChangedNowNote": "This entry changed on another device. It now reads {amount} ({note}).",
   "spendV1SignInToSaveOnly": "Sign in again to save.",
-  "spendV1SessionChanged": "Your session changed. Sign in again to save."
+  "spendV1SessionChanged": "Your session changed. Sign in again to save.",
+  "spendV1SyncSavedOnDevice": "Saved on device · Waiting to sync ({count})",
+  "spendV1SyncProgress": "Syncing {sent} of {total}",
+  "spendV1SyncChecking": "Checking {count} entries with GoGoSpend before sending them again",
+  "spendV1SyncNeedsReview": "Entries that need your review: {count}",
+  "spendV1SyncUpgrade": "Update GoGoSpend to send the entries saved on this device",
+  "spendV1SyncSignIn": "Sign in again to send the entries saved on this device",
+  "spendV1SyncKeyLocked": "This device's diary is locked. Recover it from GoGoSpend or discard it.",
+  "spendV1SyncKeyUnavailable": "This device's diary can't be opened right now. Try again later.",
+  "spendV1SyncUnreachable": "Couldn't reach GoGoSpend. Your entries stay saved on this device.",
+  "spendV1SyncPaused": "Sync is paused after repeated failures.",
+  "spendV1SyncResyncPending": "Getting your full diary from GoGoSpend",
+  "spendV1SyncRetry": "Retry",
+  "spendV1PendingOut": "Waiting to sync: money out {amount}",
+  "spendV1PendingIn": "Waiting to sync: money in {amount}",
+  "spendV1LocalSaveFailed": "Couldn't save this entry on the device. Nothing was saved.",
+  "spendV1ReminderTitle": "Log today's spending",
+  "spendV1ReminderBody": "Add what you spent today in GoGoSpend."
 }

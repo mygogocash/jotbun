@@ -5,6 +5,7 @@ import { getSession, getV1SessionSnapshot } from '@mobile/auth/session';
 import { getMobileEnv } from '@mobile/config/env';
 import { createSpendV1Resources, createSyncResources } from '@mobile/spend/v1/resources';
 import type { SpendV1Resources } from '@mobile/spend/v1/resources';
+import { isUuid } from '@gogospend/contracts';
 import * as Crypto from 'expo-crypto';
 
 import type { SyncRemote } from '@mobile/sync/types';
@@ -49,4 +50,13 @@ export function getSharedSyncRemote(): SyncRemote {
     sha256Hex: (text) => Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, text),
   });
   return sync;
+}
+
+/** The signed-in account's internal id (GET /v1/me): device diaries are keyed by it, never by email or provider subject. */
+export async function fetchAccountId(): Promise<string> {
+  const me = await sharedTransport().request('GET', '/v1/me', {
+    validate: (value): value is { account_id: string } =>
+      typeof value === 'object' && value !== null && typeof (value as { account_id?: unknown }).account_id === 'string' && isUuid((value as { account_id: string }).account_id),
+  });
+  return me.account_id;
 }

@@ -390,5 +390,22 @@
   "spendV1ChangedNow": "รายการนี้ถูกแก้ไขจากอุปกรณ์อื่น ตอนนี้เป็น {amount}",
   "spendV1ChangedNowNote": "รายการนี้ถูกแก้ไขจากอุปกรณ์อื่น ตอนนี้เป็น {amount} ({note})",
   "spendV1SignInToSaveOnly": "เข้าสู่ระบบอีกครั้งเพื่อบันทึก",
-  "spendV1SessionChanged": "เซสชันของคุณเปลี่ยนไป เข้าสู่ระบบอีกครั้งเพื่อบันทึก"
+  "spendV1SessionChanged": "เซสชันของคุณเปลี่ยนไป เข้าสู่ระบบอีกครั้งเพื่อบันทึก",
+  "spendV1SyncSavedOnDevice": "บันทึกในเครื่องแล้ว · รอซิงก์ ({count})",
+  "spendV1SyncProgress": "กำลังซิงก์ {sent} จาก {total}",
+  "spendV1SyncChecking": "กำลังตรวจสอบ {count} รายการกับ GoGoSpend ก่อนส่งอีกครั้ง",
+  "spendV1SyncNeedsReview": "รายการที่ต้องตรวจสอบ: {count}",
+  "spendV1SyncUpgrade": "อัปเดต GoGoSpend เพื่อส่งรายการที่บันทึกไว้ในเครื่องนี้",
+  "spendV1SyncSignIn": "เข้าสู่ระบบอีกครั้งเพื่อส่งรายการที่บันทึกไว้ในเครื่องนี้",
+  "spendV1SyncKeyLocked": "บันทึกในเครื่องนี้ถูกล็อก กู้คืนจาก GoGoSpend หรือทิ้งไป",
+  "spendV1SyncKeyUnavailable": "ยังเปิดบันทึกในเครื่องนี้ไม่ได้ในขณะนี้ ลองอีกครั้งภายหลัง",
+  "spendV1SyncUnreachable": "เชื่อมต่อ GoGoSpend ไม่ได้ รายการของคุณยังบันทึกอยู่ในเครื่องนี้",
+  "spendV1SyncPaused": "หยุดซิงก์ชั่วคราวหลังจากล้มเหลวหลายครั้ง",
+  "spendV1SyncResyncPending": "กำลังดึงบันทึกทั้งหมดจาก GoGoSpend",
+  "spendV1SyncRetry": "ลองอีกครั้ง",
+  "spendV1PendingOut": "รอซิงก์: เงินออก {amount}",
+  "spendV1PendingIn": "รอซิงก์: เงินเข้า {amount}",
+  "spendV1LocalSaveFailed": "บันทึกรายการนี้ในเครื่องไม่สำเร็จ ยังไม่มีอะไรถูกบันทึก",
+  "spendV1ReminderTitle": "บันทึกรายจ่ายวันนี้",
+  "spendV1ReminderBody": "เพิ่มรายจ่ายของวันนี้ใน GoGoSpend"
 }

@@ -861,3 +861,52 @@ Observed, not changed (pre-existing):
   - `sync/scheduler.ts`, `sync/deviceSync.ts` and the test helpers are extra files.
   - F5 has no token refresh yet, so the device wiring refuses refreshes: a rejected token stops the flush and keeps drafts.
 - **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (437), test:db PASS (397), test:app PASS (11), test:unit PASS (102), test:render PASS (38), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
+
+## S4: pending/conflict UX, local reminders (local work)
+
+- **Displayed totals** (`spend/v1/pendingTotals.ts`): `deriveDisplayedTotals(confirmed, pending)` keeps the confirmed totals exactly as the server sent them. Drafts on the device become a separate adjustment: income adds, expenses subtract, and a transfer moves money between its wallets. The estimate is the exact BigInt sum. Pinned `pending_expense_is_distinct_from_confirmed_total`: confirmed expense stays `'10000'` and the pending adjustment is `'6500'`.
+- **Device diary for the screens** (`spend/v1/spendDiary.ts`, `SpendDiaryContext.tsx`, `DeviceDiaryProvider.tsx`):
+  - **Opening:** it opens the diary of the account the server names (`GET /v1/me`), so a new identity with the same email never inherits a queue. Any session change closes the previous account's diary first.
+  - **Saving:** drafts save on the device before anything is sent; `saveDraft` rejects when nothing was saved.
+  - **Sync triggers:** it syncs at launch, on foreground (AppState), after each save and on manual retry, and stops in the background.
+  - **Locking:**
+    - A remote sign-in refusal locks the diary and keeps its drafts.
+    - A missing or rejected key locks it with that reason.
+    - Signed out means no diary.
+  - **Platform:** iOS and Android only; the web keeps none.
+- **Banner** (`sync/SyncStatus.tsx`): a polite status announcement (`role="status"`, `aria-live="polite"`), in words rather than colour alone. It covers:
+  - "Saved on device · Waiting to sync (n)";
+  - "Syncing n of m" while the server paces a backlog;
+  - entries being checked before a resend;
+  - entries needing review;
+  - update required;
+  - sign in again;
+  - a locked key (recover or discard);
+  - an unreachable server with Retry, and paused after repeated failures.
+- **Screens:**
+  - **Add:** with a ready diary, saves on the device and only then returns home. A failed local commit shows "Couldn't save this entry on the device. Nothing was saved." and never claims it was saved. Without a diary (web, not yet open) it uses the online save as before.
+  - **Home:** shows the banner and "Waiting to sync: money out/in …" lines apart from the confirmed totals. Acknowledged commands are excluded, so they are never counted twice.
+  - **Copy:** 17 new English/Thai entries (Vietnamese falls back to English).
+- **Local reminders** (`notifications/reminders.ts`, plus `localReminders.ts` for devices via expo-notifications and `localReminders.web.ts`):
+  - One device-local daily reminder with a fixed id, so a new time or locale replaces it, never duplicates.
+  - Permission is asked at most once. A denial is a settled "off" state with no retry loop.
+  - The web reports reminders unsupported, and there is no push backend.
+  - Added `expo-notifications ~58.1.4`, the SDK's pinned version.
+- **RED → GREEN:**
+  - Unit tests (`pendingTotals`, `localReminders`, `spendDiary`): 12 of 12 failed, then 12 of 12 passed.
+  - Render tests (`SyncStatus`, `OfflineSave`): 9 of 10 failed; the "no banner" case already held. Then 10 of 10 passed.
+  - **Test fixes before GREEN:**
+    - The account-switch controller test now runs offline, so A's draft stays pending.
+    - One controller test used a fixed date for drafts but the real clock for the engine, which made the draft look 30 days old; it now uses one clock.
+    - The banner test needed the same `expo-crypto` mock as the other render tests.
+- **SKIPPED:**
+  - **E2 visual approval** of the new banner and pending lines.
+  - **Native journeys:** airplane mode, restart, two devices and account switch.
+  - **OS checks:** notification permission and delivery on devices.
+  - **320 px visual checks** in Thai and English.
+  - **Not built yet:** a settings screen for reminders and a review screen for needs-review entries, which both wait for approved visuals. The services and states exist.
+- **Deviations:**
+  - The device reminder adapter is `localReminders.ts` (not `.native.ts`), for `tsc` resolution.
+  - `reminders.ts`, `spendDiary.ts`, `SpendDiaryContext.tsx`, `DeviceDiaryProvider.tsx` and `testing/fakeDiary.ts` are extra files.
+  - The diary provider wraps the spend routes in `app/spend/_layout.tsx` (not on the legacy path).
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (437), test:db PASS (397), test:app PASS (11), test:unit PASS (114), test:render PASS (48), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.

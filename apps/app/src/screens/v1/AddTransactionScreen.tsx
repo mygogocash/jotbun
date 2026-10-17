@@ -1,7 +1,9 @@
-// v1 Add: an expense, income or transfer between the user's own wallets,
-// saved as one immutable command. Success is shown only after the server's
-// acknowledgement; an unconfirmed save keeps the entry frozen and resends the
-// same command. Offline saving stays off until S2/S3 can persist drafts.
+// v1 Add: an expense, income or transfer between the user's own wallets.
+// With a device diary (S2/S3) the entry is saved on the device first - only
+// once that local commit succeeds is it shown as saved - and the outbox sends
+// it. Without one (web, or before the diary opens) it is saved online as one
+// immutable command, shown as saved only after the server's acknowledgement;
+// an unconfirmed online save keeps the entry frozen and resends the same command.
 import { ContractValidationError, normalizeMerchant, normalizeNote, validateOccurredOn } from '@gogospend/contracts';
 import type { CategoryDto, WalletDto } from '@gogospend/contracts';
 import { useRouter } from 'expo-router';
@@ -11,6 +13,7 @@ import { View } from 'react-native';
 import { useCopy } from '@mobile/i18n/useCopy';
 import { AmountInputError, parseAmountInput } from '@mobile/spend/v1/money';
 import type { CreateEntryInput, CreateTransferInput } from '@mobile/spend/v1/resources';
+import { useDiaryView, useSpendDiary } from '@mobile/spend/v1/SpendDiaryContext';
 import { useSpendV1 } from '@mobile/spend/v1/SpendV1Context';
 import { categoryName, todayInBangkok } from '@mobile/spend/v1/viewModels';
 import { Text } from '@mobile/theme/AppText';
@@ -53,6 +56,8 @@ function EntryForm({ wallets, categories, today }: { wallets: WalletDto[]; categ
   const locale = useMoneyLocale();
   const { colors } = useTheme();
   const keys = useCommandKeys();
+  const diary = useSpendDiary();
+  const diaryView = useDiaryView();
   // One record id per draft, so a resent command always names the same record.
   const [recordId] = useState(newId);
   const [type, setType] = useState<EntryType>('expense');
@@ -112,6 +117,18 @@ function EntryForm({ wallets, categories, today }: { wallets: WalletDto[]; categ
   async function save() {
     const input = build();
     if (!input) return;
+    if (diary && diaryView.phase === 'ready') {
+      setStatus('saving');
+      setMessage(null);
+      try {
+        await diary.saveDraft('source_wallet_id' in input ? { ...input, type: 'transfer' } : input);
+        router.replace('/spend');
+      } catch {
+        setMessage(tc("Couldn't save this entry on the device. Nothing was saved."));
+        setStatus('editing');
+      }
+      return;
+    }
     const key = keys.keyFor('create', input);
     setStatus('saving');
     setMessage(null);
