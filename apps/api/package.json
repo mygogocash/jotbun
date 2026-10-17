@@ -13,9 +13,11 @@
     "start:dev": "node --watch dist/main",
     "start:v1": "node dist/v1/main",
     "worker:security": "node dist/jobs/security-worker",
+    "worker:jobs": "node dist/worker",
     "db:migrate": "node dist/database/migrate-cli",
     "typecheck": "tsc --noEmit",
     "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --maxWorkers=2 --workerIdleMemoryLimit=1GB",
+    "test:storage-contract": "STORAGE_CONTRACT_SCRIPT=1 NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --runInBand --runTestsByPath src/storage/s3-object-store.contract.spec.ts",
     "test:db": "node ../../scripts/dev-v1.mjs db-up && NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest -c jest.integration.cjs --maxWorkers=2 --workerIdleMemoryLimit=1GB"
   },
   "dependencies": {

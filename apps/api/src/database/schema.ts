@@ -87,12 +87,13 @@ export const blockedPrincipals = pgTable('blocked_principals', {
   pendingJobId: uuid('pending_job_id'),
 });
 
-export const JOB_KINDS = ['auth0_revoke_grants'] as const;
-export const JOB_STATUSES = ['queued', 'leased', 'succeeded', 'superseded', 'failed'] as const;
+/** Kinds visible only to gogospend_security (RLS); other kinds are any identifier. */
+export const SECURITY_JOB_KINDS = ['auth0_revoke_grants'] as const;
+export const JOB_STATUSES = ['queued', 'leased', 'succeeded', 'superseded', 'failed', 'cancelled'] as const;
 
 export const jobs = pgTable('jobs', {
   id: uuid('id').primaryKey(),
-  kind: text('kind', { enum: JOB_KINDS }).notNull(),
+  kind: text('kind').notNull(),
   accountId: uuid('account_id'),
   lifecycleGeneration: integer('lifecycle_generation').notNull().default(0),
   payload: jsonb('payload').notNull(),
@@ -106,6 +107,24 @@ export const jobs = pgTable('jobs', {
   createdAt: instant('created_at').notNull().defaultNow(),
   updatedAt: instant('updated_at').notNull().defaultNow(),
   finishedAt: instant('finished_at'),
+  maxRuntimeSeconds: integer('max_runtime_seconds').notNull().default(900),
+  attemptStartedAt: instant('attempt_started_at'),
+});
+
+export const objectPublications = pgTable('object_publications', {
+  key: text('key').primaryKey(),
+  jobId: uuid('job_id').notNull(),
+  accountId: uuid('account_id').notNull(),
+  leaseToken: uuid('lease_token').notNull(),
+  lifecycleGeneration: integer('lifecycle_generation').notNull(),
+  purpose: text('purpose').notNull(),
+  status: text('status', { enum: ['reserved', 'published', 'deleted'] }).notNull().default('reserved'),
+  deleteAfter: instant('delete_after').notNull(),
+  bytes: bigint('bytes', { mode: 'bigint' }),
+  sha256: bytea('sha256'),
+  createdAt: instant('created_at').notNull().defaultNow(),
+  publishedAt: instant('published_at'),
+  deletedAt: instant('deleted_at'),
 });
 
 export const reauthChallenges = pgTable('reauth_challenges', {
@@ -312,4 +331,5 @@ export const schema = {
   transactions,
   monthlyBudgets,
   budgetCategoryLimits,
+  objectPublications,
 };

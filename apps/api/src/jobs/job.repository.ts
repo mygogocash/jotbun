@@ -1,8 +1,10 @@
-import type { Pool } from 'pg';
+import type { Pool, PoolClient } from 'pg';
 
+import { SECURITY_JOB_KINDS } from '../database/schema';
 import type { ClaimedJob, JobFailure, JobKind, JobLease } from './job-types';
 
-export type EnqueueInput = { id: string; kind: JobKind; accountId: string | null; payload: unknown; maxAttempts: number; lifecycleGeneration?: number };
+export type EnqueueInput = { id: string; kind: JobKind; accountId: string | null; payload: unknown; maxAttempts: number; lifecycleGeneration?: number; maxRuntimeSeconds?: number };
+export type BacklogRow = { kind: string; status: string; count: number; oldestSeconds: number };
 
 const ERROR_CODE = /^[a-z0-9_]{1,64}$/;
 // Local work stops this long (at most a fifth of the lease) before the
@@ -10,7 +12,17 @@ const ERROR_CODE = /^[a-z0-9_]{1,64}$/;
 // holders overlap. The database also refuses work on an expired lease.
 const LEASE_SAFETY_MS = 5_000;
 
-type LeasedRow = { id: string; kind: JobKind; account_id: string | null; lifecycle_generation: number; payload: unknown; lease_token: string; attempts: number; max_attempts: number; lease_expires_at: Date };
+/**
+ * How long local work may still run on a lease the database granted for
+ * `grantedMs` (measured by the database clock) when the request was sent at
+ * `sentAt` (local clock): only elapsed local time is used, so clock skew
+ * between the worker and the database cannot stretch it.
+ */
+export function leaseBudgetMs(grantedMs: number, sentAt: number, leaseSeconds: number): number {
+  return Math.max(0, grantedMs - Math.min(LEASE_SAFETY_MS, leaseSeconds * 200) - (Date.now() - sentAt));
+}
+
+type LeasedRow = { id: string; kind: JobKind; account_id: string | null; lifecycle_generation: number; payload: unknown; lease_token: string; attempts: number; max_attempts: number; lease_expires_at: Date; granted_ms: number };
 
 /**
  * The one durable job queue (PostgreSQL, worker role only). Claims take a
@@ -19,6 +31,9 @@ type LeasedRow = { id: string; kind: JobKind; account_id: string | null; lifecyc
  * can no longer complete or fail the job. Retryable failures back off
  * exponentially (30 s × 2^attempt, at most 1 h) until max attempts, then fail
  * visibly. Error codes are short identifiers, never provider text.
+ *
+ * Heartbeats extend a current lease, but never past attempt_started_at +
+ * max_runtime_seconds, so a stuck handler cannot hold a job forever.
  */
 export class JobRepository {
   constructor(private readonly pool: Pool) {}
@@ -26,9 +41,9 @@ export class JobRepository {
   /** Idempotent by job id. */
   async enqueue(input: EnqueueInput): Promise<void> {
     await this.pool.query(
-      `INSERT INTO jobs (id, kind, account_id, lifecycle_generation, payload, max_attempts)
-       VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (id) DO NOTHING`,
-      [input.id, input.kind, input.accountId, input.lifecycleGeneration ?? 0, JSON.stringify(input.payload), input.maxAttempts],
+      `INSERT INTO jobs (id, kind, account_id, lifecycle_generation, payload, max_attempts, max_runtime_seconds)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (id) DO NOTHING`,
+      [input.id, input.kind, input.accountId, input.lifecycleGeneration ?? 0, JSON.stringify(input.payload), input.maxAttempts, input.maxRuntimeSeconds ?? 900],
     );
   }
 
@@ -45,11 +60,11 @@ export class JobRepository {
                       FOR UPDATE SKIP LOCKED)`,
       [kinds],
     );
-    const claimedAt = Date.now();
+    const sentAt = Date.now();
     const { rows } = await this.pool.query<LeasedRow>(
       `UPDATE jobs j
-          SET status = 'leased', attempts = j.attempts + 1, lease_token = gen_random_uuid(),
-              lease_expires_at = now() + make_interval(secs => $3), updated_at = now()
+          SET status = 'leased', attempts = j.attempts + 1, lease_token = gen_random_uuid(), attempt_started_at = now(),
+              lease_expires_at = least(now() + make_interval(secs => $3), now() + make_interval(secs => j.max_runtime_seconds)), updated_at = now()
          FROM (SELECT id FROM jobs
                 WHERE kind = ANY($1)
                   AND ((status = 'queued' AND run_after <= now())
@@ -58,7 +73,8 @@ export class JobRepository {
                 LIMIT $2
                 FOR UPDATE SKIP LOCKED) picked
         WHERE j.id = picked.id
-      RETURNING j.id, j.kind, j.account_id, j.lifecycle_generation, j.payload, j.lease_token, j.attempts, j.max_attempts, j.lease_expires_at`,
+      RETURNING j.id, j.kind, j.account_id, j.lifecycle_generation, j.payload, j.lease_token, j.attempts, j.max_attempts, j.lease_expires_at,
+                (extract(epoch FROM j.lease_expires_at - now()) * 1000)::float8 AS granted_ms`,
       [kinds, limit, leaseSeconds],
     );
     return rows.map((row) => ({
@@ -72,14 +88,17 @@ export class JobRepository {
         attempt: row.attempts,
         maxAttempts: row.max_attempts,
         deadline: row.lease_expires_at.toISOString(),
-        signal: AbortSignal.timeout(Math.max(0, leaseSeconds * 1000 - Math.min(LEASE_SAFETY_MS, leaseSeconds * 200) - (Date.now() - claimedAt))),
+        signal: AbortSignal.timeout(leaseBudgetMs(row.granted_ms, sentAt, leaseSeconds)),
       },
     }));
   }
 
-  /** True only for the current lease holder, once. */
-  async complete(lease: JobLease, status: 'succeeded' | 'superseded' = 'succeeded'): Promise<boolean> {
-    const { rowCount } = await this.pool.query(
+  /**
+   * True only for the current lease holder, once. Pass `client` to complete
+   * inside a caller's transaction (publication completes with its objects).
+   */
+  async complete(lease: JobLease, status: 'succeeded' | 'superseded' = 'succeeded', client?: PoolClient): Promise<boolean> {
+    const { rowCount } = await (client ?? this.pool).query(
       `UPDATE jobs SET status = $3, lease_token = NULL, lease_expires_at = NULL, last_error = NULL, finished_at = now(), updated_at = now()
         WHERE id = $1 AND status = 'leased' AND lease_token = $2`,
       [lease.jobId, lease.leaseToken, status],
@@ -100,5 +119,73 @@ export class JobRepository {
       [lease.jobId, lease.leaseToken, failure.retryable, failure.code],
     );
     return rowCount === 1;
+  }
+
+  /**
+   * Extends a current lease by `leaseSeconds`, capped at the attempt's runtime
+   * bound. Returns the new deadline (ISO), or null when the lease is no longer
+   * held (expired, reclaimed, cancelled or finished).
+   */
+  async heartbeat(lease: JobLease, leaseSeconds = 30): Promise<string | null> {
+    return (await this.extend(lease, leaseSeconds))?.deadline ?? null;
+  }
+
+  /** heartbeat, plus the local budget the new deadline allows (for the worker's abort timer). */
+  async extend(lease: JobLease, leaseSeconds = 30): Promise<{ deadline: string; budgetMs: number } | null> {
+    if (!Number.isInteger(leaseSeconds) || leaseSeconds < 1 || leaseSeconds > 3600) throw new RangeError('leaseSeconds must be 1-3600');
+    const sentAt = Date.now();
+    const { rows } = await this.pool.query<{ lease_expires_at: Date; granted_ms: number }>(
+      `UPDATE jobs
+          SET lease_expires_at = least(now() + make_interval(secs => $3), attempt_started_at + make_interval(secs => max_runtime_seconds)),
+              updated_at = now()
+        WHERE id = $1 AND status = 'leased' AND lease_token = $2 AND lease_expires_at > now()
+      RETURNING lease_expires_at, (extract(epoch FROM lease_expires_at - now()) * 1000)::float8 AS granted_ms`,
+      [lease.jobId, lease.leaseToken, leaseSeconds],
+    );
+    const row = rows[0];
+    return row ? { deadline: row.lease_expires_at.toISOString(), budgetMs: leaseBudgetMs(row.granted_ms, sentAt, leaseSeconds) } : null;
+  }
+
+  /** Whether this lease still holds its job, unexpired. */
+  async isHeld(lease: JobLease): Promise<boolean> {
+    const { rowCount } = await this.pool.query(
+      `SELECT 1 FROM jobs WHERE id = $1 AND status = 'leased' AND lease_token = $2 AND lease_expires_at > now()`,
+      [lease.jobId, lease.leaseToken],
+    );
+    return rowCount === 1;
+  }
+
+  /**
+   * Operator/worker path: cancels an account's open jobs (queued or leased),
+   * fencing any holder. Security cleanup jobs are never cancelled. The app
+   * path is gogospend_cancel_account_jobs (under the account lock).
+   */
+  async cancelAccount(accountId: string): Promise<number> {
+    const { rowCount } = await this.pool.query(
+      `UPDATE jobs SET status = 'cancelled', lease_token = NULL, lease_expires_at = NULL, finished_at = now(), updated_at = now()
+        WHERE account_id = $1 AND status IN ('queued', 'leased') AND kind <> ALL ($2)`,
+      [accountId, SECURITY_JOB_KINDS],
+    );
+    return rowCount ?? 0;
+  }
+
+  /** Operator path: puts a terminally failed job back in the queue with a fresh attempt budget. */
+  async requeue(jobId: string): Promise<boolean> {
+    const { rowCount } = await this.pool.query(
+      `UPDATE jobs SET status = 'queued', attempts = 0, run_after = now(), finished_at = NULL, updated_at = now()
+        WHERE id = $1 AND status = 'failed'`,
+      [jobId],
+    );
+    return rowCount === 1;
+  }
+
+  /** Counts and the oldest age of open and failed jobs, per kind and status (no payloads). */
+  async backlog(): Promise<BacklogRow[]> {
+    const { rows } = await this.pool.query<{ kind: string; status: string; count: string; oldest_seconds: string }>(
+      `SELECT kind, status, count(*) AS count, floor(extract(epoch FROM now() - min(created_at)))::bigint AS oldest_seconds
+         FROM jobs WHERE status IN ('queued', 'leased', 'failed')
+        GROUP BY kind, status ORDER BY kind, status`,
+    );
+    return rows.map((row) => ({ kind: row.kind, status: row.status, count: Number(row.count), oldestSeconds: Number(row.oldest_seconds) }));
   }
 }

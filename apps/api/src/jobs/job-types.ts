@@ -1,8 +1,7 @@
 // Server-only job contract (master plan). F6a defines it; P1 extends the
 // repository without changing these fields.
-import type { JOB_KINDS } from '../database/schema';
-
-export type JobKind = (typeof JOB_KINDS)[number];
+/** A job kind: a lowercase identifier (`auth0_revoke_grants`, `sync_snapshot`, ...). */
+export type JobKind = string;
 
 export type JobLease = {
   jobId: string;

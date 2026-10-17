@@ -514,3 +514,38 @@ Observed, not changed (pre-existing):
   - A device keyboard whose decimal key is "," (for example Vietnamese) could type "1,500" meaning 1.5. Money is parsed in the Thai/English convention, and this remains a device-review item.
   - `EXPO_PUBLIC_V1_API_URL` defaults to local development and must be set for real builds; plain http to anything but loopback is refused.
 - **Full gate after the fixes:** typecheck PASS, typecheck:app PASS, test:api PASS (402), test:db PASS (326), test:app PASS (11), test:unit PASS (35), test:render PASS (38), test:dev PASS, build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
+
+## P1: generic job runtime and private object publication
+
+- **Migration `0009_jobs_storage`:**
+  - `jobs` takes any identifier kind (security kinds stay visible to `gogospend_security` only), a `cancelled` state, `max_runtime_seconds` (10 s–24 h, default 900) and `attempt_started_at`. A lease cannot be extended past `attempt_started_at + max_runtime_seconds`.
+  - `object_publications`: every key is registered (`reserved`) before its PUT, with the publisher's final deadline. Only the worker role can see it.
+  - New group role `gogospend_leased_read` with no table grants. It reads only through `gogospend_leased_read_open`, `gogospend_leased_high_water` and `gogospend_leased_entities`. Each call checks the job, its current unexpired lease, purpose = job kind (`sync_snapshot` or `export`), the job's lifecycle generation and an active account.
+  - App routines (owner transaction, under the common account lock): `gogospend_enqueue_account_job` (own account, user-startable kinds only) and `gogospend_cancel_account_jobs` (never security cleanup).
+  - Worker routine `gogospend_lock_current_job`: takes the account lock and the job row, then checks that the lease, account and generation still hold.
+- **Job runtime** (`src/jobs`):
+  - `JobRepository` gains `heartbeat`/`extend`, `isHeld`, `cancelAccount`, `requeue` (failed jobs only, with a fresh attempt budget) and `backlog` (counts and oldest age, no payloads). `complete` can run inside a caller's transaction.
+  - Lease budgets count only elapsed local time against the database-granted duration, so worker/database clock skew cannot stretch a lease.
+  - `HandlerRegistry` refuses security kinds and duplicates.
+  - `JobWorker` runs one job at a time. Heartbeats default to every 10 s on a 30 s lease and keep `lease.signal`/`deadline` in step. A handler that throws becomes a retryable `handler_error` (or `handler_timeout`). One that returns still holding its lease fails terminally as `handler_incomplete`. It claims only registered kinds.
+- **Storage** (`src/storage`):
+  - `ObjectStore` adapters accept only server-shaped keys (no `..`, leading `/`, spaces or uppercase purpose) and never offer a URL or presign.
+  - `MemoryObjectStore` is the deterministic failure adapter (`failNext`: error before acting, or crash after the PUT landed).
+  - `S3ObjectStore` uses SigV4 with no new dependency. It matches AWS's published GET-object signature vector. PUTs are conditional (`If-None-Match: *`, 412 → `exists`), and the body hash is both the signed payload hash and `x-amz-meta-sha256`, which `get` verifies. Errors carry only a code.
+  - `objectStoreFromEnv`: production needs `R2_*` with an https origin and a bucket outside `gogospend-test-*`. `OBJECT_STORE=memory` is local only.
+  - `ObjectPublicationService`: `reserveKey` (committed before the PUT); `finishWithObjects` (HEAD-verifies, then one READ COMMITTED transaction: lock and recheck, publish, complete); `sweep` (registry-first deletion of reservations past their deadline and expired objects, batched with SKIP LOCKED, then an orphan pass over the store).
+- **Leased reads** (`LeasedAccountRead.withSnapshot`): one `REPEATABLE READ READ ONLY` transaction on the leased-read login. Denials surface as `LeasedReadDenied`. Publication rechecks under lock, because a lease cancelled after the snapshot began still reads inside it.
+- **Worker process:** `npm run worker:jobs -w gogospend-api` (`src/worker.ts`). It uses two logins, checked at startup by `assertLoginRoles`: `DATABASE_URL` must be in exactly `gogospend_jobs`, and `LEASED_READ_DATABASE_URL` in exactly `gogospend_leased_read`. It runs a periodic sweep and logs counts only for failed jobs and for kinds no handler runs. The new `.env.jobs-worker.example` lists its settings. The security worker's login check now uses the same helper, so it also refuses a leased-read membership.
+- **Storage contract script:** `npm run test:storage-contract -w gogospend-api` sets `STORAGE_CONTRACT_SCRIPT=1`. With `STORAGE_CONTRACT_TARGET=r2-test` it adds real R2 as a third contract target. It refuses to start without the `R2_TEST_*` settings, without an https endpoint, or with a bucket outside `gogospend-test-*`. Without the target, it and the normal suite run the failure adapter and a loopback fake S3 and never read R2 settings. Checked locally: with the target set and no settings, it fails before any test.
+- **Deviations:**
+  - The worker is a plain Node process like the security worker, so no `jobs.module.ts` was needed.
+  - `storage.module.ts` waits for S1, the first API route that reads stored objects.
+  - The security worker keeps its own loop. It already uses the same fenced lease protocol and table, and security kinds cannot run in the generic worker by design.
+  - `dev:v1` does not start the job worker yet, because no generic handler exists before S1.
+- **RED → GREEN** (assertion-level RED against seams, no module errors):
+  - `s3-object-store.contract.spec.ts`: 22 failed of 25, then 25 passed.
+  - DB specs (`job.repository`, `object-publication`, `leased-account-read`, `migrations`): 27 failed of 43, then 43 passed. The existing lease tests failed too until claims set `attempt_started_at`.
+  - Worker wiring: `object-store-config.spec.ts` 4 failed of 4, then 4 passed; the login-role test failed 1 of 16, then 16 passed.
+  - Pinned `late_cancelled_output_is_not_published`: the account's jobs are cancelled while the PUT is in flight; completion returns false, nothing is published and the sweep deletes the object.
+- **Hosted gate:** SKIPPED. Real R2 (private access, ownership, expiry, denial for backup/control buckets, worker kill against R2) needs the E1-authorized test scope. P1 is not complete for P2a uploads or beta until it passes.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (431), test:db PASS (347), test:app PASS (11), test:unit PASS (35), test:render PASS (38), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.

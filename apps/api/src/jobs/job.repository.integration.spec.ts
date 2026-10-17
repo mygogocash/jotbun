@@ -1,10 +1,14 @@
 import { randomUUID } from 'node:crypto';
 
-import type { Pool } from 'pg';
+import { Pool } from 'pg';
 
 import { createTestDatabase } from '../testing/postgres-harness';
 import type { TestDatabase } from '../testing/postgres-harness';
+import { DatabaseService } from '../database/database.service';
+import { HandlerRegistry } from './handler-registry';
 import { JobRepository } from './job.repository';
+import { JobWorker } from './worker';
+import { assertLoginRoles } from './worker-login';
 
 let db: TestDatabase;
 let workerPool: Pool;
@@ -110,5 +114,133 @@ describe('job leases', () => {
   it('the app role cannot read the queue', async () => {
     const app = await db.loginPool(['gogospend_app'], 1);
     await expect(app.query('SELECT * FROM jobs')).rejects.toMatchObject({ code: '42501' });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// P1: the generic runtime - heartbeats, bounded runtime, cancellation,
+// explicit requeue, backlog and the worker loop.
+
+const account = async (): Promise<string> => {
+  const id = randomUUID();
+  await db.admin(async (client) => {
+    await client.query('INSERT INTO accounts (id) VALUES ($1)', [id]);
+    await client.query('INSERT INTO account_sync_state (account_id) VALUES ($1)', [id]);
+  });
+  return id;
+};
+const generic = (accountId: string | null, options: { maxAttempts?: number; maxRuntimeSeconds?: number; kind?: string } = {}) => {
+  const id = randomUUID();
+  return jobs.enqueue({ id, kind: options.kind ?? 'test_task', accountId, payload: { n: 1 }, maxAttempts: options.maxAttempts ?? 3, maxRuntimeSeconds: options.maxRuntimeSeconds }).then(() => id);
+};
+const ownerCtx = (accountId: string) => ({ accountId, subject: 'x', clientId: 'native', bindingId: randomUUID(), sessionGeneration: 0 });
+
+describe('P1 job runtime', () => {
+  it('three failed attempts end in a visible failure that can be requeued explicitly', async () => {
+    const id = await generic(null, { maxAttempts: 3 });
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      await db.admin((client) => client.query('UPDATE jobs SET run_after = now() WHERE id = $1', [id]));
+      const [claimed] = await jobs.claim(['test_task']);
+      expect(claimed.lease.attempt).toBe(attempt);
+      await jobs.fail(claimed.lease, { code: 'parser_error', retryable: true });
+    }
+    expect(await status(id)).toMatchObject({ status: 'failed', attempts: 3, last_error: 'parser_error' });
+    expect(await jobs.backlog()).toContainEqual(expect.objectContaining({ kind: 'test_task', status: 'failed', count: 1 }));
+    expect(await jobs.requeue(id)).toBe(true);
+    expect(await status(id)).toMatchObject({ status: 'queued', attempts: 0 });
+    expect(await jobs.requeue(id)).toBe(false);
+  });
+
+  it('a heartbeat extends only the current lease, and never past the attempt runtime bound', async () => {
+    await generic(null, { maxRuntimeSeconds: 10 });
+    const [claimed] = await jobs.claim(['test_task'], { leaseSeconds: 5 });
+    const extended = await jobs.heartbeat(claimed.lease, 30);
+    expect(extended).not.toBeNull();
+    const bound = (await db.admin((client) => client.query(`SELECT attempt_started_at + interval '10 seconds' AS bound FROM jobs WHERE id = $1`, [claimed.lease.jobId]))).rows[0].bound as Date;
+    expect(new Date(extended as string).getTime()).toBeLessThanOrEqual(bound.getTime());
+    expect(await jobs.heartbeat({ ...claimed.lease, leaseToken: randomUUID() })).toBeNull();
+    expect(await jobs.isHeld(claimed.lease)).toBe(true);
+  });
+
+  it("cancelling an account stops its open jobs, fences the holder, and leaves others and security cleanup alone", async () => {
+    const [mine, theirs] = [await account(), await account()];
+    const queued = await generic(mine);
+    const leasedId = await generic(mine);
+    await db.admin((client) => client.query(`UPDATE jobs SET run_after = now() + interval '1 hour' WHERE id = $1`, [queued]));
+    const [held] = await jobs.claim(['test_task']);
+    expect(held.lease.jobId).toBe(leasedId);
+    const other = await generic(theirs);
+    const security = randomUUID();
+    await jobs.enqueue({ id: security, kind: 'auth0_revoke_grants', accountId: mine, payload: {}, maxAttempts: 3 });
+    expect(await jobs.cancelAccount(mine)).toBe(2);
+    expect((await status(queued)).status).toBe('cancelled');
+    expect((await status(leasedId)).status).toBe('cancelled');
+    expect((await status(other)).status).toBe('queued');
+    expect((await status(security)).status).toBe('queued');
+    expect(await jobs.complete(held.lease)).toBe(false);
+    expect(await jobs.heartbeat(held.lease)).toBeNull();
+    expect(await jobs.isHeld(held.lease)).toBe(false);
+  });
+
+  it("the app cancels and enqueues only its own account's jobs, under the account lock", async () => {
+    const [mine, theirs] = [await account(), await account()];
+    const service = new DatabaseService(await db.loginPool(['gogospend_app'], 2));
+    const id = randomUUID();
+    await service.withOwnerTransaction(ownerCtx(mine), (tx) => tx.query(`SELECT gogospend_enqueue_account_job($1, 'sync_snapshot', '{}'::jsonb, 3, 120)`, [id]));
+    const row = (await db.admin((client) => client.query('SELECT account_id, kind, status, max_runtime_seconds FROM jobs WHERE id = $1', [id]))).rows[0];
+    expect(row).toEqual({ account_id: mine, kind: 'sync_snapshot', status: 'queued', max_runtime_seconds: 120 });
+    await expect(service.withOwnerTransaction(ownerCtx(mine), (tx) => tx.query(`SELECT gogospend_enqueue_account_job($1, 'auth0_revoke_grants', '{}'::jsonb, 3, 120)`, [randomUUID()]))).rejects.toThrow();
+    const theirsJob = await generic(theirs);
+    const [cancelled] = await service.withOwnerTransaction(ownerCtx(mine), (tx) => tx.query<{ n: number }>('SELECT gogospend_cancel_account_jobs() AS n'));
+    expect(cancelled.n).toBe(1);
+    expect((await status(theirsJob)).status).toBe('queued');
+  });
+
+  it('the worker runs registered handlers with heartbeats and never claims unknown kinds', async () => {
+    const slow = await generic(null, { maxRuntimeSeconds: 60 });
+    await generic(null, { kind: 'nobody_handles_this' });
+    let beats = 0;
+    const registry = new HandlerRegistry().register('test_task', async (job) => {
+      const before = await db.admin((client) => client.query('SELECT lease_expires_at FROM jobs WHERE id = $1', [job.lease.jobId]));
+      await new Promise((resolve) => setTimeout(resolve, 2_500));
+      const after = await db.admin((client) => client.query('SELECT lease_expires_at FROM jobs WHERE id = $1', [job.lease.jobId]));
+      if (after.rows[0].lease_expires_at > before.rows[0].lease_expires_at) beats += 1;
+      await jobs.complete(job.lease);
+    });
+    const worker = new JobWorker(jobs, registry, { leaseSeconds: 2, heartbeatMs: 500 });
+    expect(await worker.runOnce()).toBe('ran');
+    expect(beats).toBe(1);
+    expect((await status(slow)).status).toBe('succeeded');
+    expect(await worker.runOnce()).toBe('idle');
+  });
+
+  it('a handler that throws is retried; one that ends without a transition fails visibly', async () => {
+    const thrown = await generic(null);
+    const registry = new HandlerRegistry().register('test_task', async () => {
+      throw new Error('boom user@example.com');
+    });
+    await new JobWorker(jobs, registry).runOnce();
+    expect(await status(thrown)).toMatchObject({ status: 'queued', last_error: 'handler_error' });
+    await db.admin((client) => client.query('DELETE FROM jobs'));
+    const silent = await generic(null);
+    await new JobWorker(jobs, new HandlerRegistry().register('test_task', async () => undefined)).runOnce();
+    expect(await status(silent)).toMatchObject({ status: 'failed', last_error: 'handler_incomplete' });
+  });
+
+  it('each worker connection is a login with exactly its group roles', async () => {
+    const jobsOnly = await db.loginPool(['gogospend_jobs'], 1);
+    const leasedOnly = await db.loginPool(['gogospend_leased_read'], 1);
+    await expect(assertLoginRoles(jobsOnly, ['gogospend_jobs'], 'DATABASE_URL')).resolves.toBeUndefined();
+    await expect(assertLoginRoles(leasedOnly, ['gogospend_leased_read'], 'LEASED_READ_DATABASE_URL')).resolves.toBeUndefined();
+    await expect(assertLoginRoles(leasedOnly, ['gogospend_jobs'], 'DATABASE_URL')).rejects.toThrow(/DATABASE_URL/);
+    await expect(assertLoginRoles(workerPool, ['gogospend_jobs'], 'DATABASE_URL')).rejects.toThrow(/gogospend_jobs/);
+    const both = await db.loginPool(['gogospend_jobs', 'gogospend_leased_read'], 1);
+    await expect(assertLoginRoles(both, ['gogospend_leased_read'], 'LEASED_READ_DATABASE_URL')).rejects.toThrow();
+    const superuser = new Pool({ connectionString: db.adminUrl, max: 1 });
+    try {
+      await expect(assertLoginRoles(superuser, ['gogospend_jobs'], 'DATABASE_URL')).rejects.toThrow();
+    } finally {
+      await superuser.end();
+    }
   });
 });

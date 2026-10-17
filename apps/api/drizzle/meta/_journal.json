@@ -57,6 +57,13 @@
       "when": 1792195208000,
       "tag": "0008_budgets",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792195209000,
+      "tag": "0009_jobs_storage",
+      "breakpoints": true
     }
   ]
 }

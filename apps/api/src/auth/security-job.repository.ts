@@ -1,6 +1,7 @@
 import type { Pool } from 'pg';
 
 import { JobRepository } from '../jobs/job.repository';
+import { assertLoginRoles } from '../jobs/worker-login';
 import type { ClaimedJob, JobLease } from '../jobs/job-types';
 import type { IdentityMaintenanceGateway } from './auth0-management.client';
 
@@ -21,17 +22,7 @@ export class SecurityJobRepository {
    * superuser, a BYPASSRLS role or (a member of) a table owner.
    */
   async assertLeastPrivilegeWorker(): Promise<void> {
-    const { rows } = await this.pool.query<{ ok: boolean }>(
-      `SELECT NOT r.rolsuper AND NOT r.rolbypassrls
-              AND pg_has_role(current_user, 'gogospend_jobs', 'USAGE')
-              AND pg_has_role(current_user, 'gogospend_security', 'USAGE')
-              AND NOT pg_has_role(current_user, 'gogospend_app', 'USAGE')
-              AND NOT pg_has_role(current_user, 'gogospend_bootstrap', 'USAGE')
-              AND NOT EXISTS (SELECT 1 FROM pg_tables t
-                               WHERE t.schemaname = 'public' AND pg_has_role(current_user, t.tableowner, 'USAGE')) AS ok
-         FROM pg_roles r WHERE r.rolname = current_user`,
-    );
-    if (!rows[0]?.ok) throw new Error('The security worker must use a login that is a member of gogospend_jobs and gogospend_security only.');
+    await assertLoginRoles(this.pool, ['gogospend_jobs', 'gogospend_security'], 'The security worker DATABASE_URL');
   }
 
   async state(lease: JobLease): Promise<RevocationState> {

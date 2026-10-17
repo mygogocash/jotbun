@@ -81,8 +81,8 @@ Migration integration is serial:
 | `0006_wallets_categories` | M2 | wallets, categories |
 | `0007_transactions` | M3 | transactions |
 | `0008_budgets` | M4 | budgets, category sublimit trigger |
+| `0009_jobs_storage` | P1 | generic leases/attempts/deadlines, publication registry, leased-read routines |
 | next free | F6b | verified provider-event receipts and reset reconciliation state |
-| next free | P1 | generic leases/attempts/deadlines, publication registry, leased-read routines |
 | next free | S1 | snapshot manifests, cursor support |
 | next free | P2a | uploads, import jobs, quota counters |
 | next free | P2b | candidates, preview issues |
@@ -91,7 +91,7 @@ Migration integration is serial:
 | next free | P4 | export jobs/objects |
 | next free | P5 | deletion requests, retention schedule |
 
-F1, F5, F6c, M5, S2–S4 and P6a/P6b add no migration. Numbers follow the order tasks are actually integrated: F6b was deferred with its hosted proof, so M1–M4 took `0005`–`0008` (17 October 2026). Every later migration, including F6b's and any F6c needs, takes the next free number when it is integrated and updates this table in the same diff. Generate/review the matching Drizzle metadata in this order; parallel feature writers must not independently rewrite the migration journal.
+F1, F5, F6c, M5, S2–S4 and P6a/P6b add no migration. Numbers follow the order tasks are actually integrated: F6b was deferred with its hosted proof, so M1–M4 took `0005`–`0008` and P1 took `0009` (17 October 2026). Every later migration, including F6b's and any F6c needs, takes the next free number when it is integrated and updates this table in the same diff. Generate/review the matching Drizzle metadata in this order; parallel feature writers must not independently rewrite the migration journal.
 
 ## Shared interfaces and wire decisions
 
