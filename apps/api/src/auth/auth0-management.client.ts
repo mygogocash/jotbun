@@ -7,7 +7,15 @@ export type MaintenanceOutcome =
   | { status: 'retryable'; code: string }
   | { status: 'permanent'; code: string };
 
+/** A user's last password change as Auth0 records it (reconciliation of lost events). */
+export type CredentialStateOutcome =
+  | { status: 'done'; lastPasswordReset: string | null }
+  | { status: 'retryable'; code: string }
+  | { status: 'permanent'; code: string };
+
 export interface IdentityMaintenanceGateway {
+  /** Reads only `last_password_reset`; a deleted user has none. */
+  credentialState(subject: string, signal?: AbortSignal): Promise<CredentialStateOutcome>;
   /** Revokes this user's refresh grants for the given native clients. Idempotent. */
   revokeGrants(subject: string, clientIds: readonly string[], signal?: AbortSignal): Promise<MaintenanceOutcome>;
   /** Deletes the Auth0 user; an already deleted user is done. */
@@ -67,6 +75,25 @@ export class Auth0MaintenanceClient implements IdentityMaintenanceGateway {
       }
       return { status: 'done', count };
     });
+  }
+
+  /** Needs `read:users` on the maintenance client; asks for one field only. */
+  async credentialState(subject: string, signal?: AbortSignal): Promise<CredentialStateOutcome> {
+    try {
+      if (signal?.aborted) return { status: 'retryable', code: 'lease_expired' };
+      const response = await this.api.request(`api/v2/users/${encodeURIComponent(subject)}`, { signal }, { fields: 'last_password_reset', include_fields: 'true' });
+      if (response.status === 404) return { status: 'done', lastPasswordReset: null };
+      if (!response.ok) return failure(response.status) as CredentialStateOutcome;
+      const body = (await response.json().catch(() => null)) as { last_password_reset?: unknown } | null;
+      if (!body || typeof body !== 'object') return { status: 'retryable', code: 'provider_bad_response' };
+      const reset = body.last_password_reset;
+      if (reset === undefined || reset === null) return { status: 'done', lastPasswordReset: null };
+      if (typeof reset !== 'string' || Number.isNaN(Date.parse(reset))) return { status: 'retryable', code: 'provider_bad_response' };
+      return { status: 'done', lastPasswordReset: reset };
+    } catch (error) {
+      if (error instanceof ManagementUnavailableError) return { status: 'retryable', code: 'provider_unavailable' };
+      throw error;
+    }
   }
 
   deleteUser(subject: string, signal?: AbortSignal): Promise<MaintenanceOutcome> {

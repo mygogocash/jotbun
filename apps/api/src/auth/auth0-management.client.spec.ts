@@ -51,6 +51,21 @@ describe('Auth0 maintenance client', () => {
     expect(JSON.stringify(outcome)).not.toMatch(/alice|token/);
   });
 
+  it('reads only the last password change, and treats a deleted user as having none', async () => {
+    management.profiles.set('auth0|dana', { user_id: 'auth0|dana', email_verified: true, last_password_reset: '2026-10-17T08:00:00.000Z' });
+    management.requests.length = 0;
+    expect(await client().credentialState('auth0|dana')).toEqual({ status: 'done', lastPasswordReset: '2026-10-17T08:00:00.000Z' });
+    const read = management.requests.find((request) => request.url.startsWith('/api/v2/users/'));
+    expect(read?.url).toBe('/api/v2/users/auth0%7Cdana?fields=last_password_reset&include_fields=true');
+    management.profiles.set('auth0|erin', { user_id: 'auth0|erin' });
+    expect(await client().credentialState('auth0|erin')).toEqual({ status: 'done', lastPasswordReset: null });
+    expect(await client().credentialState('auth0|nobody')).toEqual({ status: 'done', lastPasswordReset: null });
+    management.mode = 'down';
+    expect(await client().credentialState('auth0|dana')).toEqual({ status: 'retryable', code: 'provider_unavailable' });
+    management.mode = 'forbidden';
+    expect(await client().credentialState('auth0|dana')).toEqual({ status: 'permanent', code: 'provider_forbidden' });
+  });
+
   it('deletes a user, and treats an already deleted user as done', async () => {
     management.profiles.set('auth0|carol', { user_id: 'auth0|carol' });
     expect(await client().deleteUser('auth0|carol')).toEqual({ status: 'done', count: 1 });

@@ -17,6 +17,9 @@ import { PoliciesModule } from '../policies/policies.module';
 import { PolicyService } from '../policies/policy.service';
 import { AuthBootstrapService } from './auth-bootstrap.service';
 import { AuthController } from './auth.controller';
+import { eventVerifierConfigFromEnv } from './auth0-event-verifier';
+import { Auth0EventsController } from './auth0-events.controller';
+import { EVENT_VERIFIER_CONFIG, SecurityEventService } from './auth0-events.service';
 import { Auth0AccessTokenGuard } from './auth0-access-token.guard';
 import { Auth0KeySource } from './auth0-key-source';
 import { AUTH0_PROFILE_GATEWAY, profileGatewayFromEnv } from './auth0-profile.client';
@@ -75,7 +78,7 @@ const AUTH0_CONFIG = Symbol('AUTH0_CONFIG');
 
 @Module({
   imports: [DatabaseModule, PoliciesModule],
-  controllers: [AuthController],
+  controllers: [AuthController, Auth0EventsController],
   providers: [
     { provide: AUTH0_CONFIG, useFactory: () => auth0ConfigFromEnv(process.env) },
     // One JWKS cache and outage back-off for access tokens and ID-token proofs.
@@ -88,6 +91,8 @@ const AUTH0_CONFIG = Symbol('AUTH0_CONFIG');
     { provide: RATE_LIMITER, inject: [PG_POOL], useFactory: (pool: Pool) => new PostgresRateLimiter(pool, rateLimitKeyFromEnv(process.env)) },
     { provide: SESSION_RESOLVER, useClass: SqlSessionResolver },
     { provide: POLICY_GATE, useExisting: PolicyService },
+    { provide: EVENT_VERIFIER_CONFIG, useFactory: () => eventVerifierConfigFromEnv(process.env) },
+    { provide: SecurityEventService, inject: [PG_POOL, EVENT_VERIFIER_CONFIG], useFactory: (pool: Pool, config) => new SecurityEventService(pool, config) },
     ReauthenticationService,
     AuthBootstrapService,
     AccountLifecycleService,

@@ -44,6 +44,9 @@ const gateway: IdentityMaintenanceGateway & { calls: Call[]; outcome: Maintenanc
   async deleteUser() {
     return { status: 'done', count: 1 };
   },
+  async credentialState() {
+    return { status: 'done', lastPasswordReset: null };
+  },
 };
 const runWorker = (options: { leaseSeconds?: number } = {}) => runSecurityJobsOnce({ jobs, security, gateway, nativeClientIds: [TEST_CLIENT_ID] }, options);
 
@@ -280,6 +283,7 @@ describe('review hardening', () => {
         return { status: 'done', count: 1 };
       },
       deleteUser: async () => ({ status: 'done', count: 0 }),
+      credentialState: async () => ({ status: 'done', lastPasswordReset: null }),
     };
     expect(await runSecurityJobsOnce({ jobs, security, gateway: slow, nativeClientIds: [TEST_CLIENT_ID] }, { leaseSeconds: 2 })).toMatchObject({ revoked: 2, stale: 0 });
   });

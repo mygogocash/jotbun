@@ -11,7 +11,7 @@ export const FAKE_PROFILE_CLIENT_SECRET = 'synthetic-profile-secret-not-real';
 export const FAKE_MAINTENANCE_CLIENT_ID = 'maintenance-client-test';
 export const FAKE_MAINTENANCE_CLIENT_SECRET = 'synthetic-maintenance-secret-not-real';
 
-export type FakeProfile = { user_id: string; email_verified?: boolean; blocked?: boolean; identities?: { connection: string; provider: string; user_id: string }[] };
+export type FakeProfile = { user_id: string; email_verified?: boolean; blocked?: boolean; last_password_reset?: string; identities?: { connection: string; provider: string; user_id: string }[] };
 export type FakeDeviceCredential = { id: string; user_id: string; client_id: string; type: 'refresh_token' | 'public_key' };
 export type RecordedRequest = { method: string; url: string; authorization?: string; body: string };
 
@@ -69,10 +69,13 @@ export async function startManagementFake(): Promise<ManagementFake> {
     if (fake.mode === 'forbidden') return deny(403);
     const user = /^\/api\/v2\/users\/([^/]+)$/.exec(url.pathname);
     if (req.method === 'GET' && user) {
-      if (role !== 'profile') return deny(role ? 403 : 401);
+      // The maintenance client may read exactly one field: the last password change.
+      const resetOnly = url.searchParams.get('fields') === 'last_password_reset' && url.searchParams.get('include_fields') === 'true';
+      if (role !== 'profile' && !(role === 'maintenance' && resetOnly)) return deny(role ? 403 : 401);
       const profile = fake.profiles.get(decodeURIComponent(user[1]));
       if (!profile) return deny(404);
-      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(profile));
+      const answer = resetOnly ? (profile.last_password_reset ? { last_password_reset: profile.last_password_reset } : {}) : profile;
+      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(answer));
       return;
     }
     if (req.method === 'DELETE' && user) {

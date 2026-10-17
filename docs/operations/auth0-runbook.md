@@ -10,7 +10,8 @@ step marked *Tenant proof* is SKIPPED until then and must be done before beta.
 | --- | --- | --- | --- |
 | Native iOS / Android | the app | none | `AUTH0_ALLOWED_CLIENT_IDS` |
 | Read-profile M2M | API process | `read:users` | `AUTH0_PROFILE_LINK_CLIENT_ID/SECRET` |
-| Maintenance M2M | security worker only | `read:device_credentials`, `delete:device_credentials`, `delete:users` | `AUTH0_MAINTENANCE_CLIENT_ID/SECRET` |
+| Maintenance M2M | security worker only | `read:device_credentials`, `delete:device_credentials`, `delete:users`, `read:users` (only `last_password_reset` is requested) | `AUTH0_MAINTENANCE_CLIENT_ID/SECRET` |
+| Post Change Password Action | Auth0 | none | secret `JOTBUN_EVENTS_SECRET` = one of the API's `AUTH0_EVENTS_SIGNING_SECRETS` |
 
 - The maintenance credentials go only to the worker deployment
   (`apps/api/.env.worker.example`). The API never receives them, and the
@@ -109,8 +110,79 @@ would let a sign-in reuse refresh grants the user asked to revoke.
 
 All user-disable and delete operations must update GoGoSpend's state first
 (account status, holds, jobs) and then Auth0. Changes made directly in the
-Auth0 dashboard are not promised to revoke app sessions instantly; F6b adds
-signed Auth0 security events for that.
+Auth0 dashboard are not promised to revoke app sessions instantly; a signed
+`user_blocked` event (below), sent by the operator tooling, ends them.
+
+## Password changes and other provider security events (F6b)
+
+`POST /v1/auth/provider-events` accepts one signed envelope per event:
+
+- header `x-gogospend-event-signature: t=<unix seconds>,v1=<hex HMAC-SHA256>`
+  over `<t>.<raw body>`, keyed by a secret in `AUTH0_EVENTS_SIGNING_SECRETS`
+  (several `v1=` values and several configured secrets allow rotation:
+  add the new secret to the API, switch the Action, then remove the old one);
+- body, exactly `{"id","type","issuer","subject","occurred_at"}`: `type` is
+  `password_changed` or `user_blocked`; `issuer` must equal `AUTH0_ISSUER`;
+  `occurred_at` is at most 60 s ahead and 7 days old; the signature time is
+  within 5 minutes; at most 8 KiB.
+
+Answers: `200 {"result":"applied"|"duplicate"}`, `401 UNAUTHENTICATED`
+(signature or replay window), `422 VALIDATION_FAILED`, `409
+IDEMPOTENCY_MISMATCH` (an id reused for different content), `404` when no
+secret is configured. Retry only on 5xx or a network error, with the same id.
+
+Effect, under the account lock, when the change is newer than the account's
+last applied one (an older or repeated event changes nothing):
+
+1. every live session signed in before the change (auth time, rounded up to
+   the next whole second) ends at once, and `reauth_after` moves past the
+   change, so no login from before it can bind again - including one replayed
+   from an old refresh grant;
+2. if any session ended, every alias is held and `auth0_revoke_grants` is
+   queued (the global-logout cleanup, same hold and retry rules); sessions
+   signed in after the change wait for that cleanup.
+
+Post Change Password Action (Node 18 runtime; synthetic until E1):
+
+```js
+exports.onExecutePostChangePassword = async (event, api) => {
+  const crypto = require('crypto');
+  const body = JSON.stringify({
+    id: `pcp_${event.user.user_id.replace(/[^A-Za-z0-9]/g, '')}_${Date.now()}`.slice(0, 128),
+    type: 'password_changed',
+    issuer: `https://${event.tenant.id}.auth0.com/`, // the API's AUTH0_ISSUER (custom domain if used)
+    subject: event.user.user_id,
+    occurred_at: new Date().toISOString(),
+  });
+  const t = Math.floor(Date.now() / 1000);
+  const mac = crypto.createHmac('sha256', event.secrets.JOTBUN_EVENTS_SECRET).update(`${t}.${body}`).digest('hex');
+  await fetch('https://<api host>/v1/auth/provider-events', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-gogospend-event-signature': `t=${t},v1=${mac}` },
+    body,
+  });
+};
+```
+
+### Lost events: reconciliation
+
+The security worker queues an `auth0_security_reconcile` pass at most every
+`SECURITY_RECONCILE_INTERVAL_SECONDS` (default 300). Each pass reads
+`last_password_reset` for the `SECURITY_RECONCILE_BATCH` (default 200) least
+recently checked identities that still have a live session, and applies any
+change newer than the account's last one exactly as an event would. A change
+older than every live session ends nothing.
+
+- **Propagation bound for a lost event:** at most
+  `ceil(identities with live sessions / batch) × interval` plus one pass
+  (about 10 minutes for up to 200 signed-in identities with the defaults).
+  Raise the batch or lower the interval as the user base grows; the bound is
+  recorded with the tenant proof.
+- **Provider outage:** the pass fails as retryable (`provider_unavailable`)
+  and sessions stay as they are - nothing is guessed; it runs again with
+  backoff, and a terminal failure is logged like any security job.
+- Do not claim that access-token expiry alone ends a compromised refreshable
+  session: recovery relies on the binding revocation above.
 
 ## Tenant proof (SKIPPED until E1/E2)
 
@@ -124,3 +196,12 @@ signed Auth0 security events for that.
       on either device fails after the worker runs; a fresh login succeeds.
 - [ ] Primary Apple token revocation through Auth0's managed deletion path.
 - [ ] Independent auth/security review of the above evidence.
+- [ ] F6b: deploy the Post Change Password Action with a test secret; change a
+      test user's password with two devices signed in; both lose access at
+      once and a fresh login works after cleanup. Record the delivery delay.
+- [ ] F6b: disable the Action, change the password again, and confirm the
+      reconciliation pass applies it within the documented bound; record the
+      plan's `last_password_reset` behaviour (set on reset and on change).
+- [ ] F6b: decide whether Auth0 itself revokes refresh tokens on password
+      change on the selected plan; if recovery cannot be reconciled within a
+      stated bound, stop the release path for a design decision.

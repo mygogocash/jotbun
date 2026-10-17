@@ -1055,3 +1055,62 @@ Observed, not changed (pre-existing):
   - On devices: the offline-launch, airplane-mode, account-switch and remount journeys; VoiceOver and TalkBack announcements; the notification channel and provisional delivery.
   - The sign-out confirmation UI waits for visual approval.
 - **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (437), test:db PASS (397), test:app PASS (16), test:unit PASS (173), test:render PASS (60), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
+
+## F6b: verified provider security events and reset reconciliation (local work; F6b not complete)
+
+- **Status:** built and tested locally against the synthetic issuer and the loopback Management API fake. F6b is **not complete**: the tenant proof (the Post Change Password Action's real delivery delay, the reconciliation bound on the selected plan, whether Auth0 itself revokes refresh tokens on a password change) and its independent review of that evidence are **SKIPPED** until E1. Recovery must not be enabled for users before then.
+- **Migration `0011_auth_events`:**
+  - `accounts.credentials_changed_at`: the newest provider credential change applied. An older or repeated event changes nothing.
+  - `auth_event_receipts`: one row per verified event id or reconciled change. It stores the principal as a digest only, the time, the outcome (`applied`, `superseded`, `no_account`) and the cleanup job. No role can read it directly.
+  - `security_reconcile_checks`: when each principal was last checked against Auth0.
+  - **Routines** (`SECURITY DEFINER`, `search_path = pg_catalog`, revoked from `PUBLIC`):
+    - `gogospend_apply_credential_change` (internal, granted to no role). It records the receipt first, so a concurrent duplicate waits and then sees `duplicate`; an id reused for different content returns `conflict`. Under the account lock, a change newer than the last one ends every live session signed in before it (auth time rounded up to the next whole second) and moves `reauth_after` past it. Only when it ended a session does it hold every alias and queue F6a's `auth0_revoke_grants` job, with the same hold, retry and supersede rules as global logout. Times more than 5 minutes ahead are refused.
+    - `gogospend_record_security_event` (`gogospend_bootstrap`, the API's pre-account role).
+    - `gogospend_schedule_security_reconcile`, `gogospend_reconcile_candidates` and `gogospend_reconcile_identity` (`gogospend_security`; the last two need the current, unexpired lease of an `auth0_security_reconcile` pass).
+  - The job RLS policies now treat `auth0_security_reconcile` as a security kind: a generic `gogospend_jobs` login neither sees, claims nor creates it.
+- **Server:**
+  - `POST /v1/auth/provider-events` (public; the signed envelope is its only authentication). Answers 200 `{result: "applied"|"duplicate"}`. A missing secret configuration gives 404.
+  - `auth0-event-verifier.ts` checks, in order:
+    1. the size (8 KiB);
+    2. the HMAC-SHA256 over `<t>.<raw body>` with any configured secret and any listed `v1`, compared in constant time;
+    3. the 5-minute replay window;
+    4. the exact envelope keys, a known type (`password_changed`, `user_blocked`) and the id and subject shapes;
+    5. the issuer (`AUTH0_ISSUER`);
+    6. the event time: at most 60 s ahead and 7 days old.
+  - Refusals reuse the existing codes: 401 `UNAUTHENTICATED`, 422 `VALIDATION_FAILED`, 413 `COMMAND_TOO_LARGE` and 409 `IDEMPOTENCY_MISMATCH`. Nothing from an unauthenticated body is echoed or logged.
+  - `jsonBody` keeps the raw request bytes for signature checks.
+  - `SecurityEventService.handleSecurityEvent(signedEnvelope)` is the plan's interface. Superseded and unknown-principal events also answer `applied`, since the provider has nothing to retry.
+  - **Reconciliation of lost events:**
+    - The security worker queues one `auth0_security_reconcile` pass at most every `SECURITY_RECONCILE_INTERVAL_SECONDS` (default 300).
+    - The pass reads `last_password_reset` (new `credentialState`, which asks for that one field only; needs `read:users` on the maintenance client) for the least recently checked identities that still have a live session (`SECURITY_RECONCILE_BATCH`, default 200).
+    - It applies any newer change exactly as an event would. The receipt id is derived from the principal and the change time, so a change found again is a duplicate.
+    - A change older than every live session ends nothing.
+    - A provider outage retries the pass with backoff and never guesses.
+  - **Docs:** the runbook gains the envelope, its answers, the effect and the Action script, rotation, the reconciliation bound (`ceil(signed-in identities / batch) × interval` plus one pass) and the tenant-proof checklist. Settings were added to `.env.example` and `.env.worker.example`, and the master plan's migration table now records `0010_sync` (S1) and `0011_auth_events` (F6b).
+- **RED against seams** (the verifier parsed without checking; the service and routines were stubs; the reconcile read returned nothing):
+  - unit: 6 of 8 failed;
+  - database: 14 of 15 failed, all on behaviour. One failed with a `TypeError` because the stub scheduler queued no pass to claim.
+- **GREEN:** `npm run test -w gogospend-api -- --runTestsByPath src/auth/auth0-events.spec.ts src/auth/auth0-management.client.spec.ts` gives 19 of 19, and `npm run test:db -w gogospend-api -- --runTestsByPath src/auth/auth0-events.integration.spec.ts` gives 15 of 15.
+- **Covered:**
+  - forged, re-serialized, stale and other-issuer events;
+  - a duplicate, and concurrent duplicates applied once;
+  - an id reused for other content;
+  - an older event after a newer one;
+  - an unknown principal;
+  - a block;
+  - a change after every live session;
+  - a future time refused by the database;
+  - the refresh-grant replay refused (`REAUTH_REQUIRED`);
+  - cleanup lifting the hold;
+  - a lost change found by reconciliation, applied once;
+  - a provider outage;
+  - the scheduling interval;
+  - the role and lease matrix.
+
+  Eight mutants that remove a guard (supersede, dedupe, the pre-change cutoff, no-hold-when-nothing-ended, the database future check, the candidate lease, the signature and the replay window) each fail the suite (`f6b-mutants.log`).
+- **Deviations:**
+  - `auth0-events.service.ts` is an extra file, holding `handleSecurityEvent`.
+  - A change only holds and queues provider cleanup when it ended a session; otherwise `reauth_after` alone keeps an old grant from binding.
+  - `user_blocked` has no Auth0 trigger; it is for operator tooling.
+  - Reconciliation covers password changes only. A blocked Auth0 user cannot refresh, so their sessions end within one access-token lifetime anyway.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (446), test:db PASS (412), test:app PASS (16), test:unit PASS (173), test:render PASS (60), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.

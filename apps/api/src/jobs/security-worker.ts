@@ -1,5 +1,6 @@
 // `npm run worker:security -w gogospend-api [-- --once]`: the security job
-// worker (global-logout provider cleanup). Its own process, database login
+// worker (global-logout and credential-change provider cleanup, and the
+// reconciliation pass for lost provider events). Its own process, database login
 // (gogospend_jobs + gogospend_security) and Auth0 maintenance credentials;
 // see apps/api/.env.worker.example and docs/operations/auth0-runbook.md.
 // Logs counts only, never subjects, job payloads or tokens.
@@ -18,6 +19,12 @@ function intervalSeconds(value: string | undefined): number {
   return seconds;
 }
 
+function boundedInteger(name: string, value: string | undefined, fallback: number, min: number, max: number): number {
+  const parsed = Number(value ?? fallback);
+  if (!Number.isInteger(parsed) || parsed < min || parsed > max) throw new Error(`${name} must be ${min}-${max}.`);
+  return parsed;
+}
+
 async function main(): Promise<void> {
   const once = process.argv.includes('--once');
   const interval = intervalSeconds(process.env.SECURITY_WORKER_INTERVAL_SECONDS);
@@ -34,7 +41,11 @@ async function main(): Promise<void> {
     await pool.end();
     throw error;
   }
-  const deps = { jobs: new JobRepository(pool), security, gateway, nativeClientIds };
+  const reconcile = {
+    everySeconds: boundedInteger('SECURITY_RECONCILE_INTERVAL_SECONDS', process.env.SECURITY_RECONCILE_INTERVAL_SECONDS, 300, 60, 86_400),
+    batch: boundedInteger('SECURITY_RECONCILE_BATCH', process.env.SECURITY_RECONCILE_BATCH, 200, 1, 1000),
+  };
+  const deps = { jobs: new JobRepository(pool), security, gateway, nativeClientIds, reconcile };
   const stop = new AbortController();
   for (const signal of ['SIGTERM', 'SIGINT'] as const) process.once(signal, () => stop.abort());
   try {
@@ -43,7 +54,7 @@ async function main(): Promise<void> {
         const summary = await runSecurityJobsOnce(deps);
         if (Object.values(summary).some((count) => count > 0)) console.log(`security worker: ${JSON.stringify(summary)}`);
         // Alert on this line: a failed job leaves a user unable to sign in until the runbook is followed.
-        if (summary.failed > 0) console.error(`security worker: ${summary.failed} revocation job(s) failed terminally`);
+        if (summary.failed > 0) console.error(`security worker: ${summary.failed} security job(s) failed terminally`);
       } catch (error) {
         console.error(`security worker: batch failed (${error instanceof Error ? error.name : 'unknown'})`);
         if (once) process.exitCode = 1;

@@ -82,8 +82,8 @@ Migration integration is serial:
 | `0007_transactions` | M3 | transactions |
 | `0008_budgets` | M4 | budgets, category sublimit trigger |
 | `0009_jobs_storage` | P1 | generic leases/attempts/deadlines, publication registry, leased-read routines |
-| next free | F6b | verified provider-event receipts and reset reconciliation state |
-| next free | S1 | snapshot manifests, cursor support |
+| `0010_sync` | S1 | snapshot manifests, cursor support, retention |
+| `0011_auth_events` | F6b | verified provider-event receipts and reset reconciliation state |
 | next free | P2a | uploads, import jobs, quota counters |
 | next free | P2b | candidates, preview issues |
 | next free | P2c | `attachments`, `transaction_attachments` |

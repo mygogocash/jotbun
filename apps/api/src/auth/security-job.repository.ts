@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import type { Pool } from 'pg';
 
 import { JobRepository } from '../jobs/job.repository';
@@ -6,6 +8,12 @@ import type { ClaimedJob, JobLease } from '../jobs/job-types';
 import type { IdentityMaintenanceGateway } from './auth0-management.client';
 
 export type RevocationState = 'current' | 'superseded' | 'stale_lease';
+
+/** An identity with a live session, and the last credential change applied to its account. */
+export type ReconcileCandidate = { issuer: string; subject: string; credentialsChangedAt: Date | null };
+export type ReconcileOutcome = 'checked' | 'applied' | 'duplicate' | 'superseded' | 'stale_lease';
+
+export const RECONCILE_KIND = 'auth0_security_reconcile';
 
 /**
  * The security half of the worker (role gogospend_security): checks a
@@ -39,6 +47,30 @@ export class SecurityJobRepository {
     const { rows } = await this.pool.query<{ result: 'done' | 'stale_lease' }>('SELECT gogospend_finish_revocation($1, $2) AS result', [lease.jobId, lease.leaseToken]);
     return rows[0].result;
   }
+
+  /** Queues one reconciliation pass unless one is open or was queued within `everySeconds`. */
+  async scheduleReconcile(jobId: string, everySeconds: number): Promise<boolean> {
+    const { rows } = await this.pool.query<{ queued: boolean }>('SELECT gogospend_schedule_security_reconcile($1, $2) AS queued', [jobId, everySeconds]);
+    return rows[0].queued;
+  }
+
+  /** The least recently checked identities with a live session (current lease only). */
+  async reconcileCandidates(lease: JobLease, limit: number): Promise<ReconcileCandidate[]> {
+    const { rows } = await this.pool.query<{ issuer: string; subject: string; credentials_changed_at: Date | null }>(
+      'SELECT issuer, subject, credentials_changed_at FROM gogospend_reconcile_candidates($1, $2, $3)',
+      [lease.jobId, lease.leaseToken, limit],
+    );
+    return rows.map((row) => ({ issuer: row.issuer, subject: row.subject, credentialsChangedAt: row.credentials_changed_at }));
+  }
+
+  /** Marks the identity checked and applies a credential change Auth0 reports (null: none). */
+  async reconcileIdentity(lease: JobLease, candidate: ReconcileCandidate, changedAt: Date | null, newJobId: string): Promise<ReconcileOutcome> {
+    const { rows } = await this.pool.query<{ outcome: ReconcileOutcome }>(
+      'SELECT gogospend_reconcile_identity($1, $2, $3, $4, $5, $6) AS outcome',
+      [lease.jobId, lease.leaseToken, candidate.issuer, candidate.subject, changedAt, newJobId],
+    );
+    return rows[0].outcome;
+  }
 }
 
 export type SecurityJobDeps = {
@@ -47,9 +79,13 @@ export type SecurityJobDeps = {
   gateway: IdentityMaintenanceGateway;
   /** The native Auth0 client ids (AUTH0_ALLOWED_CLIENT_IDS) whose refresh grants are revoked. */
   nativeClientIds?: readonly string[];
+  /** Reconciliation of lost password-change events: how often a pass is queued, and identities per pass. */
+  reconcile?: { everySeconds: number; batch: number };
+  newId?: () => string;
 };
 export type RevocationResult = 'revoked' | 'superseded' | 'stale' | 'retrying' | 'failed';
-export type SecurityRunSummary = Record<RevocationResult, number>;
+export type ReconcileResult = 'reconciled' | 'stale' | 'retrying' | 'failed';
+export type SecurityRunSummary = Record<RevocationResult, number> & { reconciled: number };
 
 function payloadClientIds(payload: unknown): string[] | null {
   const value = payload as { generation?: unknown; client_ids?: unknown } | null;
@@ -57,7 +93,7 @@ function payloadClientIds(payload: unknown): string[] | null {
   return value.client_ids.every((id): id is string => typeof id === 'string') ? value.client_ids : null;
 }
 
-async function failed(deps: SecurityJobDeps, lease: JobLease, code: string, retryable: boolean): Promise<RevocationResult> {
+async function failed(deps: SecurityJobDeps, lease: JobLease, code: string, retryable: boolean): Promise<'stale' | 'retrying' | 'failed'> {
   if (!(await deps.jobs.fail(lease, { code, retryable }))) return 'stale';
   return retryable && lease.attempt < lease.maxAttempts ? 'retrying' : 'failed';
 }
@@ -96,15 +132,52 @@ export async function processRevocationJob(claimed: ClaimedJob, deps: SecurityJo
 }
 
 /**
+ * One reconciliation pass: asks Auth0 for the last password change of the
+ * least recently checked identities that still have a live session, and
+ * applies any change newer than the account's last one exactly as a verified
+ * event would. It covers events that were lost; its bound is documented in
+ * the runbook. A provider outage keeps sessions as they are and retries the
+ * pass - it never guesses.
+ */
+export async function processReconcileJob(claimed: ClaimedJob, deps: SecurityJobDeps): Promise<ReconcileResult> {
+  const { lease } = claimed;
+  const newId = deps.newId ?? randomUUID;
+  for (const candidate of await deps.security.reconcileCandidates(lease, deps.reconcile?.batch ?? 200)) {
+    if (lease.signal.aborted) return failed(deps, lease, 'lease_expired', true);
+    let state;
+    try {
+      state = await deps.gateway.credentialState(candidate.subject, lease.signal);
+    } catch {
+      return failed(deps, lease, 'worker_error', true);
+    }
+    if (state.status !== 'done') return failed(deps, lease, state.code, state.status === 'retryable');
+    const changedAt = state.lastPasswordReset === null ? null : new Date(state.lastPasswordReset);
+    const known = changedAt !== null && !Number.isNaN(changedAt.getTime()) ? changedAt : null;
+    if ((await deps.security.reconcileIdentity(lease, candidate, known, newId())) === 'stale_lease') return 'stale';
+  }
+  return (await deps.jobs.complete(lease, 'succeeded')) ? 'reconciled' : 'stale';
+}
+
+/**
  * Runs up to `limit` revocation jobs, claiming each one only when it is about
- * to be processed, so every job gets its full lease.
+ * to be processed, so every job gets its full lease; then queues and runs a
+ * reconciliation pass when one is due.
  */
 export async function runSecurityJobsOnce(deps: SecurityJobDeps, options: { limit?: number; leaseSeconds?: number } = {}): Promise<SecurityRunSummary> {
-  const summary: SecurityRunSummary = { revoked: 0, superseded: 0, stale: 0, retrying: 0, failed: 0 };
+  const summary: SecurityRunSummary = { revoked: 0, superseded: 0, stale: 0, retrying: 0, failed: 0, reconciled: 0 };
   for (let run = 0; run < (options.limit ?? 10); run += 1) {
     const [job] = await deps.jobs.claim(['auth0_revoke_grants'], { limit: 1, leaseSeconds: options.leaseSeconds ?? 120 });
     if (!job) break;
     summary[await processRevocationJob(job, deps)] += 1;
+  }
+  if (deps.reconcile) {
+    await deps.security.scheduleReconcile((deps.newId ?? randomUUID)(), deps.reconcile.everySeconds);
+    const [job] = await deps.jobs.claim([RECONCILE_KIND], { limit: 1, leaseSeconds: options.leaseSeconds ?? 120 });
+    if (job) {
+      const result = await processReconcileJob(job, deps);
+      if (result === 'reconciled') summary.reconciled += 1;
+      else summary[result] += 1;
+    }
   }
   return summary;
 }

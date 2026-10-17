@@ -9,7 +9,8 @@ import { sendProblem } from './api-problem.filter';
  * default HTML error page.
  */
 export function jsonBody(limit: string): RequestHandler {
-  const parse = json({ limit, strict: true });
+  // The raw bytes stay on the request for routes that authenticate them (signed provider events).
+  const parse = json({ limit, strict: true, verify: (req, _res, buffer) => void ((req as Request & { rawBody?: Buffer }).rawBody = buffer) });
   return (req: Request, res: Response, next: NextFunction) => {
     parse(req, res, (error?: unknown) => {
       if (!error) {

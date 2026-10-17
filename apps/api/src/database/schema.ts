@@ -13,6 +13,8 @@ export const accounts = pgTable('accounts', {
   sessionGeneration: integer('session_generation').notNull().default(0),
   lifecycleGeneration: integer('lifecycle_generation').notNull().default(0),
   reauthAfter: timestamp('reauth_after', { withTimezone: true, mode: 'date' }),
+  /** F6b: the newest provider credential change applied (older events are superseded). */
+  credentialsChangedAt: timestamp('credentials_changed_at', { withTimezone: true, mode: 'date' }),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
 });
 
@@ -88,8 +90,27 @@ export const blockedPrincipals = pgTable('blocked_principals', {
   pendingJobId: uuid('pending_job_id'),
 });
 
+/** F6b: one row per verified provider event or reconciled change (routines only). */
+export const authEventReceipts = pgTable('auth_event_receipts', {
+  eventId: text('event_id').primaryKey(),
+  source: text('source', { enum: ['event', 'reconcile'] }).notNull(),
+  type: text('type', { enum: ['password_changed', 'user_blocked'] }).notNull(),
+  principalDigest: bytea('principal_digest').notNull(),
+  occurredAt: instant('occurred_at').notNull(),
+  receivedAt: instant('received_at').notNull().defaultNow(),
+  outcome: text('outcome', { enum: ['pending', 'applied', 'superseded', 'no_account'] }).notNull(),
+  accountId: uuid('account_id').references(() => accounts.id, { onDelete: 'set null' }),
+  jobId: uuid('job_id'),
+});
+
+/** F6b: when each principal was last checked against Auth0 (routines only). */
+export const securityReconcileChecks = pgTable('security_reconcile_checks', {
+  principalDigest: bytea('principal_digest').primaryKey(),
+  checkedAt: instant('checked_at').notNull(),
+});
+
 /** Kinds visible only to gogospend_security (RLS); other kinds are any identifier. */
-export const SECURITY_JOB_KINDS = ['auth0_revoke_grants'] as const;
+export const SECURITY_JOB_KINDS = ['auth0_revoke_grants', 'auth0_security_reconcile'] as const;
 export const JOB_STATUSES = ['queued', 'leased', 'succeeded', 'superseded', 'failed', 'cancelled'] as const;
 
 export const jobs = pgTable('jobs', {
@@ -345,6 +366,8 @@ export const schema = {
   policyVersions,
   consents,
   blockedPrincipals,
+  authEventReceipts,
+  securityReconcileChecks,
   reauthChallenges,
   authSessions,
   jobs,
