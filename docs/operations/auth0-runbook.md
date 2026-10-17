@@ -226,9 +226,9 @@ revokes nothing.
 
 ## Account linking (F6c)
 
-`POST /v1/me/identities` (recent proof; Idempotency-Key = the command id of
-both `link` challenges) adds a second sign-in method to the signed-in
-account. The app:
+`POST /v1/me/identities` (recent proof plus the current terms; Idempotency-Key
+= the command id of both `link` challenges) adds a second sign-in method to
+the signed-in account. The app:
 
 1. issues two `link` challenges for one command (`POST /v1/auth/challenges`);
 2. proves the signed-in identity with the first (`/v1/auth/proofs`, fresh
@@ -236,21 +236,34 @@ account. The app:
 3. signs in with the other method using the second challenge's nonce and
    sends that ID token with the proof.
 
-The API then checks both fresh logins and the other identity's account
-(read-only), links the identities at Auth0 (idempotent; an existing link is
-success), and in one transaction under the account lock consumes both
-proofs and makes the other identity an alias of this account. An empty
-account of the other identity is folded in; one holding data gets `409
-ACCOUNT_LINK_CONFLICT` before Auth0 is asked. Every binding then ends through
-global logout (hold + refresh-grant revocation), so both devices sign in
-again once cleanup clears.
+The API checks the other identity exactly as its own sign-in would: a fresh
+login for this challenge, nonce and client; Auth0 reports it unblocked with a
+verified email (read-profile client); and the login postdates its own
+account's `reauth_after` and every credential change recorded for it (F6b).
+Then one transaction under the account lock decides everything:
 
-- Auth0 down: `503`, nothing changed; the same proofs work while fresh.
-- Interrupted after Auth0 linked: logins with the other method already come
-  back as the primary user, so no second account appears; a retry with fresh
-  proofs completes the database side.
-- Unlinking is not offered. If an operator unlinks at Auth0, also remove the
-  alias row only after confirming the account holds no data for it.
+- both proofs are consumed;
+- the other identity becomes an alias of this account; its own account is
+  folded in if it holds no data (untouched built-in categories do not count),
+  otherwise `409 ACCOUNT_LINK_CONFLICT`;
+- every binding ends through global logout (hold + refresh-grant revocation);
+- an `auth0_link_identities` job is queued to merge the two Auth0 users.
+
+Nothing irreversible happens at Auth0 before that commit. The security worker
+runs the merge with the profile/link application (`update:users`; set
+`AUTH0_PROFILE_LINK_CLIENT_ID/SECRET` in the worker environment; without them
+merge jobs stay queued and visible). Until the merge runs - or if it fails -
+either login already reaches the account through its alias.
+
+- Auth0 outage (incl. 401, 429, 5xx): the merge retries with backoff.
+- `provider_forbidden` (403, scope missing) or `provider_rejected`: the job
+  fails visibly; fix the configuration and requeue it (see "Holds and failed
+  jobs"). The database link stays in force.
+- A merge whose identities are no longer both aliases is superseded.
+- Revoking refresh grants of an Auth0 user that a merge has already removed
+  (Auth0 answers 404) counts as done.
+- Unlinking is not offered. If an operator unlinks at Auth0, remove the alias
+  row only after confirming the account holds no data for it.
 
 ## Tenant proof (SKIPPED until E1/E2)
 
@@ -270,10 +283,16 @@ again once cleanup clears.
 - [ ] F6b: disable the Action, change the password again, and confirm the
       reconciliation pass applies it within the documented bound; record the
       plan's `last_password_reset` behaviour (set on reset and on change).
-- [ ] F6c: grant `update:users` to the profile/link application; link an
-      Apple login into an email login on test identities; both sign in to
-      the same account; delete the account and confirm Auth0's managed
-      deletion revokes the linked Apple token. Record the evidence.
+- [ ] F6c: grant `update:users` to the profile/link application and give
+      its credentials to the security worker; link an Apple login into an
+      email login on test identities; both sign in to the same account;
+      delete the account and confirm Auth0's managed deletion revokes the
+      linked Apple token. Record the evidence.
+- [ ] F6c: confirm the link request body for the `auth0` provider when the
+      tenant has several database connections (`connection_id`), how Auth0
+      reports `user_id` types, what happens to the merged user's refresh
+      tokens, and that `device-credentials` answers 404 (or an empty list)
+      for a merged user.
 - [ ] F6b: decide whether Auth0 itself revokes refresh tokens on password
       change on the selected plan; if recovery cannot be reconciled within a
       stated bound, stop the release path for a design decision.

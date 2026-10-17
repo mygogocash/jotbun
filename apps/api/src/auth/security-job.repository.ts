@@ -6,6 +6,8 @@ import { JobRepository } from '../jobs/job.repository';
 import { assertLoginRoles } from '../jobs/worker-login';
 import type { ClaimedJob, JobLease } from '../jobs/job-types';
 import type { IdentityMaintenanceGateway } from './auth0-management.client';
+import { LinkForbiddenError, LinkRefusedError, ProfileUnavailableError } from './auth0-profile.client';
+import type { Auth0LinkGateway } from './auth0-profile.client';
 
 export type RevocationState = 'current' | 'superseded' | 'stale_lease';
 
@@ -26,6 +28,7 @@ export function usableChangeTime(value: string | null, nowMs: number = Date.now(
 }
 
 export const RECONCILE_KIND = 'auth0_security_reconcile';
+export const LINK_KIND = 'auth0_link_identities';
 
 /**
  * The security half of the worker (role gogospend_security): checks a
@@ -58,6 +61,15 @@ export class SecurityJobRepository {
   async finishRevocation(lease: JobLease): Promise<'done' | 'stale_lease'> {
     const { rows } = await this.pool.query<{ result: 'done' | 'stale_lease' }>('SELECT gogospend_finish_revocation($1, $2) AS result', [lease.jobId, lease.leaseToken]);
     return rows[0].result;
+  }
+
+  /** F6c: the primary and linked Auth0 subjects of a current merge lease; empty when either is no longer an alias. */
+  async linkSubjects(lease: JobLease): Promise<{ primary: string; secondary: string } | null> {
+    const { rows } = await this.pool.query<{ primary_subject: string; secondary_subject: string }>(
+      'SELECT primary_subject, secondary_subject FROM gogospend_link_job_subjects($1, $2)',
+      [lease.jobId, lease.leaseToken],
+    );
+    return rows[0] ? { primary: rows[0].primary_subject, secondary: rows[0].secondary_subject } : null;
   }
 
   /** Queues one reconciliation pass unless one is open or was queued within `everySeconds`. */
@@ -93,11 +105,13 @@ export type SecurityJobDeps = {
   nativeClientIds?: readonly string[];
   /** Reconciliation of lost password-change events: how often a pass is queued, and identities per pass. */
   reconcile?: { everySeconds: number; batch: number };
+  /** F6c: the profile/link client; without it merge jobs stay queued (visible) until it is configured. */
+  linker?: Auth0LinkGateway;
   newId?: () => string;
 };
 export type RevocationResult = 'revoked' | 'superseded' | 'stale' | 'retrying' | 'failed';
 export type ReconcileResult = 'reconciled' | 'stale' | 'retrying' | 'failed';
-export type SecurityRunSummary = Record<RevocationResult, number> & { reconciled: number };
+export type SecurityRunSummary = Record<RevocationResult, number> & { reconciled: number; linked: number };
 
 function payloadClientIds(payload: unknown): string[] | null {
   const value = payload as { generation?: unknown; client_ids?: unknown } | null;
@@ -172,16 +186,46 @@ export async function processReconcileJob(claimed: ClaimedJob, deps: SecurityJob
 }
 
 /**
+ * F6c: merges a linked identity into the primary Auth0 user. The database
+ * already made it an alias, so either login reaches the account meanwhile.
+ * A job whose identities are no longer both aliases is superseded. Auth0
+ * outages (incl. 401/429/5xx) retry; a missing scope (403) or a refusal fails
+ * visibly for the runbook - the database link stays in force either way.
+ */
+export async function processLinkJob(claimed: ClaimedJob, linker: Auth0LinkGateway, deps: SecurityJobDeps): Promise<'linked' | 'superseded' | 'stale' | 'retrying' | 'failed'> {
+  const { lease } = claimed;
+  const subjects = await deps.security.linkSubjects(lease);
+  if (!subjects) return (await deps.jobs.complete(lease, 'superseded')) ? 'superseded' : 'stale';
+  if (lease.signal.aborted) return failed(deps, lease, 'lease_expired', true);
+  try {
+    await linker.link(subjects.primary, subjects.secondary);
+  } catch (error) {
+    if (error instanceof ProfileUnavailableError) return failed(deps, lease, 'provider_unavailable', true);
+    if (error instanceof LinkForbiddenError) return failed(deps, lease, 'provider_forbidden', false);
+    if (error instanceof LinkRefusedError) return failed(deps, lease, 'provider_rejected', false);
+    return failed(deps, lease, 'worker_error', true);
+  }
+  return (await deps.jobs.complete(lease, 'succeeded')) ? 'linked' : 'stale';
+}
+
+/**
  * Runs up to `limit` revocation jobs, claiming each one only when it is about
  * to be processed, so every job gets its full lease; then queues and runs a
  * reconciliation pass when one is due.
  */
 export async function runSecurityJobsOnce(deps: SecurityJobDeps, options: { limit?: number; leaseSeconds?: number } = {}): Promise<SecurityRunSummary> {
-  const summary: SecurityRunSummary = { revoked: 0, superseded: 0, stale: 0, retrying: 0, failed: 0, reconciled: 0 };
+  const summary: SecurityRunSummary = { revoked: 0, superseded: 0, stale: 0, retrying: 0, failed: 0, reconciled: 0, linked: 0 };
   for (let run = 0; run < (options.limit ?? 10); run += 1) {
     const [job] = await deps.jobs.claim(['auth0_revoke_grants'], { limit: 1, leaseSeconds: options.leaseSeconds ?? 120 });
     if (!job) break;
     summary[await processRevocationJob(job, deps)] += 1;
+  }
+  if (deps.linker) {
+    for (let run = 0; run < (options.limit ?? 10); run += 1) {
+      const [job] = await deps.jobs.claim([LINK_KIND], { limit: 1, leaseSeconds: options.leaseSeconds ?? 120 });
+      if (!job) break;
+      summary[await processLinkJob(job, deps.linker, deps)] += 1;
+    }
   }
   if (deps.reconcile) {
     await deps.security.scheduleReconcile((deps.newId ?? randomUUID)(), deps.reconcile.everySeconds);

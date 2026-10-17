@@ -59,6 +59,8 @@ export class Auth0MaintenanceClient implements IdentityMaintenanceGateway {
             if (signal?.aborted) return { status: 'retryable', code: 'lease_expired' };
             if (round === MAX_LIST_ROUNDS) return { status: 'retryable', code: 'provider_incomplete' };
             const listed = await this.api.request('api/v2/device-credentials', { signal }, { user_id: subject, client_id: clientId, type, fields: 'id', include_fields: 'true' });
+            // A user Auth0 no longer has (deleted, or merged by a link) holds no grants.
+            if (listed.status === 404) break;
             if (!listed.ok) return failure(listed.status);
             const ids = await this.credentialIds(listed);
             if (!ids) return { status: 'retryable', code: 'provider_bad_response' };

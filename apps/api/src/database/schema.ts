@@ -110,7 +110,7 @@ export const securityReconcileChecks = pgTable('security_reconcile_checks', {
 });
 
 /** Kinds visible only to gogospend_security (RLS); other kinds are any identifier. */
-export const SECURITY_JOB_KINDS = ['auth0_revoke_grants', 'auth0_security_reconcile'] as const;
+export const SECURITY_JOB_KINDS = ['auth0_revoke_grants', 'auth0_security_reconcile', 'auth0_link_identities'] as const;
 export const JOB_STATUSES = ['queued', 'leased', 'succeeded', 'superseded', 'failed', 'cancelled'] as const;
 
 export const jobs = pgTable('jobs', {

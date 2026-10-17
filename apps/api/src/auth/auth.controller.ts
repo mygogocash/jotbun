@@ -81,7 +81,7 @@ export class AuthController {
     if (!isUuid(commandId)) throw new ContractValidationError('VALIDATION_FAILED', 'Idempotency-Key must be a UUID.', 'idempotency_key');
     if (!isUuid(input.proof_id)) throw new ContractValidationError('VALIDATION_FAILED', 'proof_id must be a UUID.', 'proof_id');
     if (!isUuid(input.secondary_challenge_id)) throw new ContractValidationError('VALIDATION_FAILED', 'secondary_challenge_id must be a UUID.', 'secondary_challenge_id');
-    if (typeof input.secondary_id_token !== 'string' || input.secondary_id_token.length > MAX_TOKEN_LENGTH) {
+    if (typeof input.secondary_id_token !== 'string' || input.secondary_id_token.length === 0 || input.secondary_id_token.length > MAX_TOKEN_LENGTH) {
       throw new ContractValidationError('VALIDATION_FAILED', 'secondary_id_token must be a token.', 'secondary_id_token');
     }
     return this.linking.link(session, identity, { proofId: input.proof_id, commandId, secondaryChallengeId: input.secondary_challenge_id, secondaryIdToken: input.secondary_id_token });

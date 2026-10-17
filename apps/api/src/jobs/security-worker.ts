@@ -9,6 +9,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { Pool } from 'pg';
 
 import { maintenanceGatewayFromEnv } from '../auth/auth0-management.client';
+import { Auth0ProfileClient, profileGatewayFromEnv } from '../auth/auth0-profile.client';
 import { SecurityJobRepository, runSecurityJobsOnce } from '../auth/security-job.repository';
 import { poolConfigFromUrl } from '../database/database-config';
 import { JobRepository } from './job.repository';
@@ -45,7 +46,10 @@ async function main(): Promise<void> {
     everySeconds: boundedInteger('SECURITY_RECONCILE_INTERVAL_SECONDS', process.env.SECURITY_RECONCILE_INTERVAL_SECONDS, 300, 60, 86_400),
     batch: boundedInteger('SECURITY_RECONCILE_BATCH', process.env.SECURITY_RECONCILE_BATCH, 200, 1, 1000),
   };
-  const deps = { jobs: new JobRepository(pool), security, gateway, nativeClientIds, reconcile };
+  // F6c: the profile/link client (update:users) merges linked identities; unset, merge jobs wait.
+  const profiles = profileGatewayFromEnv(process.env);
+  const linker = profiles instanceof Auth0ProfileClient ? profiles : undefined;
+  const deps = { jobs: new JobRepository(pool), security, gateway, nativeClientIds, reconcile, linker };
   const stop = new AbortController();
   for (const signal of ['SIGTERM', 'SIGINT'] as const) process.once(signal, () => stop.abort());
   try {

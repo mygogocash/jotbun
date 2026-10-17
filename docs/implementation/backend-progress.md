@@ -1287,3 +1287,48 @@ Observed, not changed (pre-existing):
 - **Migration:** renumbered from `0011_exports` to `0013_exports`, after F6b (`0011`) and F6c (`0012`). Journal and plan table are updated.
 - **Journal test:** now checks the journal against the `.sql` files on disk, with the integrated prefix `0001`–`0013` pinned by name.
 - **Full gate on the merged tree:** typecheck PASS, typecheck:app PASS, test:api PASS (480), test:db PASS (453), test:app PASS (16), test:unit PASS (182), test:render PASS (60), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. The two `gogospend_test_*` databases seen belonged to parallel worktrees' running suites.
+
+## Review fixes for F6c
+
+- **F6c review** (commit `c0abc3f`): no blockers, four majors, five minors, nits; 14 mutants survived the commit's spec.
+  - The reviewer confirmed that both fresh logins are enforced and that proofs can't be swapped or reused.
+  - It also confirmed that the empty-account fold and cascades behave, that refusals roll back, that the route is classified and validated, and that nothing leaks.
+- **Redesign, not a patch.** Linking at Auth0 before the database decided (majors 1 and 2) can't be made safe in place. The order is now reversed:
+  - One transaction decides everything: both proofs, the alias, the fold, global logout, and queuing an `auth0_link_identities` job.
+  - The security worker then merges the Auth0 users with the profile/link application.
+  - Nothing irreversible happens at Auth0 before the commit. Until the merge runs, either login reaches the account through its alias, so an interrupted request leaves either nothing or a working link.
+  - **Test-first deviation:** the routine and its tests were rewritten together. Because of that, there is no separate RED run against the old code for this round. The reviewer's probes (PA–PN) showed each defect on the old code, and every guard below is proven by a mutant that fails the new suite.
+- **Fixed:**
+  - **Major 1 — irreversible Auth0 link before the database decided.** Now database first, with the Auth0 merge as a fenced security job. It retries on outages (including 401, 429 and 5xx), fails visibly on 403 (`provider_forbidden`) or a refusal (`provider_rejected`), and is superseded when the identities are no longer both aliases. Merge jobs are a security kind: the job RLS policies are recreated in `0012`, `gogospend_link_job_subjects` reads the subjects per lease, and the payload holds digests only.
+  - **Major 2 — the stated recovery could not happen.** There is no longer a pre-commit Auth0 step to recover from, and the runbook is updated.
+  - **Major 3 — the other identity skipped sign-in checks.** It must now pass what its own sign-in would. Auth0 must report it unblocked with a verified email (403 `ACCOUNT_UNAVAILABLE`, `errors.email_unverified`). An Auth0 outage gives 503 with `retry_after_seconds`.
+  - **Major 4 — its login was not checked against its own `reauth_after`.** It must now also postdate its own account's `reauth_after` and every credential change recorded for its principal, including F6b `no_account` watermarks.
+  - **Minor — Auth0 error mapping.** 401, 429 and 5xx mean unavailable, 403 means forbidden, anything else is refused. The "already linked" check compares `user_id` as a string.
+  - **Minor — revocation after a merge.** Listing grants of a user Auth0 no longer has (404) now counts as done, so cleanup after a merge cannot strand holds. This path is not covered by a test: the fake lists nothing rather than answering 404. It is a tenant-proof item.
+  - **Minor — "holds data" was too strict.** Untouched built-in categories (seeded by opening Add) are not data, so an otherwise-empty account folds. Command receipts alone no longer count.
+  - **Minor — validation.**
+    - An empty secondary token is a 422.
+    - A bad secondary token is `PROOF_INVALID`, like `/auth/proofs`.
+    - 503s carry `retry_after_seconds`.
+  - **Nits:**
+    - The link routine consumes the primary proof itself, and checks that the caller's identity is an alias of the account.
+    - Linking now needs the current terms (it is not a privacy operation).
+    - The precheck routine is gone, since nothing happens before the transaction.
+- **Not changed (recorded):**
+  - The `connection_id` for the `auth0` provider with several database connections, and the merged user's refresh-token behaviour, are tenant-proof items in the runbook.
+  - Lock order (account, then the other principal, then the other account) is unchanged. A cycle with bootstrap needs the other identity to already be an alias and to sign in at that instant.
+- **Tests:**
+  - `account-linking.integration.spec.ts` passes 18 of 18. It newly covers:
+    - DB-first ordering;
+    - the merge job: outage, refusal, missing scope, supersede, role isolation;
+    - unverified, blocked and unavailable profiles;
+    - the other account's `reauth_after`;
+    - the principal watermark;
+    - the current-terms requirement;
+    - the built-in fold;
+    - data written while the link waits on the other account's lock;
+    - the nonce and client binding.
+  - The profile and management client specs pass 24 of 24.
+  - Seventeen guard mutants each fail the suite (`f6cfix-mutants.log`), including the four the reviewer's probes could not catch.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (480), test:db PASS (457), test:app PASS (16), test:unit PASS (182), test:render PASS (60), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. The one `gogospend_test_*` database seen belonged to a parallel worktree's running suite.
+- **Integration note:** P5 (running in parallel on `60ba012`) sees the old `0012`. If its migration recreates the job policies, they must keep all three security kinds when merged.

@@ -67,10 +67,12 @@ export type GlobalLogoutResult = {
  * challenges): adds a second sign-in method to this account. Needs a fresh
  * `link` proof of the signed-in identity and a fresh login of the other
  * identity - an ID token whose nonce belongs to a second `link` challenge
- * issued to this account for the same command. Every binding ends when this
- * returns; sign in again once `provider_cleanup` clears. If the other
- * identity's own account holds data, it is refused with 409
- * ACCOUNT_LINK_CONFLICT; an empty one is folded into this account.
+ * issued to this account for the same command. The other identity must be
+ * one that could sign in (verified email, not blocked). Every binding ends
+ * when this returns; sign in again once `provider_cleanup` clears. If the
+ * other identity's own account holds data, it is refused with 409
+ * ACCOUNT_LINK_CONFLICT; an empty one is folded into this account. Needs the
+ * current policy accepted.
  */
 export type LinkIdentityRequest = {
   proof_id: string;
@@ -81,6 +83,8 @@ export type LinkIdentityRequest = {
 export type LinkIdentityResult = {
   generation: number;
   provider_cleanup: "pending";
+  /** Merging the two Auth0 users follows in the background; either login already reaches this account. */
+  provider_link: "pending";
 };
 
 export const CLIENT_PLATFORMS = ["ios", "android"] as const;
