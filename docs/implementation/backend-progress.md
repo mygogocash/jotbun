@@ -392,3 +392,27 @@ Observed, not changed (pre-existing):
 - **Test correction:** one budget test used an overall limit of 2 with the default 50,000 food sublimit. That is a validation error, which correctly comes before the conflict check, so the test now uses 2,000,000.
 - **GREEN:** `npm run test:db -w gogospend-api -- --runTestsByPath src/budgets/budgets.integration.spec.ts src/history/history.integration.spec.ts src/summary/summary.integration.spec.ts src/database/migrations.integration.spec.ts` → 52 of 52. The three M4 specs were stable over 2 more runs (38 of 38). `src/v1/contracts.spec.ts` → 83 of 83.
 - **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (400), test:db PASS (300), test:app PASS, test:unit PASS, test:render PASS (3), test:dev PASS, build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
+
+## Review fixes for M2 and M3
+
+- **M2 review** (commit `12c1a8f`): one major finding, three minor and four nits; no blockers. The reviewer confirmed RLS, ownership, money and date handling, idempotency normalization and archive rules.
+- **M3 review** (commit `ea1be96`): one major finding, three minor and six nits; no blockers. The reviewer confirmed balances (no double counting; exact numeric), composite references, lock order, restore rules and receipt privacy.
+- **Fixed, with tests that failed first** (`src/transactions/money-hardening.integration.spec.ts`: 9 of 15 failed; `src/v1/contracts.spec.ts`: 3 of 85 failed; all on assertions). The other 6 hardening tests passed at once and stay as coverage: equivalent retries replay, receipts and audit hold no note or merchant, delete needs `If-Match` and is 404 for another account, a failure after the row is written rolls everything back, a three-way edit/delete/edit race commits exactly one with one receipt and one revision, and records read back over HTTP match SQL.
+  - **M2 major — built-in seeding broke after key rotation, reordering or a new built-in.** `POST /v1/categories/builtins` is now an idempotent ensure that returns the category list. It inserts only the missing built-ins, as one command whose id is derived from the missing keys, and writes nothing when none are missing. It no longer depends on an old receipt or digest key, and a built-in added later is seeded on the next call.
+  - **M3 major — delete, correct, restore skipped the wallet setup rules.** `BalanceQuery.firstRecordOn` now counts records deleted within the 30-day restore window, so a correction still needs a reason and tracking cannot start after a restorable record.
+  - **Category snapshots** accept any stored `#RRGGBB`; the palette is enforced only on input, so a palette change cannot strand existing categories.
+  - **Text hygiene:** names, notes and merchants refuse lone surrogates and bidirectional controls. Names must contain something visible; an invisible note or merchant becomes null.
+  - **`correction_reason`** is refused unless the opening balance or tracking start changes.
+  - **Replays report the current state:** a replayed acknowledgement reports the entity's current state (for example `deleted`), as status lookups already did.
+  - **Restore** checks the version before the deleted state, so a stale restore is `409 VERSION_CONFLICT` with the current record. The 30-day window is computed in SQL.
+  - **Moving a record** to a wallet that starts later reports `DATE_BEFORE_TRACKING_START` on the wallet field when only the wallet changed.
+  - **Purged ids:** a record id whose record was purged is `410 ENTITY_PURGED` instead of a 500.
+  - **`DateStyle`:** owner transactions pin `DateStyle` to `ISO, YMD`, and date reads use `to_char(..., 'YYYY-MM-DD')`.
+  - **Midnight flake:** "tomorrow" in tests is computed 36 hours ahead.
+- **Not changed** (recorded here):
+  - Derived built-in ids use no per-account secret. They reveal nothing beyond an internal account id, which is itself not public.
+  - No `categories.repository.ts`: the queries live in the service.
+  - A PATCH that sets current values still bumps the version.
+  - Editing the amount of a record on an archived wallet, like deleting one, can make that wallet's balance non-zero.
+  - Change-log snapshots contain notes and merchants by design; P5 must purge them.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (402), test:db PASS (315), test:app PASS, test:unit PASS, test:render PASS (3), test:dev PASS, build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.

@@ -93,6 +93,9 @@ export class WalletsService {
       if (!WALLET_CORRECTION_REASONS.includes(input.correction_reason as WalletCorrectionReason)) {
         throw new ContractValidationError('VALIDATION_FAILED', 'Unknown correction reason.', 'correction_reason');
       }
+      if (change.opening_minor === undefined && change.tracking_start === undefined) {
+        throw new ContractValidationError('VALIDATION_FAILED', 'A correction reason goes with an opening balance or tracking start change.', 'correction_reason');
+      }
       reason = input.correction_reason as WalletCorrectionReason;
     }
     const payload = { id: walletId, ...change, ...(reason ? { correction_reason: reason } : {}) };

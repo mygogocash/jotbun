@@ -107,6 +107,8 @@ export class TransactionsService {
     for (const ref of refs) draft[ref] = uuidField(input[ref], ref);
     sameWallet(draft);
     return this.executor.run(ctx, { ...command, kind: 'transaction.create', payload: draft }, async (tx) => {
+      // A purged record leaves no row but keeps its head: its id is spent.
+      if ((await entityHead(tx, ENTITY, draft.id))?.state === 'purged') throw new ProblemException(410, 'ENTITY_PURGED');
       await this.checkReferences(tx, draft, new Set(refs));
       const [row] = await tx.query<Row>(
         `INSERT INTO transactions (account_id, id, type, amount_minor, occurred_on, wallet_id, category_id, source_wallet_id, destination_wallet_id, note, merchant)
@@ -140,7 +142,7 @@ export class TransactionsService {
       }
       const draft: Draft = { ...row, ...edits };
       sameWallet(draft);
-      await this.checkReferences(tx, draft, new Set(refs.filter((field) => edits[field] !== undefined && edits[field] !== row[field])));
+      await this.checkReferences(tx, draft, new Set(refs.filter((field) => edits[field] !== undefined && edits[field] !== row[field])), edits.occurred_on !== undefined);
       const [updated] = await tx.query<Row>(
         `UPDATE transactions
             SET amount_minor = $2, occurred_on = $3, wallet_id = $4, category_id = $5, source_wallet_id = $6, destination_wallet_id = $7,
@@ -169,9 +171,12 @@ export class TransactionsService {
     assertKnownFields(body ?? {}, []);
     return this.executor.run(ctx, { ...command, kind: 'transaction.restore', payload: { id: recordId } }, async (tx) => {
       const row = await this.locked(tx, recordId);
-      if (!row.deleted_at) throw stateProblem('errors.not_deleted', 'deleted_at');
       await expectVersion(row, command.expectedVersion, async (current) => toDto(current));
-      const [{ expired }] = await tx.query<{ expired: boolean }>(`SELECT $1::timestamptz < now() - make_interval(days => $2) AS expired`, [row.deleted_at, RESTORE_WINDOW_DAYS]);
+      if (!row.deleted_at) throw stateProblem('errors.not_deleted', 'deleted_at');
+      const [{ expired }] = await tx.query<{ expired: boolean }>(
+        'SELECT deleted_at < now() - make_interval(days => $2) AS expired FROM transactions WHERE id = $1',
+        [recordId, RESTORE_WINDOW_DAYS],
+      );
       if (expired) throw new ProblemException(409, 'ENTITY_DELETED', { messageKey: 'errors.restore_expired' });
       // Restoring re-adds every reference, so all must still be valid.
       await this.checkReferences(tx, row, new Set(refsOf(row.type)));
@@ -203,7 +208,7 @@ export class TransactionsService {
    * referenced ones are not archived; the category type matches; the date is
    * within every wallet's tracking period.
    */
-  private async checkReferences(tx: OwnerTx, draft: Draft, newlyReferenced: ReadonlySet<RefField>): Promise<void> {
+  private async checkReferences(tx: OwnerTx, draft: Draft, newlyReferenced: ReadonlySet<RefField>, dateChanged = true): Promise<void> {
     for (const field of refsOf(draft.type)) {
       const id = draft[field] as string;
       if (field === 'category_id') {
@@ -213,11 +218,13 @@ export class TransactionsService {
         if (category.archived && newlyReferenced.has(field)) throw stateProblem('errors.category_archived', field);
         continue;
       }
-      const [wallet] = await tx.query<{ archived: boolean; tracking_start: string }>('SELECT archived, tracking_start::text AS tracking_start FROM wallets WHERE id = $1', [id]);
+      const [wallet] = await tx.query<{ archived: boolean; tracking_start: string }>(`SELECT archived, to_char(tracking_start, 'YYYY-MM-DD') AS tracking_start FROM wallets WHERE id = $1`, [id]);
       if (!wallet) throw stateProblem('errors.wallet_not_found', field);
       if (wallet.archived && newlyReferenced.has(field)) throw stateProblem('errors.wallet_archived', field);
       if (draft.occurred_on < wallet.tracking_start) {
-        throw new ContractValidationError('DATE_BEFORE_TRACKING_START', 'Date is before the wallet started tracking.', 'occurred_on');
+        // Blame the wallet when only the wallet changed, otherwise the date.
+        const blame = !dateChanged && newlyReferenced.has(field) ? field : 'occurred_on';
+        throw new ContractValidationError('DATE_BEFORE_TRACKING_START', 'Date is before the wallet started tracking.', blame);
       }
     }
   }

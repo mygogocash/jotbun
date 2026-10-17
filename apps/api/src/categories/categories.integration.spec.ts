@@ -54,8 +54,8 @@ describe('built-in categories', () => {
     expect((await as(user).get('/v1/categories')).body).toEqual([]);
     const seeded = await as(user).post('/v1/categories/builtins');
     expect(seeded.status).toBe(200);
-    expect(seeded.body).toMatchObject({ outcome: 'created', version: 1, entity_id: derivedUuid(user.accountId, 'builtin-category', 'food') });
     const list = (await as(user).get('/v1/categories')).body;
+    expect(seeded.body).toEqual(list);
     expect(list).toEqual(BUILTIN_CATEGORIES.map((builtin) => ({
       id: derivedUuid(user.accountId, 'builtin-category', builtin.key),
       type: builtin.type,

@@ -19,11 +19,11 @@ export class CategoriesController {
     return this.categories.list(session);
   }
 
-  /** Seeds the built-in categories once per account; the server derives the command id, so repeats replay. */
+  /** Ensures every built-in category exists (idempotent), then returns all categories. */
   @Post('categories/builtins')
   @Access('current_policy')
   @HttpCode(200)
-  seedBuiltins(@CurrentSession() session: SessionContext): Promise<CommandAck> {
+  seedBuiltins(@CurrentSession() session: SessionContext): Promise<CategoryDto[]> {
     return this.categories.seedBuiltins(session);
   }
 

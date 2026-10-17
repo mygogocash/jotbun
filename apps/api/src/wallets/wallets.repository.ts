@@ -4,7 +4,7 @@ import type { OwnerTx } from '../database/owner-transaction';
 import { BalanceQuery } from '../transactions/balance-query';
 
 // Dates and bigints as text: never a JS Date (time zone) or Number (precision).
-const COLUMNS = `id, name, currency, opening_minor::text AS opening_minor, tracking_start::text AS tracking_start, archived, version`;
+const COLUMNS = `id, name, currency, opening_minor::text AS opening_minor, to_char(tracking_start, 'YYYY-MM-DD') AS tracking_start, archived, version`;
 
 /** The owner's wallets (RLS), optionally one id, optionally locked for a command. */
 export async function walletRows(tx: OwnerTx, options: { id?: string; forUpdate?: boolean } = {}): Promise<WalletSnapshot[]> {

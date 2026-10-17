@@ -155,17 +155,30 @@ export function validateTrackingStart(value: unknown, todayBangkok: string, fiel
 export const NAME_MAX_CHARS = 80;
 // Control characters (including NUL, tabs and line breaks) never belong in a name.
 const CONTROL = /[\p{Cc}\u2028\u2029]/u;
+/** Bidirectional controls can make text display differently from what it says. */
+export const BIDI_CONTROL = /[\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069]/u;
+/** A lone surrogate is not well-formed Unicode (PostgreSQL would store U+FFFD instead). */
+export const LONE_SURROGATE = /[\uD800-\uDFFF]/u;
+// Characters that render as nothing: spaces, format characters, Hangul fillers.
+const INVISIBLE = /^[\p{White_Space}\p{Cf}\u115F\u1160\u3164\uFFA0]*$/u;
+
+/** True when text has nothing a person could see. */
+export function isInvisible(text: string): boolean {
+  return INVISIBLE.test(text);
+}
 
 /**
- * A wallet name or category label: NFC-normalized and trimmed, 1–80 code
- * points, no control characters. The stored value is exactly what this
+ * A wallet name or category label: well-formed Unicode, NFC-normalized and
+ * trimmed, 1–80 code points, with something visible and no control or
+ * bidirectional-override characters. The stored value is exactly what this
  * returns, so equal names compare equal.
  */
 export function normalizeName(value: unknown, field: string): string {
   if (typeof value !== "string") throw new ContractValidationError("VALIDATION_FAILED", "Expected text.", field);
+  if (LONE_SURROGATE.test(value)) throw new ContractValidationError("VALIDATION_FAILED", "Text is not well-formed Unicode.", field);
   const name = value.normalize("NFC").trim();
   const length = [...name].length;
-  if (length < 1 || length > NAME_MAX_CHARS || CONTROL.test(name)) {
+  if (length < 1 || length > NAME_MAX_CHARS || CONTROL.test(name) || BIDI_CONTROL.test(name) || isInvisible(name)) {
     throw new ContractValidationError("VALIDATION_FAILED", `Expected 1-${NAME_MAX_CHARS} characters without control characters.`, field);
   }
   return name;

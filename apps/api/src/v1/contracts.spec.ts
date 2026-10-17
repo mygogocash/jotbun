@@ -256,7 +256,9 @@ describe('v1 wallets and categories', () => {
     const category = { id: 'b', type: 'expense', builtin_key: null, label: 'Pets', color: CATEGORY_COLORS[0], archived: false, version: 1 };
     expect(isCategorySnapshot(category)).toBe(true);
     expect(isCategorySnapshot({ ...category, label: null })).toBe(false);
-    expect(isCategorySnapshot({ ...category, color: '#000000' })).toBe(false);
+    // Snapshots accept any stored #RRGGBB, so a palette change can never strand an old category.
+    expect(isCategorySnapshot({ ...category, color: '#000000' })).toBe(true);
+    expect(isCategorySnapshot({ ...category, color: '#00000g' })).toBe(false);
     expect(isCategorySnapshot({ ...category, builtin_key: 'cashback' })).toBe(false);
   });
 
@@ -308,5 +310,21 @@ describe('v1 budgets', () => {
     expect(isBudgetSnapshot({ ...budget, overall_limit_minor: '0' })).toBe(false);
     expect(isBudgetSnapshot({ ...budget, category_limits: [{ category_id: 'c', limit_minor: '10', note: 'x' }] })).toBe(false);
     expect(isBudgetSnapshot({ ...budget, month: '2026-9' })).toBe(false);
+  });
+});
+
+describe('v1 text hygiene', () => {
+  it('refuses names that are invisible, direction-switching or not well-formed Unicode', () => {
+    for (const bad of ['\u200b', '\u3164', '\u2060\u2060', '\u202eevil', 'a\u2066b', 'A\ud800', '\udc00x']) {
+      expect(failure(() => normalizeName(bad, 'name'))).toEqual({ code: 'VALIDATION_FAILED', field: 'name' });
+    }
+    expect(normalizeName('ร้านกาแฟ', 'name')).toBe('ร้านกาแฟ');
+    expect(normalizeName('👨‍👩‍👧', 'name')).toBe('👨‍👩‍👧');
+  });
+
+  it('refuses direction overrides and broken surrogates in notes and merchants too', () => {
+    expect(failure(() => normalizeNote('ok \u202e'))).toEqual({ code: 'VALIDATION_FAILED', field: 'note' });
+    expect(failure(() => normalizeMerchant('Shop\ud800'))).toEqual({ code: 'VALIDATION_FAILED', field: 'merchant' });
+    expect(normalizeMerchant('\u200b')).toBeNull();
   });
 });

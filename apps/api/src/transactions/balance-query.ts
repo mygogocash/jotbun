@@ -1,3 +1,4 @@
+import { RESTORE_WINDOW_DAYS } from '@gogospend/contracts';
 import type { Minor } from '@gogospend/contracts';
 
 import type { OwnerTx } from '../database/owner-transaction';
@@ -30,12 +31,17 @@ export const BalanceQuery = {
     return new Map(rows.map((row) => [row.id, row.balance]));
   },
 
-  /** The earliest date of an active record touching the wallet, or null. */
+  /**
+   * The earliest date of a record touching the wallet that is active or still
+   * restorable (deleted within the restore window), or null. Setup rules
+   * count restorable records, so delete-correct-restore cannot skip them.
+   */
   async firstRecordOn(tx: OwnerTx, walletId: string): Promise<string | null> {
     const [row] = await tx.query<{ first: string | null }>(
-      `SELECT min(occurred_on)::text AS first FROM transactions
-        WHERE deleted_at IS NULL AND (wallet_id = $1 OR source_wallet_id = $1 OR destination_wallet_id = $1)`,
-      [walletId],
+      `SELECT to_char(min(occurred_on), 'YYYY-MM-DD') AS first FROM transactions
+        WHERE (deleted_at IS NULL OR deleted_at >= now() - make_interval(days => $2))
+          AND (wallet_id = $1 OR source_wallet_id = $1 OR destination_wallet_id = $1)`,
+      [walletId, RESTORE_WINDOW_DAYS],
     );
     return row?.first ?? null;
   },

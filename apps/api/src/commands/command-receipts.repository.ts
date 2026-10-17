@@ -27,9 +27,14 @@ const toAck = (row: ReceiptRow): CommandAck => ({
 export class CommandReceiptRepository {
   /** Call under the account lock, so a concurrent same-key command's receipt is visible. */
   async find(tx: OwnerTx, commandId: string): Promise<StoredReceipt | null> {
+    // The acknowledgement as committed, with the entity's current state, so a
+    // replay after a delete or purge says so.
     const [row] = await tx.query<ReceiptRow & { request_digest: Buffer; digest_key_id: string }>(
-      `SELECT command_id, entity_id, entity_version, revision::text, outcome, entity_state, request_digest, digest_key_id
-         FROM command_receipts WHERE command_id = $1`,
+      `SELECT r.command_id, r.entity_id, r.entity_version, r.revision::text, r.outcome, coalesce(h.state, r.entity_state) AS entity_state,
+              r.request_digest, r.digest_key_id
+         FROM command_receipts r
+         LEFT JOIN entity_heads h ON h.account_id = r.account_id AND h.entity = r.entity AND h.entity_id = r.entity_id
+        WHERE r.command_id = $1`,
       [commandId],
     );
     return row ? { ack: toAck(row), digest: { keyId: row.digest_key_id, digest: row.request_digest } } : null;

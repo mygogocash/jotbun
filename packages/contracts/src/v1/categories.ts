@@ -72,7 +72,9 @@ export function isCategorySnapshot(value: unknown): value is CategoryDto {
     (category.builtin_key === null || BUILTIN_KEYS.includes(category.builtin_key as string)) &&
     (category.label === null || typeof category.label === "string") &&
     (category.builtin_key !== null || category.label !== null) &&
-    (category.color === null || (CATEGORY_COLORS as readonly string[]).includes(category.color as string)) &&
+    // Any stored #RRGGBB: the palette is enforced on input, so a later palette
+    // change can never make an existing category's snapshot invalid.
+    (category.color === null || (typeof category.color === "string" && /^#[0-9A-F]{6}$/.test(category.color))) &&
     typeof category.archived === "boolean" &&
     Number.isSafeInteger(category.version) && (category.version as number) >= 1
   );

@@ -23,7 +23,8 @@ let as: ReturnType<typeof v1Client>;
 let money: ReturnType<typeof moneyFixtures>;
 
 const today = () => bangkokDate(new Date());
-const tomorrow = () => bangkokDate(new Date(Date.now() + 86_400_000));
+// 36 hours ahead is tomorrow or later for the server too, even across Bangkok midnight.
+const tomorrow = () => bangkokDate(new Date(Date.now() + 36 * 3_600_000));
 
 type Setup = { user: SignedUp; cash: string; daily: string; expense: (overrides?: Record<string, unknown>) => Record<string, unknown> };
 

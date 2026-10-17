@@ -59,6 +59,7 @@ export class DatabaseService implements OnModuleDestroy {
          SELECT set_config('gogospend.account_id', '${accountId}', true),
                 set_config('gogospend.tx_token', '${token}', true),
                 set_config('statement_timeout', '${STATEMENT_TIMEOUT}', true),
+                set_config('DateStyle', 'ISO, YMD', true),
                 set_config('idle_in_transaction_session_timeout', '${IDLE_IN_TRANSACTION_TIMEOUT}', true)`,
       );
       const result = await insideOwnerTransaction.run(true, () => fn(tx));

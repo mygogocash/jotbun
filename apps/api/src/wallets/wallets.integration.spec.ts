@@ -21,7 +21,8 @@ let v1: Awaited<ReturnType<typeof startV1App>>;
 let as: ReturnType<typeof v1Client>;
 
 const today = () => bangkokDate(new Date());
-const tomorrow = () => bangkokDate(new Date(Date.now() + 86_400_000));
+// 36 hours ahead is tomorrow or later for the server too, even across Bangkok midnight.
+const tomorrow = () => bangkokDate(new Date(Date.now() + 36 * 3_600_000));
 const wallet = (overrides: Record<string, unknown> = {}) => ({ id: randomUUID(), name: 'Cash', opening_minor: '403200', tracking_start: '2026-01-01', ...overrides });
 
 async function member(): Promise<SignedUp> {

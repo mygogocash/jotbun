@@ -5,6 +5,7 @@
  */
 import type { Minor } from "./common.ts";
 import { ContractValidationError } from "./errors.ts";
+import { BIDI_CONTROL, LONE_SURROGATE, isInvisible } from "./validation.ts";
 
 export const TRANSACTION_TYPES = ["expense", "income", "transfer"] as const;
 export type TransactionType = (typeof TRANSACTION_TYPES)[number];
@@ -55,12 +56,13 @@ const NOTE_CONTROL = /[\p{Cc}\u2028\u2029]/u;
 function optionalText(value: unknown, field: string, max: number, multiline: boolean): string | null {
   if (value === undefined || value === null) return null;
   if (typeof value !== "string") throw new ContractValidationError("VALIDATION_FAILED", "Expected text.", field);
+  if (LONE_SURROGATE.test(value)) throw new ContractValidationError("VALIDATION_FAILED", "Text is not well-formed Unicode.", field);
   let text = value.normalize("NFC");
   if (multiline) text = text.replace(/\r\n?/g, "\n");
   text = text.trim();
-  if (text.length === 0) return null;
+  if (text.length === 0 || isInvisible(text)) return null;
   const control = multiline ? NOTE_CONTROL.test(text.replace(/\n/g, "")) : NOTE_CONTROL.test(text);
-  if ([...text].length > max || control) {
+  if ([...text].length > max || control || BIDI_CONTROL.test(text)) {
     throw new ContractValidationError("VALIDATION_FAILED", `Expected at most ${max} characters without control characters.`, field);
   }
   return text;

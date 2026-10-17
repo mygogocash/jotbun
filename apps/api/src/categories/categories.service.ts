@@ -23,6 +23,8 @@ const COMMANDS: [string, CommandOutcome][] = [
   ['category.unarchive', 'unarchived'],
 ];
 
+class SeedRaced extends Error {}
+
 const change = (category: CategoryDto) => ({ entity: ENTITY, id: category.id, version: category.version, state: 'active' as const, snapshot: category });
 const changed = (category: CategoryDto): MutationResult => ({ entityId: category.id, version: category.version, changes: [change(category)] });
 
@@ -60,25 +62,40 @@ export class CategoriesService {
   }
 
   /**
-   * Seeds the built-ins. The command id and category ids are derived from the
-   * account, so repeats and concurrent devices replay one command; the
-   * client's schema header is irrelevant (the server writes the payload).
+   * Ensures the account has every built-in category, then returns all
+   * categories. Only missing built-ins are inserted, as one command whose id
+   * is derived from the missing keys: concurrent devices replay one command,
+   * a built-in added in a later release is seeded on the next call, and a
+   * call with nothing missing writes nothing (so it never depends on an old
+   * receipt or digest key). Ids are derived from the account, so every
+   * device agrees on them.
    */
-  seedBuiltins(ctx: SessionContext): Promise<CommandAck> {
+  async seedBuiltins(ctx: SessionContext): Promise<CategoryDto[]> {
     const builtins = BUILTIN_CATEGORIES.map((builtin) => ({ ...builtin, id: derivedUuid(ctx.accountId, 'builtin-category', builtin.key) }));
-    const commandId = derivedUuid(ctx.accountId, 'seed-builtin-categories', 'v1');
-    return this.executor.run(ctx, { commandId, kind: 'category.seed_builtins', schemaVersion: 1, payload: { id: builtins[0].id } }, async (tx) => {
-      const rows = await tx.query<CategoryDto>(
-        `INSERT INTO categories (account_id, id, type, builtin_key, color)
-         SELECT $1, b.id, b.type, b.key, b.color FROM jsonb_to_recordset($2::jsonb) AS b(id uuid, type text, key text, color text)
-         ON CONFLICT DO NOTHING RETURNING ${COLUMNS}`,
-        [tx.accountId, JSON.stringify(builtins)],
-      );
-      // Only possible if the receipt is gone but the built-ins remain.
-      if (rows.length !== builtins.length) throw new ProblemException(409, 'VERSION_CONFLICT', { messageKey: 'errors.builtins_already_seeded' });
-      const byId = new Map(rows.map((row) => [row.id, row]));
-      return { entityId: builtins[0].id, version: 1, changes: builtins.map((builtin) => change(byId.get(builtin.id) as CategoryDto)) };
-    });
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const present = new Set((await this.db.withOwnerTransaction(ctx, (tx) => tx.query<{ builtin_key: string }>('SELECT builtin_key FROM categories WHERE builtin_key IS NOT NULL'))).map((row) => row.builtin_key));
+      const missing = builtins.filter((builtin) => !present.has(builtin.key));
+      if (missing.length === 0) break;
+      const keys = missing.map((builtin) => builtin.key);
+      const commandId = derivedUuid(ctx.accountId, 'seed-builtin-categories', ...keys);
+      try {
+        await this.executor.run(ctx, { commandId, kind: 'category.seed_builtins', schemaVersion: 1, payload: { id: missing[0].id, keys } }, async (tx) => {
+          const rows = await tx.query<CategoryDto>(
+            `INSERT INTO categories (account_id, id, type, builtin_key, color)
+             SELECT $1, b.id, b.type, b.key, b.color FROM jsonb_to_recordset($2::jsonb) AS b(id uuid, type text, key text, color text)
+             ON CONFLICT DO NOTHING RETURNING ${COLUMNS}`,
+            [tx.accountId, JSON.stringify(missing)],
+          );
+          // Another device seeded some of these first: start over with what is still missing.
+          if (!rows.some((row) => row.id === missing[0].id)) throw new SeedRaced();
+          const byId = new Map(rows.map((row) => [row.id, row]));
+          return { entityId: missing[0].id, version: 1, changes: missing.filter((builtin) => byId.has(builtin.id)).map((builtin) => change(byId.get(builtin.id) as CategoryDto)) };
+        });
+      } catch (error) {
+        if (!(error instanceof SeedRaced)) throw error;
+      }
+    }
+    return this.list(ctx);
   }
 
   create(ctx: SessionContext, command: CommandHeaders, body: unknown): Promise<CommandAck> {
