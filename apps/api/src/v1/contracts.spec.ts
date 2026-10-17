@@ -1,0 +1,219 @@
+import {
+  ContractValidationError,
+  MINOR_AMOUNT_MAX,
+  assertKnownFields,
+  bangkokDate,
+  compareVersions,
+  formatClientHeader,
+  isUuid,
+  normalizeCommand,
+  parseClientHeader,
+  parseMinor,
+  validateOccurredOn,
+} from '@gogospend/contracts';
+import type { CommandInput } from '@gogospend/contracts';
+
+const amount = { allowZero: false, allowNegative: false, max: MINOR_AMOUNT_MAX };
+const opening = { allowZero: true, allowNegative: false, max: MINOR_AMOUNT_MAX };
+const total = { allowZero: true, allowNegative: true };
+
+function failure(fn: () => unknown): { code: string; field: string | undefined } | undefined {
+  try {
+    fn();
+  } catch (error) {
+    if (error instanceof ContractValidationError) return { code: error.code, field: error.field };
+    throw error;
+  }
+  return undefined;
+}
+const codeOf = (fn: () => unknown) => failure(fn)?.code;
+
+describe('v1 money', () => {
+  it('parses_satang_without_float_conversion', () => {
+    expect(parseMinor('6500', { allowZero: false, allowNegative: false })).toBe(6500n);
+  });
+
+  it.each([1.5, 6500, '1.5', '65.00', '65.001', '1e3', '01', '-0', '+5', 'NaN', '', '   ', ' 5', '5 ', '0x10', '٦٥', null, undefined, {}])(
+    'rejects non-canonical amount %p',
+    (value) => {
+      expect(codeOf(() => parseMinor(value, amount))).toBe('INVALID_MINOR');
+    },
+  );
+
+  it('enforces the amount cap and positivity', () => {
+    expect(parseMinor('99999999999', amount)).toBe(99_999_999_999n);
+    expect(codeOf(() => parseMinor('100000000000', amount))).toBe('MINOR_OUT_OF_RANGE');
+    expect(codeOf(() => parseMinor('0', amount))).toBe('MINOR_OUT_OF_RANGE');
+    expect(codeOf(() => parseMinor('-6500', amount))).toBe('MINOR_OUT_OF_RANGE');
+  });
+
+  it('allows a zero opening balance but not a negative one', () => {
+    expect(parseMinor('0', opening)).toBe(0n);
+    expect(codeOf(() => parseMinor('-1', opening))).toBe('MINOR_OUT_OF_RANGE');
+  });
+
+  it('permits negative values only for totals', () => {
+    expect(parseMinor('-235000', total)).toBe(-235000n);
+  });
+
+  it('applies a cap to the magnitude of negative values too', () => {
+    const cappedSigned = { allowZero: true, allowNegative: true, max: MINOR_AMOUNT_MAX };
+    expect(parseMinor('-99999999999', cappedSigned)).toBe(-99_999_999_999n);
+    expect(codeOf(() => parseMinor('-100000000000', cappedSigned))).toBe('MINOR_OUT_OF_RANGE');
+  });
+
+  it('keeps totals above the JS safe-integer range exact', () => {
+    const beyondDouble = '9007199254740993'; // 2^53 + 1 has no exact double
+    expect(parseMinor(beyondDouble, total)).toBe(9007199254740993n);
+    expect(parseMinor(`-${beyondDouble}`, total).toString()).toBe(`-${beyondDouble}`);
+    expect((parseMinor('9007199254740992', total) + parseMinor('1', total)).toString()).toBe(beyondDouble);
+  });
+
+  it('rejects unbounded digit strings before converting them', () => {
+    expect(codeOf(() => parseMinor('1'.repeat(41), total))).toBe('INVALID_MINOR');
+  });
+
+  it('reports the offending field', () => {
+    expect(failure(() => parseMinor('1.5', amount, 'amount_minor'))).toEqual({ code: 'INVALID_MINOR', field: 'amount_minor' });
+  });
+});
+
+describe('v1 dates', () => {
+  const start = '2024-01-01';
+  const today = '2026-10-17';
+
+  it('accepts real dates inside the tracking window, including both ends', () => {
+    expect(validateOccurredOn('2024-02-29', start, today)).toBe('2024-02-29');
+    expect(validateOccurredOn(start, start, today)).toBe(start);
+    expect(validateOccurredOn(today, start, today)).toBe(today);
+    expect(validateOccurredOn('2000-02-29', '1999-01-01', today)).toBe('2000-02-29');
+  });
+
+  it.each(['2023-02-29', '2026-02-29', '2100-02-29', '2026-13-01', '2026-00-10', '2026-04-31', '2026-1-01', '20261017', '2026-10-17T00:00:00Z', '0000-01-01', '', 20261017, null])(
+    'rejects invalid date %p',
+    (value) => {
+      expect(codeOf(() => validateOccurredOn(value, '0001-01-01', today))).toBe('INVALID_DATE');
+    },
+  );
+
+  it('rejects dates before tracking started and after today', () => {
+    expect(codeOf(() => validateOccurredOn('2023-12-31', start, today))).toBe('DATE_BEFORE_TRACKING_START');
+    expect(codeOf(() => validateOccurredOn('2026-10-18', start, today))).toBe('DATE_IN_FUTURE');
+  });
+
+  it('derives the Bangkok calendar day across midnight, year end and leap day', () => {
+    expect(bangkokDate(new Date('2026-10-16T16:59:59.999Z'))).toBe('2026-10-16');
+    expect(bangkokDate(new Date('2026-10-16T17:00:00.000Z'))).toBe('2026-10-17');
+    expect(bangkokDate(new Date('2026-12-31T17:00:00.000Z'))).toBe('2027-01-01');
+    expect(bangkokDate(new Date('2028-02-28T17:30:00.000Z'))).toBe('2028-02-29');
+  });
+
+  it('treats 00:30 in Bangkok as today even while UTC is still yesterday', () => {
+    const todayBangkok = bangkokDate(new Date('2026-10-16T17:30:00.000Z'));
+    expect(validateOccurredOn('2026-10-17', start, todayBangkok)).toBe('2026-10-17');
+  });
+
+  it('refuses an invalid instant instead of guessing a day', () => {
+    expect(() => bangkokDate(new Date('not a date'))).toThrow(RangeError);
+  });
+});
+
+describe('v1 command normalization', () => {
+  const kind = 'transaction.create';
+
+  it('makes reordered equivalent payloads equal', () => {
+    const a = normalizeCommand(kind, 1, { wallet_id: 'w', amount_minor: '6500', meta: { b: 1, a: [{ y: 1, x: 2 }] } });
+    const b = normalizeCommand(kind, 1, { meta: { a: [{ x: 2, y: 1 }], b: 1 }, amount_minor: '6500', wallet_id: 'w' });
+    expect(a).toEqual(b);
+    expect(a.canonicalJson).toBe(
+      '{"kind":"transaction.create","payload":{"amount_minor":"6500","meta":{"a":[{"x":2,"y":1}],"b":1},"wallet_id":"w"},"schema_version":1}',
+    );
+  });
+
+  it('leaves command identity to the command ID, not to content', () => {
+    // Two same-day coffees normalize identically. Normalization only defines
+    // the digest compared under ONE command ID (IDEMPOTENCY_MISMATCH); keeping
+    // the two commands apart is the receipt key's job, proven in M1.
+    const payload = { wallet_id: 'w', amount_minor: '6500' };
+    const first: CommandInput<typeof payload> = { commandId: '0192f0c1-7b3a-7c3e-9d4f-1a2b3c4d5e6f', kind, schemaVersion: 1, payload };
+    const second: CommandInput<typeof payload> = { ...first, commandId: '0192f0c1-7b3a-7c3e-9d4f-1a2b3c4d5e70' };
+    const [one, two] = [first, second].map((command) => normalizeCommand(command.kind, command.schemaVersion, command.payload));
+    expect(one).toEqual(two);
+    expect(Object.keys(one).sort()).toEqual(['canonicalJson', 'kind', 'schemaVersion']);
+  });
+
+  it('normalizes the same payload under two schema versions differently', () => {
+    expect(normalizeCommand(kind, 1, { a: 1 }).canonicalJson).not.toBe(normalizeCommand(kind, 2, { a: 1 }).canonicalJson);
+  });
+
+  it('preserves array order', () => {
+    expect(normalizeCommand(kind, 1, [1, 2]).canonicalJson).not.toBe(normalizeCommand(kind, 1, [2, 1]).canonicalJson);
+  });
+
+  it('omits undefined object properties exactly as JSON does', () => {
+    expect(normalizeCommand(kind, 1, { a: 1, b: undefined })).toEqual(normalizeCommand(kind, 1, { a: 1 }));
+  });
+
+  it('treats an own __proto__ key as data, not as a prototype', () => {
+    const payload: unknown = JSON.parse('{"__proto__":{"x":1},"a":1}');
+    expect(normalizeCommand('k', 1, payload).canonicalJson).toBe('{"kind":"k","payload":{"__proto__":{"x":1},"a":1},"schema_version":1}');
+  });
+
+  it.each([[[undefined]], [[1, , 3]], [new Array(1)], [1.5], [2 ** 53], [Number.NaN], [Number.POSITIVE_INFINITY], [1n], [() => 1], [new Date(0)], [new Map()], [Symbol('s')]])(
+    'rejects non-JSON payload %p',
+    (payload) => {
+      expect(codeOf(() => normalizeCommand(kind, 1, payload))).toBe('INVALID_COMMAND');
+    },
+  );
+
+  it('rejects malformed kinds and schema versions', () => {
+    for (const bad of ['', 'Transaction', 'a b', `a${'b'.repeat(64)}`]) expect(codeOf(() => normalizeCommand(bad, 1, {}))).toBe('INVALID_COMMAND');
+    for (const bad of [0, -1, 1.5, Number.NaN]) expect(codeOf(() => normalizeCommand(kind, bad, {}))).toBe('INVALID_COMMAND');
+  });
+
+  it('rejects pathologically deep payloads', () => {
+    let deep: unknown = {};
+    for (let i = 0; i < 40; i++) deep = { d: deep };
+    expect(codeOf(() => normalizeCommand(kind, 1, deep))).toBe('INVALID_COMMAND');
+  });
+});
+
+describe('v1 request shapes', () => {
+  it('rejects unknown fields and names them', () => {
+    expect(failure(() => assertKnownFields({ amount_minor: '1', owner_id: 'x' }, ['amount_minor']))).toEqual({ code: 'UNKNOWN_FIELD', field: 'owner_id' });
+  });
+
+  it('returns a known-field object unchanged', () => {
+    expect(assertKnownFields({ amount_minor: '1' }, ['amount_minor', 'note'])).toEqual({ amount_minor: '1' });
+  });
+
+  it.each([null, [], 'x', 1, new Date(0)])('rejects a non-object body %p', (value) => {
+    expect(codeOf(() => assertKnownFields(value, ['a']))).toBe('VALIDATION_FAILED');
+  });
+
+  it('accepts canonical lower-case UUIDs only', () => {
+    expect(isUuid('0192f0c1-7b3a-7c3e-9d4f-1a2b3c4d5e6f')).toBe(true);
+    expect(isUuid('3b241101-e2bb-4255-8caf-4136c566a962')).toBe(true);
+    for (const bad of ['3B241101-E2BB-4255-8CAF-4136C566A962', '3b241101e2bb42558caf4136c566a962', '00000000-0000-0000-0000-000000000000', '3b241101-e2bb-4255-8caf-4136c566a96', 123]) {
+      expect(isUuid(bad)).toBe(false);
+    }
+  });
+
+  it('parses, formats and orders client version headers', () => {
+    expect(parseClientHeader('ios/1.4.0')).toEqual({ platform: 'ios', version: '1.4.0' });
+    expect(formatClientHeader({ platform: 'android', version: '2.0.10' })).toBe('android/2.0.10');
+    for (const bad of ['web/1.0.0', 'ios/1.4', 'ios/01.4.0', 'ios/1.4.0-beta', ' ios/1.4.0', 'IOS/1.4.0', '', undefined]) {
+      expect(parseClientHeader(bad)).toBeNull();
+    }
+    expect(compareVersions('1.10.0', '1.9.9')).toBe(1);
+    expect(compareVersions('2.0.0', '2.0.0')).toBe(0);
+    expect(compareVersions('0.9.12', '1.0.0')).toBe(-1);
+  });
+
+  it('refuses to compare malformed versions rather than failing open', () => {
+    for (const [a, b] of [['1.4.0', '1.4'], ['v2.0.0', '1.0.0'], ['1.0.0.9', '1.0.0'], ['1.0.0', '']]) {
+      expect(() => compareVersions(a, b)).toThrow(TypeError);
+      expect(() => compareVersions(b, a)).toThrow(TypeError);
+    }
+  });
+});

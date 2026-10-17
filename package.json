@@ -13,6 +13,7 @@
     "dev": "node scripts/dev.mjs",
     "test:dev": "node --experimental-vm-modules --test scripts/dev.test.mjs",
     "test:app": "npm run test -w gogospend-app",
+    "test:unit": "npm run test:unit -w gogospend-app",
     "typecheck": "npm run typecheck -w @gogospend/contracts && npm run typecheck -w gogospend-api",
     "typecheck:app": "npm run typecheck -w gogospend-app",
     "test:api": "npm run test -w gogospend-api",

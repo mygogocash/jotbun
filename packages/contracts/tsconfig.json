@@ -13,6 +13,9 @@
     "strict": true,
     "noEmit": true,
     "isolatedModules": true,
+    // Enforces the erasable-only rule above: the built API loads this source
+    // through Node's type stripping (master plan contracts constraint).
+    "erasableSyntaxOnly": true,
     "skipLibCheck": true
   },
   "include": ["src"]

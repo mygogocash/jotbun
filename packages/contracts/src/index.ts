@@ -22,3 +22,49 @@ export type {
   SpendJobErrorCode,
   SpendCategoryHue,
 } from "./spend.ts";
+
+// v1 (standalone PostgreSQL/Auth0 backend). Legacy spend exports above stay
+// until their callers are retired (M5/P6b).
+export {
+  COMMAND_OUTCOMES,
+  ENTITY_STATES,
+  V1_HEADERS,
+} from "./v1/common.ts";
+export type {
+  AccountId,
+  Minor,
+  Revision,
+  ApiIdentity,
+  SessionContext,
+  CommandInput,
+  CommandOutcome,
+  EntityState,
+  CommandAck,
+} from "./v1/common.ts";
+export { API_ERROR_CODES, ContractValidationError } from "./v1/errors.ts";
+export type { ApiErrorCode, ApiProblem } from "./v1/errors.ts";
+export {
+  REAUTH_PURPOSES,
+  CLIENT_PLATFORMS,
+  formatClientHeader,
+  parseClientHeader,
+  compareVersions,
+} from "./v1/auth.ts";
+export type {
+  ReauthPurpose,
+  AuthChallengeRequest,
+  AuthChallenge,
+  BootstrapResult,
+  ClientPlatform,
+  ClientVersion,
+} from "./v1/auth.ts";
+export {
+  MINOR_AMOUNT_MAX,
+  parseMinor,
+  normalizeCommand,
+  validateOccurredOn,
+  bangkokDate,
+  assertKnownFields,
+  isUuid,
+} from "./v1/validation.ts";
+export type { MinorOptions, CanonicalCommand } from "./v1/validation.ts";

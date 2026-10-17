@@ -1,0 +1,73 @@
+/**
+ * v1 auth wire types. Challenge/bootstrap behaviour is implemented by F4;
+ * these shapes are published first so the server and app agree on them.
+ */
+
+export const REAUTH_PURPOSES = [
+  "bootstrap",
+  "export",
+  "link",
+  "global_logout",
+  "deletion",
+] as const;
+export type ReauthPurpose = (typeof REAUTH_PURPOSES)[number];
+
+export type AuthChallengeRequest = {
+  request_id: string;
+  purpose: ReauthPurpose;
+  command_id: string;
+};
+
+export type AuthChallenge = {
+  challenge_id: string;
+  nonce: string;
+  expires_at: string;
+};
+
+export type BootstrapResult = {
+  account_id: string;
+  binding: string;
+  session_generation: number;
+};
+
+export const CLIENT_PLATFORMS = ["ios", "android"] as const;
+export type ClientPlatform = (typeof CLIENT_PLATFORMS)[number];
+
+export type ClientVersion = {
+  platform: ClientPlatform;
+  /** `major.minor.patch`, no pre-release or build suffix. */
+  version: string;
+};
+
+/** Value for the `x-gogospend-client` header. */
+export function formatClientHeader(client: ClientVersion): string {
+  return `${client.platform}/${client.version}`;
+}
+
+const VERSION_PATTERN = "(?:0|[1-9][0-9]{0,5})\\.(?:0|[1-9][0-9]{0,5})\\.(?:0|[1-9][0-9]{0,5})";
+const VERSION = new RegExp(`^${VERSION_PATTERN}$`);
+const CLIENT_HEADER = new RegExp(`^(ios|android)/(${VERSION_PATTERN})$`);
+
+/** Parses `x-gogospend-client`; anything not exactly `<platform>/<major.minor.patch>` is null. */
+export function parseClientHeader(value: unknown): ClientVersion | null {
+  if (typeof value !== "string") return null;
+  const match = CLIENT_HEADER.exec(value);
+  if (!match) return null;
+  return { platform: match[1] as ClientPlatform, version: match[2] };
+}
+
+/**
+ * Orders two `major.minor.patch` strings numerically; returns -1, 0 or 1.
+ * Throws on a malformed operand so a mistyped minimum can never fail open.
+ */
+export function compareVersions(a: string, b: string): -1 | 0 | 1 {
+  if (!VERSION.test(a) || !VERSION.test(b)) {
+    throw new TypeError("compareVersions needs two major.minor.patch versions.");
+  }
+  const left = a.split(".").map(Number);
+  const right = b.split(".").map(Number);
+  for (let i = 0; i < 3; i++) {
+    if (left[i] !== right[i]) return left[i] > right[i] ? 1 : -1;
+  }
+  return 0;
+}
