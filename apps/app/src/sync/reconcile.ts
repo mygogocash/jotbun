@@ -11,11 +11,13 @@ export type ReconcileOptions = {
   sleep: (ms: number) => Promise<void>;
   /** How many times to poll a pending snapshot before giving up for this run. */
   maxSnapshotPolls?: number;
+  now?: () => number;
 };
 
 export type ReconcileOutcome = { status: 'synced' | 'resync_pending'; resolved: number };
 
 const SNAPSHOT_POLL_MS = 2_000;
+const GRANT_MARGIN_MS = 30_000;
 const CURSOR_RETRIES = 3;
 
 /** Downloads a full snapshot and swaps it in; false when it is not ready (or failed) in this run. */
@@ -27,8 +29,16 @@ async function resync(store: DiaryStore, remote: SyncRemote, options: ReconcileO
     dto = await remote.snapshotStatus(dto.snapshot_id);
   }
   if (dto.status !== 'ready') return false;
+  const now = options.now ?? (() => Date.now());
   const entities: EntityChange[] = [];
-  for (const grant of [...dto.chunks].sort((a, b) => a.index - b.index)) {
+  for (let index = 0; index < dto.chunks.length; index += 1) {
+    // Grants last minutes; renew them (one status call) before one runs out.
+    if (Date.parse(dto.chunks[index].grant_expires_at) - GRANT_MARGIN_MS <= now()) {
+      const renewed = await remote.snapshotStatus(dto.snapshot_id);
+      if (renewed.status !== 'ready' || renewed.high_water !== dto.high_water) return false;
+      dto = renewed;
+    }
+    const grant = dto.chunks[index];
     const chunk = await remote.snapshotChunk(grant);
     if (chunk.snapshot_id !== dto.snapshot_id || chunk.high_water !== dto.high_water || chunk.index !== grant.index) {
       throw new V1Error('invalid_response', 200, 'SNAPSHOT_MISMATCH');
@@ -40,25 +50,34 @@ async function resync(store: DiaryStore, remote: SyncRemote, options: ReconcileO
 }
 
 /**
- * Commands whose record the confirmed state now holds (in any state: active,
- * deleted or purged) are done - their ids are client-generated, so the record
- * can only come from them - and so is an acknowledged one once the confirmed
- * state passed its revision. Their drafts go with them: a deleted or purged
- * record never comes back from its old draft or acknowledgement.
+ * A command whose record the confirmed state holds (active, deleted or
+ * purged) is done, whatever its local state - its id is client-generated, so
+ * the record can only come from it - and its draft goes with it: a deleted or
+ * purged record never comes back from an old draft or acknowledgement. Only a
+ * command being transmitted right now is left alone. An acknowledged command
+ * whose record is missing although the confirmed state has passed its
+ * revision (a server restore lost it) becomes uncertain again, so its status
+ * is checked and the same command resent - never deleted.
  */
 async function resolve(store: DiaryStore): Promise<number> {
   const state = await store.readState();
   const confirmed = new Set(state.confirmed.map((entity) => entity.id));
   const applied = BigInt(state.appliedRevision);
-  const done = (await store.readOutbox())
-    .filter((command) =>
-      (command.state === 'acknowledged' || command.state === 'uncertain') &&
-      (confirmed.has(command.payload.id) || (command.state === 'acknowledged' && command.ackedRevision !== null && BigInt(command.ackedRevision) <= applied)),
-    )
-    .map((command) => command.commandId);
+  const done: string[] = [];
+  for (const command of await store.readOutbox()) {
+    if (command.state === 'sending') continue;
+    if (confirmed.has(command.payload.id)) done.push(command.commandId);
+    else if (command.state === 'acknowledged' && command.ackedRevision !== null && BigInt(command.ackedRevision) <= applied) {
+      await store.setCommandState(command.commandId, ['acknowledged'], 'uncertain');
+    }
+  }
   if (done.length > 0) await store.resolveCommands(done);
   return done.length;
 }
+
+/** The server cannot continue from this cursor: retention passed it, a restore moved behind it, or it refused it. */
+const needsResync = (error: V1Error) =>
+  error.code === 'RESYNC_REQUIRED' || error.status === 410 || (error.status === 422 && error.fields?.cursor !== undefined);
 
 /**
  * Brings the confirmed state up to date - every delta page from the stored
@@ -86,7 +105,7 @@ export async function reconcile(store: DiaryStore, remote: SyncRemote, options: 
         cursorRetries += 1;
         continue;
       }
-      if (error instanceof V1Error && error.code === 'RESYNC_REQUIRED' && !resynced) {
+      if (error instanceof V1Error && needsResync(error) && !resynced) {
         if (!(await resync(store, remote, options))) return { status: 'resync_pending', resolved: 0 };
         resynced = true;
         continue;

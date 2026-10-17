@@ -910,3 +910,49 @@ Observed, not changed (pre-existing):
   - `reminders.ts`, `spendDiary.ts`, `SpendDiaryContext.tsx`, `DeviceDiaryProvider.tsx` and `testing/fakeDiary.ts` are extra files.
   - The diary provider wraps the spend routes in `app/spend/_layout.tsx` (not on the legacy path).
 - **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (437), test:db PASS (397), test:app PASS (11), test:unit PASS (114), test:render PASS (48), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
+
+## Review fixes for S3
+
+- **S3 review** (commit `857912b`): one blocker, five majors, nine minors and two nits. The reviewer found that ten mutants survived the original suite. It confirmed:
+  - no new id or rewritten body after a transmission begins;
+  - crash and session recovery;
+  - single-request verdicts that match the real server's guard and executor order;
+  - the backoff math;
+  - reconcile and snapshot paging;
+  - request shapes that match the API.
+- **Fixed, with tests that failed first.** New `src/sync/engineHardening.test.ts`: 13 of 47 sync tests failed on assertions, then all passed.
+  - **Blocker — an edit made while a flush ran was lost.** The engine sent its stale in-memory copy. `beginTransmission` now returns the frozen row from its own transaction, and that row is what gets sent. A draft removed before its turn is skipped. Test: draft #3 is edited to 999 while #1 and #2 are in flight, and the server commits 999.
+  - **Major — committed commands could get stuck.**
+    - Any command not in flight whose record the confirmed state holds now resolves, whatever its local state (unsent, needs-review, paused).
+    - Outbox sends make exactly one attempt, with no hidden transport resend (new `resendLost: false`).
+    - On a create, 409 conflict or idempotency mismatch and 410 deleted/purged mean "this id is already used" and become `uncertain`, not needs-review.
+  - **Major — one worker's success erased the other's backoff.** The retry decision is now made once per run: any failure in the run sets the backoff, and only a run without failures resets it. The second worker's success no longer lets an immediate retry through.
+  - **Major — errors escaped `flush()`.** Each worker catches its errors, the run uses `Promise.allSettled`, and `DiaryLocked`, `CursorMoved` and unexpected errors map to outcomes. The scheduler catches a failing flush and re-arms its timer, so nothing goes unhandled.
+  - **Major — a server restore could delete drafts.** Resolution is now by presence only. An acknowledged command missing from the confirmed state after the state has passed its revision becomes `uncertain`, so its status is checked and the same command resent.
+  - **Major — weak tests.** New tests cover:
+    - 426 on a send;
+    - pending adjustment ignoring income (the bench gains an income category);
+    - a mismatched chunk refused with the diary unchanged;
+    - a paced uncertain command keeping its mark;
+    - background clearing the foreground flag;
+    - exactly two requests in flight;
+    - stale uncertain commands reviewed, not resent;
+    - a known status acknowledging even when the next pull fails;
+    - a status answer for another record refused.
+
+    Three re-applied mutants now fail the suite: sending the stale copy, a success resetting the backoff, and one request in flight.
+  - **Minor fixes:**
+    - The fake server now limits writes like the real guard: before the receipt lookup, replays charged, fixed one-minute windows. The backlog bound becomes at least 120 s, with exactly two in flight.
+    - A save during a running flush gets exactly one follow-up run. Concurrent calls serialize; the "share one run" test was updated to match.
+    - `launch()` counts as foreground, so a timer is armed.
+    - References are read once per flush.
+    - Expired chunk grants are renewed with one status call.
+    - A resync still pending after the sends is reported.
+    - Status answers are cross-checked against the command and its record.
+    - A 410 without a problem body, or a 422 on the cursor, triggers a resync.
+    - `unsupported_platform` stops as signed-out everywhere.
+- **Not changed (recorded):**
+  - The device wiring creates one engine per opened store, and closing a store stops its scheduler. A stale engine's in-flight request can at most leave a `sending` row, which the next session's engine turns uncertain and checks.
+  - `pendingAdjustmentMinor` stays an expense total. `deriveDisplayedTotals` (S4) is the full model.
+  - The transport still parses chunk JSON once before text mode returns it.
+- **Full gate after the fixes:** typecheck PASS, typecheck:app PASS, test:api PASS (437), test:db PASS (397), test:app PASS (11), test:unit PASS (132), test:render PASS (48), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.

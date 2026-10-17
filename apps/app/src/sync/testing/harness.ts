@@ -8,6 +8,8 @@ import { createMemoryKeyStore } from '../../storage/testing/memoryKeys.ts';
 import { createTestDiaryFiles } from '../../storage/testing/nodeSqlite.ts';
 import type { TestDiaryFiles } from '../../storage/testing/nodeSqlite.ts';
 import { ACCOUNT_A, SAVINGS, category, change, draft, outbox, wallet } from '../../storage/testing/diaryFixtures.ts';
+
+export const SALARY = '2c000000-0000-4000-8000-000000000002';
 import type { OutboxCommand, PendingEntry } from '../../storage/types.ts';
 import { createSyncEngine } from '../syncEngine.ts';
 import type { SyncEngine } from '../syncEngine.ts';
@@ -38,7 +40,12 @@ export async function bench(options: { writesPerMinute?: number } = {}): Promise
   const database = new AccountDatabase({ files, keys: createMemoryKeyStore(), epoch: () => session.epoch });
   const store = await database.open(ACCOUNT_A);
   const server = createFakeServer({ now: () => clock.now, writesPerMinute: options.writesPerMinute });
-  server.commitElsewhere([change('wallet', wallet()), change('wallet', wallet({ id: SAVINGS, name: 'Savings', opening_minor: '0' })), change('category', category())]);
+  server.commitElsewhere([
+    change('wallet', wallet()),
+    change('wallet', wallet({ id: SAVINGS, name: 'Savings', opening_minor: '0' })),
+    change('category', category()),
+    change('category', category({ id: SALARY, type: 'income', builtin_key: 'salary' })),
+  ]);
   await store.applyChangeGroups(server.groups.slice(0, 1), 'cursor-1', null);
   const refreshes = { count: 0, result: true };
   const newEngine = (target: DiaryStore = store) =>

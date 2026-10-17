@@ -29,9 +29,10 @@ export interface DiaryStore {
   /**
    * Marks a command as being transmitted (unsent, uncertain or paused ->
    * sending) before it is sent, freezing it: the first transmission time is
-   * set once and the id and body never change again. Returns its state before.
+   * set once and the id and body never change again. Returns its state before
+   * and the frozen command - send exactly that - or null if it no longer exists.
    */
-  beginTransmission(commandId: string, at: string): Promise<OutboxState>;
+  beginTransmission(commandId: string, at: string): Promise<{ previous: OutboxState; command: OutboxCommand } | null>;
   /** Moves a command from one of `from` to `to` (acknowledged needs the revision). False if it was in no state of `from`. */
   setCommandState(commandId: string, from: readonly OutboxState[], to: OutboxState, ackedRevision?: string): Promise<boolean>;
   /** Removes resolved commands with their drafts. */
@@ -62,6 +63,19 @@ const REVISION = /^(0|[1-9][0-9]{0,18})$/;
 const AMOUNT = /^[1-9][0-9]{0,10}$/;
 const MAX_CURSOR = 512;
 const TRANSMITTABLE: readonly OutboxState[] = ['unsent', 'uncertain', 'paused_upgrade'];
+const OUTBOX_COLUMNS = 'command_id, account_id, kind, schema_version, payload, state, first_transmission_at, created_at, acked_revision';
+type OutboxRow = { command_id: string; account_id: string; kind: 'transaction.create'; schema_version: number; payload: string; state: OutboxState; first_transmission_at: string | null; created_at: string; acked_revision: string | null };
+const toCommand = (row: OutboxRow): OutboxCommand => ({
+  commandId: row.command_id,
+  accountId: row.account_id,
+  schemaVersion: row.schema_version,
+  kind: row.kind,
+  payload: JSON.parse(row.payload) as PendingEntry,
+  state: row.state,
+  firstTransmissionAt: row.first_transmission_at,
+  createdAt: row.created_at,
+  ackedRevision: row.acked_revision,
+});
 
 type EntityRow = { entity: string; id: string; version: number; state: EntityChange['state']; snapshot: string | null };
 
@@ -290,22 +304,7 @@ export function createDiaryStore(options: DiaryStoreOptions): DiaryStore {
       });
     },
 
-    readOutbox: () =>
-      read(async (sql) =>
-        (await sql.all<{ command_id: string; account_id: string; kind: 'transaction.create'; schema_version: number; payload: string; state: OutboxCommand['state']; first_transmission_at: string | null; created_at: string; acked_revision: string | null }>(
-          'SELECT command_id, account_id, kind, schema_version, payload, state, first_transmission_at, created_at, acked_revision FROM outbox ORDER BY created_at, rowid',
-        )).map((row) => ({
-          commandId: row.command_id,
-          accountId: row.account_id,
-          schemaVersion: row.schema_version,
-          kind: row.kind,
-          payload: JSON.parse(row.payload) as PendingEntry,
-          state: row.state,
-          firstTransmissionAt: row.first_transmission_at,
-          createdAt: row.created_at,
-          ackedRevision: row.acked_revision,
-        })),
-      ),
+    readOutbox: () => read(async (sql) => (await sql.all<OutboxRow>(`SELECT ${OUTBOX_COLUMNS} FROM outbox ORDER BY created_at, rowid`)).map(toCommand)),
 
     readState: () =>
       read(async (sql) => {
@@ -332,10 +331,11 @@ export function createDiaryStore(options: DiaryStoreOptions): DiaryStore {
       guard();
       if (typeof at !== 'string' || Number.isNaN(Date.parse(at))) throw new TypeError('A transmission time is an ISO instant.');
       return write(async (tx) => {
-        const [row] = await tx.all<{ state: OutboxState }>('SELECT state FROM outbox WHERE command_id = ?', [commandId]);
-        if (!row || !TRANSMITTABLE.includes(row.state)) throw new TypeError('Only an unsent, uncertain or paused command can be transmitted.');
+        const [row] = await tx.all<OutboxRow>(`SELECT ${OUTBOX_COLUMNS} FROM outbox WHERE command_id = ?`, [commandId]);
+        if (!row) return null;
+        if (!TRANSMITTABLE.includes(row.state)) throw new TypeError('Only an unsent, uncertain or paused command can be transmitted.');
         await tx.run(`UPDATE outbox SET state = 'sending', first_transmission_at = coalesce(first_transmission_at, ?) WHERE command_id = ?`, [at, commandId]);
-        return row.state;
+        return { previous: row.state, command: { ...toCommand(row), state: 'sending' as const, firstTransmissionAt: row.first_transmission_at ?? at } };
       });
     },
 

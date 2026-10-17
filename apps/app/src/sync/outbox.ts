@@ -12,14 +12,18 @@ export type SendVerdict = {
 };
 
 const MAYBE_COMMITTED: SendVerdict = { next: 'uncertain', flush: 'stop', failure: true };
+// On a create, "this id is already used": an earlier transmission may have committed it.
+const ID_USED: SendVerdict = { next: 'uncertain', flush: 'continue', failure: false };
 const REFUSED: SendVerdict = { next: 'needs_review', flush: 'continue', failure: false };
 const NOT_PROCESSED: SendVerdict = { next: 'previous', flush: 'stop', failure: false };
 
 /**
  * A lost response, a 5xx or a garbled answer may follow a commit: the command
  * is uncertain (status is checked before any resend; it is never recreated).
- * A refusal (validation, conflict, missing or deleted reference, unsupported
- * schema, too large) needs review and is not retried. Pacing (429), an
+ * So is a refusal saying the id is already used (409 conflict or idempotency
+ * mismatch, 410 deleted/purged): an earlier transmission may have committed.
+ * A refusal (validation, missing reference, unsupported schema, too large)
+ * needs review and is not retried. Pacing (429), an
  * upgrade requirement and auth or policy refusals happen before any commit:
  * the command goes back to where it was, still frozen. A session change
  * mid-response leaves it `sending` for the next session to resolve.
@@ -30,13 +34,14 @@ export function verdictFor(outcome: V1Outcome): SendVerdict {
     case 'unavailable':
     case 'invalid_response':
       return MAYBE_COMMITTED;
-    case 'schema_unsupported':
-    case 'invalid':
     case 'conflict':
-    case 'not_found':
     case 'deleted':
     case 'purged':
     case 'idempotency_mismatch':
+      return ID_USED;
+    case 'schema_unsupported':
+    case 'invalid':
+    case 'not_found':
     case 'too_large':
       return REFUSED;
     case 'session_changed':

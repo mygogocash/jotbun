@@ -180,6 +180,7 @@ export function createSyncResources(transport: V1Transport, options: { sha256Hex
       transport.request('POST', '/v1/transactions', {
         body: command.payload,
         command: { id: command.commandId, schemaVersion: command.schemaVersion },
+        resendLost: false,
         validate: ackFor(command.commandId, command.payload.id),
       }),
     commandStatus: (ids) => fetchCommandStatus(transport, ids),

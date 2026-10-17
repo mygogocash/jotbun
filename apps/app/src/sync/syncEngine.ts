@@ -2,8 +2,8 @@ import type { CategoryDto, WalletSnapshot } from '@gogospend/contracts';
 
 import { V1Error } from '../api/client.ts';
 import type { DiaryStore } from '../storage/diaryRepository.ts';
-import { StaleEpochError } from '../storage/types.ts';
-import type { OutboxCommand, OutboxState } from '../storage/types.ts';
+import { CursorMoved, DiaryLocked, StaleEpochError } from '../storage/types.ts';
+import type { OutboxCommand } from '../storage/types.ts';
 import { isStale, verdictFor } from './outbox.ts';
 import { reconcile } from './reconcile.ts';
 import type { ReconcileOptions } from './reconcile.ts';
@@ -57,6 +57,7 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
   let retry: RetryState = INITIAL_RETRY;
   let upgradeRequired = false;
   let running: Promise<SyncOutcome> | null = null;
+  let followUp: Promise<SyncOutcome> | null = null;
 
   const iso = () => new Date(deps.now()).toISOString();
 
@@ -77,33 +78,38 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
     }
   }
 
-  /** Maps a failure outside a command send to a stop. */
-  async function stopFor(error: unknown): Promise<Stop> {
+  /** One run's view of what went wrong: decided once at the end, so a later success never erases a failure. */
+  type RunState = { failed: V1Error | null; paced: V1Error | null };
+
+  /** Maps any failure to a stop; transport/server failures and unexpected errors count toward the pause. */
+  async function stopFor(error: unknown, run: RunState): Promise<Stop> {
     if (error instanceof Stop) return error;
-    if (error instanceof StaleEpochError) return new Stop('session_changed');
-    if (!(error instanceof V1Error)) throw error;
+    if (error instanceof StaleEpochError || error instanceof DiaryLocked) return new Stop('session_changed');
+    if (!(error instanceof V1Error)) {
+      run.failed ??= new V1Error('unavailable', 0, error instanceof CursorMoved ? 'CURSOR_MOVED' : 'LOCAL_ERROR');
+      return new Stop('waiting');
+    }
     switch (error.outcome) {
       case 'rate_limited':
-        retry = afterPacing(retry, deps.now(), error.retryAfterSeconds);
+        run.paced = error;
         return new Stop('rate_limited');
       case 'upgrade_required':
         await pauseForUpgrade();
         return new Stop('upgrade_required');
       case 'signed_out':
+      case 'unsupported_platform':
         return new Stop('signed_out');
       case 'policy_required':
         return new Stop('policy_required');
       case 'session_changed':
         return new Stop('session_changed');
       default:
-        retry = afterFailure(retry, deps.now(), deps.random(), error.retryAfterSeconds);
-        return new Stop(retry.paused ? 'paused' : 'waiting');
+        run.failed ??= error;
+        return new Stop('waiting');
     }
   }
 
-  async function referencesUsable(command: OutboxCommand): Promise<boolean> {
-    const state = await store.readState();
-    const active = new Map(state.confirmed.filter((entity) => entity.state === 'active').map((entity) => [`${entity.entity}:${entity.id}`, entity.snapshot]));
+  function usable(command: OutboxCommand, active: Map<string, unknown>): boolean {
     const payload = command.payload as Record<string, unknown>;
     const wallets = payload.type === 'transfer' ? [payload.source_wallet_id, payload.destination_wallet_id] : [payload.wallet_id];
     for (const id of wallets) {
@@ -117,39 +123,34 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
     return true;
   }
 
-  async function send(command: OutboxCommand, progress: { sent: number }): Promise<Stop | null> {
-    const previous: OutboxState = await store.beginTransmission(command.commandId, iso());
+  /** Sends one queued command as the frozen row; null when it is done or was skipped. */
+  async function send(commandId: string, progress: { sent: number }, run: RunState): Promise<Stop | null> {
+    const frozen = await store.beginTransmission(commandId, iso());
+    if (!frozen) return null; // removed (undone) before its turn
+    const { previous, command } = frozen;
     let refreshed = false;
     for (;;) {
       try {
-        const ack = await remote.sendCreate({ ...command, state: 'sending' });
-        await store.setCommandState(command.commandId, ['sending'], 'acknowledged', ack.committed_revision);
-        retry = afterSuccess(retry);
+        const ack = await remote.sendCreate(command);
+        await store.setCommandState(commandId, ['sending'], 'acknowledged', ack.committed_revision);
         progress.sent += 1;
         return null;
       } catch (error) {
-        if (error instanceof StaleEpochError) return new Stop('session_changed');
-        if (!(error instanceof V1Error)) throw error;
+        if (!(error instanceof V1Error)) return stopFor(error, run);
         if (error.outcome === 'signed_out' && !refreshed) {
           refreshed = true;
           if (await deps.refreshSession()) continue;
         }
         const verdict = verdictFor(error.outcome);
         if (verdict.next !== 'keep_sending') {
-          await store.setCommandState(command.commandId, ['sending'], verdict.next === 'previous' ? previous : verdict.next);
+          await store.setCommandState(commandId, ['sending'], verdict.next === 'previous' ? previous : verdict.next);
         }
-        if (error.outcome === 'upgrade_required') {
-          await pauseForUpgrade();
-          return new Stop('upgrade_required');
-        }
-        if (error.outcome === 'rate_limited') {
-          retry = afterPacing(retry, deps.now(), error.retryAfterSeconds);
-          return new Stop('rate_limited');
-        }
-        if (verdict.failure) retry = afterFailure(retry, deps.now(), deps.random(), error.retryAfterSeconds);
         if (verdict.flush === 'continue') return null;
-        if (verdict.failure) return new Stop(retry.paused ? 'paused' : 'waiting');
-        return new Stop(error.outcome === 'session_changed' ? 'session_changed' : error.outcome === 'policy_required' ? 'policy_required' : 'signed_out');
+        if (verdict.failure) {
+          run.failed ??= error;
+          return new Stop('waiting');
+        }
+        return stopFor(error, run);
       }
     }
   }
@@ -158,83 +159,121 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
     const outbox = await store.readOutbox().catch(() => [] as OutboxCommand[]);
     const nextAttemptAt = status === 'rate_limited' ? retry.paceUntil : status === 'waiting' ? retry.notBefore : null;
     return {
-      status,
+      status: status === 'waiting' && retry.paused ? 'paused' : status,
       progress: { sent: progress.sent, total: progress.total },
-      nextAttemptAt,
+      nextAttemptAt: status === 'waiting' && retry.paused ? null : nextAttemptAt,
       uncertain: outbox.filter((command) => command.state === 'uncertain' || command.state === 'sending').length,
       needsReview: outbox.filter((command) => command.state === 'needs_review').length,
     };
   }
 
-  async function run(session: SyncSession, trigger: FlushTrigger): Promise<SyncOutcome> {
+  async function steps(progress: { sent: number; total: number }, run: RunState): Promise<SyncStatus> {
+    // 1. Recover transmissions a crash interrupted.
+    for (const command of await store.readOutbox()) {
+      if (command.state === 'sending') await store.setCommandState(command.commandId, ['sending'], 'uncertain');
+    }
+    // 2. Ask about uncertain commands before anything is resent; only an
+    //    answer for exactly this command and record counts.
+    const uncertain = (await store.readOutbox()).filter((command) => command.state === 'uncertain');
+    progress.total += uncertain.length;
+    for (let start = 0; start < uncertain.length; start += STATUS_BATCH) {
+      const batch = uncertain.slice(start, start + STATUS_BATCH);
+      const byId = new Map(batch.map((command) => [command.commandId, command]));
+      const statuses = await call(() => remote.commandStatus(batch.map((command) => command.commandId)));
+      for (const status of statuses) {
+        const command = byId.get(status.command_id);
+        if (!command) throw new V1Error('invalid_response', 200, 'STATUS_MISMATCH');
+        if (status.state !== 'known') continue;
+        if (status.ack.command_id !== command.commandId || status.ack.entity_id !== command.payload.id) throw new V1Error('invalid_response', 200, 'STATUS_MISMATCH');
+        if (await store.setCommandState(command.commandId, ['uncertain'], 'acknowledged', status.ack.committed_revision)) progress.sent += 1;
+      }
+    }
+    // 3. Current references (and anything that already committed resolves).
+    const pulled = await call(() => reconcile(store, remote, deps.reconcile));
+    if (pulled.status === 'resync_pending') return 'resync_pending';
+    // 4. Review, then 5. send.
+    const state = await store.readState();
+    const active = new Map(state.confirmed.filter((entity) => entity.state === 'active').map((entity) => [`${entity.entity}:${entity.id}`, entity.snapshot]));
+    const queue: string[] = [];
+    for (const command of await store.readOutbox()) {
+      const sendable = command.state === 'unsent' || command.state === 'uncertain' || command.state === 'paused_upgrade';
+      if (!sendable) continue;
+      if (isStale(command, deps.now()) || !usable(command, active)) {
+        await store.setCommandState(command.commandId, [command.state], 'needs_review');
+        if (command.state === 'uncertain') progress.total -= 1;
+        continue;
+      }
+      if (command.state !== 'uncertain') progress.total += 1;
+      queue.push(command.commandId);
+    }
+    let stop: Stop | null = null;
+    const worker = async () => {
+      while (!stop && queue.length > 0) {
+        const commandId = queue.shift() as string;
+        let result: Stop | null;
+        try {
+          result = await send(commandId, progress, run);
+        } catch (error) {
+          result = await stopFor(error, run);
+        }
+        if (result && !stop) stop = result;
+      }
+    };
+    await Promise.allSettled(Array.from({ length: MAX_IN_FLIGHT }, worker));
+    // 6. Resolve what was acknowledged.
+    if (progress.sent > 0) {
+      try {
+        const after = await call(() => reconcile(store, remote, deps.reconcile));
+        if (after.status === 'resync_pending' && !stop) return 'resync_pending';
+      } catch (error) {
+        if (!stop) stop = await stopFor(error, run);
+      }
+    }
+    return stop ? (stop as Stop).status : 'synced';
+  }
+
+  async function runOnce(session: SyncSession, trigger: FlushTrigger): Promise<SyncOutcome> {
     const progress = { sent: 0, total: 0 };
     if (session.accountId !== store.accountId) return summarize('session_changed', progress);
     if (upgradeRequired) return summarize('upgrade_required', progress);
     const allowed = gate(retry, deps.now(), trigger);
     retry = allowed.state;
     if (!allowed.go) return summarize(allowed.wait === 'rate_limited' ? 'rate_limited' : allowed.wait === 'paused' ? 'paused' : 'waiting', progress);
+    const run: RunState = { failed: null, paced: null };
+    let status: SyncStatus;
     try {
-      // 1. Recover transmissions a crash interrupted.
-      for (const command of await store.readOutbox()) {
-        if (command.state === 'sending') await store.setCommandState(command.commandId, ['sending'], 'uncertain');
-      }
-      // 2. Ask about uncertain commands before anything is resent.
-      const uncertain = (await store.readOutbox()).filter((command) => command.state === 'uncertain');
-      progress.total += uncertain.length;
-      for (let start = 0; start < uncertain.length; start += STATUS_BATCH) {
-        const statuses = await call(() => remote.commandStatus(uncertain.slice(start, start + STATUS_BATCH).map((command) => command.commandId)));
-        for (const status of statuses) {
-          if (status.state === 'known' && (await store.setCommandState(status.command_id, ['uncertain'], 'acknowledged', status.ack.committed_revision))) progress.sent += 1;
-        }
-      }
-      // 3. Current references.
-      const pulled = await call(() => reconcile(store, remote, deps.reconcile));
-      if (pulled.status === 'resync_pending') return summarize('resync_pending', progress);
-      // 4. Review, then 5. send.
-      const queue: OutboxCommand[] = [];
-      for (const command of await store.readOutbox()) {
-        const sendable = command.state === 'unsent' || command.state === 'uncertain' || command.state === 'paused_upgrade';
-        if (!sendable) continue;
-        if (isStale(command, deps.now()) || !(await referencesUsable(command))) {
-          await store.setCommandState(command.commandId, [command.state], 'needs_review');
-          if (command.state === 'uncertain') progress.total -= 1;
-          continue;
-        }
-        if (command.state !== 'uncertain') progress.total += 1;
-        queue.push(command);
-      }
-      let stop: Stop | null = null;
-      const worker = async () => {
-        while (!stop && queue.length > 0) {
-          const command = queue.shift() as OutboxCommand;
-          const result = await send(command, progress);
-          if (result && !stop) stop = result;
-        }
-      };
-      await Promise.all(Array.from({ length: MAX_IN_FLIGHT }, worker));
-      // 6. Resolve what was acknowledged (also after a stop, if the connection still works).
-      if (progress.sent > 0) {
-        try {
-          await call(() => reconcile(store, remote, deps.reconcile));
-        } catch (error) {
-          if (!stop) stop = await stopFor(error);
-        }
-      }
-      if (stop) return summarize((stop as Stop).status, progress);
-      return summarize('synced', progress);
+      status = await steps(progress, run);
     } catch (error) {
-      return summarize((await stopFor(error)).status, progress);
+      status = (await stopFor(error, run)).status;
     }
+    // One retry decision per run.
+    if (run.failed) retry = afterFailure(retry, deps.now(), deps.random(), run.failed.retryAfterSeconds);
+    else if (status === 'synced' || progress.sent > 0) retry = afterSuccess(retry);
+    if (run.paced) retry = afterPacing(retry, deps.now(), run.paced.retryAfterSeconds);
+    if (run.failed && status !== 'session_changed' && status !== 'signed_out' && status !== 'policy_required' && status !== 'upgrade_required') status = 'waiting';
+    return summarize(status, progress);
   }
 
   return {
     flush(session, trigger = 'timer') {
       if (!running) {
-        running = run(session, trigger).finally(() => {
+        running = runOnce(session, trigger).finally(() => {
           running = null;
         });
+        return running;
       }
-      return running;
+      // A call during a run (a new save) gets exactly one follow-up run.
+      followUp ??= running.then(
+        () => {
+          followUp = null;
+          return this.flush(session, trigger);
+        },
+        () => {
+          followUp = null;
+          return this.flush(session, trigger);
+        },
+      );
+      return followUp;
     },
   };
 }

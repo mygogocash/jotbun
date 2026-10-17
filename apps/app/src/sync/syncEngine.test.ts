@@ -155,12 +155,13 @@ test('five transport failures in a row pause the engine until the app comes to t
   assert.equal(b.server.records().length, 1);
 });
 
-test('validation and conflicts need review instead of retrying forever; others still go', async () => {
+test('validation refusals need review instead of retrying forever; others still go', async () => {
   b = await bench();
   await b.save();
   await b.save();
   const third = await b.save();
-  b.server.scriptSends(PROBLEMS.invalid(), PROBLEMS.conflict());
+  // (A 409 on a create means the id may already be committed: uncertain, see engineHardening.)
+  b.server.scriptSends(PROBLEMS.invalid(), PROBLEMS.invalid());
   const outcome = await b.flush();
   assert.equal(outcome.needsReview, 2);
   assert.deepEqual((await b.store.readOutbox()).map((c) => c.state), ['needs_review', 'needs_review']);
@@ -221,16 +222,18 @@ test('a 200-draft backlog drains at the write limit with progress, never pausing
   assert.equal(acknowledged, 200);
   assert.equal(b.server.records().length, 200);
   assert.equal(b.server.receipts.size, 200);
-  assert.ok(b.clock.now - START >= 180_000, `took ${(b.clock.now - START) / 1000}s`);
-  assert.ok(b.server.maxInFlight <= 2);
+  // Fixed one-minute windows of 60 writes: 200 writes need at least three window changes.
+  assert.ok(b.clock.now - START >= 120_000, `took ${(b.clock.now - START) / 1000}s`);
+  assert.equal(b.server.maxInFlight, 2);
   assert.deepEqual(await b.store.readOutbox(), []);
 });
 
-test('one flush at a time per account: concurrent calls share it', async () => {
+test('one flush at a time per account: a call during a run waits and runs once after it', async () => {
   b = await bench();
   for (let i = 0; i < 4; i += 1) await b.save();
-  const [first, second] = await Promise.all([b.flush(), b.flush()]);
-  assert.deepEqual(first, second);
+  const [first, second] = await Promise.all([b.flush(), b.flush(), b.flush()]);
+  assert.equal(first.status, 'synced');
+  assert.equal(second.status, 'synced');
   assert.equal(b.server.sent.length, 4);
   assert.equal(new Set(b.server.sent.map((s) => s.commandId)).size, 4);
 });

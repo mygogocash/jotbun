@@ -124,6 +124,11 @@ export type V1RequestOptions<T> = {
   command?: V1CommandHeaders;
   /** Hand the raw response text to `validate` (e.g. to check a digest) instead of parsed JSON. */
   text?: boolean;
+  /**
+   * false: one attempt only, never resent after a lost response (the outbox
+   * decides; a hidden resend could commit and then be reported as refused).
+   */
+  resendLost?: boolean;
   /** Rejects any response that is not exactly the expected DTO. */
   validate: (payload: unknown) => payload is T;
 };
@@ -250,7 +255,7 @@ export function createV1Transport(options: {
           // Only a command may be resent blindly, and only as itself, and
           // never once the session changed; a read is retried from the screen.
           const lost = error instanceof V1Error && error.outcome === 'network';
-          if (!lost || !request.command || attempt >= NETWORK_RETRIES) throw error;
+          if (!lost || !request.command || request.resendLost === false || attempt >= NETWORK_RETRIES) throw error;
           await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
           if (options.credentials.getSessionSnapshot().epoch !== before.epoch) throw new V1Error('session_changed', 0, 'SESSION_CHANGED');
         }

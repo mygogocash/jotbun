@@ -82,15 +82,18 @@ export function createFakeServer(options: { now?: () => number; writesPerMinute?
         sent.push({ commandId: command.commandId, schemaVersion: command.schemaVersion, body });
         const script = await nextScript(sendScripts);
         if (script && script.kind !== 'network_after' && script.kind !== 'session_changed_after') throwScript(script);
+        // Like the real guard: every write (replays included) is charged to a
+        // fixed one-minute window before the receipt lookup.
+        if (options.writesPerMinute !== undefined) {
+          const window = Math.floor(now() / 60_000);
+          const used = writeTimes.filter((at) => Math.floor(at / 60_000) === window).length;
+          if (used >= options.writesPerMinute) throw new V1Error('rate_limited', 429, 'RATE_LIMITED', { retryAfterSeconds: Math.ceil(((window + 1) * 60_000 - now()) / 1000) });
+          writeTimes.push(now());
+        }
         const receipt = receipts.get(command.commandId);
         if (receipt) {
           if (receipt.body !== body) throw new V1Error('idempotency_mismatch', 409, 'IDEMPOTENCY_MISMATCH');
           return receipt.ack;
-        }
-        if (options.writesPerMinute !== undefined) {
-          const recent = writeTimes.filter((at) => at > now() - 60_000);
-          if (recent.length >= options.writesPerMinute) throw new V1Error('rate_limited', 429, 'RATE_LIMITED', { retryAfterSeconds: Math.ceil((recent[0] + 60_000 - now()) / 1000) });
-          writeTimes.push(now());
         }
         const ack = createTransaction(command);
         receipts.set(command.commandId, { ack, body });
