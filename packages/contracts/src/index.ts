@@ -130,13 +130,15 @@ export {
   EXPORT_STATUSES,
   EXPORT_CSV_COLUMNS,
   EXPORT_CSV_BOM,
+  EXPORT_FAILURE_REASONS,
+  EXPORT_MAX_OPEN,
   exportFileName,
   isExportFilter,
   isExportRequestSnapshot,
   isExportDto,
   isExportGrant,
 } from "./v1/privacy.ts";
-export type { ExportStatus, ExportFilter, ExportRequest, ExportRequestSnapshot, ExportDto, ExportGrant, ExportCsvColumn } from "./v1/privacy.ts";
+export type { ExportFailureReason, ExportStatus, ExportFilter, ExportRequest, ExportRequestSnapshot, ExportDto, ExportGrant, ExportCsvColumn } from "./v1/privacy.ts";
 export {
   IMPORT_UPLOAD_MAX_BYTES,
   IMPORT_FILE_NAME_MAX_CHARS,

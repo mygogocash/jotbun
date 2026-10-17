@@ -24,13 +24,15 @@ export class CsvTooLarge extends Error {
 // ASCII and full-width forms, plus tab and line breaks that some apps strip.
 const FORMULA_START = /^[=+\-@＝＋－＠\t\r\n]/u;
 // Leading characters a spreadsheet may skip before deciding it saw a formula:
-// any Unicode whitespace (including no-break and ideographic spaces), the
-// byte order mark and zero-width characters.
-const IGNORABLE_PREFIX = /^[\s​-‍⁠﻿]+/u;
+// any Unicode whitespace (including no-break and ideographic spaces) and every
+// default-ignorable code point (byte order mark, zero-width characters, soft
+// hyphen, fillers).
+const IGNORABLE_PREFIX = /^[\s\p{Default_Ignorable_Code_Point}]+/u;
 
-/** True when a spreadsheet could read this text as a formula. */
+/** True when a spreadsheet could read this text as a formula, including compatibility look-alikes (NFKC). */
 export function startsLikeFormula(text: string): boolean {
-  return FORMULA_START.test(text) || FORMULA_START.test(text.replace(IGNORABLE_PREFIX, ''));
+  const visible = text.replace(IGNORABLE_PREFIX, '');
+  return FORMULA_START.test(text) || FORMULA_START.test(visible) || FORMULA_START.test(visible.slice(0, 8).normalize('NFKC'));
 }
 
 /** Prefixes `'` (shown as text, never evaluated) to text that could start a formula; other text is unchanged. */

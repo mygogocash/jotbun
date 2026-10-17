@@ -115,6 +115,17 @@ export class S3ObjectStore implements ObjectStore {
     return new Uint8Array(data);
   }
 
+  /** Streams the body as it arrives; the caller checks size and digest against what it recorded. */
+  async getStream(key: string): Promise<{ body: AsyncIterable<Uint8Array>; bytes: number; sha256: string } | null> {
+    assertObjectKey(key);
+    const response = await this.send('GET', this.address(key));
+    if (response.status === 404) return discard(response, null);
+    if (!response.ok) return discard(response, new ObjectStoreError('unavailable'));
+    const bytes = Number(response.headers.get('content-length') ?? -1);
+    if (!Number.isSafeInteger(bytes) || bytes < 0 || bytes > this.maxBytes || !response.body) return discard(response, new ObjectStoreError('unavailable'));
+    return { body: response.body as unknown as AsyncIterable<Uint8Array>, bytes, sha256: response.headers.get('x-amz-meta-sha256') ?? '' };
+  }
+
   async delete(key: string): Promise<void> {
     assertObjectKey(key);
     const response = await this.send('DELETE', this.address(key));

@@ -29,6 +29,9 @@ export function leaseSafetyMs(leaseSeconds: number): number {
 
 type LeasedRow = { id: string; kind: JobKind; account_id: string | null; lifecycle_generation: number; payload: unknown; lease_token: string; attempts: number; max_attempts: number; lease_expires_at: Date; granted_ms: number };
 
+/** Job failures that are the user's to act on (shown to them), not an operator's. */
+export const USER_FAILURE_CODES: readonly string[] = ['export_too_large'];
+
 /**
  * The one durable job queue (PostgreSQL, worker role only). Claims take a
  * fresh fencing token per attempt with SKIP LOCKED; every later transition
@@ -186,12 +189,19 @@ export class JobRepository {
     return rowCount === 1;
   }
 
-  /** Counts and the oldest age of open and failed jobs, per kind and status (no payloads). */
+  /**
+   * Counts and the oldest age of open jobs, and of jobs that failed in the
+   * last 24 hours, per kind and status (no payloads). Failures the user
+   * caused and was told about (USER_FAILURE_CODES) are not operator alerts.
+   */
   async backlog(): Promise<BacklogRow[]> {
     const { rows } = await this.pool.query<{ kind: string; status: string; count: string; oldest_seconds: string }>(
       `SELECT kind, status, count(*) AS count, floor(extract(epoch FROM now() - min(created_at)))::bigint AS oldest_seconds
-         FROM jobs WHERE status IN ('queued', 'leased', 'failed')
+         FROM jobs
+        WHERE status IN ('queued', 'leased')
+           OR (status = 'failed' AND finished_at > now() - interval '24 hours' AND coalesce(last_error, '') <> ALL ($1))
         GROUP BY kind, status ORDER BY kind, status`,
+      [USER_FAILURE_CODES],
     );
     return rows.map((row) => ({ kind: row.kind, status: row.status, count: Number(row.count), oldestSeconds: Number(row.oldest_seconds) }));
   }

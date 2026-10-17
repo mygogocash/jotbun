@@ -27,6 +27,7 @@ import { v1Client } from '../testing/v1-client';
 import { ExportHandler, exportCleanupOverdue } from './export-handler';
 import type { ExportHandlerOptions } from './export-handler';
 import { ExportService } from './export.service';
+import { DatabaseService } from '../database/database.service';
 
 const HOUR = 3_600_000;
 const MARCH: ExportFilter = { from: '2026-03-01', through: '2026-03-31' };
@@ -577,5 +578,122 @@ describe('runtime logs', () => {
       setLogSink(previous);
       for (const spy of spies) spy.mockRestore();
     }
+  });
+});
+
+describe('P4 review fixes', () => {
+  it('a download streams the stored file and never reads it whole', async () => {
+    const { user } = await marchDiary();
+    const ready = await readyExport(user);
+    const whole = store.get.bind(store);
+    store.get = async (key) => {
+      if (key.startsWith('export/')) throw new Error('read whole');
+      return whole(key);
+    };
+    try {
+      const { body } = await download(user, ready.export_id);
+      expect(createHash('sha256').update(body).digest('hex')).toBe(ready.sha256);
+    } finally {
+      store.get = whole;
+    }
+  });
+
+  it('at most four export downloads run at once in a process; more are told to retry', async () => {
+    const { user } = await marchDiary();
+    const ready = await readyExport(user);
+    const grant = (await as(user).get(`/v1/exports/${ready.export_id}/grant`)).body as ExportGrant;
+    const open = store.getStream.bind(store);
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    store.getStream = async (key) => {
+      const found = await open(key);
+      if (!found) return found;
+      return { ...found, body: (async function* held() { await gate; yield* found.body; })() };
+    };
+    try {
+      const held = Array.from({ length: 4 }, () => fetchFile(user, grant.url));
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      const extra = await fetchFile(user, grant.url);
+      expect([extra.status, extra.body instanceof Buffer ? JSON.parse(extra.body.toString()).code : extra.body.code]).toEqual([503, 'SERVICE_UNAVAILABLE']);
+      release();
+      expect((await Promise.all(held)).map((res) => res.status)).toEqual([200, 200, 200, 200]);
+      expect((await fetchFile(user, grant.url)).status).toBe(200);
+    } finally {
+      release();
+      store.getStream = open;
+    }
+  });
+
+  it('a too-large export says why, and is not an operator alert', async () => {
+    const { user } = await marchDiary();
+    const { res } = await requestExport(user);
+    const small = new JobWorker(jobs, buildHandlers(deps(), { export: { maxBytes: 300 } }));
+    expect(await small.runOnce()).toBe('ran');
+    const status = await as(user).get(`/v1/exports/${res.body.entity_id}`);
+    expect(status.body).toMatchObject({ status: 'failed', reason: 'too_large' });
+    expect(isExportDto(status.body)).toBe(true);
+    expect((await jobs.backlog()).filter((row) => row.kind === 'export' && row.status === 'failed')).toEqual([]);
+  });
+
+  it('an account can have at most two exports open; a third waits', async () => {
+    const { user } = await marchDiary();
+    expect((await requestExport(user)).res.status).toBe(202);
+    expect((await requestExport(user, { from: '2026-02-01', through: '2026-02-28' })).res.status).toBe(202);
+    const third = await requestExport(user, { from: '2026-01-01', through: '2026-01-31' });
+    expect([third.res.status, third.res.body.code]).toEqual([429, 'RATE_LIMITED']);
+    expect(third.res.body.retry_after_seconds).toBeGreaterThan(0);
+    await drain();
+    expect((await requestExport(user, { from: '2026-01-01', through: '2026-01-31' })).res.status).toBe(202);
+  });
+
+  it("the exports table's own policy hides another account's rows", async () => {
+    const { user } = await marchDiary();
+    const ready = await readyExport(user);
+    const other = await money.member();
+    const seen = await new DatabaseService(pool).withOwnerTransaction(other.session, (tx) => tx.query('SELECT export_id FROM exports WHERE export_id = $1', [ready.export_id]));
+    expect(seen).toEqual([]);
+  });
+
+  it('an expired file is not served even while its grant and object remain', async () => {
+    const { user } = await marchDiary();
+    const ready = await readyExport(user);
+    const grant = (await as(user).get(`/v1/exports/${ready.export_id}/grant`)).body as ExportGrant;
+    await db.admin((client) => client.query(`UPDATE exports SET ready_at = now() - interval '2 hours', expires_at = now() - interval '1 second' WHERE export_id = $1`, [ready.export_id]));
+    expect((await store.list(`export/${user.accountId}/`)).length).toBe(1);
+    expect((await fetchFile(user, grant.url)).status).toBe(404);
+  });
+
+  it('recording a file needs the current lease, an active account and the published object itself', async () => {
+    const expiresAt = new Date(Date.now() + HOUR);
+    /** A claimed export job with a genuinely published object for its lease. */
+    async function published() {
+      const { user } = await marchDiary();
+      await requestExport(user);
+      const claimed = await claimExport();
+      const key = `export/${user.accountId}/${claimed.lease.jobId}/${claimed.lease.leaseToken}/march.csv`;
+      await db.admin((client) => client.query(
+        `INSERT INTO object_publications (key, job_id, account_id, lease_token, lifecycle_generation, purpose, status, delete_after, bytes, sha256, published_at)
+         VALUES ($1, $2, $3, $4, 0, 'export', 'published', $5, 10, decode($6, 'hex'), now())`,
+        [key, claimed.lease.jobId, user.accountId, claimed.lease.leaseToken, expiresAt, 'a'.repeat(64)],
+      ));
+      const record = (lease: string, objectKey = key) =>
+        jobsPool.query<{ recorded: boolean }>('SELECT gogospend_record_export($1, $2, $3, $4, $5, $6, $7, $8) AS recorded', [claimed.lease.jobId, lease, objectKey, 10, 'a'.repeat(64), 1, 0, expiresAt]).then((res) => res.rows[0].recorded);
+      return { user, claimed, key, record };
+    }
+    // Control: the current lease, an active account and its published object record the file.
+    const ok = await published();
+    expect(await ok.record(ok.claimed.lease.leaseToken)).toBe(true);
+    // Another object, even of this export, is refused.
+    const forged = await published();
+    expect(await forged.record(forged.claimed.lease.leaseToken, `export/${forged.user.accountId}/${forged.claimed.lease.jobId}/${forged.claimed.lease.leaseToken}/other.csv`)).toBe(false);
+    // The job was claimed again under a new lease: the old lease's object is not recorded.
+    const reclaimed = await published();
+    await db.admin((client) => client.query('UPDATE jobs SET lease_token = $2 WHERE id = $1', [reclaimed.claimed.lease.jobId, randomUUID()]));
+    expect(await reclaimed.record(reclaimed.claimed.lease.leaseToken)).toBe(false);
+    // The account is no longer active.
+    const disabled = await published();
+    await db.admin((client) => client.query(`UPDATE accounts SET status = 'disabled' WHERE id = $1`, [disabled.user.accountId]));
+    expect(await disabled.record(disabled.claimed.lease.leaseToken)).toBe(false);
+    for (const refused of [forged, reclaimed, disabled]) expect((await exportsOf(refused.user.accountId))[0].object_key).toBeNull();
   });
 });

@@ -51,13 +51,24 @@ GRANT SELECT ON exports TO gogospend_app;
 GRANT INSERT (export_id, account_id, lifecycle_generation, from_date, through_date) ON exports TO gogospend_app;
 --> statement-breakpoint
 -- The owner's export job state ('queued' | 'leased' | 'succeeded' | 'failed'
--- | 'cancelled' | ...), or NULL when they have no such export job.
-CREATE FUNCTION gogospend_export_job_status(p_export_id uuid) RETURNS text
+-- | 'cancelled' | ...) and, for a failure the user can act on, its code
+-- ('export_too_large'); no row when they have no such export job.
+CREATE FUNCTION gogospend_export_job_status(p_export_id uuid) RETURNS TABLE (status text, failure text)
   LANGUAGE sql STABLE SECURITY DEFINER
   SET search_path = pg_catalog
 AS $$
-  SELECT j.status FROM public.jobs j
+  SELECT j.status, CASE WHEN j.status = 'failed' AND j.last_error = 'export_too_large' THEN j.last_error END
+    FROM public.jobs j
    WHERE j.id = p_export_id AND j.kind = 'export' AND j.account_id = public.gogospend_current_account()
+$$;
+--> statement-breakpoint
+-- How many of the owner's export jobs are queued or running (the per-account cap).
+CREATE FUNCTION gogospend_open_export_jobs() RETURNS integer
+  LANGUAGE sql STABLE SECURITY DEFINER
+  SET search_path = pg_catalog
+AS $$
+  SELECT count(*)::integer FROM public.jobs j
+   WHERE j.kind = 'export' AND j.account_id = public.gogospend_current_account() AND j.status IN ('queued', 'leased')
 $$;
 --> statement-breakpoint
 -- Records for a current `export` lease (gogospend_leased_account validates the
@@ -149,10 +160,10 @@ BEGIN
 END
 $$;
 --> statement-breakpoint
-REVOKE ALL ON FUNCTION gogospend_export_job_status(uuid), gogospend_leased_export_rows(uuid, uuid, date, uuid, integer),
+REVOKE ALL ON FUNCTION gogospend_export_job_status(uuid), gogospend_open_export_jobs(), gogospend_leased_export_rows(uuid, uuid, date, uuid, integer),
   gogospend_record_export(uuid, uuid, text, bigint, text, integer, bigint, timestamptz) FROM PUBLIC;
 --> statement-breakpoint
-GRANT EXECUTE ON FUNCTION gogospend_export_job_status(uuid) TO gogospend_app;
+GRANT EXECUTE ON FUNCTION gogospend_export_job_status(uuid), gogospend_open_export_jobs() TO gogospend_app;
 --> statement-breakpoint
 GRANT EXECUTE ON FUNCTION gogospend_leased_export_rows(uuid, uuid, date, uuid, integer) TO gogospend_leased_read;
 --> statement-breakpoint

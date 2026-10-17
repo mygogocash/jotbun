@@ -62,7 +62,8 @@ export type ExportState =
   | { state: 'unconfirmed'; request: PendingExportRequest }
   | { state: 'queued'; exportId: string }
   | { state: 'ready'; exportId: string; file: ReadyExport }
-  | { state: 'failed'; exportId: string }
+  /** `too_large`: ask for a shorter period; `error` or unknown: try again later. */
+  | { state: 'failed'; exportId: string; reason: 'too_large' | 'error' }
   | { state: 'expired'; exportId: string };
 
 export type ExportDeps = {
@@ -115,11 +116,12 @@ export async function pollExport(exportId: string, deps: Pick<ExportDeps, 'resou
     try {
       dto = await deps.resources.exportStatus(exportId);
     } catch (error) {
-      if (error instanceof V1Error && error.outcome === 'not_found') return { state: 'failed', exportId };
+      if (error instanceof V1Error && error.outcome === 'not_found') return { state: 'failed', exportId, reason: 'error' };
       throw error;
     }
     if (dto.status === 'ready') return { state: 'ready', exportId, file: dto };
-    if (dto.status === 'failed' || dto.status === 'expired') return { state: dto.status, exportId };
+    if (dto.status === 'failed') return { state: 'failed', exportId, reason: dto.reason };
+    if (dto.status === 'expired') return { state: 'expired', exportId };
   }
   return { state: 'queued', exportId };
 }

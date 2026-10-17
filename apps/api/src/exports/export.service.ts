@@ -1,11 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ContractValidationError, EXPORT_DOWNLOAD_PATH, exportFileName, isExportFilter, isExportRequestSnapshot, isUuid } from '@gogospend/contracts';
+import { ContractValidationError, EXPORT_DOWNLOAD_PATH, EXPORT_MAX_OPEN, exportFileName, isExportFilter, isExportRequestSnapshot, isUuid } from '@gogospend/contracts';
 import type { CommandAck, CommandInput, ExportDto, ExportFilter, ExportGrant, ExportRequestSnapshot, SessionContext } from '@gogospend/contracts';
 
 import { authorizePurpose } from '../auth/reauthentication.service';
 import { CommandExecutor } from '../commands/command-executor';
 import { CommandRegistry } from '../commands/command-registry';
 import { derivedUuid } from '../commands/derived-id';
+import { ProblemException } from '../common/api-problem.filter';
 import { DatabaseService } from '../database/database.service';
 import type { OwnerTx } from '../database/owner-transaction';
 import { parseHistoryRequest } from '../history/history-query';
@@ -73,6 +74,9 @@ export class ExportService {
     const id = derivedUuid(ctx.accountId, 'export-request', input.commandId);
     const snapshot: ExportRequestSnapshot = { id, from: input.payload.from, through: input.payload.through };
     return this.executor.run(ctx, { ...input, payload: snapshot }, async (tx) => {
+      // Under the account lock: one account cannot fill the shared queue.
+      const [open] = await tx.query<{ n: number }>('SELECT gogospend_open_export_jobs() AS n');
+      if ((open?.n ?? 0) >= EXPORT_MAX_OPEN) throw new ProblemException(429, 'RATE_LIMITED', { retryAfterSeconds: 60 });
       await authorizePurpose(tx, ctx, proofId, input.commandId, 'export');
       const [queued] = await tx.query<{ queued: boolean }>('SELECT gogospend_enqueue_account_job($1, $2, $3::jsonb, $4, $5) AS queued', [
         id,
@@ -143,7 +147,8 @@ export class ExportService {
       if (row.expires_at.getTime() <= now.getTime()) return { ...base, status: 'expired' };
       return { ...base, status: 'ready', as_of_revision: row.high_water, row_count: row.row_count, bytes: Number(row.bytes), sha256: row.sha256, expires_at: row.expires_at.toISOString() };
     }
-    const [job] = await tx.query<{ status: string | null }>('SELECT gogospend_export_job_status($1) AS status', [exportId]);
-    return { ...base, status: job?.status === 'queued' || job?.status === 'leased' ? 'pending' : 'failed' };
+    const [job] = await tx.query<{ status: string; failure: string | null }>('SELECT status, failure FROM gogospend_export_job_status($1)', [exportId]);
+    if (job?.status === 'queued' || job?.status === 'leased') return { ...base, status: 'pending' };
+    return { ...base, status: 'failed', reason: job?.failure === 'export_too_large' ? 'too_large' : 'error' };
   }
 }

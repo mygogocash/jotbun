@@ -217,3 +217,17 @@ describe('export rows', () => {
     expect(asRecord(exportRowCells({ ...base, categoryLabel: 'Lunch', categoryBuiltinKey: null })).category_builtin_key).toBe('');
   });
 });
+
+describe('P4 review fixes', () => {
+  it('neutralizes formula look-alikes and invisible prefixes', () => {
+    for (const text of ['﹦1+1', '﹢cmd', '﹣1', '﹫SUM(A1)', '­=1+1', '͏=1', '᠎=1', 'ㅤ=1', '​­=1']) {
+      expect([text, neutralizeFormula(text)]).toEqual([text, `'${text}`]);
+    }
+    expect(neutralizeFormula('\rtext')).toBe("'\rtext");
+    expect(neutralizeFormula('ข้าวมันไก่')).toBe('ข้าวมันไก่');
+  });
+
+  it('quotes a lone carriage return', () => {
+    expect(quoteCsvField('a\rb')).toBe('"a\rb"');
+  });
+});

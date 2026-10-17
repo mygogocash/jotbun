@@ -1569,3 +1569,32 @@ Observed, not changed (pre-existing):
   - supply a reapply routine that re-queues provider cleanup;
   - decide whether to purge `auth_event_receipts` digests on erasure.
 - **Open for P2c:** supply the real attachment-reference query that replaces `rehearsal_attachment_refs`.
+
+## Review fixes for P4
+
+- **P4 review** (`d8f191c` as merged in `60ba012`): no blockers, one major, five minors, nits; nine mutants survived.
+  - The reviewer confirmed the proof and replay rules, ownership 404s, grant forgery and cross-route refusal, and session handling after a global logout.
+  - It also confirmed snapshot consistency, paging, exact amounts, the cancellation/deletion/lifecycle paths, the routines' privileges, sync parity with export entities, and the app client's checks.
+- **Fixed, with tests that failed first.** RED: 4 of 22 database tests and 1 of 34 CSV tests failed on assertions; then all passed. The other new tests pin guards whose mutants survived. All 12 mutants re-applied now fail the suite (`p4fix-mutants.log`), including the three `gogospend_record_export` guards, which needed a genuinely published object to isolate.
+  - **Major — downloads loaded the whole file into API memory.**
+    - The object store gains `getStream` (memory: 64 KiB chunks; S3: the response body as it arrives).
+    - The download streams with the recorded length, checks size and SHA-256 as it streams (a mismatch aborts the response; the client checks too), and never calls `get`.
+    - At most four export downloads run at once per process; more get 503 with `retry_after_seconds`.
+  - **Minor — a too-large export failed without a reason, and alerted operators forever.**
+    - `ExportDto`'s failed state now carries `reason: "too_large" | "error"`. `gogospend_export_job_status` exposes only user-actionable codes. The app client passes the reason through.
+    - The worker's failed-job alert counts only failures from the last 24 hours, and not user-caused codes (`USER_FAILURE_CODES`: `export_too_large`).
+  - **Minor — one account could hold up the shared queue.** At most `EXPORT_MAX_OPEN` (2) exports per account are queued or running; a third request gets 429 with a retry time (checked under the account lock through `gogospend_open_export_jobs`).
+  - **Minor — untested guards.** New tests cover:
+    - the `exports` table's own RLS (read directly in another owner's transaction);
+    - `file()` refusing an expired file while its grant and object remain;
+    - the record routine refusing another object, a re-claimed lease and an inactive account;
+    - a lone CR being quoted.
+  - **Nit — formula look-alikes.** The formula guard now strips every default-ignorable code point (soft hyphen, U+034F, U+180E, U+3164, zero-width characters) and also checks the NFKC form, so small-form `﹦﹢﹣﹫` are neutralized. `\rtext` is pinned.
+- **Not changed (recorded):**
+  - **API rollback below P4 is not supported** once any account has requested an export: export entities in the change log would fail a pre-P4 API's sync validators. P6b's rollback rules must state that the rollback floor is the P4 release.
+  - The worker still holds an export's CSV parts plus the store's buffered upload (bounded by the 64 MiB cap).
+  - Export grants reuse S1's five-minute grant (`EXPORT_GRANT_MINUTES` has the same value).
+  - `exportCleanupOverdue` can over-count while two sweeps race.
+  - The app role can read the spent lease token inside `object_key`.
+  - A global logout leaves queued exports running, as the plan intends.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (555), test:db PASS (489), test:app PASS (28), test:unit PASS (215), test:dev PASS (7), test:ops PASS (59), test:render PASS (60), build PASS, export:web PASS, `git diff --check` PASS. The two `gogospend_test_*` databases seen belonged to parallel worktrees' running suites.

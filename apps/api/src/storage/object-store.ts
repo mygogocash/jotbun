@@ -12,6 +12,8 @@ export interface ObjectStore {
   putStream(key: string, body: ObjectBody, options?: { contentType?: string; signal?: AbortSignal }): Promise<{ bytes: number; sha256: string }>;
   head(key: string): Promise<ObjectInfo | null>;
   get(key: string): Promise<Uint8Array | null>;
+  /** Reads an object as a stream of chunks (never whole), with its stored size and digest; null if absent. */
+  getStream(key: string): Promise<{ body: AsyncIterable<Uint8Array>; bytes: number; sha256: string } | null>;
   delete(key: string): Promise<void>;
   list(prefix: string): Promise<ObjectInfo[]>;
 }
@@ -38,6 +40,9 @@ export function assertObjectKey(key: string): void {
 export function assertObjectPrefix(prefix: string): void {
   if (typeof prefix !== 'string' || !PREFIX.test(prefix)) throw new ObjectStoreError('invalid_key');
 }
+
+/** Chunk size of the memory store's streamed reads. */
+const STREAM_CHUNK_BYTES = 64 * 1024;
 
 /** The largest object any adapter accepts (bodies are hashed before upload). */
 export const MAX_OBJECT_BYTES = 64 * 1024 * 1024;
@@ -102,6 +107,17 @@ export class MemoryObjectStore implements ObjectStore {
     assertObjectKey(key);
     const object = this.objects.get(key);
     return object ? new Uint8Array(object.body) : null;
+  }
+
+  async getStream(key: string): Promise<{ body: AsyncIterable<Uint8Array>; bytes: number; sha256: string } | null> {
+    assertObjectKey(key);
+    const object = this.objects.get(key);
+    if (!object) return null;
+    const stored = object.body;
+    async function* chunks(): AsyncIterable<Uint8Array> {
+      for (let start = 0; start < stored.byteLength; start += STREAM_CHUNK_BYTES) yield new Uint8Array(stored.subarray(start, start + STREAM_CHUNK_BYTES));
+    }
+    return { body: chunks(), bytes: stored.byteLength, sha256: object.sha256 };
   }
 
   async delete(key: string): Promise<void> {

@@ -161,12 +161,12 @@ test('an unknown outcome keeps the exact request, and a retry sends the same key
 test('polling reports queued after its budget, and failed, expired or unknown exports as such', async () => {
   replies.push({ status: 200, body: { ...BASE, status: 'pending' } }, { status: 200, body: { ...BASE, status: 'pending' } }, { status: 200, body: { ...BASE, status: 'pending' } });
   assert.deepEqual(await pollExport(EXPORT_ID, deps()), { state: 'queued', exportId: EXPORT_ID });
-  replies.push({ status: 200, body: { ...BASE, status: 'failed' } });
-  assert.deepEqual(await pollExport(EXPORT_ID, deps()), { state: 'failed', exportId: EXPORT_ID });
+  replies.push({ status: 200, body: { ...BASE, status: 'failed', reason: 'too_large' } });
+  assert.deepEqual(await pollExport(EXPORT_ID, deps()), { state: 'failed', exportId: EXPORT_ID, reason: 'too_large' });
   replies.push({ status: 200, body: { ...BASE, status: 'expired' } });
   assert.deepEqual(await pollExport(EXPORT_ID, deps()), { state: 'expired', exportId: EXPORT_ID });
   replies.push({ status: 404, body: { code: 'NOT_FOUND', request_id: 'r', message_key: 'errors.not_found' } });
-  assert.deepEqual(await pollExport(EXPORT_ID, deps()), { state: 'failed', exportId: EXPORT_ID });
+  assert.deepEqual(await pollExport(EXPORT_ID, deps()), { state: 'failed', exportId: EXPORT_ID, reason: 'error' });
 });
 
 test('downloading a ready export asks for a fresh grant; an expired one asks for nothing', async () => {

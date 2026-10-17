@@ -41,9 +41,17 @@ export type ExportRequestSnapshot = { id: string; from: string; through: string 
 
 type ExportBase = { export_id: string; from: string; through: string; requested_at: string };
 
+/** Why an export failed: `too_large` - choose a shorter period; `error` - try again later. */
+export const EXPORT_FAILURE_REASONS = ["too_large", "error"] as const;
+export type ExportFailureReason = (typeof EXPORT_FAILURE_REASONS)[number];
+
+/** At most this many exports per account are queued or running at once. */
+export const EXPORT_MAX_OPEN = 2;
+
 /** GET /v1/exports/:id */
 export type ExportDto =
-  | (ExportBase & { status: "pending" | "failed" | "expired" })
+  | (ExportBase & { status: "pending" | "expired" })
+  | (ExportBase & { status: "failed"; reason: ExportFailureReason })
   | (ExportBase & {
       status: "ready";
       /** The account revision the file was read at (one consistent view). */
@@ -141,7 +149,8 @@ export function isExportRequestSnapshot(value: unknown): value is ExportRequestS
 export function isExportDto(value: unknown): value is ExportDto {
   if (!isObject(value) || !isUuid(value.export_id) || !hasPeriod(value) || !isInstant(value.requested_at)) return false;
   const base = ["export_id", "status", "from", "through", "requested_at"];
-  if (value.status === "pending" || value.status === "failed" || value.status === "expired") return hasExactly(value, base);
+  if (value.status === "pending" || value.status === "expired") return hasExactly(value, base);
+  if (value.status === "failed") return hasExactly(value, [...base, "reason"]) && EXPORT_FAILURE_REASONS.includes(value.reason as ExportFailureReason);
   return (
     value.status === "ready" &&
     hasExactly(value, [...base, "as_of_revision", "row_count", "bytes", "sha256", "expires_at"]) &&
