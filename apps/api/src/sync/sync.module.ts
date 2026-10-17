@@ -16,7 +16,7 @@ import { SyncQuery } from './sync-query';
   providers: [
     SyncQuery,
     SnapshotRepository,
-    { provide: SnapshotGrants, useFactory: (digester: CommandDigester) => new SnapshotGrants(digester.deriveKey('gogospend.snapshot-grant.v1')), inject: [CommandDigester] },
+    { provide: SnapshotGrants, useFactory: (digester: CommandDigester) => new SnapshotGrants(digester.deriveKeys('gogospend.snapshot-grant.v1')), inject: [CommandDigester] },
   ],
 })
 export class SyncModule {}

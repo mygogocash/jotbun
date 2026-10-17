@@ -220,6 +220,7 @@ export const entityChanges = pgTable(
     state: text('state', { enum: ENTITY_STATE_VALUES }).notNull(),
     snapshot: jsonb('snapshot'),
     committedAt: instant('committed_at').notNull().defaultNow(),
+    groupBytes: integer('group_bytes'),
   },
   (table) => [primaryKey({ columns: [table.accountId, table.revision, table.ordinal] })],
 );

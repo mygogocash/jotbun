@@ -26,8 +26,11 @@ export class SnapshotRepository {
 
   /** Null when the caller has no such snapshot. */
   async status(tx: OwnerTx, snapshotId: string, now: Date = new Date()): Promise<SnapshotDto | null> {
-    const [manifest] = await tx.query<{ high_water: string; expires_at: Date }>(
-      'SELECT high_water::text AS high_water, expires_at FROM snapshot_manifests WHERE snapshot_id = $1',
+    // A manifest from an earlier lifecycle generation is never served.
+    const [manifest] = await tx.query<{ high_water: string; expires_at: Date; generation: number }>(
+      `SELECT m.high_water::text AS high_water, m.expires_at, m.lifecycle_generation AS generation
+         FROM snapshot_manifests m JOIN accounts a ON a.id = m.account_id AND a.lifecycle_generation = m.lifecycle_generation
+        WHERE m.snapshot_id = $1`,
       [snapshotId],
     );
     if (manifest) {
@@ -41,7 +44,7 @@ export class SnapshotRepository {
         status: 'ready',
         schema_version: SNAPSHOT_SCHEMA_VERSION,
         high_water: manifest.high_water,
-        cursor: encodeSyncCursor(tx.accountId, manifest.high_water),
+        cursor: encodeSyncCursor(tx.accountId, manifest.high_water, manifest.generation),
         expires_at: manifest.expires_at.toISOString(),
         chunks: chunks.map((chunk) => {
           const { grant, expiresAt } = this.grants.issue(tx.accountId, { snapshotId, index: chunk.chunk_index }, now, manifest.expires_at);
@@ -57,7 +60,7 @@ export class SnapshotRepository {
       case 'queued':
       case 'leased':
         return { snapshot_id: snapshotId, status: 'pending' };
-      // Succeeded without a manifest: the manifest was dropped after expiry.
+      // Succeeded without a current manifest: dropped after expiry, or from an earlier lifecycle generation.
       case 'succeeded':
         return { snapshot_id: snapshotId, status: 'expired' };
       default:
@@ -72,6 +75,7 @@ export class SnapshotRepository {
     const [row] = await tx.query<{ object_key: string; bytes: string; sha256: string }>(
       `SELECT c.object_key, c.bytes::text AS bytes, encode(c.sha256, 'hex') AS sha256
          FROM snapshot_chunks c JOIN snapshot_manifests m ON m.snapshot_id = c.snapshot_id
+         JOIN accounts a ON a.id = m.account_id AND a.lifecycle_generation = m.lifecycle_generation
         WHERE c.snapshot_id = $1 AND c.chunk_index = $2 AND m.expires_at > $3`,
       [target.snapshotId, target.index, now],
     );

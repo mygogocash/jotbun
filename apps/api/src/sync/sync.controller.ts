@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Headers, HttpCode, Inject, Param, Post, Query, StreamableFile } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Inject, Param, Post, Query, Res, StreamableFile } from '@nestjs/common';
 import { ContractValidationError, assertKnownFields, isUuid } from '@gogospend/contracts';
 import type { SessionContext, SnapshotDto, SyncChangesPage } from '@gogospend/contracts';
+import type { Response } from 'express';
 import { createHash } from 'node:crypto';
 
 import { Access } from '../auth/auth-route.decorator';
@@ -32,20 +33,27 @@ export class SyncController {
   /**
    * Asks for a full snapshot (built in the background). Idempotent by
    * `Idempotency-Key`; an open build or a snapshot from the last hour is
-   * reused. Poll `GET snapshots/:id` until it is ready.
+   * reused. 200 with a ready snapshot; otherwise 202 - poll `GET
+   * snapshots/:id` until it is ready.
    */
   @Post('snapshots')
   @Access('bound_session')
-  @HttpCode(202)
-  async request(@CurrentSession() session: SessionContext, @Headers('idempotency-key') key: string | undefined, @Body() body: unknown): Promise<SnapshotDto> {
+  async request(
+    @CurrentSession() session: SessionContext,
+    @Headers('idempotency-key') key: string | undefined,
+    @Body() body: unknown,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<SnapshotDto> {
     assertKnownFields(body ?? {}, []);
     if (!isUuid(key)) throw new ContractValidationError('VALIDATION_FAILED', 'Idempotency-Key must be a UUID.', 'idempotency-key');
-    return this.db.withOwnerTransaction(session, async (tx) => {
+    const status = await this.db.withOwnerTransaction(session, async (tx) => {
       const id = await this.snapshots.request(tx, key);
-      const status = await this.snapshots.status(tx, id);
-      if (!status) throw new Error('a requested snapshot has no status');
-      return status;
+      const current = await this.snapshots.status(tx, id);
+      if (!current) throw new Error('a requested snapshot has no status');
+      return current;
     });
+    res.status(status.status === 'ready' ? 200 : 202);
+    return status;
   }
 
   @Get('snapshots/:id')

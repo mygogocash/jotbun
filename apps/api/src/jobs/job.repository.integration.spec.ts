@@ -186,9 +186,11 @@ describe('P1 job runtime', () => {
     const [mine, theirs] = [await account(), await account()];
     const service = new DatabaseService(await db.loginPool(['gogospend_app'], 2));
     const id = randomUUID();
-    await service.withOwnerTransaction(ownerCtx(mine), (tx) => tx.query(`SELECT gogospend_enqueue_account_job($1, 'sync_snapshot', '{}'::jsonb, 3, 120)`, [id]));
+    await service.withOwnerTransaction(ownerCtx(mine), (tx) => tx.query(`SELECT gogospend_enqueue_account_job($1, 'export', '{}'::jsonb, 3, 120)`, [id]));
     const row = (await db.admin((client) => client.query('SELECT account_id, kind, status, max_runtime_seconds FROM jobs WHERE id = $1', [id]))).rows[0];
-    expect(row).toEqual({ account_id: mine, kind: 'sync_snapshot', status: 'queued', max_runtime_seconds: 120 });
+    expect(row).toEqual({ account_id: mine, kind: 'export', status: 'queued', max_runtime_seconds: 120 });
+    // Snapshots go through gogospend_request_snapshot (one open build, reuse, its own limits).
+    await expect(service.withOwnerTransaction(ownerCtx(mine), (tx) => tx.query(`SELECT gogospend_enqueue_account_job($1, 'sync_snapshot', '{}'::jsonb, 3, 120)`, [randomUUID()]))).rejects.toThrow();
     await expect(service.withOwnerTransaction(ownerCtx(mine), (tx) => tx.query(`SELECT gogospend_enqueue_account_job($1, 'auth0_revoke_grants', '{}'::jsonb, 3, 120)`, [randomUUID()]))).rejects.toThrow();
     const theirsJob = await generic(theirs);
     const [cancelled] = await service.withOwnerTransaction(ownerCtx(mine), (tx) => tx.query<{ n: number }>('SELECT gogospend_cancel_account_jobs() AS n'));

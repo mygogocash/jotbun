@@ -17,8 +17,12 @@ const BODY_BYTES = 1 + 16 + 2 + 6;
  * is looked up under the owner's RLS.
  */
 export class SnapshotGrants {
-  constructor(private readonly key: Buffer) {
-    if (key.length < 32) throw new RangeError('grant keys are at least 32 bytes');
+  private readonly keys: readonly Buffer[];
+
+  /** Issues with the first key; verifies with any (the rest are keys from before a rotation). */
+  constructor(keys: Buffer | readonly Buffer[]) {
+    this.keys = Array.isArray(keys) ? [...keys] : [keys as Buffer];
+    if (this.keys.length === 0 || this.keys.some((key) => key.length < 32)) throw new RangeError('grant keys are at least 32 bytes');
   }
 
   issue(accountId: string, target: GrantTarget, now: Date = new Date(), notAfter?: Date): { grant: string; expiresAt: Date } {
@@ -30,7 +34,7 @@ export class SnapshotGrants {
     Buffer.from(target.snapshotId.replace(/-/g, ''), 'hex').copy(body, 1);
     body.writeUInt16BE(target.index, 17);
     body.writeUIntBE(Math.max(0, expires), 19, 6);
-    return { grant: Buffer.concat([body, this.mac(accountId, body)]).toString('base64url'), expiresAt: new Date(expires * 1000) };
+    return { grant: Buffer.concat([body, this.mac(this.keys[0], accountId, body)]).toString('base64url'), expiresAt: new Date(expires * 1000) };
   }
 
   verify(accountId: string, grant: string, now: Date = new Date()): GrantTarget | null {
@@ -38,13 +42,14 @@ export class SnapshotGrants {
     const raw = Buffer.from(grant, 'base64url');
     if (raw.length !== BODY_BYTES + MAC_BYTES) return null;
     const body = raw.subarray(0, BODY_BYTES);
-    if (!timingSafeEqual(raw.subarray(BODY_BYTES), this.mac(accountId, body)) || body.readUInt8(0) !== VERSION) return null;
+    const mac = raw.subarray(BODY_BYTES);
+    if (!this.keys.some((key) => timingSafeEqual(mac, this.mac(key, accountId, body))) || body.readUInt8(0) !== VERSION) return null;
     if (body.readUIntBE(19, 6) * 1000 <= now.getTime()) return null;
     const hex = body.subarray(1, 17).toString('hex');
     return { snapshotId: `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`, index: body.readUInt16BE(17) };
   }
 
-  private mac(accountId: string, body: Buffer): Buffer {
-    return createHmac('sha256', this.key).update(`gogospend.snapshot-grant.v1\u0000${accountId}\u0000`).update(body).digest().subarray(0, MAC_BYTES);
+  private mac(key: Buffer, accountId: string, body: Buffer): Buffer {
+    return createHmac('sha256', key).update(`gogospend.snapshot-grant.v1\u0000${accountId}\u0000`).update(body).digest().subarray(0, MAC_BYTES);
   }
 }

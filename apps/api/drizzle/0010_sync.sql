@@ -10,9 +10,17 @@
 --                         publish-and-complete transaction; read by the owner.
 -- Retention keeps every entity's head change row (the latest snapshot),
 -- since snapshots are built from heads; only superseded changes go.
+--   entity_changes.group_bytes - each group's serialized size (on ordinal 0),
+--                         so delta pages are chosen by byte budget.
 ALTER TABLE account_sync_state ADD COLUMN pruned_through bigint NOT NULL DEFAULT 0 CHECK (pruned_through >= 0);
 --> statement-breakpoint
-CREATE INDEX entity_changes_committed_idx ON entity_changes (account_id, committed_at);
+ALTER TABLE account_sync_state ADD CONSTRAINT account_sync_state_pruned_check CHECK (pruned_through <= revision);
+--> statement-breakpoint
+-- The serialized size of the whole group, on its first change (ordinal 0),
+-- so a delta page picks its groups by byte budget before reading them.
+ALTER TABLE entity_changes ADD COLUMN group_bytes integer CHECK (group_bytes IS NULL OR (ordinal = 0 AND group_bytes > 0));
+--> statement-breakpoint
+CREATE INDEX entity_changes_groups_idx ON entity_changes (account_id, revision) INCLUDE (group_bytes, committed_at) WHERE ordinal = 0;
 --> statement-breakpoint
 CREATE TABLE snapshot_manifests (
   snapshot_id uuid PRIMARY KEY,
@@ -28,6 +36,8 @@ CREATE TABLE snapshot_manifests (
 --> statement-breakpoint
 CREATE INDEX snapshot_manifests_account_idx ON snapshot_manifests (account_id, created_at);
 --> statement-breakpoint
+CREATE INDEX snapshot_manifests_expiry_idx ON snapshot_manifests (expires_at);
+--> statement-breakpoint
 CREATE TABLE snapshot_chunks (
   snapshot_id uuid NOT NULL REFERENCES snapshot_manifests (snapshot_id) ON DELETE CASCADE,
   account_id uuid NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
@@ -37,6 +47,8 @@ CREATE TABLE snapshot_chunks (
   sha256 bytea NOT NULL CHECK (octet_length(sha256) = 32),
   PRIMARY KEY (snapshot_id, chunk_index)
 );
+--> statement-breakpoint
+CREATE INDEX snapshot_chunks_account_idx ON snapshot_chunks (account_id);
 --> statement-breakpoint
 ALTER TABLE snapshot_manifests ENABLE ROW LEVEL SECURITY;
 --> statement-breakpoint
@@ -112,7 +124,8 @@ $$;
 -- Called by the snapshot worker inside its publish-and-complete transaction,
 -- after gogospend_lock_current_job: records the manifest of a current lease's
 -- sync_snapshot job. Every chunk must be an object this lease has published
--- with the same size and digest. False when anything does not hold.
+-- with the same size and digest and the manifest's expiry, and the
+-- high-water must still be above the retention line. False otherwise.
 CREATE FUNCTION gogospend_record_snapshot(p_job_id uuid, p_lease_token uuid, p_high_water bigint, p_chunks jsonb, p_expires_at timestamptz) RETURNS boolean
   LANGUAGE plpgsql VOLATILE SECURITY DEFINER
   SET search_path = pg_catalog
@@ -128,7 +141,9 @@ BEGIN
   IF NOT FOUND OR NOT EXISTS (SELECT 1 FROM public.accounts a WHERE a.id = v_job.account_id AND a.status = 'active' AND a.lifecycle_generation = v_job.lifecycle_generation) THEN
     RETURN false;
   END IF;
-  IF jsonb_typeof(p_chunks) <> 'array' OR p_high_water > (SELECT s.revision FROM public.account_sync_state s WHERE s.account_id = v_job.account_id) THEN
+  IF jsonb_typeof(p_chunks) <> 'array' OR NOT EXISTS (
+       SELECT 1 FROM public.account_sync_state s
+        WHERE s.account_id = v_job.account_id AND p_high_water BETWEEN s.pruned_through AND s.revision) THEN
     RETURN false;
   END IF;
   v_count := jsonb_array_length(p_chunks);
@@ -137,7 +152,7 @@ BEGIN
     JOIN public.object_publications o ON o.key = c.value ->> 'key'
    WHERE o.job_id = p_job_id AND o.lease_token = p_lease_token AND o.account_id = v_job.account_id
      AND o.purpose = 'sync_snapshot' AND o.status = 'published'
-     AND o.bytes = (c.value ->> 'bytes')::bigint AND o.sha256 = decode(c.value ->> 'sha256', 'hex')
+     AND o.bytes = (c.value ->> 'bytes')::bigint AND o.sha256 = decode(c.value ->> 'sha256', 'hex') AND o.delete_after = p_expires_at
      AND (c.value ->> 'index')::integer = c.ordinal - 1;
   IF v_count < 1 OR v_matched <> v_count THEN
     RETURN false;
@@ -151,46 +166,72 @@ BEGIN
 END
 $$;
 --> statement-breakpoint
--- Retention (the worker's maintenance loop). For up to p_max_accounts
--- accounts with changes committed before p_before, under each account lock:
--- deletes those changes except each entity's head change row, and moves
--- pruned_through to the last pruned revision. Also drops manifests a week
--- past their expiry. Returns the number of accounts pruned.
-CREATE FUNCTION gogospend_prune_changes(p_before timestamptz, p_max_accounts integer) RETURNS integer
+-- Retention (the worker's maintenance loop), 30 days by the database clock.
+-- Candidates, in account order after p_after: accounts whose oldest change
+-- above the retention line is past the cutoff (found through the primary key).
+CREATE FUNCTION gogospend_retention_candidates(p_after uuid, p_limit integer) RETURNS SETOF uuid
+  LANGUAGE sql STABLE SECURITY DEFINER
+  SET search_path = pg_catalog
+AS $$
+  SELECT s.account_id FROM public.account_sync_state s
+   WHERE (p_after IS NULL OR s.account_id > p_after)
+     AND (SELECT c.committed_at FROM public.entity_changes c
+           WHERE c.account_id = s.account_id AND c.revision > s.pruned_through AND c.ordinal = 0
+           ORDER BY c.revision LIMIT 1) < now() - interval '30 days'
+   ORDER BY s.account_id
+   LIMIT least(greatest(p_limit, 1), 1000)
+$$;
+--> statement-breakpoint
+-- Prunes one account in the caller's (short) transaction: skips it if its
+-- lock is held (a user write is running; the next run retries), deletes
+-- changes above the old retention line and committed before the cutoff
+-- except each entity's head change, and moves pruned_through up. True when
+-- the account was pruned.
+CREATE FUNCTION gogospend_prune_account(p_account uuid) RETURNS boolean
   LANGUAGE plpgsql VOLATILE SECURITY DEFINER
   SET search_path = pg_catalog
 AS $$
 DECLARE
-  v_account uuid;
+  v_from bigint;
   v_cut bigint;
-  v_done integer := 0;
 BEGIN
-  IF p_before > now() - interval '1 day' OR p_max_accounts NOT BETWEEN 1 AND 10000 THEN
-    RAISE EXCEPTION 'retention cutoff must be at least a day old, and 1-10000 accounts per call';
+  SELECT s.pruned_through INTO v_from FROM public.account_sync_state s WHERE s.account_id = p_account FOR UPDATE SKIP LOCKED;
+  IF NOT FOUND THEN
+    RETURN false;
   END IF;
-  FOR v_account IN
-    SELECT s.account_id FROM public.account_sync_state s
-     WHERE EXISTS (SELECT 1 FROM public.entity_changes c
-                    WHERE c.account_id = s.account_id AND c.committed_at < p_before AND c.revision > s.pruned_through)
-     LIMIT p_max_accounts
-  LOOP
-    PERFORM 1 FROM public.account_sync_state s WHERE s.account_id = v_account FOR UPDATE;
-    SELECT max(c.revision) INTO v_cut FROM public.entity_changes c WHERE c.account_id = v_account AND c.committed_at < p_before;
-    DELETE FROM public.entity_changes c
-     WHERE c.account_id = v_account AND c.revision <= v_cut
-       AND NOT EXISTS (SELECT 1 FROM public.entity_heads h
-                        WHERE h.account_id = c.account_id AND h.entity = c.entity AND h.entity_id = c.entity_id AND h.revision = c.revision);
-    UPDATE public.account_sync_state s SET pruned_through = greatest(s.pruned_through, v_cut) WHERE s.account_id = v_account;
-    v_done := v_done + 1;
-  END LOOP;
+  SELECT max(c.revision) INTO v_cut FROM public.entity_changes c
+   WHERE c.account_id = p_account AND c.revision > v_from AND c.ordinal = 0 AND c.committed_at < now() - interval '30 days';
+  IF v_cut IS NULL THEN
+    RETURN false;
+  END IF;
+  DELETE FROM public.entity_changes c
+   WHERE c.account_id = p_account AND c.revision > v_from AND c.revision <= v_cut
+     AND NOT EXISTS (SELECT 1 FROM public.entity_heads h
+                      WHERE h.account_id = c.account_id AND h.entity = c.entity AND h.entity_id = c.entity_id AND h.revision = c.revision);
+  UPDATE public.account_sync_state s SET pruned_through = v_cut WHERE s.account_id = p_account;
+  RETURN true;
+END
+$$;
+--> statement-breakpoint
+-- Drops snapshot manifests (and their chunk rows) a week past their expiry.
+CREATE FUNCTION gogospend_prune_expired_manifests() RETURNS integer
+  LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+  SET search_path = pg_catalog
+AS $$
+DECLARE
+  v_count integer;
+BEGIN
   DELETE FROM public.snapshot_manifests m WHERE m.expires_at < now() - interval '7 days';
-  RETURN v_done;
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  RETURN v_count;
 END
 $$;
 --> statement-breakpoint
 REVOKE ALL ON FUNCTION gogospend_request_snapshot(uuid), gogospend_snapshot_job_status(uuid),
-  gogospend_record_snapshot(uuid, uuid, bigint, jsonb, timestamptz), gogospend_prune_changes(timestamptz, integer) FROM PUBLIC;
+  gogospend_record_snapshot(uuid, uuid, bigint, jsonb, timestamptz), gogospend_retention_candidates(uuid, integer),
+  gogospend_prune_account(uuid), gogospend_prune_expired_manifests() FROM PUBLIC;
 --> statement-breakpoint
 GRANT EXECUTE ON FUNCTION gogospend_request_snapshot(uuid), gogospend_snapshot_job_status(uuid) TO gogospend_app;
 --> statement-breakpoint
-GRANT EXECUTE ON FUNCTION gogospend_record_snapshot(uuid, uuid, bigint, jsonb, timestamptz), gogospend_prune_changes(timestamptz, integer) TO gogospend_jobs;
+GRANT EXECUTE ON FUNCTION gogospend_record_snapshot(uuid, uuid, bigint, jsonb, timestamptz), gogospend_retention_candidates(uuid, integer),
+  gogospend_prune_account(uuid), gogospend_prune_expired_manifests() TO gogospend_jobs;

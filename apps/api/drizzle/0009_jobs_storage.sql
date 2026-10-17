@@ -228,7 +228,8 @@ END
 $$;
 --> statement-breakpoint
 -- The app enqueues work for its own account only, and only the kinds a user
--- may start (a sync snapshot, an export), under the common account lock so a
+-- may start through this routine (an export; snapshots have their own
+-- request routine), under the common account lock so a
 -- concurrent lifecycle transition cannot leave a job at a stale generation.
 -- Idempotent by job id.
 CREATE FUNCTION gogospend_enqueue_account_job(p_job_id uuid, p_kind text, p_payload jsonb, p_max_attempts integer, p_max_runtime_seconds integer) RETURNS boolean
@@ -242,7 +243,7 @@ BEGIN
   IF v_account IS NULL THEN
     RAISE EXCEPTION 'enqueueing needs an owner transaction';
   END IF;
-  IF p_kind NOT IN ('sync_snapshot', 'export') THEN
+  IF p_kind NOT IN ('export') THEN
     RAISE EXCEPTION 'this job kind cannot be started by the app' USING ERRCODE = 'insufficient_privilege';
   END IF;
   PERFORM 1 FROM public.account_sync_state s WHERE s.account_id = v_account FOR UPDATE;
@@ -300,7 +301,9 @@ AS $$
 $$;
 --> statement-breakpoint
 -- Every entity's latest committed state (deleted ones as tombstones), with the
--- snapshot from the change that set it, in (entity, id) order after a key.
+-- snapshot from the change that set it, in (entity, id) order after a key. A
+-- head whose change row is missing (only a purge may drop one) raises rather
+-- than silently leaving the entity out of a snapshot.
 CREATE FUNCTION gogospend_leased_entities(p_job_id uuid, p_lease_token uuid, p_purpose text, p_after_entity text, p_after_id uuid, p_limit integer)
   RETURNS TABLE (entity text, entity_id uuid, version integer, state text, snapshot jsonb)
   LANGUAGE plpgsql STABLE SECURITY DEFINER
@@ -308,6 +311,7 @@ CREATE FUNCTION gogospend_leased_entities(p_job_id uuid, p_lease_token uuid, p_p
 AS $$
 DECLARE
   v_account uuid := public.gogospend_leased_account(p_job_id, p_lease_token, p_purpose);
+  v_row record;
 BEGIN
   IF p_limit IS NULL OR p_limit < 1 OR p_limit > 1000 THEN
     RAISE EXCEPTION 'limit must be 1-1000';
@@ -315,15 +319,26 @@ BEGIN
   IF (p_after_entity IS NULL) <> (p_after_id IS NULL) THEN
     RAISE EXCEPTION 'a key position needs both its entity and id';
   END IF;
-  RETURN QUERY
-    SELECT h.entity, h.entity_id, h.version, h.state, c.snapshot
+  FOR v_row IN
+    SELECT h.entity AS h_entity, h.entity_id AS h_id, h.version AS h_version, h.state AS h_state, c.snapshot AS c_snapshot, c.revision AS c_revision
       FROM public.entity_heads h
-      JOIN public.entity_changes c
+      LEFT JOIN public.entity_changes c
         ON c.account_id = h.account_id AND c.revision = h.revision AND c.entity = h.entity AND c.entity_id = h.entity_id
      WHERE h.account_id = v_account
        AND (p_after_entity IS NULL OR (h.entity, h.entity_id) > (p_after_entity, p_after_id))
      ORDER BY h.entity, h.entity_id
-     LIMIT p_limit;
+     LIMIT p_limit
+  LOOP
+    IF v_row.c_revision IS NULL AND v_row.h_state <> 'purged' THEN
+      RAISE EXCEPTION 'an entity head has no change row';
+    END IF;
+    entity := v_row.h_entity;
+    entity_id := v_row.h_id;
+    version := v_row.h_version;
+    state := v_row.h_state;
+    snapshot := v_row.c_snapshot;
+    RETURN NEXT;
+  END LOOP;
 END
 $$;
 --> statement-breakpoint

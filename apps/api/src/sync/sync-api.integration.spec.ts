@@ -1,15 +1,17 @@
 import { createHash, randomUUID } from 'node:crypto';
 
-import { isCommittedChangeGroup, isSnapshotChunk, isSnapshotChunkGrant } from '@gogospend/contracts';
+import { SYNC_ENTITY_VALIDATORS, isCommittedChangeGroup, isSnapshotChunk, isSnapshotChunkGrant } from '@gogospend/contracts';
 import type { SnapshotDto, SyncChangesPage } from '@gogospend/contracts';
 import type { Pool } from 'pg';
 import request from 'supertest';
 
+import { CommandRegistry } from '../commands/command-registry';
 import { LeasedAccountRead } from '../database/leased-account-read';
 import { buildHandlers } from '../jobs/handlers';
 import { JobRepository } from '../jobs/job.repository';
 import { JobWorker } from '../jobs/worker';
 import { ObjectPublicationService } from '../storage/object-publication.service';
+import { SyncRetention } from './sync-retention';
 import type { ObjectStore } from '../storage/object-store';
 import { OBJECT_STORE } from '../storage/storage.module';
 import { authFixtures } from '../testing/auth-fixtures';
@@ -30,6 +32,7 @@ let v1: Awaited<ReturnType<typeof startV1App>>;
 let as: ReturnType<typeof v1Client>;
 let money: ReturnType<typeof moneyFixtures>;
 let worker: JobWorker;
+let retention: SyncRetention;
 
 async function diary(): Promise<{ user: SignedUp; wallet: string }> {
   const user = await money.member();
@@ -53,6 +56,7 @@ beforeAll(async () => {
   const jobs = new JobRepository(jobsPool);
   const deps = { jobs, reader: new LeasedAccountRead(await db.loginPool(['gogospend_leased_read'], 2)), store, publication: new ObjectPublicationService(jobsPool, store) };
   worker = new JobWorker(jobs, buildHandlers(deps));
+  retention = new SyncRetention(jobsPool);
 });
 
 afterAll(async () => {
@@ -123,5 +127,40 @@ describe('snapshots over HTTP', () => {
     const after = (await as(user).get(`/v1/sync/changes?cursor=${encodeURIComponent(ready.cursor)}`)).body as SyncChangesPage;
     expect(after.groups).toHaveLength(1);
     expect(after.groups[0].changes[0]).toMatchObject({ entity: 'transaction', state: 'active' });
+  });
+});
+
+describe('S1 review: contract parity and recovery', () => {
+  it('snapshots validate exactly the entities the API registers', () => {
+    expect(v1.app.get(CommandRegistry).entityNames().sort()).toEqual(Object.keys(SYNC_ENTITY_VALIDATORS).sort());
+  });
+
+  it('asking again while a snapshot is ready answers 200 with it', async () => {
+    const { user } = await diary();
+    const requested = await as(user).post('/v1/sync/snapshots', {});
+    expect(requested.status).toBe(202);
+    await worker.runOnce();
+    const again = await as(user).post('/v1/sync/snapshots', {});
+    expect(again.status).toBe(200);
+    expect(again.body).toMatchObject({ snapshot_id: requested.body.snapshot_id, status: 'ready' });
+  });
+
+  it('a client behind retention recovers: 410, then a snapshot, then deltas from its cursor', async () => {
+    const { user, wallet } = await diary();
+    const old = (await as(user).get('/v1/sync/changes')).body as SyncChangesPage;
+    await money.record(user, { type: 'income', amount_minor: '500', occurred_on: '2026-03-03', wallet_id: wallet, category_id: builtinId(user, 'salary') });
+    await db.admin((client) => client.query(`UPDATE entity_changes SET committed_at = now() - interval '31 days' WHERE account_id = $1`, [user.accountId]));
+    await retention.prune();
+    const gone = await as(user).get(`/v1/sync/changes?cursor=${encodeURIComponent(old.next_cursor)}`);
+    expect(gone.status).toBe(410);
+    const requested = await as(user).post('/v1/sync/snapshots', {});
+    await worker.runOnce();
+    const ready = (await as(user).get(`/v1/sync/snapshots/${requested.body.snapshot_id}`)).body as SnapshotDto;
+    if (ready.status !== 'ready') throw new Error(`snapshot is ${ready.status}`);
+    const chunk = await as(user).get(`/v1/sync/snapshot-chunks/${ready.chunks[0].grant}`);
+    expect((JSON.parse(chunk.text) as { entities: { entity: string }[] }).entities.filter((e) => e.entity === 'transaction')).toHaveLength(2);
+    await money.record(user, { type: 'expense', amount_minor: '200', occurred_on: '2026-03-04', wallet_id: wallet, category_id: builtinId(user, 'food') });
+    const after = (await as(user).get(`/v1/sync/changes?cursor=${encodeURIComponent(ready.cursor)}`)).body as SyncChangesPage;
+    expect(after.groups).toHaveLength(1);
   });
 });

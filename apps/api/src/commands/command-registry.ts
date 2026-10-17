@@ -55,4 +55,9 @@ export class CommandRegistry {
   entity(name: string): EntityDefinition | undefined {
     return this.entities.get(name);
   }
+
+  /** Every registered entity (sync's DTO map must cover exactly these). */
+  entityNames(): string[] {
+    return [...this.entities.keys()];
+  }
 }

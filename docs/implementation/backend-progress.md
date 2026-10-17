@@ -657,3 +657,44 @@ Observed, not changed (pre-existing):
   - Each sweep lists every object of a purpose. It is fine at current scale; revisit with P2a volumes.
   - `publishIfCurrent` stays public for the plan's interface; `finishWithObjects` is the transactional path.
 - **Full gate after the fixes:** typecheck PASS, typecheck:app PASS, test:api PASS (436), test:db PASS (384), test:app PASS (11), test:unit PASS (35), test:render PASS (38), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
+
+## Review fixes for S1
+
+- **S1 review** (commit `ae40498`): no blockers; two majors, seven minors and some nits. The reviewer confirmed:
+  - delta ordering and the staggered-commit test;
+  - paging that never splits a group;
+  - retention and 410 correctness;
+  - snapshot recording, fencing and expiry;
+  - the grant construction;
+  - definer-routine hygiene and fail-fast storage configuration.
+- **Correction to the S1 receipt:** the original "same view" barrier test did not prove isolation. With six entities and 500-entity pages, every entity was read before the concurrent writes landed; the reviewer showed it also passed under READ COMMITTED. The new test below does prove it.
+- **Fixed, with tests that failed first.** RED: 14 of 48 DB tests (`sync-query`, `snapshot-builder`, `sync-api`, `job.repository`) and 2 of 5 unit tests failed, all on assertions.
+  - **Major — snapshot isolation is now tested.** The new test reads one entity per page with fixed ids. Between page 0 and page 1 it commits a late create (`ffffffff-…`) and a delete. The snapshot at high-water 4 still has neither. The earlier test now also commits between 2-entity pages. Checked by temporarily switching `LeasedAccountRead` to READ COMMITTED: both tests fail. The file was then restored.
+  - **Major — delta pages read about their budget.** `ChangeWriter` stores each group's serialized size on its ordinal-0 row (`entity_changes.group_bytes`, new partial index `(account_id, revision) INCLUDE (group_bytes, committed_at) WHERE ordinal = 0`). `SyncQuery` chooses groups by size before reading any change. Twenty 600 KiB groups with `limit=1000` now fetch at most 2× the page budget (query spy); before, it fetched every group. The exact size check is kept.
+  - **Retention** is now `gogospend_retention_candidates`, `gogospend_prune_account` and `gogospend_prune_expired_manifests`:
+    - **Short transactions:** one transaction per account, visited in order. An account whose lock is held is skipped (`SKIP LOCKED`) rather than waited for: a run finished while a user write held the lock, and the next run pruned it.
+    - **Every due account:** candidates are found through the primary key, the DELETE is bounded above the old retention line, and each run pages until every due account is done (3 accounts with a batch of 2).
+    - **Database clock:** the cutoff is `now() - 30 days` in SQL, so no caller or worker clock can shorten it; changes 29 days old stay.
+    - **CHECK:** `pruned_through <= revision`.
+  - **A head missing its change row** now raises in `gogospend_leased_entities` (left join), failing the build instead of dropping the entity.
+  - **One registry for entity types:** a parity test asserts `SYNC_ENTITY_VALIDATORS` covers exactly the API registry's entities (`CommandRegistry.entityNames()`).
+  - **Cursor generation:** cursors carry the lifecycle generation. A cursor ahead of the account (a restore) or from an earlier generation gets `410 RESYNC_REQUIRED`, not 422. Manifests and chunks are served only at the account's current generation (status `expired`, grant refused), and reuse needs the same generation.
+  - **Snapshot jobs only through their own routine:** the generic app enqueue routine now allows only `export`. Snapshots go only through `gogospend_request_snapshot`, with its single open build, reuse and limits.
+  - **No read transaction during uploads:** the builder cuts chunks in memory inside the read transaction (at most 64 MiB, `MAX_SNAPSHOT_BYTES`), closes the transaction, then uploads. During every PUT, `pg_stat_activity` showed no open transaction for the leased-read login.
+  - **Nits fixed:**
+    - Grants verify against keys derived from the current and previous `COMMAND_DIGEST_KEY`s, so a rotation does not break live grants (unit test).
+    - `gogospend_record_snapshot` requires the objects' `delete_after` to equal the manifest expiry and the high-water to sit between `pruned_through` and the revision.
+    - `POST /v1/sync/snapshots` answers 200 when it returns a ready snapshot and 202 otherwise.
+    - New indexes on `snapshot_manifests(expires_at)` and `snapshot_chunks(account_id)`.
+    - The worker's sweep, retention and backlog report each run even if another fails.
+    - `OBJECT_STORE=memory` needs `NODE_ENV` development or test.
+- **Coverage tests (passed at once):**
+  - an end-to-end recovery: prune, a stale cursor gets 410, a snapshot, then deltas from its cursor;
+  - chunks near their target size;
+  - grants capped at manifest expiry.
+- **Not changed (recorded):**
+  - **Validators must accept old data:** a stored change that fails today's validator still stops that account's deltas and snapshots. Future DTO changes must keep every stored shape valid, by versioning or by accepting both. This is now a rule for M-series DTO edits.
+  - **Cursor tag:** it stays an unkeyed hash of the internal account id. The client already holds its cursors, and the id is never exposed.
+  - **Snapshot reuse:** a request reused from a ready snapshot isn't recorded under its idempotency key. A retry with the same key after the one-hour window gets a fresh snapshot, which is harmless.
+  - **Wide groups:** paging over heads of 500-wide groups costs about 6× more. Revisit if wide imports (P3) make it matter.
+- **Full gate after the fixes:** typecheck PASS, typecheck:app PASS, test:api PASS (437), test:db PASS (397), test:app PASS (11), test:unit PASS (35), test:render PASS (38), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases or logins left behind.

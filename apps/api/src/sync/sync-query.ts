@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { ContractValidationError, SYNC_DEFAULT_GROUPS, SYNC_MAX_GROUPS, SYNC_PAGE_BYTES, assertKnownFields } from '@gogospend/contracts';
+import { ContractValidationError, MAX_CHANGE_GROUP_BYTES, SYNC_DEFAULT_GROUPS, SYNC_MAX_GROUPS, SYNC_PAGE_BYTES, assertKnownFields } from '@gogospend/contracts';
 import type { CommittedChangeGroup, EntityChange, EntityState, SyncChangesPage } from '@gogospend/contracts';
 
 import { CommandRegistry } from '../commands/command-registry';
 import { ProblemException } from '../common/api-problem.filter';
 import type { OwnerTx } from '../database/owner-transaction';
-import { decodeSyncCursor, encodeSyncCursor } from './sync-cursor';
+import { decodeSyncPosition, encodeSyncCursor } from './sync-cursor';
 
 export type SyncRequest = { cursor?: string; limit: number };
 
@@ -37,10 +37,13 @@ type ChangeRow = { revision: string; command_id: string; entity: string; entity_
  * first, at most `limit` groups and SYNC_PAGE_BYTES serialized. Revisions are
  * allocated and committed under the account lock, so a group can never become
  * visible after a later one: reading in one snapshot and resuming after the
- * last included revision skips nothing. Groups at or below the account's
- * retention line (pruned_through) may be incomplete, so a position below it
- * gets 410 RESYNC_REQUIRED. Every change is re-validated against its
- * entity's persisted DTO before it is served.
+ * last included revision skips nothing. Groups are chosen by their stored
+ * size before any change is read, so a page reads about its budget, not
+ * every group `limit` allows. Groups at or below the account's retention line
+ * (pruned_through) may be incomplete, so a position below it - or ahead of
+ * the account (a restore), or from an earlier lifecycle generation - gets
+ * 410 RESYNC_REQUIRED. Every change is re-validated against its entity's
+ * persisted DTO before it is served.
  */
 @Injectable()
 export class SyncQuery {
@@ -48,25 +51,35 @@ export class SyncQuery {
 
   async after(tx: OwnerTx, cursor?: string, limit = SYNC_DEFAULT_GROUPS): Promise<SyncChangesPage> {
     if (!Number.isInteger(limit) || limit < 1 || limit > SYNC_MAX_GROUPS) throw new RangeError(`limit must be 1-${SYNC_MAX_GROUPS}`);
-    const position = cursor === undefined ? '0' : decodeSyncCursor(tx.accountId, cursor);
-    const [state] = await tx.query<{ revision: string; pruned_through: string }>(
-      'SELECT revision::text, pruned_through::text FROM account_sync_state WHERE account_id = $1',
+    const [state] = await tx.query<{ revision: string; pruned_through: string; generation: number }>(
+      `SELECT s.revision::text AS revision, s.pruned_through::text AS pruned_through, a.lifecycle_generation AS generation
+         FROM account_sync_state s JOIN accounts a ON a.id = s.account_id WHERE s.account_id = $1`,
       [tx.accountId],
     );
     if (!state) throw new ProblemException(404, 'NOT_FOUND');
-    if (BigInt(position) > BigInt(state.revision)) {
-      throw new ContractValidationError('VALIDATION_FAILED', 'The cursor is ahead of this account.', 'cursor');
+    const position = cursor === undefined ? { revision: '0', generation: state.generation } : decodeSyncPosition(tx.accountId, cursor);
+    if (
+      position.generation !== state.generation ||
+      BigInt(position.revision) > BigInt(state.revision) ||
+      BigInt(position.revision) < BigInt(state.pruned_through)
+    ) {
+      throw new ProblemException(410, 'RESYNC_REQUIRED');
     }
-    if (BigInt(position) < BigInt(state.pruned_through)) throw new ProblemException(410, 'RESYNC_REQUIRED');
 
-    // Every group has an ordinal-0 change, and groups above pruned_through are
-    // complete, so this walks the primary key one row per group.
-    const revisions = await tx.query<{ revision: string }>(
-      `SELECT c.revision::text AS revision FROM entity_changes c
+    // One index-only row per group (groups above pruned_through are complete).
+    const candidates = await tx.query<{ revision: string; group_bytes: number | null }>(
+      `SELECT c.revision::text AS revision, c.group_bytes FROM entity_changes c
         WHERE c.account_id = $1 AND c.revision > $2 AND c.ordinal = 0 ORDER BY c.revision LIMIT $3`,
-      [tx.accountId, position, limit + 1],
+      [tx.accountId, position.revision, limit + 1],
     );
-    const wanted = revisions.slice(0, limit).map((row) => row.revision);
+    const wanted: string[] = [];
+    let planned = PAGE_OVERHEAD_BYTES;
+    for (const candidate of candidates.slice(0, limit)) {
+      const size = (candidate.group_bytes ?? MAX_CHANGE_GROUP_BYTES) + 1;
+      if (wanted.length > 0 && planned + size > SYNC_PAGE_BYTES) break;
+      planned += size;
+      wanted.push(candidate.revision);
+    }
     const groups: CommittedChangeGroup[] = [];
     if (wanted.length > 0) {
       const rows = await tx.query<ChangeRow>(
@@ -74,6 +87,7 @@ export class SyncQuery {
           WHERE c.account_id = $1 AND c.revision = ANY($2::bigint[]) ORDER BY c.revision, c.ordinal`,
         [tx.accountId, wanted],
       );
+      // The stored size is an upper bound of what is served; keep the exact check anyway.
       let bytes = PAGE_OVERHEAD_BYTES;
       for (let start = 0; start < rows.length; ) {
         let end = start;
@@ -86,11 +100,11 @@ export class SyncQuery {
         start = end;
       }
     }
-    const last = groups.length > 0 ? groups[groups.length - 1].revision : position;
+    const last = groups.length > 0 ? groups[groups.length - 1].revision : position.revision;
     return {
       groups,
-      next_cursor: encodeSyncCursor(tx.accountId, last),
-      has_more: groups.length < revisions.length,
+      next_cursor: encodeSyncCursor(tx.accountId, last, state.generation),
+      has_more: groups.length < candidates.length,
     };
   }
 

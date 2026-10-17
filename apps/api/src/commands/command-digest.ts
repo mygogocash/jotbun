@@ -49,6 +49,12 @@ export class CommandDigester {
     return Buffer.from(hkdfSync('sha256', this.current.secret, Buffer.alloc(0), label, 32));
   }
 
+  /** deriveKey for the current key first, then every previous key (to verify across a rotation). */
+  deriveKeys(label: string): Buffer[] {
+    return [this.current.secret, ...[...this.keys.values()].filter((secret) => secret !== this.current.secret)]
+      .map((secret) => Buffer.from(hkdfSync('sha256', secret, Buffer.alloc(0), label, 32)));
+  }
+
   matches(accountId: string, input: CommandInput<unknown>, stored: StoredDigest): boolean {
     const secret = this.keys.get(stored.keyId);
     const text = canonicalCommandText(accountId, input);

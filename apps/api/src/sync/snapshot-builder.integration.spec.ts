@@ -129,8 +129,9 @@ describe('consistent snapshots', () => {
     let writes = 0;
     const manifest = await builder({
       chunkBytes: 400,
-      // Mutations and a deletion commit while the snapshot is being written.
-      afterChunk: async (index) => {
+      pageSize: 2,
+      // Mutations and a deletion commit while the snapshot is being read.
+      afterPage: async (index) => {
         if (index !== 0) return;
         await commands.create(user.session, purchase({ note: 'late 1' }));
         await commands.create(user.session, purchase({ note: 'late 2' }));
@@ -286,5 +287,87 @@ describe('snapshot requests, status and grants', () => {
     expect(await new JobWorker(jobs, handlers).runOnce()).toBe('ran');
     expect((await status(user, id))?.status).toBe('ready');
     expect(new HandlerRegistry().kinds()).toEqual([]);
+  });
+});
+
+describe('S1 review: one view, bounded work, generations', () => {
+  const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
+  const LATE = 'ffffffff-ffff-4fff-bfff-ffffffffffff';
+
+  it('every entity comes from the high-water view even when writes land between single-entity pages', async () => {
+    const user = await member();
+    for (const n of [1, 2, 3]) await commands.create(user.session, purchase({ id: id(n) }));
+    await commands.remove(user.session, id(1), 1);
+    const snapshotId = await request(user);
+    let writes = 0;
+    const manifest = await builder({
+      pageSize: 1,
+      chunkBytes: 1,
+      afterPage: async (index) => {
+        if (index !== 0) return;
+        await commands.create(user.session, purchase({ id: LATE, note: 'late' }));
+        await commands.remove(user.session, id(3), 1);
+        writes += 2;
+      },
+    }).build((await claimSnapshot()).lease);
+    expect(writes).toBe(2);
+    expect(manifest?.high_water).toBe('4');
+    const chunks = await download(user, (await status(user, snapshotId)) as SnapshotDto);
+    const entities = chunks.flatMap((chunk) => chunk.entities).map((e) => [e.id, e.version, e.state]);
+    expect(entities).toEqual([[id(1), 2, 'deleted'], [id(2), 1, 'active'], [id(3), 1, 'active']]);
+  });
+
+  it('closes the read transaction before uploading chunks', async () => {
+    const user = await member();
+    for (let i = 0; i < 3; i += 1) await commands.create(user.session, purchase());
+    await request(user);
+    const readerLogin = (await db.admin((client) => client.query(`SELECT r.rolname FROM pg_roles r JOIN pg_auth_members m ON m.member = r.oid JOIN pg_roles g ON g.oid = m.roleid WHERE g.rolname = 'gogospend_leased_read' AND r.rolname LIKE 'gogospend_test_login_%'`))).rows.map((row) => row.rolname as string);
+    const openDuringPut: number[] = [];
+    const put = store.putStream.bind(store);
+    store.putStream = async (key, body, options) => {
+      const open = await db.admin((client) => client.query(`SELECT count(*)::int AS n FROM pg_stat_activity WHERE datname = current_database() AND usename = ANY($1) AND xact_start IS NOT NULL`, [readerLogin]));
+      openDuringPut.push(open.rows[0].n);
+      return put(key, body, options);
+    };
+    await builder({ chunkBytes: 300 }).build((await claimSnapshot()).lease);
+    expect(openDuringPut.length).toBeGreaterThan(0);
+    expect(openDuringPut.every((n) => n === 0)).toBe(true);
+  });
+
+  it('a head whose change row is missing fails the build instead of vanishing from it', async () => {
+    const user = await member();
+    const kept = purchase();
+    await commands.create(user.session, kept);
+    await commands.create(user.session, purchase());
+    await db.admin((client) => client.query('DELETE FROM entity_changes WHERE account_id = $1 AND entity_id = $2', [user.accountId, kept.id]));
+    const snapshotId = await request(user);
+    await expect(builder().build((await claimSnapshot()).lease)).rejects.toThrow();
+    expect((await db.admin((client) => client.query('SELECT count(*)::int AS n FROM snapshot_manifests WHERE snapshot_id = $1', [snapshotId]))).rows[0].n).toBe(0);
+  });
+
+  it("a snapshot from an earlier lifecycle generation is neither served nor reused", async () => {
+    const user = await member();
+    await commands.create(user.session, purchase());
+    const first = await request(user);
+    await builder().build((await claimSnapshot()).lease);
+    const ready = await status(user, first);
+    if (ready?.status !== 'ready') throw new Error('not ready');
+    await db.admin((client) => client.query('UPDATE accounts SET lifecycle_generation = lifecycle_generation + 1 WHERE id = $1', [user.accountId]));
+    expect(await status(user, first)).toEqual({ snapshot_id: first, status: 'expired' });
+    expect(await owner(user.session, (tx) => snapshots.chunk(tx, ready.chunks[0].grant))).toBeNull();
+    expect(await request(user)).not.toBe(first);
+  });
+
+  it('keeps chunks near their target size and grants within the snapshot expiry', async () => {
+    const user = await member();
+    for (let i = 0; i < 8; i += 1) await commands.create(user.session, purchase({ note: `entry ${i}` }));
+    const snapshotId = await request(user);
+    const manifest = await builder({ chunkBytes: 500 }).build((await claimSnapshot()).lease);
+    expect(manifest?.chunks.length).toBeGreaterThan(2);
+    expect(manifest?.chunks.every((chunk) => chunk.bytes <= 500 + 400)).toBe(true);
+    await db.admin((client) => client.query(`UPDATE snapshot_manifests SET expires_at = now() + interval '2 minutes' WHERE snapshot_id = $1`, [snapshotId]));
+    const ready = await status(user, snapshotId);
+    if (ready?.status !== 'ready') throw new Error('not ready');
+    expect(ready.chunks.every((chunk) => Date.parse(chunk.grant_expires_at) <= Date.parse(ready.expires_at))).toBe(true);
   });
 });

@@ -19,6 +19,8 @@ describe('object store configuration', () => {
     expect(objectStoreFromEnv({ NODE_ENV: 'development', OBJECT_STORE: 'memory' })).toBeInstanceOf(MemoryObjectStore);
     expect(() => objectStoreFromEnv({ NODE_ENV: 'production', OBJECT_STORE: 'memory', ...r2 })).toThrow(/production/);
     expect(() => objectStoreFromEnv({ NODE_ENV: 'development' })).toThrow(/R2_ENDPOINT/);
+    expect(objectStoreFromEnv({ NODE_ENV: 'test', OBJECT_STORE: 'memory' })).toBeInstanceOf(MemoryObjectStore);
+    for (const env of [undefined, 'staging', 'Production']) expect(() => objectStoreFromEnv({ NODE_ENV: env, OBJECT_STORE: 'memory' })).toThrow();
   });
 
   it('never accepts the hosted contract test bucket as the service bucket', () => {

@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { SYNC_PAGE_BYTES } from '@gogospend/contracts';
 import type { CommittedChangeGroup, SessionContext, SyncChangesPage } from '@gogospend/contracts';
-import type { Pool } from 'pg';
+import { Pool } from 'pg';
 
 import { CommandDigester, TEST_DIGEST_KEY } from '../commands/command-digest';
 import { CommandExecutor } from '../commands/command-executor';
@@ -168,7 +168,8 @@ describe('ordered deltas', () => {
     await commands.create(other.session, purchase());
     expect(await failure(() => page(user.session, 'not a cursor'))).toMatchObject({ status: 422, code: 'VALIDATION_FAILED' });
     expect(await failure(() => page(user.session, encodeSyncCursor(other.accountId, '1')))).toMatchObject({ status: 422, code: 'VALIDATION_FAILED' });
-    expect(await failure(() => page(user.session, encodeSyncCursor(user.accountId, '3')))).toMatchObject({ status: 422, code: 'VALIDATION_FAILED' });
+    // A cursor ahead of the account (e.g. after a database restore) needs a resync.
+    expect(await failure(() => page(user.session, encodeSyncCursor(user.accountId, '3')))).toMatchObject({ status: 410, code: 'RESYNC_REQUIRED' });
     expect((await page(user.session, encodeSyncCursor(user.accountId, '2'))).groups).toEqual([]);
     await db.admin((client) => client.query('UPDATE account_sync_state SET pruned_through = 1 WHERE account_id = $1', [user.accountId]));
     expect(await failure(() => page(user.session, encodeSyncCursor(user.accountId, '0')))).toMatchObject({ status: 410, code: 'RESYNC_REQUIRED' });
@@ -185,15 +186,17 @@ describe('ordered deltas', () => {
     await commands.create(user.session, tea);
     await commands.create(user.session, purchase());
     await db.admin((client) => client.query(`UPDATE entity_changes SET committed_at = now() - interval '31 days' WHERE account_id = $1 AND revision <= 3`, [user.accountId]));
-    expect(await retention.prune(new Date())).toBeGreaterThanOrEqual(1);
+    expect(await retention.prune()).toBeGreaterThanOrEqual(1);
     const rows = (await db.admin((client) => client.query('SELECT revision::text, entity_id FROM entity_changes WHERE account_id = $1 ORDER BY revision', [user.accountId]))).rows;
     // Coffee's create (revision 1) was superseded by its delete; every head stays.
     expect(rows.map((row) => row.revision)).toEqual(['2', '3', '4']);
     expect((await db.admin((client) => client.query('SELECT pruned_through::text AS p FROM account_sync_state WHERE account_id = $1', [user.accountId]))).rows[0].p).toBe('3');
     expect(await failure(() => page(user.session, encodeSyncCursor(user.accountId, '2')))).toMatchObject({ status: 410, code: 'RESYNC_REQUIRED' });
     expect((await page(user.session, encodeSyncCursor(user.accountId, '3'))).groups.map((g) => g.revision)).toEqual(['4']);
-    // Nothing newer than the cutoff is touched, and recent cutoffs are refused.
-    await expect(retention.prune(new Date(Date.now() + 40 * 86_400_000))).rejects.toThrow();
+    // Changes inside the 30 days stay, whatever the caller's clock says.
+    await db.admin((client) => client.query(`UPDATE entity_changes SET committed_at = now() - interval '29 days' WHERE account_id = $1 AND revision = 4`, [user.accountId]));
+    await retention.prune();
+    expect((await page(user.session, encodeSyncCursor(user.accountId, '3'))).groups.map((g) => g.revision)).toEqual(['4']);
   });
 
   it('refuses to serve a stored change that no longer matches its entity DTO', async () => {
@@ -210,5 +213,73 @@ describe('ordered deltas', () => {
     expect(decodeSyncCursor(account, cursor)).toBe('42');
     expect(() => decodeSyncCursor(randomUUID(), cursor)).toThrow();
     expect(cursor).not.toContain(account);
+  });
+
+  it('a cursor from an earlier lifecycle generation needs a resync', async () => {
+    const user = await member();
+    await commands.create(user.session, purchase());
+    const cursor = encodeSyncCursor(user.accountId, '1');
+    await db.admin((client) => client.query('UPDATE accounts SET lifecycle_generation = lifecycle_generation + 1 WHERE id = $1', [user.accountId]));
+    expect(await failure(() => page(user.session, cursor))).toMatchObject({ status: 410, code: 'RESYNC_REQUIRED' });
+    expect((await page(user.session, encodeSyncCursor(user.accountId, '1', 1))).groups).toEqual([]);
+  });
+
+  it('a page reads about its byte budget, not every group the limit allows', async () => {
+    const user = await member();
+    const big = 'x'.repeat(600 * 1024);
+    for (let i = 0; i < 20; i += 1) await commands.create(user.session, purchase({ note: big }));
+    let fetched = 0;
+    const first = await service.withOwnerTransaction(user.session, (tx) => {
+      const spied = Object.create(tx) as typeof tx;
+      spied.query = (async (text: string, values?: unknown[]) => {
+        const rows = await tx.query(text, values);
+        fetched += Buffer.byteLength(JSON.stringify(rows));
+        return rows;
+      }) as typeof tx.query;
+      return query.after(spied, undefined, 1000);
+    }, { snapshot: true });
+    expect(first.groups.length).toBeGreaterThan(1);
+    expect(fetched).toBeLessThanOrEqual(2 * SYNC_PAGE_BYTES);
+  });
+
+  it('retention covers every due account in one run, beyond its batch size', async () => {
+    const users = [await member(), await member(), await member()];
+    for (const user of users) {
+      await commands.create(user.session, purchase());
+      await commands.create(user.session, purchase());
+      await db.admin((client) => client.query(`UPDATE entity_changes SET committed_at = now() - interval '31 days' WHERE account_id = $1`, [user.accountId]));
+    }
+    await retention.prune(2);
+    for (const user of users) {
+      const state = (await db.admin((client) => client.query('SELECT pruned_through::text AS p FROM account_sync_state WHERE account_id = $1', [user.accountId]))).rows[0];
+      expect(state.p).toBe('2');
+    }
+  });
+
+  it('retention skips an account whose lock is held instead of waiting for it', async () => {
+    const user = await member();
+    await commands.create(user.session, purchase());
+    await db.admin((client) => client.query(`UPDATE entity_changes SET committed_at = now() - interval '31 days' WHERE account_id = $1`, [user.accountId]));
+    const holder = new Pool({ connectionString: db.adminUrl, max: 1 });
+    const lock = await holder.connect();
+    try {
+      await lock.query('BEGIN');
+      await lock.query('SELECT 1 FROM account_sync_state WHERE account_id = $1 FOR UPDATE', [user.accountId]);
+      const started = Date.now();
+      const outcome = await Promise.race([retention.prune().then(() => 'done'), new Promise((resolve) => setTimeout(() => resolve('blocked'), 1_500))]);
+      expect(outcome).toBe('done');
+      expect(Date.now() - started).toBeLessThan(1_500);
+    } finally {
+      await lock.query('ROLLBACK');
+      lock.release();
+      await holder.end();
+    }
+    await retention.prune();
+    expect((await db.admin((client) => client.query('SELECT pruned_through::text AS p FROM account_sync_state WHERE account_id = $1', [user.accountId]))).rows[0].p).toBe('1');
+  });
+
+  it('the retention line can never pass the account revision', async () => {
+    const user = await member();
+    await expect(db.admin((client) => client.query('UPDATE account_sync_state SET pruned_through = revision + 1 WHERE account_id = $1', [user.accountId]))).rejects.toMatchObject({ code: '23514' });
   });
 });

@@ -33,18 +33,19 @@ export class ChangeWriter {
     // toJSON or getter cannot show the validator one thing and store another).
     const serialized = JSON.stringify(changes.map((c) => ({ entity: c.entity, id: c.id, version: c.version, state: c.state, snapshot: c.snapshot ?? null })));
     const normalized = this.validate(JSON.parse(serialized) as EntityChange[]);
-    if (changeGroupBytes(commandId, normalized) > MAX_CHANGE_GROUP_BYTES) throw new ProblemException(413, 'COMMAND_TOO_LARGE');
+    const groupBytes = changeGroupBytes(commandId, normalized);
+    if (groupBytes > MAX_CHANGE_GROUP_BYTES) throw new ProblemException(413, 'COMMAND_TOO_LARGE');
 
     const [{ revision }] = await tx.query<{ revision: string }>(
       'UPDATE account_sync_state SET revision = revision + 1 WHERE account_id = $1 RETURNING revision::text',
       [tx.accountId],
     );
     await tx.query(
-      `INSERT INTO entity_changes (account_id, revision, ordinal, command_id, entity, entity_id, version, state, snapshot)
+      `INSERT INTO entity_changes (account_id, revision, ordinal, command_id, entity, entity_id, version, state, snapshot, group_bytes)
        SELECT $1, $2, (e.ordinal - 1)::int, $3, e.value ->> 'entity', (e.value ->> 'id')::uuid, (e.value ->> 'version')::int,
-              e.value ->> 'state', NULLIF(e.value -> 'snapshot', 'null'::jsonb)
+              e.value ->> 'state', NULLIF(e.value -> 'snapshot', 'null'::jsonb), CASE WHEN e.ordinal = 1 THEN $5::int END
          FROM jsonb_array_elements($4::jsonb) WITH ORDINALITY AS e(value, ordinal)`,
-      [tx.accountId, revision, commandId, serialized],
+      [tx.accountId, revision, commandId, serialized, groupBytes],
     );
     const moved = await tx.query(
       `INSERT INTO entity_heads AS h (account_id, entity, entity_id, version, state, revision)

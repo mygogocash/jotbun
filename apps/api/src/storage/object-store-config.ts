@@ -7,12 +7,12 @@ const SETTINGS = ['R2_ENDPOINT', 'R2_BUCKET', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACC
 /**
  * The service's private object store: the R2 bucket in R2_* (https only, never
  * the hosted contract's `gogospend-test-*` scope). `OBJECT_STORE=memory` is a
- * local-development store that loses everything on restart, refused in
- * production. Missing configuration fails at startup, not on first use.
+ * local store that loses everything on restart, allowed only with NODE_ENV
+ * development or test. Missing configuration fails at startup, not on first use.
  */
 export function objectStoreFromEnv(env: NodeJS.ProcessEnv): ObjectStore {
   if (env.OBJECT_STORE === 'memory') {
-    if (env.NODE_ENV === 'production') throw new Error('OBJECT_STORE=memory is not allowed in production.');
+    if (env.NODE_ENV !== 'development' && env.NODE_ENV !== 'test') throw new Error('OBJECT_STORE=memory needs NODE_ENV=development or test; never production.');
     return new MemoryObjectStore();
   }
   const missing = SETTINGS.filter((name) => !env[name]);

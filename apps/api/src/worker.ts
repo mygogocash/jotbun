@@ -54,11 +54,20 @@ async function main(): Promise<void> {
       // A slow sweep must not overlap the next one.
       if (maintaining) return;
       maintaining = true;
+      // Each step runs even if another fails.
       try {
         const removed = await publication.sweep(null);
         if (removed.length > 0) console.log(`job worker: swept ${removed.length} object(s)`);
+      } catch (error) {
+        console.error(`job worker: object sweep failed (${error instanceof Error ? error.name : 'unknown'})`);
+      }
+      try {
         const pruned = await retention.prune();
         if (pruned > 0) console.log(`job worker: applied change retention to ${pruned} account(s)`);
+      } catch (error) {
+        console.error(`job worker: change retention failed (${error instanceof Error ? error.name : 'unknown'})`);
+      }
+      try {
         const handled = new Set(handlers.kinds());
         for (const row of await jobs.backlog()) {
           // Alert on these lines: failed jobs need the runbook; unhandled kinds need a worker.
@@ -66,7 +75,7 @@ async function main(): Promise<void> {
           else if (!handled.has(row.kind)) console.error(`job worker: ${row.count} ${row.kind} job(s) ${row.status} with no handler in this worker`);
         }
       } catch (error) {
-        console.error(`job worker: maintenance failed (${error instanceof Error ? error.name : 'unknown'})`);
+        console.error(`job worker: backlog report failed (${error instanceof Error ? error.name : 'unknown'})`);
       } finally {
         maintaining = false;
       }
