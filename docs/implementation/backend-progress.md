@@ -291,3 +291,52 @@ Observed, not changed (pre-existing):
 - **RED against seams** (services returning empty lists and fake acknowledgements; real controllers, migration and contracts): 43 of 47 wallet and category tests failed on behaviour, with no module errors.
 - **GREEN:** `npm run test:db -w gogospend-api -- --runTestsByPath src/wallets/wallets.integration.spec.ts src/categories/categories.integration.spec.ts src/database/migrations.integration.spec.ts` → 61 of 61. `src/v1/contracts.spec.ts` → 79 of 79, including new name, date, snapshot and built-in tests written against the real validators.
 - **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (396), test:db PASS (227), test:app PASS, test:unit PASS, test:render PASS (3), test:dev PASS, build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
+
+## M3 — expense, income and transfer records with edit, delete and restore
+
+- **Migration `0007_transactions`:**
+  - One row per logical record (a transfer is never two rows), keyed by (account, id) with owner RLS.
+  - **Database checks:**
+    - amounts are 1 to 99,999,999,999 satang;
+    - dates are 1970 or later;
+    - notes are at most 500 characters and merchants at most 120 (one line);
+    - entry and transfer columns are exclusive, and a transfer needs two different wallets.
+  - Composite foreign keys go to the owner's wallets, and from (category, generated `category_type`) to categories, so an expense can only use an expense category.
+  - Partial indexes cover active rows per wallet side and `(account, occurred_on, id)` for M4 history.
+  - **App access:** no DELETE grant; the type cannot be updated.
+- **Contracts (`v1/transactions.ts`):**
+  - `TransactionDto` is a union of `EntryDto` (`wallet_id`, `category_id`) and `TransferDto` (`source_wallet_id`, `destination_wallet_id`), with `deleted_at` and `version`.
+  - `CreateTransactionRequest` is discriminated on `type`; there is also `UpdateTransactionRequest`.
+  - Helpers: `normalizeNote` (multi-line, `\r\n` → `\n`), `normalizeMerchant` (one line), `isTransactionSnapshot`, and `RESTORE_WINDOW_DAYS = 30`.
+- **Endpoints:** `GET /v1/transactions/:id`, `POST /v1/transactions`, `PATCH /v1/transactions/:id`, `DELETE /v1/transactions/:id` and `POST /v1/transactions/:id/restore`. The last three need `If-Match`.
+  - Another branch's fields are `UNKNOWN_FIELD`, as are `owner_id` and `account_id`.
+  - A stale edit is `409 VERSION_CONFLICT` with the current record. Editing a deleted record is `409 ENTITY_DELETED`; a purged one is `410 ENTITY_PURGED`.
+  - Restoring after 30 days is `409 ENTITY_DELETED` (`errors.restore_expired`).
+- **Reference rules** (checked under the account lock):
+  - wallets and categories must belong to the owner (otherwise 422 on the field, with no existence leak);
+  - newly referenced wallets and categories must not be archived;
+  - a restore re-checks every reference;
+  - the category type must match;
+  - the date must be no earlier than every referenced wallet's tracking start and no later than today in Bangkok.
+- **Balances:** `BalanceQuery.forWallets` derives each balance in SQL numeric from the opening balance plus active records, returned as exact strings; balances may be negative. Wallets now use it.
+- **Wallet rules once records exist:**
+  - changing the opening balance or tracking start needs a `correction_reason`, which is recorded as an audit code;
+  - tracking cannot start after an existing active record;
+  - archiving needs a zero balance with records included.
+- **Pinned tests:**
+  - `golden_transfer_reconciles_both_wallets` checks cash `235000`, daily `1870000` and total `2105000`, and matches an independent SQL recomputation;
+  - `renaming_category_preserves_historical_reference` (moved from M2) reads the record back by id; M4 repeats it through history.
+- **Other proofs:**
+  - two identical 6,500 coffees with different ids and keys both remain;
+  - editing, deleting and restoring the golden transfer moves both wallets together and keeps the total;
+  - a refused transfer edit changes neither wallet and leaves no receipt or revision;
+  - of two edits from the same version, exactly one wins and the account revision moves by exactly one;
+  - a balance of `99,999,999,999 × 90,101` (above `Number.MAX_SAFE_INTEGER`) is returned as an exact string.
+- **Deviations:**
+  - One `POST /v1/transactions` takes a union on `type` instead of a separate transfer endpoint; the plan's `transfer(ctx, …)` is the transfer branch of `create`.
+  - The type of a record cannot be edited; changing it means deleting and recreating.
+  - Deleting is allowed even when a referenced wallet is now archived, which can make an archived wallet's balance non-zero. Archive only checks the balance when it happens.
+  - Unchanged references to a since-archived wallet or category do not block edits; only newly referenced ones must be active.
+- **RED against seams** (a do-nothing service and opening-only balances; real controller, migration and contracts): 34 of 49 failed on behaviour, with no module errors. The passes were the migration suite and the database-level guards.
+- **GREEN:** `npm run test:db -w gogospend-api -- --runTestsByPath src/transactions/transactions.integration.spec.ts src/transactions/reconciliation.integration.spec.ts src/wallets/wallets.integration.spec.ts` → 67 of 67. Both transaction specs were stable over 2 more runs (35 of 35). `src/v1/contracts.spec.ts` → 81 of 81.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (398), test:db PASS (262), test:app PASS, test:unit PASS, test:render PASS (3), test:dev PASS, build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.

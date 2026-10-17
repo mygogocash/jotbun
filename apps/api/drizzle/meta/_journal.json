@@ -43,6 +43,13 @@
       "when": 1792195206000,
       "tag": "0006_wallets_categories",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792195207000,
+      "tag": "0007_transactions",
+      "breakpoints": true
     }
   ]
 }

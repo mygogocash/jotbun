@@ -21,6 +21,7 @@ import { expectVersion, routeId, stateProblem } from '../commands/versioned-enti
 import { ProblemException } from '../common/api-problem.filter';
 import { DatabaseService } from '../database/database.service';
 import type { OwnerTx } from '../database/owner-transaction';
+import { BalanceQuery } from '../transactions/balance-query';
 import { insertWallet, updateWallet, walletBalances, walletDtos, walletRows } from './wallets.repository';
 import type { WalletChange } from './wallets.repository';
 
@@ -99,6 +100,15 @@ export class WalletsService {
       const wallet = await this.locked(tx, walletId, command.expectedVersion);
       if (wallet.archived) throw stateProblem('errors.wallet_archived', 'archived');
       const corrected = change.opening_minor !== undefined || change.tracking_start !== undefined;
+      if (corrected) {
+        // Once records exist, setup changes are explicit corrections, and
+        // tracking can never start after a record it already holds.
+        const first = await BalanceQuery.firstRecordOn(tx, walletId);
+        if (first !== null && !reason) throw stateProblem('errors.correction_reason_required', 'correction_reason');
+        if (first !== null && change.tracking_start !== undefined && change.tracking_start > first) {
+          throw stateProblem('errors.records_before_tracking_start', 'tracking_start');
+        }
+      }
       return { ...changed(await updateWallet(tx, walletId, change)), audit: corrected && reason ? { correction: reason } : undefined };
     });
   }

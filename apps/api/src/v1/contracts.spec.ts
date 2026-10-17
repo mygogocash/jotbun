@@ -9,9 +9,12 @@ import {
   formatClientHeader,
   isCategorySnapshot,
   isUuid,
+  isTransactionSnapshot,
   isWalletSnapshot,
   normalizeCommand,
+  normalizeMerchant,
   normalizeName,
+  normalizeNote,
   parseClientHeader,
   parseMinor,
   validateOccurredOn,
@@ -260,5 +263,31 @@ describe('v1 wallets and categories', () => {
     expect(new Set(keys).size).toBe(keys.length);
     expect(keys).not.toContain('cashback');
     expect(BUILTIN_CATEGORIES.every((builtin) => (CATEGORY_COLORS as readonly string[]).includes(builtin.color))).toBe(true);
+  });
+});
+
+describe('v1 records', () => {
+  it('normalizes notes (multi-line) and merchants (one line); blank means none', () => {
+    for (const blank of [undefined, null, '', '   ', '\n\n']) {
+      expect(normalizeNote(blank)).toBeNull();
+      expect(normalizeMerchant(blank)).toBeNull();
+    }
+    expect(normalizeNote(' a\r\nb\rc ')).toBe('a\nb\nc');
+    expect(normalizeNote('n'.repeat(500))).toHaveLength(500);
+    expect(failure(() => normalizeNote('n'.repeat(501)))).toEqual({ code: 'VALIDATION_FAILED', field: 'note' });
+    expect(failure(() => normalizeNote('a\u0000b'))).toEqual({ code: 'VALIDATION_FAILED', field: 'note' });
+    expect(failure(() => normalizeMerchant('a\nb'))).toEqual({ code: 'VALIDATION_FAILED', field: 'merchant' });
+    expect(failure(() => normalizeMerchant('m'.repeat(121)))).toEqual({ code: 'VALIDATION_FAILED', field: 'merchant' });
+    expect(failure(() => normalizeNote(5))).toEqual({ code: 'VALIDATION_FAILED', field: 'note' });
+  });
+
+  it('recognizes exactly the persisted entry and transfer shapes', () => {
+    const common = { id: 'a', amount_minor: '6500', occurred_on: '2026-09-20', note: null, merchant: null, deleted_at: null, version: 1 };
+    expect(isTransactionSnapshot({ ...common, type: 'expense', wallet_id: 'w', category_id: 'c' })).toBe(true);
+    expect(isTransactionSnapshot({ ...common, type: 'transfer', source_wallet_id: 'w', destination_wallet_id: 'v' })).toBe(true);
+    expect(isTransactionSnapshot({ ...common, type: 'transfer', source_wallet_id: 'w', destination_wallet_id: 'w' })).toBe(false);
+    expect(isTransactionSnapshot({ ...common, type: 'transfer', source_wallet_id: 'w', destination_wallet_id: 'v', category_id: 'c' })).toBe(false);
+    expect(isTransactionSnapshot({ ...common, type: 'expense', wallet_id: 'w', category_id: 'c', amount_minor: '0' })).toBe(false);
+    expect(isTransactionSnapshot({ ...common, type: 'refund', wallet_id: 'w', category_id: 'c' })).toBe(false);
   });
 });

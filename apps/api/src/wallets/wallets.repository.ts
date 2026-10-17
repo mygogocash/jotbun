@@ -1,6 +1,7 @@
 import type { Minor, WalletDto, WalletSnapshot } from '@gogospend/contracts';
 
 import type { OwnerTx } from '../database/owner-transaction';
+import { BalanceQuery } from '../transactions/balance-query';
 
 // Dates and bigints as text: never a JS Date (time zone) or Number (precision).
 const COLUMNS = `id, name, currency, opening_minor::text AS opening_minor, tracking_start::text AS tracking_start, archived, version`;
@@ -40,13 +41,9 @@ export async function updateWallet(tx: OwnerTx, id: string, change: WalletChange
   return row;
 }
 
-/**
- * Derived balances: opening balance plus active records (M3 adds records).
- * Never a stored counter.
- */
-export async function walletBalances(tx: OwnerTx, ids: readonly string[]): Promise<Map<string, Minor>> {
-  const rows = await tx.query<{ id: string; balance: Minor }>('SELECT id, opening_minor::text AS balance FROM wallets WHERE id = ANY($1::uuid[])', [ids]);
-  return new Map(rows.map((row) => [row.id, row.balance]));
+/** Derived balances (BalanceQuery): opening balance plus active records, never a stored counter. */
+export function walletBalances(tx: OwnerTx, ids: readonly string[]): Promise<ReadonlyMap<string, Minor>> {
+  return BalanceQuery.forWallets(tx, ids);
 }
 
 export async function walletDtos(tx: OwnerTx, wallets: readonly WalletSnapshot[]): Promise<WalletDto[]> {

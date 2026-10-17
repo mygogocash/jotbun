@@ -96,3 +96,5 @@ export { WALLET_CURRENCY, WALLET_CORRECTION_REASONS, isWalletSnapshot } from "./
 export type { WalletCorrectionReason, WalletSnapshot, WalletDto, CreateWalletRequest, UpdateWalletRequest } from "./v1/wallets.ts";
 export { CATEGORY_TYPES, CATEGORY_COLORS, BUILTIN_CATEGORIES, isCategorySnapshot } from "./v1/categories.ts";
 export type { CategoryType, BuiltinCategoryKey, CategoryDto, CreateCategoryRequest, UpdateCategoryRequest } from "./v1/categories.ts";
+export { TRANSACTION_TYPES, NOTE_MAX_CHARS, MERCHANT_MAX_CHARS, RESTORE_WINDOW_DAYS, normalizeNote, normalizeMerchant, isTransactionSnapshot } from "./v1/transactions.ts";
+export type { TransactionType, EntryType, EntryDto, TransferDto, TransactionDto, CreateTransactionRequest, UpdateTransactionRequest } from "./v1/transactions.ts";

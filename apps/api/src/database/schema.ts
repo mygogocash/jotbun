@@ -242,6 +242,30 @@ export const categories = pgTable(
   (table) => [primaryKey({ columns: [table.accountId, table.id] })],
 );
 
+export const transactions = pgTable(
+  'transactions',
+  {
+    accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+    id: uuid('id').notNull(),
+    type: text('type', { enum: ['expense', 'income', 'transfer'] }).notNull(),
+    amountMinor: bigint('amount_minor', { mode: 'bigint' }).notNull(),
+    occurredOn: date('occurred_on', { mode: 'string' }).notNull(),
+    walletId: uuid('wallet_id'),
+    categoryId: uuid('category_id'),
+    // Generated: the category type an entry must match (FK in SQL).
+    categoryType: text('category_type').generatedAlwaysAs(sql`CASE WHEN type <> 'transfer' THEN type END`),
+    sourceWalletId: uuid('source_wallet_id'),
+    destinationWalletId: uuid('destination_wallet_id'),
+    note: text('note'),
+    merchant: text('merchant'),
+    version: integer('version').notNull().default(1),
+    deletedAt: instant('deleted_at'),
+    createdAt: instant('created_at').notNull().defaultNow(),
+    updatedAt: instant('updated_at').notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.accountId, table.id] })],
+);
+
 export const schema = {
   accounts,
   accountIdentities,
@@ -259,4 +283,5 @@ export const schema = {
   auditEvents,
   wallets,
   categories,
+  transactions,
 };
