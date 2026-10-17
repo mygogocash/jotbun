@@ -340,3 +340,55 @@ Observed, not changed (pre-existing):
 - **RED against seams** (a do-nothing service and opening-only balances; real controller, migration and contracts): 34 of 49 failed on behaviour, with no module errors. The passes were the migration suite and the database-level guards.
 - **GREEN:** `npm run test:db -w gogospend-api -- --runTestsByPath src/transactions/transactions.integration.spec.ts src/transactions/reconciliation.integration.spec.ts src/wallets/wallets.integration.spec.ts` → 67 of 67. Both transaction specs were stable over 2 more runs (35 of 35). `src/v1/contracts.spec.ts` → 81 of 81.
 - **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (398), test:db PASS (262), test:app PASS, test:unit PASS, test:render PASS (3), test:dev PASS, build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
+
+## M4 — budgets, complete filtered history and month summary
+
+- **Migration `0008_budgets`:**
+  - `monthly_budgets`: one per (account, month), holding the derived entity id, the overall limit and a version.
+  - `budget_category_limits`: positive sublimits. Each references `(category, 'expense')` by composite foreign key, so only an owned expense category can carry a sublimit, and the (account, month, category) key rules out duplicates.
+  - A deferred constraint trigger on both tables refuses, at commit, sublimits that add up to more than the overall limit, whichever side changed.
+  - Owner RLS. The app may delete sublimits (a budget is replaced as a whole) but never a month's budget row.
+- **Contracts:**
+  - `v1/budgets.ts`: `BudgetDto`, `SetMonthlyBudgetRequest`, `parseMonth` and `isBudgetSnapshot`.
+  - `v1/history.ts`: `HistoryFilter`, `Totals`, `FilteredTotals` and `HistoryPage`, with a default limit of 50 and a maximum of 200.
+  - `v1/summary.ts`: `MonthSummary`, `CategoryTotal` and `BudgetUsage`.
+- **Endpoints:**
+  - `GET /v1/budgets/:month` and `PUT /v1/budgets/:month`. PUT replaces the whole month's budget in one M1 command: without `If-Match` it creates, and a second create is `409` with the current budget; with the current version it replaces. The budget id is derived from (account, month).
+  - `GET /v1/history?from&through[&wallet_id&category_id&type&query&sort&limit&cursor]`.
+  - `GET /v1/summary?month=YYYY-MM`.
+- **Budget rules:**
+  - Overall and category limits are positive and within the cap.
+  - Duplicate categories, sublimits summing above the overall limit (from either side), income categories, other accounts' categories and newly added archived categories are refused with 422 on `category_limits`.
+  - A limit on a category that was renamed or archived after it was set stays, and re-setting it is allowed.
+  - Uncapped categories still count toward the overall budget. Transfers and opening balances never consume a budget.
+- **History:**
+  - Keyset paging on (occurred_on, id), in the requested order.
+  - The opaque cursor carries the last row, the first page's account revision and a digest of the filter and order; a malformed cursor, or one from another filter or order, is 422.
+  - `refresh_suggested` is set when the account changed since the first page.
+  - Rows, totals over the whole filter (`count`, `income_minor`, `expense_minor`, `balance_minor` = income − expense, and `by_wallet` net with transfers on both sides) and `as_of_revision` all come from one `REPEATABLE READ READ ONLY` owner transaction. This is a new `snapshot` option on `withOwnerTransaction`.
+  - Filters: wallet (either side of a transfer), category, type, case-insensitive note/merchant text (with `%` and `_` escaped), and inclusive dates. Deleted records are left out.
+- **Summary:**
+  - Totals for the Bangkok calendar month, per-category totals (renamed and archived categories keep their ids) and budget usage.
+  - Budget usage has `spent_minor` (all expenses), `remaining_minor` (may be negative) and per-category spent and remaining.
+  - All values are decimal strings computed in numeric or BigInt; no percentages are sent.
+- **Pinned and boundary tests:**
+  - `all_451_records_are_pageable`: 451 records on three tied dates give 451 unique ids in 10 pages of 50 (and 200/200/51 ascending), in exact key order.
+  - The golden month totals: income `2800000`, expense `1245000`, net `1555000`, cash `-168200`, daily `1723200`. Budget usage: spent `1245000`, remaining `-245000`, food `18200` of `50000`.
+  - Month and year boundaries.
+  - History totals agree exactly with the sum of all pages' rows, for every filter.
+- **Query plans** (1,000,000 synthetic records, 50 accounts × 20,000, in a throwaway database since dropped):
+  - first and keyset history pages: index-only backward scan of `transactions_history_idx`, about 0.2 ms;
+  - wallet-filtered history: a BitmapOr over the three wallet-side indexes, then a top-N sort, about 2 ms for 6,679 matching rows;
+  - month totals: the history index, about 0.1 ms;
+  - wallet balance: `transactions_wallet_idx`, about 0.7 ms.
+  - A planned `(account, type, occurred_on)` index was never chosen, so it was removed, as the plan requires.
+- **Deviations:**
+  - `GET /v1/summary` has its own `summary.controller.ts`.
+  - History and summary controllers live in `BudgetsModule`.
+  - `BudgetService` methods take `(ctx, CommandHeaders, month, body)`.
+  - Budget create and replace are two command kinds (`budget.create`, `budget.replace`) so each has a fixed outcome.
+  - A month's budget cannot be deleted; setting it again replaces it.
+- **RED against seams** (empty history and summary, fake budget acknowledgements; real controllers, migration and contracts): 37 of 52 failed on behaviour, with no module errors.
+- **Test correction:** one budget test used an overall limit of 2 with the default 50,000 food sublimit. That is a validation error, which correctly comes before the conflict check, so the test now uses 2,000,000.
+- **GREEN:** `npm run test:db -w gogospend-api -- --runTestsByPath src/budgets/budgets.integration.spec.ts src/history/history.integration.spec.ts src/summary/summary.integration.spec.ts src/database/migrations.integration.spec.ts` → 52 of 52. The three M4 specs were stable over 2 more runs (38 of 38). `src/v1/contracts.spec.ts` → 83 of 83.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (400), test:db PASS (300), test:app PASS, test:unit PASS, test:render PASS (3), test:dev PASS, build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.

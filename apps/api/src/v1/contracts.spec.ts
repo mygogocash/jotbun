@@ -7,6 +7,7 @@ import {
   BUILTIN_CATEGORIES,
   CATEGORY_COLORS,
   formatClientHeader,
+  isBudgetSnapshot,
   isCategorySnapshot,
   isUuid,
   isTransactionSnapshot,
@@ -17,6 +18,7 @@ import {
   normalizeNote,
   parseClientHeader,
   parseMinor,
+  parseMonth,
   validateOccurredOn,
   validateTrackingStart,
 } from '@gogospend/contracts';
@@ -289,5 +291,22 @@ describe('v1 records', () => {
     expect(isTransactionSnapshot({ ...common, type: 'transfer', source_wallet_id: 'w', destination_wallet_id: 'v', category_id: 'c' })).toBe(false);
     expect(isTransactionSnapshot({ ...common, type: 'expense', wallet_id: 'w', category_id: 'c', amount_minor: '0' })).toBe(false);
     expect(isTransactionSnapshot({ ...common, type: 'refund', wallet_id: 'w', category_id: 'c' })).toBe(false);
+  });
+});
+
+describe('v1 budgets', () => {
+  it('parses calendar months from 1970-01', () => {
+    expect(parseMonth('2026-09')).toBe('2026-09');
+    for (const bad of ['2026-9', '2026-13', '2026-00', '1969-12', '2026-09-01', 202609, undefined]) {
+      expect(failure(() => parseMonth(bad))).toEqual({ code: 'VALIDATION_FAILED', field: 'month' });
+    }
+  });
+
+  it('recognizes exactly the persisted budget shape', () => {
+    const budget = { id: 'b', month: '2026-09', overall_limit_minor: '1000', category_limits: [{ category_id: 'c', limit_minor: '10' }], version: 1 };
+    expect(isBudgetSnapshot(budget)).toBe(true);
+    expect(isBudgetSnapshot({ ...budget, overall_limit_minor: '0' })).toBe(false);
+    expect(isBudgetSnapshot({ ...budget, category_limits: [{ category_id: 'c', limit_minor: '10', note: 'x' }] })).toBe(false);
+    expect(isBudgetSnapshot({ ...budget, month: '2026-9' })).toBe(false);
   });
 });

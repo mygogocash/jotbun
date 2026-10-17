@@ -6,6 +6,7 @@ import type { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 
 import { AuthModule } from '../auth/auth.module';
+import { BudgetsModule } from '../budgets/budgets.module';
 import { CategoriesModule } from '../categories/categories.module';
 import { CommandsModule } from '../commands/commands.module';
 import { requestContextMiddleware } from '../auth/request-context';
@@ -23,7 +24,7 @@ import { WalletsModule } from '../wallets/wallets.module';
  * (v1-isolation.spec.ts).
  */
 @Module({
-  imports: [DatabaseModule, AuthModule, CommandsModule, WalletsModule, CategoriesModule, TransactionsModule],
+  imports: [DatabaseModule, AuthModule, CommandsModule, WalletsModule, CategoriesModule, TransactionsModule, BudgetsModule],
 })
 export class V1AppModule {}
 

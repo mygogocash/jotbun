@@ -98,3 +98,8 @@ export { CATEGORY_TYPES, CATEGORY_COLORS, BUILTIN_CATEGORIES, isCategorySnapshot
 export type { CategoryType, BuiltinCategoryKey, CategoryDto, CreateCategoryRequest, UpdateCategoryRequest } from "./v1/categories.ts";
 export { TRANSACTION_TYPES, NOTE_MAX_CHARS, MERCHANT_MAX_CHARS, RESTORE_WINDOW_DAYS, normalizeNote, normalizeMerchant, isTransactionSnapshot } from "./v1/transactions.ts";
 export type { TransactionType, EntryType, EntryDto, TransferDto, TransactionDto, CreateTransactionRequest, UpdateTransactionRequest } from "./v1/transactions.ts";
+export { MAX_BUDGET_CATEGORY_LIMITS, parseMonth, isBudgetSnapshot } from "./v1/budgets.ts";
+export type { BudgetCategoryLimit, BudgetDto, SetMonthlyBudgetRequest } from "./v1/budgets.ts";
+export { HISTORY_SORTS, HISTORY_DEFAULT_LIMIT, HISTORY_MAX_LIMIT, HISTORY_QUERY_MAX_CHARS } from "./v1/history.ts";
+export type { HistorySort, HistoryFilter, Totals, FilteredTotals, HistoryPage } from "./v1/history.ts";
+export type { CategoryTotal, BudgetCategoryUsage, BudgetUsage, MonthSummary } from "./v1/summary.ts";

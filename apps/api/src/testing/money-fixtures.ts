@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto';
 import type { BuiltinCategoryKey } from '@gogospend/contracts';
 
 import { derivedUuid } from '../commands/derived-id';
+import { GOLDEN_RECORDS, GOLDEN_START, GOLDEN_WALLETS } from '../transactions/fixtures/golden-diary';
 import type { SignedUp, authFixtures } from './auth-fixtures';
 import { acceptPolicies } from './command-fixtures';
 import type { TestDatabase } from './postgres-harness';
@@ -43,5 +44,34 @@ export function moneyFixtures(db: TestDatabase, fx: ReturnType<typeof authFixtur
     return Object.fromEntries(wallets.map((w) => [w.id, w.balance_minor]));
   }
 
-  return { member, wallet, record, balances };
+  /** The pinned golden diary for a new member; records in GOLDEN_RECORDS order. */
+  async function golden(): Promise<{ user: SignedUp; wallets: { cash: string; daily: string }; records: string[] }> {
+    const user = await member();
+    const wallets = {
+      cash: await wallet(user, { ...GOLDEN_WALLETS.cash, tracking_start: GOLDEN_START }),
+      daily: await wallet(user, { ...GOLDEN_WALLETS.daily, tracking_start: GOLDEN_START }),
+    };
+    const records: string[] = [];
+    for (const item of GOLDEN_RECORDS) {
+      const base = { type: item.type, amount_minor: item.amount_minor, occurred_on: item.occurred_on, note: item.note };
+      records.push(await record(user, item.type === 'transfer'
+        ? { ...base, source_wallet_id: wallets[item.source], destination_wallet_id: wallets[item.destination] }
+        : { ...base, wallet_id: wallets[item.wallet], category_id: builtinId(user, item.category) }));
+    }
+    return { user, wallets, records };
+  }
+
+  /** Inserts records straight into the table (no commands) for read-model scale tests. */
+  async function bulkRecords(user: SignedUp, rows: { type: 'expense' | 'income'; amount_minor: string; occurred_on: string; wallet_id: string; category_id: string; note?: string | null }[]): Promise<string[]> {
+    const ids = rows.map(() => randomUUID());
+    await db.admin((client) => client.query(
+      `INSERT INTO transactions (account_id, id, type, amount_minor, occurred_on, wallet_id, category_id, note)
+       SELECT $1, r.id, r.type, r.amount_minor, r.occurred_on, r.wallet_id, r.category_id, r.note
+         FROM jsonb_to_recordset($2::jsonb) AS r(id uuid, type text, amount_minor bigint, occurred_on date, wallet_id uuid, category_id uuid, note text)`,
+      [user.accountId, JSON.stringify(rows.map((row, i) => ({ ...row, id: ids[i], note: row.note ?? null })))],
+    ));
+    return ids;
+  }
+
+  return { member, wallet, record, balances, golden, bulkRecords };
 }

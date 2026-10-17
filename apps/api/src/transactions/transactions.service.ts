@@ -25,6 +25,8 @@ import { expectVersion, routeId, stateProblem } from '../commands/versioned-enti
 import { ProblemException } from '../common/api-problem.filter';
 import { DatabaseService } from '../database/database.service';
 import type { OwnerTx } from '../database/owner-transaction';
+import { RECORD_COLUMNS as COLUMNS, toDto } from './transactions.repository';
+import type { RecordRow as Row } from './transactions.repository';
 
 const ENTITY = 'transaction';
 const COMMANDS: [string, CommandOutcome][] = [['transaction.create', 'created'], ['transaction.update', 'updated'], ['transaction.delete', 'deleted'], ['transaction.restore', 'restored']];
@@ -34,23 +36,8 @@ const ENTRY_REFS = ['wallet_id', 'category_id'] as const;
 const TRANSFER_REFS = ['source_wallet_id', 'destination_wallet_id'] as const;
 type RefField = (typeof ENTRY_REFS)[number] | (typeof TRANSFER_REFS)[number];
 
-const COLUMNS = `id, type, amount_minor::text AS amount_minor, occurred_on::text AS occurred_on, wallet_id, category_id,
-  source_wallet_id, destination_wallet_id, note, merchant, deleted_at, version`;
-
-type Row = {
-  id: string; type: TransactionType; amount_minor: string; occurred_on: string;
-  wallet_id: string | null; category_id: string | null; source_wallet_id: string | null; destination_wallet_id: string | null;
-  note: string | null; merchant: string | null; deleted_at: Date | null; version: number;
-};
 /** The record's editable state, before it is written. */
 type Draft = Omit<Row, 'deleted_at' | 'version'>;
-
-function toDto(row: Row): TransactionDto {
-  const common = { id: row.id, amount_minor: row.amount_minor, occurred_on: row.occurred_on, note: row.note, merchant: row.merchant, deleted_at: row.deleted_at ? row.deleted_at.toISOString() : null, version: row.version };
-  return row.type === 'transfer'
-    ? { ...common, type: 'transfer', source_wallet_id: row.source_wallet_id as string, destination_wallet_id: row.destination_wallet_id as string }
-    : { ...common, type: row.type, wallet_id: row.wallet_id as string, category_id: row.category_id as string };
-}
 
 const changed = (row: Row): MutationResult => ({
   entityId: row.id,

@@ -32,7 +32,7 @@ export class DatabaseService implements OnModuleDestroy {
    * transaction with the same owner and role; after COMMIT a connection that
    * kept any session-level owner or role is discarded instead of reused.
    */
-  async withOwnerTransaction<T>(ctx: SessionContext, fn: (tx: OwnerTx) => Promise<T>): Promise<T> {
+  async withOwnerTransaction<T>(ctx: SessionContext, fn: (tx: OwnerTx) => Promise<T>, options: { snapshot?: boolean } = {}): Promise<T> {
     if (!isUuid(ctx.accountId)) throw new Error('Owner transaction needs a canonical account UUID.');
     if (insideOwnerTransaction.getStore()) throw new Error('Owner transactions cannot be nested.');
     // Both values are inlined into simple-protocol batches below, so they are
@@ -48,9 +48,14 @@ export class DatabaseService implements OnModuleDestroy {
     };
     client.on('error', onConnectionError);
     const tx = new OwnerTx(client, accountId);
+    // Writes run READ COMMITTED (each statement after the account lock sees
+    // the previous holder's commit). `snapshot` reads (history, summaries)
+    // run REPEATABLE READ READ ONLY, so rows, totals and the revision they
+    // report all come from one view.
+    const begin = options.snapshot ? 'BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY' : 'BEGIN ISOLATION LEVEL READ COMMITTED';
     try {
       await client.query(
-        `BEGIN ISOLATION LEVEL READ COMMITTED;
+        `${begin};
          SELECT set_config('gogospend.account_id', '${accountId}', true),
                 set_config('gogospend.tx_token', '${token}', true),
                 set_config('statement_timeout', '${STATEMENT_TIMEOUT}', true),

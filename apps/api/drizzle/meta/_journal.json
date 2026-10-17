@@ -50,6 +50,13 @@
       "when": 1792195207000,
       "tag": "0007_transactions",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792195208000,
+      "tag": "0008_budgets",
+      "breakpoints": true
     }
   ]
 }

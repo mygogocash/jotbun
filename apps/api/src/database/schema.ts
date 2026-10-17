@@ -266,6 +266,32 @@ export const transactions = pgTable(
   (table) => [primaryKey({ columns: [table.accountId, table.id] })],
 );
 
+export const monthlyBudgets = pgTable(
+  'monthly_budgets',
+  {
+    accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+    month: date('month', { mode: 'string' }).notNull(),
+    id: uuid('id').notNull(),
+    overallLimitMinor: bigint('overall_limit_minor', { mode: 'bigint' }).notNull(),
+    version: integer('version').notNull().default(1),
+    createdAt: instant('created_at').notNull().defaultNow(),
+    updatedAt: instant('updated_at').notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.accountId, table.month] })],
+);
+
+export const budgetCategoryLimits = pgTable(
+  'budget_category_limits',
+  {
+    accountId: uuid('account_id').notNull(),
+    month: date('month', { mode: 'string' }).notNull(),
+    categoryId: uuid('category_id').notNull(),
+    categoryType: text('category_type').notNull().default('expense'),
+    limitMinor: bigint('limit_minor', { mode: 'bigint' }).notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.accountId, table.month, table.categoryId] })],
+);
+
 export const schema = {
   accounts,
   accountIdentities,
@@ -284,4 +310,6 @@ export const schema = {
   wallets,
   categories,
   transactions,
+  monthlyBudgets,
+  budgetCategoryLimits,
 };
