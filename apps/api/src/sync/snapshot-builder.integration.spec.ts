@@ -282,7 +282,7 @@ describe('snapshot requests, status and grants', () => {
     const user = await member();
     await commands.create(user.session, purchase());
     const id = await request(user);
-    const handlers = buildHandlers({ jobs, reader, store, publication }, { snapshot: { validators: validators() } });
+    const handlers = buildHandlers({ jobs, reader, store, publication, pool: jobsPool }, { snapshot: { validators: validators() } });
     expect(handlers.kinds()).toContain('sync_snapshot');
     expect(await new JobWorker(jobs, handlers).runOnce()).toBe('ran');
     expect((await status(user, id))?.status).toBe('ready');

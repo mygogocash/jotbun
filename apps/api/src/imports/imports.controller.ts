@@ -1,12 +1,13 @@
 import { Controller, Get, HttpCode, Inject, Param, Post, Req, Res } from '@nestjs/common';
 import { ContractValidationError, IMPORT_FILE_NAME_HEADER, isUuid } from '@gogospend/contracts';
-import type { ImportJobDto, SessionContext, UploadAccepted } from '@gogospend/contracts';
+import type { ImportJobDto, ImportPreview, SessionContext, UploadAccepted } from '@gogospend/contracts';
 import type { Request, Response } from 'express';
 
 import { Access } from '../auth/auth-route.decorator';
 import { CurrentSession } from '../auth/request-context';
 import { ProblemException } from '../common/api-problem.filter';
 import { ImportRepository } from './import.repository';
+import { PreviewQuery } from './preview-query';
 import { IMPORT_INTAKE_CONFIG, UploadIntake } from './upload-intake';
 import type { ImportIntakeConfig } from './upload-intake';
 
@@ -37,6 +38,7 @@ export class ImportsController {
   constructor(
     private readonly intake: UploadIntake,
     private readonly imports: ImportRepository,
+    private readonly previews: PreviewQuery,
     @Inject(IMPORT_INTAKE_CONFIG) private readonly config: ImportIntakeConfig,
   ) {}
 
@@ -76,6 +78,20 @@ export class ImportsController {
   async status(@CurrentSession() session: SessionContext, @Param('id') id: string): Promise<ImportJobDto> {
     if (!isUuid(id)) throw new ProblemException(404, 'NOT_FOUND');
     const found = await this.imports.find(session, id);
+    if (!found) throw new ProblemException(404, 'NOT_FOUND');
+    return found;
+  }
+
+  /**
+   * P2b: the caller's own import as a reviewable preview (candidates,
+   * issues, advisory duplicates); any other id is the same 404. Reading it
+   * never saves anything.
+   */
+  @Get(':id/preview')
+  @Access('bound_session')
+  async preview(@CurrentSession() session: SessionContext, @Param('id') id: string): Promise<ImportPreview> {
+    if (!isUuid(id)) throw new ProblemException(404, 'NOT_FOUND');
+    const found = await this.previews.find(session, id);
     if (!found) throw new ProblemException(404, 'NOT_FOUND');
     return found;
   }

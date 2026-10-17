@@ -14,6 +14,7 @@ import request from 'supertest';
 
 import { LeasedAccountRead } from '../database/leased-account-read';
 import { importUploads } from '../database/schema';
+import { HandlerRegistry } from '../jobs/handler-registry';
 import { buildHandlers } from '../jobs/handlers';
 import { JobRepository } from '../jobs/job.repository';
 import { JobWorker } from '../jobs/worker';
@@ -278,7 +279,10 @@ beforeAll(async () => {
   jobsPool = await db.loginPool(['gogospend_jobs'], 3);
   jobs = new JobRepository(jobsPool);
   publication = new ObjectPublicationService(jobsPool, store);
-  const handlers = buildHandlers({ jobs, reader: new LeasedAccountRead(await db.loginPool(['gogospend_leased_read'], 2)), store, publication });
+  const all = buildHandlers({ jobs, reader: new LeasedAccountRead(await db.loginPool(['gogospend_leased_read'], 2)), store, publication, pool: jobsPool });
+  // This spec covers intake and quarantine expiry: its worker runs only the
+  // expiry handler, so parse jobs stay queued (parsing is import-preview.integration.spec's).
+  const handlers = new HandlerRegistry().register('import_expire', all.handler('import_expire'));
   handled = handlers.kinds();
   worker = new JobWorker(jobs, handlers);
   ownerPool = await db.loginPool(['gogospend_app'], 2);
@@ -349,7 +353,7 @@ describe('POST /v1/imports streams into bounded private quarantine', () => {
     const whole = Buffer.from((await store.get(keys[0])) as Uint8Array);
     expect(createHash('sha256').update(whole).digest('hex')).toBe(createHash('sha256').update(LEGACY_SAMPLE).digest('hex'));
 
-    // One parse job (the import's own id) and one expiry job; the parser is P2b's, so no worker here claims the parse job.
+    // One parse job (the import's own id) and one expiry job; this spec's worker does not run the parser, so the parse job stays queued.
     const queued = await jobsOf(user.accountId);
     expect(queued.map((job) => [job.kind, job.status])).toEqual([['import_expire', 'queued'], ['import_parse', 'queued']]);
     expect(queued.find((job) => job.kind === 'import_parse')?.id).toBe(accepted.job_id);

@@ -425,6 +425,50 @@ export const importUploads = pgTable('import_uploads', {
   finishedAt: instant('finished_at'),
 });
 
+// Written only by the 0015 parse routine (worker, fenced); the owner reads its own rows.
+export const IMPORT_PREVIEW_ROW_STATUSES = ['ready', 'rejected', 'expired'] as const;
+
+export const importPreviews = pgTable('import_previews', {
+  jobId: uuid('job_id').primaryKey().references(() => importUploads.jobId, { onDelete: 'cascade' }),
+  accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+  lifecycleGeneration: integer('lifecycle_generation').notNull(),
+  status: text('status', { enum: IMPORT_PREVIEW_ROW_STATUSES }).notNull(),
+  layout: text('layout'),
+  issues: jsonb('issues').notNull().default([]),
+  candidateCount: integer('candidate_count').notNull(),
+  reviewRequiredCount: integer('review_required_count').notNull(),
+  expenseTotalMinor: bigint('expense_total_minor', { mode: 'bigint' }).notNull().default(0n),
+  incomeTotalMinor: bigint('income_total_minor', { mode: 'bigint' }).notNull().default(0n),
+  transferTotalMinor: bigint('transfer_total_minor', { mode: 'bigint' }).notNull().default(0n),
+  imageKey: text('image_key').unique(),
+  imageWidth: integer('image_width'),
+  imageHeight: integer('image_height'),
+  reviewRevision: bigint('review_revision', { mode: 'bigint' }).notNull().default(1n),
+  createdAt: instant('created_at').notNull().defaultNow(),
+  expiresAt: instant('expires_at').notNull(),
+  expiredAt: instant('expired_at'),
+});
+
+export const importCandidates = pgTable(
+  'import_candidates',
+  {
+    jobId: uuid('job_id').notNull().references(() => importPreviews.jobId, { onDelete: 'cascade' }),
+    accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+    sourceRowId: text('source_row_id').notNull(),
+    ordinal: integer('ordinal').notNull(),
+    occurredOn: date('occurred_on', { mode: 'string' }),
+    type: text('type', { enum: ['expense', 'income', 'transfer'] }),
+    amountMinor: bigint('amount_minor', { mode: 'bigint' }),
+    walletLabel: text('wallet_label'),
+    categoryLabel: text('category_label'),
+    merchant: text('merchant'),
+    note: text('note'),
+    issues: jsonb('issues').notNull().default([]),
+    reviewRequired: boolean('review_required').notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.jobId, table.sourceRowId] })],
+);
+
 export const schema = {
   accounts,
   accountIdentities,
@@ -453,4 +497,6 @@ export const schema = {
   exports: exportsTable,
   importUploads,
   deletionRequests,
+  importPreviews,
+  importCandidates,
 };

@@ -54,7 +54,7 @@ beforeAll(async () => {
   const store = v1.app.get<ObjectStore>(OBJECT_STORE);
   const jobsPool = await db.loginPool(['gogospend_jobs'], 3);
   const jobs = new JobRepository(jobsPool);
-  const deps = { jobs, reader: new LeasedAccountRead(await db.loginPool(['gogospend_leased_read'], 2)), store, publication: new ObjectPublicationService(jobsPool, store) };
+  const deps = { jobs, reader: new LeasedAccountRead(await db.loginPool(['gogospend_leased_read'], 2)), store, publication: new ObjectPublicationService(jobsPool, store), pool: jobsPool };
   worker = new JobWorker(jobs, buildHandlers(deps));
   retention = new SyncRetention(jobsPool);
 });

@@ -10,8 +10,17 @@ export type PublishedObject = { key: string; bytes: number; sha256: string };
 const PURPOSE = /^[a-z][a-z0-9_]{0,31}$/;
 const NAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 const SHA256 = /^[0-9a-f]{64}$/;
-/** The only purposes (= the job kinds that publish); the sweep lists each for orphans. */
-export const PUBLICATION_PURPOSES = ['sync_snapshot', 'export'] as const;
+/** The only purposes; the sweep lists each for orphans. */
+export const PUBLICATION_PURPOSES = ['sync_snapshot', 'export', 'import_image'] as const;
+/**
+ * The job kind that may publish each purpose: a snapshot or export job its
+ * own output; an import_parse job (P2b) its sanitized receipt image.
+ */
+const PUBLISHER_KIND: Readonly<Record<(typeof PUBLICATION_PURPOSES)[number], string>> = {
+  sync_snapshot: 'sync_snapshot',
+  export: 'export',
+  import_image: 'import_parse',
+};
 /**
  * Purposes registered by the API's own routines rather than a worker lease
  * (P2a's upload quarantine: the intake token takes the lease-token slot).
@@ -45,22 +54,23 @@ export class ObjectPublicationService {
   constructor(private readonly pool: Pool, private readonly store: ObjectStore) {}
 
   /**
-   * Registers a key for a current lease of a job whose kind is `purpose`
-   * (one of PUBLICATION_PURPOSES). Takes the pool, not a transaction
-   * client: the reservation must be committed before the PUT, or a concurrent
-   * sweep would see the object as an unregistered orphan.
+   * Registers a key for a current lease of a job whose kind publishes
+   * `purpose` (PUBLICATION_PURPOSES / PUBLISHER_KIND). Takes the pool, not a
+   * transaction client: the reservation must be committed before the PUT, or
+   * a concurrent sweep would see the object as an unregistered orphan.
    */
   async reserveKey(client: Pool, lease: JobLease, purpose: string, name: string): Promise<string> {
     if (!PURPOSE.test(purpose) || !(PUBLICATION_PURPOSES as readonly string[]).includes(purpose) || !NAME.test(name)) throw new ObjectStoreError('invalid_key');
     if (lease.accountId === null) throw new Error('only account jobs publish objects');
+    const kind = PUBLISHER_KIND[purpose as (typeof PUBLICATION_PURPOSES)[number]];
     const key = `${purpose}/${lease.accountId}/${lease.jobId}/${lease.leaseToken}/${name}`;
     const { rowCount } = await client.query(
       `INSERT INTO object_publications (key, job_id, account_id, lease_token, lifecycle_generation, purpose, delete_after)
        SELECT $1, j.id, j.account_id, j.lease_token, j.lifecycle_generation, $5,
               j.attempt_started_at + make_interval(secs => j.max_runtime_seconds + $6)
          FROM jobs j
-        WHERE j.id = $2 AND j.lease_token = $3 AND j.account_id = $4 AND j.kind = $5 AND j.status = 'leased' AND j.lease_expires_at > now()`,
-      [key, lease.jobId, lease.leaseToken, lease.accountId, purpose, RESERVATION_GRACE_SECONDS],
+        WHERE j.id = $2 AND j.lease_token = $3 AND j.account_id = $4 AND j.kind = $7 AND j.status = 'leased' AND j.lease_expires_at > now()`,
+      [key, lease.jobId, lease.leaseToken, lease.accountId, purpose, RESERVATION_GRACE_SECONDS, kind],
     );
     if (rowCount !== 1) throw new Error('this lease cannot reserve an object key');
     return key;
