@@ -1,4 +1,4 @@
-import type { V1SessionSnapshot } from '../api/client.ts';
+import type { V1Credentials, V1SessionSnapshot } from '../api/client.ts';
 import type { CredentialProvider } from './credentialProvider.ts';
 
 /**
@@ -39,13 +39,18 @@ export function getV1SessionSnapshot(): V1SessionSnapshot {
 // F5: once the native SDK is configured, the credential provider owns the
 // session; the legacy seam above stays only until every caller has moved.
 let provider: CredentialProvider | null = null;
+let unsubscribeProvider: (() => void) | null = null;
 
+/** Installs (or removes) the provider; a replaced provider no longer drives the seam. */
 export function installCredentialProvider(next: CredentialProvider | null): void {
+  unsubscribeProvider?.();
+  unsubscribeProvider = null;
   provider = next;
   for (const listener of listeners) listener();
-  next?.subscribe(() => {
-    for (const listener of listeners) listener();
-  });
+  unsubscribeProvider =
+    next?.subscribe(() => {
+      for (const listener of listeners) listener();
+    }) ?? null;
 }
 
 export function getCredentialProvider(): CredentialProvider | null {
@@ -56,3 +61,15 @@ export function getCredentialProvider(): CredentialProvider | null {
 export function getV1AccessToken(): Promise<string | null> {
   return provider ? provider.getAccessToken() : Promise.resolve(session?.access_token ?? null);
 }
+
+/**
+ * The shared transport's credentials: the installed provider's token,
+ * binding, epoch and refresh, and the server-ended sessions the transport
+ * reports back to it; or the legacy seam's.
+ */
+export const v1SessionCredentials: V1Credentials = {
+  getAccessToken: getV1AccessToken,
+  getSessionSnapshot: getV1SessionSnapshot,
+  refreshAfterUnauthorized: async () => (await provider?.refreshAfterUnauthorized()) ?? false,
+  sessionEnded: (event) => provider?.sessionEnded(event),
+};

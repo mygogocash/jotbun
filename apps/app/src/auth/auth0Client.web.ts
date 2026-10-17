@@ -1,21 +1,12 @@
 // The web preview has no real sign-in: Auth0 is reported unsupported and the
-// app stays in its signed-out or demo preview.
-import type { Auth0Port } from './auth0Client.ts';
+// app stays in its signed-out or demo preview. Same exports as the native
+// adapter (auth0Client.ts), so callers never branch on the platform.
+import { unsupportedAuth0Port } from './auth0Port.ts';
+import type { Auth0Port, Auth0SdkLike } from './auth0Port.ts';
 
-export { AuthCancelled } from './auth0Client.ts';
-export type { Auth0Port } from './auth0Client.ts';
+export { AuthCancelled, AuthUnavailable } from './auth0Port.ts';
+export type { Auth0Port, Auth0SdkLike, PendingCredentials } from './auth0Port.ts';
 
-export function webAuth0Port(): Auth0Port {
-  const unsupported = async (): Promise<never> => {
-    throw new Error('Real sign-in is available in the Jotbun app on iOS and Android.');
-  };
-  return {
-    supported: false,
-    authorize: unsupported,
-    authorizeWithNonce: unsupported,
-    accessToken: async () => null,
-    refresh: async () => false,
-    hasCredentials: async () => false,
-    clearSession: async () => undefined,
-  };
+export function createAuth0Port(_sdk: Auth0SdkLike | null, _audience: string): Auth0Port {
+  return unsupportedAuth0Port('Real sign-in is available in the Jotbun app on iOS and Android.');
 }
