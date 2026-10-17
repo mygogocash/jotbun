@@ -47,6 +47,21 @@ export type ProofResult = {
   expires_at: string;
 };
 
+/**
+ * POST /v1/me/global-logout (Idempotency-Key = the proof's command id).
+ * Every binding is dead when this returns; new sign-ins wait until Auth0
+ * refresh grants are revoked (`provider_cleanup`). A retry after a lost
+ * response gets 401 SESSION_REQUIRED, which the app treats as signed out.
+ */
+export type GlobalLogoutRequest = {
+  proof_id: string;
+};
+
+export type GlobalLogoutResult = {
+  generation: number;
+  provider_cleanup: "pending";
+};
+
 export const CLIENT_PLATFORMS = ["ios", "android"] as const;
 export type ClientPlatform = (typeof CLIENT_PLATFORMS)[number];
 

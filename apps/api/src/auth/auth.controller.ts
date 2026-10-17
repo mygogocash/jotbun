@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Header, Post } from '@nestjs/common';
-import { ContractValidationError, assertKnownFields, isUuid } from '@gogospend/contracts';
-import type { ApiIdentity, AuthChallenge, BootstrapResult, MeDto, ProofResult, SessionContext } from '@gogospend/contracts';
+import { Body, Controller, Get, Header, Headers, HttpCode, Post } from '@nestjs/common';
+import { ContractValidationError, V1_HEADERS, assertKnownFields, isUuid } from '@gogospend/contracts';
+import type { ApiIdentity, AuthChallenge, BootstrapResult, GlobalLogoutResult, MeDto, ProofResult, SessionContext } from '@gogospend/contracts';
 
 import { AccountLifecycleService } from '../accounts/account-lifecycle.service';
+import { SessionRevocationService } from '../accounts/session-revocation.service';
 import { ProblemException } from '../common/api-problem.filter';
 import { AuthBootstrapService } from './auth-bootstrap.service';
 import { Access } from './auth-route.decorator';
@@ -19,6 +20,7 @@ export class AuthController {
     private readonly proofs: OidcProofVerifier,
     private readonly bootstrapper: AuthBootstrapService,
     private readonly accounts: AccountLifecycleService,
+    private readonly sessions: SessionRevocationService,
   ) {}
 
   /** Token-only: needs a verified access token and rate budget; returns no financial data. */
@@ -53,6 +55,29 @@ export class AuthController {
   @Access('bound_session')
   me(@CurrentSession() session: SessionContext): Promise<MeDto> {
     return this.accounts.describe(session);
+  }
+
+  /** Signs this device out (its binding only). */
+  @Post('me/logout')
+  @Access('bound_session')
+  @HttpCode(204)
+  async logout(@CurrentSession() session: SessionContext): Promise<void> {
+    await this.sessions.revokeCurrent(session);
+  }
+
+  /** Signs out everywhere; needs a fresh global_logout proof bound to this Idempotency-Key. */
+  @Post('me/global-logout')
+  @Access('recent_proof')
+  @HttpCode(202)
+  globalLogout(
+    @CurrentSession() session: SessionContext,
+    @Headers(V1_HEADERS.idempotencyKey) commandId: string | undefined,
+    @Body() body: unknown,
+  ): Promise<GlobalLogoutResult> {
+    const input = assertKnownFields(body, ['proof_id']);
+    if (!isUuid(commandId)) throw new ContractValidationError('VALIDATION_FAILED', 'Idempotency-Key must be a UUID.', 'idempotency_key');
+    if (!isUuid(input.proof_id)) throw new ContractValidationError('VALIDATION_FAILED', 'proof_id must be a UUID.', 'proof_id');
+    return this.sessions.revokeAll(session, input.proof_id, commandId);
   }
 
   private async verify(identity: ApiIdentity, body: unknown): Promise<VerifiedOidcProof> {

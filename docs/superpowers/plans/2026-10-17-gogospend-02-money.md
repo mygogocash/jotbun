@@ -39,7 +39,7 @@ Fixture variables belong to the named task test; these assertions are planned, n
 
 ### Task M1: Implement the common command transaction and revision protocol
 
-**Files:** Create `apps/api/drizzle/0006_commands.sql`, `apps/api/src/commands/{command-executor,command-receipts.repository,command-status.controller,command-digest}.ts`, `apps/api/src/sync/change-writer.ts`, `apps/api/src/commands/{command-executor,command-status}.integration.spec.ts`; extend F2 schema and F1 command/error contracts.
+**Files:** Create `apps/api/drizzle/0005_commands.sql`, `apps/api/src/commands/{command-executor,command-receipts.repository,command-status.controller,command-digest}.ts`, `apps/api/src/sync/change-writer.ts`, `apps/api/src/commands/{command-executor,command-status}.integration.spec.ts`; extend F2 schema and F1 command/error contracts.
 
 **Interfaces:** Implement master `CommandExecutor.run` and `MutationResult`. `ChangeWriter.append(tx: OwnerTx, commandId: string, changes: readonly EntityChange[]): Promise<Revision>` writes one master `CommittedChangeGroup` and allocates its account revision under the held lock. `CommandReceiptRepository.lookup(tx, ids: readonly string[]): Promise<CommandStatus[]>` returns at most 100 outcomes; `CommandStatus = {command_id:string; state:'unknown'} | {command_id:string; state:'known'; ack:CommandAck}`. No arbitrary nested transaction or callback may publish an external object inside this database transaction. Each command kind registers the schema versions it accepts; `CommandInput.schemaVersion` comes from the master `X-GoGoSpend-Command-Schema` header and is part of the canonical digest.
 
@@ -53,7 +53,7 @@ Fixture variables belong to the named task test; these assertions are planned, n
 
 ### Task M2: Add wallets, opening balances and stable categories
 
-**Files:** Create `apps/api/drizzle/0007_wallets_categories.sql`, `packages/contracts/src/v1/{wallets,categories}.ts`, `apps/api/src/wallets/{wallets.module,wallets.controller,wallets.service,wallets.repository}.ts`, `apps/api/src/categories/{categories.module,categories.controller,categories.service,categories.repository}.ts`, `apps/api/src/wallets/wallets.integration.spec.ts`, `apps/api/src/categories/categories.integration.spec.ts`; extend schema/v1 root and contract exports.
+**Files:** Create `apps/api/drizzle/0006_wallets_categories.sql`, `packages/contracts/src/v1/{wallets,categories}.ts`, `apps/api/src/wallets/{wallets.module,wallets.controller,wallets.service,wallets.repository}.ts`, `apps/api/src/categories/{categories.module,categories.controller,categories.service,categories.repository}.ts`, `apps/api/src/wallets/wallets.integration.spec.ts`, `apps/api/src/categories/categories.integration.spec.ts`; extend schema/v1 root and contract exports.
 
 **Interfaces:** `WalletsService.create(ctx, CommandInput<CreateWallet>)`, `update(ctx, CommandInput<UpdateWallet>)`, `archive(ctx, CommandInput<{id: string}>)` return `CommandAck`; owned queries return `WalletDto {id,name,currency:'THB',opening_minor,balance_minor,tracking_start,archived,version}`. Category DTO has stable UUID, immutable expense/income type, built-in key or custom label, color and archive/version state. All commands use M1.
 
@@ -67,7 +67,7 @@ Fixture variables belong to the named task test; these assertions are planned, n
 
 ### Task M3: Deliver expense/income/transfer and edit/delete/undo
 
-**Files:** Create `apps/api/drizzle/0008_transactions.sql`, `packages/contracts/src/v1/transactions.ts`, `apps/api/src/transactions/{transactions.module,transactions.controller,transactions.service,transactions.repository,balance-query}.ts`, `apps/api/src/transactions/{transactions,reconciliation}.integration.spec.ts`, `apps/api/src/transactions/fixtures/golden-diary.ts`; extend wallet balance queries/schema and v1 root.
+**Files:** Create `apps/api/drizzle/0007_transactions.sql`, `packages/contracts/src/v1/transactions.ts`, `apps/api/src/transactions/{transactions.module,transactions.controller,transactions.service,transactions.repository,balance-query}.ts`, `apps/api/src/transactions/{transactions,reconciliation}.integration.spec.ts`, `apps/api/src/transactions/fixtures/golden-diary.ts`; extend wallet balance queries/schema and v1 root.
 
 **Interfaces:** `TransactionsService.create(ctx, CommandInput<CreateTransaction>)`, `transfer(ctx, CommandInput<CreateTransfer>)`, `edit/delete/restore(ctx, command)` return compact `CommandAck`. Expense/income use `wallet_id/category_id`; transfer uses `source_wallet_id/destination_wallet_id`. `BalanceQuery.forWallets(tx, ids): Promise<ReadonlyMap<string, Minor>>` derives totals from active rows. Input ID is unique per owner. Notes ≤500 and merchant ≤120 characters; empty optional values normalize consistently.
 
@@ -81,7 +81,7 @@ Fixture variables belong to the named task test; these assertions are planned, n
 
 ### Task M4: Add budgets and complete filtered history/summary
 
-**Files:** Create `apps/api/drizzle/0009_budgets.sql`, `packages/contracts/src/v1/{budgets,history,summary}.ts`, `apps/api/src/budgets/{budgets.controller,budgets.service}.ts`, `apps/api/src/history/{history.controller,history-query,cursor}.ts`, `apps/api/src/summary/summary-query.ts`, `apps/api/src/budgets/budgets.integration.spec.ts`, `apps/api/src/history/history.integration.spec.ts`, `apps/api/src/summary/summary.integration.spec.ts`; extend schema/root/exports.
+**Files:** Create `apps/api/drizzle/0008_budgets.sql`, `packages/contracts/src/v1/{budgets,history,summary}.ts`, `apps/api/src/budgets/{budgets.controller,budgets.service}.ts`, `apps/api/src/history/{history.controller,history-query,cursor}.ts`, `apps/api/src/summary/summary-query.ts`, `apps/api/src/budgets/budgets.integration.spec.ts`, `apps/api/src/history/history.integration.spec.ts`, `apps/api/src/summary/summary.integration.spec.ts`; extend schema/root/exports.
 
 **Interfaces:** `BudgetService.set(ctx, CommandInput<SetMonthlyBudget>): Promise<CommandAck>`; `HistoryQuery.list(tx, filter: HistoryFilter, cursor?: string, limit?: number): Promise<{items: TransactionDto[]; next_cursor: string|null; as_of_revision: Revision; summary: FilteredTotals}>`; `SummaryQuery.month(tx, month: string): Promise<MonthSummary>`. `HistoryFilter = {from:string; through:string; wallet_id?:string; category_id?:string; type?:'expense'|'income'|'transfer'; query?:string; sort:'date_desc'|'date_asc'}` uses inclusive Gregorian date bounds. `Totals = {income_minor:Minor; expense_minor:Minor; balance_minor:Minor; by_wallet:Readonly<Record<string,Minor>>}`; `FilteredTotals` adds count, and `MonthSummary` adds month, category totals, budget usage and `as_of_revision`.
 

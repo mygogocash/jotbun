@@ -130,9 +130,9 @@ F5's assertion must fail for an implementation that increments the epoch but sti
 
 ### Task F6b: Ingest provider security events and prove password-reset recovery
 
-**Files:** Create `apps/api/drizzle/0005_auth_events.sql`, `apps/api/src/auth/{auth0-events.controller,auth0-event-verifier}.ts`, `apps/api/src/auth/auth0-events.spec.ts`, `apps/api/src/auth/auth0-events.integration.spec.ts`; modify `apps/api/src/database/schema.ts`, F6a's security-job adapter and `docs/operations/auth0-runbook.md`.
+**Files:** Create `apps/api/drizzle/NNNN_auth_events.sql`, `apps/api/src/auth/{auth0-events.controller,auth0-event-verifier}.ts`, `apps/api/src/auth/auth0-events.spec.ts`, `apps/api/src/auth/auth0-events.integration.spec.ts`; modify `apps/api/src/database/schema.ts`, F6a's security-job adapter and `docs/operations/auth0-runbook.md`.
 
-**Interfaces:** `handleSecurityEvent(signedEnvelope): Promise<'applied'|'duplicate'>` verifies source/replay/time bounds and records each verified event in the `0005_auth_events.sql` receipts for deduplication and reconciliation. Follow-up revocation runs through F6a's jobs.
+**Interfaces:** `handleSecurityEvent(signedEnvelope): Promise<'applied'|'duplicate'>` verifies source/replay/time bounds and records each verified event in the `NNNN_auth_events.sql` receipts for deduplication and reconciliation. Follow-up revocation runs through F6a's jobs.
 
 - [ ] Add RED tests for forged, duplicate, out-of-order and lost password-reset events and provider outage: signature/source/time-bound rejection in the unit spec; deduplication, ordering and reconciliation against real SQL in the integration spec.
 - [ ] Implement authenticated event ingestion plus reconciliation. Run `npm run test -w gogospend-api -- --runTestsByPath src/auth/auth0-events.spec.ts` and `npm run test:db -w gogospend-api -- --runTestsByPath src/auth/auth0-events.integration.spec.ts`.

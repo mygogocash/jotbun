@@ -8,7 +8,7 @@ import { GROUP_ROLES, createTestDatabase } from '../testing/postgres-harness';
 import type { GroupRole, TestDatabase } from '../testing/postgres-harness';
 import { poolConfigFromUrl } from './database-config';
 import { MIGRATIONS_FOLDER, readJournal, runMigrations } from './migrations';
-import { accountIdentities, accountSyncState, accounts, authSessions, blockedPrincipals, consents, policyVersions, rateLimitBuckets, reauthChallenges } from './schema';
+import { accountIdentities, accountSyncState, accounts, authSessions, blockedPrincipals, consents, policyVersions, rateLimitBuckets, reauthChallenges, jobs } from './schema';
 
 const ISSUER = 'https://gogospend-test.example/';
 const ACCOUNT_A = '0192f0c1-7b3a-7c3e-9d4f-00000000000a';
@@ -118,7 +118,7 @@ describe('migrations', () => {
   });
 
   it('Drizzle definitions match the migrated columns', async () => {
-    for (const table of [accounts, accountIdentities, accountSyncState, rateLimitBuckets, policyVersions, consents, blockedPrincipals, reauthChallenges, authSessions]) {
+    for (const table of [accounts, accountIdentities, accountSyncState, rateLimitBuckets, policyVersions, consents, blockedPrincipals, reauthChallenges, authSessions, jobs]) {
       const config = getTableConfig(table);
       const result = await db.admin((client) =>
         client.query<{ column_name: string; is_nullable: string }>(

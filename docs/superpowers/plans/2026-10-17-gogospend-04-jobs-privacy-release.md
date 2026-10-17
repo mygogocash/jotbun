@@ -43,7 +43,7 @@ Arrange these fixture values in each task's named test files; they do not stand 
 
 ### Task P1: Generalize durable jobs and implement private object publication
 
-**Files:** Create `apps/api/drizzle/0010_jobs_storage.sql`, `apps/api/src/jobs/{jobs.module,worker,handler-registry}.ts`, `apps/api/src/storage/{storage.module,object-store,s3-object-store,object-publication.service}.ts`, `apps/api/src/database/leased-account-read.ts`, `apps/api/src/database/leased-account-read.integration.spec.ts`, `apps/api/src/worker.ts`, `apps/api/src/jobs/job.repository.integration.spec.ts`, `apps/api/src/storage/{object-publication.integration,s3-object-store.contract}.spec.ts`; modify F6a's `apps/api/src/jobs/{job.repository,job-types}.ts` and security-job adapter, database schema, API package build/start scripts (adding `test:storage-contract`) and v1 root.
+**Files:** Create `apps/api/drizzle/NNNN_jobs_storage.sql`, `apps/api/src/jobs/{jobs.module,worker,handler-registry}.ts`, `apps/api/src/storage/{storage.module,object-store,s3-object-store,object-publication.service}.ts`, `apps/api/src/database/leased-account-read.ts`, `apps/api/src/database/leased-account-read.integration.spec.ts`, `apps/api/src/worker.ts`, `apps/api/src/jobs/job.repository.integration.spec.ts`, `apps/api/src/storage/{object-publication.integration,s3-object-store.contract}.spec.ts`; modify F6a's `apps/api/src/jobs/{job.repository,job-types}.ts` and security-job adapter, database schema, API package build/start scripts (adding `test:storage-contract`) and v1 root.
 
 **Interfaces:** Use F6a's `JobLease` (master definition) unchanged. Extend F6a's `JobRepository` to `claim/heartbeat/complete/fail/cancelAccount`; every transition requires the lease token. `ObjectStore.putStream/head/get/delete/list` operate on scoped server-generated keys and never return a public URL. `ObjectPublicationService.reserveKey(tx, lease, purpose)`, `publishIfCurrent(tx, lease, objectMetadata)` and `sweep(accountId, beforeDeadline)` fence the external write. `lifecycleGeneration` is separate from Auth0 session generation.
 
@@ -59,7 +59,7 @@ Arrange these fixture values in each task's named test files; they do not stand 
 
 ### Task P2a: Replace raw-buffer uploads with bounded private quarantine
 
-**Files:** Create `apps/api/drizzle/0012_import_intake.sql`, `packages/contracts/src/v1/imports.ts`, `apps/api/src/imports/{imports.module,imports.controller,upload-intake,import.repository}.ts`, `apps/api/src/imports/upload-intake.spec.ts`, `apps/api/src/imports/upload-intake.integration.spec.ts`; retain old fixtures as read-only reference and add synthetic malicious/oversized fixtures under `apps/api/src/imports/fixtures/`; extend schema/root/exports.
+**Files:** Create `apps/api/drizzle/NNNN_import_intake.sql`, `packages/contracts/src/v1/imports.ts`, `apps/api/src/imports/{imports.module,imports.controller,upload-intake,import.repository}.ts`, `apps/api/src/imports/upload-intake.spec.ts`, `apps/api/src/imports/upload-intake.integration.spec.ts`; retain old fixtures as read-only reference and add synthetic malicious/oversized fixtures under `apps/api/src/imports/fixtures/`; extend schema/root/exports.
 
 **Interfaces:** `UploadIntake.accept(ctx, stream, metadata): Promise<UploadAccepted>` streams into private quarantine under a server-generated key, records the upload and import job, and enqueues one parse job through P1. It never buffers a whole upload in memory and never writes a transaction.
 
@@ -72,7 +72,7 @@ Arrange these fixture values in each task's named test files; they do not stand 
 
 ### Task P2b: Parse quarantined files into a reviewable preview in a bounded child process
 
-**Files:** Create `apps/api/drizzle/0013_import_candidates.sql`, `apps/api/src/imports/{parse-handler,parser-runner,preview-query}.ts`, `apps/api/src/imports/parsers/{amount,date,csv,xlsx,image,receipt}.ts`, `apps/api/src/imports/parser-runner.spec.ts`, `apps/api/src/imports/import-preview.integration.spec.ts`; add synthetic malicious/unknown-field fixtures under `apps/api/src/imports/fixtures/`; extend `packages/contracts/src/v1/imports.ts`, P1's handler registry and schema.
+**Files:** Create `apps/api/drizzle/NNNN_import_candidates.sql`, `apps/api/src/imports/{parse-handler,parser-runner,preview-query}.ts`, `apps/api/src/imports/parsers/{amount,date,csv,xlsx,image,receipt}.ts`, `apps/api/src/imports/parser-runner.spec.ts`, `apps/api/src/imports/import-preview.integration.spec.ts`; add synthetic malicious/unknown-field fixtures under `apps/api/src/imports/fixtures/`; extend `packages/contracts/src/v1/imports.ts`, P1's handler registry and schema.
 
 **Interfaces:** `ParseHandler.run(lease): Promise<void>` writes review candidates only. `ImportPreview = {job_id,status,candidates,issues,duplicate_advice,review_revision,expires_at}`; each candidate has stable source-row identity and nullable unknown fields, never guessed committed values. No parser can call the transaction repository.
 
@@ -85,9 +85,9 @@ Arrange these fixture values in each task's named test files; they do not stand 
 
 ### Task P2c: Retain receipt attachments with versioned ownership
 
-**Files:** Create `apps/api/drizzle/0014_attachments.sql`, `packages/contracts/src/v1/attachments.ts`, `apps/api/src/attachments/{attachments.module,attachments.controller,attachments.service}.ts`, `apps/api/src/attachments/attachments.integration.spec.ts`; extend schema/root/exports.
+**Files:** Create `apps/api/drizzle/NNNN_attachments.sql`, `packages/contracts/src/v1/attachments.ts`, `apps/api/src/attachments/{attachments.module,attachments.controller,attachments.service}.ts`, `apps/api/src/attachments/attachments.integration.spec.ts`; extend schema/root/exports.
 
-**Interfaces:** `AttachmentService.retain/replace/remove(ctx, CommandInput<AttachmentCommand>):Promise<CommandAck>` uses M1, explicit consent and expected transaction version. `AttachmentCommand = {transaction_id:string; attachment_id?:string}` names only owned, sanitized published images from P2b. `0014_attachments.sql` adds `attachments` plus `transaction_attachments` with composite owner FKs and one current receipt per transaction. `GET /v1/attachments/:id/grant` authorizes a current retained association and issues a five-minute grant; quarantine/unattached preview objects never receive accepted-receipt grants.
+**Interfaces:** `AttachmentService.retain/replace/remove(ctx, CommandInput<AttachmentCommand>):Promise<CommandAck>` uses M1, explicit consent and expected transaction version. `AttachmentCommand = {transaction_id:string; attachment_id?:string}` names only owned, sanitized published images from P2b. `NNNN_attachments.sql` adds `attachments` plus `transaction_attachments` with composite owner FKs and one current receipt per transaction. `GET /v1/attachments/:id/grant` authorizes a current retained association and issues a five-minute grant; quarantine/unattached preview objects never receive accepted-receipt grants.
 
 - [ ] Add RED SQL tests: cross-owner association/grant denied with `404` and no existence leak; replace/remove is versioned against the transaction's current version; replaced/unreferenced objects are queued for deletion; a soft-deleted transaction's receipt survives its 30-day undo window but normal grant is denied until restore; shared references prevent premature object deletion.
 - [ ] Implement explicit accepted-receipt retention and the grant endpoint through P1's object store. Explicit receipt removal has no binary undo and the client copy must disclose that. Run `npm run test:db -w gogospend-api -- --runTestsByPath src/attachments/attachments.integration.spec.ts`.
@@ -97,7 +97,7 @@ Arrange these fixture values in each task's named test files; they do not stand 
 
 ### Task P3: Implement resumable import confirmation and client review
 
-**Files:** Create `apps/api/drizzle/0015_import_confirmation.sql` (frozen selections and per-row progress with unique `(job_id, source_row_id)` and resulting transaction ID), `apps/api/src/imports/{confirmation.service,confirmation.controller}.ts`, `apps/api/src/imports/import-confirmation.integration.spec.ts`, `apps/app/src/spend/v1/{imports,importReview}.ts`, `apps/app/src/spend/v1/importReview.test.ts`, `apps/app/src/screens/v1/ImportReviewScreen.tsx` and its render test; modify import route and locale messages after the new journey's visual approval, contract exports and v1 root.
+**Files:** Create `apps/api/drizzle/NNNN_import_confirmation.sql` (frozen selections and per-row progress with unique `(job_id, source_row_id)` and resulting transaction ID), `apps/api/src/imports/{confirmation.service,confirmation.controller}.ts`, `apps/api/src/imports/import-confirmation.integration.spec.ts`, `apps/app/src/spend/v1/{imports,importReview}.ts`, `apps/app/src/spend/v1/importReview.test.ts`, `apps/app/src/screens/v1/ImportReviewScreen.tsx` and its render test; modify import route and locale messages after the new journey's visual approval, contract exports and v1 root.
 
 **Interfaces:** `freezeSelection(ctx, CommandInput<{job_id:string; review_revision:string; selected_row_ids:readonly string[]; mapping:ImportMapping}>):Promise<CommandAck>` freezes the full chosen set (≤5,000 rows), normalized stored fields and mappings and returns a selection entity ID. Preview corrections are saved first through versioned `PATCH /v1/imports/:id/rows` batches ≤500; freezing verifies their common current review revision. `ConfirmImportBatch = {selection_id:string; frozen_revision:string; batch_row_ids:readonly string[]}` selects ≤500 rows from that frozen set. `ConfirmationService.confirm(ctx, CommandInput<ConfirmImportBatch>):Promise<{ack:CommandAck; selection_id:string; frozen_revision:string; committed:string[]; remaining:string[]; conflicted:string[]}>`. Source rows retain unique `(job_id,source_row_id)`, resulting transaction ID and durable progress. A batch cannot change mappings/fields or introduce rows outside the frozen selection.
 
@@ -111,7 +111,7 @@ Arrange these fixture values in each task's named test files; they do not stand 
 
 ### Task P4: Implement private asynchronous export
 
-**Files:** Create `apps/api/drizzle/0016_exports.sql`, `packages/contracts/src/v1/privacy.ts`, `apps/api/src/exports/{exports.module,exports.controller,export.service,export-handler,csv-writer}.ts`, `apps/api/src/exports/export.integration.spec.ts`, `apps/api/src/exports/csv-writer.spec.ts`, `apps/app/src/spend/v1/privacy.ts`; extend P1 handler registry, schema and settings/privacy UX after E2.
+**Files:** Create `apps/api/drizzle/NNNN_exports.sql`, `packages/contracts/src/v1/privacy.ts`, `apps/api/src/exports/{exports.module,exports.controller,export.service,export-handler,csv-writer}.ts`, `apps/api/src/exports/export.integration.spec.ts`, `apps/api/src/exports/csv-writer.spec.ts`, `apps/app/src/spend/v1/privacy.ts`; extend P1 handler registry, schema and settings/privacy UX after E2.
 
 **Interfaces:** `ExportService.request(ctx, proofId, CommandInput<ExportFilter>): Promise<CommandAck>` queues one owned job; `ExportFilter = Pick<HistoryFilter,'from'|'through'>` includes every transaction type in the selected period. `ExportHandler.run(lease): Promise<void>` creates one consistent read snapshot, exact CSV and private publication. `grant(ctx, exportId): Promise<{url:string; expires_at:string}>` checks current account/job ownership and five-minute expiry; output expires at 24 hours.
 
@@ -125,7 +125,7 @@ Arrange these fixture values in each task's named test files; they do not stand 
 
 ### Task P5: Implement retention and resumable account erasure
 
-**Files:** Create `apps/api/drizzle/0017_privacy.sql`, `apps/api/src/privacy/{privacy.module,deletion.controller,deletion.service,deletion-handler,erasure-registry,retention-handler}.ts`, `apps/api/src/privacy/{deletion,retention}.integration.spec.ts`, `apps/api/src/storage/deletion-publication.integration.spec.ts`, `docs/operations/{deletion,retention}.md`; extend F6a's maintenance client, F4's blocked principals, P1 handlers and mobile privacy states.
+**Files:** Create `apps/api/drizzle/NNNN_privacy.sql`, `apps/api/src/privacy/{privacy.module,deletion.controller,deletion.service,deletion-handler,erasure-registry,retention-handler}.ts`, `apps/api/src/privacy/{deletion,retention}.integration.spec.ts`, `apps/api/src/storage/deletion-publication.integration.spec.ts`, `docs/operations/{deletion,retention}.md`; extend F6a's maintenance client, F4's blocked principals, P1 handlers and mobile privacy states.
 
 **Interfaces:** `DeletionService.request(ctx, proofId, commandId): Promise<{request_id:string; status:'accepted'}>` commits deleting status, revoked bindings, cancelled publishers and cleanup intent under the common lock. `ErasureRegistry.record(accountId, providerSubjectKeys): Promise<MarkerReceipt>` writes opaque/keyed markers to an independent maintenance-only control scope. `DeletionHandler.run(lease)` advances idempotent provider/object/database stages and requires no later user login.
 

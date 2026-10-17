@@ -12,6 +12,7 @@
     "start": "node dist/main",
     "start:dev": "node --watch dist/main",
     "start:v1": "node dist/v1/main",
+    "worker:security": "node dist/jobs/security-worker",
     "db:migrate": "node dist/database/migrate-cli",
     "typecheck": "tsc --noEmit",
     "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --maxWorkers=2 --workerIdleMemoryLimit=1GB",

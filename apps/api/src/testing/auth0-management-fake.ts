@@ -1,22 +1,34 @@
-// A loopback stand-in for Auth0's Management API (client-credentials token
-// and GET /api/v2/users/:id). Synthetic only; never a real tenant.
+// A loopback stand-in for Auth0's Management API: client-credentials tokens,
+// user profiles, refresh-token device credentials and user deletion. Each
+// client's token only works on its own endpoints, so tests can prove the
+// read-profile and maintenance credentials stay separate. Synthetic only.
 import { createServer } from 'node:http';
 import type { IncomingMessage } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
 export const FAKE_PROFILE_CLIENT_ID = 'profile-client-test';
 export const FAKE_PROFILE_CLIENT_SECRET = 'synthetic-profile-secret-not-real';
+export const FAKE_MAINTENANCE_CLIENT_ID = 'maintenance-client-test';
+export const FAKE_MAINTENANCE_CLIENT_SECRET = 'synthetic-maintenance-secret-not-real';
 
 export type FakeProfile = { user_id: string; email_verified?: boolean; blocked?: boolean; identities?: { connection: string; provider: string; user_id: string }[] };
+export type FakeDeviceCredential = { id: string; user_id: string; client_id: string; type: 'refresh_token' | 'public_key' };
 export type RecordedRequest = { method: string; url: string; authorization?: string; body: string };
 
 export type ManagementFake = {
   url: string;
   profiles: Map<string, FakeProfile>;
+  deviceCredentials: Map<string, FakeDeviceCredential>;
+  deletedUsers: string[];
   requests: RecordedRequest[];
-  /** 'ok' answers; 'down' returns 503 for profiles; 'token-down' fails the token endpoint; 'hang' never answers. */
-  mode: 'ok' | 'down' | 'token-down' | 'hang';
+  /** 'ok' answers; 'down' 503s data calls; 'token-down' fails tokens; 'hang' never answers; 'rate-limited' 429s data calls; 'forbidden' 403s data calls. */
+  mode: 'ok' | 'down' | 'token-down' | 'hang' | 'rate-limited' | 'forbidden';
   close(): Promise<void>;
+};
+
+const CLIENTS: Record<string, { secret: string; role: 'profile' | 'maintenance' }> = {
+  [FAKE_PROFILE_CLIENT_ID]: { secret: FAKE_PROFILE_CLIENT_SECRET, role: 'profile' },
+  [FAKE_MAINTENANCE_CLIENT_ID]: { secret: FAKE_MAINTENANCE_CLIENT_SECRET, role: 'maintenance' },
 };
 
 async function readBody(req: IncomingMessage): Promise<string> {
@@ -27,45 +39,69 @@ async function readBody(req: IncomingMessage): Promise<string> {
 
 export async function startManagementFake(): Promise<ManagementFake> {
   let tokens = 0;
-  const fake = { mode: 'ok' as ManagementFake['mode'], profiles: new Map<string, FakeProfile>(), requests: [] as RecordedRequest[] };
+  const fake = {
+    mode: 'ok' as ManagementFake['mode'],
+    profiles: new Map<string, FakeProfile>(),
+    deviceCredentials: new Map<string, FakeDeviceCredential>(),
+    deletedUsers: [] as string[],
+    requests: [] as RecordedRequest[],
+  };
   const server = createServer(async (req, res) => {
     const body = await readBody(req);
     fake.requests.push({ method: req.method ?? '', url: req.url ?? '', authorization: req.headers.authorization, body });
     if (fake.mode === 'hang') return;
-    if (req.method === 'POST' && req.url === '/oauth/token') {
+    const url = new URL(req.url ?? '/', 'http://fake');
+    if (req.method === 'POST' && url.pathname === '/oauth/token') {
       const grant = JSON.parse(body || '{}') as Record<string, string>;
-      if (fake.mode === 'token-down' || grant.client_id !== FAKE_PROFILE_CLIENT_ID || grant.client_secret !== FAKE_PROFILE_CLIENT_SECRET) {
+      const client = CLIENTS[grant.client_id];
+      if (fake.mode === 'token-down' || !client || client.secret !== grant.client_secret) {
         res.writeHead(fake.mode === 'token-down' ? 503 : 401).end();
         return;
       }
       tokens += 1;
-      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify({ access_token: `mgmt-token-${tokens}`, expires_in: 86_400, token_type: 'Bearer' }));
+      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify({ access_token: `mgmt-token-${client.role}-${tokens}`, expires_in: 86_400, token_type: 'Bearer' }));
       return;
     }
-    const match = /^\/api\/v2\/users\/([^?]+)/.exec(req.url ?? '');
-    if (req.method === 'GET' && match) {
-      if (fake.mode === 'down') {
-        res.writeHead(503).end();
-        return;
-      }
-      if (!/^Bearer mgmt-token-\d+$/.test(req.headers.authorization ?? '')) {
-        res.writeHead(401).end();
-        return;
-      }
-      const profile = fake.profiles.get(decodeURIComponent(match[1]));
-      if (!profile) {
-        res.writeHead(404).end();
-        return;
-      }
+    const role = /^Bearer mgmt-token-(profile|maintenance)-\d+$/.exec(req.headers.authorization ?? '')?.[1];
+    const deny = (status: number) => res.writeHead(status).end();
+    if (fake.mode === 'down') return deny(503);
+    if (fake.mode === 'rate-limited') return deny(429);
+    if (fake.mode === 'forbidden') return deny(403);
+    const user = /^\/api\/v2\/users\/([^/]+)$/.exec(url.pathname);
+    if (req.method === 'GET' && user) {
+      if (role !== 'profile') return deny(role ? 403 : 401);
+      const profile = fake.profiles.get(decodeURIComponent(user[1]));
+      if (!profile) return deny(404);
       res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(profile));
       return;
     }
-    res.writeHead(404).end();
+    if (req.method === 'DELETE' && user) {
+      if (role !== 'maintenance') return deny(role ? 403 : 401);
+      const id = decodeURIComponent(user[1]);
+      if (!fake.profiles.delete(id)) return deny(404);
+      fake.deletedUsers.push(id);
+      return deny(204);
+    }
+    if (req.method === 'GET' && url.pathname === '/api/v2/device-credentials') {
+      if (role !== 'maintenance') return deny(role ? 403 : 401);
+      const userId = url.searchParams.get('user_id');
+      const clientId = url.searchParams.get('client_id');
+      const type = url.searchParams.get('type');
+      const list = [...fake.deviceCredentials.values()].filter((c) => c.user_id === userId && (!clientId || c.client_id === clientId) && (!type || c.type === type));
+      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(list.map(({ id, client_id, type: kind }) => ({ id, client_id, type: kind }))));
+      return;
+    }
+    const credential = /^\/api\/v2\/device-credentials\/([^/]+)$/.exec(url.pathname);
+    if (req.method === 'DELETE' && credential) {
+      if (role !== 'maintenance') return deny(role ? 403 : 401);
+      return deny(fake.deviceCredentials.delete(decodeURIComponent(credential[1])) ? 204 : 404);
+    }
+    deny(404);
   });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-  const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}/`;
+  const address = `http://127.0.0.1:${(server.address() as AddressInfo).port}/`;
   return Object.assign(fake, {
-    url,
+    url: address,
     close: () => new Promise<void>((resolve) => {
       server.closeAllConnections();
       server.close(() => resolve());

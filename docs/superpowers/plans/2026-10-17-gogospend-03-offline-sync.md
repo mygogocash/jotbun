@@ -38,7 +38,7 @@ Use these fixture assertions within each task's specified tests; native/provider
 
 ### Task S1: Implement ordered deltas, consistent snapshots and command reconciliation
 
-**Files:** Create `apps/api/drizzle/0011_sync.sql`, `packages/contracts/src/v1/sync.ts`, `apps/api/src/sync/{sync.controller,sync-query,snapshot-builder,snapshot.repository,sync-cursor}.ts`, `apps/api/src/sync/{sync-query,snapshot-builder}.integration.spec.ts`; extend M1 change writer/status, P1 handler registry and root/schema/exports.
+**Files:** Create `apps/api/drizzle/NNNN_sync.sql`, `packages/contracts/src/v1/sync.ts`, `apps/api/src/sync/{sync.controller,sync-query,snapshot-builder,snapshot.repository,sync-cursor}.ts`, `apps/api/src/sync/{sync-query,snapshot-builder}.integration.spec.ts`; extend M1 change writer/status, P1 handler registry and root/schema/exports.
 
 **Interfaces:** `SyncQuery.after(ctx, cursor?: string, limit?: number): Promise<{groups: CommittedChangeGroup[]; next_cursor: string; has_more: boolean}>`; `SnapshotBuilder.build(lease: JobLease): Promise<SnapshotManifest>`; `SnapshotManifest = {snapshot_id: string; account_id: string; high_water: Revision; schema_version: 1; chunks: readonly {key: string; sha256: string; bytes: number}[]; expires_at: string}` is internal metadata. Public responses use opaque authorized chunk grants, never public keys. Use M1's owned command-status API for uncertain commands and P1's `LeasedAccountRead.withSnapshot` for worker reads; do not fabricate a user session.
 

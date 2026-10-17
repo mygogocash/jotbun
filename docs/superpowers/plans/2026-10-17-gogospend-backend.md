@@ -77,21 +77,21 @@ Migration integration is serial:
 | `0002_rate_limits` | F3 | `rate_limit_buckets` |
 | `0003_sessions_policies` | F4 | `auth_sessions`, `reauth_challenges`, `consents`, policy versions, `blocked_principals` |
 | `0004_jobs_security` | F6a | shared `jobs` table, security-job intent |
-| `0005_auth_events` | F6b | verified provider-event receipts and reset reconciliation state |
-| `0006_commands` | M1 | commands, change groups, audit, receipts |
-| `0007_wallets_categories` | M2 | wallets, categories |
-| `0008_transactions` | M3 | transactions |
-| `0009_budgets` | M4 | budgets, category sublimit trigger |
-| `0010_jobs_storage` | P1 | generic leases/attempts/deadlines, publication registry, leased-read routines |
-| `0011_sync` | S1 | snapshot manifests, cursor support |
-| `0012_import_intake` | P2a | uploads, import jobs, quota counters |
-| `0013_import_candidates` | P2b | candidates, preview issues |
-| `0014_attachments` | P2c | `attachments`, `transaction_attachments` |
-| `0015_import_confirmation` | P3 | frozen selections, per-row progress with unique `(job_id, source_row_id)` |
-| `0016_exports` | P4 | export jobs/objects |
-| `0017_privacy` | P5 | deletion requests, retention schedule |
+| `0005_commands` | M1 | commands, change groups, audit, receipts |
+| `0006_wallets_categories` | M2 | wallets, categories |
+| `0007_transactions` | M3 | transactions |
+| `0008_budgets` | M4 | budgets, category sublimit trigger |
+| next free | F6b | verified provider-event receipts and reset reconciliation state |
+| next free | P1 | generic leases/attempts/deadlines, publication registry, leased-read routines |
+| next free | S1 | snapshot manifests, cursor support |
+| next free | P2a | uploads, import jobs, quota counters |
+| next free | P2b | candidates, preview issues |
+| next free | P2c | `attachments`, `transaction_attachments` |
+| next free | P3 | frozen selections, per-row progress with unique `(job_id, source_row_id)` |
+| next free | P4 | export jobs/objects |
+| next free | P5 | deletion requests, retention schedule |
 
-F1, F5, F6c, M5, S2–S4 and P6a/P6b add no migration. If review shows F6c needs one, it takes the next free number when it is integrated and updates this table in the same diff. Generate/review the matching Drizzle metadata in this order; parallel feature writers must not independently rewrite the migration journal.
+F1, F5, F6c, M5, S2–S4 and P6a/P6b add no migration. Numbers follow the order tasks are actually integrated: F6b was deferred with its hosted proof, so M1–M4 took `0005`–`0008` (17 October 2026). Every later migration, including F6b's and any F6c needs, takes the next free number when it is integrated and updates this table in the same diff. Generate/review the matching Drizzle metadata in this order; parallel feature writers must not independently rewrite the migration journal.
 
 ## Shared interfaces and wire decisions
 

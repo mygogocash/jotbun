@@ -58,6 +58,8 @@ export type {
   BootstrapResult,
   ProofRequest,
   ProofResult,
+  GlobalLogoutRequest,
+  GlobalLogoutResult,
   ClientPlatform,
   ClientVersion,
 } from "./v1/auth.ts";

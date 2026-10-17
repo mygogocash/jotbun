@@ -10,6 +10,7 @@ import type { MinimumClientVersions } from '../common/client-version.guard';
 import { PostgresRateLimiter, RATE_LIMITER, chargeBeforeSession, chargeSession, rateLimitKeyFromEnv } from '../common/shared-rate-limit';
 import type { RateLimiter } from '../common/shared-rate-limit';
 import { AccountLifecycleService } from '../accounts/account-lifecycle.service';
+import { SessionRevocationService } from '../accounts/session-revocation.service';
 import { DatabaseModule } from '../database/database.module';
 import { PG_POOL } from '../database/database.service';
 import { PoliciesModule } from '../policies/policies.module';
@@ -90,6 +91,7 @@ const AUTH0_CONFIG = Symbol('AUTH0_CONFIG');
     ReauthenticationService,
     AuthBootstrapService,
     AccountLifecycleService,
+    SessionRevocationService,
     Auth0AccessTokenGuard,
     ApplicationSessionGuard,
     { provide: APP_GUARD, useClass: V1AccessGuard },

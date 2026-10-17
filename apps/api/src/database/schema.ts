@@ -2,7 +2,7 @@
 // files are authoritative; migrations.integration.spec.ts fails if these
 // definitions and the migrated database drift apart.
 import { sql } from 'drizzle-orm';
-import { bigint, boolean, customType, integer, pgTable, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { bigint, boolean, customType, integer, jsonb, pgTable, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 export const ACCOUNT_STATUSES = ['active', 'disabled', 'deleting'] as const;
 export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];
@@ -84,6 +84,28 @@ export const blockedPrincipals = pgTable('blocked_principals', {
   reason: text('reason', { enum: ['deleted', 'disabled', 'revocation_pending'] }).notNull(),
   blockedUntil: instant('blocked_until'),
   createdAt: instant('created_at').notNull().defaultNow(),
+  pendingGeneration: integer('pending_generation'),
+});
+
+export const JOB_KINDS = ['auth0_revoke_grants'] as const;
+export const JOB_STATUSES = ['queued', 'leased', 'succeeded', 'superseded', 'failed'] as const;
+
+export const jobs = pgTable('jobs', {
+  id: uuid('id').primaryKey(),
+  kind: text('kind', { enum: JOB_KINDS }).notNull(),
+  accountId: uuid('account_id'),
+  lifecycleGeneration: integer('lifecycle_generation').notNull().default(0),
+  payload: jsonb('payload').notNull(),
+  status: text('status', { enum: JOB_STATUSES }).notNull().default('queued'),
+  attempts: integer('attempts').notNull().default(0),
+  maxAttempts: integer('max_attempts').notNull(),
+  runAfter: instant('run_after').notNull().defaultNow(),
+  leaseToken: uuid('lease_token'),
+  leaseExpiresAt: instant('lease_expires_at'),
+  lastError: text('last_error'),
+  createdAt: instant('created_at').notNull().defaultNow(),
+  updatedAt: instant('updated_at').notNull().defaultNow(),
+  finishedAt: instant('finished_at'),
 });
 
 export const reauthChallenges = pgTable('reauth_challenges', {
@@ -128,4 +150,5 @@ export const schema = {
   blockedPrincipals,
   reauthChallenges,
   authSessions,
+  jobs,
 };
