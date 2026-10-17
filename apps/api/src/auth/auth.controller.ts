@@ -1,8 +1,9 @@
 import { Body, Controller, Get, Header, Headers, HttpCode, Post } from '@nestjs/common';
 import { ContractValidationError, V1_HEADERS, assertKnownFields, isUuid } from '@gogospend/contracts';
-import type { ApiIdentity, AuthChallenge, BootstrapResult, GlobalLogoutResult, MeDto, ProofResult, SessionContext } from '@gogospend/contracts';
+import type { ApiIdentity, AuthChallenge, BootstrapResult, GlobalLogoutResult, LinkIdentityResult, MeDto, ProofResult, SessionContext } from '@gogospend/contracts';
 
 import { AccountLifecycleService } from '../accounts/account-lifecycle.service';
+import { AccountLinkingService } from '../accounts/account-linking.service';
 import { SessionRevocationService } from '../accounts/session-revocation.service';
 import { ProblemException } from '../common/api-problem.filter';
 import { AuthBootstrapService } from './auth-bootstrap.service';
@@ -21,6 +22,7 @@ export class AuthController {
     private readonly bootstrapper: AuthBootstrapService,
     private readonly accounts: AccountLifecycleService,
     private readonly sessions: SessionRevocationService,
+    private readonly linking: AccountLinkingService,
   ) {}
 
   /** Token-only: needs a verified access token and rate budget; returns no financial data. */
@@ -63,6 +65,26 @@ export class AuthController {
   @HttpCode(204)
   async logout(@CurrentSession() session: SessionContext): Promise<void> {
     await this.sessions.revokeCurrent(session);
+  }
+
+  /** Links a second sign-in method (F6c); needs fresh logins of both identities for this Idempotency-Key. */
+  @Post('me/identities')
+  @Access('recent_proof')
+  @HttpCode(202)
+  linkIdentity(
+    @CurrentSession() session: SessionContext,
+    @CurrentIdentity() identity: ApiIdentity,
+    @Headers(V1_HEADERS.idempotencyKey) commandId: string | undefined,
+    @Body() body: unknown,
+  ): Promise<LinkIdentityResult> {
+    const input = assertKnownFields(body, ['proof_id', 'secondary_challenge_id', 'secondary_id_token']);
+    if (!isUuid(commandId)) throw new ContractValidationError('VALIDATION_FAILED', 'Idempotency-Key must be a UUID.', 'idempotency_key');
+    if (!isUuid(input.proof_id)) throw new ContractValidationError('VALIDATION_FAILED', 'proof_id must be a UUID.', 'proof_id');
+    if (!isUuid(input.secondary_challenge_id)) throw new ContractValidationError('VALIDATION_FAILED', 'secondary_challenge_id must be a UUID.', 'secondary_challenge_id');
+    if (typeof input.secondary_id_token !== 'string' || input.secondary_id_token.length > MAX_TOKEN_LENGTH) {
+      throw new ContractValidationError('VALIDATION_FAILED', 'secondary_id_token must be a token.', 'secondary_id_token');
+    }
+    return this.linking.link(session, identity, { proofId: input.proof_id, commandId, secondaryChallengeId: input.secondary_challenge_id, secondaryIdToken: input.secondary_id_token });
   }
 
   /** Signs out everywhere; needs a fresh global_logout proof bound to this Idempotency-Key. */

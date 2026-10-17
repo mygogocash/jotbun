@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 
 import type { ApiIdentity } from '@gogospend/contracts';
-import { jwtVerify } from 'jose';
+import { decodeJwt, jwtVerify } from 'jose';
 
 import { Auth0KeySource } from './auth0-key-source';
 import { CLOCK_TOLERANCE_SECONDS, MAX_TOKEN_LENGTH } from './auth0-token-verifier';
@@ -93,5 +93,26 @@ export class OidcProofVerifier {
       throw new ProofVerificationError('invalid');
     }
     return VerifiedOidcProof[ISSUE](challengeId, identity, sha256(nonce), new Date(authTime * 1000));
+  }
+
+  /**
+   * F6c: the other identity's fresh login for account linking. The same
+   * checks as a challenge proof, except that the subject is whoever signed
+   * in (it is the identity being linked); the nonce must belong to a `link`
+   * challenge issued to the signed-in account, which SQL checks.
+   */
+  async verifyLinkedIdentity(clientId: string, challengeId: string, idToken: string): Promise<VerifiedOidcProof> {
+    if (typeof idToken !== 'string' || idToken.length === 0 || idToken.length > MAX_TOKEN_LENGTH || idToken.split('.').length !== 3) {
+      throw new ProofVerificationError('invalid');
+    }
+    let subject: unknown;
+    try {
+      // Only to learn whom to verify for; verifyChallenge checks the signature and every claim.
+      subject = decodeJwt(idToken).sub;
+    } catch {
+      throw new ProofVerificationError('invalid');
+    }
+    if (typeof subject !== 'string' || subject.length === 0 || subject.length > 255) throw new ProofVerificationError('invalid');
+    return this.verifyChallenge({ issuer: this.issuer, subject, clientId, scopes: [] }, challengeId, idToken);
   }
 }

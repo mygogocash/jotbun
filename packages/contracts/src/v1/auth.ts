@@ -62,6 +62,27 @@ export type GlobalLogoutResult = {
   provider_cleanup: "pending";
 };
 
+/**
+ * POST /v1/me/identities (Idempotency-Key = the command id of both link
+ * challenges): adds a second sign-in method to this account. Needs a fresh
+ * `link` proof of the signed-in identity and a fresh login of the other
+ * identity - an ID token whose nonce belongs to a second `link` challenge
+ * issued to this account for the same command. Every binding ends when this
+ * returns; sign in again once `provider_cleanup` clears. If the other
+ * identity's own account holds data, it is refused with 409
+ * ACCOUNT_LINK_CONFLICT; an empty one is folded into this account.
+ */
+export type LinkIdentityRequest = {
+  proof_id: string;
+  secondary_challenge_id: string;
+  secondary_id_token: string;
+};
+
+export type LinkIdentityResult = {
+  generation: number;
+  provider_cleanup: "pending";
+};
+
 export const CLIENT_PLATFORMS = ["ios", "android"] as const;
 export type ClientPlatform = (typeof CLIENT_PLATFORMS)[number];
 

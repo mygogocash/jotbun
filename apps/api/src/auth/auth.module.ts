@@ -10,6 +10,7 @@ import type { MinimumClientVersions } from '../common/client-version.guard';
 import { PostgresRateLimiter, RATE_LIMITER, chargeBeforeSession, chargeSession, rateLimitKeyFromEnv } from '../common/shared-rate-limit';
 import type { RateLimiter } from '../common/shared-rate-limit';
 import { AccountLifecycleService } from '../accounts/account-lifecycle.service';
+import { AccountLinkingService } from '../accounts/account-linking.service';
 import { SessionRevocationService } from '../accounts/session-revocation.service';
 import { DatabaseModule } from '../database/database.module';
 import { PG_POOL } from '../database/database.service';
@@ -22,7 +23,7 @@ import { Auth0EventsController } from './auth0-events.controller';
 import { EVENT_VERIFIER_CONFIG, SecurityEventService } from './auth0-events.service';
 import { Auth0AccessTokenGuard } from './auth0-access-token.guard';
 import { Auth0KeySource } from './auth0-key-source';
-import { AUTH0_PROFILE_GATEWAY, profileGatewayFromEnv } from './auth0-profile.client';
+import { AUTH0_LINK_GATEWAY, AUTH0_PROFILE_GATEWAY, profileGatewayFromEnv } from './auth0-profile.client';
 import { Auth0TokenVerifier, TOKEN_VERIFIER, auth0ConfigFromEnv } from './auth0-token-verifier';
 import type { Auth0Config } from './auth0-token-verifier';
 import { ApplicationSessionGuard, POLICY_GATE, SESSION_RESOLVER } from './application-session.guard';
@@ -87,6 +88,9 @@ const AUTH0_CONFIG = Symbol('AUTH0_CONFIG');
     { provide: OidcProofVerifier, inject: [AUTH0_CONFIG, Auth0KeySource], useFactory: (config: Auth0Config, keys: Auth0KeySource) => new OidcProofVerifier(config.issuer, keys) },
     // Read-profile client only; it never receives maintenance (deletion/revocation) credentials.
     { provide: AUTH0_PROFILE_GATEWAY, useFactory: () => profileGatewayFromEnv(process.env) },
+    // The same profile/link client links identities (F6c; update:users).
+    { provide: AUTH0_LINK_GATEWAY, useExisting: AUTH0_PROFILE_GATEWAY },
+    AccountLinkingService,
     { provide: MIN_CLIENT_VERSIONS, useFactory: () => minimumClientVersionsFromEnv(process.env) },
     { provide: RATE_LIMITER, inject: [PG_POOL], useFactory: (pool: Pool) => new PostgresRateLimiter(pool, rateLimitKeyFromEnv(process.env)) },
     { provide: SESSION_RESOLVER, useClass: SqlSessionResolver },

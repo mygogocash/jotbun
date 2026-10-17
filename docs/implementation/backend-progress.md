@@ -1114,3 +1114,58 @@ Observed, not changed (pre-existing):
   - `user_blocked` has no Auth0 trigger; it is for operator tooling.
   - Reconciliation covers password changes only. A blocked Auth0 user cannot refresh, so their sessions end within one access-token lifetime anyway.
 - **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (446), test:db PASS (412), test:app PASS (16), test:unit PASS (173), test:render PASS (60), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
+
+## F6c: explicit account linking (local work; F6c not complete)
+
+- **Status:** built and tested locally against the synthetic issuer and stand-ins for Auth0. F6c is **not complete**:
+  - the tenant proof is SKIPPED until E1/E2 (linking an Apple login into an email login on test identities, and the linked Apple token revoked through Auth0's managed deletion);
+  - so is the joint F6a–F6c auth/security review of that evidence.
+
+  Linking must not be offered to users before then.
+- **Migration `0012_account_linking`** (routines only, no tables; the plan expected none, and the master plan table and note are updated):
+  - `gogospend_link_secondary_is_valid`: the other identity's fresh login. It needs an unconsumed, unexpired `link` challenge of this account for the same command, client and nonce, signed in at most 5 minutes ago and not before the challenge or `reauth_after`.
+  - `gogospend_account_is_populated`: any committed entity or command receipt.
+  - `gogospend_link_precheck`: read-only. Returns `linkable`, `already_linked`, `conflict`, `unavailable`, `proof_invalid` or `secondary_invalid`.
+  - `gogospend_link_identity`: under the account lock, then the other identity's principal lock (the one bootstrap takes, so its first sign-in cannot race), consumes the secondary challenge and links:
+    - an unknown identity is added as an alias;
+    - an identity whose own account is empty has that account folded in: its aliases move over and the empty account is deleted;
+    - an identity whose account holds data is a `conflict`.
+
+    It then calls `gogospend_global_logout`: every binding ends, every alias is held, and refresh-grant revocation is queued.
+  - Only `gogospend_app` can call these, and only inside an owner transaction.
+- **Server:**
+  - `POST /v1/me/identities` (recent proof; Idempotency-Key = the command id of both `link` challenges) answers 202 `{generation, provider_cleanup: "pending"}`.
+  - `AccountLinkingService.link` runs in four steps:
+    1. verify the other identity's ID token (`OidcProofVerifier.verifyLinkedIdentity`: the full challenge-proof checks for whatever subject signed in);
+    2. the read-only precheck;
+    3. the Auth0 link, only when the precheck says `linkable`;
+    4. one transaction: `assertActiveSession`, `authorizePurpose(… 'link')`, then the link routine.
+  - Linking the same identity as the signed-in one is a 422.
+  - Auth0 down gives 503 and Auth0 refusing gives 409. Neither changes anything, and the same proofs still work.
+  - `Auth0ProfileClient.link(primary, secondary)` (new `Auth0LinkGateway`, with `update:users` on the profile/link client). It is idempotent: it reads the primary's identities first, then `POST /api/v2/users/{primary}/identities`. 5xx or 429 means unavailable; other refusals are `LinkRefusedError`.
+  - New contract types `LinkIdentityRequest` and `LinkIdentityResult`, and the problem code `ACCOUNT_LINK_CONFLICT`.
+  - The runbook gains the flow, the failure cases and the tenant-proof steps.
+- **RED against seams** (a precheck that always said `linkable`, a link routine that changed nothing, and a no-op Auth0 link): 10 of 10 database tests and 2 of 13 profile-client tests failed. One of the database failures was the test's own `populate` helper tripping the revision guard; it was fixed to advance the revision first.
+- **GREEN:**
+  - `npm run test -w gogospend-api -- --runTestsByPath src/auth/auth0-profile.client.spec.ts` gives 13 of 13.
+  - `npm run test:db -w gogospend-api -- --runTestsByPath src/accounts/account-linking.integration.spec.ts` gives 14 of 14.
+  - Implementing it surfaced one defect: a malformed linked-identity token threw from `decodeJwt` instead of being refused. It is now a 401.
+- **Covered:**
+  - a new method resolving to the same account;
+  - an empty account folded in;
+  - a populated account refused before Auth0 is asked;
+  - data written during the Auth0 call refused under the lock;
+  - stale, foreign, other-command and malformed proofs;
+  - a used proof;
+  - the same identity;
+  - Auth0 outage and refusal;
+  - an interrupted link with no second account;
+  - an already-linked identity;
+  - a held or deleted secondary;
+  - the route over HTTP.
+- **Mutants:** seven of eight guard mutants fail the suite (`f6c-mutants.log`). The eighth, dropping `authorizePurpose`, is equivalent in practice: a successful link moves the generation and `reauth_after`, so the same proof can never be replayed. The consumption stays as the plan's purpose-bound proof rule.
+- **Deviations:**
+  - `Auth0LinkGateway` is a separate interface implemented by the profile client, so read-only fakes are unchanged.
+  - Auth0 is linked before the database transaction. Its failure modes are covered above; unlinking is not offered.
+  - Linking signs every device out (global logout), so both identities sign in again once cleanup clears.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (448), test:db PASS (426), test:app PASS (16), test:unit PASS (173), test:render PASS (60), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. One `gogospend_test_*` database seen afterwards belonged to a parallel worktree's running suite.

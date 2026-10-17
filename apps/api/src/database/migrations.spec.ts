@@ -25,7 +25,7 @@ afterEach(() => {
 
 describe('migration journal', () => {
   it('the committed journal matches its SQL files', () => {
-    expect(readJournal().map((migration) => migration.tag)).toEqual(['0001_identity', '0002_rate_limits', '0003_sessions_policies', '0004_jobs_security', '0005_commands', '0006_wallets_categories', '0007_transactions', '0008_budgets', '0009_jobs_storage', '0010_sync', '0011_auth_events']);
+    expect(readJournal().map((migration) => migration.tag)).toEqual(['0001_identity', '0002_rate_limits', '0003_sessions_policies', '0004_jobs_security', '0005_commands', '0006_wallets_categories', '0007_transactions', '0008_budgets', '0009_jobs_storage', '0010_sync', '0011_auth_events', '0012_account_linking']);
   });
 
   it('accepts a contiguous, increasing journal', () => {

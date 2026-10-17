@@ -1,6 +1,6 @@
 import { FAKE_PROFILE_CLIENT_ID, FAKE_PROFILE_CLIENT_SECRET, startManagementFake } from '../testing/auth0-management-fake';
 import type { ManagementFake } from '../testing/auth0-management-fake';
-import { Auth0ProfileClient, ProfileUnavailableError, UnconfiguredProfileGateway, profileGatewayFromEnv } from './auth0-profile.client';
+import { Auth0ProfileClient, LinkRefusedError, ProfileUnavailableError, UnconfiguredProfileGateway, profileGatewayFromEnv } from './auth0-profile.client';
 
 let management: ManagementFake;
 let client: Auth0ProfileClient;
@@ -84,6 +84,26 @@ describe('Auth0 read-profile client', () => {
   it('fails closed with wrong client credentials', async () => {
     const wrong = new Auth0ProfileClient({ managementUrl: management.url, clientId: FAKE_PROFILE_CLIENT_ID, clientSecret: 'wrong' }, fetch, 300);
     expect(await outcome('google-oauth2|111', wrong)).toBe('unavailable');
+  });
+
+  it('links a secondary identity into the primary once; repeating is harmless', async () => {
+    management.profiles.set('auth0|primary', { user_id: 'auth0|primary', identities: [{ connection: 'Username-Password-Authentication', provider: 'auth0', user_id: 'primary' }] });
+    management.profiles.set('apple|secondary', { user_id: 'apple|secondary', identities: [{ connection: 'apple', provider: 'apple', user_id: 'secondary' }] });
+    await client.link('auth0|primary', 'apple|secondary');
+    expect(management.links).toEqual([{ primary: 'auth0|primary', secondary: 'apple|secondary' }]);
+    await client.link('auth0|primary', 'apple|secondary');
+    expect(management.links).toHaveLength(1);
+    const linking = management.requests.find((request) => request.method === 'POST' && request.url.endsWith('/identities'));
+    expect(JSON.parse(linking?.body ?? '{}')).toEqual({ provider: 'apple', user_id: 'secondary' });
+  });
+
+  it('reports a refused link and an unavailable Auth0 distinctly', async () => {
+    await expect(client.link('auth0|primary', 'apple|nobody')).rejects.toBeInstanceOf(LinkRefusedError);
+    await expect(client.link('auth0|primary', 'no-provider-separator')).rejects.toBeInstanceOf(LinkRefusedError);
+    management.mode = 'down';
+    await expect(client.link('auth0|primary', 'apple|other')).rejects.toBeInstanceOf(ProfileUnavailableError);
+    management.mode = 'ok';
+    await expect(new UnconfiguredProfileGateway().link()).rejects.toBeInstanceOf(ProfileUnavailableError);
   });
 
   it('is unavailable until E1 credentials are configured', async () => {

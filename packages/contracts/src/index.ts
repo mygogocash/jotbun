@@ -67,6 +67,8 @@ export type {
   ProofResult,
   GlobalLogoutRequest,
   GlobalLogoutResult,
+  LinkIdentityRequest,
+  LinkIdentityResult,
   ClientPlatform,
   ClientVersion,
 } from "./v1/auth.ts";

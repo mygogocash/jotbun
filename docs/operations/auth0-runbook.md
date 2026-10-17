@@ -9,7 +9,7 @@ step marked *Tenant proof* is SKIPPED until then and must be done before beta.
 | Application | Used by | Management API scopes | Settings |
 | --- | --- | --- | --- |
 | Native iOS / Android | the app | none | `AUTH0_ALLOWED_CLIENT_IDS` |
-| Read-profile M2M | API process | `read:users` | `AUTH0_PROFILE_LINK_CLIENT_ID/SECRET` |
+| Read-profile/link M2M | API process | `read:users`, `update:users` (account linking, F6c) | `AUTH0_PROFILE_LINK_CLIENT_ID/SECRET` |
 | Maintenance M2M | security worker only | `read:device_credentials`, `delete:device_credentials`, `delete:users`, `read:users` (only `last_password_reset` is requested) | `AUTH0_MAINTENANCE_CLIENT_ID/SECRET` |
 | Post Change Password Action | Auth0 | none | secret `JOTBUN_EVENTS_SECRET` = one of the API's `AUTH0_EVENTS_SIGNING_SECRETS` |
 
@@ -184,6 +184,34 @@ older than every live session ends nothing.
 - Do not claim that access-token expiry alone ends a compromised refreshable
   session: recovery relies on the binding revocation above.
 
+## Account linking (F6c)
+
+`POST /v1/me/identities` (recent proof; Idempotency-Key = the command id of
+both `link` challenges) adds a second sign-in method to the signed-in
+account. The app:
+
+1. issues two `link` challenges for one command (`POST /v1/auth/challenges`);
+2. proves the signed-in identity with the first (`/v1/auth/proofs`, fresh
+   login with `max_age=0`);
+3. signs in with the other method using the second challenge's nonce and
+   sends that ID token with the proof.
+
+The API then checks both fresh logins and the other identity's account
+(read-only), links the identities at Auth0 (idempotent; an existing link is
+success), and in one transaction under the account lock consumes both
+proofs and makes the other identity an alias of this account. An empty
+account of the other identity is folded in; one holding data gets `409
+ACCOUNT_LINK_CONFLICT` before Auth0 is asked. Every binding then ends through
+global logout (hold + refresh-grant revocation), so both devices sign in
+again once cleanup clears.
+
+- Auth0 down: `503`, nothing changed; the same proofs work while fresh.
+- Interrupted after Auth0 linked: logins with the other method already come
+  back as the primary user, so no second account appears; a retry with fresh
+  proofs completes the database side.
+- Unlinking is not offered. If an operator unlinks at Auth0, also remove the
+  alias row only after confirming the account holds no data for it.
+
 ## Tenant proof (SKIPPED until E1/E2)
 
 - [ ] Create the maintenance M2M application with exactly the scopes above;
@@ -202,6 +230,10 @@ older than every live session ends nothing.
 - [ ] F6b: disable the Action, change the password again, and confirm the
       reconciliation pass applies it within the documented bound; record the
       plan's `last_password_reset` behaviour (set on reset and on change).
+- [ ] F6c: grant `update:users` to the profile/link application; link an
+      Apple login into an email login on test identities; both sign in to
+      the same account; delete the account and confirm Auth0's managed
+      deletion revokes the linked Apple token. Record the evidence.
 - [ ] F6b: decide whether Auth0 itself revokes refresh tokens on password
       change on the selected plan; if recovery cannot be reconciled within a
       stated bound, stop the release path for a design decision.

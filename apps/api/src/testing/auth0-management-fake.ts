@@ -20,6 +20,8 @@ export type ManagementFake = {
   profiles: Map<string, FakeProfile>;
   deviceCredentials: Map<string, FakeDeviceCredential>;
   deletedUsers: string[];
+  /** F6c: links made, primary <- secondary. */
+  links: { primary: string; secondary: string }[];
   requests: RecordedRequest[];
   /** 'ok' answers; 'down' 503s data calls; 'token-down' fails tokens; 'hang' never answers; 'rate-limited' 429s data calls; 'forbidden' 403s data calls. */
   mode: 'ok' | 'down' | 'token-down' | 'hang' | 'rate-limited' | 'forbidden';
@@ -44,6 +46,7 @@ export async function startManagementFake(): Promise<ManagementFake> {
     profiles: new Map<string, FakeProfile>(),
     deviceCredentials: new Map<string, FakeDeviceCredential>(),
     deletedUsers: [] as string[],
+    links: [] as { primary: string; secondary: string }[],
     requests: [] as RecordedRequest[],
   };
   const server = createServer(async (req, res) => {
@@ -76,6 +79,21 @@ export async function startManagementFake(): Promise<ManagementFake> {
       if (!profile) return deny(404);
       const answer = resetOnly ? (profile.last_password_reset ? { last_password_reset: profile.last_password_reset } : {}) : profile;
       res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(answer));
+      return;
+    }
+    // F6c: link `{provider, user_id}` into the primary user (profile/link client only).
+    const identities = /^\/api\/v2\/users\/([^/]+)\/identities$/.exec(url.pathname);
+    if (req.method === 'POST' && identities) {
+      if (role !== 'profile') return deny(role ? 403 : 401);
+      const primary = fake.profiles.get(decodeURIComponent(identities[1]));
+      const { provider, user_id: userId } = JSON.parse(body || '{}') as { provider?: string; user_id?: string };
+      const secondaryId = `${provider}|${userId}`;
+      const secondary = fake.profiles.get(secondaryId);
+      if (!primary || !secondary || secondaryId === primary.user_id) return deny(primary ? 400 : 404);
+      fake.links.push({ primary: primary.user_id, secondary: secondaryId });
+      primary.identities = [...(primary.identities ?? []), { connection: String(provider), provider: String(provider), user_id: String(userId) }];
+      fake.profiles.delete(secondaryId);
+      res.writeHead(201, { 'content-type': 'application/json' }).end(JSON.stringify(primary.identities));
       return;
     }
     if (req.method === 'DELETE' && user) {
