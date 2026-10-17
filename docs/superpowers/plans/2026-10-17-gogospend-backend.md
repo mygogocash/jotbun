@@ -88,7 +88,7 @@ Migration integration is serial:
 | next free | P2b | candidates, preview issues |
 | next free | P2c | `attachments`, `transaction_attachments` |
 | next free | P3 | frozen selections, per-row progress with unique `(job_id, source_row_id)` |
-| next free | P4 | export jobs/objects |
+| `0011_exports` | P4 | `exports` (request period; private file record and 24-hour expiry), leased export-row read, export record and status routines |
 | next free | P5 | deletion requests, retention schedule |
 
 F1, F5, F6c, M5, S2–S4 and P6a/P6b add no migration. Numbers follow the order tasks are actually integrated: F6b was deferred with its hosted proof, so M1–M4 took `0005`–`0008` and P1 took `0009` (17 October 2026). Every later migration, including F6b's and any F6c needs, takes the next free number when it is integrated and updates this table in the same diff. Generate/review the matching Drizzle metadata in this order; parallel feature writers must not independently rewrite the migration journal.

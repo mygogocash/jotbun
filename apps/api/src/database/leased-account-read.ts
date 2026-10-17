@@ -6,12 +6,78 @@ import type { JobLease } from '../jobs/job-types';
 export type LeasedPurpose = 'sync_snapshot' | 'export';
 export type LeasedEntity = { entity: string; id: string; version: number; state: EntityState; snapshot: unknown | null };
 
+/**
+ * One active record for an export (P4), with the names of what it references.
+ * Entries carry wallet and category; transfers carry source and destination.
+ */
+export type LeasedExportRow = {
+  id: string;
+  type: 'expense' | 'income' | 'transfer';
+  occurredOn: string;
+  amountMinor: string;
+  walletId: string | null;
+  walletName: string | null;
+  categoryId: string | null;
+  categoryBuiltinKey: string | null;
+  categoryLabel: string | null;
+  sourceWalletId: string | null;
+  sourceWalletName: string | null;
+  destinationWalletId: string | null;
+  destinationWalletName: string | null;
+  merchant: string | null;
+  note: string | null;
+  version: number;
+};
+
 /** Typed reads of one account, available only inside `withSnapshot`. */
 export interface LeasedReadTx {
   readonly accountId: string;
   highWater(): Promise<Revision>;
   entities(after: { entity: string; id: string } | null, limit: number): Promise<LeasedEntity[]>;
+  /**
+   * Export leases only: active records dated within the job's stored period,
+   * in (occurred_on, id) order after `after`.
+   */
+  exportRows(after: { occurredOn: string; id: string } | null, limit: number): Promise<LeasedExportRow[]>;
 }
+
+type ExportRowSql = {
+  record_id: string;
+  record_type: LeasedExportRow['type'];
+  occurred_on: string;
+  amount_minor: string;
+  wallet_id: string | null;
+  wallet_name: string | null;
+  category_id: string | null;
+  category_builtin_key: string | null;
+  category_label: string | null;
+  source_wallet_id: string | null;
+  source_wallet_name: string | null;
+  destination_wallet_id: string | null;
+  destination_wallet_name: string | null;
+  merchant: string | null;
+  note: string | null;
+  record_version: number;
+};
+
+const toExportRow = (row: ExportRowSql): LeasedExportRow => ({
+  id: row.record_id,
+  type: row.record_type,
+  occurredOn: row.occurred_on,
+  amountMinor: row.amount_minor,
+  walletId: row.wallet_id,
+  walletName: row.wallet_name,
+  categoryId: row.category_id,
+  categoryBuiltinKey: row.category_builtin_key,
+  categoryLabel: row.category_label,
+  sourceWalletId: row.source_wallet_id,
+  sourceWalletName: row.source_wallet_name,
+  destinationWalletId: row.destination_wallet_id,
+  destinationWalletName: row.destination_wallet_name,
+  merchant: row.merchant,
+  note: row.note,
+  version: row.record_version,
+});
 
 export class LeasedReadDenied extends Error {
   constructor() {
@@ -68,6 +134,13 @@ export class LeasedAccountRead {
             ),
           );
           return rows.map((row) => ({ entity: row.entity, id: row.entity_id, version: row.version, state: row.state, snapshot: row.snapshot ?? null }));
+        },
+        exportRows: async (after, limit) => {
+          if (!Number.isInteger(limit) || limit < 1 || limit > 1000) throw new RangeError('limit must be 1-1000');
+          const { rows } = await guarded(() =>
+            client.query<ExportRowSql>('SELECT * FROM gogospend_leased_export_rows($1, $2, $3, $4, $5)', [lease.jobId, lease.leaseToken, after?.occurredOn ?? null, after?.id ?? null, limit]),
+          );
+          return rows.map(toExportRow);
         },
       };
       const result = await fn(read);
