@@ -41,10 +41,11 @@ export class AccountDatabase {
     this.options = options;
   }
 
-  async open(accountId: string): Promise<DiaryStore> {
+  /** Opens the account's diary; with `expectedEpoch`, only while the session epoch is still that one. */
+  async open(accountId: string, expectedEpoch?: number): Promise<DiaryStore> {
     assertAccount(accountId);
     this.options.files.assertAvailable?.();
-    return this.exclusive(accountId, () => this.openLocked(accountId));
+    return this.exclusive(accountId, () => this.openLocked(accountId, expectedEpoch));
   }
 
   /** Explicit recovery or erase: closes the account's store, then deletes its key (unreadable at once) and its file. */
@@ -63,9 +64,11 @@ export class AccountDatabase {
     return next;
   }
 
-  private async openLocked(accountId: string): Promise<DiaryStore> {
+  private async openLocked(accountId: string, expectedEpoch: number | undefined): Promise<DiaryStore> {
     const { files, keys } = this.options;
     const epoch = this.options.epoch();
+    // Never open one identity's diary under another identity's session.
+    if (expectedEpoch !== undefined && expectedEpoch !== epoch) throw new StaleEpochError();
     const current = this.live.get(accountId);
     if (current?.epoch === epoch) return current.store;
     await current?.store.lock();

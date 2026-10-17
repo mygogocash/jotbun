@@ -1,7 +1,7 @@
 import { SYNC_ENTITY_VALIDATORS, isCommittedChangeGroup, isEntityChange, isUuid, normalizeCommand, normalizeMerchant, normalizeNote, validateOccurredOn } from '@gogospend/contracts';
 import type { CategoryDto, CommittedChangeGroup, EntityChange, Minor, Revision, WalletSnapshot } from '@gogospend/contracts';
 
-import { CursorMoved, DiaryLocked, StaleEpochError } from './types.ts';
+import { CursorMoved, DiaryLocked, DraftReferenceUnavailable, StaleEpochError } from './types.ts';
 import type { ConfirmedSnapshot, OutboxCommand, OutboxState, PendingEntry, SqlDatabase, SqlExecutor } from './types.ts';
 
 export type DiaryState = {
@@ -41,6 +41,8 @@ export interface DiaryStore {
   editPending(commandId: string, entry: PendingEntry): Promise<void>;
   /** Removes a draft that was never transmitted, with its command. */
   removePending(commandId: string): Promise<void>;
+  /** Discards a draft the server never committed (needs review), with its command. */
+  discardReviewed(commandId: string): Promise<void>;
   /** Closes the diary (sign-out, transient auth failure); data stays for the next unlock. */
   lock(): Promise<void>;
   /** Deletes this account's diary and key. Call only after the user confirmed. */
@@ -125,12 +127,12 @@ async function assertDraft(tx: SqlExecutor, entry: PendingEntry): Promise<void> 
   const wallets: WalletSnapshot[] = [];
   for (const id of walletIds) {
     const wallet = await activeSnapshot<WalletSnapshot>(tx, 'wallet', id);
-    if (!wallet || wallet.archived) fail('wallet');
+    if (!wallet || wallet.archived) throw new DraftReferenceUnavailable('wallet');
     wallets.push(wallet as WalletSnapshot);
   }
   if (!transfer) {
     const category = await activeSnapshot<CategoryDto>(tx, 'category', record.category_id);
-    if (!category || category.archived || category.type !== record.type) fail('category');
+    if (!category || category.archived || category.type !== record.type) throw new DraftReferenceUnavailable('category');
   }
   const trackingStart = wallets.map((wallet) => wallet.tracking_start).sort().at(-1) as string;
   try {
@@ -386,6 +388,15 @@ export function createDiaryStore(options: DiaryStoreOptions): DiaryStore {
       await write(async (tx) => {
         const removed = await tx.run(`DELETE FROM outbox WHERE command_id = ? AND state = 'unsent' AND first_transmission_at IS NULL`, [commandId]);
         if (removed !== 1) throw new TypeError('Only a draft that was never transmitted can be removed.');
+        await tx.run('DELETE FROM pending_entries WHERE command_id = ?', [commandId]);
+      });
+    },
+
+    async discardReviewed(commandId) {
+      guard();
+      await write(async (tx) => {
+        const removed = await tx.run(`DELETE FROM outbox WHERE command_id = ? AND state = 'needs_review'`, [commandId]);
+        if (removed !== 1) throw new TypeError('Only a draft that needs review can be discarded.');
         await tx.run('DELETE FROM pending_entries WHERE command_id = ?', [commandId]);
       });
     },

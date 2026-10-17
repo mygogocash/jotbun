@@ -19,6 +19,8 @@ export type SyncEngineDeps = {
   /** Refreshes the access token once (F5); false when the session cannot be renewed. */
   refreshSession: () => Promise<boolean>;
   reconcile: ReconcileOptions;
+  /** Live "n of m" while a run sends: called when the run's work is known and after each acknowledgement. */
+  onProgress?: (progress: { sent: number; total: number }) => void;
 };
 
 export interface SyncEngine {
@@ -124,7 +126,9 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
   }
 
   /** Sends one queued command as the frozen row; null when it is done or was skipped. */
-  async function send(commandId: string, progress: { sent: number }, run: RunState): Promise<Stop | null> {
+  const report = (progress: { sent: number; total: number }) => deps.onProgress?.({ sent: progress.sent, total: progress.total });
+
+  async function send(commandId: string, progress: { sent: number; total: number }, run: RunState): Promise<Stop | null> {
     const frozen = await store.beginTransmission(commandId, iso());
     if (!frozen) return null; // removed (undone) before its turn
     const { previous, command } = frozen;
@@ -134,6 +138,7 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
         const ack = await remote.sendCreate(command);
         await store.setCommandState(commandId, ['sending'], 'acknowledged', ack.committed_revision);
         progress.sent += 1;
+        report(progress);
         return null;
       } catch (error) {
         if (!(error instanceof V1Error)) return stopFor(error, run);
@@ -206,6 +211,7 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
       if (command.state !== 'uncertain') progress.total += 1;
       queue.push(command.commandId);
     }
+    if (queue.length > 0) report(progress);
     let stop: Stop | null = null;
     const worker = async () => {
       while (!stop && queue.length > 0) {

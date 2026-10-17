@@ -1,13 +1,15 @@
 // v1 Add: an expense, income or transfer between the user's own wallets.
 // With a device diary (S2/S3) the entry is saved on the device first - only
 // once that local commit succeeds is it shown as saved - and the outbox sends
-// it. Without one (web, or before the diary opens) it is saved online as one
-// immutable command, shown as saved only after the server's acknowledgement;
-// an unconfirmed online save keeps the entry frozen and resends the same command.
+// it; the form then lists the wallets and categories synced to the device, so
+// it works offline. Without one (web, or before the diary opens) it is saved
+// online as one immutable command, shown as saved only after the server's
+// acknowledgement; an unconfirmed online save keeps the entry frozen and
+// resends the same command online, even if the diary opens meanwhile.
 import { ContractValidationError, normalizeMerchant, normalizeNote, validateOccurredOn } from '@gogospend/contracts';
-import type { CategoryDto, WalletDto } from '@gogospend/contracts';
+import type { CategoryDto, WalletSnapshot } from '@gogospend/contracts';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import { useCopy } from '@mobile/i18n/useCopy';
@@ -15,6 +17,7 @@ import { AmountInputError, parseAmountInput } from '@mobile/spend/v1/money';
 import type { CreateEntryInput, CreateTransferInput } from '@mobile/spend/v1/resources';
 import { useDiaryView, useSpendDiary } from '@mobile/spend/v1/SpendDiaryContext';
 import { useSpendV1 } from '@mobile/spend/v1/SpendV1Context';
+import { DiaryLocked, DraftReferenceUnavailable } from '@mobile/storage/types';
 import { categoryName, todayInBangkok } from '@mobile/spend/v1/viewModels';
 import { Text } from '@mobile/theme/AppText';
 import { useTheme } from '@mobile/theme/ThemeProvider';
@@ -23,6 +26,13 @@ import type { Translate } from './parts';
 
 type EntryType = 'expense' | 'income' | 'transfer';
 type Status = 'editing' | 'saving' | 'unconfirmed' | 'blocked';
+type References = { wallets: WalletSnapshot[]; categories: CategoryDto[] };
+
+function localSaveProblem(error: unknown, tc: Translate): string {
+  if (error instanceof DiaryLocked) return tc("This device's diary is locked. Nothing was saved.");
+  if (error instanceof DraftReferenceUnavailable) return tc("This wallet or category isn't on this device yet. Connect and try again. Nothing was saved.");
+  return tc("Couldn't save this entry on the device. Nothing was saved.");
+}
 
 function amountProblem(error: unknown, tc: Translate): string {
   const problem = error instanceof AmountInputError ? error.problem : 'invalid';
@@ -35,21 +45,30 @@ function amountProblem(error: unknown, tc: Translate): string {
 export function AddTransactionScreen({ now }: { now?: Date }) {
   const resources = useSpendV1();
   const tc = useCopy();
-  const loaded = useLoad(async () => {
+  const diaryView = useDiaryView();
+  const loaded = useLoad(async (): Promise<References> => {
     const [wallets, categories] = await Promise.all([resources.wallets(), resources.ensureBuiltinCategories()]);
     return { wallets: wallets.filter((wallet) => !wallet.archived), categories: categories.filter((category) => !category.archived) };
   }, [resources]);
+  // Synced to the device: usable offline, and exactly what a device save accepts.
+  const onDevice = diaryView.phase === 'ready' && diaryView.wallets.length > 0 && diaryView.categories.length > 0 ? { wallets: diaryView.wallets, categories: diaryView.categories } : null;
+  // The form keeps the lists it first showed for its whole life.
+  const [shown, setShown] = useState<References | null>(null);
+  const references = shown ?? onDevice ?? (loaded.state === 'ready' ? loaded.data : null);
+  useEffect(() => {
+    if (!shown && references) setShown(references);
+  }, [shown, references]);
 
-  if (loaded.state === 'loading') return <Frame title={tc('Add an entry')}><Loading label={tc('Loading your wallets')} /></Frame>;
-  if (loaded.state === 'error') {
+  if (!references && loaded.state === 'loading') return <Frame title={tc('Add an entry')}><Loading label={tc('Loading your wallets')} /></Frame>;
+  if (!references && loaded.state === 'error') {
     const problem = loadProblem(loaded.error, tc);
     return <Frame title={tc('Add an entry')}><Notice tone="warning" message={problem.message} action={problem.retry ? { label: tc('Try again'), onPress: loaded.reload } : undefined} /></Frame>;
   }
-  if (loaded.data.wallets.length === 0) return <Frame title={tc('Add an entry')}><Notice message={tc('Add a wallet on the home screen first.')} /></Frame>;
-  return <EntryForm wallets={loaded.data.wallets} categories={loaded.data.categories} today={todayInBangkok(now ?? new Date())} />;
+  if (!references || references.wallets.length === 0) return <Frame title={tc('Add an entry')}><Notice message={tc('Add a wallet on the home screen first.')} /></Frame>;
+  return <EntryForm wallets={references.wallets} categories={references.categories} today={todayInBangkok(now ?? new Date())} />;
 }
 
-function EntryForm({ wallets, categories, today }: { wallets: WalletDto[]; categories: CategoryDto[]; today: string }) {
+function EntryForm({ wallets, categories, today }: { wallets: WalletSnapshot[]; categories: CategoryDto[]; today: string }) {
   const resources = useSpendV1();
   const router = useRouter();
   const tc = useCopy();
@@ -58,8 +77,10 @@ function EntryForm({ wallets, categories, today }: { wallets: WalletDto[]; categ
   const keys = useCommandKeys();
   const diary = useSpendDiary();
   const diaryView = useDiaryView();
-  // One record id per draft, so a resent command always names the same record.
+  // One record id per draft, so a resent command always names the same record;
+  // one device command id per form, so a repeated device save is one draft.
   const [recordId] = useState(newId);
+  const [commandId] = useState(newId);
   const [type, setType] = useState<EntryType>('expense');
   const [amount, setAmount] = useState('');
   const [walletId, setWalletId] = useState(wallets[0].id);
@@ -117,14 +138,15 @@ function EntryForm({ wallets, categories, today }: { wallets: WalletDto[]; categ
   async function save() {
     const input = build();
     if (!input) return;
-    if (diary && diaryView.phase === 'ready') {
+    // An online save whose outcome is unknown is resent online as itself, never re-queued on the device.
+    if (diary && diaryView.phase === 'ready' && status !== 'unconfirmed') {
       setStatus('saving');
       setMessage(null);
       try {
-        await diary.saveDraft('source_wallet_id' in input ? { ...input, type: 'transfer' } : input);
+        await diary.saveDraft('source_wallet_id' in input ? { ...input, type: 'transfer' } : input, commandId);
         router.replace('/spend');
-      } catch {
-        setMessage(tc("Couldn't save this entry on the device. Nothing was saved."));
+      } catch (error) {
+        setMessage(localSaveProblem(error, tc));
         setStatus('editing');
       }
       return;

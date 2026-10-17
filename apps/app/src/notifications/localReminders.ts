@@ -2,34 +2,38 @@
 // uses localReminders.web.ts on the web, which reports reminders unsupported.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 
+import { createNotificationsPort } from './notificationsPort.ts';
 import { createLocalReminderService } from './reminders.ts';
 import type { LocalReminderService, ReminderContent, ReminderPreference } from './reminders.ts';
 
 const PREFERENCE_KEY = 'gogospend.reminder.v1';
+const SCHEDULED_FOR_KEY = 'gogospend.reminder.scheduled-for.v1';
 
-export function createDeviceReminderService(content: () => ReminderContent): LocalReminderService {
-  return createLocalReminderService(
+/**
+ * `context` names the device time zone and language the reminder is written
+ * for; `refresh()` re-schedules when it changes.
+ */
+export function createDeviceReminderService(content: () => ReminderContent, context: () => string, channelName: () => string): LocalReminderService {
+  const port = createNotificationsPort(
     {
-      supported: true,
-      async permission() {
-        const status = await Notifications.getPermissionsAsync();
-        return status.granted ? 'granted' : status.canAskAgain ? 'undetermined' : 'denied';
-      },
-      async requestPermission() {
-        return (await Notifications.requestPermissionsAsync()).granted ? 'granted' : 'denied';
-      },
-      async cancel(id) {
-        await Notifications.cancelScheduledNotificationAsync(id);
-      },
-      async scheduleDaily(id, hour, minute, message) {
-        await Notifications.scheduleNotificationAsync({
-          identifier: id,
-          content: { title: message.title, body: message.body },
-          trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute },
-        });
-      },
+      getPermissionsAsync: () => Notifications.getPermissionsAsync(),
+      requestPermissionsAsync: (request) => Notifications.requestPermissionsAsync(request),
+      cancelScheduledNotificationAsync: (id) => Notifications.cancelScheduledNotificationAsync(id),
+      scheduleNotificationAsync: ({ identifier, content: message, trigger }) =>
+        Notifications.scheduleNotificationAsync({
+          identifier,
+          content: message,
+          trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: trigger.hour, minute: trigger.minute, channelId: trigger.channelId },
+        }),
+      setNotificationChannelAsync: (id, channel) => Notifications.setNotificationChannelAsync(id, { name: channel.name, importance: Notifications.AndroidImportance.DEFAULT }),
     },
+    Platform.OS,
+    channelName,
+  );
+  return createLocalReminderService(
+    port,
     {
       async load() {
         const raw = await AsyncStorage.getItem(PREFERENCE_KEY);
@@ -42,7 +46,10 @@ export function createDeviceReminderService(content: () => ReminderContent): Loc
         }
       },
       save: (preference) => AsyncStorage.setItem(PREFERENCE_KEY, JSON.stringify(preference)),
+      loadScheduledFor: () => AsyncStorage.getItem(SCHEDULED_FOR_KEY),
+      saveScheduledFor: (value) => (value === null ? AsyncStorage.removeItem(SCHEDULED_FOR_KEY) : AsyncStorage.setItem(SCHEDULED_FOR_KEY, value)),
     },
     content,
+    context,
   );
 }

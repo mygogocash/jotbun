@@ -5,6 +5,8 @@ export type SchedulerDeps = {
   now: () => number;
   setTimer: (fn: () => void, ms: number) => unknown;
   clearTimer: (handle: unknown) => void;
+  /** Every run's outcome, including the one reported for a flush that failed outright. */
+  onOutcome?: (outcome: SyncOutcome) => void;
 };
 
 export interface SyncScheduler {
@@ -57,7 +59,9 @@ export function createSyncScheduler(deps: SchedulerDeps): SyncScheduler {
       // A flush that failed outright tries again on the regular timer.
       outcome = { status: 'waiting', progress: { sent: 0, total: 0 }, nextAttemptAt: null, uncertain: 0, needsReview: 0 };
     }
-    if (!stopped) arm(outcome);
+    if (stopped) return;
+    deps.onOutcome?.(outcome);
+    arm(outcome);
   }
 
   return {

@@ -310,3 +310,25 @@ test('the scheduler survives a failing flush, re-arms its timer, and marks launc
   await scheduler.written();
   assert.equal(timers.length, 2, 'no timer while in the background');
 });
+
+test('every run reports its outcome, including a flush that failed outright', async () => {
+  const reported: string[] = [];
+  let fail = false;
+  const scheduler = createSyncScheduler({
+    flush: async () => {
+      if (fail) throw new TypeError('store error');
+      return { status: 'synced', progress: { sent: 0, total: 0 }, nextAttemptAt: null, uncertain: 0, needsReview: 0 };
+    },
+    now: () => 0,
+    setTimer: () => null,
+    clearTimer: () => undefined,
+    onOutcome: (outcome) => reported.push(outcome.status),
+  });
+  await scheduler.launch();
+  fail = true;
+  await scheduler.manual();
+  assert.deepEqual(reported, ['synced', 'waiting']);
+  scheduler.stop();
+  await scheduler.manual();
+  assert.deepEqual(reported, ['synced', 'waiting'], 'nothing is reported after a stop');
+});

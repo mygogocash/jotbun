@@ -127,6 +127,19 @@ export class CursorMoved extends Error {
   }
 }
 
+/**
+ * A draft names a wallet or category this device has not synced yet (or one
+ * that is archived or gone): pulling the latest changes may make it usable.
+ */
+export class DraftReferenceUnavailable extends TypeError {
+  readonly reference: 'wallet' | 'category';
+  constructor(reference: 'wallet' | 'category') {
+    super(`A pending entry is not a valid create: ${reference}.`);
+    this.name = 'DraftReferenceUnavailable';
+    this.reference = reference;
+  }
+}
+
 /** The diary was written by a newer app version. */
 export class DiarySchemaTooNew extends Error {
   constructor() {

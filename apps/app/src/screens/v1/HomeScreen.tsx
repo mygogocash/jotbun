@@ -1,24 +1,111 @@
 // v1 Home: total and per-wallet balances, this month's money in and out, and
 // the latest entries, all from the v1 API. An empty account asks for an
-// explicit first wallet; nothing is inferred or created by default.
+// explicit first wallet; nothing is inferred or created by default. With a
+// device diary, money waiting on the device is shown apart from confirmed
+// money - entries still being checked with the server apart again, since
+// they may already be counted - and confirmed money reloads in place when
+// entries resolve. Offline, Home still shows the diary's status, waiting
+// money and drafts, and Add works from the device.
+import type { CategoryDto, Totals } from '@gogospend/contracts';
 import { validateTrackingStart } from '@gogospend/contracts';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import { useCopy } from '@mobile/i18n/useCopy';
 import { AmountInputError, formatMinor, parseAmountInput } from '@mobile/spend/v1/money';
 import { deriveDisplayedTotals } from '@mobile/spend/v1/pendingTotals';
+import type { DiaryView } from '@mobile/spend/v1/spendDiary';
 import { useDiaryView, useSpendDiary } from '@mobile/spend/v1/SpendDiaryContext';
 import { useSpendV1 } from '@mobile/spend/v1/SpendV1Context';
+import type { OutboxCommand, OutboxState } from '@mobile/storage/types';
 import { SyncStatus } from '@mobile/sync/SyncStatus';
-import { byId, monthOf, recordView, todayInBangkok, walletsTotal } from '@mobile/spend/v1/viewModels';
+import { byId, categoryName, monthOf, recordView, todayInBangkok, walletsTotal } from '@mobile/spend/v1/viewModels';
 import { Text } from '@mobile/theme/AppText';
 import { useTheme } from '@mobile/theme/ThemeProvider';
 import { spacing } from '@mobile/theme/tokens';
 import { Button, Card, Field, Frame, Loading, Notice, isOwnCreate, loadProblem, newId, saveProblem, useCommandKeys, useLoad, useMoneyLocale } from './parts';
+import type { Translate } from './parts';
 
 const RECENT = 5;
+const ZERO: Totals = { income_minor: '0', expense_minor: '0', balance_minor: '0', by_wallet: {} };
+// Queued on the device and not yet at the server.
+const WAITING: readonly OutboxState[] = ['unsent', 'sending', 'paused_upgrade'];
+// Possibly committed already: the server is being asked.
+const CHECKING: readonly OutboxState[] = ['uncertain'];
+
+/** Reloads confirmed money in place whenever a command it was waiting on resolves. */
+function useRefreshOnResolve(outbox: readonly OutboxCommand[], refresh: () => void): void {
+  const open = useRef(new Set<string>());
+  useEffect(() => {
+    const now = new Set(outbox.filter((command) => command.state !== 'acknowledged').map((command) => command.commandId));
+    const resolved = [...open.current].some((id) => !now.has(id));
+    open.current = now;
+    if (resolved) refresh();
+  }, [outbox, refresh]);
+}
+
+/** "Waiting to sync" and "Checking with Jotbun" money for this month, never mixed into confirmed money. */
+function WaitingMoney({ outbox, month }: { outbox: readonly OutboxCommand[]; month: string }) {
+  const tc = useCopy();
+  const locale = useMoneyLocale();
+  const { colors } = useTheme();
+  const sum = (states: readonly OutboxState[]) =>
+    deriveDisplayedTotals(ZERO, outbox.filter((command) => states.includes(command.state) && monthOf(command.payload.occurred_on) === month).map((command) => command.payload)).pendingAdjustment;
+  const waiting = sum(WAITING);
+  const checking = sum(CHECKING);
+  const lines = [
+    waiting.income_minor === '0' ? null : tc('Waiting to sync: money in {amount}', { amount: formatMinor(waiting.income_minor, locale) }),
+    waiting.expense_minor === '0' ? null : tc('Waiting to sync: money out {amount}', { amount: formatMinor(waiting.expense_minor, locale) }),
+    checking.income_minor === '0' ? null : tc('Checking with Jotbun: money in {amount}', { amount: formatMinor(checking.income_minor, locale) }),
+    checking.expense_minor === '0' ? null : tc('Checking with Jotbun: money out {amount}', { amount: formatMinor(checking.expense_minor, locale) }),
+  ].filter((line): line is string => line !== null);
+  return <>{lines.map((line) => <Text key={line} accessibilityLabel={line} style={{ color: colors.muted }}>{line}</Text>)}</>;
+}
+
+function draftTitle(entry: OutboxCommand['payload'], categories: ReadonlyMap<string, CategoryDto>, tc: Translate): string {
+  if (entry.type === 'transfer') return tc('Transfer');
+  const category = categories.get(entry.category_id);
+  return category ? categoryName(category, tc) : tc(entry.type === 'income' ? 'Income' : 'Expense');
+}
+
+/**
+ * Drafts on this device that the server has not confirmed. An unsent draft
+ * can be undone here; one that needs review (the server never committed it)
+ * can be discarded; one being checked or sent waits for its outcome.
+ */
+function DeviceDrafts({ view, categories }: { view: DiaryView; categories: ReadonlyMap<string, CategoryDto> }) {
+  const diary = useSpendDiary();
+  const tc = useCopy();
+  const locale = useMoneyLocale();
+  const { colors } = useTheme();
+  const drafts = view.outbox.filter((command) => command.state !== 'acknowledged');
+  if (!diary || view.phase !== 'ready' || drafts.length === 0) return null;
+  const statusText: Record<Exclude<OutboxState, 'acknowledged'>, string> = {
+    unsent: tc('Waiting to sync'),
+    sending: tc('Checking with Jotbun'),
+    uncertain: tc('Checking with Jotbun'),
+    needs_review: tc('Needs your review'),
+    paused_upgrade: tc('Update Jotbun to send'),
+  };
+  return (
+    <Card>
+      <Text accessibilityRole="header" style={{ color: colors.ink, fontWeight: '700' }}>{tc('Saved on this device')}</Text>
+      {drafts.map((command) => {
+        const entry = `${draftTitle(command.payload, categories, tc)} ${formatMinor(command.payload.amount_minor, locale)}`;
+        const undoable = command.state === 'unsent' && command.firstTransmissionAt === null;
+        return (
+          <View key={command.commandId} style={{ gap: spacing.xs }}>
+            <Text style={{ color: colors.ink }}>{entry}</Text>
+            <Text style={{ color: colors.muted }}>{statusText[command.state as Exclude<OutboxState, 'acknowledged'>]}</Text>
+            {undoable ? <Button kind="secondary" label={tc('Remove')} accessibilityLabel={tc('Remove {entry}', { entry })} onPress={() => void diary.removeDraft(command.commandId).catch(() => undefined)} /> : null}
+            {command.state === 'needs_review' ? <Button kind="secondary" label={tc('Discard')} accessibilityLabel={tc('Discard {entry}', { entry })} onPress={() => void diary.discardDraft(command.commandId).catch(() => undefined)} /> : null}
+          </View>
+        );
+      })}
+    </Card>
+  );
+}
 
 export function HomeScreen({ now }: { now?: Date }) {
   const resources = useSpendV1();
@@ -40,28 +127,49 @@ export function HomeScreen({ now }: { now?: Date }) {
     ]);
     return { categories, wallets, summary, recent: recent.items };
   }, [resources, month, today]);
+  useRefreshOnResolve(diaryView.outbox, loaded.refresh);
 
+  const banner = diary ? <SyncStatus view={diaryView} onRetry={() => void diary.retry()} onDiscard={() => void diary.discardDiary()} /> : null;
   if (loaded.state === 'loading') return <Frame title={tc('Jotbun')}><Loading label={tc('Loading your diary')} /></Frame>;
   if (loaded.state === 'error') {
     const problem = loadProblem(loaded.error, tc);
-    return <Frame title={tc('Jotbun')}><Notice tone="warning" message={problem.message} action={problem.retry ? { label: tc('Try again'), onPress: loaded.reload } : undefined} /></Frame>;
+    const notice = <Notice tone="warning" message={problem.message} action={problem.retry ? { label: tc('Try again'), onPress: loaded.reload } : undefined} />;
+    if (!diary) return <Frame title={tc('Jotbun')}>{notice}</Frame>;
+    // Offline: what the device holds is still here, and new entries are saved on it.
+    return (
+      <Frame title={tc('Jotbun')}>
+        {banner}
+        {notice}
+        <WaitingMoney outbox={diaryView.outbox} month={month} />
+        {diaryView.phase === 'ready' && diaryView.wallets.length > 0 ? <Button label={tc('Add an entry')} onPress={() => router.push('/spend/add')} /> : null}
+        <DeviceDrafts view={diaryView} categories={byId(diaryView.categories)} />
+      </Frame>
+    );
   }
 
   const { wallets, categories, summary, recent } = loaded.data;
-  if (wallets.length === 0) return <Frame title={tc('Jotbun')}><FirstWallet today={today} onCreated={loaded.reload} /></Frame>;
+  if (wallets.length === 0) {
+    return (
+      <Frame title={tc('Jotbun')}>
+        <FirstWallet
+          today={today}
+          onCreated={() => {
+            loaded.reload();
+            // Bring the new wallet (and the built-in categories) to the device, so entries can be saved there.
+            void diary?.retry();
+          }}
+        />
+      </Frame>
+    );
+  }
 
   const lookups = { wallets: byId(wallets), categories: byId(categories) };
   const total = formatMinor(walletsTotal(wallets), locale);
   const moneyIn = formatMinor(summary.income_minor, locale);
   const moneyOut = formatMinor(summary.expense_minor, locale);
-  // Drafts on this device this month, not yet acknowledged: shown apart from confirmed money.
-  const waiting = diaryView.outbox.filter((command) => command.state !== 'acknowledged' && monthOf(command.payload.occurred_on) === month).map((command) => command.payload);
-  const pending = deriveDisplayedTotals({ income_minor: summary.income_minor, expense_minor: summary.expense_minor, balance_minor: summary.balance_minor, by_wallet: summary.by_wallet }, waiting).pendingAdjustment;
-  const pendingOut = pending.expense_minor === '0' ? null : tc('Waiting to sync: money out {amount}', { amount: formatMinor(pending.expense_minor, locale) });
-  const pendingIn = pending.income_minor === '0' ? null : tc('Waiting to sync: money in {amount}', { amount: formatMinor(pending.income_minor, locale) });
   return (
     <Frame title={tc('Jotbun')}>
-      {diary ? <SyncStatus view={diaryView} onRetry={() => void diary.retry()} /> : null}
+      {banner}
       <Card>
         <Text style={{ color: colors.muted }}>{tc('Total balance')}</Text>
         <Text accessibilityLabel={`${tc('Total balance')} ${total}`} style={{ color: colors.ink, fontSize: 34, fontWeight: '700' }}>{total}</Text>
@@ -69,8 +177,7 @@ export function HomeScreen({ now }: { now?: Date }) {
           <Text accessibilityLabel={`${tc('Money in')} ${moneyIn}`} style={{ color: colors.ink }}>{`${tc('Money in')} ${moneyIn}`}</Text>
           <Text accessibilityLabel={`${tc('Money out')} ${moneyOut}`} style={{ color: colors.ink }}>{`${tc('Money out')} ${moneyOut}`}</Text>
         </View>
-        {pendingIn ? <Text accessibilityLabel={pendingIn} style={{ color: colors.muted }}>{pendingIn}</Text> : null}
-        {pendingOut ? <Text accessibilityLabel={pendingOut} style={{ color: colors.muted }}>{pendingOut}</Text> : null}
+        <WaitingMoney outbox={diaryView.outbox} month={month} />
       </Card>
       <Card>
         <Text accessibilityRole="header" style={{ color: colors.ink, fontWeight: '700' }}>{tc('Wallets')}</Text>
@@ -85,6 +192,7 @@ export function HomeScreen({ now }: { now?: Date }) {
         })}
       </Card>
       <Button label={tc('Add an entry')} onPress={() => router.push('/spend/add')} />
+      <DeviceDrafts view={diaryView} categories={lookups.categories} />
       <Card>
         <Text accessibilityRole="header" style={{ color: colors.ink, fontWeight: '700' }}>{tc('Latest entries')}</Text>
         {recent.length === 0 ? <Text style={{ color: colors.muted }}>{tc('No entries yet')}</Text> : null}

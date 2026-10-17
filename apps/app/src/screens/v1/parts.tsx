@@ -204,20 +204,31 @@ export function useCommandKeys() {
 
 export type Loaded<T> = { state: 'loading' } | { state: 'ready'; data: T } | { state: 'error'; error: unknown };
 
-/** Loads once, and again on `reload`; a superseded load never overwrites a newer one. */
-export function useLoad<T>(load: () => Promise<T>, deps: readonly unknown[]): Loaded<T> & { reload: () => void } {
+/**
+ * Loads once, and again on `reload`; a superseded load never overwrites a
+ * newer one. `refresh` reloads in place: the current data stays on screen
+ * while it loads, and stays if the refresh fails.
+ */
+export function useLoad<T>(load: () => Promise<T>, deps: readonly unknown[]): Loaded<T> & { reload: () => void; refresh: () => void } {
   const [result, setResult] = useState<Loaded<T>>({ state: 'loading' });
   const [round, setRound] = useState(0);
+  const quiet = useRef(false);
   useEffect(() => {
     let current = true;
-    setResult({ state: 'loading' });
+    const inPlace = quiet.current;
+    quiet.current = false;
+    if (!inPlace) setResult({ state: 'loading' });
     load().then(
       (data) => { if (current) setResult({ state: 'ready', data }); },
-      (error: unknown) => { if (current) setResult({ state: 'error', error }); },
+      (error: unknown) => { if (current) setResult((previous) => (inPlace && previous.state === 'ready' ? previous : { state: 'error', error })); },
     );
     return () => { current = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, round]);
   const reload = useCallback(() => setRound((value) => value + 1), []);
-  return { ...result, reload };
+  const refresh = useCallback(() => {
+    quiet.current = true;
+    setRound((value) => value + 1);
+  }, []);
+  return { ...result, reload, refresh };
 }

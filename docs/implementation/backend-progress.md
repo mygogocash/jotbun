@@ -1004,3 +1004,54 @@ Observed, not changed (pre-existing):
   - `AuthSessionProvider.tsx` is replaced by `installCredentialProvider`, since nothing can be installed before E1.
   - `authApi.ts` is an extra file.
 - **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (437), test:db PASS (397), test:app PASS (16), test:unit PASS (148), test:render PASS (48), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
+
+## Review fixes for S4
+
+- **S4 review** (commit `e3a9ee2`): two blockers, seven majors, minors and nits. The reviewer confirmed the pending/confirmed split in `deriveDisplayedTotals`, the local-first save order and the reminder service's single fixed id.
+- **Fixed, with tests that failed first.** RED: 21 of 46 unit tests, 5 of 6 resolver tests and 14 of 22 render tests failed, on assertions or on the bug's own error; then all passed. Eleven mutants that undo a fix each fail the suite (`s4fix-mutants.log`).
+  - **Blocker — offline launch made device saves impossible.** `GET /v1/me` failing left no diary, and Add and Home needed the server.
+    - A new resolver (`spend/v1/diarySession.ts`) remembers the account the server verified for a binding (`knownAccount.ts`, SecureStore, this device only; only a SHA-256 of the binding is stored).
+    - Offline, it reopens that account's diary. A refusal recalls nothing, and a new binding (a new identity, even with the same email) inherits nothing.
+    - A recalled account is verified again on the next refresh.
+    - The diary view now carries its synced, open wallets and categories. Add uses them when the diary is ready, so it works offline, and keeps the lists it first showed.
+    - Offline, Home still shows the banner, waiting money, the drafts and Add.
+  - **Blocker — the first entry after creating the first wallet couldn't be saved.** The diary had not pulled the new wallet yet.
+    - `assertDraft` now throws `DraftReferenceUnavailable` for an unknown wallet or category.
+    - `saveDraft` then pulls once and tries again.
+    - Creating the first wallet online asks the diary to sync.
+  - **Major — a token refresh tore the diary down mid-flush.** A notification for the same account and epoch is now a no-op, and the resolver no longer calls `/v1/me` again for the same identity.
+  - **Major — the diary's session epoch was never checked.** `AccountDatabase.open(accountId, expectedEpoch)` refuses to open under another identity's epoch. The engine flushes as the session the store was opened for, not the store's account plus the installation epoch.
+  - **Major — a superseded session change overwrote a newer "ready".** Generation is checked after closing. A superseded open of another account's store is closed (the leak).
+  - **Major — Home double-counted or dropped money.**
+    - Confirmed money reloads in place (no loading flash) when a waiting command resolves.
+    - Uncertain entries show as "Checking with Jotbun", apart from waiting money.
+    - Needs-review entries are left out of both and counted in the banner.
+  - **Major — an unconfirmed online save could be re-queued on the device with a new command id.** Try again now stays online with the same key until the outcome is known. Device saves use one command id per form, so a repeat is a no-op.
+  - **Major — no foreground timer at launch.** Already fixed by the S3 review (`launch()` counts as foreground); a test now pins it. A background launch clears the timer.
+  - **Major — plan items not done.** Now done:
+    - Undo of an unsent draft and discard of a needs-review draft, from a "Saved on this device" list on Home (`discardReviewed` in the store).
+    - A locked diary's "Start over", only after confirming.
+    - `eraseForSignOut()` erases only this account's diary. The sign-out screen that calls it waits for the settings page's visual approval.
+    - The banner explains terms to accept (`policy_required`) and a newer diary (`schema_too_new`).
+    - iOS hears status changes through `AccessibilityInfo.announceForAccessibility`.
+  - **Minors:**
+    - Outcomes now come from the scheduler, including a flush that failed outright.
+    - Device saves explain a locked diary or a reference not yet on the device.
+    - An older `/v1/me` answer is ignored, and nothing reopens after unmount.
+    - One `AccountDatabase` is shared across remounts.
+    - Live "n of m" progress comes from the engine (`onProgress`).
+    - `foreground()` retries a diary whose key store was unavailable.
+    - Reminders:
+      - provisional iOS delivery counts as granted, and iOS asks for alerts and sounds;
+      - Android posts on its own `daily-reminder` channel;
+      - `refresh()` re-schedules only after a time zone or language change, at launch and on foreground (`useReminderUpkeep`).
+  - **Nits:**
+    - "Checking 1 entry … sending it again" is singular.
+    - `useDiaryView` subscribes with a stable callback.
+    - The S4 lockfile also resolved `expo-notifications` 58.1.5 and moved `expo-application` to 58.1.2.
+- **Copy:** 21 new en/th keys, and `spendV1SyncKeyLocked` was reworded (it now explains why the diary is unreadable; the action is "Start over").
+- **Branding** (commit `d1b1d60`, between S4 and these fixes): the display name and user-facing copy are now Jotbun, with the store icons in `docs/brand/`. The slug, scheme, package ids, headers and database roles are unchanged.
+- **SKIPPED:**
+  - On devices: the offline-launch, airplane-mode, account-switch and remount journeys; VoiceOver and TalkBack announcements; the notification channel and provisional delivery.
+  - The sign-out confirmation UI waits for visual approval.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (437), test:db PASS (397), test:app PASS (16), test:unit PASS (173), test:render PASS (60), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
