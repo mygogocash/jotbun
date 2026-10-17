@@ -29,6 +29,9 @@ export const API_ERROR_CODES = [
   "ENTITY_DELETED",
   "ENTITY_PURGED",
   "WRITES_PAUSED",
+  // Server side (500/503); never carries internal detail
+  "INTERNAL_ERROR",
+  "SERVICE_UNAVAILABLE",
 ] as const;
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
 

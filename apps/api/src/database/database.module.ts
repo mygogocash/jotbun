@@ -18,6 +18,8 @@ import { DatabaseService, PG_POOL } from './database.service';
     },
     DatabaseService,
   ],
-  exports: [DatabaseService],
+  // PG_POOL is exported for non-owner routines (rate limiting); private data
+  // goes through DatabaseService owner transactions only.
+  exports: [DatabaseService, PG_POOL],
 })
 export class DatabaseModule {}

@@ -34,6 +34,7 @@
     "express": "^5.1.0",
     "firebase-admin": "^14.4.0",
     "helmet": "^8.3.0",
+    "jose": "6.2.12",
     "jsqr": "^1.4.0",
     "mongoose": "^9.9.5",
     "multer": "^2.3.0",

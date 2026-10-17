@@ -6,15 +6,27 @@ import { createV1App } from './v1-app.module';
 const ACCOUNT = '0192f0c1-7b3a-7c3e-9d4f-0000000000aa';
 
 let db: TestDatabase;
-const saved = { DATABASE_URL: process.env.DATABASE_URL, MONGO_URI: process.env.MONGO_URI };
+// Synthetic configuration only; no tenant is contacted at startup.
+const v1Settings = {
+  AUTH0_ISSUER: 'https://gogospend-test.invalid/',
+  AUTH0_AUDIENCE: 'https://api.gogospend.test',
+  AUTH0_ALLOWED_CLIENT_IDS: 'native-client-test',
+  RATE_LIMIT_KEY: 'synthetic-test-key-0123456789abcdef0123456789',
+  MIN_CLIENT_VERSION_IOS: '1.0.0',
+  MIN_CLIENT_VERSION_ANDROID: '1.0.0',
+};
+const saved = Object.fromEntries(['DATABASE_URL', 'MONGO_URI', ...Object.keys(v1Settings)].map((key) => [key, process.env[key]]));
 
 beforeAll(async () => {
   db = await createTestDatabase();
+  Object.assign(process.env, v1Settings);
 });
 
 afterAll(async () => {
-  process.env.DATABASE_URL = saved.DATABASE_URL;
-  process.env.MONGO_URI = saved.MONGO_URI;
+  for (const [key, value] of Object.entries(saved)) {
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  }
   await db?.drop();
 });
 
@@ -45,6 +57,29 @@ it.each([
 ])('refuses to start on %s', async (_name, makeUrl) => {
   process.env.DATABASE_URL = await makeUrl();
   await expect(createV1App()).rejects.toThrow(/least-privilege/);
+});
+
+it.each([
+  ['no AUTH0_ISSUER', { AUTH0_ISSUER: undefined }],
+  ['no allowed client ids', { AUTH0_ALLOWED_CLIENT_IDS: '' }],
+  ['no iOS minimum version', { MIN_CLIENT_VERSION_IOS: undefined }],
+  ['a short RATE_LIMIT_KEY', { RATE_LIMIT_KEY: 'too-short' }],
+  ['TRUST_PROXY_HOPS unset in production', { NODE_ENV: 'production', TRUST_PROXY_HOPS: undefined }],
+])('refuses to start with %s', async (_name, override: Record<string, string | undefined>) => {
+  process.env.DATABASE_URL = await db.loginUrl(['gogospend_app', 'gogospend_bootstrap']);
+  const before = Object.fromEntries(Object.keys(override).map((key) => [key, process.env[key]]));
+  const apply = (values: Record<string, string | undefined>) => {
+    for (const [key, value] of Object.entries(values)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  };
+  apply(override);
+  try {
+    await expect(createV1App()).rejects.toThrow();
+  } finally {
+    apply(before);
+  }
 });
 
 it('fails fast without DATABASE_URL instead of starting unconfigured', async () => {

@@ -8,7 +8,7 @@ import { GROUP_ROLES, createTestDatabase } from '../testing/postgres-harness';
 import type { GroupRole, TestDatabase } from '../testing/postgres-harness';
 import { poolConfigFromUrl } from './database-config';
 import { MIGRATIONS_FOLDER, readJournal, runMigrations } from './migrations';
-import { accountIdentities, accountSyncState, accounts } from './schema';
+import { accountIdentities, accountSyncState, accounts, rateLimitBuckets } from './schema';
 
 const ISSUER = 'https://gogospend-test.example/';
 const ACCOUNT_A = '0192f0c1-7b3a-7c3e-9d4f-00000000000a';
@@ -100,6 +100,16 @@ describe('migrations', () => {
     }
   });
 
+  it('no gogospend routine is executable by PUBLIC', async () => {
+    const result = await db.admin((client) =>
+      client.query(
+        `SELECT p.proname FROM pg_proc p, aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a
+          WHERE p.proname LIKE 'gogospend\\_%' AND a.grantee = 0 AND a.privilege_type = 'EXECUTE'`,
+      ),
+    );
+    expect(result.rows).toEqual([]);
+  });
+
   it('new functions are not executable by PUBLIC by default', async () => {
     await db.admin((client) => client.query('CREATE FUNCTION later_routine() RETURNS int LANGUAGE sql AS $$ SELECT 1 $$'));
     const result = await db.admin((client) => client.query(`SELECT has_function_privilege('gogospend_app', 'later_routine()', 'EXECUTE') AS allowed`));
@@ -108,7 +118,7 @@ describe('migrations', () => {
   });
 
   it('Drizzle definitions match the migrated columns', async () => {
-    for (const table of [accounts, accountIdentities, accountSyncState]) {
+    for (const table of [accounts, accountIdentities, accountSyncState, rateLimitBuckets]) {
       const config = getTableConfig(table);
       const result = await db.admin((client) =>
         client.query<{ column_name: string; is_nullable: string }>(

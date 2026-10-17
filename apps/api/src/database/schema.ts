@@ -31,4 +31,17 @@ export const accountSyncState = pgTable('account_sync_state', {
   revision: bigint('revision', { mode: 'bigint' }).notNull().default(0n),
 });
 
-export const schema = { accounts, accountIdentities, accountSyncState };
+// Reached only through gogospend_consume_rate_limit/gogospend_purge_rate_limits;
+// defined here so the drift test covers it.
+export const rateLimitBuckets = pgTable(
+  'rate_limit_buckets',
+  {
+    bucketKey: text('bucket_key').notNull(),
+    windowStart: timestamp('window_start', { withTimezone: true, mode: 'date' }).notNull(),
+    hits: integer('hits').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.bucketKey, table.windowStart] })],
+);
+
+export const schema = { accounts, accountIdentities, accountSyncState, rateLimitBuckets };

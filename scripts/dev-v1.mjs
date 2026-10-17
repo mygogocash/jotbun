@@ -99,9 +99,20 @@ try {
         '',
       ].join('\n'),
     });
+    // Auth0 settings come from your environment once a non-production tenant
+    // exists (E1). Until then these placeholders make every token-protected
+    // route fail closed (503), while public routes still work.
+    const env = process.env;
     start(process.execPath, ['apps/api/dist/v1/main.js'], {
       NODE_ENV: 'development', HOST: '127.0.0.1', PORT: '8091',
       DATABASE_URL: `postgres://${devLogin}:${password}@127.0.0.1:55432/gogospend_v1`,
+      AUTH0_ISSUER: env.AUTH0_ISSUER ?? 'https://auth.gogospend.invalid/',
+      AUTH0_AUDIENCE: env.AUTH0_AUDIENCE ?? 'https://api.gogospend.invalid',
+      AUTH0_ALLOWED_CLIENT_IDS: env.AUTH0_ALLOWED_CLIENT_IDS ?? 'unconfigured-local-client',
+      RATE_LIMIT_KEY: randomBytes(32).toString('base64url'),
+      MIN_CLIENT_VERSION_IOS: env.MIN_CLIENT_VERSION_IOS ?? '0.0.0',
+      MIN_CLIENT_VERSION_ANDROID: env.MIN_CLIENT_VERSION_ANDROID ?? '0.0.0',
+      TRUST_PROXY_HOPS: '0',
     });
   }
 } catch (error) {

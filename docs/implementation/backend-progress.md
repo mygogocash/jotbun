@@ -78,3 +78,41 @@ Observed, not changed (pre-existing):
   - Nits fixed: `TEMPORARY` revoked from `PUBLIC` (a temp table could shadow the lock row), and default `EXECUTE` on new functions revoked from `PUBLIC`.
 - **Interface note for F3/F4:** binding lookup needs `auth_sessions`, which the migration table assigns to F4. F3 therefore defines a session-resolver port that fails closed; F4 supplies the SQL implementation.
 - **Not run against Neon:** no hosted database was used (E1).
+
+## F3 — Auth0 access tokens, route classification, rate limits, safe logging
+
+- **Dependency:** `jose` pinned at 6.2.12 (published 5 September 2026; no dependencies or install scripts). It was already in the tree at that version through `firebase-admin` → `jwks-rsa`; pinning it hoisted the same version, adding no new version.
+- **Built:**
+  - **Token verification:** `Auth0TokenVerifier` checks RS256 signatures against the pinned issuer's JWKS, plus issuer, audience, allowed client (`azp`/`client_id`), subject and expiry, with 30 s clock tolerance. ID tokens (client audience or `nonce`) and opaque tokens are rejected. At most one JWKS refetch per 30 s for unknown key IDs. A JWKS timeout, network failure or bad response is `unavailable` (503), never a bad token.
+  - **Access classes:** `public`, `token_only`, `bound_session`, `current_policy` and `recent_proof`. They are declared with `@Access`, checked at startup (`assertRoutesClassified`) and enforced by one global `V1AccessGuard` in this order: classification → client version (426) → token → rate limit → binding/policy.
+  - **Rate limits:** PostgreSQL buckets (`0002_rate_limits`) store HMAC keys only; rows expire within the hour, and the table is reachable only through two `SECURITY DEFINER` routines. Budgets are reads 120 and writes 60 per binding, and challenge/bootstrap 10 per principal and 30 per network address. `TRUST_PROXY_HOPS` defaults to 0.
+  - **Logging and errors:** request IDs are server-generated. Logs are JSON lines with request ID, method, route template, status and latency only. Every error, including body-parser errors, is an `ApiProblem`, and a 500 never carries detail.
+- **Plan clarification:** `ApplicationSessionGuard.resolve` uses a `SessionResolver` port, and current-policy routes use a `PolicyGate` port. Until F4 provides the SQL implementations, F3's defaults deny, so every bound route fails closed.
+- **Contract change:** added `INTERNAL_ERROR` (500) and `SERVICE_UNAVAILABLE` (503) to `API_ERROR_CODES`.
+- **RED against seams:** a decode-only verifier, allow-all guards, a full-URL logger and a non-problem filter. The four unit specs had 58 of 65 failing, and the rate-limit integration spec 4 of 6, all on assertions with no module errors. The RED also exposed a real bug in `routeManifest`: a trailing slash on `@Get()` routes, now fixed.
+- **GREEN:** `npm run test -w gogospend-api -- --runTestsByPath src/auth/auth0-token-verifier.spec.ts src/auth/route-policy.spec.ts src/auth/request-context.spec.ts src/common/client-version.guard.spec.ts` → 65 of 65. `npm run test:db -w gogospend-api -- --runTestsByPath src/common/shared-rate-limit.integration.spec.ts` → 6 of 6.
+  - The pinned `id_token_is_not_api_authorization` returns HTTP 401 through the real verifier and a synthetic loopback issuer.
+  - Two API replicas share one budget.
+  - A synthetic secret in the query, headers, cookie, path or body never appears in captured logs.
+  - The trusted-proxy tests (a spoofed `X-Forwarded-For` is ignored at 0 hops; the proxy-appended address is used at 1 hop) were added after the code, so they had no separate RED.
+- **Independent review:** no blocker; every bound, current-policy and recent-proof route needs a verified token and a resolved session. Fixed, with tests that failed first (18 unit and 1 integration, all on assertions, after adding compile-safe seams for `RequireScopes` and `networkSubject`):
+  - **Random bindings bypassed rate limits.** A valid token plus a new invented binding per request got 401, never 429, and caused one session query each. Bound routes are now charged to a per-principal budget (360/min) *before* the session lookup; read/write budgets are keyed by the server's binding ID after the lookup, so invented bindings create no buckets.
+  - `TRUST_PROXY_HOPS` must be set explicitly when `NODE_ENV=production` (unset behind Railway, every user would have shared one sign-in budget).
+  - IPv6 clients are bucketed by /64; IPv4-mapped addresses as IPv4.
+  - **Token lifetime is bounded:** 15 minutes maximum (`exp − iat`, and `maxTokenAge`); a future-dated `iat` is rejected. Client-credentials tokens are rejected, and `client_id` is used only when `azp` is absent.
+  - **Route scopes:** `@RequireScopes(...)` is enforced by the global guard (403 when missing). No v1 route declares scopes yet.
+  - **Nits fixed:**
+    - A non-JWKS response now counts as unavailable (503).
+    - After a key-source failure, the verifier answers `unavailable` for 5 seconds without refetching; 20 requests during an outage cause at most 2 fetches.
+    - A failing policy store is 503, not 500; HTTP errors without a specific code keep their 4xx status.
+    - The route manifest includes inherited handlers.
+    - The `.env.example` rate-limit key is blank, so a copied example cannot start with a known key.
+    - `0002` revokes routine `EXECUTE` from `PUBLIC` explicitly.
+  - **Coverage added:** an integration spec runs the real `AuthModule` wiring (synthetic issuer, real verifier, PostgreSQL rate limiter, fail-closed session default), and startup refusal is tested for each missing or weak setting.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (25 suites, 316 tests), test:db PASS (5 suites, 56 tests), test:app PASS, test:unit PASS (11), test:render PASS, test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
+- **Manual `npm run dev:v1`:** started with placeholder Auth0 settings, so token-protected routes fail closed.
+  - The migration guard first refused to run because `0001` had changed (F2 review fixes) after an earlier local smoke run applied it to the local `gogospend_v1`. That database was confirmed empty (0 accounts, 0 identities) and recreated; no other database was touched.
+  - Afterwards, unmatched routes and malformed JSON returned `ApiProblem` bodies with server-generated request IDs, and a secret query value was absent from the logs.
+  - The review fixes changed `0002`, so the still-empty local database was recreated once more (0 accounts, 0 identities) and re-checked with the same result.
+  - Until the migrations are committed and frozen, editing one means recreating the local dev database. That is the edited-migration guard working as intended.
+- **Not proven here:** no Auth0 tenant, native client or real token was used (E1/E2). This proves cryptographic validation and route rules against a synthetic issuer only, not tenant or native behaviour.

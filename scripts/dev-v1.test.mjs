@@ -95,5 +95,9 @@ test('start migrates with the admin URL, sets a fresh least-privilege login from
   assert.deepEqual([...started[0].args], ['apps/api/dist/v1/main.js']);
   assert.equal(started[0].env.DATABASE_URL, `postgres://gogospend_dev_api:${password}@127.0.0.1:55432/gogospend_v1`);
   assert.equal(started[0].env.HOST, '127.0.0.1');
+  // Without a configured tenant, token-protected routes fail closed.
+  assert.equal(started[0].env.AUTH0_ISSUER, 'https://auth.gogospend.invalid/');
+  assert.equal(started[0].env.TRUST_PROXY_HOPS, '0');
+  assert.ok(started[0].env.RATE_LIMIT_KEY.length >= 32);
   assertNothingTouchedMongoOrDestroyed(calls, started);
 });
