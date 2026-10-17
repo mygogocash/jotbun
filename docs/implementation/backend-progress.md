@@ -1716,3 +1716,113 @@ Observed, not changed (pre-existing):
 - **Open:**
   - Register a retention step for `import_uploads` (file names on parsed imports) in `defaultPrivacySteps()` when the P2a fixes land.
   - P2b and P2c register their purge steps the same way.
+
+## P6b: release package (local work; P6b not complete)
+
+- **Status:** the local part of the release package is built and proven on this machine: operational gates, health and readiness, redaction of API and worker failures, graceful shutdown, a release image holding only the release graph, a CI workflow, the ops tooling and the release documents. P6b is **not complete**: hosted CI, the staging performance smoke, native device journeys, every hosted receipt `/ready` requires, E3/E4 approvals and any deployment are SKIPPED. Nothing was pushed, deployed or written to a provider.
+- **Base:** `7646c43`. The P6a and P2a review fixes merged meanwhile at `c68f1c0`; this work is not rebased onto them (see "For the integrator").
+- **Contracts:** `IMPORTS_PAUSED`, `OCR_PAUSED`, `UPLOADS_PAUSED` and `JOBS_PAUSED` join `WRITES_PAUSED`. The app already maps any 503 to `unavailable`, so it keeps the command and retries.
+- **Operational gates** (`common/feature-gates.ts`):
+  - Scopes `writes`, `imports`, `ocr`, `uploads`, `jobs`, paused by `OPERATIONAL_PAUSE` (comma list; an unknown scope stops startup) with `OPERATIONAL_PAUSE_RETRY_AFTER_SECONDS` (30–3600, default 300).
+  - A paused route answers 503 with its code, `retry_after_seconds`, `Retry-After` and `errors.<scope>_paused`. The check runs in `V1AccessGuard` right after classification, before the client-version check, the token and any database work, so nothing is reserved.
+  - Routes: `writes` on wallet, category, record and budget mutations and identity linking; `jobs` on `POST /v1/exports` and `POST /v1/sync/snapshots`; `uploads` + `imports` on `POST /v1/imports`; `ocr` inside the upload handler for JPEG/PNG/WebP before any byte is read. Exempt (stay up): sign-in, proofs, provider events, sign-out, global logout, deletion and its receipt, policy acceptance, privacy preferences, command status and every GET.
+  - **Uploads flag reconciled:** `IMPORT_UPLOADS_ENABLED` is now the `uploads` release flag (`releaseFlagFromEnv`; `importIntakeConfigFromEnv` delegates to it). An unreleased feature answers 404 in the guard even while paused, so a pause never reveals the route; the controller's own 404 stays as defense in depth.
+  - Workers: `JobWorker` takes `gates` and claims nothing while `jobs` is paused, and no kind whose `JOB_KIND_GATES` scope is paused (`import_parse` → `imports`), so a paused kind waits without spending attempts. The job, security and deletion workers all honour `jobs`; maintenance passes, sweeps, retention and reports carry on.
+  - `route-policy.ts`'s manifest now carries each route's gates, and `operational-safety.spec.ts` pins every mutating route as gated or deliberately exempt.
+- **Gate API for P2b/P3:** `@Gated('imports')` on each new mutating import route (`'writes'` as well for confirmation, which writes records); `gates.assertOpen('ocr')` (inject `FEATURE_GATES`) where a request would start image work; a new job kind that needs more than `jobs` goes in `JOB_KIND_GATES` (an image-parsing kind would be `['imports', 'ocr']`). The route-gate test fails until a new mutating route is classified.
+- **Health** (`health/health.controller.ts`, `health.service.ts`; `HealthModule` lives in the controller file):
+  - `GET /live` → 200 `{status: "live"}`, no dependency.
+  - `GET /ready` → 200 `{status: "ready", checks}`, or 503 `SERVICE_UNAVAILABLE` (`errors.not_ready`, `retry_after_seconds` 30) whose `fields` name each check: `process` ok/draining, `database` ok/failed/timeout (2 s bound), `receipt.restore_rehearsal` and `receipt.storage_contract` passed/missing/failed/expired/invalid. Cached 5 s and single-flight; a state change logs one JSON line (`event: "readiness"`); driver text is never logged or returned.
+  - **Receipt source:** `READINESS_RECEIPTS` (inline JSON) or `READINESS_RECEIPTS_FILE` (absolute path), read once at startup, never both. Each entry has exactly `status`, `recorded_at`, `valid_until` (≤ 31 days), `target` (`isolated-synthetic` / `r2-test`; a local rehearsal never counts) and `evidence_sha256`. Locally neither is set, so `/ready` is 503 by design. Format and production steps: [beta-receipts.md](beta-receipts.md).
+- **Redaction and metrics** (`common/operational-metrics.ts`):
+  - `describeFailure`: the error class; for driver and system errors only their SQLSTATE or system code; otherwise the message only if `isSafeOperationalText` accepts it (no URL, `@`, bearer/JWT, key=value credential, UUID, long hex, mixed-case secret-shaped run, 5+ digit run, decimal or grouped amount, currency). Worker loops use `failureName` (never a message).
+  - `OperationalLogger` replaces Nest's logger in `createV1App`: errors and warnings become one redacted JSON line without a stack. In the image, a missing setting now prints `{"source":"nest","context":"ExceptionHandler","message":"Error: Database URL is not configured."}` instead of a stack trace.
+  - `queueAge(pool, kinds)` (oldest due job per kind: queued past `run_after`, or a lease that expired) and `queueAgeLines`: each worker logs `<worker>: queue due=N oldest_due_seconds=S` (the heartbeat) and `<worker>: alert queue_age kind=… threshold_seconds=300`. `OPERATIONAL_THRESHOLDS` holds 5 min queue age, 26 h backup age, 20 h deletion, the US$100 envelope with 50/80/100%, and 7-day logs.
+- **Process lifecycle** (`common/process-lifecycle.ts`):
+  - `runMain` reports startup failures through `describeFailure` (exit 1) for all five entries (`v1/main`, `worker`, `jobs/security-worker`, `privacy/deletion-worker`, `database/migrate-cli`), which now run `main` only under `require.main === module`.
+  - `handleShutdownSignals`: the first SIGTERM/SIGINT starts a graceful stop with an unref'd hard exit after `SHUTDOWN_TIMEOUT_SECONDS` (5–120, default 25). The API marks itself draining (`/ready` 503), closes and exits 0, or closes every socket and exits 1 on timeout. Workers abort their loops and exit when done.
+  - HTTP bounds: request 9 min (the value of P2a's `V1_REQUEST_TIMEOUT_MS`), headers 66 s, keep-alive 65 s.
+  - `createV1App` no longer calls `enableShutdownHooks` (it would re-raise the signal around the handler).
+- **Command-schema table:** `CommandRegistry.commandSchemas()`; the spec pins all 16 kinds at schema `[1]`, so a schema change shows in review and goes in the release record.
+- **Release graph** (`apps/api/release-graph.json`, `apps/api/scripts/release-graph.mjs`):
+  - From the five entries it walks the built JS and refuses legacy files (`spend/`, `user/`, `offer/`, `legal-documents/`, `product-access/`, `analytics/`, Firebase, the old rate-limit guard, the cron gate, Multer limits, the legacy `main`/`app.module`), tests, fixtures, any direct package outside the eight reviewed ones (`@gogospend/contracts`, `@nestjs/common`, `@nestjs/core`, `drizzle-orm`, `express`, `helmet`, `jose`, `pg`; plus `@nestjs/platform-express`, which Nest loads at runtime), and any forbidden package in the closure (Mongo, Firebase, schedule, swagger, jwt, exceljs, tesseract, sharp, jsqr, class-validator/transformer).
+  - `stage <dir>` copies only what is reached: 117 dist files, the migrations, the contracts `package.json` + `src`, and the 117-package closure (dependencies, installed optional dependencies, required peers, resolved as Node does).
+  - `v1-isolation.spec.ts` now checks every release entry's source graph against the same JSON (3 of 3).
+  - No legacy source was deleted; the legacy `start` script still runs the legacy entry (switching local defaults waits for the v1 journey).
+- **Image** (`apps/api/Dockerfile`, `.dockerignore`, `apps/api/scripts/release-smoke.cjs`):
+  - `node:24-bookworm-slim` pinned by digest (Node 24.22.0). `npm ci -w gogospend-api --ignore-scripts`, the swc build, then `release-graph.mjs stage /release`. The runtime stage holds only `/release`, owned by root and read-only to the `node` user, with `NODE_ENV=production`, `HOST=0.0.0.0`, `PORT=8091`, `STOPSIGNAL SIGTERM` and default command `node dist/v1/main.js`. Worker commands are in the Dockerfile header. The allow-list `.dockerignore` sends no `.env`, `node_modules`, `dist`, app, vendor, docs or ops script.
+  - `NODE_OPTIONS=--disable-warning=MODULE_TYPELESS_PACKAGE_JSON` silences F1's known warning; contracts source is unchanged.
+- **Lockfile finding:** `package-lock.json` records only the darwin-arm64 binding of the API workspace's nested `@swc/core`, `unrs-resolver` (Jest 30's resolver) and `sharp` (+ libvips). On Linux, `npm ci` alone cannot build the API or run Jest; the first image build failed on exactly this. `scripts/ci/linux-native-bindings.mjs` adds the exact locked versions with `npm pack`, refused unless the sha512 matches a pin; it is used by the Docker build (swc) and CI (swc, unrs, sharp), and `--check` (in `test:ops`) fails when a lockfile bump leaves the pins behind. The real fix is a regenerated lockfile, which needs an authorized dependency change.
+- **CI** (`.github/workflows/backend.yml`): `contents: read`, actions pinned by commit, Node 24.22.0. Three jobs:
+  - gate: typecheck ×2, test:api, test:app, test:unit, test:dev, test:render, build, release graph, export:web, whitespace;
+  - database: test:db on the compose PostgreSQL, then test:ops;
+  - image: docker build and the release smoke.
+
+  No secret, push, login or deploy. Checked locally by parsing it and comparing its commands with the local gate (every local command present, nothing unpinned, no `secrets.`); it has **not run** on GitHub.
+- **Ops tooling** (`scripts/ops`, now in `test:ops`):
+  - `performance-smoke.mjs` takes `--target staging-synthetic` only with a descriptor-supplied authorization record (https, non-production-looking, matching origin, ≤ 7 days); without one it exits 3 (SKIPPED). `--target local-dry-run` takes a loopback base URL only; anything else exits 2. Open-loop 20 req/s, 80/20 reads/writes from ≥ 20 synthetic accounts (tokens and bindings from a descriptor, never printed), 30 s warm-up + 120 s measured, pass at warm p95 reads < 800 ms, writes < 1,200 ms, ≤ 1% failed, with a redacted receipt.
+  - `backup-age.mjs` reads an inventory report on stdin and alerts past 26 hours or with no backup.
+- **Docs:** [release.md](../operations/release.md), [rollback.md](../operations/rollback.md), [incident.md](../operations/incident.md) and [beta-receipts.md](beta-receipts.md). They cover:
+  - migration order (migrate → workers → API, expand-only, no startup migration);
+  - command-schema and minimum-version compatibility;
+  - the rollback floor (P4);
+  - secrets by name and role;
+  - the preflight backup and restore receipt;
+  - every alert line the workers emit, including P2a's quarantine-overdue alarm and import maintenance failure from `c68f1c0`, and the 426/429/408 refusals that are not incidents;
+  - the alert thresholds;
+  - 7-day redacted logs;
+  - staged enablement with success and failure signals.
+
+  The auth0 runbook's alert line now matches the code (`security job(s) failed terminally`).
+- **RED → GREEN** (assertion-level RED against compile-safe seams: never-pausing gates, an always-ready health service, a pass-through `describeFailure`, no-op shutdown, empty queue age; no module errors; logs `p6b-red-unit.log`, `p6b-red-db.log`):
+  - `npm run test -w gogospend-api -- --runTestsByPath src/common/operational-safety.spec.ts`: RED 32 failed, 5 passed of 37; GREEN 37 of 37.
+    - The five that held at RED: a request that is not paused reaches the access checks; OCR leaves CSV alone; writes/uploads/OCR pauses leave the worker claiming every kind; API failures already left nothing in logs (F3); a worker that stopped by itself is not forced out.
+    - Two tests added afterwards, not RED-first (Nest logger redaction, the command-schema table): 39 of 39.
+    - Pinned `paused_writes_gate_rejects_business_mutation`: `POST /v1/wallets` with `OPERATIONAL_PAUSE=writes` → 503 `WRITES_PAUSED`, `retry_after_seconds` 300.
+  - `npm run test:db -w gogospend-api -- --runTestsByPath src/common/operational-metrics.integration.spec.ts`: RED 3 failed, 1 passed of 4 (two first-run failures were `TypeError`s on an empty result; they now assert the length first); GREEN 4 of 4.
+  - Written with their code (not RED-first): `performance-smoke.test.mjs` 8, `backup-age.test.mjs` 4, `linux-native-bindings.test.mjs` 3, `v1-isolation.spec.ts` 3.
+- **Docker proof** (local, arm64, never pushed):
+  - `docker build -f apps/api/Dockerfile -t gogospend-local .` PASS (release graph: 117 files, 117 packages, no problems).
+  - `docker run --rm gogospend-local node -e "…require('@gogospend/contracts')…"` → `{"node":"v24.22.0","parseMinor":"6500","isUuid":true,"codes":43,"jobsPaused":true}`.
+  - `docker run --rm gogospend-local node scripts/release-smoke.cjs` → `ok: true`:
+    - the v1 API, job, security and deletion workers each requested `@gogospend/contracts` and got runtime exports (34, 4, 1 and 2 requests);
+    - all five commands, with production settings made of synthetic values, ended `<name> startup failed: Error ECONNREFUSED`, with no missing module and 0 synthetic secrets printed;
+    - no legacy path or package in the image.
+  - The default command with no settings exits 1 with the redacted lines above. The process user is `node`, and `/app` is not writable.
+- **Linux parity** (not hosted CI): in `node:24-bookworm-slim` (arm64), the API workspace from the lockfile plus `linux-native-bindings.mjs swc unrs sharp`. `npm run test -w gogospend-api` PASS (39 suites, 602 tests), build PASS, release graph PASS. x64 was not run.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (39 suites, 602 tests), test:db PASS (36 suites, 526 tests), test:app PASS (28), test:unit PASS (221), test:dev PASS (7), test:ops PASS (74), test:render PASS (60), build PASS, `release-graph.mjs check` PASS, export:web PASS, `git diff --check` PASS.
+  - Three test databases from my first runs of the new integration spec were left behind when its `afterAll` ended pools that `drop()` also ends. I identified them by their contents (one queued `account_deletion` job, no accounts), dropped them with their six logins, and fixed the spec.
+  - Four other `gogospend_test_*` databases were created outside my runs and were left alone.
+- **Deviations, for review:**
+  - `HealthModule` sits in `health.controller.ts`, and shutdown helpers in a new `common/process-lifecycle.ts`.
+  - Gates are process configuration (a restart applies them), not a database switch, so no migration was needed.
+  - Readiness requires two receipts (restore rehearsal and the P1 storage contract); everything else in the beta checklist is human-reviewed.
+  - `/ready` fails on a missing receipt, so it is the deploy health check and `/live` the liveness check.
+  - Policy acceptance and privacy preferences are exempt from `writes`; identity linking is gated.
+  - Export and snapshot requests use `jobs`, not `writes`.
+  - New helper files: `apps/api/release-graph.json`, `apps/api/scripts/release-smoke.cjs`, `scripts/ci/linux-native-bindings.mjs`, `scripts/ops/backup-age.mjs`.
+  - The CI and image use Node 24.22.0 (the plan's runtime), while the local gate ran Node 26.10.0.
+- **SKIPPED:**
+  - hosted CI (needs an authorized push/PR, E4);
+  - the staging performance smoke (no authorized staging target or synthetic accounts, E1);
+  - a local dry run against a real v1 app (it would need a disposable database, a synthetic issuer and bootstrapped accounts; the generator is proven against a loopback fake only);
+  - native device journeys (E2);
+  - every hosted receipt (restore rehearsal, R2 storage contract, uploads, export, deletion, tenant proofs);
+  - E3/E4 approvals;
+  - deployment, secret writes, image push, PR and merge;
+  - alert routing, provider budget alerts and log retention settings (provider consoles, E3);
+  - the deletion worker's fd-3 delivery on the platform (open, E1).
+- **Risks:**
+  - The lockfile gap blocks hosted CI and any Linux build until the workaround or a lockfile fix is accepted.
+  - `describeFailure`'s text filter is a heuristic backstop: callers must keep logging chosen fields only.
+  - A gate change needs a restart (a Railway variable change redeploys).
+  - `/ready` gating on receipts takes every instance out of rotation when a receipt expires, so receipts need renewing before they expire (31 days).
+  - The worker heartbeat is a log line, so a dead worker shows only as a missing line; alert on its absence.
+  - The base image digest is 3 days old (Node 24.22.0); review it under the dependency-age rule.
+- **For the integrator (`c68f1c0` and later):**
+  - `worker.ts`: keep P2a's import maintenance pass and quarantine-overdue alarm. Wrap their catch lines with `failureName`, replace the trailing `main().catch(… error.message …)` with `runMain`, and keep `gates`, queue age and `handleShutdownSignals`. `operational-safety.spec.ts` fails while any release entry still prints `error.message`.
+  - `imports.controller.ts`: P2a moved the enabled check inside the try and added `Connection: close`. Put the OCR check inside that try, after the enabled check, and keep `@Gated('uploads', 'imports')`.
+  - `v1-app.module.ts`: `V1_REQUEST_TIMEOUT_MS` and `HTTP_TIMEOUTS.requestMs` are both 540 s; keep one owner.
+  - `upload-intake.ts`: keep `releaseFlagFromEnv`.
+  - `package.json` `test:ops`: P6a's `local-rehearsal.test.mjs` plus this task's three files. The CI database job already runs test:ops after the database is up.
+  - Docs mention P2a's in-progress limit (2 per account), stall timeouts (30 s idle, 8 min receive) and alarms. If later work adds an entity type or state to sync, raise the rollback floor in `rollback.md`.

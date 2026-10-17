@@ -1,0 +1,25 @@
+{
+  "$comment": "P6b release graph: what the v1 image may contain. Checked against built JS by scripts/release-graph.mjs (Docker build, CI) and against TypeScript sources by src/v1/v1-isolation.spec.ts. Adding a direct package needs the master plan's dependency gate (provenance, install scripts, advisories) first. Legacy /spend, internal shared-key, Salt Edge, cashback and autolog code stays in the repository but never reaches these entries or the image.",
+  "entries": ["v1/main", "worker", "jobs/security-worker", "privacy/deletion-worker", "database/migrate-cli"],
+  "directPackages": ["@gogospend/contracts", "@nestjs/common", "@nestjs/core", "drizzle-orm", "express", "helmet", "jose", "pg"],
+  "implicitPackages": ["@nestjs/platform-express"],
+  "forbiddenFiles": [
+    "^spend/",
+    "^legal-documents/",
+    "^product-access/",
+    "^analytics/",
+    "^user/",
+    "^offer/",
+    "^auth/firebase",
+    "^auth/rate-limit\\.(guard|decorator|store)\\.",
+    "^common/legacy-cron-gate\\.",
+    "^common/multer-limits\\.",
+    "^app\\.module\\.",
+    "^main\\.",
+    "^testing/",
+    "/fixtures/",
+    "\\.spec\\."
+  ],
+  "forbiddenPackages": ["mongoose", "mongodb", "@nestjs/mongoose", "firebase-admin", "@nestjs/schedule", "@nestjs/swagger", "@nestjs/jwt", "exceljs", "tesseract.js", "sharp", "jsqr", "class-validator", "class-transformer"],
+  "dataDirectories": ["drizzle"]
+}

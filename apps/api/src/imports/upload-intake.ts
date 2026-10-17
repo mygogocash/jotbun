@@ -14,6 +14,7 @@ import {
 import type { ImportFormat, ImportLimit, SessionContext, UploadAccepted } from '@gogospend/contracts';
 
 import { ProblemException } from '../common/api-problem.filter';
+import { releaseFlagFromEnv } from '../common/feature-gates';
 import { derivedUuid } from '../commands/derived-id';
 import { ObjectStoreError } from '../storage/object-store';
 import type { ObjectStore } from '../storage/object-store';
@@ -70,13 +71,13 @@ export const IMPORT_INTAKE_CONFIG = Symbol('IMPORT_INTAKE_CONFIG');
 /**
  * `IMPORT_UPLOADS_ENABLED`: uploads stay off (404) unless this is `1`/`true`.
  * Turn it on only after P1's hosted R2 gate and one real bounded quarantine
- * upload/expiry check. Any other value stops startup.
+ * upload/expiry check. Any other value stops startup. It is the `uploads`
+ * release flag of common/feature-gates.ts, which also answers the 404 in the
+ * access guard (so a paused `uploads` gate never reveals the route); this
+ * check stays as defense in depth.
  */
 export function importIntakeConfigFromEnv(env: NodeJS.ProcessEnv): ImportIntakeConfig {
-  const value = env.IMPORT_UPLOADS_ENABLED;
-  if (value === undefined || value === '' || value === '0' || value === 'false') return { uploadsEnabled: false };
-  if (value === '1' || value === 'true') return { uploadsEnabled: true };
-  throw new Error('IMPORT_UPLOADS_ENABLED must be 1/true or 0/false (off by default).');
+  return { uploadsEnabled: releaseFlagFromEnv(env, 'IMPORT_UPLOADS_ENABLED') };
 }
 
 /** Refused for what the upload is: recorded as `rejected`, and a retry with the same key repeats it. */

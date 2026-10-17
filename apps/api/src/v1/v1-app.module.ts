@@ -15,6 +15,9 @@ import { jsonBody } from '../common/json-body';
 import { safeRequestLogger } from '../common/safe-request-logger';
 import { DatabaseModule } from '../database/database.module';
 import { DatabaseService } from '../database/database.service';
+import { FeatureGatesModule } from '../common/feature-gates';
+import { OperationalLogger } from '../common/operational-metrics';
+import { HealthModule } from '../health/health.controller';
 import { ExportsModule } from '../exports/exports.module';
 import { ImportsModule } from '../imports/imports.module';
 import { PrivacyModule } from '../privacy/privacy.module';
@@ -25,10 +28,12 @@ import { WalletsModule } from '../wallets/wallets.module';
 /**
  * Root of the standalone v1 API: PostgreSQL and Auth0 only. It must never
  * import the legacy Mongo/Firebase/spend modules or their cron jobs
- * (v1-isolation.spec.ts).
+ * (v1-isolation.spec.ts, and the image's release graph,
+ * apps/api/scripts/release-graph.mjs). FeatureGatesModule (operational
+ * pauses) and HealthModule (`/live`, `/ready`) are P6b's.
  */
 @Module({
-  imports: [DatabaseModule, AuthModule, CommandsModule, WalletsModule, CategoriesModule, TransactionsModule, BudgetsModule, SyncModule, ExportsModule, ImportsModule, PrivacyModule],
+  imports: [FeatureGatesModule, DatabaseModule, HealthModule, AuthModule, CommandsModule, WalletsModule, CategoriesModule, TransactionsModule, BudgetsModule, SyncModule, ExportsModule, ImportsModule, PrivacyModule],
 })
 export class V1AppModule {}
 
@@ -73,7 +78,8 @@ export async function createV1App(): Promise<NestExpressApplication> {
   // the exit code) instead of Nest calling process.exit() itself.
   const app = await NestFactory.create<NestExpressApplication>(V1AppModule, {
     bodyParser: false,
-    logger: ['error', 'warn'],
+    // Nest's own errors and warnings, redacted and without stack traces.
+    logger: new OperationalLogger(),
     abortOnError: false,
   });
   try {
@@ -84,6 +90,7 @@ export async function createV1App(): Promise<NestExpressApplication> {
     await app.close();
     throw error;
   }
-  app.enableShutdownHooks();
+  // Signals are handled by main.ts (graceful, bounded shutdown), not Nest's
+  // shutdown hooks, which would re-raise the signal around our handler.
   return app;
 }

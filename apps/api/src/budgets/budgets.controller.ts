@@ -2,6 +2,7 @@ import { Body, Controller, Get, Headers, Param, Put } from '@nestjs/common';
 import type { BudgetDto, CommandAck, SessionContext } from '@gogospend/contracts';
 
 import { Access } from '../auth/auth-route.decorator';
+import { Gated } from '../common/feature-gates';
 import { CurrentSession } from '../auth/request-context';
 import { commandHeaders } from '../commands/command-headers';
 import { BudgetService } from './budgets.service';
@@ -21,6 +22,7 @@ export class BudgetsController {
 
   @Put('budgets/:month')
   @Access('current_policy')
+  @Gated('writes')
   set(@CurrentSession() session: SessionContext, @Headers() headers: HeaderBag, @Param('month') month: string, @Body() body: unknown): Promise<CommandAck> {
     return this.budgets.set(session, commandHeaders(headers, 'optional'), month, body);
   }

@@ -1,11 +1,12 @@
-import { Controller, Get, HttpCode, Inject, Param, Post, Req } from '@nestjs/common';
-import { ContractValidationError, IMPORT_FILE_NAME_HEADER, isUuid } from '@gogospend/contracts';
+import { Controller, Get, HttpCode, Inject, Optional, Param, Post, Req } from '@nestjs/common';
+import { ContractValidationError, IMPORT_FILE_NAME_HEADER, importFormatForContentType, isUuid } from '@gogospend/contracts';
 import type { ImportJobDto, SessionContext, UploadAccepted } from '@gogospend/contracts';
 import type { Request } from 'express';
 
 import { Access } from '../auth/auth-route.decorator';
 import { CurrentSession } from '../auth/request-context';
 import { ProblemException } from '../common/api-problem.filter';
+import { FEATURE_GATES, FeatureGates, Gated } from '../common/feature-gates';
 import { ImportRepository } from './import.repository';
 import { IMPORT_INTAKE_CONFIG, UploadIntake } from './upload-intake';
 import type { ImportIntakeConfig } from './upload-intake';
@@ -38,14 +39,18 @@ export class ImportsController {
     private readonly intake: UploadIntake,
     private readonly imports: ImportRepository,
     @Inject(IMPORT_INTAKE_CONFIG) private readonly config: ImportIntakeConfig,
+    @Optional() @Inject(FEATURE_GATES) private readonly gates: FeatureGates = new FeatureGates(),
   ) {}
 
   /**
    * Streams the raw body into private quarantine and queues one parse job
-   * (202). Disabled (404, body unread) unless IMPORT_UPLOADS_ENABLED is set.
+   * (202). Disabled (404, body unread) unless IMPORT_UPLOADS_ENABLED is set;
+   * the `uploads` and `imports` gates pause it (503) before authentication,
+   * and the `ocr` gate pauses image uploads here, before any byte is read.
    */
   @Post()
   @Access('current_policy')
+  @Gated('uploads', 'imports')
   @HttpCode(202)
   async upload(@CurrentSession() session: SessionContext, @Req() req: Request): Promise<UploadAccepted> {
     if (!this.config.uploadsEnabled) throw new ProblemException(404, 'NOT_FOUND');
@@ -53,6 +58,8 @@ export class ImportsController {
     // still has to reach the client.
     const body = req.iterator({ destroyOnReturn: false }) as AsyncIterator<Uint8Array>;
     try {
+      const format = importFormatForContentType(singleHeader(req, 'content-type'));
+      if (format === 'jpeg' || format === 'png' || format === 'webp') this.gates.assertOpen('ocr');
       return await this.intake.accept(session, { [Symbol.asyncIterator]: () => body }, {
         idempotencyKey: singleHeader(req, 'idempotency-key'),
         fileName: fileNameFrom(req),

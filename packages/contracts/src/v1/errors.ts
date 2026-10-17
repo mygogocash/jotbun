@@ -35,6 +35,12 @@ export const API_ERROR_CODES = [
   "ENTITY_DELETED",
   "ENTITY_PURGED",
   "WRITES_PAUSED",
+  // Operational pauses (P6b): 503 with retry_after_seconds; nothing was
+  // started or reserved, so the same request can be resent later.
+  "IMPORTS_PAUSED",
+  "OCR_PAUSED",
+  "UPLOADS_PAUSED",
+  "JOBS_PAUSED",
   // Import uploads (P2a): 400/409/413/415/422/429
   "INVALID_FILE_NAME",
   "UPLOAD_EMPTY",
