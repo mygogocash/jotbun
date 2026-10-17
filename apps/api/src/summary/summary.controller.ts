@@ -1,5 +1,5 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { parseMonth } from '@gogospend/contracts';
+import { assertKnownFields, parseMonth } from '@gogospend/contracts';
 import type { MonthSummary, SessionContext } from '@gogospend/contracts';
 
 import { Access } from '../auth/auth-route.decorator';
@@ -14,8 +14,8 @@ export class SummaryController {
   /** One Bangkok calendar month: totals, category totals and budget usage at one revision. */
   @Get('summary')
   @Access('bound_session')
-  month(@CurrentSession() session: SessionContext, @Query('month') month: unknown): Promise<MonthSummary> {
-    const parsed = parseMonth(month);
+  month(@CurrentSession() session: SessionContext, @Query() query: Record<string, unknown>): Promise<MonthSummary> {
+    const parsed = parseMonth(assertKnownFields({ ...query }, ['month']).month);
     return this.db.withOwnerTransaction(session, (tx) => SummaryQuery.month(tx, parsed), { snapshot: true });
   }
 }

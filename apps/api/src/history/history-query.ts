@@ -19,7 +19,11 @@ import { accountRevision, scopedTotals } from './totals';
 
 const QUERY_KEYS = ['from', 'through', 'wallet_id', 'category_id', 'type', 'query', 'sort', 'limit', 'cursor'];
 // Any real Gregorian date from 1970; `through` may be in the future.
-const date = (value: unknown, field: string) => validateOccurredOn(value, '1970-01-01', '9999-12-31', field);
+function date(value: unknown, field: string): string {
+  const parsed = validateOccurredOn(value, '0001-01-01', '9999-12-31', field);
+  if (parsed < '1970-01-01') throw new ContractValidationError('INVALID_DATE', 'Dates start in 1970.', field);
+  return parsed;
+}
 const CONTROL = /[\p{Cc}\u2028\u2029]/u;
 
 function single(value: unknown, field: string): string | undefined {

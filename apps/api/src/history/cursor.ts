@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import { ContractValidationError, isUuid } from '@gogospend/contracts';
+import { ContractValidationError, isUuid, validateOccurredOn } from '@gogospend/contracts';
 import type { HistoryFilter } from '@gogospend/contracts';
 
 export type CursorPosition = { occurredOn: string; id: string; revision: string };
@@ -31,6 +31,12 @@ export function decodeCursor(filter: HistoryFilter, cursor: string): CursorPosit
     throw invalid('The cursor is malformed.');
   }
   if (value?.v !== 1 || typeof value.d !== 'string' || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(value.d) || !isUuid(value.i) || typeof value.r !== 'string' || !/^[0-9]{1,19}$/.test(value.r)) {
+    throw invalid('The cursor is malformed.');
+  }
+  try {
+    // A real Gregorian date, so a garbled or forged cursor is a 422, not a database error.
+    validateOccurredOn(value.d, '0001-01-01', '9999-12-31', 'cursor');
+  } catch {
     throw invalid('The cursor is malformed.');
   }
   if (value.f !== filterKey(filter)) throw invalid('The cursor belongs to a different filter or order.');

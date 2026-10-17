@@ -70,7 +70,7 @@ export class BudgetService {
     const parsed = parseMonth(month);
     const input = assertKnownFields(body, ['overall_limit_minor', LIMITS_FIELD]);
     const overall = parseMinor(input.overall_limit_minor, LIMIT, 'overall_limit_minor');
-    const rawLimits = input.category_limits ?? [];
+    const rawLimits = input.category_limits === undefined ? [] : input.category_limits;
     if (!Array.isArray(rawLimits) || rawLimits.length > MAX_BUDGET_CATEGORY_LIMITS) {
       throw new ContractValidationError('VALIDATION_FAILED', `Expected at most ${MAX_BUDGET_CATEGORY_LIMITS} category limits.`, LIMITS_FIELD);
     }
@@ -93,6 +93,7 @@ export class BudgetService {
     const payload = { id, month: parsed, overall_limit_minor: overall.toString(), category_limits: categoryLimits };
     return this.executor.run(ctx, { ...command, kind: creating ? 'budget.create' : 'budget.replace', payload }, async (tx) => {
       const existing = await readBudget(tx, parsed, true);
+      if (!creating && !existing) throw new ProblemException(404, 'NOT_FOUND');
       if (creating ? existing !== undefined : existing?.version !== command.expectedVersion) {
         throw new ProblemException(409, 'VERSION_CONFLICT', { current: existing });
       }

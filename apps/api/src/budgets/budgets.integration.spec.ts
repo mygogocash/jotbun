@@ -62,14 +62,15 @@ describe('setting a monthly budget', () => {
     expect((await as(user).get('/v1/budgets/2026-10')).status).toBe(404);
   });
 
-  it('a second create for the month, or a stale replace, is VERSION_CONFLICT with the current budget', async () => {
+  it('a second create for the month, or a stale replace, is VERSION_CONFLICT with the current budget; replacing a missing month is NOT_FOUND', async () => {
     const user = await money.member();
     await as(user).put(`/v1/budgets/${MONTH}`, budget(user));
     const again = await as(user).put(`/v1/budgets/${MONTH}`, budget(user, '2000000'));
     expect(again.status).toBe(409);
     expect(again.body.current).toMatchObject({ month: MONTH, version: 1 });
     expect((await as(user).put(`/v1/budgets/${MONTH}`, budget(user, '2000000'), { ifMatch: 7 })).status).toBe(409);
-    expect((await as(user).put('/v1/budgets/2026-11', budget(user), { ifMatch: 1 })).status).toBe(409);
+    // Replacing a month with no budget is NOT_FOUND (review fix), not a conflict.
+    expect((await as(user).put('/v1/budgets/2026-11', budget(user), { ifMatch: 1 })).status).toBe(404);
   });
 
   it('two devices creating the same month at once: exactly one wins', async () => {

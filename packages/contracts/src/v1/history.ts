@@ -30,7 +30,11 @@ export type Totals = {
   expense_minor: Minor;
   /** income − expense. */
   balance_minor: Minor;
-  /** Net change per wallet in scope; transfers count on both sides and cancel overall. */
+  /**
+   * Net of the matching records per wallet they touch; transfers count on
+   * both sides. Under a wallet filter, the other side of a matching transfer
+   * shows only that transfer, not the other wallet's net change.
+   */
   by_wallet: Readonly<Record<string, Minor>>;
 };
 

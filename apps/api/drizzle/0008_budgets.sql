@@ -18,7 +18,9 @@ CREATE TABLE monthly_budgets (
 );
 --> statement-breakpoint
 CREATE TABLE budget_category_limits (
-  account_id uuid NOT NULL,
+  -- Direct cascade: deleting an account must not depend on the order in
+  -- which its categories and budgets are removed.
+  account_id uuid NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
   month date NOT NULL,
   category_id uuid NOT NULL,
   -- Fixed: only expense categories can carry a sublimit (FK below).
@@ -29,28 +31,27 @@ CREATE TABLE budget_category_limits (
   FOREIGN KEY (account_id, category_id, category_type) REFERENCES categories (account_id, id, type)
 );
 --> statement-breakpoint
+-- Fires at commit for inserted or changed sublimits and for changed overall
+-- limits (removing a sublimit can never break the rule, so deletes - and
+-- account deletion by other roles - never fire it). It first locks the
+-- month's budget row: of two transactions changing the same month, the later
+-- committer waits for the earlier one, then sums with its commit visible, so
+-- concurrent parent and child changes cannot together breach the rule.
 CREATE FUNCTION gogospend_check_budget_sublimits() RETURNS trigger
   LANGUAGE plpgsql
   SET search_path = pg_catalog
 AS $$
 DECLARE
-  v_account uuid;
-  v_month date;
   v_overall bigint;
   v_sum numeric;
 BEGIN
-  IF TG_OP = 'DELETE' THEN
-    v_account := OLD.account_id;
-    v_month := OLD.month;
-  ELSE
-    v_account := NEW.account_id;
-    v_month := NEW.month;
-  END IF;
-  SELECT b.overall_limit_minor INTO v_overall FROM public.monthly_budgets b WHERE b.account_id = v_account AND b.month = v_month;
+  SELECT b.overall_limit_minor INTO v_overall FROM public.monthly_budgets b
+   WHERE b.account_id = NEW.account_id AND b.month = NEW.month
+   FOR NO KEY UPDATE;
   IF v_overall IS NULL THEN
     RETURN NULL;
   END IF;
-  SELECT coalesce(sum(l.limit_minor), 0) INTO v_sum FROM public.budget_category_limits l WHERE l.account_id = v_account AND l.month = v_month;
+  SELECT coalesce(sum(l.limit_minor), 0) INTO v_sum FROM public.budget_category_limits l WHERE l.account_id = NEW.account_id AND l.month = NEW.month;
   IF v_sum > v_overall THEN
     RAISE EXCEPTION 'category sublimits exceed the overall budget' USING ERRCODE = 'check_violation';
   END IF;
@@ -58,7 +59,7 @@ BEGIN
 END
 $$;
 --> statement-breakpoint
-CREATE CONSTRAINT TRIGGER budget_limits_within_overall AFTER INSERT OR UPDATE OR DELETE ON budget_category_limits
+CREATE CONSTRAINT TRIGGER budget_limits_within_overall AFTER INSERT OR UPDATE ON budget_category_limits
   DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION gogospend_check_budget_sublimits();
 --> statement-breakpoint
 CREATE CONSTRAINT TRIGGER budget_overall_covers_limits AFTER UPDATE ON monthly_budgets

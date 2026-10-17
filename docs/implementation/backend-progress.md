@@ -416,3 +416,21 @@ Observed, not changed (pre-existing):
   - Editing the amount of a record on an archived wallet, like deleting one, can make that wallet's balance non-zero.
   - Change-log snapshots contain notes and merchants by design; P5 must purge them.
 - **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (402), test:db PASS (315), test:app PASS, test:unit PASS, test:render PASS (3), test:dev PASS, build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
+
+## Review fixes for M4, and a local dev check
+
+- **M4 review** (commit `b3ec54f`): two major findings, two minor, five nits; no blockers. The reviewer confirmed keyset paging in both orders, cursor binding, the refresh signal, text-search escaping, totals agreeing with rows, the snapshot transaction's integrity checks, summary month bounds and arithmetic, budget validation, and that no string-built SQL fragment is injectable.
+- **Fixed, with tests that failed first** (`src/budgets/m4-hardening.integration.spec.ts`: 7 of 9 failed on assertions). The other two (history and summary use the snapshot option, at REPEATABLE READ and read-only; usage keeps a sublimit whose category was later archived) passed at once and stay as coverage.
+  - **Major — deleting an account with a budget sublimit failed** (23503): the category foreign key was checked before the cascade reached the sublimits. `budget_category_limits.account_id` now cascades directly from `accounts`. The sublimit trigger no longer fires on DELETE, so a deletion routine run by another role (such as the jobs worker) is not refused at commit.
+  - **Major — write skew past the sublimit backstop:** a concurrent parent lowering and child insert could both commit. The trigger now locks the month's budget row (`FOR NO KEY UPDATE`) before summing, so the later committer waits and sees the earlier one's commit. This was proven over 5 rounds with two real transactions released together: exactly one fails and sublimits never exceed the overall limit. API writes were already serialized by the account lock; this protects any other write path.
+  - **A forged or garbled cursor date** (for example `2026-02-30`) is now a 422 on `cursor`, not a 500.
+  - **Replacing a month that has no budget** is `404 NOT_FOUND`, and a stale replace still carries `current`. The earlier M4 test expected 409 here and was updated.
+  - **Nits:**
+    - `category_limits: null` is refused;
+    - `/v1/summary` refuses unknown query parameters;
+    - a history date before 1970 is `INVALID_DATE`;
+    - the `by_wallet` contract now says it is the net of the matching records only.
+  - **Not changed:** the Drizzle definitions describe columns only (the drift test compares columns and nullability); keys and foreign keys live in the reviewed SQL.
+- **Local dev database:** `dev:v1` had applied the first version of `0008` to the local `gogospend_v1`. I confirmed every table held 0 rows, dropped and recreated it, and applied all 8 migrations.
+- **Manual `npm run dev:v1`:** before the database was recreated, migrations `0004`–`0008` applied on start. `GET /v1/policies` returned `[]` with `no-store`. `GET /v1/wallets`, `/v1/history`, `/v1/summary` and `/v1/budgets/:month` returned 401 without a token, and logs showed only method, route and status.
+- **Full gate after the fixes:** typecheck PASS, typecheck:app PASS, test:api PASS (402), test:db PASS (324), test:app PASS, test:unit PASS, test:render PASS (3), test:dev PASS, build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
