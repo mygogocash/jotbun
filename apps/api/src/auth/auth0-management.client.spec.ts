@@ -73,6 +73,23 @@ describe('Auth0 maintenance client', () => {
     expect(management.deletedUsers).toEqual(['auth0|carol']);
   });
 
+  it('P5: confirms a deletion only when the user is gone, reading the id field only', async () => {
+    management.profiles.set('auth0|frank', { user_id: 'auth0|frank', email_verified: true });
+    management.requests.length = 0;
+    expect(await client().confirmDeleted('auth0|frank')).toEqual({ status: 'retryable', code: 'provider_user_present' });
+    expect(management.requests.find((request) => request.url.startsWith('/api/v2/users/'))?.url).toBe('/api/v2/users/auth0%7Cfrank?fields=user_id&include_fields=true');
+    expect(await client().deleteUser('auth0|frank')).toEqual({ status: 'done', count: 1 });
+    expect(await client().confirmDeleted('auth0|frank')).toEqual({ status: 'done', count: 0 });
+    management.mode = 'down';
+    expect(await client().confirmDeleted('auth0|frank')).toEqual({ status: 'retryable', code: 'provider_unavailable' });
+    management.mode = 'forbidden';
+    expect(await client().confirmDeleted('auth0|frank')).toEqual({ status: 'permanent', code: 'provider_forbidden' });
+    const expired = new AbortController();
+    expired.abort();
+    management.mode = 'ok';
+    expect(await client().confirmDeleted('auth0|frank', expired.signal)).toEqual({ status: 'retryable', code: 'lease_expired' });
+  });
+
   it('cannot act with the read-profile credentials', async () => {
     const profileCreds = new Auth0MaintenanceClient({ managementUrl: management.url, clientId: FAKE_PROFILE_CLIENT_ID, clientSecret: FAKE_PROFILE_CLIENT_SECRET }, fetch, 300);
     expect((await profileCreds.revokeGrants('auth0|alice', ['native-ios'])).status).toBe('permanent');

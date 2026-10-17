@@ -137,8 +137,13 @@ export {
   isExportRequestSnapshot,
   isExportDto,
   isExportGrant,
+  DELETION_TARGET_HOURS,
+  DELETION_RECEIPT_PATH,
+  DELETION_RECEIPT_STATUSES,
+  isDeletionAccepted,
+  isDeletionReceipt,
 } from "./v1/privacy.ts";
-export type { ExportFailureReason, ExportStatus, ExportFilter, ExportRequest, ExportRequestSnapshot, ExportDto, ExportGrant, ExportCsvColumn } from "./v1/privacy.ts";
+export type { ExportFailureReason, ExportStatus, ExportFilter, ExportRequest, ExportRequestSnapshot, ExportDto, ExportGrant, ExportCsvColumn, DeletionReceiptStatus, DeletionRequest, DeletionAccepted, DeletionReceiptRequest, DeletionReceipt } from "./v1/privacy.ts";
 export {
   IMPORT_UPLOAD_MAX_BYTES,
   IMPORT_FILE_NAME_MAX_CHARS,

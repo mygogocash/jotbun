@@ -22,6 +22,15 @@ export interface IdentityMaintenanceGateway {
   deleteUser(subject: string, signal?: AbortSignal): Promise<MaintenanceOutcome>;
 }
 
+/**
+ * P5 erasure: the maintenance gateway plus a read-back that the user is gone
+ * (`done` only when Auth0 answers 404; a user still present is retryable
+ * `provider_user_present`). Deletion is verified, never assumed.
+ */
+export interface IdentityErasureGateway extends IdentityMaintenanceGateway {
+  confirmDeleted(subject: string, signal?: AbortSignal): Promise<MaintenanceOutcome>;
+}
+
 // Auth0 lists refresh grants as device credentials of these types (rotating
 // ones when refresh-token rotation is on).
 const GRANT_TYPES = ['refresh_token', 'rotating_refresh_token'] as const;
@@ -41,7 +50,7 @@ function failure(status: number): MaintenanceOutcome {
  * process never holds these credentials. Outcomes carry only retryability and
  * a short code; nothing here logs subjects, ids or tokens.
  */
-export class Auth0MaintenanceClient implements IdentityMaintenanceGateway {
+export class Auth0MaintenanceClient implements IdentityErasureGateway {
   private readonly api: ManagementApi;
 
   constructor(config: ManagementClientConfig, fetchImpl: typeof fetch = fetch, timeoutMs = 5_000) {
@@ -107,6 +116,18 @@ export class Auth0MaintenanceClient implements IdentityMaintenanceGateway {
     });
   }
 
+  /** Needs `read:users`; asks for the id field only. */
+  confirmDeleted(subject: string, signal?: AbortSignal): Promise<MaintenanceOutcome> {
+    return this.guarded(async () => {
+      if (signal?.aborted) return { status: 'retryable', code: 'lease_expired' };
+      const response = await this.api.request(`api/v2/users/${encodeURIComponent(subject)}`, { signal }, { fields: 'user_id', include_fields: 'true' });
+      if (response.status === 404) return { status: 'done', count: 0 };
+      await response.body?.cancel().catch(() => undefined);
+      if (!response.ok) return failure(response.status);
+      return { status: 'retryable', code: 'provider_user_present' };
+    });
+  }
+
   private async credentialIds(response: Response): Promise<string[] | null> {
     const body = (await response.json().catch(() => null)) as unknown;
     if (!Array.isArray(body)) return null;
@@ -129,7 +150,7 @@ export class Auth0MaintenanceClient implements IdentityMaintenanceGateway {
  * (never the read-profile credentials). Null when unset; refuses a
  * configuration that reuses the profile client.
  */
-export function maintenanceGatewayFromEnv(env: NodeJS.ProcessEnv): IdentityMaintenanceGateway | null {
+export function maintenanceGatewayFromEnv(env: NodeJS.ProcessEnv): IdentityErasureGateway | null {
   const clientId = env.AUTH0_MAINTENANCE_CLIENT_ID;
   if (clientId && clientId === env.AUTH0_PROFILE_LINK_CLIENT_ID) {
     throw new Error('AUTH0_MAINTENANCE_CLIENT_ID must be a separate Auth0 application from the profile client.');

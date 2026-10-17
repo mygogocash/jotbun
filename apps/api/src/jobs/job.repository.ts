@@ -132,6 +132,21 @@ export class JobRepository {
   }
 
   /**
+   * Puts a current lease's job back in the queue until `runAfter` (never
+   * earlier than now), e.g. to wait for other publishers' deadlines. The
+   * attempt this lease used still counts. True only for the current,
+   * unexpired lease holder.
+   */
+  async defer(lease: JobLease, runAfter: Date): Promise<boolean> {
+    const { rowCount } = await this.pool.query(
+      `UPDATE jobs SET status = 'queued', run_after = greatest($3::timestamptz, now()), last_error = 'deferred', lease_token = NULL, lease_expires_at = NULL, updated_at = now()
+        WHERE id = $1 AND status = 'leased' AND lease_token = $2 AND lease_expires_at > clock_timestamp()`,
+      [lease.jobId, lease.leaseToken, runAfter],
+    );
+    return rowCount === 1;
+  }
+
+  /**
    * Extends a current lease to `leaseSeconds` from now (never shortening it),
    * capped at the attempt's runtime bound. Returns the new deadline (ISO), or null when the lease is no longer
    * held (expired, reclaimed, cancelled or finished).

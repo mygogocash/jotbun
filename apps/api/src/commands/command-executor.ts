@@ -79,7 +79,9 @@ export class CommandExecutor {
 
       const existing = await this.receipts.find(tx, input.commandId);
       if (existing) {
-        if (!this.digester.matches(ctx.accountId, input, existing.digest)) throw new ProblemException(409, 'IDEMPOTENCY_MISMATCH');
+        // A receipt whose digest retention dropped can no longer prove the same
+        // request: refused like a mismatch, never executed again.
+        if (!existing.digest || !this.digester.matches(ctx.accountId, input, existing.digest)) throw new ProblemException(409, 'IDEMPOTENCY_MISMATCH');
         return existing.ack;
       }
       if (!digest || !command.schemaVersions.includes(input.schemaVersion)) throw new ProblemException(422, 'COMMAND_SCHEMA_UNSUPPORTED');

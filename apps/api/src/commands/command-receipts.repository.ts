@@ -4,7 +4,8 @@ import type { CommandAck, CommandOutcome, CommandStatus, EntityState } from '@go
 import type { OwnerTx } from '../database/owner-transaction';
 import type { StoredDigest } from './command-digest';
 
-export type StoredReceipt = { ack: CommandAck; digest: StoredDigest };
+/** `digest` is null once retention dropped it (after the 30-day outbox lifetime): such a receipt never matches a replay. */
+export type StoredReceipt = { ack: CommandAck; digest: StoredDigest | null };
 export type NewReceipt = { ack: CommandAck; kind: string; schemaVersion: number; digest: StoredDigest; entity: string };
 
 type ReceiptRow = { command_id: string; entity_id: string; entity_version: number; revision: string; outcome: CommandOutcome; entity_state: EntityState };
@@ -20,8 +21,8 @@ const toAck = (row: ReceiptRow): CommandAck => ({
 
 /**
  * Command receipts: the idempotency record and compact acknowledgement for
- * each (account, command id). Rows hold a salted digest and ids, never
- * payload values. Owner RLS scopes every read.
+ * each (account, command id). Rows hold a keyed digest (dropped after the
+ * outbox lifetime) and ids, never payload values. Owner RLS scopes every read.
  */
 @Injectable()
 export class CommandReceiptRepository {
@@ -29,7 +30,7 @@ export class CommandReceiptRepository {
   async find(tx: OwnerTx, commandId: string): Promise<StoredReceipt | null> {
     // The acknowledgement as committed, with the entity's current state, so a
     // replay after a delete or purge says so.
-    const [row] = await tx.query<ReceiptRow & { request_digest: Buffer; digest_key_id: string }>(
+    const [row] = await tx.query<ReceiptRow & { request_digest: Buffer | null; digest_key_id: string | null }>(
       `SELECT r.command_id, r.entity_id, r.entity_version, r.revision::text, r.outcome, coalesce(h.state, r.entity_state) AS entity_state,
               r.request_digest, r.digest_key_id
          FROM command_receipts r
@@ -37,7 +38,8 @@ export class CommandReceiptRepository {
         WHERE r.command_id = $1`,
       [commandId],
     );
-    return row ? { ack: toAck(row), digest: { keyId: row.digest_key_id, digest: row.request_digest } } : null;
+    if (!row) return null;
+    return { ack: toAck(row), digest: row.request_digest && row.digest_key_id ? { keyId: row.digest_key_id, digest: row.request_digest } : null };
   }
 
   async insert(tx: OwnerTx, receipt: NewReceipt): Promise<void> {

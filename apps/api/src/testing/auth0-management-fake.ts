@@ -72,12 +72,14 @@ export async function startManagementFake(): Promise<ManagementFake> {
     if (fake.mode === 'forbidden') return deny(403);
     const user = /^\/api\/v2\/users\/([^/]+)$/.exec(url.pathname);
     if (req.method === 'GET' && user) {
-      // The maintenance client may read exactly one field: the last password change.
+      // The maintenance client may read exactly one field: the last password
+      // change, or (P5, confirming a deletion) the user id.
       const resetOnly = url.searchParams.get('fields') === 'last_password_reset' && url.searchParams.get('include_fields') === 'true';
-      if (role !== 'profile' && !(role === 'maintenance' && resetOnly)) return deny(role ? 403 : 401);
+      const idOnly = url.searchParams.get('fields') === 'user_id' && url.searchParams.get('include_fields') === 'true';
+      if (role !== 'profile' && !(role === 'maintenance' && (resetOnly || idOnly))) return deny(role ? 403 : 401);
       const profile = fake.profiles.get(decodeURIComponent(user[1]));
       if (!profile) return deny(404);
-      const answer = resetOnly ? (profile.last_password_reset ? { last_password_reset: profile.last_password_reset } : {}) : profile;
+      const answer = resetOnly ? (profile.last_password_reset ? { last_password_reset: profile.last_password_reset } : {}) : idOnly ? { user_id: profile.user_id } : profile;
       res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(answer));
       return;
     }

@@ -10,7 +10,7 @@ step marked *Tenant proof* is SKIPPED until then and must be done before beta.
 | --- | --- | --- | --- |
 | Native iOS / Android | the app | none | `AUTH0_ALLOWED_CLIENT_IDS` |
 | Read-profile/link M2M | API process | `read:users`, `update:users` (account linking, F6c) | `AUTH0_PROFILE_LINK_CLIENT_ID/SECRET` |
-| Maintenance M2M | security worker only | `read:device_credentials`, `delete:device_credentials`, `delete:users`, `read:users` (only `last_password_reset` is requested) | `AUTH0_MAINTENANCE_CLIENT_ID/SECRET` |
+| Maintenance M2M | security worker and deletion worker (P5) only | `read:device_credentials`, `delete:device_credentials`, `delete:users`, `read:users` (only `last_password_reset`, or `user_id` to confirm a deletion, is requested) | `AUTH0_MAINTENANCE_CLIENT_ID/SECRET` |
 | Post Change Password Action | Auth0 | none | secret `JOTBUN_EVENTS_SECRET` = one of the API's `AUTH0_EVENTS_SIGNING_SECRETS` |
 
 - The maintenance credentials go only to the worker deployment
@@ -109,7 +109,9 @@ would let a sign-in reuse refresh grants the user asked to revoke.
 ## Disabling or deleting users
 
 All user-disable and delete operations must update GoGoSpend's state first
-(account status, holds, jobs) and then Auth0. Changes made directly in the
+(account status, holds, jobs) and then Auth0. Account deletion does exactly
+this through `POST /v1/me/deletion` and the deletion worker
+([deletion.md](deletion.md)); never delete an Auth0 user by hand for it. Changes made directly in the
 Auth0 dashboard are not promised to revoke app sessions instantly; a signed
 `user_blocked` event (below), sent by the operator tooling, ends them.
 
@@ -219,8 +221,10 @@ revokes nothing.
 - **Provider outage:** the pass fails as retryable (`provider_unavailable`)
   and sessions stay as they are - nothing is guessed; it runs again with
   backoff, and a terminal failure is logged like any security job.
-- **Retention:** receipts and check rows are kept until P5's retention job
-  prunes them (receipts must outlive the 7-day event window).
+- **Retention:** receipts and check rows are pruned 30 days after they were
+  written (past the 7-day event window) by the job worker's
+  `auth.security_records` step, and at once for an erased account (P5; see
+  [retention.md](retention.md) and [deletion.md](deletion.md)).
 - Do not claim that access-token expiry alone ends a compromised refreshable
   session: recovery relies on the binding revocation above.
 

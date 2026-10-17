@@ -1,6 +1,6 @@
 import type { Pool } from 'pg';
 
-export const GROUP_ROLES = ['gogospend_app', 'gogospend_bootstrap', 'gogospend_jobs', 'gogospend_security', 'gogospend_leased_read'] as const;
+export const GROUP_ROLES = ['gogospend_app', 'gogospend_bootstrap', 'gogospend_jobs', 'gogospend_security', 'gogospend_leased_read', 'gogospend_erasure_registry'] as const;
 export type GroupRole = (typeof GROUP_ROLES)[number];
 
 /**

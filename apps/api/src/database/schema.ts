@@ -2,7 +2,7 @@
 // files are authoritative; migrations.integration.spec.ts fails if these
 // definitions and the migrated database drift apart.
 import { sql } from 'drizzle-orm';
-import { bigint, boolean, customType, date, integer, jsonb, pgTable, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { bigint, boolean, customType, date, integer, jsonb, pgSchema, pgTable, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 export const ACCOUNT_STATUSES = ['active', 'disabled', 'deleting'] as const;
 export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];
@@ -110,7 +110,7 @@ export const securityReconcileChecks = pgTable('security_reconcile_checks', {
 });
 
 /** Kinds visible only to gogospend_security (RLS); other kinds are any identifier. */
-export const SECURITY_JOB_KINDS = ['auth0_revoke_grants', 'auth0_security_reconcile', 'auth0_link_identities'] as const;
+export const SECURITY_JOB_KINDS = ['auth0_revoke_grants', 'auth0_security_reconcile', 'auth0_link_identities', 'account_deletion'] as const;
 export const JOB_STATUSES = ['queued', 'leased', 'succeeded', 'superseded', 'failed', 'cancelled'] as const;
 
 export const jobs = pgTable('jobs', {
@@ -189,6 +189,32 @@ export const exportsTable = pgTable('exports', {
   expiresAt: instant('expires_at'),
 });
 
+/** P5: one per account being erased; outlives the account (routines only). */
+export const deletionRequests = pgTable('deletion_requests', {
+  requestId: uuid('request_id').primaryKey(),
+  accountId: uuid('account_id').notNull().unique(),
+  commandId: uuid('command_id').notNull(),
+  // Null for an erasure re-queued after a restore.
+  initiatorBindingDigest: bytea('initiator_binding_digest').unique(),
+  initiatorPrincipalDigest: bytea('initiator_principal_digest'),
+  initiatorClientId: text('initiator_client_id'),
+  requestedAt: instant('requested_at').notNull().defaultNow(),
+  markerRecordedAt: instant('marker_recorded_at'),
+  providerVerifiedAt: instant('provider_verified_at'),
+  objectsSweptAt: instant('objects_swept_at'),
+  purgedAt: instant('purged_at'),
+});
+
+/** P5: the independent erasure registry (maintenance role only; its own database in production). */
+export const erasureRegistry = pgSchema('erasure_registry');
+export const erasureMarkers = erasureRegistry.table('erasure_markers', {
+  markerId: uuid('marker_id').primaryKey(),
+  accountId: uuid('account_id').notNull(),
+  subjectLookups: text('subject_lookups').array().notNull(),
+  lookupKeyId: text('lookup_key_id').notNull(),
+  recordedAt: instant('recorded_at').notNull().defaultNow(),
+});
+
 export const reauthChallenges = pgTable('reauth_challenges', {
   id: uuid('id').primaryKey(),
   principalDigest: bytea('principal_digest').notNull(),
@@ -231,8 +257,9 @@ export const commandReceipts = pgTable(
     commandId: uuid('command_id').notNull(),
     kind: text('kind').notNull(),
     schemaVersion: integer('schema_version').notNull(),
-    requestDigest: bytea('request_digest').notNull(),
-    digestKeyId: text('digest_key_id').notNull(),
+    // Null once dropped after the 30-day outbox lifetime (P5 retention).
+    requestDigest: bytea('request_digest'),
+    digestKeyId: text('digest_key_id'),
     entity: text('entity').notNull(),
     entityId: uuid('entity_id').notNull(),
     entityVersion: integer('entity_version').notNull(),
@@ -425,4 +452,5 @@ export const schema = {
   snapshotChunks,
   exports: exportsTable,
   importUploads,
+  deletionRequests,
 };
