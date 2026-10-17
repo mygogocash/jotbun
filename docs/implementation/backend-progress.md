@@ -786,3 +786,78 @@ Observed, not changed (pre-existing):
   - The no-credentials test checks column names only.
 - **Native and device checks: still SKIPPED.**
 - **Full gate after the fixes:** typecheck PASS, typecheck:app PASS, test:api PASS (437), test:db PASS (397), test:app PASS (11), test:unit PASS (70), test:render PASS (38), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
+
+## S3: outbox, retry discipline and reconciliation (local work)
+
+- **Outbox states** (`storage/types.ts`, S2 schema version 1 edited in place since it is undeployed):
+  - The plan's `unsent`, `sending`, `uncertain`, `needs_review` and `paused_upgrade`, plus `acknowledged` with its committed revision, kept until the confirmed state holds the record.
+  - **CHECK:** a command that was ever in flight keeps its first transmission time.
+  - **New store operations:**
+    - `beginTransmission`: unsent, uncertain or paused → sending. It freezes the command: first transmission time set once, id and body never change.
+    - `setCommandState`: compare-and-set; only an acknowledgement carries a revision.
+    - `resolveCommands`: removes the command and its draft together.
+    - `editPending` / `removePending`: only for drafts never transmitted; edits are re-validated against synced references.
+- **Verdicts** (`sync/outbox.ts`):
+  - **Maybe committed** (network, 5xx, garbled response): `uncertain`. It counts as a failure, and its status is checked before any resend.
+  - **Refused** (validation, conflict, missing, deleted or purged reference, unsupported schema, idempotency mismatch, too large): `needs_review`, never retried, draft kept.
+  - **Not processed** (429, 426, auth, policy): the command returns to its previous state and stays frozen.
+  - **Session change mid-response:** stays `sending` for the next session to recover.
+  - **Age:** drafts older than 30 days need review.
+- **Retry policy** (`retryPolicy.ts`):
+  - Backoff starts at 1 s and doubles to a 60 s cap, with jitter keeping half to all of each delay. A 503's Retry-After wins when longer.
+  - A 429's Retry-After is pacing, honoured even by a manual retry, and never counts as a failure.
+  - Five consecutive failures pause the engine until foreground or a manual retry.
+- **Engine** (`syncEngine.ts`): one flush per account at a time; concurrent calls share it. Each flush:
+  1. recovers `sending` → `uncertain` after a crash;
+  2. checks the status of uncertain commands in batches of 100, so known ones are acknowledged without a resend;
+  3. pulls deltas so references are current;
+  4. moves stale drafts, or drafts with archived or deleted wallets or categories, to needs-review;
+  5. sends in order, at most two at a time, with one token refresh per failed request and the same key and body;
+  6. reconciles.
+
+  A 426 pauses every unsent command (`paused_upgrade`, ids and bodies unchanged) and stops sending until the app is updated; uncertain ones stay uncertain. Outcomes report "n of m" progress, uncertain and needs-review counts, and the next attempt time.
+- **Reconciliation** (`reconcile.ts`):
+  - It pulls every delta page from the stored cursor, and retries from the new cursor if one moved underneath (`CursorMoved`).
+  - On `RESYNC_REQUIRED` it requests a snapshot, polls it (bounded), downloads and checks every chunk, swaps it in and then pulls deltas. A snapshot not ready in time leaves the diary as it was (`resync_pending`).
+  - Commands resolve only when the confirmed state holds their record in any state, or has passed the revision they were acknowledged at. A deleted or purged record drops its draft, never re-inserting it, and confirmed state never comes from an acknowledgement.
+  - `pendingAdjustmentMinor` gives S4 the exact total of unconfirmed pending expenses.
+- **Scheduler** (`scheduler.ts`):
+  - Syncs at launch, on foreground, after a write and on a manual retry.
+  - Runs at most one foreground timer, every 60 s or at the backoff or Retry-After time.
+  - Sets no timer while paused, after a 426 or after an auth stop.
+  - Background and stop clear the timer, and a stopped scheduler ignores late results.
+- **Server side** (`resources.ts`, `client.ts`, contracts):
+  - `createSyncResources` sends a command as itself: its own Idempotency-Key, its own `X-GoGoSpend-Command-Schema` and its exact body.
+  - It also covers command status, deltas, snapshot request and status, and chunk download. Chunks are checked against the grant's byte size and SHA-256 (via a new transport text mode) before parsing.
+  - New contract validators: `isSyncChangesPage` (whole valid groups, increasing revisions) and `isSnapshotDto`.
+  - `sharedV1.ts` exposes `getSharedSyncRemote` (SHA-256 via expo-crypto), and `sync/deviceSync.ts` builds the engine and scheduler for an open diary.
+- **Tests:** a fake server (`sync/testing/fakeServer.ts`) keeps receipts by command id, gives one revision per commit, serves cursor pages, enforces 410 retention, serves snapshots and a 60-per-minute write limit, and supports scripted failures including lost responses. The bench runs a real S2 diary on `node:sqlite`.
+- **RED → GREEN** (`npm run test:unit -w gogospend-app -- src/sync/outbox.test.ts src/sync/syncEngine.test.ts src/sync/reconcile.test.ts src/spend/v1/resources.test.ts`):
+  - RED: 32 new tests failed against seams with no module errors (22 outbox/engine/policy/scheduler, 7 reconcile, 3 resources). The existing resources tests kept passing.
+  - One test change before GREEN: the five-failure test used queued failure scripts that outlived their flushes, so the fake server gained an offline switch.
+  - GREEN: all pass.
+  - Pinned `purged_ack_does_not_resurrect_original_draft`: an acknowledged draft purged on the server before this device pulled leaves no active confirmed record, no draft, no outbox entry, and a pending adjustment of `'0'`.
+  - **Covered cases:**
+    - airplane mode: uncertain and frozen; the backoff gate holds; status is checked before the same command is resent; one record;
+    - a timeout after commit resolves through status with no resend;
+    - an app killed after commit but before the local acknowledgement recovers at launch;
+    - a late response after a session change is dropped, and the next session resolves it;
+    - an expired token is refreshed once and the same command resent; a second refusal stops with the draft kept and frozen;
+    - account denial;
+    - 429 pacing without counting toward the pause, and a 5xx counted as uncertain;
+    - five failures pause until foreground;
+    - 409/422 and an unsupported schema need review while others still go;
+    - 426;
+    - a 200-draft backlog at 60 per minute takes at least 180 s of simulated time, never pauses, never has more than two requests in flight, and creates exactly 200 records;
+    - concurrent flushes share one run;
+    - archived references and 30-day-old drafts need review without data loss.
+- **SKIPPED:**
+  - **Network-cut check:** the real API/SQL fixture with a cut immediately after commit, then a restart (one server record and receipt, no lost draft, correct balance). Per your instruction, recorded only; the fake-server tests above cover the same sequence.
+  - **Device checks.**
+- **Deviations:**
+  - The extra `acknowledged` state.
+  - `applyChangeGroups` takes the previous cursor (from S2's fixes).
+  - Sync endpoints live in `createSyncResources`, so the screens' `SpendV1Resources` and its fake are unchanged.
+  - `sync/scheduler.ts`, `sync/deviceSync.ts` and the test helpers are extra files.
+  - F5 has no token refresh yet, so the device wiring refuses refreshes: a rejected token stops the flush and keeps drafts.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (437), test:db PASS (397), test:app PASS (11), test:unit PASS (102), test:render PASS (38), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.

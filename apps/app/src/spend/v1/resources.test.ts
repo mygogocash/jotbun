@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
 import type { IncomingHttpHeaders } from 'node:http';
 import { after, before, beforeEach, test } from 'node:test';
 
 import { V1Error, createV1Transport } from '../../api/client.ts';
 import type { V1Credentials } from '../../api/client.ts';
-import { V1_COMMAND_SCHEMA, createSpendV1Resources } from './resources.ts';
+import { V1_COMMAND_SCHEMA, createSpendV1Resources, createSyncResources } from './resources.ts';
 
 type Seen = { method: string; url: string; headers: IncomingHttpHeaders; body: string };
 type Reply = { status: number; body?: unknown; raw?: string; drop?: boolean };
@@ -227,4 +227,61 @@ test('FORBIDDEN and RESYNC_REQUIRED are not field errors', async () => {
   assert.equal((await outcome(() => resources().wallets())).outcome, 'signed_out');
   replies.push({ status: 410, body: { code: 'RESYNC_REQUIRED', request_id: 'r', message_key: 'm' } });
   assert.equal((await outcome(() => resources().wallets())).outcome, 'unavailable');
+});
+
+const sync = () => createSyncResources(transport(), { sha256Hex: async (text) => createHash('sha256').update(text, 'utf8').digest('hex') });
+const TX = { id: '6a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d', type: 'expense', amount_minor: '6500', occurred_on: '2026-03-01', wallet_id: WALLET.id, category_id: '0c000000-0000-4000-8000-000000000001' } as const;
+
+test('an outbox command is sent as itself: its own key, its own schema version and its exact body', async () => {
+  const commandId = '5f2c9d64-3b1e-4f7a-8c2d-9e0a1b2c3d4e';
+  replies.push({ status: 201, body: { ...ACK, entity_id: TX.id } });
+  const ack = await sync().sendCreate({ commandId, accountId: randomUUID(), schemaVersion: 3, kind: 'transaction.create', payload: TX, state: 'sending', firstTransmissionAt: '2026-03-01T00:00:00.000Z', createdAt: '2026-03-01T00:00:00.000Z', ackedRevision: null });
+  assert.equal(ack.entity_id, TX.id);
+  const [request] = seen;
+  assert.equal(request.method, 'POST');
+  assert.equal(request.url, '/v1/transactions');
+  assert.equal(request.headers['idempotency-key'], commandId);
+  assert.equal(request.headers['x-gogospend-command-schema'], '3');
+  assert.deepEqual(JSON.parse(request.body), TX);
+  replies.push({ status: 201, body: ACK });
+  assert.equal((await outcome(() => sync().sendCreate({ commandId, accountId: randomUUID(), schemaVersion: 1, kind: 'transaction.create', payload: { ...TX, id: randomUUID() }, state: 'sending', firstTransmissionAt: null, createdAt: '2026-03-01T00:00:00.000Z', ackedRevision: null }))).outcome, 'invalid_response');
+});
+
+test('delta pages are fetched by opaque cursor and checked group by group', async () => {
+  const group = { revision: '4', command_id: randomUUID(), changes: [{ entity: 'wallet', id: WALLET.id, version: 1, state: 'active', snapshot: { ...WALLET, balance_minor: undefined } }] };
+  const { balance_minor: _balance, ...walletSnapshot } = WALLET;
+  group.changes[0].snapshot = walletSnapshot as never;
+  replies.push({ status: 200, body: { groups: [group], next_cursor: 'eyJ2IjoxfQ', has_more: false } });
+  const page = await sync().changes('abc_-1', 500);
+  assert.equal(page.groups.length, 1);
+  assert.equal(seen[0].url, '/v1/sync/changes?cursor=abc_-1&limit=500');
+  replies.push({ status: 200, body: { groups: [], next_cursor: 'x', has_more: false } });
+  await sync().changes(null);
+  assert.equal(seen[1].url, '/v1/sync/changes');
+  replies.push({ status: 200, body: { groups: [{ ...group, changes: [] }], next_cursor: 'x', has_more: false } });
+  assert.equal((await outcome(() => sync().changes(null))).outcome, 'invalid_response');
+  replies.push({ status: 410, body: { code: 'RESYNC_REQUIRED', request_id: 'r', message_key: 'x' } });
+  assert.equal((await outcome(() => sync().changes('stale'))).code, 'RESYNC_REQUIRED');
+});
+
+test('snapshots: requested with a key, polled, and each chunk verified by size and SHA-256', async () => {
+  const id = randomUUID();
+  replies.push({ status: 202, body: { snapshot_id: id, status: 'pending' } });
+  assert.deepEqual(await sync().requestSnapshot('7c1d2e3f-4a5b-4c6d-8e7f-8091a2b3c4d5'), { snapshot_id: id, status: 'pending' });
+  assert.equal(seen[0].method, 'POST');
+  assert.equal(seen[0].url, '/v1/sync/snapshots');
+  assert.equal(seen[0].headers['idempotency-key'], '7c1d2e3f-4a5b-4c6d-8e7f-8091a2b3c4d5');
+  const body = JSON.stringify({ schema_version: 1, snapshot_id: id, high_water: '9', index: 0, entities: [] });
+  const sha256 = createHash('sha256').update(body).digest('hex');
+  const grant = { index: 0, bytes: Buffer.byteLength(body), sha256, grant: 'A'.repeat(55), grant_expires_at: '2026-03-01T00:05:00.000Z' };
+  replies.push({ status: 200, body: { snapshot_id: id, status: 'ready', schema_version: 1, high_water: '9', cursor: 'c9', expires_at: '2026-03-02T00:00:00.000Z', chunks: [grant] } });
+  assert.equal((await sync().snapshotStatus(id)).status, 'ready');
+  assert.equal(seen[1].url, `/v1/sync/snapshots/${id}`);
+  replies.push({ status: 200, raw: body });
+  assert.deepEqual(await sync().snapshotChunk(grant), JSON.parse(body));
+  assert.equal(seen[2].url, `/v1/sync/snapshot-chunks/${'A'.repeat(55)}`);
+  replies.push({ status: 200, raw: body.replace('"9"', '"8"') });
+  assert.equal((await outcome(() => sync().snapshotChunk(grant))).outcome, 'invalid_response');
+  replies.push({ status: 200, body: { snapshot_id: id, status: 'ready' } });
+  assert.equal((await outcome(() => sync().snapshotStatus(id))).outcome, 'invalid_response');
 });

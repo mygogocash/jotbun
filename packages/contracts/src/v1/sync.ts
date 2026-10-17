@@ -140,3 +140,35 @@ export function isSnapshotChunkGrant(value: unknown): value is SnapshotChunkGran
     typeof value.grant_expires_at === "string" && !Number.isNaN(Date.parse(value.grant_expires_at))
   );
 }
+
+const CURSOR = /^[A-Za-z0-9_-]{1,512}$/;
+
+/** A delta page: whole valid groups in strictly increasing revision order. */
+export function isSyncChangesPage(value: unknown, validators = SYNC_ENTITY_VALIDATORS): value is SyncChangesPage {
+  if (!isObject(value) || !hasExactly(value, ["groups", "next_cursor", "has_more"])) return false;
+  if (typeof value.next_cursor !== "string" || !CURSOR.test(value.next_cursor) || typeof value.has_more !== "boolean" || !Array.isArray(value.groups)) return false;
+  let previous = -1n;
+  for (const group of value.groups) {
+    if (!isCommittedChangeGroup(group, validators)) return false;
+    const revision = BigInt(group.revision);
+    if (revision <= previous) return false;
+    previous = revision;
+  }
+  return true;
+}
+
+/** A snapshot status: pending/failed/expired carry only their id; ready carries its versioned manifest view. */
+export function isSnapshotDto(value: unknown): value is SnapshotDto {
+  if (!isObject(value) || !isUuid(value.snapshot_id)) return false;
+  if (value.status === "pending" || value.status === "failed" || value.status === "expired") return hasExactly(value, ["snapshot_id", "status"]);
+  return (
+    value.status === "ready" &&
+    hasExactly(value, ["snapshot_id", "status", "schema_version", "high_water", "cursor", "expires_at", "chunks"]) &&
+    value.schema_version === SNAPSHOT_SCHEMA_VERSION &&
+    typeof value.high_water === "string" && REVISION.test(value.high_water) &&
+    typeof value.cursor === "string" && CURSOR.test(value.cursor) &&
+    typeof value.expires_at === "string" && !Number.isNaN(Date.parse(value.expires_at)) &&
+    Array.isArray(value.chunks) && value.chunks.length > 0 &&
+    value.chunks.every((chunk, index) => isSnapshotChunkGrant(chunk) && chunk.index === index)
+  );
+}

@@ -41,5 +41,5 @@ export function draft(overrides: Partial<PendingEntry> = {}): PendingEntry {
 }
 
 export function outbox(entry: PendingEntry, accountId = ACCOUNT_A, overrides: Partial<OutboxCommand> = {}): OutboxCommand {
-  return { commandId: randomUUID(), accountId, schemaVersion: 1, kind: 'transaction.create', payload: entry, state: 'unsent', firstTransmissionAt: null, createdAt: '2026-03-02T05:00:00.000Z', ...overrides };
+  return { commandId: randomUUID(), accountId, schemaVersion: 1, kind: 'transaction.create', payload: entry, state: 'unsent', firstTransmissionAt: null, createdAt: '2026-03-02T05:00:00.000Z', ackedRevision: null, ...overrides };
 }

@@ -117,5 +117,7 @@ export {
   isCommittedChangeGroup,
   isSnapshotChunk,
   isSnapshotChunkGrant,
+  isSyncChangesPage,
+  isSnapshotDto,
 } from "./v1/sync.ts";
 export type { SyncChangesPage, SnapshotStatus, SnapshotChunkGrant, SnapshotDto, SnapshotChunk } from "./v1/sync.ts";

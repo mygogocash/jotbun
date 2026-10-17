@@ -122,6 +122,8 @@ export type V1CommandHeaders = { id: string; schemaVersion: number; ifMatch?: nu
 export type V1RequestOptions<T> = {
   body?: unknown;
   command?: V1CommandHeaders;
+  /** Hand the raw response text to `validate` (e.g. to check a digest) instead of parsed JSON. */
+  text?: boolean;
   /** Rejects any response that is not exactly the expected DTO. */
   validate: (payload: unknown) => payload is T;
 };
@@ -197,18 +199,18 @@ export function createV1Transport(options: {
   const fetchImpl = options.fetchImpl ?? fetch;
   const timeoutMs = options.timeoutMs ?? 20_000;
 
-  async function once(url: string, init: RequestInit): Promise<{ status: number; payload: unknown; readable: boolean }> {
+  async function once(url: string, init: RequestInit): Promise<{ status: number; payload: unknown; readable: boolean; text: string }> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const response = await fetchImpl(url, { ...init, signal: controller.signal, redirect: 'error' });
       const text = await response.text();
       try {
-        return { status: response.status, payload: text ? JSON.parse(text) : null, readable: true };
+        return { status: response.status, payload: text ? JSON.parse(text) : null, readable: true, text };
       } catch {
         // A gateway's HTML error page: classified by status below, so a 5xx
         // while the origin may have committed stays "unavailable".
-        return { status: response.status, payload: null, readable: false };
+        return { status: response.status, payload: null, readable: false, text };
       }
     } catch (error) {
       if (error instanceof V1Error) throw error;
@@ -239,7 +241,7 @@ export function createV1Transport(options: {
       }
       // Serialized once, so every retry sends byte-identical content.
       const init: RequestInit = { method, headers, body: request.body === undefined ? undefined : JSON.stringify(request.body) };
-      let result: { status: number; payload: unknown; readable: boolean } | undefined;
+      let result: { status: number; payload: unknown; readable: boolean; text: string } | undefined;
       for (let attempt = 0; ; attempt += 1) {
         try {
           result = await once(`${baseUrl}${path}`, init);
@@ -254,7 +256,11 @@ export function createV1Transport(options: {
         }
       }
       if (options.credentials.getSessionSnapshot().epoch !== before.epoch) throw new V1Error('session_changed', 0, 'SESSION_CHANGED');
-      const { status, payload, readable } = result;
+      const { status, payload, readable, text } = result;
+      if (status >= 200 && status <= 299 && request.text) {
+        if (!request.validate(text)) throw new V1Error('invalid_response', status, 'INVALID_RESPONSE');
+        return text as T;
+      }
       if (status >= 200 && status <= 299 && !readable) throw new V1Error('invalid_response', status, 'INVALID_RESPONSE');
       if (status < 200 || status > 299) {
         const problem = payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : {};

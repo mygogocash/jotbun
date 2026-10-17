@@ -41,9 +41,11 @@ export const DIARY_MIGRATIONS: readonly DiaryMigration[] = [
          kind TEXT NOT NULL CHECK (kind = 'transaction.create'),
          schema_version INTEGER NOT NULL CHECK (schema_version >= 1),
          payload TEXT NOT NULL,
-         state TEXT NOT NULL CHECK (state IN ('unsent', 'sending', 'uncertain', 'needs_review', 'paused_upgrade')),
+         state TEXT NOT NULL CHECK (state IN ('unsent', 'sending', 'uncertain', 'needs_review', 'paused_upgrade', 'acknowledged')),
          first_transmission_at TEXT,
-         created_at TEXT NOT NULL
+         created_at TEXT NOT NULL,
+         acked_revision TEXT CHECK ((state = 'acknowledged') = (acked_revision IS NOT NULL)),
+         CHECK (state = 'unsent' OR state = 'needs_review' OR state = 'paused_upgrade' OR first_transmission_at IS NOT NULL)
        ) STRICT`,
     ],
   },

@@ -46,7 +46,15 @@ export interface KeyStore {
   delete(accountId: string): Promise<void>;
 }
 
-export const OUTBOX_STATES = ['unsent', 'sending', 'uncertain', 'needs_review', 'paused_upgrade'] as const;
+/**
+ * unsent: never transmitted (editable while firstTransmissionAt is null);
+ * sending: a transmission is in flight (after a crash: uncertain);
+ * uncertain: transmitted, outcome unknown - check its status, then resend
+ * only the same command; needs_review: refused (validation, references,
+ * schema, age) - the draft is kept; paused_upgrade: waits for an app update;
+ * acknowledged: committed - removed once the confirmed state holds it.
+ */
+export const OUTBOX_STATES = ['unsent', 'sending', 'uncertain', 'needs_review', 'paused_upgrade', 'acknowledged'] as const;
 export type OutboxState = (typeof OUTBOX_STATES)[number];
 
 /** A command waiting to be sent (S3 drives its states). Its id and body are immutable once transmitted. */
@@ -60,6 +68,8 @@ export type OutboxCommand = {
   state: OutboxState;
   firstTransmissionAt: string | null;
   createdAt: string;
+  /** The committed revision once acknowledged. */
+  ackedRevision: string | null;
 };
 
 /** A draft saved on the device: shown as pending, never mixed into confirmed totals. */

@@ -2,7 +2,7 @@ import { SYNC_ENTITY_VALIDATORS, isCommittedChangeGroup, isEntityChange, isUuid,
 import type { CategoryDto, CommittedChangeGroup, EntityChange, Minor, Revision, WalletSnapshot } from '@gogospend/contracts';
 
 import { CursorMoved, DiaryLocked, StaleEpochError } from './types.ts';
-import type { ConfirmedSnapshot, OutboxCommand, PendingEntry, SqlDatabase, SqlExecutor } from './types.ts';
+import type { ConfirmedSnapshot, OutboxCommand, OutboxState, PendingEntry, SqlDatabase, SqlExecutor } from './types.ts';
 
 export type DiaryState = {
   cursor: string | null;
@@ -26,6 +26,20 @@ export interface DiaryStore {
   replaceConfirmed(snapshot: ConfirmedSnapshot, highWater: Revision): Promise<void>;
   readOutbox(): Promise<OutboxCommand[]>;
   readState(): Promise<DiaryState>;
+  /**
+   * Marks a command as being transmitted (unsent, uncertain or paused ->
+   * sending) before it is sent, freezing it: the first transmission time is
+   * set once and the id and body never change again. Returns its state before.
+   */
+  beginTransmission(commandId: string, at: string): Promise<OutboxState>;
+  /** Moves a command from one of `from` to `to` (acknowledged needs the revision). False if it was in no state of `from`. */
+  setCommandState(commandId: string, from: readonly OutboxState[], to: OutboxState, ackedRevision?: string): Promise<boolean>;
+  /** Removes resolved commands with their drafts. */
+  resolveCommands(commandIds: readonly string[]): Promise<void>;
+  /** Edits a draft that was never transmitted (its command body follows). */
+  editPending(commandId: string, entry: PendingEntry): Promise<void>;
+  /** Removes a draft that was never transmitted, with its command. */
+  removePending(commandId: string): Promise<void>;
   /** Closes the diary (sign-out, transient auth failure); data stays for the next unlock. */
   lock(): Promise<void>;
   /** Deletes this account's diary and key. Call only after the user confirmed. */
@@ -47,6 +61,7 @@ export type DiaryStoreOptions = {
 const REVISION = /^(0|[1-9][0-9]{0,18})$/;
 const AMOUNT = /^[1-9][0-9]{0,10}$/;
 const MAX_CURSOR = 512;
+const TRANSMITTABLE: readonly OutboxState[] = ['unsent', 'uncertain', 'paused_upgrade'];
 
 type EntityRow = { entity: string; id: string; version: number; state: EntityChange['state']; snapshot: string | null };
 
@@ -212,7 +227,7 @@ export function createDiaryStore(options: DiaryStoreOptions): DiaryStore {
       if (
         command.accountId !== accountId || !isUuid(command.commandId) || command.kind !== 'transaction.create' ||
         !Number.isInteger(command.schemaVersion) || command.schemaVersion < 1 ||
-        command.state !== 'unsent' || command.firstTransmissionAt !== null || typeof command.createdAt !== 'string' || !same
+        command.state !== 'unsent' || command.firstTransmissionAt !== null || command.ackedRevision !== null || typeof command.createdAt !== 'string' || !same
       ) {
         throw new TypeError("An outbox command must be this account's unsent create of exactly this entry.");
       }
@@ -277,8 +292,8 @@ export function createDiaryStore(options: DiaryStoreOptions): DiaryStore {
 
     readOutbox: () =>
       read(async (sql) =>
-        (await sql.all<{ command_id: string; account_id: string; kind: 'transaction.create'; schema_version: number; payload: string; state: OutboxCommand['state']; first_transmission_at: string | null; created_at: string }>(
-          'SELECT command_id, account_id, kind, schema_version, payload, state, first_transmission_at, created_at FROM outbox ORDER BY created_at, rowid',
+        (await sql.all<{ command_id: string; account_id: string; kind: 'transaction.create'; schema_version: number; payload: string; state: OutboxCommand['state']; first_transmission_at: string | null; created_at: string; acked_revision: string | null }>(
+          'SELECT command_id, account_id, kind, schema_version, payload, state, first_transmission_at, created_at, acked_revision FROM outbox ORDER BY created_at, rowid',
         )).map((row) => ({
           commandId: row.command_id,
           accountId: row.account_id,
@@ -288,6 +303,7 @@ export function createDiaryStore(options: DiaryStoreOptions): DiaryStore {
           state: row.state,
           firstTransmissionAt: row.first_transmission_at,
           createdAt: row.created_at,
+          ackedRevision: row.acked_revision,
         })),
       ),
 
@@ -311,6 +327,68 @@ export function createDiaryStore(options: DiaryStoreOptions): DiaryStore {
           walletTotals: Object.fromEntries(totals.map((row) => [row.wallet_id, row.balance_minor])),
         };
       }),
+
+    async beginTransmission(commandId, at) {
+      guard();
+      if (typeof at !== 'string' || Number.isNaN(Date.parse(at))) throw new TypeError('A transmission time is an ISO instant.');
+      return write(async (tx) => {
+        const [row] = await tx.all<{ state: OutboxState }>('SELECT state FROM outbox WHERE command_id = ?', [commandId]);
+        if (!row || !TRANSMITTABLE.includes(row.state)) throw new TypeError('Only an unsent, uncertain or paused command can be transmitted.');
+        await tx.run(`UPDATE outbox SET state = 'sending', first_transmission_at = coalesce(first_transmission_at, ?) WHERE command_id = ?`, [at, commandId]);
+        return row.state;
+      });
+    },
+
+    async setCommandState(commandId, from, to, ackedRevision) {
+      guard();
+      if ((to === 'acknowledged') !== (ackedRevision !== undefined) || (ackedRevision !== undefined && !REVISION.test(ackedRevision))) {
+        throw new TypeError('Only an acknowledgement carries a committed revision, and it always does.');
+      }
+      return write(async (tx) => {
+        const states = [...from];
+        if (states.length === 0) return false;
+        const changed = await tx.run(
+          `UPDATE outbox SET state = ?, acked_revision = ? WHERE command_id = ? AND state IN (${states.map(() => '?').join(', ')})`,
+          [to, ackedRevision ?? null, commandId, ...states],
+        );
+        return changed === 1;
+      });
+    },
+
+    async resolveCommands(commandIds) {
+      guard();
+      await write(async (tx) => {
+        for (const commandId of commandIds) {
+          await tx.run('DELETE FROM outbox WHERE command_id = ?', [commandId]);
+          await tx.run('DELETE FROM pending_entries WHERE command_id = ?', [commandId]);
+        }
+      });
+    },
+
+    async editPending(commandId, entry) {
+      guard();
+      await write(async (tx) => {
+        const [row] = await tx.all<{ entity_id: string }>(
+          `SELECT p.entity_id FROM outbox o JOIN pending_entries p ON p.command_id = o.command_id
+            WHERE o.command_id = ? AND o.state = 'unsent' AND o.first_transmission_at IS NULL`,
+          [commandId],
+        );
+        if (!row) throw new TypeError('Only a draft that was never transmitted can be edited.');
+        if (row.entity_id !== entry.id) throw new TypeError('An edit keeps the draft id.');
+        await assertDraft(tx, entry);
+        await tx.run('UPDATE pending_entries SET entry = ? WHERE command_id = ?', [JSON.stringify(entry), commandId]);
+        await tx.run('UPDATE outbox SET payload = ? WHERE command_id = ?', [JSON.stringify(entry), commandId]);
+      });
+    },
+
+    async removePending(commandId) {
+      guard();
+      await write(async (tx) => {
+        const removed = await tx.run(`DELETE FROM outbox WHERE command_id = ? AND state = 'unsent' AND first_transmission_at IS NULL`, [commandId]);
+        if (removed !== 1) throw new TypeError('Only a draft that was never transmitted can be removed.');
+        await tx.run('DELETE FROM pending_entries WHERE command_id = ?', [commandId]);
+      });
+    },
 
     lock: close,
 

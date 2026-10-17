@@ -2,7 +2,19 @@
 // exact shared DTO shape (no coercion of number money, no unknown fields),
 // every write is an immutable command with a caller-held key, and nothing
 // falls back to the legacy /spend API or infers a wallet by name.
-import { COMMAND_OUTCOMES, ENTITY_STATES, isBudgetSnapshot, isCategorySnapshot, isTransactionSnapshot, isUuid, isWalletSnapshot } from '@gogospend/contracts';
+import {
+  COMMAND_OUTCOMES,
+  ENTITY_STATES,
+  isBudgetSnapshot,
+  isCategorySnapshot,
+  isSnapshotChunk,
+  isSnapshotChunkGrant,
+  isSnapshotDto,
+  isSyncChangesPage,
+  isTransactionSnapshot,
+  isUuid,
+  isWalletSnapshot,
+} from '@gogospend/contracts';
 import type {
   BudgetDto,
   CategoryDto,
@@ -19,6 +31,7 @@ import type {
 
 import { V1Error } from '../../api/client.ts';
 import type { V1Transport } from '../../api/client.ts';
+import type { SyncRemote } from '../../sync/types.ts';
 
 /** The command schema this build emits (`X-GoGoSpend-Command-Schema`). */
 export const V1_COMMAND_SCHEMA = 1;
@@ -101,6 +114,14 @@ function isCommandStatus(value: unknown): value is CommandStatus {
   return value.state === 'known' && hasExactly(value, ['command_id', 'state', 'ack']) && isCommandAck(value.ack);
 }
 
+async function fetchCommandStatus(transport: V1Transport, ids: readonly string[]): Promise<CommandStatus[]> {
+  const response = await transport.request('POST', '/v1/commands/status', {
+    body: { command_ids: ids },
+    validate: (value): value is { statuses: CommandStatus[] } => isObject(value) && hasExactly(value, ['statuses']) && listOf(isCommandStatus)(value.statuses),
+  });
+  return response.statuses;
+}
+
 const command = (id: string, ifMatch?: number) => ({ id, schemaVersion: V1_COMMAND_SCHEMA, ...(ifMatch === undefined ? {} : { ifMatch }) });
 /** An acknowledgement must be for this command and this entity. */
 const ackFor = (commandId: string, entityId: string) => (value: unknown): value is CommandAck =>
@@ -141,12 +162,49 @@ export function createSpendV1Resources(transport: V1Transport): SpendV1Resources
         throw error;
       }
     },
-    commandStatus: async (ids) => {
-      const response = await transport.request('POST', '/v1/commands/status', {
-        body: { command_ids: ids },
-        validate: (value): value is { statuses: CommandStatus[] } => isObject(value) && hasExactly(value, ['statuses']) && listOf(isCommandStatus)(value.statuses),
-      });
-      return response.statuses;
+    commandStatus: (ids) => fetchCommandStatus(transport, ids),
+  };
+}
+
+/**
+ * The sync side of the v1 API (S1 deltas and snapshots, M1 command status)
+ * for the outbox engine. A command is sent only as itself: its own id as
+ * Idempotency-Key, its own schema version and its exact stored body. Every
+ * response is checked against the shared contract; a snapshot chunk must also
+ * match its grant's size and SHA-256 before it is parsed.
+ */
+export function createSyncResources(transport: V1Transport, options: { sha256Hex: (text: string) => Promise<string> }): SyncRemote {
+  const invalid = () => new V1Error('invalid_response', 200, 'INVALID_RESPONSE');
+  return {
+    sendCreate: (command) =>
+      transport.request('POST', '/v1/transactions', {
+        body: command.payload,
+        command: { id: command.commandId, schemaVersion: command.schemaVersion },
+        validate: ackFor(command.commandId, command.payload.id),
+      }),
+    commandStatus: (ids) => fetchCommandStatus(transport, ids),
+    changes: (cursor, limit) => {
+      const query = new URLSearchParams();
+      if (cursor !== null) query.set('cursor', cursor);
+      if (limit !== undefined) query.set('limit', String(limit));
+      const search = query.toString();
+      return transport.request('GET', `/v1/sync/changes${search ? `?${search}` : ''}`, { validate: (value) => isSyncChangesPage(value) });
+    },
+    requestSnapshot: (key) =>
+      transport.request('POST', '/v1/sync/snapshots', { body: {}, command: { id: segment(key), schemaVersion: V1_COMMAND_SCHEMA }, validate: isSnapshotDto }),
+    snapshotStatus: (id) => transport.request('GET', `/v1/sync/snapshots/${segment(id)}`, { validate: isSnapshotDto }),
+    async snapshotChunk(grant) {
+      if (!isSnapshotChunkGrant(grant)) throw new V1Error('invalid', 0, 'INVALID_GRANT');
+      const text = await transport.request('GET', `/v1/sync/snapshot-chunks/${grant.grant}`, { text: true, validate: (value): value is string => typeof value === 'string' });
+      if (new TextEncoder().encode(text).length !== grant.bytes || (await options.sha256Hex(text)) !== grant.sha256) throw invalid();
+      let chunk: unknown;
+      try {
+        chunk = JSON.parse(text);
+      } catch {
+        throw invalid();
+      }
+      if (!isSnapshotChunk(chunk) || chunk.index !== grant.index) throw invalid();
+      return chunk;
     },
   };
 }
