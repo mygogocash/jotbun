@@ -12,7 +12,9 @@ import { PolicyService } from './policy.service';
 
 const ACCOUNT = '0192f0c1-7b3a-7c3e-9d4f-0000000000d1';
 const OTHER = '0192f0c1-7b3a-7c3e-9d4f-0000000000d2';
-const ctx = (accountId: string): SessionContext => ({ accountId, subject: `auth0|${accountId}`, clientId: 'native', bindingId: 'binding-1', sessionGeneration: 0 });
+// Writes re-check the binding under the account lock, so each account has a real session row.
+const SESSIONS: Record<string, string> = { [ACCOUNT]: '0192f0c1-7b3a-7c3e-9d4f-0000000000e1', [OTHER]: '0192f0c1-7b3a-7c3e-9d4f-0000000000e2' };
+const ctx = (accountId: string): SessionContext => ({ accountId, subject: `auth0|${accountId}`, clientId: 'native', bindingId: SESSIONS[accountId], sessionGeneration: 0 });
 
 let db: TestDatabase;
 let policies: PolicyService;
@@ -33,6 +35,11 @@ beforeAll(async () => {
     for (const id of [ACCOUNT, OTHER]) {
       await client.query('INSERT INTO accounts (id) VALUES ($1)', [id]);
       await client.query('INSERT INTO account_sync_state (account_id) VALUES ($1)', [id]);
+      await client.query(
+        `INSERT INTO auth_sessions (id, account_id, binding_digest, principal_digest, client_id, session_generation, authenticated_at, first_used_at, idle_expires_at, absolute_expires_at)
+         VALUES ($1::uuid, $2::uuid, sha256(convert_to($1::text, 'UTF8')), sha256(convert_to($2::text, 'UTF8')), 'native', 0, now(), now(), now() + interval '7 days', now() + interval '30 days')`,
+        [SESSIONS[id], id],
+      );
     }
   });
   const pool = await db.loginPool(['gogospend_app']);

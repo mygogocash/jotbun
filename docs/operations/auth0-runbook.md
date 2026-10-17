@@ -16,7 +16,9 @@ step marked *Tenant proof* is SKIPPED until then and must be done before beta.
   (`apps/api/.env.worker.example`). The API never receives them, and the
   worker refuses a configuration that reuses the read-profile client.
 - The worker's database login is a member of `gogospend_jobs` and
-  `gogospend_security` only.
+  `gogospend_security` only; the worker refuses to start otherwise. A login
+  with only `gogospend_jobs` (P1's generic workers) cannot see, create or
+  change security jobs.
 - Neither process logs subjects, job payloads, tokens or Management API URLs.
   Job errors are short codes (`provider_unavailable`, `provider_forbidden`, …).
 
@@ -26,22 +28,26 @@ step marked *Tenant proof* is SKIPPED until then and must be done before beta.
 = the proof's command id) returns `202 {generation, provider_cleanup: "pending"}`.
 In one transaction under the account lock it:
 
-1. bumps the account's session generation and sets `reauth_after` (whole
-   second); every binding stops working at once, including requests that had
-   already passed the access guard and were waiting on the lock;
+1. bumps the account's session generation and sets `reauth_after` to the next
+   whole second; every binding stops working at once, including requests that
+   had already passed the access guard and were waiting on the lock;
 2. revokes every binding row;
-3. puts a `revocation_pending` hold, tagged with the new generation, on every
-   alias; new sign-ins and proofs get `403 ACCOUNT_UNAVAILABLE` until it clears;
-4. queues an `auth0_revoke_grants` job (8 attempts).
+3. puts a `revocation_pending` hold on every alias that names this call's
+   job; new sign-ins and proofs get `403 ACCOUNT_UNAVAILABLE` until that job
+   succeeds. No other job can lift it, whatever its payload says;
+4. queues an `auth0_revoke_grants` job (20 attempts). The queue stores no
+   provider subjects; the worker reads them per lease from the database.
 
-The security worker then, per job:
+The security worker claims one job at a time (each gets its full lease) and:
 
-- skips it as **stale** if its lease was lost (expired and reclaimed);
-- marks it **superseded** without calling Auth0 if no alias still waits on its
-  generation (a newer logout took over), so an old job can never revoke grants
-  issued after a later cleanup;
-- otherwise revokes each alias's refresh-token device credentials for the
-  native clients that held sessions, then lifts that generation's hold.
+- skips it as **stale** if its lease was lost or has expired; the database
+  refuses every step on an expired lease, and provider calls stop 5 seconds
+  before it expires;
+- marks it **superseded** without calling Auth0 if no hold names it any more
+  (deletion or an operator replaced the hold);
+- otherwise revokes each held alias's refresh-token device credentials for
+  every native client (`AUTH0_ALLOWED_CLIENT_IDS` plus any that held
+  sessions), then lifts the holds that name this job.
 
 `POST /v1/me/logout` revokes only the calling device's binding; it does not
 touch Auth0.
@@ -68,11 +74,15 @@ manual recovery. Polling interval: `SECURITY_WORKER_INTERVAL_SECONDS` (15).
 A provider outage never falls back to the old grants: the hold stays.
 
 - Retryable failures (`provider_unavailable`, `provider_rate_limited`,
-  `provider_incomplete`, `provider_bad_response`, `worker_error`) back off
-  30 s × 2^attempt, capped at 1 hour, for up to 8 attempts.
+  `provider_incomplete`, `provider_bad_response`, `lease_expired`,
+  `worker_error`) back off 30 s × 2^attempt, capped at 1 hour, for up to 20
+  attempts (about 15 hours).
 - Permanent failures (`provider_forbidden`, `provider_rejected`,
-  `invalid_payload`) and exhausted retries leave a visible `failed` job. A lease
-  that expires on its last attempt fails with `lease_expired`.
+  `invalid_payload`, `no_client_ids`) and exhausted retries leave a visible
+  `failed` job. A lease that expires on its last attempt fails with
+  `lease_expired`.
+- **Alert** on the worker log line `revocation job(s) failed terminally`
+  (until P6b's monitoring exists): each one is a user who cannot sign in.
 
 Find stuck cleanup (migration/admin connection; never expose payloads):
 

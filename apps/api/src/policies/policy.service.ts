@@ -3,8 +3,10 @@ import { ContractValidationError, POLICY_KINDS } from '@gogospend/contracts';
 import type { PolicyKind, PolicyVersionDto, PrivacyPreferences, SessionContext } from '@gogospend/contracts';
 import type { Pool } from 'pg';
 
+import { assertActiveSession } from '../accounts/active-session';
 import type { PolicyGate, PolicyState } from '../auth/application-session.guard';
 import { DatabaseService, PG_POOL } from '../database/database.service';
+import { lockAccount } from '../database/owner-transaction';
 import type { OwnerTx } from '../database/owner-transaction';
 
 /**
@@ -87,6 +89,7 @@ export class PolicyService implements PolicyGate {
     if (!POLICY_KINDS.includes(kind as PolicyKind)) throw new ContractValidationError('VALIDATION_FAILED', 'Unknown policy kind.', 'kind');
     if (!Number.isSafeInteger(version) || (version as number) < 1) throw new ContractValidationError('VALIDATION_FAILED', 'Invalid policy version.', 'version');
     await this.db.withOwnerTransaction(ctx, async (tx) => {
+      await assertActiveSession(tx, ctx, await lockAccount(tx, ctx.accountId));
       const published = await tx.query('SELECT 1 FROM policy_versions WHERE kind = $1 AND version = $2', [kind, version]);
       if (published.length === 0) throw new ContractValidationError('VALIDATION_FAILED', 'That policy version is not published.', 'version');
       await tx.query(
@@ -105,6 +108,7 @@ export class PolicyService implements PolicyGate {
   async setPrivacy(ctx: SessionContext, analytics: unknown): Promise<PrivacyPreferences> {
     if (typeof analytics !== 'boolean') throw new ContractValidationError('VALIDATION_FAILED', 'analytics must be true or false.', 'analytics');
     return this.db.withOwnerTransaction(ctx, async (tx) => {
+      await assertActiveSession(tx, ctx, await lockAccount(tx, ctx.accountId));
       await tx.query(
         `INSERT INTO consents (account_id, kind, version, granted) VALUES ($1, 'analytics', 0, $2)
          ON CONFLICT (account_id, kind, version) DO UPDATE SET granted = EXCLUDED.granted, recorded_at = now()`,

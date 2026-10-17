@@ -5,8 +5,9 @@ import type { ClaimedJob, JobFailure, JobKind, JobLease } from './job-types';
 export type EnqueueInput = { id: string; kind: JobKind; accountId: string | null; payload: unknown; maxAttempts: number; lifecycleGeneration?: number };
 
 const ERROR_CODE = /^[a-z0-9_]{1,64}$/;
-// Local work stops this long before the database lease expires, so clock
-// skew or a slow commit cannot let two holders overlap.
+// Local work stops this long (at most a fifth of the lease) before the
+// database lease expires, so clock skew or a slow commit cannot let two
+// holders overlap. The database also refuses work on an expired lease.
 const LEASE_SAFETY_MS = 5_000;
 
 type LeasedRow = { id: string; kind: JobKind; account_id: string | null; lifecycle_generation: number; payload: unknown; lease_token: string; attempts: number; max_attempts: number; lease_expires_at: Date };
@@ -35,7 +36,7 @@ export class JobRepository {
     const limit = options.limit ?? 10;
     const leaseSeconds = options.leaseSeconds ?? 120;
     if (!Number.isInteger(limit) || limit < 1 || limit > 100) throw new RangeError('limit must be 1-100');
-    if (!Number.isInteger(leaseSeconds) || leaseSeconds < 15 || leaseSeconds > 3600) throw new RangeError('leaseSeconds must be 15-3600');
+    if (!Number.isInteger(leaseSeconds) || leaseSeconds < 1 || leaseSeconds > 3600) throw new RangeError('leaseSeconds must be 1-3600');
     // A lease that expired on its last attempt becomes a visible failure.
     await this.pool.query(
       `UPDATE jobs SET status = 'failed', last_error = 'lease_expired', lease_token = NULL, lease_expires_at = NULL, finished_at = now(), updated_at = now()
@@ -71,7 +72,7 @@ export class JobRepository {
         attempt: row.attempts,
         maxAttempts: row.max_attempts,
         deadline: row.lease_expires_at.toISOString(),
-        signal: AbortSignal.timeout(Math.max(1_000, leaseSeconds * 1000 - LEASE_SAFETY_MS - (Date.now() - claimedAt))),
+        signal: AbortSignal.timeout(Math.max(0, leaseSeconds * 1000 - Math.min(LEASE_SAFETY_MS, leaseSeconds * 200) - (Date.now() - claimedAt))),
       },
     }));
   }

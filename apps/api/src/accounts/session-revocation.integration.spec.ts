@@ -13,6 +13,8 @@ import { poolConfigFromUrl } from '../database/database-config';
 import { DatabaseService } from '../database/database.service';
 import { lockAccount } from '../database/owner-transaction';
 import { JobRepository } from '../jobs/job.repository';
+import { PolicyService } from '../policies/policy.service';
+import { publishPolicies } from '../testing/command-fixtures';
 import { authFixtures } from '../testing/auth-fixtures';
 import { TEST_AUDIENCE, TEST_CLIENT_ID, startJwksFixture } from '../testing/jwks-server';
 import type { JwksFixture } from '../testing/jwks-server';
@@ -43,7 +45,7 @@ const gateway: IdentityMaintenanceGateway & { calls: Call[]; outcome: Maintenanc
     return { status: 'done', count: 1 };
   },
 };
-const runWorker = () => runSecurityJobsOnce({ jobs, security, gateway });
+const runWorker = (options: { leaseSeconds?: number } = {}) => runSecurityJobsOnce({ jobs, security, gateway, nativeClientIds: [TEST_CLIENT_ID] }, options);
 
 async function code(run: () => Promise<unknown>): Promise<string> {
   try {
@@ -53,6 +55,12 @@ async function code(run: () => Promise<unknown>): Promise<string> {
     if (error instanceof ProblemException) return `${error.getStatus()} ${error.code}`;
     throw error;
   }
+}
+
+/** Sign-ins after a logout must postdate reauth_after (whole seconds). */
+async function afterReauthBoundary(accountId: string): Promise<void> {
+  const row = (await db.admin((client) => client.query(`SELECT greatest(0, extract(epoch FROM reauth_after - clock_timestamp()) * 1000)::int AS wait FROM accounts WHERE id = $1`, [accountId]))).rows[0];
+  await new Promise((resolve) => setTimeout(resolve, (row?.wait ?? 0) + 50));
 }
 
 async function logoutEverywhere(signedIn: Awaited<ReturnType<typeof fx.signUp>>) {
@@ -150,6 +158,7 @@ describe('provider cleanup hold', () => {
     expect(await code(() => fx.signIn(user.who))).toBe('403 ACCOUNT_UNAVAILABLE');
     expect(await runWorker()).toMatchObject({ revoked: 1 });
     expect(gateway.calls).toEqual([{ subject: user.who.subject, clientIds: [TEST_CLIENT_ID] }]);
+    await afterReauthBoundary(user.accountId);
     const back = await fx.signIn(user.who);
     expect(back.accountId).toBe(user.accountId);
     expect(back.session.sessionGeneration).toBe(1);
@@ -180,6 +189,7 @@ describe('provider cleanup hold', () => {
     const [stale] = await jobs.claim(['auth0_revoke_grants']);
     await db.admin((client) => client.query(`UPDATE jobs SET lease_expires_at = now() - interval '1 second' WHERE id = $1`, [stale.lease.jobId]));
     expect(await runWorker()).toMatchObject({ revoked: 1 });
+    await afterReauthBoundary(user.accountId);
     await fx.signIn(user.who);
     gateway.calls = [];
     expect(await processRevocationJob(stale, { jobs, security, gateway })).toBe('stale');
@@ -218,5 +228,135 @@ describe('races with the account lock', () => {
     const user = await fx.signUp();
     const proofId = await fx.proven(user.who, 'global_logout', randomUUID());
     expect(await code(() => revocation.revokeAll(user.session, proofId, randomUUID()))).toBe('401 REAUTH_REQUIRED');
+  });
+});
+
+describe('review hardening', () => {
+  const jobOf = async (accountId: string) => (await db.admin((client) => client.query(`SELECT * FROM jobs WHERE account_id = $1`, [accountId]))).rows[0];
+
+  it('a job that global logout did not write cannot lift a hold', async () => {
+    const user = await fx.signUp();
+    await logoutEverywhere(user);
+    const real = await jobOf(user.accountId);
+    await db.admin(async (client) => {
+      await client.query(`UPDATE jobs SET run_after = now() + interval '1 hour' WHERE id = $1`, [real.id]);
+      await client.query(`INSERT INTO jobs (id, kind, account_id, payload, max_attempts) VALUES ($1, 'auth0_revoke_grants', $2, $3, 3)`, [randomUUID(), user.accountId, JSON.stringify({ ...real.payload, client_ids: [] })]);
+    });
+    await runWorker();
+    await afterReauthBoundary(user.accountId);
+    expect(await code(() => fx.signIn(user.who))).toBe('403 ACCOUNT_UNAVAILABLE');
+  });
+
+  it('a login with only the generic jobs role cannot see or create security jobs', async () => {
+    const user = await fx.signUp();
+    await logoutEverywhere(user);
+    const generic = await db.loginPool(['gogospend_jobs'], 1);
+    expect((await generic.query(`SELECT count(*)::int AS n FROM jobs WHERE kind = 'auth0_revoke_grants'`)).rows[0].n).toBe(0);
+    await expect(generic.query(`INSERT INTO jobs (id, kind, account_id, payload, max_attempts) VALUES ($1, 'auth0_revoke_grants', $2, '{}', 1)`, [randomUUID(), user.accountId])).rejects.toMatchObject({ code: '42501' });
+  });
+
+  it('the queue never stores provider subjects', async () => {
+    const user = await fx.signUp();
+    await logoutEverywhere(user);
+    expect(JSON.stringify((await jobOf(user.accountId)).payload)).not.toContain(user.who.subject);
+  });
+
+  it('revokes grants for every configured native client, not only those that held sessions', async () => {
+    const user = await fx.signUp();
+    await logoutEverywhere(user);
+    await runSecurityJobsOnce({ jobs, security, gateway, nativeClientIds: ['native-android-test', TEST_CLIENT_ID] });
+    expect(gateway.calls).toEqual([{ subject: user.who.subject, clientIds: ['native-android-test', TEST_CLIENT_ID].sort() }]);
+  });
+
+  it('each job gets its own lease when processing starts, so a slow first job cannot starve the next', async () => {
+    const [first, second] = [await fx.signUp(), await fx.signUp()];
+    await logoutEverywhere(first);
+    await logoutEverywhere(second);
+    const slow: IdentityMaintenanceGateway = {
+      revokeGrants: async () => {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        return { status: 'done', count: 1 };
+      },
+      deleteUser: async () => ({ status: 'done', count: 0 }),
+    };
+    expect(await runSecurityJobsOnce({ jobs, security, gateway: slow, nativeClientIds: [TEST_CLIENT_ID] }, { leaseSeconds: 2 })).toMatchObject({ revoked: 2, stale: 0 });
+  });
+
+  it('a lease past its expiry can neither start nor finish provider work, even if nobody reclaimed it', async () => {
+    const user = await fx.signUp();
+    await logoutEverywhere(user);
+    const [claimed] = await jobs.claim(['auth0_revoke_grants'], { leaseSeconds: 60 });
+    await db.admin((client) => client.query(`UPDATE jobs SET lease_expires_at = now() - interval '1 second' WHERE id = $1`, [claimed.lease.jobId]));
+    expect(await security.state(claimed.lease)).toBe('stale_lease');
+    expect(await security.finishRevocation(claimed.lease)).toBe('stale_lease');
+  });
+
+  it('cleanup keeps retrying through a long provider outage (20 attempts, about 15 hours)', async () => {
+    const user = await fx.signUp();
+    await logoutEverywhere(user);
+    expect((await jobOf(user.accountId)).max_attempts).toBe(20);
+  });
+
+  it('reauth_after rounds up, so no login from the logout second counts', async () => {
+    const user = await fx.signUp();
+    const before = (await db.admin((client) => client.query('SELECT clock_timestamp() AS t'))).rows[0].t as Date;
+    await logoutEverywhere(user);
+    const { reauth_after: after } = (await db.admin((client) => client.query('SELECT reauth_after FROM accounts WHERE id = $1', [user.accountId]))).rows[0];
+    expect(after.getTime()).toBeGreaterThan(before.getTime());
+    expect(after.getMilliseconds()).toBe(0);
+  });
+
+  it('a bootstrap waiting behind the logout lock comes back blocked', async () => {
+    const user = await fx.signUp();
+    const logout = new Client(poolConfigFromUrl(db.adminUrl, 1));
+    await logout.connect();
+    try {
+      await logout.query('BEGIN');
+      await logout.query(`SELECT set_config('gogospend.account_id', $1, true)`, [user.accountId]);
+      await logout.query('SELECT * FROM gogospend_global_logout($1)', [randomUUID()]);
+      const waiting = code(() => fx.signIn(user.who));
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      await logout.query('COMMIT');
+      expect(await waiting).toBe('403 ACCOUNT_UNAVAILABLE');
+    } finally {
+      await logout.end();
+    }
+  });
+
+  it('a policy acceptance that waited behind a logout writes nothing', async () => {
+    await publishPolicies(db);
+    const user = await fx.signUp();
+    const logout = new Client(poolConfigFromUrl(db.adminUrl, 1));
+    await logout.connect();
+    try {
+      await logout.query('BEGIN');
+      await logout.query(`SELECT set_config('gogospend.account_id', $1, true)`, [user.accountId]);
+      await logout.query('SELECT * FROM gogospend_global_logout($1)', [randomUUID()]);
+      const waiting = code(() => new PolicyService(pool, service, 0).accept(user.session, 'terms', 1));
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      await logout.query('COMMIT');
+      expect(await waiting).toBe('401 SESSION_REQUIRED');
+      expect((await db.admin((client) => client.query('SELECT count(*)::int AS n FROM consents WHERE account_id = $1', [user.accountId]))).rows[0].n).toBe(0);
+    } finally {
+      await logout.end();
+    }
+  });
+
+  it('each role reaches only its own security routines', async () => {
+    const app = await db.loginPool(['gogospend_app'], 1);
+    const generic = await db.loginPool(['gogospend_jobs'], 1);
+    const securityOnly = await db.loginPool(['gogospend_security'], 1);
+    const id = randomUUID();
+    for (const caller of [app, generic]) {
+      await expect(caller.query('SELECT gogospend_finish_revocation($1, $1)', [id])).rejects.toMatchObject({ code: '42501' });
+      await expect(caller.query('SELECT gogospend_revocation_job_is_current($1, $1)', [id])).rejects.toMatchObject({ code: '42501' });
+    }
+    await expect(securityOnly.query('SELECT * FROM gogospend_global_logout($1)', [id])).rejects.toMatchObject({ code: '42501' });
+  });
+
+  it('the worker refuses to run as anything but a jobs+security login', async () => {
+    await expect(new SecurityJobRepository(await db.loginPool(['gogospend_app'], 1)).assertLeastPrivilegeWorker()).rejects.toThrow();
+    await expect(new SecurityJobRepository(await db.loginPool(['gogospend_jobs', 'gogospend_security', 'gogospend_app'], 1)).assertLeastPrivilegeWorker()).rejects.toThrow();
+    await expect(security.assertLeastPrivilegeWorker()).resolves.toBeUndefined();
   });
 });

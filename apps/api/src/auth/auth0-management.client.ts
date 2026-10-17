@@ -46,6 +46,9 @@ export class Auth0MaintenanceClient implements IdentityMaintenanceGateway {
       for (const clientId of clientIds) {
         for (const type of GRANT_TYPES) {
           for (let round = 0; ; round += 1) {
+            // Re-checked before every call: past the lease deadline another
+            // worker may already have finished and the user signed in again.
+            if (signal?.aborted) return { status: 'retryable', code: 'lease_expired' };
             if (round === MAX_LIST_ROUNDS) return { status: 'retryable', code: 'provider_incomplete' };
             const listed = await this.api.request('api/v2/device-credentials', { signal }, { user_id: subject, client_id: clientId, type, fields: 'id', include_fields: 'true' });
             if (!listed.ok) return failure(listed.status);
@@ -53,6 +56,7 @@ export class Auth0MaintenanceClient implements IdentityMaintenanceGateway {
             if (!ids) return { status: 'retryable', code: 'provider_bad_response' };
             if (ids.length === 0) break;
             for (const id of ids) {
+              if (signal?.aborted) return { status: 'retryable', code: 'lease_expired' };
               const removed = await this.api.request(`api/v2/device-credentials/${encodeURIComponent(id)}`, { method: 'DELETE', signal });
               if (removed.status === 404) continue;
               if (!removed.ok) return failure(removed.status);

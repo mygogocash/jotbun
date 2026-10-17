@@ -84,7 +84,7 @@ export const blockedPrincipals = pgTable('blocked_principals', {
   reason: text('reason', { enum: ['deleted', 'disabled', 'revocation_pending'] }).notNull(),
   blockedUntil: instant('blocked_until'),
   createdAt: instant('created_at').notNull().defaultNow(),
-  pendingGeneration: integer('pending_generation'),
+  pendingJobId: uuid('pending_job_id'),
 });
 
 export const JOB_KINDS = ['auth0_revoke_grants'] as const;

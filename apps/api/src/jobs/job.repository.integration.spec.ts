@@ -21,7 +21,8 @@ beforeAll(async () => {
   db = await createTestDatabase();
   workerPool = await db.loginPool(['gogospend_jobs', 'gogospend_security']);
   jobs = new JobRepository(workerPool);
-  otherWorker = new JobRepository(await db.loginPool(['gogospend_jobs']));
+  // Security kinds are visible only to logins that also hold gogospend_security.
+  otherWorker = new JobRepository(await db.loginPool(['gogospend_jobs', 'gogospend_security']));
 });
 
 afterAll(async () => {

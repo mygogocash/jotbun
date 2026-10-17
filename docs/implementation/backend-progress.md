@@ -174,11 +174,11 @@ Observed, not changed (pre-existing):
 - **Plan housekeeping:** migration numbers now follow integration order: F6a `0004`, M1 `0005_commands`, M2 `0006_wallets_categories`, M3 `0007_transactions`, M4 `0008_budgets`; F6b, P and S take the next free number (`NNNN_…`).
 - **Migration `0004_jobs_security`:**
   - **`jobs`:** the one durable queue that P1 extends. Worker role only (`gogospend_jobs`: SELECT, INSERT and column-limited UPDATE); the app role has no access. No foreign key to accounts, so cleanup jobs can outlive a deleted account. `last_error` is constrained to short identifiers.
-  - **`blocked_principals.pending_generation`:** a revocation hold names the session generation it waits for.
+  - **`blocked_principals.pending_job_id`:** a revocation hold names the one job that may lift it (after review; first written as `pending_generation`).
   - **Routines** (`SECURITY DEFINER`, `search_path = pg_catalog`, revoked from `PUBLIC`):
-    - `gogospend_global_logout` (app): takes the account lock itself, bumps `session_generation`, sets `reauth_after` (whole second, matching `auth_time` resolution), revokes every binding, puts a generation-tagged `revocation_pending` hold on every alias (an existing deleted/disabled block is kept) and queues `auth0_revoke_grants` (8 attempts).
+    - `gogospend_global_logout` (app): takes the account lock itself, bumps `session_generation`, sets `reauth_after` to the next whole second (matching `auth_time` resolution), revokes every binding, puts a `revocation_pending` hold naming its job on every alias (an existing deleted/disabled block is kept) and queues `auth0_revoke_grants` (20 attempts; no provider subjects in the payload).
     - `gogospend_session_is_active` and `gogospend_revoke_session` (app): the under-lock binding check and per-device sign-out.
-    - `gogospend_revocation_job_is_current` and `gogospend_finish_revocation` (security): need the current lease token; finishing lifts only that generation's hold, under the account lock and job row lock, and marks the job succeeded.
+    - `gogospend_revocation_job_is_current`, `gogospend_revocation_subjects` and `gogospend_finish_revocation` (security): need the current, unexpired lease token; finishing lifts only the holds naming that job, under the account lock and job row lock, and marks the job succeeded.
 - **Server:**
   - `JobLease` (master contract) plus `JobRepository`: enqueue (idempotent by id), claim with `FOR UPDATE SKIP LOCKED` and a fresh fencing token per attempt, complete, and fail. Every transition needs the lease token. Retryable failures back off 30 s × 2^attempt (max 1 hour); after max attempts, and for a lease that expires on its last attempt, the job fails visibly. Each lease carries an `AbortSignal` that fires 5 seconds before the database lease expires. Deviation: `JobLease` gained `maxAttempts`, and `accountId` is nullable.
   - `assertActiveSession(tx, ctx, state)`: under the account lock, re-checks account status, session generation and the binding itself. Commands (M1) call it after `lockAccount`.
@@ -193,6 +193,20 @@ Observed, not changed (pre-existing):
 - **Test corrections:** each revocation test now clears the queue first, so one test's pending cleanup cannot be counted by another. The global-logout response is 202, not the 201 first written, because provider cleanup is still pending.
 - **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (29 suites, 370 tests), test:db PASS (9 suites, 119 tests), test:app PASS, test:unit PASS, test:render PASS (3), test:dev PASS, build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
 - **Tenant/native proof:** SKIPPED (E1/E2 not authorized). Checklist in the runbook.
+- **Independent review** (after commit `27aa551`): one major finding, six minor and two nits. The reviewer confirmed old bindings, refresh grants and proofs cannot regain access, fencing and SKIP LOCKED are correct, lock order holds, and nothing leaks. Fixed in a follow-up commit, with 10 tests that failed first on assertions; two further tests (a bootstrap waiting behind the logout lock, and the role matrix for the routines) passed at once and stay as coverage:
+  - **Major — a forged job could lift a hold.** Any `gogospend_jobs` login could read the queue and insert an `auth0_revoke_grants` job with empty client ids; finishing it deleted the hold with no Auth0 call. Now:
+    - holds name their job (`pending_job_id`), and only that job can lift them;
+    - RLS gives security kinds to `gogospend_security` only, so a generic jobs login sees and creates none;
+    - the payload no longer stores subjects; the worker reads them per lease through `gogospend_revocation_subjects`.
+  - **One lease clock per batch.** A slow first job let later jobs' leases expire unused. The worker now claims one job at a time; a lease that runs out mid-job is failed as retryable `lease_expired`.
+  - **A 2-hour outage failed cleanup for good.** Revocation jobs now get 20 attempts (about 15 hours), and the worker logs an alert line for every terminal failure.
+  - **Work on an expired lease.** The state, subjects and finish routines now refuse expired leases, and the maintenance client re-checks the abort signal before every call.
+  - **Consent writes after logout.** `PolicyService.accept` and `setPrivacy` now take the account lock and call `assertActiveSession`. The policy spec now uses real session rows.
+  - **Clients without sessions kept their grants.** The worker revokes for `AUTH0_ALLOWED_CLIENT_IDS` (now required in the worker environment) plus any client that held a session.
+  - **`reauth_after` rounding.** It now rounds up to the next whole second, so no login from the logout second counts. Tests that sign in again wait for that boundary.
+  - **Worker login.** The worker refuses to start unless its login is in `gogospend_jobs` and `gogospend_security` only.
+  - Not changed: `gogospend_global_logout` still relies on its caller (`SessionRevocationService`) to consume the proof in the same transaction.
+  - **RED → GREEN:** `session-revocation.integration.spec.ts` went from 10 of 21 failing to 21 of 21. Full gate after the fixes: typecheck PASS, typecheck:app PASS, test:api PASS (390), test:db PASS (163), test:app PASS, test:unit PASS, test:render PASS (3), test:dev PASS, build PASS, export:web PASS, `git diff --check` PASS; no test databases left. The fix suites (revocation, jobs, policies, migrations) pass 55 of 55, and the revocation spec was stable over 2 more runs. `job.repository.integration.spec.ts` now gives its second worker the security role too, because security jobs are invisible to a generic login.
 
 ## M1 — common command transaction and revision protocol
 
