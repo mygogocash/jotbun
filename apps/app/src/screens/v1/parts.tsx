@@ -145,7 +145,12 @@ export type SaveProblem = {
   fields: Record<string, string>;
 };
 
-/** What a failed save should say, and whether the command may still have been committed. */
+/**
+ * What a failed save should say, and whether the command may still have been
+ * committed. Anything that happened after the request may have reached the
+ * server - a lost or garbled response, a gateway error page, overload - is
+ * "unconfirmed": the entry stays frozen and the same command is resent.
+ */
 export function saveProblem(error: unknown, tc: Translate): SaveProblem {
   const v1 = error instanceof V1Error ? error : undefined;
   const fields: Record<string, string> = {};
@@ -153,31 +158,46 @@ export function saveProblem(error: unknown, tc: Translate): SaveProblem {
   const result = (message: string, extra: Partial<SaveProblem> = {}): SaveProblem => ({ message: tc(message), unconfirmed: false, blocked: false, fields, ...extra });
   switch (v1?.outcome) {
     case 'network':
-    case 'unavailable': return result('Not confirmed yet. Your entry is kept; try again.', { unconfirmed: true });
+    case 'unavailable':
+    case 'invalid_response': return result('Not confirmed yet. Your entry is kept; try again.', { unconfirmed: true });
     case 'rate_limited': return result('Too many changes at once. Your entry is kept; try again in a moment.', { unconfirmed: true });
     case 'upgrade_required': return result('Update GoGoSpend to keep saving. Your entry is kept.', { blocked: true });
-    case 'policy_required': return result('Review and accept the updated terms to continue.', { blocked: true });
-    case 'signed_out':
-    case 'session_changed': return result('Sign in again to save. Your entry is kept.', { blocked: true });
-    case 'invalid': return result('Check the highlighted fields.');
+    case 'policy_required': return result('Review and accept the updated terms to continue.');
+    case 'signed_out': return result('Sign in again to save.');
+    // The session changed after sending: never resend this draft under another identity.
+    case 'session_changed': return result('Your session changed. Sign in again to save.', { blocked: true });
+    case 'invalid': return result(Object.keys(fields).length > 0 ? 'Check the highlighted fields.' : 'This entry could not be saved.');
     default: return result('This entry could not be saved.');
   }
 }
 
 /**
- * Immutable commands: the same payload keeps its key until the outcome is
- * known, so a retry after a lost response can never commit twice; a changed
- * payload after a definite refusal gets a new key.
+ * A create refused because its record id already exists in this account:
+ * an earlier attempt of the same draft committed, so the entry is saved.
+ */
+export function isOwnCreate(error: unknown, id: string): boolean {
+  return error instanceof V1Error && error.outcome === 'conflict' && (error.current as { id?: unknown } | undefined)?.id === id;
+}
+
+/**
+ * Immutable commands, one slot per pending action (e.g. `edit:<id>`,
+ * `delete:<id>`): the same payload keeps its key until its outcome is known,
+ * so a resend after a lost response can never commit twice, and work on one
+ * entry never discards another entry's pending key. A changed payload after a
+ * definite refusal gets a new key.
  */
 export function useCommandKeys() {
-  const pending = useRef<{ key: string; payload: string } | null>(null);
-  const keyFor = useCallback((payload: unknown): string => {
+  const pending = useRef(new Map<string, { key: string; payload: string }>());
+  const keyFor = useCallback((slot: string, payload: unknown): string => {
     const text = JSON.stringify(payload);
-    if (pending.current?.payload !== text) pending.current = { key: newId(), payload: text };
-    return pending.current.key;
+    const current = pending.current.get(slot);
+    if (current?.payload === text) return current.key;
+    const key = newId();
+    pending.current.set(slot, { key, payload: text });
+    return key;
   }, []);
-  const settle = useCallback(() => {
-    pending.current = null;
+  const settle = useCallback((slot: string) => {
+    pending.current.delete(slot);
   }, []);
   return { keyFor, settle };
 }

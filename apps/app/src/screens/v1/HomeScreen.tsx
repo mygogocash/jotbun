@@ -13,7 +13,7 @@ import { byId, monthOf, recordView, todayInBangkok, walletsTotal } from '@mobile
 import { Text } from '@mobile/theme/AppText';
 import { useTheme } from '@mobile/theme/ThemeProvider';
 import { spacing } from '@mobile/theme/tokens';
-import { Button, Card, Field, Frame, Loading, Notice, loadProblem, newId, saveProblem, useCommandKeys, useLoad, useMoneyLocale } from './parts';
+import { Button, Card, Field, Frame, Loading, Notice, isOwnCreate, loadProblem, newId, saveProblem, useCommandKeys, useLoad, useMoneyLocale } from './parts';
 
 const RECENT = 5;
 
@@ -64,7 +64,7 @@ export function HomeScreen({ now }: { now?: Date }) {
         {wallets.map((wallet) => {
           const balance = formatMinor(wallet.balance_minor, locale);
           return (
-            <View key={wallet.id} accessibilityLabel={`${wallet.name} ${balance}`} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <View key={wallet.id} accessible accessibilityLabel={`${wallet.name} ${balance}`} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               <Text style={{ color: wallet.archived ? colors.muted : colors.ink }}>{wallet.name}</Text>
               <Text style={{ color: colors.ink }}>{balance}</Text>
             </View>
@@ -78,7 +78,7 @@ export function HomeScreen({ now }: { now?: Date }) {
         {recent.map((record) => {
           const row = recordView(record, lookups, tc, locale);
           return (
-            <View key={row.id} accessibilityLabel={`${row.title}, ${row.amountLabel}`} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <View key={row.id} accessible accessibilityLabel={`${row.title}, ${row.amountLabel}`} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               <View>
                 <Text style={{ color: colors.ink }}>{row.title}</Text>
                 <Text style={{ color: colors.muted }}>{`${row.occurredOn} · ${row.detail}`}</Text>
@@ -99,6 +99,7 @@ function FirstWallet({ today, onCreated }: { today: string; onCreated: () => voi
   const tc = useCopy();
   const { colors } = useTheme();
   const keys = useCommandKeys();
+  const locale = useMoneyLocale();
   const [walletId] = useState(newId);
   const [name, setName] = useState('');
   const [opening, setOpening] = useState('0');
@@ -114,7 +115,7 @@ function FirstWallet({ today, onCreated }: { today: string; onCreated: () => voi
     if (!trimmed) next.name = tc('Enter a wallet name');
     let openingMinor = '0';
     try {
-      openingMinor = parseAmountInput(opening, 'en');
+      openingMinor = parseAmountInput(opening, locale);
     } catch (error) {
       next.opening = error instanceof AmountInputError && error.problem === 'too_precise' ? tc('Use at most two decimal places') : tc('Enter an amount like 65 or 65.50');
     }
@@ -128,12 +129,17 @@ function FirstWallet({ today, onCreated }: { today: string; onCreated: () => voi
     const input = { id: walletId, name: trimmed, opening_minor: openingMinor, tracking_start: start };
     setBusy(true);
     try {
-      await resources.createWallet(input, keys.keyFor(input));
-      keys.settle();
+      await resources.createWallet(input, keys.keyFor('create', input));
+      keys.settle('create');
       onCreated();
     } catch (error) {
+      if (isOwnCreate(error, walletId)) {
+        keys.settle('create');
+        onCreated();
+        return;
+      }
       const problem = saveProblem(error, tc);
-      if (!problem.unconfirmed) keys.settle();
+      if (!problem.unconfirmed) keys.settle('create');
       setFrozen(problem.unconfirmed);
       setMessage(problem.message);
       setErrors({ ...(problem.fields.name ? { name: problem.fields.name } : {}), ...(problem.fields.tracking_start ? { start: problem.fields.tracking_start } : {}) });

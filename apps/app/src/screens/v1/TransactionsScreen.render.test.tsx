@@ -70,7 +70,8 @@ test('edits with the current version and shows the server record after the ackno
   expect(await screen.findByLabelText('Bills, Expense ฿12,000.00')).toBeTruthy();
   const [id, version, changes] = fake.callsOf('updateTransaction')[0].args;
   expect([id, version, changes]).toEqual([RENT, 1, { amount_minor: '1200000' }]);
-  expect(fake.callsOf('transaction').map((call) => call.args[0])).toContain(RENT);
+  // The shown record comes from a fresh read after the acknowledgement, not from the receipt.
+  expect(fake.callsOf('history').length).toBeGreaterThan(1);
 });
 
 test('a conflicting edit offers reload or an explicit reapply, never a silent overwrite', async () => {
@@ -81,7 +82,7 @@ test('a conflicting edit offers reload or an explicit reapply, never a silent ov
   fake.records.set(RENT, { ...rent, amount_minor: '1300000', version: 2 });
   fireEvent.change(screen.getByLabelText('Edit amount'), { target: { value: '12,000' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
-  expect(await screen.findByText('This entry changed on another device.')).toBeTruthy();
+  expect(await screen.findByText('This entry changed on another device. It now reads ฿13,000.00 (Rent).')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Apply my change' }));
   expect(await screen.findByLabelText('Bills, Expense ฿12,000.00')).toBeTruthy();
   const [first, second] = fake.callsOf('updateTransaction');

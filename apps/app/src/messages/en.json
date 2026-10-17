@@ -383,8 +383,12 @@
   "spendV1Unconfirmed": "Not confirmed yet. Your entry is kept; try again.",
   "spendV1TooMany": "Too many changes at once. Your entry is kept; try again in a moment.",
   "spendV1UpdateToSave": "Update GoGoSpend to keep saving. Your entry is kept.",
-  "spendV1SignInToSave": "Sign in again to save. Your entry is kept.",
   "spendV1CheckFields": "Check the highlighted fields.",
   "spendV1NotSaved": "This entry could not be saved.",
-  "spendV1CheckThis": "Check this and try again."
+  "spendV1CheckThis": "Check this and try again.",
+  "spendV1AlreadyDeleted": "This entry was already deleted.",
+  "spendV1ChangedNow": "This entry changed on another device. It now reads {amount}.",
+  "spendV1ChangedNowNote": "This entry changed on another device. It now reads {amount} ({note}).",
+  "spendV1SignInToSaveOnly": "Sign in again to save.",
+  "spendV1SessionChanged": "Your session changed. Sign in again to save."
 }

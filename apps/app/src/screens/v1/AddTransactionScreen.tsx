@@ -15,7 +15,7 @@ import { useSpendV1 } from '@mobile/spend/v1/SpendV1Context';
 import { categoryName, todayInBangkok } from '@mobile/spend/v1/viewModels';
 import { Text } from '@mobile/theme/AppText';
 import { useTheme } from '@mobile/theme/ThemeProvider';
-import { Button, Card, Chip, ChipRow, Field, Frame, Loading, Notice, loadProblem, newId, saveProblem, useCommandKeys, useLoad, useMoneyLocale } from './parts';
+import { Button, Card, Chip, ChipRow, Field, Frame, Loading, Notice, isOwnCreate, loadProblem, newId, saveProblem, useCommandKeys, useLoad, useMoneyLocale } from './parts';
 import type { Translate } from './parts';
 
 type EntryType = 'expense' | 'income' | 'transfer';
@@ -112,18 +112,25 @@ function EntryForm({ wallets, categories, today }: { wallets: WalletDto[]; categ
   async function save() {
     const input = build();
     if (!input) return;
-    const key = keys.keyFor(input);
+    const key = keys.keyFor('create', input);
     setStatus('saving');
     setMessage(null);
     try {
       if ('source_wallet_id' in input) await resources.createTransfer(input, key);
       else await resources.createTransaction(input, key);
-      keys.settle();
+      keys.settle('create');
       router.replace('/spend');
     } catch (error) {
+      // The record id is fixed for this draft: if it already exists, an
+      // earlier attempt committed, so this entry is saved.
+      if (isOwnCreate(error, recordId)) {
+        keys.settle('create');
+        router.replace('/spend');
+        return;
+      }
       const problem = saveProblem(error, tc);
       // A definite refusal frees the key; an unknown outcome keeps it.
-      if (!problem.unconfirmed) keys.settle();
+      if (!problem.unconfirmed) keys.settle('create');
       setErrors(problem.fields);
       setMessage(problem.message);
       setStatus(problem.unconfirmed ? 'unconfirmed' : problem.blocked ? 'blocked' : 'editing');

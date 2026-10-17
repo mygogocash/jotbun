@@ -476,3 +476,41 @@ Observed, not changed (pre-existing):
   - `viewModels.test.ts` (5 tests) was written against the real functions (not RED first).
 - **App adapter against the real API** (`apps/api/src/v1/app-adapter.integration.spec.ts`, 2 tests): the app's own transport, resources, money and view models drive the golden journey against the real v1 server on a disposable database. It covers wallets, records and a transfer replayed as the same command; the exact balances `฿2,350.00`, `฿18,700.00` and total `฿21,050.00`; month totals; history rows; a versioned edit; a stale-edit conflict carrying `current`; delete and undo; command status; and a build below the minimum version getting `upgrade_required` (426), not a sign-out.
 - **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (402), test:db PASS (326), test:app PASS (11), test:unit PASS (31), test:render PASS (27), test:dev PASS, build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
+
+## Review fixes for M5
+
+- **M5 review** (commit `83f3b10`): three major findings, eight minor, five nits; no blockers. The reviewer confirmed:
+  - money exactness (34 probed inputs, BigInt only);
+  - byte-identical command retries and success shown only after the acknowledgement;
+  - epoch drops, and 426 never treated as a sign-out;
+  - strict DTO validation, with no `/spend` fallback and no name-based wallets;
+  - full English/Thai copy coverage.
+- **Fixed, with tests that failed first:** `src/screens/v1/M5Hardening.render.test.tsx` (9 of 11 failed) and `src/spend/v1/resources.test.ts` (4 of 13 failed), all on assertions. The two render tests that passed at once stay as coverage: a lost response resolves by replay, and a failed reload after an acknowledged edit is a load problem. The fake port now keeps receipts by key (replays), refuses an existing record id under a new key with a 409, and can commit a write and then lose or garble its response.
+  - **Major — a save that may have committed was reported as failed** and its key freed (the duplicate-expense risk):
+    - a 5xx gateway page is now `unavailable`;
+    - a garbled acknowledgement (`invalid_response`) is unconfirmed, keeping its key and retrying the same command;
+    - a session change after sending blocks resending under another identity;
+    - a create refused because its own record id already exists counts as saved.
+  - **Major — a read after an acknowledgement could make the save look unconfirmed.** Reading back is now a separate load whose failure is a load problem. Edits, deletes and undo reload the list instead of a separate entity read.
+  - **Major — one shared key slot, and unconfirmed edits were editable.** Command keys are now kept per action (`create`, `edit:<id>`, `delete:<id>`, `restore:<id>`). An unconfirmed edit freezes its fields, with "Try again" only and no Cancel. An unconfirmed delete keeps its key while other entries are edited.
+  - **Conflicts:** the server's current record is validated (`isTransactionSnapshot`, same id) and its values are shown ("It now reads ฿13,000.00 (Rent and water).") before "Apply my change". An unusable one reloads instead of looping.
+  - **Already deleted:** deleting an entry another device already deleted shows "This entry was already deleted." and reloads.
+  - **Pagination:** edits, deletes and undo reload as many entries as were on screen (up to 200), so "Load more" pages no longer vanish. "Load more" has a busy state, drops superseded results and clears its notice on success.
+  - **Transport:**
+    - a command retry stops with `session_changed` once the epoch moves, with a short backoff between retries;
+    - acknowledgements must name the request's command and entity;
+    - `FORBIDDEN` is `signed_out` and `RESYNC_REQUIRED` is `unavailable` (no longer "check the highlighted fields").
+  - **Locale:** the root layout follows the device locale (Thai, English or Vietnamese) instead of hard-coded English, and syncs the Thai font. The first-wallet form parses Thai digits. A Thai render test covers both.
+  - **Accessibility:** labelled rows set `accessible`, so VoiceOver/TalkBack read the label ("Bills, Expense ฿12,268.00") rather than the children.
+  - **Copy and edges:**
+    - day headers show formatted dates;
+    - "Sign in again to save." no longer promises a draft survives the sign-out redirect;
+    - policy and sign-out states no longer disable Save;
+    - only an upgrade or a session change does;
+    - `/spend/import` redirects to `/spend` unless `EXPO_PUBLIC_LEGACY_SPEND=1`.
+  - **Test updates:** two original Transactions tests now expect the list reload (not a separate entity read) and the conflict message with current values. Two transport tests now reply with acknowledgements that match their own command.
+- **Not changed (recorded):**
+  - Tying frozen drafts to the session epoch at the screen level waits for F5's session machine; the transport already refuses to resend across an epoch change.
+  - A device keyboard whose decimal key is "," (for example Vietnamese) could type "1,500" meaning 1.5. Money is parsed in the Thai/English convention, and this remains a device-review item.
+  - `EXPO_PUBLIC_V1_API_URL` defaults to local development and must be set for real builds; plain http to anything but loopback is refused.
+- **Full gate after the fixes:** typecheck PASS, typecheck:app PASS, test:api PASS (402), test:db PASS (326), test:app PASS (11), test:unit PASS (35), test:render PASS (38), test:dev PASS, build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.

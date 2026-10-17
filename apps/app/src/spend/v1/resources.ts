@@ -102,6 +102,9 @@ function isCommandStatus(value: unknown): value is CommandStatus {
 }
 
 const command = (id: string, ifMatch?: number) => ({ id, schemaVersion: V1_COMMAND_SCHEMA, ...(ifMatch === undefined ? {} : { ifMatch }) });
+/** An acknowledgement must be for this command and this entity. */
+const ackFor = (commandId: string, entityId: string) => (value: unknown): value is CommandAck =>
+  isCommandAck(value) && value.command_id === commandId && value.entity_id === entityId;
 const segment = (id: string) => {
   if (!isUuid(id)) throw new V1Error('invalid', 0, 'INVALID_ID');
   return id;
@@ -110,18 +113,18 @@ const segment = (id: string) => {
 export function createSpendV1Resources(transport: V1Transport): SpendV1Resources {
   return {
     wallets: () => transport.request('GET', '/v1/wallets', { validate: listOf(isWalletDto) }),
-    createWallet: (input, commandId) => transport.request('POST', '/v1/wallets', { body: input, command: command(commandId), validate: isCommandAck }),
+    createWallet: (input, commandId) => transport.request('POST', '/v1/wallets', { body: input, command: command(commandId), validate: ackFor(commandId, input.id) }),
     categories: () => transport.request('GET', '/v1/categories', { validate: listOf(isCategorySnapshot) }),
     // Server-derived command: no key or schema from the app.
     ensureBuiltinCategories: () => transport.request('POST', '/v1/categories/builtins', { validate: listOf(isCategorySnapshot) }),
-    createTransaction: (input, commandId) => transport.request('POST', '/v1/transactions', { body: input, command: command(commandId), validate: isCommandAck }),
-    createTransfer: (input, commandId) => transport.request('POST', '/v1/transactions', { body: { ...input, type: 'transfer' }, command: command(commandId), validate: isCommandAck }),
+    createTransaction: (input, commandId) => transport.request('POST', '/v1/transactions', { body: input, command: command(commandId), validate: ackFor(commandId, input.id) }),
+    createTransfer: (input, commandId) => transport.request('POST', '/v1/transactions', { body: { ...input, type: 'transfer' }, command: command(commandId), validate: ackFor(commandId, input.id) }),
     transaction: (id) => transport.request('GET', `/v1/transactions/${segment(id)}`, { validate: isTransactionSnapshot }),
     updateTransaction: (id, version, changes, commandId) =>
-      transport.request('PATCH', `/v1/transactions/${segment(id)}`, { body: changes, command: command(commandId, version), validate: isCommandAck }),
-    deleteTransaction: (id, version, commandId) => transport.request('DELETE', `/v1/transactions/${segment(id)}`, { command: command(commandId, version), validate: isCommandAck }),
+      transport.request('PATCH', `/v1/transactions/${segment(id)}`, { body: changes, command: command(commandId, version), validate: ackFor(commandId, id) }),
+    deleteTransaction: (id, version, commandId) => transport.request('DELETE', `/v1/transactions/${segment(id)}`, { command: command(commandId, version), validate: ackFor(commandId, id) }),
     restoreTransaction: (id, version, commandId) =>
-      transport.request('POST', `/v1/transactions/${segment(id)}/restore`, { body: {}, command: command(commandId, version), validate: isCommandAck }),
+      transport.request('POST', `/v1/transactions/${segment(id)}/restore`, { body: {}, command: command(commandId, version), validate: ackFor(commandId, id) }),
     history: (filter, cursor, limit) => {
       const query = new URLSearchParams();
       for (const [key, value] of Object.entries(filter)) if (value !== undefined) query.set(key, String(value));

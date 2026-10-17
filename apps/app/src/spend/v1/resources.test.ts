@@ -85,8 +85,11 @@ test('signed out, unbound or unsupported clients fail before any request', async
 });
 
 test('commands send their key, the command schema and If-Match with the exact body', async () => {
-  replies.push({ status: 201, body: ACK }, { status: 201, body: ACK }, { status: 200, body: ACK });
-  const key = randomUUID();
+  const key = ACK.command_id;
+  const transferId = randomUUID();
+  const transferKey = randomUUID();
+  const editKey = randomUUID();
+  replies.push({ status: 201, body: ACK }, { status: 201, body: { ...ACK, command_id: transferKey, entity_id: transferId } }, { status: 200, body: { ...ACK, command_id: editKey } });
   const entry = { id: ACK.entity_id, type: 'expense' as const, amount_minor: '6500', occurred_on: '2026-09-20', wallet_id: WALLET.id, category_id: '1d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f5a', note: null };
   assert.deepEqual(await resources().createTransaction(entry, key), ACK);
   assert.equal(seen[0].method, 'POST');
@@ -95,9 +98,9 @@ test('commands send their key, the command schema and If-Match with the exact bo
   assert.equal(seen[0].headers['x-gogospend-command-schema'], String(V1_COMMAND_SCHEMA));
   assert.equal(seen[0].headers['if-match'], undefined);
   assert.deepEqual(JSON.parse(seen[0].body), entry);
-  await resources().createTransfer({ id: randomUUID(), amount_minor: '150000', occurred_on: '2026-09-28', source_wallet_id: WALLET.id, destination_wallet_id: ACK.entity_id }, randomUUID());
+  await resources().createTransfer({ id: transferId, amount_minor: '150000', occurred_on: '2026-09-28', source_wallet_id: WALLET.id, destination_wallet_id: ACK.entity_id }, transferKey);
   assert.equal(JSON.parse(seen[1].body).type, 'transfer');
-  await resources().updateTransaction(ACK.entity_id, 3, { amount_minor: '7000' }, randomUUID());
+  await resources().updateTransaction(ACK.entity_id, 3, { amount_minor: '7000' }, editKey);
   assert.equal(seen[2].method, 'PATCH');
   assert.equal(seen[2].url, `/v1/transactions/${ACK.entity_id}`);
   assert.equal(seen[2].headers['if-match'], '"3"');
@@ -105,7 +108,7 @@ test('commands send their key, the command schema and If-Match with the exact bo
 
 test('a lost response is retried as the same immutable command', async () => {
   replies.push({ status: 0, drop: true }, { status: 201, body: ACK });
-  const key = randomUUID();
+  const key = ACK.command_id;
   const entry = { id: ACK.entity_id, type: 'income' as const, amount_minor: '2800000', occurred_on: '2026-09-25', wallet_id: WALLET.id, category_id: '1d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f5a', note: 'Salary' };
   assert.deepEqual(await resources().createTransaction(entry, key), ACK);
   assert.equal(seen.length, 2);
@@ -184,4 +187,44 @@ test('only https, or loopback http, API addresses are accepted', () => {
   assert.throws(() => createV1Transport({ baseUrl: 'http://api.example.com', credentials, client: null }), V1Error);
   assert.throws(() => createV1Transport({ baseUrl: 'https://user:pw@api.example.com', credentials, client: null }), V1Error);
   assert.doesNotThrow(() => createV1Transport({ baseUrl: 'https://api.example.com/', credentials, client: null }));
+});
+
+test('a gateway error page is "unavailable" (maybe committed), never a definite refusal', async () => {
+  replies.push({ status: 502, raw: '<html>Bad gateway</html>' });
+  const error = await outcome(() => resources().createTransaction({ id: ACK.entity_id, type: 'expense', amount_minor: '1', occurred_on: '2026-09-20', wallet_id: WALLET.id, category_id: ACK.command_id }, randomUUID()));
+  assert.equal(error.outcome, 'unavailable');
+  replies.push({ status: 200, raw: 'not json' });
+  assert.equal((await outcome(() => resources().wallets())).outcome, 'invalid_response');
+});
+
+test('a sign-out during a command retry stops resending', async () => {
+  replies.push({ status: 0, drop: true }, { status: 201, body: ACK });
+  let calls = 0;
+  const switching = createSpendV1Resources(createV1Transport({
+    baseUrl,
+    client: { platform: 'ios', version: '1.2.3' },
+    credentials: {
+      getAccessToken: async () => 'access-token',
+      getSessionSnapshot: () => {
+        calls += 1;
+        return calls === 1 ? { binding: 'b'.repeat(43), epoch: 1 } : { binding: null, epoch: 2 };
+      },
+    },
+  }));
+  const error = await outcome(() => switching.createWallet({ id: WALLET.id, name: 'Cash', opening_minor: '0', tracking_start: '2026-09-01' }, randomUUID()));
+  assert.equal(error.outcome, 'session_changed');
+  assert.equal(seen.length, 1);
+});
+
+test('an acknowledgement for another command or entity is refused', async () => {
+  replies.push({ status: 201, body: ACK });
+  const error = await outcome(() => resources().createWallet({ id: WALLET.id, name: 'Cash', opening_minor: '0', tracking_start: '2026-09-01' }, randomUUID()));
+  assert.equal(error.outcome, 'invalid_response');
+});
+
+test('FORBIDDEN and RESYNC_REQUIRED are not field errors', async () => {
+  replies.push({ status: 403, body: { code: 'FORBIDDEN', request_id: 'r', message_key: 'm' } });
+  assert.equal((await outcome(() => resources().wallets())).outcome, 'signed_out');
+  replies.push({ status: 410, body: { code: 'RESYNC_REQUIRED', request_id: 'r', message_key: 'm' } });
+  assert.equal((await outcome(() => resources().wallets())).outcome, 'unavailable');
 });

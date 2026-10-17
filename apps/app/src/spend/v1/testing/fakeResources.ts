@@ -38,6 +38,10 @@ export function createFakeResources(seed: { wallets?: WalletSnapshot[]; records?
   const categories = new Map<string, CategoryDto>();
   const calls: FakeCall[] = [];
   const failures = new Map<keyof SpendV1Resources, V1Error[]>();
+  // Errors thrown after the write committed: the response was lost or garbled.
+  const afterCommit = new Map<keyof SpendV1Resources, V1Error[]>();
+  // Receipts by command key, as the server keeps them: a resent command replays.
+  const receipts = new Map<string, CommandAck>();
   const pending = new Map<keyof SpendV1Resources, Promise<void>>();
   let revision = 10;
 
@@ -67,6 +71,15 @@ export function createFakeResources(seed: { wallets?: WalletSnapshot[]; records?
     if (failure) throw failure;
   }
 
+  /** Runs a command once per key (replaying its receipt), then applies any after-commit failure. */
+  async function command(method: keyof SpendV1Resources, key: string, write: () => CommandAck): Promise<CommandAck> {
+    const result = receipts.get(key) ?? write();
+    receipts.set(key, result);
+    const lost = afterCommit.get(method)?.shift();
+    if (lost) throw lost;
+    return result;
+  }
+
   const inMonth = (record: TransactionDto, filter: HistoryFilter) =>
     !record.deleted_at && record.occurred_on >= filter.from && record.occurred_on <= filter.through &&
     (!filter.type || record.type === filter.type);
@@ -78,8 +91,12 @@ export function createFakeResources(seed: { wallets?: WalletSnapshot[]; records?
     },
     async createWallet(input: CreateWalletRequest, commandId: string) {
       await step('createWallet', [input, commandId]);
-      wallets.set(input.id, { ...input, currency: 'THB', archived: false, version: 1 });
-      return ack(commandId, input.id, 1, 'created');
+      return command('createWallet', commandId, () => {
+        const existing = wallets.get(input.id);
+        if (existing) throw new V1Error('conflict', 409, 'VERSION_CONFLICT', { current: { ...existing, balance_minor: balance(existing) } });
+        wallets.set(input.id, { ...input, currency: 'THB', archived: false, version: 1 });
+        return ack(commandId, input.id, 1, 'created');
+      });
     },
     async categories() {
       await step('categories', []);
@@ -92,13 +109,21 @@ export function createFakeResources(seed: { wallets?: WalletSnapshot[]; records?
     },
     async createTransaction(input: CreateEntryInput, commandId: string) {
       await step('createTransaction', [input, commandId]);
-      records.set(input.id, { ...input, note: input.note ?? null, merchant: input.merchant ?? null, deleted_at: null, version: 1 });
-      return ack(commandId, input.id, 1, 'created');
+      return command('createTransaction', commandId, () => {
+        const existing = records.get(input.id);
+        if (existing) throw new V1Error('conflict', 409, 'VERSION_CONFLICT', { current: { ...existing } });
+        records.set(input.id, { ...input, note: input.note ?? null, merchant: input.merchant ?? null, deleted_at: null, version: 1 });
+        return ack(commandId, input.id, 1, 'created');
+      });
     },
     async createTransfer(input: CreateTransferInput, commandId: string) {
       await step('createTransfer', [input, commandId]);
-      records.set(input.id, { ...input, type: 'transfer', note: input.note ?? null, merchant: input.merchant ?? null, deleted_at: null, version: 1 });
-      return ack(commandId, input.id, 1, 'created');
+      return command('createTransfer', commandId, () => {
+        const existing = records.get(input.id);
+        if (existing) throw new V1Error('conflict', 409, 'VERSION_CONFLICT', { current: { ...existing } });
+        records.set(input.id, { ...input, type: 'transfer', note: input.note ?? null, merchant: input.merchant ?? null, deleted_at: null, version: 1 });
+        return ack(commandId, input.id, 1, 'created');
+      });
     },
     async transaction(id: string) {
       await step('transaction', [id]);
@@ -108,28 +133,36 @@ export function createFakeResources(seed: { wallets?: WalletSnapshot[]; records?
     },
     async updateTransaction(id, version, changes, commandId) {
       await step('updateTransaction', [id, version, changes, commandId]);
-      const record = records.get(id);
-      if (!record) throw new V1Error('not_found', 404, 'NOT_FOUND');
-      if (record.version !== version) throw new V1Error('conflict', 409, 'VERSION_CONFLICT', { current: { ...record } });
-      const next = { ...record, ...changes, version: record.version + 1 } as TransactionDto;
-      records.set(id, next);
-      return ack(commandId, id, next.version, 'updated');
+      return command('updateTransaction', commandId, () => {
+        const record = records.get(id);
+        if (!record) throw new V1Error('not_found', 404, 'NOT_FOUND');
+        if (record.deleted_at) throw new V1Error('deleted', 409, 'ENTITY_DELETED');
+        if (record.version !== version) throw new V1Error('conflict', 409, 'VERSION_CONFLICT', { current: { ...record } });
+        const next = { ...record, ...changes, version: record.version + 1 } as TransactionDto;
+        records.set(id, next);
+        return ack(commandId, id, next.version, 'updated');
+      });
     },
     async deleteTransaction(id, version, commandId) {
       await step('deleteTransaction', [id, version, commandId]);
-      const record = records.get(id);
-      if (!record) throw new V1Error('not_found', 404, 'NOT_FOUND');
-      if (record.version !== version) throw new V1Error('conflict', 409, 'VERSION_CONFLICT', { current: { ...record } });
-      records.set(id, { ...record, deleted_at: '2026-09-29T00:00:00.000Z', version: version + 1 });
-      return ack(commandId, id, version + 1, 'deleted', 'deleted');
+      return command('deleteTransaction', commandId, () => {
+        const record = records.get(id);
+        if (!record) throw new V1Error('not_found', 404, 'NOT_FOUND');
+        if (record.deleted_at) throw new V1Error('deleted', 409, 'ENTITY_DELETED');
+        if (record.version !== version) throw new V1Error('conflict', 409, 'VERSION_CONFLICT', { current: { ...record } });
+        records.set(id, { ...record, deleted_at: '2026-09-29T00:00:00.000Z', version: version + 1 });
+        return ack(commandId, id, version + 1, 'deleted', 'deleted');
+      });
     },
     async restoreTransaction(id, version, commandId) {
       await step('restoreTransaction', [id, version, commandId]);
-      const record = records.get(id);
-      if (!record) throw new V1Error('not_found', 404, 'NOT_FOUND');
-      if (record.version !== version) throw new V1Error('conflict', 409, 'VERSION_CONFLICT', { current: { ...record } });
-      records.set(id, { ...record, deleted_at: null, version: version + 1 });
-      return ack(commandId, id, version + 1, 'restored');
+      return command('restoreTransaction', commandId, () => {
+        const record = records.get(id);
+        if (!record) throw new V1Error('not_found', 404, 'NOT_FOUND');
+        if (record.version !== version) throw new V1Error('conflict', 409, 'VERSION_CONFLICT', { current: { ...record } });
+        records.set(id, { ...record, deleted_at: null, version: version + 1 });
+        return ack(commandId, id, version + 1, 'restored');
+      });
     },
     async history(filter: HistoryFilter, cursor?: string, limit = 50) {
       await step('history', [filter, cursor, limit]);
@@ -176,6 +209,12 @@ export function createFakeResources(seed: { wallets?: WalletSnapshot[]; records?
       const list = failures.get(method) ?? [];
       list.push(new V1Error(outcome, extra.status ?? 0, extra.code ?? outcome.toUpperCase(), extra));
       failures.set(method, list);
+    },
+    /** The next call of `method` commits, then its response is lost (or arrives unreadable). */
+    loseResponse(method: keyof SpendV1Resources, outcome: V1Outcome = 'network') {
+      const list = afterCommit.get(method) ?? [];
+      list.push(new V1Error(outcome, 0, outcome === 'network' ? 'NETWORK_ERROR' : 'INVALID_RESPONSE'));
+      afterCommit.set(method, list);
     },
     /** Holds `method` until the returned release is called. */
     hold(method: keyof SpendV1Resources): () => void {
