@@ -58,6 +58,9 @@ export function configureV1App(app: INestApplication): void {
   });
   http.use(safeRequestLogger);
   http.use(helmet());
+  // Signed provider events: 8 KiB, raw bytes kept for the signature check.
+  // Parsed here first, so the general parser below skips them.
+  http.use('/v1/auth/provider-events', jsonBody('8kb', { keepRaw: true }));
   // Master plan: 2 MiB v1 JSON cap; routes may set stricter limits.
   http.use(jsonBody('2mb'));
 }

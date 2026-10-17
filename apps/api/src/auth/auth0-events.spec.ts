@@ -68,6 +68,8 @@ describe('signed provider security events', () => {
       [envelope({ type: 'password_reset_requested' }), 'envelope_invalid'],
       [envelope({ id: 'short' }), 'envelope_invalid'],
       [envelope({ id: 'has spaces in it 123' }), 'envelope_invalid'],
+      // Reconciliation's own receipt ids are reserved.
+      [envelope({ id: 'reconcile:0123456789abcdef' }), 'envelope_invalid'],
       [envelope({ subject: '' }), 'envelope_invalid'],
       [envelope({ subject: 'x'.repeat(256) }), 'envelope_invalid'],
       [envelope({ occurred_at: 'yesterday' }), 'envelope_invalid'],

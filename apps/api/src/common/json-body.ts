@@ -8,9 +8,13 @@ import { sendProblem } from './api-problem.filter';
  * filters run, so they are answered here as ApiProblems instead of Express's
  * default HTML error page.
  */
-export function jsonBody(limit: string): RequestHandler {
-  // The raw bytes stay on the request for routes that authenticate them (signed provider events).
-  const parse = json({ limit, strict: true, verify: (req, _res, buffer) => void ((req as Request & { rawBody?: Buffer }).rawBody = buffer) });
+export function jsonBody(limit: string, options: { keepRaw?: boolean } = {}): RequestHandler {
+  // `keepRaw` keeps the exact bytes for a route that authenticates them (signed provider events).
+  const parse = json({
+    limit,
+    strict: true,
+    ...(options.keepRaw ? { verify: (req: unknown, _res: unknown, buffer: Buffer) => void ((req as Request & { rawBody?: Buffer }).rawBody = buffer) } : {}),
+  });
   return (req: Request, res: Response, next: NextFunction) => {
     parse(req, res, (error?: unknown) => {
       if (!error) {

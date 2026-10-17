@@ -7,9 +7,12 @@
 --                          trail. Principals are stored as digests only.
 --   security_reconcile_checks - when each principal was last checked against
 --                          Auth0 by a reconciliation pass.
--- A change ends every live session signed in before it, raises reauth_after
--- past it, and - when it ended any session - holds the principals and queues
--- F6a's refresh-grant revocation job, exactly like global logout.
+-- A change ends every session signed in before it and raises reauth_after
+-- past it. A verified event (and any change found by reconciliation that
+-- ended a live session or is less than a day old) also holds the principals
+-- and queues F6a's refresh-grant revocation job, exactly like global logout.
+-- A change for a principal with no account yet is still a watermark:
+-- bootstrap refuses logins from before it.
 ALTER TABLE accounts ADD COLUMN credentials_changed_at timestamptz;
 --> statement-breakpoint
 CREATE TABLE auth_event_receipts (
@@ -25,6 +28,8 @@ CREATE TABLE auth_event_receipts (
 );
 --> statement-breakpoint
 CREATE INDEX auth_event_receipts_received_idx ON auth_event_receipts (received_at);
+--> statement-breakpoint
+CREATE INDEX auth_event_receipts_principal_idx ON auth_event_receipts (principal_digest, occurred_at);
 --> statement-breakpoint
 CREATE TABLE security_reconcile_checks (
   principal_digest bytea PRIMARY KEY CHECK (octet_length(principal_digest) = 32),
@@ -59,10 +64,12 @@ CREATE POLICY jobs_worker_insert ON jobs FOR INSERT TO gogospend_jobs
   WITH CHECK (kind NOT IN ('auth0_revoke_grants', 'auth0_security_reconcile', 'sync_snapshot', 'export'));
 --> statement-breakpoint
 -- The one place a credential change takes effect (not granted to any role;
--- called by the event and reconciliation routines). Records the receipt
--- first, so a concurrent delivery of the same id waits on it and then sees a
--- duplicate. Returns 'applied', 'superseded', 'no_account', 'duplicate' or
--- 'conflict' (the id was used for different content; nothing changes).
+-- called by the event and reconciliation routines). Takes the principal lock
+-- bootstrap takes, then records the receipt, so a concurrent delivery of the
+-- same id waits on it and then sees a duplicate, and a first sign-in waiting
+-- on the lock sees the change. Returns 'applied', 'superseded', 'no_account',
+-- 'duplicate' or 'conflict' (the id was used for different content; nothing
+-- changes).
 CREATE FUNCTION gogospend_apply_credential_change(p_event_id text, p_source text, p_type text, p_issuer text, p_subject text, p_occurred_at timestamptz, p_job_id uuid)
   RETURNS text
   LANGUAGE plpgsql VOLATILE SECURITY DEFINER
@@ -72,16 +79,17 @@ DECLARE
   v_digest bytea := public.gogospend_principal_digest(p_issuer, p_subject);
   v_existing public.auth_event_receipts%ROWTYPE;
   v_account uuid;
-  v_status text;
   v_changed timestamptz;
   v_generation integer;
   v_lifecycle integer;
   v_cutoff timestamptz;
-  v_revoked integer;
+  v_live_ended integer;
 BEGIN
-  IF p_occurred_at IS NULL OR p_occurred_at > clock_timestamp() + interval '5 minutes' THEN
+  -- The verifier allows 60 s of clock skew; this leaves room for processing.
+  IF p_occurred_at IS NULL OR p_occurred_at > clock_timestamp() + interval '90 seconds' THEN
     RAISE EXCEPTION 'a credential change cannot be in the future' USING ERRCODE = '22023';
   END IF;
+  PERFORM pg_advisory_xact_lock(hashtextextended('gogospend.principal:' || encode(v_digest, 'hex'), 0));
   INSERT INTO public.auth_event_receipts (event_id, source, type, principal_digest, occurred_at, outcome)
   VALUES (p_event_id, p_source, p_type, v_digest, p_occurred_at, 'pending')
   ON CONFLICT (event_id) DO NOTHING;
@@ -95,16 +103,18 @@ BEGIN
 
   SELECT i.account_id INTO v_account FROM public.account_identities i WHERE i.issuer = p_issuer AND i.subject = p_subject;
   IF v_account IS NULL THEN
+    -- Kept as the principal's watermark: bootstrap refuses logins from before it.
     UPDATE public.auth_event_receipts r SET outcome = 'no_account' WHERE r.event_id = p_event_id;
     RETURN 'no_account';
   END IF;
   -- The common account lock, then a fresh read (see lockAccount).
   PERFORM 1 FROM public.account_sync_state s WHERE s.account_id = v_account FOR UPDATE;
-  SELECT a.status, a.credentials_changed_at, a.session_generation, a.lifecycle_generation
-    INTO v_status, v_changed, v_generation, v_lifecycle
+  SELECT a.credentials_changed_at, a.session_generation, a.lifecycle_generation
+    INTO v_changed, v_generation, v_lifecycle
     FROM public.accounts a WHERE a.id = v_account;
-  IF NOT FOUND OR v_status <> 'active' OR (v_changed IS NOT NULL AND p_occurred_at <= v_changed) THEN
-    UPDATE public.auth_event_receipts r SET outcome = 'superseded', account_id = CASE WHEN v_status IS NULL THEN NULL ELSE v_account END WHERE r.event_id = p_event_id;
+  -- Any status: a disabled account re-enabled later must not revive old sessions.
+  IF NOT FOUND OR (v_changed IS NOT NULL AND p_occurred_at <= v_changed) THEN
+    UPDATE public.auth_event_receipts r SET outcome = 'superseded', account_id = CASE WHEN FOUND THEN v_account END WHERE r.event_id = p_event_id;
     RETURN 'superseded';
   END IF;
 
@@ -114,13 +124,17 @@ BEGIN
      SET credentials_changed_at = p_occurred_at,
          reauth_after = greatest(coalesce(a.reauth_after, '-infinity'::timestamptz), v_cutoff)
    WHERE a.id = v_account;
-  UPDATE public.auth_sessions s SET revoked_at = now()
-   WHERE s.account_id = v_account AND s.revoked_at IS NULL AND s.authenticated_at < v_cutoff
-     AND now() < s.idle_expires_at AND now() < s.absolute_expires_at;
-  GET DIAGNOSTICS v_revoked = ROW_COUNT;
-  IF v_revoked = 0 THEN
-    -- Nothing signed in with the old credentials is live here: without a
-    -- binding, an old refresh grant cannot bind again (reauth_after).
+  WITH ended AS (
+    UPDATE public.auth_sessions s SET revoked_at = now()
+     WHERE s.account_id = v_account AND s.revoked_at IS NULL AND s.authenticated_at < v_cutoff
+    RETURNING (now() < s.idle_expires_at AND now() < s.absolute_expires_at) AS live
+  )
+  SELECT count(*) FILTER (WHERE live) INTO v_live_ended FROM ended;
+  -- Old refresh grants could still reach the token-only routes (and spend the
+  -- principal's challenge budget): revoke them for every verified event and
+  -- for a reconciled change that ended a live session or is recent. A change
+  -- found days after every live session started ends nothing.
+  IF v_live_ended = 0 AND p_source = 'reconcile' AND p_occurred_at < clock_timestamp() - interval '1 day' THEN
     UPDATE public.auth_event_receipts r SET outcome = 'applied', account_id = v_account WHERE r.event_id = p_event_id;
     RETURN 'applied';
   END IF;
@@ -138,6 +152,95 @@ BEGIN
   ), 20);
   UPDATE public.auth_event_receipts r SET outcome = 'applied', account_id = v_account, job_id = p_job_id WHERE r.event_id = p_event_id;
   RETURN 'applied';
+END
+$$;
+--> statement-breakpoint
+-- Bootstrap (0003), now also refusing a login from before the newest
+-- provider credential change recorded for the principal, including one that
+-- arrived before the account existed; a new account starts with that change
+-- as its watermark. Otherwise unchanged.
+CREATE OR REPLACE FUNCTION gogospend_bootstrap(p_issuer text, p_subject text, p_client_id text, p_challenge_id uuid, p_nonce_digest bytea, p_auth_time timestamptz, p_new_account_id uuid, p_session_id uuid, p_binding_digest bytea)
+  RETURNS TABLE (outcome text, account_id uuid, session_generation integer)
+  LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+  SET search_path = pg_catalog
+AS $$
+#variable_conflict use_column
+DECLARE
+  v_digest bytea := public.gogospend_principal_digest(p_issuer, p_subject);
+  v_challenge public.reauth_challenges%ROWTYPE;
+  v_account uuid;
+  v_outcome text := 'renewed';
+  v_status text;
+  v_generation integer;
+  v_reauth_after timestamptz;
+  v_changed timestamptz;
+BEGIN
+  PERFORM pg_advisory_xact_lock(hashtextextended('gogospend.principal:' || encode(v_digest, 'hex'), 0));
+  -- The common account lock comes before the challenge row, the same order
+  -- as deletion and authorizePurpose, so racing them cannot deadlock.
+  SELECT i.account_id INTO v_account FROM public.account_identities i WHERE i.issuer = p_issuer AND i.subject = p_subject;
+  IF v_account IS NOT NULL THEN
+    PERFORM 1 FROM public.account_sync_state s WHERE s.account_id = v_account FOR UPDATE;
+    -- Re-read: the account may have been deleted while this waited.
+    SELECT i.account_id INTO v_account FROM public.account_identities i WHERE i.issuer = p_issuer AND i.subject = p_subject;
+  END IF;
+  SELECT c.* INTO v_challenge FROM public.reauth_challenges c
+   WHERE c.id = p_challenge_id AND c.principal_digest = v_digest AND c.client_id = p_client_id AND c.purpose = 'bootstrap'
+   FOR UPDATE;
+  IF NOT FOUND OR v_challenge.nonce_digest <> p_nonce_digest THEN
+    RETURN QUERY SELECT 'challenge_invalid'::text, NULL::uuid, NULL::integer;
+    RETURN;
+  END IF;
+  IF v_challenge.consumed_at IS NOT NULL THEN
+    RETURN QUERY SELECT 'challenge_used'::text, NULL::uuid, NULL::integer;
+    RETURN;
+  END IF;
+  IF v_challenge.expires_at <= now() THEN
+    RETURN QUERY SELECT 'challenge_invalid'::text, NULL::uuid, NULL::integer;
+    RETURN;
+  END IF;
+  UPDATE public.reauth_challenges c SET consumed_at = now() WHERE c.id = p_challenge_id;
+  IF p_auth_time < v_challenge.created_at - interval '30 seconds' THEN
+    RETURN QUERY SELECT 'reauth_required'::text, NULL::uuid, NULL::integer;
+    RETURN;
+  END IF;
+  -- Checked after the account lock, so a hold written under that lock
+  -- (global-logout cleanup, deletion) always wins.
+  IF EXISTS (SELECT 1 FROM public.blocked_principals b
+              WHERE b.principal_digest = v_digest AND (b.blocked_until IS NULL OR b.blocked_until > now())) THEN
+    RETURN QUERY SELECT 'blocked'::text, NULL::uuid, NULL::integer;
+    RETURN;
+  END IF;
+  -- F6b: a provider credential change recorded for this principal - even
+  -- before any account existed - refuses logins from before it.
+  SELECT max(r.occurred_at) INTO v_changed FROM public.auth_event_receipts r
+   WHERE r.principal_digest = v_digest AND r.outcome <> 'pending';
+  IF v_changed IS NOT NULL AND p_auth_time < date_trunc('second', v_changed) + interval '1 second' THEN
+    RETURN QUERY SELECT 'reauth_required'::text, NULL::uuid, NULL::integer;
+    RETURN;
+  END IF;
+  IF v_account IS NULL THEN
+    INSERT INTO public.accounts (id, credentials_changed_at, reauth_after)
+    VALUES (p_new_account_id, v_changed, date_trunc('second', v_changed) + interval '1 second');
+    INSERT INTO public.account_sync_state (account_id) VALUES (p_new_account_id);
+    INSERT INTO public.account_identities (issuer, subject, account_id) VALUES (p_issuer, p_subject, p_new_account_id);
+    v_account := p_new_account_id;
+    v_outcome := 'created';
+  END IF;
+  -- Fresh read under the lock (see lockAccount).
+  SELECT a.status, a.session_generation, a.reauth_after INTO v_status, v_generation, v_reauth_after
+    FROM public.accounts a WHERE a.id = v_account;
+  IF v_status <> 'active' THEN
+    RETURN QUERY SELECT 'account_unavailable'::text, NULL::uuid, NULL::integer;
+    RETURN;
+  END IF;
+  IF v_reauth_after IS NOT NULL AND p_auth_time < v_reauth_after THEN
+    RETURN QUERY SELECT 'reauth_required'::text, NULL::uuid, NULL::integer;
+    RETURN;
+  END IF;
+  INSERT INTO public.auth_sessions (id, account_id, binding_digest, principal_digest, client_id, session_generation, authenticated_at, idle_expires_at, absolute_expires_at)
+  VALUES (p_session_id, v_account, p_binding_digest, v_digest, p_client_id, v_generation, p_auth_time, now() + interval '7 days', now() + interval '30 days');
+  RETURN QUERY SELECT v_outcome, v_account, v_generation;
 END
 $$;
 --> statement-breakpoint
@@ -181,8 +284,10 @@ AS $$
                     AND j.lease_token = p_lease_token AND j.lease_expires_at > clock_timestamp())
 $$;
 --> statement-breakpoint
--- The least recently checked principals of active accounts that still have
--- a live session (nothing to protect otherwise), for a current lease only.
+-- Principals of active accounts that still have a live session (nothing to
+-- protect otherwise), longest-waiting first: by when they were last checked,
+-- or - never checked - since their earliest live session began, so new
+-- sign-ins cannot starve older ones. Current lease only.
 CREATE FUNCTION gogospend_reconcile_candidates(p_job_id uuid, p_lease_token uuid, p_limit integer)
   RETURNS TABLE (issuer text, subject text, credentials_changed_at timestamptz)
   LANGUAGE sql STABLE SECURITY DEFINER
@@ -197,14 +302,18 @@ AS $$
      AND EXISTS (SELECT 1 FROM public.auth_sessions s
                   WHERE s.account_id = a.id AND s.revoked_at IS NULL
                     AND now() < s.idle_expires_at AND now() < s.absolute_expires_at)
-   ORDER BY c.checked_at NULLS FIRST, i.issuer, i.subject
+   ORDER BY coalesce(c.checked_at,
+                     (SELECT min(s.created_at) FROM public.auth_sessions s
+                       WHERE s.account_id = a.id AND s.revoked_at IS NULL)), i.issuer, i.subject
    LIMIT least(greatest(p_limit, 1), 1000)
 $$;
 --> statement-breakpoint
 -- Marks the principal checked and applies the last password change Auth0
 -- reports (null: none). The receipt id is derived from the principal and the
--- change time, so a change found again is a duplicate. Returns 'checked',
--- 'applied', 'superseded', 'duplicate', 'no_account' or 'stale_lease'.
+-- change time, so a change found again is a duplicate. A time the provider
+-- reports in the future is not applied ('invalid_time'). Returns 'checked',
+-- 'applied', 'superseded', 'duplicate', 'no_account', 'conflict',
+-- 'invalid_time' or 'stale_lease'.
 CREATE FUNCTION gogospend_reconcile_identity(p_job_id uuid, p_lease_token uuid, p_issuer text, p_subject text, p_changed_at timestamptz, p_new_job_id uuid) RETURNS text
   LANGUAGE plpgsql VOLATILE SECURITY DEFINER
   SET search_path = pg_catalog
@@ -219,6 +328,9 @@ BEGIN
   ON CONFLICT (principal_digest) DO UPDATE SET checked_at = EXCLUDED.checked_at;
   IF p_changed_at IS NULL THEN
     RETURN 'checked';
+  END IF;
+  IF p_changed_at > clock_timestamp() + interval '90 seconds' THEN
+    RETURN 'invalid_time';
   END IF;
   RETURN public.gogospend_apply_credential_change(
     'reconcile:' || encode(v_digest, 'hex') || ':' || floor(extract(epoch FROM p_changed_at) * 1000)::bigint::text,

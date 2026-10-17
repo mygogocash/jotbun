@@ -83,7 +83,8 @@ export function verifySecurityEvent(rawBody: Buffer, header: string | undefined,
   const fields = body as Record<string, unknown>;
   if (Object.keys(fields).sort().join(',') !== KEYS.join(',')) throw new SecurityEventRejected('envelope_invalid');
   const { id, type, issuer, subject, occurred_at: occurred } = fields;
-  if (typeof id !== 'string' || !EVENT_ID.test(id)) throw new SecurityEventRejected('envelope_invalid');
+  // `reconcile:` ids belong to reconciliation's own receipts.
+  if (typeof id !== 'string' || !EVENT_ID.test(id) || id.startsWith('reconcile:')) throw new SecurityEventRejected('envelope_invalid');
   if (typeof type !== 'string' || !(SECURITY_EVENT_TYPES as readonly string[]).includes(type)) throw new SecurityEventRejected('envelope_invalid');
   if (typeof subject !== 'string' || subject.length < 1 || subject.length > 255) throw new SecurityEventRejected('envelope_invalid');
   if (typeof issuer !== 'string' || typeof occurred !== 'string' || !ISO_INSTANT.test(occurred)) throw new SecurityEventRejected('envelope_invalid');

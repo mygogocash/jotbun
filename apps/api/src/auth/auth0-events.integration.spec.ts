@@ -16,6 +16,8 @@ import type { JwksFixture } from '../testing/jwks-server';
 import { createTestDatabase } from '../testing/postgres-harness';
 import type { TestDatabase } from '../testing/postgres-harness';
 import { V1AppModule, configureV1App } from '../v1/v1-app.module';
+import { SessionRevocationService } from '../accounts/session-revocation.service';
+import { DatabaseService } from '../database/database.service';
 import { EVENT_SIGNATURE_HEADER, signSecurityEvent } from './auth0-event-verifier';
 import { SecurityEventService } from './auth0-events.service';
 import type { CredentialStateOutcome, IdentityMaintenanceGateway, MaintenanceOutcome } from './auth0-management.client';
@@ -31,10 +33,12 @@ let events: SecurityEventService;
 let jobs: JobRepository;
 let security: SecurityJobRepository;
 
-const gateway: IdentityMaintenanceGateway & { revoked: string[]; resets: Map<string, string>; state: CredentialStateOutcome | null; outcome: MaintenanceOutcome } = {
+const gateway: IdentityMaintenanceGateway & { revoked: string[]; resets: Map<string, string>; state: CredentialStateOutcome | null; perSubject: Map<string, CredentialStateOutcome>; asked: string[]; outcome: MaintenanceOutcome } = {
   revoked: [],
   resets: new Map(),
   state: null,
+  perSubject: new Map(),
+  asked: [],
   outcome: { status: 'done', count: 1 },
   async revokeGrants(subject) {
     this.revoked.push(subject);
@@ -44,7 +48,8 @@ const gateway: IdentityMaintenanceGateway & { revoked: string[]; resets: Map<str
     return { status: 'done', count: 0 };
   },
   async credentialState(subject) {
-    return this.state ?? { status: 'done', lastPasswordReset: this.resets.get(subject) ?? null };
+    this.asked.push(subject);
+    return this.perSubject.get(subject) ?? this.state ?? { status: 'done', lastPasswordReset: this.resets.get(subject) ?? null };
   },
 };
 const runWorker = (reconcile = false) =>
@@ -115,6 +120,8 @@ beforeEach(async () => {
   gateway.revoked = [];
   gateway.resets.clear();
   gateway.state = null;
+  gateway.perSubject.clear();
+  gateway.asked = [];
   gateway.outcome = { status: 'done', count: 1 };
   await db.admin((client) => client.query('DELETE FROM jobs'));
 });
@@ -141,12 +148,14 @@ describe('verified password-change events', () => {
     expect(await active(await signInAt(who, nowSeconds()))).toBe(true);
   });
 
-  it('a change after every live session revokes nothing and holds nothing', async () => {
+  it('a change after every live session ends no session, but old refresh grants are still revoked', async () => {
     const user = await signInAt(fx.identity(), nowSeconds() - 25);
-    const raw = envelope({ subject: user.who.subject, occurredAt: new Date((nowSeconds() - 40) * 1000) });
+    // Two days old (events are accepted for seven): still a reason to revoke grants.
+    const raw = envelope({ subject: user.who.subject, occurredAt: new Date(Date.now() - 2 * 86_400_000) });
     expect(await deliver(raw)).toBe('applied');
+    expect(await revocationJobs(user.accountId)).toBe(1);
+    expect(await runWorker()).toMatchObject({ revoked: 1 });
     expect(await active(user)).toBe(true);
-    expect(await revocationJobs(user.accountId)).toBe(0);
   });
 
   it('a duplicate delivery changes nothing, and concurrent duplicates apply once', async () => {
@@ -249,6 +258,11 @@ describe('over HTTP', () => {
     }
   });
 
+  it('refuses a large body at the 8 KiB limit, before any JSON parsing', async () => {
+    const res = await request(app.getHttpServer()).post('/v1/auth/provider-events').set('content-type', 'application/json').send(`{"x":${'['.repeat(20_000)}`);
+    expect([res.status, res.body.code]).toEqual([413, 'COMMAND_TOO_LARGE']);
+  });
+
   it('accepts a signed event as sent, and refuses a forged or re-serialized one', async () => {
     const user = await signInAt(fx.identity(), nowSeconds() - 25);
     const raw = envelope({ subject: user.who.subject, occurredAt: new Date(Date.now() - 10_000) });
@@ -281,9 +295,9 @@ describe('reconciliation of lost events', () => {
     expect(await revocationJobs(user.accountId)).toBe(1);
   });
 
-  it('ignores a password change older than every live session', async () => {
+  it('ignores a password change from days before every live session', async () => {
     const user = await signInAt(fx.identity(), nowSeconds() - 25);
-    gateway.resets.set(user.who.subject, new Date(Date.now() - 3_600_000).toISOString());
+    gateway.resets.set(user.who.subject, new Date(Date.now() - 2 * 86_400_000).toISOString());
     expect(await runWorker(true)).toMatchObject({ reconciled: 1 });
     expect(await active(user)).toBe(true);
     expect(await revocationJobs(user.accountId)).toBe(0);
@@ -314,5 +328,132 @@ describe('reconciliation of lost events', () => {
     const generic = new JobRepository(await db.loginPool(['gogospend_jobs'], 1));
     await security.scheduleReconcile(randomUUID(), 0).catch(() => undefined);
     expect(await generic.claim([RECONCILE_KIND])).toEqual([]);
+  });
+});
+
+describe('F6b review fixes', () => {
+  const reconcileWith = (batch: number) => runSecurityJobsOnce({ jobs, security, gateway, nativeClientIds: [TEST_CLIENT_ID], reconcile: { everySeconds: 60, batch } });
+  const account = async (accountId: string) =>
+    (await db.admin((client) => client.query<{ reauth_after: Date | null; credentials_changed_at: Date | null }>('SELECT reauth_after, credentials_changed_at FROM accounts WHERE id = $1', [accountId]))).rows[0];
+
+  it('an event that arrives before the account exists still stops a pre-change login from binding', async () => {
+    const who = fx.identity();
+    const challenge = await fx.challengeFor(who);
+    expect(await deliver(envelope({ subject: who.subject, occurredAt: new Date(Date.now() - 5_000) }))).toBe('applied');
+    expect(await problem(async () => fx.bootstrapper.bootstrap(who, await fx.proofFor(who, challenge, { auth_time: nowSeconds() - 20 })))).toBe('401 REAUTH_REQUIRED');
+    // Refused before anything is created: no stray empty account.
+    expect((await db.admin((client) => client.query('SELECT count(*)::int AS n FROM account_identities WHERE subject = $1', [who.subject]))).rows[0].n).toBe(0);
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+    const fresh = await signInAt(who, nowSeconds());
+    expect(await active(fresh)).toBe(true);
+  });
+
+  it('a provider time the database cannot take is skipped; the pass still reaches everyone', async () => {
+    const poison = await signInAt(fx.identity('auth0|0000-poison'), nowSeconds() - 25);
+    const victim = await signInAt(fx.identity(), nowSeconds() - 25);
+    gateway.resets.set(poison.who.subject, new Date(Date.now() + 3_600_000).toISOString());
+    gateway.resets.set(victim.who.subject, new Date(Date.now() - 10_000).toISOString());
+    expect(await runWorker(true)).toMatchObject({ reconciled: 1 });
+    expect(await active(victim)).toBe(false);
+    expect(await active(poison)).toBe(true);
+    for (const bad of ['+275760-09-13T00:00:00.000Z', 'not a date']) {
+      gateway.resets.set(poison.who.subject, bad);
+      await db.admin((client) => client.query('DELETE FROM jobs WHERE kind = $1', [RECONCILE_KIND]));
+      expect(await runWorker(true)).toMatchObject({ reconciled: 1 });
+    }
+    expect(await active(poison)).toBe(true);
+  });
+
+  it('a permanent provider error for one identity skips it; the others are still reconciled', async () => {
+    const odd = await signInAt(fx.identity(), nowSeconds() - 25);
+    const victim = await signInAt(fx.identity(), nowSeconds() - 25);
+    gateway.perSubject.set(odd.who.subject, { status: 'permanent', code: 'provider_rejected' });
+    gateway.resets.set(victim.who.subject, new Date(Date.now() - 10_000).toISOString());
+    expect(await runWorker(true)).toMatchObject({ reconciled: 1 });
+    expect(await active(victim)).toBe(false);
+    expect(await active(odd)).toBe(true);
+  });
+
+  it('a change at the same instant under a new id is superseded', async () => {
+    const user = await signInAt(fx.identity(), nowSeconds() - 25);
+    const at = new Date(Date.now() - 10_000);
+    expect(await deliver(envelope({ subject: user.who.subject, occurredAt: at }))).toBe('applied');
+    const again = envelope({ subject: user.who.subject, occurredAt: at });
+    expect(await deliver(again)).toBe('applied');
+    expect(await receipt(again)).toEqual({ outcome: 'superseded', job_id: null });
+  });
+
+  it('the same id with the same subject but another time is refused', async () => {
+    const user = await signInAt(fx.identity(), nowSeconds() - 25);
+    const id = `evt_${randomUUID().replace(/-/g, '')}`;
+    expect(await deliver(envelope({ id, subject: user.who.subject, occurredAt: new Date(Date.now() - 10_000) }))).toBe('applied');
+    expect(await problem(() => deliver(envelope({ id, subject: user.who.subject, occurredAt: new Date(Date.now() - 9_000) })))).toBe('409 IDEMPOTENCY_MISMATCH');
+  });
+
+  it('a session signed in during the second of the change ends; one from the next second stays', async () => {
+    const who = fx.identity();
+    const second = nowSeconds() - 20;
+    const during = await signInAt(who, second);
+    const next = await signInAt(who, second + 1);
+    // Exactly on the second: a login stamped with that same second may predate the change.
+    expect(await deliver(envelope({ subject: who.subject, occurredAt: new Date(second * 1000) }))).toBe('applied');
+    await runWorker();
+    expect(await active(during)).toBe(false);
+    expect(await active(next)).toBe(true);
+  });
+
+  it('a delayed event never lowers a later global logout\'s reauth_after', async () => {
+    const user = await signInAt(fx.identity(), nowSeconds() - 25);
+    const commandId = randomUUID();
+    const proofId = await fx.proven(user.who, 'global_logout', commandId);
+    await new SessionRevocationService(new DatabaseService(pool)).revokeAll(user.session, proofId, commandId);
+    const logout = (await account(user.accountId)).reauth_after;
+    expect(await deliver(envelope({ subject: user.who.subject, occurredAt: new Date(Date.now() - 15_000) }))).toBe('applied');
+    expect((await account(user.accountId)).reauth_after).toEqual(logout);
+  });
+
+  it('an event for a disabled account still applies, so re-enabling it revives nothing', async () => {
+    const user = await signInAt(fx.identity(), nowSeconds() - 25);
+    await db.admin((client) => client.query(`UPDATE accounts SET status = 'disabled' WHERE id = $1`, [user.accountId]));
+    const raw = envelope({ subject: user.who.subject, occurredAt: new Date(Date.now() - 10_000) });
+    expect(await deliver(raw)).toBe('applied');
+    expect((await receipt(raw)).outcome).toBe('applied');
+    await db.admin((client) => client.query(`UPDATE accounts SET status = 'active' WHERE id = $1`, [user.accountId]));
+    expect(await active(user)).toBe(false);
+  });
+
+  it('a checked identity goes to the back of the queue, and one without a live session is never asked', async () => {
+    // Subjects sort opposite to sign-in order, so only waiting time can order them.
+    const first = await signInAt(fx.identity(`auth0|zzzz-${randomUUID()}`), nowSeconds() - 25);
+    const second = await signInAt(fx.identity(`auth0|0000-${randomUUID()}`), nowSeconds() - 25);
+    const gone = await signInAt(fx.identity(), nowSeconds() - 25);
+    await db.admin((client) => client.query('UPDATE auth_sessions SET revoked_at = now() WHERE account_id = $1', [gone.accountId]));
+    await security.scheduleReconcile(randomUUID(), 60);
+    const [claimed] = await jobs.claim([RECONCILE_KIND]);
+    const order = async () => (await security.reconcileCandidates(claimed.lease, 1000)).map((candidate) => candidate.subject);
+    const before = await order();
+    expect(before).not.toContain(gone.who.subject);
+    expect(before.indexOf(first.who.subject)).toBeLessThan(before.indexOf(second.who.subject));
+    expect(await security.reconcileIdentity(claimed.lease, { issuer: issuer.issuer, subject: first.who.subject, credentialsChangedAt: null }, null, randomUUID())).toBe('checked');
+    const after = await order();
+    expect(after.indexOf(first.who.subject)).toBeGreaterThan(after.indexOf(second.who.subject));
+    expect(await security.reconcileIdentity({ ...claimed.lease, leaseToken: randomUUID() }, { issuer: issuer.issuer, subject: second.who.subject, credentialsChangedAt: null }, null, randomUUID())).toBe('stale_lease');
+  });
+
+  it('a generic jobs login can neither see, claim nor create a queued reconciliation pass', async () => {
+    expect(await security.scheduleReconcile(randomUUID(), 60)).toBe(true);
+    const generic = await db.loginPool(['gogospend_jobs'], 1);
+    expect((await generic.query('SELECT count(*)::int AS n FROM jobs WHERE kind = $1', [RECONCILE_KIND])).rows[0].n).toBe(0);
+    expect(await new JobRepository(generic).claim([RECONCILE_KIND])).toEqual([]);
+    await expect(generic.query(`INSERT INTO jobs (id, kind, payload, max_attempts) VALUES ($1, $2, '{}', 1)`, [randomUUID(), RECONCILE_KIND])).rejects.toThrow();
+  });
+
+  it('a finished pass is not queued again within the interval', async () => {
+    expect(await security.scheduleReconcile(randomUUID(), 60)).toBe(true);
+    const [claimed] = await jobs.claim([RECONCILE_KIND]);
+    expect(await jobs.complete(claimed.lease)).toBe(true);
+    expect(await security.scheduleReconcile(randomUUID(), 60)).toBe(false);
+    expect(await security.scheduleReconcile(randomUUID(), 0)).toBe(true);
+    void reconcileWith;
   });
 });

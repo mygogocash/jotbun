@@ -1169,3 +1169,38 @@ Observed, not changed (pre-existing):
   - Auth0 is linked before the database transaction. Its failure modes are covered above; unlinking is not offered.
   - Linking signs every device out (global logout), so both identities sign in again once cleanup clears.
 - **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (448), test:db PASS (426), test:app PASS (16), test:unit PASS (173), test:render PASS (60), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. One `gogospend_test_*` database seen afterwards belonged to a parallel worktree's running suite.
+
+## Review fixes for F6b
+
+- **F6b review** (commit `efa96b2`): no blockers, two majors, six minors and some nits; 12 mutants survived. The reviewer confirmed:
+  - the HMAC envelope and its rotation and replay window;
+  - raw-body fidelity;
+  - receipt-first dedupe under concurrency;
+  - no deadlocks across event, renewal and worker;
+  - hold handover;
+  - the privileges of every new routine;
+  - that a generic jobs login and a forged lease are refused.
+- **Fixed, with tests that failed first.** RED: 7 of 27 database tests and 1 of 8 unit tests failed, all on behaviour; then all passed. The other new tests pin behaviour the surviving mutants changed. All 14 re-applied mutants now fail the suite (`f6bfix-mutants.log`), including the four that first survived the new tests until those were sharpened.
+  - **Major — a change that arrived before the account existed was lost.** A login from before the change could still create the account and bind.
+    - The apply routine now takes the principal lock bootstrap takes.
+    - Bootstrap (re-created in `0011`, otherwise unchanged) refuses a login from before the newest recorded change for the principal, including a `no_account` one. It refuses before creating anything, so no stray account is left.
+    - A new account starts with that change as its watermark.
+  - **Major — one bad provider time stalled reconciliation for everyone.**
+    - Times are now checked in TypeScript (`usableChangeTime`): a real instant, not before 2000, at most 60 s ahead.
+    - The database answers `invalid_time` instead of raising.
+    - A permanent refusal for one identity is skipped and marked checked; only an outage fails the pass.
+  - **Minor — old refresh grants survived when no session ended.** Every verified event now revokes grants behind a hold. A reconciled change ends nothing only when it is more than a day older than every live session.
+  - **Minor — the database and verifier disagreed on the future limit.** The database now allows 90 s (60 s skew plus processing). The routine stays with `gogospend_bootstrap`; a dedicated role was not added (recorded).
+  - **Minor — reconcile fairness.** Candidates are ordered by last check, or, never checked, by when their earliest live session began, so new sign-ins cannot starve older ones. The runbook's bound and its note on sharing the rate limit are updated.
+  - **Minor — the sample Action.**
+    - The issuer and URL now come from Action secrets.
+    - Delivery is retried on 5xx or network errors and refusals are logged.
+    - The id is a hash, so long user ids cannot truncate it.
+  - **Nits:**
+    - The events route has its own 8 KiB parser, which keeps the raw bytes; the general 2 MiB parser no longer keeps raw bodies.
+    - An event for a disabled (or any non-active) account now applies, so re-enabling it revives nothing.
+    - `reconcile:` event ids are reserved.
+    - `ReconcileOutcome` includes `conflict`, `no_account` and `invalid_time`.
+    - Receipt retention is handed to P5, noted in the runbook.
+  - **Not changed (recorded):** the Action's `occurred_at` can be a few seconds after the real change, so a login in that window must sign in again. It is documented.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (448), test:db PASS (438), test:app PASS (16), test:unit PASS (173), test:render PASS (60), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. The one `gogospend_test_*` database seen belonged to a parallel worktree's running suite.

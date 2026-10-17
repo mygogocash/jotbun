@@ -131,56 +131,96 @@ Answers: `200 {"result":"applied"|"duplicate"}`, `401 UNAUTHENTICATED`
 IDEMPOTENCY_MISMATCH` (an id reused for different content), `404` when no
 secret is configured. Retry only on 5xx or a network error, with the same id.
 
-Effect, under the account lock, when the change is newer than the account's
-last applied one (an older or repeated event changes nothing):
+Effect, under the principal and account locks, when the change is newer
+than the account's last applied one (an older or repeated event changes
+nothing; any account status, so re-enabling a disabled account revives no
+old session):
 
-1. every live session signed in before the change (auth time, rounded up to
-   the next whole second) ends at once, and `reauth_after` moves past the
-   change, so no login from before it can bind again - including one replayed
-   from an old refresh grant;
-2. if any session ended, every alias is held and `auth0_revoke_grants` is
-   queued (the global-logout cleanup, same hold and retry rules); sessions
-   signed in after the change wait for that cleanup.
+1. every session signed in before the change (auth time, rounded up to the
+   next whole second) ends at once, and `reauth_after` moves past the change
+   (never back), so no login from before it can bind again - including one
+   replayed from an old refresh grant;
+2. every alias is held and `auth0_revoke_grants` is queued (the global-logout
+   cleanup, same hold and retry rules), so old refresh grants cannot even
+   reach the token-only routes; sessions signed in after the change wait for
+   that cleanup.
 
-Post Change Password Action (Node 18 runtime; synthetic until E1):
+A change for a principal with no account yet is kept as its watermark:
+a first sign-in with a login from before the change is refused
+(`REAUTH_REQUIRED`), and the new account starts with that watermark.
+Event ids starting with `reconcile:` are reserved.
+
+Post Change Password Action (Node 18 runtime; synthetic until E1). Set the
+Action secrets `JOTBUN_EVENTS_SECRET`, `JOTBUN_ISSUER` (exactly the API's
+`AUTH0_ISSUER`, including any regional or custom domain) and
+`JOTBUN_EVENTS_URL`:
 
 ```js
 exports.onExecutePostChangePassword = async (event, api) => {
   const crypto = require('crypto');
+  const now = Date.now();
   const body = JSON.stringify({
-    id: `pcp_${event.user.user_id.replace(/[^A-Za-z0-9]/g, '')}_${Date.now()}`.slice(0, 128),
+    // Unique per change, short whatever the user id length.
+    id: `pcp_${crypto.createHash('sha256').update(`${event.user.user_id}:${now}`).digest('hex').slice(0, 48)}`,
     type: 'password_changed',
-    issuer: `https://${event.tenant.id}.auth0.com/`, // the API's AUTH0_ISSUER (custom domain if used)
+    issuer: event.secrets.JOTBUN_ISSUER,
     subject: event.user.user_id,
-    occurred_at: new Date().toISOString(),
+    // The Action runs just after the change; this may be up to a few seconds late.
+    occurred_at: new Date(now).toISOString(),
   });
-  const t = Math.floor(Date.now() / 1000);
-  const mac = crypto.createHmac('sha256', event.secrets.JOTBUN_EVENTS_SECRET).update(`${t}.${body}`).digest('hex');
-  await fetch('https://<api host>/v1/auth/provider-events', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-gogospend-event-signature': `t=${t},v1=${mac}` },
-    body,
-  });
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    const t = Math.floor(Date.now() / 1000);
+    const mac = crypto.createHmac('sha256', event.secrets.JOTBUN_EVENTS_SECRET).update(`${t}.${body}`).digest('hex');
+    try {
+      const response = await fetch(event.secrets.JOTBUN_EVENTS_URL, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-gogospend-event-signature': `t=${t},v1=${mac}` },
+        body,
+      });
+      if (response.ok) return;
+      if (response.status < 500) {
+        console.log(`jotbun event refused: ${response.status}`);
+        return; // not retryable; reconciliation still finds the change
+      }
+    } catch (error) {
+      // network error: retry
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
+  }
+  console.log('jotbun event not delivered; reconciliation will find the change');
 };
 ```
+
+An `occurred_at` a little later than the real change can end a legitimate
+login made within that same second; the user signs in again.
 
 ### Lost events: reconciliation
 
 The security worker queues an `auth0_security_reconcile` pass at most every
 `SECURITY_RECONCILE_INTERVAL_SECONDS` (default 300). Each pass reads
-`last_password_reset` for the `SECURITY_RECONCILE_BATCH` (default 200) least
-recently checked identities that still have a live session, and applies any
-change newer than the account's last one exactly as an event would. A change
-older than every live session ends nothing.
+`last_password_reset` for the `SECURITY_RECONCILE_BATCH` (default 200)
+longest-waiting identities that still have a live session - ordered by when
+each was last checked, or, never checked, since its earliest live session
+began, so new sign-ins cannot starve older ones - and applies any change
+newer than the account's last one exactly as an event would, except that a
+change found more than a day after every live session began ends nothing and
+revokes nothing.
 
-- **Propagation bound for a lost event:** at most
+- **Propagation bound for a lost event:** each identity waits behind at most
+  everyone who was waiting before it, so a change is found within about
   `ceil(identities with live sessions / batch) × interval` plus one pass
   (about 10 minutes for up to 200 signed-in identities with the defaults).
   Raise the batch or lower the interval as the user base grows; the bound is
-  recorded with the tenant proof.
+  recorded with the tenant proof. The pass runs after the worker's revocation
+  jobs and shares the Management API rate limit with them.
+- **One bad identity cannot stop a pass:** a time that is not a real instant,
+  is before 2000 or is ahead of now is treated as unknown, and a permanent
+  refusal for one identity is skipped; both are marked checked.
 - **Provider outage:** the pass fails as retryable (`provider_unavailable`)
   and sessions stay as they are - nothing is guessed; it runs again with
   backoff, and a terminal failure is logged like any security job.
+- **Retention:** receipts and check rows are kept until P5's retention job
+  prunes them (receipts must outlive the 7-day event window).
 - Do not claim that access-token expiry alone ends a compromised refreshable
   session: recovery relies on the binding revocation above.
 

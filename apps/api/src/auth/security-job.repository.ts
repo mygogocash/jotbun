@@ -11,7 +11,19 @@ export type RevocationState = 'current' | 'superseded' | 'stale_lease';
 
 /** An identity with a live session, and the last credential change applied to its account. */
 export type ReconcileCandidate = { issuer: string; subject: string; credentialsChangedAt: Date | null };
-export type ReconcileOutcome = 'checked' | 'applied' | 'duplicate' | 'superseded' | 'stale_lease';
+export type ReconcileOutcome = 'checked' | 'applied' | 'duplicate' | 'superseded' | 'no_account' | 'conflict' | 'invalid_time' | 'stale_lease';
+
+// A provider time is used only if it is a real instant from this century and
+// not ahead of now by more than clock skew; anything else counts as unknown.
+const EARLIEST_CHANGE = Date.parse('2000-01-01T00:00:00Z');
+const FUTURE_SKEW_MS = 60_000;
+
+export function usableChangeTime(value: string | null, nowMs: number = Date.now()): Date | null {
+  if (value === null) return null;
+  const at = Date.parse(value);
+  if (!Number.isFinite(at) || at < EARLIEST_CHANGE || at > nowMs + FUTURE_SKEW_MS) return null;
+  return new Date(at);
+}
 
 export const RECONCILE_KIND = 'auth0_security_reconcile';
 
@@ -133,11 +145,13 @@ export async function processRevocationJob(claimed: ClaimedJob, deps: SecurityJo
 
 /**
  * One reconciliation pass: asks Auth0 for the last password change of the
- * least recently checked identities that still have a live session, and
- * applies any change newer than the account's last one exactly as a verified
- * event would. It covers events that were lost; its bound is documented in
- * the runbook. A provider outage keeps sessions as they are and retries the
- * pass - it never guesses.
+ * longest-waiting identities that still have a live session, and applies any
+ * change newer than the account's last one exactly as a verified event would.
+ * It covers events that were lost; its bound is documented in the runbook.
+ * One identity cannot stop the pass: an unusable time counts as unknown and a
+ * permanent refusal for that identity is skipped (both are marked checked). A
+ * provider outage keeps sessions as they are and retries the pass - it never
+ * guesses.
  */
 export async function processReconcileJob(claimed: ClaimedJob, deps: SecurityJobDeps): Promise<ReconcileResult> {
   const { lease } = claimed;
@@ -150,10 +164,9 @@ export async function processReconcileJob(claimed: ClaimedJob, deps: SecurityJob
     } catch {
       return failed(deps, lease, 'worker_error', true);
     }
-    if (state.status !== 'done') return failed(deps, lease, state.code, state.status === 'retryable');
-    const changedAt = state.lastPasswordReset === null ? null : new Date(state.lastPasswordReset);
-    const known = changedAt !== null && !Number.isNaN(changedAt.getTime()) ? changedAt : null;
-    if ((await deps.security.reconcileIdentity(lease, candidate, known, newId())) === 'stale_lease') return 'stale';
+    if (state.status === 'retryable') return failed(deps, lease, state.code, true);
+    const changedAt = state.status === 'done' ? usableChangeTime(state.lastPasswordReset) : null;
+    if ((await deps.security.reconcileIdentity(lease, candidate, changedAt, newId())) === 'stale_lease') return 'stale';
   }
   return (await deps.jobs.complete(lease, 'succeeded')) ? 'reconciled' : 'stale';
 }
