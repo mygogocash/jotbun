@@ -18,6 +18,7 @@ import { ENTITY_STATES } from "./common.ts";
 import type { CommittedChangeGroup, EntityChange, Revision } from "./common.ts";
 import { isBudgetSnapshot } from "./budgets.ts";
 import { isCategorySnapshot } from "./categories.ts";
+import { isExportRequestSnapshot } from "./privacy.ts";
 import { isTransactionSnapshot } from "./transactions.ts";
 import { isUuid } from "./validation.ts";
 import { isWalletSnapshot } from "./wallets.ts";
@@ -83,6 +84,8 @@ export const SYNC_ENTITY_VALIDATORS: Readonly<Record<string, (snapshot: unknown)
   category: isCategorySnapshot,
   transaction: isTransactionSnapshot,
   budget: isBudgetSnapshot,
+  // P4: an export request (its period only); the file is never synced.
+  export: isExportRequestSnapshot,
 };
 
 const REVISION = /^(0|[1-9][0-9]{0,18})$/;

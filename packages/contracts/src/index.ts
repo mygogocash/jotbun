@@ -123,3 +123,17 @@ export {
   isSnapshotDto,
 } from "./v1/sync.ts";
 export type { SyncChangesPage, SnapshotStatus, SnapshotChunkGrant, SnapshotDto, SnapshotChunk } from "./v1/sync.ts";
+export {
+  EXPORT_TTL_HOURS,
+  EXPORT_GRANT_MINUTES,
+  EXPORT_DOWNLOAD_PATH,
+  EXPORT_STATUSES,
+  EXPORT_CSV_COLUMNS,
+  EXPORT_CSV_BOM,
+  exportFileName,
+  isExportFilter,
+  isExportRequestSnapshot,
+  isExportDto,
+  isExportGrant,
+} from "./v1/privacy.ts";
+export type { ExportStatus, ExportFilter, ExportRequest, ExportRequestSnapshot, ExportDto, ExportGrant, ExportCsvColumn } from "./v1/privacy.ts";

@@ -85,11 +85,11 @@ Migration integration is serial:
 | `0010_sync` | S1 | snapshot manifests, cursor support, retention |
 | `0011_auth_events` | F6b | verified provider-event receipts and reset reconciliation state |
 | `0012_account_linking` | F6c | linking routines only (proof checks, alias move, empty-account fold); no tables |
+| `0013_exports` | P4 | `exports` (request period; private file record and 24-hour expiry), leased export-row read, export record and status routines |
 | next free | P2a | uploads, import jobs, quota counters |
 | next free | P2b | candidates, preview issues |
 | next free | P2c | `attachments`, `transaction_attachments` |
 | next free | P3 | frozen selections, per-row progress with unique `(job_id, source_row_id)` |
-| next free | P4 | export jobs/objects |
 | next free | P5 | deletion requests, retention schedule |
 
 F1, F5, M5, S2–S4 and P6a/P6b add no migration; F6c needed routines (no tables) and took `0012`. Numbers follow the order tasks are actually integrated: F6b was deferred with its hosted proof, so M1–M4 took `0005`–`0008` and P1 took `0009` (17 October 2026). Every later migration, including F6b's and any F6c needs, takes the next free number when it is integrated and updates this table in the same diff. Generate/review the matching Drizzle metadata in this order; parallel feature writers must not independently rewrite the migration journal.

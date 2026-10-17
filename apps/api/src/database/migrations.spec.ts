@@ -1,10 +1,10 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import type { Client } from 'pg';
 
-import { readJournal, verifyAppliedMigrations } from './migrations';
+import { MIGRATIONS_FOLDER, readJournal, verifyAppliedMigrations } from './migrations';
 
 let folder: string;
 
@@ -25,7 +25,11 @@ afterEach(() => {
 
 describe('migration journal', () => {
   it('the committed journal matches its SQL files', () => {
-    expect(readJournal().map((migration) => migration.tag)).toEqual(['0001_identity', '0002_rate_limits', '0003_sessions_policies', '0004_jobs_security', '0005_commands', '0006_wallets_categories', '0007_transactions', '0008_budgets', '0009_jobs_storage', '0010_sync', '0011_auth_events', '0012_account_linking']);
+    const tags = readJournal().map((migration) => migration.tag);
+    // Every migration file, in order. Later migrations are numbered when they are
+    // integrated, so only the already-integrated prefix is pinned by name.
+    expect(tags).toEqual(readdirSync(MIGRATIONS_FOLDER).filter((name) => name.endsWith('.sql')).map((name) => name.slice(0, -'.sql'.length)).sort());
+    expect(tags.slice(0, 13)).toEqual(['0001_identity', '0002_rate_limits', '0003_sessions_policies', '0004_jobs_security', '0005_commands', '0006_wallets_categories', '0007_transactions', '0008_budgets', '0009_jobs_storage', '0010_sync', '0011_auth_events', '0012_account_linking', '0013_exports']);
   });
 
   it('accepts a contiguous, increasing journal', () => {

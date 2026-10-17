@@ -5,14 +5,16 @@
 //   LEASED_READ_DATABASE_URL - member of gogospend_leased_read only (account
 //                              reads through lease-validating routines).
 // One job at a time (CPU parser concurrency one). Periodically sweeps
-// unpublished, expired and orphaned objects, applies the 30-day change
-// retention, and reports - counts only -
-// failed jobs and queued kinds no handler here runs. Never logs payloads,
+// unpublished, expired and orphaned objects (export files at their 24-hour
+// expiry), applies the 30-day change retention, and reports - counts only -
+// failed jobs, queued kinds no handler here runs and export objects whose
+// deletion is overdue. Never logs payloads,
 // object keys or error text. See apps/api/.env.jobs-worker.example.
 import { Pool } from 'pg';
 
 import { poolConfigFromUrl } from './database/database-config';
 import { LeasedAccountRead } from './database/leased-account-read';
+import { exportCleanupOverdue } from './exports/export-handler';
 import { buildHandlers } from './jobs/handlers';
 import { JobRepository } from './jobs/job.repository';
 import { JobWorker } from './jobs/worker';
@@ -60,6 +62,13 @@ async function main(): Promise<void> {
         if (removed.length > 0) console.log(`job worker: swept ${removed.length} object(s)`);
       } catch (error) {
         console.error(`job worker: object sweep failed (${error instanceof Error ? error.name : 'unknown'})`);
+      }
+      try {
+        // Alert on this line: export files past their deletion deadline are still stored.
+        const overdue = await exportCleanupOverdue(jobsPool);
+        if (overdue > 0) console.error(`job worker: ${overdue} export object(s) overdue for deletion`);
+      } catch (error) {
+        console.error(`job worker: export cleanup check failed (${error instanceof Error ? error.name : 'unknown'})`);
       }
       try {
         const pruned = await retention.prune();

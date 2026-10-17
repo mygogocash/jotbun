@@ -1204,3 +1204,86 @@ Observed, not changed (pre-existing):
     - Receipt retention is handed to P5, noted in the runbook.
   - **Not changed (recorded):** the Action's `occurred_at` can be a few seconds after the real change, so a login in that window must sign in again. It is documented.
 - **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (448), test:db PASS (438), test:app PASS (16), test:unit PASS (173), test:render PASS (60), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. The one `gogospend_test_*` database seen belonged to a parallel worktree's running suite.
+
+## P4: private asynchronous export (local work)
+
+- **Migration `0013_exports`** (numbered `0011` in its branch; renumbered at integration after F6b `0011` and F6c `0012`):
+  - `exports`: one row per request. Its id is also the export job's id and the `export` entity's id. The owner's command writes the period and lifecycle generation. Only `gogospend_record_export` adds the file columns, once: object key, size, digest, row count, the revision it was read at and an expiry within 25 h of `ready_at`. CHECKs require the file columns all set or all null, and the key must be this export's own `export/<account>/<export>/…` publication.
+  - **App access:** owner-read RLS, INSERT of the request columns only, no UPDATE or DELETE. `gogospend_export_job_status` gives the owner's export job state.
+  - `gogospend_leased_export_rows` (leased-read role only) validates the lease through P1's `gogospend_leased_account(…, 'export')`. It takes the account and period from the stored job, which no worker login can change, and returns active records dated within the period in `(occurred_on, id)` order, with wallet and category names. Amounts are text. No account, identity, receipt or deleted rows.
+  - `gogospend_record_export` (jobs role) needs a current `export` lease, an active account at the job's generation, and the object this lease published with the same size, digest and expiry.
+- **Contract** (`packages/contracts/src/v1/privacy.ts`):
+  - `ExportFilter` (`Pick<HistoryFilter,'from'|'through'>`), `ExportRequest`, `ExportRequestSnapshot`, the `ExportDto` union (`pending | ready | failed | expired`) and `ExportGrant`.
+  - `EXPORT_CSV_COLUMNS`, `EXPORT_CSV_BOM`, `EXPORT_TTL_HOURS = 24`, `EXPORT_GRANT_MINUTES = 5`, `EXPORT_DOWNLOAD_PATH` and `exportFileName`.
+  - Strict validators. `SYNC_ENTITY_VALIDATORS` gains `export`.
+- **Request** (`POST /v1/exports`, `recent_proof`, 202): `ExportService.request(ctx, proofId, CommandInput<ExportFilter>)` runs through M1's `CommandExecutor` as the policy-exempt kind `export.request` (outcome `accepted`). Under the account lock, after the session re-check and receipt replay, the mutation:
+  1. consumes a fresh `export` proof bound to the command id (`authorizePurpose`);
+  2. queues the job through P1's `gogospend_enqueue_account_job` (3 attempts, 900 s per attempt);
+  3. inserts the `exports` row;
+  4. commits an `export` entity change (`{id, from, through}`).
+
+  The export id is derived from (account, command id). The period is validated by `parseHistoryRequest`, so its date rules are exactly history's.
+- **Status, grant and download** (`bound_session`, so no policy acceptance is needed):
+  - `GET /v1/exports/:id`.
+  - `GET /v1/exports/:id/grant` returns `{url, expires_at}`.
+  - `GET /v1/export-files/:grant` returns `text/csv`, `Content-Disposition: attachment`, `no-store`. The body must match the recorded size and SHA-256.
+  - Only the caller's own export is served, at the account's current lifecycle generation and while the account is active. Unknown, foreign, unready and expired exports are all the same 404.
+  - Grants reuse S1's opaque account-bound HMAC construction (`SnapshotGrants`) under keys from `CommandDigester.deriveKeys('gogospend.export-grant.v1')`, so an export grant never verifies as a snapshot grant. They last five minutes and never outlive the file.
+- **Worker** (`ExportHandler.run(lease)`, registered as `export` in `jobs/handlers.ts`):
+  - It reads the high-water revision and every record page in one `LeasedAccountRead.withSnapshot(lease, 'export')` REPEATABLE READ view (new `LeasedReadTx.exportRows`).
+  - It builds the CSV in bounded memory (`CsvWriter`: 64 KiB blocks, 64 MiB cap; larger fails terminally as `export_too_large`) and closes the view before the upload.
+  - If the lease is no longer held it stops. Otherwise it reserves the key, PUTs, and in one `finishWithObjects` transaction publishes the file with a 24-hour expiry, records it and completes the job.
+  - The worker's maintenance loop logs a count-only alert (`exportCleanupOverdue`) for export objects whose deletion is over an hour late or whose storage delete failed. P1's sweep deletes the file at its deadline.
+- **CSV** (`csv-writer.ts`): RFC 4180, CRLF and a UTF-8 byte order mark. Every cell goes through a typed encoder:
+  - `csvText` (notes, merchants, wallet and category names): a leading `=`, `+`, `-` or `@` (ASCII or full-width), tab, CR or LF gets a `'` prefix, including after leading whitespace, no-break or ideographic spaces, zero-width characters or a BOM. The cell is then quoted when it holds a comma, quote or line break.
+  - `csvNumber` (exact `amount_minor` and the BigInt-free `amount` in baht): canonical numbers only, never prefixed.
+  - `csvLiteral`: ids, dates and enum values in a safe charset only.
+  - Columns: id, date, type, both amounts, `THB`, wallet id and name, category id, name and built-in key, source and destination wallet ids and names, merchant, note and version.
+- **Client** (`apps/app/src/spend/v1/privacy.ts`):
+  - `createPrivacyResources`: requests as the proof's command (Idempotency-Key = proof command id, schema 1), and validates status and grant DTOs exactly.
+  - A download must match the ready export's size and SHA-256. The byte order mark is restored if text decoding dropped it.
+  - The journey: `requestExport` (cancelled reauth requests nothing), `retryExportRequest` (an unknown outcome keeps the exact key, body and proof; `REAUTH_REQUIRED` asks for a new proof instead of signing out), `pollExport` (bounded) and `downloadExport` (a fresh grant each time; expired asks for nothing).
+- **RED → GREEN** (assertion-level RED against compile-safe seams: stub writer, service, handler, leased read and client; real migration and contract; no module errors):
+  - `npm run test -w gogospend-api -- --runTestsByPath src/exports/csv-writer.spec.ts`: 31 of 32 failed, then 32 of 32. The one that held at RED: ordinary text stays unchanged.
+  - `npm run test:db -w gogospend-api -- --runTestsByPath src/exports/export.integration.spec.ts`: 15 of 15 failed, then 15 of 15. On the first RED run 10 failures came from helper throws (`expectOk`, an empty claim); those helpers now assert with `expect`, and the recorded RED is 15 assertion failures.
+  - `npm run test:unit -w gogospend-app -- src/spend/v1/privacy.test.ts`: 8 of 9 failed (`ERR_ASSERTION`), then 9 of 9. Cancelled reauth already requested nothing.
+  - The export, sync-API and migration DB specs were stable over 2 more runs (34 of 34 each).
+  - Pinned `untrusted_csv_text_cannot_start_formula`: `csvText('=SUM(A1:A2)')` is `'=SUM(A1:A2)`.
+- **Integration proofs** (`export.integration.spec.ts`, real v1 app, worker and memory store):
+  - **Proofs:** a missing proof, a `global_logout` proof, a proof for another command, and a proof with `auth_time` 6 minutes old each get 401 `REAUTH_REQUIRED` and queue nothing. A valid proof is consumed once.
+  - **Replay:** the same key and body returns the identical acknowledgement with one job and one row. A changed period is 409 `IDEMPOTENCY_MISMATCH`. A missing schema header is 422 before the proof is used, and the same key then succeeds.
+  - **Policy:** an account that has not accepted the required terms gets 403 on a wallet write but can still export (a header-only CSV). With no binding the request is 401.
+  - **Fields and period:** every entry and transfer field appears. Records on both edge dates are present; the day before, the day after and a deleted record are not. Hostile notes, merchant, wallet and category names are neutralized, and `99999999999` and `999999999.99` are exact.
+  - **Reconciliation:** rows equal `GET /v1/history` for the same period record by record, and income and expense sums equal its summary.
+  - **Nothing extra:** no account id, subject, binding, issuer, `receipt` or `attachment` text.
+  - **Concurrent edit:** an edit, a delete and a create commit between leased pages. The file still shows the request-time state (`as_of_revision` before them), and a later export shows the edits.
+  - **Deletion race:** an account set to `deleting` with a new generation after the upload publishes nothing, and the sweep removes the object. A cancel mid-read publishes nothing and reports `failed`.
+  - **After ready:** an account that is `disabled` or `deleting`, or a new lifecycle generation, gets no grant or file (HTTP 401/403, service null, status `expired`).
+  - **Cross-owner:** another account's status, grant and file are the same 404 body as an unknown id. A snapshot lease, a forged token and a wrong purpose cannot read export rows, and the leased-read login still cannot SELECT `transactions` or `exports`.
+  - **Expiry and cleanup:** a grant is valid until 5 minutes and refused after. The file expires 24 h after `ready_at` (equal to the publication's `delete_after`) and the sweep deletes it.
+  - **Failed cleanup:** a failed storage delete stays `deleting` and is counted overdue until the next sweep deletes it.
+  - **Logs:** captured API logs and console output contain no note text, amount, grant, object key or digest.
+- **Deviations, for review:**
+  - **Export requests are synced.** M1's executor needs a change for the command's entity, and S1's parity test requires `SYNC_ENTITY_VALIDATORS` to cover every registered entity. So an `export` entity with its period only rides in deltas and snapshots. The app diary stores it and ignores it in totals. A client built before this change would refuse such groups; none has shipped.
+  - **The grant `url` is a relative API path,** not a presigned storage URL: P1's `ObjectStore` never presigns. Downloading still needs the owner's bound session.
+  - **Grants reuse `SnapshotGrants` (index 0)** rather than a new grant class.
+  - **The ready DTO adds** `as_of_revision`, `row_count`, `bytes`, `sha256` and `expires_at` beyond the plan's interface, so the client can verify the file. The CSV starts with a UTF-8 BOM so spreadsheets read Thai.
+  - **Category names:** a built-in category is named by its stable key (`food`); the server does not localize.
+  - **File layout:** status, grant and file lookups live in `export.service.ts` (no repository file). `exportCleanupOverdue` lives in `export-handler.ts`, and `worker.ts` gained its alert step.
+  - **Journal test:** `migrations.spec.ts` now compares the journal with the `.sql` files on disk and pins only `0001`–`0010` by name, so renumbering at merge needs no edit there.
+  - **No per-account cap on open exports.** Each needs a fresh re-login proof, and requests share the write budget.
+- **SKIPPED:**
+  - **Hosted:** real private R2 delivery, grant, expiry and lifecycle evidence, and the synthetic real-scope export (P1's hosted gate, E1).
+  - **E2 UX:** the settings/privacy screen; copy for queued, ready, expired, failed and reauthentication; save/share on devices; Thai and English review. No UI or locale strings were added.
+- **For P5 (recorded, not changed):**
+  - `exports` rows (period, size, digest, row count) stay after the file is deleted. The `export` change-log snapshots carry periods. P5's retention should purge or age out both, and its account purge removes them by cascade.
+  - `gogospend_cancel_account_jobs` already cancels export jobs. `object_publications` rows outlive the account, so the sweep still deletes export files after erasure.
+  - S1's row in the master migration table still reads "next free" although S1 took `0010`.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (35 suites, 469 tests), test:db PASS (29 suites, 412 tests), test:app PASS (16), test:unit PASS (182), test:render PASS (60), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. The built API loads the new contract exports and `dist/exports/*`. My runs left no test databases; one other `gogospend_test_*` database existed, from concurrent runs.
+
+## Integration: P4 merged
+
+- **Merged:** P4 (built in its own worktree as `d8f191c`).
+- **Migration:** renumbered from `0011_exports` to `0013_exports`, after F6b (`0011`) and F6c (`0012`). Journal and plan table are updated.
+- **Journal test:** now checks the journal against the `.sql` files on disk, with the integrated prefix `0001`–`0013` pinned by name.
+- **Full gate on the merged tree:** typecheck PASS, typecheck:app PASS, test:api PASS (480), test:db PASS (453), test:app PASS (16), test:unit PASS (182), test:render PASS (60), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. The two `gogospend_test_*` databases seen belonged to parallel worktrees' running suites.

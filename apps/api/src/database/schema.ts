@@ -173,6 +173,22 @@ export const snapshotChunks = pgTable(
   (table) => [primaryKey({ columns: [table.snapshotId, table.chunkIndex] })],
 );
 
+export const exportsTable = pgTable('exports', {
+  exportId: uuid('export_id').primaryKey(),
+  accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+  lifecycleGeneration: integer('lifecycle_generation').notNull(),
+  fromDate: date('from_date', { mode: 'string' }).notNull(),
+  throughDate: date('through_date', { mode: 'string' }).notNull(),
+  requestedAt: instant('requested_at').notNull().defaultNow(),
+  objectKey: text('object_key').unique(),
+  bytes: bigint('bytes', { mode: 'bigint' }),
+  sha256: bytea('sha256'),
+  rowCount: integer('row_count'),
+  highWater: bigint('high_water', { mode: 'bigint' }),
+  readyAt: instant('ready_at'),
+  expiresAt: instant('expires_at'),
+});
+
 export const reauthChallenges = pgTable('reauth_challenges', {
   id: uuid('id').primaryKey(),
   principalDigest: bytea('principal_digest').notNull(),
@@ -383,4 +399,5 @@ export const schema = {
   objectPublications,
   snapshotManifests,
   snapshotChunks,
+  exports: exportsTable,
 };

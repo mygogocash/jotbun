@@ -15,6 +15,7 @@ import { jsonBody } from '../common/json-body';
 import { safeRequestLogger } from '../common/safe-request-logger';
 import { DatabaseModule } from '../database/database.module';
 import { DatabaseService } from '../database/database.service';
+import { ExportsModule } from '../exports/exports.module';
 import { SyncModule } from '../sync/sync.module';
 import { TransactionsModule } from '../transactions/transactions.module';
 import { WalletsModule } from '../wallets/wallets.module';
@@ -25,7 +26,7 @@ import { WalletsModule } from '../wallets/wallets.module';
  * (v1-isolation.spec.ts).
  */
 @Module({
-  imports: [DatabaseModule, AuthModule, CommandsModule, WalletsModule, CategoriesModule, TransactionsModule, BudgetsModule, SyncModule],
+  imports: [DatabaseModule, AuthModule, CommandsModule, WalletsModule, CategoriesModule, TransactionsModule, BudgetsModule, SyncModule, ExportsModule],
 })
 export class V1AppModule {}
 
