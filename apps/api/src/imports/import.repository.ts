@@ -23,12 +23,15 @@ export type IntakeOutcomeCode =
   | 'deadline_passed'
   | 'account_changed'
   | 'session_ended'
+  | 'upload_stalled'
+  | 'upload_timeout'
   | 'intake_error';
 
 export type BeginInput = { jobId: string; intakeToken: string; fileName: string; declaredType: string; declaredBytes: number | null };
 export type StoredUpload = { dto: ImportJobDto; fileName: string | null; declaredType: string };
 export type BeginResult =
-  | { kind: 'started' }
+  /** `remainingBytes`: what the account may still have accepted in the 24-hour window. */
+  | { kind: 'started'; remainingBytes: number }
   | { kind: 'replay'; upload: StoredUpload }
   | { kind: 'in_progress'; retryAfterSeconds: number }
   | { kind: 'ended'; status: 'rejected' | 'failed'; code: string }
@@ -50,12 +53,14 @@ export interface ImportIntakeRepository {
   abort(ctx: SessionContext, jobId: string, intakeToken: string, status: 'rejected' | 'failed', code: IntakeOutcomeCode): Promise<string[]>;
   /** Confirms parts whose storage delete succeeded (otherwise the sweep retries them). */
   discarded?(ctx: SessionContext, jobId: string, intakeToken: string, keys: readonly string[]): Promise<void>;
+  /** Seconds until `need` more accepted bytes fit in the account's 24-hour window (at least 1). */
+  bytesRetry(ctx: SessionContext, need: number): Promise<number>;
 }
 
-const LIMITS: Record<string, ImportLimit> = { limit_uploads: 'uploads', limit_bytes: 'bytes', limit_parse_jobs: 'parse_jobs' };
+const LIMITS: Record<string, ImportLimit> = { limit_uploads: 'uploads', limit_bytes: 'bytes', limit_parse_jobs: 'parse_jobs', limit_in_progress: 'in_progress' };
 const REFUSALS: readonly IntakeOutcomeCode[] = ['deadline_passed', 'account_changed'];
 
-type Outcome = { outcome: string; code: string | null; retry_after_seconds: number | null };
+type Outcome = { outcome: string; code: string | null; retry_after_seconds: number | null; remaining_bytes?: string | null };
 type UploadRow = {
   job_id: string;
   status: string;
@@ -116,12 +121,12 @@ export class ImportRepository implements ImportIntakeRepository {
     return this.db.withOwnerTransaction(ctx, async (tx) => {
       await this.underLock(tx, ctx);
       const [row] = await tx.query<Outcome>(
-        'SELECT outcome, code, retry_after_seconds FROM gogospend_begin_import_upload($1, $2, $3, $4, $5)',
+        'SELECT outcome, code, retry_after_seconds, remaining_bytes::text AS remaining_bytes FROM gogospend_begin_import_upload($1, $2, $3, $4, $5)',
         [input.jobId, input.intakeToken, input.fileName, input.declaredType, input.declaredBytes],
       );
       switch (row?.outcome) {
         case 'started':
-          return { kind: 'started' };
+          return { kind: 'started', remainingBytes: Number(row.remaining_bytes ?? 0) };
         case 'replay': {
           const stored = await this.stored(tx, input.jobId);
           if (!stored) throw new Error('a replayed upload has no accepted row');
@@ -177,6 +182,13 @@ export class ImportRepository implements ImportIntakeRepository {
     return this.db.withOwnerTransaction(ctx, async (tx) => {
       const rows = await tx.query<{ key: string }>('SELECT key FROM gogospend_abort_import_upload($1, $2, $3, $4) AS key', [jobId, intakeToken, status, code]);
       return rows.map((row) => row.key);
+    });
+  }
+
+  bytesRetry(ctx: SessionContext, need: number): Promise<number> {
+    return this.db.withOwnerTransaction(ctx, async (tx) => {
+      const [row] = await tx.query<{ seconds: number }>('SELECT gogospend_import_bytes_wait($1) AS seconds', [need]);
+      return row?.seconds ?? 1;
     });
   }
 

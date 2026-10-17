@@ -1,7 +1,7 @@
-import { Controller, Get, HttpCode, Inject, Param, Post, Req } from '@nestjs/common';
+import { Controller, Get, HttpCode, Inject, Param, Post, Req, Res } from '@nestjs/common';
 import { ContractValidationError, IMPORT_FILE_NAME_HEADER, isUuid } from '@gogospend/contracts';
 import type { ImportJobDto, SessionContext, UploadAccepted } from '@gogospend/contracts';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 
 import { Access } from '../auth/auth-route.decorator';
 import { CurrentSession } from '../auth/request-context';
@@ -47,20 +47,25 @@ export class ImportsController {
   @Post()
   @Access('current_policy')
   @HttpCode(202)
-  async upload(@CurrentSession() session: SessionContext, @Req() req: Request): Promise<UploadAccepted> {
-    if (!this.config.uploadsEnabled) throw new ProblemException(404, 'NOT_FOUND');
-    // Leaving the iteration early must not destroy the socket: the response
-    // still has to reach the client.
-    const body = req.iterator({ destroyOnReturn: false }) as AsyncIterator<Uint8Array>;
+  async upload(@CurrentSession() session: SessionContext, @Req() req: Request, @Res({ passthrough: true }) res: Response): Promise<UploadAccepted> {
     try {
+      if (!this.config.uploadsEnabled) throw new ProblemException(404, 'NOT_FOUND');
+      // Leaving the iteration early must not destroy the socket: the error
+      // reply still has to reach the client.
+      const body = req.iterator({ destroyOnReturn: false }) as AsyncIterator<Uint8Array>;
       return await this.intake.accept(session, { [Symbol.asyncIterator]: () => body }, {
         idempotencyKey: singleHeader(req, 'idempotency-key'),
         fileName: fileNameFrom(req),
         contentType: singleHeader(req, 'content-type') ?? '',
         declaredBytes: contentLength(req),
       });
+    } catch (error) {
+      // The rest of the body is not wanted: close the connection once the
+      // error reply is sent, instead of reading whatever the client still sends.
+      if (!req.complete) res.setHeader('Connection', 'close');
+      throw error;
     } finally {
-      // Whatever was not read is discarded as it arrives, never buffered.
+      // Until then, what arrives is discarded unbuffered.
       if (!req.complete) req.resume();
     }
   }

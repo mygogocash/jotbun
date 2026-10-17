@@ -8,15 +8,18 @@
 // unpublished, expired and orphaned objects (export files at their 24-hour
 // expiry), runs P5's retention steps (privacy/privacy-steps.ts: purged
 // records, change log, receipt digests, security records, finished jobs,
-// completed deletion requests), and reports - counts only -
-// failed jobs, queued kinds no handler here runs and export objects whose
-// deletion is overdue. Never logs payloads,
+// completed deletion requests), and reports - counts only - failed jobs,
+// queued kinds no handler here runs and export and quarantine objects whose
+// deletion is overdue. Before each sweep it runs the import maintenance
+// (stale uploads, imports to end, names past their preview window). Never
+// logs payloads,
 // object keys or error text. See apps/api/.env.jobs-worker.example.
 import { Pool } from 'pg';
 
 import { poolConfigFromUrl } from './database/database-config';
 import { LeasedAccountRead } from './database/leased-account-read';
 import { exportCleanupOverdue } from './exports/export-handler';
+import { importMaintenance, quarantineCleanupOverdue } from './imports/import-expiry';
 import { buildHandlers } from './jobs/handlers';
 import { JobRepository } from './jobs/job.repository';
 import { JobWorker } from './jobs/worker';
@@ -60,6 +63,15 @@ async function main(): Promise<void> {
       maintaining = true;
       // Each step runs even if another fails.
       try {
+        // Before the sweep, so the quarantine parts it makes due are deleted in this pass.
+        const ended = await importMaintenance(jobsPool);
+        if (ended.stale + ended.expired + ended.namesCleared > 0) {
+          console.log(`job worker: import maintenance failed ${ended.stale} stale upload(s), ended ${ended.expired} import(s), cleared ${ended.namesCleared} name(s)`);
+        }
+      } catch (error) {
+        console.error(`job worker: import maintenance failed (${error instanceof Error ? error.name : 'unknown'})`);
+      }
+      try {
         const removed = await publication.sweep(null);
         if (removed.length > 0) console.log(`job worker: swept ${removed.length} object(s)`);
       } catch (error) {
@@ -71,6 +83,13 @@ async function main(): Promise<void> {
         if (overdue > 0) console.error(`job worker: ${overdue} export object(s) overdue for deletion`);
       } catch (error) {
         console.error(`job worker: export cleanup check failed (${error instanceof Error ? error.name : 'unknown'})`);
+      }
+      try {
+        // Alert on this line: quarantined uploads past their deletion deadline are still stored.
+        const overdue = await quarantineCleanupOverdue(jobsPool);
+        if (overdue > 0) console.error(`job worker: ${overdue} quarantine object(s) overdue for deletion`);
+      } catch (error) {
+        console.error(`job worker: quarantine cleanup check failed (${error instanceof Error ? error.name : 'unknown'})`);
       }
       try {
         const report = await retention.run();

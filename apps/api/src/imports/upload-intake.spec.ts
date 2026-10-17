@@ -5,7 +5,11 @@ import {
   IMPORT_CONTENT_TYPES,
   IMPORT_HEIC_MESSAGE_KEY,
   IMPORT_LIMIT_MESSAGE_KEYS,
+  IMPORT_QUOTAS,
+  IMPORT_TIMEOUT_MESSAGE_KEY,
+  IMPORT_UPLOAD_IDLE_SECONDS,
   IMPORT_UPLOAD_MAX_BYTES,
+  IMPORT_UPLOAD_RECEIVE_SECONDS,
   importFormatForContentType,
   importFormatForExtension,
   isImportJobDto,
@@ -19,7 +23,7 @@ import type { ObjectBody } from '../storage/object-store';
 import { PATH_LIKE_NAMES, SYNTHETIC, meteredStream } from './fixtures/synthetic-uploads';
 import type { BeginInput, BeginResult, FinishInput, FinishResult, ImportIntakeRepository, IntakeOutcomeCode } from './import.repository';
 import { QUARANTINE_PART_BYTES, UploadIntake, importIntakeConfigFromEnv, sniffImportFormat } from './upload-intake';
-import type { UploadMetadata } from './upload-intake';
+import type { UploadIntakeLimits, UploadMetadata } from './upload-intake';
 
 const MiB = 1024 * 1024;
 const CAP = IMPORT_UPLOAD_MAX_BYTES;
@@ -43,9 +47,17 @@ class FakeImports implements ImportIntakeRepository {
   readonly reserved: string[] = [];
   readonly finished: FinishInput[] = [];
   readonly aborted: { status: 'rejected' | 'failed'; code: IntakeOutcomeCode }[] = [];
-  beginResult: BeginResult = { kind: 'started' };
+  readonly published = new Set<string>();
+  readonly retryNeeds: number[] = [];
+  beginResult: BeginResult = { kind: 'started', remainingBytes: Number.MAX_SAFE_INTEGER };
   finishResult: ((input: FinishInput) => FinishResult) | null = null;
   refuseReservationAt: number | null = null;
+  bytesRetryAfter = 1;
+
+  async bytesRetry(_ctx: SessionContext, need: number): Promise<number> {
+    this.retryNeeds.push(need);
+    return this.bytesRetryAfter;
+  }
 
   async begin(_ctx: SessionContext, input: BeginInput): Promise<BeginResult> {
     this.begun.push(input);
@@ -67,7 +79,8 @@ class FakeImports implements ImportIntakeRepository {
 
   async abort(_ctx: SessionContext, _jobId: string, intakeToken: string, status: 'rejected' | 'failed', code: IntakeOutcomeCode): Promise<string[]> {
     this.aborted.push({ status, code });
-    return this.reserved.filter((key) => key.includes(`/${intakeToken}/`));
+    // Like the routine: only reservations still unpublished are handed back for deletion.
+    return this.reserved.filter((key) => key.includes(`/${intakeToken}/`) && !this.published.has(key));
   }
 }
 
@@ -114,7 +127,7 @@ const meta = (format: ImportFormat, overrides: Partial<UploadMetadata> = {}): Up
   ...overrides,
 });
 
-function setup(limits: { maxConcurrent?: number } = {}) {
+function setup(limits: Partial<UploadIntakeLimits> = {}) {
   const imports = new FakeImports();
   const store = new MeteredStore();
   const intake = new UploadIntake(imports, store, limits);
@@ -503,5 +516,159 @@ describe('contract helpers and configuration', () => {
     expect(importIntakeConfigFromEnv({ IMPORT_UPLOADS_ENABLED: '1' })).toEqual({ uploadsEnabled: true });
     expect(importIntakeConfigFromEnv({ IMPORT_UPLOADS_ENABLED: 'true' })).toEqual({ uploadsEnabled: true });
     expect(() => importIntakeConfigFromEnv({ IMPORT_UPLOADS_ENABLED: 'yes' })).toThrow(/IMPORT_UPLOADS_ENABLED/);
+  });
+});
+
+/** Settles `promise` as an outcome, or reports it still running after `ms`. */
+async function within(promise: Promise<unknown>, ms: number): Promise<Problem> {
+  let timer: NodeJS.Timeout | undefined;
+  const late = new Promise<Problem>((resolve) => {
+    timer = setTimeout(() => resolve({ status: -1, code: 'STILL_RUNNING' }), ms);
+  });
+  try {
+    return await Promise.race([outcome(promise), late]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function gate() {
+  let open: () => void = () => undefined;
+  const opened = new Promise<void>((resolve) => {
+    open = resolve;
+  });
+  return { opened, open };
+}
+
+describe('review fixes: stalled and slow bodies', () => {
+  it('a body that stops arriving is ended after the idle timeout: 408, its parts deleted, its slot freed', async () => {
+    const { imports, store, intake } = setup({ idleMs: 50, maxConcurrent: 1 });
+    const release = gate();
+    const stalled = {
+      async *[Symbol.asyncIterator]() {
+        yield Buffer.concat([SYNTHETIC.csv, Buffer.alloc(QUARANTINE_PART_BYTES, 0x61)]);
+        await release.opened;
+      },
+    };
+    try {
+      expect(await within(intake.accept(session(), stalled, meta('csv')), 3_000)).toMatchObject({ status: 408, code: 'UPLOAD_INCOMPLETE', messageKey: IMPORT_TIMEOUT_MESSAGE_KEY });
+      expect(imports.aborted).toEqual([{ status: 'failed', code: 'upload_stalled' }]);
+      expect(store.puts).toHaveLength(1);
+      expect(await store.quarantined()).toEqual([]);
+      expect(await within(intake.accept(session(), once(SYNTHETIC.csv).stream, meta('csv')), 3_000)).toEqual({ status: 200, code: 'ACCEPTED' });
+    } finally {
+      release.open();
+    }
+  });
+
+  it('a body that keeps trickling is ended at the absolute receive deadline: 408', async () => {
+    const { imports, store, intake } = setup({ idleMs: 1_000, receiveMs: 150 });
+    let dripping = true;
+    const trickle = {
+      async *[Symbol.asyncIterator]() {
+        yield SYNTHETIC.csv;
+        while (dripping) {
+          await new Promise((resolve) => setTimeout(resolve, 20));
+          yield Buffer.from('2026-03-01,expense,food,1.00,drip\n');
+        }
+      },
+    };
+    try {
+      expect(await within(intake.accept(session(), trickle, meta('csv')), 3_000)).toMatchObject({ status: 408, code: 'UPLOAD_INCOMPLETE', messageKey: IMPORT_TIMEOUT_MESSAGE_KEY });
+      expect(imports.aborted).toEqual([{ status: 'failed', code: 'upload_timeout' }]);
+      expect(await store.quarantined()).toEqual([]);
+    } finally {
+      dripping = false;
+    }
+  });
+
+  it('defaults to the published idle and receive bounds', () => {
+    const { intake } = setup();
+    const limits = (intake as unknown as { limits: UploadIntakeLimits }).limits;
+    expect([limits.idleMs, limits.receiveMs]).toEqual([IMPORT_UPLOAD_IDLE_SECONDS * 1000, IMPORT_UPLOAD_RECEIVE_SECONDS * 1000]);
+    expect(limits.maxConcurrent).toBeGreaterThanOrEqual(8 * IMPORT_QUOTAS.uploadsInProgress);
+  });
+});
+
+describe('review fixes: quotas while streaming, lost replies and verification', () => {
+  it('a body is refused as soon as it passes what the account may still have accepted today: 429 bytes, nothing written', async () => {
+    const { imports, store, intake } = setup();
+    imports.beginResult = { kind: 'started', remainingBytes: 1000 };
+    imports.bytesRetryAfter = 777;
+    const source = meteredStream(SYNTHETIC.csv, 5 * MiB, { chunk: 512 });
+    expect(await outcome(intake.accept(session(), source.stream, meta('csv')))).toEqual({
+      status: 429,
+      code: 'UPLOAD_LIMIT_REACHED',
+      messageKey: IMPORT_LIMIT_MESSAGE_KEYS.bytes,
+      retryAfterSeconds: 777,
+    });
+    expect(source.pulled()).toBeLessThanOrEqual(1024);
+    expect(store.puts).toEqual([]);
+    expect(imports.aborted).toEqual([{ status: 'rejected', code: 'limit_bytes' }]);
+    expect(imports.retryNeeds).toEqual([1024]);
+  });
+
+  it('the 12 MiB cap still answers 413 when today allows more', async () => {
+    const { imports, intake } = setup();
+    imports.beginResult = { kind: 'started', remainingBytes: 40 * MiB };
+    expect(await outcome(intake.accept(session(), meteredStream(SYNTHETIC.csv, CAP + 1).stream, meta('csv')))).toMatchObject({ status: 413, code: 'UPLOAD_TOO_LARGE' });
+    expect(imports.retryNeeds).toEqual([]);
+  });
+
+  it('a finish that committed but whose reply was lost leaves the published parts alone', async () => {
+    const { imports, store, intake } = setup();
+    imports.finishResult = (input) => {
+      for (const part of input.parts) imports.published.add(part.key);
+      throw new Error('Connection terminated unexpectedly');
+    };
+    await expect(intake.accept(session(), meteredStream(SYNTHETIC.csv, 1.5 * MiB).stream, meta('csv'))).rejects.toThrow('Connection terminated');
+    expect(imports.published.size).toBe(2);
+    expect(await store.quarantined()).toEqual([...imports.published].sort());
+  });
+
+  it('a part whose stored size or digest differs from what was written fails the upload (503) and is deleted', async () => {
+    const { imports, store, intake } = setup();
+    const head = store.head.bind(store);
+    store.head = async (key) => {
+      const info = await head(key);
+      return info && { ...info, sha256: '0'.repeat(64) };
+    };
+    expect(await outcome(intake.accept(session(), once(SYNTHETIC.csv).stream, meta('csv')))).toMatchObject({ status: 503, code: 'SERVICE_UNAVAILABLE' });
+    expect(imports.finished).toEqual([]);
+    expect(imports.aborted).toEqual([{ status: 'failed', code: 'storage_unavailable' }]);
+    expect(await store.quarantined()).toEqual([]);
+  });
+
+  it('refuses CSV with a NUL after the sniffed bytes of its first chunk', async () => {
+    const { imports, store, intake } = setup();
+    const body = Buffer.concat([Buffer.from('date,amount,note\n'.repeat(6)), Buffer.from([0x00]), Buffer.from('tail\n')]);
+    expect(body.indexOf(0)).toBeGreaterThan(64);
+    expect(await outcome(intake.accept(session(), once(body).stream, meta('csv')))).toMatchObject({ status: 422, code: 'UPLOAD_TYPE_MISMATCH' });
+    expect(store.puts).toEqual([]);
+    expect(imports.aborted).toEqual([{ status: 'rejected', code: 'type_mismatch' }]);
+  });
+
+  it('after its file name was cleared (expiry), the same key replays its import under any name, but not under another type', async () => {
+    const { imports, intake } = setup();
+    const expired = dto({ status: 'expired', file_name: null });
+    imports.beginResult = { kind: 'replay', upload: { dto: expired, fileName: null, declaredType: 'text/csv' } };
+    await expect(intake.accept(session(), once(SYNTHETIC.csv).stream, meta('csv', { fileName: 'different.csv' }))).resolves.toEqual(expired);
+    expect(await outcome(intake.accept(session(), once(SYNTHETIC.xlsx).stream, meta('xlsx')))).toMatchObject({ status: 409, code: 'IDEMPOTENCY_MISMATCH' });
+  });
+});
+
+describe('review fixes: sniffing and names', () => {
+  it('text that starts like a binary signature is still text; AVIF under the HEIF brand is not HEIC', () => {
+    const text = (value: string) => Buffer.from(value.padEnd(64, ' '), 'latin1');
+    expect(sniffImportFormat(text('GIF8 code,amount\n1,2\n'))).toBe('csv');
+    expect(sniffImportFormat(text('%PDF-ref,amount\n1,2\n'))).toBe('csv');
+    expect(sniffImportFormat(text('qty,ftyp,amount\n1,a,2\n'))).toBe('csv');
+    expect(sniffImportFormat(text('RIFFLE,amount\n1,2\n'))).toBe('csv');
+    expect(sniffImportFormat(SYNTHETIC.avifMif1)).toBe('unsupported');
+    expect(sniffImportFormat(SYNTHETIC.heif)).toBe('heic');
+  });
+
+  it('accepts an emoji with its presentation selector', () => {
+    expect(parseImportFileName('receipt \u2615\uFE0F.jpg')).toEqual({ name: 'receipt \u2615\uFE0F.jpg', extension: 'jpg' });
   });
 });
