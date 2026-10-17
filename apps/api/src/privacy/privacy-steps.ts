@@ -4,6 +4,9 @@
 // docs/operations/retention.md and docs/operations/deletion.md.
 //
 // Contract for every domain:
+//   0. Register a step in defaultPrivacySteps() with a `<domain>.<step>` name;
+//      batched routines take a row limit and the runner calls them until they
+//      remove nothing (see `batched`).
 //   1. Account-owned tables reference accounts(id) ON DELETE CASCADE, so the
 //      deletion purge removes them; a table that cannot (it must outlive the
 //      account) is listed in ERASURE_HANDLED_TABLES with the step or routine
@@ -42,7 +45,6 @@ export type ErasureStep = { name: string; run(context: ErasureContext): Promise<
 export const ERASURE_HANDLED_TABLES: Readonly<Record<string, string>> = {
   jobs: 'gogospend_deletion_purge deletes the account\'s other jobs; retention prunes finished jobs after 30 days',
   object_publications: 'the deletion objects stage deletes every object; P1\'s sweep drops deleted rows after 30 days',
-  deletion_requests: 'kept as the initiating device\'s receipt; retention drops it 30 days after the purge',
   auth_event_receipts: 'gogospend_deletion_purge deletes them by principal digest (account_id is SET NULL)',
 };
 
@@ -109,6 +111,17 @@ export async function purgeExpiredRecords(pool: Pool, batchSize = 100): Promise<
   return purged;
 }
 
+/** Calls a batched `routine(limit)` until a call removes nothing (at most `maxPasses` calls per run). */
+async function batched(pool: Pool, routine: string, batchSize = 5_000, maxPasses = 200): Promise<number> {
+  let total = 0;
+  for (let pass = 0; pass < maxPasses; pass += 1) {
+    const n = await count(pool, routine, [batchSize]);
+    total += n;
+    if (n === 0) break;
+  }
+  return total;
+}
+
 /** Receipt digests older than the 30-day outbox lifetime, in batches. */
 export async function dropReceiptDigests(pool: Pool, batchSize = 5_000): Promise<number> {
   let dropped = 0;
@@ -131,12 +144,14 @@ export function defaultPrivacySteps(): PrivacySteps {
       // M1: request digests after the 30-day outbox lifetime (the compact acknowledgement stays).
       .retention({ name: 'commands.receipt_digests', run: (pool) => dropReceiptDigests(pool) })
       // F6b: provider-event receipts and reconcile checks after 30 days; expired challenges; lapsed deletion holds.
-      .retention({ name: 'auth.security_records', run: (pool) => count(pool, 'gogospend_prune_security_records') })
+      .retention({ name: 'auth.security_records', run: (pool) => batched(pool, 'gogospend_prune_security_records') })
       // P1: finished jobs after 30 days (failed ones stay for the runbook).
-      .retention({ name: 'jobs.finished', run: (pool) => count(pool, 'gogospend_prune_finished_jobs') })
+      .retention({ name: 'jobs.finished', run: (pool) => batched(pool, 'gogospend_prune_finished_jobs') })
       // P5: completed deletion requests 30 days after their purge.
-      .retention({ name: 'privacy.deletion_requests', run: (pool) => count(pool, 'gogospend_prune_deletion_requests') })
-    // P2a: .retention({ name: 'uploads.quarantine', ... }) - raw/quarantine objects and rows at 24 hours.
+      .retention({ name: 'privacy.deletion_requests', run: (pool) => batched(pool, 'gogospend_prune_deletion_requests') })
+      // P2a: upload rows 30 days after they finished or expired (quarantine objects go at 24 hours through P1's
+      // sweep and P2a's own maintenance; names are cleared after 8 days).
+      .retention({ name: 'imports.uploads', run: (pool) => batched(pool, 'gogospend_prune_import_uploads') })
     // P2b: .retention({ name: 'imports.preview', ... }) - unconfirmed candidates at 7 days, unattached sanitized images at 24 hours.
     // P2c: .retention({ name: 'attachments.obsolete', ... }) - receipts of purged or replaced records, once unreferenced.
     // P2a-P3: .erasure({ name: '<domain>.<step>', run }) - only for data the cascade and object stage cannot reach.

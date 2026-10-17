@@ -51,7 +51,13 @@ test('local rehearsal: erased accounts stay erased in a private restored copy', 
   assert.equal(result.passed, true);
   assert.deepEqual(receipt.erased_owner_rows, []);
   assert.deepEqual(receipt.missing_retained_objects, []);
-  assert.equal(receipt.accounts_erased, 2);
+  assert.equal(receipt.accounts_erased, 3);
+  // P5: the in-progress erasure (marker without purged_at) and the copy's own
+  // accepted-but-unmarked deletion are re-queued with their aliases captured
+  // and holds left open; the purged one is replayed, not re-queued.
+  assert.equal(receipt.erasures_requeued, 2);
+  assert.equal(checks.requeued_erasures, true);
+  assert.equal(checks.requeued_holds_open, true);
   // Alias re-blocking (one marker records a block end, one does not).
   assert.equal(checks.erased_principals_blocked, 2);
   assert.equal(checks.block_end_replayed, true);
