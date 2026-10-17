@@ -11,8 +11,11 @@
     "build": "swc src -d dist --strip-leading-paths",
     "start": "node dist/main",
     "start:dev": "node --watch dist/main",
+    "start:v1": "node dist/v1/main",
+    "db:migrate": "node dist/database/migrate-cli",
     "typecheck": "tsc --noEmit",
-    "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --maxWorkers=2 --workerIdleMemoryLimit=1GB"
+    "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --maxWorkers=2 --workerIdleMemoryLimit=1GB",
+    "test:db": "node ../../scripts/dev-v1.mjs db-up && NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest -c jest.integration.cjs --maxWorkers=2 --workerIdleMemoryLimit=1GB"
   },
   "dependencies": {
     "@gogospend/contracts": "0.1.0",
@@ -26,6 +29,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "dotenv": "^17.4.2",
+    "drizzle-orm": "0.45.3",
     "exceljs": "^4.4.0",
     "express": "^5.1.0",
     "firebase-admin": "^14.4.0",
@@ -33,6 +37,7 @@
     "jsqr": "^1.4.0",
     "mongoose": "^9.9.5",
     "multer": "^2.3.0",
+    "pg": "8.23.1",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.2",
     "sharp": "^0.35.4",
@@ -46,6 +51,7 @@
     "@types/jest": "^30.0.0",
     "@types/multer": "^2.2.0",
     "@types/node": "^26.5.1",
+    "@types/pg": "8.23.1",
     "@types/supertest": "^7.2.1",
     "jest": "^30.5.1",
     "supertest": "^7.0.0",
@@ -60,6 +66,10 @@
     ],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "\\.integration\\.spec\\.ts$"
+    ],
     "transform": {
       "^.+\\.(t|j)s$": [
         "@swc/jest",

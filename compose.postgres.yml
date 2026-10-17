@@ -1,0 +1,34 @@
+# Local-only PostgreSQL for the v1 API and its integration tests.
+# Started and guarded by scripts/dev-v1.mjs. Loopback-bound, with its own
+# volume; it never touches the legacy gogospend-mongo-local-data volume.
+# The admin password is a fixed local development value, not a credential
+# for any shared environment.
+name: gogospend-v1
+
+services:
+  postgres:
+    image: postgres:17.11-bookworm@sha256:3645570cccdfa447589da9f57dd740faa29b30938e861289a5574b6ca6b03826
+    container_name: gogospend-postgres-v1-local
+    labels:
+      app: gogospend
+      role: postgres-v1
+    environment:
+      POSTGRES_USER: gogospend_local_admin
+      POSTGRES_PASSWORD: gogospend-local-only
+      POSTGRES_DB: gogospend_v1
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - postgres-v1-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gogospend_local_admin -d postgres"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  postgres-v1-data:
+    name: gogospend-postgres-v1-local-data
+    labels:
+      app: gogospend
+      role: postgres-v1
