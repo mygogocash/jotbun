@@ -47,6 +47,8 @@ export type ApiProblem = {
   message_key: string;
   fields?: Record<string, string>;
   retry_after_seconds?: number;
+  /** VERSION_CONFLICT only: the current record, safe to show, for reload or explicit reapply. */
+  current?: unknown;
 };
 
 /** Thrown by the shared validators; servers map it to a 422 `ApiProblem`. */

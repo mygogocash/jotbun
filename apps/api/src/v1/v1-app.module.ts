@@ -6,6 +6,7 @@ import type { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 
 import { AuthModule } from '../auth/auth.module';
+import { CategoriesModule } from '../categories/categories.module';
 import { CommandsModule } from '../commands/commands.module';
 import { requestContextMiddleware } from '../auth/request-context';
 import { assertRoutesClassified } from '../auth/route-policy';
@@ -13,6 +14,7 @@ import { jsonBody } from '../common/json-body';
 import { safeRequestLogger } from '../common/safe-request-logger';
 import { DatabaseModule } from '../database/database.module';
 import { DatabaseService } from '../database/database.service';
+import { WalletsModule } from '../wallets/wallets.module';
 
 /**
  * Root of the standalone v1 API: PostgreSQL and Auth0 only. It must never
@@ -20,7 +22,7 @@ import { DatabaseService } from '../database/database.service';
  * (v1-isolation.spec.ts).
  */
 @Module({
-  imports: [DatabaseModule, AuthModule, CommandsModule],
+  imports: [DatabaseModule, AuthModule, CommandsModule, WalletsModule, CategoriesModule],
 })
 export class V1AppModule {}
 

@@ -252,3 +252,42 @@ Observed, not changed (pre-existing):
     - NUL characters in snapshot strings: domain validators (M2/M3) reject control characters with 422;
     - status keeps the plan's `CommandStatus` shape, with no `current_version`.
   - **Full gate after the fixes:** typecheck PASS, typecheck:app PASS, test:api PASS (392), test:db PASS (180), test:app PASS, test:unit PASS, test:render PASS (3), test:dev PASS, build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
+
+## M2 — wallets, opening balances and stable categories
+
+- **Migration `0006_wallets_categories`:**
+  - `wallets` and `categories` keyed by (account, id) with owner RLS.
+  - **Database checks:**
+    - names and labels are trimmed, 1–80 characters, with no control characters;
+    - opening balances are 0 to 99,999,999,999 satang;
+    - tracking starts on or after 1970-01-01;
+    - currency is THB only;
+    - built-in keys match their type, and each key appears at most once per account.
+  - `UNIQUE (account_id, id, type)` is the target for M3's foreign key, so an expense can only point at an expense category.
+  - **App access:** no DELETE grant. A category's type and built-in key, and a wallet's currency, are not updatable at all.
+- **Contracts:**
+  - `v1/wallets.ts`: `WalletSnapshot`, `WalletDto` (with `balance_minor`), create/update requests, `WALLET_CORRECTION_REASONS` and `isWalletSnapshot`.
+  - `v1/categories.ts`: `CategoryDto`, create/update requests, `CATEGORY_TYPES`, `CATEGORY_COLORS` (the existing pastel palette), `BUILTIN_CATEGORIES` and `isCategorySnapshot`. The built-ins use the app's existing keys and hues (food, travel, household, bills, shopping, fun; salary, bonus, side job, gift); cashback is a separate ledger and is left out.
+  - `normalizeName` (NFC, trimmed, 1–80 code points, no control characters) and `validateTrackingStart` (Gregorian, 1970 to today in Bangkok).
+  - `ApiProblem.current` carries the current record on `VERSION_CONFLICT`.
+- **Endpoints:** every write is an M1 command, and edits need `If-Match`.
+  - Wallets: `GET /v1/wallets`, `GET /v1/wallets/:id`, `POST /v1/wallets`, `PATCH /v1/wallets/:id`, `POST /v1/wallets/:id/archive` and `/unarchive`.
+  - Categories: `GET /v1/categories`, `POST /v1/categories/builtins`, `POST /v1/categories`, `PATCH /v1/categories/:id`, `POST /v1/categories/:id/archive` and `/unarchive`.
+  - Another account's ids, and malformed ids, are 404.
+- **Rules:**
+  - A stale version is `409 VERSION_CONFLICT` with the current record.
+  - A zero opening balance is not income.
+  - Archiving a wallet needs a zero derived balance (`walletBalances`; M3 adds records).
+  - Archived entities stay readable and cannot be edited until unarchived.
+  - A built-in can be relabelled and reverted to its localized name; a custom category always has a label.
+  - Opening or tracking-start corrections may carry `correction_reason`, recorded as an audit code. M3 makes it required once records exist.
+- **Built-in seeding:** the command id and the ten category ids are derived from the account id (`derivedUuid`, a v8 UUID). Repeats, and two devices seeding at once, replay one command and create one set. The client's schema header is not used, because the server writes the payload.
+- **Deviations:**
+  - Service methods take `(ctx, CommandHeaders, id, body)` rather than a prebuilt `CommandInput`. Each service validates and normalizes the body and copies the route id into the payload, as M1's target-id rule needs.
+  - Wallets have no type or colour yet: the plan's `WalletDto` has neither, and wallet screen visuals are not approved.
+  - Seeding is an explicit `POST /v1/categories/builtins` after policy acceptance, not a bootstrap side effect, because bootstrap has no binding and usually precedes acceptance.
+  - The pinned `renaming_category_preserves_historical_reference` moves to M3, which adds history.
+  - No OpenAPI document exists for v1 yet. Responses are checked against the shared snapshot validators in tests.
+- **RED against seams** (services returning empty lists and fake acknowledgements; real controllers, migration and contracts): 43 of 47 wallet and category tests failed on behaviour, with no module errors.
+- **GREEN:** `npm run test:db -w gogospend-api -- --runTestsByPath src/wallets/wallets.integration.spec.ts src/categories/categories.integration.spec.ts src/database/migrations.integration.spec.ts` → 61 of 61. `src/v1/contracts.spec.ts` → 79 of 79, including new name, date, snapshot and built-in tests written against the real validators.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (396), test:db PASS (227), test:app PASS, test:unit PASS, test:render PASS (3), test:dev PASS, build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.

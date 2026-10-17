@@ -4,12 +4,18 @@ import {
   assertKnownFields,
   bangkokDate,
   compareVersions,
+  BUILTIN_CATEGORIES,
+  CATEGORY_COLORS,
   formatClientHeader,
+  isCategorySnapshot,
   isUuid,
+  isWalletSnapshot,
   normalizeCommand,
+  normalizeName,
   parseClientHeader,
   parseMinor,
   validateOccurredOn,
+  validateTrackingStart,
 } from '@gogospend/contracts';
 import type { CommandInput } from '@gogospend/contracts';
 
@@ -215,5 +221,44 @@ describe('v1 request shapes', () => {
       expect(() => compareVersions(a, b)).toThrow(TypeError);
       expect(() => compareVersions(b, a)).toThrow(TypeError);
     }
+  });
+});
+
+describe('v1 wallets and categories', () => {
+  it('normalizes names: NFC, trimmed, 1-80 code points, no control characters', () => {
+    expect(normalizeName('  Cafe\u0301 ', 'name')).toBe('Caf\u00e9');
+    expect(normalizeName('ก'.repeat(80), 'name')).toHaveLength(80);
+    expect(normalizeName('😀'.repeat(80), 'name')).toBe('😀'.repeat(80));
+    for (const bad of ['', '   ', 'x'.repeat(81), 'a\tb', 'a\u0000', 'a\u2028b', 5, null]) {
+      expect(failure(() => normalizeName(bad, 'name'))).toEqual({ code: 'VALIDATION_FAILED', field: 'name' });
+    }
+  });
+
+  it('accepts tracking starts from 1970 up to today in Bangkok', () => {
+    expect(validateTrackingStart('1970-01-01', '2026-10-17')).toBe('1970-01-01');
+    expect(validateTrackingStart('2026-10-17', '2026-10-17')).toBe('2026-10-17');
+    expect(codeOf(() => validateTrackingStart('2026-10-18', '2026-10-17'))).toBe('DATE_IN_FUTURE');
+    expect(codeOf(() => validateTrackingStart('1969-12-31', '2026-10-17'))).toBe('INVALID_DATE');
+    expect(codeOf(() => validateTrackingStart('2025-02-29', '2026-10-17'))).toBe('INVALID_DATE');
+  });
+
+  it('recognizes exactly the persisted wallet and category shapes', () => {
+    const wallet = { id: 'a', name: 'Cash', currency: 'THB', opening_minor: '0', tracking_start: '2026-01-01', archived: false, version: 1 };
+    expect(isWalletSnapshot(wallet)).toBe(true);
+    expect(isWalletSnapshot({ ...wallet, balance_minor: '0' })).toBe(false);
+    expect(isWalletSnapshot({ ...wallet, opening_minor: '-1' })).toBe(false);
+    expect(isWalletSnapshot({ ...wallet, currency: 'USD' })).toBe(false);
+    const category = { id: 'b', type: 'expense', builtin_key: null, label: 'Pets', color: CATEGORY_COLORS[0], archived: false, version: 1 };
+    expect(isCategorySnapshot(category)).toBe(true);
+    expect(isCategorySnapshot({ ...category, label: null })).toBe(false);
+    expect(isCategorySnapshot({ ...category, color: '#000000' })).toBe(false);
+    expect(isCategorySnapshot({ ...category, builtin_key: 'cashback' })).toBe(false);
+  });
+
+  it('built-in categories use palette colours and unique keys, and leave out cashback', () => {
+    const keys = BUILTIN_CATEGORIES.map((builtin) => builtin.key);
+    expect(new Set(keys).size).toBe(keys.length);
+    expect(keys).not.toContain('cashback');
+    expect(BUILTIN_CATEGORIES.every((builtin) => (CATEGORY_COLORS as readonly string[]).includes(builtin.color))).toBe(true);
   });
 });

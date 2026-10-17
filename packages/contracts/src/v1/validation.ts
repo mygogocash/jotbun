@@ -136,6 +136,41 @@ export function validateOccurredOn(value: unknown, trackingStart: string, todayB
   return value;
 }
 
+/** Earliest wallet tracking start the API accepts. */
+export const TRACKING_START_MIN = "1970-01-01";
+
+/** A wallet's tracking start: a real Gregorian date from 1970 up to today in Bangkok. */
+export function validateTrackingStart(value: unknown, todayBangkok: string, field = "tracking_start"): string {
+  if (!isGregorianDate(todayBangkok)) throw new TypeError("validateTrackingStart needs a Gregorian YYYY-MM-DD today.");
+  if (!isGregorianDate(value) || value < TRACKING_START_MIN) {
+    throw new ContractValidationError("INVALID_DATE", "Expected a real Gregorian YYYY-MM-DD date from 1970.", field);
+  }
+  if (value > todayBangkok) {
+    throw new ContractValidationError("DATE_IN_FUTURE", "Date is in the future.", field);
+  }
+  return value;
+}
+
+/** Longest wallet name or category label, in Unicode code points. */
+export const NAME_MAX_CHARS = 80;
+// Control characters (including NUL, tabs and line breaks) never belong in a name.
+const CONTROL = /[\p{Cc}\u2028\u2029]/u;
+
+/**
+ * A wallet name or category label: NFC-normalized and trimmed, 1–80 code
+ * points, no control characters. The stored value is exactly what this
+ * returns, so equal names compare equal.
+ */
+export function normalizeName(value: unknown, field: string): string {
+  if (typeof value !== "string") throw new ContractValidationError("VALIDATION_FAILED", "Expected text.", field);
+  const name = value.normalize("NFC").trim();
+  const length = [...name].length;
+  if (length < 1 || length > NAME_MAX_CHARS || CONTROL.test(name)) {
+    throw new ContractValidationError("VALIDATION_FAILED", `Expected 1-${NAME_MAX_CHARS} characters without control characters.`, field);
+  }
+  return name;
+}
+
 // Asia/Bangkok has been a fixed UTC+07:00 with no daylight saving since 1920,
 // so a constant offset is exact and avoids depending on runtime tz data.
 const BANGKOK_OFFSET_MS = 7 * 60 * 60 * 1000;

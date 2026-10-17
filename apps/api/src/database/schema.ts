@@ -2,7 +2,7 @@
 // files are authoritative; migrations.integration.spec.ts fails if these
 // definitions and the migrated database drift apart.
 import { sql } from 'drizzle-orm';
-import { bigint, boolean, customType, integer, jsonb, pgTable, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { bigint, boolean, customType, date, integer, jsonb, pgTable, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 export const ACCOUNT_STATUSES = ['active', 'disabled', 'deleting'] as const;
 export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];
@@ -208,6 +208,40 @@ export const auditEvents = pgTable(
   (table) => [primaryKey({ columns: [table.accountId, table.revision] })],
 );
 
+export const wallets = pgTable(
+  'wallets',
+  {
+    accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+    id: uuid('id').notNull(),
+    name: text('name').notNull(),
+    currency: text('currency').notNull().default('THB'),
+    openingMinor: bigint('opening_minor', { mode: 'bigint' }).notNull(),
+    trackingStart: date('tracking_start', { mode: 'string' }).notNull(),
+    archived: boolean('archived').notNull().default(false),
+    version: integer('version').notNull().default(1),
+    createdAt: instant('created_at').notNull().defaultNow(),
+    updatedAt: instant('updated_at').notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.accountId, table.id] })],
+);
+
+export const categories = pgTable(
+  'categories',
+  {
+    accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+    id: uuid('id').notNull(),
+    type: text('type', { enum: ['expense', 'income'] }).notNull(),
+    builtinKey: text('builtin_key'),
+    label: text('label'),
+    color: text('color'),
+    archived: boolean('archived').notNull().default(false),
+    version: integer('version').notNull().default(1),
+    createdAt: instant('created_at').notNull().defaultNow(),
+    updatedAt: instant('updated_at').notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.accountId, table.id] })],
+);
+
 export const schema = {
   accounts,
   accountIdentities,
@@ -223,4 +257,6 @@ export const schema = {
   entityChanges,
   entityHeads,
   auditEvents,
+  wallets,
+  categories,
 };

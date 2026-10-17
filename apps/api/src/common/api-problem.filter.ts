@@ -7,7 +7,7 @@ import type { Request, Response } from 'express';
 import { requestContext } from '../auth/request-context';
 import { routeTemplate, writeLog } from './safe-request-logger';
 
-export type ProblemOptions = { fields?: Record<string, string>; retryAfterSeconds?: number; messageKey?: string };
+export type ProblemOptions = { fields?: Record<string, string>; retryAfterSeconds?: number; messageKey?: string; current?: unknown };
 
 /** An HTTP error that is rendered as an ApiProblem with a stable code. */
 export class ProblemException extends HttpException {
@@ -29,6 +29,7 @@ export function sendProblem(req: Request, res: Response, status: number, code: A
     message_key: problem.messageKey ?? `errors.${code.toLowerCase()}`,
   };
   if (problem.fields) body.fields = problem.fields;
+  if (problem.current !== undefined) body.current = problem.current;
   if (problem.retryAfterSeconds !== undefined) {
     body.retry_after_seconds = problem.retryAfterSeconds;
     res.setHeader('Retry-After', String(problem.retryAfterSeconds));
