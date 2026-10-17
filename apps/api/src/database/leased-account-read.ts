@@ -24,7 +24,8 @@ async function guarded<T>(run: () => Promise<T>): Promise<T> {
   try {
     return await run();
   } catch (error) {
-    if ((error as { code?: string }).code === '42501') throw new LeasedReadDenied();
+    const failure = error as { code?: string; message?: string };
+    if (failure.code === '42501' && failure.message === 'leased read denied') throw new LeasedReadDenied();
     throw error;
   }
 }
@@ -37,9 +38,12 @@ async function guarded<T>(run: () => Promise<T>): Promise<T> {
  * `withSnapshot` share one REPEATABLE READ READ ONLY snapshot, so a snapshot
  * is consistent at its high-water revision.
  *
- * A lease that is cancelled or expires after the snapshot began still reads
- * inside it (the snapshot predates the change): publishing what was read must
- * re-check the lease under lock in a fresh READ COMMITTED transaction
+ * Inside the snapshot, later heartbeats are invisible, so reads count the
+ * lease as it was when the transaction began plus the attempt's fixed runtime
+ * bound: a long build keeps reading while its heartbeats run, and stops at
+ * the bound. For the same reason a lease cancelled after the snapshot began
+ * still reads inside it: publishing what was read must re-check the lease
+ * under lock in a fresh READ COMMITTED transaction
  * (ObjectPublicationService.finishWithObjects).
  */
 export class LeasedAccountRead {

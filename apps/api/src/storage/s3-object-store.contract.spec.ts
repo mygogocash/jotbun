@@ -37,6 +37,11 @@ async function startFakeS3() {
       return;
     }
     const objectKey = decodeURIComponent(url.pathname.replace(/^\/test-bucket\/?/, ''));
+    if (objectKey.startsWith('sync_snapshot/redirect/')) {
+      res.writeHead(307, { location: `${other.endpoint}/elsewhere` });
+      return void res.end();
+    }
+    if (objectKey.startsWith('sync_snapshot/broken/')) return void res.writeHead(500).end('internal detail');
     if (req.method === 'PUT') {
       if (req.headers['if-none-match'] === '*' && objects.has(objectKey)) return void res.writeHead(412).end();
       if (req.headers['x-amz-content-sha256'] !== createHash('sha256').update(body).digest('hex')) return void res.writeHead(400).end();
@@ -45,10 +50,14 @@ async function startFakeS3() {
     }
     if (req.method === 'GET' && url.searchParams.get('list-type') === '2') {
       const prefix = url.searchParams.get('prefix') ?? '';
-      const contents = [...objects.entries()].filter(([k]) => k.startsWith(prefix))
-        .map(([k, o]) => `<Contents><Key>${k}</Key><Size>${o.body.length}</Size><LastModified>${o.modified.toISOString()}</LastModified></Contents>`).join('');
+      // Two keys a page, so listings must follow continuation tokens.
+      const all = [...objects.entries()].filter(([k]) => k.startsWith(prefix)).sort(([a], [b]) => (a < b ? -1 : 1));
+      const start = Number(url.searchParams.get('continuation-token')?.replace('t+/=&', '') ?? 0);
+      const page = all.slice(start, start + 2);
+      const contents = page.map(([k, o]) => `<Contents><Key>${k}</Key><Size>${o.body.length}</Size><LastModified>${o.modified.toISOString()}</LastModified></Contents>`).join('');
+      const more = start + 2 < all.length;
       res.writeHead(200, { 'content-type': 'application/xml' });
-      return void res.end(`<?xml version="1.0"?><ListBucketResult><IsTruncated>false</IsTruncated>${contents}</ListBucketResult>`);
+      return void res.end(`<?xml version="1.0"?><ListBucketResult><IsTruncated>${more}</IsTruncated>${more ? `<NextContinuationToken>t+/=&amp;${start + 2}</NextContinuationToken>` : ''}${contents}</ListBucketResult>`);
     }
     const object = objects.get(objectKey);
     if (req.method === 'DELETE') {
@@ -70,11 +79,15 @@ async function startFakeS3() {
 }
 
 let fake: Awaited<ReturnType<typeof startFakeS3>>;
+// A second origin that a redirect points at; it must never receive a request.
+let other: Awaited<ReturnType<typeof startFakeS3>>;
 beforeAll(async () => {
+  other = await startFakeS3();
   fake = await startFakeS3();
 });
 afterAll(async () => {
   await fake.close();
+  await other.close();
 });
 
 const s3Config = (): S3Config => ({ endpoint: fake.endpoint, region: 'auto', bucket: 'test-bucket', accessKeyId: 'test-access-key', secretAccessKey: 'test-secret-key-not-real' });
@@ -192,5 +205,28 @@ describe('which store the contract targets', () => {
     expect(() => storageContractTarget({ ...script, ...r2, R2_TEST_BUCKET: 'gogospend-production' })).toThrow(/test scope/);
     expect(() => storageContractTarget({ ...script, ...r2, R2_TEST_ENDPOINT: 'http://acct.r2.cloudflarestorage.com' })).toThrow(/https/);
     expect(storageContractTarget({ ...script, ...r2 })).toMatchObject({ target: 'r2-test', config: { bucket: 'gogospend-test-contract', region: 'auto' } });
+  });
+});
+
+describe('S3 adapter failure handling', () => {
+  it('never follows a redirect, and reports 5xx as unavailable without provider text', async () => {
+    const store = new S3ObjectStore(s3Config());
+    other.seen.length = 0;
+    await expect(store.putStream('sync_snapshot/redirect/x/y/a.json', text('secret body'))).rejects.toMatchObject({ code: 'unavailable' });
+    await expect(store.get('sync_snapshot/redirect/x/y/a.json')).rejects.toMatchObject({ code: 'unavailable' });
+    expect(other.seen).toEqual([]);
+    const error = await store.head('sync_snapshot/broken/x/y/a.json').catch((caught: unknown) => caught as Error);
+    expect(error).toMatchObject({ code: 'unavailable' });
+    expect(String((error as Error).message)).not.toContain('internal detail');
+  });
+
+  it('follows list continuation tokens, and refuses to read an object over its size limit', async () => {
+    fake.objects.clear();
+    const store = new S3ObjectStore(s3Config());
+    for (const name of ['a', 'b', 'c', 'd', 'e']) await store.putStream(key(`${name}.json`), text(name));
+    expect((await store.list(`sync_snapshot/${ACCOUNT}/`)).map((o) => o.key)).toEqual(['a', 'b', 'c', 'd', 'e'].map((name) => key(`${name}.json`)));
+    await store.putStream(key('big.json'), text('x'.repeat(100)));
+    await expect(new S3ObjectStore(s3Config(), fetch, 50).get(key('big.json'))).rejects.toMatchObject({ code: 'too_large' });
+    fake.objects.clear();
   });
 });

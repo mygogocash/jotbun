@@ -4,6 +4,7 @@ import type { Pool } from 'pg';
 
 import { JobRepository } from '../jobs/job.repository';
 import type { ClaimedJob } from '../jobs/job-types';
+import { queueAccountJob } from '../testing/job-fixtures';
 import { createTestDatabase } from '../testing/postgres-harness';
 import type { TestDatabase } from '../testing/postgres-harness';
 import { ObjectPublicationService } from './object-publication.service';
@@ -30,9 +31,9 @@ async function account(): Promise<string> {
   return id;
 }
 
-async function claimFor(accountId: string, leaseSeconds = 30): Promise<ClaimedJob> {
-  await jobs.enqueue({ id: randomUUID(), kind: 'sync_snapshot', accountId, payload: {}, maxAttempts: 3, maxRuntimeSeconds: 60 });
-  const [claimed] = await jobs.claim(['sync_snapshot'], { leaseSeconds });
+async function claimFor(accountId: string, leaseSeconds = 30, kind: 'sync_snapshot' | 'export' = 'sync_snapshot'): Promise<ClaimedJob> {
+  await queueAccountJob(db, accountId, kind, { maxRuntimeSeconds: 60 });
+  const [claimed] = await jobs.claim([kind], { leaseSeconds });
   return claimed;
 }
 
@@ -157,5 +158,50 @@ describe('fenced object publication', () => {
     expect(await publication.sweep(owner, new Date())).toEqual([orphan]);
     expect((await publication.sweep(owner, new Date(Date.now() + 2 * HOUR))).sort()).toEqual([object.key]);
     expect(await keys()).toEqual([]);
+  });
+
+  it('a key is reserved only for the purpose its job runs', async () => {
+    const owner = await account();
+    const claimed = await claimFor(owner);
+    await expect(publication.reserveKey(pool, claimed.lease, 'export', 'x.json')).rejects.toThrow();
+    await expect(publication.reserveKey(pool, claimed.lease, 'quarantine', 'x.json')).rejects.toThrow();
+    const exportJob = await claimFor(owner, 30, 'export');
+    expect(await publication.reserveKey(pool, exportJob.lease, 'export', 'x.json')).toMatch(/^export\//);
+  });
+
+  it('a failed storage delete is retried by the next sweep, and old deleted rows are purged', async () => {
+    const owner = await account();
+    const claimed = await claimFor(owner);
+    const object = await write(claimed, 'chunk.json', 'x');
+    store.failNext('delete');
+    expect(await publication.sweep(owner, new Date(Date.now() + 2 * HOUR))).toEqual([]);
+    expect(await keys()).toEqual([object.key]);
+    expect(await publication.sweep(owner, new Date(Date.now() + 2 * HOUR))).toEqual([object.key]);
+    expect(await keys()).toEqual([]);
+    await db.admin((client) => client.query(`UPDATE object_publications SET deleted_at = now() - interval '31 days' WHERE key = $1`, [object.key]));
+    await publication.sweep(owner);
+    expect((await db.admin((client) => client.query('SELECT count(*)::int AS n FROM object_publications WHERE key = $1', [object.key]))).rows[0].n).toBe(0);
+  });
+
+  it('without an explicit cutoff the sweep uses the database clock', async () => {
+    const owner = await account();
+    const claimed = await claimFor(owner);
+    const due = await write(claimed, 'due.json', 'x');
+    const kept = await write(claimed, 'kept.json', 'y');
+    await db.admin((client) => client.query(`UPDATE object_publications SET delete_after = now() - interval '1 second' WHERE key = $1`, [due.key]));
+    expect(await publication.sweep(owner)).toEqual([due.key]);
+    expect(await keys()).toEqual([kept.key]);
+  });
+
+  it('the registry refuses a key that does not name its own account, job and lease, or a published expiry past 7 days', async () => {
+    const owner = await account();
+    const claimed = await claimFor(owner);
+    const [jobId, token] = [claimed.lease.jobId, claimed.lease.leaseToken];
+    const insert = (key: string) =>
+      pool.query(`INSERT INTO object_publications (key, job_id, account_id, lease_token, lifecycle_generation, purpose, delete_after) VALUES ($1, $2, $3, $4, 0, 'sync_snapshot', now() + interval '1 hour')`, [key, jobId, owner, token]);
+    await expect(insert(`sync_snapshot/${randomUUID()}/${jobId}/${token}/x.json`)).rejects.toMatchObject({ code: '23514' });
+    await expect(insert(`export/${owner}/${jobId}/${token}/x.json`)).rejects.toMatchObject({ code: '23514' });
+    const object = await write(claimed, 'x.json', 'x');
+    await expect(pool.query(`UPDATE object_publications SET status = 'published', published_at = now(), bytes = 1, sha256 = decode(repeat('00', 32), 'hex'), delete_after = now() + interval '8 days' WHERE key = $1`, [object.key])).rejects.toMatchObject({ code: '23514' });
   });
 });

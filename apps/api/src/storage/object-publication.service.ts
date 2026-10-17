@@ -10,7 +10,7 @@ export type PublishedObject = { key: string; bytes: number; sha256: string };
 const PURPOSE = /^[a-z][a-z0-9_]{0,31}$/;
 const NAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 const SHA256 = /^[0-9a-f]{64}$/;
-/** Purposes whose objects the sweep lists for orphans. */
+/** The only purposes (= the job kinds that publish); the sweep lists each for orphans. */
 export const PUBLICATION_PURPOSES = ['sync_snapshot', 'export'] as const;
 // A reservation outlives its publisher's last possible moment (the attempt's
 // runtime bound) by this much before the sweep may delete it.
@@ -39,12 +39,13 @@ export class ObjectPublicationService {
   constructor(private readonly pool: Pool, private readonly store: ObjectStore) {}
 
   /**
-   * Registers a key for a current lease. Takes the pool, not a transaction
+   * Registers a key for a current lease of a job whose kind is `purpose`
+   * (one of PUBLICATION_PURPOSES). Takes the pool, not a transaction
    * client: the reservation must be committed before the PUT, or a concurrent
    * sweep would see the object as an unregistered orphan.
    */
   async reserveKey(client: Pool, lease: JobLease, purpose: string, name: string): Promise<string> {
-    if (!PURPOSE.test(purpose) || !NAME.test(name)) throw new ObjectStoreError('invalid_key');
+    if (!PURPOSE.test(purpose) || !(PUBLICATION_PURPOSES as readonly string[]).includes(purpose) || !NAME.test(name)) throw new ObjectStoreError('invalid_key');
     if (lease.accountId === null) throw new Error('only account jobs publish objects');
     const key = `${purpose}/${lease.accountId}/${lease.jobId}/${lease.leaseToken}/${name}`;
     const { rowCount } = await client.query(
@@ -52,7 +53,7 @@ export class ObjectPublicationService {
        SELECT $1, j.id, j.account_id, j.lease_token, j.lifecycle_generation, $5,
               j.attempt_started_at + make_interval(secs => j.max_runtime_seconds + $6)
          FROM jobs j
-        WHERE j.id = $2 AND j.lease_token = $3 AND j.account_id = $4 AND j.status = 'leased' AND j.lease_expires_at > now()`,
+        WHERE j.id = $2 AND j.lease_token = $3 AND j.account_id = $4 AND j.kind = $5 AND j.status = 'leased' AND j.lease_expires_at > now()`,
       [key, lease.jobId, lease.leaseToken, lease.accountId, purpose, RESERVATION_GRACE_SECONDS],
     );
     if (rowCount !== 1) throw new Error('this lease cannot reserve an object key');
@@ -121,39 +122,61 @@ export class ObjectPublicationService {
   }
 
   /**
-   * Deletes (registry first, then storage): reservations whose final deadline
-   * is before `before`, published objects that expired before it, and stored
-   * objects under the account's prefixes (every account's when null) that are
-   * unregistered or already marked deleted. Returns the keys deleted from
-   * storage. A storage failure leaves the key to the next sweep's orphan pass.
+   * Deletes, registry first and storage second:
+   *   1. rows left `deleting` by an earlier failed storage delete (retried);
+   *   2. reservations whose final deadline and published objects whose expiry
+   *      is before the cutoff - the database clock unless `cutoff` is given
+   *      (tests and operators) - marked `deleting` (SKIP LOCKED) and then
+   *      deleted from storage;
+   *   3. stored objects under the account's prefixes (every account's when
+   *      null) with no live registry row (unregistered, or already deleted);
+   * and purges `deleted` rows after 30 days. A row becomes `deleted` only once
+   * its object is gone. Returns the keys deleted from storage.
    */
-  async sweep(accountId: string | null, before: Date): Promise<string[]> {
+  async sweep(accountId: string | null, cutoff?: Date): Promise<string[]> {
     const deleted = new Set<string>();
+    const remove = async (keys: readonly string[]) => {
+      for (const key of keys) {
+        if (!(await this.tryDelete(key))) continue;
+        deleted.add(key);
+        await this.pool.query(`UPDATE object_publications SET status = 'deleted', deleted_at = now() WHERE key = $1 AND status = 'deleting'`, [key]);
+      }
+    };
+    const retry = await this.pool.query<{ key: string }>(
+      `SELECT key FROM object_publications WHERE status = 'deleting' AND ($1::uuid IS NULL OR account_id = $1) ORDER BY key LIMIT $2`,
+      [accountId, SWEEP_BATCH],
+    );
+    await remove(retry.rows.map((row) => row.key));
     for (;;) {
-      // Rows a publisher holds are skipped (SKIP LOCKED) and seen next time.
       const { rows } = await this.pool.query<{ key: string }>(
-        `UPDATE object_publications SET status = 'deleted', deleted_at = now()
+        `UPDATE object_publications SET status = 'deleting'
           WHERE key IN (SELECT key FROM object_publications
-                         WHERE status IN ('reserved', 'published') AND delete_after < $1 AND ($2::uuid IS NULL OR account_id = $2)
+                         WHERE status IN ('reserved', 'published') AND delete_after < coalesce($1::timestamptz, now())
+                           AND ($2::uuid IS NULL OR account_id = $2)
                          ORDER BY delete_after LIMIT $3 FOR UPDATE SKIP LOCKED)
         RETURNING key`,
-        [before, accountId, SWEEP_BATCH],
+        [cutoff ?? null, accountId, SWEEP_BATCH],
       );
-      for (const { key } of rows) if (await this.tryDelete(key)) deleted.add(key);
+      await remove(rows.map((row) => row.key));
       if (rows.length < SWEEP_BATCH) break;
     }
     for (const purpose of PUBLICATION_PURPOSES) {
       const stored = await this.store.list(accountId ? `${purpose}/${accountId}/` : `${purpose}/`);
       for (let start = 0; start < stored.length; start += SWEEP_BATCH) {
         const batch = stored.slice(start, start + SWEEP_BATCH).map((object) => object.key);
+        // Rows still `deleting` are left to the next sweep's retry.
         const live = await this.pool.query<{ key: string }>(
-          `SELECT key FROM object_publications WHERE key = ANY($1) AND status IN ('reserved', 'published')`,
+          `SELECT key FROM object_publications WHERE key = ANY($1) AND status IN ('reserved', 'published', 'deleting')`,
           [batch],
         );
         const keep = new Set(live.rows.map((row) => row.key));
         for (const key of batch) if (!keep.has(key) && !deleted.has(key) && (await this.tryDelete(key))) deleted.add(key);
       }
     }
+    await this.pool.query(
+      `DELETE FROM object_publications WHERE status = 'deleted' AND deleted_at < now() - interval '30 days' AND ($1::uuid IS NULL OR account_id = $1)`,
+      [accountId],
+    );
     return [...deleted];
   }
 

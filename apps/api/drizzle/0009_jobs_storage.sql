@@ -42,11 +42,89 @@ ALTER TABLE jobs ADD COLUMN max_runtime_seconds integer NOT NULL DEFAULT 900 CHE
 --> statement-breakpoint
 ALTER TABLE jobs ADD COLUMN attempt_started_at timestamptz;
 --> statement-breakpoint
+-- Leases held while this migration runs started their attempt now.
+UPDATE jobs SET attempt_started_at = now() WHERE status = 'leased';
+--> statement-breakpoint
 ALTER TABLE jobs ADD CONSTRAINT jobs_attempt_started_check CHECK (status <> 'leased' OR attempt_started_at IS NOT NULL);
 --> statement-breakpoint
 GRANT UPDATE (attempt_started_at) ON jobs TO gogospend_jobs, gogospend_security;
 --> statement-breakpoint
 CREATE INDEX jobs_account_open_idx ON jobs (account_id) WHERE status IN ('queued', 'leased');
+--> statement-breakpoint
+-- The worker login may create only its own kinds: user-startable kinds
+-- (sync_snapshot, export) come only from the app's routines, so the worker
+-- cannot mint a job (and with it a leased read) for an account.
+DROP POLICY jobs_worker ON jobs;
+--> statement-breakpoint
+CREATE POLICY jobs_worker_read ON jobs FOR SELECT TO gogospend_jobs
+  USING (kind NOT IN ('auth0_revoke_grants'));
+--> statement-breakpoint
+CREATE POLICY jobs_worker_update ON jobs FOR UPDATE TO gogospend_jobs
+  USING (kind NOT IN ('auth0_revoke_grants')) WITH CHECK (kind NOT IN ('auth0_revoke_grants'));
+--> statement-breakpoint
+CREATE POLICY jobs_worker_insert ON jobs FOR INSERT TO gogospend_jobs
+  WITH CHECK (kind NOT IN ('auth0_revoke_grants', 'sync_snapshot', 'export'));
+--> statement-breakpoint
+-- Every login (and every routine) moves jobs only along the protocol:
+--   insert            - queued, with no attempt or lease;
+--   a new lease token - only a claim: of a runnable queued job, or of an
+--                       expired lease with attempts left; it counts the
+--                       attempt and starts the attempt clock now;
+--   the same lease    - may only move forward, while unexpired, and never
+--                       past attempt_started_at + max_runtime_seconds;
+--   status            - queued -> leased | cancelled; leased -> queued |
+--                       succeeded | superseded | failed | cancelled;
+--                       failed -> queued (an explicit requeue, attempts 0).
+--                       Succeeded, superseded and cancelled are final.
+-- A superuser session (an operator, or test fixtures) is exempt.
+CREATE FUNCTION gogospend_guard_job_transition() RETURNS trigger
+  LANGUAGE plpgsql
+  SET search_path = pg_catalog
+AS $$
+BEGIN
+  IF current_setting('is_superuser') = 'on' THEN
+    RETURN NEW;
+  END IF;
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.status <> 'queued' OR NEW.attempts <> 0 OR NEW.lease_token IS NOT NULL OR NEW.lease_expires_at IS NOT NULL
+       OR NEW.attempt_started_at IS NOT NULL OR NEW.finished_at IS NOT NULL THEN
+      RAISE EXCEPTION 'a job starts queued' USING ERRCODE = 'insufficient_privilege';
+    END IF;
+    RETURN NEW;
+  END IF;
+  IF NEW.lease_token IS NOT NULL AND NEW.lease_token IS DISTINCT FROM OLD.lease_token THEN
+    IF NOT (NEW.status = 'leased' AND NEW.attempts = OLD.attempts + 1
+            AND ((OLD.status = 'queued' AND OLD.run_after <= now())
+                 OR (OLD.status = 'leased' AND OLD.lease_expires_at <= now() AND OLD.attempts < OLD.max_attempts))) THEN
+      RAISE EXCEPTION 'a lease is taken only by a claim' USING ERRCODE = 'insufficient_privilege';
+    END IF;
+    NEW.attempt_started_at := now();
+    IF NEW.lease_expires_at > now() + make_interval(secs => NEW.max_runtime_seconds) THEN
+      RAISE EXCEPTION 'a lease cannot outlast the attempt runtime' USING ERRCODE = 'insufficient_privilege';
+    END IF;
+    RETURN NEW;
+  END IF;
+  IF NEW.attempt_started_at IS DISTINCT FROM OLD.attempt_started_at
+     OR (NEW.attempts <> OLD.attempts AND NOT (OLD.status = 'failed' AND NEW.status = 'queued' AND NEW.attempts = 0)) THEN
+    RAISE EXCEPTION 'attempts change only by a claim or a requeue' USING ERRCODE = 'insufficient_privilege';
+  END IF;
+  IF NEW.status = 'leased' AND NEW.lease_expires_at IS DISTINCT FROM OLD.lease_expires_at
+     AND (OLD.status <> 'leased' OR OLD.lease_expires_at <= now() OR NEW.lease_expires_at < OLD.lease_expires_at
+          OR NEW.lease_expires_at > OLD.attempt_started_at + make_interval(secs => OLD.max_runtime_seconds)) THEN
+    RAISE EXCEPTION 'a lease only moves forward, unexpired, within the attempt runtime' USING ERRCODE = 'insufficient_privilege';
+  END IF;
+  IF NEW.status <> OLD.status AND NOT (
+       (OLD.status = 'queued' AND NEW.status = 'cancelled')
+    OR (OLD.status = 'leased' AND NEW.status IN ('queued', 'succeeded', 'superseded', 'failed', 'cancelled'))
+    OR (OLD.status = 'failed' AND NEW.status = 'queued')) THEN
+    RAISE EXCEPTION 'a job cannot go from % to %', OLD.status, NEW.status USING ERRCODE = 'insufficient_privilege';
+  END IF;
+  RETURN NEW;
+END
+$$;
+--> statement-breakpoint
+CREATE TRIGGER jobs_guard_transition BEFORE INSERT OR UPDATE ON jobs
+  FOR EACH ROW EXECUTE FUNCTION gogospend_guard_job_transition();
 --> statement-breakpoint
 CREATE TABLE object_publications (
   -- <purpose>/<account>/<job>/<lease token>/<name>: a fresh lease token per
@@ -57,7 +135,8 @@ CREATE TABLE object_publications (
   lease_token uuid NOT NULL,
   lifecycle_generation integer NOT NULL CHECK (lifecycle_generation >= 0),
   purpose text NOT NULL CHECK (purpose ~ '^[a-z][a-z0-9_]{0,31}$'),
-  status text NOT NULL DEFAULT 'reserved' CHECK (status IN ('reserved', 'published', 'deleted')),
+  -- deleting: due, and its storage delete has not succeeded yet (retried).
+  status text NOT NULL DEFAULT 'reserved' CHECK (status IN ('reserved', 'published', 'deleting', 'deleted')),
   -- reserved: the publisher's final deadline; published: the object's expiry.
   delete_after timestamptz NOT NULL,
   bytes bigint CHECK (bytes IS NULL OR bytes >= 0),
@@ -65,11 +144,17 @@ CREATE TABLE object_publications (
   created_at timestamptz NOT NULL DEFAULT now(),
   published_at timestamptz,
   deleted_at timestamptz,
-  CHECK ((status = 'published') = (published_at IS NOT NULL AND bytes IS NOT NULL AND sha256 IS NOT NULL) OR status = 'deleted'),
-  CHECK ((status = 'deleted') = (deleted_at IS NOT NULL))
+  CHECK ((status = 'published') = (published_at IS NOT NULL AND bytes IS NOT NULL AND sha256 IS NOT NULL) OR status IN ('deleting', 'deleted')),
+  CHECK ((status = 'deleted') = (deleted_at IS NOT NULL)),
+  -- The key names its own purpose, account, job and lease.
+  CHECK (starts_with(key, purpose || '/' || account_id::text || '/' || job_id::text || '/' || lease_token::text || '/')),
+  -- Published objects live at most 7 days.
+  CHECK (status <> 'published' OR delete_after <= published_at + interval '7 days 1 minute')
 );
 --> statement-breakpoint
 CREATE INDEX object_publications_sweep_idx ON object_publications (delete_after) WHERE status IN ('reserved', 'published');
+--> statement-breakpoint
+CREATE INDEX object_publications_retry_idx ON object_publications (key) WHERE status = 'deleting';
 --> statement-breakpoint
 CREATE INDEX object_publications_job_idx ON object_publications (job_id, lease_token);
 --> statement-breakpoint
@@ -79,7 +164,7 @@ ALTER TABLE object_publications ENABLE ROW LEVEL SECURITY;
 --> statement-breakpoint
 CREATE POLICY object_publications_worker ON object_publications TO gogospend_jobs USING (true) WITH CHECK (true);
 --> statement-breakpoint
-GRANT SELECT, INSERT ON object_publications TO gogospend_jobs;
+GRANT SELECT, INSERT, DELETE ON object_publications TO gogospend_jobs;
 --> statement-breakpoint
 GRANT UPDATE (status, delete_after, bytes, sha256, published_at, deleted_at) ON object_publications TO gogospend_jobs;
 --> statement-breakpoint
@@ -97,8 +182,9 @@ DECLARE
   v_status text;
   v_generation integer;
 BEGIN
+  -- Check before locking, so a stale or forged token never takes the account lock.
   SELECT j.* INTO v_job FROM public.jobs j WHERE j.id = p_job_id;
-  IF NOT FOUND THEN
+  IF NOT FOUND OR v_job.status <> 'leased' OR v_job.lease_token IS DISTINCT FROM p_lease_token OR v_job.lease_expires_at <= clock_timestamp() THEN
     RETURN false;
   END IF;
   IF v_job.account_id IS NOT NULL THEN
@@ -142,7 +228,9 @@ END
 $$;
 --> statement-breakpoint
 -- The app enqueues work for its own account only, and only the kinds a user
--- may start (a sync snapshot, an export). Idempotent by job id.
+-- may start (a sync snapshot, an export), under the common account lock so a
+-- concurrent lifecycle transition cannot leave a job at a stale generation.
+-- Idempotent by job id.
 CREATE FUNCTION gogospend_enqueue_account_job(p_job_id uuid, p_kind text, p_payload jsonb, p_max_attempts integer, p_max_runtime_seconds integer) RETURNS boolean
   LANGUAGE plpgsql VOLATILE SECURITY DEFINER
   SET search_path = pg_catalog
@@ -157,6 +245,7 @@ BEGIN
   IF p_kind NOT IN ('sync_snapshot', 'export') THEN
     RAISE EXCEPTION 'this job kind cannot be started by the app' USING ERRCODE = 'insufficient_privilege';
   END IF;
+  PERFORM 1 FROM public.account_sync_state s WHERE s.account_id = v_account FOR UPDATE;
   SELECT a.lifecycle_generation INTO v_generation FROM public.accounts a WHERE a.id = v_account AND a.status = 'active';
   IF NOT FOUND THEN
     RAISE EXCEPTION 'the account is not active' USING ERRCODE = 'insufficient_privilege';
@@ -168,9 +257,14 @@ BEGIN
 END
 $$;
 --> statement-breakpoint
--- Validates a leased read: the job exists with kind = purpose, the lease is
--- current and unexpired, and the job's account is active at the job's
--- lifecycle generation. Returns the account; otherwise "leased read denied".
+-- Validates a leased read: the job exists with kind = purpose, holds this
+-- lease token, the lease was unexpired when the calling transaction began
+-- (now()) and the attempt's runtime bound has not passed (clock), and the
+-- job's account is active at the job's lifecycle generation. Inside a
+-- REPEATABLE READ snapshot later heartbeats are invisible, so the lease
+-- seen at the snapshot's start plus the fixed attempt bound is what counts;
+-- publication re-checks everything under lock. Returns the account;
+-- otherwise "leased read denied".
 CREATE FUNCTION gogospend_leased_account(p_job_id uuid, p_lease_token uuid, p_purpose text) RETURNS uuid
   LANGUAGE plpgsql STABLE SECURITY DEFINER
   SET search_path = pg_catalog
@@ -182,7 +276,8 @@ BEGIN
     FROM public.jobs j
     JOIN public.accounts a ON a.id = j.account_id
    WHERE j.id = p_job_id AND j.kind = p_purpose AND p_purpose IN ('sync_snapshot', 'export')
-     AND j.status = 'leased' AND j.lease_token = p_lease_token AND j.lease_expires_at > clock_timestamp()
+     AND j.status = 'leased' AND j.lease_token = p_lease_token AND j.lease_expires_at > now()
+     AND j.attempt_started_at + make_interval(secs => j.max_runtime_seconds) > clock_timestamp()
      AND a.status = 'active' AND a.lifecycle_generation = j.lifecycle_generation;
   IF v_account IS NULL THEN
     RAISE EXCEPTION 'leased read denied' USING ERRCODE = 'insufficient_privilege';
@@ -216,6 +311,9 @@ DECLARE
 BEGIN
   IF p_limit IS NULL OR p_limit < 1 OR p_limit > 1000 THEN
     RAISE EXCEPTION 'limit must be 1-1000';
+  END IF;
+  IF (p_after_entity IS NULL) <> (p_after_id IS NULL) THEN
+    RAISE EXCEPTION 'a key position needs both its entity and id';
   END IF;
   RETURN QUERY
     SELECT h.entity, h.entity_id, h.version, h.state, c.snapshot

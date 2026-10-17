@@ -49,6 +49,13 @@ export function signV4(request: SignInput): Record<string, string> {
 }
 
 const EMPTY_SHA256 = sha256Hex('');
+
+/** Releases a response body, then throws `outcome` if it is an error or returns it. */
+async function discard<T>(response: Response, outcome: T): Promise<Exclude<T, Error>> {
+  await response.body?.cancel().catch(() => undefined);
+  if (outcome instanceof Error) throw outcome;
+  return outcome as Exclude<T, Error>;
+}
 const unescapeXml = (value: string) =>
   value.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&');
 const tag = (xml: string, name: string) => {
@@ -77,16 +84,17 @@ export class S3ObjectStore implements ObjectStore {
       'x-amz-meta-sha256': sha256,
       'content-type': options.contentType ?? 'application/octet-stream',
     }, data, sha256, options.signal);
-    if (response.status === 412) throw new ObjectStoreError('exists');
-    if (!response.ok) throw new ObjectStoreError('unavailable');
+    if (response.status === 412) return discard(response, new ObjectStoreError('exists'));
+    if (!response.ok) return discard(response, new ObjectStoreError('unavailable'));
+    await response.body?.cancel();
     return { bytes: data.byteLength, sha256 };
   }
 
   async head(key: string): Promise<ObjectInfo | null> {
     assertObjectKey(key);
     const response = await this.send('HEAD', this.address(key));
-    if (response.status === 404) return null;
-    if (!response.ok) throw new ObjectStoreError('unavailable');
+    if (response.status === 404) return discard(response, null);
+    if (!response.ok) return discard(response, new ObjectStoreError('unavailable'));
     return {
       key,
       bytes: Number(response.headers.get('content-length') ?? 0),
@@ -98,9 +106,10 @@ export class S3ObjectStore implements ObjectStore {
   async get(key: string): Promise<Uint8Array | null> {
     assertObjectKey(key);
     const response = await this.send('GET', this.address(key));
-    if (response.status === 404) return null;
-    if (!response.ok) throw new ObjectStoreError('unavailable');
-    const data = Buffer.from(await response.arrayBuffer());
+    if (response.status === 404) return discard(response, null);
+    if (!response.ok) return discard(response, new ObjectStoreError('unavailable'));
+    if (Number(response.headers.get('content-length') ?? 0) > this.maxBytes) return discard(response, new ObjectStoreError('too_large'));
+    const data = response.body ? await collectBody(response.body as unknown as AsyncIterable<Uint8Array>, this.maxBytes) : Buffer.alloc(0);
     const expected = response.headers.get('x-amz-meta-sha256');
     if (expected && expected !== sha256Hex(data)) throw new ObjectStoreError('unavailable');
     return new Uint8Array(data);
@@ -109,7 +118,7 @@ export class S3ObjectStore implements ObjectStore {
   async delete(key: string): Promise<void> {
     assertObjectKey(key);
     const response = await this.send('DELETE', this.address(key));
-    if (!response.ok && response.status !== 404) throw new ObjectStoreError('unavailable');
+    await discard(response, !response.ok && response.status !== 404 ? new ObjectStoreError('unavailable') : null);
   }
 
   async list(prefix: string): Promise<ObjectInfo[]> {
@@ -122,8 +131,8 @@ export class S3ObjectStore implements ObjectStore {
       address.searchParams.set('prefix', prefix);
       if (token) address.searchParams.set('continuation-token', token);
       const response = await this.send('GET', address);
-      if (!response.ok) throw new ObjectStoreError('unavailable');
-      const xml = await response.text();
+      if (!response.ok) return discard(response, new ObjectStoreError('unavailable'));
+      const xml = (await collectBody(response.body as unknown as AsyncIterable<Uint8Array>, 16 * 1024 * 1024)).toString('utf8');
       for (const [, entry] of xml.matchAll(/<Contents>([\s\S]*?)<\/Contents>/g)) {
         const key = tag(entry, 'Key');
         if (key === null || !key.startsWith(prefix)) continue;
@@ -147,7 +156,8 @@ export class S3ObjectStore implements ObjectStore {
     // fetch sets Host itself (from the URL, as signed).
     const { host: _host, ...sent } = signed;
     try {
-      return await this.fetchImpl(address, { method, headers: sent, body: body ? new Uint8Array(body) : undefined, signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(60_000)]) : AbortSignal.timeout(60_000) });
+      // Never follow a redirect: it could send the body (or the request) elsewhere.
+      return await this.fetchImpl(address, { method, headers: sent, body: body ? new Uint8Array(body) : undefined, redirect: 'manual', signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(60_000)]) : AbortSignal.timeout(60_000) });
     } catch {
       throw new ObjectStoreError('unavailable');
     }

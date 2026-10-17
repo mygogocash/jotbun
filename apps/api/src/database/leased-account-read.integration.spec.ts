@@ -15,6 +15,7 @@ import type { SignedUp } from '../testing/auth-fixtures';
 import { acceptPolicies, createFixtureDomain, fixtureCommands, publishPolicies, purchase, registerFixtureDomain } from '../testing/command-fixtures';
 import { startJwksFixture } from '../testing/jwks-server';
 import type { JwksFixture } from '../testing/jwks-server';
+import { queueAccountJob } from '../testing/job-fixtures';
 import { createTestDatabase } from '../testing/postgres-harness';
 import type { TestDatabase } from '../testing/postgres-harness';
 import { DatabaseService } from './database.service';
@@ -35,9 +36,9 @@ async function member(): Promise<SignedUp> {
   return user;
 }
 
-async function leaseFor(user: SignedUp, kind = 'sync_snapshot'): Promise<ClaimedJob> {
-  await jobs.enqueue({ id: randomUUID(), kind, accountId: user.accountId, payload: {}, maxAttempts: 3, maxRuntimeSeconds: 120 });
-  const [claimed] = await jobs.claim([kind], { leaseSeconds: 60 });
+async function leaseFor(user: SignedUp, kind: 'sync_snapshot' | 'export' = 'sync_snapshot', leaseSeconds = 60): Promise<ClaimedJob> {
+  await queueAccountJob(db, user.accountId, kind, { maxRuntimeSeconds: 120 });
+  const [claimed] = await jobs.claim([kind], { leaseSeconds });
   return claimed;
 }
 
@@ -140,6 +141,30 @@ describe('leased account reads', () => {
     const claimed = await leaseFor(user);
     await db.admin((client) => client.query('UPDATE accounts SET lifecycle_generation = lifecycle_generation + 1 WHERE id = $1', [user.accountId]));
     expect(await denied(() => reader.withSnapshot(claimed.lease, 'sync_snapshot', (tx) => tx.highWater()))).toBe(true);
+    const deleting = await member();
+    const lease = await leaseFor(deleting);
+    await db.admin((client) => client.query(`UPDATE accounts SET status = 'deleting' WHERE id = $1`, [deleting.accountId]));
+    expect(await denied(() => reader.withSnapshot(lease.lease, 'sync_snapshot', (tx) => tx.highWater()))).toBe(true);
+  });
+
+  it('a long snapshot stays readable while heartbeats extend its lease, until the attempt runtime bound', async () => {
+    const user = await member();
+    await commands.create(user.session, purchase());
+    const claimed = await leaseFor(user, 'sync_snapshot', 2);
+    expect(await jobs.heartbeat(claimed.lease, 30)).not.toBeNull();
+    const result = await reader.withSnapshot(claimed.lease, 'sync_snapshot', async (read) => {
+      await new Promise((resolve) => setTimeout(resolve, 2_500));
+      return [await read.highWater(), (await read.entities(null, 10)).length];
+    });
+    expect(result).toEqual(['1', 1]);
+    await db.admin((client) => client.query(`UPDATE jobs SET attempt_started_at = now() - interval '1 hour' WHERE id = $1`, [claimed.lease.jobId]));
+    expect(await denied(() => reader.withSnapshot(claimed.lease, 'sync_snapshot', (tx) => tx.highWater()))).toBe(true);
+  });
+
+  it('a key position needs both its entity and id', async () => {
+    const user = await member();
+    const claimed = await leaseFor(user);
+    await expect(reader.withSnapshot(claimed.lease, 'sync_snapshot', (tx) => tx.entities({ entity: 'fixture_purchase', id: null as unknown as string }, 10))).rejects.toThrow();
   });
 
   it('the leased-read role has no direct access to financial or identity tables', async () => {

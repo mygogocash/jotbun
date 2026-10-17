@@ -49,9 +49,13 @@ async function main(): Promise<void> {
     const publication = new ObjectPublicationService(jobsPool, store);
     const handlers = buildHandlers({ jobs, reader: new LeasedAccountRead(readPool), store, publication });
     const retention = new SyncRetention(jobsPool);
+    let maintaining = false;
     const maintain = async () => {
+      // A slow sweep must not overlap the next one.
+      if (maintaining) return;
+      maintaining = true;
       try {
-        const removed = await publication.sweep(null, new Date());
+        const removed = await publication.sweep(null);
         if (removed.length > 0) console.log(`job worker: swept ${removed.length} object(s)`);
         const pruned = await retention.prune();
         if (pruned > 0) console.log(`job worker: applied change retention to ${pruned} account(s)`);
@@ -63,6 +67,8 @@ async function main(): Promise<void> {
         }
       } catch (error) {
         console.error(`job worker: maintenance failed (${error instanceof Error ? error.name : 'unknown'})`);
+      } finally {
+        maintaining = false;
       }
     };
     await maintain();

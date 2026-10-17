@@ -7,6 +7,7 @@ import { isUuid } from '@gogospend/contracts';
 import type { SessionContext } from '@gogospend/contracts';
 import type { Pool, QueryResult } from 'pg';
 
+import { assertLoginRoles } from '../jobs/worker-login';
 import { OwnerTx } from './owner-transaction';
 
 export const PG_POOL = Symbol('PG_POOL');
@@ -97,21 +98,14 @@ export class DatabaseService implements OnModuleDestroy {
   }
 
   /**
-   * Startup check: the API must connect as a least-privilege login, never a
-   * superuser, BYPASSRLS role or (a member of) a table owner, all of which
-   * would bypass row-level security.
+   * Startup check: the API must connect as a least-privilege login - exactly
+   * gogospend_app and gogospend_bootstrap, never a superuser, BYPASSRLS or
+   * CREATEROLE role or (a member of) a table owner, which would bypass
+   * row-level security.
    */
   async assertLeastPrivilegeLogin(): Promise<void> {
-    const { rows } = await this.pool.query<{ rolsuper: boolean; rolbypassrls: boolean; owns_tables: boolean }>(
-      `SELECT r.rolsuper, r.rolbypassrls,
-              EXISTS (SELECT 1 FROM pg_tables t
-                       WHERE t.schemaname = 'public' AND pg_has_role(current_user, t.tableowner, 'USAGE')) AS owns_tables
-         FROM pg_roles r WHERE r.rolname = current_user`,
-    );
-    const login = rows[0];
-    if (!login || login.rolsuper || login.rolbypassrls || login.owns_tables) {
-      throw new Error('DATABASE_URL must use a least-privilege login: not a superuser, BYPASSRLS role or table owner.');
-    }
+    await assertLoginRoles(this.pool, ['gogospend_app', 'gogospend_bootstrap'], 'DATABASE_URL',
+      'DATABASE_URL must use a least-privilege login: a member of gogospend_app and gogospend_bootstrap only, not a superuser, BYPASSRLS role or table owner.');
   }
 
   async onModuleDestroy(): Promise<void> {

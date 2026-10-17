@@ -590,3 +590,70 @@ Observed, not changed (pre-existing):
   - Known P1 review findings, being fixed next, also affect snapshots: a leased read is denied when the lease it saw at its start expires, even though heartbeats extended it, so builds over about 20–30 s fail. That must be fixed before S2 relies on snapshots.
 - **Hosted check:** SKIPPED. Private grants, expiry and streamed checksums against real R2 and Neon need the E1-authorized scope. S1 is not reported complete for beta until it passes.
 - **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (433), test:db PASS (366), test:app PASS (11), test:unit PASS (35), test:render PASS (38), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
+
+## Review fixes for P1
+
+- **P1 review** (commit `4d39532`): no blockers, two majors, ten minors and some nits. The reviewer ran its probes against PostgreSQL 17 on an extracted copy of the commit. It verified as correct:
+  - SigV4 against several AWS vectors;
+  - lock ordering among publish, cancel, logout, revocation, claim and extend;
+  - heartbeat bounds and fencing of reclaimed or cancelled leases;
+  - SECURITY DEFINER hygiene;
+  - that the leased-read role has routine-only access.
+- **Fixed, with tests that failed first:**
+  - New `src/jobs/job-hardening.integration.spec.ts`.
+  - Additions to `leased-account-read`, `object-publication` and `s3-object-store.contract`.
+  - New unit `job.repository.spec.ts`.
+  - RED: 14 of 31 DB tests and 2 of 28 unit tests failed on assertions, then 1 of 12 for the registry checks below.
+  - **Major — a long snapshot was denied once the lease it started with expired.** Inside REPEATABLE READ, heartbeats are invisible. The leased routines now require that the token matches, that the lease was unexpired when the reading transaction began (`now()`), and that the attempt's fixed runtime bound (`attempt_started_at + max_runtime_seconds`) has not passed. A 2 s lease kept alive by heartbeats now reads 2.5 s in. Moving the attempt start back an hour denies the read.
+  - **Major — the worker login could mint jobs and leases.**
+    - `gogospend_jobs` can no longer INSERT `sync_snapshot` or `export` jobs (separate SELECT/UPDATE/INSERT policies). Those come only from the app routines.
+    - A new trigger, `gogospend_guard_job_transition`, enforces the job protocol for every non-superuser login and routine:
+      - inserts start queued;
+      - a new lease token only by a claim, which counts the attempt and sets `attempt_started_at = now()` itself;
+      - the same lease only forward, unexpired, within the runtime bound;
+      - no revival of succeeded, superseded or cancelled jobs;
+      - `failed → queued` only as a requeue with attempts reset to 0.
+    - Forged tokens, revivals, a moved runtime start and over-long leases all fail with 42501.
+  - **Login checks** (`assertLoginRoles`, now also used by the API's `assertLeastPrivilegeLogin` and the security worker): the login's memberships, direct or through other roles and inheriting or not, must equal exactly the expected set. CREATEROLE is refused. A `WITH INHERIT FALSE` grant of `gogospend_app`, `pg_read_all_data` or CREATEROLE are each refused.
+  - **Locks:**
+    - `gogospend_enqueue_account_job` takes the account lock; a test shows it waits for a held lock.
+    - `gogospend_lock_current_job` checks the lease before locking, so a stale token never takes the account lock (checked with a 200 ms `lock_timeout`).
+  - **Expired leases:** `complete` and `fail` refuse an expired lease that nobody reclaimed. Heartbeats never shorten a lease.
+  - **Publication:**
+    - Purposes are limited to `sync_snapshot` and `export`, and must equal the job's kind.
+    - The new `deleting` state is retried until the storage delete succeeds; only then is a row `deleted`.
+    - `deleted` rows are purged after 30 days.
+    - The sweep uses the database clock unless a cutoff is passed (tests and operators).
+    - New CHECKs: the key must name its own purpose, account, job and lease, and a published object expires within 7 days.
+  - **S3 client:**
+    - It never follows redirects (`redirect: 'manual'`). The fake now has a redirect route and a second origin, which receives nothing.
+    - 5xx responses report `unavailable` without provider text.
+    - `get` enforces the size limit (`too_large`), error bodies are released, and list pagination follows continuation tokens. The fake pages 2 keys at a time with a token containing `+ / = &`.
+  - **Worker loop:**
+    - A transient heartbeat error keeps the last granted budget instead of aborting.
+    - Losing the lease (cancelled) aborts the handler.
+    - Stopping the worker aborts the running handler and requeues it (`worker_stopped`).
+    - Idle polling uses `timers/promises` sleep, so listeners no longer pile up.
+    - `heartbeatMs` must leave the lease safety margin (29 s on a 30 s lease is refused).
+    - Maintenance sweeps no longer overlap.
+  - **Migration:** `0009` backfills `attempt_started_at` for leases held during the migration. Checked by applying 0001–0008 to a scratch database, holding a leased job, then applying 0009. The scratch database was dropped.
+  - **Leased reads:**
+    - Only the routine's own "leased read denied" error maps to `LeasedReadDenied`.
+    - A key position needs both its entity and its id.
+    - An account in `deleting` status is denied even at the same generation.
+- **Tests added for coverage (passed at once):**
+  - the app's own locked cancel racing a publisher that waits on the account lock (completion refused, object stays reserved);
+  - cancel mid-handler aborts the handler's signal.
+  - `failNext('delete')` is now used.
+- **Test updates:**
+  - Specs that queued `sync_snapshot`/`export` jobs through the worker login now use `queueAccountJob`, which simulates the app routine.
+  - The S3 redirect test first failed on the fake's route order. After the fix to the fake, it was checked to fail with redirects followed, then restored.
+  - The P1 receipts' "43" DB tests should read 44.
+- **Not changed (recorded):**
+  - `reserveKey` and `requeue` do not check that the account is active. Publication and leased reads re-check under lock.
+  - The cancel routine's security-kind list is in SQL; P5 must add its own kinds.
+  - Failed-job alerts repeat every sweep.
+  - Worker startup logs the error message.
+  - Each sweep lists every object of a purpose. It is fine at current scale; revisit with P2a volumes.
+  - `publishIfCurrent` stays public for the plan's interface; `finishWithObjects` is the transactional path.
+- **Full gate after the fixes:** typecheck PASS, typecheck:app PASS, test:api PASS (436), test:db PASS (384), test:app PASS (11), test:unit PASS (35), test:render PASS (38), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
