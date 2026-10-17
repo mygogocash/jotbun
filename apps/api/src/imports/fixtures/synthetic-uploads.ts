@@ -63,6 +63,8 @@ export const SYNTHETIC = {
   heic: ftyp('heic', 'mif1', 'heic'),
   heif: ftyp('mif1', 'mif1', 'heic'),
   avif: ftyp('avif', 'mif1', 'avif'),
+  /** AVIF under the generic HEIF major brand: still AVIF, not HEIC. */
+  avifMif1: ftyp('mif1', 'avif', 'miaf'),
   pdf: Buffer.concat([ascii('%PDF-1.7\n%'), bytes(0xe2, 0xe3, 0xcf, 0xd3), ascii('\n1 0 obj\n<<>>\nendobj\n')]),
   gif: Buffer.concat([ascii('GIF89a'), bytes(0x01, 0x00, 0x01, 0x00, 0x80, 0x00, 0x00, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x21, 0xf9, 0x04)]),
   /** A legacy .xls (OLE2 compound file) header. */
@@ -96,6 +98,20 @@ export const PATH_LIKE_NAMES = [
   '',
   'statement',
   `${'a'.repeat(125)}.csv`,
+  // Invisible fillers and other default-ignorable code points.
+  '\u3164.csv',
+  'a\u3164b.csv',
+  'a\uFFA0b.csv',
+  'a\u115Fb.csv',
+  'a\u034Fb.csv',
+  // Slash, backslash and colon look-alikes.
+  'a\uFF0Fb.csv',
+  'a\u2215b.csv',
+  'a\u2044b.csv',
+  'a\u29F8b.csv',
+  'a\uFF3Cb.csv',
+  'a\uFE68b.csv',
+  'a\uFF1Ab.csv',
 ];
 
 export type MeteredStream = { stream: AsyncIterable<Uint8Array>; pulled(): number; returned(): boolean };

@@ -13,15 +13,21 @@
  *     are refused (`422 INVALID_FILE_NAME`), and its extension must match the
  *     content type;
  *   - `Idempotency-Key`: a UUID. A retry with the same key returns the
- *     original outcome; a key whose upload ended without acceptance answers
- *     `409 UPLOAD_FAILED` (start again with a new key);
- *   - `Content-Length` is optional; the 12 MiB cap is enforced while
- *     streaming either way.
+ *     original outcome: the accepted import (once its file expired, under
+ *     any file name of the same type), or the same refusal. A key refused
+ *     only by a limit may be retried once room returns; a key whose upload
+ *     failed (stream, storage, timeout) answers `409 UPLOAD_FAILED` (start
+ *     again with a new key);
+ *   - `Content-Length` is optional; the 12 MiB cap, and the bytes still
+ *     allowed today, are enforced while streaming either way.
+ * The whole body must arrive within IMPORT_UPLOAD_RECEIVE_SECONDS, with no
+ * pause longer than IMPORT_UPLOAD_IDLE_SECONDS (`408 UPLOAD_INCOMPLETE`).
  * The server sniffs magic bytes: a body that is not what its type and name
  * say is refused (`422 UPLOAD_TYPE_MISMATCH`), HEIC/HEIF and other formats
  * are unsupported (`415 UPLOAD_UNSUPPORTED_TYPE`). Per-account limits answer
  * `429 UPLOAD_LIMIT_REACHED` with `retry_after_seconds` and a message key
- * naming the limit (IMPORT_LIMIT_MESSAGE_KEYS).
+ * naming the limit (IMPORT_LIMIT_MESSAGE_KEYS). After any error reply the
+ * server closes the connection.
  *
  * `GET /v1/imports/:job_id` returns the caller's own accepted import;
  * another account's id and an unknown id are the same `404 NOT_FOUND`.
@@ -48,18 +54,28 @@ export const IMPORT_QUOTAS = {
   uploadWindowMinutes: 15,
   acceptedBytesPerDay: 50 * 1024 * 1024,
   parseJobsPerDay: 10,
+  /** Uploads of one account streaming at the same time. */
+  uploadsInProgress: 2,
 } as const;
 
-export const IMPORT_LIMITS = ["uploads", "bytes", "parse_jobs"] as const;
+/** The whole body must arrive within this long (12 MiB then needs about 26 KB/s on average). */
+export const IMPORT_UPLOAD_RECEIVE_SECONDS = 480;
+/** An upload that sends nothing for this long is ended. */
+export const IMPORT_UPLOAD_IDLE_SECONDS = 30;
+
+export const IMPORT_LIMITS = ["uploads", "bytes", "parse_jobs", "in_progress"] as const;
 export type ImportLimit = (typeof IMPORT_LIMITS)[number];
 /** The `message_key` of a `429 UPLOAD_LIMIT_REACHED` names the limit that was reached. */
 export const IMPORT_LIMIT_MESSAGE_KEYS: Readonly<Record<ImportLimit, string>> = {
   uploads: "errors.upload_limit_uploads",
   bytes: "errors.upload_limit_bytes",
   parse_jobs: "errors.upload_limit_parse_jobs",
+  in_progress: "errors.upload_limit_in_progress",
 };
 /** The `message_key` of a `415 UPLOAD_UNSUPPORTED_TYPE` for HEIC/HEIF photos. */
 export const IMPORT_HEIC_MESSAGE_KEY = "errors.upload_heic_unsupported";
+/** The `message_key` of a `408 UPLOAD_INCOMPLETE` when the body stalled or took too long. */
+export const IMPORT_TIMEOUT_MESSAGE_KEY = "errors.upload_timeout";
 
 export const IMPORT_FORMATS = ["csv", "xlsx", "jpeg", "png", "webp"] as const;
 export type ImportFormat = (typeof IMPORT_FORMATS)[number];
@@ -120,10 +136,14 @@ export function parseImportFileName(value: unknown): ImportFileName {
   const name = value.normalize("NFC");
   const length = [...name].length;
   if (length < 1 || length > IMPORT_FILE_NAME_MAX_CHARS) throw invalid("File name must be 1-128 characters.");
-  // Path separators, drive/stream markers and characters no file system takes.
-  if (/[\/\\:*?"<>|]/.test(name)) throw invalid("File name must not look like a path.");
+  // Path separators, drive/stream markers and characters no file system takes,
+  // and their look-alikes (fullwidth, division and fraction slashes, ratio).
+  if (/[\/\\:*?"<>|\u2044\u2215\u2216\u2236\u29F8\u29F9\uA789\uFE68\uFF0F\uFF1A\uFF3C]/.test(name)) throw invalid("File name must not look like a path.");
   // Control, invisible formatting (bidi overrides, zero-width), line separators, lone surrogates.
   if (/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}\p{Cs}]/u.test(name)) throw invalid("File name has control or invisible characters.");
+  // Other default-ignorable code points (Hangul fillers, combining grapheme
+  // joiner, ...) render as nothing; only emoji presentation selectors may stay.
+  if (/[\p{Default_Ignorable_Code_Point}]/u.test(name.replace(/[\uFE0E\uFE0F]/g, ""))) throw invalid("File name has invisible characters.");
   if (name.startsWith(".") || /^\s|\s$/u.test(name)) throw invalid("File name must not start with a dot or space, or end with a space.");
   const dot = name.lastIndexOf(".");
   const extension = dot > 0 ? name.slice(dot + 1).toLowerCase() : "";

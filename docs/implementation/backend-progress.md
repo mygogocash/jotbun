@@ -1598,3 +1598,59 @@ Observed, not changed (pre-existing):
   - The app role can read the spent lease token inside `object_key`.
   - A global logout leaves queued exports running, as the plan intends.
 - **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (555), test:db PASS (489), test:app PASS (28), test:unit PASS (215), test:dev PASS (7), test:ops PASS (59), test:render PASS (60), build PASS, export:web PASS, `git diff --check` PASS. The two `gogospend_test_*` databases seen belonged to parallel worktrees' running suites.
+
+## Review fixes for P2a
+
+- **P2a review** (`307f2a4` as merged in `0753ae7`, migration `0014_import_intake`, which is not deployed and was edited in place): no blockers, one major, five minors, nits; eight mutants survived that the review asked to kill. Built on the integration tip `6ecd1c4` in P2a's worktree.
+- **Fixed, with tests that failed first.**
+  - RED: 18 of 96 unit tests and 10 of 40 database/HTTP tests failed, all on assertions (`p2afix-red-unit.log`, `p2afix-red-db.log`).
+  - Seams: a stub maintenance pass and overdue count returning 0, a request timeout of 0, and a begin result carrying "unlimited" remaining bytes.
+  - The other new tests pin guards whose mutants survived, and passed at once.
+  - GREEN: 96 of 96 and 40 of 40, the database/HTTP suite stable over 3 runs.
+  - **Major — stalled uploads could hold every intake slot.** Eight stalled bodies from two accounts gave everyone else 503 until Node's 300 s request timeout.
+    - **Per account:** at most 2 uploads of one account stream at once (`IMPORT_QUOTAS.uploadsInProgress`). A third gets 429 `UPLOAD_LIMIT_REACHED`, with `errors.upload_limit_in_progress` and a retry time of at most 60 s. This is decided under the account lock (`gogospend_import_quota`).
+    - **Timeouts:** the read loop ends an upload that sends nothing for 30 s (`IMPORT_UPLOAD_IDLE_SECONDS`) or is still arriving after 8 minutes (`IMPORT_UPLOAD_RECEIVE_SECONDS`). Either way it answers 408 `UPLOAD_INCOMPLETE` (`errors.upload_timeout`), records `upload_stalled` or `upload_timeout`, deletes the parts and frees the slot. It never waits on the stalled pull again.
+    - **Per process:** the cap is 16 intakes, so 8 accounts would have to stall at once; memory stays bounded at about one part each.
+    - **Request timeout:** the v1 server's `requestTimeout` is set to 9 minutes (`V1_REQUEST_TIMEOUT_MS`). The intake therefore always answers first, and a 12 MiB upload at about 26 KB/s can finish within the stated bound.
+    - **Bounds line up:** the database's 10-minute receive deadline still covers the 8-minute stream plus finishing.
+    - Probe H1 is now a test: two accounts stall 2 uploads each, their third is refused, and a bystander's upload is accepted.
+  - **Minor — a 429 decided at finish stuck to its key forever, without a retry time.** A key refused by `limit_bytes` or `limit_parse_jobs` is now decided again at `begin`: it gets 429 with a fresh retry time while still limited, and starts as a new attempt once room returns. Tested for a bytes refusal while streaming and a parse-job refusal at finish.
+  - **Minor — chunked uploads skipped the daily-bytes check at start.** `begin` returns the bytes the account may still have accepted in its 24-hour window. The read loop refuses a body as soon as it passes that, with 429 bytes and the exact retry time (`gogospend_import_bytes_wait`), before a part is written. Probe H3 is now a test: no PUT, no reservation. The 12 MiB cap still answers 413 when today allows more.
+  - **Minor — the expiry job never finished once the account was deleted or its generation moved.**
+    - When P1's fence refuses (inactive account, other generation), `import_expire` now ends `superseded`. "Not due yet" inside the fence is a retryable `import_not_due`; the misleading `import_not_expired` is gone.
+    - A new worker routine, `gogospend_import_maintenance`, runs before each sweep (`importMaintenance`). It ends imports whose account is not active at their generation, or whose expiry passed with no expiry job: their file name is cleared, the parse job cancelled and the parts made due.
+    - Tested for a deleting account and for a moved generation.
+  - **Minor — file names were kept too long.**
+    - The same maintenance fails uploads left `receiving` past their deadline, or of a departing account, clearing their names, without waiting for that account's next upload. Tested with a simulated dead API.
+    - Retention hook: any name kept more than 8 days after acceptance is cleared, so a parsed import keeps its name through its 7-day preview window only. The `accepted` CHECK now requires the digest but not the name. P5 still owns the rows' retention.
+    - Clearing the name on refusal and on failure is now asserted (M21).
+  - **Minor — no overdue-deletion alarm for quarantine.** `quarantineCleanupOverdue` counts quarantine objects more than an hour past their deadline, or `deleting` after a failed storage delete. The worker logs `job worker: N quarantine object(s) overdue for deletion` after each sweep, next to the export alarm. Tested with a failed delete.
+  - **Nits:**
+    - **Lost-reply finish:** cleanup deletes only the keys the abort routine hands back as still unpublished, never one a finish already published (probe U3 is a test).
+    - **Connection: close:** an error reply sent before the body was read sets `Connection: close`, so the server stops reading an endless body (probe H9 is a test).
+    - **Sniffing:** text is CSV whatever word it starts with (`GIF8 code`, `%PDF-ref`, `qty,ftyp`, `RIFFLE`). Only an exact PDF header line is refused as text. AVIF under the `mif1` major brand is plainly unsupported, not HEIC.
+    - **File names:** refused when they contain default-ignorable code points (U+3164, U+FFA0, U+115F, U+034F, …; emoji presentation selectors stay) or slash, backslash and colon look-alikes (`／ ∕ ⁄ ⧸ ＼ ﹨ ：`, …).
+    - **Publish:** the publish UPDATE matches only the upload's own `reserved` parts.
+    - **Replay after expiry (decided):** once the name is cleared, the same key replays the expired import under any file name of the same type. Another type is still `IDEMPOTENCY_MISMATCH`. It reveals nothing beyond the caller's own job id.
+- **Test adjustment:** "at most 5 upload attempts in 15 minutes" now sends its 8 uploads in concurrent pairs, since an account may stream only 2 at once. The third pair still races for the last slot.
+- **Mutants** (`p2afix-mutate.mjs`, `p2afix-mutants.log`, both suites per mutant): 23 of 24 fail the suite.
+  - **Required by the review:** all eight are now killed. That covers the parse-job limit under concurrency (M9 with M18), register-after-PUT through the real upload (M5a), the generation check at finish (M14), the deadline at reservation (M15), HEAD verification (M16), clearing the name on abort (M21), a NUL after the first 64 bytes (M31) and finish part matching (M33).
+  - **Guarding these fixes:** 15 more, all killed:
+    - the idle timeout, the in-progress cap, the bytes check while streaming, retrying a limited key, and maintenance for departing accounts;
+    - `Connection: close` and "text before signatures";
+    - the request timeout, stale cleanup and the overdue count of failed deletes;
+    - cleanup that spares published parts;
+    - look-alike and default-ignorable names, name retention, and the expiry job ending `superseded`.
+  - **The survivor:** dropping `status = 'reserved'` from the publish UPDATE. It is equivalent: the check just before it in the same transaction requires every listed part to be the upload's own reservation, before a deadline the sweep cannot pass.
+- **Not changed (recorded):**
+  - With 16 slots a process holds at most about 16 × 2 MiB of upload buffers. Slow-drip uploads from 8 or more accounts could still fill the slots for up to 8 minutes; a minimum-rate rule was not added.
+  - Raising Node's request timeout from 300 s to 540 s also applies to the 2 MiB JSON routes.
+  - A pure-text PDF without the standard header line passes sniffing as CSV and fails at parsing (P2b).
+  - The maintenance pass ends at most 1,000 imports per run.
+  - The in-progress retry time is a hint (at most 60 s); the slot frees when an upload ends.
+- **For P2b:**
+  - The maintenance pass, like the expiry job, cancels a still-queued or running `import_parse` job when its import ends.
+  - A parsed import keeps `status = 'accepted'` (shown as `parsed`) and loses its file name after 8 days.
+  - Do not rely on the raw parts after `expires_at`.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (578), test:db PASS (504), test:app PASS (28), test:unit PASS (215), test:dev PASS (7), test:ops PASS (59), test:render PASS (60), build PASS, export:web PASS, `git diff --check` PASS. Two `gogospend_test_*` databases remained. Both were created before this work began and hold none of its routines, so they were left alone.
+- **SKIPPED:** a real R2 quarantine upload, its stall timeout and its expiry, which need P1's hosted gate. Uploads stay disabled (`IMPORT_UPLOADS_ENABLED`).

@@ -1,5 +1,8 @@
+import type { Server } from 'node:http';
+
 import { Module } from '@nestjs/common';
 import type { INestApplication } from '@nestjs/common';
+import { IMPORT_UPLOAD_RECEIVE_SECONDS } from '@gogospend/contracts';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { NextFunction, Request, Response } from 'express';
@@ -47,9 +50,18 @@ export function trustProxyHopsFromEnv(value: string | undefined, nodeEnv = proce
   return hops;
 }
 
+/**
+ * Node's limit on receiving one whole request (headers still have their own
+ * 60 s limit). It must exceed the import upload's receive bound, so the
+ * intake - which ends a stalled or too-slow upload itself and cleans up - always
+ * answers first. JSON bodies stay capped at 2 MiB.
+ */
+export const V1_REQUEST_TIMEOUT_MS = (IMPORT_UPLOAD_RECEIVE_SECONDS + 60) * 1000;
+
 /** Middleware shared by the real app and test apps, in order. */
 export function configureV1App(app: INestApplication): void {
   const http = app as NestExpressApplication;
+  (http.getHttpServer() as Server).requestTimeout = V1_REQUEST_TIMEOUT_MS;
   http.set('trust proxy', trustProxyHopsFromEnv(process.env.TRUST_PROXY_HOPS));
   http.use(requestContextMiddleware);
   // v1 responses carry private or credential-bearing data; nothing is cacheable

@@ -86,7 +86,7 @@ Migration integration is serial:
 | `0011_auth_events` | F6b | verified provider-event receipts and reset reconciliation state |
 | `0012_account_linking` | F6c | linking routines only (proof checks, alias move, empty-account fold); no tables |
 | `0013_exports` | P4 | `exports` (request period; private file record and 24-hour expiry), leased export-row read, export record and status routines |
-| `0014_import_intake` | P2a | `import_uploads` (upload record, import job id and sliding-window quota ledger in one row per attempt), quarantine/expiry routines, worker insert policy for import kinds |
+| `0014_import_intake` | P2a | `import_uploads` (upload record, import job id and sliding-window quota ledger in one row per attempt, at most 2 streaming per account), quarantine/expiry/maintenance routines, worker insert policy for import kinds |
 | next free | P2b | candidates, preview issues |
 | next free | P2c | `attachments`, `transaction_attachments` |
 | next free | P3 | frozen selections, per-row progress with unique `(job_id, source_row_id)` |
