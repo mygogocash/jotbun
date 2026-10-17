@@ -649,8 +649,8 @@ export function CustomerSpendScreen() {
   const onSharePie = useCallback(async () => {
     if (!summary) return;
     const lines = [
-      `GoGoSpend ${summary.month}`,
-      `${tc("GoGoSpend expenses")}: ${formatBaht(summary.expense_minor)}`,
+      `Jotbun ${summary.month}`,
+      `${tc("Jotbun expenses")}: ${formatBaht(summary.expense_minor)}`,
       ...summary.pie.map(
         (slice) => `${slice.category} · ${formatBaht(slice.amount_minor)}`,
       ),
@@ -770,7 +770,7 @@ export function CustomerSpendScreen() {
 
   if (introSeen === null) {
     return (
-      <ProfileSubPageFrame title={tc("GoGoSpend")}>{null}</ProfileSubPageFrame>
+      <ProfileSubPageFrame title={tc("Jotbun")}>{null}</ProfileSubPageFrame>
     );
   }
   if (!introSeen) {
@@ -788,7 +788,7 @@ export function CustomerSpendScreen() {
     <ProfileSubPageFrame
       keyboardAware
       stickyHeader={<SpendSectionTabs active="overview" />}
-      title={tc("GoGoSpend")}
+      title={tc("Jotbun")}
     >
       {/*
        * ── adding, on request ────────────────────────────────────────

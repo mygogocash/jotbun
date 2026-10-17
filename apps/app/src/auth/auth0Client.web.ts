@@ -7,7 +7,7 @@ export type { Auth0Port } from './auth0Client.ts';
 
 export function webAuth0Port(): Auth0Port {
   const unsupported = async (): Promise<never> => {
-    throw new Error('Real sign-in is available in the GoGoSpend app on iOS and Android.');
+    throw new Error('Real sign-in is available in the Jotbun app on iOS and Android.');
   };
   return {
     supported: false,

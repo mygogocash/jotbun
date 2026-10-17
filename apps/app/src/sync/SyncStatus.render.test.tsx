@@ -43,13 +43,13 @@ test('a large backlog shows n of m progress while the server paces it', () => {
 
 test('uncertain, needs-review and upgrade states each explain themselves without colour alone', () => {
   show({ outbox: [command('uncertain')] });
-  expect(screen.getByText('Checking 1 entries with GoGoSpend before sending them again')).toBeTruthy();
+  expect(screen.getByText('Checking 1 entries with Jotbun before sending them again')).toBeTruthy();
   cleanup();
   show({ outbox: [command('needs_review'), command('needs_review')] });
   expect(screen.getByText('Entries that need your review: 2')).toBeTruthy();
   cleanup();
   show({ outbox: [command('paused_upgrade')], outcome: outcome('upgrade_required') });
-  expect(screen.getByText('Update GoGoSpend to send the entries saved on this device')).toBeTruthy();
+  expect(screen.getByText('Update Jotbun to send the entries saved on this device')).toBeTruthy();
 });
 
 test('a locked diary asks for sign-in, or for recovery when its key is gone', () => {
@@ -57,12 +57,12 @@ test('a locked diary asks for sign-in, or for recovery when its key is gone', ()
   expect(screen.getByText('Sign in again to send the entries saved on this device')).toBeTruthy();
   cleanup();
   show({ phase: 'locked', lockReason: 'key_missing' });
-  expect(screen.getByText("This device's diary is locked. Recover it from GoGoSpend or discard it.")).toBeTruthy();
+  expect(screen.getByText("This device's diary is locked. Recover it from Jotbun or discard it.")).toBeTruthy();
 });
 
 test('an unreachable server keeps drafts and offers a retry', () => {
   const onRetry = show({ outbox: [command('uncertain')], outcome: outcome('paused') });
-  expect(screen.getByText("Couldn't reach GoGoSpend. Your entries stay saved on this device.")).toBeTruthy();
+  expect(screen.getByText("Couldn't reach Jotbun. Your entries stay saved on this device.")).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
   expect(onRetry).toHaveBeenCalledTimes(1);
 });

@@ -592,7 +592,7 @@ export function CustomerSpendAllScreen() {
           {filterSection}
         </>
       }
-      title={tc("GoGoSpend")}
+      title={tc("Jotbun")}
     >
       {/* ── add one from here ───────────────────────────────────────── */}
       <View style={styles.addCard}>

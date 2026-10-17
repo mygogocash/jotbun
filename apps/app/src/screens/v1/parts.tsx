@@ -119,11 +119,11 @@ export function Loading({ label }: { label: string }) {
 export function loadProblem(error: unknown, tc: Translate): { message: string; retry: boolean } {
   const outcome: V1Outcome | undefined = error instanceof V1Error ? error.outcome : undefined;
   switch (outcome) {
-    case 'upgrade_required': return { message: tc('Update GoGoSpend to keep using your diary. Nothing you saved is lost.'), retry: false };
+    case 'upgrade_required': return { message: tc('Update Jotbun to keep using your diary. Nothing you saved is lost.'), retry: false };
     case 'policy_required': return { message: tc('Review and accept the updated terms to continue.'), retry: false };
     case 'signed_out':
     case 'session_changed': return { message: tc('Sign in again to see your diary.'), retry: false };
-    case 'unsupported_platform': return { message: tc('Your diary is available in the GoGoSpend app on iOS and Android.'), retry: false };
+    case 'unsupported_platform': return { message: tc('Your diary is available in the Jotbun app on iOS and Android.'), retry: false };
     default: return { message: tc("We couldn't load your diary."), retry: true };
   }
 }
@@ -161,7 +161,7 @@ export function saveProblem(error: unknown, tc: Translate): SaveProblem {
     case 'unavailable':
     case 'invalid_response': return result('Not confirmed yet. Your entry is kept; try again.', { unconfirmed: true });
     case 'rate_limited': return result('Too many changes at once. Your entry is kept; try again in a moment.', { unconfirmed: true });
-    case 'upgrade_required': return result('Update GoGoSpend to keep saving. Your entry is kept.', { blocked: true });
+    case 'upgrade_required': return result('Update Jotbun to keep saving. Your entry is kept.', { blocked: true });
     case 'policy_required': return result('Review and accept the updated terms to continue.');
     case 'signed_out': return result('Sign in again to save.');
     // The session changed after sending: never resend this draft under another identity.

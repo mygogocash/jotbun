@@ -179,7 +179,7 @@
   "spendAutologFail": "Không thêm được giao dịch hoàn tiền. Hãy thử lại.",
   "spendAmount": "Số tiền bằng baht",
   "spendImportFail": "Không bắt đầu được quá trình nhập. Hãy thử lại file.",
-  "spendExpenses": "Chi tiêu GoGoSpend",
+  "spendExpenses": "Chi tiêu Jotbun",
   "spendTooLarge": "File lớn hơn 12 MB. Hãy tách bản xuất thành từng khoảng 12 tháng.",
   "spendImportFailed": "Nhập thất bại. Kiểm tra đây là file từ MeowJot, Spendee hoặc Money Lover.",
   "spendImportInFlight": "Một lần nhập đang chạy. Đợi một lát rồi thử lại.",

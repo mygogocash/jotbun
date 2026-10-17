@@ -15,6 +15,6 @@ export default function RootLayout() {
   const locale = useMemo(deviceLocale, []);
   useEffect(() => { syncUiFontFamily(locale); }, [locale]);
   useEffect(() => { if (fontError) console.warn('Bundled fonts could not load; using the system fallback.'); }, [fontError]);
-  if (!fontsLoaded && !fontError) return <View style={{ flex: 1, justifyContent: 'center' }}><ActivityIndicator accessibilityLabel="Loading GoGoSpend" /></View>;
+  if (!fontsLoaded && !fontError) return <View style={{ flex: 1, justifyContent: 'center' }}><ActivityIndicator accessibilityLabel="Loading Jotbun" /></View>;
   return <SafeAreaProvider><IntlProvider locale={locale}><ThemeProvider><ThemedStatusBar /><Stack screenOptions={{ headerShown: false }} /></ThemeProvider></IntlProvider></SafeAreaProvider>;
 }

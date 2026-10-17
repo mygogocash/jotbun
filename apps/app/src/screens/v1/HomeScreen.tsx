@@ -41,14 +41,14 @@ export function HomeScreen({ now }: { now?: Date }) {
     return { categories, wallets, summary, recent: recent.items };
   }, [resources, month, today]);
 
-  if (loaded.state === 'loading') return <Frame title={tc('GoGoSpend')}><Loading label={tc('Loading your diary')} /></Frame>;
+  if (loaded.state === 'loading') return <Frame title={tc('Jotbun')}><Loading label={tc('Loading your diary')} /></Frame>;
   if (loaded.state === 'error') {
     const problem = loadProblem(loaded.error, tc);
-    return <Frame title={tc('GoGoSpend')}><Notice tone="warning" message={problem.message} action={problem.retry ? { label: tc('Try again'), onPress: loaded.reload } : undefined} /></Frame>;
+    return <Frame title={tc('Jotbun')}><Notice tone="warning" message={problem.message} action={problem.retry ? { label: tc('Try again'), onPress: loaded.reload } : undefined} /></Frame>;
   }
 
   const { wallets, categories, summary, recent } = loaded.data;
-  if (wallets.length === 0) return <Frame title={tc('GoGoSpend')}><FirstWallet today={today} onCreated={loaded.reload} /></Frame>;
+  if (wallets.length === 0) return <Frame title={tc('Jotbun')}><FirstWallet today={today} onCreated={loaded.reload} /></Frame>;
 
   const lookups = { wallets: byId(wallets), categories: byId(categories) };
   const total = formatMinor(walletsTotal(wallets), locale);
@@ -60,7 +60,7 @@ export function HomeScreen({ now }: { now?: Date }) {
   const pendingOut = pending.expense_minor === '0' ? null : tc('Waiting to sync: money out {amount}', { amount: formatMinor(pending.expense_minor, locale) });
   const pendingIn = pending.income_minor === '0' ? null : tc('Waiting to sync: money in {amount}', { amount: formatMinor(pending.income_minor, locale) });
   return (
-    <Frame title={tc('GoGoSpend')}>
+    <Frame title={tc('Jotbun')}>
       {diary ? <SyncStatus view={diaryView} onRetry={() => void diary.retry()} /> : null}
       <Card>
         <Text style={{ color: colors.muted }}>{tc('Total balance')}</Text>

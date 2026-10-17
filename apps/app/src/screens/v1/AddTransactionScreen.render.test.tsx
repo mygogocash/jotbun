@@ -94,7 +94,7 @@ test('an upgrade requirement blocks saving but keeps the draft', async () => {
   fake.fail('createTransaction', 'upgrade_required', { status: 426, code: 'CLIENT_UPGRADE_REQUIRED' });
   type('Amount', '65');
   fireEvent.click(screen.getByRole('button', { name: 'Save entry' }));
-  expect(await screen.findByText('Update GoGoSpend to keep saving. Your entry is kept.')).toBeTruthy();
+  expect(await screen.findByText('Update Jotbun to keep saving. Your entry is kept.')).toBeTruthy();
   expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('65');
   expect(screen.getByRole('button', { name: 'Save entry' }).getAttribute('aria-disabled')).toBe('true');
   expect(router.replace).not.toHaveBeenCalled();

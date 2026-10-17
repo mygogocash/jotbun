@@ -65,7 +65,7 @@ test('a failed load offers a retry that loads again', async () => {
 });
 
 test.each([
-  ['upgrade_required', 'Update GoGoSpend to keep using your diary. Nothing you saved is lost.'],
+  ['upgrade_required', 'Update Jotbun to keep using your diary. Nothing you saved is lost.'],
   ['policy_required', 'Review and accept the updated terms to continue.'],
   ['signed_out', 'Sign in again to see your diary.'],
 ])('%s shows its own state, not a generic error', async (outcome, message) => {

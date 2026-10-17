@@ -371,7 +371,7 @@ export function CustomerSpendImportScreen() {
     <ProfileSubPageFrame
       onBackPress={goBackToSpend}
       stickyHeader={<SpendSectionTabs active="import" />}
-      title={tc("GoGoSpend")}
+      title={tc("Jotbun")}
     >
       {/*
        * ── link a bank ──────────────────────────────────────────────
