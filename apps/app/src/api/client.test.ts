@@ -1,0 +1,70 @@
+import { after, before, test } from 'node:test';
+import assert from 'node:assert/strict';
+import { createServer } from 'node:http';
+import { ApiError, createMobileApiClient } from './client.ts';
+
+let baseUrl = '';
+let requests = 0;
+const server = createServer(async (req, res) => {
+  requests += 1;
+  if (req.url === '/spend/denied') {
+    res.writeHead(403, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ message: 'Spend access is off', code: 'SPEND_DISABLED' }));
+    return;
+  }
+  let body = '';
+  for await (const chunk of req) body += chunk.toString();
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify({ authorization: req.headers.authorization, contentType: req.headers['content-type'], method: req.method, body }));
+});
+before(async () => {
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const address = server.address();
+  assert.ok(address && typeof address !== 'string');
+  baseUrl = `http://127.0.0.1:${address.port}`;
+});
+after(() => new Promise<void>((resolve) => server.close(() => resolve())));
+
+test('signed-out reads fail before any network request', async () => {
+  const before = requests;
+  const client = createMobileApiClient({ baseUrl, getToken: async () => null });
+  await assert.rejects(client.get('/spend/summary'), (error: unknown) => error instanceof ApiError && error.status === 401 && error.code === 'SESSION_REQUIRED');
+  assert.equal(requests, before);
+});
+
+test('JSON writes send the active bearer credential and preserve integer satang', async () => {
+  const client = createMobileApiClient({ baseUrl, getToken: async () => 'synthetic-test-session' });
+  const result = await client.post<{authorization: string; contentType: string; method: string; body: string}>('/spend/txs', { amount_minor: 12345 });
+  assert.equal(result.authorization, 'Bearer synthetic-test-session');
+  assert.equal(result.contentType, 'application/json');
+  assert.equal(result.method, 'POST');
+  assert.deepEqual(JSON.parse(result.body), { amount_minor: 12345 });
+});
+
+test('multipart uploads let the runtime generate a matching boundary', async () => {
+  const client = createMobileApiClient({ baseUrl, getToken: async () => 'synthetic-test-session' });
+  const form = new FormData();
+  form.append('file', new Blob(['amount\n100']), 'sample.csv');
+  const result = await client.postFormData<{contentType: string; body: string}>('/spend/imports', form);
+  assert.match(result.contentType, /^multipart\/form-data; boundary=/);
+  assert.ok(result.body.includes(result.contentType.split('boundary=')[1]));
+  assert.ok(result.body.includes('filename="sample.csv"'));
+});
+
+test('server failures stay failures with their actionable code', async () => {
+  const client = createMobileApiClient({ baseUrl, getToken: async () => 'synthetic-test-session' });
+  await assert.rejects(client.get('/spend/denied'), (error: unknown) => error instanceof ApiError && error.status === 403 && error.code === 'SPEND_DISABLED');
+});
+
+test('absolute URLs cannot receive session credentials', async () => {
+  const before = requests;
+  const client = createMobileApiClient({ baseUrl, getToken: async () => 'synthetic-test-session' });
+  await assert.rejects(client.get('https://example.com/steal'), /relative API path/i);
+  assert.equal(requests, before);
+});
+
+test('a response from the previous account cannot become the current diary', async () => {
+  let reads = 0;
+  const client = createMobileApiClient({ baseUrl, getToken: async () => ++reads === 1 ? 'account-a' : 'account-b' });
+  await assert.rejects(client.get('/spend/summary'), (error: unknown) => error instanceof ApiError && error.code === 'SESSION_CHANGED');
+});

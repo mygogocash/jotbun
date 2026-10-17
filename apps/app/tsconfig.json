@@ -9,12 +9,25 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
-    "baseUrl": ".",
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
     "paths": {
-      "@mobile/*": ["./src/*"],
-      "@gogospend/contracts": ["../../packages/contracts/src/index.ts"]
+      "@mobile/*": [
+        "./src/*"
+      ],
+      "@gogospend/contracts": [
+        "../../packages/contracts/src/index.ts"
+      ]
     },
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   },
-  "include": ["src", "app"]
+  "include": [
+    "src",
+    "app",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
+  ],
+  "extends": "expo/tsconfig.base.json"
 }

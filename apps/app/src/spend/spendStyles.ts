@@ -1,4 +1,4 @@
-import { StyleSheet, type ViewStyle } from "react-native";
+import { StyleSheet } from "react-native";
 
 import { pickThemed, type ThemeColors } from "@mobile/theme/colorPalettes";
 import { elevationCss, materialGlass } from "@mobile/theme/elevation";
@@ -162,6 +162,7 @@ export function createSpendStyles(colors: ThemeColors) {
       position: "absolute",
     },
     introSumSmall: {
+      zIndex: 1,
       color: SPEND_INTRO_FRAME.caption,
       fontFamily: typography.family,
       fontSize: typography.caption + SPEND_INTRO_CAPTION_LIFT,
@@ -169,6 +170,7 @@ export function createSpendStyles(colors: ThemeColors) {
       textAlign: "center",
     },
     introSumBig: {
+      zIndex: 1,
       color: SPEND_INTRO_FRAME.figure,
       fontFamily: typography.family,
       fontSize: typography.displayLg.size,
@@ -822,7 +824,7 @@ export function createSpendStyles(colors: ThemeColors) {
       ...({
         backdropFilter: `blur(${materialGlass(colors).blurCssPx}px) saturate(150%)`,
         WebkitBackdropFilter: `blur(${materialGlass(colors).blurCssPx}px) saturate(150%)`,
-      } as ViewStyle),
+      }),
       pointerEvents: "none",
     },
     sheet: {

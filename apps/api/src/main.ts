@@ -42,7 +42,7 @@ async function bootstrap() {
     next();
   });
   const port = Number(process.env.PORT ?? 8090);
-  await app.listen(port);
+  await app.listen(port, process.env.HOST ?? '0.0.0.0');
 }
 
 void bootstrap();

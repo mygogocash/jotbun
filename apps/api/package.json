@@ -49,10 +49,15 @@
     "@types/supertest": "^7.2.1",
     "jest": "^30.5.1",
     "supertest": "^7.0.0",
-    "typescript": "^7.0.2"
+    "typescript": "^6.0.3"
   },
   "jest": {
-    "moduleFileExtensions": ["js", "json", "ts", "tsx"],
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts",
+      "tsx"
+    ],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
@@ -60,18 +65,34 @@
         "@swc/jest",
         {
           "jsc": {
-            "parser": { "syntax": "typescript", "decorators": true },
-            "transform": { "legacyDecorator": true, "decoratorMetadata": true },
+            "parser": {
+              "syntax": "typescript",
+              "decorators": true
+            },
+            "transform": {
+              "legacyDecorator": true,
+              "decoratorMetadata": true
+            },
             "target": "es2021",
             "keepClassNames": true,
             "baseUrl": ".",
-            "paths": { "src/*": ["./src/*"] }
-          }
+            "paths": {
+              "src/*": [
+                "./src/*"
+              ]
+            }
+          },
+          "swcrc": false,
+          "configFile": false
         }
       ]
     },
-    "transformIgnorePatterns": ["node_modules/(?!(jose|jwks-rsa)/)"],
-    "moduleNameMapper": { "^src/(.*)$": "<rootDir>/$1" },
+    "transformIgnorePatterns": [
+      "node_modules/(?!(jose|jwks-rsa)/)"
+    ],
+    "moduleNameMapper": {
+      "^src/(.*)$": "<rootDir>/$1"
+    },
     "testEnvironment": "node"
   }
 }

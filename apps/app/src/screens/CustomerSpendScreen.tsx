@@ -762,7 +762,7 @@ export function CustomerSpendScreen() {
   }, [months, selectedMonth, summary]);
 
   if (!isSpendEnabled() || !spendLive) {
-    return <Redirect href="/profile" />;
+    return <Redirect href="/" />;
   }
   if (!isAuthed) {
     return <Redirect href="/login" />;

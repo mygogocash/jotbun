@@ -33,7 +33,7 @@ describe('SpendController allowlist', () => {
     const spend = { summary: jest.fn(), listTxs: jest.fn(), addTx: jest.fn() };
     const controller = makeController(spend, true);
     await expect(
-      controller.summary({ user: {} } as Request, '2025-12'),
+      controller.summary({ user: {} } as unknown as Request, '2025-12'),
     ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
@@ -140,7 +140,7 @@ describe('SpendController month list', () => {
   it('given a session with no subject > then it 401s', async () => {
     const controller = makeController({ listMonths: jest.fn() }, true);
     await expect(
-      controller.listMonths({ user: {} } as Request),
+      controller.listMonths({ user: {} } as unknown as Request),
     ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 });

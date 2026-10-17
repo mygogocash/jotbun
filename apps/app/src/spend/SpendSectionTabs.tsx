@@ -10,7 +10,7 @@ import { useCopy } from "@mobile/i18n/useCopy";
 export type SpendSection = "overview" | "records" | "import";
 
 /** Where each section actually lives. Overview is GoGoSpend itself. */
-const SECTION_ROUTE: Record<SpendSection, string> = {
+const SECTION_ROUTE: Record<SpendSection, "/spend" | "/spend/all" | "/spend/import"> = {
   overview: "/spend",
   records: "/spend/all",
   import: "/spend/import",

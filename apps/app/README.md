@@ -1,28 +1,29 @@
-# GoGoSpend standalone client (Expo, SDK 58). Phase-1 scaffold.
+# GoGoSpend client
 
-## What is here
+Expo SDK 58 client with the extracted Spend screens, shared presentation
+components, English/Thai/Vietnamese Spend catalogs, and standalone routing.
+The original Spend UI is preserved without importing the cashback app shell.
 
-- `src/spend/` — working copy of the spend diary modules (seeded from
-  `vendor/gogocash-apps-app-spend/`).
-- `src/screens/CustomerSpend{,All,Import}Screen.tsx` — the three spend screens.
-- `app/spend/{all,import}.tsx` — expo-router routes.
+From the repository root, run `npm ci --ignore-scripts` then `npm run dev`.
+Open <http://localhost:8081>.
 
-## What is NOT here yet (phase 2)
+- `/` shows the Spend introduction.
+- `/spend`, `/spend/all`, and `/spend/import` require an issued backend session.
+- `/login` explains the account setup requirement on an unconfigured install.
+- System/Light/Dark appearance is scoped to GoGoSpend and persists locally.
+- API calls use `EXPO_PUBLIC_API_URL`, defaulting to `http://localhost:8090`.
+- Telemetry is disabled until a consent-aware sink is explicitly connected.
 
-The screens resolve ~20 shared `@mobile/*` modules that still live in the
-monorepo. Next extraction, in dependency order:
+The extracted API has no standalone account login/refresh issuer yet. No demo
+account, borrowed token, or authentication bypass is installed. Bank links,
+cashback history, and import workers retain their documented setup boundaries.
+See [local development](../../docs/LOCAL_DEVELOPMENT.md) for full details.
 
-1. `theme/*` (11 files: colorPalettes, tokens, AppText, ThemeProvider,
-   useThemedStyles, motion, animatedMotion, icons, elevation, tapTarget,
-   stageChange, useSpringPop) + `hooks/useReducedMotion`
-2. `i18n/useCopy` + spend catalog slice (reuses `tc()` English-first)
-3. `api/client` + `api/sharedClient` repointed at this repo's API
-4. `auth/useAuthGuardSession` + session store (same Firebase project = SSO)
-5. `components/*` (CustomerSectionTabs, ProfileSubPageFrame, SpendDatePicker,
-   SpendMediaPermissionPrimer, SpendNewCategorySheet)
-6. `config/env`, `config/featureFlags` (spend-only subset), `navigation/appChrome`
-   (spend-only subset), `consent/*` (spend slices), `lib/*` (clipboard,
-   hapticMoment, openAppSettings), `analytics/bus` (spend events only)
+Verification from the repository root:
 
-`SpendIntroScreen` + `SpendSectionTabs` already travel inside `src/spend/`.
-Diff working copies against `vendor/` with `npm run diff:app-spend`.
+```sh
+npm run typecheck:app
+npm run test:app
+npm run test:render -w gogospend-app
+npm run export:web -w gogospend-app -- --max-workers 2
+```

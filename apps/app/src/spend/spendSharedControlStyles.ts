@@ -29,18 +29,7 @@ import { CONTROL_HEIGHT } from "@mobile/spend/spendLayout";
  * Returns plain objects, not `StyleSheet.create` output, so every caller can
  * spread it into their own `StyleSheet.create`.
  */
-export function createSpendSharedControlStyles(colors: ThemeColors): {
-  segmentRow: ViewStyle;
-  segmentButton: ViewStyle;
-  segmentButtonActive: ViewStyle;
-  segmentButtonLabel: TextStyle;
-  segmentButtonLabelActive: TextStyle;
-  framesRow: ViewStyle;
-  message: TextStyle;
-  messageBad: TextStyle;
-  controlDisabled: ViewStyle;
-  controlPressed: ViewStyle;
-} {
+export function createSpendSharedControlStyles(colors: ThemeColors) {
   return {
     segmentRow: {
       flexDirection: "row",
@@ -125,5 +114,16 @@ export function createSpendSharedControlStyles(colors: ThemeColors): {
      */
     controlDisabled: { opacity: 0.4 },
     controlPressed: { opacity: 0.7 },
-  };
+  } satisfies {
+  segmentRow: ViewStyle;
+  segmentButton: ViewStyle;
+  segmentButtonActive: ViewStyle;
+  segmentButtonLabel: TextStyle;
+  segmentButtonLabelActive: TextStyle;
+  framesRow: ViewStyle;
+  message: TextStyle;
+  messageBad: TextStyle;
+  controlDisabled: ViewStyle;
+  controlPressed: ViewStyle;
+};
 }

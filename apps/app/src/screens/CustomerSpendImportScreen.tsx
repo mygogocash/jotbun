@@ -354,7 +354,7 @@ export function CustomerSpendImportScreen() {
   }, [stalledJobId]);
 
   if (!isSpendEnabled() || !spendLive) {
-    return <Redirect href="/profile" />;
+    return <Redirect href="/" />;
   }
   if (!isAuthed) {
     return <Redirect href="/login" />;
@@ -449,17 +449,17 @@ export function CustomerSpendImportScreen() {
         <Text style={styles.cardTitle}>{tc("Add my earn cashback too")}</Text>
         <Text style={styles.step}>
           {tc(
-            "Pull in what you already bought through GoGoCash. We skip anything already here.",
+            "Cashback history sync is not connected to this standalone app yet.",
           )}
         </Text>
         <Pressable
           accessibilityRole="button"
           onPress={() => void onAutolog()}
-          disabled={busy}
-          style={({ pressed }) => [
+          disabled
+          accessibilityState={{ disabled: true }}
+          style={[
             styles.secondaryButton,
-            busy && styles.controlDisabled,
-            pressed && !busy && styles.controlPressed,
+            styles.controlDisabled,
           ]}
         >
           <Text style={styles.secondaryLabel}>

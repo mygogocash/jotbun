@@ -18,7 +18,7 @@ export class ProductAccess {
     enum: PRODUCT_ACCESS_PRODUCTS,
     unique: true,
   })
-  product: ProductAccessProduct;
+  product!: ProductAccessProduct;
 
   @Prop({
     type: String,
@@ -26,10 +26,10 @@ export class ProductAccess {
     enum: PRODUCT_ACCESS_MODES,
     default: 'off',
   })
-  mode: ProductAccessMode;
+  mode!: ProductAccessMode;
 
   @Prop({ type: String, default: 'seed:product-access' })
-  updated_by: string;
+  updated_by!: string;
 }
 
 export const ProductAccessSchema = SchemaFactory.createForClass(ProductAccess);
