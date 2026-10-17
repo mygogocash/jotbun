@@ -11,6 +11,7 @@ export function createMemoryKeyStore(): KeyStore & { keys: Map<string, string> }
       return keys.get(accountId) ?? null;
     },
     async create(accountId) {
+      if (keys.has(accountId)) throw new Error('This account already has a diary key.');
       const key = randomBytes(32).toString('hex');
       keys.set(accountId, key);
       return key;

@@ -1,5 +1,5 @@
 // The encrypted per-account diary on the device (S2). Platform adapters
-// (database.native.ts / database.web.ts, and a node:sqlite test adapter)
+// (database.ts / database.web.ts, and a node:sqlite test adapter)
 // implement these ports; accountDatabase.ts and diaryRepository.ts hold all
 // the logic, so it is tested against a real SQLite engine.
 import type { CreateTransactionRequest, EntityChange } from '@gogospend/contracts';
@@ -14,23 +14,34 @@ export interface SqlExecutor {
 }
 
 export interface SqlDatabase extends SqlExecutor {
-  /** Runs `fn` in one exclusive transaction: commits if it resolves, rolls back if it throws. */
+  /** Runs `fn` in one exclusive write transaction: commits if it resolves, rolls back if it throws. */
   transaction<T>(fn: (tx: SqlExecutor) => Promise<T>): Promise<T>;
+  /** Runs `fn`'s reads as one consistent unit (no write can land between them). */
+  read<T>(fn: (tx: SqlExecutor) => Promise<T>): Promise<T>;
+  close(): Promise<void>;
+}
+
+/** One raw, already keyed database connection (wrapped by createSerialDatabase). */
+export interface SqlConnection extends SqlExecutor {
   close(): Promise<void>;
 }
 
 /** Where account diaries live. Opening with the wrong key fails (SQLCipher). */
 export interface DiaryFiles {
+  /** Throws when this platform keeps no local diary (web). */
+  assertAvailable?(): void;
   exists(name: string): Promise<boolean>;
   /** Opens (creating if missing) `name`, keyed with a 64-hex-digit raw key. Throws DiaryKeyRejected for a wrong key. */
   open(name: string, key: string): Promise<SqlDatabase>;
-  /** Deletes the database and its side files (journal/WAL). */
+  /** Deletes the database and its side files (journal/WAL); a missing file is not an error. */
   delete(name: string): Promise<void>;
 }
 
 /** Per-account database keys (SecureStore on device; this device only, never backed up). */
 export interface KeyStore {
+  /** Throws MalformedDiaryKey for a stored value that is not a key. */
   get(accountId: string): Promise<string | null>;
+  /** Refuses when the account already has a key (never overwrites one). */
   create(accountId: string): Promise<string>;
   delete(accountId: string): Promise<void>;
 }
@@ -57,7 +68,12 @@ export type PendingEntry = CreateTransactionRequest;
 /** A full replacement of the confirmed state: every entity at `high_water`, and the delta cursor there. */
 export type ConfirmedSnapshot = { entities: readonly EntityChange[]; cursor: string };
 
-export type DiaryLockReason = 'key_missing' | 'key_rejected' | 'locked' | 'wrong_account';
+/**
+ * key_missing / key_rejected: the data cannot be decrypted - offer recovery
+ * (resync) or an explicit discard. key_unavailable: the key store failed
+ * (e.g. the device is locked) - retry later; never offer discard.
+ */
+export type DiaryLockReason = 'key_missing' | 'key_rejected' | 'key_unavailable' | 'locked' | 'wrong_account';
 
 /** The diary cannot be used: its key is gone or wrong, it was locked, or it belongs to another account. */
 export class DiaryLocked extends Error {
@@ -82,6 +98,22 @@ export class StaleEpochError extends Error {
   constructor() {
     super('The session changed; this write was not saved.');
     this.name = 'StaleEpochError';
+  }
+}
+
+/** A stored key that is not a 64-hex-digit key. */
+export class MalformedDiaryKey extends Error {
+  constructor() {
+    super('The stored diary key is malformed.');
+    this.name = 'MalformedDiaryKey';
+  }
+}
+
+/** The diary's cursor moved since the page being applied was fetched; fetch again from the current cursor. */
+export class CursorMoved extends Error {
+  constructor() {
+    super('The sync cursor moved; fetch again.');
+    this.name = 'CursorMoved';
   }
 }
 

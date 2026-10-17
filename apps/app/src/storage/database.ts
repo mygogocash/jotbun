@@ -1,11 +1,12 @@
 // Device diaries on SQLCipher (expo-sqlite built with useSQLCipher; see
 // app.json). Metro uses database.web.ts on web instead. Verified only on
 // development builds (docs/implementation/sqlcipher-device-proof.md).
-import { File } from 'expo-file-system';
+import { File, FileMode } from 'expo-file-system';
 import * as SQLite from 'expo-sqlite';
 
+import { createSerialDatabase } from './serialDatabase.ts';
 import { DiaryKeyRejected } from './types.ts';
-import type { DiaryFiles, SqlDatabase, SqlExecutor, SqlValue } from './types.ts';
+import type { DiaryFiles, SqlConnection, SqlValue } from './types.ts';
 
 const KEY = /^[0-9a-f]{64}$/;
 
@@ -14,25 +15,11 @@ function directoryUri(): string {
   return directory.startsWith('file:') ? directory : `file://${directory}`;
 }
 
-function executor(connection: SQLite.SQLiteDatabase): SqlExecutor {
+function connection(db: SQLite.SQLiteDatabase): SqlConnection {
   return {
-    exec: (sql) => connection.execAsync(sql),
-    run: async (sql, params = []) => (await connection.runAsync(sql, params as SqlValue[])).changes,
-    all: <T>(sql: string, params: readonly SqlValue[] = []) => connection.getAllAsync<T>(sql, params as SqlValue[]),
-  };
-}
-
-function wrap(db: SQLite.SQLiteDatabase): SqlDatabase {
-  return {
-    ...executor(db),
-    async transaction<T>(fn: (tx: SqlExecutor) => Promise<T>): Promise<T> {
-      let result: T | undefined;
-      // A separate exclusive connection: nothing else can interleave.
-      await db.withExclusiveTransactionAsync(async (txn) => {
-        result = await fn(executor(txn));
-      });
-      return result as T;
-    },
+    exec: (sql) => db.execAsync(sql),
+    run: async (sql, params = []) => (await db.runAsync(sql, params as SqlValue[])).changes,
+    all: <T>(sql: string, params: readonly SqlValue[] = []) => db.getAllAsync<T>(sql, params as SqlValue[]),
     close: () => db.closeAsync(),
   };
 }
@@ -57,18 +44,34 @@ export function deviceDiaryFiles(): DiaryFiles {
         await db.execAsync(`PRAGMA key = "x'${key}'"`);
         try {
           await db.getFirstAsync('SELECT count(*) AS n FROM sqlite_master');
-        } catch {
-          throw new DiaryKeyRejected();
+        } catch (error) {
+          // Only SQLITE_NOTADB means a wrong key; busy, I/O or corruption errors stay what they are.
+          if (/not a database|SQLITE_NOTADB/i.test(error instanceof Error ? error.message : String(error))) throw new DiaryKeyRejected();
+          throw error;
         }
         await db.execAsync('PRAGMA temp_store = MEMORY; PRAGMA foreign_keys = ON;');
       } catch (error) {
         await db.closeAsync().catch(() => undefined);
         throw error;
       }
-      return wrap(db);
+      // One keyed connection for everything, transactions included:
+      // withExclusiveTransactionAsync would open a second, unkeyed connection.
+      return createSerialDatabase(connection(db));
     },
     async delete(name) {
+      // deleteDatabaseAsync throws for a missing file; that is a finished delete here.
+      if (!new File(directoryUri(), name).exists) return;
       await SQLite.deleteDatabaseAsync(name);
     },
   };
+}
+
+/** For the native proof harness: whether a diary file starts with the plaintext SQLite header. */
+export function diaryHeaderIsPlainSqlite(name: string): boolean {
+  const handle = new File(directoryUri(), name).open(FileMode.ReadOnly);
+  try {
+    return String.fromCharCode(...handle.readBytesSync(16)) === 'SQLite format 3\u0000';
+  } finally {
+    handle.close();
+  }
 }

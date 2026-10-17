@@ -3,6 +3,7 @@ import { test } from 'node:test';
 
 import { createSecureKeyStore } from './keyStore.ts';
 import type { SecureStorePort } from './keyStore.ts';
+import { MalformedDiaryKey } from './types.ts';
 
 const THIS_DEVICE_ONLY = 7;
 
@@ -47,4 +48,14 @@ test('refuses a malformed stored key or account id instead of using it', async (
   secure.items.set('gogospend.diary.v1.0a000000-0000-4000-8000-00000000000a', 'not-a-key');
   await assert.rejects(keys.get('0a000000-0000-4000-8000-00000000000a'));
   await assert.rejects(keys.create('../other'));
+});
+
+test('never overwrites an existing key, and reports a malformed one as such', async () => {
+  const secure = fakeSecureStore();
+  const keys = createSecureKeyStore(secure.port, (bytes) => new Uint8Array(bytes).fill(1), THIS_DEVICE_ONLY);
+  const first = await keys.create('0a000000-0000-4000-8000-00000000000a');
+  await assert.rejects(keys.create('0a000000-0000-4000-8000-00000000000a'), /already/);
+  assert.equal(await keys.get('0a000000-0000-4000-8000-00000000000a'), first);
+  secure.items.set('gogospend.diary.v1.0b000000-0000-4000-8000-00000000000b', 'zz');
+  await assert.rejects(keys.get('0b000000-0000-4000-8000-00000000000b'), (error) => error instanceof MalformedDiaryKey);
 });

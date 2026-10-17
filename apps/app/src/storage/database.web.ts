@@ -14,5 +14,17 @@ export function deviceDiaryFiles(): DiaryFiles {
   const refuse = async (): Promise<never> => {
     throw new LocalDiaryUnavailable();
   };
-  return { exists: async () => false, open: refuse, delete: async () => undefined };
+  return {
+    assertAvailable() {
+      throw new LocalDiaryUnavailable();
+    },
+    exists: async () => false,
+    open: refuse,
+    delete: async () => undefined,
+  };
+}
+
+/** For the native proof harness only; there is no diary file on the web. */
+export function diaryHeaderIsPlainSqlite(_name: string): boolean {
+  return false;
 }

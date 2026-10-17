@@ -1,5 +1,6 @@
 import { isUuid } from '@gogospend/contracts';
 
+import { MalformedDiaryKey } from './types.ts';
 import type { KeyStore } from './types.ts';
 
 /** The subset of expo-secure-store the key store needs. */
@@ -19,8 +20,9 @@ function itemName(accountId: string): string {
 /**
  * One random 256-bit SQLCipher key per account in SecureStore, readable only
  * on this device while unlocked (`thisDeviceOnly`, e.g.
- * WHEN_UNLOCKED_THIS_DEVICE_ONLY): never in a backup or another device's
- * keychain. A malformed stored value is an error, never a key.
+ * WHEN_UNLOCKED_THIS_DEVICE_ONLY): never restored to another device. An
+ * existing key is never overwritten, and a malformed stored value is an
+ * error (MalformedDiaryKey), never a key.
  */
 export function createSecureKeyStore(secure: SecureStorePort, random: (bytes: number) => Uint8Array, thisDeviceOnly: number): KeyStore {
   const options = { keychainAccessible: thisDeviceOnly };
@@ -28,11 +30,13 @@ export function createSecureKeyStore(secure: SecureStorePort, random: (bytes: nu
     async get(accountId) {
       const value = await secure.getItemAsync(itemName(accountId), options);
       if (value === null) return null;
-      if (!KEY.test(value)) throw new Error('The stored diary key is malformed.');
+      if (!KEY.test(value)) throw new MalformedDiaryKey();
       return value;
     },
     async create(accountId) {
       const name = itemName(accountId);
+      // Overwriting would make an existing diary unreadable.
+      if ((await secure.getItemAsync(name, options)) !== null) throw new Error('This account already has a diary key.');
       const bytes = random(32);
       if (bytes.length !== 32) throw new Error('The random source returned the wrong length.');
       const key = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');

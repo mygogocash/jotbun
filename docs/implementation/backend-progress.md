@@ -748,3 +748,41 @@ Observed, not changed (pre-existing):
   - `types.ts` and the `testing/` helpers are extra files.
   - Nothing in the app uses the diary yet. S3/S4 wire the outbox and the **Saved on device** state, including the save error when a local commit fails.
 - **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (437), test:db PASS (397), test:app PASS (11), test:unit PASS (56), test:render PASS (38), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
+
+## Review fixes for S2
+
+- **S2 review** (commit `0f298ae`): one blocker, five majors, ten minors and some nits. The reviewer compiled the SQLCipher 4.17.0 that expo-sqlite bundles, with its iOS build flags, to prove the blocker. It confirmed as correct:
+  - `PRAGMA cipher_version` may run before `PRAGMA key`, and `openDatabaseAsync` does not read the file before keying;
+  - the raw-hex key cannot inject SQL;
+  - temp files stay in memory and side files are deleted;
+  - the data rules match the server (versions only move forward, purged rows keep no data, totals follow `BalanceQuery` exactly);
+  - per-account isolation, transactional migrations and the introspected config.
+- **Fixed, with tests that failed first.** RED: 22 of 34 storage tests and 1 of 3 key-store tests failed, all on assertions with no module errors. GREEN: 35 of 35 plus the key-store tests.
+  - **Blocker — on a device every transaction ran on a second, unkeyed connection.** `withExclusiveTransactionAsync` opens a new connection that never receives `PRAGMA key`. The first migration would have written a plaintext database, and every later write would fail.
+    - **Fix:** the new `serialDatabase.ts` puts every statement, read unit and transaction through the one keyed connection, one at a time. It issues `BEGIN IMMEDIATE`, COMMIT and ROLLBACK itself and reports the original error if the ROLLBACK fails. A transaction handle is dead once its transaction ends.
+    - The device adapter and the test adapter now share this wrapper, so the Node tests exercise the device's transaction logic. Its own tests cover statement order, non-interleaving, a failed COMMIT, a failed ROLLBACK and escaped handles.
+  - **Major — concurrent opens could overwrite the key and lose saved drafts.** `AccountDatabase` serializes opens per account and shares one store. A store from an earlier epoch is closed on reopen. `KeyStore.create` refuses when a key exists.
+  - **Major — an old session's store could erase the account.** Erase is now checked against the epoch, and a stale store is reported as stale before it is reported as locked.
+  - **Major — discard deleted the file before the key, and could not be retried on a device.** Discard now closes the live store, deletes the key first (the data is unreadable at once) and then the file. A missing file counts as deleted. The test adapter now refuses to delete an open file, as the device does.
+  - **Major — reads could mix states or leak across sessions.** Each read runs as one unit and is checked against the epoch again afterwards. A read racing a write sees one consistent state.
+  - **Major — the atomicity test passed a wrong implementation.** New helper `everyStatementFails` fails each statement in turn (BEGIN and COMMIT included) for `savePending`, `applyChangeGroups` and `replaceConfirmed`, and checks state and outbox are unchanged every time. The reviewer's mutant, which commits the cursor in its own transaction, now fails it. Checked by temporarily applying the mutant, then restoring.
+  - **Minor fixes:**
+    - Only "not a database" means a rejected key.
+    - Key-store failures map to `key_unavailable` (transient; never offer discard). A malformed key maps to `key_rejected`.
+    - `applyChangeGroups(groups, cursor, previousCursor)` is a compare-and-set on the cursor, so a page fetched before the cursor moved is refused (`CursorMoved`) and never written back. This adds a third parameter to the plan's interface.
+    - A retried identical save is a no-op, and a different body under the same ids is refused.
+    - Drafts must be a valid create: allowed fields only, normalized note and merchant, a real date on or after the wallet's tracking start, synced unarchived wallets (two different ones for a transfer) and a matching category. A field set to `undefined` is treated as absent.
+    - The owner is checked before any migration.
+    - An epoch move during open leaves no store or connection.
+    - Web refuses before any key is read.
+    - The proof harness gains a 2,000-group write to kill mid-transaction and restores or removes its dummy key.
+  - **Docs:**
+    - The device proof doc explains the single keyed connection.
+    - It records the Android 12+ device-transfer gap: an explicit extraction rule is still needed, plus a device check.
+    - It corrects the iOS key claim. A this-device-only keychain item is restored to the same device, where the diary opens normally; only a restore to another device opens locked. The S2 receipt's "a restore opens locked" was too broad.
+- **Not changed (recorded):**
+  - `replaceConfirmed` may move the applied revision backwards. That is needed after a server restore (a 410 for a cursor ahead of the account).
+  - Totals rescan the confirmed records on each write. Fine at diary scale.
+  - The no-credentials test checks column names only.
+- **Native and device checks: still SKIPPED.**
+- **Full gate after the fixes:** typecheck PASS, typecheck:app PASS, test:api PASS (437), test:db PASS (397), test:app PASS (11), test:unit PASS (70), test:render PASS (38), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.

@@ -1,7 +1,7 @@
-import { SYNC_ENTITY_VALIDATORS, TRANSACTION_TYPES, isCommittedChangeGroup, isEntityChange, isUuid } from '@gogospend/contracts';
-import type { CommittedChangeGroup, EntityChange, Minor, Revision } from '@gogospend/contracts';
+import { SYNC_ENTITY_VALIDATORS, isCommittedChangeGroup, isEntityChange, isUuid, normalizeCommand, normalizeMerchant, normalizeNote, validateOccurredOn } from '@gogospend/contracts';
+import type { CategoryDto, CommittedChangeGroup, EntityChange, Minor, Revision, WalletSnapshot } from '@gogospend/contracts';
 
-import { DiaryLocked, StaleEpochError } from './types.ts';
+import { CursorMoved, DiaryLocked, StaleEpochError } from './types.ts';
 import type { ConfirmedSnapshot, OutboxCommand, PendingEntry, SqlDatabase, SqlExecutor } from './types.ts';
 
 export type DiaryState = {
@@ -16,8 +16,12 @@ export interface DiaryStore {
   readonly accountId: string;
   /** Saves a draft and its outbox command in one transaction. */
   savePending(entry: PendingEntry, command: OutboxCommand): Promise<void>;
-  /** Applies whole groups (strictly after the applied revision), recomputes totals and stores the cursor, atomically. */
-  applyChangeGroups(groups: readonly CommittedChangeGroup[], cursor: string): Promise<void>;
+  /**
+   * Applies whole groups (strictly after the applied revision), recomputes
+   * totals and stores the cursor, atomically - only if the diary's cursor is
+   * still `previousCursor`, the one the page was fetched with (else CursorMoved).
+   */
+  applyChangeGroups(groups: readonly CommittedChangeGroup[], cursor: string, previousCursor: string | null): Promise<void>;
   /** Replaces the confirmed state with a snapshot at `highWater`; drafts and the outbox are untouched. */
   replaceConfirmed(snapshot: ConfirmedSnapshot, highWater: Revision): Promise<void>;
   readOutbox(): Promise<OutboxCommand[]>;
@@ -35,6 +39,8 @@ export type DiaryStoreOptions = {
   currentEpoch: () => number;
   openedEpoch: number;
   erase: () => Promise<void>;
+  /** Called once when the store closes (lock or erase). */
+  onClose?: () => void;
   validators?: Readonly<Record<string, (snapshot: unknown) => boolean>>;
 };
 
@@ -44,21 +50,65 @@ const MAX_CURSOR = 512;
 
 type EntityRow = { entity: string; id: string; version: number; state: EntityChange['state']; snapshot: string | null };
 
-function canonical(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
-  if (value !== null && typeof value === 'object') {
-    return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical((value as Record<string, unknown>)[key])}`).join(',')}}`;
-  }
-  return JSON.stringify(value);
+const ENTRY_KEYS = ['amount_minor', 'category_id', 'id', 'merchant', 'note', 'occurred_on', 'type', 'wallet_id'];
+const TRANSFER_KEYS = ['amount_minor', 'destination_wallet_id', 'id', 'merchant', 'note', 'occurred_on', 'source_wallet_id', 'type'];
+const LATEST_DATE = '9999-12-31';
+
+/** The command canonical form (sorted keys, undefined fields dropped), as the server digests it. */
+const canonical = (payload: unknown) => normalizeCommand('transaction.create', 1, payload).canonicalJson;
+
+async function activeSnapshot<T>(tx: SqlExecutor, entity: string, id: unknown): Promise<T | null> {
+  if (!isUuid(id)) return null;
+  const [row] = await tx.all<{ snapshot: string }>(`SELECT snapshot FROM confirmed_entities WHERE entity = ? AND id = ? AND state = 'active'`, [entity, id]);
+  return row ? (JSON.parse(row.snapshot) as T) : null;
 }
 
-function assertDraft(entry: PendingEntry): void {
+/**
+ * A draft is a valid create (the shape the server accepts, normalized text,
+ * a real date on or after its wallets' tracking start) that uses synced,
+ * open references: active, unarchived wallets (two different ones for a
+ * transfer) and an active, unarchived category of the entry's type.
+ */
+async function assertDraft(tx: SqlExecutor, entry: PendingEntry): Promise<void> {
+  const fail = (reason: string): never => {
+    throw new TypeError(`A pending entry is not a valid create: ${reason}.`);
+  };
   const record = entry as Record<string, unknown>;
-  const ok =
-    isUuid(record.id) && typeof record.amount_minor === 'string' && AMOUNT.test(record.amount_minor) &&
-    TRANSACTION_TYPES.includes(record.type as never) && typeof record.occurred_on === 'string' &&
-    (record.type === 'transfer' ? isUuid(record.source_wallet_id) && isUuid(record.destination_wallet_id) : isUuid(record.wallet_id) && isUuid(record.category_id));
-  if (!ok) throw new TypeError('A pending entry needs a valid id, positive integer amount, type and wallets.');
+  const keys = Object.keys(record).filter((key) => record[key] !== undefined).sort();
+  const transfer = record.type === 'transfer';
+  if (!transfer && record.type !== 'expense' && record.type !== 'income') fail('type');
+  const allowed = transfer ? TRANSFER_KEYS : ENTRY_KEYS;
+  const required = transfer ? ['amount_minor', 'destination_wallet_id', 'id', 'occurred_on', 'source_wallet_id', 'type'] : ['amount_minor', 'category_id', 'id', 'occurred_on', 'type', 'wallet_id'];
+  if (keys.some((key) => !allowed.includes(key)) || required.some((key) => !keys.includes(key))) fail('fields');
+  if (!isUuid(record.id) || typeof record.amount_minor !== 'string' || !AMOUNT.test(record.amount_minor)) fail('id or amount');
+  for (const [field, normalize] of [['note', normalizeNote], ['merchant', normalizeMerchant]] as const) {
+    const value = record[field] ?? null;
+    let normalized: string | null;
+    try {
+      normalized = normalize(value);
+    } catch {
+      return fail(field);
+    }
+    if (normalized !== value) fail(field);
+  }
+  const walletIds = transfer ? [record.source_wallet_id, record.destination_wallet_id] : [record.wallet_id];
+  if (transfer && record.source_wallet_id === record.destination_wallet_id) fail('a transfer needs two different wallets');
+  const wallets: WalletSnapshot[] = [];
+  for (const id of walletIds) {
+    const wallet = await activeSnapshot<WalletSnapshot>(tx, 'wallet', id);
+    if (!wallet || wallet.archived) fail('wallet');
+    wallets.push(wallet as WalletSnapshot);
+  }
+  if (!transfer) {
+    const category = await activeSnapshot<CategoryDto>(tx, 'category', record.category_id);
+    if (!category || category.archived || category.type !== record.type) fail('category');
+  }
+  const trackingStart = wallets.map((wallet) => wallet.tracking_start).sort().at(-1) as string;
+  try {
+    validateOccurredOn(record.occurred_on, trackingStart, LATEST_DATE);
+  } catch {
+    fail('date');
+  }
 }
 
 function assertCursor(cursor: string): void {
@@ -121,9 +171,10 @@ export function createDiaryStore(options: DiaryStoreOptions): DiaryStore {
   const validators = options.validators ?? SYNC_ENTITY_VALIDATORS;
   let locked = false;
 
+  // A store from an earlier session is stale first of all, whether or not it was closed.
   const guard = () => {
-    if (locked) throw new DiaryLocked('locked');
     if (options.currentEpoch() !== options.openedEpoch) throw new StaleEpochError();
+    if (locked) throw new DiaryLocked('locked');
   };
   const write = async <T>(fn: (tx: SqlExecutor) => Promise<T>): Promise<T> => {
     guard();
@@ -133,13 +184,17 @@ export function createDiaryStore(options: DiaryStoreOptions): DiaryStore {
       return result;
     });
   };
+  // One consistent read unit; nothing read is returned once the session moved.
   const read = async <T>(fn: (sql: SqlExecutor) => Promise<T>): Promise<T> => {
     guard();
-    return fn(db);
+    const result = await db.read(fn);
+    guard();
+    return result;
   };
   const close = async () => {
     if (locked) return;
     locked = true;
+    options.onClose?.();
     await db.close();
   };
 
@@ -148,15 +203,28 @@ export function createDiaryStore(options: DiaryStoreOptions): DiaryStore {
 
     async savePending(entry, command) {
       guard();
-      assertDraft(entry);
+      let same = false;
+      try {
+        same = canonical(command.payload) === canonical(entry);
+      } catch {
+        same = false;
+      }
       if (
         command.accountId !== accountId || !isUuid(command.commandId) || command.kind !== 'transaction.create' ||
         !Number.isInteger(command.schemaVersion) || command.schemaVersion < 1 ||
-        command.state !== 'unsent' || command.firstTransmissionAt !== null || canonical(command.payload) !== canonical(entry)
+        command.state !== 'unsent' || command.firstTransmissionAt !== null || typeof command.createdAt !== 'string' || !same
       ) {
         throw new TypeError("An outbox command must be this account's unsent create of exactly this entry.");
       }
       await write(async (tx) => {
+        // A retry of a save whose outcome was unknown: the same command and entry is a no-op.
+        const [existing] = await tx.all<{ entry: string }>('SELECT entry FROM pending_entries WHERE command_id = ? OR entity_id = ?', [command.commandId, entry.id]);
+        if (existing) {
+          const [queued] = await tx.all<{ payload: string }>('SELECT payload FROM outbox WHERE command_id = ?', [command.commandId]);
+          if (queued && canonical(JSON.parse(existing.entry)) === canonical(entry) && canonical(JSON.parse(queued.payload)) === canonical(entry)) return;
+          throw new TypeError('A different draft was already saved under this command or entry id.');
+        }
+        await assertDraft(tx, entry);
         await tx.run('INSERT INTO pending_entries (entity_id, command_id, entry, created_at) VALUES (?, ?, ?, ?)', [entry.id, command.commandId, JSON.stringify(entry), command.createdAt]);
         await tx.run(
           `INSERT INTO outbox (command_id, account_id, kind, schema_version, payload, state, first_transmission_at, created_at)
@@ -166,9 +234,10 @@ export function createDiaryStore(options: DiaryStoreOptions): DiaryStore {
       });
     },
 
-    async applyChangeGroups(groups, cursor) {
+    async applyChangeGroups(groups, cursor, previousCursor) {
       guard();
       assertCursor(cursor);
+      if (previousCursor !== null) assertCursor(previousCursor);
       let previous = -1n;
       for (const group of groups) {
         if (!isCommittedChangeGroup(group, validators)) throw new TypeError('A change group does not match the sync contract.');
@@ -177,7 +246,9 @@ export function createDiaryStore(options: DiaryStoreOptions): DiaryStore {
         previous = revision;
       }
       await write(async (tx) => {
-        const [applied] = await tx.all<{ value: string }>(`SELECT value FROM diary_meta WHERE key = 'applied_revision'`);
+        const meta = new Map((await tx.all<{ key: string; value: string }>(`SELECT key, value FROM diary_meta WHERE key IN ('cursor', 'applied_revision')`)).map((row) => [row.key, row.value]));
+        if ((meta.get('cursor') ?? null) !== previousCursor) throw new CursorMoved();
+        const applied = meta.has('applied_revision') ? { value: meta.get('applied_revision') as string } : undefined;
         if (groups.length > 0 && BigInt(groups[0].revision) <= BigInt(applied?.value ?? '0')) throw new RangeError('A change group was already applied.');
         for (const group of groups) for (const change of group.changes) await upsert(tx, change, true);
         await recomputeTotals(tx);
@@ -244,6 +315,8 @@ export function createDiaryStore(options: DiaryStoreOptions): DiaryStore {
     lock: close,
 
     async eraseAfterConfirmation() {
+      // Only the current session may erase; an old store can at most be closed.
+      guard();
       await close();
       await options.erase();
     },
