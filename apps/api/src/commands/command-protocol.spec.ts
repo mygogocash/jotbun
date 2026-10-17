@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { ContractValidationError } from '@gogospend/contracts';
 
-import { commandDigest } from './command-digest';
+import { CommandDigester, TEST_DIGEST_KEY, commandDigesterFromEnv } from './command-digest';
 import { commandHeaders } from './command-headers';
 import { CommandRegistry } from './command-registry';
 
@@ -15,6 +15,9 @@ const input = (payload: unknown, extra: { schemaVersion?: number; expectedVersio
   payload,
   expectedVersion: extra.expectedVersion,
 });
+
+const digester = new CommandDigester(TEST_DIGEST_KEY);
+const commandDigest = (accountId: string, value: Parameters<CommandDigester['digest']>[1]) => digester.digest(accountId, value)?.digest ?? null;
 
 describe('command digest', () => {
   it('ignores key order but not values, schema version or expected version', () => {
@@ -73,5 +76,23 @@ describe('command registry', () => {
     registry.defineCommand({ kind: 'wallet.create', entity: 'wallet', outcome: 'created', schemaVersions: [1], policy: 'current' });
     expect(registry.command('wallet.create').schemaVersions).toEqual([1]);
     expect(() => registry.command('wallet.delete')).toThrow();
+  });
+});
+
+describe('digest keys from the environment', () => {
+  it('needs a current key of at least 32 characters', () => {
+    expect(() => commandDigesterFromEnv({})).toThrow(/COMMAND_DIGEST_KEY/);
+    expect(() => commandDigesterFromEnv({ COMMAND_DIGEST_KEY: 'short' })).toThrow(/COMMAND_DIGEST_KEY/);
+    expect(() => commandDigesterFromEnv({ COMMAND_DIGEST_KEY: 'k'.repeat(32), COMMAND_DIGEST_PREVIOUS_KEYS: 'too-short' })).toThrow(/COMMAND_DIGEST_PREVIOUS_KEYS/);
+  });
+
+  it('keeps previous keys for replays and gives every key a stable id', () => {
+    const a = commandDigesterFromEnv({ COMMAND_DIGEST_KEY: 'a'.repeat(40) });
+    const b = commandDigesterFromEnv({ COMMAND_DIGEST_KEY: 'b'.repeat(40), COMMAND_DIGEST_PREVIOUS_KEYS: 'a'.repeat(40) });
+    const signed = a.digest(ACCOUNT, input({ x: '1' }));
+    expect(signed?.keyId).toMatch(/^[a-z0-9]{1,16}$/);
+    expect(b.matches(ACCOUNT, input({ x: '1' }), signed!)).toBe(true);
+    expect(b.matches(ACCOUNT, input({ x: '2' }), signed!)).toBe(false);
+    expect(b.digest(ACCOUNT, input({ x: '1' }))?.keyId).not.toBe(signed?.keyId);
   });
 });

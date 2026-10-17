@@ -12,6 +12,7 @@ const v1Settings = {
   AUTH0_AUDIENCE: 'https://api.gogospend.test',
   AUTH0_ALLOWED_CLIENT_IDS: 'native-client-test',
   RATE_LIMIT_KEY: 'synthetic-test-key-0123456789abcdef0123456789',
+  COMMAND_DIGEST_KEY: 'synthetic-command-digest-key-0123456789abcdef',
   MIN_CLIENT_VERSION_IOS: '1.0.0',
   MIN_CLIENT_VERSION_ANDROID: '1.0.0',
 };

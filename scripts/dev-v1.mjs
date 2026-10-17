@@ -110,6 +110,8 @@ try {
       AUTH0_AUDIENCE: env.AUTH0_AUDIENCE ?? 'https://api.gogospend.invalid',
       AUTH0_ALLOWED_CLIENT_IDS: env.AUTH0_ALLOWED_CLIENT_IDS ?? 'unconfigured-local-client',
       RATE_LIMIT_KEY: randomBytes(32).toString('base64url'),
+      // Set COMMAND_DIGEST_KEY yourself to keep command replays valid across restarts.
+      COMMAND_DIGEST_KEY: env.COMMAND_DIGEST_KEY ?? randomBytes(32).toString('base64url'),
       MIN_CLIENT_VERSION_IOS: env.MIN_CLIENT_VERSION_IOS ?? '0.0.0',
       MIN_CLIENT_VERSION_ANDROID: env.MIN_CLIENT_VERSION_ANDROID ?? '0.0.0',
       TRUST_PROXY_HOPS: '0',

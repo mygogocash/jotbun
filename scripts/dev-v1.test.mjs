@@ -99,5 +99,6 @@ test('start migrates with the admin URL, sets a fresh least-privilege login from
   assert.equal(started[0].env.AUTH0_ISSUER, 'https://auth.gogospend.invalid/');
   assert.equal(started[0].env.TRUST_PROXY_HOPS, '0');
   assert.ok(started[0].env.RATE_LIMIT_KEY.length >= 32);
+  assert.ok(started[0].env.COMMAND_DIGEST_KEY.length >= 32);
   assertNothingTouchedMongoOrDestroyed(calls, started);
 });

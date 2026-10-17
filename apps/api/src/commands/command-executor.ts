@@ -1,5 +1,3 @@
-import { timingSafeEqual } from 'node:crypto';
-
 import { Injectable } from '@nestjs/common';
 import { ContractValidationError, isUuid } from '@gogospend/contracts';
 import type { CommandAck, CommandInput, EntityChange, SessionContext } from '@gogospend/contracts';
@@ -12,7 +10,7 @@ import { lockAccount } from '../database/owner-transaction';
 import type { OwnerTx } from '../database/owner-transaction';
 import { PolicyService } from '../policies/policy.service';
 import { ChangeWriter } from '../sync/change-writer';
-import { commandDigest } from './command-digest';
+import { CommandDigester } from './command-digest';
 import { CommandReceiptRepository } from './command-receipts.repository';
 import { CommandRegistry } from './command-registry';
 import type { CommandDefinition } from './command-registry';
@@ -62,12 +60,18 @@ export class CommandExecutor {
     private readonly policies: PolicyService,
     private readonly changes: ChangeWriter,
     private readonly receipts: CommandReceiptRepository,
+    private readonly digester: CommandDigester,
   ) {}
 
   run<P>(ctx: SessionContext, input: CommandInput<P>, mutate: (tx: OwnerTx) => Promise<MutationResult>): Promise<CommandAck> {
     const command = this.registry.command(input.kind);
     if (!isUuid(input.commandId)) throw new ContractValidationError('VALIDATION_FAILED', 'Idempotency-Key must be a UUID.', 'idempotency_key');
-    const digest = commandDigest(ctx.accountId, input);
+    // Every payload names its primary entity as `id` (services copy a route's
+    // :id into it), so the digest binds the target and a key reused for
+    // another entity is a mismatch, not a replay.
+    const targetId = (input.payload as { id?: unknown } | null)?.id;
+    if (!isUuid(targetId)) throw new Error(`${input.kind} payloads must name their target entity as a UUID "id".`);
+    const digest = this.digester.digest(ctx.accountId, input);
     return this.db.withOwnerTransaction(ctx, async (tx) => {
       const state = await lockAccount(tx, ctx.accountId);
       await assertActiveSession(tx, ctx, state);
@@ -75,12 +79,13 @@ export class CommandExecutor {
 
       const existing = await this.receipts.find(tx, input.commandId);
       if (existing) {
-        if (!digest || !timingSafeEqual(existing.digest, digest)) throw new ProblemException(409, 'IDEMPOTENCY_MISMATCH');
+        if (!this.digester.matches(ctx.accountId, input, existing.digest)) throw new ProblemException(409, 'IDEMPOTENCY_MISMATCH');
         return existing.ack;
       }
       if (!digest || !command.schemaVersions.includes(input.schemaVersion)) throw new ProblemException(422, 'COMMAND_SCHEMA_UNSUPPORTED');
 
       const result = await mutate(tx);
+      if (result.entityId !== targetId) throw new Error(`${input.kind} acknowledged an entity other than its target.`);
       const primary = primaryChange(command, result);
       const metadata = auditMetadata(result.audit);
       const revision = await this.changes.append(tx, input.commandId, result.changes);

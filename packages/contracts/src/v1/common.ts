@@ -85,10 +85,12 @@ export type CommandStatusRequest = {
 };
 
 /**
- * `unknown`: never committed for this account (safe to resend the same
- * immutable command). `known`: the original acknowledgement, with
- * `entity_state` reporting the entity's current state (deleted/purged
- * entities are reported, never reconstructed).
+ * `unknown`: not committed for this account when the lookup ran (it waits for
+ * a command already in progress). The only safe action is to resend the same
+ * immutable command with the same id - never a new key, which could commit a
+ * duplicate. `known`: the original acknowledgement, with `entity_state`
+ * reporting the entity's current state (deleted/purged entities are reported,
+ * never reconstructed) while `version` stays the command's own.
  */
 export type CommandStatus =
   | { command_id: string; state: "unknown" }

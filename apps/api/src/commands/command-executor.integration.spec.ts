@@ -18,6 +18,7 @@ import { startJwksFixture } from '../testing/jwks-server';
 import type { JwksFixture } from '../testing/jwks-server';
 import { createTestDatabase } from '../testing/postgres-harness';
 import type { TestDatabase } from '../testing/postgres-harness';
+import { CommandDigester, TEST_DIGEST_KEY } from './command-digest';
 import { CommandExecutor } from './command-executor';
 import { CommandReceiptRepository } from './command-receipts.repository';
 import { CommandRegistry } from './command-registry';
@@ -30,7 +31,7 @@ let service: DatabaseService;
 let commands: ReturnType<typeof fixtureCommands>;
 
 function executorWith(registry: CommandRegistry): CommandExecutor {
-  return new CommandExecutor(service, registry, new PolicyService(pool, service, 0), new ChangeWriter(registry), new CommandReceiptRepository());
+  return new CommandExecutor(service, registry, new PolicyService(pool, service, 0), new ChangeWriter(registry), new CommandReceiptRepository(), new CommandDigester(TEST_DIGEST_KEY));
 }
 
 async function code(run: () => Promise<unknown>): Promise<string> {
@@ -139,7 +140,7 @@ describe('idempotent commands', () => {
       expect(row).not.toMatch(/98765432|secret-note-text|amount|note/);
     }
     expect(Object.keys(JSON.parse(receipt.text)).sort()).toEqual(
-      ['account_id', 'command_id', 'committed_at', 'entity', 'entity_id', 'entity_state', 'entity_version', 'kind', 'outcome', 'request_digest', 'revision', 'schema_version'],
+      ['account_id', 'command_id', 'committed_at', 'digest_key_id', 'entity', 'entity_id', 'entity_state', 'entity_version', 'kind', 'outcome', 'request_digest', 'revision', 'schema_version'],
     );
     expect(JSON.parse(audit.text)).toMatchObject({ kind: 'fixture.purchase.create', session_id: user.session.bindingId, metadata: {} });
   });

@@ -117,6 +117,7 @@ export async function startV1App(db: TestDatabase, issuer: JwksFixture): Promise
     AUTH0_AUDIENCE: TEST_AUDIENCE,
     AUTH0_ALLOWED_CLIENT_IDS: TEST_CLIENT_ID,
     RATE_LIMIT_KEY: 'synthetic-test-key-0123456789abcdef0123456789',
+    COMMAND_DIGEST_KEY: 'synthetic-command-digest-key-0123456789abcdef',
     MIN_CLIENT_VERSION_IOS: '1.0.0',
     MIN_CLIENT_VERSION_ANDROID: '1.0.0',
   };

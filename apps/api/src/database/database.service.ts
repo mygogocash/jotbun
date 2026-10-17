@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { randomBytes } from 'node:crypto';
 
 import { Inject, Injectable } from '@nestjs/common';
@@ -9,6 +10,11 @@ import type { Pool, QueryResult } from 'pg';
 import { OwnerTx } from './owner-transaction';
 
 export const PG_POOL = Symbol('PG_POOL');
+
+// Set while an owner transaction's callback runs. A second owner transaction
+// started from inside it would run on another connection: it would wait on
+// the account lock the outer one holds, or commit independently of it.
+const insideOwnerTransaction = new AsyncLocalStorage<true>();
 
 // Transaction-local bounds so a stuck request cannot hold the account lock.
 const STATEMENT_TIMEOUT = '15s';
@@ -28,6 +34,7 @@ export class DatabaseService implements OnModuleDestroy {
    */
   async withOwnerTransaction<T>(ctx: SessionContext, fn: (tx: OwnerTx) => Promise<T>): Promise<T> {
     if (!isUuid(ctx.accountId)) throw new Error('Owner transaction needs a canonical account UUID.');
+    if (insideOwnerTransaction.getStore()) throw new Error('Owner transactions cannot be nested.');
     // Both values are inlined into simple-protocol batches below, so they are
     // validated (canonical UUID) or generated (hex) here, never caller text.
     const accountId = ctx.accountId;
@@ -43,13 +50,13 @@ export class DatabaseService implements OnModuleDestroy {
     const tx = new OwnerTx(client, accountId);
     try {
       await client.query(
-        `BEGIN;
+        `BEGIN ISOLATION LEVEL READ COMMITTED;
          SELECT set_config('gogospend.account_id', '${accountId}', true),
                 set_config('gogospend.tx_token', '${token}', true),
                 set_config('statement_timeout', '${STATEMENT_TIMEOUT}', true),
                 set_config('idle_in_transaction_session_timeout', '${IDLE_IN_TRANSACTION_TIMEOUT}', true)`,
       );
-      const result = await fn(tx);
+      const result = await insideOwnerTransaction.run(true, () => fn(tx));
       tx.close();
       let finished: QueryResult[];
       try {

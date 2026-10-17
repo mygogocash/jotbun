@@ -10,6 +10,11 @@ const MAX_CHANGES = 10_000;
 // The largest revision a bigint can spell, so the budget holds for any group.
 const WIDEST_REVISION = '9'.repeat(19);
 
+/** Bytes of a change group as sync serves it, with the widest possible revision. */
+export function changeGroupBytes(commandId: string, changes: readonly EntityChange[]): number {
+  return Buffer.byteLength(`{"revision":"${WIDEST_REVISION}","command_id":"${commandId}","changes":${JSON.stringify(changes)}}`);
+}
+
 /**
  * Writes one command's committed change group. The caller (CommandExecutor)
  * holds the account lock, so the revision allocated here is the next one in
@@ -23,10 +28,12 @@ export class ChangeWriter {
   constructor(private readonly registry: CommandRegistry) {}
 
   async append(tx: OwnerTx, commandId: string, changes: readonly EntityChange[]): Promise<Revision> {
-    const normalized = this.validate(changes);
-    const serialized = JSON.stringify(normalized);
-    const groupBytes = Buffer.byteLength(`{"revision":"${WIDEST_REVISION}","command_id":"${commandId}","changes":${serialized}}`);
-    if (groupBytes > MAX_CHANGE_GROUP_BYTES) throw new ProblemException(413, 'COMMAND_TOO_LARGE');
+    if (changes.length === 0 || changes.length > MAX_CHANGES) throw new Error(`A command commits 1-${MAX_CHANGES} changes.`);
+    // Validate exactly what will be stored: the JSON text, parsed back (a
+    // toJSON or getter cannot show the validator one thing and store another).
+    const serialized = JSON.stringify(changes.map((c) => ({ entity: c.entity, id: c.id, version: c.version, state: c.state, snapshot: c.snapshot ?? null })));
+    const normalized = this.validate(JSON.parse(serialized) as EntityChange[]);
+    if (changeGroupBytes(commandId, normalized) > MAX_CHANGE_GROUP_BYTES) throw new ProblemException(413, 'COMMAND_TOO_LARGE');
 
     const [{ revision }] = await tx.query<{ revision: string }>(
       'UPDATE account_sync_state SET revision = revision + 1 WHERE account_id = $1 RETURNING revision::text',
@@ -54,16 +61,20 @@ export class ChangeWriter {
   }
 
   private validate(changes: readonly EntityChange[]): EntityChange[] {
-    if (changes.length === 0 || changes.length > MAX_CHANGES) throw new Error(`A command commits 1-${MAX_CHANGES} changes.`);
     const seen = new Set<string>();
     return changes.map((change, index) => {
       const definition = this.registry.entity(change.entity);
+      const snapshot = change.snapshot as { id?: unknown; version?: unknown } | null;
       const valid =
         definition !== undefined &&
         isUuid(change.id) &&
         Number.isInteger(change.version) && change.version >= 1 && change.version <= 2_147_483_647 &&
         ENTITY_STATES.includes(change.state) &&
-        (change.state === 'purged' ? change.snapshot === null : change.snapshot !== null && definition.validate(change.snapshot));
+        (change.state === 'purged'
+          ? snapshot === null
+          : typeof snapshot === 'object' && snapshot !== null && !Array.isArray(snapshot) &&
+            snapshot.id === change.id && (snapshot.version === undefined || snapshot.version === change.version) &&
+            definition.validate(snapshot));
       if (!valid) throw new Error(`Change ${index} does not match its entity's persisted DTO.`);
       const key = `${change.entity}\u0000${change.id}`;
       if (seen.has(key)) throw new Error(`Change ${index} repeats an entity in the same group.`);

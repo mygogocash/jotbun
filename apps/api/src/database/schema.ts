@@ -151,6 +151,7 @@ export const commandReceipts = pgTable(
     kind: text('kind').notNull(),
     schemaVersion: integer('schema_version').notNull(),
     requestDigest: bytea('request_digest').notNull(),
+    digestKeyId: text('digest_key_id').notNull(),
     entity: text('entity').notNull(),
     entityId: uuid('entity_id').notNull(),
     entityVersion: integer('entity_version').notNull(),

@@ -2,9 +2,10 @@ import { Injectable } from '@nestjs/common';
 import type { CommandAck, CommandOutcome, CommandStatus, EntityState } from '@gogospend/contracts';
 
 import type { OwnerTx } from '../database/owner-transaction';
+import type { StoredDigest } from './command-digest';
 
-export type StoredReceipt = { ack: CommandAck; digest: Buffer };
-export type NewReceipt = { ack: CommandAck; kind: string; schemaVersion: number; digest: Buffer; entity: string };
+export type StoredReceipt = { ack: CommandAck; digest: StoredDigest };
+export type NewReceipt = { ack: CommandAck; kind: string; schemaVersion: number; digest: StoredDigest; entity: string };
 
 type ReceiptRow = { command_id: string; entity_id: string; entity_version: number; revision: string; outcome: CommandOutcome; entity_state: EntityState };
 
@@ -26,28 +27,31 @@ const toAck = (row: ReceiptRow): CommandAck => ({
 export class CommandReceiptRepository {
   /** Call under the account lock, so a concurrent same-key command's receipt is visible. */
   async find(tx: OwnerTx, commandId: string): Promise<StoredReceipt | null> {
-    const [row] = await tx.query<ReceiptRow & { request_digest: Buffer }>(
-      `SELECT command_id, entity_id, entity_version, revision::text, outcome, entity_state, request_digest
+    const [row] = await tx.query<ReceiptRow & { request_digest: Buffer; digest_key_id: string }>(
+      `SELECT command_id, entity_id, entity_version, revision::text, outcome, entity_state, request_digest, digest_key_id
          FROM command_receipts WHERE command_id = $1`,
       [commandId],
     );
-    return row ? { ack: toAck(row), digest: row.request_digest } : null;
+    return row ? { ack: toAck(row), digest: { keyId: row.digest_key_id, digest: row.request_digest } } : null;
   }
 
   async insert(tx: OwnerTx, receipt: NewReceipt): Promise<void> {
     const { ack } = receipt;
     await tx.query(
-      `INSERT INTO command_receipts (account_id, command_id, kind, schema_version, request_digest, entity, entity_id, entity_version, outcome, entity_state, revision)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-      [tx.accountId, ack.command_id, receipt.kind, receipt.schemaVersion, receipt.digest, receipt.entity, ack.entity_id, ack.version, ack.outcome, ack.entity_state, ack.committed_revision],
+      `INSERT INTO command_receipts (account_id, command_id, kind, schema_version, request_digest, digest_key_id, entity, entity_id, entity_version, outcome, entity_state, revision)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+      [tx.accountId, ack.command_id, receipt.kind, receipt.schemaVersion, receipt.digest.digest, receipt.digest.keyId, receipt.entity, ack.entity_id, ack.version, ack.outcome, ack.entity_state, ack.committed_revision],
     );
   }
 
   /**
    * Status for up to 100 command ids, in request order: the original
-   * acknowledgement with the entity's current state, or `unknown`.
+   * acknowledgement with the entity's current state, or `unknown`. Waits
+   * (FOR SHARE on the account lock row) for a command already holding the
+   * lock, so an in-flight command is reported once it commits.
    */
   async lookup(tx: OwnerTx, ids: readonly string[]): Promise<CommandStatus[]> {
+    await tx.query('SELECT 1 FROM account_sync_state WHERE account_id = $1 FOR SHARE', [tx.accountId]);
     const rows = await tx.query<ReceiptRow>(
       `SELECT r.command_id, r.entity_id, r.entity_version, r.revision::text, r.outcome, coalesce(h.state, r.entity_state) AS entity_state
          FROM command_receipts r

@@ -95,7 +95,7 @@ beforeEach(async () => {
 
 describe('global logout over HTTP', () => {
   let app: NestExpressApplication;
-  const SETTINGS = ['DATABASE_URL', 'AUTH0_ISSUER', 'AUTH0_AUDIENCE', 'AUTH0_ALLOWED_CLIENT_IDS', 'RATE_LIMIT_KEY', 'MIN_CLIENT_VERSION_IOS', 'MIN_CLIENT_VERSION_ANDROID'];
+  const SETTINGS = ['DATABASE_URL', 'AUTH0_ISSUER', 'AUTH0_AUDIENCE', 'AUTH0_ALLOWED_CLIENT_IDS', 'RATE_LIMIT_KEY', 'COMMAND_DIGEST_KEY', 'MIN_CLIENT_VERSION_IOS', 'MIN_CLIENT_VERSION_ANDROID'];
   const saved = Object.fromEntries(SETTINGS.map((key) => [key, process.env[key]]));
 
   beforeAll(async () => {
@@ -105,6 +105,7 @@ describe('global logout over HTTP', () => {
       AUTH0_AUDIENCE: TEST_AUDIENCE,
       AUTH0_ALLOWED_CLIENT_IDS: TEST_CLIENT_ID,
       RATE_LIMIT_KEY: 'synthetic-test-key-0123456789abcdef0123456789',
+      COMMAND_DIGEST_KEY: 'synthetic-command-digest-key-0123456789abcdef',
       MIN_CLIENT_VERSION_IOS: '1.0.0',
       MIN_CLIENT_VERSION_ANDROID: '1.0.0',
     });
