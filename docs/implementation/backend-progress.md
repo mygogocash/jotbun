@@ -1511,3 +1511,61 @@ Observed, not changed (pre-existing):
 - **Shared registration points combined:** the handler registry (export and `import_expire`), the module list, the contracts index, `schema.ts` (`importUploads`), the journal and the plan table.
 - **Full gate on the merged tree:** typecheck PASS, typecheck:app PASS, test:api PASS (553), test:db PASS (482), test:app PASS, test:unit PASS, test:render PASS (60), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS.
 - **Leftover databases:** two `gogospend_test_*` databases belonged to the running P6a worktree. A third is from an exited process of unknown origin; it was left alone.
+
+## P6a: backup, recovery inventory and restore safety (local work; P6a not complete)
+
+- **Status:** built and tested locally against fakes and the loopback Docker PostgreSQL 17. P6a is **not complete**: every hosted part (Neon PITR/branches/snapshots, R2 recovery, attachment and control scopes, managed key configuration, measured RPO/RTO) is **SKIPPED** until E1, and P6a also depends on P5 (the real erasure registry) and P2c (real attachment tables), neither built yet. A failed or SKIPPED restore rehearsal blocks beta (P6b).
+- **Base:** this worktree was created at `c009c7e` (main) and fast-forwarded to `c0abc3f` before any change.
+- **Files** (`scripts/ops/`, no migration, no new dependency):
+  - `backup.mjs`: `runDailyBackup` takes one backup set (encrypted logical dump, then the encrypted accepted-attachment copy, then a MAC'd manifest); any failure discards the whole set. `localRecoveryStore` accepts only an owner-only (0700) directory outside the repository, writes 0600 parts through exclusive temp files, verifies each part's size and SHA-256 on read, and prunes sets at their 7-day expiry. `localDockerDump` runs `pg_dump` inside the local container over its socket: no secret in any argument, stderr discarded. CLI: `--target local … --key-fd N`; `--target hosted` exits 3 (SKIPPED).
+  - `recovery-crypto.mjs`: the recovery key lives in a private field (JSON, inspection and strings show only its id). It is read from an inherited descriptor; an ordinary file is refused. Streams are 64 KiB AES-256-GCM records with a per-file HKDF key, counter-and-final-flag nonces and the header as AAD, so each record is verified before its plaintext is released and truncation, reordering or appending fails.
+  - `recovery-inventory.mjs`: `RecoveryInventory.enumerate()` lists database history, branches, manual snapshots, logical and object backups and restore-created copies from pluggable sources. It refuses a copy with no expiry, more than 7 days of retention, an expiry more than 7 days away, a copy still listed past its expiry, or a non-production copy that is not synthetic. A failing source fails the inventory. `report()` lists the four hosted sources as SKIPPED (`complete: false`). `canClearMarker` needs a complete inventory and the expiry of the last copy taken at or before the marker. `localRestoreLedger` records each restore-created database (≤7 days; default 24 h).
+  - `restore-rehearsal.mjs`: `restoreRehearsal(input)` → `RestoreReceipt`, in the order in `docs/operations/restore.md`. Nothing is read or created before the target, ledger, recovery-key custody and erasure registry pass. It never switches traffic (`serving_switch: "not_performed"`) and always drops the target it created. CLI: `--target local-isolated-synthetic`; `--target isolated-synthetic` exits 3 (SKIPPED).
+  - `erasure-markers.mjs`: the marker contract P5 must satisfy (below), `planErasure` and an in-memory registry.
+  - `local-postgres.mjs`: the Docker restore adapter (creates and drops only databases it named; generic erasure by `account_id` discovery; reapplies 0001's `REVOKE TEMPORARY … FROM PUBLIC`, which a per-database dump does not carry) and the end-to-end rehearsal.
+  - `ops-safety.mjs`: `OpsError` (fixed code and message; details keep only short identifiers, counts and dates), the filtered log, and CLI parsing that refuses unknown or secret-shaped arguments without echoing them.
+  - Root scripts `test:ops` and `ops:rehearsal:local`; runbook `docs/operations/restore.md`.
+- **Marker contract for P5:** `{marker_id, account_id, subject_lookups, lookup_key_id, recorded_at}` and nothing else. Each lookup is `deriveSubjectLookup(key, issuer, subject)` = HMAC-SHA256 over `gogospend-erasure-subject-v1\0<issuer>\0<subject>`, base64url. The registry is an `ErasureMarkerSource` `{independent: true, location, listMarkers(), lookupKey()}`. `listMarkers` throws rather than return `[]` when it cannot read, and `lookupKey` returns a `SubjectLookupKey`. A restore erases each marker's account and any account holding a listed alias created no later than the marker; a later sign-up with the same subject is kept.
+- **RED** (compile-safe stubs that copied plaintext, skipped every check and returned a success receipt; `p6a-red.log`): `node --test scripts/ops/recovery-inventory.test.mjs scripts/ops/restore-safety.test.mjs` → 56 failed, 2 passed of 58, all on assertions. The two passing are positive paths the stubs met (exactly 7 days accepted; `latest` picks the newest). One failure surfaced as the stub's unhandled leaky dump rejection, which is the redaction behaviour under test. No module or import errors.
+- **GREEN:** the same command → 58 of 58. Added afterwards, not RED-first: a record-boundary truncation, header-only and appended-data case in the stream test, and a direct test of the error-detail/log filter. Now 59 of 59 (`npm run test:ops`).
+- **Covered:**
+  - refused before any read or create: serving, unlabelled-serving, `gogospend_v1`, production, non-isolated, unclaimed-isolation, non-disposable-name, non-loopback and hosted targets; a missing, dependent or unreadable registry; missing registry key custody; markers from another lookup key; a marker with extra fields; missing recovery-key custody; no ledger;
+  - refused before create: a different recovery key, a missing backup, an expired backup and a manifest edited to extend its expiry;
+  - tampered and truncated ciphertext (target dropped); erasure that leaves rows; a missing retained attachment;
+  - owner-only, plaintext-free backup files; shared and in-repository stores; retention over 7 days; non-synthetic non-production backups; plaintext key files;
+  - redaction: synthetic connection strings, access keys and baht/satang values injected into dump, attachment, registry, inventory and restore failures, the local dump's stderr, a target label and CLI arguments appear in no error, log or receipt;
+  - the API's three env examples and `apps/api/src` contain no recovery credential name and never import `scripts/ops`.
+- **Mutants:** 25 of 26 guard-removing mutants fail the suite (`p6a-mutants.log`). The survivor drops the secret-shaped-flag pattern; it is equivalent in practice because the allow-list already refuses every unknown flag.
+- **Local end-to-end rehearsal** (`npm run ops:rehearsal:local`, PASS): a migrated synthetic source with three accounts was backed up (190 KiB dump, 3 attachment objects, 62 ms). Markers were recorded for one account by id, one by a linked alias only and one never backed up, then two accounts were deleted in the source. `gogospend_v1` was refused as a serving target before any connection. Restoring the pre-deletion backup into a fresh private database gave `erased_owner_rows: []` across every `account_id` table, `missing_retained_objects: []`, markers 2 applied / 1 not present, both erased aliases in `blocked_principals`, the kept account byte-identical with its 3 transactions, and `TEMPORARY` revoked from PUBLIC (restore 70 ms, erasure 24 ms, validation 8 ms). A one-byte ciphertext change was refused with `BACKUP_INTEGRITY` and left no database. Every database it created and its temporary recovery directory were removed; `gogospend_v1` and roles were not touched.
+- **Deviations:**
+  - Four helper files beyond the planned five (`ops-safety`, `recovery-crypto`, `erasure-markers`, `local-postgres`).
+  - Encryption uses `node:crypto` (AES-256-GCM, HKDF) instead of an external tool such as age, so no dependency or binary was added.
+  - `rehearsal_attachment_refs` stands in for P2c's tables; P2c supplies the real reference query, and a schema with attachment tables but no query is refused.
+  - The restore erases accounts itself (delete accounts, cascade, plus direct deletes from `account_id` tables that do not follow `accounts`). P5 should provide its own reapply routine, which must also re-queue provider cleanup for a marker whose deletion was still in progress.
+  - Hosted adapters are placeholders that refuse with `HOSTED_ADAPTER_NOT_AUTHORIZED`.
+- **Findings for later tasks:**
+  - A per-database logical dump carries no roles, role attributes, `CONNECT` grants or database-level ACL/settings. The local adapter reapplies 0001's database hardening; a real serving switch (P6b/E3) must also restore the serving logins' grants and recheck roles.
+  - A restore can block only aliases present in the restored copy, because markers hold keyed lookups rather than principal digests. An alias absent from an older backup is not re-blocked; its provider identity is already deleted by then.
+  - `auth_event_receipts` keeps its principal digest with `account_id` set to NULL; P5 decides whether erasure purges it.
+  - Markers are not signed. Someone able to delete a marker in the control scope could let a restore resurrect that account, so P5's registry should be append-only (object lock or versioning).
+- **SKIPPED (E1 not authorized):**
+  - hosted PITR restore with measured RPO ≤ 1 h / RTO ≤ 4 h, and the daily-backup fallback RPO ≤ 24 h;
+  - seven-day PITR configuration;
+  - Neon dump through managed configuration;
+  - the R2 recovery scope and its 7-day lifecycle rule, and the R2 accepted-attachment copy (also needs P2c);
+  - the hosted erasure registry (also needs P5);
+  - the hosted inventory sources (`neon-history`, `neon-branches`, `neon-snapshots`, `r2-recovery-objects`);
+  - `--target isolated-synthetic`.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (448), test:db PASS (426), test:app PASS (16), test:unit PASS (173), test:render PASS (60), test:dev PASS (7), test:ops PASS (59), build PASS, export:web PASS, `git diff --check` PASS. No rehearsal or restore database was left behind. One `gogospend_test_*` database seen afterwards was created before this gate's database suite started and belongs to another worktree's run.
+
+## Integration: P6a (local part) merged
+
+- **Merged:** P6a's local part (built in its own worktree as `f9cb77f` on `c0abc3f`).
+- **Changes:** no migration. Root scripts gain `test:ops` (59 tests) and `ops:rehearsal:local`.
+- **Full gate on the merged tree:** typecheck PASS, typecheck:app PASS, test:api PASS (553), test:db PASS (482), test:app PASS (28), test:unit PASS (215), test:dev PASS (7), test:ops PASS (59), test:render PASS (60), build PASS, export:web PASS, `git diff --check` PASS.
+- **Leftover database:** one `gogospend_test_*` database belongs to an exited process of unknown origin and was left alone.
+- **Open for P5:**
+  - satisfy the erasure-marker contract in `scripts/ops/erasure-markers.mjs`: keyed subject lookups, an append-only registry, and `listMarkers` that throws rather than returning empty;
+  - supply a reapply routine that re-queues provider cleanup;
+  - decide whether to purge `auth_event_receipts` digests on erasure.
+- **Open for P2c:** supply the real attachment-reference query that replaces `rehearsal_attachment_refs`.
