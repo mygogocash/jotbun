@@ -549,3 +549,44 @@ Observed, not changed (pre-existing):
   - Pinned `late_cancelled_output_is_not_published`: the account's jobs are cancelled while the PUT is in flight; completion returns false, nothing is published and the sweep deletes the object.
 - **Hosted gate:** SKIPPED. Real R2 (private access, ownership, expiry, denial for backup/control buckets, worker kill against R2) needs the E1-authorized test scope. P1 is not complete for P2a uploads or beta until it passes.
 - **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (431), test:db PASS (347), test:app PASS (11), test:unit PASS (35), test:render PASS (38), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
+
+## S1: ordered deltas and consistent snapshots (server)
+
+- **Contract** (`packages/contracts/src/v1/sync.ts`):
+  - `SyncChangesPage`, the `SnapshotDto` union (`pending | ready | failed | expired`), `SnapshotChunk` and `SnapshotChunkGrant`.
+  - Limits: 200 default / 1,000 maximum groups, a 2 MiB page, 30-day retention, a 24-hour snapshot TTL and 5-minute grants.
+  - Strict validators `isEntityChange`, `isCommittedChangeGroup`, `isSnapshotChunk` and `isSnapshotChunkGrant`. Entities are checked against the per-entity DTO map `SYNC_ENTITY_VALIDATORS`, so the app can reuse them in S2–S3.
+- **Migration `0010_sync`:**
+  - `account_sync_state.pruned_through`.
+  - `snapshot_manifests` and `snapshot_chunks`: owner-read RLS, internal object keys, expiry within 25 h of creation.
+  - App routines `gogospend_request_snapshot` (account lock; idempotent per derived id; reuses a snapshot from the last hour or an open build) and `gogospend_snapshot_job_status`.
+  - Worker routines `gogospend_record_snapshot` (only a current `sync_snapshot` lease, and only objects that lease published with the same size and digest) and `gogospend_prune_changes` (cutoff at least a day old, under each account lock).
+- **Deltas** (`GET /v1/sync/changes`, `SyncQuery.after`):
+  - Whole groups in revision order from one REPEATABLE READ snapshot, at most `limit` groups and 2 MiB. One group always fits, since M1 caps a group at 1 MiB.
+  - The cursor is opaque and account-bound, naming the last fully included group revision. An empty page returns the request's own position.
+  - Malformed, foreign-account and future cursors get 422. A position below `pruned_through` (including no cursor after a prune) gets `410 RESYNC_REQUIRED`.
+  - Each served change is re-validated against its entity's DTO.
+- **Retention** (`SyncRetention`, worker maintenance): deletes superseded changes more than 30 days old and keeps every entity's head change. Snapshots are built from heads, so a resync still has every latest state. It also drops manifests a week after expiry.
+- **Snapshots:**
+  - **Request:** `POST /v1/sync/snapshots` returns 202, takes a UUID `Idempotency-Key`, and has an empty body.
+  - **Status:** `GET /v1/sync/snapshots/:id` returns a ready snapshot with `high_water`, a delta `cursor` and per-chunk grants. The grants are HMAC tokens keyed by HKDF from `COMMAND_DIGEST_KEY` and bound to the account; they name no key. Responses carry no object key.
+  - **Chunks:** `GET /v1/sync/snapshot-chunks/:grant` requires the bound session and an unexpired manifest under RLS. The body's SHA-256 must match before it is served; any failure is 404.
+  - **Builder:** `SnapshotBuilder` (the worker's `sync_snapshot` handler) reads high-water and every head through `LeasedAccountRead.withSnapshot` (one REPEATABLE READ view) and validates each entity. It streams roughly 1 MiB JSON chunks, each registered before its PUT. In one transaction it publishes the chunks (24 h), records the manifest and completes the job, re-checking lease, account and generation. Deadline, cancellation or deletion leaves no manifest and no published chunk; the sweep removes the rest.
+- **API wiring:** `SyncModule` and `StorageModule` (`OBJECT_STORE`) in the v1 root. The API now needs `R2_*`, or `OBJECT_STORE=memory` outside production; `.env.example` and test settings are updated. `dev:v1` uses the memory store and runs no worker, so snapshots stay pending locally while deltas work. The worker's maintenance loop applies retention.
+- **RED → GREEN** (assertion-level RED against seams, no module errors):
+  - RED: 19 failed and 14 passed of 33 across `sync-query`, `snapshot-builder`, `sync-api` and `migrations`. The staggered-commit test then held its lock after an early failure, so it now releases in `finally`; the leftover test database and logins were dropped.
+  - GREEN: 33 of 33.
+  - Fixed on the way: revision lists ordered by the `::text` alias sorted "10" before "9". They now order by the bigint column.
+  - Pinned `pagination_never_splits_a_command_group`: a 500-change command is served whole as a one-group page, and the cursor decodes to that group's revision.
+  - Barrier receipts:
+    - A read taken while command A holds the account lock mid-write (B queued behind it) sees only revision 1. Resuming from its cursor returns A (2) then B (3), with nothing skipped.
+    - Five 600 KiB groups page within 2 MiB with no gaps.
+    - During a multi-chunk build, two creates and a delete commit after chunk 0. Every chunk still reports high-water 7, the concurrent delete is absent, and deltas after the cursor return exactly revisions 8–10. Snapshot plus deltas equals `entity_heads` (each entity once, at its latest version).
+    - A lifecycle change mid-build publishes nothing, and the sweep empties the prefix. An abort mid-build leaves the status `pending` with no manifest.
+  - Startup specs that set an explicit environment (`v1-startup`, `auth-bootstrap`, `session-revocation`) now include `OBJECT_STORE=memory`.
+  - Sync validator unit tests (2 tests in `contracts.spec.ts`) were written against the real validators, not RED first.
+- **Recorded, not changed here:**
+  - A purged entity's earlier changes keep their snapshots until the 30-day retention, and a snapshot taken before a purge keeps it for up to 24 h. P5's purge must scrub prior change snapshots and delete affected manifests and chunks.
+  - Known P1 review findings, being fixed next, also affect snapshots: a leased read is denied when the lease it saw at its start expires, even though heartbeats extended it, so builds over about 20–30 s fail. That must be fixed before S2 relies on snapshots.
+- **Hosted check:** SKIPPED. Private grants, expiry and streamed checksums against real R2 and Neon need the E1-authorized scope. S1 is not reported complete for beta until it passes.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (433), test:db PASS (366), test:app PASS (11), test:unit PASS (35), test:render PASS (38), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.

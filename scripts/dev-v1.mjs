@@ -115,6 +115,8 @@ try {
       MIN_CLIENT_VERSION_IOS: env.MIN_CLIENT_VERSION_IOS ?? '0.0.0',
       MIN_CLIENT_VERSION_ANDROID: env.MIN_CLIENT_VERSION_ANDROID ?? '0.0.0',
       TRUST_PROXY_HOPS: '0',
+      // No job worker runs here, so snapshots stay pending; deltas work.
+      OBJECT_STORE: 'memory',
     });
   }
 } catch (error) {

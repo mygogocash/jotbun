@@ -14,6 +14,6 @@ import { CommandStatusController } from './command-status.controller';
   imports: [DatabaseModule, PoliciesModule],
   controllers: [CommandStatusController],
   providers: [CommandRegistry, ChangeWriter, CommandReceiptRepository, CommandExecutor, { provide: CommandDigester, useFactory: () => commandDigesterFromEnv(process.env) }],
-  exports: [CommandRegistry, CommandExecutor],
+  exports: [CommandRegistry, CommandExecutor, CommandDigester],
 })
 export class CommandsModule {}

@@ -15,6 +15,7 @@ const v1Settings = {
   COMMAND_DIGEST_KEY: 'synthetic-command-digest-key-0123456789abcdef',
   MIN_CLIENT_VERSION_IOS: '1.0.0',
   MIN_CLIENT_VERSION_ANDROID: '1.0.0',
+  OBJECT_STORE: 'memory',
 };
 const saved = Object.fromEntries(['DATABASE_URL', 'MONGO_URI', ...Object.keys(v1Settings)].map((key) => [key, process.env[key]]));
 

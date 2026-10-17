@@ -120,6 +120,7 @@ export async function startV1App(db: TestDatabase, issuer: JwksFixture): Promise
     COMMAND_DIGEST_KEY: 'synthetic-command-digest-key-0123456789abcdef',
     MIN_CLIENT_VERSION_IOS: '1.0.0',
     MIN_CLIENT_VERSION_ANDROID: '1.0.0',
+    OBJECT_STORE: 'memory',
   };
   const saved = Object.fromEntries(Object.keys(settings).map((key) => [key, process.env[key]]));
   Object.assign(process.env, settings);

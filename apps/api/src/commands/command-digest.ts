@@ -1,4 +1,4 @@
-import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, hkdfSync, timingSafeEqual } from 'node:crypto';
 
 import { normalizeCommand } from '@gogospend/contracts';
 import type { CommandInput } from '@gogospend/contracts';
@@ -39,6 +39,14 @@ export class CommandDigester {
   digest(accountId: string, input: CommandInput<unknown>): StoredDigest | null {
     const text = canonicalCommandText(accountId, input);
     return text === null ? null : { keyId: this.current.id, digest: createHmac('sha256', this.current.secret).update(text).digest() };
+  }
+
+  /**
+   * A 32-byte key for another purpose (HKDF-SHA256 of the current key under
+   * `label`), for short-lived tokens that need no rotation window.
+   */
+  deriveKey(label: string): Buffer {
+    return Buffer.from(hkdfSync('sha256', this.current.secret, Buffer.alloc(0), label, 32));
   }
 
   matches(accountId: string, input: CommandInput<unknown>, stored: StoredDigest): boolean {

@@ -9,6 +9,10 @@ import {
   formatClientHeader,
   isBudgetSnapshot,
   isCategorySnapshot,
+  isCommittedChangeGroup,
+  isEntityChange,
+  isSnapshotChunk,
+  isSnapshotChunkGrant,
   isUuid,
   isTransactionSnapshot,
   isWalletSnapshot,
@@ -326,5 +330,37 @@ describe('v1 text hygiene', () => {
     expect(failure(() => normalizeNote('ok \u202e'))).toEqual({ code: 'VALIDATION_FAILED', field: 'note' });
     expect(failure(() => normalizeMerchant('Shop\ud800'))).toEqual({ code: 'VALIDATION_FAILED', field: 'merchant' });
     expect(normalizeMerchant('\u200b')).toBeNull();
+  });
+});
+
+describe('sync wire validators', () => {
+  const wallet = { id: '0000000a-0000-4000-8000-000000000001', name: 'Cash', currency: 'THB', opening_minor: '0', tracking_start: '2026-01-01', archived: false, version: 1 };
+  const change = (overrides: Record<string, unknown> = {}) => ({ entity: 'wallet', id: wallet.id, version: 1, state: 'active', snapshot: wallet, ...overrides });
+
+  it('accepts only known entities whose snapshot matches their persisted DTO', () => {
+    expect(isWalletSnapshot(wallet)).toBe(true);
+    expect(isEntityChange(change())).toBe(true);
+    expect(isEntityChange(change({ state: 'deleted' }))).toBe(true);
+    expect(isEntityChange(change({ state: 'purged', snapshot: null }))).toBe(true);
+    expect(isEntityChange(change({ entity: 'fixture_purchase' }))).toBe(false);
+    expect(isEntityChange(change({ entity: 'constructor' }))).toBe(false);
+    expect(isEntityChange(change({ version: 2 }))).toBe(false);
+    expect(isEntityChange(change({ snapshot: { ...wallet, extra: true } }))).toBe(false);
+    expect(isEntityChange(change({ state: 'purged' }))).toBe(false);
+    expect(isEntityChange({ ...change(), more: 1 })).toBe(false);
+  });
+
+  it('checks whole groups and versioned chunks', () => {
+    const group = { revision: '12', command_id: '0000000c-0000-4000-8000-000000000001', changes: [change()] };
+    expect(isCommittedChangeGroup(group)).toBe(true);
+    expect(isCommittedChangeGroup({ ...group, revision: '012' })).toBe(false);
+    expect(isCommittedChangeGroup({ ...group, revision: '0' })).toBe(false);
+    expect(isCommittedChangeGroup({ ...group, changes: [] })).toBe(false);
+    const chunk = { schema_version: 1, snapshot_id: '0000000d-0000-4000-8000-000000000001', high_water: '12', index: 0, entities: [change()] };
+    expect(isSnapshotChunk(chunk)).toBe(true);
+    expect(isSnapshotChunk({ ...chunk, schema_version: 2 })).toBe(false);
+    expect(isSnapshotChunk({ ...chunk, entities: [change({ snapshot: null })] })).toBe(false);
+    expect(isSnapshotChunkGrant({ index: 0, bytes: 10, sha256: 'a'.repeat(64), grant: 'A'.repeat(55), grant_expires_at: '2026-10-17T00:05:00.000Z' })).toBe(true);
+    expect(isSnapshotChunkGrant({ index: 0, bytes: 10, sha256: 'a'.repeat(64), grant: 'sync_snapshot/x', grant_expires_at: '2026-10-17T00:05:00.000Z' })).toBe(false);
   });
 });

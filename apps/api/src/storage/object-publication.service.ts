@@ -59,6 +59,11 @@ export class ObjectPublicationService {
     return key;
   }
 
+  /** reserveKey on this service's own pool. */
+  reserve(lease: JobLease, purpose: string, name: string): Promise<string> {
+    return this.reserveKey(this.pool, lease, purpose, name);
+  }
+
   /**
    * Inside the caller's transaction: locks the job, re-checks the lease and
    * the account, and publishes this lease's reserved objects. False (publish
@@ -86,9 +91,11 @@ export class ObjectPublicationService {
 
   /**
    * Verifies the objects landed as described, then publishes them and
-   * completes the job in one transaction. True only if both happened.
+   * completes the job in one transaction. `record` runs in that transaction
+   * after publication (e.g. a manifest naming the objects); false from it
+   * rolls everything back. True only if all of it happened.
    */
-  async finishWithObjects(jobs: JobRepository, lease: JobLease, objects: readonly PublishedObject[], expiresAt: Date): Promise<boolean> {
+  async finishWithObjects(jobs: JobRepository, lease: JobLease, objects: readonly PublishedObject[], expiresAt: Date, record?: (client: PoolClient) => Promise<boolean>): Promise<boolean> {
     for (const object of objects) {
       const stored = await this.store.head(object.key);
       if (!stored || stored.bytes !== object.bytes || stored.sha256 !== object.sha256) throw new Error('an object to publish is missing or differs from what was written');
@@ -97,7 +104,10 @@ export class ObjectPublicationService {
     let broken = false;
     try {
       await client.query('BEGIN ISOLATION LEVEL READ COMMITTED');
-      const done = (await this.publishIfCurrent(client, lease, objects, expiresAt)) && (await jobs.complete(lease, 'succeeded', client));
+      const done =
+        (await this.publishIfCurrent(client, lease, objects, expiresAt)) &&
+        (record ? await record(client) : true) &&
+        (await jobs.complete(lease, 'succeeded', client));
       await client.query(done ? 'COMMIT' : 'ROLLBACK');
       return done;
     } catch (error) {

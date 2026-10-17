@@ -103,3 +103,19 @@ export type { BudgetCategoryLimit, BudgetDto, SetMonthlyBudgetRequest } from "./
 export { HISTORY_SORTS, HISTORY_DEFAULT_LIMIT, HISTORY_MAX_LIMIT, HISTORY_QUERY_MAX_CHARS } from "./v1/history.ts";
 export type { HistorySort, HistoryFilter, Totals, FilteredTotals, HistoryPage } from "./v1/history.ts";
 export type { CategoryTotal, BudgetCategoryUsage, BudgetUsage, MonthSummary } from "./v1/summary.ts";
+export {
+  SYNC_DEFAULT_GROUPS,
+  SYNC_MAX_GROUPS,
+  SYNC_PAGE_BYTES,
+  SYNC_RETENTION_DAYS,
+  SNAPSHOT_TTL_HOURS,
+  SNAPSHOT_GRANT_MINUTES,
+  SNAPSHOT_SCHEMA_VERSION,
+  SNAPSHOT_STATUSES,
+  SYNC_ENTITY_VALIDATORS,
+  isEntityChange,
+  isCommittedChangeGroup,
+  isSnapshotChunk,
+  isSnapshotChunkGrant,
+} from "./v1/sync.ts";
+export type { SyncChangesPage, SnapshotStatus, SnapshotChunkGrant, SnapshotDto, SnapshotChunk } from "./v1/sync.ts";

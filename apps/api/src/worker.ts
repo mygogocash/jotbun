@@ -5,7 +5,8 @@
 //   LEASED_READ_DATABASE_URL - member of gogospend_leased_read only (account
 //                              reads through lease-validating routines).
 // One job at a time (CPU parser concurrency one). Periodically sweeps
-// unpublished, expired and orphaned objects, and reports - counts only -
+// unpublished, expired and orphaned objects, applies the 30-day change
+// retention, and reports - counts only -
 // failed jobs and queued kinds no handler here runs. Never logs payloads,
 // object keys or error text. See apps/api/.env.jobs-worker.example.
 import { Pool } from 'pg';
@@ -18,6 +19,7 @@ import { JobWorker } from './jobs/worker';
 import { assertLoginRoles } from './jobs/worker-login';
 import { ObjectPublicationService } from './storage/object-publication.service';
 import { objectStoreFromEnv } from './storage/object-store-config';
+import { SyncRetention } from './sync/sync-retention';
 
 function sweepMinutes(value: string | undefined): number {
   const minutes = Number(value ?? 15);
@@ -46,10 +48,13 @@ async function main(): Promise<void> {
     const jobs = new JobRepository(jobsPool);
     const publication = new ObjectPublicationService(jobsPool, store);
     const handlers = buildHandlers({ jobs, reader: new LeasedAccountRead(readPool), store, publication });
+    const retention = new SyncRetention(jobsPool);
     const maintain = async () => {
       try {
         const removed = await publication.sweep(null, new Date());
         if (removed.length > 0) console.log(`job worker: swept ${removed.length} object(s)`);
+        const pruned = await retention.prune();
+        if (pruned > 0) console.log(`job worker: applied change retention to ${pruned} account(s)`);
         const handled = new Set(handlers.kinds());
         for (const row of await jobs.backlog()) {
           // Alert on these lines: failed jobs need the runbook; unhandled kinds need a worker.

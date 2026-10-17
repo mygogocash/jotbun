@@ -30,6 +30,7 @@ export const accountIdentities = pgTable(
 export const accountSyncState = pgTable('account_sync_state', {
   accountId: uuid('account_id').primaryKey().references(() => accounts.id, { onDelete: 'cascade' }),
   revision: bigint('revision', { mode: 'bigint' }).notNull().default(0n),
+  prunedThrough: bigint('pruned_through', { mode: 'bigint' }).notNull().default(0n),
 });
 
 // Reached only through gogospend_consume_rate_limit/gogospend_purge_rate_limits;
@@ -126,6 +127,30 @@ export const objectPublications = pgTable('object_publications', {
   publishedAt: instant('published_at'),
   deletedAt: instant('deleted_at'),
 });
+
+export const snapshotManifests = pgTable('snapshot_manifests', {
+  snapshotId: uuid('snapshot_id').primaryKey(),
+  accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+  lifecycleGeneration: integer('lifecycle_generation').notNull(),
+  highWater: bigint('high_water', { mode: 'bigint' }).notNull(),
+  schemaVersion: integer('schema_version').notNull(),
+  chunkCount: integer('chunk_count').notNull(),
+  expiresAt: instant('expires_at').notNull(),
+  createdAt: instant('created_at').notNull().defaultNow(),
+});
+
+export const snapshotChunks = pgTable(
+  'snapshot_chunks',
+  {
+    snapshotId: uuid('snapshot_id').notNull().references(() => snapshotManifests.snapshotId, { onDelete: 'cascade' }),
+    accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+    chunkIndex: integer('chunk_index').notNull(),
+    objectKey: text('object_key').notNull().unique(),
+    bytes: bigint('bytes', { mode: 'bigint' }).notNull(),
+    sha256: bytea('sha256').notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.snapshotId, table.chunkIndex] })],
+);
 
 export const reauthChallenges = pgTable('reauth_challenges', {
   id: uuid('id').primaryKey(),
@@ -332,4 +357,6 @@ export const schema = {
   monthlyBudgets,
   budgetCategoryLimits,
   objectPublications,
+  snapshotManifests,
+  snapshotChunks,
 };

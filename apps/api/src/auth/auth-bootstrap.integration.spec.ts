@@ -356,7 +356,7 @@ describe('HTTP sign-in journey (synthetic issuer and Management API)', () => {
   let management: ManagementFake;
   const logs: string[] = [];
   let restoreSink: ReturnType<typeof setLogSink>;
-  const SETTINGS = ['DATABASE_URL', 'AUTH0_ISSUER', 'AUTH0_AUDIENCE', 'AUTH0_ALLOWED_CLIENT_IDS', 'AUTH0_MANAGEMENT_URL', 'AUTH0_PROFILE_LINK_CLIENT_ID', 'AUTH0_PROFILE_LINK_CLIENT_SECRET', 'RATE_LIMIT_KEY', 'COMMAND_DIGEST_KEY', 'MIN_CLIENT_VERSION_IOS', 'MIN_CLIENT_VERSION_ANDROID'];
+  const SETTINGS = ['DATABASE_URL', 'AUTH0_ISSUER', 'AUTH0_AUDIENCE', 'AUTH0_ALLOWED_CLIENT_IDS', 'AUTH0_MANAGEMENT_URL', 'AUTH0_PROFILE_LINK_CLIENT_ID', 'AUTH0_PROFILE_LINK_CLIENT_SECRET', 'RATE_LIMIT_KEY', 'COMMAND_DIGEST_KEY', 'MIN_CLIENT_VERSION_IOS', 'MIN_CLIENT_VERSION_ANDROID', 'OBJECT_STORE'];
   const saved = Object.fromEntries(SETTINGS.map((key) => [key, process.env[key]]));
   const CLIENT = { 'x-gogospend-client': 'ios/1.0.0' };
   const SUBJECT = 'auth0|journey-user';
@@ -376,6 +376,7 @@ describe('HTTP sign-in journey (synthetic issuer and Management API)', () => {
       COMMAND_DIGEST_KEY: 'synthetic-command-digest-key-0123456789abcdef',
       MIN_CLIENT_VERSION_IOS: '1.0.0',
       MIN_CLIENT_VERSION_ANDROID: '1.0.0',
+      OBJECT_STORE: 'memory',
     });
     app = await NestFactory.create<NestExpressApplication>(V1AppModule, { bodyParser: false, logger: false, abortOnError: false });
     configureV1App(app);
