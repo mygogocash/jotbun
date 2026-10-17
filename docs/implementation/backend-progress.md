@@ -434,3 +434,45 @@ Observed, not changed (pre-existing):
 - **Local dev database:** `dev:v1` had applied the first version of `0008` to the local `gogospend_v1`. I confirmed every table held 0 rows, dropped and recreated it, and applied all 8 migrations.
 - **Manual `npm run dev:v1`:** before the database was recreated, migrations `0004`–`0008` applied on start. `GET /v1/policies` returned `[]` with `no-store`. `GET /v1/wallets`, `/v1/history`, `/v1/summary` and `/v1/budgets/:month` returned 401 without a token, and logs showed only method, route and status.
 - **Full gate after the fixes:** typecheck PASS, typecheck:app PASS, test:api PASS (402), test:db PASS (324), test:app PASS, test:unit PASS, test:render PASS (3), test:dev PASS, build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
+
+## M5 — first online app journey on the v1 API (local work; M5 not complete)
+
+- **Status:** the app's money screens now run on the v1 API in local tests. M5 is **not complete**:
+  - SKIPPED until E1/E2 and F5: native builds proving real authorized writes and restart; Thai/English layout, screen reader, focus and reduced motion on devices.
+  - SKIPPED (E2 visual review): the visual review of the new states — loading, empty account and first wallet, errors, upgrade required, terms required, signed out, unconfirmed save, conflict, deleted and undo.
+  - F5 (native Auth0 and its credential provider) is not built. The v1 transport takes a credentials port shaped on F5's interface; until F5 exists it reads the existing session seam, so an unconfigured install stays signed out.
+- **Money** (`src/spend/v1/money.ts`):
+  - `formatMinor(value, locale)` gives `฿1,234.56` / `-฿1,234.56` in both Thai and English, through BigInt only, exact beyond `Number.MAX_SAFE_INTEGER`, and refuses non-canonical input.
+  - `parseAmountInput(text, locale)` accepts an optional `฿`, correctly grouped thousands, up to two decimals and Thai digits (Thai locale). It refuses anything ambiguous (`1,5`, `.5`, `007`, signs, exponents, inner spaces) with a typed problem: `empty`, `invalid`, `too_precise` or `too_large`.
+  - `minorToInputText` gives exact edit-field text.
+- **Transport** (`createV1Transport` in `src/api/client.ts`):
+  - Every request sends the access token, `X-GoGoSpend-Session` and `X-GoGoSpend-Client`; every command adds `Idempotency-Key`, `X-GoGoSpend-Command-Schema: 1` and `If-Match` when versioned.
+  - A command whose response is lost is resent byte-identical with the same key, up to twice.
+  - A response that arrives after the session epoch changed is dropped (`session_changed`).
+  - Problems map to typed outcomes: `upgrade_required` (426, never a sign-out), `policy_required`, `conflict` (with `current`), `deleted`, `purged`, `invalid` (with fields), `rate_limited` (with retry-after), and so on.
+  - Signed-out, unbound and web (no native client version) requests fail before any network call.
+  - Only https or loopback http base URLs are accepted.
+  - The legacy `/spend` client is untouched and is used only by the legacy screens.
+- **Resources** (`src/spend/v1/resources.ts`, `SpendV1Resources`):
+  - Methods: wallets, createWallet, categories, ensureBuiltinCategories, createTransaction, createTransfer, transaction, update/delete/restoreTransaction, history, summary, budget (404 → null) and commandStatus.
+  - Every response is checked against the exact shared DTO shape, so number money or unknown fields are refused, never coerced.
+- **View models** (`viewModels.ts`): category names (custom label, or the translated built-in name), exact wallet totals, signed record rows with spoken labels ("Expense ฿65.00"), month ranges, and Bangkok dates.
+- **Screens** (`src/screens/v1/`), using the existing theme tokens and copy system:
+  - **Home:** total and wallet balances, this month's money in and out, the latest entries, Add and See all. An empty account gets an explicit first-wallet form (name, opening balance — "not income" — and tracking start); nothing is created by default.
+  - **Add:** expense, income or transfer with owned wallet and category chips. It is saved as one immutable command, and success is shown only after the acknowledgement. An unconfirmed save freezes the entry and resends the same command. A definite refusal (422) shows field problems, and the corrected entry gets a new key. An upgrade requirement blocks saving and keeps the draft. Offline saving stays off.
+  - **Transactions:** month navigation, type filter, keyset "Load more", and month totals. Edits carry the version the user saw; a conflict offers "Reload" or "Apply my change" (a new command at the server's version), never a silent overwrite. Delete hides the entry after the acknowledgement, with Undo.
+- **Routes:** `/spend` → Home, `/spend/all` → Transactions, new `/spend/add` → Add. The unconverted legacy screens are reachable only with `EXPO_PUBLIC_LEGACY_SPEND=1`, never as a runtime fallback. `EXPO_PUBLIC_V1_API_URL` defaults to `http://localhost:8091`.
+- **Session seam:** `SpendSession` gained an optional `binding` and an installation-local epoch. The epoch moves on sign-out, account switch or a new binding, never on a token refresh.
+- **Copy:** 61 new English/Thai catalog entries. The Thai copy is a first draft for the founder's or a translator's pass on money screens. Vietnamese falls back to English for these strings.
+- **Deviations:**
+  - The v1 wiring lives in a new `src/api/sharedV1.ts`. `sharedClient.ts` stays the legacy client, so legacy screens and their tests do not load native modules.
+  - Screens take resources from `SpendV1Context`.
+  - `/spend/add` is a new route.
+  - Home has a minimal first-wallet form because the journey needs a wallet. Wallet list and settings screens still wait for approved visuals; their ports are in `SpendV1Resources`.
+- **RED → GREEN** (assertion-level RED against seams, no module errors):
+  - `money.test.ts`: 0 of 6 passing, then 6 of 6, including the pinned `large_minor_amount_is_formatted_exactly` (`parseAmountInput('999999999.99','en') === '99999999999'`).
+  - `resources.test.ts`: 0 of 9, then 9 of 9.
+  - Render tests (Home, Add, Transactions): 0 of 24, then 24 of 24.
+  - `viewModels.test.ts` (5 tests) was written against the real functions (not RED first).
+- **App adapter against the real API** (`apps/api/src/v1/app-adapter.integration.spec.ts`, 2 tests): the app's own transport, resources, money and view models drive the golden journey against the real v1 server on a disposable database. It covers wallets, records and a transfer replayed as the same command; the exact balances `฿2,350.00`, `฿18,700.00` and total `฿21,050.00`; month totals; history rows; a versioned edit; a stale-edit conflict carrying `current`; delete and undo; command status; and a build below the minimum version getting `upgrade_required` (426), not a sign-out.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (402), test:db PASS (326), test:app PASS (11), test:unit PASS (31), test:render PASS (27), test:dev PASS, build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.

@@ -66,3 +66,199 @@ export function createMobileApiClient(options: {
     postFormData: <T>(path: string, body: FormData) => request<T>('POST', path, body, true),
   };
 }
+
+// ---------------------------------------------------------------------------
+// v1 transport (PostgreSQL/Auth0 API). Separate from the legacy /spend client
+// above, which stays only for unconverted development screens.
+
+/** What the session layer (F5) exposes to the transport. */
+export type V1SessionSnapshot = { binding: string | null; epoch: number };
+export type V1Credentials = {
+  getAccessToken(): Promise<string | null>;
+  getSessionSnapshot(): V1SessionSnapshot;
+};
+export type V1ClientVersion = { platform: 'ios' | 'android'; version: string };
+
+/** How a screen should react, independent of the exact problem code. */
+export type V1Outcome =
+  | 'invalid'
+  | 'signed_out'
+  | 'session_changed'
+  | 'policy_required'
+  | 'not_found'
+  | 'conflict'
+  | 'deleted'
+  | 'purged'
+  | 'idempotency_mismatch'
+  | 'schema_unsupported'
+  | 'too_large'
+  | 'rate_limited'
+  | 'upgrade_required'
+  | 'unavailable'
+  | 'unsupported_platform'
+  | 'network'
+  | 'invalid_response';
+
+export class V1Error extends Error {
+  readonly status: number;
+  readonly code: string;
+  readonly outcome: V1Outcome;
+  readonly fields?: Readonly<Record<string, string>>;
+  readonly current?: unknown;
+  readonly retryAfterSeconds?: number;
+  constructor(outcome: V1Outcome, status: number, code: string, extra: { fields?: Record<string, string>; current?: unknown; retryAfterSeconds?: number } = {}) {
+    super(`${code} (${status})`);
+    this.name = 'V1Error';
+    this.outcome = outcome;
+    this.status = status;
+    this.code = code;
+    this.fields = extra.fields;
+    this.current = extra.current;
+    this.retryAfterSeconds = extra.retryAfterSeconds;
+  }
+}
+
+export type V1CommandHeaders = { id: string; schemaVersion: number; ifMatch?: number };
+export type V1RequestOptions<T> = {
+  body?: unknown;
+  command?: V1CommandHeaders;
+  /** Rejects any response that is not exactly the expected DTO. */
+  validate: (payload: unknown) => payload is T;
+};
+
+export type V1Transport = {
+  request<T>(method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE', path: string, options: V1RequestOptions<T>): Promise<T>;
+};
+
+const PROBLEM_OUTCOMES: Record<string, V1Outcome> = {
+  SESSION_REQUIRED: 'signed_out',
+  UNAUTHENTICATED: 'signed_out',
+  REAUTH_REQUIRED: 'signed_out',
+  ACCOUNT_UNAVAILABLE: 'signed_out',
+  POLICY_ACCEPTANCE_REQUIRED: 'policy_required',
+  NOT_FOUND: 'not_found',
+  VERSION_CONFLICT: 'conflict',
+  ENTITY_DELETED: 'deleted',
+  ENTITY_PURGED: 'purged',
+  IDEMPOTENCY_MISMATCH: 'idempotency_mismatch',
+  COMMAND_SCHEMA_UNSUPPORTED: 'schema_unsupported',
+  COMMAND_TOO_LARGE: 'too_large',
+  RATE_LIMITED: 'rate_limited',
+  CLIENT_UPGRADE_REQUIRED: 'upgrade_required',
+  SERVICE_UNAVAILABLE: 'unavailable',
+  WRITES_PAUSED: 'unavailable',
+};
+
+function outcomeFor(status: number, code: string): V1Outcome {
+  const known = PROBLEM_OUTCOMES[code];
+  if (known) return known;
+  if (status === 401) return 'signed_out';
+  if (status === 404) return 'not_found';
+  if (status === 409) return 'conflict';
+  if (status === 426) return 'upgrade_required';
+  if (status === 429) return 'rate_limited';
+  if (status >= 500) return 'unavailable';
+  return 'invalid';
+}
+
+const PROBLEM_CODE = /^[A-Z][A-Z0-9_]{0,63}$/;
+const NETWORK_RETRIES = 2;
+
+/**
+ * The v1 transport: every private request carries the access token, the
+ * opaque session binding and `X-GoGoSpend-Client`; every command carries its
+ * Idempotency-Key, `X-GoGoSpend-Command-Schema` and If-Match when versioned.
+ * A command whose response is lost is resent as the same immutable request
+ * (same key, same body). A response that arrives after the session epoch
+ * changed (sign-out, account switch, new binding) is dropped. Responses must
+ * pass the caller's exact DTO validator; nothing is coerced.
+ */
+export function createV1Transport(options: {
+  baseUrl: string;
+  credentials: V1Credentials;
+  client: V1ClientVersion | null;
+  fetchImpl?: typeof fetch;
+  timeoutMs?: number;
+}): V1Transport {
+  let base: URL;
+  try {
+    base = new URL(options.baseUrl);
+  } catch {
+    throw new V1Error('invalid', 0, 'CONFIG_REQUIRED');
+  }
+  const loopback = ['localhost', '127.0.0.1', '[::1]'].includes(base.hostname);
+  if (base.username || base.password || !(base.protocol === 'https:' || (base.protocol === 'http:' && loopback))) {
+    throw new V1Error('invalid', 0, 'CONFIG_REQUIRED');
+  }
+  const baseUrl = options.baseUrl.replace(/\/+$/, '');
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const timeoutMs = options.timeoutMs ?? 20_000;
+
+  async function once(url: string, init: RequestInit): Promise<{ status: number; payload: unknown }> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetchImpl(url, { ...init, signal: controller.signal, redirect: 'error' });
+      const text = await response.text();
+      let payload: unknown = null;
+      try {
+        payload = text ? JSON.parse(text) : null;
+      } catch {
+        throw new V1Error('invalid_response', response.status, 'INVALID_RESPONSE');
+      }
+      return { status: response.status, payload };
+    } catch (error) {
+      if (error instanceof V1Error) throw error;
+      throw new V1Error('network', 0, controller.signal.aborted ? 'TIMEOUT' : 'NETWORK_ERROR');
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  return {
+    async request<T>(method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE', path: string, request: V1RequestOptions<T>): Promise<T> {
+      if (!path.startsWith('/v1/') || path.includes('\\') || path.includes('//')) throw new V1Error('invalid', 0, 'INVALID_PATH');
+      if (!options.client) throw new V1Error('unsupported_platform', 0, 'CLIENT_UNSUPPORTED');
+      const before = options.credentials.getSessionSnapshot();
+      const token = await options.credentials.getAccessToken();
+      if (!token || !before.binding) throw new V1Error('signed_out', 401, 'SESSION_REQUIRED');
+      const headers: Record<string, string> = {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+        'X-GoGoSpend-Session': before.binding,
+        'X-GoGoSpend-Client': `${options.client.platform}/${options.client.version}`,
+      };
+      if (request.body !== undefined) headers['Content-Type'] = 'application/json';
+      if (request.command) {
+        headers['Idempotency-Key'] = request.command.id;
+        headers['X-GoGoSpend-Command-Schema'] = String(request.command.schemaVersion);
+        if (request.command.ifMatch !== undefined) headers['If-Match'] = `"${request.command.ifMatch}"`;
+      }
+      // Serialized once, so every retry sends byte-identical content.
+      const init: RequestInit = { method, headers, body: request.body === undefined ? undefined : JSON.stringify(request.body) };
+      let result: { status: number; payload: unknown } | undefined;
+      for (let attempt = 0; ; attempt += 1) {
+        try {
+          result = await once(`${baseUrl}${path}`, init);
+          break;
+        } catch (error) {
+          // Only a command may be resent blindly, and only as itself; a read
+          // is cheap to retry from the screen.
+          const lost = error instanceof V1Error && error.outcome === 'network';
+          if (!lost || !request.command || attempt >= NETWORK_RETRIES) throw error;
+        }
+      }
+      if (options.credentials.getSessionSnapshot().epoch !== before.epoch) throw new V1Error('session_changed', 0, 'SESSION_CHANGED');
+      const { status, payload } = result;
+      if (status < 200 || status > 299) {
+        const problem = payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : {};
+        const code = typeof problem.code === 'string' && PROBLEM_CODE.test(problem.code) ? problem.code : `HTTP_${status}`;
+        const fields = problem.fields && typeof problem.fields === 'object' ? (problem.fields as Record<string, string>) : undefined;
+        const retryAfterSeconds = typeof problem.retry_after_seconds === 'number' ? problem.retry_after_seconds : undefined;
+        throw new V1Error(outcomeFor(status, code), status, code, { fields, current: problem.current, retryAfterSeconds });
+      }
+      if (!request.validate(payload)) throw new V1Error('invalid_response', status, 'INVALID_RESPONSE');
+      return payload;
+    },
+  };
+}
