@@ -12,6 +12,12 @@ const NAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 const SHA256 = /^[0-9a-f]{64}$/;
 /** The only purposes (= the job kinds that publish); the sweep lists each for orphans. */
 export const PUBLICATION_PURPOSES = ['sync_snapshot', 'export'] as const;
+/**
+ * Purposes registered by the API's own routines rather than a worker lease
+ * (P2a's upload quarantine: the intake token takes the lease-token slot).
+ * Never reservable through reserveKey; swept like the others.
+ */
+export const QUARANTINE_PURPOSES = ['import_quarantine'] as const;
 // A reservation outlives its publisher's last possible moment (the attempt's
 // runtime bound) by this much before the sweep may delete it.
 const RESERVATION_GRACE_SECONDS = 15 * 60;
@@ -160,7 +166,7 @@ export class ObjectPublicationService {
       await remove(rows.map((row) => row.key));
       if (rows.length < SWEEP_BATCH) break;
     }
-    for (const purpose of PUBLICATION_PURPOSES) {
+    for (const purpose of [...PUBLICATION_PURPOSES, ...QUARANTINE_PURPOSES]) {
       const stored = await this.store.list(accountId ? `${purpose}/${accountId}/` : `${purpose}/`);
       for (let start = 0; start < stored.length; start += SWEEP_BATCH) {
         const batch = stored.slice(start, start + SWEEP_BATCH).map((object) => object.key);

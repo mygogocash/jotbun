@@ -1,6 +1,7 @@
 import type { LeasedAccountRead } from '../database/leased-account-read';
 import { ExportHandler } from '../exports/export-handler';
 import type { ExportHandlerOptions } from '../exports/export-handler';
+import { ImportExpiry } from '../imports/import-expiry';
 import type { ObjectPublicationService } from '../storage/object-publication.service';
 import type { ObjectStore } from '../storage/object-store';
 import { SnapshotBuilder } from '../sync/snapshot-builder';
@@ -10,10 +11,15 @@ import type { JobRepository } from './job.repository';
 
 export type WorkerDeps = { jobs: JobRepository; reader: LeasedAccountRead; store: ObjectStore; publication: ObjectPublicationService };
 
-/** Every generic job handler. */
+/**
+ * Every generic job handler. `import_parse` (P2b) has none yet: those jobs
+ * stay queued, the worker's backlog report names them, and the 24-hour
+ * `import_expire` job cancels them and deletes their quarantined upload.
+ */
 export function buildHandlers(deps: WorkerDeps, options: { snapshot?: SnapshotBuilderOptions; export?: ExportHandlerOptions } = {}): HandlerRegistry {
   const snapshots = new SnapshotBuilder(deps, options.snapshot);
   const exporter = new ExportHandler(deps, options.export);
+  const imports = new ImportExpiry(deps);
   return new HandlerRegistry()
     .register('sync_snapshot', async (job) => {
       const manifest = await snapshots.build(job.lease);
@@ -21,5 +27,6 @@ export function buildHandlers(deps: WorkerDeps, options: { snapshot?: SnapshotBu
       if (!manifest && (await deps.jobs.isHeld(job.lease))) await deps.jobs.fail(job.lease, { code: 'snapshot_not_recorded', retryable: true });
     })
     // P4: one private CSV per export request; the handler completes or fails its job.
-    .register('export', (job) => exporter.run(job.lease));
+    .register('export', (job) => exporter.run(job.lease))
+    .register('import_expire', (job) => imports.run(job));
 }

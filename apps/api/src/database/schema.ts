@@ -374,6 +374,30 @@ export const budgetCategoryLimits = pgTable(
   (table) => [primaryKey({ columns: [table.accountId, table.month, table.categoryId] })],
 );
 
+// Written only through the 0014 import intake routines; the owner reads its own rows.
+export const IMPORT_UPLOAD_STATUSES = ['receiving', 'accepted', 'rejected', 'failed', 'expired'] as const;
+
+export const importUploads = pgTable('import_uploads', {
+  jobId: uuid('job_id').primaryKey(),
+  accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+  lifecycleGeneration: integer('lifecycle_generation').notNull(),
+  intakeToken: uuid('intake_token').notNull(),
+  status: text('status', { enum: IMPORT_UPLOAD_STATUSES }).notNull(),
+  outcomeCode: text('outcome_code'),
+  fileName: text('file_name'),
+  declaredType: text('declared_type').notNull(),
+  declaredBytes: bigint('declared_bytes', { mode: 'number' }),
+  format: text('format'),
+  bytes: bigint('bytes', { mode: 'number' }),
+  sha256: bytea('sha256'),
+  partCount: integer('part_count'),
+  createdAt: instant('created_at').notNull().defaultNow(),
+  receiveDeadline: instant('receive_deadline').notNull(),
+  acceptedAt: instant('accepted_at'),
+  expiresAt: instant('expires_at'),
+  finishedAt: instant('finished_at'),
+});
+
 export const schema = {
   accounts,
   accountIdentities,
@@ -400,4 +424,5 @@ export const schema = {
   snapshotManifests,
   snapshotChunks,
   exports: exportsTable,
+  importUploads,
 };
