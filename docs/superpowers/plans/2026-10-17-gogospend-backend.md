@@ -84,7 +84,7 @@ Migration integration is serial:
 | `0009_jobs_storage` | P1 | generic leases/attempts/deadlines, publication registry, leased-read routines |
 | next free | F6b | verified provider-event receipts and reset reconciliation state |
 | next free | S1 | snapshot manifests, cursor support |
-| next free | P2a | uploads, import jobs, quota counters |
+| `0011_import_intake` | P2a | `import_uploads` (upload record, import job id and sliding-window quota ledger in one row per attempt), quarantine/expiry routines, worker insert policy for import kinds |
 | next free | P2b | candidates, preview issues |
 | next free | P2c | `attachments`, `transaction_attachments` |
 | next free | P3 | frozen selections, per-row progress with unique `(job_id, source_row_id)` |

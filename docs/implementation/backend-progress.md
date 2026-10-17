@@ -1055,3 +1055,77 @@ Observed, not changed (pre-existing):
   - On devices: the offline-launch, airplane-mode, account-switch and remount journeys; VoiceOver and TalkBack announcements; the notification channel and provisional delivery.
   - The sign-out confirmation UI waits for visual approval.
 - **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (437), test:db PASS (397), test:app PASS (16), test:unit PASS (173), test:render PASS (60), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases left behind.
+
+## P2a: bounded private upload quarantine (local work)
+
+- **Migration `0011_import_intake`:**
+  - `import_uploads`: one row per upload attempt, keyed by the import's job id (derived from the account and the `Idempotency-Key`). It holds no file content. The same row is the upload record, the import job's record and the quota ledger. Owner-read RLS; the app writes it only through routines. The file name (a display label, never part of a key) is cleared when an upload is refused, fails or expires.
+  - App routines (owner transaction, common account lock):
+    - `gogospend_begin_import_upload`: marks the account's stale `receiving` rows failed, replays a known id, applies the quotas, records the attempt (10-minute receive deadline);
+    - `gogospend_reserve_import_part`: registers each part's key in P1's `object_publications` before its PUT;
+    - `gogospend_finish_import_upload`: re-checks deadline, account and generation, matches the parts to their reservations, re-checks the 24-hour quotas, then publishes the parts for 24 hours, accepts the upload and queues one `import_parse` job (the import's own id) plus one `import_expire` job due at expiry;
+    - `gogospend_abort_import_upload` / `gogospend_discard_import_parts`: end an upload as rejected or failed, move its parts to `deleting`, and mark them `deleted` once the storage deletes succeed;
+    - `gogospend_import_job_status`.
+  - Worker routine `gogospend_expire_import`, run inside P1's fenced completion transaction.
+  - `jobs_worker_insert` now also refuses `import_parse` and `import_expire`, so the worker login cannot mint a job that reads a quarantined file.
+- **Contract** (`packages/contracts/src/v1/imports.ts`): limits, formats, content types and extensions, `ImportJobDto`/`UploadAccepted`, statuses (`queued | parsing | parsed | failed | cancelled | expired`), `parseImportFileName`, `importFormatForContentType`, `importFormatForExtension`, `isImportJobDto`, and message keys for each limit and for HEIC. New problem codes: `INVALID_FILE_NAME`, `UPLOAD_EMPTY`, `UPLOAD_TOO_LARGE`, `UPLOAD_UNSUPPORTED_TYPE`, `UPLOAD_TYPE_MISMATCH`, `UPLOAD_INCOMPLETE`, `UPLOAD_LIMIT_REACHED`, `UPLOAD_IN_PROGRESS`, `UPLOAD_FAILED`.
+- **API** (`src/imports`):
+  - `POST /v1/imports` (`current_policy`) takes the raw body: `Content-Type`, a percent-encoded `X-GoGoSpend-File-Name`, an `Idempotency-Key` and an optional `Content-Length`. It returns 202 `UploadAccepted`.
+  - `GET /v1/imports/:id` (`bound_session`) returns the caller's own accepted import. Another account's id, an unknown id, a malformed id and a refused upload all get the same 404.
+  - **Disabled by default:** `IMPORT_UPLOADS_ENABLED` (off unless `1`/`true`; any other value stops startup). While off, the upload route answers 404 without reading the body.
+  - `UploadIntake.accept(ctx, stream, metadata)`:
+    - name, type, extension and declared length are refused before any byte is read; at most 8 intakes run per process (503 otherwise);
+    - `begin` applies the quotas and idempotency under the account lock;
+    - the body is read chunk by chunk. The first 64 bytes are sniffed before anything is written. The 12 MiB cap, and any declared length, is enforced before a chunk is kept. CSV is checked for binary bytes throughout;
+    - every 1 MiB part is registered, then PUT and HEAD-verified. At most one part is held in memory, so neither the intake nor the S3 adapter (which buffers a body to hash it) ever holds a whole upload;
+    - `finish` accepts under the account lock, after re-checking session, account and policy;
+    - any refusal or failure records its outcome and deletes what was written at once; the sweep is the backstop. Leaving the request early never destroys the socket: the controller discards the unread rest so the error still reaches the client.
+  - Sniffing: JPEG, PNG, WebP, XLSX (ZIP local header) and CSV (text with no C0 controls besides TAB/LF/CR, in any single-byte or UTF-8 encoding) are accepted. HEIC/HEIF (ISO-BMFF brands) answer 415 with the HEIC message key. AVIF and other `ftyp` files, legacy XLS, PDF, GIF, TIFF and UTF-16 text answer 415. Anything else that differs from the declared type (an empty ZIP, an executable, RIFF audio, CSV with a NUL) answers 422 `UPLOAD_TYPE_MISMATCH`.
+  - File names: NFC, 1–128 characters, a final extension, no `/ \ : * ? " < > |`, no control, bidi or zero-width characters, no leading dot and no surrounding spaces. The extension must match the declared type.
+  - **Quotas** (sliding windows on the database clock, decided under the account lock):
+    - 5 attempts (accepted or refused) per 15 minutes, checked at begin;
+    - 50 MiB of accepted bytes per 24 hours, checked at begin with the declared length, and again at finish with the real size;
+    - 10 parse jobs per 24 hours, checked at begin counting uploads still receiving, and again at finish.
+    - A refusal is 429 `UPLOAD_LIMIT_REACHED` with `retry_after_seconds` (the exact time room returns) and a message key naming the limit. A limited attempt records nothing.
+  - **Replay:** the same key with the same name and type returns the original acceptance without reading the body; other content under the key is 409 `IDEMPOTENCY_MISMATCH`; a key still streaming is 409 `UPLOAD_IN_PROGRESS`; a refused key repeats its refusal; a failed key is 409 `UPLOAD_FAILED` (start again with a new key).
+- **Parse job choice:** no `import_parse` handler is registered until P2b. The generic worker claims only registered kinds, so those jobs stay queued and the worker's backlog report names them ("… queued with no handler in this worker"). The expiry job cancels them at 24 hours. Nothing is parsed, and no transaction is written.
+- **Expiry and sweeping:**
+  - The worker's `import_expire` handler (`import-expiry.ts`, registered in `buildHandlers`) runs `gogospend_expire_import` through `finishWithObjects` with no objects (account lock, current lease, active account at the job's generation), in the same transaction as its completion. It cancels a parse job still queued or running, marks an unparsed import `expired` (clearing its name and digest), and makes its parts due. It then sweeps the account. Not due yet: it fails retryably and changes nothing.
+  - P1's sweep now also lists `import_quarantine/` for orphans (`QUARANTINE_PURPOSES`; `reserveKey` stays lease-only). Published parts carry a 24-hour registry deadline, so the sweep deletes them even if the expiry job never runs. A crashed API's reservations are deleted 15 minutes after the upload's deadline.
+- **Fixtures:** `src/imports/fixtures/synthetic-uploads.ts` holds synthetic magic-byte bodies and made-up CSV rows (HEIC/HEIF/AVIF, PDF, GIF, legacy XLS, executable, RIFF audio, UTF-16, CSV with NUL, an empty ZIP), path-like and disguised names, and a metered stream for oversized bodies. The legacy `spend/fixtures` samples are unchanged and read only: the HTTP spec uploads one into quarantine.
+- **RED → GREEN** (assertion-level RED against compile-safe seams, no module errors). The seams: an intake that read the whole stream into memory and returned a made-up acceptance; a repository that did nothing; a migration with the table and two routine signatures returning nothing useful; an expiry handler that only completed its job; permissive contract helpers.
+  - Unit: `npm run test -w gogospend-api -- --runTestsByPath src/imports/upload-intake.spec.ts`. RED: 73 of 73 failed on assertions. GREEN: 73 of 73.
+  - Database and HTTP: `npm run test:db -w gogospend-api -- --runTestsByPath src/imports/upload-intake.integration.spec.ts`. RED: 23 of 25 failed on assertions. Two passed at once: the controller's undecodable-name check and the Drizzle drift check. GREEN: 25 of 25, stable over 3 runs.
+  - Before the recorded RED run, the HTTP helper got a 15 s reply bound (a seam that waited for a held-back body hung the suite) and the quota seed got explicit parameter types. That first run's `afterAll` timed out and left one test database and its 8 logins. I identified them as mine (the RED-seam routine stub) and dropped them.
+  - GREEN also corrected two retry bounds in the quota tests. Seeded uploads are accepted a minute after they are created, so room returns at 23 h 01 min and 22 h 01 min.
+  - Pinned `oversized_stream_is_rejected_before_buffering`: a chunked 12 MiB + 1 body gets 413 `UPLOAD_TOO_LARGE`, and the store received at most the cap (`bytesBufferedBeyondCap` = 0). Nothing is left in quarantine or live in the registry, no job is queued, and the row is `rejected`/`too_large`. The unit version also shows the intake stopped pulling at the first chunk past the cap and closed the source.
+  - **Concurrency proofs:**
+    - 8 concurrent uploads from one account give exactly 5 × 202 and 3 × 429 (uploads message key, Retry-After ≤ 15 min), with 5 rows and 5 parse jobs;
+    - with 50 MiB − 3 KiB already accepted, two concurrent chunked 2 KiB uploads give exactly one 202 and one 429 (bytes; retry 23 h 01 min), leaving one part in quarantine;
+    - ten parse jobs today give 429 (parse jobs; retry 22 h 01 min).
+  - **Other proofs:**
+    - a client that disconnects mid-stream leaves the row `failed`/`upload_incomplete` and nothing in quarantine;
+    - a session revoked mid-stream gives 401, with nothing kept (`failed`/`session_ended`);
+    - an API that died between a PUT and finishing: its part survives the sweep until its deadline and is then deleted, and the row turns `failed`/`deadline_passed`;
+    - expiry at 24 hours (aged rows) deletes the parts, cancels the parse job and shows `expired`;
+    - the app login cannot write `import_uploads` or read `object_publications`, and the worker login can neither mint import jobs nor read `import_uploads`;
+    - the transaction count is unchanged by every accepted or refused upload.
+- **Deviations:**
+  - One `import_uploads` table instead of separate uploads, import-jobs and quota-counter tables. Quotas are exact sliding windows counted from these rows under the account lock, not bucketed counters. Rows must outlive 24 hours for the daily windows; P5 owns their retention.
+  - Raw-body upload with header metadata, not multipart, so the body streams with no parser dependency (and no new dependency).
+  - Quarantine is up to 12 one-MiB parts rather than one object, so no adapter ever buffers a whole upload.
+  - Quarantine keys are registered by app routines, with the attempt's intake token in the lease-token slot, not by `reserveKey`. `QUARANTINE_PURPOSES` is new.
+  - Extra files: `import-expiry.ts` (keeps Nest out of the worker) and the fixtures module.
+  - The contract adds a `parsed` status for P2b's preview.
+  - Limit copy is message keys plus `retry_after_seconds`. The Thai/English text lands with P3's import UI after visual approval.
+  - `src/database/migrations.spec.ts` lists this migration's tag (every migration extends that list). Renumber it at merge along with the file, the journal and the master-plan table.
+  - The parse job's 120 s runtime and 3 attempts are set now, for P2b.
+- **SKIPPED:**
+  - One real bounded R2 quarantine upload and its expiry cleanup, on synthetic data. This needs P1's hosted gate (E1 test scope). Uploads stay disabled until both pass.
+  - The client upload flow and copy (P3).
+  - `dev:v1` was not run from this branch: it would migrate `gogospend_v1` with this migration.
+- **Notes for P2b, P2c and P3:**
+  - P2b registers the `import_parse` handler. It reads the parts in order from `object_publications` (`job_id` = the import id, purpose `import_quarantine`, `published`), verifies each part's and the whole file's SHA-256 against the registry and `import_uploads`, and must not rely on the raw file after `expires_at`.
+  - The expiry job leaves an import whose parse job succeeded as is (no status change) and still deletes its raw parts.
+  - The worker login can read every quarantine object (P1's design), so parser isolation stays P2b's child-process boundary.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (510), test:db PASS (422), test:app PASS (16), test:unit PASS (173), test:render PASS (60), test:dev PASS (7), build PASS, export:web PASS, `git diff --check` PASS. No test databases or logins left behind.
