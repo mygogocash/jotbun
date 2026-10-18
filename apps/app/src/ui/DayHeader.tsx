@@ -5,12 +5,11 @@
 import type { Minor } from '@gogospend/contracts';
 import { View } from 'react-native';
 
-import { useCopy } from '@mobile/i18n/useCopy';
-import { formatMinor } from '@mobile/spend/v1/money';
+import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
 
+import { AmountText, useAmountWords } from './Amount';
 import { BunText } from './BunText';
 import { dayLabel, fullDateLabel } from './dateStep';
-import { MoneyText, useDateLocale, useMoneyLocale } from './entryKitPrivate';
 import { BUN_SPACE } from './layout';
 
 export type DayHeaderProps = {
@@ -24,12 +23,12 @@ export type DayHeaderProps = {
 
 export function DayHeader({ date, today, outMinor, inMinor }: DayHeaderProps) {
   const tc = useCopy();
-  const dateLocale = useDateLocale();
-  const moneyLocale = useMoneyLocale();
+  const dateLocale = useActiveLocale();
+  const amountWords = useAmountWords();
   const label = dayLabel(date, today, dateLocale);
   const full = fullDateLabel(date, dateLocale);
-  const out = BigInt(outMinor) > 0n ? formatMinor(outMinor, moneyLocale) : null;
-  const into = BigInt(inMinor) > 0n ? formatMinor(inMinor, moneyLocale) : null;
+  const out = BigInt(outMinor) > 0n ? amountWords(outMinor).shown : null;
+  const into = BigInt(inMinor) > 0n ? amountWords(inMinor).shown : null;
   const spoken = [
     ...(label.kind === 'date' ? [full] : [label.text, full]),
     out ? `${tc('Money out')} ${out}` : null,
@@ -44,8 +43,8 @@ export function DayHeader({ date, today, outMinor, inMinor }: DayHeaderProps) {
     >
       <BunText variant="label" style={{ fontWeight: '700' }}>{label.text}</BunText>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: BUN_SPACE.sm }}>
-        {out ? <MoneyText variant="caption" tone="muted">{`-${out}`}</MoneyText> : null}
-        {into ? <MoneyText variant="caption" tone="muted">{`+${into}`}</MoneyText> : null}
+        {out ? <AmountText variant="caption" tone="muted">{`-${out}`}</AmountText> : null}
+        {into ? <AmountText variant="caption" tone="muted">{`+${into}`}</AmountText> : null}
       </View>
     </View>
   );

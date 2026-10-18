@@ -2,12 +2,18 @@
 // `formatMinor` only, so nothing is ever rounded or floated. A type adds its
 // sign, a pending state is written as a word beside the number (never colour
 // alone), and the screen reader hears the whole thing: "Expense ฿65.00, saving".
+//
+// `useAmountWords` and `AmountText` are the same money for components that
+// fold an amount into a larger spoken element (a record row, a day header, a
+// wallet's balance) and need a tone or text size `Amount` does not offer.
 import type { Minor } from '@gogospend/contracts';
 import { useCallback } from 'react';
 import { View } from 'react-native';
+import type { TextProps } from 'react-native';
 
 import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
 import { formatMinor } from '@mobile/spend/v1/money';
+import type { MoneyLocale } from '@mobile/spend/v1/money';
 import type { BunTextRole } from '@mobile/theme/bunType';
 import { receiptAmount } from '@mobile/theme/bunType';
 import { BunText } from './BunText';
@@ -49,10 +55,17 @@ const SIZE_PX: Readonly<Record<AmountSize, number>> = { s: 15, m: 17, l: 28, xl:
 
 const magnitude = (minor: Minor): Minor => (minor.startsWith('-') ? minor.slice(1) : minor);
 
+const TABULAR = { fontVariant: ['tabular-nums'] as ['tabular-nums'] };
+
+/** The money locale: Thai keeps its own; every other locale formats money as English does. */
+export function useMoneyLocale(): MoneyLocale {
+  return useActiveLocale() === 'th' ? 'th' : 'en';
+}
+
 /** The words for an amount, shared with components that fold it into a longer label. */
 export function useAmountWords(): (minor: Minor, type?: AmountType, state?: AmountState) => AmountWords {
   const tc = useCopy();
-  const locale = useActiveLocale() === 'th' ? 'th' : 'en';
+  const locale = useMoneyLocale();
   return useCallback((minor, type, state = 'confirmed') => {
     const exact = formatMinor(type ? magnitude(minor) : minor, locale);
     const shown = type ? `${SIGN[type]}${exact}` : exact;
@@ -71,12 +84,27 @@ export function useAmountWords(): (minor: Minor, type?: AmountType, state?: Amou
   }, [locale, tc]);
 }
 
+export type AmountTextProps = TextProps & {
+  /** Money already worded by `useAmountWords().shown` (or `budgetWords`), sign included. */
+  children: string;
+  variant?: BunTextRole;
+  tone?: BunTone;
+};
+
+/**
+ * Money drawn the way `Amount` draws it, in tabular figures so columns line
+ * up, inside a component whose own accessible label says the amount in full.
+ * It adds no spoken label; use `Amount` wherever the amount stands alone.
+ */
+export function AmountText({ children, variant = 'label', tone = 'ink', style, ...rest }: AmountTextProps) {
+  return <BunText {...rest} variant={variant} tone={tone} style={[TABULAR, style]}>{children}</BunText>;
+}
+
 export function Amount({ minor, type, size = 'm', serif = false, state = 'confirmed', on = 'surface' }: AmountProps) {
   const words = useAmountWords()(minor, type, state);
   const role = SIZE_ROLE[size];
   const numberTone: BunTone = on === 'ink' ? 'onInk' : 'ink';
   const stateTone: BunTone = on === 'ink' ? 'onInk' : on === 'stage' || state === 'conflict' ? 'ink' : 'accent';
-  const figures = serif ? receiptAmount(SIZE_PX[size]) : { fontVariant: ['tabular-nums'] as ['tabular-nums'] };
   return (
     <View
       accessible
@@ -84,7 +112,7 @@ export function Amount({ minor, type, size = 'm', serif = false, state = 'confir
       accessibilityLabel={words.spoken}
       style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', columnGap: BUN_SPACE.xs }}
     >
-      <BunText variant={role} tone={numberTone} style={figures}>{words.shown}</BunText>
+      <AmountText variant={role} tone={numberTone} style={serif ? receiptAmount(SIZE_PX[size]) : undefined}>{words.shown}</AmountText>
       {words.stateWord ? (
         <BunText
           variant={size === 'l' || size === 'xl' ? 'label' : 'caption'}

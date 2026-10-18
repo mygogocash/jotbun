@@ -71,7 +71,13 @@ export function dateTagFor(locale: string): DateTag {
 
 const utcMidnight = (date: string) => dayNumber(date) * DAY_MS;
 
-/** "Today", "Yesterday", else a short date such as "13 Oct 2026" (Thai: Buddhist-era year). */
+/**
+ * "Today", "Yesterday", else a short date such as "13 Oct 2026" (Thai:
+ * Buddhist-era year), through the device's Intl data; Vietnamese reads en-GB.
+ * It names `DayGroup.label` and its spoken summary. Screens draw day labels
+ * with `src/ui/dateStep.ts` instead (DayHeader, DateChip), which reads the
+ * same on every phone and has Vietnamese words.
+ */
 export function dayLabel(date: string, today: string, tc: Translate, tag: DateTag): string {
   const gap = daysBetween(date, today);
   if (gap === 0) return tc('Today');

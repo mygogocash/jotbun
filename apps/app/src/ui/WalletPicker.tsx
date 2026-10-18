@@ -7,11 +7,13 @@ import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { useCopy } from '@mobile/i18n/useCopy';
-import { formatMinor } from '@mobile/spend/v1/money';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 
+import { DECORATIVE } from './a11y';
+import { AmountText, useAmountWords } from './Amount';
 import { BunText } from './BunText';
-import { Decorative, Glyph, KitError, MoneyText, useMoneyLocale } from './entryKitPrivate';
+import { FieldError } from './FieldError';
+import { Glyph } from './Glyph';
 import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE, BUN_TOUCH } from './layout';
 
 export type WalletChoice = Pick<WalletDto, 'id' | 'name' | 'balance_minor' | 'archived'>;
@@ -44,12 +46,12 @@ type Side = 'from' | 'to';
 function WalletList({ label, wallets, selectedId, onSelect, disabled }: { label: string; wallets: readonly WalletChoice[]; selectedId: string | null; onSelect: (id: string) => void; disabled: boolean }) {
   const colors = useBunColors();
   const tc = useCopy();
-  const locale = useMoneyLocale();
+  const amountWords = useAmountWords();
   return (
     <View role="radiogroup" accessibilityLabel={label} style={{ gap: BUN_SPACE.xs }}>
       {wallets.map((wallet) => {
         const checked = wallet.id === selectedId;
-        const balance = formatMinor(wallet.balance_minor, locale);
+        const balance = amountWords(wallet.balance_minor).shown;
         return (
           <Pressable
             key={wallet.id}
@@ -73,11 +75,11 @@ function WalletList({ label, wallets, selectedId, onSelect, disabled }: { label:
             }}
           >
             {/* A radio mark, so the choice never rests on colour or outline weight alone. */}
-            <Decorative style={{ width: 20, height: 20, borderRadius: BUN_RADIUS.pill, borderWidth: BUN_OUTLINE.control, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' }}>
+            <View {...DECORATIVE} style={{ width: 20, height: 20, borderRadius: BUN_RADIUS.pill, borderWidth: BUN_OUTLINE.control, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' }}>
               {checked ? <View style={{ width: 10, height: 10, borderRadius: BUN_RADIUS.pill, backgroundColor: colors.ink }} /> : null}
-            </Decorative>
+            </View>
             <BunText variant="label" style={{ flex: 1 }}>{wallet.name}</BunText>
-            <MoneyText variant="label" tone="muted">{balance}</MoneyText>
+            <AmountText variant="label" tone="muted">{balance}</AmountText>
           </Pressable>
         );
       })}
@@ -97,7 +99,7 @@ export function WalletPicker(props: WalletPickerProps) {
 function MovePicker({ wallets, fromId, toId, onChangeFrom, onChangeTo, onSwap, onMoveAll, error, disabled = false }: Extract<WalletPickerProps, { mode: 'move' }>) {
   const colors = useBunColors();
   const tc = useCopy();
-  const locale = useMoneyLocale();
+  const amountWords = useAmountWords();
   const [open, setOpen] = useState<Side | null>(null);
   const from = wallets.find((wallet) => wallet.id === fromId) ?? null;
   const to = wallets.find((wallet) => wallet.id === toId) ?? null;
@@ -106,7 +108,7 @@ function MovePicker({ wallets, fromId, toId, onChangeFrom, onChangeTo, onSwap, o
 
   const card = (side: Side, wallet: WalletChoice | null) => {
     const word = side === 'from' ? tc('From') : tc('To');
-    const balance = wallet ? formatMinor(wallet.balance_minor, locale) : null;
+    const balance = wallet ? amountWords(wallet.balance_minor).shown : null;
     const label = wallet && balance
       ? side === 'from' ? tc('From {name}, balance {amount}', { name: wallet.name, amount: balance }) : tc('To {name}, balance {amount}', { name: wallet.name, amount: balance })
       : side === 'from' ? tc('From: choose a wallet') : tc('To: choose a wallet');
@@ -131,7 +133,7 @@ function MovePicker({ wallets, fromId, toId, onChangeFrom, onChangeTo, onSwap, o
       >
         <BunText variant="caption" tone="muted">{word}</BunText>
         <BunText variant="label">{wallet ? wallet.name : tc('Choose a wallet')}</BunText>
-        {balance ? <MoneyText variant="caption" tone="muted">{balance}</MoneyText> : null}
+        {balance ? <AmountText variant="caption" tone="muted">{balance}</AmountText> : null}
       </Pressable>
     );
   };
@@ -141,7 +143,7 @@ function MovePicker({ wallets, fromId, toId, onChangeFrom, onChangeTo, onSwap, o
     <View style={{ gap: BUN_SPACE.sm }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: BUN_SPACE.xs }}>
         {card('from', from)}
-        <Decorative><BunText variant="heading">→</BunText></Decorative>
+        <View {...DECORATIVE}><BunText variant="heading">→</BunText></View>
         {card('to', to)}
       </View>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: BUN_SPACE.xs }}>
@@ -152,18 +154,18 @@ function MovePicker({ wallets, fromId, toId, onChangeFrom, onChangeTo, onSwap, o
         {onMoveAll && from && fromBalance > 0n ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={tc('Move all {amount}', { amount: formatMinor(from.balance_minor, locale) })}
+            accessibilityLabel={tc('Move all {amount}', { amount: amountWords(from.balance_minor).shown })}
             disabled={disabled}
             onPress={() => onMoveAll(from.balance_minor)}
             style={pill}
           >
             <BunText variant="label">{tc('Move all')}</BunText>
-            <MoneyText variant="label">{formatMinor(from.balance_minor, locale)}</MoneyText>
+            <AmountText variant="label">{amountWords(from.balance_minor).shown}</AmountText>
           </Pressable>
         ) : null}
       </View>
-      {same ? <KitError message={tc('Choose two different wallets')} /> : null}
-      {error ? <KitError message={error} /> : null}
+      {same ? <FieldError message={tc('Choose two different wallets')} /> : null}
+      {error ? <FieldError message={error} /> : null}
       {open ? (
         <WalletList
           label={open === 'from' ? tc('From') : tc('To')}

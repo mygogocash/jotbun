@@ -11,7 +11,7 @@ import type { BunColors } from '@mobile/theme/bunPalette';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 
 import { BunText } from './BunText';
-import { Glyph } from './entryKitPrivate';
+import { Glyph } from './Glyph';
 import type { KeypadKey } from './keypadExpression';
 import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE } from './layout';
 

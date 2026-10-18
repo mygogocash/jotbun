@@ -12,7 +12,7 @@ import { bunText } from '@mobile/theme/bunType';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 
 import { BunText, useBunScript } from './BunText';
-import { KitError } from './entryKitPrivate';
+import { FieldError } from './FieldError';
 import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE, BUN_TOUCH } from './layout';
 
 export type NoteFieldProps = {
@@ -80,7 +80,7 @@ export function NoteField({ kind, value, onChangeText, error, editable = true, l
           backgroundColor: editable ? colors.card : colors.background,
         }}
       />
-      {problems.map((problem) => <KitError key={problem} message={problem} />)}
+      {problems.map((problem) => <FieldError key={problem} message={problem} />)}
     </View>
   );
 }

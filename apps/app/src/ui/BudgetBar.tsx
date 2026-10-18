@@ -8,10 +8,10 @@ import { View } from 'react-native';
 import { useCopy } from '@mobile/i18n/useCopy';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 
+import { useMoneyLocale } from './Amount';
 import { BunText } from './BunText';
 import { budgetWords } from './budgetWords';
 import type { BudgetPace } from './budgetWords';
-import { useMoneyLocale } from './entryKitPrivate';
 import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE } from './layout';
 
 export type BudgetBarProps = BudgetPace;

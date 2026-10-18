@@ -24,6 +24,7 @@ import { DECORATIVE, moveAccessibilityFocus } from './a11y';
 import { BunText } from './BunText';
 import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE, BUN_TOUCH } from './layout';
 import { PillButton } from './PillButton';
+import { sheetBackdrop } from './sheetBackdrop';
 
 export type SheetProps = {
   visible: boolean;
@@ -57,8 +58,6 @@ export type ConfirmSheetProps = {
 
 /** How far below its resting place the sheet starts its slide. */
 export const SHEET_SLIDE_FROM = 48;
-/** How much the backdrop dims the screen behind the sheet. */
-const BACKDROP_OPACITY = 0.55;
 
 export function Sheet({ visible, onClose, title, children, closeLabel }: SheetProps) {
   const tc = useCopy();
@@ -94,7 +93,7 @@ export function Sheet({ visible, onClose, title, children, closeLabel }: SheetPr
           testID="sheet-backdrop"
           focusable={false}
           onPress={onClose}
-          style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: colors.isDark ? colors.background : colors.ink, opacity: BACKDROP_OPACITY }}
+          style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, ...sheetBackdrop(colors) }}
         />
         <Animated.View
           ref={sheetRef}

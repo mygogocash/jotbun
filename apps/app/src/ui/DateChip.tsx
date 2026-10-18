@@ -10,17 +10,21 @@
 // Buddhist-era years.
 import { TRACKING_START_MIN } from '@gogospend/contracts';
 import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import type { ReactNode } from 'react';
+import { Modal, Pressable, View } from 'react-native';
 
-import { useCopy } from '@mobile/i18n/useCopy';
+import { useReducedMotion } from '@mobile/hooks/useReducedMotion';
+import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
 import { spendCalendarWeeks } from '@mobile/spend/spendCalendar';
 import { shiftMonth } from '@mobile/spend/v1/viewModels';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 
+import { DECORATIVE } from './a11y';
 import { BunText } from './BunText';
 import { canStepBack, canStepForward, dayLabel, fullDateLabel, monthLabel, stepDay, weekdayInitials } from './dateStep';
-import { Glyph, KitSheet, useDateLocale } from './entryKitPrivate';
+import { Glyph } from './Glyph';
 import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE, BUN_TOUCH } from './layout';
+import { sheetBackdrop } from './sheetBackdrop';
 
 export type DateChipProps = {
   /** The chosen Bangkok date, `YYYY-MM-DD`. */
@@ -36,7 +40,7 @@ export type DateChipProps = {
 export function DateChip({ value, today, earliest, onChange, disabled = false }: DateChipProps) {
   const colors = useBunColors();
   const tc = useCopy();
-  const locale = useDateLocale();
+  const locale = useActiveLocale();
   const [open, setOpen] = useState(false);
   const [month, setMonth] = useState(value.slice(0, 7));
   const label = dayLabel(value, today, locale);
@@ -81,7 +85,7 @@ export function DateChip({ value, today, earliest, onChange, disabled = false }:
       <Pressable accessibilityRole="button" accessibilityLabel={tc('Next day')} disabled={!forward} onPress={() => step(1)} style={{ ...arrow, opacity: forward ? 1 : 0.35 }}>
         <Glyph name="chevron-right" color={colors.ink} />
       </Pressable>
-      <KitSheet visible={open} onClose={() => setOpen(false)} label={tc('Pick another date')}>
+      <CalendarSheet visible={open} onClose={() => setOpen(false)} label={tc('Pick another date')}>
         <CalendarMonth
           month={month}
           value={value}
@@ -93,7 +97,7 @@ export function DateChip({ value, today, earliest, onChange, disabled = false }:
             onChange(date);
           }}
         />
-      </KitSheet>
+      </CalendarSheet>
     </View>
   );
 }
@@ -101,7 +105,7 @@ export function DateChip({ value, today, earliest, onChange, disabled = false }:
 function CalendarMonth({ month, value, today, floor, onMonth, onPick }: { month: string; value: string; today: string; floor: string; onMonth: (next: string) => void; onPick: (date: string) => void }) {
   const colors = useBunColors();
   const tc = useCopy();
-  const locale = useDateLocale();
+  const locale = useActiveLocale();
   const weeks = spendCalendarWeeks(month, today);
   const earlier = month > floor.slice(0, 7);
   const later = month < today.slice(0, 7);
@@ -117,7 +121,8 @@ function CalendarMonth({ month, value, today, floor, onMonth, onPick }: { month:
           <Glyph name="chevron-right" color={colors.ink} />
         </Pressable>
       </View>
-      <View aria-hidden style={{ flexDirection: 'row' }}>
+      {/* Each day button says its full date, so the initials are decoration. */}
+      <View {...DECORATIVE} style={{ flexDirection: 'row' }}>
         {weekdayInitials(locale).map((initial, index) => (
           <BunText key={index} variant="micro" tone="muted" style={{ flex: 1, textAlign: 'center' }}>{initial}</BunText>
         ))}
@@ -139,12 +144,69 @@ function CalendarMonth({ month, value, today, floor, onMonth, onPick }: { month:
                 // the cells touch, so there is no dead space between targets.
                 style={{ flex: 1, minHeight: BUN_TOUCH, alignItems: 'center', justifyContent: 'center', borderRadius: BUN_RADIUS.pill, backgroundColor: chosen ? colors.ink : 'transparent', opacity: shut ? 0.35 : 1 }}
               >
-                <BunText variant="label" tone={chosen ? 'onInk' : day.inMonth ? 'ink' : 'muted'}>{String(Number(day.date.slice(8, 10)))}</BunText>
+                {/* The chosen day is bold as well as filled, so the choice never rests on the fill alone. */}
+                <BunText variant="label" tone={chosen ? 'onInk' : day.inMonth ? 'ink' : 'muted'} style={chosen ? { fontWeight: '700' } : undefined}>{String(Number(day.date.slice(8, 10)))}</BunText>
               </Pressable>
             );
           })}
         </View>
       ))}
     </View>
+  );
+}
+
+/**
+ * The calendar's bottom sheet: a cream card with an ink outline, a Close
+ * button, and the dimmed page (`sheetBackdrop`, as `Sheet` draws it), which
+ * also closes it. It slides up, and simply appears under reduced motion.
+ *
+ * It is not the kit's `Sheet` yet, only because of DateChip's render tests.
+ * On the web, react-native-web's `Modal` marks its full-screen layer as a
+ * dialog once it has shown, so `Sheet` reads as an unnamed dialog around its
+ * own named one. This sheet nests the same way in a browser once its slide
+ * ends, but happy-dom never ends a CSS animation, and DateChip's tests ask
+ * for exactly one dialog. Fixing `Sheet`'s web dialog and then switching is
+ * recorded under "R2 unification" in docs/implementation/redesign-progress.md.
+ */
+function CalendarSheet({ visible, onClose, label, children }: { visible: boolean; onClose: () => void; label: string; children: ReactNode }) {
+  const colors = useBunColors();
+  const tc = useCopy();
+  const reducedMotion = useReducedMotion();
+  if (!visible) return null;
+  return (
+    <Modal transparent visible animationType={reducedMotion ? 'none' : 'slide'} onRequestClose={onClose} statusBarTranslucent>
+      <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+        {/* The dimmed page closes the sheet on a tap; screen readers use the Close button instead. */}
+        <Pressable {...DECORATIVE} testID="sheet-backdrop" focusable={false} onPress={onClose} style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, ...sheetBackdrop(colors) }} />
+        <View
+          role="dialog"
+          aria-modal
+          accessibilityLabel={label}
+          accessibilityViewIsModal
+          onAccessibilityEscape={onClose}
+          style={{
+            backgroundColor: colors.card,
+            borderColor: colors.ink,
+            borderWidth: BUN_OUTLINE.card,
+            borderTopLeftRadius: BUN_RADIUS.sheet,
+            borderTopRightRadius: BUN_RADIUS.sheet,
+            padding: BUN_SPACE.md,
+            gap: BUN_SPACE.sm,
+          }}
+        >
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={tc('Close')}
+              onPress={onClose}
+              style={{ minHeight: BUN_TOUCH, minWidth: BUN_TOUCH, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Glyph name="close" color={colors.ink} />
+            </Pressable>
+          </View>
+          {children}
+        </View>
+      </View>
+    </Modal>
   );
 }
