@@ -341,3 +341,122 @@ Built on `2e6bf6e`, in `src/ui/`. Nothing is routed and no existing screen chang
   - test:render PASS (126, 20 files);
   - export:web PASS;
   - `git diff --check` clean.
+
+## R3: Home and navigation shell
+
+Built on `d86001c`. Behind `isRedesignEnabled('core')`: with the flag off, the routes, the layout and the current screens are exactly as before, and their tests are untouched. No package or lockfile change, the locale catalogs are untouched, and no text pair was added.
+
+- **Files:**
+  - `src/screens/redesign/HomeScreen.tsx`: the redesigned Home, on `homeModel()`.
+  - `src/screens/redesign/SpendTabShell.tsx`: the tab shell and `spendTab(pathname)`.
+  - `app/spend/_layout.tsx`: wraps the screens in the shell only under the flag. The auth redirect and the legacy branch are unchanged.
+  - `app/spend/index.tsx`: legacy flag first, then the new Home under the flag (inside the same `SpendV1Provider`), else the v1 Home.
+  - Tests: `src/screens/redesign/HomeScreen.render.test.tsx` (34) and `SpendLayout.render.test.tsx` (14).
+- **Home, ready:**
+  - **Stage:** the month as the title ("September 2026", "กันยายน 2569", "Tháng 9 năm 2026"), then the month's **confirmed** spending, against the budget when there is one ("฿12,450.00 of ฿18,000.00"). Under it come the month's "Waiting to sync: …" and "Checking with Jotbun: …" lines, in ink, the only tone allowed on the stage.
+  - **Pace:** a `PaceRing` card, "This month". The ring shows the logic's estimate (confirmed plus waiting) and says so ("Includes ฿70.00 saving on this device", "฿9.00 more is being checked with Jotbun").
+  - **No budget:** the ring is left out, with one quiet line ("Set a monthly budget to see what's left each day") and no action, which comes in R4.
+  - **Today's receipt:** a `ReceiptSlip` with a `RecordRow` per record or draft, then `ReceiptTotal`s for the day's confirmed money out (and money in, when any), then the day's draft money on its own lines. An empty today says "Nothing logged today yet" with a secondary Add an entry.
+  - **Earlier days:** up to 5, each a `DayHeader` with confirmed totals, its draft lines and its rows.
+  - **Wallets:** the total and each balance. An archived wallet says "Archived" in words, not only in a muted colour.
+  - **See all entries:** a secondary pill.
+  - **Rows:** a record opens `/spend/record/<id>`. A draft is not a record yet, so it does not.
+- **Loading:**
+  - Today's records are read across every page (up to 20 × 200), so the receipt's total is never a partial sum.
+  - Earlier days come from one 50-record page cut back to whole days: when more pages follow, the oldest day on the page is left out rather than shown with a partial total.
+  - Confirmed money reloads in place when a draft resolves, as on the current Home.
+- **Drafts:** inline with their state ("saving…", "checking…", "needs a look"). Remove appears only for a draft never sent, Discard only for one that needs review, with the same labels as today ("Remove Food ฿65.00").
+- **Sync:** one `SyncBanner` per state:
+  - **offline:** a network load failure with an open diary, or sync backing off with entries waiting. Retry is a secondary pill beside it, because the banner's offline state takes no action.
+  - **saving:** unsent and sending drafts.
+  - **checking:** uncertain drafts.
+  - **needs_review:** its action, Review, opens a `Sheet` listing those drafts with Discard.
+  - **paused_upgrade.**
+  - **locked:** its reason follows in `SyncStatus`'s words.
+
+  The `SyncStatus` news the kit has no state for is said in its existing words as a polite live region: sync paused, terms needed to send, sign in again to send, getting the full diary, "Syncing 1 of 3". Without a diary (the web) nothing claims to be offline.
+- **Load problems:** each kind has its own card and heading: "Update Jotbun", "Updated terms", "Signed out", "Use the Jotbun app" and "Diary not loaded". The messages and the retry rule are `classifyLoadProblem`'s, and only a plain failure has Try again. With an open diary, the device's drafts by day, the waiting money and Add (when the device has wallets) still show; the offline receipt's footer reads "Saved on this device".
+- **Locked diary:** the banner and the reason. Its drafts are hidden. Start over appears only for `key_missing`, `key_rejected` and `wrong_account`, and only after a destructive `ConfirmSheet` (the existing copy; Keep it keeps the ink fill).
+- **First run:**
+  - An `EmptyState` with the `hello` bun and the action "Add a wallet". The action opens the form, so each view has one primary.
+  - **Form fields:**
+    - a NoteField-style name field;
+    - an opening balance (zero by default and allowed, parsed by `parseAmountInput` so Thai digits work, with the exact amount previewed under it);
+    - a `DateChip` tracking start, which cannot pass today.
+  - **Rules kept from `FirstWallet`:** the same errors, `validateTrackingStart`, the server field mapping (`name`, `tracking_start`) and one command key per payload. A definite refusal settles the key. An unconfirmed save freezes the form and resends the same command. `isOwnCreate` counts as created, and the device diary is asked to sync.
+- **The bun:**
+  - At Full, the stage peek (`peek`, turning `oops-kind` when over budget) and the first-run `hello`.
+  - At Quiet, the first-run `hello` only, which is an empty state.
+  - At Off, none.
+  - Every bun is decorative; the facts are in words.
+  - The peek sits in `StageHeader`'s bun slot on a zero-height anchor, so it slides up from the slot's lower edge and keeps its own box.
+- **Shell:**
+  - **Bar:** the kit `TabBar` sits as a row under the screen: Home (`/spend`), the centre add (`/spend/add`), then History (`/spend/all`). Insights joins in R5 (D7).
+  - **Navigation:** tabs use `router.navigate`, and re-selecting the active tab does nothing. Add uses `router.push`.
+  - **Where it shows:** hidden on `/spend/add…` and `/spend/record…`; shown with no tab selected elsewhere, for example `/spend/import`.
+  - **Icons:** small line drawings in the tab's own colour.
+- **Accessibility:**
+  - Headings for the stage, sections, days and problems.
+  - Rows speak their state ("Food, Expense ฿65.00, saving, Cash").
+  - Totals speak their type ("Money out, Expense ฿120.00").
+  - Polite live regions for sync, and alerts for problems.
+  - Every control is at least 44 pt.
+  - Errors are ink with a mark, never red.
+- **Text pairs:** none new. A render check walks every visible text node on the Home and on its open sheets. It asserts that the colour and its nearest ground are a `BUN_TEXT_PAIRS` pair with at least 4.5:1, in light and dark: ready in en/th/vi, first run with errors, offline, a problem with a locked diary and its confirm sheet, and over budget with the review sheet.
+- **RED → GREEN:**
+  - **RED:** `vitest run --config vitest.render.config.ts src/screens/redesign`, against typed seams (a `HomeScreen` that renders nothing, a shell that draws no bar and a `spendTab` that says hidden) with the route and layout unwired. 39 of 46 failed: 38 because an element was not found, and 1 `AssertionError` (`spendTab`). There were no module or type errors. The 7 that held are the flag-off, hidden-route, legacy-first and auth-redirect guards, which the unchanged layout already satisfies.
+  - **GREEN:** 46 of 46.
+  - **One test corrected:** its expected total balance had ignored today's ฿120.00 lunch from Cash, so ฿21,050.00 became ฿20,930.00.
+  - **Two tests added while green:** today's total across two pages (201 records, ฿203.01), and the page-split earlier day being left out. That makes 48.
+- **Mutation check:** 18 guards were mutated one at a time with `r3h-mutate.py` (in the scratchpad). All 18 were caught, and every file was restored.
+
+  | Mutation | Failing tests |
+  | --- | --- |
+  | Stage total includes waiting drafts | 7 |
+  | A draft opens the record screen | 1 |
+  | Remove offered for any draft | 1 |
+  | Offline claimed without a diary | 1 |
+  | Quiet keeps the stage bun | 1 |
+  | Over budget keeps the plain peek | 2 |
+  | A page-split earlier day kept | 1 |
+  | Today's records read from one page only | 1 |
+  | Start over without confirming | 3 |
+  | An unconfirmed wallet not frozen | 1 |
+  | `isOwnCreate` treated as a failure | 1 |
+  | Muted text on the stage | 8 |
+  | "Update to send" row looks confirmed | 1 |
+  | Needs review counted as checking | 1 |
+  | Tab bar shown on Add | 2 |
+  | Re-selecting the active tab navigates | 1 |
+  | Flag-off layout gets the shell | 1 |
+  | Redesign checked before legacy | 1 |
+
+- **Deviations:**
+  - **The stage shows confirmed spending, not `paceCopy().total`.** The logic's total is the estimate including waiting drafts. The current Home never mixes waiting money into confirmed money, so the stage keeps them apart, and only the ring (which says so) uses the estimate. The same `{spent} of {limit}` and `{spent} spent this month` copy is used.
+  - **First run is two steps.** `EmptyState` always draws its action as the view's primary.
+  - **The name field is local, in NoteField's style.** `NoteField` applies note and merchant limits and a counter. Errors use a local ink mark, because `KitError` is private to the kit.
+  - **The opening balance is a text field with an exact preview,** not the `Keypad`.
+  - **The stage peek is anchored in the bun slot.** `StageHeader` has no peek slot of its own.
+- **Kit gaps, reported and not changed:**
+  - `RecordRow` has no "update to send" state. Those rows show "saving…" (they are waiting on the device), with "Update Jotbun to send" under them.
+  - `SyncBanner`'s `offline` takes no action, and it has no state for terms, resync or progress.
+  - `EmptyState` cannot leave out its action, or make it anything but primary unless asked.
+  - Screens have no public field error (`KitError` is private).
+- **For the integrator:**
+  - `kitPace()` in `HomeScreen.tsx` maps the logic's pace to the kit's. Switch it to the shared adapter in `src/ui/budgetWords.ts`.
+  - Both test files carry the react-native-svg `resolveAssetUri.web.js` stub. Drop it once the shared vitest config has it.
+  - **Routes:** `/spend/record/<id>` comes from the History and Record work. The push is cast to `Href` until that route exists, because typed routes are on. Drafts do not navigate. History (`/spend/all`) and Add (`/spend/add`) are the other agents' screens: the bar shows on History and hides on Add.
+  - **New English strings** (they show in English in th and vi until E2): `Today's receipt`, `Earlier days`, `Add a wallet`, `Archived`, `Review`, `Start over?`, `History`, `Update Jotbun`, `Updated terms`, `Signed out`, `Use the Jotbun app` and `Diary not loaded`. The R3 logic's strings are used as they are: `{spent} of {limit}`, `{spent} spent this month`, `Needs a look`, `Nothing logged today yet`, the pace notes and the set-budget line.
+- **App gate:**
+  - typecheck:app PASS;
+  - test:unit PASS (397);
+  - test:render PASS (267 in 38 files: 219 + 48 new);
+  - export:web PASS (`--max-workers 2`);
+  - `git diff --check` clean.
+- **SKIPPED (E2):**
+  - simulator screenshots of every state in light and dark, in TH, EN and VI, at 320 pt;
+  - VoiceOver and TalkBack on the Home and the tab bar;
+  - the stage peek's geometry and spring on iOS and Android;
+  - Dynamic Type at the largest size.
+
+  The flag stays off until the screenshots are approved.
