@@ -27,6 +27,48 @@ type HeadRow = {
 type CandidateRow = Omit<ImportCandidate, 'ordinal'> & { ordinal: number; issues: { field: ImportField | null; code: string }[] };
 type AdviceRow = { source_row_id: string; kind: ImportDuplicateAdvice['kind']; matches: string[] };
 
+/**
+ * Duplicate advice for one import ($1: its job id), at most 5 matches per row
+ * and kind. Same-file matches use a window over the duplicate key (linear in
+ * the file); existing-record matches use a LATERAL lookup through
+ * transactions_duplicate_advice_idx (at most 5 ids per candidate). Rows with
+ * a null date, type or amount are excluded — they cannot be duplicates.
+ */
+export const DUPLICATE_ADVICE_SQL = `SELECT source_row_id, kind, matches FROM (
+         SELECT c.source_row_id, c.ordinal, 'existing_transaction' AS kind, x.matches
+           FROM import_candidates c
+           CROSS JOIN LATERAL (
+             SELECT array_agg(t.id::text ORDER BY t.id) AS matches
+               FROM (
+                 SELECT t.id FROM transactions t
+                  WHERE t.account_id = c.account_id AND t.occurred_on = c.occurred_on AND t.type = c.type
+                    AND t.amount_minor = c.amount_minor AND t.deleted_at IS NULL
+                  ORDER BY t.id
+                  LIMIT 5
+               ) t
+           ) x
+          WHERE c.job_id = $1
+            AND c.occurred_on IS NOT NULL AND c.type IS NOT NULL AND c.amount_minor IS NOT NULL
+            AND x.matches IS NOT NULL
+         UNION ALL
+         SELECT source_row_id, ordinal, 'same_file', matches
+           FROM (
+             SELECT c.source_row_id, c.ordinal,
+                    (array_remove(
+                       array_agg(c.source_row_id) OVER (
+                         PARTITION BY c.occurred_on, c.type, c.amount_minor, c.wallet_label, c.merchant, c.note
+                         ORDER BY c.ordinal
+                         ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+                       ),
+                       c.source_row_id
+                     ))[1:5] AS matches
+               FROM import_candidates c
+              WHERE c.job_id = $1
+                AND c.occurred_on IS NOT NULL AND c.type IS NOT NULL AND c.amount_minor IS NOT NULL
+           ) same
+          WHERE cardinality(matches) > 0
+       ) advice ORDER BY ordinal, kind`;
+
 // Job error codes that mean the quarantined file could not be read.
 const UNAVAILABLE = new Set(['quarantine_corrupt', 'quarantine_missing', 'storage_unavailable', 'import_unavailable']);
 
@@ -80,6 +122,34 @@ export class PreviewQuery {
       return { job_id: head.job_id, status, candidates: [], issues, duplicate_advice: [], review_revision: null, expires_at: null, summary: null };
     }
 
+    // M4: past expires_at the route never serves ready rows, even if the
+    // single expiry job was superseded or failed and retention has not run yet.
+    const pastExpiry = head.expires_at !== null && head.expires_at.getTime() <= Date.now();
+    const expired = head.status === 'expired' || pastExpiry;
+    const summary: ImportPreview['summary'] = {
+      layout: head.layout,
+      candidate_count: head.candidate_count ?? 0,
+      review_required_count: head.review_required_count ?? 0,
+      totals: { expense_minor: head.expense ?? '0', income_minor: head.income ?? '0', transfer_minor: head.transfer ?? '0' },
+      // P2c: the image's opaque attachment id (never its object key) and until when it can be retained.
+      image:
+        head.image_width !== null && head.image_height !== null && head.image_attachment_id !== null
+          ? { width: head.image_width, height: head.image_height, attachment_id: head.image_attachment_id, attachable_until: head.attachable_until ? head.attachable_until.toISOString() : null }
+          : null,
+    };
+    if (expired) {
+      return {
+        job_id: head.job_id,
+        status: 'expired',
+        candidates: [],
+        issues: [],
+        duplicate_advice: [],
+        review_revision: head.review_revision,
+        expires_at: head.expires_at ? head.expires_at.toISOString() : null,
+        summary,
+      };
+    }
+
     const rows = await tx.query<CandidateRow>(
       `SELECT source_row_id, ordinal, to_char(occurred_on, 'YYYY-MM-DD') AS occurred_on, type, amount_minor::text AS amount_minor,
               wallet_label, category_label, merchant, note, review_required, issues
@@ -88,32 +158,11 @@ export class PreviewQuery {
     );
     const candidates: ImportCandidate[] = rows.map(({ issues: _issues, ...candidate }) => candidate);
     const issues: ImportIssue[] = [];
-    if (head.status !== 'expired') {
-      for (const code of head.issues as string[]) issues.push({ code, source_row_id: null, field: null });
-    }
+    for (const code of head.issues as string[]) issues.push({ code, source_row_id: null, field: null });
     for (const row of rows) for (const issue of row.issues) issues.push({ code: issue.code, source_row_id: row.source_row_id, field: issue.field });
 
     // At most 5 matches are named per row.
-    const advice = await tx.query<AdviceRow>(
-      `SELECT source_row_id, kind, matches FROM (
-         SELECT c.source_row_id, c.ordinal, 'existing_transaction' AS kind, (array_agg(t.id::text ORDER BY t.id))[1:5] AS matches
-           FROM import_candidates c
-           JOIN transactions t ON t.account_id = c.account_id AND t.occurred_on = c.occurred_on AND t.type = c.type
-                              AND t.amount_minor = c.amount_minor AND t.deleted_at IS NULL
-          WHERE c.job_id = $1
-          GROUP BY c.source_row_id, c.ordinal
-         UNION ALL
-         SELECT c.source_row_id, c.ordinal, 'same_file', (array_agg(d.source_row_id ORDER BY d.ordinal))[1:5]
-           FROM import_candidates c
-           JOIN import_candidates d ON d.job_id = c.job_id AND d.source_row_id <> c.source_row_id
-                                   AND d.occurred_on = c.occurred_on AND d.type = c.type AND d.amount_minor = c.amount_minor
-                                   AND d.wallet_label IS NOT DISTINCT FROM c.wallet_label AND d.merchant IS NOT DISTINCT FROM c.merchant
-                                   AND d.note IS NOT DISTINCT FROM c.note
-          WHERE c.job_id = $1
-          GROUP BY c.source_row_id, c.ordinal
-       ) advice ORDER BY ordinal, kind`,
-      [jobId],
-    );
+    const advice = await tx.query<AdviceRow>(DUPLICATE_ADVICE_SQL, [jobId]);
 
     return {
       job_id: head.job_id,
@@ -123,17 +172,7 @@ export class PreviewQuery {
       duplicate_advice: advice.map((row) => ({ source_row_id: row.source_row_id, kind: row.kind, matches: row.matches })),
       review_revision: head.review_revision,
       expires_at: head.expires_at ? head.expires_at.toISOString() : null,
-      summary: {
-        layout: head.layout,
-        candidate_count: head.candidate_count ?? 0,
-        review_required_count: head.review_required_count ?? 0,
-        totals: { expense_minor: head.expense ?? '0', income_minor: head.income ?? '0', transfer_minor: head.transfer ?? '0' },
-        // P2c: the image's opaque attachment id (never its object key) and until when it can be retained.
-        image:
-          head.image_width !== null && head.image_height !== null && head.image_attachment_id !== null
-            ? { width: head.image_width, height: head.image_height, attachment_id: head.image_attachment_id, attachable_until: head.attachable_until ? head.attachable_until.toISOString() : null }
-            : null,
-      },
+      summary,
     };
   }
 }

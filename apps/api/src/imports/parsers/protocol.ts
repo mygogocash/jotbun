@@ -22,6 +22,8 @@ export const LIMITS = {
   columns: 100,
   cellChars: 10_000,
   imagePixels: 20_000_000,
+  /** Width × height × channels × bytes per sample, as decoded. */
+  imageDecodedBytes: 120_000_000,
   /** Wallet and category labels, merchant and note, in code points (M2/M3 limits). */
   labelChars: 80,
   merchantChars: 120,
@@ -62,6 +64,9 @@ export type ParseResult = ParseSuccess | ParseFailure;
 
 /** The body of a successful parse, before the child adds its usage. */
 export type ParseBody = Omit<ParseSuccess, 'ok' | 'usage'>;
+/** Inside the child an image stays bytes; child-io writes it out as base64 slices. */
+export type ChildImage = { format: ImageFormat; width: number; height: number; bytes: Uint8Array };
+export type ChildBody = Omit<ParseBody, 'image'> & { image: ChildImage | null };
 
 /** A whole-file refusal with a file issue code (contracts' IMPORT_FILE_ISSUE_CODES). */
 export class ParseRejection extends Error {

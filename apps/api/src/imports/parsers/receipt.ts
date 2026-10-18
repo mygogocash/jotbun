@@ -4,10 +4,10 @@
 // downloaded at runtime) - so every field stays unknown and needs review, and
 // the file says why (receipt_fields_unread). The legacy slip reader filled in
 // today's date and an "expense"; that guessing is deliberately not ported.
-import type { ImageFormat, ParseBody } from './protocol.ts';
+import type { ChildBody, ImageFormat } from './protocol.ts';
 import type { SanitizedImage } from './image.ts';
 
-export function receiptBody(image: SanitizedImage, format: ImageFormat): ParseBody {
+export function receiptBody(image: SanitizedImage, format: ImageFormat): ChildBody {
   return {
     layout: 'receipt',
     rows: [
@@ -29,6 +29,6 @@ export function receiptBody(image: SanitizedImage, format: ImageFormat): ParseBo
       },
     ],
     file_issues: ['receipt_fields_unread'],
-    image: { format, width: image.width, height: image.height, base64: image.bytes.toString('base64') },
+    image: { format, width: image.width, height: image.height, bytes: image.bytes },
   };
 }
