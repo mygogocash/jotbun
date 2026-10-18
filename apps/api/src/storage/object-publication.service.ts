@@ -154,7 +154,8 @@ export class ObjectPublicationService {
    *      (tests and operators) - marked `deleting` (SKIP LOCKED) and then
    *      deleted from storage;
    *   3. stored objects under the account's prefixes (every account's when
-   *      null) with no live registry row (unregistered, or already deleted);
+   *      null; receipts only of accounts with a reservation in the last week)
+   *      with no live registry row (unregistered, or already deleted);
    * and purges `deleted` rows after 30 days. A row becomes `deleted` only once
    * its object is gone. Returns the keys deleted from storage.
    */
@@ -185,17 +186,19 @@ export class ObjectPublicationService {
       await remove(rows.map((row) => row.key));
       if (rows.length < SWEEP_BATCH) break;
     }
-    for (const purpose of PUBLICATION_PURPOSES) {
-      const stored = await this.store.list(accountId ? `${purpose}/${accountId}/` : `${purpose}/`);
-      for (let start = 0; start < stored.length; start += SWEEP_BATCH) {
-        const batch = stored.slice(start, start + SWEEP_BATCH).map((object) => object.key);
-        // Rows still `deleting` are left to the next sweep's retry.
-        const live = await this.pool.query<{ key: string }>(
-          `SELECT key FROM object_publications WHERE key = ANY($1) AND status IN ('reserved', 'published', 'deleting')`,
-          [batch],
-        );
-        const keep = new Set(live.rows.map((row) => row.key));
-        for (const key of batch) if (!keep.has(key) && !deleted.has(key) && (await this.tryDelete(key))) deleted.add(key);
+    for (const prefix of await this.orphanPrefixes(accountId)) {
+      // A page at a time: the listing is never held whole.
+      for await (const stored of this.store.listPages(prefix)) {
+        for (let start = 0; start < stored.length; start += SWEEP_BATCH) {
+          const batch = stored.slice(start, start + SWEEP_BATCH).map((object) => object.key);
+          // Rows still `deleting` are left to the next sweep's retry.
+          const live = await this.pool.query<{ key: string }>(
+            `SELECT key FROM object_publications WHERE key = ANY($1) AND status IN ('reserved', 'published', 'deleting')`,
+            [batch],
+          );
+          const keep = new Set(live.rows.map((row) => row.key));
+          for (const key of batch) if (!keep.has(key) && !deleted.has(key) && (await this.tryDelete(key))) deleted.add(key);
+        }
       }
     }
     await this.pool.query(
@@ -203,6 +206,24 @@ export class ObjectPublicationService {
       [accountId],
     );
     return [...deleted];
+  }
+
+  /**
+   * Where to look for unregistered objects. One account's sweep lists every
+   * purpose under that account. The global sweep lists every purpose except
+   * receipts under the whole purpose, and receipts only under accounts that
+   * reserved a receipt copy in the last week: a receipt is registered before
+   * its copy exists, so an unregistered one can only follow a recent
+   * reservation, and the listing's cost then grows with recent activity
+   * rather than with every receipt ever kept.
+   */
+  private async orphanPrefixes(accountId: string | null): Promise<string[]> {
+    if (accountId) return PUBLICATION_PURPOSES.map((purpose) => `${purpose}/${accountId}/`);
+    const prefixes: string[] = PUBLICATION_PURPOSES.filter((purpose) => purpose !== 'receipt').map((purpose) => `${purpose}/`);
+    const { rows } = await this.pool.query<{ account_id: string }>(
+      `SELECT DISTINCT account_id FROM object_publications WHERE purpose = 'receipt' AND created_at > now() - interval '7 days' ORDER BY account_id`,
+    );
+    return [...prefixes, ...rows.map((row) => `receipt/${row.account_id}/`)];
   }
 
   private async tryDelete(key: string): Promise<boolean> {

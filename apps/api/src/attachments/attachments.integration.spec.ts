@@ -1,5 +1,7 @@
-import { createHash, randomUUID } from 'node:crypto';
-import type { Server } from 'node:http';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { get as httpGet } from 'node:http';
+import type { IncomingHttpHeaders, Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
 
 import { ATTACHMENT_DOWNLOAD_PATH, ATTACHMENT_GRANT_MINUTES, RECEIPT_RETENTION_CONSENT, isAttachmentGrant, isImportPreview, isSyncChangesPage, isTransactionSnapshot } from '@gogospend/contracts';
 import type { AttachmentGrant, CommandAck, ImportJobDto, ImportPreview, SyncChangesPage, TransactionDto } from '@gogospend/contracts';
@@ -19,6 +21,7 @@ import { ParseHandler } from '../imports/parse-handler';
 import type { ParserRunOutcome } from '../imports/parser-runner';
 import { defaultPrivacySteps, purgeExpiredRecords } from '../privacy/privacy-steps';
 import { API_PUBLISHED_PURPOSES, ObjectPublicationService } from '../storage/object-publication.service';
+import { ObjectStoreError } from '../storage/object-store';
 import type { MemoryObjectStore } from '../storage/object-store';
 import { OBJECT_STORE } from '../storage/storage.module';
 import { authFixtures } from '../testing/auth-fixtures';
@@ -31,7 +34,10 @@ import { createTestDatabase } from '../testing/postgres-harness';
 import type { TestDatabase } from '../testing/postgres-harness';
 import { deletionWorker, scriptedGateway } from '../testing/privacy-fixtures';
 import { v1Client } from '../testing/v1-client';
+import { ATTACHMENT_LIMITS } from './attachment-limits';
+import type { AttachmentLimits } from './attachment-limits';
 import { AttachmentService } from './attachments.service';
+import { receiptCleanupOverdue } from './receipt-cleanup';
 
 const HOUR_MS = 3_600_000;
 const CONSENT = { consent: RECEIPT_RETENTION_CONSENT };
@@ -182,6 +188,99 @@ async function retained(user: SignedUp, recordId: string, image: Attachable, ifM
   return res.body as CommandAck;
 }
 
+const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+type StoreMethods = Pick<MemoryObjectStore, 'getStream' | 'putStream' | 'copy' | 'head' | 'list' | 'listPages'>;
+type StorePatches = { [K in keyof StoreMethods]?: (original: StoreMethods[K]) => StoreMethods[K] };
+/** Wraps some of the app's store methods; returns the undo. */
+function patchStore(patches: StorePatches): () => void {
+  const target = store as unknown as Record<string, unknown>;
+  const names = Object.keys(patches) as (keyof StoreMethods)[];
+  const saved = names.map((name) => [name, Object.prototype.hasOwnProperty.call(target, name), target[name]] as const);
+  for (const name of names) {
+    const original = (store[name] as (...args: unknown[]) => unknown).bind(store);
+    target[name] = (patches[name] as (original: unknown) => unknown)(original);
+  }
+  return () => {
+    for (const [name, own, value] of saved) {
+      if (own) target[name] = value;
+      else delete target[name];
+    }
+  };
+}
+
+/** Counts every write of receipt bytes, whether streamed through the API or copied inside the store. */
+function countReceiptWrites(): { count: () => number; restore: () => void } {
+  let writes = 0;
+  const restore = patchStore({
+    putStream: (original) => (key, body, options) => {
+      if (key.startsWith('receipt/')) writes += 1;
+      return original(key, body, options);
+    },
+    copy: (original) => (source, destination, options) => {
+      if (destination.startsWith('receipt/')) writes += 1;
+      return original(source, destination, options);
+    },
+  });
+  return { count: () => writes, restore };
+}
+
+const limits = () => v1.app.get<AttachmentLimits>(ATTACHMENT_LIMITS);
+/** Runs `fn` with some limits changed, then puts them back. */
+async function withLimits<T>(changes: Partial<AttachmentLimits>, fn: () => Promise<T>): Promise<T> {
+  const current = limits();
+  const saved = { ...current };
+  Object.assign(current, changes);
+  try {
+    return await fn();
+  } finally {
+    Object.assign(current, saved);
+  }
+}
+
+/** A reservation in its own owner transaction, held open `holdSeconds` before COMMIT. */
+async function reserveIn(app: Pool, user: SignedUp, attachmentId: string, holdSeconds = 0): Promise<{ outcome: string; retry_after: number | null }> {
+  const client = await app.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(`SELECT set_config('gogospend.account_id', $1, true)`, [user.accountId]);
+    const { rows } = await client.query<{ outcome: string; retry_after?: number | null }>('SELECT * FROM gogospend_reserve_receipt_copy($1, $2)', [attachmentId, randomUUID()]);
+    if (holdSeconds > 0) await client.query('SELECT pg_sleep($1)', [holdSeconds]);
+    await client.query('COMMIT');
+    return { outcome: rows[0].outcome, retry_after: rows[0].retry_after ?? null };
+  } finally {
+    client.release();
+  }
+}
+
+async function listening(): Promise<number> {
+  if (!server.listening) await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
+  return (server.address() as AddressInfo).port;
+}
+
+type RawDownload = { status: number; headers: IncomingHttpHeaders; body: Buffer; complete: boolean };
+/** A download over a real socket, reporting whether the response arrived whole (or was cut off). */
+async function rawDownload(user: SignedUp, path: string): Promise<RawDownload> {
+  const port = await listening();
+  const headers = await sessionHeaders(user);
+  return new Promise((resolve, reject) => {
+    const req = httpGet({ host: '127.0.0.1', port, path, headers }, (res) => {
+      const chunks: Buffer[] = [];
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        resolve({ status: res.statusCode ?? 0, headers: res.headers, body: Buffer.concat(chunks), complete: res.complete });
+      };
+      res.on('data', (chunk: Buffer) => chunks.push(chunk));
+      res.on('end', finish);
+      res.on('error', finish);
+      res.on('close', finish);
+    });
+    req.on('error', reject);
+  });
+}
+
 beforeAll(async () => {
   db = await createTestDatabase();
   issuer = await startJwksFixture();
@@ -195,6 +294,8 @@ beforeAll(async () => {
     delete process.env.IMPORT_UPLOADS_ENABLED;
   }
   server = v1.app.getHttpServer() as Server;
+  // Concurrent requests must not each open and close their own listener.
+  await listening();
   as = v1Client(v1.app, issuer);
   money = moneyFixtures(db, fx, as);
   store = v1.app.get<MemoryObjectStore>(OBJECT_STORE);
@@ -341,21 +442,36 @@ describe('retaining a receipt', () => {
     });
   });
 
-  it('registers the copy before its PUT, and the receipt outlives the import image and the preview', async () => {
+  it('copies inside the store, registered before the copy, and the receipt outlives the import image and the preview', async () => {
     const { user, records } = await memberWithRecords();
     const image = await attachableImage(user);
-    const seenAtPut: { status: string | undefined }[] = [];
-    const original = store.putStream.bind(store);
-    store.putStream = async (key, body, options) => {
-      if (key.startsWith('receipt/')) seenAtPut.push({ status: (await adminRows<{ status: string }>('SELECT status FROM object_publications WHERE key = $1', [key]))[0]?.status });
-      return original(key, body, options);
-    };
+    const calls: string[] = [];
+    const seenAtCopy: (string | undefined)[] = [];
+    const purposeOf = (key: string) => key.split('/')[0];
+    const restore = patchStore({
+      getStream: (original) => (key) => {
+        calls.push(`read ${purposeOf(key)}`);
+        return original(key);
+      },
+      putStream: (original) => (key, body, options) => {
+        calls.push(`write ${purposeOf(key)}`);
+        return original(key, body, options);
+      },
+      copy: (original) => async (source, destination, options) => {
+        calls.push(`copy ${purposeOf(source)} to ${purposeOf(destination)}`);
+        seenAtCopy.push((await adminRows<{ status: string }>('SELECT status FROM object_publications WHERE key = $1', [destination]))[0]?.status);
+        return original(source, destination, options);
+      },
+    });
     try {
       await retained(user, records[0], image, 1);
     } finally {
-      store.putStream = original;
+      restore();
     }
-    expect(seenAtPut).toEqual([{ status: 'reserved' }]);
+    // The API never holds the image: one copy inside the store, registered first.
+    expect(calls).toEqual(['copy import_image to receipt']);
+    expect(seenAtCopy).toEqual(['reserved']);
+    expect(Buffer.from((await store.get(await receiptKeyOf(user.accountId, image.attachmentId))) as Uint8Array).equals(image.bytes)).toBe(true);
 
     // The import image goes at its 24-hour deadline; the preview at 7 days.
     await publication.sweep(user.accountId, new Date(Date.now() + 25 * HOUR_MS));
@@ -414,9 +530,8 @@ describe('retaining a receipt', () => {
     const present = await retain(user, records[0], { attachment_id: second.attachmentId, ...CONSENT }, 2);
     expect([present.status, present.body.message_key]).toEqual([422, 'errors.attachment_present']);
     expect((await recordOf(user, records[0])).attachment_id).toBe(image.attachmentId);
-    // The copy that refused command made is due at once, and swept.
-    const spare = (await receiptRows(user.accountId)).filter((row) => row.job_id === second.attachmentId);
-    expect(spare).toEqual([expect.objectContaining({ status: 'reserved', due: true })]);
+    // The refusal was decided before anything was copied: no spare copy exists.
+    expect((await receiptRows(user.accountId)).filter((row) => row.job_id === second.attachmentId)).toEqual([]);
     await publication.sweep(user.accountId);
     expect(await storedReceipts(user.accountId)).toEqual([await receiptKeyOf(user.accountId, image.attachmentId)]);
   });
@@ -471,30 +586,30 @@ describe('retaining a receipt', () => {
     expect(await attempt(image.bytes.length, image.sha256)).toBe('retained');
   });
 
-  it('an account has at most four copies in flight; a fifth retain is told to retry', async () => {
+  it('an account has at most four copies in flight; a fifth retain is told when to retry', async () => {
     const { user, records } = await memberWithRecords();
-    const image = await attachableImage(user);
+    const images: Attachable[] = [];
+    for (let i = 0; i < 5; i += 1) images.push(await attachableImage(user));
     const app = await db.loginPool(['gogospend_app'], 1);
-    const reserve = async () => {
-      const client = await app.connect();
-      try {
-        await client.query('BEGIN');
-        await client.query(`SELECT set_config('gogospend.account_id', $1, true)`, [user.accountId]);
-        const { rows } = await client.query<{ outcome: string }>('SELECT outcome FROM gogospend_reserve_receipt_copy($1, $2)', [image.attachmentId, randomUUID()]);
-        await client.query('COMMIT');
-        return rows[0].outcome;
-      } finally {
-        client.release();
-      }
-    };
-    expect([await reserve(), await reserve(), await reserve(), await reserve()]).toEqual(['reserved', 'reserved', 'reserved', 'reserved']);
-    expect(await reserve()).toBe('limited');
-    const limited = await retain(user, records[0], { attachment_id: image.attachmentId, ...CONSENT }, 1);
-    expect([limited.status, limited.body.code, limited.body.retry_after_seconds]).toEqual([429, 'RATE_LIMITED', 60]);
-    expect(await attachmentOf(user.accountId, image.attachmentId)).toBeUndefined();
+    const outcomes: string[] = [];
+    for (const image of images.slice(0, 4)) outcomes.push((await reserveIn(app, user, image.attachmentId)).outcome);
+    expect(outcomes).toEqual(['reserved', 'reserved', 'reserved', 'reserved']);
+    // A reservation lasts three minutes: the copy's one-minute deadline plus its command.
+    const lifetimes = await adminRows<{ seconds: number }>(
+      `SELECT extract(epoch FROM delete_after - created_at)::int AS seconds FROM object_publications WHERE purpose = 'receipt' AND account_id = $1`,
+      [user.accountId],
+    );
+    expect(lifetimes.map((row) => row.seconds)).toEqual([180, 180, 180, 180]);
+    expect((await reserveIn(app, user, images[4].attachmentId)).outcome).toBe('limited');
+    const limited = await retain(user, records[0], { attachment_id: images[4].attachmentId, ...CONSENT }, 1);
+    expect([limited.status, limited.body.code]).toEqual([429, 'RATE_LIMITED']);
+    // Retry when the oldest copy in flight reaches its deadline, not before.
+    expect(limited.body.retry_after_seconds).toBeGreaterThan(160);
+    expect(limited.body.retry_after_seconds).toBeLessThanOrEqual(180);
+    expect(await attachmentOf(user.accountId, images[4].attachmentId)).toBeUndefined();
     // Once those copies are due (abandoned), retaining goes ahead.
     await db.admin((client) => client.query(`UPDATE object_publications SET delete_after = now() - interval '1 second' WHERE purpose = 'receipt' AND account_id = $1`, [user.accountId]));
-    expect((await retain(user, records[0], { attachment_id: image.attachmentId, ...CONSENT }, 1)).status).toBe(200);
+    expect((await retain(user, records[0], { attachment_id: images[4].attachmentId, ...CONSENT }, 1)).status).toBe(200);
   });
 
   it('refuses an image past its window, and a deleted record', async () => {
@@ -606,11 +721,19 @@ describe('shared references prevent premature deletion', () => {
     expect(await storedReceipts(user.accountId)).toEqual([]);
   });
 
-  it('two records retaining one image at once keep one receipt; the spare copy is swept', async () => {
+  it('two records retaining one image at once keep one receipt, made by one copy', async () => {
     const { user, records } = await memberWithRecords(2);
     const image = await attachableImage(user);
-    const [a, b] = await Promise.all(records.map((id) => retain(user, id, { attachment_id: image.attachmentId, ...CONSENT }, 1)));
-    expect([a.status, b.status]).toEqual([200, 200]);
+    const writes = countReceiptWrites();
+    let statuses: number[];
+    try {
+      statuses = (await Promise.all(records.map((id) => retain(user, id, { attachment_id: image.attachmentId, ...CONSENT }, 1)))).map((res) => res.status);
+    } finally {
+      writes.restore();
+    }
+    expect(statuses).toEqual([200, 200]);
+    // The second waited for the copy already in flight instead of making its own.
+    expect(writes.count()).toBe(1);
     expect(await heldBy(user.accountId, image.attachmentId)).toEqual([...records].sort());
     await publication.sweep(user.accountId);
     const kept = await receiptKeyOf(user.accountId, image.attachmentId);
@@ -764,6 +887,599 @@ describe('retention and erasure (P5)', () => {
     expect(await step.run(jobsPool)).toBeGreaterThanOrEqual(1);
     expect(await attachmentOf(user.accountId, image.attachmentId)).toBeUndefined();
     expect(await attachmentOf(user.accountId, held.attachmentId)).toEqual(expect.objectContaining({ status: 'retained' }));
+  });
+});
+
+describe('copying is bounded (P2c review fixes M1, M2)', () => {
+  it('serializes reservations: five at once from one account reserve exactly four', async () => {
+    const user = await money.member();
+    const images: Attachable[] = [];
+    for (let i = 0; i < 5; i += 1) images.push(await attachableImage(user));
+    const app = await db.loginPool(['gogospend_app'], 5);
+    // Each holds its transaction open before COMMIT, so unlocked reads of the count would all see zero.
+    const outcomes = await Promise.all(images.map((image) => reserveIn(app, user, image.attachmentId, 0.15)));
+    expect(outcomes.filter((o) => o.outcome === 'reserved')).toHaveLength(4);
+    expect(outcomes.filter((o) => o.outcome === 'limited')).toHaveLength(1);
+    expect(await receiptRows(user.accountId)).toHaveLength(4);
+    // Told when the oldest copy in flight is due, never a fixed minute.
+    for (const limited of outcomes.filter((o) => o.outcome === 'limited')) {
+      expect(limited.retry_after).toBeGreaterThan(0);
+      expect(limited.retry_after).toBeLessThanOrEqual(180);
+    }
+  });
+
+  it('a busy process answers 503 with when to retry, before it reserves anything', async () => {
+    const { user, records } = await memberWithRecords(2);
+    const first = await attachableImage(user);
+    const second = await attachableImage(user);
+    let letGo!: () => void;
+    const hold = new Promise<void>((resolve) => (letGo = resolve));
+    let entered!: () => void;
+    const inside = new Promise<void>((resolve) => (entered = resolve));
+    const restore = patchStore({
+      copy: (original) => async (source, destination, options) => {
+        entered();
+        await hold;
+        return original(source, destination, options);
+      },
+    });
+    try {
+      await withLimits({ copiesPerProcess: 1 }, async () => {
+        const running = retain(user, records[0], { attachment_id: first.attachmentId, ...CONSENT }, 1);
+        await inside;
+        const busy = await retain(user, records[1], { attachment_id: second.attachmentId, ...CONSENT }, 1);
+        expect([busy.status, busy.body.code, busy.body.retry_after_seconds]).toEqual([503, 'SERVICE_UNAVAILABLE', 5]);
+        // Turned away before reserving: nothing to sweep, nothing counted against the account.
+        expect((await receiptRows(user.accountId)).filter((row) => row.job_id === second.attachmentId)).toEqual([]);
+        letGo();
+        expect((await running).status).toBe(200);
+      });
+    } finally {
+      letGo();
+      restore();
+    }
+    expect((await retain(user, records[1], { attachment_id: second.attachmentId, ...CONSENT }, 1)).status).toBe(200);
+  });
+
+  it('a process never has more copies running than its limit', async () => {
+    const users = await Promise.all([memberWithRecords(), memberWithRecords(), memberWithRecords(), memberWithRecords()]);
+    const images = await Promise.all(users.map(({ user }) => attachableImage(user)));
+    let running = 0;
+    let peak = 0;
+    const restore = patchStore({
+      copy: (original) => async (source, destination, options) => {
+        running += 1;
+        peak = Math.max(peak, running);
+        try {
+          await delay(120);
+          return await original(source, destination, options);
+        } finally {
+          running -= 1;
+        }
+      },
+    });
+    let statuses: number[];
+    try {
+      statuses = await withLimits({ copiesPerProcess: 2 }, async () =>
+        (await Promise.all(users.map(({ user, records }, i) => retain(user, records[0], { attachment_id: images[i].attachmentId, ...CONSENT }, 1)))).map((res) => res.status),
+      );
+    } finally {
+      restore();
+    }
+    expect(peak).toBeLessThanOrEqual(2);
+    expect(statuses.filter((status) => status === 200).length).toBeGreaterThanOrEqual(2);
+    expect(statuses.every((status) => status === 200 || status === 503)).toBe(true);
+  });
+
+  it('refused retains, replaces and removals copy nothing', async () => {
+    const { user, records } = await memberWithRecords(3);
+    const held = await attachableImage(user);
+    await retained(user, records[0], held, 1);
+    const spare = await attachableImage(user);
+    const writes = countReceiptWrites();
+    try {
+      // The record already holds a receipt.
+      const present = await retain(user, records[0], { attachment_id: spare.attachmentId, ...CONSENT }, 2);
+      expect([present.status, present.body.message_key]).toEqual([422, 'errors.attachment_present']);
+      // Replacing with the receipt it already holds.
+      const same = await replace(user, records[0], { attachment_id: held.attachmentId, ...CONSENT }, 2);
+      expect([same.status, same.body.message_key]).toEqual([422, 'errors.attachment_unchanged']);
+      // Replacing on a record with none.
+      const missing = await replace(user, records[1], { attachment_id: spare.attachmentId, ...CONSENT }, 1);
+      expect([missing.status, missing.body.message_key]).toEqual([422, 'errors.attachment_missing']);
+      // A stale version, no consent, an unsupported schema, an unknown record.
+      expect((await retain(user, records[1], { attachment_id: spare.attachmentId, ...CONSENT }, 5)).status).toBe(409);
+      expect((await retain(user, records[1], { attachment_id: spare.attachmentId }, 1)).status).toBe(422);
+      const schema = await as(user).post(`/v1/transactions/${records[1]}/attachment`, { attachment_id: spare.attachmentId, ...CONSENT }, { ifMatch: 1, schema: 2 });
+      expect([schema.status, schema.body.code]).toEqual([422, 'COMMAND_SCHEMA_UNSUPPORTED']);
+      expect((await retain(user, randomUUID(), { attachment_id: spare.attachmentId, ...CONSENT }, 1)).status).toBe(404);
+      // A deleted record.
+      expect((await as(user).del(`/v1/transactions/${records[2]}`, { ifMatch: 1 })).status).toBe(200);
+      expect((await retain(user, records[2], { attachment_id: spare.attachmentId, ...CONSENT }, 2)).status).toBe(409);
+    } finally {
+      writes.restore();
+    }
+    expect(writes.count()).toBe(0);
+    expect((await receiptRows(user.accountId)).filter((row) => row.job_id === spare.attachmentId)).toEqual([]);
+    // Nothing was spent: the same image still retains.
+    expect((await retain(user, records[1], { attachment_id: spare.attachmentId, ...CONSENT }, 1)).status).toBe(200);
+  });
+
+  it('a receipt that already exists is attached without another copy', async () => {
+    const { user, records } = await memberWithRecords(2);
+    const image = await attachableImage(user);
+    await retained(user, records[0], image, 1);
+    const writes = countReceiptWrites();
+    try {
+      expect((await retain(user, records[1], { attachment_id: image.attachmentId, ...CONSENT }, 1)).status).toBe(200);
+    } finally {
+      writes.restore();
+    }
+    expect(writes.count()).toBe(0);
+  });
+
+  it('an account has a copy budget; past it, retaining is told when the oldest copy leaves the window', async () => {
+    const { user, records } = await memberWithRecords();
+    const image = await attachableImage(user);
+    // 100 copies reserved in the last day (all long due: none is in flight).
+    await db.admin((client) => client.query(
+      `INSERT INTO object_publications (key, job_id, account_id, lease_token, lifecycle_generation, purpose, delete_after)
+       SELECT format('receipt/%s/%s/%s/image.jpg', $1::text, t.job, t.token), t.job, $1::uuid, t.token, 0, 'receipt', now() - interval '1 hour'
+         FROM (SELECT gen_random_uuid() AS token, gen_random_uuid() AS job FROM generate_series(1, 100)) t`,
+      [user.accountId],
+    ));
+    const writes = countReceiptWrites();
+    let limited;
+    try {
+      limited = await retain(user, records[0], { attachment_id: image.attachmentId, ...CONSENT }, 1);
+    } finally {
+      writes.restore();
+    }
+    expect([limited.status, limited.body.code]).toEqual([429, 'RATE_LIMITED']);
+    expect(limited.body.retry_after_seconds).toBeGreaterThan(24 * 3600 - 60);
+    expect(limited.body.retry_after_seconds).toBeLessThanOrEqual(24 * 3600);
+    expect(writes.count()).toBe(0);
+    // Another account is unaffected.
+    const { user: other, records: otherRecords } = await memberWithRecords();
+    expect((await retain(other, otherRecords[0], { attachment_id: (await attachableImage(other)).attachmentId, ...CONSENT }, 1)).status).toBe(200);
+  });
+
+  it('gives one deadline to the whole copy: the HEAD that checks it runs on the same signal', async () => {
+    const { user, records } = await memberWithRecords();
+    const image = await attachableImage(user);
+    const signals: (AbortSignal | undefined)[] = [];
+    const restore = patchStore({
+      copy: (original) => (source, destination, options) => {
+        signals.push(options?.signal);
+        return original(source, destination, options);
+      },
+      head: (original) => async (key, options) => {
+        if (key.startsWith('receipt/')) {
+          signals.push(options?.signal);
+          // The deadline has passed: the check does not outlive it.
+          if (options?.signal) await new Promise<void>((resolve) => options.signal?.addEventListener('abort', () => resolve(), { once: true }));
+          throw new ObjectStoreError('unavailable');
+        }
+        return original(key, options);
+      },
+    });
+    const started = Date.now();
+    let refused;
+    try {
+      refused = await withLimits({ copyDeadlineMs: 400 }, () => retain(user, records[0], { attachment_id: image.attachmentId, ...CONSENT }, 1));
+    } finally {
+      restore();
+    }
+    expect([refused.status, refused.body.code]).toEqual([503, 'SERVICE_UNAVAILABLE']);
+    expect(signals).toHaveLength(2);
+    expect(signals[0]).toBeDefined();
+    expect(signals[1]).toBe(signals[0]);
+    expect(Date.now() - started).toBeLessThan(2_500);
+    // Its reservation was given back at once.
+    expect((await receiptRows(user.accountId)).every((row) => row.status === 'reserved' && row.due)).toBe(true);
+    expect(await attachmentOf(user.accountId, image.attachmentId)).toBeUndefined();
+  });
+
+  it('a copy the store cannot make is a 503 with no reservation left live, and never leaks the failure', async () => {
+    const { user, records } = await memberWithRecords();
+    const image = await attachableImage(user);
+    const restore = patchStore({
+      copy: () => async () => {
+        throw new Error('provider said: bucket secret-bucket is on fire');
+      },
+    });
+    let refused;
+    try {
+      refused = await retain(user, records[0], { attachment_id: image.attachmentId, ...CONSENT }, 1);
+    } finally {
+      restore();
+    }
+    expect([refused.status, refused.body.code, refused.body.retry_after_seconds]).toEqual([503, 'SERVICE_UNAVAILABLE', 5]);
+    expect(JSON.stringify(refused.body)).not.toMatch(/secret-bucket|on fire/);
+    expect((await receiptRows(user.accountId)).every((row) => row.status === 'reserved' && row.due)).toBe(true);
+    expect((await retain(user, records[0], { attachment_id: image.attachmentId, ...CONSENT }, 1)).status).toBe(200);
+  });
+
+  it('the copy is checked as stored by the database too: a copy that is not the registered image is not published', async () => {
+    const { user, records } = await memberWithRecords();
+    const image = await attachableImage(user);
+    // The store's copy comes out different (a provider fault), and the HEAD reports what is stored.
+    const restore = patchStore({
+      copy: (original) => async (source, destination, options) => {
+        const made = await original(source, destination, options);
+        await store.delete(destination);
+        await store.putStream(destination, Buffer.concat([image.bytes, randomBytes(8)]));
+        return made;
+      },
+    });
+    let refused;
+    try {
+      refused = await retain(user, records[0], { attachment_id: image.attachmentId, ...CONSENT }, 1);
+    } finally {
+      restore();
+    }
+    expect([refused.status, refused.body.message_key]).toEqual([422, 'errors.attachment_expired']);
+    expect(await attachmentOf(user.accountId, image.attachmentId)).toBeUndefined();
+    await publication.sweep(user.accountId);
+    expect(await storedReceipts(user.accountId)).toEqual([]);
+  });
+});
+
+describe('receipt downloads (P2c review fixes M3, minor 1)', () => {
+  type Streamed = { user: SignedUp; image: Attachable; url: string };
+  async function streamed(): Promise<Streamed> {
+    const { user, records } = await memberWithRecords();
+    const image = await attachableImage(user, 'png', 120, 90);
+    await retained(user, records[0], image, 1);
+    return { user, image, url: ((await grantOf(user, image.attachmentId)).body as AttachmentGrant).url };
+  }
+  const thirds = (bytes: Buffer): Buffer[] => {
+    const size = Math.ceil(bytes.length / 4);
+    return [0, 1, 2, 3].map((i) => bytes.subarray(i * size, (i + 1) * size)).filter((part) => part.length > 0);
+  };
+  /** Replaces what the store streams for receipt objects (size and digest as registered). */
+  const serving = (image: Attachable, body: () => AsyncIterable<Uint8Array>, only?: () => boolean) =>
+    patchStore({
+      getStream: (original) => async (key) => {
+        const real = await original(key);
+        if (!real || !key.startsWith('receipt/') || (only && !only())) return real;
+        return { body: body(), bytes: image.bytes.length, sha256: image.sha256 };
+      },
+    });
+  const problemBody = (raw: RawDownload) => JSON.parse(raw.body.toString('utf8')) as Record<string, unknown>;
+
+  it('serves the image whole, with its length, as it always did', async () => {
+    const { user, image, url } = await streamed();
+    const raw = await rawDownload(user, url);
+    expect([raw.status, raw.complete]).toEqual([200, true]);
+    expect(raw.body.equals(image.bytes)).toBe(true);
+    expect(raw.headers['content-length']).toBe(String(image.bytes.length));
+  });
+
+  it('one account cannot take every download slot: its third waits while another account is served', async () => {
+    const mine = await streamed();
+    const theirs = await streamed();
+    let open!: () => void;
+    const gate = new Promise<void>((resolve) => (open = resolve));
+    let reached!: () => void;
+    const first = new Promise<void>((resolve) => (reached = resolve));
+    let held = 0;
+    const restore = serving(mine.image, () => {
+      held += 1;
+      reached();
+      return (async function* () {
+        await gate;
+        yield mine.image.bytes;
+      })();
+    }, () => held === 0);
+    try {
+      await withLimits({ downloadsPerAccount: 1, downloadsPerProcess: 8 }, async () => {
+        const slow = rawDownload(mine.user, mine.url);
+        await first;
+        const refused = await rawDownload(mine.user, mine.url);
+        expect([refused.status, problemBody(refused).code, problemBody(refused).retry_after_seconds]).toEqual([503, 'SERVICE_UNAVAILABLE', 5]);
+        expect(refused.headers['retry-after']).toBe('5');
+        const served = await rawDownload(theirs.user, theirs.url);
+        expect([served.status, served.complete]).toEqual([200, true]);
+        open();
+        const done = await slow;
+        expect([done.status, done.complete]).toEqual([200, true]);
+        expect(done.body.equals(mine.image.bytes)).toBe(true);
+        // The slot came back.
+        expect((await rawDownload(mine.user, mine.url)).status).toBe(200);
+      });
+    } finally {
+      open();
+      restore();
+    }
+  });
+
+  it('the process-wide cap still holds across accounts', async () => {
+    const a = await streamed();
+    const b = await streamed();
+    let open!: () => void;
+    const gate = new Promise<void>((resolve) => (open = resolve));
+    let reached!: () => void;
+    const first = new Promise<void>((resolve) => (reached = resolve));
+    let held = 0;
+    const restore = serving(a.image, () => {
+      held += 1;
+      reached();
+      return (async function* () {
+        await gate;
+        yield a.image.bytes;
+      })();
+    }, () => held === 0);
+    try {
+      await withLimits({ downloadsPerProcess: 1, downloadsPerAccount: 1 }, async () => {
+        const slow = rawDownload(a.user, a.url);
+        await first;
+        expect((await rawDownload(b.user, b.url)).status).toBe(503);
+        open();
+        expect((await slow).status).toBe(200);
+        expect((await rawDownload(b.user, b.url)).status).toBe(200);
+      });
+    } finally {
+      open();
+      restore();
+    }
+  });
+
+  it('cuts off a download that stops making progress, and frees its slot', async () => {
+    const { user, image, url } = await streamed();
+    const parts = thirds(image.bytes);
+    expect(parts.length).toBeGreaterThanOrEqual(3);
+    let calls = 0;
+    const restore = serving(image, () => {
+      calls += 1;
+      const stall = calls === 1;
+      return (async function* () {
+        yield parts[0];
+        yield parts[1];
+        yield parts[2];
+        if (stall) await new Promise<void>(() => undefined);
+        yield* parts.slice(3);
+      })();
+    });
+    try {
+      await withLimits({ downloadIdleMs: 200, downloadsPerAccount: 1 }, async () => {
+        const started = Date.now();
+        const cut = await rawDownload(user, url);
+        expect(cut.complete).toBe(false);
+        expect(Date.now() - started).toBeLessThan(5_000);
+        // Never the whole image, never a made-up ending.
+        expect(cut.body.length).toBeLessThan(image.bytes.length);
+        const next = await rawDownload(user, url);
+        expect([next.status, next.complete]).toEqual([200, true]);
+        expect(next.body.equals(image.bytes)).toBe(true);
+      });
+    } finally {
+      restore();
+    }
+  });
+
+  it('cuts off a download still running at the total limit even though it keeps trickling', async () => {
+    const { user, image, url } = await streamed();
+    const restore = serving(image, () =>
+      (async function* () {
+        for (let i = 0; i < image.bytes.length; i += 1) {
+          await delay(25);
+          yield image.bytes.subarray(i, i + 1);
+        }
+      })(),
+    );
+    try {
+      await withLimits({ downloadIdleMs: 5_000, downloadTotalMs: 400 }, async () => {
+        const started = Date.now();
+        const cut = await rawDownload(user, url);
+        expect(cut.complete).toBe(false);
+        expect(Date.now() - started).toBeLessThan(3_000);
+      });
+    } finally {
+      restore();
+    }
+  });
+
+  it('a download that never starts is a 503 problem, not an image-typed body', async () => {
+    const { user, image, url } = await streamed();
+    const restore = serving(image, () => (async function* () { await new Promise<void>(() => undefined); })());
+    try {
+      await withLimits({ downloadIdleMs: 200 }, async () => {
+        const raw = await rawDownload(user, url);
+        expect([raw.status, problemBody(raw).code]).toEqual([503, 'SERVICE_UNAVAILABLE']);
+        expect(String(raw.headers['content-type'])).toMatch(/json/);
+      });
+    } finally {
+      restore();
+    }
+  });
+
+  it('unavailable storage is a 503 with when to retry, and never sends the failure text', async () => {
+    const { user, url } = await streamed();
+    for (const failure of [new ObjectStoreError('unavailable'), new Error('provider said: secret-bucket exploded')]) {
+      const restore = patchStore({ getStream: () => async () => { throw failure; } });
+      try {
+        const raw = await rawDownload(user, url);
+        expect([raw.status, problemBody(raw).code, problemBody(raw).retry_after_seconds]).toEqual([503, 'SERVICE_UNAVAILABLE', 5]);
+        expect(String(raw.headers['content-type'])).not.toMatch(/image/);
+        expect(raw.body.toString('utf8')).not.toMatch(/secret-bucket|exploded|Object store/);
+      } finally {
+        restore();
+      }
+    }
+  });
+
+  it('a body that fails before its first byte is a 503 problem, with no error text', async () => {
+    const { user, image, url } = await streamed();
+    const restore = serving(image, () => (async function* () { throw new Error('secret-bucket reset'); })());
+    try {
+      const raw = await rawDownload(user, url);
+      expect([raw.status, problemBody(raw).code]).toEqual([503, 'SERVICE_UNAVAILABLE']);
+      expect(raw.body.toString('utf8')).not.toContain('secret-bucket');
+    } finally {
+      restore();
+    }
+  });
+
+  it('a corrupted object is never served as a complete download', async () => {
+    const { user, image, url } = await streamed();
+    const parts = thirds(image.bytes).map((part) => Buffer.from(part));
+    const last = parts[parts.length - 1];
+    last[last.length - 1] ^= 0xff;
+    const restore = serving(image, () => (async function* () { yield* parts; })());
+    try {
+      const raw = await rawDownload(user, url);
+      // The last chunk waits for the digest, so the client never receives a complete 200.
+      expect(raw.complete).toBe(false);
+      expect(raw.body.length).toBeLessThan(image.bytes.length);
+      expect(raw.body.equals(image.bytes.subarray(0, raw.body.length))).toBe(true);
+    } finally {
+      restore();
+    }
+    // In one chunk nothing is sent before the check, so it is a plain 503.
+    const single = Buffer.from(image.bytes);
+    single[0] ^= 0xff;
+    const restoreSingle = serving(image, () => (async function* () { yield single; })());
+    try {
+      const raw = await rawDownload(user, url);
+      expect([raw.status, problemBody(raw).code]).toEqual([503, 'SERVICE_UNAVAILABLE']);
+      expect(raw.body.includes(single)).toBe(false);
+    } finally {
+      restoreSingle();
+    }
+    // Too long and too short are corrupt as well.
+    for (const body of [Buffer.concat([image.bytes, Buffer.from('x')]), image.bytes.subarray(0, image.bytes.length - 1)]) {
+      const restoreSize = serving(image, () => (async function* () { yield body; })());
+      try {
+        expect((await rawDownload(user, url)).status).toBe(503);
+      } finally {
+        restoreSize();
+      }
+    }
+  });
+});
+
+describe('grants are bound to the session (P2c review fix, minor 2)', () => {
+  it('a grant verifies only for the session it was issued to', async () => {
+    const { user, records } = await memberWithRecords();
+    const image = await attachableImage(user);
+    await retained(user, records[0], image, 1);
+    const service = v1.app.get(AttachmentService);
+    const issued = await service.grant(user.session, image.attachmentId);
+    if (!issued) throw new Error('no grant');
+    const token = issued.url.slice(ATTACHMENT_DOWNLOAD_PATH.length);
+    expect(await service.file(user.session, token)).not.toBeNull();
+    // The same account on another session binding, or after the session generation moved on.
+    expect(await service.file({ ...user.session, bindingId: randomUUID() }, token)).toBeNull();
+    expect(await service.file({ ...user.session, sessionGeneration: user.session.sessionGeneration + 1 }, token)).toBeNull();
+    // Over HTTP the same: a second sign-in's session cannot use the first one's grant.
+    const second = await money.member();
+    expect((await download(second, issued.url)).status).toBe(404);
+  });
+});
+
+describe('orphan sweep cost (P2c review fix, minor 3)', () => {
+  it('the global sweep lists receipts only for accounts with recent reservations, a page at a time', async () => {
+    const { user: recent, records } = await memberWithRecords();
+    const image = await attachableImage(recent);
+    await retained(recent, records[0], image, 1);
+    const { user: quiet, records: quietRecords } = await memberWithRecords();
+    await retained(quiet, quietRecords[0], await attachableImage(quiet), 1);
+    await db.admin((client) => client.query(`UPDATE object_publications SET created_at = now() - interval '30 days' WHERE purpose = 'receipt' AND account_id = $1`, [quiet.accountId]));
+    // An orphan: stored, with no registry row at all.
+    const orphan = `receipt/${recent.accountId}/${randomUUID()}/${randomUUID()}/image.jpg`;
+    await store.putStream(orphan, Buffer.from('orphan'));
+    const listed: string[] = [];
+    const restore = patchStore({
+      listPages: (original) => (prefix) => {
+        listed.push(prefix);
+        return original(prefix);
+      },
+    });
+    try {
+      await publication.sweep(null);
+    } finally {
+      restore();
+    }
+    expect(listed).toContain(`receipt/${recent.accountId}/`);
+    expect(listed).not.toContain('receipt/');
+    expect(listed).not.toContain(`receipt/${quiet.accountId}/`);
+    expect(await store.head(orphan)).toBeNull();
+    // What is registered stays.
+    expect(await storedReceipts(recent.accountId)).toEqual([await receiptKeyOf(recent.accountId, image.attachmentId)]);
+    expect(await storedReceipts(quiet.accountId)).toHaveLength(1);
+  });
+
+  it('a sweep of one account lists that account whatever its history', async () => {
+    const { user, records } = await memberWithRecords();
+    await retained(user, records[0], await attachableImage(user), 1);
+    await db.admin((client) => client.query(`UPDATE object_publications SET created_at = now() - interval '30 days' WHERE purpose = 'receipt' AND account_id = $1`, [user.accountId]));
+    const orphan = `receipt/${user.accountId}/${randomUUID()}/${randomUUID()}/image.jpg`;
+    await store.putStream(orphan, Buffer.from('orphan'));
+    await publication.sweep(user.accountId);
+    expect(await store.head(orphan)).toBeNull();
+  });
+});
+
+describe('overdue receipt deletion (P2c review fix, minor 4)', () => {
+  it('counts released receipts whose object is still stored an hour after its deadline, and failed deletes', async () => {
+    const { user, records } = await memberWithRecords(2);
+    const image = await attachableImage(user);
+    const kept = await attachableImage(user);
+    await retained(user, records[0], image, 1);
+    await retained(user, records[1], kept, 1);
+    expect(await receiptCleanupOverdue(jobsPool, user.accountId)).toBe(0);
+    expect((await remove(user, records[0], 2)).status).toBe(200);
+    // Due, but only just: the sweep has not had its chance yet.
+    expect(await receiptCleanupOverdue(jobsPool, user.accountId)).toBe(0);
+    await db.admin((client) => client.query(`UPDATE object_publications SET delete_after = now() - interval '2 hours' WHERE purpose = 'receipt' AND account_id = $1 AND delete_after < now() + interval '1 minute'`, [user.accountId]));
+    expect(await receiptCleanupOverdue(jobsPool, user.accountId)).toBe(1);
+    expect(await receiptCleanupOverdue(jobsPool)).toBeGreaterThanOrEqual(1);
+    // A failed storage delete leaves it `deleting`, still overdue.
+    store.failNext('delete');
+    await publication.sweep(user.accountId);
+    expect(await receiptCleanupOverdue(jobsPool, user.accountId)).toBe(1);
+    await publication.sweep(user.accountId);
+    expect(await receiptCleanupOverdue(jobsPool, user.accountId)).toBe(0);
+    // The receipt a record still holds is never overdue.
+    expect(await storedReceipts(user.accountId)).toEqual([await receiptKeyOf(user.accountId, kept.attachmentId)]);
+  });
+});
+
+describe('ownership holds for replace and remove too (P2c review fix, minor 6)', () => {
+  it('another account gets the same 404 as for an unknown record, and nothing changes', async () => {
+    const { user: owner, records } = await memberWithRecords();
+    const first = await attachableImage(owner);
+    await retained(owner, records[0], first, 1);
+    const { user: intruder, records: intruderRecords } = await memberWithRecords();
+    const intruderImage = await attachableImage(intruder);
+    const spare = await attachableImage(intruder);
+    await retained(intruder, intruderRecords[0], intruderImage, 1);
+    const writes = countReceiptWrites();
+    try {
+      // The intruder's own receipt onto the owner's record: the same 404 as an unknown record.
+      const foreignReplace = await replace(intruder, records[0], { attachment_id: spare.attachmentId, ...CONSENT }, 2);
+      const unknownReplace = await replace(intruder, randomUUID(), { attachment_id: spare.attachmentId, ...CONSENT }, 2);
+      expect(foreignReplace.status).toBe(404);
+      expect(problemOf(foreignReplace.body)).toEqual(problemOf(unknownReplace.body));
+      // The owner's receipt onto the intruder's own record: the same 404 as an unknown id.
+      const foreignReceipt = await replace(intruder, intruderRecords[0], { attachment_id: first.attachmentId, ...CONSENT }, 2);
+      const unknownReceipt = await replace(intruder, intruderRecords[0], { attachment_id: randomUUID(), ...CONSENT }, 2);
+      expect(foreignReceipt.status).toBe(404);
+      expect(problemOf(foreignReceipt.body)).toEqual(problemOf(unknownReceipt.body));
+      const foreignRemove = await remove(intruder, records[0], 2);
+      const unknownRemove = await remove(intruder, randomUUID(), 2);
+      expect(foreignRemove.status).toBe(404);
+      expect(problemOf(foreignRemove.body)).toEqual(problemOf(unknownRemove.body));
+    } finally {
+      writes.restore();
+    }
+    expect(writes.count()).toBe(0);
+    expect(await heldBy(owner.accountId, first.attachmentId)).toEqual([records[0]]);
+    expect((await recordOf(owner, records[0])).version).toBe(2);
+    expect(await attachmentOf(owner.accountId, first.attachmentId)).toEqual(expect.objectContaining({ status: 'retained' }));
+    expect(await attachmentOf(intruder.accountId, intruderImage.attachmentId)).toEqual(expect.objectContaining({ status: 'retained' }));
+    expect(await heldBy(intruder.accountId, intruderImage.attachmentId)).toEqual([intruderRecords[0]]);
   });
 });
 

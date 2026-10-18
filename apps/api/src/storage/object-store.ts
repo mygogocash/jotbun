@@ -10,12 +10,21 @@ export type ObjectBody = Uint8Array | AsyncIterable<Uint8Array>;
  */
 export interface ObjectStore {
   putStream(key: string, body: ObjectBody, options?: { contentType?: string; signal?: AbortSignal }): Promise<{ bytes: number; sha256: string }>;
-  head(key: string): Promise<ObjectInfo | null>;
+  /**
+   * Copies an existing object to a new key inside the store (no bytes pass
+   * through this process), keeping its type and recorded digest. Never
+   * overwrites (`exists`); false when the source is absent. The caller
+   * HEAD-checks the copy.
+   */
+  copy(sourceKey: string, destinationKey: string, options?: { signal?: AbortSignal }): Promise<boolean>;
+  head(key: string, options?: { signal?: AbortSignal }): Promise<ObjectInfo | null>;
   get(key: string): Promise<Uint8Array | null>;
   /** Reads an object as a stream of chunks (never whole), with its stored size and digest; null if absent. */
   getStream(key: string): Promise<{ body: AsyncIterable<Uint8Array>; bytes: number; sha256: string } | null>;
   delete(key: string): Promise<void>;
   list(prefix: string): Promise<ObjectInfo[]>;
+  /** The same listing one page at a time, fetched as it is consumed (never collected whole). */
+  listPages(prefix: string): AsyncIterable<ObjectInfo[]>;
 }
 
 export class ObjectStoreError extends Error {
@@ -76,11 +85,11 @@ type Stored = { body: Buffer; sha256: string; lastModified: Date };
  */
 export class MemoryObjectStore implements ObjectStore {
   private readonly objects = new Map<string, Stored>();
-  private readonly failures = new Map<'put' | 'delete' | 'list', FailureMode>();
+  private readonly failures = new Map<'put' | 'delete' | 'list' | 'copy', FailureMode>();
 
-  constructor(private readonly maxBytes = MAX_OBJECT_BYTES) {}
+  constructor(private readonly maxBytes = MAX_OBJECT_BYTES, private readonly pageSize = 1000) {}
 
-  failNext(operation: 'put' | 'delete' | 'list', mode: FailureMode = 'error'): void {
+  failNext(operation: 'put' | 'delete' | 'list' | 'copy', mode: FailureMode = 'error'): void {
     if (mode === 'crash_after_write' && operation !== 'put') throw new RangeError('only a PUT can crash after writing');
     this.failures.set(operation, mode);
   }
@@ -97,7 +106,19 @@ export class MemoryObjectStore implements ObjectStore {
     return { bytes: data.byteLength, sha256 };
   }
 
-  async head(key: string): Promise<ObjectInfo | null> {
+  async copy(sourceKey: string, destinationKey: string, options: { signal?: AbortSignal } = {}): Promise<boolean> {
+    assertObjectKey(sourceKey);
+    assertObjectKey(destinationKey);
+    if (this.take('copy')) throw new ObjectStoreError('unavailable');
+    options.signal?.throwIfAborted();
+    const source = this.objects.get(sourceKey);
+    if (!source) return false;
+    if (this.objects.has(destinationKey)) throw new ObjectStoreError('exists');
+    this.objects.set(destinationKey, { body: Buffer.from(source.body), sha256: source.sha256, lastModified: new Date() });
+    return true;
+  }
+
+  async head(key: string, _options: { signal?: AbortSignal } = {}): Promise<ObjectInfo | null> {
     assertObjectKey(key);
     const object = this.objects.get(key);
     return object ? { key, bytes: object.body.byteLength, sha256: object.sha256, lastModified: object.lastModified } : null;
@@ -135,7 +156,12 @@ export class MemoryObjectStore implements ObjectStore {
       .map(([key, object]) => ({ key, bytes: object.body.byteLength, sha256: object.sha256, lastModified: object.lastModified }));
   }
 
-  private take(operation: 'put' | 'delete' | 'list'): FailureMode | undefined {
+  async *listPages(prefix: string): AsyncIterable<ObjectInfo[]> {
+    const all = await this.list(prefix);
+    for (let start = 0; start < all.length; start += this.pageSize) yield all.slice(start, start + this.pageSize);
+  }
+
+  private take(operation: 'put' | 'delete' | 'list' | 'copy'): FailureMode | undefined {
     const mode = this.failures.get(operation);
     this.failures.delete(operation);
     return mode;

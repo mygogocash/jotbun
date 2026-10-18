@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ATTACHMENT_GRANT_MINUTES } from '@gogospend/contracts';
 
 import { CommandDigester } from '../commands/command-digest';
 import { CommandsModule } from '../commands/commands.module';
@@ -6,6 +7,7 @@ import { DatabaseModule } from '../database/database.module';
 import { StorageModule } from '../storage/storage.module';
 import { SnapshotGrants } from '../sync/snapshot-grants';
 import { TransactionsModule } from '../transactions/transactions.module';
+import { ATTACHMENT_LIMITS, DEFAULT_ATTACHMENT_LIMITS } from './attachment-limits';
 import { ATTACHMENT_GRANTS, AttachmentService } from './attachments.service';
 import { AttachmentsController } from './attachments.controller';
 
@@ -21,7 +23,8 @@ import { AttachmentsController } from './attachments.controller';
   controllers: [AttachmentsController],
   providers: [
     AttachmentService,
-    { provide: ATTACHMENT_GRANTS, useFactory: (digester: CommandDigester) => new SnapshotGrants(digester.deriveKeys('gogospend.attachment-grant.v1')), inject: [CommandDigester] },
+    { provide: ATTACHMENT_LIMITS, useFactory: () => ({ ...DEFAULT_ATTACHMENT_LIMITS }) },
+    { provide: ATTACHMENT_GRANTS, useFactory: (digester: CommandDigester) => new SnapshotGrants(digester.deriveKeys('gogospend.attachment-grant.v1'), { minutes: ATTACHMENT_GRANT_MINUTES }), inject: [CommandDigester] },
   ],
   exports: [AttachmentService],
 })

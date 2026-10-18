@@ -91,9 +91,37 @@ export class S3ObjectStore implements ObjectStore {
     return { bytes: data.byteLength, sha256 };
   }
 
-  async head(key: string): Promise<ObjectInfo | null> {
+  /**
+   * CopyObject with the metadata directive COPY: the provider copies inside
+   * the bucket, so no object bytes reach this process, and the digest metadata
+   * the source carries stays on the copy. A 200 whose body is an error
+   * document is a failure, as S3 can answer that way.
+   */
+  async copy(sourceKey: string, destinationKey: string, options: { signal?: AbortSignal } = {}): Promise<boolean> {
+    assertObjectKey(sourceKey);
+    assertObjectKey(destinationKey);
+    const source = `/${encodeURIComponent(this.config.bucket)}/${sourceKey.split('/').map(encodeURIComponent).join('/')}`;
+    const response = await this.send('PUT', this.address(destinationKey), {
+      'if-none-match': '*',
+      'x-amz-copy-source': source,
+      'x-amz-metadata-directive': 'COPY',
+    }, undefined, EMPTY_SHA256, options.signal);
+    if (response.status === 412) return discard(response, new ObjectStoreError('exists'));
+    if (response.status === 404) return discard(response, false);
+    if (!response.ok) return discard(response, new ObjectStoreError('unavailable'));
+    let xml: string;
+    try {
+      xml = (await collectBody(response.body as unknown as AsyncIterable<Uint8Array>, 64 * 1024, options.signal)).toString('utf8');
+    } catch {
+      throw new ObjectStoreError('unavailable');
+    }
+    if (/<Error>/.test(xml)) throw new ObjectStoreError('unavailable');
+    return true;
+  }
+
+  async head(key: string, options: { signal?: AbortSignal } = {}): Promise<ObjectInfo | null> {
     assertObjectKey(key);
-    const response = await this.send('HEAD', this.address(key));
+    const response = await this.send('HEAD', this.address(key), {}, undefined, EMPTY_SHA256, options.signal);
     if (response.status === 404) return discard(response, null);
     if (!response.ok) return discard(response, new ObjectStoreError('unavailable'));
     return {
@@ -134,8 +162,14 @@ export class S3ObjectStore implements ObjectStore {
   }
 
   async list(prefix: string): Promise<ObjectInfo[]> {
-    assertObjectPrefix(prefix);
     const found: ObjectInfo[] = [];
+    for await (const page of this.listPages(prefix)) found.push(...page);
+    return found.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+  }
+
+  /** One ListObjectsV2 request per page, made when the previous page has been consumed. */
+  async *listPages(prefix: string): AsyncIterable<ObjectInfo[]> {
+    assertObjectPrefix(prefix);
     let token: string | null = null;
     do {
       const address = new URL(`${this.base()}/${encodeURIComponent(this.config.bucket)}`);
@@ -145,14 +179,15 @@ export class S3ObjectStore implements ObjectStore {
       const response = await this.send('GET', address);
       if (!response.ok) return discard(response, new ObjectStoreError('unavailable'));
       const xml = (await collectBody(response.body as unknown as AsyncIterable<Uint8Array>, 16 * 1024 * 1024)).toString('utf8');
+      const page: ObjectInfo[] = [];
       for (const [, entry] of xml.matchAll(/<Contents>([\s\S]*?)<\/Contents>/g)) {
         const key = tag(entry, 'Key');
         if (key === null || !key.startsWith(prefix)) continue;
-        found.push({ key, bytes: Number(tag(entry, 'Size') ?? 0), sha256: '', lastModified: new Date(tag(entry, 'LastModified') ?? 0) });
+        page.push({ key, bytes: Number(tag(entry, 'Size') ?? 0), sha256: '', lastModified: new Date(tag(entry, 'LastModified') ?? 0) });
       }
       token = tag(xml, 'IsTruncated') === 'true' ? tag(xml, 'NextContinuationToken') : null;
+      if (page.length > 0) yield page;
     } while (token);
-    return found.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
   }
 
   private base(): string {

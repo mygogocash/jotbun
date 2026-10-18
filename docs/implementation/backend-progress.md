@@ -2222,7 +2222,7 @@ Observed, not changed (pre-existing):
     - `import_previews_attachment_id`: gives every preview with an image a random `image_attachment_id` (new column, unique, set when `image_key` is; existing rows backfilled). It cannot be changed afterwards.
   - **Registry:** P1's 7-day CHECK on published objects (found by its definition and dropped) is recreated as `object_publications_published_expiry_check`, exempting only purpose `receipt`. A retained receipt is published with `delete_after = 'infinity'`, so P1's sweep, the orphan pass and P5's deletion objects stage treat it like any other published object: never due while held, due at once on release or erasure.
   - **App routines** (owner transaction):
-    - `gogospend_reserve_receipt_copy(attachment, copy_token)`. For the owner's own ready preview whose image is still published with at least 2 minutes left, it registers the copy's key for 10 minutes before any PUT. Outcomes: `reserved`, `existing` (the receipt exists), `limited` (4 copies already in flight) or `unavailable`.
+    - `gogospend_reserve_receipt_copy(attachment, copy_token)`. For the owner's own ready preview whose image is still published with at least 2 minutes left, it registers the copy's key for 3 minutes before any copy, under a per-account lock. Outcomes: `reserved`, `existing` (the receipt exists), `pending` (an unexpired reservation for this image is already in flight), `limited` (4 copies in flight, or 100 reservations in 24 hours; with `retry_after`) or `unavailable`. The copy itself is a server-side `ObjectStore.copy` (P2c review fixes).
     - `gogospend_retain_attachment(attachment, copy_key, bytes, sha256)`, under the account lock. It answers `retained` (existing, or recorded now), `released`, `expired` or `unknown`. A new receipt needs this account's own unexpired reservation for this attachment, at the account's lifecycle generation, whose stored size and digest equal the import image's registration. A copy made for an existing receipt is due at once.
     - `gogospend_release_receipt_copy(copy_key)`: an unused reservation is due now.
     - `gogospend_import_image_attachable_until(job)`: the preview's retain deadline.
@@ -2704,3 +2704,27 @@ Observed, not changed (pre-existing):
 - **Minors done:** repeated XLSX relIds/sheet cap; generic sign → `missing_type`; per-file amount separators; parse-job prune vs upload expiry; narrowed image read roots. **Left optional:** additive preview paging; `release(lease, 'ocr_paused')`.
 - **Also:** worker import-maintenance log reworded so it no longer matches the `import maintenance failed` alert prefix; `incident.md` and `retention.md` updated for the sandbox and `imports.previews`.
 - **Focused GREEN:** `import-preview.integration.spec.ts` + privacy retention specs; `parser-runner.spec.ts` + `privacy-steps.spec.ts` (238). Full gate and image smoke recorded below after squash.
+
+## Review fixes for P2c
+
+- **Status:** the independent P2c review's findings are fixed locally, test-first where a RED assertion existed. Nothing was pushed, deployed or written to a provider. Hosted, device and real-R2 checks stay SKIPPED.
+- **Base:** integration head `9606a3c` merged cleanly (no conflicts with the P2b review-fix merge). WIP commit `9b5aaf1` was finished into this commit.
+- **Migration edited in place:** `0017_attachments.sql` (undeployed):
+  - `gogospend_reserve_receipt_copy` takes the per-account advisory lock first, returns `retry_after`, and answers `pending` while an unexpired reservation exists for the same image and generation. TTL is 180 s. Limits: 4 in flight, 100 reservations per rolling 24 h; `retry_after` is the time until room truly returns.
+  - The two added CHECKs are `NOT VALID` then `VALIDATE`, with a "locks and rewrites" note for the release runbook.
+- **Server-side copy:** `ObjectStore.copy` (S3 CopyObject with `if-none-match: *`; a 200 body holding `<Error>` is a failure; `MemoryObjectStore` copies in memory) plus `listPages`; `head` takes a signal. The service HEADs the copy and feeds the measured size and digest to SQL, so the registration comparison is not circular. One `AbortSignal.timeout` covers copy and HEAD.
+- **Bounded copies:** a process semaphore (503 + `retry_after`), state checks before any copy, one copy for several records retaining one image (reservation reuse), refused retains copy nothing, a store failure is 503 without any error text.
+- **Bounded downloads:** per-process and per-account caps, idle and total timeouts, the first chunk read before headers (so a failure is a real 503), the last chunk held until size and digest verify, a mid-stream failure closes the connection.
+- **Grants:** the MAC binds the account, binding and session generation; `SnapshotGrants` takes a `minutes` option (S1 callers unchanged).
+- **Gating:** retain and replace are `@Gated('imports','writes')`.
+- **Orphan sweep:** receipts are scanned only for accounts with reservations in the last 7 days; the account sweep covers all its purposes; pages are streamed.
+- **Alert:** the job worker reports receipt objects over an hour overdue (`incident.md`, `retention.md`).
+- **Minor 6:** cross-owner tests pinned for replace and remove.
+- **Mutation checks:** 22 guards mutated, 21 killed; the survivor was an equivalent clause and was removed.
+- **Not done / decisions for the owner:**
+  - `remove_no_undo` wording ("permanently") needs E2 copy approval; unchanged.
+  - A receipt held only by a deleted record can be re-attached by its id while the undo window lasts; left as designed.
+  - Optional paging polish not done.
+  - R2's CopyObject (including `if-none-match`) is unverified: hosted check SKIPPED.
+- **Gate (local):** `typecheck`, `typecheck:app`, `test:api` (918), `test:db` (666; attachments spec 45), `test:app`, `test:unit`, `test:dev`, `test:ops` (DB required), `test:render` (66), API build, release-graph check, web export and `git diff --check` all pass. Release-image smoke (Docker) not run.
+- **Test fix found by the gate:** concurrent supertest requests each opened and closed their own listener, so one test saw `ECONNREFUSED`; the spec now keeps the server listening.
