@@ -197,3 +197,67 @@ Receipts for the [redesign plan](../superpowers/plans/2026-10-18-jotbun-redesign
   - test:render PASS (142: 68 before, 74 new).
   - export:web PASS (`--max-workers 2`).
   - `git diff --check` clean.
+
+## R3 logic: screen view models
+
+Pure view models for Home, Quick add, History and Record detail in `src/spend/v1/redesign/`. They contain no React or React Native code, and no screen uses them yet. The R3 screen agents call them next. Money is BigInt over canonical satang strings, and dates are Bangkok calendar dates. English copy is `tc()` source text: either a `Translate` parameter, as in `viewModels.ts`, or `{ text, values }` lines for `useCopyLine()`. The locale catalogs are unchanged.
+
+- **`shared.ts`:**
+  - Bangkok date maths, and day labels ("Today", "Yesterday", then the current list's short date; Thai dates use `th-TH`).
+  - The draft-state mapping, the same as the current Home's money groups:
+    - unsent and sending show as "Saving…";
+    - uncertain shows as "Checking with Jotbun";
+    - needs_review shows as "Needs a look";
+    - paused_upgrade shows as "Update Jotbun to send".
+  - Undo is allowed only while a draft was never transmitted; discard only when it needs review.
+  - Diary rows read word for word like `recordView`, which a test checks.
+  - Day groups show confirmed money out and in, with waiting and checking draft money kept apart. A transfer counts as neither in nor out, and a refused draft counts nowhere.
+- **`budgetPace.ts`:**
+  - spent, limit and left, plus days left (counting today) and left per day (rounded down to whole satang);
+  - the states `on_track`, `tight`, `over` and `no_budget`, and a state for each category limit;
+  - **Tight threshold:** spending is more than 110% of the even pace through the end of today, compared in exact integers (`spent × days × 100 > limit × elapsed × 110`). After the month ends, nothing is tight.
+  - **Pending money:** waiting expense drafts are added to an estimate and listed separately. Drafts being checked are never added, because the server may already count them. Refused drafts never count.
+  - **Copy:** kind and factual, for example "฿9.04 a day left · a bit ahead of pace", "฿0.01 over · 16 days to go" and "It happens."
+- **`homeModel.ts`:**
+  - loading;
+  - `classifyLoadProblem`, which gives the same messages and retry rule as `loadProblem()`;
+  - offline with the device's drafts by day, waiting money and Add;
+  - the first wallet;
+  - ready: the pace card, today's receipt (empty but present when nothing is logged), earlier days, wallet balances, and the draft counts for the SyncBanner.
+  - Drafts show only from an open diary, as the current Home does.
+- **`historyModel.ts`:**
+  - **Days:** a month's day groups, with drafts merged into their days. A draft already confirmed shows once.
+  - **Filters:** type, wallet (a transfer matches on either side) and category.
+  - **Search:**
+    - It covers the category name as shown, the merchant and the note.
+    - Text is folded with NFKC, then a locale-free lower case, then NFC. Width and case don't matter, the canonical order of Thai marks is fixed, and sara am matches nikhahit plus sara aa. Marks are never stripped.
+    - The summary reads like "1 entry, ฿120.00 out". It counts drafts apart and says when not every page is loaded yet.
+- **`recordModel.ts`:**
+  - The receipt rows.
+  - **The edit draft:** it keeps the original record and `baseVersion`. Changes are measured against the original, so untouched fields are never sent. "Apply my change" (`rebaseEdit`) resends the same changes on the server's version, as `TransactionsScreen` does.
+  - **Copy:** a new draft with new ids, dated today. It refuses a reused id. A closed wallet or category is left unchosen.
+  - **Conflict rows:** "yours" against "on the server". Each row marks whether you changed the field and whether applying your change would replace what is on the server.
+- **`recentCategories.ts`:** ranks recent use over the last 60 days. Each use weighs 60 minus its age in days. Ties go to the built-in order, then the label, then the id. Archived categories are excluded, deleted records are ignored, and a draft already confirmed counts once. The rest keeps the stable default order.
+- **`quickAddModel.ts`:**
+  - **Checks:** `checkEntryFields` runs every check in `AddTransactionScreen.build()`, with the same keys and messages. Its one addition is `wallet_id` ("Choose a wallet"), for a prefilled draft whose wallet is gone; the form already renders that key.
+  - **Builder:** `buildQuickAdd` gives the create input and the device entry.
+  - **Id rules:** one record id and one command id per draft, as documented in the module header. "Add another" and Copy always take new ids.
+- **RED → GREEN:** `npm run test:unit -w gogospend-app -- src/spend/v1/redesign/*.test.ts`.
+  - **RED:** 67 of 68 failed against typed stub seams. 65 failed on assertions, and 2 on reading the rows of a day group the stubs never produced. The one that held is the copy scan for shaming words, which empty stub copy passes trivially.
+  - **GREEN:** 68 of 68.
+- **Mutation check (each one restored afterwards):**
+
+  | Mutation | Tests that failed |
+  | --- | --- |
+  | Per-day pace rounded up instead of down | 4 |
+  | `sending` shown as "checking" (the old per-draft label) | 4 |
+  | A `needs_review` draft counted as waiting money | 6 |
+  | A move allowed with the same wallet twice | 4 |
+
+- **Parity table:** quick add is compared with a transcription of the current form's `build()` over 6 entry shapes, 10 amounts, 7 dates, 8 notes and 6 merchants (708 rows). Errors match exactly, and accepted inputs match JSON byte for byte, because `keys.keyFor` compares JSON. A too-precise amount such as `1.234` has no keypad form, so it is left out.
+- **Gap: Recently deleted.** No existing API lists deleted records.
+  - `/v1/history` filters `deleted_at IS NULL`, and `DiaryView` exposes no records.
+  - The device diary does hold deleted transaction snapshots from sync.
+  - `recentlyDeletedModel` takes whatever deleted records the caller has and applies the server's restore rule (`deleted_at >= now − 30 days`). `RECENTLY_DELETED_GAP` records what is missing. Exposing the diary's deleted snapshots, or adding a server listing, needs a separate change.
+- **New English source strings:** "Saving…", "Needs a look", the pace lines, the search summaries, "Choose a wallet", the restore countdown and the conflict labels. They fall back to English until the catalogs are updated after E2.
+- **App gate:** typecheck:app PASS, test:unit PASS (342 = 274 + 68), test:render PASS (68), `git diff --check` clean.
