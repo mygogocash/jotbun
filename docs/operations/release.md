@@ -16,7 +16,7 @@ Related: [rollback.md](rollback.md), [incident.md](incident.md),
 One image (`apps/api/Dockerfile`), one process per service. The image holds
 only the release graph (`apps/api/scripts/release-graph.mjs`): the compiled
 files its 7 entries reach (the five processes below and P2b's two parser
-children; 141 files at this revision), the migrations, the contracts
+children; 145 files at this revision), the migrations, the contracts
 TypeScript source and the package closure of 9 reviewed direct runtime
 packages (123 packages in all). Legacy `/spend`, internal shared-key, Salt
 Edge, cashback, autolog, Firebase and Mongo code and packages, tests, fixtures

@@ -8,11 +8,11 @@ This page lets another engineer or AI agent continue the GoGoSpend v1 backend an
 
 | Item | State |
 | --- | --- |
-| Integration branch | `claude/gogospend-backend-plan-review-3c7544`, head `6367a9e` |
+| Integration branch | `claude/gogospend-backend-plan-review-3c7544`; last code commit `d16c528` (the docs commit after it ends the branch; use `git log`) |
 | On GitHub | PR [mygogocash/gogospend#1](https://github.com/mygogocash/gogospend/pull/1) was merged into `main` at `ccd3fb0` / merge commit `afd5dff`. **Every later commit is local only**, on the owner's machine, until someone pushes it. |
 | Phases built and merged locally | F1–F6c, M1–M5, S1–S4, P1, P2a, P2b (+ review fixes), P2c (+ review fixes), P3 (+ review fixes), P4, P5, P6a, P6b (local parts) |
 | Migrations | `apps/api/drizzle/0001`–`0018`; **next free number: `0019`**. None has been applied to a deployed database. In-place edits this session: `0016`, `0017`, `0018`. |
-| Last full gate (at `6367a9e`) | typecheck, typecheck:app, test:api 921, test:db 671, test:app 28, test:unit 246, test:dev 7, test:ops 107 (`GOGOSPEND_OPS_REQUIRE_DB=1`), test:render 66, build, release-graph check, export:web, `git diff --check`: all PASS. |
+| Last full gate (at `d16c528`) | typecheck, typecheck:app, test:api 928, test:db 676, test:app 28, test:unit 257, test:dev 7, test:ops 107 (`GOGOSPEND_OPS_REQUIRE_DB=1`), test:render 66, build, release-graph check (145 files), export:web, `git diff --check`: all PASS. |
 | Image smoke | P2b fail-closed proven on Node 24.22.0 (`parsers: sandbox_unsupported`, `ok: true`). P2c/P3 image smokes not re-run after later merges; re-run after worker/parser/package changes. |
 | Never done | No provider resource, credential or paid service used. Nothing deployed. Hosted CI never ran. Every hosted, native and device check is recorded SKIPPED. |
 | Flags that stay off | Uploads (`IMPORT_UPLOADS_ENABLED`); account linking; password-reset recovery; the import review screen is not routed. |
@@ -25,6 +25,7 @@ This page lets another engineer or AI agent continue the GoGoSpend v1 backend an
 | P3 confirmation timeout | `9606a3c` | 120 s bound on the 5,000-row second-batch test (was flaking at 30 s under load) |
 | P2c review fixes | `857bc47` → merge `7930d12` | Store-level copy; bounded copies/downloads; session-bound grants; overdue alert |
 | P3 review + fixes | `6367a9e` | Independent review re-run; skip unknown sync entities; re-freeze skips committed rows; prune starvation |
+| Local follow-ups | `001ef70`, `28b520f`, `d16c528` | Receipt pre-checks before the copy; `ocr_paused` release; device import draft store (see [backend-progress.md](backend-progress.md#local-follow-ups-after-the-p2b-p2c-p3-review-fixes)) |
 
 ## 2. Orientation
 
@@ -162,20 +163,21 @@ On Node 24 the smoke expects parser outcomes `sandbox_unsupported`; on Node ≥2
 
 ## 6. Work queue, in order
 
-Local items 1–3 from the prior handover are **done**. What remains:
+Local items 1–3 from the prior handover are **done**, and so are the follow-ups marked below. What remains:
 
 ### 1. Smaller follow-ups (local; no provider)
 
 - **Rollback floor / client versions:** raise them at the import release step (`rollback.md`). New synced types and `attachment_id` in record snapshots are rejected by older APIs; clients without the unknown-entity skip still stall until that floor.
-- **P3 drafts:** a device-backed store for the review draft (in memory today).
+- ~~**P3 drafts:** a device-backed store for the review draft~~ **Done locally** (`d16c528`): `importDraftStore.ts` / `deviceImportDraftStore.ts`, erased with the diary at explicit sign-out. **Open before the screen is routed (E2):** the draft is plain AsyncStorage, not encrypted and not backup-excluded (decision 7 below).
 - **S4 screens:** reminder settings and needs-review, once visuals are approved.
-- **S2:** iOS backup-exclusion native step.
-- **OCR:** if wanted, pin model assets and checksums at build time.
+- **S2:** iOS backup-exclusion native step. Still open (needs authorization for a config plugin or package); a `TODO(S2)` marks the seam in `storage/deviceDiary.ts`.
+- **OCR:** if wanted, pin model assets and checksums at build time (needs dependencies).
 - **Dev database:** recreate local `gogospend_v1` before the next `dev:v1` (confirm empty first).
 - **Image cleanup:** remove stale local images (`gogospend-local-integration`, probe tags) if desired.
-- **Optional P3 leftovers:** post-prune confirmation replay shape; move receipt `prepare` after batch pre-checks.
-- **Optional P2b leftovers:** additive preview paging; `release(lease, 'ocr_paused')` for a narrower OCR pause.
-- **Stale `release.md` file count:** graph check reports 145 files; the runbook may still say 141.
+- **Optional P3 leftovers:** post-prune confirmation replay shape (open; owner decision). ~~Move receipt `prepare` after batch pre-checks~~ **Done locally** (`001ef70`).
+- **Optional P2b leftovers:** additive preview paging (open). ~~`release(lease, 'ocr_paused')` for a narrower OCR pause~~ **Done locally** (`28b520f`; `release` takes a bounded delay so a paused gate does not spin).
+- ~~**Stale `release.md` file count**~~ **Done:** `release.md` says 145, matching the graph check.
+- **Release image smoke:** worker, parse handler and job repository changed after the last smoke; re-run `docker build` and `release-smoke.cjs` before a release.
 
 ### 2. Push and PR (only when the owner asks)
 
@@ -193,6 +195,7 @@ Beta stays blocked without hosted evidence. The next product-critical gate is **
 4. **Recreating `gogospend_v1`** (local dev data, if any).
 5. **E1–E4 authority** (next section) for every hosted, native and release step.
 6. **Visual approvals** (E2): M5 states, the S4 banner, sign-out confirmation, F5 login UX, the P4 export screen, the P5 privacy and deletion screen, the P3 import review and progress screens, receipt copy (P2c), and the S4 settings and needs-review screens.
+7. **Import draft at rest.** The device-backed import draft (`d16c528`) is in AsyncStorage: unencrypted, and not covered by iOS backup exclusion until S2's native step exists. Accept that for the review screen, or require the native exclusion first, or move the draft into the encrypted diary.
 
 ## 8. Waiting for authority
 
