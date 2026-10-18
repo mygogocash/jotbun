@@ -75,7 +75,14 @@ CREATE POLICY jobs_worker_insert ON jobs FOR INSERT TO gogospend_jobs
 --   status            - queued -> leased | cancelled; leased -> queued |
 --                       succeeded | superseded | failed | cancelled;
 --                       failed -> queued (an explicit requeue, attempts 0).
---                       Succeeded, superseded and cancelled are final.
+--                       Succeeded, superseded and cancelled are final;
+--   attempts          - change only by a claim (+1), a requeue (0), or a
+--                       release: an unexpired lease going back to queued
+--                       with its attempt given back (-1), when a worker
+--                       stops (SIGTERM) and the attempt was not the job's
+--                       doing (P6b review).
+--                       The release, like every transition, is fenced by
+--                       the lease token in the statement that makes it.
 -- A superuser session (an operator, or test fixtures) is exempt.
 CREATE FUNCTION gogospend_guard_job_transition() RETURNS trigger
   LANGUAGE plpgsql
@@ -105,8 +112,11 @@ BEGIN
     RETURN NEW;
   END IF;
   IF NEW.attempt_started_at IS DISTINCT FROM OLD.attempt_started_at
-     OR (NEW.attempts <> OLD.attempts AND NOT (OLD.status = 'failed' AND NEW.status = 'queued' AND NEW.attempts = 0)) THEN
-    RAISE EXCEPTION 'attempts change only by a claim or a requeue' USING ERRCODE = 'insufficient_privilege';
+     OR (NEW.attempts <> OLD.attempts
+         AND NOT (OLD.status = 'failed' AND NEW.status = 'queued' AND NEW.attempts = 0)
+         AND NOT (OLD.status = 'leased' AND NEW.status = 'queued' AND NEW.lease_token IS NULL
+                  AND OLD.lease_expires_at > now() AND NEW.attempts = OLD.attempts - 1)) THEN
+    RAISE EXCEPTION 'attempts change only by a claim, a release or a requeue' USING ERRCODE = 'insufficient_privilege';
   END IF;
   IF NEW.status = 'leased' AND NEW.lease_expires_at IS DISTINCT FROM OLD.lease_expires_at
      AND (OLD.status <> 'leased' OR OLD.lease_expires_at <= now() OR NEW.lease_expires_at < OLD.lease_expires_at

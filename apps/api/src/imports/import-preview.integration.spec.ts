@@ -10,6 +10,7 @@ import type { Pool } from 'pg';
 import sharp from 'sharp';
 import request from 'supertest';
 
+import { FeatureGates } from '../common/feature-gates';
 import { LeasedAccountRead } from '../database/leased-account-read';
 import { importCandidates, importPreviews } from '../database/schema';
 import { HandlerRegistry } from '../jobs/handler-registry';
@@ -29,9 +30,14 @@ import { builtinId, moneyFixtures } from '../testing/money-fixtures';
 import { createTestDatabase } from '../testing/postgres-harness';
 import type { TestDatabase } from '../testing/postgres-harness';
 import { v1Client } from '../testing/v1-client';
+import { defaultPrivacySteps } from '../privacy/privacy-steps';
+import { OpenNetRunner, parsingRunner } from './fixtures/parsing-runner';
 import { IMAGE_MARKERS, XLSX_STATEMENT_ROWS, buildXlsx, csv, csvRows, imageWithMetadata } from './fixtures/synthetic-parse';
+import { importMaintenance } from './import-expiry';
+import { importParsingStartup } from './import-parsing';
 import { ParseHandler } from './parse-handler';
 import type { ParserRunOutcome, ParserRunnerPort } from './parser-runner';
+import { DUPLICATE_ADVICE_SQL } from './preview-query';
 
 const HOUR_MS = 3_600_000;
 const DAY_MS = 24 * HOUR_MS;
@@ -73,12 +79,12 @@ async function upload(user: SignedUp, body: Buffer, options: { name?: string; ty
   return res.body as ImportJobDto;
 }
 
-async function preview(user: SignedUp, id: string) {
-  return request(server).get(`/v1/imports/${id}/preview`).set(await sessionHeaders(user));
+async function preview(user: SignedUp, id: string, query = '') {
+  return request(server).get(`/v1/imports/${id}/preview${query}`).set(await sessionHeaders(user));
 }
 
-async function previewOf(user: SignedUp, id: string): Promise<ImportPreview> {
-  const res = await preview(user, id);
+async function previewOf(user: SignedUp, id: string, query = ''): Promise<ImportPreview> {
+  const res = await preview(user, id, query);
   expect(res.status).toBe(200);
   expect(isImportPreview(res.body)).toBe(true);
   return res.body as ImportPreview;
@@ -140,7 +146,8 @@ beforeAll(async () => {
   jobs = new JobRepository(jobsPool);
   publication = new ObjectPublicationService(jobsPool, store);
   deps = { jobs, reader: new LeasedAccountRead(await db.loginPool(['gogospend_leased_read'], 2)), store, publication, pool: jobsPool };
-  worker = new JobWorker(jobs, buildHandlers(deps));
+  // The real children; the sandbox gate itself is proven in parser-runner.spec (and below).
+  worker = new JobWorker(jobs, buildHandlers(deps, { parse: { runner: parsingRunner() } }));
 });
 
 afterEach(async () => {
@@ -267,6 +274,234 @@ describe('duplicates are advice only', () => {
     const otherCash = await money.wallet(other, { name: 'Cash', tracking_start: '2026-01-01' });
     await money.record(other, { type: 'income', amount_minor: '100000', occurred_on: '2026-09-02', wallet_id: otherCash, category_id: builtinId(other, 'salary') });
     expect((await previewOf(user, accepted.job_id)).duplicate_advice.some((advice) => advice.source_row_id === 'row:4')).toBe(false);
+  });
+});
+
+describe('preview paging is additive (P2b)', () => {
+  const ROWS = [
+    '2026-09-01,expense,65.00,Cash,coffee',
+    '2026-09-01,expense,65.00,Cash,coffee',
+    '2026-09-02,income,10.00,Cash,a',
+    '2026-09-03,expense,11.00,,b',
+    '2026-09-04,expense,12.00,Cash,c',
+    '2026-09-05,expense,13.00,Cash,d',
+    '2026-09-06,expense,14.00,Cash,e',
+    '2026-09-07,expense,15.00,,f',
+    '2026-09-08,expense,16.00,Cash,g',
+    '2026-09-09,expense,17.00,Cash,h',
+    '2026-09-10,expense,18.00,Cash,twin',
+    '2026-09-10,expense,18.00,Cash,twin',
+  ];
+
+  async function parsed(): Promise<{ user: SignedUp; jobId: string; existing: string }> {
+    const user = await money.member();
+    const cash = await money.wallet(user, { name: 'Cash', tracking_start: '2026-01-01' });
+    const existing = await money.record(user, { type: 'expense', amount_minor: '6500', occurred_on: '2026-09-01', wallet_id: cash, category_id: builtinId(user, 'food') });
+    const accepted = await upload(user, csv(['date,type,amount,wallet,note', ...ROWS]));
+    expect((await runParse(accepted.job_id)).status).toBe('succeeded');
+    return { user, jobId: accepted.job_id, existing };
+  }
+
+  it('no parameters is exactly the whole preview, with no page key', async () => {
+    const { user, jobId } = await parsed();
+    const whole = await previewOf(user, jobId);
+    expect(whole.candidates).toHaveLength(ROWS.length);
+    expect(Object.keys(whole).sort()).toEqual(['candidates', 'duplicate_advice', 'expires_at', 'issues', 'job_id', 'review_revision', 'status', 'summary']);
+  });
+
+  it('pages only candidates: summary and issues stay whole-file, advice follows the page rows, pages rejoin the whole', async () => {
+    const { user, jobId, existing } = await parsed();
+    const whole = await previewOf(user, jobId);
+    expect(whole.issues.map((issue) => issue.source_row_id)).toEqual(['row:5', 'row:9']);
+    expect(whole.duplicate_advice.length).toBeGreaterThan(4);
+
+    const seen: ImportPreview['candidates'] = [];
+    let offset = 0;
+    let pages = 0;
+    for (;;) {
+      const page = await previewOf(user, jobId, `?offset=${offset}&limit=5`);
+      pages += 1;
+      expect(page.page).toEqual({ offset, limit: 5, total: ROWS.length, next_offset: offset + 5 < ROWS.length ? offset + 5 : null });
+      expect(page.candidates).toEqual(whole.candidates.slice(offset, offset + 5));
+      expect(page.summary).toEqual(whole.summary);
+      expect(page.issues).toEqual(whole.issues);
+      expect({ job_id: page.job_id, status: page.status, review_revision: page.review_revision, expires_at: page.expires_at }).toEqual({ job_id: whole.job_id, status: whole.status, review_revision: whole.review_revision, expires_at: whole.expires_at });
+      const ids = new Set(page.candidates.map((candidate) => candidate.source_row_id));
+      expect(page.duplicate_advice).toEqual(whole.duplicate_advice.filter((advice) => ids.has(advice.source_row_id)));
+      seen.push(...page.candidates);
+      if (page.page?.next_offset === null) break;
+      offset = page.page?.next_offset as number;
+    }
+    expect(pages).toBe(3);
+    expect(seen).toEqual(whole.candidates);
+    const first = await previewOf(user, jobId, '?limit=5');
+    expect(first.duplicate_advice).toContainEqual({ source_row_id: 'row:2', kind: 'existing_transaction', matches: [existing] });
+    // Twins named by a page point at rows that may be on another page.
+    expect((await previewOf(user, jobId, '?offset=10&limit=1')).duplicate_advice).toEqual([{ source_row_id: 'row:12', kind: 'same_file', matches: ['row:13'] }]);
+  });
+
+  it('defaults the missing parameter, and a page past the end is empty', async () => {
+    const { user, jobId } = await parsed();
+    const whole = await previewOf(user, jobId);
+    const fromStart = await previewOf(user, jobId, '?limit=3');
+    expect([fromStart.candidates.length, fromStart.page]).toEqual([3, { offset: 0, limit: 3, total: ROWS.length, next_offset: 3 }]);
+    const tail = await previewOf(user, jobId, '?offset=2');
+    expect(tail.candidates).toEqual(whole.candidates.slice(2));
+    expect(tail.page).toEqual({ offset: 2, limit: 500, total: ROWS.length, next_offset: null });
+    const beyond = await previewOf(user, jobId, `?offset=${ROWS.length}&limit=5`);
+    expect([beyond.candidates, beyond.duplicate_advice, beyond.page]).toEqual([[], [], { offset: ROWS.length, limit: 5, total: ROWS.length, next_offset: null }]);
+    expect(beyond.issues).toEqual(whole.issues);
+  });
+
+  it('refuses malformed paging as a validation error, and keeps owner-only 404s', async () => {
+    const { user, jobId } = await parsed();
+    for (const query of ['?limit=0', '?limit=501', '?limit=x', '?offset=-1', '?offset=5001', '?limit=1&limit=2', '?cursor=abc', '?limit=5&foo=1']) {
+      const res = await preview(user, jobId, query);
+      expect([query, res.status]).toEqual([query, 422]);
+    }
+    const stranger = await money.member();
+    expect((await preview(stranger, jobId, '?limit=5')).status).toBe(404);
+    expect((await preview(stranger, randomUUID(), '?limit=5')).status).toBe(404);
+  });
+
+  it('a preview that is not ready is served as before, whatever the paging', async () => {
+    const user = await money.member();
+    const accepted = await upload(user, MEOWJOT);
+    expect(await previewOf(user, accepted.job_id, '?offset=0&limit=5')).toEqual({
+      job_id: accepted.job_id, status: 'queued', candidates: [], issues: [], duplicate_advice: [], review_revision: null, expires_at: null, summary: null,
+    });
+  });
+});
+
+describe('duplicate advice stays linear in the file and the records (M1)', () => {
+  // The advice as the first P2b release computed it (a self-join), kept here as the reference.
+  const SELF_JOIN_ADVICE = `
+    SELECT source_row_id, kind, matches FROM (
+      SELECT c.source_row_id, c.ordinal, 'existing_transaction' AS kind, (array_agg(t.id::text ORDER BY t.id))[1:5] AS matches
+        FROM import_candidates c
+        JOIN transactions t ON t.account_id = c.account_id AND t.occurred_on = c.occurred_on AND t.type = c.type
+                           AND t.amount_minor = c.amount_minor AND t.deleted_at IS NULL
+       WHERE c.job_id = $1
+       GROUP BY c.source_row_id, c.ordinal
+      UNION ALL
+      SELECT c.source_row_id, c.ordinal, 'same_file', (array_agg(d.source_row_id ORDER BY d.ordinal))[1:5]
+        FROM import_candidates c
+        JOIN import_candidates d ON d.job_id = c.job_id AND d.source_row_id <> c.source_row_id
+                                AND d.occurred_on = c.occurred_on AND d.type = c.type AND d.amount_minor = c.amount_minor
+                                AND d.wallet_label IS NOT DISTINCT FROM c.wallet_label AND d.merchant IS NOT DISTINCT FROM c.merchant
+                                AND d.note IS NOT DISTINCT FROM c.note
+       WHERE c.job_id = $1
+       GROUP BY c.source_row_id, c.ordinal
+    ) advice ORDER BY ordinal, kind`;
+
+  async function cloneRecord(id: string, times: number): Promise<void> {
+    await db.admin((client) =>
+      client.query(
+        `INSERT INTO transactions (account_id, id, type, amount_minor, occurred_on, wallet_id, category_id, note, merchant)
+         SELECT account_id, gen_random_uuid(), type, amount_minor, occurred_on, wallet_id, category_id, note, merchant
+           FROM transactions, generate_series(1, $2) WHERE id = $1`,
+        [id, times],
+      ),
+    );
+  }
+
+  const bigJobs: { identical?: string; distinct?: string } = {};
+
+  /** Statistics taken before the import under test: the planner has never seen its job id. */
+  async function staleStatistics(user: SignedUp): Promise<void> {
+    const earlier = await upload(user, csv(['date,type,amount,wallet', '2026-09-02,expense,1.00,Cash']));
+    expect((await runParse(earlier.job_id)).status).toBe('succeeded');
+    await db.admin(async (client) => {
+      await client.query('ANALYZE import_candidates');
+      await client.query('ANALYZE transactions');
+    });
+  }
+
+  it('5,000 identical rows against 5,000 identical records, with statistics older than the import: answered in time, five matches each', async () => {
+    const user = await money.member();
+    await staleStatistics(user);
+    const cash = await money.wallet(user, { name: 'Cash', tracking_start: '2026-01-01' });
+    const existing = await money.record(user, { type: 'expense', amount_minor: '6500', occurred_on: '2026-09-01', wallet_id: cash, category_id: builtinId(user, 'food') });
+    await cloneRecord(existing, 4_999);
+    const lines = ['date,type,amount,wallet,note'];
+    for (let i = 0; i < 5_000; i += 1) lines.push('2026-09-01,expense,65.00,Cash,coffee');
+    const accepted = await upload(user, csv(lines));
+    expect((await runParse(accepted.job_id)).status).toBe('succeeded');
+    bigJobs.identical = accepted.job_id;
+
+    const started = Date.now();
+    const res = await preview(user, accepted.job_id);
+    const elapsed = Date.now() - started;
+    expect(res.status).toBe(200);
+    expect(elapsed).toBeLessThan(2_000);
+    const body = res.body as ImportPreview;
+    expect(isImportPreview(body)).toBe(true);
+    expect(body.duplicate_advice).toHaveLength(10_000);
+    expect(body.duplicate_advice.every((advice) => advice.matches.length === 5)).toBe(true);
+    const firstRecords = (await adminRows<{ id: string }>('SELECT id::text AS id FROM transactions WHERE account_id = $1 AND deleted_at IS NULL ORDER BY id LIMIT 5', [user.accountId])).map((row) => row.id);
+    const of = (id: string, kind: string) => body.duplicate_advice.find((advice) => advice.source_row_id === id && advice.kind === kind)?.matches;
+    expect(of('row:2', 'existing_transaction')).toEqual(firstRecords);
+    expect(of('row:5001', 'existing_transaction')).toEqual(firstRecords);
+    // The first five other rows, in file order.
+    expect(of('row:2', 'same_file')).toEqual(['row:3', 'row:4', 'row:5', 'row:6', 'row:7']);
+    expect(of('row:4', 'same_file')).toEqual(['row:2', 'row:3', 'row:5', 'row:6', 'row:7']);
+    expect(of('row:5001', 'same_file')).toEqual(['row:2', 'row:3', 'row:4', 'row:5', 'row:6']);
+  }, 300_000);
+
+  it('5,000 distinct rows with statistics older than the import are answered in time', async () => {
+    const user = await money.member();
+    await staleStatistics(user);
+    const accepted = await upload(user, csvRows(IMPORT_PARSE_LIMITS.candidateRows));
+    expect((await runParse(accepted.job_id)).status).toBe('succeeded');
+    bigJobs.distinct = accepted.job_id;
+    const started = Date.now();
+    const res = await preview(user, accepted.job_id);
+    expect(res.status).toBe(200);
+    expect(Date.now() - started).toBeLessThan(2_000);
+    expect((res.body as ImportPreview).candidates).toHaveLength(5_000);
+    expect((res.body as ImportPreview).duplicate_advice).toEqual([]);
+  }, 300_000);
+
+  it('stays linear whatever join the planner picks (hash and merge joins disabled)', async () => {
+    for (const [jobId, expected] of [[bigJobs.identical, 10_000], [bigJobs.distinct, 0]] as const) {
+      expect(jobId).toEqual(expect.any(String));
+      const started = Date.now();
+      const outcome = await db.admin(async (client) => {
+        await client.query('BEGIN');
+        try {
+          await client.query(`SET LOCAL statement_timeout = '5s'`);
+          await client.query('SET LOCAL enable_hashjoin = off');
+          await client.query('SET LOCAL enable_mergejoin = off');
+          return { rows: (await client.query(DUPLICATE_ADVICE_SQL, [jobId])).rowCount };
+        } catch (error) {
+          return { error: (error as { code?: string }).code };
+        } finally {
+          await client.query('ROLLBACK');
+        }
+      });
+      expect(outcome).toEqual({ rows: expected });
+      expect(Date.now() - started).toBeLessThan(2_000);
+    }
+  }, 60_000);
+
+  it('names exactly what the self-join named, row for row', async () => {
+    const user = await money.member();
+    const cash = await money.wallet(user, { name: 'Cash', tracking_start: '2026-01-01' });
+    const coffee = await money.record(user, { type: 'expense', amount_minor: '6500', occurred_on: '2026-09-01', wallet_id: cash, category_id: builtinId(user, 'food') });
+    await cloneRecord(coffee, 6);
+    const deleted = await money.record(user, { type: 'expense', amount_minor: '6500', occurred_on: '2026-09-01', wallet_id: cash, category_id: builtinId(user, 'food') });
+    await db.admin((client) => client.query('UPDATE transactions SET deleted_at = now() WHERE id = $1', [deleted]));
+    await money.record(user, { type: 'income', amount_minor: '100000', occurred_on: '2026-09-02', wallet_id: cash, category_id: builtinId(user, 'salary') });
+    const lines = ['date,type,amount,wallet,note,merchant'];
+    for (let i = 0; i < 8; i += 1) lines.push('2026-09-01,expense,65.00,Cash,coffee,Cafe');
+    lines.push('2026-09-01,expense,65.00,,coffee,Cafe', '2026-09-01,expense,65.00,,coffee,Cafe', '2026-09-01,expense,65.00,Cash,,Cafe', '2026-09-01,expense,65.00,Cash,coffee,');
+    lines.push('2026-09-02,income,1000.00,Cash,pay,', '2026-09-02,income,1000.00,Cash,pay,');
+    lines.push(',expense,65.00,Cash,coffee,Cafe', ',expense,65.00,Cash,coffee,Cafe', '2026-09-03,,5.00,Cash,x,', '2026-09-03,,5.00,Cash,x,', '2026-09-01,income,65.00,Cash,coffee,Cafe');
+    const accepted = await upload(user, csv(lines));
+    expect((await runParse(accepted.job_id)).status).toBe('succeeded');
+    const reference = await adminRows<{ source_row_id: string; kind: string; matches: string[] }>(SELF_JOIN_ADVICE, [accepted.job_id]);
+    expect(reference.length).toBeGreaterThan(20);
+    expect((await previewOf(user, accepted.job_id)).duplicate_advice).toEqual(reference.map(({ source_row_id, kind, matches }) => ({ source_row_id, kind, matches })));
   });
 });
 
@@ -498,6 +733,225 @@ describe('unconfirmed candidates expire after 7 days', () => {
     expect(await count('import_candidates', user.accountId)).toBe(0);
     const expired = await previewOf(user, accepted.job_id);
     expect(expired).toMatchObject({ status: 'expired', candidates: [], issues: [], duplicate_advice: [] });
+  });
+});
+
+describe('a preview past its 7 days is expired, whatever happened to its expiry job (M4)', () => {
+  const retention = () => {
+    const step = defaultPrivacySteps().retentionSteps().find((candidate) => candidate.name === 'imports.previews');
+    expect(step?.name).toBe('imports.previews');
+    if (!step) throw new Error('unreachable');
+    return step;
+  };
+
+  async function overdue(jobId: string): Promise<string> {
+    const [expiry] = await adminRows<{ id: string }>(`SELECT id FROM jobs WHERE kind = 'import_expire' AND payload ->> 'stage' = 'preview' AND payload ->> 'import_job_id' = $1::text`, [jobId]);
+    await db.admin(async (client) => {
+      await client.query(`UPDATE import_previews SET created_at = created_at - interval '8 days', expires_at = expires_at - interval '8 days' WHERE job_id = $1`, [jobId]);
+      await client.query(`UPDATE jobs SET run_after = now() - interval '1 minute' WHERE id = $1`, [expiry.id]);
+    });
+    return expiry.id;
+  }
+
+  it('an account disabled at the due time: its job ends superseded, the route says expired at once, retention deletes the candidates', async () => {
+    const user = await money.member();
+    const accepted = await upload(user, MEOWJOT);
+    await runParse(accepted.job_id);
+    const expiry = await overdue(accepted.job_id);
+    await db.admin((client) => client.query(`UPDATE accounts SET status = 'disabled' WHERE id = $1`, [user.accountId]));
+    expect(await worker.runOnce()).toBe('ran');
+    expect((await jobOf(expiry)).status).toBe('superseded');
+    // Maintenance as the worker runs it, then the account comes back.
+    await importMaintenance(jobsPool);
+    await db.admin((client) => client.query(`UPDATE accounts SET status = 'active' WHERE id = $1`, [user.accountId]));
+    await importMaintenance(jobsPool);
+
+    // Past expires_at the route never serves the rows, even before retention runs.
+    expect(await count('import_candidates', user.accountId)).toBe(6);
+    const served = await previewOf(user, accepted.job_id);
+    expect(served).toMatchObject({ status: 'expired', candidates: [], issues: [], duplicate_advice: [] });
+    expect(served.summary).toMatchObject({ candidate_count: 6, totals: { expense_minor: '154000', income_minor: '235000', transfer_minor: '0' } });
+
+    expect(await retention().run(jobsPool)).toBe(1);
+    expect(await count('import_candidates', user.accountId)).toBe(0);
+    const [row] = await adminRows<{ status: string; expired_at: Date | null }>('SELECT status, expired_at FROM import_previews WHERE job_id = $1', [accepted.job_id]);
+    expect(row.status).toBe('expired');
+    expect(row.expired_at).not.toBeNull();
+    expect(await retention().run(jobsPool)).toBe(0);
+  });
+
+  it('an account at a newer lifecycle generation: retention expires the preview and makes its image due', async () => {
+    const user = await money.member();
+    const accepted = await upload(user, await imageWithMetadata('jpeg', 32, 24), { name: 'receipt.jpg', type: 'image/jpeg' });
+    expect((await runParse(accepted.job_id)).status).toBe('succeeded');
+    const expiry = await overdue(accepted.job_id);
+    await db.admin((client) => client.query('UPDATE accounts SET lifecycle_generation = lifecycle_generation + 1 WHERE id = $1', [user.accountId]));
+    expect(await worker.runOnce()).toBe('ran');
+    expect((await jobOf(expiry)).status).toBe('superseded');
+    expect(await count('import_candidates', user.accountId)).toBe(1);
+
+    expect(await retention().run(jobsPool)).toBe(1);
+    expect(await count('import_candidates', user.accountId)).toBe(0);
+    const [image] = await adminRows<{ due: boolean }>(`SELECT delete_after <= now() AS due FROM object_publications WHERE job_id = $1 AND purpose = 'import_image'`, [accepted.job_id]);
+    expect(image.due).toBe(true);
+  });
+
+  it('leaves a preview inside its 7 days alone', async () => {
+    const user = await money.member();
+    const accepted = await upload(user, MEOWJOT);
+    await runParse(accepted.job_id);
+    await retention().run(jobsPool);
+    expect(await count('import_candidates', user.accountId)).toBe(6);
+    expect((await previewOf(user, accepted.job_id)).status).toBe('ready');
+  });
+});
+
+describe('a parsed import keeps its state until its rows are pruned (minor 4)', () => {
+  const step = (name: string) => {
+    const found = defaultPrivacySteps().retentionSteps().find((candidate) => candidate.name === name);
+    expect(found?.name).toBe(name);
+    if (!found) throw new Error('unreachable');
+    return found;
+  };
+
+  it('pruning its succeeded parse job does not turn it into an expired upload; its rows, preview and totals go 30 days after its raw expiry', async () => {
+    const user = await money.member();
+    const accepted = await upload(user, MEOWJOT);
+    await runParse(accepted.job_id);
+    const shift = (by: string) =>
+      db.admin((client) =>
+        client.query(
+          `UPDATE import_uploads SET created_at = created_at - $2::interval, receive_deadline = receive_deadline - $2::interval,
+                  accepted_at = accepted_at - $2::interval, expires_at = expires_at - $2::interval WHERE job_id = $1`,
+          [accepted.job_id, by],
+        ),
+      );
+    // Almost 31 days on: the parse job finished over 30 days ago; the raw file expired just under 30 days ago.
+    await shift('31 days -2 hours');
+    await db.admin((client) => client.query(`UPDATE jobs SET finished_at = finished_at - interval '31 days' WHERE id = $1`, [accepted.job_id]));
+    await step('jobs.finished').run(jobsPool);
+    expect(await jobOf(accepted.job_id)).toBeUndefined();
+    await importMaintenance(jobsPool);
+    const [upload_] = await adminRows<{ status: string; finished_at: Date | null }>('SELECT status, finished_at FROM import_uploads WHERE job_id = $1', [accepted.job_id]);
+    expect(upload_).toEqual({ status: 'accepted', finished_at: null });
+    const status = await request(server).get(`/v1/imports/${accepted.job_id}`).set(await sessionHeaders(user));
+    expect(status.body.status).toBe('parsed');
+
+    // Not yet 30 days past the raw expiry: kept.
+    await step('imports.uploads').run(jobsPool);
+    expect(await count('import_previews', user.accountId)).toBe(1);
+    await shift('3 hours');
+    await step('imports.uploads').run(jobsPool);
+    expect(await count('import_uploads', user.accountId)).toBe(0);
+    expect(await count('import_previews', user.accountId)).toBe(0);
+    expect(await count('import_candidates', user.accountId)).toBe(0);
+  });
+});
+
+describe('the job worker never claims a parse it cannot sandbox (B1)', () => {
+  it('a worker started on a runtime without network permission leaves import_parse queued, without spending an attempt', async () => {
+    const user = await money.member();
+    const accepted = await upload(user, MEOWJOT);
+    const startup = await importParsingStartup(new OpenNetRunner());
+    expect(startup.parse).toBeNull();
+    const unsandboxed = new JobWorker(jobs, buildHandlers(deps, { parse: startup.parse }));
+    for (let round = 0; round < 3; round += 1) await unsandboxed.runOnce();
+    const [job] = await adminRows<{ status: string; attempts: number }>('SELECT status, attempts FROM jobs WHERE id = $1', [accepted.job_id]);
+    expect(job).toEqual({ status: 'queued', attempts: 0 });
+    expect(await count('import_previews', user.accountId)).toBe(0);
+  });
+
+  it.each<[string, ParserRunOutcome, string]>([
+    ['a runner that refuses an unsandboxed runtime', { kind: 'sandbox_unsupported' }, 'parser_sandbox_unsupported'],
+    ['a child that could not be started', { kind: 'spawn_failed' }, 'parser_unavailable'],
+  ])('%s fails the job retryably and records no preview', async (_label, outcome, code) => {
+    const user = await money.member();
+    const accepted = await upload(user, MEOWJOT);
+    await runParse(accepted.job_id, workerWith(fakeRunner(outcome)));
+    const [job] = await adminRows<{ status: string; last_error: string; attempts: number }>('SELECT status, last_error, attempts FROM jobs WHERE id = $1', [accepted.job_id]);
+    expect([job.last_error, job.status === 'queued' || job.status === 'failed']).toEqual([code, true]);
+    expect(await count('import_previews', user.accountId)).toBe(0);
+  });
+
+  it('a child stopped past its memory budget gives a rejected preview, never a retry', async () => {
+    const user = await money.member();
+    const accepted = await upload(user, MEOWJOT);
+    expect((await runParse(accepted.job_id, workerWith(fakeRunner({ kind: 'memory_limit' })))).status).toBe('succeeded');
+    const result = await previewOf(user, accepted.job_id);
+    expect(result).toMatchObject({ status: 'rejected', candidates: [] });
+    expect(result.issues).toEqual([{ code: 'parse_resource_limit', source_row_id: null, field: null }]);
+  });
+
+  it('an image whose own header disagrees with what the child said is never published', async () => {
+    const user = await money.member();
+    const image = await imageWithMetadata('jpeg', 16, 16);
+    const accepted = await upload(user, image, { name: 'receipt.jpg', type: 'image/jpeg' });
+    const clean = await sharp({ create: { width: 16, height: 16, channels: 3, background: '#406080' } }).jpeg().toBuffer();
+    const claimed = (base64: string, width: number): ParserRunOutcome => ({
+      kind: 'result',
+      result: {
+        ok: true, layout: 'receipt', file_issues: ['receipt_fields_unread'], usage: { max_rss_kb: 1024, cpu_ms: 5 },
+        image: { format: 'jpeg', width, height: 16, base64 },
+        rows: [{ source_row_id: 'image:1', occurred_on: null, type: null, amount_minor: null, wallet_label: null, category_label: null, merchant: null, note: null,
+          issues: [{ field: 'occurred_on', code: 'missing_date' }, { field: 'type', code: 'missing_type' }, { field: 'amount_minor', code: 'missing_amount' }, { field: 'wallet_label', code: 'missing_wallet' }] }],
+      },
+    });
+    // The wrong size, then metadata the child said it removed.
+    expect((await runParse(accepted.job_id, workerWith(fakeRunner(claimed(clean.toString('base64'), 4_000))))).status).toBe('succeeded');
+    expect((await previewOf(user, accepted.job_id)).issues).toEqual([{ code: 'parse_failed', source_row_id: null, field: null }]);
+    const second = await upload(user, image, { name: 'receipt.jpg', type: 'image/jpeg' });
+    expect((await runParse(second.job_id, workerWith(fakeRunner(claimed(image.toString('base64'), 16))))).status).toBe('succeeded');
+    expect((await previewOf(user, second.job_id)).issues).toEqual([{ code: 'parse_failed', source_row_id: null, field: null }]);
+    expect(await stored(`import_image/${user.accountId}/`)).toEqual([]);
+  });
+});
+
+describe('a paused OCR gate parks queued image parses attempt-neutrally (P2b)', () => {
+  const pausedOcr = () => new FeatureGates({ paused: ['ocr'], retryAfterSeconds: 120 });
+  const attemptsOf = async (id: string) =>
+    (await adminRows<{ status: string; attempts: number; last_error: string | null; delayed: boolean }>(
+      `SELECT status, attempts, last_error, run_after > now() + interval '60 seconds' AS delayed FROM jobs WHERE id = $1`,
+      [id],
+    ))[0];
+
+  it('releases a claimed image job (no attempt spent, nothing read or recorded) and still parses a spreadsheet', async () => {
+    const user = await money.member();
+    const image = await imageWithMetadata('jpeg', 16, 16);
+    const receipt = await upload(user, image, { name: 'receipt.jpg', type: 'image/jpeg' });
+    const sheet = await upload(user, MEOWJOT);
+    const gated = new JobWorker(jobs, buildHandlers(deps, { parse: { runner: parsingRunner() }, gates: pausedOcr() }));
+    expect((await runParse(sheet.job_id, gated)).status).toBe('succeeded');
+    for (let round = 0; round < 3; round += 1) await gated.runOnce();
+    // Released with its attempt given back, and held back for the retry-after rather than spun on.
+    expect(await attemptsOf(receipt.job_id)).toEqual({ status: 'queued', attempts: 0, last_error: 'ocr_paused', delayed: true });
+    expect(await stored(`import_image/${user.accountId}/`)).toEqual([]);
+    expect(await count('import_previews', user.accountId)).toBe(1);
+  });
+
+  it('parses the same job after the gate reopens, as its first attempt', async () => {
+    const user = await money.member();
+    const receipt = await upload(user, await imageWithMetadata('jpeg', 16, 16), { name: 'receipt.jpg', type: 'image/jpeg' });
+    const gated = new JobWorker(jobs, buildHandlers(deps, { parse: { runner: parsingRunner() }, gates: pausedOcr() }));
+    await gated.runOnce();
+    expect(await attemptsOf(receipt.job_id)).toMatchObject({ status: 'queued', attempts: 0, last_error: 'ocr_paused' });
+    await db.admin((client) => client.query('UPDATE jobs SET run_after = now() WHERE id = $1', [receipt.job_id]));
+    expect(await runParse(receipt.job_id)).toEqual({ status: 'succeeded', last_error: null });
+    expect((await previewOf(user, receipt.job_id)).status).toBe('ready');
+  });
+
+  it('does not park a raw file past its expiry: it still fails visibly', async () => {
+    const user = await money.member();
+    const receipt = await upload(user, await imageWithMetadata('jpeg', 16, 16), { name: 'receipt.jpg', type: 'image/jpeg' });
+    await db.admin((client) =>
+      client.query(
+        `UPDATE import_uploads SET created_at = created_at - interval '25 hours', receive_deadline = receive_deadline - interval '25 hours',
+                accepted_at = accepted_at - interval '25 hours', expires_at = expires_at - interval '25 hours' WHERE job_id = $1`,
+        [receipt.job_id],
+      ),
+    );
+    const gated = new JobWorker(jobs, buildHandlers(deps, { parse: { runner: parsingRunner() }, gates: pausedOcr() }));
+    await gated.runOnce();
+    expect(await jobOf(receipt.job_id)).toEqual({ status: 'failed', last_error: 'import_unavailable' });
   });
 });
 

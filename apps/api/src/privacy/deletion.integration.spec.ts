@@ -4,6 +4,7 @@ import { isDeletionAccepted, isDeletionReceipt } from '@gogospend/contracts';
 import type { DeletionAccepted } from '@gogospend/contracts';
 import { Client, Pool } from 'pg';
 
+import { sha256 } from '../auth/oidc-proof-verifier';
 import { ProblemException } from '../common/api-problem.filter';
 import { JobRepository } from '../jobs/job.repository';
 import { ObjectPublicationService } from '../storage/object-publication.service';
@@ -21,6 +22,7 @@ import { createTestDatabase } from '../testing/postgres-harness';
 import type { GroupRole, TestDatabase } from '../testing/postgres-harness';
 import {
   accountTables,
+  capturedSubjectsOf,
   countDeletes,
   deletionJobOf,
   deletionRequestOf,
@@ -77,7 +79,7 @@ const accountOf = async (accountId: string) =>
 const blocksOf = async (user: SignedUp) =>
   (await db.admin((client) => client.query('SELECT reason, blocked_until FROM blocked_principals WHERE principal_digest = gogospend_principal_digest($1, $2)', [user.who.issuer, user.who.subject]))).rows;
 const markersOf = async (accountId: string) =>
-  (await db.admin((client) => client.query('SELECT * FROM erasure_registry.erasure_markers WHERE account_id = $1', [accountId]))).rows;
+  (await db.admin((client) => client.query('SELECT * FROM erasure_registry.erasure_markers WHERE account_id = $1 ORDER BY recorded_at', [accountId]))).rows;
 
 /** A member with money, a second signed-in device, an export file and a pending provider event receipt. */
 async function populated() {
@@ -119,6 +121,7 @@ afterAll(async () => {
 beforeEach(async () => {
   provider.reset();
   registryControl.state.failing = false;
+  registryControl.state.failingPurge = false;
   w.handlerOptions.afterStage = undefined;
   // Each test runs only the deletions it requested.
   await db.admin((client) => client.query(`DELETE FROM jobs WHERE status IN ('queued', 'leased')`));
@@ -270,6 +273,8 @@ describe('erasure', () => {
     const fileKey = await publication.reserve(claimed.lease, 'export', 'export.csv');
     const put = await store.putStream(fileKey, new TextEncoder().encode('record_id\r\n'));
     expect(await publication.finishWithObjects(generic, claimed.lease, [{ key: fileKey, ...put }], new Date(Date.now() + 24 * 3_600_000))).toBe(true);
+    // A sign-in that had started (its bootstrap challenge has no account) is purged too.
+    await fx.challengeFor(user.who);
     const registryBefore = registryControl.state.records;
     const { key } = await accepted(user);
     await w.drain();
@@ -277,7 +282,7 @@ describe('erasure', () => {
     // 1. The independent marker, in P6a's shape, keyed - no raw subject.
     const markers = await markersOf(user.accountId);
     expect(markers).toHaveLength(1);
-    expect(Object.keys(markers[0]).sort()).toEqual(['account_id', 'lookup_key_id', 'marker_id', 'recorded_at', 'subject_lookups']);
+    expect(Object.keys(markers[0]).sort()).toEqual(['account_id', 'blocked_until', 'lookup_key_id', 'marker_id', 'purged_at', 'recorded_at', 'subject_lookups']);
     const expectedLookup = createHmac('sha256', Buffer.alloc(32, 7)).update(`gogospend-erasure-subject-v1\u0000${user.who.issuer}\u0000${user.who.subject}`).digest('base64url');
     expect(markers[0].subject_lookups).toEqual([expectedLookup]);
     expect(JSON.stringify(markers)).not.toContain(user.who.subject);
@@ -298,15 +303,25 @@ describe('erasure', () => {
     const principal = [user.who.issuer, user.who.subject];
     expect((await db.admin((client) => client.query('SELECT 1 FROM auth_event_receipts WHERE principal_digest = gogospend_principal_digest($1, $2)', principal))).rowCount).toBe(0);
     expect((await db.admin((client) => client.query('SELECT 1 FROM security_reconcile_checks WHERE principal_digest = gogospend_principal_digest($1, $2)', principal))).rowCount).toBe(0);
+    expect((await db.admin((client) => client.query('SELECT 1 FROM reauth_challenges WHERE principal_digest = gogospend_principal_digest($1, $2)', principal))).rowCount).toBe(0);
     const request = await deletionRequestOf(db, user.accountId);
     expect(request?.marker_recorded_at).toBeInstanceOf(Date);
     expect(request?.provider_verified_at).toBeInstanceOf(Date);
     expect(request?.objects_swept_at).toBeInstanceOf(Date);
     expect(request?.purged_at).toBeInstanceOf(Date);
+    expect(request?.marker_purge_recorded_at).toBeInstanceOf(Date);
+    // 6. The registry learned the purge and the hold end (a restore replays it; the marker can now be cleared).
+    expect(markers[0].purged_at).toBeInstanceOf(Date);
+    expect(markers[0].blocked_until?.toISOString()).toBe(request?.blocked_until?.toISOString());
+    // No pseudonymous identifier of the person outlives the purge: only the device's binding digest stays for its receipt.
+    expect(request?.initiator_principal_digest).toBeNull();
+    expect(request?.initiator_binding_digest).toBeInstanceOf(Buffer);
+    expect(await capturedSubjectsOf(db, user.accountId)).toEqual([]);
     // The alias stays blocked for an hour past provider verification: no stale token bootstraps.
     const [block] = await blocksOf(user);
     expect(block.reason).toBe('deleted');
     expect(block.blocked_until.getTime()).toBeGreaterThan(Date.now() + 55 * 60_000);
+    expect(block.blocked_until.toISOString()).toBe(request?.blocked_until?.toISOString());
     expect(await code(() => fx.signIn(user.who))).toBe('403 ACCOUNT_UNAVAILABLE');
     expect(await code(() => fx.signIn(otherDevice.who))).toBe('403 ACCOUNT_UNAVAILABLE');
     expect(key).toBeDefined();
@@ -399,7 +414,7 @@ describe('erasure', () => {
     const request = await deletionRequestOf(db, user.accountId);
     expect(request?.provider_verified_at).toBeNull();
     expect(request?.purged_at).toBeNull();
-    await db.admin((client) => client.query(`UPDATE deletion_requests SET requested_at = now() - interval '21 hours' WHERE account_id = $1`, [user.accountId]));
+    await db.admin((client) => client.query(`UPDATE deletion_requests SET requested_at = now() - interval '21 hours' WHERE erased_account_id = $1`, [user.accountId]));
     const backlog = await w.repository.backlog();
     expect(backlog.failed).toBeGreaterThanOrEqual(1);
     expect(backlog.overdue).toBeGreaterThanOrEqual(1);
@@ -434,22 +449,268 @@ describe('erasure', () => {
     expect((await deletionRequestOf(db, user.accountId))?.purged_at).toBeInstanceOf(Date);
   });
 
-  it('a restore can re-queue the whole erasure of a marked account (P6a)', async () => {
+  it('a crash after the purge, before the registry learned it: the marker stays unclearable until the retry records it', async () => {
+    const { user } = await populated();
+    await accepted(user);
+    registryControl.state.failingPurge = true;
+    await w.drain(1);
+    const request = await deletionRequestOf(db, user.accountId);
+    expect(request?.purged_at).toBeInstanceOf(Date);
+    expect(request?.marker_purge_recorded_at).toBeNull();
+    expect((await markersOf(user.accountId))[0].purged_at).toBeNull();
+    const [job] = await deletionJobOf(db, user.accountId);
+    expect(job).toEqual(expect.objectContaining({ status: 'queued', last_error: 'registry_unavailable' }));
+    expect((await w.repository.backlog()).open).toBeGreaterThanOrEqual(1);
+    registryControl.state.failingPurge = false;
+    provider.calls.length = 0;
+    await runNow(db, job.id);
+    await w.drain();
+    expect(provider.calls).toEqual([]);
+    expect((await deletionRequestOf(db, user.accountId))?.marker_purge_recorded_at).toBeInstanceOf(Date);
+    expect((await markersOf(user.accountId))[0].purged_at).toBeInstanceOf(Date);
+    expect((await deletionJobOf(db, user.accountId))[0].status).toBe('succeeded');
+  });
+
+  it('an expired deletion lease can neither read, mark, shed, purge nor finish', async () => {
     const user = await money.member();
-    // The restored copy holds the account as it was before its deletion was asked for.
-    const outcome = (await db.admin((client) => client.query('SELECT gogospend_reapply_erasure($1, $2) AS outcome', [user.accountId, randomUUID()]))).rows[0].outcome;
-    expect(outcome).toBe('requeued');
+    await accepted(user);
+    const [claimed] = await w.jobs.claim(['account_deletion'], { leaseSeconds: 30 });
+    expect(claimed.lease.jobId).toBe((await deletionJobOf(db, user.accountId))[0].id);
+    expect(await w.repository.progress(claimed.lease)).not.toBeNull();
+    await db.admin((client) => client.query(`UPDATE jobs SET lease_expires_at = now() - interval '1 second' WHERE id = $1`, [claimed.lease.jobId]));
+    expect(await w.repository.progress(claimed.lease)).toBeNull();
+    expect(await w.repository.identities(claimed.lease)).toEqual([]);
+    expect(await w.repository.clientIds(claimed.lease)).toEqual([]);
+    expect(await w.repository.mark(claimed.lease, 'marker')).toBe(false);
+    expect(await w.repository.objects(claimed.lease)).toBeNull();
+    expect(await w.repository.shed(claimed.lease, 10)).toBeNull();
+    expect(await w.repository.purge(claimed.lease)).toBe('stale_lease');
+    expect(await w.repository.finish(claimed.lease)).toBe('stale_lease');
+    expect((await deletionRequestOf(db, user.accountId))?.marker_recorded_at).toBeNull();
+    expect((await accountOf(user.accountId)).status).toBe('deleting');
+  });
+
+  it('sheds the largest tables in short batches before a small purge', async () => {
+    const { user, cash } = await populated();
+    for (let i = 0; i < 4; i += 1) {
+      await money.record(user, { type: 'expense', amount_minor: String(100 + i), occurred_on: '2026-03-02', wallet_id: cash, category_id: builtinId(user, 'food') });
+    }
+    await accepted(user);
+    w.handlerOptions.afterStage = async (stage) => {
+      if (stage === 'steps') throw new Error('synthetic stop before the shed');
+    };
+    await w.drain(1);
+    w.handlerOptions.afterStage = undefined;
+    await runNow(db, (await deletionJobOf(db, user.accountId))[0].id);
+    const [claimed] = await w.jobs.claim(['account_deletion'], { leaseSeconds: 30 });
+    const rowsLeft = async () => Number((await db.admin((client) => client.query(
+      `SELECT (SELECT count(*) FROM entity_changes WHERE account_id = $1) + (SELECT count(*) FROM audit_events WHERE account_id = $1)
+            + (SELECT count(*) FROM command_receipts WHERE account_id = $1) + (SELECT count(*) FROM transactions WHERE account_id = $1)
+            + (SELECT count(*) FROM entity_heads WHERE account_id = $1) AS n`,
+      [user.accountId],
+    ))).rows[0].n);
+    const before = await rowsLeft();
+    expect(before).toBeGreaterThan(6);
+    expect(await w.repository.shed(claimed.lease, 3)).toBe(3);
+    expect(await rowsLeft()).toBe(before - 3);
+    let passes = 0;
+    while ((await w.repository.shed(claimed.lease, 3)) !== 0) passes += 1;
+    expect(passes).toBeGreaterThan(1);
+    expect(await rowsLeft()).toBe(0);
+    await w.handler.run(claimed.lease);
+    expect((await deletionRequestOf(db, user.accountId))?.marker_purge_recorded_at).toBeInstanceOf(Date);
+    expect(await ownerRows(db, user.accountId, ['jobs', 'object_publications'])).toEqual({});
+  });
+
+  it('the worker sheds until nothing is left, one bounded batch per transaction, before it purges', async () => {
+    const { user, cash } = await populated();
+    for (let i = 0; i < 3; i += 1) {
+      await money.record(user, { type: 'expense', amount_minor: String(200 + i), occurred_on: '2026-03-03', wallet_id: cash, category_id: builtinId(user, 'food') });
+    }
+    await accepted(user);
+    const shed: (number | null)[] = [];
+    const original = w.repository.shed.bind(w.repository);
+    w.repository.shed = async (lease, limit) => {
+      const n = await original(lease, limit);
+      shed.push(n);
+      return n;
+    };
+    w.handlerOptions.shedBatch = 4;
+    try {
+      await w.drain();
+    } finally {
+      w.repository.shed = original;
+      w.handlerOptions.shedBatch = undefined;
+    }
+    expect(shed.length).toBeGreaterThan(2);
+    expect(shed[shed.length - 1]).toBe(0);
+    expect(shed.slice(0, -1).every((n) => n !== null && n > 0 && n <= 4)).toBe(true);
+    expect((await deletionRequestOf(db, user.accountId))?.marker_purge_recorded_at).toBeInstanceOf(Date);
+  });
+
+  it('the account cancel routine never cancels the deletion job', async () => {
+    const user = await money.member();
+    await accepted(user);
+    const owner = new Client(poolConfigFromUrl(db.adminUrl, 1));
+    await owner.connect();
+    try {
+      await owner.query('BEGIN');
+      await owner.query(`SELECT set_config('gogospend.account_id', $1, true)`, [user.accountId]);
+      await owner.query('SELECT gogospend_cancel_account_jobs()');
+      await owner.query('COMMIT');
+    } finally {
+      await owner.end();
+    }
+    expect(await deletionJobOf(db, user.accountId)).toEqual([expect.objectContaining({ status: 'queued', account_id: user.accountId })]);
+  });
+
+  it('the receipt needs the initiating binding, principal and client; after the purge only binding and client remain to match', async () => {
+    const user = await money.member();
+    const { key } = await accepted(user);
+    const boot = await db.loginPool(['gogospend_bootstrap'], 1);
+    const receiptRows = async (subject: string, client: string, commandId = key, binding = user.binding) =>
+      (await boot.query('SELECT request_id, status FROM gogospend_deletion_receipt($1, $2, $3, $4, $5)', [sha256(binding), user.who.issuer, subject, client, commandId])).rows;
+    expect(await receiptRows(user.who.subject, user.who.clientId)).toEqual([{ request_id: expect.any(String), status: 'accepted' }]);
+    expect(await receiptRows(`auth0|${randomUUID()}`, user.who.clientId)).toEqual([]);
+    expect(await receiptRows(user.who.subject, 'another-client')).toEqual([]);
+    expect(await receiptRows(user.who.subject, user.who.clientId, randomUUID())).toEqual([]);
+    expect(await receiptRows(user.who.subject, user.who.clientId, key, 'x'.repeat(43))).toEqual([]);
+    await w.drain();
+    // The principal digest is gone with the purge; the device's binding and client still have to match.
+    expect((await deletionRequestOf(db, user.accountId))?.initiator_principal_digest).toBeNull();
+    expect(await receiptRows(user.who.subject, user.who.clientId)).toEqual([{ request_id: expect.any(String), status: 'completed' }]);
+    expect(await receiptRows(user.who.subject, 'another-client')).toEqual([]);
+  });
+
+  it('a provider event for an erased principal keeps no new receipt while the hold lasts', async () => {
+    const user = await money.member();
+    await accepted(user);
+    await w.drain();
+    const boot = await db.loginPool(['gogospend_bootstrap'], 1);
+    const event = async () => (await boot.query(
+      `SELECT gogospend_record_security_event($1, 'password_changed', $2, $3, now() - interval '1 second', $4) AS outcome`,
+      [`evt_${randomUUID().replace(/-/g, '')}`, user.who.issuer, user.who.subject, randomUUID()],
+    )).rows[0].outcome as string;
+    const receipts = async () => (await db.admin((client) => client.query(
+      'SELECT count(*)::int AS n FROM auth_event_receipts WHERE principal_digest = gogospend_principal_digest($1, $2)', [user.who.issuer, user.who.subject],
+    ))).rows[0].n as number;
+    expect(await event()).toBe('no_account');
+    expect(await receipts()).toBe(0);
+    // Once the hold has lapsed the login is nobody's; F6b's ordinary watermark applies again.
+    await db.admin((client) => client.query(`UPDATE blocked_principals SET blocked_until = now() - interval '1 second' WHERE principal_digest = gogospend_principal_digest($1, $2)`, [user.who.issuer, user.who.subject]));
+    expect(await event()).toBe('no_account');
+    expect(await receipts()).toBe(1);
+  });
+});
+
+describe('an account with a linked second sign-in method', () => {
+  it('holds, captures, marks, revokes, deletes and finally blocks every alias', async () => {
+    const user = await money.member();
+    const second = { issuer: user.who.issuer, subject: `apple|${randomUUID()}` };
+    await db.admin((client) => client.query('INSERT INTO account_identities (issuer, subject, account_id) VALUES ($1, $2, $3)', [second.issuer, second.subject, user.accountId]));
+    const secondWho = { ...user.who, subject: second.subject };
+    const both = [user.who.subject, second.subject].sort();
+    const holdsOf = async () => (await db.admin((client) => client.query(
+      `SELECT reason, blocked_until IS NOT NULL AS lapses FROM blocked_principals
+        WHERE principal_digest IN (gogospend_principal_digest($1, $2), gogospend_principal_digest($3, $4))`,
+      [user.who.issuer, user.who.subject, second.issuer, second.subject],
+    ))).rows;
+    await accepted(user);
+    // Held at once, and captured for the provider stage.
+    expect(await holdsOf()).toEqual([{ reason: 'deleted', lapses: false }, { reason: 'deleted', lapses: false }]);
+    expect((await capturedSubjectsOf(db, user.accountId)).map((row) => row.subject).sort()).toEqual(both);
+    expect(await code(() => fx.signIn(secondWho))).toBe('403 ACCOUNT_UNAVAILABLE');
+    await w.drain();
+    // Marked: one keyed lookup per alias.
+    const lookup = (subject: string) => createHmac('sha256', Buffer.alloc(32, 7)).update(`gogospend-erasure-subject-v1\u0000${user.who.issuer}\u0000${subject}`).digest('base64url');
+    expect((await markersOf(user.accountId)).flatMap((marker) => marker.subject_lookups).sort()).toEqual([lookup(user.who.subject), lookup(second.subject)].sort());
+    // Revoked, deleted and confirmed at the provider, per alias.
+    for (const subject of both) {
+      expect(provider.calls.filter((call) => call.subject === subject).map((call) => call.op)).toEqual(['revokeGrants', 'deleteUser', 'confirmDeleted']);
+    }
+    // Blocked after the purge until the stale-token window passes.
+    expect(await holdsOf()).toEqual([{ reason: 'deleted', lapses: true }, { reason: 'deleted', lapses: true }]);
+    expect(await code(() => fx.signIn(secondWho))).toBe('403 ACCOUNT_UNAVAILABLE');
+    expect(await ownerRows(db, user.accountId, ['jobs', 'object_publications'])).toEqual({});
+  });
+});
+
+describe('restores (P6a)', () => {
+  /** What P6a's row-level erase does to the restored copy: digest rows, rows that do not follow accounts, then the accounts. */
+  async function restoreErase(accountId: string): Promise<void> {
+    const loose = (await accountTables(db)).filter((row) => !row.cascades).map((row) => row.table);
+    await db.admin(async (client) => {
+      await client.query('BEGIN');
+      await client.query(`DELETE FROM auth_event_receipts WHERE principal_digest IN (SELECT gogospend_principal_digest(issuer, subject) FROM account_identities WHERE account_id = $1)`, [accountId]);
+      for (const table of loose) await client.query(`DELETE FROM ${client.escapeIdentifier(table)} WHERE account_id = $1`, [accountId]);
+      await client.query('DELETE FROM accounts WHERE id = $1', [accountId]);
+      await client.query('COMMIT');
+    });
+  }
+
+  it('re-queues an in-progress erasure whose rows the restore then deletes: provider cleanup still runs from the captured aliases', async () => {
+    const user = await money.member();
+    const reapply = async () => (await db.admin((client) => client.query('SELECT gogospend_reapply_erasure($1, $2) AS outcome', [user.accountId, randomUUID()]))).rows[0].outcome as string;
+    expect(await reapply()).toBe('requeued');
     expect((await accountOf(user.accountId)).status).toBe('deleting');
     expect((await as(user).get('/v1/me')).status).toBe(401);
     expect(await blocksOf(user)).toEqual([{ reason: 'deleted', blocked_until: null }]);
-    expect((await db.admin((client) => client.query('SELECT gogospend_reapply_erasure($1, $2) AS outcome', [user.accountId, randomUUID()]))).rows[0].outcome).toBe('running');
+    expect(await capturedSubjectsOf(db, user.accountId)).toEqual([{ issuer: user.who.issuer, subject: user.who.subject }]);
+    const [first] = await deletionJobOf(db, user.accountId);
+    expect(first).toEqual(expect.objectContaining({ status: 'queued', account_id: null }));
+    // A second reapply replaces the job: exactly one stays open.
+    expect(await reapply()).toBe('requeued');
+    const [second] = await deletionJobOf(db, user.accountId);
+    expect(second.id).not.toBe(first.id);
+    expect((await db.admin((client) => client.query('SELECT status FROM jobs WHERE id = $1', [first.id]))).rows[0].status).toBe('cancelled');
+
+    await restoreErase(user.accountId);
+    // The work items survive the row-level erase (no account_id), and no owner row is left.
+    expect(await ownerRows(db, user.accountId)).toEqual({});
+    expect(await deletionJobOf(db, user.accountId)).toEqual([expect.objectContaining({ id: second.id, status: 'queued' })]);
     await w.drain();
-    expect(provider.calls.map((call) => call.op)).toEqual(['revokeGrants', 'deleteUser', 'confirmDeleted']);
-    expect(await ownerRows(db, user.accountId, ['deletion_requests', 'jobs', 'object_publications'])).toEqual({});
-    expect((await db.admin((client) => client.query('SELECT gogospend_reapply_erasure($1, $2) AS outcome', [user.accountId, randomUUID()]))).rows[0].outcome).toBe('absent');
+    expect(provider.calls).toEqual([
+      { op: 'revokeGrants', subject: user.who.subject },
+      { op: 'deleteUser', subject: user.who.subject },
+      { op: 'confirmDeleted', subject: user.who.subject },
+    ]);
+    const request = await deletionRequestOf(db, user.accountId);
+    expect(request?.marker_purge_recorded_at).toBeInstanceOf(Date);
+    expect(await capturedSubjectsOf(db, user.accountId)).toEqual([]);
+    // P5's hold semantics: an end one hour past verification, also on the marker.
+    const [block] = await blocksOf(user);
+    expect(block.blocked_until).toBeInstanceOf(Date);
+    const markers = await markersOf(user.accountId);
+    expect(markers.length).toBeGreaterThan(0);
+    expect(markers.every((marker) => marker.purged_at instanceof Date && marker.blocked_until?.toISOString() === block.blocked_until.toISOString())).toBe(true);
+    expect(await reapply()).toBe('absent');
     // No serving role can call it.
     const app = await db.loginPool(['gogospend_app', 'gogospend_bootstrap'], 1);
     await expect(app.query('SELECT gogospend_reapply_erasure($1, $2)', [user.accountId, randomUUID()])).rejects.toMatchObject({ code: '42501' });
+  });
+
+  it('a re-run after an earlier purge appends a new marker, so the account stays unclearable until this run is purged too', async () => {
+    const user = await money.member();
+    await accepted(user);
+    await w.drain();
+    expect(await markersOf(user.accountId)).toHaveLength(1);
+    // An older backup brings the account back; the restore re-queues its erasure.
+    await db.admin(async (client) => {
+      await client.query('DELETE FROM blocked_principals WHERE principal_digest = gogospend_principal_digest($1, $2)', [user.who.issuer, user.who.subject]);
+      await client.query('INSERT INTO accounts (id) VALUES ($1)', [user.accountId]);
+      await client.query('INSERT INTO account_sync_state (account_id) VALUES ($1)', [user.accountId]);
+      await client.query('INSERT INTO account_identities (issuer, subject, account_id) VALUES ($1, $2, $3)', [user.who.issuer, user.who.subject, user.accountId]);
+    });
+    expect((await db.admin((client) => client.query('SELECT gogospend_reapply_erasure($1, $2) AS outcome', [user.accountId, randomUUID()]))).rows[0].outcome).toBe('requeued');
+    registryControl.state.failingPurge = true;
+    await w.drain(1);
+    const markers = await markersOf(user.accountId);
+    expect(markers).toHaveLength(2);
+    expect(markers.map((marker) => marker.purged_at === null)).toEqual([false, true]);
+    registryControl.state.failingPurge = false;
+    await runNow(db, (await deletionJobOf(db, user.accountId))[0].id);
+    await w.drain();
+    expect((await markersOf(user.accountId)).every((marker) => marker.purged_at instanceof Date)).toBe(true);
   });
 });
 
@@ -478,8 +739,23 @@ describe('extension point and registry isolation', () => {
     expect(await registry.record(accountId, [{ issuer: 'https://issuer.test/', subject: 'auth0|synthetic' }])).toEqual(first);
     expect(first.lookup_key_id).toMatch(/^[0-9a-f]{32}$/);
     expect((await registry.listMarkers()).some((marker) => marker.marker_id === first.marker_id)).toBe(true);
+    expect(first).toEqual(expect.objectContaining({ purged_at: null, blocked_until: null }));
+    // Not independent here (same database as the data); production says so explicitly.
+    expect(registry.independent).toBe(false);
+    expect(new PostgresErasureRegistry(login, new LookupKey(Buffer.alloc(32, 9)), { independent: true, location: 'r2-recovery-control' })).toEqual(
+      expect.objectContaining({ independent: true, location: 'r2-recovery-control', lookupKeyId: first.lookup_key_id }),
+    );
     await expect(login.query('UPDATE erasure_registry.erasure_markers SET account_id = $1', [randomUUID()])).rejects.toMatchObject({ code: '42501' });
     await expect(login.query('DELETE FROM erasure_registry.erasure_markers')).rejects.toMatchObject({ code: '42501' });
+    // The purge is recorded once; after that the marker is final.
+    const purgedAt = new Date(Date.now() + 1_000);
+    const until = new Date(Date.now() + 3_600_000);
+    await registry.recordPurge(accountId, purgedAt, until);
+    const [purged] = (await registry.listMarkers()).filter((marker) => marker.account_id === accountId);
+    expect(purged).toEqual(expect.objectContaining({ purged_at: purgedAt.toISOString(), blocked_until: until.toISOString() }));
+    await expect(login.query(`UPDATE erasure_registry.erasure_markers SET blocked_until = NULL WHERE account_id = $1`, [accountId])).rejects.toMatchObject({ code: '42501' });
+    await expect(login.query(`UPDATE erasure_registry.erasure_markers SET purged_at = NULL WHERE account_id = $1`, [accountId])).rejects.toMatchObject({ code: '42501' });
+    await expect(registry.recordPurge(randomUUID(), purgedAt, null)).rejects.toThrow();
     const broken = new Pool(poolConfigFromUrl(db.adminUrl.replace(/\/[^/]+$/, '/gogospend_no_such_database'), 1));
     try {
       await expect(new PostgresErasureRegistry(broken, new LookupKey(Buffer.alloc(32, 9))).listMarkers()).rejects.toThrow();

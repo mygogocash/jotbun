@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { afterEach, test } from 'node:test';
+
+import { SYNC_ENTITY_VALIDATORS } from '@gogospend/contracts';
+import type { EntityChange } from '@gogospend/contracts';
 
 import { AccountDatabase } from './accountDatabase.ts';
 import type { DiaryStore } from './diaryRepository.ts';
@@ -219,4 +223,64 @@ test('stores exact integer strings and no credentials', async () => {
   raw.close();
   assert.ok(columns.length > 0);
   assert.deepEqual(columns.filter((name) => /token|binding|auth|password|secret/i.test(name)), []);
+});
+
+// An app built before P3 has no validators for the import entity types. A
+// server that has them must never stall that app's sync: a change of an
+// entity this build does not know is skipped, its cursor and revision still
+// advance, and everything it does know is applied.
+const { import_review: _review, import_selection: _selection, ...BEFORE_IMPORTS } = SYNC_ENTITY_VALIDATORS;
+
+async function openWith(validators: typeof SYNC_ENTITY_VALIDATORS): Promise<DiaryStore> {
+  files?.dispose();
+  files = createTestDiaryFiles();
+  const database = new AccountDatabase({ files, keys: createMemoryKeyStore(), epoch: () => 1, validators });
+  return database.open(ACCOUNT_A);
+}
+
+const JOB = '3d000000-0000-4000-8000-000000000001';
+const importReview = (version = 1): EntityChange => ({ entity: 'import_review', id: JOB, version, state: 'active', snapshot: { id: JOB, review_revision: String(version + 1) } });
+const importSelection = (): EntityChange => {
+  const id = randomUUID();
+  return { entity: 'import_selection', id, version: 1, state: 'active', snapshot: { id, job_id: JOB, frozen_revision: '1', row_count: 2, committed_count: 0 } };
+};
+
+test('a build without the import validators skips import changes, applies the rest and advances the cursor', async () => {
+  const store = await openWith(BEFORE_IMPORTS);
+  const spent = expense({ amount_minor: '4200' });
+  await store.applyChangeGroups([references()], 'c1', null);
+  await store.applyChangeGroups([group(2, importReview()), group(3, importSelection(), change('transaction', spent)), group(4, importReview(2))], 'c4', 'c1');
+  const state = await store.readState();
+  assert.equal(state.cursor, 'c4');
+  assert.equal(state.appliedRevision, '4');
+  assert.deepEqual(state.confirmed.map((entity) => entity.entity).sort(), ['category', 'transaction', 'wallet', 'wallet']);
+  assert.deepEqual(state.walletTotals[WALLET], '95800');
+  // A later page continues from the advanced cursor.
+  await store.applyChangeGroups([group(5, change('transaction', expense({ amount_minor: '100' })))], 'c5', 'c4');
+  assert.equal((await store.readState()).appliedRevision, '5');
+});
+
+test('a snapshot with import entities replaces the confirmed state without them for a build that does not know them', async () => {
+  const store = await openWith(BEFORE_IMPORTS);
+  await store.replaceConfirmed({ entities: [change('wallet', wallet({ version: 2 })), importReview(), importSelection()], cursor: 'snapshot-cursor' }, '9');
+  const state = await store.readState();
+  assert.equal(state.cursor, 'snapshot-cursor');
+  assert.equal(state.appliedRevision, '9');
+  assert.deepEqual(state.confirmed.map((entity) => entity.entity), ['wallet']);
+});
+
+test('a known entity that does not match its validator, and an unknown entity that is not an entity change at all, still refuse the page', async () => {
+  const store = await openWith(BEFORE_IMPORTS);
+  await store.applyChangeGroups([references()], 'c1', null);
+  const before = await store.readState();
+  await assert.rejects(store.applyChangeGroups([group(2, importReview(), { ...change('transaction', expense()), snapshot: { amount_minor: 65 } })], 'bad', 'c1'), invalid);
+  await assert.rejects(store.applyChangeGroups([group(2, { ...importReview(), id: 'not-a-uuid' })], 'bad', 'c1'), invalid);
+  await assert.rejects(store.applyChangeGroups([group(2, { ...importReview(), extra: true } as EntityChange)], 'bad', 'c1'), invalid);
+  assert.deepEqual(await store.readState(), before);
+});
+
+test('a build that knows the import entities stores them', async () => {
+  const store = await open();
+  await store.applyChangeGroups([references(), group(2, importReview())], 'c2', null);
+  assert.ok((await store.readState()).confirmed.some((entity) => entity.entity === 'import_review'));
 });

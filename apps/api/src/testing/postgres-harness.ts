@@ -45,6 +45,9 @@ function urlFor(base: URL, database: string, user?: string, password?: string): 
 
 async function withClient<T>(url: string, fn: (client: Client) => Promise<T>): Promise<T> {
   const client = new Client(poolConfigFromUrl(url, 1));
+  // A server-side disconnect emits 'error'. Without a listener Node treats it
+  // as an unhandled exception and fails whichever test is running.
+  client.on('error', () => undefined);
   try {
     await client.connect();
   } catch {
@@ -90,6 +93,22 @@ export async function createTestDatabase(): Promise<TestDatabase> {
     loginUrl,
     async loginPool(roles, poolMax = 4) {
       const pool = new Pool(poolConfigFromUrl(await loginUrl(roles), poolMax));
+      pool.on('error', () => undefined);
+      // A checked-out client is not covered by the pool listener. A disconnect
+      // (DROP … FORCE, pg_terminate_backend) must not surface as an unhandled
+      // 'error' event; the query promise still rejects.
+      const connect = pool.connect.bind(pool) as typeof pool.connect;
+      const guarded = new WeakSet<object>();
+      pool.connect = ((callback?: Parameters<Pool['connect']>[0]) => {
+        if (typeof callback === 'function') return connect(callback);
+        return Promise.resolve(connect()).then((client) => {
+          if (!guarded.has(client)) {
+            guarded.add(client);
+            client.on('error', () => undefined);
+          }
+          return client;
+        });
+      }) as typeof pool.connect;
       pools.push(pool);
       return pool;
     },

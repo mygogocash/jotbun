@@ -171,9 +171,12 @@ export async function restoreRehearsal(input = {}) {
       const identities = await restorer.identities(target);
       const markerAccounts = [...new Set(registry.markers.map((marker) => marker.account_id))];
       const existing = await restorer.existingAccounts(target, markerAccounts);
-      return planErasure(identities, registry.markers, registry.lookupKey, existing, now);
+      // Deletions the copy holds as accepted but not purged: their marker may
+      // not exist yet (written by P5's worker after the acceptance).
+      const requested = typeof restorer.openDeletions === 'function' ? await restorer.openDeletions(target) : [];
+      return planErasure(identities, registry.markers, registry.lookupKey, existing, now, requested);
     });
-    const erasure = { accountIds: plan.accountIds, principalDigests: plan.principalDigests, blocks: plan.blocks };
+    const erasure = { accountIds: plan.accountIds, principalDigests: plan.principalDigests, blocks: plan.blocks, reapply: plan.reapply };
     const erased = await phase('ERASURE_NOT_APPLIED', () => restorer.applyErasure(target, erasure));
     const remaining = await phase('ERASURE_NOT_APPLIED', () => restorer.ownerRows(target, erasure));
     if (remaining.length > 0) throw new OpsError('ERASURE_NOT_APPLIED', { tables: remaining.map((entry) => entry.table) });
@@ -199,6 +202,7 @@ export async function restoreRehearsal(input = {}) {
       },
       markers: { total: registry.markers.length, applied: plan.applied, not_present: plan.notPresent },
       accounts_erased: plan.accountsErased,
+      erasures_requeued: erased?.requeued ?? 0,
       principals_blocked: erased?.principalsBlocked ?? 0,
       erased_owner_rows: remaining,
       missing_retained_objects: missing.map((reference) => reference.ref),

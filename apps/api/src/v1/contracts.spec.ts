@@ -1,6 +1,15 @@
 import {
+  ATTACHMENT_COPY_REQUIREMENTS,
+  ATTACHMENT_DOWNLOAD_PATH,
+  ATTACHMENT_MAX_BYTES,
+  ATTACHMENT_MESSAGE_KEYS,
   ContractValidationError,
   MINOR_AMOUNT_MAX,
+  RECEIPT_RETENTION_CONSENT,
+  isAttachmentGrant,
+  IMPORT_PREVIEW_PAGE_MAX_LIMIT,
+  isImportPreview,
+  parseImportPreviewPaging,
   assertKnownFields,
   bangkokDate,
   compareVersions,
@@ -12,6 +21,8 @@ import {
   isCommittedChangeGroup,
   isEntityChange,
   isSnapshotChunk,
+  isSyncChangesPage,
+  SYNC_ENTITY_VALIDATORS,
   isSnapshotChunkGrant,
   isUuid,
   isTransactionSnapshot,
@@ -298,6 +309,80 @@ describe('v1 records', () => {
     expect(isTransactionSnapshot({ ...common, type: 'expense', wallet_id: 'w', category_id: 'c', amount_minor: '0' })).toBe(false);
     expect(isTransactionSnapshot({ ...common, type: 'refund', wallet_id: 'w', category_id: 'c' })).toBe(false);
   });
+
+  it('P2c: a record snapshot may name its receipt; older snapshots without one stay valid', () => {
+    const common = { id: 'a', amount_minor: '6500', occurred_on: '2026-09-20', note: null, merchant: null, deleted_at: null, version: 2 };
+    const receipt = '0b8f6a52-1c3d-4e5f-8a7b-9c0d1e2f3a4b';
+    expect(isTransactionSnapshot({ ...common, type: 'expense', wallet_id: 'w', category_id: 'c', attachment_id: receipt })).toBe(true);
+    expect(isTransactionSnapshot({ ...common, type: 'transfer', source_wallet_id: 'w', destination_wallet_id: 'v', attachment_id: receipt })).toBe(true);
+    for (const bad of [null, '', 'receipt/x/y', receipt.toUpperCase(), 7]) {
+      expect(isTransactionSnapshot({ ...common, type: 'expense', wallet_id: 'w', category_id: 'c', attachment_id: bad })).toBe(false);
+    }
+    expect(isTransactionSnapshot({ ...common, type: 'expense', wallet_id: 'w', category_id: 'c', attachment_key: receipt })).toBe(false);
+  });
+});
+
+describe('v1 receipt attachments (P2c)', () => {
+  const grant = {
+    url: `${ATTACHMENT_DOWNLOAD_PATH}AbC_d-1`,
+    expires_at: '2026-10-18T10:05:00.000Z',
+    content_type: 'image/jpeg',
+    bytes: 1234,
+    sha256: 'a'.repeat(64),
+  };
+
+  it('recognizes exactly a grant: a relative download path, the image type, size and digest', () => {
+    expect(isAttachmentGrant(grant)).toBe(true);
+    expect(isAttachmentGrant({ ...grant, url: 'https://bucket.example/receipt/x.jpg' })).toBe(false);
+    expect(isAttachmentGrant({ ...grant, url: `${ATTACHMENT_DOWNLOAD_PATH}../x` })).toBe(false);
+    expect(isAttachmentGrant({ ...grant, content_type: 'image/heic' })).toBe(false);
+    expect(isAttachmentGrant({ ...grant, bytes: 0 })).toBe(false);
+    expect(isAttachmentGrant({ ...grant, bytes: ATTACHMENT_MAX_BYTES + 1 })).toBe(false);
+    expect(isAttachmentGrant({ ...grant, sha256: 'A'.repeat(64) })).toBe(false);
+    expect(isAttachmentGrant({ ...grant, object_key: 'receipt/x' })).toBe(false);
+    expect(isAttachmentGrant({ ...grant, expires_at: 'soon' })).toBe(false);
+  });
+
+  it('names the consent literal and the copy the client must show, including that removal has no undo', () => {
+    expect(RECEIPT_RETENTION_CONSENT).toBe('retain_receipt');
+    expect(ATTACHMENT_MESSAGE_KEYS.removeNoUndo).toBe('attachments.remove_no_undo');
+    expect(ATTACHMENT_COPY_REQUIREMENTS[ATTACHMENT_MESSAGE_KEYS.removeNoUndo]).toMatch(/cannot be undone/);
+    expect(ATTACHMENT_COPY_REQUIREMENTS[ATTACHMENT_MESSAGE_KEYS.retainConsent]).toBeDefined();
+  });
+
+  it('a preview image carries its opaque attachment id and retain deadline, never a key', () => {
+    const preview = {
+      job_id: '1b8f6a52-1c3d-4e5f-8a7b-9c0d1e2f3a4b', status: 'ready', candidates: [], issues: [], duplicate_advice: [], review_revision: '1', expires_at: '2026-10-25T10:00:00.000Z',
+      summary: {
+        layout: 'receipt', candidate_count: 0, review_required_count: 0, totals: { expense_minor: '0', income_minor: '0', transfer_minor: '0' },
+        image: { width: 64, height: 48, attachment_id: '2b8f6a52-1c3d-4e5f-8a7b-9c0d1e2f3a4b', attachable_until: '2026-10-19T09:58:00.000Z' },
+      },
+    };
+    expect(isImportPreview(preview)).toBe(true);
+    expect(isImportPreview({ ...preview, summary: { ...preview.summary, image: { ...preview.summary.image, attachable_until: null } } })).toBe(true);
+    expect(isImportPreview({ ...preview, summary: { ...preview.summary, image: { width: 64, height: 48 } } })).toBe(false);
+    expect(isImportPreview({ ...preview, summary: { ...preview.summary, image: { ...preview.summary.image, attachment_id: 'import_image/x' } } })).toBe(false);
+    expect(isImportPreview({ ...preview, summary: { ...preview.summary, image: { ...preview.summary.image, image_key: 'import_image/x' } } })).toBe(false);
+  });
+
+  it('preview paging is additive: no parameters is the whole preview, a page is announced by an exact page object', () => {
+    const preview = { job_id: '1b8f6a52-1c3d-4e5f-8a7b-9c0d1e2f3a4b', status: 'ready', candidates: [], issues: [], duplicate_advice: [], review_revision: '1', expires_at: '2026-10-25T10:00:00.000Z', summary: null };
+    expect(parseImportPreviewPaging({})).toBeNull();
+    expect(parseImportPreviewPaging({ limit: '50' })).toEqual({ offset: 0, limit: 50 });
+    expect(parseImportPreviewPaging({ offset: '100' })).toEqual({ offset: 100, limit: IMPORT_PREVIEW_PAGE_MAX_LIMIT });
+    expect(parseImportPreviewPaging({ offset: '0', limit: '1' })).toEqual({ offset: 0, limit: 1 });
+    for (const query of [{ limit: '0' }, { limit: String(IMPORT_PREVIEW_PAGE_MAX_LIMIT + 1) }, { limit: '-1' }, { limit: '1.5' }, { limit: '01' }, { limit: ['1', '2'] }, { offset: '-1' }, { offset: '5001' }, { offset: 'x' }, { offset: '007' }]) {
+      expect(failure(() => parseImportPreviewPaging(query))).toMatchObject({ code: 'VALIDATION_FAILED' });
+    }
+    expect(failure(() => parseImportPreviewPaging({ limit: '5', cursor: 'x' }))).toEqual({ code: 'UNKNOWN_FIELD', field: 'cursor' });
+    expect(isImportPreview(preview)).toBe(true);
+    const page = { offset: 0, limit: 50, total: 120, next_offset: 50 };
+    expect(isImportPreview({ ...preview, page })).toBe(true);
+    expect(isImportPreview({ ...preview, page: { ...page, next_offset: null } })).toBe(true);
+    for (const bad of [{ ...page, extra: 1 }, { ...page, offset: -1 }, { ...page, limit: 0 }, { ...page, limit: IMPORT_PREVIEW_PAGE_MAX_LIMIT + 1 }, { ...page, total: -1 }, { ...page, next_offset: 'x' }, { offset: 0, limit: 50 }, { ...page, next_offset: 120 }, { ...page, offset: 120, next_offset: 170 }]) {
+      expect(isImportPreview({ ...preview, page: bad })).toBe(false);
+    }
+  });
 });
 
 describe('v1 budgets', () => {
@@ -362,5 +447,42 @@ describe('sync wire validators', () => {
     expect(isSnapshotChunk({ ...chunk, entities: [change({ snapshot: null })] })).toBe(false);
     expect(isSnapshotChunkGrant({ index: 0, bytes: 10, sha256: 'a'.repeat(64), grant: 'A'.repeat(55), grant_expires_at: '2026-10-17T00:05:00.000Z' })).toBe(true);
     expect(isSnapshotChunkGrant({ index: 0, bytes: 10, sha256: 'a'.repeat(64), grant: 'sync_snapshot/x', grant_expires_at: '2026-10-17T00:05:00.000Z' })).toBe(false);
+  });
+  describe('older validator sets (an entity type the reader does not know yet)', () => {
+    // A build from before P3 knows no import_review / import_selection.
+    const { import_review: _review, import_selection: _selection, ...older } = SYNC_ENTITY_VALIDATORS;
+    const job = '0000003d-0000-4000-8000-000000000001';
+    const importChange = (overrides: Record<string, unknown> = {}) => ({ entity: 'import_review', id: job, version: 1, state: 'active', snapshot: { id: job, review_revision: '2' }, ...overrides });
+    const group = (...changes: unknown[]) => ({ revision: '12', command_id: '0000000c-0000-4000-8000-000000000001', changes });
+    const page = (...groups: unknown[]) => ({ groups, next_cursor: 'cursor', has_more: false });
+    const skip = { unknownEntities: 'skip' } as const;
+
+    it('rejects an unknown entity strictly (the default), but tolerates it when the reader skips unknown entities', () => {
+      expect(isEntityChange(importChange(), older)).toBe(false);
+      expect(isCommittedChangeGroup(group(change(), importChange()), older)).toBe(false);
+      expect(isEntityChange(importChange(), older, skip)).toBe(true);
+      expect(isCommittedChangeGroup(group(change(), importChange()), older, skip)).toBe(true);
+      expect(isSyncChangesPage(page(group(importChange())), older, skip)).toBe(true);
+      const chunk = { schema_version: 1, snapshot_id: '0000000d-0000-4000-8000-000000000001', high_water: '12', index: 0, entities: [change(), importChange()] };
+      expect(isSnapshotChunk(chunk, older)).toBe(false);
+      expect(isSnapshotChunk(chunk, older, skip)).toBe(true);
+    });
+
+    it('still checks the envelope of an unknown entity and the snapshot of every known one', () => {
+      expect(isEntityChange(importChange({ id: 'nope' }), older, skip)).toBe(false);
+      expect(isEntityChange(importChange({ version: 0 }), older, skip)).toBe(false);
+      expect(isEntityChange(importChange({ state: 'gone' }), older, skip)).toBe(false);
+      expect(isEntityChange(importChange({ state: 'purged' }), older, skip)).toBe(false);
+      expect(isEntityChange(importChange({ state: 'purged', snapshot: null }), older, skip)).toBe(true);
+      expect(isEntityChange({ ...importChange(), extra: 1 }, older, skip)).toBe(false);
+      expect(isEntityChange(importChange({ entity: 'constructor' }), older, skip)).toBe(true);
+      expect(isEntityChange(change({ snapshot: { ...wallet, extra: true } }), older, skip)).toBe(false);
+      expect(isCommittedChangeGroup(group(change({ snapshot: { ...wallet, extra: true } }), importChange()), older, skip)).toBe(false);
+    });
+
+    it('a reader that knows the entity still validates its snapshot strictly', () => {
+      expect(isEntityChange(importChange(), SYNC_ENTITY_VALIDATORS, skip)).toBe(true);
+      expect(isEntityChange(importChange({ snapshot: { id: job, review_revision: 2 } }), SYNC_ENTITY_VALIDATORS, skip)).toBe(false);
+    });
   });
 });

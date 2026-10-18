@@ -82,8 +82,9 @@ A provider outage never falls back to the old grants: the hold stays.
   `invalid_payload`, `no_client_ids`) and exhausted retries leave a visible
   `failed` job. A lease that expires on its last attempt fails with
   `lease_expired`.
-- **Alert** on the worker log line `revocation job(s) failed terminally`
-  (until P6b's monitoring exists): each one is a user who cannot sign in.
+- **Alert** on the worker log line `security worker: N security job(s) failed
+  terminally`: each one is a user who cannot sign in. The full alert list is
+  in [incident.md](incident.md).
 
 Find stuck cleanup (migration/admin connection; never expose payloads):
 

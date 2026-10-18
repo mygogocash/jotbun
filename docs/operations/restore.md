@@ -142,11 +142,20 @@ or swap in a part from another backup made with the same key.
 7. Reapply erasure markers. A marker erases its own account, and every account
    with an alias whose keyed lookup it lists if that alias was created no later
    than the marker. (An older backup can hold an alias that was later linked
-   elsewhere; a later sign-up with the same subject is kept.) In one
-   transaction:
+   elsewhere; a later sign-up with the same subject is kept.) A deletion the
+   restored copy itself holds as accepted but not purged (`deletion_requests`,
+   `restorer.openDeletions`) is erased too: its marker may not exist yet (P5
+   writes it after the acceptance). In one transaction:
+   - P5's `gogospend_reapply_erasure` for every erasure still in progress -
+     a marker without `purged_at`, or a request held by the copy
+     (`plan.reapply`): it captures the account's provider aliases and
+     re-queues a deletion job without an `account_id`, so provider cleanup,
+     the object sweep, the purge and the marker's `purged_at` are redone by
+     P5's deletion worker once the copy serves (its provider calls are
+     harmless when already done). A marker with `purged_at` is only replayed;
    - re-block every alias of those accounts in `blocked_principals` with the
-     block end the marker records (none = no end; an end already past adds no
-     block; an existing permanent hold stays);
+     block end the marker records (none = no end until the re-queued erasure
+     purges; an end already past adds no block; an existing open hold stays);
    - delete rows keyed by those aliases' principal digests
      (`auth_event_receipts`, `security_reconcile_checks`, `auth_sessions`,
      `reauth_challenges`: every `public` table with a `principal_digest` column
@@ -157,12 +166,23 @@ or swap in a part from another backup made with the same key.
 8. Prove it. There must be no row for an erased account in `accounts`, in any
    `public` table with an `account_id` column (this includes a marker's account
    id whose account row is already gone), or in any principal-digest table
-   above (`erased_owner_rows`, else `ERASURE_NOT_APPLIED`).
+   above (`erased_owner_rows`, else `ERASURE_NOT_APPLIED`). P5's work items
+   (`deletion_requests` keyed by `erased_account_id`, `deletion_request_subjects`,
+   the re-queued job with no `account_id`) are deliberately outside this check:
+   they are the erasure itself, and hold the provider aliases only until the
+   re-queued erasure purges them. The receipt counts them as
+   `erasures_requeued`.
 9. Every retained attachment reference must resolve, with a matching SHA-256,
    in the backup's attachment copy (`missing_retained_objects`, else
-   `ATTACHMENT_REFERENCES_MISSING`). A schema with attachment tables but no
-   reference query is refused (`ATTACHMENT_VALIDATOR_MISSING`); P2c supplies
-   the query.
+   `ATTACHMENT_REFERENCES_MISSING`). The references are P2c's
+   `RETAINED_ATTACHMENT_REFERENCES_SQL` (`scripts/ops/local-postgres.mjs`):
+   every `attachments` row with status `retained`, whether the record holding
+   it is active or deleted within its 30-day undo window. Released receipts are
+   not references (their objects are deleted). A copy taken before P2c (no
+   `attachments` table) has nothing to check; a restorer given no query for a
+   schema with attachment tables is refused (`ATTACHMENT_VALIDATOR_MISSING`).
+   Erased accounts' receipts are gone with their rows, and their objects in
+   the copy are not restored (`unreferenced_objects_not_restored`).
 10. Never switch traffic. The receipt says `ready_for_serving_switch` and
     `serving_switch: "not_performed"`. Drop the target (always on failure) and
     mark it dropped in the ledger.
@@ -193,17 +213,32 @@ restored:
   `deriveSubjectLookup(lookupKey, issuer, subject)` =
   HMAC-SHA256(key, `gogospend-erasure-subject-v1\0<issuer>\0<subject>`).
 - `lookup_key_id` is `SubjectLookupKey.id` of the registry lookup key.
-- **`purged_at`**: P5 sets it when it has verified that the last server-side
-  copy of the account's rows and objects was purged. Until then the marker can
-  never be cleared.
-- **`blocked_until`**: P5 sets it whenever it ends or shortens the account's
-  blocked-principal hold, and a restore replays it. Absent or null means no
-  end, which also stops that person signing up again until P5's tooling lifts
-  the block (a `TODO(P5)` in `erasure-markers.mjs`).
-- P5's purge must remove the same principal-digest rows as step 7 (event
-  receipts, reconcile checks, sessions, challenges) and keep only the
-  `blocked_principals` hold. If P5 decides to keep any of them, the restore's
-  purge and check must be changed to match.
+- **`purged_at`**: P5 sets it, once, on every unpurged marker of the account
+  after its purge transaction committed (the registry stage of the deletion
+  worker). Until then the marker can never be cleared, and a restore
+  re-queues the account's erasure (step 7). An erasure re-run after a restore
+  appends a new, unpurged marker, so the account cannot be cleared before that
+  run is purged too.
+- **`blocked_until`**: P5 sets it with `purged_at`: one hour past provider
+  verification, the end of the aliases' hold (no access token issued before
+  the provider deletion can still be valid). A restore replays it. Null means
+  the erasure is still in progress: held with no end until it purges.
+- P5's purge removes the same principal-digest rows as step 7 (event
+  receipts, reconcile checks, sessions, challenges) and keeps only the
+  `blocked_principals` hold; provider events for an alias under an active
+  `deleted` hold record nothing.
+- **The window before the marker** (see [deletion.md](deletion.md)): the API
+  answers `accepted` before the deletion worker writes the marker. A backup
+  taken before the acceptance holds neither the request nor a marker; before
+  a serving switch the operator compares the failed primary's open
+  `deletion_requests` (or the deletion worker's alerts) with the copy and runs
+  `gogospend_reapply_erasure` for any account it still holds.
+- P5's `PostgresErasureRegistry` is not itself an `ErasureMarkerSource`: it has
+  `independent` (false unless deployed outside the main database and its
+  backups), `location` and `listMarkers()`, but no `lookupKey()` - the key's
+  bytes never leave it. The restore builds its source from a read login on
+  the registry and its own key custody. The local registry is not independent
+  (same database): the hosted placement is SKIPPED (E1).
 - The registry is supplied to restores as an `ErasureMarkerSource`:
   `{ independent: true, location, listMarkers(), lookupKey() }`.
   - `listMarkers` returns the complete set and throws on any failure (never
@@ -221,20 +256,29 @@ restored:
 `npm run ops:rehearsal:local` (and the Docker test in `npm run test:ops`):
 
 1. creates `gogospend_rehearsal_src_<random>`, applies the migrations and seeds
-   three synthetic accounts. Each has an alias, a wallet, a category, three
+   four synthetic accounts. Each has an alias, a wallet, a category, three
    expenses, a queued job, a verified provider-event receipt, a reconcile
-   check, and one retained-attachment reference in the stand-in table
-   `rehearsal_attachment_refs` (until P2c exists);
+   check, and one P2c receipt (registry row, `attachments` and
+   `transaction_attachments`) held by its first expense. The kept account also
+   has a receipt held by a record deleted within its undo window, and a
+   released receipt whose object is gone. One account has a deletion accepted
+   (P5's request, captured alias and job) but no marker yet;
 2. takes an encrypted backup with an in-memory key (or `--key-fd N`);
-3. records markers (one by account id with no block end, one by a linked alias
-   only with a block end, one for an account the backup never held), then
-   deletes two accounts in the source;
+3. records markers (one by account id still in progress - no `purged_at` -,
+   one by a linked alias only, purged with a block end, one for an account the
+   backup never held), then deletes two accounts in the source;
 4. refuses `gogospend_v1` as a serving target before connecting;
 5. restores the pre-deletion backup into `gogospend_restore_<random>`, reapplies
    the markers and checks:
    - no erased-owner row, no erased job, no erased principal-digest row;
    - both erased aliases blocked, with the recorded block end replayed;
-   - the kept account byte-identical, with its event receipt and attachment;
+   - the in-progress erasure and the copy's accepted-but-unmarked deletion
+     re-queued by P5's routine (a detached job, one captured alias each, holds
+     open), and the purged one not re-queued;
+   - the kept account byte-identical, with its event receipt and receipts;
+   - the kept account's two retained receipts (one held by a deleted record)
+     checked against the copy by P2c's reference query, and the erased
+     accounts' receipt objects not restored;
    - no PUBLIC or non-superuser `CONNECT` and no PUBLIC `TEMPORARY`;
 6. tampers one ciphertext byte and proves the restore is refused with
    `BACKUP_INTEGRITY` and its target is gone;

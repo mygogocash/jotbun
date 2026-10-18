@@ -1,10 +1,8 @@
-import { closeSync, mkdtempSync, openSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { createServer } from 'node:net';
-import type { Server } from 'node:net';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, dirname, join, sep } from 'node:path';
 
-import { IMPORT_PARSE_DEADLINE_SECONDS, IMPORT_PARSE_LIMITS, MERCHANT_MAX_CHARS, NAME_MAX_CHARS, NOTE_MAX_CHARS } from '@gogospend/contracts';
+import { IMPORT_PARSE_DEADLINE_SECONDS, IMPORT_PARSE_LIMITS, IMPORT_PARSER_MEMORY_BUDGET_MIB, MERCHANT_MAX_CHARS, NAME_MAX_CHARS, NOTE_MAX_CHARS } from '@gogospend/contracts';
 import sharp from 'sharp';
 
 import {
@@ -21,10 +19,14 @@ import {
   imageWithMetadata,
   pngClaiming,
 } from './fixtures/synthetic-parse';
-import { toPreviewRecord } from './parse-handler';
-import { ParserRunner, validateParseResult } from './parser-runner';
-import type { ParserRunOutcome } from './parser-runner';
-import { parseAmountText } from './parsers/amount';
+import { buildHandlers } from '../jobs/handlers';
+import type { WorkerDeps } from '../jobs/handlers';
+import { NET_PERMISSION, OpenNetRunner, UngatedParserRunner, parsingRunner } from './fixtures/parsing-runner';
+import { importParsingStartup } from './import-parsing';
+import { sanitizedImageHeader, toPreviewRecord } from './parse-handler';
+import { PARSER_CHILD_MEMORY_MIB, PARSER_ENTRIES, PARSER_WORKER_HEADROOM_MIB, ParserRunner, sandboxVerdict, validateParseResult } from './parser-runner';
+import type { ChildLaunch, ParserRunOutcome, SandboxVerdict } from './parser-runner';
+import { detectAmountConvention, parseAmountText } from './parsers/amount';
 import { readCsv } from './parsers/csv';
 import { detectDateOrder, excelSerialToIso, parseDateText } from './parsers/date';
 import { LIMITS } from './parsers/protocol';
@@ -35,7 +37,8 @@ const LEGACY = (name: string) => readFileSync(join(__dirname, '..', 'spend', 'fi
 const PROBES = join(__dirname, 'fixtures', 'probes');
 const probe = (name: string) => join(PROBES, `${name}.ts`);
 
-const runner = new ParserRunner();
+// Parsing behaviour on any runtime; the sandbox gate has its own tests below.
+const runner = parsingRunner();
 const parse = (format: ParseFormat, bytes: Uint8Array) => runner.run({ format, bytes, today: TODAY });
 
 async function parsed(format: ParseFormat, bytes: Uint8Array): Promise<ParseSuccess> {
@@ -165,6 +168,12 @@ describe('dates: Gregorian and Buddhist era, never guessed', () => {
     ['31/12/1969', 'date_out_of_range'],
     ['2026-10-18', 'date_out_of_range'],
     ['01/01/2700', 'date_out_of_range'],
+    // A time of day must be one.
+    ['15/08/2026 99:99', 'invalid_date'],
+    ['15/08/2026 24:00', 'invalid_date'],
+    ['15/08/2026 13:45:61', 'invalid_date'],
+    ['2026-08-15 10:00:61', 'invalid_date'],
+    ['2026-08-15T10:60:00Z', 'invalid_date'],
   ])('%s is refused as %s', (raw, code) => {
     expect(at(raw)).toEqual({ ok: false, code });
   });
@@ -246,7 +255,8 @@ describe('the parser child: CSV', () => {
     expect(result.layout).toBe('generic');
     expect(result.rows).toEqual([
       row({ source_row_id: 'row:2', amount_minor: '6500', note: 'unsigned', issues: [{ field: 'occurred_on', code: 'ambiguous_date' }, { field: 'type', code: 'missing_type' }, { field: 'wallet_label', code: 'missing_wallet' }] }),
-      row({ source_row_id: 'row:3', type: 'expense', amount_minor: '1200', note: 'signed', issues: [{ field: 'occurred_on', code: 'ambiguous_date' }, { field: 'wallet_label', code: 'missing_wallet' }] }),
+      // A generic file's sign is not a direction: only the signed legacy layouts write one.
+      row({ source_row_id: 'row:3', amount_minor: '1200', note: 'signed', issues: [{ field: 'occurred_on', code: 'ambiguous_date' }, { field: 'type', code: 'missing_type' }, { field: 'wallet_label', code: 'missing_wallet' }] }),
       row({ source_row_id: 'row:4', occurred_on: '2026-04-06', note: 'precise', issues: [{ field: 'amount_minor', code: 'excess_precision' }, { field: 'type', code: 'missing_type' }, { field: 'wallet_label', code: 'missing_wallet' }] }),
       row({ source_row_id: 'row:5', occurred_on: '2026-04-07', note: 'empty', issues: [{ field: 'amount_minor', code: 'missing_amount' }, { field: 'type', code: 'missing_type' }, { field: 'wallet_label', code: 'missing_wallet' }] }),
     ]);
@@ -261,11 +271,100 @@ describe('the parser child: CSV', () => {
     ]);
   });
 
-  it('reads Thai text in the legacy Windows-874 code page and says which encoding it used', async () => {
-    const bytes = Buffer.concat([Buffer.from('date,type,amount,wallet\n2026-03-01,expense,65.00,', 'latin1'), Buffer.from([0xa1, 0xd2, 0xe1, 0xbf]), Buffer.from('\n', 'latin1')]);
+  it('reads Thai text in the legacy Windows-874 code page, says which encoding it used and flags each row whose text it decoded', async () => {
+    const bytes = Buffer.concat([
+      Buffer.from('date,type,amount,wallet,note\n2026-03-01,expense,65.00,', 'latin1'),
+      Buffer.from([0xa1, 0xd2, 0xe1, 0xbf]),
+      // A Latin-1 "Café" decodes as Thai text too: the code page is a guess, so the row needs a look.
+      Buffer.from(',Caf', 'latin1'),
+      Buffer.from([0xe9]),
+      Buffer.from('\n2026-03-02,expense,1.00,Cash,plain ascii\n', 'latin1'),
+    ]);
     const result = await parsed('csv', bytes);
     expect(result.file_issues).toEqual(['legacy_encoding']);
-    expect(result.rows[0].wallet_label).toBe('กาแฟ');
+    expect(result.rows[0]).toMatchObject({ wallet_label: 'กาแฟ', note: 'Caf้' });
+    expect(result.rows[0].issues).toEqual([{ field: 'wallet_label', code: 'legacy_encoding_text' }, { field: 'note', code: 'legacy_encoding_text' }]);
+    expect(result.rows[1].issues).toEqual([]);
+    const record = toPreviewRecord(result, TODAY);
+    expect(record.candidates.map((candidate) => candidate.review_required)).toEqual([true, false]);
+  });
+
+  describe('layouts are the exact legacy header sets; nothing else gets their conventions', () => {
+    it('a file with a category column is generic: its day/month dates are ambiguous', async () => {
+      const result = await parsed('csv', csv(['Date,Category,Amount,Wallet,Type', '03/04/2026,Food,12.00,Cash,expense', '05/06/2026,Pay,1000.00,Bank,income']));
+      expect(result.layout).toBe('generic');
+      expect(result.rows.map((candidate) => [candidate.occurred_on, candidate.issues])).toEqual([
+        [null, [{ field: 'occurred_on', code: 'ambiguous_date' }]],
+        [null, [{ field: 'occurred_on', code: 'ambiguous_date' }]],
+      ]);
+    });
+
+    it('account, currency and category columns are not Money Lover: an unsigned amount has no direction and dates stay ambiguous', async () => {
+      const result = await parsed('csv', csv(['Date,Account,Currency,Category,Amount', '03/04/2026,Visa,THB,Groceries,250.00', '07/08/2026,Visa,THB,Fuel,-12.00']));
+      expect(result.layout).toBe('generic');
+      expect(result.rows).toEqual([
+        row({ source_row_id: 'row:2', amount_minor: '25000', wallet_label: 'Visa', category_label: 'Groceries', issues: [{ field: 'occurred_on', code: 'ambiguous_date' }, { field: 'type', code: 'missing_type' }] }),
+        row({ source_row_id: 'row:3', amount_minor: '1200', wallet_label: 'Visa', category_label: 'Fuel', issues: [{ field: 'occurred_on', code: 'ambiguous_date' }, { field: 'type', code: 'missing_type' }] }),
+      ]);
+    });
+
+    it('a legacy header set with one more column is generic too', async () => {
+      const result = await parsed('csv', csv(['Display Name,Category,Amount,Currency,Account,Note,Date,Exclude Report,Id,Extra', 'Lunch,Food,-120.00,THB,Cash,x,03/04/2026,False,ml-1,y']));
+      expect(result.layout).toBe('generic');
+      expect(result.rows[0]).toMatchObject({ type: null, occurred_on: null });
+    });
+
+    it('the legacy exports keep their conventions, whatever the column order', async () => {
+      const moneyLover = await parsed('csv', csv(['Id,Date,Display Name,Category,Amount,Currency,Account,Note,Exclude Report', 'ml-1,03/04/2026,Lunch,Food,-120.00,THB,Cash,x,False']));
+      expect(moneyLover.layout).toBe('moneylover');
+      expect(moneyLover.rows[0]).toMatchObject({ occurred_on: '2026-04-03', type: 'expense', amount_minor: '12000' });
+    });
+  });
+
+  describe('a file\'s amounts use one decimal separator', () => {
+    it.each<[string[], string | null]>([
+      [['1,500', '12.50'], 'dot'],
+      [['1,234.56'], 'dot'],
+      [['1,234,567'], 'dot'],
+      [['12,50', '1,500'], 'comma'],
+      [['1.234,56'], 'comma'],
+      [['1.234.567'], 'comma'],
+      [['12,50', '1,234.56'], 'mixed'],
+      [['1,500', '1.500', '150', '-', ''], null],
+      [['฿ 1,234.50', '(12,5)'], 'mixed'],
+    ])('%j proves %s', (raws, convention) => {
+      expect(detectAmountConvention(raws)).toBe(convention);
+    });
+
+    it('in a decimal-comma file no amount with a separator is read: 1,500 may be 1.5', async () => {
+      const result = await parsed('csv', csv(['date,type,amount,wallet', '2026-01-02,expense,"12,50",Cash', '2026-01-03,expense,"1,500",Cash', '2026-01-04,expense,150,Cash']));
+      expect(result.rows.map((candidate) => [candidate.amount_minor, candidate.issues])).toEqual([
+        [null, [{ field: 'amount_minor', code: 'ambiguous_amount' }]],
+        [null, [{ field: 'amount_minor', code: 'ambiguous_amount' }]],
+        ['15000', []],
+      ]);
+      expect(result.file_issues).toEqual([]);
+    });
+
+    it('a file mixing both conventions says so, and reads no amount with a separator', async () => {
+      const result = await parsed('csv', csv(['date,type,amount,wallet', '2026-01-02,expense,"12,50",Cash', '2026-01-03,expense,"1,234.56",Cash', '2026-01-04,expense,7,Cash']));
+      expect(result.file_issues).toEqual(['mixed_amount_separators']);
+      expect(result.rows.map((candidate) => candidate.amount_minor)).toEqual([null, null, '700']);
+    });
+
+    it('a decimal-point file reads grouping commas as before', async () => {
+      const result = await parsed('csv', csv(['date,type,amount,wallet', '2026-01-02,expense,"1,500",Cash', '2026-01-03,expense,12.50,Cash']));
+      expect(result.rows.map((candidate) => candidate.amount_minor)).toEqual(['150000', '1250']);
+    });
+  });
+
+  it('an explicit plus sign on an expense is a type conflict, as a minus on income is', async () => {
+    const result = await parsed('csv', csv(['date,type,amount,wallet', '2026-01-02,expense,+50.00,Cash', '2026-01-03,expense,-50.00,Cash', '2026-01-04,income,50.00,Cash']));
+    expect(result.rows.map((candidate) => [candidate.type, candidate.issues])).toEqual([
+      [null, [{ field: 'type', code: 'type_conflict' }]],
+      ['expense', []],
+      ['income', []],
+    ]);
   });
 
   it('keeps record numbers as source row ids across blank lines and quoted line breaks', async () => {
@@ -303,7 +402,8 @@ describe('the parser child: CSV', () => {
 describe('the parser child: XLSX', () => {
   it('reads one worksheet: shared and inline strings, a date-styled serial, Buddhist leap day and signed amounts', async () => {
     const result = await parsed('xlsx', buildXlsx({ sheets: [{ rows: XLSX_STATEMENT_ROWS }, { name: 'Empty', rows: [] }] }));
-    expect(result.layout).toBe('meowjot');
+    // Six of the Meowjot columns are not the Meowjot export: generic. Its type keywords and its own day-first date still read.
+    expect(result.layout).toBe('generic');
     expect(result.rows).toEqual([
       row({ source_row_id: 'row:2', occurred_on: '2025-01-01', type: 'expense', amount_minor: '12050', wallet_label: 'เงินสด', category_label: 'อาหาร', note: 'ข้าวสังเคราะห์' }),
       row({ source_row_id: 'row:3', occurred_on: '2024-02-29', type: 'income', amount_minor: '1500000', wallet_label: 'ธนาคารสังเคราะห์', category_label: 'เงินเดือน', note: 'synthetic pay' }),
@@ -327,6 +427,17 @@ describe('the parser child: XLSX', () => {
 
   const statement = (extra: Partial<Parameters<typeof buildXlsx>[0]> = {}) => buildXlsx({ sheets: [{ rows: XLSX_STATEMENT_ROWS }], ...extra });
   const zipBombEntry = { name: 'xl/media/padding.bin', data: Buffer.alloc(IMPORT_PARSE_LIMITS.zipExpandedBytes + 1) };
+  const SHEET_NS = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+  const OFFICE_RELS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+  const PACKAGE_RELS = 'http://schemas.openxmlformats.org/package/2006/relationships';
+  /** A workbook whose <sheet> entries name `relIds`, each resolved by `targets`, all pointing at one worksheet part. */
+  const workbookNaming = (relIds: string[], targets: Record<string, string>, sheet = `<?xml version="1.0"?><worksheet xmlns="${SHEET_NS}"><sheetData/></worksheet>`) =>
+    buildZip([
+      { name: '[Content_Types].xml', data: '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>' },
+      { name: 'xl/workbook.xml', data: `<?xml version="1.0"?><workbook xmlns="${SHEET_NS}" xmlns:r="${OFFICE_RELS}"><sheets>${relIds.map((id, i) => `<sheet name="s${i}" sheetId="${i + 1}" r:id="${id}"/>`).join('')}</sheets></workbook>` },
+      { name: 'xl/_rels/workbook.xml.rels', data: `<?xml version="1.0"?><Relationships xmlns="${PACKAGE_RELS}">${Object.entries(targets).map(([id, target]) => `<Relationship Id="${id}" Type="${OFFICE_RELS}/worksheet" Target="${target}"/>`).join('')}</Relationships>` },
+      { name: 'xl/worksheets/sheet1.xml', data: sheet },
+    ]);
 
   it.each<[string, () => Buffer, string]>([
     ['a formula cell', () => buildXlsx({ sheets: [{ rows: [['date', 'amount'], ['2026-01-01', { formula: 'SUM(1,2)', value: '3' }]] }] }), 'formulas'],
@@ -354,9 +465,28 @@ describe('the parser child: XLSX', () => {
     ['a shared string over 10,000 characters', () => buildXlsx({ sheets: [{ rows: [['date', 'amount', 'note'], ['2026-01-01', 1, 'y'.repeat(IMPORT_PARSE_LIMITS.cellChars + 1)]] }] }), 'cell_too_long'],
     ['a workbook without worksheets', () => buildXlsx({ sheets: [] }), 'empty_file'],
     ['bytes that are not a ZIP at all', () => Buffer.from('PK\u0003\u0004 then nothing useful'), 'zip_malformed'],
+    [
+      'an external hyperlink in the worksheet relationships (where Excel writes it)',
+      () => statement({ extraEntries: [{ name: 'xl/worksheets/_rels/sheet1.xml.rels', data: `<?xml version="1.0"?><Relationships xmlns="${PACKAGE_RELS}"><Relationship Id="rIdH" Type="${OFFICE_RELS}/hyperlink" Target="https://example.invalid/x" TargetMode="External"/></Relationships>` }] }),
+      'external_references',
+    ],
+    ['an embedded OLE object', () => statement({ extraEntries: [{ name: 'xl/embeddings/oleObject1.bin', data: Buffer.from('synthetic ole payload') }] }), 'embedded_objects'],
+    ['an ActiveX control', () => statement({ extraEntries: [{ name: 'xl/activeX/activeX1.xml', data: '<ax:ocx xmlns:ax="http://schemas.microsoft.com/office/2006/activeX"/>' }] }), 'embedded_objects'],
+    ['one worksheet named twice', () => workbookNaming(['rId1', 'rId1'], { rId1: 'worksheets/sheet1.xml' }), 'workbook_malformed'],
+    ['two relationships to one worksheet', () => workbookNaming(['rId1', 'rId2'], { rId1: 'worksheets/sheet1.xml', rId2: 'worksheets/sheet1.xml' }), 'workbook_malformed'],
+    ['more than 256 worksheets', () => buildXlsx({ sheets: Array.from({ length: 257 }, () => ({ rows: [] })) }), 'workbook_malformed'],
   ])('rejects %s', async (_label, build, code) => {
     expect(await rejected('xlsx', build())).toBe(code);
   });
+
+  it('a 29 KB workbook naming one big empty worksheet 4,000 times is refused at once, not read 4,000 times', async () => {
+    const empty = `<?xml version="1.0"?><worksheet xmlns="${SHEET_NS}"><sheetData><row r="1">${'<c/>'.repeat(2 * 1024 * 1024)}</row></sheetData></worksheet>`;
+    const workbook = workbookNaming(Array.from({ length: 4_000 }, () => 'rId1'), { rId1: 'worksheets/sheet1.xml' }, empty);
+    expect(workbook.length).toBeLessThan(64 * 1024);
+    const started = Date.now();
+    expect(await rejected('xlsx', workbook)).toBe('workbook_malformed');
+    expect(Date.now() - started).toBeLessThan(5_000);
+  }, 40_000);
 
   it('stops inflating an entry at its declared size: 512 MiB of zeros claiming 10 bytes never reaches memory', async () => {
     const bomb = await deflatedZeros(512 * 1024 * 1024);
@@ -417,15 +547,87 @@ describe('the parser child: images', () => {
   it.each<[string, ParseFormat, () => Promise<Buffer> | Buffer, string]>([
     ['an undecodable JPEG', 'jpeg', () => BROKEN_JPEG, 'image_malformed'],
     ['a PNG presented as JPEG', 'jpeg', () => imageWithMetadata('png'), 'image_format_mismatch'],
+    // Only the JPEG, PNG and WebP loaders may run: another format's loader never reads even the header.
+    ['a TIFF presented as PNG', 'png', () => sharp({ create: { width: 4, height: 4, channels: 3, background: '#808080' } }).tiff().toBuffer(), 'image_malformed'],
+    ['a GIF presented as PNG', 'png', () => sharp({ create: { width: 4, height: 4, channels: 3, background: '#808080' } }).gif().toBuffer(), 'image_malformed'],
+    ['an SVG presented as WebP', 'webp', () => Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"><rect width="4" height="4"/></svg>'), 'image_malformed'],
   ])('rejects %s', async (_label, format, build, code) => {
     expect(await rejected(format, await build())).toBe(code);
+  });
+
+  it.each(['png', 'webp'] as const)('flattens a transparent %s onto white: the sanitized image has no alpha channel', async (format) => {
+    const clear = sharp({ create: { width: 8, height: 8, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } });
+    const result = await parsed(format, await (format === 'png' ? clear.png() : clear.webp({ lossless: true })).toBuffer());
+    const sanitized = Buffer.from(result.image?.base64 ?? '', 'base64');
+    const meta = await sharp(sanitized).metadata();
+    expect([meta.channels, meta.hasAlpha]).toEqual([3, false]);
+    const { data } = await sharp(sanitized).raw().toBuffer({ resolveWithObject: true });
+    expect([...data.subarray(0, 3)]).toEqual([255, 255, 255]);
+  });
+
+  it('refuses an image whose decoded size is over the bound, from its header: 16-bit RGBA at 20 MP', async () => {
+    const deep = await sharp({ create: { width: 5_000, height: 4_000, channels: 4, background: { r: 10, g: 20, b: 30, alpha: 0.5 } } }).toColourspace('rgb16').png({ compressionLevel: 9 }).toBuffer();
+    expect(5_000 * 4_000 * 4 * 2).toBeGreaterThan(LIMITS.imageDecodedBytes);
+    expect(await rejected('png', deep)).toBe('image_too_large');
+  }, 60_000);
+
+  // M3: the worst honest 20 MP inputs - noise defeats compression - within the
+  // child budget (512 MiB container minus the worker's 160 MiB headroom).
+  const noise = (width: number, height: number, channels: 3 | 4) => {
+    const pixels = Buffer.alloc(width * height * channels);
+    for (let i = 0; i < pixels.length; i += 1) pixels[i] = (i * 2654435761) >>> 24;
+    return sharp(pixels, { raw: { width, height, channels } });
+  };
+  it.each<[string, ParseFormat, () => Promise<Buffer>]>([
+    ['a noisy 5000 × 4000 WebP', 'webp', () => noise(5_000, 4_000, 3).webp({ quality: 60 }).toBuffer()],
+    ['a noisy 5000 × 4000 WebP with alpha', 'webp', () => noise(5_000, 4_000, 4).webp({ quality: 50 }).toBuffer()],
+    ['a noisy 16383 × 1220 WebP', 'webp', () => noise(16_383, 1_220, 3).webp({ quality: 60 }).toBuffer()],
+    ['a noisy 5000 × 4000 JPEG turned by EXIF', 'jpeg', () => noise(5_000, 4_000, 3).withMetadata({ orientation: 6 }).jpeg({ quality: 75 }).toBuffer()],
+  ])('sanitizes %s within the child memory budget (Linux, the container platform), or refuses it as over budget', async (_label, format, build) => {
+    const outcome = await parse(format, await build());
+    // macOS's allocator reports far more for the same work (WebP above 500 MiB), so there the budget refuses it.
+    if (process.platform !== 'linux' && outcome.kind === 'memory_limit') return;
+    expect(outcome.kind).toBe('result');
+    const result = (outcome as Extract<ParserRunOutcome, { kind: 'result' }>).result;
+    expect(result.ok && result.image?.width).toBeGreaterThan(0);
+    expect(result.usage.max_rss_kb).toBeLessThan(PARSER_CHILD_MEMORY_MIB * 1024);
+  }, 120_000);
+});
+
+describe('the worker reads the sanitized image itself', () => {
+  const plain = (format: 'jpeg' | 'png' | 'webp', width: number, height: number) => {
+    const base = sharp({ create: { width, height, channels: 3, background: '#406080' } });
+    return (format === 'jpeg' ? base.jpeg() : format === 'png' ? base.png() : base.webp()).toBuffer();
+  };
+
+  it.each(['jpeg', 'png', 'webp'] as const)('reads a %s\'s own width and height', async (format) => {
+    expect(sanitizedImageHeader(await plain(format, 37, 23), format)).toEqual({ width: 37, height: 23 });
+    expect(sanitizedImageHeader(await plain(format, 1, 3000), format)).toEqual({ width: 1, height: 3000 });
+  });
+
+  it.each(['jpeg', 'png', 'webp'] as const)('refuses a %s that still carries EXIF or XMP', async (format) => {
+    expect(sanitizedImageHeader(await imageWithMetadata(format, 16, 16), format)).toBeNull();
+  });
+
+  it.each(['jpeg', 'png', 'webp'] as const)('refuses a %s with an ICC profile', async (format) => {
+    const base = sharp({ create: { width: 8, height: 8, channels: 3, background: '#406080' } }).withIccProfile('p3');
+    const bytes = await (format === 'jpeg' ? base.jpeg() : format === 'png' ? base.png() : base.webp()).toBuffer();
+    expect(sanitizedImageHeader(bytes, format)).toBeNull();
+  });
+
+  it('refuses another format, a truncated file and an animation', async () => {
+    expect(sanitizedImageHeader(await plain('png', 8, 8), 'jpeg')).toBeNull();
+    expect(sanitizedImageHeader((await plain('png', 8, 8)).subarray(0, 20), 'png')).toBeNull();
+    expect(sanitizedImageHeader((await plain('jpeg', 8, 8)).subarray(0, 10), 'jpeg')).toBeNull();
+    expect(sanitizedImageHeader((await plain('webp', 8, 8)).subarray(0, 16), 'webp')).toBeNull();
+    const frames = await Promise.all(['#406080', '#804060'].map((background) => sharp({ create: { width: 4, height: 8, channels: 3, background } }).png().toBuffer()));
+    const animated = await sharp(frames, { join: { animated: true } }).webp({ loop: 0 }).toBuffer();
+    expect((await sharp(animated, { animated: true }).metadata()).pages).toBe(2);
+    expect(sanitizedImageHeader(animated, 'webp')).toBeNull();
   });
 });
 
 describe('the parser child runs isolated and bounded', () => {
-  let server: Server;
-  let port: number;
-  let connections = 0;
   let scratch: string;
   const credentials: Record<string, string> = {
     DATABASE_URL: 'postgres://p2b-fixture-user:p2b-fixture-password@127.0.0.1:5432/fixture',
@@ -440,75 +642,181 @@ describe('the parser child runs isolated and bounded', () => {
   };
   const saved: Record<string, string | undefined> = {};
 
-  beforeAll(async () => {
+  beforeAll(() => {
     for (const [name, value] of Object.entries(credentials)) {
       saved[name] = process.env[name];
       process.env[name] = value;
     }
-    server = createServer((socket) => {
-      connections += 1;
-      socket.destroy();
-    });
-    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-    port = (server.address() as { port: number }).port;
     scratch = mkdtempSync(join(tmpdir(), 'p2b-runner-'));
   });
 
-  afterAll(async () => {
+  afterAll(() => {
     for (const [name, value] of Object.entries(saved)) {
       if (value === undefined) delete process.env[name];
       else process.env[name] = value;
     }
-    await new Promise<void>((resolve) => server.close(() => resolve()));
     rmSync(scratch, { recursive: true, force: true });
   });
 
-  async function sandboxReport(format: ParseFormat) {
-    const secretPath = join(scratch, 'secret.txt');
-    writeFileSync(secretPath, 'p2b-fixture-file-secret');
-    const fd = openSync(secretPath, 'r');
-    try {
-      const { dev, ino } = statSync(secretPath);
-      const probeRunner = new ParserRunner({ entries: { table: probe('sandbox-probe'), image: probe('sandbox-probe') } });
-      const exit = await probeRunner.exec({ format, bytes: Buffer.from(JSON.stringify({ port, secretPath, dev, ino })), today: TODAY });
-      expect(exit.reason).toBe('exited');
-      const report = JSON.parse(exit.stdout.toString('utf8')) as Record<string, unknown>;
-      expect(Object.keys(report).sort()).toEqual(['argv', 'child', 'codegen', 'env', 'fsRead', 'inherited', 'net', 'worker']);
-      return report as {
-        env: Record<string, string>;
-        argv: string[];
-        inherited: number[];
-        fsRead: string;
-        net: string;
-        child: string;
-        worker: string;
-        codegen: string;
-      };
-    } finally {
-      closeSync(fd);
-    }
-  }
+  type Report = { permission: boolean; net: string; fsRead: string; fsWrite: string; child: string; worker: string; codegen: string; envKeys: string[]; inherited: number[]; argv: string[] };
 
-  it.each(['csv', 'jpeg'] as const)('a %s child sees no credentials, no inherited descriptor, no network, files, processes, workers or eval', async (format) => {
-    const report = await sandboxReport(format);
-    const text = JSON.stringify(report.env);
-    for (const [name, value] of Object.entries(credentials)) {
-      expect(report.env[name]).toBeUndefined();
-      expect(text).not.toContain(value);
-    }
-    expect(text).not.toMatch(/p2b-fixture/);
+  // The real children check themselves, started with exactly the flags and environment of a parse.
+  it.each(['table', 'image'] as const)('a %s child sees no credentials or inherited descriptor, and may not read, write, start processes or workers, or eval', async (family) => {
+    const inspection = await new ParserRunner().inspectSandbox(family);
+    expect(inspection).not.toBeNull();
+    const report = inspection?.report as Report;
+    expect(Object.keys(report).sort()).toEqual(['argv', 'child', 'codegen', 'envKeys', 'fsRead', 'fsWrite', 'inherited', 'net', 'permission', 'worker']);
+    for (const name of Object.keys(credentials)) expect(report.envKeys).not.toContain(name);
     // Only the explicit minimal environment (the platform may add its own locale/library markers).
-    expect(report.env.TZ).toBe('UTC');
-    expect(Object.keys(report.env).filter((name) => !['TZ', '__CF_USER_TEXT_ENCODING', 'VIPSHOME'].includes(name))).toEqual([]);
-    expect(report.argv).toEqual([format, TODAY]);
+    expect(report.envKeys.filter((name) => !['__CF_USER_TEXT_ENCODING', 'VIPSHOME'].includes(name))).toEqual(['TZ']);
+    expect(report.argv[0]).toBe('sandbox');
+    // The runner holds a descriptor open on the outside file while the child runs; the child does not inherit it.
     expect(report.inherited).toEqual([]);
-    expect(report.fsRead).toBe('ERR_ACCESS_DENIED');
-    expect(report.net).toBe('ERR_ACCESS_DENIED');
-    expect(report.child).toBe('ERR_ACCESS_DENIED');
-    expect(report.worker).toBe('ERR_ACCESS_DENIED');
+    expect(report.permission).toBe(true);
+    expect([report.fsRead, report.fsWrite, report.child, report.worker]).toEqual(['ERR_ACCESS_DENIED', 'ERR_ACCESS_DENIED', 'ERR_ACCESS_DENIED', 'ERR_ACCESS_DENIED']);
+    expect(inspection?.wrote).toBe(false);
     expect(report.codegen).toBe('EvalError');
-    expect(connections).toBe(0);
   });
+
+  it.each(['table', 'image'] as const)('a %s child is denied the network on Node 25 and later; on Node 24 it is not, and parsing is refused', async (family) => {
+    const real = new ParserRunner();
+    const inspection = await real.inspectSandbox(family);
+    expect(inspection).not.toBeNull();
+    const report = inspection?.report as Report;
+    if (NET_PERMISSION) {
+      expect([report.net, inspection?.connections]).toEqual(['ERR_ACCESS_DENIED', 0]);
+      expect(await real.verifySandbox()).toEqual({ supported: true });
+    } else {
+      expect(report.net).toBe('connected');
+      expect(inspection?.connections).toBeGreaterThan(0);
+      expect(await real.verifySandbox()).toEqual({ supported: false, reason: 'net' });
+    }
+    const outcome = await real.run({ format: family === 'table' ? 'csv' : 'png', bytes: family === 'table' ? csv(['date,type,amount,wallet', '2026-01-02,expense,1.00,Cash']) : await sharp({ create: { width: 2, height: 2, channels: 3, background: '#808080' } }).png().toBuffer(), today: TODAY });
+    expect(outcome.kind).toBe(NET_PERMISSION ? 'result' : 'sandbox_unsupported');
+  });
+
+  it('a runtime that lets the child reach the network runs no parse at all (simulated with --allow-net on Node 25 and later)', async () => {
+    const open = new OpenNetRunner();
+    const inspection = await open.inspectSandbox('table');
+    expect(inspection).not.toBeNull();
+    expect((inspection?.report as Report).net).toBe('connected');
+    expect(inspection?.connections).toBeGreaterThan(0);
+    expect(await open.verifySandbox()).toEqual({ supported: false, reason: 'net' });
+    const spawned: number[] = [];
+    const onSpawn = (pid: number) => spawned.push(pid);
+    expect(await open.run({ format: 'csv', bytes: csv(['date,type,amount,wallet', '2026-01-02,expense,1.00,Cash']), today: TODAY, onSpawn })).toEqual({ kind: 'sandbox_unsupported' });
+    expect(await open.run({ format: 'png', bytes: Buffer.from('x'), today: TODAY, onSpawn })).toEqual({ kind: 'sandbox_unsupported' });
+    expect(spawned).toEqual([]);
+  });
+
+  describe('the job worker registers import_parse only behind a verified sandbox', () => {
+    // Building the handlers touches none of their dependencies.
+    const deps = {} as WorkerDeps;
+    const disabledLine = 'job worker: import parsing disabled (parser sandbox unsupported: net)';
+
+    it('a runtime without network permission: no import_parse handler, one fixed alert line', async () => {
+      const startup = await importParsingStartup(new OpenNetRunner());
+      expect(startup).toEqual({ parse: null, alert: disabledLine });
+      const kinds = buildHandlers(deps, { parse: startup.parse }).kinds();
+      expect(kinds).not.toContain('import_parse');
+      expect(kinds).toEqual(expect.arrayContaining(['sync_snapshot', 'export', 'import_expire']));
+    });
+
+    it('this runtime: enabled on Node 25 and later, disabled on Node 24', async () => {
+      const runner = new ParserRunner();
+      const startup = await importParsingStartup(runner);
+      if (NET_PERMISSION) {
+        expect(startup).toEqual({ parse: { runner }, alert: null });
+        expect(buildHandlers(deps, { parse: startup.parse }).kinds()).toContain('import_parse');
+      } else {
+        expect(startup).toEqual({ parse: null, alert: disabledLine });
+        expect(buildHandlers(deps, { parse: startup.parse }).kinds()).not.toContain('import_parse');
+      }
+    });
+
+    it('a check that throws disables parsing and names only the failure class, never its message', async () => {
+      class Throwing extends ParserRunner {
+        override async verifySandbox(): Promise<SandboxVerdict> {
+          throw new TypeError('postgres://p2b-fixture-user:p2b-fixture-password@127.0.0.1/fixture');
+        }
+      }
+      const startup = await importParsingStartup(new Throwing());
+      expect(startup).toEqual({ parse: null, alert: 'job worker: import parsing disabled (parser sandbox check failed: TypeError)' });
+    });
+  });
+
+  describe('the sandbox verdict fails closed', () => {
+    const held = {
+      permission: true, net: 'ERR_ACCESS_DENIED', fsRead: 'ERR_ACCESS_DENIED', fsWrite: 'ERR_ACCESS_DENIED', child: 'ERR_ACCESS_DENIED', worker: 'ERR_ACCESS_DENIED',
+      codegen: 'EvalError', envKeys: ['TZ'], inherited: [], argv: ['sandbox', TODAY],
+    };
+    const quiet = { connections: 0, wrote: false };
+
+    it('holds only when every capability is denied', () => {
+      expect(sandboxVerdict(held, quiet)).toEqual({ supported: true });
+      expect(sandboxVerdict({ ...held, envKeys: ['TZ', '__CF_USER_TEXT_ENCODING', 'VIPSHOME'] }, quiet)).toEqual({ supported: true });
+    });
+
+    it.each<[string, unknown, { connections: number; wrote: boolean }, string]>([
+      ['the permission model is off', { ...held, permission: false }, quiet, 'permission'],
+      ['a socket connected', { ...held, net: 'connected' }, quiet, 'net'],
+      ['a refused connection (not a denial)', { ...held, net: 'ECONNREFUSED' }, quiet, 'net'],
+      ['the runner saw a connection', held, { connections: 1, wrote: false }, 'net'],
+      ['a file was written', { ...held, fsWrite: 'allowed' }, quiet, 'fs_write'],
+      ['the runner found the written file', held, { connections: 0, wrote: true }, 'fs_write'],
+      ['a process started', { ...held, child: 'allowed' }, quiet, 'child'],
+      ['a worker started', { ...held, worker: 'allowed' }, quiet, 'worker'],
+      ['an outside file was read', { ...held, fsRead: 'allowed' }, quiet, 'fs_read'],
+      ['eval ran', { ...held, codegen: 'allowed' }, quiet, 'codegen'],
+      ['an inherited variable', { ...held, envKeys: ['TZ', 'DATABASE_URL'] }, quiet, 'env'],
+      ['no TZ', { ...held, envKeys: [] }, quiet, 'env'],
+      ['an inherited descriptor', { ...held, inherited: [5] }, quiet, 'descriptors'],
+      ['an unknown key', { ...held, extra: true }, quiet, 'probe_failed'],
+      ['a field of the wrong type', { ...held, inherited: 'none' }, quiet, 'probe_failed'],
+      ['no report', null, quiet, 'probe_failed'],
+    ])('refuses when %s', (_label, report, observed, reason) => {
+      expect(sandboxVerdict(report, observed)).toEqual({ supported: false, reason });
+    });
+  });
+
+  it('the image child reads only the sharp, @img, detect-libc and semver package directories besides its own', () => {
+    const reads = (launch: ChildLaunch) => launch.args.filter((arg) => arg.startsWith('--allow-fs-read=')).map((arg) => arg.slice('--allow-fs-read='.length));
+    expect(reads(runner.launch('csv'))).toEqual([`${dirname(PARSER_ENTRIES.table)}${sep}`]);
+    const [own, ...packages] = reads(runner.launch('webp'));
+    expect(own).toBe(`${dirname(PARSER_ENTRIES.image)}${sep}`);
+    const names = packages.map((dir) => {
+      const [last, parent, grandparent] = dir.split(sep).filter(Boolean).reverse();
+      expect(parent === 'node_modules' || (parent === '@img' && grandparent === 'node_modules')).toBe(true);
+      return parent === '@img' ? `@img/${last}` : last;
+    });
+    expect(names).toEqual(expect.arrayContaining(['sharp', 'detect-libc', 'semver', '@img/colour']));
+    expect(names.some((name) => name?.startsWith('@img/sharp-'))).toBe(true);
+    expect(names.filter((name) => !['sharp', 'detect-libc', 'semver'].includes(name as string) && !name?.startsWith('@img/'))).toEqual([]);
+    for (const dir of packages) expect(basename(dir)).not.toBe('node_modules');
+  });
+
+  it('a child that cannot be started is a spawn failure (retried), not a parse failure', async () => {
+    class Unstartable extends UngatedParserRunner {
+      override launch(format: ParseFormat, entryOverride?: string): ChildLaunch {
+        return { ...super.launch(format, entryOverride), command: join(scratch, 'no-such-node') };
+      }
+    }
+    expect(await new Unstartable().run({ format: 'csv', bytes: Buffer.from('x'), today: TODAY })).toEqual({ kind: 'spawn_failed' });
+  });
+
+  it('the child budget leaves the worker its headroom in the 512 MiB container', () => {
+    expect(IMPORT_PARSER_MEMORY_BUDGET_MIB).toBe(512);
+    expect(PARSER_WORKER_HEADROOM_MIB).toBe(160);
+    expect(PARSER_CHILD_MEMORY_MIB).toBe(IMPORT_PARSER_MEMORY_BUDGET_MIB - PARSER_WORKER_HEADROOM_MIB);
+  });
+
+  it('a child past its memory budget is refused (on Linux the runner stops it while it grows)', async () => {
+    const hungry = new UngatedParserRunner({ memoryBudgetKb: 96 * 1024, timeoutMs: 20_000, entries: { table: probe('ballast-probe') } });
+    const started = Date.now();
+    expect(await hungry.run({ format: 'csv', bytes: Buffer.from('x'), today: TODAY })).toEqual({ kind: 'memory_limit' });
+    // The probe holds 192 MiB for 3 seconds before it answers.
+    if (process.platform === 'linux') expect(Date.now() - started).toBeLessThan(2_500);
+  }, 30_000);
 
   it('only an image child may load the native image library; neither may write files or use the network', () => {
     const table = runner.launch('csv');
@@ -531,7 +839,7 @@ describe('the parser child runs isolated and bounded', () => {
   }
 
   it('kills a child stuck past its deadline and reaps it', async () => {
-    const hung = new ParserRunner({ timeoutMs: 1_000, entries: { table: probe('hang-probe') } });
+    const hung = parsingRunner({ timeoutMs: 1_000, entries: { table: probe('hang-probe') } });
     let pid: number | undefined;
     const { outcome, ms } = await timed(hung.run({ format: 'csv', bytes: Buffer.alloc(1024 * 1024, 0x41), today: TODAY, onSpawn: (spawned) => (pid = spawned) }));
     expect(outcome).toEqual({ kind: 'timeout' });
@@ -545,7 +853,7 @@ describe('the parser child runs isolated and bounded', () => {
   });
 
   it('kills the child at once when the job is aborted (lease lost or worker stopping)', async () => {
-    const hung = new ParserRunner({ timeoutMs: 20_000, entries: { table: probe('hang-probe') } });
+    const hung = parsingRunner({ timeoutMs: 20_000, entries: { table: probe('hang-probe') } });
     const controller = new AbortController();
     setTimeout(() => controller.abort(), 300);
     const { outcome, ms } = await timed(hung.run({ format: 'csv', bytes: Buffer.from('x'), today: TODAY, signal: controller.signal }));
@@ -554,17 +862,17 @@ describe('the parser child runs isolated and bounded', () => {
   });
 
   it('a child that exhausts its heap fails visibly as a crash', async () => {
-    const small = new ParserRunner({ heapMb: 32, timeoutMs: 20_000, entries: { table: probe('memory-probe') } });
+    const small = parsingRunner({ heapMb: 32, timeoutMs: 20_000, entries: { table: probe('memory-probe') } });
     expect((await small.run({ format: 'csv', bytes: Buffer.from('x'), today: TODAY })).kind).toBe('crashed');
   }, 30_000);
 
   it('a child flooding its output is killed once it passes the output cap', async () => {
-    const flood = new ParserRunner({ maxOutputBytes: 4 * 1024 * 1024, timeoutMs: 20_000, entries: { table: probe('flood-probe') } });
+    const flood = parsingRunner({ maxOutputBytes: 4 * 1024 * 1024, timeoutMs: 20_000, entries: { table: probe('flood-probe') } });
     expect(await flood.run({ format: 'csv', bytes: Buffer.from('x'), today: TODAY })).toEqual({ kind: 'output_too_large' });
   });
 
   it('output that is not the protocol, and a failing exit, are never trusted', async () => {
-    const garbage = new ParserRunner({ entries: { table: probe('garbage-probe'), image: probe('garbage-probe') } });
+    const garbage = parsingRunner({ entries: { table: probe('garbage-probe'), image: probe('garbage-probe') } });
     expect(await garbage.run({ format: 'csv', bytes: Buffer.from('x'), today: TODAY })).toEqual({ kind: 'output_invalid' });
     expect(await garbage.run({ format: 'png', bytes: Buffer.from('x'), today: TODAY })).toEqual({ kind: 'output_invalid' });
     expect(await garbage.run({ format: 'xlsx', bytes: Buffer.from('x'), today: TODAY })).toEqual({ kind: 'crashed' });
@@ -574,9 +882,18 @@ describe('the parser child runs isolated and bounded', () => {
 describe('the worker re-validates everything a child says', () => {
   const ok = (rows: unknown[], extra: Record<string, unknown> = {}) => ({ ok: true, layout: 'generic', rows, file_issues: [], image: null, usage: { max_rss_kb: 1, cpu_ms: 1 }, ...extra });
   const good = { source_row_id: 'row:2', occurred_on: '2026-01-01', type: 'expense', amount_minor: '100', wallet_label: 'Cash', category_label: null, merchant: null, note: null, issues: [] };
+  const receiptRow = {
+    source_row_id: 'image:1', occurred_on: null, type: null, amount_minor: null, wallet_label: null, category_label: null, merchant: null, note: null,
+    issues: [{ field: 'occurred_on', code: 'missing_date' }, { field: 'type', code: 'missing_type' }, { field: 'amount_minor', code: 'missing_amount' }, { field: 'wallet_label', code: 'missing_wallet' }],
+  };
+  const receipt = (overrides: Record<string, unknown>) => ({
+    ok: true, layout: 'receipt', rows: [{ ...receiptRow, ...overrides }], file_issues: ['receipt_fields_unread'],
+    image: { format: 'png', width: 1, height: 1, base64: 'AAAA' }, usage: { max_rss_kb: 1, cpu_ms: 1 },
+  });
 
   it('accepts the protocol shape', () => {
     expect(validateParseResult(ok([good]))).toEqual(ok([good]));
+    expect(validateParseResult(receipt({}))).toEqual(receipt({}));
     expect(validateParseResult({ ok: false, code: 'formulas', usage: { max_rss_kb: 1, cpu_ms: 1 } })).toEqual({ ok: false, code: 'formulas', usage: { max_rss_kb: 1, cpu_ms: 1 } });
   });
 
@@ -595,6 +912,13 @@ describe('the worker re-validates everything a child says', () => {
     ['a huge image claim', ok([good], { image: { format: 'jpeg', width: 10_000, height: 10_000, base64: 'AAAA' } })],
     ['a failure without a code', { ok: false, usage: { max_rss_kb: 1, cpu_ms: 1 } }],
     ['not an object', 'ok'],
+    ['a row issue code nobody defined', ok([{ ...good, issues: [{ field: 'note', code: 'made_up' }] }])],
+    ['a file issue code nobody defined', ok([good], { file_issues: ['made_up'] })],
+    ['a table row named like the image', ok([{ ...good, source_row_id: 'image:1' }])],
+    ['a receipt whose row carries values', receipt({ amount_minor: '100' })],
+    ['a receipt without its review issues', receipt({ issues: [] })],
+    ['a receipt with a second row', { ...receipt({}), rows: [receiptRow, { ...receiptRow, source_row_id: 'row:2' }] }],
+    ['a receipt without the unread notice', { ...receipt({}), file_issues: [] }],
   ])('refuses %s', (_label, value) => {
     expect(validateParseResult(value)).toBeNull();
   });

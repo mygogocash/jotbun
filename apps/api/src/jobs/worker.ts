@@ -1,10 +1,12 @@
 import { setTimeout as sleep } from 'node:timers/promises';
 
+import type { FeatureGates } from '../common/feature-gates';
 import { HandlerRegistry } from './handler-registry';
 import { JobRepository, leaseSafetyMs } from './job.repository';
+import { WorkerStopped } from './job-types';
 import type { ClaimedJob } from './job-types';
 
-export type WorkerOptions = { leaseSeconds?: number; heartbeatMs?: number };
+export type WorkerOptions = { leaseSeconds?: number; heartbeatMs?: number; gates?: FeatureGates };
 export type WorkerOutcome = 'idle' | 'ran';
 
 /**
@@ -15,25 +17,36 @@ export type WorkerOutcome = 'idle' | 'ran';
  * expired, reclaimed or cancelled), when the local budget of the last granted
  * lease runs out (a transient heartbeat error alone does not abort), or when
  * the worker is stopped. A handler that throws is failed as retryable
- * (`handler_error`, `handler_timeout` after its signal aborted, or
- * `worker_stopped`); one that returns while still holding its lease never
- * transitioned the job, which is a bug, so it fails terminally
- * (`handler_incomplete`). Error text is never logged: it may carry user data.
+ * (`handler_error`, or `handler_timeout` after its signal aborted); one that
+ * returns while still holding its lease never transitioned the job, which is
+ * a bug, so it fails terminally (`handler_incomplete`). A stop is not the
+ * job's failure: the signal aborts with WorkerStopped and the job is
+ * released (`worker_stopped`, due now, the attempt not spent), also when the
+ * handler records its own retryable failure (JobRepository.fail). Error text
+ * is never logged: it may carry user data.
  */
 export class JobWorker {
   private readonly leaseSeconds: number;
   private readonly heartbeatMs: number;
+  private readonly gates: FeatureGates | undefined;
 
   constructor(private readonly jobs: JobRepository, private readonly handlers: HandlerRegistry, options: WorkerOptions = {}) {
     this.leaseSeconds = options.leaseSeconds ?? 30;
     this.heartbeatMs = options.heartbeatMs ?? 10_000;
+    this.gates = options.gates;
     if (!Number.isInteger(this.heartbeatMs) || this.heartbeatMs < 100 || this.heartbeatMs >= this.leaseSeconds * 1000 - leaseSafetyMs(this.leaseSeconds)) {
       throw new RangeError('heartbeatMs must be at least 100 and leave the lease safety margin');
     }
   }
 
+  /**
+   * Claims and runs at most one job. With `gates`, a paused `jobs` gate
+   * claims nothing and a kind whose JOB_KIND_GATES are paused is not claimed
+   * (it stays queued without spending an attempt).
+   */
   async runOnce(stop?: AbortSignal): Promise<WorkerOutcome> {
-    const kinds = this.handlers.kinds();
+    const registered = this.handlers.kinds();
+    const kinds = this.gates ? this.gates.claimableKinds(registered) : registered;
     if (kinds.length === 0 || stop?.aborted) return 'idle';
     const [claimed] = await this.jobs.claim(kinds, { limit: 1, leaseSeconds: this.leaseSeconds });
     if (!claimed) return 'idle';
@@ -62,7 +75,7 @@ export class JobWorker {
     let stopped = false;
     const onStop = () => {
       stopped = true;
-      controller.abort();
+      controller.abort(new WorkerStopped());
     };
     stop?.addEventListener('abort', onStop, { once: true });
     const onExpire = () => {
@@ -104,8 +117,10 @@ export class JobWorker {
       stop?.removeEventListener('abort', onStop);
       claimed.lease.signal.removeEventListener('abort', onExpire);
     }
-    if (thrown) {
-      await this.jobs.fail(lease, { code: stopped ? 'worker_stopped' : controller.signal.aborted ? 'handler_timeout' : 'handler_error', retryable: true });
+    if (stopped && (thrown || (await this.jobs.isHeld(lease)))) {
+      await this.jobs.release(lease, 'worker_stopped');
+    } else if (thrown) {
+      await this.jobs.fail(lease, { code: controller.signal.aborted ? 'handler_timeout' : 'handler_error', retryable: true });
     } else if (await this.jobs.isHeld(lease)) {
       await this.jobs.fail(lease, { code: 'handler_incomplete', retryable: false });
     }

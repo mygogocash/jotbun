@@ -49,14 +49,19 @@ export function scriptedGateway() {
   };
 }
 
-/** Wraps a registry: counts writes and can be switched to fail. */
+/** Wraps a registry: counts writes and can be switched to fail (all calls, or only the purge record). */
 export function switchableRegistry(inner: ErasureRegistry) {
-  const state = { failing: false, records: 0 };
+  const state = { failing: false, failingPurge: false, records: 0, purges: 0 };
   const registry: ErasureRegistry = {
     async record(accountId: string, keys: readonly ProviderSubjectKey[]): Promise<MarkerReceipt> {
       if (state.failing) throw new Error('synthetic registry outage');
       state.records += 1;
       return inner.record(accountId, keys);
+    },
+    async recordPurge(accountId: string, purgedAt: Date, blockedUntil: Date | null): Promise<void> {
+      if (state.failing || state.failingPurge) throw new Error('synthetic registry outage');
+      state.purges += 1;
+      return inner.recordPurge(accountId, purgedAt, blockedUntil);
     },
     async listMarkers(): Promise<ErasureMarker[]> {
       if (state.failing) throw new Error('synthetic registry outage');
@@ -139,11 +144,28 @@ export async function runNow(db: TestDatabase, jobId: string): Promise<void> {
   await db.admin((client) => client.query(`UPDATE jobs SET run_after = now() WHERE id = $1 AND status = 'queued'`, [jobId]));
 }
 
-export const deletionRequestOf = async (db: TestDatabase, accountId: string) =>
-  (await db.admin((client) => client.query('SELECT * FROM deletion_requests WHERE account_id = $1', [accountId]))).rows[0] as
-    | { request_id: string; command_id: string; marker_recorded_at: Date | null; provider_verified_at: Date | null; objects_swept_at: Date | null; purged_at: Date | null; requested_at: Date }
-    | undefined;
+export type DeletionRequestRow = {
+  request_id: string; job_id: string; command_id: string; requested_at: Date;
+  initiator_binding_digest: Buffer | null; initiator_principal_digest: Buffer | null; initiator_client_id: string | null;
+  marker_recorded_at: Date | null; provider_verified_at: Date | null; objects_swept_at: Date | null; purged_at: Date | null;
+  blocked_until: Date | null; marker_purge_recorded_at: Date | null;
+};
 
+export const deletionRequestOf = async (db: TestDatabase, accountId: string) =>
+  (await db.admin((client) => client.query('SELECT * FROM deletion_requests WHERE erased_account_id = $1', [accountId]))).rows[0] as DeletionRequestRow | undefined;
+
+/** The deletion job the account's request names (none before a request). */
 export const deletionJobOf = async (db: TestDatabase, accountId: string) =>
-  (await db.admin((client) => client.query(`SELECT id, status, attempts, last_error, run_after FROM jobs WHERE account_id = $1 AND kind = 'account_deletion' ORDER BY created_at`, [accountId]))).rows as
-    { id: string; status: string; attempts: number; last_error: string | null; run_after: Date }[];
+  (await db.admin((client) => client.query(
+    `SELECT j.id, j.status, j.attempts, j.last_error, j.run_after, j.account_id FROM jobs j JOIN deletion_requests r ON r.job_id = j.id
+      WHERE r.erased_account_id = $1 AND j.kind = 'account_deletion'`,
+    [accountId],
+  ))).rows as { id: string; status: string; attempts: number; last_error: string | null; run_after: Date; account_id: string | null }[];
+
+/** The provider aliases captured for the account's erasure. */
+export const capturedSubjectsOf = async (db: TestDatabase, accountId: string) =>
+  (await db.admin((client) => client.query(
+    `SELECT s.issuer, s.subject FROM deletion_request_subjects s JOIN deletion_requests r ON r.request_id = s.request_id
+      WHERE r.erased_account_id = $1 ORDER BY s.subject`,
+    [accountId],
+  ))).rows as { issuer: string; subject: string }[];

@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 import { Readable } from 'node:stream';
 
 import { Access } from '../auth/auth-route.decorator';
+import { Gated } from '../common/feature-gates';
 import { CurrentSession } from '../auth/request-context';
 import { commandHeaders } from '../commands/command-headers';
 import { ProblemException } from '../common/api-problem.filter';
@@ -36,6 +37,7 @@ export class ExportsController {
   /** Queues one export of the period (202). Idempotency-Key = the export proof's command id. */
   @Post('exports')
   @Access('recent_proof')
+  @Gated('jobs')
   @HttpCode(202)
   request(@CurrentSession() session: SessionContext, @Headers() headers: HeaderBag, @Body() body: unknown): Promise<CommandAck> {
     const command = commandHeaders(headers, 'forbidden');

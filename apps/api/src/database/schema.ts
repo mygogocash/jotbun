@@ -33,6 +33,8 @@ export const accountSyncState = pgTable('account_sync_state', {
   accountId: uuid('account_id').primaryKey().references(() => accounts.id, { onDelete: 'cascade' }),
   revision: bigint('revision', { mode: 'bigint' }).notNull().default(0n),
   prunedThrough: bigint('pruned_through', { mode: 'bigint' }).notNull().default(0n),
+  // P5: the latest retention purge's revision; no snapshot below it is recorded.
+  purgeRevision: bigint('purge_revision', { mode: 'bigint' }).notNull().default(0n),
 });
 
 // Reached only through gogospend_consume_rate_limit/gogospend_purge_rate_limits;
@@ -189,12 +191,14 @@ export const exportsTable = pgTable('exports', {
   expiresAt: instant('expires_at'),
 });
 
-/** P5: one per account being erased; outlives the account (routines only). */
+/** P5: one per account being erased - the erasure's work item; outlives the account (routines only). */
 export const deletionRequests = pgTable('deletion_requests', {
   requestId: uuid('request_id').primaryKey(),
-  accountId: uuid('account_id').notNull().unique(),
+  // Not account_id: a work item, not the account's data (a restore keeps it).
+  erasedAccountId: uuid('erased_account_id').notNull().unique(),
+  jobId: uuid('job_id').notNull().unique(),
   commandId: uuid('command_id').notNull(),
-  // Null for an erasure re-queued after a restore.
+  // Null for an erasure re-queued after a restore; the principal digest is cleared at the purge.
   initiatorBindingDigest: bytea('initiator_binding_digest').unique(),
   initiatorPrincipalDigest: bytea('initiator_principal_digest'),
   initiatorClientId: text('initiator_client_id'),
@@ -203,7 +207,20 @@ export const deletionRequests = pgTable('deletion_requests', {
   providerVerifiedAt: instant('provider_verified_at'),
   objectsSweptAt: instant('objects_swept_at'),
   purgedAt: instant('purged_at'),
+  blockedUntil: instant('blocked_until'),
+  markerPurgeRecordedAt: instant('marker_purge_recorded_at'),
 });
+
+/** P5: the provider aliases an erasure still has to clean up (until its purge). */
+export const deletionRequestSubjects = pgTable(
+  'deletion_request_subjects',
+  {
+    requestId: uuid('request_id').notNull().references(() => deletionRequests.requestId, { onDelete: 'cascade' }),
+    issuer: text('issuer').notNull(),
+    subject: text('subject').notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.requestId, table.issuer, table.subject] })],
+);
 
 /** P5: the independent erasure registry (maintenance role only; its own database in production). */
 export const erasureRegistry = pgSchema('erasure_registry');
@@ -213,6 +230,8 @@ export const erasureMarkers = erasureRegistry.table('erasure_markers', {
   subjectLookups: text('subject_lookups').array().notNull(),
   lookupKeyId: text('lookup_key_id').notNull(),
   recordedAt: instant('recorded_at').notNull().defaultNow(),
+  purgedAt: instant('purged_at'),
+  blockedUntil: instant('blocked_until'),
 });
 
 export const reauthChallenges = pgTable('reauth_challenges', {
@@ -443,6 +462,8 @@ export const importPreviews = pgTable('import_previews', {
   imageKey: text('image_key').unique(),
   imageWidth: integer('image_width'),
   imageHeight: integer('image_height'),
+  // P2c: the opaque id a retain names (set by a trigger when there is an image).
+  imageAttachmentId: uuid('image_attachment_id').unique(),
   reviewRevision: bigint('review_revision', { mode: 'bigint' }).notNull().default(1n),
   createdAt: instant('created_at').notNull().defaultNow(),
   expiresAt: instant('expires_at').notNull(),
@@ -467,6 +488,91 @@ export const importCandidates = pgTable(
     reviewRequired: boolean('review_required').notNull(),
   },
   (table) => [primaryKey({ columns: [table.jobId, table.sourceRowId] })],
+);
+
+// P3: frozen selections (written only by gogospend_freeze_import_selection),
+// their frozen rows, and per-row progress (append-only, one per committed
+// source row). The owner reads its own rows.
+export const importSelections = pgTable(
+  'import_selections',
+  {
+    accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+    selectionId: uuid('selection_id').notNull().unique(),
+    jobId: uuid('job_id').notNull().references(() => importPreviews.jobId, { onDelete: 'cascade' }),
+    frozenRevision: bigint('frozen_revision', { mode: 'bigint' }).notNull(),
+    rowCount: integer('row_count').notNull(),
+    createdAt: instant('created_at').notNull().defaultNow(),
+    expiresAt: instant('expires_at').notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.accountId, table.selectionId] })],
+);
+
+export const importSelectionRows = pgTable(
+  'import_selection_rows',
+  {
+    accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+    selectionId: uuid('selection_id').notNull(),
+    sourceRowId: text('source_row_id').notNull(),
+    ordinal: integer('ordinal').notNull(),
+    type: text('type', { enum: ['expense', 'income'] }).notNull(),
+    amountMinor: bigint('amount_minor', { mode: 'bigint' }).notNull(),
+    occurredOn: date('occurred_on', { mode: 'string' }).notNull(),
+    walletId: uuid('wallet_id').notNull(),
+    categoryId: uuid('category_id').notNull(),
+    categoryType: text('category_type').generatedAlwaysAs(sql`type`),
+    note: text('note'),
+    merchant: text('merchant'),
+  },
+  (table) => [primaryKey({ columns: [table.accountId, table.selectionId, table.sourceRowId] })],
+);
+
+export const importRowProgress = pgTable(
+  'import_row_progress',
+  {
+    accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+    jobId: uuid('job_id').notNull().references(() => importPreviews.jobId, { onDelete: 'cascade' }),
+    sourceRowId: text('source_row_id').notNull(),
+    selectionId: uuid('selection_id').notNull(),
+    // NULL only once the transaction was purged.
+    transactionId: uuid('transaction_id'),
+    commandId: uuid('command_id').notNull(),
+    committedAt: instant('committed_at').notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.jobId, table.sourceRowId] })],
+);
+
+// P2c: receipts the owner explicitly retained (written only by SQL routines)
+// and which record holds which (one per record; shared receipts allowed).
+export const ATTACHMENT_STATUSES = ['retained', 'released'] as const;
+
+export const attachments = pgTable(
+  'attachments',
+  {
+    accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+    id: uuid('id').notNull(),
+    sourceJobId: uuid('source_job_id').notNull(),
+    status: text('status', { enum: ATTACHMENT_STATUSES }).notNull().default('retained'),
+    objectKey: text('object_key').notNull().unique(),
+    contentType: text('content_type', { enum: ['image/jpeg', 'image/png', 'image/webp'] }).notNull(),
+    bytes: bigint('bytes', { mode: 'bigint' }).notNull(),
+    sha256: bytea('sha256').notNull(),
+    width: integer('width').notNull(),
+    height: integer('height').notNull(),
+    retainedAt: instant('retained_at').notNull().defaultNow(),
+    releasedAt: instant('released_at'),
+  },
+  (table) => [primaryKey({ columns: [table.accountId, table.id] })],
+);
+
+export const transactionAttachments = pgTable(
+  'transaction_attachments',
+  {
+    accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+    transactionId: uuid('transaction_id').notNull(),
+    attachmentId: uuid('attachment_id').notNull(),
+    attachedAt: instant('attached_at').notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.accountId, table.transactionId] })],
 );
 
 export const schema = {
@@ -497,6 +603,12 @@ export const schema = {
   exports: exportsTable,
   importUploads,
   deletionRequests,
+  deletionRequestSubjects,
   importPreviews,
   importCandidates,
+  importSelections,
+  importSelectionRows,
+  importRowProgress,
+  attachments,
+  transactionAttachments,
 };

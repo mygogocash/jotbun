@@ -5,9 +5,16 @@ import { Client } from 'pg';
 import type { Pool } from 'pg';
 
 import { poolConfigFromUrl } from '../database/database-config';
+import { LeasedAccountRead } from '../database/leased-account-read';
+import { JobRepository } from '../jobs/job.repository';
+import { ObjectPublicationService } from '../storage/object-publication.service';
+import type { MemoryObjectStore } from '../storage/object-store';
+import { OBJECT_STORE } from '../storage/storage.module';
+import { SnapshotBuilder } from '../sync/snapshot-builder';
 import { authFixtures } from '../testing/auth-fixtures';
 import type { SignedUp } from '../testing/auth-fixtures';
 import { publishPolicies, startV1App } from '../testing/command-fixtures';
+import { queueAccountJob } from '../testing/job-fixtures';
 import { startJwksFixture } from '../testing/jwks-server';
 import type { JwksFixture } from '../testing/jwks-server';
 import { builtinId, expectOk, moneyFixtures } from '../testing/money-fixtures';
@@ -59,7 +66,7 @@ const changesOf = async (accountId: string, id: string) =>
 const headOf = async (accountId: string, id: string) =>
   (await db.admin((client) => client.query('SELECT version, state, revision::text AS revision FROM entity_heads WHERE account_id = $1 AND entity_id = $2', [accountId, id]))).rows[0];
 const syncState = async (accountId: string) =>
-  (await db.admin((client) => client.query('SELECT revision::text AS revision, pruned_through::text AS pruned_through FROM account_sync_state WHERE account_id = $1', [accountId]))).rows[0];
+  (await db.admin((client) => client.query('SELECT revision::text AS revision, pruned_through::text AS pruned_through, purge_revision::text AS purge_revision FROM account_sync_state WHERE account_id = $1', [accountId]))).rows[0];
 const latestCursor = async (user: SignedUp): Promise<string> => {
   let cursor: string | undefined;
   for (;;) {
@@ -197,6 +204,58 @@ describe('deleted records', () => {
     expect(status.body.statuses[0].ack.entity_state).toBe('purged');
   });
 
+  it('leaves an account being erased to its erasure: no purge group is written for it', async () => {
+    const { user, cash } = await diary();
+    const record = await create(user, cash);
+    await expectOk(await remove(user, record.body.id));
+    await age(user.accountId, 'transaction', record.body.id, 31);
+    const key = randomUUID();
+    const proofId = await fx.proven(user.who, 'deletion', key);
+    expect((await as(user).raw('post', '/v1/me/deletion', { proof_id: proofId }, { 'idempotency-key': key })).status).toBe(202);
+    const revision = (await syncState(user.accountId)).revision;
+    const report = await retention.run();
+    expect(report.counts['records.purge']).toBe(0);
+    expect((await headOf(user.accountId, record.body.id)).state).toBe('deleted');
+    expect((await syncState(user.accountId)).revision).toBe(revision);
+  });
+
+  it('a snapshot read before a purge is never recorded afterwards, so it cannot serve the purged data', async () => {
+    const { user, cash } = await diary();
+    const record = await create(user, cash);
+    await expectOk(await remove(user, record.body.id));
+    await age(user.accountId, 'transaction', record.body.id, 31);
+    const store = v1.app.get<MemoryObjectStore>(OBJECT_STORE);
+    const jobs = new JobRepository(jobsPool);
+    const publication = new ObjectPublicationService(jobsPool, store);
+    const reader = new LeasedAccountRead(await db.loginPool(['gogospend_leased_read'], 2));
+    await queueAccountJob(db, user.accountId, 'sync_snapshot');
+    const [claimed] = await jobs.claim(['sync_snapshot'], { leaseSeconds: 60 });
+    let purgedInBetween = false;
+    const builder = new SnapshotBuilder({ reader, jobs, store, publication }, {
+      // The read view is closed and its chunks stored; the maintenance pass purges now.
+      afterChunk: async () => {
+        if (purgedInBetween) return;
+        purgedInBetween = (await retention.run()).counts['records.purge'] === 1;
+      },
+    });
+    const manifest = await builder.build(claimed.lease);
+    expect(purgedInBetween).toBe(true);
+    expect(manifest).toBeNull();
+    expect((await db.admin((client) => client.query('SELECT count(*)::int AS n FROM snapshot_manifests WHERE account_id = $1', [user.accountId]))).rows[0].n).toBe(0);
+    const state = await syncState(user.accountId);
+    expect(state.purge_revision).toBe((await headOf(user.accountId, record.body.id)).revision);
+    // Nothing published carries the purged note.
+    const published = (await db.admin((client) => client.query(`SELECT key FROM object_publications WHERE account_id = $1 AND status = 'published'`, [user.accountId]))).rows;
+    for (const { key } of published) expect(new TextDecoder().decode((await store.get(key)) as Uint8Array)).not.toContain(NOTE);
+    // A fresh build, from a view after the purge, is recorded.
+    await jobs.fail(claimed.lease, { code: 'snapshot_not_recorded', retryable: true }).catch(() => undefined);
+    await queueAccountJob(db, user.accountId, 'sync_snapshot');
+    const [again] = await jobs.claim(['sync_snapshot'], { leaseSeconds: 60 });
+    const fresh = await new SnapshotBuilder({ reader, jobs, store, publication }).build(again.lease);
+    expect(fresh).not.toBeNull();
+    for (const chunk of fresh?.chunks ?? []) expect(new TextDecoder().decode((await store.get(chunk.key)) as Uint8Array)).not.toContain(NOTE);
+  });
+
   it('skips an account while a user write holds its lock, and purges it on the next run', async () => {
     const { user, cash } = await diary();
     const record = await create(user, cash);
@@ -257,9 +316,9 @@ describe('other retention', () => {
                             ($1, 'sync_snapshot', '{}', 3, 'succeeded', now() - interval '31 days'),
                             ($2, 'sync_snapshot', '{}', 3, 'succeeded', now() - interval '1 day'),
                             ($3, 'sync_snapshot', '{}', 3, 'failed', now() - interval '40 days')`, [oldJob, freshJob, failedJob]);
-      await client.query(`INSERT INTO deletion_requests (request_id, account_id, command_id, requested_at, marker_recorded_at, provider_verified_at, objects_swept_at, purged_at) VALUES
-                            ($1, $1, $1, now() - interval '40 days', now() - interval '40 days', now() - interval '40 days', now() - interval '40 days', now() - interval '31 days'),
-                            ($2, $2, $2, now() - interval '2 days', now() - interval '2 days', now() - interval '2 days', now() - interval '2 days', now() - interval '1 day')`, [oldRequest, freshRequest]);
+      await client.query(`INSERT INTO deletion_requests (request_id, erased_account_id, job_id, command_id, requested_at, marker_recorded_at, provider_verified_at, objects_swept_at, purged_at, blocked_until, marker_purge_recorded_at) VALUES
+                            ($1, $1, $1, $1, now() - interval '40 days', now() - interval '40 days', now() - interval '40 days', now() - interval '40 days', now() - interval '31 days', now() - interval '31 days', now() - interval '31 days'),
+                            ($2, $2, $2, $2, now() - interval '2 days', now() - interval '2 days', now() - interval '2 days', now() - interval '2 days', now() - interval '1 day', now() - interval '1 day', now() - interval '1 day')`, [oldRequest, freshRequest]);
     });
     const report = await retention.run();
     expect(report.failed).toEqual([]);
@@ -304,7 +363,66 @@ describe('other retention', () => {
     expect(report).toEqual({ counts: { 'fixture.counted': 3 }, failed: ['fixture.broken'] });
     // The default steps in their order.
     expect(defaultPrivacySteps().retentionSteps().map((step) => step.name)).toEqual([
-      'records.purge', 'sync.change_log', 'commands.receipt_digests', 'auth.security_records', 'jobs.finished', 'privacy.deletion_requests',
+      'records.purge', 'sync.change_log', 'commands.receipt_digests', 'auth.security_records', 'jobs.finished', 'privacy.deletion_requests', 'imports.previews', 'imports.uploads',
+      'attachments.obsolete', 'imports.selections',
     ]);
+  });
+
+  it('every prune works in bounded batches', async () => {
+    const digest = (n: number) => Buffer.alloc(32, n);
+    await db.admin(async (client) => {
+      await client.query(`INSERT INTO security_reconcile_checks (principal_digest, checked_at) VALUES ($1, now() - interval '40 days'), ($2, now() - interval '40 days'), ($3, now() - interval '40 days')`, [digest(21), digest(22), digest(23)]);
+      await client.query(`INSERT INTO jobs (id, kind, payload, max_attempts, status, finished_at)
+                          SELECT gen_random_uuid(), 'sync_snapshot', '{}', 3, 'cancelled', now() - interval '40 days' FROM generate_series(1, 3)`);
+    });
+    const once = async (routine: string) => (await jobsPool.query(`SELECT ${routine}(1) AS n`)).rows[0].n as number;
+    expect(await once('gogospend_prune_security_records')).toBe(1);
+    expect(await once('gogospend_prune_finished_jobs')).toBe(1);
+    // The runner calls them until a call removes nothing.
+    const report = await retention.run();
+    expect(report.counts['auth.security_records']).toBeGreaterThanOrEqual(2);
+    expect(report.counts['jobs.finished']).toBeGreaterThanOrEqual(2);
+    expect(await once('gogospend_prune_security_records')).toBe(0);
+    expect(await once('gogospend_prune_finished_jobs')).toBe(0);
+  });
+
+  it('drops finished upload rows 30 days after they ended, never one still receiving or within the quota window', async () => {
+    const user = await money.member();
+    const row = async (status: string, ended: string | null, extra: Record<string, string> = {}) => {
+      const id = randomUUID();
+      await db.admin((client) => client.query(
+        `INSERT INTO import_uploads (job_id, account_id, lifecycle_generation, intake_token, status, outcome_code, file_name, declared_type, created_at, receive_deadline,
+                                     accepted_at, expires_at, format, bytes, part_count, sha256, finished_at)
+         VALUES ($1, $2, 0, gen_random_uuid(), $3, $4, $5, 'text/csv', $6::timestamptz, $6::timestamptz + interval '10 minutes',
+                 $7::timestamptz, $8::timestamptz, $9, $10, $11, $12, $13::timestamptz)`,
+        [id, user.accountId, status, extra.outcome ?? null, status === 'receiving' ? 'statement.csv' : null, extra.created ?? 'now()', extra.accepted ?? null, extra.expires ?? null,
+          extra.accepted ? 'csv' : null, extra.accepted ? 100 : null, extra.accepted ? 1 : null, status === 'accepted' ? Buffer.alloc(32, 1) : null, ended],
+      ));
+      return id;
+    };
+    const day = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString();
+    const oldFailed = await row('failed', day(31), { outcome: 'stream_failed', created: day(31) });
+    const freshFailed = await row('failed', day(2), { outcome: 'stream_failed', created: day(2) });
+    const oldExpired = await row('expired', day(32), { created: day(34), accepted: day(34), expires: day(33) });
+    const oldAccepted = await row('accepted', null, { created: day(40), accepted: day(40), expires: day(39) });
+    const receiving = await row('receiving', null, { created: day(0) });
+    const report = await retention.run();
+    expect(report.failed).toEqual([]);
+    const left = (await db.admin((client) => client.query('SELECT job_id FROM import_uploads WHERE account_id = $1', [user.accountId]))).rows.map((r) => r.job_id).sort();
+    expect(left).toEqual([freshFailed, receiving].sort());
+    expect([oldFailed, oldExpired, oldAccepted].some((id) => left.includes(id))).toBe(false);
+  });
+
+  it('the erasure purge and the account foreign key use indexes for jobs and provider-event receipts', async () => {
+    const plans = await db.admin(async (client) => {
+      await client.query('BEGIN');
+      await client.query('SET LOCAL enable_seqscan = off');
+      const jobs = (await client.query(`EXPLAIN DELETE FROM jobs WHERE account_id = $1 AND id <> $2`, [randomUUID(), randomUUID()])).rows.map((r) => r['QUERY PLAN']).join('\n');
+      const receipts = (await client.query(`EXPLAIN DELETE FROM auth_event_receipts WHERE account_id = $1`, [randomUUID()])).rows.map((r) => r['QUERY PLAN']).join('\n');
+      await client.query('ROLLBACK');
+      return { jobs, receipts };
+    });
+    expect(plans.jobs).toMatch(/jobs_account_idx/);
+    expect(plans.receipts).toMatch(/auth_event_receipts_account_idx/);
   });
 });

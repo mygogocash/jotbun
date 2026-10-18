@@ -28,13 +28,14 @@ async function setup(initial: DiarySession = { accountId: ACCOUNT_A, epoch: 1 },
   const database = new AccountDatabase({ files, keys, epoch: () => installation.epoch ?? session.epoch });
   const server = createFakeServer();
   if (options.seed !== false) server.commitElsewhere([change('wallet', wallet()), change('wallet', wallet({ id: SAVINGS, name: 'Savings', opening_minor: '0' })), change('category', category())]);
-  const record = { opens: 0, flushedAs: [] as SyncSession[], timers: [] as number[] };
+  const record = { opens: 0, flushedAs: [] as SyncSession[], timers: [] as number[], erasedWithDiary: [] as string[] };
   const diary = createSpendDiary({
     open: (accountId, epoch) => {
       record.opens += 1;
       return database.open(accountId, epoch);
     },
     discard: (accountId) => database.discard(accountId),
+    eraseWithDiary: async (accountId) => void record.erasedWithDiary.push(accountId),
     session: () => session,
     now: () => Date.now(),
     newId: () => randomUUID(),
@@ -288,6 +289,14 @@ test("an explicit sign-out erases only this account's diary on the device", asyn
   installation.epoch = 4;
   assert.deepEqual((await (await database.open(ACCOUNT_A)).readState()).pending, []);
   assert.deepEqual((await (await database.open(ACCOUNT_B)).readState()).pending.map((e) => e.id), [forB.id]);
+});
+
+test("an explicit sign-out also erases the account's other on-device copies (the import draft); a diary discard does not", async () => {
+  const { diary, record } = await setup();
+  await diary.discardDiary();
+  assert.deepEqual(record.erasedWithDiary, []);
+  await diary.eraseForSignOut();
+  assert.deepEqual(record.erasedWithDiary, [ACCOUNT_A]);
 });
 
 test('a sync run reports live n-of-m progress, then clears it', async () => {

@@ -6,6 +6,7 @@ import type { Pool } from 'pg';
 
 import { ApiProblemFilter, ProblemException } from '../common/api-problem.filter';
 import { ClientVersionGuard, MIN_CLIENT_VERSIONS, minimumClientVersionsFromEnv } from '../common/client-version.guard';
+import { FEATURE_GATES, FeatureGates, FeatureGatesModule, routeGatesOf } from '../common/feature-gates';
 import type { MinimumClientVersions } from '../common/client-version.guard';
 import { PostgresRateLimiter, RATE_LIMITER, chargeBeforeSession, chargeSession, rateLimitKeyFromEnv } from '../common/shared-rate-limit';
 import type { RateLimiter } from '../common/shared-rate-limit';
@@ -36,8 +37,9 @@ import { routeAccessOf } from './route-policy';
 
 /**
  * The single global v1 guard, in a fixed order: route classification →
- * client version → access token → route scopes → principal/network budget →
- * binding → per-session budget → current policy. An unclassified route is
+ * operational gates (404 for an unreleased feature, 503 for a paused scope;
+ * no database work) → client version → access token → route scopes →
+ * principal/network budget → binding → per-session budget → current policy. An unclassified route is
  * refused here even if the startup check was skipped. Charging the principal
  * before the session lookup means random bindings cannot bypass rate limits.
  */
@@ -51,6 +53,8 @@ export class V1AccessGuard implements CanActivate {
     @Inject(RATE_LIMITER) private readonly limiter: RateLimiter,
     private readonly tokens: Auth0AccessTokenGuard,
     private readonly sessions: ApplicationSessionGuard,
+    // Required: a module without the gates must not start with nothing paused.
+    @Inject(FEATURE_GATES) private readonly gates: FeatureGates,
   ) {
     this.clientVersions = new ClientVersionGuard(minimums);
   }
@@ -58,6 +62,7 @@ export class V1AccessGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const access = routeAccessOf(this.reflector, context);
     if (!access) throw new ProblemException(403, 'FORBIDDEN');
+    this.gates.assertOpen(...routeGatesOf(this.reflector, context));
     if (access === 'public') return true;
     const req = context.switchToHttp().getRequest<Request>();
     this.clientVersions.check(access, req);
@@ -78,7 +83,7 @@ export class V1AccessGuard implements CanActivate {
 const AUTH0_CONFIG = Symbol('AUTH0_CONFIG');
 
 @Module({
-  imports: [DatabaseModule, PoliciesModule],
+  imports: [FeatureGatesModule, DatabaseModule, PoliciesModule],
   controllers: [AuthController, Auth0EventsController],
   providers: [
     { provide: AUTH0_CONFIG, useFactory: () => auth0ConfigFromEnv(process.env) },

@@ -4,6 +4,10 @@ import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import { ModulesContainer } from '@nestjs/core';
 import type { Reflector } from '@nestjs/core';
 
+import { GATE_METADATA } from '../common/feature-gates';
+import type { GateScope } from '../common/feature-gates';
+import { ConfigurationError } from '../common/configuration-error';
+
 /**
  * Every v1 route declares exactly one access class:
  * - public: no credentials (health, published policy text)
@@ -28,7 +32,8 @@ export const needsToken = (access: RouteAccess): boolean => access !== 'public';
 export const needsBinding = (access: RouteAccess): boolean =>
   access === 'bound_session' || access === 'current_policy' || access === 'recent_proof';
 
-export type RouteManifestEntry = { route: string; access: RouteAccess | undefined };
+/** `gates`: the operational gates (common/feature-gates.ts) that can pause the route. */
+export type RouteManifestEntry = { route: string; access: RouteAccess | undefined; gates: readonly GateScope[] };
 
 /** Every registered controller route with its declared access class. */
 export function routeManifest(app: INestApplication): RouteManifestEntry[] {
@@ -52,9 +57,11 @@ export function routeManifest(app: INestApplication): RouteManifestEntry[] {
         const method = RequestMethod[Reflect.getMetadata(METHOD_METADATA, handler) as RequestMethod];
         const access = (Reflect.getMetadata(ROUTE_ACCESS_METADATA, handler) ?? Reflect.getMetadata(ROUTE_ACCESS_METADATA, type)) as unknown;
         const fullPath = `/${[base, path].filter(Boolean).join('/')}`.replace(/\/+/g, '/').replace(/(.)\/$/, '$1');
+        const gates = (Reflect.getMetadata(GATE_METADATA, handler) ?? Reflect.getMetadata(GATE_METADATA, type) ?? []) as GateScope[];
         entries.push({
           route: `${method} ${fullPath}`,
           access: ROUTE_ACCESS.includes(access as RouteAccess) ? (access as RouteAccess) : undefined,
+          gates: [...gates],
         });
       }
     }
@@ -66,6 +73,6 @@ export function routeManifest(app: INestApplication): RouteManifestEntry[] {
 export function assertRoutesClassified(app: INestApplication): void {
   const missing = routeManifest(app).filter((entry) => !entry.access);
   if (missing.length > 0) {
-    throw new Error(`Unclassified v1 routes: ${missing.map((entry) => entry.route).join(', ')}`);
+    throw new ConfigurationError(`Unclassified v1 routes: ${missing.map((entry) => entry.route).join(', ')}`);
   }
 }

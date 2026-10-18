@@ -16,11 +16,23 @@
 // reports - counts only - open, overdue (over 20 hours) and failed deletions.
 // Never logs subjects, account ids, payloads or error text.
 // See apps/api/.env.deletion-worker.example and docs/operations/deletion.md.
+//
+// P6b: OPERATIONAL_PAUSE=jobs stops claiming (accepted deletions stay
+// locked and pending; the over-20-hour alert still fires). Every minute, on
+// its own timer, it logs `deletion worker: queue due=N oldest_due_seconds=S`
+// (the heartbeat) and `deletion worker: alert queue_age …` past 5 minutes.
+// SIGTERM aborts the running stage and releases the job (due now, the
+// attempt not spent; resumed later from its recorded progress), and exits
+// within SHUTDOWN_TIMEOUT_SECONDS.
 import { closeSync, readFileSync } from 'node:fs';
 
 import { Pool } from 'pg';
 
 import { maintenanceGatewayFromEnv } from '../auth/auth0-management.client';
+import { ConfigurationError } from '../common/configuration-error';
+import { featureGatesFromEnv } from '../common/feature-gates';
+import { failureName, queueAge, queueAgeLines, startQueueReports } from '../common/operational-metrics';
+import { handleShutdownSignals, runMain, shutdownTimeoutMsFromEnv } from '../common/process-lifecycle';
 import { poolConfigFromUrl } from '../database/database-config';
 import { HandlerRegistry } from '../jobs/handler-registry';
 import { JobRepository } from '../jobs/job.repository';
@@ -38,30 +50,32 @@ type RegistrySettings = { databaseUrl: string; lookupKey: LookupKey };
 export function readRegistrySettings(argv: readonly string[], read: (fd: number) => string = (fd) => readFileSync(fd, 'utf8')): RegistrySettings {
   const index = argv.indexOf('--registry-fd');
   const fd = index >= 0 ? Number(argv[index + 1]) : NaN;
-  if (!Number.isInteger(fd) || fd < 3 || fd > 99) throw new Error('--registry-fd <3-99> is required (the erasure registry settings, piped from the secret manager).');
+  if (!Number.isInteger(fd) || fd < 3 || fd > 99) throw new ConfigurationError('--registry-fd <3-99> is required (the erasure registry settings, piped from the secret manager).');
   let parsed: unknown;
   try {
     parsed = JSON.parse(read(fd));
   } catch {
-    throw new Error('The erasure registry settings are not readable JSON.');
+    throw new ConfigurationError('The erasure registry settings are not readable JSON.');
   }
   const value = parsed as { database_url?: unknown; lookup_key?: unknown } | null;
   const keys = value && typeof value === 'object' ? Object.keys(value).sort().join(',') : '';
   if (keys !== 'database_url,lookup_key' || typeof value?.database_url !== 'string' || typeof value.lookup_key !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(value.lookup_key)) {
-    throw new Error('The erasure registry settings must be exactly {database_url, lookup_key}.');
+    throw new ConfigurationError('The erasure registry settings must be exactly {database_url, lookup_key}.');
   }
   return { databaseUrl: value.database_url, lookupKey: new LookupKey(Buffer.from(value.lookup_key, 'base64url')) };
 }
 
 function intervalSeconds(value: string | undefined): number {
   const seconds = Number(value ?? 15);
-  if (!Number.isInteger(seconds) || seconds < 1 || seconds > 300) throw new Error('DELETION_WORKER_INTERVAL_SECONDS must be 1-300.');
+  if (!Number.isInteger(seconds) || seconds < 1 || seconds > 300) throw new ConfigurationError('DELETION_WORKER_INTERVAL_SECONDS must be 1-300.');
   return seconds;
 }
 
 async function main(): Promise<void> {
   const once = process.argv.includes('--once');
   const interval = intervalSeconds(process.env.DELETION_WORKER_INTERVAL_SECONDS);
+  const gates = featureGatesFromEnv(process.env);
+  const shutdownMs = shutdownTimeoutMsFromEnv(process.env.SHUTDOWN_TIMEOUT_SECONDS);
   const registrySettings = readRegistrySettings(process.argv);
   const fd = Number(process.argv[process.argv.indexOf('--registry-fd') + 1]);
   try {
@@ -70,17 +84,18 @@ async function main(): Promise<void> {
     // Already closed.
   }
   const gateway = maintenanceGatewayFromEnv(process.env);
-  if (!gateway) throw new Error('AUTH0_MAINTENANCE_CLIENT_ID and AUTH0_MAINTENANCE_CLIENT_SECRET are not configured.');
+  if (!gateway) throw new ConfigurationError('AUTH0_MAINTENANCE_CLIENT_ID and AUTH0_MAINTENANCE_CLIENT_SECRET are not configured.');
   const nativeClientIds = (process.env.AUTH0_ALLOWED_CLIENT_IDS ?? '').split(',').map((id) => id.trim()).filter(Boolean);
-  if (nativeClientIds.length === 0) throw new Error('AUTH0_ALLOWED_CLIENT_IDS (the native app clients) is not configured.');
+  if (nativeClientIds.length === 0) throw new ConfigurationError('AUTH0_ALLOWED_CLIENT_IDS (the native app clients) is not configured.');
   const store = objectStoreFromEnv(process.env);
   const pool = new Pool(poolConfigFromUrl(process.env.DATABASE_URL, 2));
   pool.on('error', () => console.error('deletion worker: idle database connection failed'));
   const registryPool = new Pool(poolConfigFromUrl(registrySettings.databaseUrl, 2));
   registryPool.on('error', () => console.error('deletion worker: idle registry connection failed'));
   const stop = new AbortController();
-  for (const signal of ['SIGTERM', 'SIGINT'] as const) process.once(signal, () => stop.abort());
+  handleShutdownSignals({ name: 'deletion worker', timeoutMs: shutdownMs, exitWhenStopped: false, stop: () => stop.abort() });
   let reporter: NodeJS.Timeout | undefined;
+  let stopQueueReports: (() => Promise<void>) | undefined;
   try {
     await assertLoginRoles(pool, ['gogospend_jobs', 'gogospend_security'], 'DATABASE_URL');
     await assertLoginRoles(registryPool, ['gogospend_erasure_registry'], 'the erasure registry login', 'The erasure registry login must be a member of gogospend_erasure_registry only.');
@@ -97,8 +112,8 @@ async function main(): Promise<void> {
       steps: defaultPrivacySteps(),
     });
     const handlers = new HandlerRegistry({ security: true }).register('account_deletion', (job) => handler.run(job.lease));
-    const worker = new JobWorker(jobs, handlers);
-    const report = async () => {
+    const worker = new JobWorker(jobs, handlers, { gates });
+    const reportBacklog = async () => {
       try {
         const backlog = await repository.backlog();
         if (backlog.open > 0) console.log(`deletion worker: ${backlog.open} deletion(s) in progress, oldest ${backlog.oldestSeconds}s`);
@@ -106,28 +121,37 @@ async function main(): Promise<void> {
         if (backlog.overdue > 0) console.error(`deletion worker: ${backlog.overdue} deletion(s) open for over 20 hours`);
         if (backlog.failed > 0) console.error(`deletion worker: ${backlog.failed} deletion job(s) failed terminally`);
       } catch (error) {
-        console.error(`deletion worker: backlog report failed (${error instanceof Error ? error.name : 'unknown'})`);
+        console.error(`deletion worker: backlog report failed (${failureName(error)})`);
+      }
+    };
+    const reportQueue = async () => {
+      try {
+        // Alert on `alert queue_age`; the summary line is the heartbeat.
+        const lines = queueAgeLines('deletion worker', await queueAge(pool, ['account_deletion']));
+        for (const line of lines.info) console.log(line);
+        for (const line of lines.alerts) console.error(line);
+        if (gates.isPaused('jobs')) console.error('deletion worker: paused jobs');
+      } catch (error) {
+        console.error(`deletion worker: queue report failed (${failureName(error)})`);
       }
     };
     if (once) {
       for (let run = 0; run < 100 && (await worker.runOnce(stop.signal)) === 'ran'; run += 1);
-      await report();
+      await reportBacklog();
+      await reportQueue();
       return;
     }
-    await report();
-    reporter = setInterval(() => void report(), 5 * 60_000);
+    await reportBacklog();
+    reporter = setInterval(() => void reportBacklog(), 5 * 60_000);
+    stopQueueReports = startQueueReports(reportQueue);
     await worker.runUntil(stop.signal, interval * 1000, (error) => {
-      console.error(`deletion worker: claim failed (${error instanceof Error ? error.name : 'unknown'})`);
+      console.error(`deletion worker: claim failed (${failureName(error)})`);
     });
   } finally {
     clearInterval(reporter);
+    await stopQueueReports?.();
     await Promise.allSettled([pool.end(), registryPool.end()]);
   }
 }
 
-if (require.main === module) {
-  main().catch((error: unknown) => {
-    console.error(`deletion worker startup failed: ${error instanceof Error ? error.message : 'unknown error'}`);
-    process.exitCode = 1;
-  });
-}
+if (require.main === module) void runMain('deletion worker', main);

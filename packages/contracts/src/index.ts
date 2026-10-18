@@ -116,13 +116,14 @@ export {
   SNAPSHOT_STATUSES,
   SYNC_ENTITY_VALIDATORS,
   isEntityChange,
+  isKnownSyncEntity,
   isCommittedChangeGroup,
   isSnapshotChunk,
   isSnapshotChunkGrant,
   isSyncChangesPage,
   isSnapshotDto,
 } from "./v1/sync.ts";
-export type { SyncChangesPage, SnapshotStatus, SnapshotChunkGrant, SnapshotDto, SnapshotChunk } from "./v1/sync.ts";
+export type { SyncChangesPage, SyncEntityValidators, SyncReadOptions, SnapshotStatus, SnapshotChunkGrant, SnapshotDto, SnapshotChunk } from "./v1/sync.ts";
 export {
   EXPORT_TTL_HOURS,
   EXPORT_GRANT_MINUTES,
@@ -177,6 +178,19 @@ export {
   IMPORT_ROW_ISSUE_CODES,
   importIssueMessageKey,
   isImportPreview,
+  parseImportPreviewPaging,
+  IMPORT_PREVIEW_PAGE_MAX_LIMIT,
+  IMPORT_PATCH_MAX_ROWS,
+  IMPORT_SELECTION_MAX_ROWS,
+  IMPORT_CONFIRM_BATCH_MAX_ROWS,
+  IMPORT_SELECTION_STATUSES,
+  IMPORT_IMAGE_ROW_ID,
+  isImportReviewSnapshot,
+  isImportSelectionSnapshot,
+  isImportSourceRowId,
+  parseImportRowIds,
+  parseImportMapping,
+  parseImportRowPatch,
 } from "./v1/imports.ts";
 export type {
   ImportLimit,
@@ -195,4 +209,36 @@ export type {
   ImportDuplicateAdvice,
   ImportPreviewSummary,
   ImportPreview,
+  ImportPreviewPage,
+  ImportRowPatch,
+  PatchImportRowsRequest,
+  PatchImportRowsResult,
+  ImportMapping,
+  FreezeImportSelection,
+  FreezeImportSelectionRequest,
+  ConfirmImportBatch,
+  ImportReceiptChoice,
+  ConfirmImportBatchResult,
+  ImportSelectionStatus,
+  ImportSelectionProgress,
+  ImportReviewSnapshot,
+  ImportSelectionSnapshot,
 } from "./v1/imports.ts";
+export {
+  RECEIPT_RETENTION_CONSENT,
+  ATTACHMENT_CONTENT_TYPES,
+  ATTACHMENT_MAX_BYTES,
+  ATTACHMENT_GRANT_MINUTES,
+  ATTACHMENT_DOWNLOAD_PATH,
+  ATTACHMENT_MESSAGE_KEYS,
+  ATTACHMENT_COPY_REQUIREMENTS,
+  isAttachmentGrant,
+} from "./v1/attachments.ts";
+export type {
+  ReceiptRetentionConsent,
+  AttachmentCommand,
+  RetainAttachmentRequest,
+  ReplaceAttachmentRequest,
+  AttachmentContentType,
+  AttachmentGrant,
+} from "./v1/attachments.ts";

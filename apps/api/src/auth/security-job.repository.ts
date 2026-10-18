@@ -108,6 +108,12 @@ export type SecurityJobDeps = {
   /** F6c: the profile/link client; without it merge jobs stay queued (visible) until it is configured. */
   linker?: Auth0LinkGateway;
   newId?: () => string;
+  /**
+   * The worker's stop (SIGTERM). Once aborted no further job is claimed; the
+   * job in hand finishes (its provider calls are bounded), so a stop never
+   * fails or spends a security job's attempt.
+   */
+  stop?: AbortSignal;
 };
 export type RevocationResult = 'revoked' | 'superseded' | 'stale' | 'retrying' | 'failed';
 export type ReconcileResult = 'reconciled' | 'stale' | 'retrying' | 'failed';
@@ -215,19 +221,20 @@ export async function processLinkJob(claimed: ClaimedJob, linker: Auth0LinkGatew
  */
 export async function runSecurityJobsOnce(deps: SecurityJobDeps, options: { limit?: number; leaseSeconds?: number } = {}): Promise<SecurityRunSummary> {
   const summary: SecurityRunSummary = { revoked: 0, superseded: 0, stale: 0, retrying: 0, failed: 0, reconciled: 0, linked: 0 };
-  for (let run = 0; run < (options.limit ?? 10); run += 1) {
+  const stopped = () => deps.stop?.aborted === true;
+  for (let run = 0; run < (options.limit ?? 10) && !stopped(); run += 1) {
     const [job] = await deps.jobs.claim(['auth0_revoke_grants'], { limit: 1, leaseSeconds: options.leaseSeconds ?? 120 });
     if (!job) break;
     summary[await processRevocationJob(job, deps)] += 1;
   }
   if (deps.linker) {
-    for (let run = 0; run < (options.limit ?? 10); run += 1) {
+    for (let run = 0; run < (options.limit ?? 10) && !stopped(); run += 1) {
       const [job] = await deps.jobs.claim([LINK_KIND], { limit: 1, leaseSeconds: options.leaseSeconds ?? 120 });
       if (!job) break;
       summary[await processLinkJob(job, deps.linker, deps)] += 1;
     }
   }
-  if (deps.reconcile) {
+  if (deps.reconcile && !stopped()) {
     await deps.security.scheduleReconcile((deps.newId ?? randomUUID)(), deps.reconcile.everySeconds);
     const [job] = await deps.jobs.claim([RECONCILE_KIND], { limit: 1, leaseSeconds: options.leaseSeconds ?? 120 });
     if (job) {

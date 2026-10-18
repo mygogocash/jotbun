@@ -10,23 +10,32 @@ export type PublishedObject = { key: string; bytes: number; sha256: string };
 const PURPOSE = /^[a-z][a-z0-9_]{0,31}$/;
 const NAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 const SHA256 = /^[0-9a-f]{64}$/;
-/** The only purposes; the sweep lists each for orphans. */
-export const PUBLICATION_PURPOSES = ['sync_snapshot', 'export', 'import_image'] as const;
 /**
- * The job kind that may publish each purpose: a snapshot or export job its
- * own output; an import_parse job (P2b) its sanitized receipt image.
+ * Every purpose an object key can have. The sweep (and the deletion objects
+ * stage, through it) lists each for orphans, so a purpose missing here would
+ * leave unregistered objects behind.
  */
-const PUBLISHER_KIND: Readonly<Record<(typeof PUBLICATION_PURPOSES)[number], string>> = {
+export const PUBLICATION_PURPOSES = ['sync_snapshot', 'export', 'import_image', 'import_quarantine', 'receipt'] as const;
+export type PublicationPurpose = (typeof PUBLICATION_PURPOSES)[number];
+/**
+ * The job kind that may reserve each lease-published purpose: a snapshot or
+ * export job its own output; an import_parse job (P2b) its sanitized receipt
+ * image.
+ */
+const PUBLISHER_KIND: Readonly<Partial<Record<PublicationPurpose, string>>> = {
   sync_snapshot: 'sync_snapshot',
   export: 'export',
   import_image: 'import_parse',
 };
 /**
- * Purposes registered by the API's own routines rather than a worker lease
- * (P2a's upload quarantine: the intake token takes the lease-token slot).
- * Never reservable through reserveKey; swept like the others.
+ * Purposes registered by the API's own routines rather than a worker lease,
+ * never reservable through reserveKey: P2a's upload quarantine (the intake
+ * token takes the lease-token slot) and P2c's retained receipts (a copy
+ * token does; gogospend_reserve_receipt_copy, then
+ * gogospend_retain_attachment publishes with no expiry while a record holds
+ * the receipt).
  */
-export const QUARANTINE_PURPOSES = ['import_quarantine'] as const;
+export const API_PUBLISHED_PURPOSES: readonly PublicationPurpose[] = ['import_quarantine', 'receipt'];
 // A reservation outlives its publisher's last possible moment (the attempt's
 // runtime bound) by this much before the sweep may delete it.
 const RESERVATION_GRACE_SECONDS = 15 * 60;
@@ -60,9 +69,9 @@ export class ObjectPublicationService {
    * a concurrent sweep would see the object as an unregistered orphan.
    */
   async reserveKey(client: Pool, lease: JobLease, purpose: string, name: string): Promise<string> {
-    if (!PURPOSE.test(purpose) || !(PUBLICATION_PURPOSES as readonly string[]).includes(purpose) || !NAME.test(name)) throw new ObjectStoreError('invalid_key');
+    const kind = PUBLISHER_KIND[purpose as PublicationPurpose];
+    if (!PURPOSE.test(purpose) || kind === undefined || !NAME.test(name)) throw new ObjectStoreError('invalid_key');
     if (lease.accountId === null) throw new Error('only account jobs publish objects');
-    const kind = PUBLISHER_KIND[purpose as (typeof PUBLICATION_PURPOSES)[number]];
     const key = `${purpose}/${lease.accountId}/${lease.jobId}/${lease.leaseToken}/${name}`;
     const { rowCount } = await client.query(
       `INSERT INTO object_publications (key, job_id, account_id, lease_token, lifecycle_generation, purpose, delete_after)
@@ -145,7 +154,8 @@ export class ObjectPublicationService {
    *      (tests and operators) - marked `deleting` (SKIP LOCKED) and then
    *      deleted from storage;
    *   3. stored objects under the account's prefixes (every account's when
-   *      null) with no live registry row (unregistered, or already deleted);
+   *      null; receipts only of accounts with a reservation in the last week)
+   *      with no live registry row (unregistered, or already deleted);
    * and purges `deleted` rows after 30 days. A row becomes `deleted` only once
    * its object is gone. Returns the keys deleted from storage.
    */
@@ -176,17 +186,19 @@ export class ObjectPublicationService {
       await remove(rows.map((row) => row.key));
       if (rows.length < SWEEP_BATCH) break;
     }
-    for (const purpose of [...PUBLICATION_PURPOSES, ...QUARANTINE_PURPOSES]) {
-      const stored = await this.store.list(accountId ? `${purpose}/${accountId}/` : `${purpose}/`);
-      for (let start = 0; start < stored.length; start += SWEEP_BATCH) {
-        const batch = stored.slice(start, start + SWEEP_BATCH).map((object) => object.key);
-        // Rows still `deleting` are left to the next sweep's retry.
-        const live = await this.pool.query<{ key: string }>(
-          `SELECT key FROM object_publications WHERE key = ANY($1) AND status IN ('reserved', 'published', 'deleting')`,
-          [batch],
-        );
-        const keep = new Set(live.rows.map((row) => row.key));
-        for (const key of batch) if (!keep.has(key) && !deleted.has(key) && (await this.tryDelete(key))) deleted.add(key);
+    for (const prefix of await this.orphanPrefixes(accountId)) {
+      // A page at a time: the listing is never held whole.
+      for await (const stored of this.store.listPages(prefix)) {
+        for (let start = 0; start < stored.length; start += SWEEP_BATCH) {
+          const batch = stored.slice(start, start + SWEEP_BATCH).map((object) => object.key);
+          // Rows still `deleting` are left to the next sweep's retry.
+          const live = await this.pool.query<{ key: string }>(
+            `SELECT key FROM object_publications WHERE key = ANY($1) AND status IN ('reserved', 'published', 'deleting')`,
+            [batch],
+          );
+          const keep = new Set(live.rows.map((row) => row.key));
+          for (const key of batch) if (!keep.has(key) && !deleted.has(key) && (await this.tryDelete(key))) deleted.add(key);
+        }
       }
     }
     await this.pool.query(
@@ -194,6 +206,24 @@ export class ObjectPublicationService {
       [accountId],
     );
     return [...deleted];
+  }
+
+  /**
+   * Where to look for unregistered objects. One account's sweep lists every
+   * purpose under that account. The global sweep lists every purpose except
+   * receipts under the whole purpose, and receipts only under accounts that
+   * reserved a receipt copy in the last week: a receipt is registered before
+   * its copy exists, so an unregistered one can only follow a recent
+   * reservation, and the listing's cost then grows with recent activity
+   * rather than with every receipt ever kept.
+   */
+  private async orphanPrefixes(accountId: string | null): Promise<string[]> {
+    if (accountId) return PUBLICATION_PURPOSES.map((purpose) => `${purpose}/${accountId}/`);
+    const prefixes: string[] = PUBLICATION_PURPOSES.filter((purpose) => purpose !== 'receipt').map((purpose) => `${purpose}/`);
+    const { rows } = await this.pool.query<{ account_id: string }>(
+      `SELECT DISTINCT account_id FROM object_publications WHERE purpose = 'receipt' AND created_at > now() - interval '7 days' ORDER BY account_id`,
+    );
+    return [...prefixes, ...rows.map((row) => `receipt/${row.account_id}/`)];
   }
 
   private async tryDelete(key: string): Promise<boolean> {

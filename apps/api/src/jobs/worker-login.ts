@@ -1,4 +1,5 @@
 import type { Pool } from 'pg';
+import { ConfigurationError } from '../common/configuration-error';
 
 export const GROUP_ROLES = ['gogospend_app', 'gogospend_bootstrap', 'gogospend_jobs', 'gogospend_security', 'gogospend_leased_read', 'gogospend_erasure_registry'] as const;
 export type GroupRole = (typeof GROUP_ROLES)[number];
@@ -24,5 +25,5 @@ export async function assertLoginRoles(pool: Pool, roles: readonly GroupRole[], 
        FROM pg_roles r WHERE r.rolname = current_user`,
     [roles],
   );
-  if (!rows[0]?.ok) throw new Error(message ?? `${setting} must use a login that is a member of ${roles.join(' and ')} only.`);
+  if (!rows[0]?.ok) throw new ConfigurationError(message ?? `${setting} must use a login that is a member of ${roles.join(' and ')} only.`);
 }

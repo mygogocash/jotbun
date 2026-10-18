@@ -1,0 +1,93 @@
+# Backend CI (P6b): the same commands as the local full gate
+# (docs/superpowers/plans/2026-10-17-gogospend-backend.md, "Verification
+# commands"), plus the release image build and its smoke. It holds no secret,
+# writes nothing (contents: read), pushes no image and deploys nothing.
+# Written and reviewed locally only: it has not run on GitHub yet (E4).
+name: backend
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # The release image's Node (apps/api/Dockerfile).
+  NODE_VERSION: 24.22.0
+
+jobs:
+  gate:
+    name: Typecheck, unit, render, build, export
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          # The whitespace check compares against the base commit.
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Install (lockfile only, no install scripts)
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Add the Linux native bindings the lockfile lacks (pinned versions and sha512)
+        run: node scripts/ci/linux-native-bindings.mjs swc unrs sharp
+      - run: npm run typecheck
+      - run: npm run typecheck:app
+      - run: npm run test:api
+      - run: npm run test:app
+      - run: npm run test:unit
+      - run: npm run test:dev
+      - run: npm run test:render -w gogospend-app
+      - run: npm run build -w gogospend-api
+      - name: Release graph (no legacy code or unreviewed package reachable)
+        run: node apps/api/scripts/release-graph.mjs check
+      - run: npm run export:web -w gogospend-app -- --max-workers 2
+      - name: Whitespace (the change under test)
+        run: git diff --check ${{ github.event.pull_request.base.sha || 'HEAD^' }} HEAD
+
+  database:
+    name: SQL integration and ops (local PostgreSQL 17 container)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node scripts/ci/linux-native-bindings.mjs swc unrs sharp
+      # test:db starts the loopback PostgreSQL 17 container itself
+      # (scripts/dev-v1.mjs db-up, compose.postgres.yml, pinned digest).
+      - run: npm run test:db
+      # The ops suite (and P6a's local rehearsal) uses the same container; an
+      # unreachable database fails the rehearsal instead of skipping it, as
+      # in the local gate (scripts/ci/backend-workflow.test.mjs checks parity).
+      - run: npm run test:ops
+        env:
+          GOGOSPEND_OPS_REQUIRE_DB: '1'
+
+  image:
+    name: Release image and smoke (never pushed)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Build
+        run: docker build -f apps/api/Dockerfile -t gogospend-ci .
+      - name: Smoke (contracts load in every process; each fails closed; no legacy code)
+        run: docker run --rm gogospend-ci node scripts/release-smoke.cjs

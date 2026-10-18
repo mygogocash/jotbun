@@ -261,6 +261,21 @@ test('delta pages are fetched by opaque cursor and checked group by group', asyn
   assert.equal((await outcome(() => sync().changes('stale'))).code, 'RESYNC_REQUIRED');
 });
 
+test('delta pages and snapshot chunks may carry entity types this build does not know; a malformed one is still refused', async () => {
+  const future = { entity: 'future_thing', id: randomUUID(), version: 1, state: 'active', snapshot: { id: '', anything: ['goes'] } };
+  future.snapshot.id = future.id;
+  const group = { revision: '5', command_id: randomUUID(), changes: [future] };
+  replies.push({ status: 200, body: { groups: [group], next_cursor: 'c5', has_more: false } });
+  assert.deepEqual((await sync().changes(null)).groups, [group]);
+  replies.push({ status: 200, body: { groups: [{ ...group, changes: [{ ...future, id: 'not-a-uuid' }] }], next_cursor: 'c5', has_more: false } });
+  assert.equal((await outcome(() => sync().changes(null))).outcome, 'invalid_response');
+  const id = randomUUID();
+  const body = JSON.stringify({ schema_version: 1, snapshot_id: id, high_water: '9', index: 0, entities: [future] });
+  const grant = { index: 0, bytes: Buffer.byteLength(body), sha256: createHash('sha256').update(body).digest('hex'), grant: 'A'.repeat(55), grant_expires_at: '2026-03-01T00:05:00.000Z' };
+  replies.push({ status: 200, raw: body });
+  assert.deepEqual(await sync().snapshotChunk(grant), JSON.parse(body));
+});
+
 test('snapshots: requested with a key, polled, and each chunk verified by size and SHA-256', async () => {
   const id = randomUUID();
   replies.push({ status: 202, body: { snapshot_id: id, status: 'pending' } });

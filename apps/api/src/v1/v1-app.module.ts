@@ -2,12 +2,12 @@ import type { Server } from 'node:http';
 
 import { Module } from '@nestjs/common';
 import type { INestApplication } from '@nestjs/common';
-import { IMPORT_UPLOAD_RECEIVE_SECONDS } from '@gogospend/contracts';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 
+import { AttachmentsModule } from '../attachments/attachments.module';
 import { AuthModule } from '../auth/auth.module';
 import { BudgetsModule } from '../budgets/budgets.module';
 import { CategoriesModule } from '../categories/categories.module';
@@ -18,20 +18,27 @@ import { jsonBody } from '../common/json-body';
 import { safeRequestLogger } from '../common/safe-request-logger';
 import { DatabaseModule } from '../database/database.module';
 import { DatabaseService } from '../database/database.service';
+import { FeatureGatesModule } from '../common/feature-gates';
+import { OperationalLogger } from '../common/operational-metrics';
+import { HTTP_TIMEOUTS } from '../common/process-lifecycle';
+import { HealthModule } from '../health/health.controller';
 import { ExportsModule } from '../exports/exports.module';
 import { ImportsModule } from '../imports/imports.module';
 import { PrivacyModule } from '../privacy/privacy.module';
 import { SyncModule } from '../sync/sync.module';
 import { TransactionsModule } from '../transactions/transactions.module';
 import { WalletsModule } from '../wallets/wallets.module';
+import { ConfigurationError } from '../common/configuration-error';
 
 /**
  * Root of the standalone v1 API: PostgreSQL and Auth0 only. It must never
  * import the legacy Mongo/Firebase/spend modules or their cron jobs
- * (v1-isolation.spec.ts).
+ * (v1-isolation.spec.ts, and the image's release graph,
+ * apps/api/scripts/release-graph.mjs). FeatureGatesModule (operational
+ * pauses) and HealthModule (`/live`, `/ready`) are P6b's.
  */
 @Module({
-  imports: [DatabaseModule, AuthModule, CommandsModule, WalletsModule, CategoriesModule, TransactionsModule, BudgetsModule, SyncModule, ExportsModule, ImportsModule, PrivacyModule],
+  imports: [FeatureGatesModule, DatabaseModule, HealthModule, AuthModule, CommandsModule, WalletsModule, CategoriesModule, TransactionsModule, BudgetsModule, SyncModule, ExportsModule, ImportsModule, AttachmentsModule, PrivacyModule],
 })
 export class V1AppModule {}
 
@@ -43,21 +50,21 @@ export class V1AppModule {}
  */
 export function trustProxyHopsFromEnv(value: string | undefined, nodeEnv = process.env.NODE_ENV): number {
   if (value === undefined || value === '') {
-    if (nodeEnv === 'production') throw new Error('TRUST_PROXY_HOPS must be set explicitly in production.');
+    if (nodeEnv === 'production') throw new ConfigurationError('TRUST_PROXY_HOPS must be set explicitly in production.');
     return 0;
   }
   const hops = Number(value);
-  if (!Number.isInteger(hops) || hops < 0 || hops > 3) throw new Error('TRUST_PROXY_HOPS must be an integer from 0 to 3.');
+  if (!Number.isInteger(hops) || hops < 0 || hops > 3) throw new ConfigurationError('TRUST_PROXY_HOPS must be an integer from 0 to 3.');
   return hops;
 }
 
 /**
- * Node's limit on receiving one whole request (headers still have their own
- * 60 s limit). It must exceed the import upload's receive bound, so the
- * intake - which ends a stalled or too-slow upload itself and cleans up - always
- * answers first. JSON bodies stay capped at 2 MiB.
+ * Node's limit on receiving one whole request, owned by
+ * common/process-lifecycle.ts (HTTP_TIMEOUTS.requestMs: the upload receive
+ * bound + 60 s). Set here as well so test apps get it; main.ts applies the
+ * header and keep-alive limits too. JSON bodies stay capped at 2 MiB.
  */
-export const V1_REQUEST_TIMEOUT_MS = (IMPORT_UPLOAD_RECEIVE_SECONDS + 60) * 1000;
+export const V1_REQUEST_TIMEOUT_MS = HTTP_TIMEOUTS.requestMs;
 
 /** Middleware shared by the real app and test apps, in order. */
 export function configureV1App(app: INestApplication): void {
@@ -85,7 +92,8 @@ export async function createV1App(): Promise<NestExpressApplication> {
   // the exit code) instead of Nest calling process.exit() itself.
   const app = await NestFactory.create<NestExpressApplication>(V1AppModule, {
     bodyParser: false,
-    logger: ['error', 'warn'],
+    // Nest's own errors and warnings, redacted and without stack traces.
+    logger: new OperationalLogger(),
     abortOnError: false,
   });
   try {
@@ -96,6 +104,7 @@ export async function createV1App(): Promise<NestExpressApplication> {
     await app.close();
     throw error;
   }
-  app.enableShutdownHooks();
+  // Signals are handled by main.ts (graceful, bounded shutdown), not Nest's
+  // shutdown hooks, which would re-raise the signal around our handler.
   return app;
 }

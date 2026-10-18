@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Headers, HttpCode, Param, Patch, Post } 
 import type { CommandAck, SessionContext, TransactionDto } from '@gogospend/contracts';
 
 import { Access } from '../auth/auth-route.decorator';
+import { Gated } from '../common/feature-gates';
 import { CurrentSession } from '../auth/request-context';
 import { commandHeaders } from '../commands/command-headers';
 import { TransactionsService } from './transactions.service';
@@ -21,12 +22,14 @@ export class TransactionsController {
 
   @Post('transactions')
   @Access('current_policy')
+  @Gated('writes')
   create(@CurrentSession() session: SessionContext, @Headers() headers: HeaderBag, @Body() body: unknown): Promise<CommandAck> {
     return this.transactions.create(session, commandHeaders(headers, 'forbidden'), body);
   }
 
   @Patch('transactions/:id')
   @Access('current_policy')
+  @Gated('writes')
   @HttpCode(200)
   update(@CurrentSession() session: SessionContext, @Headers() headers: HeaderBag, @Param('id') id: string, @Body() body: unknown): Promise<CommandAck> {
     return this.transactions.update(session, commandHeaders(headers, 'required'), id, body);
@@ -34,6 +37,7 @@ export class TransactionsController {
 
   @Delete('transactions/:id')
   @Access('current_policy')
+  @Gated('writes')
   @HttpCode(200)
   remove(@CurrentSession() session: SessionContext, @Headers() headers: HeaderBag, @Param('id') id: string): Promise<CommandAck> {
     return this.transactions.remove(session, commandHeaders(headers, 'required'), id);
@@ -41,6 +45,7 @@ export class TransactionsController {
 
   @Post('transactions/:id/restore')
   @Access('current_policy')
+  @Gated('writes')
   @HttpCode(200)
   restore(@CurrentSession() session: SessionContext, @Headers() headers: HeaderBag, @Param('id') id: string, @Body() body: unknown): Promise<CommandAck> {
     return this.transactions.restore(session, commandHeaders(headers, 'required'), id, body);

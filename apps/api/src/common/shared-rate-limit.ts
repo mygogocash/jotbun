@@ -9,6 +9,7 @@ import { needsBinding } from '../auth/route-policy';
 import type { RouteAccess } from '../auth/route-policy';
 import { ProblemException } from './api-problem.filter';
 import { writeLog } from './safe-request-logger';
+import { ConfigurationError } from './configuration-error';
 
 /** Requests per minute. Bucket keys are keyed hashes; raw IPs/subjects are never stored. */
 export const RATE_BUDGETS = {
@@ -62,7 +63,7 @@ export class PostgresRateLimiter implements RateLimiter {
 /** RATE_LIMIT_KEY: at least 32 characters, used only to key bucket hashes. */
 export function rateLimitKeyFromEnv(env: NodeJS.ProcessEnv): Buffer {
   const key = env.RATE_LIMIT_KEY ?? '';
-  if (key.length < 32) throw new Error('RATE_LIMIT_KEY must be at least 32 characters.');
+  if (key.length < 32) throw new ConfigurationError('RATE_LIMIT_KEY must be at least 32 characters.');
   return Buffer.from(key, 'utf8');
 }
 

@@ -1,3 +1,5 @@
+import { STATUS_CODES as HTTP_STATUS_CODES } from 'node:http';
+
 import { Catch, HttpException, HttpStatus } from '@nestjs/common';
 import type { ArgumentsHost, ExceptionFilter } from '@nestjs/common';
 import { ContractValidationError } from '@gogospend/contracts';
@@ -21,7 +23,13 @@ export class ProblemException extends HttpException {
   }
 }
 
-/** Writes an ApiProblem response; also used by middleware outside Nest's filters. */
+/**
+ * Writes an ApiProblem response; also used by middleware outside Nest's
+ * filters. A refusal sent before the request body was read (a gate, the
+ * access guard, a body parser limit) closes the connection afterwards, so
+ * Node does not read whatever the client still sends - up to the 9-minute
+ * request timeout for a refused upload - just to keep the socket alive.
+ */
 export function sendProblem(req: Request, res: Response, status: number, code: ApiErrorCode, problem: ProblemOptions = {}): void {
   const body: ApiProblem = {
     code,
@@ -30,11 +38,55 @@ export function sendProblem(req: Request, res: Response, status: number, code: A
   };
   if (problem.fields) body.fields = problem.fields;
   if (problem.current !== undefined) body.current = problem.current;
-  if (problem.retryAfterSeconds !== undefined) {
-    body.retry_after_seconds = problem.retryAfterSeconds;
-    res.setHeader('Retry-After', String(problem.retryAfterSeconds));
-  }
+  if (problem.retryAfterSeconds !== undefined) body.retry_after_seconds = problem.retryAfterSeconds;
+  // A client still writing a chunked body never sees Express's json() reply on
+  // Node 24: ending that reply with Connection: close aborts the socket (RST)
+  // and drops the bytes. Write the refusal on the socket and half-close it,
+  // without reading the rest of the body. GETs and finished bodies stay on
+  // Express so Cache-Control and the request log still apply.
+  if (hasUnreadBody(req) && !res.headersSent && refuseUnread(req, status, Buffer.from(JSON.stringify(body)), problem.retryAfterSeconds)) return;
+  if (!req.complete && !res.headersSent) res.setHeader('Connection', 'close');
+  if (problem.retryAfterSeconds !== undefined) res.setHeader('Retry-After', String(problem.retryAfterSeconds));
   res.status(status).json(body);
+}
+
+/** A request that still has a body the handler did not read. */
+function hasUnreadBody(req: Request): boolean {
+  if (req.complete) return false;
+  const length = req.headers['content-length'];
+  if (typeof length === 'string' && /^\d+$/.test(length) && Number(length) > 0) return true;
+  const encoding = req.headers['transfer-encoding'];
+  return typeof encoding === 'string' && encoding.length > 0;
+}
+
+/** True when the refusal was written and the socket half-closed. */
+function refuseUnread(req: Request, status: number, payload: Buffer, retryAfterSeconds?: number): boolean {
+  const socket = req.socket;
+  if (!socket || socket.destroyed) return false;
+  const swallow = () => undefined;
+  socket.on('error', swallow);
+  req.on('error', swallow);
+  const reason = HTTP_STATUS_CODES[status] ?? 'Error';
+  const headers = [
+    `HTTP/1.1 ${status} ${reason}`,
+    'Content-Type: application/json; charset=utf-8',
+    `Content-Length: ${payload.length}`,
+    'Connection: close',
+  ];
+  if (retryAfterSeconds !== undefined) headers.push(`Retry-After: ${retryAfterSeconds}`);
+  // A prior setHeader corks the socket; a direct write stays buffered until
+  // uncork, and the client then blocks on its own write forever.
+  const chunk = Buffer.concat([Buffer.from(`${headers.join('\r\n')}\r\n\r\n`), payload]);
+  socket.cork();
+  socket.write(chunk);
+  socket.uncork();
+  socket.end();
+  // Drop the unread body on the next turn, after the refusal bytes are queued.
+  // Destroying in the same turn sends a RST that discards them (Node 24).
+  setImmediate(() => {
+    if (!socket.destroyed) socket.destroy();
+  });
+  return true;
 }
 
 // Nest/Express errors without our own code, by status.

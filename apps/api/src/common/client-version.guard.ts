@@ -4,6 +4,7 @@ import type { Request } from 'express';
 
 import type { RouteAccess } from '../auth/route-policy';
 import { ProblemException } from './api-problem.filter';
+import { ConfigurationError } from './configuration-error';
 
 export type MinimumClientVersions = Record<ClientPlatform, string>;
 
@@ -16,7 +17,7 @@ export function minimumClientVersionsFromEnv(env: NodeJS.ProcessEnv): MinimumCli
   const ios = env.MIN_CLIENT_VERSION_IOS ?? '';
   const android = env.MIN_CLIENT_VERSION_ANDROID ?? '';
   if (!VERSION.test(ios) || !VERSION.test(android)) {
-    throw new Error('MIN_CLIENT_VERSION_IOS and MIN_CLIENT_VERSION_ANDROID must be major.minor.patch versions.');
+    throw new ConfigurationError('MIN_CLIENT_VERSION_IOS and MIN_CLIENT_VERSION_ANDROID must be major.minor.patch versions.');
   }
   return { ios, android };
 }

@@ -2,7 +2,7 @@
 // parsing, but test doubles for the token verifier, session/policy ports and
 // rate limiter. No database or provider is touched.
 import { Module } from '@nestjs/common';
-import type { Type } from '@nestjs/common';
+import type { Provider, Type } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 
@@ -14,6 +14,7 @@ import type { PolicyGate, SessionResolver } from '../auth/application-session.gu
 import { V1AccessGuard } from '../auth/auth.module';
 import { ApiProblemFilter } from '../common/api-problem.filter';
 import { MIN_CLIENT_VERSIONS } from '../common/client-version.guard';
+import { FEATURE_GATES, FeatureGates } from '../common/feature-gates';
 import type { MinimumClientVersions } from '../common/client-version.guard';
 import { RATE_LIMITER } from '../common/shared-rate-limit';
 import type { RateLimiter } from '../common/shared-rate-limit';
@@ -25,6 +26,10 @@ export type V1TestDoubles = {
   policies?: PolicyGate;
   limiter?: RateLimiter;
   minimums?: MinimumClientVersions;
+  /** Operational gates (default: nothing paused, everything released). */
+  gates?: FeatureGates;
+  /** Extra providers the controllers under test need. */
+  providers?: Provider[];
 };
 
 const rejectAll: TokenVerifier = {
@@ -43,10 +48,12 @@ export async function createV1TestApp(controllers: Type[], doubles: V1TestDouble
       doubles.policies ? { provide: POLICY_GATE, useValue: doubles.policies } : { provide: POLICY_GATE, useClass: NoPolicyGate },
       { provide: RATE_LIMITER, useValue: doubles.limiter ?? allowAll },
       { provide: MIN_CLIENT_VERSIONS, useValue: doubles.minimums ?? { ios: '1.0.0', android: '1.0.0' } },
+      { provide: FEATURE_GATES, useValue: doubles.gates ?? new FeatureGates() },
       Auth0AccessTokenGuard,
       ApplicationSessionGuard,
       { provide: APP_GUARD, useClass: V1AccessGuard },
       { provide: APP_FILTER, useClass: ApiProblemFilter },
+      ...(doubles.providers ?? []),
     ],
   })
   class V1TestModule {}

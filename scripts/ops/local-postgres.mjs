@@ -138,12 +138,25 @@ const DIGEST_TABLES = `
 const DIGESTS = `(SELECT decode(d, 'hex') FROM unnest($1::text[]) AS d)`;
 
 /**
+ * P2c's attachment-reference query: every retained receipt (`account_id`,
+ * object key as `ref`, hex `sha256`), whether the record holding it is
+ * active or deleted within its 30-day undo window. Released receipts are not
+ * references: their objects are deleted (and need not be in the copy).
+ */
+export const RETAINED_ATTACHMENT_REFERENCES_SQL = `
+  SELECT a.account_id::text AS account_id, a.object_key AS ref, encode(a.sha256, 'hex') AS sha256
+    FROM attachments a
+   WHERE a.status = 'retained'
+   ORDER BY a.account_id, a.object_key`;
+
+/**
  * Restore adapter for the local container. `attachmentReferenceSql` returns
- * `account_id, ref[, sha256]` for every retained attachment reference; P2c
- * supplies the real query. Without it, a schema that has attachment tables is
+ * `account_id, ref[, sha256]` for every retained attachment reference; it
+ * defaults to P2c's query, which a copy taken before P2c (no `attachments`
+ * table) skips. Passed as null, a schema that has attachment tables is
  * refused rather than passed unchecked.
  */
-export function localDockerRestorer({ attachmentReferenceSql, spawnImpl = spawn } = {}) {
+export function localDockerRestorer({ attachmentReferenceSql = RETAINED_ATTACHMENT_REFERENCES_SQL, spawnImpl = spawn } = {}) {
   const databases = databaseRegistry();
   return {
     kind: 'local-docker',
@@ -184,13 +197,38 @@ export function localDockerRestorer({ attachmentReferenceSql, spawnImpl = spawn 
       return rows.rows.map((row) => row.id);
     }),
 
-    // One transaction: re-block the erased aliases with the block end their
-    // markers record (no end = permanent; an existing permanent hold stays),
+    // Accounts whose deletion the copy holds as accepted but not purged (P5).
+    openDeletions: (target) => withClient(target.database, async (client) => {
+      const present = await client.query(`SELECT to_regclass('public.deletion_requests') IS NOT NULL AS present`);
+      if (!present.rows[0].present) return [];
+      const rows = await client.query(
+        `SELECT r.erased_account_id::text AS id FROM deletion_requests r JOIN accounts a ON a.id = r.erased_account_id WHERE r.purged_at IS NULL ORDER BY 1`,
+      );
+      return rows.rows.map((row) => row.id);
+    }),
+
+    // One transaction: first P5's gogospend_reapply_erasure for every erasure
+    // still in progress (`reapply`), which captures its provider aliases and
+    // re-queues a deletion job carrying no account_id, so provider cleanup,
+    // the object sweep and the purge run again once the copy serves; then
+    // re-block the erased aliases with the block end their markers record (no
+    // end = until that re-queued erasure purges; an existing open hold stays),
     // delete principal-digest rows of those aliases, delete rows in account
     // tables that do not follow accounts, then the accounts (rows cascade).
-    applyErasure: (target, { accountIds, principalDigests = [], blocks = [] }) => withClient(target.database, async (client) => {
+    // P5's work items (deletion_requests, deletion_request_subjects, the
+    // re-queued job) carry no account_id or principal_digest and stay.
+    applyErasure: (target, { accountIds, principalDigests = [], blocks = [], reapply = [] }) => withClient(target.database, async (client) => {
       await client.query('BEGIN');
       try {
+        let requeued = 0;
+        if (reapply.length > 0) {
+          const routine = await client.query(`SELECT to_regprocedure('public.gogospend_reapply_erasure(uuid,uuid)') IS NOT NULL AS ok`);
+          if (!routine.rows[0].ok) throw new OpsError('ERASURE_NOT_APPLIED', { reason: 'reapply_unavailable' });
+          for (const accountId of reapply) {
+            const outcome = await client.query('SELECT gogospend_reapply_erasure($1::uuid, gen_random_uuid()) AS outcome', [accountId]);
+            if (outcome.rows[0].outcome === 'requeued') requeued += 1;
+          }
+        }
         let principalsBlocked = 0;
         const blocking = await client.query(`SELECT to_regclass('public.blocked_principals') IS NOT NULL AS ok`);
         if (blocking.rows[0].ok && blocks.length > 0) {
@@ -212,7 +250,7 @@ export function localDockerRestorer({ attachmentReferenceSql, spawnImpl = spawn 
         }
         await client.query('DELETE FROM accounts WHERE id = ANY($1::uuid[])', [accountIds]);
         await client.query('COMMIT');
-        return { principalsBlocked };
+        return { principalsBlocked, requeued };
       } catch (error) {
         await client.query('ROLLBACK').catch(() => undefined);
         throw asOpsError(error, 'ERASURE_NOT_APPLIED');
@@ -237,13 +275,15 @@ export function localDockerRestorer({ attachmentReferenceSql, spawnImpl = spawn 
     }),
 
     attachmentReferences: (target) => withClient(target.database, async (client) => {
-      if (attachmentReferenceSql) {
-        const rows = await client.query(attachmentReferenceSql);
-        return rows.rows.map((row) => ({ account_id: String(row.account_id), ref: String(row.ref), ...(row.sha256 ? { sha256: String(row.sha256) } : {}) }));
-      }
       const tables = await client.query(`SELECT to_regclass('public.attachments') IS NOT NULL OR to_regclass('public.transaction_attachments') IS NOT NULL AS present`);
-      if (tables.rows[0].present) throw new OpsError('ATTACHMENT_VALIDATOR_MISSING');
-      return null;
+      if (!attachmentReferenceSql) {
+        if (tables.rows[0].present) throw new OpsError('ATTACHMENT_VALIDATOR_MISSING');
+        return null;
+      }
+      // A copy from before P2c has no receipts to check.
+      if (attachmentReferenceSql === RETAINED_ATTACHMENT_REFERENCES_SQL && !tables.rows[0].present) return null;
+      const rows = await client.query(attachmentReferenceSql);
+      return rows.rows.map((row) => ({ account_id: String(row.account_id), ref: String(row.ref), ...(row.sha256 ? { sha256: String(row.sha256) } : {}) }));
     }),
 
     databases,
@@ -251,27 +291,54 @@ export function localDockerRestorer({ attachmentReferenceSql, spawnImpl = spawn 
 }
 
 const ISSUER = 'https://auth.gogospend.invalid/';
-const ATTACHMENT_REFS_SQL = 'SELECT account_id::text AS account_id, object_key AS ref, sha256 FROM rehearsal_attachment_refs';
 
 /**
- * Synthetic data in a fresh migrated database: three accounts, each with an
+ * A P2c receipt as the API leaves it: the registry row of its copy (purpose
+ * `receipt`, published with no expiry), the attachment and, when given, the
+ * record holding it. A released receipt has a deleted registry row and no
+ * holder, and its object is not in the copy.
+ */
+async function seedReceipt(client, accountId, { holder = null, released = false } = {}) {
+  const id = randomUUID();
+  const token = randomUUID();
+  const ref = `receipt/${accountId}/${id}/${token}/image.jpg`;
+  const bytes = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.from('synthetic jpeg '), randomBytes(512)]);
+  const sha256 = createHash('sha256').update(bytes).digest('hex');
+  await client.query(
+    released
+      ? `INSERT INTO object_publications (key, job_id, account_id, lease_token, lifecycle_generation, purpose, status, delete_after, bytes, sha256, published_at, deleted_at)
+         VALUES ($1, $2, $3, $4, 0, 'receipt', 'deleted', now() - interval '1 day', $5, decode($6, 'hex'), now() - interval '3 days', now() - interval '1 day')`
+      : `INSERT INTO object_publications (key, job_id, account_id, lease_token, lifecycle_generation, purpose, status, delete_after, bytes, sha256, published_at)
+         VALUES ($1, $2, $3, $4, 0, 'receipt', 'published', 'infinity', $5, decode($6, 'hex'), now() - interval '3 days')`,
+    [ref, id, accountId, token, bytes.length, sha256],
+  );
+  await client.query(
+    `INSERT INTO attachments (account_id, id, source_job_id, status, object_key, content_type, bytes, sha256, width, height, released_at)
+     VALUES ($1, $2, $3, $4, $5, 'image/jpeg', $6, decode($7, 'hex'), 64, 48, $8)`,
+    [accountId, id, randomUUID(), released ? 'released' : 'retained', ref, bytes.length, sha256, released ? new Date() : null],
+  );
+  if (holder) await client.query('INSERT INTO transaction_attachments (account_id, transaction_id, attachment_id) VALUES ($1, $2, $3)', [accountId, holder, id]);
+  return { ref, bytes };
+}
+
+/**
+ * Synthetic data in a fresh migrated database: four accounts, each with an
  * Auth0 alias, a wallet, a category, three expenses, a queued job, a verified
- * provider-event receipt, a reconcile check and one retained-attachment
- * reference. `rehearsal_attachment_refs` stands in for P2c's attachment
- * tables (not built yet) and cascades from accounts.
+ * provider-event receipt, a reconcile check and one retained receipt (P2c)
+ * held by its first expense. The kept account also has a retained receipt
+ * held by a record deleted within its undo window, and a released receipt
+ * whose object is gone (not a reference).
  */
 async function seedSyntheticSource(name) {
   await withClient(name, async (client) => {
     await migrate(drizzle(client), { migrationsFolder: join(REPO_ROOT, 'apps/api/drizzle') });
-    await client.query(`CREATE TABLE rehearsal_attachment_refs (
-      account_id uuid NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
-      object_key text PRIMARY KEY,
-      sha256 text NOT NULL)`);
   });
   const people = {
     kept: { id: randomUUID(), subject: `apple|synthetic-kept-${randomBytes(4).toString('hex')}` },
     erased: { id: randomUUID(), subject: `apple|synthetic-erased-${randomBytes(4).toString('hex')}` },
     linked: { id: randomUUID(), subject: `auth0|synthetic-linked-${randomBytes(4).toString('hex')}` },
+    // Its deletion was accepted before the backup; the worker had not written the marker yet.
+    pending: { id: randomUUID(), subject: `apple|synthetic-pending-${randomBytes(4).toString('hex')}` },
   };
   const objects = new Map();
   await withClient(name, async (client) => {
@@ -283,18 +350,25 @@ async function seedSyntheticSource(name) {
       await client.query('INSERT INTO account_identities (issuer, subject, account_id, created_at) VALUES ($1, $2, $3, now() - interval \'10 days\')', [ISSUER, person.subject, person.id]);
       await client.query(`INSERT INTO wallets (account_id, id, name, opening_minor, tracking_start) VALUES ($1, $2, 'Synthetic wallet', 100000, DATE '2026-10-01')`, [person.id, wallet]);
       await client.query(`INSERT INTO categories (account_id, id, type, builtin_key) VALUES ($1, $2, 'expense', 'food')`, [person.id, category]);
+      const records = [];
       for (let index = 1; index <= 3; index += 1) {
+        const record = randomUUID();
+        records.push(record);
         await client.query(
           `INSERT INTO transactions (account_id, id, type, amount_minor, occurred_on, wallet_id, category_id, note)
            VALUES ($1, $2, 'expense', $3, DATE '2026-10-10', $4, $5, 'synthetic rehearsal row')`,
-          [person.id, randomUUID(), 1000 * index + 7, wallet, category],
+          [person.id, record, 1000 * index + 7, wallet, category],
         );
       }
       await client.query(`INSERT INTO jobs (id, kind, account_id, payload, max_attempts) VALUES ($1, 'export', $2, '{}'::jsonb, 3)`, [randomUUID(), person.id]);
-      const ref = `receipt/${person.id}/${randomUUID()}.jpg`;
-      const bytes = Buffer.concat([Buffer.from('synthetic jpeg '), randomBytes(512)]);
-      objects.set(ref, bytes);
-      await client.query('INSERT INTO rehearsal_attachment_refs (account_id, object_key, sha256) VALUES ($1, $2, $3)', [person.id, ref, createHash('sha256').update(bytes).digest('hex')]);
+      const receipt = await seedReceipt(client, person.id, { holder: records[0] });
+      objects.set(receipt.ref, receipt.bytes);
+      if (person === people.kept) {
+        await client.query(`UPDATE transactions SET deleted_at = now() - interval '2 days' WHERE account_id = $1 AND id = $2`, [person.id, records[1]]);
+        const undoable = await seedReceipt(client, person.id, { holder: records[1] });
+        objects.set(undoable.ref, undoable.bytes);
+        await seedReceipt(client, person.id, { released: true });
+      }
       await client.query(
         `INSERT INTO auth_event_receipts (event_id, source, type, principal_digest, occurred_at, outcome, account_id)
          VALUES ($1, 'event', 'password_changed', gogospend_principal_digest($2, $3), now() - interval '9 days', 'applied', $4)`,
@@ -302,6 +376,15 @@ async function seedSyntheticSource(name) {
       );
       await client.query(`INSERT INTO security_reconcile_checks (principal_digest, checked_at) VALUES (gogospend_principal_digest($1, $2), now())`, [ISSUER, person.subject]);
     }
+    // P5's acceptance of the pending deletion, as gogospend_request_deletion leaves it.
+    const pending = people.pending;
+    const request = randomUUID();
+    await client.query(`UPDATE accounts SET status = 'deleting', lifecycle_generation = lifecycle_generation + 1 WHERE id = $1`, [pending.id]);
+    await client.query(`UPDATE jobs SET status = 'cancelled', finished_at = now() WHERE account_id = $1`, [pending.id]);
+    await client.query(`INSERT INTO deletion_requests (request_id, erased_account_id, job_id, command_id) VALUES ($1, $2, $1, $1)`, [request, pending.id]);
+    await client.query(`INSERT INTO deletion_request_subjects (request_id, issuer, subject) VALUES ($1, $2, $3)`, [request, ISSUER, pending.subject]);
+    await client.query(`INSERT INTO jobs (id, kind, account_id, payload, max_attempts) VALUES ($1, 'account_deletion', $2, '{}'::jsonb, 20)`, [request, pending.id]);
+    await client.query(`INSERT INTO blocked_principals (principal_digest, reason) VALUES (gogospend_principal_digest($1, $2), 'deleted')`, [ISSUER, pending.subject]);
   });
   return { people, objects };
 }
@@ -312,7 +395,8 @@ const KEPT_DIGEST_SQL = `
     UNION ALL SELECT 'i:' || i::text FROM account_identities i WHERE account_id = $1::uuid
     UNION ALL SELECT 'w:' || w::text FROM wallets w WHERE account_id = $1::uuid
     UNION ALL SELECT 't:' || t::text FROM transactions t WHERE account_id = $1::uuid
-    UNION ALL SELECT 'r:' || r::text FROM rehearsal_attachment_refs r WHERE account_id = $1::uuid
+    UNION ALL SELECT 'r:' || r::text FROM attachments r WHERE account_id = $1::uuid
+    UNION ALL SELECT 'h:' || h::text FROM transaction_attachments h WHERE account_id = $1::uuid
   ) rows`;
 
 /**
@@ -334,13 +418,13 @@ export async function runLocalSyntheticRehearsal({ restoreRehearsal, keyFd, log 
   const tamperedName = `gogospend_restore_${suffix}t`;
   const recoveryDir = await mkdtemp(join(tmpdir(), 'gogospend-recovery-'));
   const sources = databaseRegistry();
-  const restorer = localDockerRestorer({ attachmentReferenceSql: ATTACHMENT_REFS_SQL });
+  const restorer = localDockerRestorer();
   const key = keyFd === undefined ? RecoveryKey.generate() : readRecoveryKeyFromFd(keyFd);
   const lookupKey = SubjectLookupKey.generate();
   try {
     await sources.create(sourceName);
     const { people, objects } = await seedSyntheticSource(sourceName);
-    log.event('rehearsal_source_seeded', { accounts: 3 });
+    log.event('rehearsal_source_seeded', { accounts: 4 });
     const keptDigest = await withClient(sourceName, async (client) => (await client.query(KEPT_DIGEST_SQL, [people.kept.id])).rows[0].digest);
 
     const store = localRecoveryStore({ dir: recoveryDir });
@@ -354,11 +438,13 @@ export async function runLocalSyntheticRehearsal({ restoreRehearsal, keyFd, log 
     const recordedAt = new Date().toISOString();
     const linkedBlockEnd = new Date(Date.now() + 3 * 86_400_000).toISOString();
     const markers = [
-      // No recorded block end: re-blocked with no end (see the P5 TODO).
+      // Still in progress at the registry's last write (no purged_at): the
+      // restore re-queues the erasure, and the hold has no end until it purges.
       { marker_id: randomUUID(), account_id: people.erased.id, subject_lookups: [lookupKey.lookup(ISSUER, people.erased.subject)], lookup_key_id: lookupKey.id, recorded_at: recordedAt },
       // The alias was later linked into another account, which was then
-      // erased; its marker records when P5 ends the block.
-      { marker_id: randomUUID(), account_id: randomUUID(), subject_lookups: [lookupKey.lookup(ISSUER, people.linked.subject)], lookup_key_id: lookupKey.id, recorded_at: recordedAt, blocked_until: linkedBlockEnd },
+      // erased and purged: its marker records the purge and when the hold
+      // ends, which the restore replays (nothing is re-queued).
+      { marker_id: randomUUID(), account_id: randomUUID(), subject_lookups: [lookupKey.lookup(ISSUER, people.linked.subject)], lookup_key_id: lookupKey.id, recorded_at: recordedAt, purged_at: recordedAt, blocked_until: linkedBlockEnd },
       { marker_id: randomUUID(), account_id: randomUUID(), subject_lookups: [lookupKey.lookup(ISSUER, 'apple|synthetic-never-backed-up')], lookup_key_id: lookupKey.id, recorded_at: recordedAt },
     ];
     await withClient(sourceName, (client) => client.query('DELETE FROM accounts WHERE id = ANY($1::uuid[])', [[people.erased.id, people.linked.id]]));
@@ -389,8 +475,18 @@ export async function runLocalSyntheticRehearsal({ restoreRehearsal, keyFd, log 
           [ISSUER, people.erased.subject, people.linked.subject],
         );
         const endOf = (erased) => ends.rows.find((row) => row.erased === erased)?.blocked_until;
-        const erasedIds = [people.erased.id, people.linked.id];
+        const erasedIds = [people.erased.id, people.linked.id, people.pending.id];
         const jobs = await client.query('SELECT count(*)::int AS n FROM jobs WHERE account_id = ANY($1::uuid[])', [erasedIds]);
+        // P5's re-queued erasures: the in-progress marker and the copy's own accepted request, not the purged one.
+        const requeued = await client.query(
+          `SELECT r.erased_account_id::text AS id, j.status, j.account_id IS NULL AS detached,
+                  (SELECT count(*)::int FROM deletion_request_subjects s WHERE s.request_id = r.request_id) AS subjects
+             FROM deletion_requests r JOIN jobs j ON j.id = r.job_id AND j.kind = 'account_deletion' ORDER BY 1`,
+        );
+        const pendingHold = await client.query(
+          `SELECT blocked_until FROM blocked_principals WHERE principal_digest IN (gogospend_principal_digest($1, $2), gogospend_principal_digest($1, $3))`,
+          [ISSUER, people.erased.subject, people.pending.subject],
+        );
         const digests = [principalDigest(ISSUER, people.erased.subject), principalDigest(ISSUER, people.linked.subject)];
         const digestRows = await client.query(
           `SELECT (SELECT count(*) FROM auth_event_receipts WHERE principal_digest IN ${DIGESTS})::int
@@ -410,6 +506,8 @@ export async function runLocalSyntheticRehearsal({ restoreRehearsal, keyFd, log 
           erased_principals_blocked: blocked.rows[0].n,
           block_end_replayed: endOf(true) === null && endOf(false) instanceof Date && endOf(false).toISOString() === linkedBlockEnd,
           erased_jobs: jobs.rows[0].n,
+          requeued_erasures: requeued.rows.filter((row) => row.status === 'queued' && row.detached && row.subjects === 1).map((row) => row.id).sort().join(',') === [people.erased.id, people.pending.id].sort().join(','),
+          requeued_holds_open: pendingHold.rows.length === 2 && pendingHold.rows.every((row) => row.blocked_until === null),
           erased_digest_rows: digestRows.rows[0].n,
           kept_digest_rows: keptReceipts.rows[0].n,
           temp_revoked_from_public: access.rows[0].public_temp === false,
@@ -443,10 +541,13 @@ export async function runLocalSyntheticRehearsal({ restoreRehearsal, keyFd, log 
     };
     const passed = checks.serving_target_refused && checks.kept_account_identical && checks.kept_transactions === 3
       && checks.erased_principals_blocked === 2 && checks.block_end_replayed && checks.erased_jobs === 0
+      && checks.requeued_erasures && checks.requeued_holds_open && receipt.erasures_requeued === 2
       && checks.erased_digest_rows === 0 && checks.kept_digest_rows === 1
       && checks.temp_revoked_from_public && checks.connect_revoked_from_public && checks.connect_revoked_from_app_roles
       && checks.restore_target_dropped && checks.tampered_backup_refused && checks.tampered_target_absent
-      && receipt.erased_owner_rows.length === 0 && receipt.missing_retained_objects.length === 0 && receipt.accounts_erased === 2;
+      && receipt.erased_owner_rows.length === 0 && receipt.missing_retained_objects.length === 0 && receipt.accounts_erased === 3
+      // P2c: the kept account's two retained receipts (one held by a deleted record) were checked against the copy.
+      && receipt.attachments.schema_has_references && receipt.attachments.references_checked === 2;
     const result = {
       rehearsal: 'local-isolated-synthetic',
       passed,
@@ -461,6 +562,7 @@ export async function runLocalSyntheticRehearsal({ restoreRehearsal, keyFd, log 
         'hosted daily-backup fallback RPO <=24h (Neon + R2 recovery scope, E1 not authorized)',
         'R2 accepted-attachment copy and 7-day lifecycle rule (E1, P2c)',
         'hosted erasure registry in the R2 recovery-control scope (E1, P5)',
+        're-queued erasures run by the deletion worker against Auth0 and R2 after a serving switch (E1, P5)',
         'hosted inventory sources: neon-history, neon-branches, neon-snapshots, r2-recovery-objects',
       ],
     };

@@ -22,7 +22,7 @@ async function* chunks(...parts: string[]) {
   for (const part of parts) yield text(part);
 }
 
-/** A loopback S3 subset: conditional PUT, HEAD, GET, DELETE, ListObjectsV2. */
+/** A loopback S3 subset: conditional PUT and CopyObject, HEAD, GET, DELETE, ListObjectsV2. */
 async function startFakeS3() {
   const objects = new Map<string, { body: Buffer; meta: Record<string, string>; modified: Date }>();
   const seen: { method: string; path: string; headers: Record<string, string | string[] | undefined> }[] = [];
@@ -42,6 +42,16 @@ async function startFakeS3() {
       return void res.end();
     }
     if (objectKey.startsWith('sync_snapshot/broken/')) return void res.writeHead(500).end('internal detail');
+    if (req.method === 'PUT' && req.headers['x-amz-copy-source']) {
+      if (req.headers['if-none-match'] === '*' && objects.has(objectKey)) return void res.writeHead(412).end();
+      const sourceKey = decodeURIComponent(String(req.headers['x-amz-copy-source']).replace(/^\/test-bucket\//, ''));
+      const source = objects.get(sourceKey);
+      if (!source) return void res.writeHead(404, { 'content-type': 'application/xml' }).end('<Error><Code>NoSuchKey</Code></Error>');
+      if (sourceKey.startsWith('sync_snapshot/copyfail/')) return void res.writeHead(200, { 'content-type': 'application/xml' }).end('<Error><Code>InternalError</Code><Message>internal detail</Message></Error>');
+      if (req.headers['x-amz-metadata-directive'] !== 'COPY') return void res.writeHead(400).end();
+      objects.set(objectKey, { body: source.body, meta: { ...source.meta }, modified: new Date() });
+      return void res.writeHead(200, { 'content-type': 'application/xml' }).end('<CopyObjectResult><ETag>"x"</ETag></CopyObjectResult>');
+    }
     if (req.method === 'PUT') {
       if (req.headers['if-none-match'] === '*' && objects.has(objectKey)) return void res.writeHead(412).end();
       if (req.headers['x-amz-content-sha256'] !== createHash('sha256').update(body).digest('hex')) return void res.writeHead(400).end();
@@ -137,6 +147,30 @@ describe.each(targets)('ObjectStore contract: %s', (_name, make) => {
     expect(await store.get(key('a.json'))).toBeNull();
   });
 
+  it('copies an object inside the store, keeping its digest and never overwriting', async () => {
+    await store.putStream(key('a.json'), chunks('{"a":', '1}'));
+    expect(await store.copy(key('a.json'), key('b.json'))).toBe(true);
+    expect(await store.head(key('b.json'))).toMatchObject({ key: key('b.json'), bytes: 7, sha256: sha('{"a":1}') });
+    expect(new TextDecoder().decode((await store.get(key('b.json'))) as Uint8Array)).toBe('{"a":1}');
+    expect(await store.head(key('a.json'))).toMatchObject({ bytes: 7 });
+    // A missing source is not an error; an existing destination is never replaced.
+    expect(await store.copy(key('absent.json'), key('c.json'))).toBe(false);
+    expect(await store.head(key('c.json'))).toBeNull();
+    await store.putStream(key('d.json'), text('other'));
+    await expect(store.copy(key('a.json'), key('d.json'))).rejects.toMatchObject({ code: 'exists' });
+    expect(new TextDecoder().decode((await store.get(key('d.json'))) as Uint8Array)).toBe('other');
+    await expect(store.copy('../escape', key('e.json'))).rejects.toBeInstanceOf(ObjectStoreError);
+    await expect(store.copy(key('a.json'), '/abs/path')).rejects.toBeInstanceOf(ObjectStoreError);
+  });
+
+  it('lists in pages that together are the whole listing', async () => {
+    for (const name of ['a', 'b', 'c', 'd', 'e']) await store.putStream(key(`${name}.json`), text(name));
+    const pages: string[][] = [];
+    for await (const page of store.listPages(`sync_snapshot/${ACCOUNT}/`)) pages.push(page.map((o) => o.key));
+    expect(pages.flat()).toEqual(['a', 'b', 'c', 'd', 'e'].map((name) => key(`${name}.json`)));
+    expect(pages.every((page) => page.length > 0)).toBe(true);
+  });
+
   it.each([['../escape'], ['/abs/path'], ['sync_snapshot/x/../y'], [''], ['UPPER/case'], ['a b']])('refuses the key %p', async (bad) => {
     await expect(store.putStream(bad, text('x'))).rejects.toBeInstanceOf(ObjectStoreError);
   });
@@ -147,6 +181,15 @@ describe.each(targets)('ObjectStore contract: %s', (_name, make) => {
 });
 
 describe('deterministic failures', () => {
+  it('can fail a copy before it acts', async () => {
+    const store = new MemoryObjectStore();
+    await store.putStream(key('a.json'), text('x'));
+    store.failNext('copy');
+    await expect(store.copy(key('a.json'), key('b.json'))).rejects.toMatchObject({ code: 'unavailable' });
+    expect(await store.head(key('b.json'))).toBeNull();
+    expect(await store.copy(key('a.json'), key('b.json'))).toBe(true);
+  });
+
   it('can fail a PUT before writing, or crash after the write landed', async () => {
     const store = new MemoryObjectStore();
     store.failNext('put');
@@ -205,6 +248,52 @@ describe('which store the contract targets', () => {
     expect(() => storageContractTarget({ ...script, ...r2, R2_TEST_BUCKET: 'gogospend-production' })).toThrow(/test scope/);
     expect(() => storageContractTarget({ ...script, ...r2, R2_TEST_ENDPOINT: 'http://acct.r2.cloudflarestorage.com' })).toThrow(/https/);
     expect(storageContractTarget({ ...script, ...r2 })).toMatchObject({ target: 'r2-test', config: { bucket: 'gogospend-test-contract', region: 'auto' } });
+  });
+});
+
+describe('S3 server-side copy', () => {
+  it('sends one signed CopyObject with the metadata directive COPY and no body, and HEAD takes its caller\'s deadline', async () => {
+    fake.objects.clear();
+    const store = new S3ObjectStore(s3Config());
+    await store.putStream(key('a.json'), text('payload'));
+    fake.seen.length = 0;
+    expect(await store.copy(key('a.json'), key('b.json'))).toBe(true);
+    expect(fake.seen.map((request) => request.method)).toEqual(['PUT']);
+    const [copy] = fake.seen;
+    expect(copy.headers['x-amz-copy-source']).toBe(`/test-bucket/${key('a.json').split('/').map(encodeURIComponent).join('/')}`);
+    expect(copy.headers['x-amz-metadata-directive']).toBe('COPY');
+    expect(copy.headers['if-none-match']).toBe('*');
+    expect(copy.headers['content-length']).toBe('0');
+    expect((await store.head(key('b.json')))?.sha256).toBe(sha('payload'));
+    await expect(store.head(key('b.json'), { signal: AbortSignal.abort() })).rejects.toMatchObject({ code: 'unavailable' });
+    await expect(store.copy(key('a.json'), key('c.json'), { signal: AbortSignal.abort() })).rejects.toMatchObject({ code: 'unavailable' });
+    expect(await store.head(key('c.json'))).toBeNull();
+    fake.objects.clear();
+  });
+
+  it('treats an error document inside a 200 copy response as unavailable, without provider text', async () => {
+    fake.objects.clear();
+    const store = new S3ObjectStore(s3Config());
+    await store.putStream('sync_snapshot/copyfail/x/y/a.json', text('payload'));
+    const error = await store.copy('sync_snapshot/copyfail/x/y/a.json', key('b.json')).catch((caught: unknown) => caught as Error);
+    expect(error).toMatchObject({ code: 'unavailable' });
+    expect(String((error as Error).message)).not.toContain('internal detail');
+    expect(await store.head(key('b.json'))).toBeNull();
+    fake.objects.clear();
+  });
+
+  it('fetches a listing page only when the previous one is consumed', async () => {
+    fake.objects.clear();
+    const store = new S3ObjectStore(s3Config());
+    for (const name of ['a', 'b', 'c', 'd', 'e']) await store.putStream(key(`${name}.json`), text(name));
+    fake.seen.length = 0;
+    const listing = store.listPages(`sync_snapshot/${ACCOUNT}/`)[Symbol.asyncIterator]();
+    const first = await listing.next();
+    expect(first.value.map((o: { key: string }) => o.key)).toEqual([key('a.json'), key('b.json')]);
+    expect(fake.seen.filter((request) => request.method === 'GET')).toHaveLength(1);
+    await listing.return?.();
+    expect(fake.seen.filter((request) => request.method === 'GET')).toHaveLength(1);
+    fake.objects.clear();
   });
 });
 

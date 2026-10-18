@@ -17,6 +17,10 @@ export type ErasureMarker = {
   lookup_key_id: string;
   /** ISO-8601 UTC time the marker was durably written. */
   recorded_at: string;
+  /** When P5 verified the account's server-side rows and objects were purged; null until then (the marker cannot be cleared before). */
+  purged_at: string | null;
+  /** The end of the aliases' hold P5 set at the purge (a restore replays it); null while the hold has no end. */
+  blocked_until: string | null;
 };
 
 /** The stored marker that covers a `record` call. */
@@ -32,7 +36,8 @@ export type ProviderSubjectKey = { issuer: string; subject: string };
  * path, so P6a can re-erase the account (and every alias created no later
  * than the marker) after restoring an older backup. Only the deletion
  * worker's maintenance login (gogospend_erasure_registry) can use it; the API
- * and the other workers can neither read nor write it. Append-only.
+ * and the other workers can neither read nor write it. Append-only, except
+ * that each marker's purge is recorded once.
  */
 export interface ErasureRegistry {
   /**
@@ -41,6 +46,12 @@ export interface ErasureRegistry {
    * and the caller must not destroy anything.
    */
   record(accountId: string, providerSubjectKeys: readonly ProviderSubjectKey[]): Promise<MarkerReceipt>;
+  /**
+   * Records, once, that the account's server-side data is purged and when its
+   * aliases' hold ends, on every marker of the account. Resolves only when
+   * every marker carries it.
+   */
+  recordPurge(accountId: string, purgedAt: Date, blockedUntil: Date | null): Promise<void>;
   /** The complete marker set; throws when it cannot read (never [] for "unreadable"). */
   listMarkers(): Promise<ErasureMarker[]>;
 }
@@ -77,23 +88,43 @@ export class LookupKey {
   }
 }
 
-type MarkerRow = { marker_id: string; account_id: string; subject_lookups: string[]; lookup_key_id: string; recorded_at: Date };
+type MarkerRow = { marker_id: string; account_id: string; subject_lookups: string[]; lookup_key_id: string; recorded_at: Date; purged_at: Date | null; blocked_until: Date | null };
+const COLUMNS = 'marker_id, account_id, subject_lookups, lookup_key_id, recorded_at, purged_at, blocked_until';
 const toMarker = (row: MarkerRow): ErasureMarker => ({
   marker_id: row.marker_id,
   account_id: row.account_id,
   subject_lookups: [...row.subject_lookups],
   lookup_key_id: row.lookup_key_id,
   recorded_at: row.recorded_at.toISOString(),
+  purged_at: row.purged_at ? row.purged_at.toISOString() : null,
+  blocked_until: row.blocked_until ? row.blocked_until.toISOString() : null,
 });
 
+export type RegistryPlacement = {
+  /** True only when the registry lives outside the main database and its backups (P6a refuses anything else). */
+  independent?: boolean;
+  /** A non-secret label for receipts, e.g. 'r2-recovery-control'. */
+  location?: string;
+};
+
 /**
- * The PostgreSQL registry (schema erasure_registry; INSERT and SELECT only),
- * on its own maintenance login. Locally it sits in the test/dev database; in
- * production it must be an independent store (P6a), so a restore of the main
- * database cannot roll it back.
+ * The PostgreSQL registry (schema erasure_registry; INSERT, SELECT and the
+ * once-only purge record), on its own maintenance login. It has the shape
+ * P6a's restore reads (`independent`, `location`, `listMarkers()`) except
+ * `lookupKey()`: the key's bytes never leave this object and the API code
+ * never imports the restore tooling, so that tooling takes the lookup key from
+ * its own custody and checks it against `lookupKeyId`. Locally it sits in the
+ * test/dev database, so it is NOT independent (the default); production must
+ * place it in an independent store and say so.
  */
 export class PostgresErasureRegistry implements ErasureRegistry {
-  constructor(private readonly pool: Pool, private readonly key: LookupKey) {}
+  readonly independent: boolean;
+  readonly location: string;
+
+  constructor(private readonly pool: Pool, private readonly key: LookupKey, placement: RegistryPlacement = {}) {
+    this.independent = placement.independent === true;
+    this.location = placement.location ?? 'same-database';
+  }
 
   get lookupKeyId(): string {
     return this.key.id;
@@ -105,7 +136,10 @@ export class PostgresErasureRegistry implements ErasureRegistry {
       throw new ErasureRegistryError('invalid_input');
     }
     const wanted = [...new Set(providerSubjectKeys.map((key) => this.key.lookup(key.issuer, key.subject)))].sort();
-    const existing = await this.markersOf(accountId);
+    // Only markers whose purge is not recorded yet count: an erasure re-run
+    // after a restore appends a new one, so the account's markers cannot be
+    // cleared before this run's purge is recorded too.
+    const existing = (await this.markersOf(accountId)).filter((marker) => marker.purged_at === null);
     const recorded = new Set(existing.flatMap((marker) => marker.subject_lookups));
     if (existing.length > 0 && wanted.every((lookup) => recorded.has(lookup))) return existing[0];
     // Append-only: a new marker (more than 32 aliases take several), never an edit.
@@ -114,29 +148,39 @@ export class PostgresErasureRegistry implements ErasureRegistry {
       const { rows } = await this.pool.query<MarkerRow>(
         `INSERT INTO erasure_registry.erasure_markers (marker_id, account_id, subject_lookups, lookup_key_id)
          VALUES ($1, $2, $3::text[], $4)
-         RETURNING marker_id, account_id, subject_lookups, lookup_key_id, recorded_at`,
+         RETURNING ${COLUMNS}`,
         [randomUUID(), accountId, wanted.slice(start, start + MAX_LOOKUPS), this.key.id],
       );
       if (!rows[0]) throw new ErasureRegistryError('incomplete');
       first ??= toMarker(rows[0]);
     }
     // Read back: the registry, not this process's memory, is what restores use.
-    const stored = await this.markersOf(accountId);
+    const stored = (await this.markersOf(accountId)).filter((marker) => marker.purged_at === null);
     const lookups = new Set(stored.flatMap((marker) => marker.subject_lookups));
     if (!first || !wanted.every((lookup) => lookups.has(lookup))) throw new ErasureRegistryError('incomplete');
     return first;
   }
 
-  async listMarkers(): Promise<ErasureMarker[]> {
-    const { rows } = await this.pool.query<MarkerRow>(
-      `SELECT marker_id, account_id, subject_lookups, lookup_key_id, recorded_at FROM erasure_registry.erasure_markers ORDER BY recorded_at, marker_id`,
+  async recordPurge(accountId: string, purgedAt: Date, blockedUntil: Date | null): Promise<void> {
+    if (!isUuid(accountId) || !(purgedAt instanceof Date) || Number.isNaN(purgedAt.getTime())) throw new ErasureRegistryError('invalid_input');
+    // A marker's clock may run ahead of the main database's: purged_at never precedes recorded_at.
+    await this.pool.query(
+      `UPDATE erasure_registry.erasure_markers SET purged_at = greatest($2::timestamptz, recorded_at), blocked_until = $3
+        WHERE account_id = $1 AND lookup_key_id = $4 AND purged_at IS NULL`,
+      [accountId, purgedAt, blockedUntil, this.key.id],
     );
+    const markers = await this.markersOf(accountId);
+    if (markers.length === 0 || markers.some((marker) => marker.purged_at === null)) throw new ErasureRegistryError('incomplete');
+  }
+
+  async listMarkers(): Promise<ErasureMarker[]> {
+    const { rows } = await this.pool.query<MarkerRow>(`SELECT ${COLUMNS} FROM erasure_registry.erasure_markers ORDER BY recorded_at, marker_id`);
     return rows.map(toMarker);
   }
 
   private async markersOf(accountId: string): Promise<ErasureMarker[]> {
     const { rows } = await this.pool.query<MarkerRow>(
-      `SELECT marker_id, account_id, subject_lookups, lookup_key_id, recorded_at FROM erasure_registry.erasure_markers
+      `SELECT ${COLUMNS} FROM erasure_registry.erasure_markers
         WHERE account_id = $1 AND lookup_key_id = $2 ORDER BY recorded_at, marker_id`,
       [accountId, this.key.id],
     );

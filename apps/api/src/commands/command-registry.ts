@@ -60,4 +60,12 @@ export class CommandRegistry {
   entityNames(): string[] {
     return [...this.entities.keys()];
   }
+
+  /**
+   * Every command kind with the schema versions it accepts: the release
+   * package's command-schema compatibility table (P6b, docs/operations/release.md).
+   */
+  commandSchemas(): Record<string, number[]> {
+    return Object.fromEntries([...this.commands].sort(([a], [b]) => a.localeCompare(b)).map(([kind, definition]) => [kind, [...definition.schemaVersions]]));
+  }
 }

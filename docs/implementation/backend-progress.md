@@ -1615,7 +1615,7 @@ Observed, not changed (pre-existing):
   - `gogospend_purge_entities` (internal): a purged tombstone in a new change group, earlier change rows of those entities deleted, `pruned_through` moved over them, and snapshots built before dropped (their objects become due).
   - Retention (jobs): `gogospend_retention_purge_candidates`/`_account`, `gogospend_drop_receipt_digests`, `gogospend_prune_security_records`, `gogospend_prune_finished_jobs` and `gogospend_prune_deletion_requests`.
   - `gogospend_reapply_erasure` (granted to no role; for P6a's restore operator).
-  - S1's `gogospend_prune_account` is replaced: a change that was an entity's head when an earlier pass moved the retention line, and was superseded later, was never removed. It now is, once its successor is past the cutoff.
+  - S1's `gogospend_prune_account` is replaced: a change that was an entity's head when an earlier pass moved the retention line, and was superseded later, was never removed. It now is, at the account's next prune pass (its successor sits above the old retention line, so the account is a candidate once that successor is 30 days old). Corrected in the review fixes below, which also restore an incremental bound.
 - **API:** `PrivacyModule`:
   - `POST /v1/me/deletion` (`recent_proof`; Idempotency-Key = the `deletion` proof's command id; 202 `{request_id, status: "accepted"}`). `DeletionService.request(ctx, proofId, commandId)` takes the lock, re-checks the session, consumes the proof and calls the routine in one transaction.
   - `POST /v1/auth/deletion-receipt` (`token_only`; the old binding header and `{command_id}`) answers only the initiating device: `accepted` or `completed`, otherwise 404.
@@ -1999,3 +1999,778 @@ Observed, not changed (pre-existing):
 - **One gate failure, fixed:** P6a's check that the API source holds no recovery-credential names flagged P2b's parser-isolation fixture, `RECOVERY_KEY_REF`. The fixture now builds that name at runtime, so the check stays strict.
 - **Full gate on the merged tree:** typecheck PASS, typecheck:app PASS, test:api PASS (734), test:db PASS (559), test:app PASS (28), test:unit PASS (221), test:dev PASS (7), test:render PASS (60), build PASS, export:web PASS, `git diff --check` PASS. test:ops first failed 1 of 78 on that check; after the fixture fix it passes 78 of 78 and the parser spec 149 of 149.
 - **Open for the P2b review:** a preview expiry job for an account at another lifecycle generation ends `superseded`, and P2a's maintenance does not know P2b's tables. That account's candidates then stay until it is deleted.
+
+## Review fixes for P5
+
+- **Review** (of `d972fde`, merged as `7646c43`): four majors (the linked-alias mutants M7–M10), six minor findings and five more surviving mutants (M6, M13, M14, M15, M17). Worked on `c68f1c0`; P5's privacy migration (now `0015_privacy`, undeployed) is edited in place.
+- **Fixed:**
+  - **Linked aliases (major).** New tests give an account a second sign-in method (an alias row, as F6c's linking leaves it). They assert that every alias is held at the request, captured for the provider stage, in the marker, revoked, deleted and confirmed at Auth0, and blocked with a lapsing hold after the purge, and that the second alias cannot sign in. M7–M10 are now killed.
+  - **Snapshot read before a purge (minor 2).** `account_sync_state.purge_revision` is a per-account purge watermark that `gogospend_purge_entities` raises. S1's `gogospend_record_snapshot` (replaced in place) refuses a high-water below it, so the builder retries with a fresh view. Manifests built earlier were already dropped. The reviewer's probe is now a test: the retention purge runs between the build's read and its record, nothing is recorded, nothing published carries the purged note, and a fresh build is recorded.
+  - **Accepted before the marker exists (minor 3).** The window is documented in [deletion.md](../operations/deletion.md) and [restore.md](../operations/restore.md), with an operator check before any serving switch. The restore tooling now also replays what it can see: deletion requests that the restored copy holds as accepted but unpurged are erased and re-queued (`restorer.openDeletions`; the rehearsal seeds one with no marker).
+  - **P5 and P6a's restore reconciled (minor 4).**
+    - P6a's `applyErasure` (`scripts/ops/local-postgres.mjs`) first calls `gogospend_reapply_erasure` for every erasure still in progress (`planErasure` now returns `reapply`: marker accounts without `purged_at`, plus the copy's open requests), then erases rows as before.
+    - To make that possible, the erasure's work items no longer carry `account_id`:
+      - `deletion_requests.account_id` became `erased_account_id`, with `job_id` naming its job;
+      - provider aliases are captured in the new `deletion_request_subjects` (until the purge), so provider cleanup no longer reads `account_identities`;
+      - a re-queued job has no `account_id`.
+    - P6a's row-level erase and its "no erased-owner rows" check therefore pass, and the re-queued job still knows which Auth0 users to delete.
+    - The registry now writes the marker fields P6a honours. After the purge, a new registry stage sets `purged_at` and `blocked_until` (the hold end) on every unpurged marker, once: the registry role gets UPDATE of those two columns only, and a trigger refuses any other change or a second purge record. The job completes only after that (`gogospend_deletion_finish`).
+    - `record` reuses only unpurged markers, so an erasure re-run after a restore gets a fresh, unclearable marker.
+    - The hold semantics match P5's: no end while pending, one hour past provider verification after the purge, and a restore replays it.
+  - **Performance (minor 5):**
+    - `jobs_account_idx` and `auth_event_receipts_account_idx` are new; with sequential scans disabled, the purge's statements use them (tested).
+    - The security-record, finished-job, deletion-request and upload prunes take a row limit (at most 10,000); the runner calls each until a call removes nothing (tested with a limit of 1 on the security-record and finished-job prunes).
+    - S1's replaced prune has an incremental bound again: besides the window, it visits only the history of entities changed since the last pass, through `entity_changes_entity_idx`. Measured on 50,000 entities: incremental 1.6 ms per pass, the first P5 version's full scan 27.2 ms, 0010's original 1.2 ms (it never removed rows superseded after an earlier pass).
+    - Before the purge, the worker deletes the account's change log, audit rows, receipts, records and entity heads in transactions of at most 5,000 rows each (`gogospend_deletion_shed`), so the final purge transaction stays small whatever the account's size.
+  - **Pseudonymous identifiers (minor 6).** The purge clears `initiator_principal_digest`; after that the receipt matches on the binding digest, client and command id. F6b's `gogospend_apply_credential_change` (replaced in place) records nothing for a principal under an active `deleted` hold and answers `no_account`; after the hold lapses, F6b's watermark applies as before. Both are tested.
+  - **M6 (minor 7).** A test calls `gogospend_cancel_account_jobs` in the owner context during a deletion; the deletion job (which keeps its `account_id` on the normal path) survives.
+  - **Other mutants:**
+    - M13: an expired deletion lease is refused by progress, identities, client ids, mark, objects, shed, purge and finish. The reviewer's M13 run had broken the migration; this test kills the real mutant.
+    - M14: a sign-in that had started (a bootstrap challenge, which has no account) is purged.
+    - M15: the intended rule is that retention leaves an account being erased to its erasure (no purge group, no new revision); it is now tested.
+    - M17: the receipt routine refuses another principal, client, command or binding.
+  - **Also:**
+    - A new `imports.uploads` retention step (`gogospend_prune_import_uploads`) closes the gap noted in the integration above. It deletes P2a's rows 30 days after they were rejected, failed or expired, or after an accepted upload's 24-hour expiry. It never touches a receiving one or one created in the last 24 hours, so the 24-hour quotas still count every upload. It is tested with failed, expired, accepted and receiving rows.
+    - The S1 prune comment and the matching receipt sentence in the P5 section above are corrected.
+    - Registry independence is explicitly SKIPPED in [deletion.md](../operations/deletion.md). `PostgresErasureRegistry` gains `independent` (false unless deployed outside the main database and its backups), `location` and `lookupKeyId`. It deliberately has no `lookupKey()`: the key's bytes never leave it and the API never imports the restore tooling, so P6a builds its marker source from a read login and its own key custody.
+- **RED, then GREEN.** Every fix was reverted at once, as a compile-safe seam (`p5fix-mutants.py seam`; the CHECK that pins the cleared digest was relaxed so that revert fails on an assertion):
+  - `npm run test:db -w gogospend-api -- --runTestsByPath src/privacy/deletion.integration.spec.ts src/privacy/retention.integration.spec.ts src/storage/deletion-publication.integration.spec.ts`: 14 of 46 failed, all on assertions.
+  - `GOGOSPEND_OPS_REQUIRE_DB=1 npm run test:ops`: 2 of 79 failed (the new `planErasure` test, on an assertion, and the Docker rehearsal's checks).
+  - The shed-loop test was added after a mutant survived (below), making 47.
+  - GREEN: 47 of 47 (61 of 61 with `migrations.integration.spec.ts`) and 79 of 79. Unit: `privacy-steps.spec.ts` 6 of 6.
+- **Mutants:** 23 of 23 killed (`p5fix-mutants.log`):
+  - the reviewer's M6, M7, M8, M9, M10, M13, M14, M15 and M17;
+  - one reversion of each fix: the purge watermark, copy requests not replayed, nothing re-queued, no captured aliases, a re-queued job keeping `account_id`, no registry purge record, purged markers reused, prunes ignoring the batch limit, each new index, no shedding, the principal digest kept, events recorded for erased principals, and upload rows never pruned.
+  - "No shedding" first survived: the purge's cascade removes the same rows. A test now spies on the worker's batches.
+- **Deviations, for review:**
+  - **Registry purge record.** The registry is append-only except for the once-only purge record. Appending a second marker instead would not work, because P6a's `planErasure` lets a marker with no end win over one with an end.
+  - **Job completion moved.** The job completes after the registry record, not inside the purge.
+  - **Raw provider subjects** sit in `deletion_request_subjects` from acceptance until the purge, the same lifetime they had in `account_identities`.
+  - **`gogospend_reapply_erasure`** always queues a fresh, detached job (cancelling or removing the earlier one) and answers `requeued` or `absent`. The `running` outcome is gone.
+  - **Replaced routines.** S1's `gogospend_record_snapshot` and F6b's `gogospend_apply_credential_change` are replaced in place in the privacy migration.
+  - **P6a's scripts** gain the `reapply` and `requested` paths, `openDeletions`, an `erasures_requeued` receipt field, a seeded pending deletion and a `planErasure` test. The rehearsal now erases 3 accounts.
+- **Risks:**
+  - The window between acceptance and the marker is only covered by the operator check, unless the copy holds the request.
+  - Until the registry has an independent placement, a main-database restore rolls the markers back with it.
+  - P2a's `import_quarantine` purpose is not in `PUBLICATION_PURPOSES`, so the erasure's orphan listing does not cover that prefix. Its registered objects are still deleted, but a P1/P2a follow-up should add it.
+  - A restored copy must run the deletion worker after the switch; a provider outage then leaves those erasures pending and alerted.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (585), test:db PASS (551), test:app PASS (28), test:unit PASS (221), test:dev PASS (7), test:ops PASS (79, with `GOGOSPEND_OPS_REQUIRE_DB=1`, including the Docker rehearsal), test:render PASS (60), build PASS, export:web PASS, `git diff --check` PASS.
+- **Leftover databases:** the four `gogospend_test_*` databases seen afterwards hold none of these routines, so this work did not create them; they were left alone.
+- **SKIPPED:** hosted proofs (Apple revocation, the 24-hour target, real storage), an independent registry placement, and E2's deletion screen.
+
+## Integration: P5 review fixes merged
+
+- **Merged:** the P5 review fixes (`da9640d`, built on `c68f1c0`). They edit the undeployed `0015_privacy` in place.
+- **Conflicts:** two, both combined. `schema.ts` now has P5's `deletionRequestSubjects` and P2b's `importPreviews`/`importCandidates`, and the progress log keeps both sections.
+- **Checked:**
+  - `0016_import_candidates` redefines none of the routines the fixes replace in `0015` (`gogospend_record_snapshot`, `gogospend_apply_credential_change`, the deletion and purge routines) and creates no `jobs` policy.
+  - P2b's tables cascade from `accounts` and `import_uploads`, so the erasure purge covers them without an `ERASURE_HANDLED_TABLES` entry.
+  - The fixes' new `imports.uploads` retention step (`gogospend_prune_import_uploads`) also removes P2b's expired preview rows with their upload. That closes the "no retention step for `import_uploads`" gap noted at the P2a and P2b merges.
+- **Full gate on the merged tree:** typecheck PASS, typecheck:app PASS, test:api PASS (734), test:db PASS (573), test:app PASS (28), test:unit PASS (221), test:dev PASS (7), test:ops PASS (79, `GOGOSPEND_OPS_REQUIRE_DB=1`, Docker rehearsal included), test:render PASS (60), build PASS, export:web PASS, `git diff --check` PASS. The 4 `gogospend_test_*` databases seen afterwards are not from this run and were left alone.
+- **Still open from the P5 review:** `PUBLICATION_PURPOSES` does not list P2a's `import_quarantine`, so the erasure orphan listing misses that prefix. Registered quarantine objects are still deleted. This waits for P2c, which also adds a purpose there.
+
+## P6b: release package (local work; P6b not complete)
+
+- **Status:** the local part of the release package is built and proven on this machine: operational gates, health and readiness, redaction of API and worker failures, graceful shutdown, a release image holding only the release graph, a CI workflow, the ops tooling and the release documents. P6b is **not complete**: hosted CI, the staging performance smoke, native device journeys, every hosted receipt `/ready` requires, E3/E4 approvals and any deployment are SKIPPED. Nothing was pushed, deployed or written to a provider.
+- **Base:** `7646c43`. The P6a and P2a review fixes merged meanwhile at `c68f1c0`; this work is not rebased onto them (see "For the integrator").
+- **Contracts:** `IMPORTS_PAUSED`, `OCR_PAUSED`, `UPLOADS_PAUSED` and `JOBS_PAUSED` join `WRITES_PAUSED`. The app already maps any 503 to `unavailable`, so it keeps the command and retries.
+- **Operational gates** (`common/feature-gates.ts`):
+  - Scopes `writes`, `imports`, `ocr`, `uploads`, `jobs`, paused by `OPERATIONAL_PAUSE` (comma list; an unknown scope stops startup) with `OPERATIONAL_PAUSE_RETRY_AFTER_SECONDS` (30–3600, default 300).
+  - A paused route answers 503 with its code, `retry_after_seconds`, `Retry-After` and `errors.<scope>_paused`. The check runs in `V1AccessGuard` right after classification, before the client-version check, the token and any database work, so nothing is reserved.
+  - Routes: `writes` on wallet, category, record and budget mutations and identity linking; `jobs` on `POST /v1/exports` and `POST /v1/sync/snapshots`; `uploads` + `imports` on `POST /v1/imports`; `ocr` inside the upload handler for JPEG/PNG/WebP before any byte is read. Exempt (stay up): sign-in, proofs, provider events, sign-out, global logout, deletion and its receipt, policy acceptance, privacy preferences, command status and every GET.
+  - **Uploads flag reconciled:** `IMPORT_UPLOADS_ENABLED` is now the `uploads` release flag (`releaseFlagFromEnv`; `importIntakeConfigFromEnv` delegates to it). An unreleased feature answers 404 in the guard even while paused, so a pause never reveals the route; the controller's own 404 stays as defense in depth.
+  - Workers: `JobWorker` takes `gates` and claims nothing while `jobs` is paused, and no kind whose `JOB_KIND_GATES` scope is paused (`import_parse` → `imports`), so a paused kind waits without spending attempts. The job, security and deletion workers all honour `jobs`; maintenance passes, sweeps, retention and reports carry on.
+  - `route-policy.ts`'s manifest now carries each route's gates, and `operational-safety.spec.ts` pins every mutating route as gated or deliberately exempt.
+- **Gate API for P2b/P3:** `@Gated('imports')` on each new mutating import route (`'writes'` as well for confirmation, which writes records); `gates.assertOpen('ocr')` (inject `FEATURE_GATES`) where a request would start image work; a new job kind that needs more than `jobs` goes in `JOB_KIND_GATES` (an image-parsing kind would be `['imports', 'ocr']`). The route-gate test fails until a new mutating route is classified.
+- **Health** (`health/health.controller.ts`, `health.service.ts`; `HealthModule` lives in the controller file):
+  - `GET /live` → 200 `{status: "live"}`, no dependency.
+  - `GET /ready` → 200 `{status: "ready", checks}`, or 503 `SERVICE_UNAVAILABLE` (`errors.not_ready`, `retry_after_seconds` 30) whose `fields` name each check: `process` ok/draining, `database` ok/failed/timeout (2 s bound), `receipt.restore_rehearsal` and `receipt.storage_contract` passed/missing/failed/expired/invalid. Cached 5 s and single-flight; a state change logs one JSON line (`event: "readiness"`); driver text is never logged or returned.
+  - **Receipt source:** `READINESS_RECEIPTS` (inline JSON) or `READINESS_RECEIPTS_FILE` (absolute path), read once at startup, never both. Each entry has exactly `status`, `recorded_at`, `valid_until` (≤ 31 days), `target` (`isolated-synthetic` / `r2-test`; a local rehearsal never counts) and `evidence_sha256`. Locally neither is set, so `/ready` is 503 by design. Format and production steps: [beta-receipts.md](beta-receipts.md).
+- **Redaction and metrics** (`common/operational-metrics.ts`):
+  - `describeFailure`: the error class; for driver and system errors only their SQLSTATE or system code; otherwise the message only if `isSafeOperationalText` accepts it (no URL, `@`, bearer/JWT, key=value credential, UUID, long hex, mixed-case secret-shaped run, 5+ digit run, decimal or grouped amount, currency). Worker loops use `failureName` (never a message).
+  - `OperationalLogger` replaces Nest's logger in `createV1App`: errors and warnings become one redacted JSON line without a stack. In the image, a missing setting now prints `{"source":"nest","context":"ExceptionHandler","message":"Error: Database URL is not configured."}` instead of a stack trace.
+  - `queueAge(pool, kinds)` (oldest due job per kind: queued past `run_after`, or a lease that expired) and `queueAgeLines`: each worker logs `<worker>: queue due=N oldest_due_seconds=S` (the heartbeat) and `<worker>: alert queue_age kind=… threshold_seconds=300`. `OPERATIONAL_THRESHOLDS` holds 5 min queue age, 26 h backup age, 20 h deletion, the US$100 envelope with 50/80/100%, and 7-day logs.
+- **Process lifecycle** (`common/process-lifecycle.ts`):
+  - `runMain` reports startup failures through `describeFailure` (exit 1) for all five entries (`v1/main`, `worker`, `jobs/security-worker`, `privacy/deletion-worker`, `database/migrate-cli`), which now run `main` only under `require.main === module`.
+  - `handleShutdownSignals`: the first SIGTERM/SIGINT starts a graceful stop with an unref'd hard exit after `SHUTDOWN_TIMEOUT_SECONDS` (5–120, default 25). The API marks itself draining (`/ready` 503), closes and exits 0, or closes every socket and exits 1 on timeout. Workers abort their loops and exit when done.
+  - HTTP bounds: request 9 min (the value of P2a's `V1_REQUEST_TIMEOUT_MS`), headers 66 s, keep-alive 65 s.
+  - `createV1App` no longer calls `enableShutdownHooks` (it would re-raise the signal around the handler).
+- **Command-schema table:** `CommandRegistry.commandSchemas()`; the spec pins all 16 kinds at schema `[1]`, so a schema change shows in review and goes in the release record.
+- **Release graph** (`apps/api/release-graph.json`, `apps/api/scripts/release-graph.mjs`):
+  - From the five entries it walks the built JS and refuses legacy files (`spend/`, `user/`, `offer/`, `legal-documents/`, `product-access/`, `analytics/`, Firebase, the old rate-limit guard, the cron gate, Multer limits, the legacy `main`/`app.module`), tests, fixtures, any direct package outside the eight reviewed ones (`@gogospend/contracts`, `@nestjs/common`, `@nestjs/core`, `drizzle-orm`, `express`, `helmet`, `jose`, `pg`; plus `@nestjs/platform-express`, which Nest loads at runtime), and any forbidden package in the closure (Mongo, Firebase, schedule, swagger, jwt, exceljs, tesseract, sharp, jsqr, class-validator/transformer).
+  - `stage <dir>` copies only what is reached: 117 dist files, the migrations, the contracts `package.json` + `src`, and the 117-package closure (dependencies, installed optional dependencies, required peers, resolved as Node does).
+  - `v1-isolation.spec.ts` now checks every release entry's source graph against the same JSON (3 of 3).
+  - No legacy source was deleted; the legacy `start` script still runs the legacy entry (switching local defaults waits for the v1 journey).
+- **Image** (`apps/api/Dockerfile`, `.dockerignore`, `apps/api/scripts/release-smoke.cjs`):
+  - `node:24-bookworm-slim` pinned by digest (Node 24.22.0). `npm ci -w gogospend-api --ignore-scripts`, the swc build, then `release-graph.mjs stage /release`. The runtime stage holds only `/release`, owned by root and read-only to the `node` user, with `NODE_ENV=production`, `HOST=0.0.0.0`, `PORT=8091`, `STOPSIGNAL SIGTERM` and default command `node dist/v1/main.js`. Worker commands are in the Dockerfile header. The allow-list `.dockerignore` sends no `.env`, `node_modules`, `dist`, app, vendor, docs or ops script.
+  - `NODE_OPTIONS=--disable-warning=MODULE_TYPELESS_PACKAGE_JSON` silences F1's known warning; contracts source is unchanged.
+- **Lockfile finding:** `package-lock.json` records only the darwin-arm64 binding of the API workspace's nested `@swc/core`, `unrs-resolver` (Jest 30's resolver) and `sharp` (+ libvips). On Linux, `npm ci` alone cannot build the API or run Jest; the first image build failed on exactly this. `scripts/ci/linux-native-bindings.mjs` adds the exact locked versions with `npm pack`, refused unless the sha512 matches a pin; it is used by the Docker build (swc) and CI (swc, unrs, sharp), and `--check` (in `test:ops`) fails when a lockfile bump leaves the pins behind. The real fix is a regenerated lockfile, which needs an authorized dependency change.
+- **CI** (`.github/workflows/backend.yml`): `contents: read`, actions pinned by commit, Node 24.22.0. Three jobs:
+  - gate: typecheck ×2, test:api, test:app, test:unit, test:dev, test:render, build, release graph, export:web, whitespace;
+  - database: test:db on the compose PostgreSQL, then test:ops;
+  - image: docker build and the release smoke.
+
+  No secret, push, login or deploy. Checked locally by parsing it and comparing its commands with the local gate (every local command present, nothing unpinned, no `secrets.`); it has **not run** on GitHub.
+- **Ops tooling** (`scripts/ops`, now in `test:ops`):
+  - `performance-smoke.mjs` takes `--target staging-synthetic` only with a descriptor-supplied authorization record (https, non-production-looking, matching origin, ≤ 7 days); without one it exits 3 (SKIPPED). `--target local-dry-run` takes a loopback base URL only; anything else exits 2. Open-loop 20 req/s, 80/20 reads/writes from ≥ 20 synthetic accounts (tokens and bindings from a descriptor, never printed), 30 s warm-up + 120 s measured, pass at warm p95 reads < 800 ms, writes < 1,200 ms, ≤ 1% failed, with a redacted receipt.
+  - `backup-age.mjs` reads an inventory report on stdin and alerts past 26 hours or with no backup.
+- **Docs:** [release.md](../operations/release.md), [rollback.md](../operations/rollback.md), [incident.md](../operations/incident.md) and [beta-receipts.md](beta-receipts.md). They cover:
+  - migration order (migrate → workers → API, expand-only, no startup migration);
+  - command-schema and minimum-version compatibility;
+  - the rollback floor (P4);
+  - secrets by name and role;
+  - the preflight backup and restore receipt;
+  - every alert line the workers emit, including P2a's quarantine-overdue alarm and import maintenance failure from `c68f1c0`, and the 426/429/408 refusals that are not incidents;
+  - the alert thresholds;
+  - 7-day redacted logs;
+  - staged enablement with success and failure signals.
+
+  The auth0 runbook's alert line now matches the code (`security job(s) failed terminally`).
+- **RED → GREEN** (assertion-level RED against compile-safe seams: never-pausing gates, an always-ready health service, a pass-through `describeFailure`, no-op shutdown, empty queue age; no module errors; logs `p6b-red-unit.log`, `p6b-red-db.log`):
+  - `npm run test -w gogospend-api -- --runTestsByPath src/common/operational-safety.spec.ts`: RED 32 failed, 5 passed of 37; GREEN 37 of 37.
+    - The five that held at RED: a request that is not paused reaches the access checks; OCR leaves CSV alone; writes/uploads/OCR pauses leave the worker claiming every kind; API failures already left nothing in logs (F3); a worker that stopped by itself is not forced out.
+    - Two tests added afterwards, not RED-first (Nest logger redaction, the command-schema table): 39 of 39.
+    - Pinned `paused_writes_gate_rejects_business_mutation`: `POST /v1/wallets` with `OPERATIONAL_PAUSE=writes` → 503 `WRITES_PAUSED`, `retry_after_seconds` 300.
+  - `npm run test:db -w gogospend-api -- --runTestsByPath src/common/operational-metrics.integration.spec.ts`: RED 3 failed, 1 passed of 4 (two first-run failures were `TypeError`s on an empty result; they now assert the length first); GREEN 4 of 4.
+  - Written with their code (not RED-first): `performance-smoke.test.mjs` 8, `backup-age.test.mjs` 4, `linux-native-bindings.test.mjs` 3, `v1-isolation.spec.ts` 3.
+- **Docker proof** (local, arm64, never pushed):
+  - `docker build -f apps/api/Dockerfile -t gogospend-local .` PASS (release graph: 117 files, 117 packages, no problems).
+  - `docker run --rm gogospend-local node -e "…require('@gogospend/contracts')…"` → `{"node":"v24.22.0","parseMinor":"6500","isUuid":true,"codes":43,"jobsPaused":true}`.
+  - `docker run --rm gogospend-local node scripts/release-smoke.cjs` → `ok: true`:
+    - the v1 API, job, security and deletion workers each requested `@gogospend/contracts` and got runtime exports (34, 4, 1 and 2 requests);
+    - all five commands, with production settings made of synthetic values, ended `<name> startup failed: Error ECONNREFUSED`, with no missing module and 0 synthetic secrets printed;
+    - no legacy path or package in the image.
+  - The default command with no settings exits 1 with the redacted lines above. The process user is `node`, and `/app` is not writable.
+- **Linux parity** (not hosted CI): in `node:24-bookworm-slim` (arm64), the API workspace from the lockfile plus `linux-native-bindings.mjs swc unrs sharp`. `npm run test -w gogospend-api` PASS (39 suites, 602 tests), build PASS, release graph PASS. x64 was not run.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (39 suites, 602 tests), test:db PASS (36 suites, 526 tests), test:app PASS (28), test:unit PASS (221), test:dev PASS (7), test:ops PASS (74), test:render PASS (60), build PASS, `release-graph.mjs check` PASS, export:web PASS, `git diff --check` PASS.
+  - Three test databases from my first runs of the new integration spec were left behind when its `afterAll` ended pools that `drop()` also ends. I identified them by their contents (one queued `account_deletion` job, no accounts), dropped them with their six logins, and fixed the spec.
+  - Four other `gogospend_test_*` databases were created outside my runs and were left alone.
+- **Deviations, for review:**
+  - `HealthModule` sits in `health.controller.ts`, and shutdown helpers in a new `common/process-lifecycle.ts`.
+  - Gates are process configuration (a restart applies them), not a database switch, so no migration was needed.
+  - Readiness requires two receipts (restore rehearsal and the P1 storage contract); everything else in the beta checklist is human-reviewed.
+  - `/ready` fails on a missing receipt, so it is the deploy health check and `/live` the liveness check.
+  - Policy acceptance and privacy preferences are exempt from `writes`; identity linking is gated.
+  - Export and snapshot requests use `jobs`, not `writes`.
+  - New helper files: `apps/api/release-graph.json`, `apps/api/scripts/release-smoke.cjs`, `scripts/ci/linux-native-bindings.mjs`, `scripts/ops/backup-age.mjs`.
+  - The CI and image use Node 24.22.0 (the plan's runtime), while the local gate ran Node 26.10.0.
+- **SKIPPED:**
+  - hosted CI (needs an authorized push/PR, E4);
+  - the staging performance smoke (no authorized staging target or synthetic accounts, E1);
+  - a local dry run against a real v1 app (it would need a disposable database, a synthetic issuer and bootstrapped accounts; the generator is proven against a loopback fake only);
+  - native device journeys (E2);
+  - every hosted receipt (restore rehearsal, R2 storage contract, uploads, export, deletion, tenant proofs);
+  - E3/E4 approvals;
+  - deployment, secret writes, image push, PR and merge;
+  - alert routing, provider budget alerts and log retention settings (provider consoles, E3);
+  - the deletion worker's fd-3 delivery on the platform (open, E1).
+- **Risks:**
+  - The lockfile gap blocks hosted CI and any Linux build until the workaround or a lockfile fix is accepted.
+  - `describeFailure`'s text filter is a heuristic backstop: callers must keep logging chosen fields only.
+  - A gate change needs a restart (a Railway variable change redeploys).
+  - `/ready` gating on receipts takes every instance out of rotation when a receipt expires, so receipts need renewing before they expire (31 days).
+  - The worker heartbeat is a log line, so a dead worker shows only as a missing line; alert on its absence.
+  - The base image digest is 3 days old (Node 24.22.0); review it under the dependency-age rule.
+- **For the integrator (`c68f1c0` and later):**
+  - `worker.ts`: keep P2a's import maintenance pass and quarantine-overdue alarm. Wrap their catch lines with `failureName`, replace the trailing `main().catch(… error.message …)` with `runMain`, and keep `gates`, queue age and `handleShutdownSignals`. `operational-safety.spec.ts` fails while any release entry still prints `error.message`.
+  - `imports.controller.ts`: P2a moved the enabled check inside the try and added `Connection: close`. Put the OCR check inside that try, after the enabled check, and keep `@Gated('uploads', 'imports')`.
+  - `v1-app.module.ts`: `V1_REQUEST_TIMEOUT_MS` and `HTTP_TIMEOUTS.requestMs` are both 540 s; keep one owner.
+  - `upload-intake.ts`: keep `releaseFlagFromEnv`.
+  - `package.json` `test:ops`: P6a's `local-rehearsal.test.mjs` plus this task's three files. The CI database job already runs test:ops after the database is up.
+  - Docs mention P2a's in-progress limit (2 per account), stall timeouts (30 s idle, 8 min receive) and alarms. If later work adds an entity type or state to sync, raise the rollback floor in `rollback.md`.
+
+## Integration: P6b merged
+
+- **Merged:** P6b's local release package (`51cf41c`, built on `7646c43`).
+- **Conflicts resolved:**
+  - `imports.controller.ts`: P2b's preview route and `Res`, plus P6b's gates. The OCR check now sits inside P2a's `try`, after the enabled check and before the body iterator, so a refusal still closes the connection.
+  - Root `test:ops`: P6a's `local-rehearsal.test.mjs` plus P6b's three test files.
+  - The progress log.
+- **Integration changes, following P6b's "For the integrator" notes:**
+  - **`worker.ts`:** P2a's two catches (import maintenance, quarantine overdue) now log `failureName(error)`. P2b's handler wiring, P6b's gates, queue age and `runMain` are kept.
+  - **One owner for the request timeout:** `HTTP_TIMEOUTS.requestMs` in `common/process-lifecycle.ts` is now `(IMPORT_UPLOAD_RECEIVE_SECONDS + 60) * 1000` (still 540 s). `V1_REQUEST_TIMEOUT_MS` re-exports it for `configureV1App` and test apps.
+  - **Release graph:**
+    - P2b's parser children (`imports/parsers/table-child`, `imports/parsers/image-child`) are spawned by path, not required, so the image would have shipped without them. They are now release entries (seven in all).
+    - `sharp` moves from forbidden to reviewed direct packages; P2b recorded its dependency review.
+    - The Dockerfile adds sharp's Linux binding (`linux-native-bindings.mjs swc sharp`).
+  - **`release-smoke.cjs`:** no longer counts sharp as legacy. It now parses a synthetic CSV and a 1×1 PNG through the real `ParserRunner` inside the image.
+  - **`operational-safety.spec.ts`:** the OCR tests construct the controller with P2b's `PreviewQuery` and P2a's response. The image-refusal test also checks `Connection: close`.
+  - **`ocr` decision:** P2b parses images and spreadsheets under one job kind, `import_parse`, which `JOB_KIND_GATES` gates by `imports` only. Pausing `ocr` therefore refuses new image uploads, but image parses already queued still run; pause `imports` too to stop them. `feature-gates.ts` and `docs/operations/incident.md` now say so. A separate image-parse kind can follow if a narrower pause is needed.
+  - **P2b's routes:** P2b adds only `GET /v1/imports/:id/preview`, which is exempt.
+- **Full gate on the merged tree:** typecheck PASS, typecheck:app PASS, test:api PASS (774), test:db PASS (577), test:app PASS (28), test:unit PASS (221), test:dev PASS (7), test:ops PASS (94, `GOGOSPEND_OPS_REQUIRE_DB=1`), test:render PASS (60), build PASS, export:web PASS, `git diff --check` PASS. `release-graph.mjs check` PASS: 133 dist files, 9 direct packages, 123 closure packages, no problems.
+- **Image** (local Docker, linux/arm64; not hosted CI):
+  - `docker build -f apps/api/Dockerfile -t gogospend-local-integration .` PASS.
+  - `docker run --rm gogospend-local-integration node scripts/release-smoke.cjs` PASS on Node v24.22.0:
+    - all five processes load the contracts and fail closed at the database (`ECONNREFUSED`);
+    - no module is missing and no secret is printed;
+    - both parser children parse (`csv: parsed`, `png: parsed`);
+    - no legacy path or package is present.
+  - This closes P2b's SKIPPED "sharp under `--permission` on Linux" for arm64; x64 was not run.
+- **Still SKIPPED:** everything P6b lists (hosted CI, the staging performance smoke, devices, hosted receipts, E3/E4, deployment), and the lockfile regeneration, which needs authorization. P6b has not been independently reviewed yet.
+
+## P2c: retained receipt attachments (local work)
+
+- **Status:** built test-first and passing the full local gate. The real R2 upload/retain/grant/cleanup is **SKIPPED** (P1's hosted gate, E1). Receipts can only come from image imports, so they stay unexposed while `IMPORT_UPLOADS_ENABLED` is off. Not independently reviewed yet.
+- **Base:** the worktree started at `afd5dff`, main's merge commit of PR #1. Its tree equals `ccd3fb0`, but it is not an ancestor of `d0eb98d`, so `git merge --ff-only d0eb98d` refused. With nothing changed yet, the worktree's own branch was reset to `d0eb98d`, then fast-forwarded to `5be44c9` (P5 review fixes and P6b) when the integration branch moved, before any P2c change. Checked again before the final gate: still `5be44c9`.
+- **Migration `0017_attachments`:**
+  - `attachments`, keyed `(account_id, id)`, cascading from `accounts`. One row per retained receipt: its own `receipt/<account>/<attachment>/<copy token>/image.<jpg|png|webp>` key, type, size (at most 12 MiB), SHA-256, dimensions (at most 20 MP), `retained_at` (the consent) and `retained → released` (final). One receipt per import image (`UNIQUE (account_id, source_job_id)`; no foreign key, a receipt outlives its import's rows).
+  - `transaction_attachments`: primary key `(account_id, transaction_id)`, so a record holds at most one receipt. Composite owner foreign keys to `transactions (account_id, id)` (cascade) and `attachments (account_id, id)`, plus `accounts` (cascade). Several records may share one receipt.
+  - **RLS and grants:** owner policies on both tables. The app may only SELECT `attachments` (written only by routines), and may SELECT, INSERT, DELETE and `UPDATE (attachment_id, attached_at)` its own `transaction_attachments` inside commands. Worker logins see neither table.
+  - **Triggers:**
+    - `transaction_attachments_retained` (BEFORE INSERT/UPDATE): a record can only come to hold a retained receipt.
+    - `transaction_attachments_unheld` (AFTER DELETE/UPDATE, SECURITY DEFINER): when no record holds a receipt any more it is released and its object is made due. That covers an explicit removal or replacement, P5's 30-day purge of a deleted record (its row cascades), shedding and erasure.
+    - `import_previews_attachment_id`: gives every preview with an image a random `image_attachment_id` (new column, unique, set when `image_key` is; existing rows backfilled). It cannot be changed afterwards.
+  - **Registry:** P1's 7-day CHECK on published objects (found by its definition and dropped) is recreated as `object_publications_published_expiry_check`, exempting only purpose `receipt`. A retained receipt is published with `delete_after = 'infinity'`, so P1's sweep, the orphan pass and P5's deletion objects stage treat it like any other published object: never due while held, due at once on release or erasure.
+  - **App routines** (owner transaction):
+    - `gogospend_reserve_receipt_copy(attachment, copy_token)`. For the owner's own ready preview whose image is still published with at least 2 minutes left, it registers the copy's key for 3 minutes before any copy, under a per-account lock. Outcomes: `reserved`, `existing` (the receipt exists), `pending` (an unexpired reservation for this image is already in flight), `limited` (4 copies in flight, or 100 reservations in 24 hours; with `retry_after`) or `unavailable`. The copy itself is a server-side `ObjectStore.copy` (P2c review fixes).
+    - `gogospend_retain_attachment(attachment, copy_key, bytes, sha256)`, under the account lock. It answers `retained` (existing, or recorded now), `released`, `expired` or `unknown`. A new receipt needs this account's own unexpired reservation for this attachment, at the account's lifecycle generation, whose stored size and digest equal the import image's registration. A copy made for an existing receipt is due at once.
+    - `gogospend_release_receipt_copy(copy_key)`: an unused reservation is due now.
+    - `gogospend_import_image_attachable_until(job)`: the preview's retain deadline.
+    - `gogospend_transaction_attachment(account, record)`: the record DTO's lookup. It is not a definer, so owner RLS applies.
+  - **Jobs and security routines:** `gogospend_prune_attachments(limit)` (retention) and `gogospend_attachment_erasure(job, lease)` (erasure step).
+  - **Job policies:** no `jobs` policy or routine is recreated, and no job kind is added.
+- **How the client learns an attachable image's id:** `GET /v1/imports/:id/preview` now gives `summary.image = {width, height, attachment_id, attachable_until}`. `attachment_id` is the preview's random `image_attachment_id`, and it becomes the receipt's id once retained.
+  - Why a stored random id rather than the import job id or a key-derived id:
+    - it is opaque, and unrelated to any key or job id;
+    - it names the image rather than the import, so a later multi-image import still works;
+    - one stable id lets a second record share the same receipt.
+  - A foreign or unknown id is the same 404.
+  - `attachable_until` is the image's 24-hour deadline minus 2 minutes, or null once it can no longer be copied. A receipt already retained stays attachable to more records by the same id.
+- **Retain by copy (not re-registration):** a key names its purpose, and only an `import_parse` lease may publish `import_image`. So retaining copies the sanitized image under the new `receipt` purpose (added to `PUBLICATION_PURPOSES`, so the sweep's orphan pass lists it; `import_quarantine` was added too). The copy is made by the API, before the command:
+  1. it checks that the command id has no receipt yet (a resend copies nothing), and that the named record is the caller's, live and at `If-Match` (otherwise the command refuses it and nothing is copied);
+  2. it reserves the key, committed before the PUT;
+  3. it streams the import image into it, checking the size and SHA-256 against the registry as it streams, then the stored object (HEAD);
+  4. it runs the M1 command, which publishes the copy and records the attachment in the same transaction as the record's new version.
+
+  A copy the command did not use (refused, resend, a receipt already shared) is made due at once, and anything never published is swept at its reservation deadline. A failing storage call is `503` with `retry_after_seconds`; a source that is missing or differs is `422 errors.attachment_expired`. No database rollback is relied on to undo a PUT.
+- **Versioning and sync:** retain, replace and remove are M1 commands on the record (entity `transaction`, outcome `updated`, schema 1, current policies). They need `If-Match` = the record's version and move it to its next version. The record's snapshot (sync deltas and snapshots, `GET /v1/transactions/:id`, history) carries `attachment_id` while it holds a receipt and omits the key otherwise.
+  - **Compatibility:**
+    - `isTransactionSnapshot` accepts both shapes, so every stored snapshot stays valid (S1's rule);
+    - every existing command kind and schema is unchanged;
+    - the new kinds accept schema 1.
+  - An app or API older than P2c refuses a snapshot with `attachment_id`. `rollback.md` now says the rollback floor and the minimum client versions move to P2c at the import release step, before receipts can exist.
+  - A deleted record keeps its receipt (its snapshot still names it). A restore within 30 days brings the grant back; the purge at 30 days releases the receipt unless another record holds it.
+- **Routes** (`AttachmentsModule`, after P6b's gates):
+  - `POST /v1/transactions/:id/attachment` (retain), `PUT …` (replace), `DELETE …` (remove): `current_policy`, `@Gated('writes')`, `Idempotency-Key`, `If-Match`.
+  - Retain and replace need `{attachment_id, consent: "retain_receipt"}`; anything else is `422 errors.consent_required` on `consent`. The consent is recorded as the audit code `consent=retain_receipt`; replace and remove also record `previous=released|shared`.
+  - State refusals are 422 on `attachment_id`: `errors.attachment_present`, `_missing`, `_unchanged`, `_removed` (no undo) and `_expired`. A deleted record is `409 ENTITY_DELETED`; a stale version `409 VERSION_CONFLICT` with the current record.
+  - `GET /v1/attachments/:id/grant` (`bound_session`, not gated) returns `{url, expires_at, content_type, bytes, sha256}`. The receipt must be retained, held by one of the caller's active (not deleted) records, and the account active. Grants reuse S1's opaque account-bound HMAC grants under `deriveKeys('gogospend.attachment-grant.v1')`, last five minutes, and name no key.
+  - `GET /v1/attachment-files/:grant` (`bound_session`) re-authorizes now and streams the image with its recorded length and type. It checks the digest as it streams, sends `Content-Disposition: attachment` and `no-store`, and runs at most 8 at once per process (more get 503).
+  - Every unusable id - unknown, another account's, an unretained preview image, an import id, a receipt only deleted records hold, an expired or foreign grant - gets the same 404 body.
+- **Contracts:**
+  - `v1/attachments.ts`: `AttachmentCommand` (the plan's `{transaction_id, attachment_id?}` plus `consent?`), request types, `RECEIPT_RETENTION_CONSENT`, `ATTACHMENT_CONTENT_TYPES`, `ATTACHMENT_MAX_BYTES`, `ATTACHMENT_GRANT_MINUTES`, `ATTACHMENT_DOWNLOAD_PATH`, `AttachmentGrant` with the strict `isAttachmentGrant`, `ATTACHMENT_MESSAGE_KEYS` and `ATTACHMENT_COPY_REQUIREMENTS`.
+  - `TransactionDto.attachment_id?`.
+  - `ImportPreviewSummary.image` gains `attachment_id` and `attachable_until`.
+- **Client copy (no UI in P2c; for P3/E2):**
+  - `ATTACHMENT_MESSAGE_KEYS.removeNoUndo` = `attachments.remove_no_undo`, which must say that removing a receipt deletes its image permanently, cannot be undone, and is not brought back by restoring the record;
+  - `retainConsent` = `attachments.retain_consent`, asked before a retain or replace sends `consent`.
+  - No locale text was added: it needs E2 approval.
+- **P5 (`privacy-steps.ts`):**
+  - Retention `attachments.obsolete` runs `gogospend_prune_attachments`. It releases any retained receipt nothing holds (a safety net; the trigger normally does it), skipping accounts whose lock is held. It drops a released receipt's row 30 days after release, once its object is no longer live.
+  - Erasure `attachments.objects`: under the deletion lease it makes any of the account's receipt objects still live due, and throws while one is (the purge waits). P5's objects stage already deletes them, so this is a guard.
+  - `ERASURE_HANDLED_TABLES` is unchanged. Both new tables cascade from `accounts`, and the P5 table-coverage test refuses a cascading table in that allowlist. The object half goes through `object_publications`, which is already listed.
+- **P6a:** the `rehearsal_attachment_refs` stand-in is gone.
+  - `scripts/ops/local-postgres.mjs` exports `RETAINED_ATTACHMENT_REFERENCES_SQL`: every `retained` receipt, including one held by a record deleted within its undo window; released ones are not references. It is the restorer's default; a copy from before P2c (no `attachments` table) has nothing to check.
+  - The Docker rehearsal seeds real receipts (registry row, `attachments`, `transaction_attachments`) for all four accounts. The kept account also has one held by a deleted record and one released receipt whose object is not in the copy.
+  - It asserts 2 references checked, 5 objects in the copy, 3 not restored (the erased accounts'), no missing object, and the kept account byte-identical including its receipts. `restore.md` is updated.
+- **AttachmentService for P3:** `prepare(ctx, attachmentId, commandId, record?)` (outside any transaction), `attachIn(tx, prepared, transactionId)` (inside the confirm command, after creating the record) and `release(ctx, prepared)` (in a `finally`). This is how P3 links a retained receipt atomically with the confirmed rows.
+- **RED → GREEN** (assertion-level RED against seams: the migration with the real tables, constraints, column and preview trigger but stub routine bodies (no copy, no retain, no release, no guard, `NULL` deadline, `0` from prune and erasure); a typed stub `AttachmentService` returning fake acknowledgements and no grants; the real controller, contracts, routes and gates; no module errors):
+  - `npm run test:db -w gogospend-api -- --runTestsByPath src/attachments/attachments.integration.spec.ts`: RED 18 of 19 failed, all on assertions; the Drizzle drift check held (`p2c-red-final.log`). The first RED run had three `TypeError`s from reading a missing row's key; a helper now asserts the row first.
+  - GREEN 19 of 19. GREEN needed two test fixes: a JSON 404 read through the binary download parser, and the retained-receipt trigger answering `23514` before the composite key's `23503` (the test now checks both, the key with the trigger disabled inside a rolled-back transaction). One implementation change: a copy is skipped when the named record is not the caller's, live and at the version, so a refused cross-owner retain copies nothing.
+  - Coverage added after GREEN, for guards read as likely survivors: a source that differs from its registration, the retain routine's own fences (digest, size, generation, deadline, another attachment's reservation), the 4-copy limit, the spare copy of a refused command, a resend copying nothing, a held receipt untouched by the prune, a released row kept while its object is live, and the no-expiry CHECK for other purposes. Then 22 of 22.
+  - Pinned `foreign_attachment_grant_is_denied`: `expect(foreignGrantResponse.status).toBe(404)`. The body equals an unknown id's, and the owner's grant does not download for the other account.
+  - Contract tests (`src/v1/contracts.spec.ts`, 3 new) were written against the real validators, not RED first.
+- **Mutation check** (`p2c-mutate.mjs`, `p2c-mutants.log`; copy, mutate, run the focused tests, restore, then verify checksums with `shasum -c`): 31 of 32 killed.
+  - **SQL (16):** the preview owner checks in reserve and retain, the retain window, the in-flight limit, the retain routine's digest, deadline, generation and attachment fences, the still-held check in release, the unheld and retained-receipt triggers, both prune guards, the no-expiry CHECK, the erasure count, and making a released object due.
+  - **Service (12):** consent, version, deleted record, the resend and record pre-checks, releasing an unused copy, grants for deleted records, the download's grant expiry, remove or replace without a change, and a second receipt on retain.
+  - **Contracts (2) and restore (2):** the `attachment_id` checks in the record and preview validators; the reference query's `retained` filter and the reference check itself (the Docker rehearsal fails).
+  - **First survivors:** M12 (the prune's held filter) and S4 (the resend check) survived the first run, masked by the release function's own held check and by the record pre-check. Two tests were added: a one-row prune batch must reach an unheld receipt past an older held one, and `prepare` for a committed command id with another image must copy nothing. Both then failed as intended.
+  - **The survivor:** S11, dropping the copy's source size/digest pre-check. It is equivalent: the streamed copy is re-hashed byte by byte (`verified`) and refused before the PUT completes. The stored object is HEAD-checked, and the SQL routine compares the digest with the import image's registration (M5 kills that).
+- **Full gate** (on `5be44c9` plus this work): typecheck PASS, typecheck:app PASS, test:api PASS (40 suites, 778 tests), test:db PASS (38 suites, 599 tests), test:app PASS (28), test:unit PASS (221), test:dev PASS (7), test:ops PASS (94, `GOGOSPEND_OPS_REQUIRE_DB=1`, Docker rehearsal included), test:render PASS (60), build PASS, `node apps/api/scripts/release-graph.mjs check` PASS (136 dist files, the same 9 direct packages, 123 closure packages, no problems), export:web PASS, `git diff --check` PASS. No test, rehearsal or restore database of mine was left. The four `gogospend_test_*` databases seen afterwards were created on 17 October by other runs and were left alone.
+- **Deviations, for review:**
+  - **Routes on the record** (`/v1/transactions/:id/attachment`), since every command must name its primary entity as `id` and the version is the record's. The plan names only the service interface and the grant route.
+  - **`AttachmentCommand` gains `consent?`**, so the consent is in the command digest and the audit row.
+  - **The copy is made by the API**, not a worker job: synchronous, registry-first, with no `pending` receipt state. The `receipt` purpose is API-published like `import_quarantine` (`API_PUBLISHED_PURPOSES`; `reserveKey` refuses it).
+  - **Release is final:** a removed receipt cannot be attached again, even while its import image still exists. That is the "no undo".
+  - **Released `attachments` rows stay 30 days** after release (then retention drops them).
+  - **New migration objects beyond the planned tables:** `import_previews.image_attachment_id` and its trigger, and the relaxed P1 CHECK.
+  - **Extra files and changes:** `v1-client.ts` gains `del`. `RECORD_COLUMNS` calls `gogospend_transaction_attachment`.
+- **SKIPPED:**
+  - real R2 upload, copy, retain, grant, expiry and cleanup on synthetic data (P1's hosted gate, E1);
+  - the R2 accepted-attachment recovery copy (P6a hosted part, E1);
+  - the client UI and copy (P3/E2);
+  - device checks;
+  - `dev:v1` (it would migrate `gogospend_v1`).
+- **Risks:**
+  - **Orphan pass cost:** each sweep lists every `receipt/` object (all retained receipts) for its orphan pass, and that grows with retained receipts. P1 noted the same for other purposes; revisit with real volumes (a dated prefix or an inventory).
+  - **API write scope:** the API holds write access to the receipt scope (it already writes quarantine).
+  - **Copy timing:** a copy takes up to 60 s inside the request.
+  - **Compatibility:** an old client refuses `attachment_id` snapshots (see the rollback floor).
+  - **Preview shape:** `isImportPreview` is stricter about `summary.image` (P3's adapter must use the new shape).
+- **Notes for the integrator:**
+  - **Gating:** P6b is merged here. Retain, replace and remove carry `@Gated('writes')`; the grant and file GETs are ungated. `operational-safety.spec.ts`'s gate and command-schema tables include them, and `release.md`'s table lists `attachment.remove|replace|retain`.
+  - **Expected conflicts with P3 (`0018_import_confirmation`):**
+    - `drizzle/meta/_journal.json` and `migrations.spec.ts` (the pinned prefix);
+    - `schema.ts`;
+    - `privacy-steps.ts`, `privacy-steps.spec.ts` and `retention.integration.spec.ts` (the step lists);
+    - `operational-safety.spec.ts` (both tables);
+    - `packages/contracts/src/index.ts` and `v1/imports.ts`;
+    - `imports/preview-query.ts`;
+    - `v1-app.module.ts`;
+    - this log, the master plan's migration table and `release.md`.
+  - **Renumbering:** if P3 integrates first, renumber `0017` in the file name, the journal, the pinned prefix, the plan table and this receipt.
+  - **Release graph:** no new package; `release-graph.mjs check` passes.
+
+## Integration: P2c merged
+
+- **Merged:** P2c (`e4f7bd0`), built on `5be44c9`, the current integration head. No conflicts. The merged tree is byte-identical to P2c's own commit, whose full gate passed on that same base (`git diff --cached e4f7bd0` is empty), so that gate result applies unchanged:
+  - typecheck and typecheck:app: PASS;
+  - test:api: PASS (778);
+  - test:db: PASS (599);
+  - test:app: PASS (28);
+  - test:unit: PASS (221);
+  - test:dev: PASS (7);
+  - test:ops: PASS (94, `GOGOSPEND_OPS_REQUIRE_DB=1`);
+  - test:render: PASS (60);
+  - build: PASS;
+  - `release-graph.mjs check`: PASS;
+  - export:web: PASS;
+  - `git diff --check`: PASS.
+- **Migration:** `0017_attachments` keeps its number.
+- **Closes:** the P5 review's open item. `PUBLICATION_PURPOSES` now lists `import_quarantine`, together with P2c's new `receipt` purpose.
+- **Open:**
+  - P2c's independent review.
+  - P3 wires `AttachmentService.prepare`/`attachIn`/`release` into confirmation.
+  - Rollback floor: snapshots that carry `attachment_id` are rejected by an app or API older than P2c, so the floor and the minimum client versions move at the import release step (see `rollback.md`).
+
+## P3: resumable import confirmation and client review (local work)
+
+- **Status:** built test-first and passing the full local gate on the integration head `e14669f` (P2c merged). Not independently reviewed yet. Imports stay unexposed: uploads answer 404 while `IMPORT_UPLOADS_ENABLED` is off, so no preview (and no correction, selection or confirmation) can exist. The review screen is not routed and its copy is a draft awaiting E2.
+- **Base:** the worktree started at `afd5dff` (main's merge of PR #1, tree equal to `ccd3fb0`, not an ancestor of `d0eb98d`), so `git merge --ff-only d0eb98d` refused. With nothing changed yet, the branch was reset to `d0eb98d`, then fast-forwarded to `7b23eec` and `5be44c9` (P5 review fixes, P6b) before any P3 change. A checkpoint commit (`55b771b`) preceded the merge of `e14669f` (P2c), which renumbered this migration to `0018` and brought the receipt-link work below. Checked again before the final gate: still `e14669f`.
+- **Migration `0018_import_confirmation`** (numbered `0017` on this branch until P2c merged; renumbered in the merge):
+  - `import_selections`: one per freeze command, keyed `(account_id, selection_id)` (selection ids are also unique): the preview (`job_id`, cascading from `import_previews`), the frozen review revision, the row count (1-5,000) and the preview's own `expires_at`.
+  - `import_selection_rows`: the frozen, normalized fields of each chosen row (type expense/income only, amount, date, note, merchant, ordinal) with the owned wallet and category its labels were mapped to. Composite owner foreign keys to `wallets` and to `categories (account_id, id, type)`, so a mapped category always has the row's direction. Never updated.
+  - `import_row_progress`: primary key `(job_id, source_row_id)` - the plan's uniqueness - plus the selection, the resulting `transaction_id` (`UNIQUE (account_id, transaction_id)`, `ON DELETE SET NULL (transaction_id)` so P5's 30-day purge of a deleted record keeps the row committed) and the command id. Cascades from `import_previews` and `accounts`.
+  - **RLS and grants:** owner policies on all three. The app may only SELECT selections and their rows (written by the freeze routine), and may SELECT and INSERT progress (no UPDATE or DELETE).
+  - **Guard trigger** `gogospend_guard_import_progress` (BEFORE INSERT, as the caller so RLS applies): a progress row needs a selection of the same import that still matches the ready, unexpired preview's review revision, and a new transaction (version 1, active) whose type, amount, date, wallet, category, note and merchant equal the frozen row. So no batch can change mappings or fields, add a row outside the frozen set, or record a stale selection, even through the app login directly.
+  - **App routines** (SECURITY DEFINER, fixed `search_path`, called inside the owner's command transaction; each re-takes the account lock and raises on any violation - the service validates first and answers with problems):
+    - `gogospend_patch_import_rows(job, revision, rows)`: for a ready, unexpired preview at exactly that revision, 1-500 distinct rows of known fields, none committed: replaces the named fields, clears the corrected fields' issues, recomputes `review_required` per row and the preview's counts and exact totals, and moves `review_revision` forward by one. This is the only write to P2b's candidates.
+    - `gogospend_freeze_import_selection(selection, job, revision, rows, mapping)`: for a ready, unexpired preview at exactly that revision, copies 1-5,000 distinct candidates with the wallet and category their labels map to. A row without a date, an expense/income direction, an amount or a mapped label violates the frozen row's constraints; a foreign or mistyped wallet or category violates its foreign keys; an unknown row id fails the count check.
+  - **Retention routine** `gogospend_prune_import_selections(limit)` (jobs login; helper `gogospend_import_records_due`): frozen copies are deleted when their preview expires (7 days after parsing). The import's compact synced records (`import_selection`, `import_review`) are purged with P5's `gogospend_purge_entities` only once their last change is 30 days old and their selection or preview is gone, so a purge never moves the sync retention line inside S1's 30-day delta window (a 7-day purge would have forced resyncs). One account at a time, `SKIP LOCKED`, skipping accounts being erased.
+  - **Job policies:** no `jobs` policy, job kind or job routine is created or recreated.
+- **Contracts** (`packages/contracts/src/v1/imports.ts`, exported from the index): `IMPORT_PATCH_MAX_ROWS` (500), `IMPORT_SELECTION_MAX_ROWS` (5,000), `IMPORT_CONFIRM_BATCH_MAX_ROWS` (500), `ImportRowPatch`, `PatchImportRowsRequest/Result`, `ImportMapping` (`{wallets: {label: id}, categories: {expense: {label: id}, income: {label: id}}}`), `FreezeImportSelection(Request)`, `ConfirmImportBatch` (with optional `receipt`), `ImportReceiptChoice`, `IMPORT_IMAGE_ROW_ID`, `ConfirmImportBatchResult`, `ImportSelectionProgress` with `IMPORT_SELECTION_STATUSES` (`open | stale | expired`), the synced `ImportReviewSnapshot` and `ImportSelectionSnapshot` with strict validators, and the shared parsers `parseImportRowIds`, `parseImportMapping` and `parseImportRowPatch` (M2/M3's normalizers, exact money, dates 1970 to today in Bangkok). `SYNC_ENTITY_VALIDATORS` gains `import_review` and `import_selection`. New problem codes: `IMPORT_PREVIEW_UNAVAILABLE`, `IMPORT_SELECTION_CONFLICT`, `IMPORT_ROW_COMMITTED` (all 409).
+- **API** (`src/imports/confirmation.{controller,service}.ts`, registered in `ImportsModule`, which now imports `CommandsModule` and `AttachmentsModule`). Every write is an M1 command (policy `current`, schema 1); another account's import, selection or rows are the same 404 as unknown ones:
+  - `PATCH /v1/imports/:id/rows` (`import.review.patch`, entity `import_review` = the job id, `If-Match: "<review_revision>"`): 1-500 rows. A stale revision is `409 VERSION_CONFLICT` with `current: {review_revision}`, an unknown row 422, a committed row `409 IMPORT_ROW_COMMITTED`, an expired or unready preview `409 IMPORT_PREVIEW_UNAVAILABLE`. Answers `{ack, review_revision}`; the entity's version n is review revision n + 1 (revision 1 is the parse), so a replay reports the same revision.
+  - `POST /v1/imports/:id/selections` (`import.selection.freeze`, entity `import_selection`, outcome `created`): `freezeSelection(ctx, CommandInput<{job_id, review_revision, selected_row_ids, mapping}>): Promise<CommandAck>`. Non-financial. The selection id is derived from the account and command id, so a retried freeze names the same selection. Every chosen row is checked before the routine runs: a transfer, a missing value, an unmapped wallet or category label (including rows the parser marked as needing no review), a foreign, archived or mistyped wallet or category, or a date before the wallet's tracking start or after today is a 422 naming at most 50 rows (`fields: {"row:7": "errors.import_wallet_unmapped"}`). Rows committed by an earlier selection may be included; they are acknowledged later, never written again.
+  - `POST /v1/imports/:id/confirmations` (`import.selection.confirm`, entity `import_selection`, outcome `updated`): `ConfirmationService.confirm(ctx, CommandInput<ConfirmImportBatch>)` answering `{ack, selection_id, frozen_revision, committed, remaining, conflicted}`. Under the account lock, after the executor's account, session and policy re-checks: the selection must exist for this import, its preview be ready and unexpired, the client's `frozen_revision` equal the selection's, and the preview's review revision still equal it (otherwise `409 IMPORT_SELECTION_CONFLICT`, nothing written; a correction after the freeze makes the selection stale). Every batch row must be in the frozen set (409 otherwise). Rows already committed (by any selection of the import) are acknowledged. Every other row whose wallet and category are still active and whose date is within the wallet's tracking period and not in the future becomes one transaction, with an id derived from `(account, job, source row)`, plus its progress row, in this one transaction. The rest are `conflicted`, with nothing written for them. A record id that already has a head (even purged) is never written again. The selection's next version carries `{id, job_id, frozen_revision, row_count, committed_count}`, never row fields. The answer is read back from durable progress, so a replayed command (lost response) reports the same outcome.
+  - `GET /v1/imports/:id/selections/:selection_id`: `ImportSelectionProgress` (open, stale or expired, committed and remaining rows in file order).
+  - A batch over the 1 MiB change-group budget (long notes) is `413 COMMAND_TOO_LARGE` from M1's change writer, before anything commits.
+  - Receipts and audit rows hold no candidate field: the command digest is an HMAC, audit metadata is `rows`, `conflicted` (and `consent`) codes, and synced snapshots carry revisions and counts only.
+- **P2c receipts, wired** (replacing the provisional hook seam `import-receipt-links.ts`, now deleted): a batch that contains the image row (`image:1`) may carry `receipt: {attachment_id, consent: "retain_receipt"}`. The consent literal is checked before anything else (`422 errors.consent_required`), and a receipt without its image row is 422. Before the command, outside any transaction, `AttachmentService.prepare(ctx, attachment_id, commandId)` copies the import image to the account's own registered receipt key (a resend copies nothing). Inside the command, once the image row's record is inserted, `linkReceipt` checks that the attachment id is this import's own `image_attachment_id` (`422 errors.import_receipt_not_this_import`) and calls `AttachmentService.attachIn`. The record is created holding the receipt at version 1, and its snapshot carries `attachment_id`. `release` runs in a `finally`, so an unused copy is due at once. A receipt past its window or removed refuses the whole batch with 422 (nothing saved); the same rows can then be sent without `receipt` as a new command. A receipt is never linked to a row committed earlier: that record keeps P2c's own retain route.
+- **P5:** retention `imports.selections` registered in `defaultPrivacySteps()` after `attachments.obsolete`. No erasure step: all three tables cascade from `accounts` and hold no objects (`ERASURE_HANDLED_TABLES` unchanged; the deletion spec's table check covers them). `privacy-steps.spec.ts` and `retention.integration.spec.ts` list the step. `retention.md` documents the three P3 rows.
+- **P6b:**
+  - Gates: `@Gated('imports')` on the row patch and the freeze, `@Gated('imports', 'writes')` on confirmation; the progress GET is exempt.
+  - `operational-safety.spec.ts`: the gate table has the three routes, the probe table has four new probes (each pauses only under its gates), and the command-schema table has `import.review.patch`, `import.selection.confirm` and `import.selection.freeze`.
+  - Docs: `release.md` (command list and journal) and `rollback.md` (two new synced entity types raise the floor to `0018` once any import is corrected or frozen, at the import release step).
+  - No new package. `release-graph.mjs check`: 138 dist files, the same 9 direct packages, 123 closure packages, no problems. No logging was added.
+- **Client** (`apps/app`):
+  - **Transport:** `createV1Transport` takes a raw body (`raw: {bytes, contentType, fileName}`), sent byte for byte with the percent-encoded `X-GoGoSpend-File-Name`, for the upload.
+  - **`src/spend/v1/imports.ts`:** `createImportResources` covers upload, status, preview, `patchRows` (If-Match), freeze, confirm and selection progress. Strict validators: a confirmation result must report every batch row exactly once (committed or conflicted), never a batch row as remaining, and name the batch's selection and revision.
+  - **`src/spend/v1/importReview.ts`:** the journey (upload → parsing → review → freeze the full selection → confirm batches → progress and result).
+    - Nothing is selected for the user. Freezing needs, for every chosen row, an explicit review of date, direction, category and wallet (a correction of a field counts), every label mapped, no transfer and no unsaved corrections (`reviewBlockers`).
+    - Corrections go in commands of at most 500 rows, each against the revision the previous one produced. A reload keeps the selection, mapping, edits and the reviews of unchanged rows.
+    - Every command is saved in the draft store as pending (key and body) before it is sent, and resent as itself until its outcome is known. A network, gateway, pause or garbled-answer outcome keeps the review and the pending command.
+    - Only a proven `413 COMMAND_TOO_LARGE` splits a batch (halved, new command ids). An unknown outcome is always resolved with the original key and body first.
+    - `IMPORT_SELECTION_CONFLICT` returns to review with everything kept (freeze again; committed rows are acknowledged).
+    - Progress is the server's committed, remaining and conflicted rows. Conflicted rows are never resent.
+    - The draft is cleared only when every outcome is known.
+    - The receipt image is kept only after an explicit `chooseReceipt(journey, true)`. If it can no longer be kept, the batch saved nothing and the user may save without it (a new command).
+  - **`src/screens/v1/ImportReviewScreen.tsx`** (not routed): it follows the v1 screens' patterns: header roles, labelled chips and buttons with `accessibilityState`, alerts through `Notice`, and a polite live region for progress. It shows label mapping chips, per-row Include, Expense/Income and "date, direction, category and wallet are right" controls, "Save corrections", "Save n rows" (disabled while anything blocks), progress counts, "Try again" for an unknown outcome, "Reload" for a moved preview, and the opt-in "Keep the receipt photo" choice. Parsing says nothing is saved yet.
+  - **Copy:** Thai and English live in `src/screens/v1/importReviewCopy.draft.ts`, marked as awaiting E2, outside the locale catalogs (which are unchanged). The receipt consent line notes its approved catalog key `attachments.retain_consent` and P2c's copy requirement.
+- **RED → GREEN** (assertion-level RED against compile-safe seams, no module or database errors).
+  - **Seams:** a service with the real registrations and body parsing but stub commands (fake acknowledgements, nothing written, no progress); the real controller, migration (tables, guard and routines), contracts and module wiring; a journey module whose steps returned the journey unchanged and blocked nothing; a screen rendering only its title.
+  - **Database and HTTP:** `npm run test:db -w gogospend-api -- --runTestsByPath src/imports/import-confirmation.integration.spec.ts`. RED: 16 of 18 failed on assertions (`p3-red-db.log`). The two that held were the direct-privilege test and the Drizzle drift check, both against the real migration. GREEN: 18 of 18. With the tests added after mutation and for P2c, the final run is 24 of 24; the 5,000-row journeys take about 85 s in total.
+  - **Client unit:** `npm run test:unit -w gogospend-app -- src/spend/v1/importReview.test.ts`. RED: 14 of 16 failed on assertions. One `TypeError` (a destructured missing call) was rewritten to assert first before the recorded run. The two wire tests ran against the real port and passed at once. GREEN: 16 of 16; final 20 of 20.
+  - **Render:** `ImportReviewScreen.render.test.tsx`. RED: 4 of 4 failed on assertions. GREEN: 4 of 4; final 6 of 6.
+  - **P2c receipt link:** its tests were added with the wiring and passed. With the link removed (mutant H1) 2 of them fail, and so do the other four hook mutants.
+  - **Pinned `second_batch_uses_same_frozen_selection`:** a parsed 5,000-row file, one freeze, ten 500-row batches. `expect(first.selection_id).toBe(second.selection_id); expect(new Set(committedRowIds).size).toBe(5000)`; every batch has the same selection and frozen revision; the selection versions run 2-11; 5,000 records and 5,000 progress rows.
+  - **Covered:**
+    - **Nothing saved early:** a parsed, corrected and frozen import has no transaction, no progress and no `transaction` change.
+    - **Ownership:** another account's import, selection and rows are 404 (correct, freeze, confirm, progress, and naming the owner's selection under its own import); an unknown row and a foreign wallet are 422.
+    - **Batch limits:** a 5,000-row freeze succeeds; a 501-row batch is 422 with no receipt.
+    - **Conflicts:** a wrong frozen revision, out-of-set rows, a stale selection after a correction, and a stale freeze are refused. A committed row cannot be corrected (409). A new selection with another mapping acknowledges committed rows unchanged and saves the rest with the new mapping.
+    - **Overlapping retries:** the same key replays an equal result; an overlapping new command saves only the new rows; two concurrent overlapping commands save every row once; the same key with another body is `409 IDEMPOTENCY_MISMATCH`.
+    - **Lost response:** a kill after commit and before the response (the executor commits, then the request fails with 500) is retried with the original key and body, giving the same acknowledgement, committed and remaining rows, and no duplicate.
+    - **Large notes:** a 500-row batch with 500-emoji notes is `413 COMMAND_TOO_LARGE` with nothing committed and no receipt; two 250-row batches with new keys save it.
+    - **Revalidation under the lock:** an archived wallet, or a tracking start moved past some rows after the freeze, makes those rows `conflicted` while the rest are saved.
+    - **Labels:** unmapped wallet and category labels are 422 per row; transfers are refused.
+    - **Database guards:** the app login cannot UPDATE candidates, INSERT selections or DELETE progress. Called directly, the routines and the guard refuse stale, unknown, committed and duplicate rows (`23514`/`23505`).
+    - **Corrections:** versioned commands that clear issues, recompute flags and totals, replay, and refuse stale or oversized ones.
+    - **Expiry and retention:** an expired preview cannot be frozen or confirmed. Retention deletes frozen copies at expiry, leaves the synced records (and `pruned_through`) alone until their last change is 30 days old, then purges them.
+    - **Privacy:** receipts, audit rows and synced import snapshots contain no labels, notes or merchants.
+    - **Schema:** cascades from `accounts`; the Drizzle definitions match.
+  - **Synthetic 5,000-row import with a forced interruption and restart:** a real 5,000-row CSV (two wallet labels, three category labels, exact two-decimal amounts) is parsed, frozen and confirmed in ten batches of 500. The fifth batch is killed after commit; the API is closed and started again, the client resends that batch's original key and body, and the rest continue. Wallet balances (`GET /v1/wallets`) and per-category sums equal the totals computed from the file with BigInt, exactly; 5,000 records and progress rows; the selection reports nothing remaining.
+- **Mutation check** (`p3-mutate.mjs`, `p3-mutants-final.log`; copy, mutate one guard, run the focused tests, restore, verify the SHA-256): 45 of 46 killed.
+  - **SQL (10):** the guard's frozen-row match and stale check, the freeze routine's revision and count checks, the patch routine's committed-row and revision checks and its review flag, both retention conditions, and the progress primary key.
+  - **Service (19):** the record-id check (with its own test), frozen revision, stale selection, out-of-set rows, archived wallet, tracking start, the 500-row limit, transfers, wallet and category mapping, foreign wallets, patch commit and If-Match checks, freeze revision, the remaining-row rule, the per-row record id, expiry, and both duplicate layers removed together.
+  - **P2c hook (5):** the link itself, this import's own image, consent, releasing an unused copy, and the image-row rule.
+  - **Client (11) and screen (1):** an unknown outcome keeps its pending batch, split batches get new ids, explicit review, nothing preselected, the draft kept until outcomes are known, conflicted rows not resent, pending resolved first, no freeze while blocked or with unsaved corrections, the result validator, the upload file-name header, and Save disabled while rows need review.
+  - **First survivors, then killed:** T9 (wallet mapping, caught later as `wallet_not_found`) was killed by asserting the message keys. T1b (the record-id head check) was killed by a test that loses a progress row.
+  - **The survivor:** T1, dropping the "already committed" filter. It is equivalent: every committed row's derived record id already has a head, so the head check skips it. Removing both layers (T1c) is killed.
+- **Full gate** (on `e14669f` plus this work):
+  - typecheck: PASS;
+  - typecheck:app: PASS;
+  - test:api: PASS (40 suites, 778);
+  - test:db: PASS (39 suites, 623);
+  - test:app: PASS (28);
+  - test:unit: PASS (241);
+  - test:dev: PASS (7);
+  - test:ops: PASS (94, `GOGOSPEND_OPS_REQUIRE_DB=1`);
+  - test:render: PASS (66);
+  - build: PASS;
+  - `node apps/api/scripts/release-graph.mjs check`: PASS (no problems);
+  - export:web: PASS;
+  - `git diff --check`: PASS.
+
+  The P3 spec passed again on its own afterwards (24 of 24). No test database or login of mine was left. The four `gogospend_test_*` databases present were created on 17 October by other runs and were left alone.
+- **Deviations, for review:**
+  - **Corrections are M1 commands** on a new synced entity `import_review` (id = job id; version n = review revision n + 1), with `If-Match` carrying the review revision. The plan named only "versioned PATCH"; the master constraint needs a command id for every business mutation.
+  - **Two synced entity types** (`import_review`, `import_selection`). Their snapshots carry revisions and counts only. They raise the rollback floor at the import release step.
+  - **Routes:** `POST …/selections` (freeze), `POST …/confirmations` (the body is `ConfirmImportBatch`), and an extra `GET …/selections/:id` for progress after a restart.
+  - **The mapping is per label**, with categories per direction. A row without a label gets one through a correction.
+  - **Transfers cannot be confirmed from a file:** no layout names a destination wallet. The row can be corrected to expense or income, or entered by hand.
+  - **Conflicted rows are not durable:** they are recomputed per batch, so unarchiving a wallet lets the same selection save them later.
+  - **Retention:** frozen copies go at 7 days; synced records at 30 days after their last change (not at 7, to keep S1's window); row progress goes with its upload row.
+  - **Extra files:** `testing/fakeImportServer.ts` and `importReviewCopy.draft.ts`. The transport gained raw bodies.
+- **Finding for the P2b fix (not P3 code; reported to the coordinator):** `GET /v1/imports/:id/preview` of a 5,000-row import can exceed the 15 s owner statement timeout (500). When `import_candidates` statistics predate the import, the same-file duplicate-advice self-join runs as a nested loop: 25,000,000 join-filter rows, about 3 s for that subquery alone, and the whole preview hit 15 s. Repro: parse any import, `ANALYZE import_candidates`, then parse a 5,000-row file and GET its preview. A window-function rewrite (partition by date, type, amount, wallet, merchant, note) avoids the self-join. Per the coordinator, P3 does not edit `preview-query.ts`; its large-file tests read readiness from the table instead of the preview route.
+- **SKIPPED:**
+  - E2 visual approval of the review and progress screens and their copy;
+  - routing the new screen, and locale catalog entries;
+  - device checks (Thai/English layout at 320 px, screen reader, focus, reduced motion);
+  - a device draft store (the journey takes a store port; only the in-memory one exists);
+  - real R2 for the receipt copy (P1's hosted gate, E1);
+  - `dev:v1` (it would migrate `gogospend_v1`).
+
+  The import flag stays off until the dependency, worker, storage and confirmation gates all pass.
+- **Risks:**
+  - A confirmation with a kept receipt copies the image inside the request (P2c's synchronous copy, up to 60 s).
+  - The client draft store is in memory only, so an app restart loses an unsaved review until a device store is approved. Committed work is never lost: progress is durable on the server.
+  - The `remaining` and `committed` lists can hold 5,000 ids per answer (about 60 KB).
+- **Notes for the integrator:**
+  - **Migration:** `0018_import_confirmation`, journal idx 17, `when` 1792195218000 (after P2c's). The pinned prefix, the plan table and `release.md` already say so.
+  - **Gating:** applied as specified (P6b was merged first).
+  - **P2c hook:** wired to `AttachmentService.prepare`/`attachIn`/`release` and tested. Its contract: a batch with `image:1` may carry `{attachment_id, consent: "retain_receipt"}`; only this import's own `image_attachment_id`; linked in the same command as the record (version 1, snapshot with `attachment_id`); an unusable receipt refuses the batch; never linked to an earlier-committed row.
+  - **Expected conflicts with parallel work:**
+    - the P2b fixes: `privacy-steps.ts` and its two specs (the step lists; P3's `imports.selections` follows `attachments.obsolete`); `0016` edited in place (P3's tables reference `import_previews(job_id)` with cascade, and its trigger and routines read `status`, `expires_at`, `review_revision`, `image_attachment_id` and the candidates' columns); and `retention.md`;
+    - `operational-safety.spec.ts` (the gate, probe and command-schema tables);
+    - `packages/contracts/src/{index.ts,v1/imports.ts,v1/errors.ts,v1/sync.ts}`;
+    - `schema.ts`, `imports.module.ts`, `apps/app/src/api/client.ts` (raw bodies);
+    - `release.md`, `rollback.md`, the master plan's migration table and this log.
+
+## Integration: P3 merged
+
+- **Merged:** P3 (`ca36bbc`), which already contains the integration head `e14669f` (P2c merged). No conflicts.
+- **Gate:** the merged tree is byte-identical to P3's commit, so P3's full gate on that tree applies:
+  - typecheck and typecheck:app: PASS;
+  - test:api: PASS (778);
+  - test:db: PASS (623);
+  - test:app: PASS (28);
+  - test:unit: PASS (241);
+  - test:dev: PASS (7);
+  - test:ops: PASS (94, `GOGOSPEND_OPS_REQUIRE_DB=1`);
+  - test:render: PASS (66);
+  - build: PASS;
+  - `release-graph.mjs check`: PASS (138 files, 9 direct packages);
+  - export:web: PASS;
+  - `git diff --check`: PASS.
+- **Migration:** `0018_import_confirmation` keeps its number.
+- **P2c hook:** P3's confirm wires P2c's `AttachmentService.prepare`/`attachIn`/`release`. A batch carrying the image row may retain its receipt with explicit consent, in the same account-locked command.
+- **Open:**
+  - P3's independent review.
+  - The P2b review fixes in flight (they include the stale-statistics preview timeout P3 reported).
+  - E2 visual approval of the review screen (not routed; draft copy only).
+  - A device-backed review draft store.
+  - The rollback floor and minimum client versions move at the import release step: new synced types `import_review`/`import_selection`, and `attachment_id` in record snapshots.
+  - The import flag stays off.
+
+## Review fixes for P6b
+
+- **Status:** every finding of the independent P6b review is fixed locally, test-first, except one nit kept as documented behaviour (the 540 s bound on JSON bodies). Hosted CI, a hosted deploy and every hosted check stay SKIPPED. Nothing was pushed, deployed or written to a provider.
+- **Base:** the integration head `9e1a857` (P6b as merged at `5be44c9`, plus P2c and P3). The work started on `5be44c9`, moved to `e14669f` (P2c) before any test ran, and was rebased onto `9e1a857` (P3) without conflicts.
+- **The reviewer's probes** (`p6b-review` in the coordinator's scratchpad) were reused as the RED tests: probe A (refused upload body), B (graceful stop with the pool), C (SIGTERM during a job), D (redaction), E (receipt edges), F (gates wiring), KA (busy keep-alive), `backup-age-partial.mjs` and `perf-distribution.mjs`.
+
+### Findings, tests and fixes
+
+- **M1, graceful API shutdown** (`common/process-lifecycle.ts`, `v1/main.ts`).
+  - Tests:
+    - `operational-hardening.spec.ts` (probe KA): a busy keep-alive request finishes 200 with `Connection: close`, and the process exits 0 in under 2 s with a 4 s timeout. Before the fix it waited out the 65 s keep-alive and exited 1 at the timeout.
+    - A response whose headers were already sent when the stop began is closed once idle, so the stop still ends early.
+    - Through the drain delay the API keeps serving with `Connection: close`, and `app.close()` runs only after it.
+    - `SHUTDOWN_DRAIN_DELAY_SECONDS` bounds.
+    - `main.ts` wiring.
+    - `operational-hardening.integration.spec.ts` (probe B): a request that needs the pool after SIGTERM returns 200 `{ok: 1}`, and the process exits 0 in under 3 s. Before the fix it got a 500 (`Cannot use a pool after calling end`) and exited 1.
+  - Fix:
+    - `trackHttpDrain(server)` is installed before `listen`. While draining, every response that has not started gets `Connection: close` (the ones in flight when the stop begins too). `close()` then calls `server.close()` and closes idle sockets every 100 ms until the server has none.
+    - `gracefulHttpStop` runs in order: mark draining, end keep-alive, wait `SHUTDOWN_DRAIN_DELAY_SECONDS` (default 2, 0–30, at most half the shutdown timeout), close HTTP and wait for in-flight requests, then `app.close()`, whose destroy hook ends the pool.
+- **M2, pause and rollback blocked by `/ready`.** Design:
+  - The platform's deploy health check is `GET /live` (`DEPLOY_HEALTH_PATH` in `health.controller.ts`).
+  - `/ready` stays the readiness signal, for monitoring and any proxy that routes by readiness. It still fails on the database, a draining process or any missing, failed, expired or invalid receipt, as the plan's interface requires.
+  - Receipts are enforced in the release preflight: `scripts/ops/readiness-receipts.mjs --min-valid-days 7` must exit 0. It loads the API's own rules from `health/readiness-receipts.ts` through Node's type stripping, so there is one copy of them.
+  - The API logs `{"event":"receipt_expiring","receipt":…,"hours_left":…,"warning_days":7}` at startup and hourly, at most once a day per receipt, once a passed receipt is within 7 days of expiry.
+  - Why `/live` is enough to deploy: it answers only after startup, which already verified the exact database login, so a misconfigured deploy still never goes live.
+  - Limit: during a full database outage a new API deploy cannot start, because the startup login check needs the database. The previous deployment keeps serving. The runbooks say so.
+  - Tests:
+    - The deploy health path answers 200 on the real `V1AppModule` with a closed database port and two expired receipts, while `/ready` is 503.
+    - `release.md` names the same deploy path.
+    - The expiry warning fires inside the window and at most daily, and runs at startup and every hour.
+    - The preflight needs every receipt to stay valid for the release window, in `operational-hardening.spec.ts` and in `readiness-receipts.test.mjs` (with the CLI).
+  - Runbooks:
+    - `release.md`: the health column, a "Health checks" note, preflight step 1 and verification.
+    - `rollback.md`: step 5 and procedure step 2. A rollback switches over on `/live` and is not blocked by `/ready`.
+    - `incident.md`: a pause redeploy goes live on `/live`.
+    - `beta-receipts.md`.
+- **M3, a crashed backup silenced the age alert.**
+  - Fix in `recovery-inventory.mjs`:
+    - A `.partial` stray is now its own kind, `partial_backup`, in `COPY_KINDS`. It still counts for retention and marker clearing, with its 24-hour bound.
+    - Every copy carries `verified` (true only when the store checked its manifest with the key).
+  - Fix in `backup-age.mjs`: the age counts only `logical_backup` copies with `verified: true`. Logical backups that exist but are unverified alert as `unverified`, which means the inventory must run with `--key-fd`.
+  - Tests in `backup-age.test.mjs`:
+    - The reviewer's probe through the real `RecoveryInventory` and `recoveryStoreSource`: the last complete set 50 h old plus a 1 h old partial gives `alert: true`, reason `too_old`, 50 h.
+    - A partial or an unverified set never resets the age.
+    - A store without the key yields `unverified`.
+  - `recovery-inventory.test.mjs` now lists `partial_backup` among the kinds.
+- **M4, SIGTERM spent attempts.**
+  - `JobRepository.release(lease, code = 'released')` puts a current, unexpired lease's job back to `queued`, due now, with `attempts - 1` (its value before the claim), `last_error = code`. It is fenced by the lease token in its `WHERE`, like every transition.
+  - **Edited in place: `apps/api/drizzle/0009_jobs_storage.sql`, `gogospend_guard_job_transition`.** It is undeployed. The guard now also allows exactly that decrement: leased → queued, lease cleared, unexpired lease, `attempts = OLD.attempts - 1`. Any other attempt change stays refused (42501). No policy changed, so the four security kinds stay out of every `gogospend_jobs` policy and the app-only kinds out of the worker insert policy. No later migration redefines the function.
+  - `JobWorker` aborts a stopping handler's signal with `WorkerStopped` (`jobs/job-types.ts`), and releases the job when the handler throws or returns still holding the lease. Before, it failed with `worker_stopped` (spending the attempt; terminal on the last one) or with `handler_incomplete`.
+  - `JobRepository.fail` turns a retryable failure recorded on a lease aborted by `WorkerStopped` into a release. This covers handlers that convert the abort into their own code: the deletion handler's `lease_expired`/`worker_error`, export, snapshot, and P2b's parse handler, which is not edited here. Terminal failures are unchanged.
+  - Per worker:
+    - The job and deletion workers both run `JobWorker`, so both are covered.
+    - The security worker never aborted a running job (`runSecurityJobsOnce` finishes the job in hand). It now also stops claiming once SIGTERM arrives (`SecurityJobDeps.stop`).
+  - Docs: the `worker.ts`, deletion and security worker headers, and `incident.md`.
+  - Tests in `operational-hardening.integration.spec.ts`:
+    - Probe C for attempt 1 and attempt 3 of 3 gives `queued`, attempts unchanged, `worker_stopped`, due now.
+    - A handler that just returns on the stop is released.
+    - A handler that records `lease_expired` itself is released; a terminal failure still fails.
+    - `release` is fenced (forged token, second release, expired lease) and the next claim is the same attempt with a new token.
+    - The guard still refuses other decrements: a queued job, a kept lease, −2, to failed, an expired lease.
+    - `operational-hardening.spec.ts`: a stopped security pass claims nothing.
+- **M5, CI could skip the database rehearsal.**
+  - `backend.yml`'s `test:ops` step sets `GOGOSPEND_OPS_REQUIRE_DB: '1'`.
+  - New `scripts/ci/backend-workflow.test.mjs` (in `test:ops`) is the parity check. It reads the workflow structurally (no YAML dependency) and the local full gate from `handover.md`, and asserts:
+    - every local command runs in CI with the same settings;
+    - `test:ops` has the flag;
+    - `contents: read`;
+    - no `secrets.`;
+    - every action is pinned by a 40-hex commit;
+    - the image's Node is 24.22.0.
+- **m1, a refused upload read its body.**
+  - Fix: `sendProblem` sets `Connection: close` whenever the request body is incomplete. This covers the guard's 404/503/401, the filter and the body-parser limits.
+  - Test (probe A, 16 MiB chunked): 404, 503 and 401 each answer with `Connection: close`, and the server reads under 1 MiB. It read about 200 KB; before the fix it read the whole body.
+  - The test client yields between frames, like a client that reads an early reply while it sends. A client that reads nothing until it has sent everything may see a reset instead of the reply. The app treats that as a network error and retries, and these refusals happen only for unreleased or paused routes.
+- **m2, redaction heuristic.**
+  - Fix:
+    - `describeFailure` prints a message only for the new `ConfigurationError` (`common/configuration-error.ts`), still filtered by `isSafeOperationalText`. Any other error prints its class, plus SQLSTATE or system code.
+    - `OperationalLogger` never prints Nest's string messages.
+    - Every startup configuration throw in the release graph is now a `ConfigurationError`, so its fixed text stays readable. That covers settings, URLs, keys, receipts, login roles, object storage, `TRUST_PROXY_HOPS`, the worker intervals, the registry descriptor, unclassified routes and the migration journal.
+  - Tests:
+    - Probe D's values all print as `Error`/`TypeError`.
+    - Sixteen settings' errors are `ConfigurationError` with a readable message.
+    - The worker entries have no plain `throw new Error(`.
+    - The four existing expectations in `operational-safety.spec.ts` are updated.
+  - `incident.md`'s redaction wording now says the tests check known shapes; it is not a guarantee.
+- **m3, receipts.**
+  - Fix:
+    - An all-zero `evidence_sha256` is invalid.
+    - `recorded_at` and `valid_until` must round-trip through `toISOString()`, with zero milliseconds optional. This rejects hour 24 and day 31 of September.
+    - `/ready` returns `{status: "ready"}` or a 503 problem without `fields`; check states go only to the `readiness` log line.
+    - `beta-receipts.md` says "format- and time-checked attestations".
+  - Tests: probe E's cases, accepted canonical forms, and `/ready` without states, in both specs.
+- **m4, late queue-age alert.**
+  - `startQueueReports(report, QUEUE_REPORT_INTERVAL_MS = 60 s)` in `operational-metrics.ts` reports at once and then every minute on an unref'd timer, never overlapping. Its stop waits for a running report before the pool ends.
+  - All three workers use it. The job worker's queue report left `maintain()`, the security worker's left its pass, and the deletion worker's left its 5-minute backlog report.
+  - The heartbeat is now every minute; `incident.md` alerts after 5 minutes without it.
+  - Tests: timing with fake timers, and a source check that each worker schedules it and that the job worker's sweep has no `queueAge`.
+- **m5, performance smoke distribution.** Reads and writes rotate over the accounts with separate counters. Test: one simulated minute at the plan's load across 20 accounts: every account reads and writes, at most 30 writes per account (12 in practice).
+- **m6, docs drift.**
+  - `release.md`: 7 entries, 141 files, 9 direct and 123 closure packages at this tree, from the `release-graph.mjs check` below. The journal line already ended at `0018_import_confirmation` (P3).
+  - `beta-receipts.md`: P2b, P2c and P3 are built and merged.
+  - `incident.md`: `ocr` is checked after authentication, in the controller; the heartbeat goes to stdout.
+  - The Dockerfile and `linux-native-bindings.mjs` comments now name `swc sharp`.
+- **Nits:**
+  - A second signal is ignored: `emitter.on`, and the handlers stay installed.
+  - `runMain` installs `uncaughtException`/`unhandledRejection` handlers that log `<name> crashed: <class>[ code]` and exit 1.
+  - The `/ready` query carries `query_timeout`.
+  - `FEATURE_GATES` is required in `V1AccessGuard` and `ImportsController` (no `@Optional` fail-open). `createV1TestApp` provides it, and specs pin both the wiring and the refusal without it.
+  - `performance-smoke.mjs` needs a staging label (`staging`, `stage`, `stg`), so `api.gogospend.app` is refused.
+  - `release-smoke.cjs` adds `@nestjs/jwt`, `class-validator` and `class-transformer` to the absent list. It also serves the real `V1AppModule` in the image (`/live` 200, `/ready` 503 `SERVICE_UNAVAILABLE`) and stops it with `gracefulHttpStop`.
+  - `multer` is documented in `release.md` as a load-time dependency of `@nestjs/platform-express` that no v1 route uses. Excluding it would break loading.
+  - The runbook says a shutdown cuts a streaming upload, and P2a's stale-upload pass ends it.
+  - The 540 s bound on JSON bodies is documented (`release.md`, `HTTP_TIMEOUTS`) rather than split per route.
+
+### Evidence
+
+- **RED** (assertion failures against compile-safe seams: no-op drain and expiry check, a `release` that called `fail`, a run-once queue report, unchanged rules; no module errors; logs `p6bfix-red-*.log`):
+  - `npm run test -w gogospend-api -- --runTestsByPath src/common/operational-hardening.spec.ts src/common/operational-safety.spec.ts`: 46 failed, 38 passed of 84.
+    - The new spec: 42 of 45 failed. The three that held were the `valid_until` round trip (already NaN), the accepted canonical forms, and the real module's gates wiring, which was correct.
+    - The existing spec: the 4 changed expectations failed, 35 passed.
+  - `npm run test:db -w gogospend-api -- --runTestsByPath src/common/operational-hardening.integration.spec.ts`: 5 failed, 1 passed of 6. The guard-refusal test held.
+  - `node --test` over the five changed or new ops/CI test files: 10 failed, 33 passed of 43.
+- **GREEN:** the same commands give 86 of 86 (unit), 7 of 7 (database) and test:ops 107 of 107.
+  - Added after RED: the idle-socket stop test, the early-return release test and the security-worker stop test. Each was added for a mutation that survived, or with its fix, and was proved by mutation.
+  - The m1 test client was changed to yield (see m1), and the queue-report test to async fake timers.
+- **Mutation check** (`p6bfix-mutate.py`; each guard mutated alone, its tests run, the file restored; the SHA-256 of all 18 touched files was identical before and after): 41 of 42 killed.
+  - The two first-run survivors were killed after adding tests:
+    - idle sockets not polled (the streaming test);
+    - releasing only on throw (the early-return test).
+  - The one survivor is equivalent: `JobWorker` calling `fail(…, retryable)` instead of `release` on a stop. `fail` already turns that into a release.
+  - A spot check confirmed the database mutants fail on assertions (`attempts` 3 for 2).
+- **Full gate** on this tree (Node 26.10.0), all PASS:
+  - typecheck and typecheck:app;
+  - test:api (41 suites, 825 tests);
+  - test:db (40 suites, 630 tests);
+  - test:app (28);
+  - test:unit (241);
+  - test:dev (7);
+  - test:ops (107, `GOGOSPEND_OPS_REQUIRE_DB=1`, Docker rehearsal included);
+  - test:render (66);
+  - build;
+  - `release-graph.mjs check` (141 files, 9 direct packages, 123 closure packages, no problems);
+  - export:web;
+  - `git diff --check` (and against `9e1a857`).
+- **Image** (local Docker, linux/arm64; never pushed):
+  - `docker build -f apps/api/Dockerfile -t p6bfix-probe .` PASS (release graph inside the build: 141 files, 123 closure packages, no problems).
+  - `docker run --rm p6bfix-probe node scripts/release-smoke.cjs` → `ok: true` on Node v24.22.0:
+    - five processes load the contracts and fail closed at the database (`Error ECONNREFUSED`), with no missing module and 0 secrets printed;
+    - `http`: `/live` 200 `{status: "live"}`, `/ready` 503 `SERVICE_UNAVAILABLE`, graceful stop in 3 ms;
+    - both parser children parse;
+    - no legacy path or package, including `@nestjs/jwt`, `class-validator` and `class-transformer`.
+  - The default command with no settings prints `v1 startup failed: ConfigurationError: Database URL is not configured.`
+  - `docker rmi p6bfix-probe` done.
+- **SKIPPED:** hosted CI (E4); the platform's health check setting and an external `/ready` monitor (E3); hosted receipts, hence a real preflight pass (E1); a staging performance run (E1); x64 image build; device journeys (E2). As before, no provider resource, credential or MCP tool was used.
+
+### For the integrator
+
+- **Migration edited in place:** `0009_jobs_storage.sql`, function `gogospend_guard_job_transition` only. A local database that already applied 0009 is refused by the journal check (`gogospend_v1` from `npm run dev:v1`). It was not touched here; recreate it when convenient. Test databases are created fresh.
+- **P2b-fix (`worker.ts`):**
+  - My edits are the header comment, the `ConfigurationError` import and two throws, and the queue report moved to `reportQueue`/`startQueueReports` (`stopQueueReports` in `finally`).
+  - Their parser-sandbox startup check should throw `ConfigurationError` if its message should be readable: a plain `Error` now logs only its class.
+  - Their `parse-handler.ts` can use `jobs.release(lease, 'ocr_paused')` to let an image parse wait without spending an attempt. Any retryable `fail` it records after a worker stop is already a release.
+- **P2b-fix, P2c, P3 (shared docs):** `release.md` (What ships, health, stop, preflight, verify, logs), `incident.md` (first moves, pausing, alert table, logs) and `rollback.md` (steps 2 and 5, signals) changed. Expect conflicts near the Node runtime notes.
+- **New tests and modules:**
+  - Any new test module that includes `V1AccessGuard` or `ImportsController` must provide `FEATURE_GATES`, or import `FeatureGatesModule`. `createV1TestApp` does.
+  - New startup settings should throw `ConfigurationError`.
+- **Not fixed, outside this review:** `worker.ts` prints its import-maintenance summary as `job worker: import maintenance failed N stale upload(s) …` (P2a's wording). An alert on the prefix `import maintenance failed` would match that info line. It was left alone to keep this change out of P2b-fix's area; reword it to `marked N stale upload(s) failed`.
+
+## Integration: P6b review fixes merged
+
+- **Merged:** the P6b review fixes (`61899bd`, built on the integration head `9e1a857`). There were no conflicts.
+- **Gate:** the merged tree is byte-identical to the fix commit, so its full gate applies:
+  - typecheck and typecheck:app: PASS;
+  - test:api: PASS (825);
+  - test:db: PASS (630);
+  - test:app: PASS (28);
+  - test:unit: PASS (241);
+  - test:dev: PASS (7);
+  - test:ops: PASS (107, `GOGOSPEND_OPS_REQUIRE_DB=1`);
+  - test:render: PASS (66);
+  - build: PASS;
+  - `release-graph.mjs check`: PASS (141 files, 9 direct and 123 closure packages);
+  - export:web: PASS;
+  - `git diff --check`: PASS.
+- **Image:** the image built and its smoke passed on Node 24.22.0, now including `/live` 200 and `/ready` 503 inside the image.
+- **Note for local development:** the fix edits the undeployed `0009_jobs_storage.sql` in place (`gogospend_guard_job_transition` only). The local `gogospend_v1` dev database, if it has applied `0009`, will be refused by the journal check. Recreate it before the next `dev:v1`, after confirming it holds no data. It was not touched here.
+- **For P2b's fixes:**
+  - The parse handler can now let an image parse wait while `ocr` is paused, with `release(lease, 'ocr_paused')`. That attempt-neutral release makes the narrower `ocr` pause possible.
+  - Startup checks should throw `ConfigurationError` when their message should stay readable.
+
+## Review fixes for P2b
+
+- **Status:** every finding of the independent P2b review is fixed locally, test-first, except optional paging (minor 5), the optional narrower `ocr_paused` release, and the totals/`excluded_in_source` nit. Hosted, OCR/QR and device checks stay SKIPPED. Nothing was pushed, deployed or written to a provider. Node ≥25 for a working parser sandbox remains an owner decision (imports fail closed on Node 24).
+- **Base:** the integration head `d036e75`. WIP commits `adc4bad` + `1edc37a` were finished and squashed into this commit.
+- **Migration edited in place:** `0016_import_candidates.sql` (undeployed):
+  - `transactions_duplicate_advice_idx` on `(account_id, occurred_on, type, amount_minor, id) WHERE deleted_at IS NULL`;
+  - `import_previews_due_idx`;
+  - `gogospend_expire_due_import_previews(p_limit)` (SECURITY DEFINER, SKIP LOCKED, batched) granted to `gogospend_jobs`;
+  - `gogospend_end_import` / `gogospend_import_maintenance` / `gogospend_import_job_status` treat a recorded preview as parsed even after the parse job is pruned (minor 4).
+- **B1 (blocker): fail closed without a network-denying sandbox.**
+  - `parsers/sandbox-check.ts` + `ParserRunner.verifySandbox` / `sandboxVerdict`: real children with parse flags; unsupported unless network, writes, children, workers (and the rest) are denied.
+  - `importParsingStartup` / worker: no `import_parse` registration when unsupported; one fixed alert line.
+  - Local Node 26 proves network deny; Node 24 path proves `sandbox_unsupported` and an unregistered handler. Image/CI remain Node 24.22.0 until the owner raises the runtime.
+- **M1: linear duplicate advice.** `DUPLICATE_ADVICE_SQL` uses a window over the same-file key and `LATERAL … LIMIT 5` for existing records (backed by the new index). Tests: 5,000 identical rows + stale `ANALYZE`, 5,000 distinct rows, hash/merge joins off, parity with the old self-join.
+- **M2: exact legacy header sets only** (`table.ts`). Day-first and sign-as-direction never apply to inferred/generic layouts. Tests: `ambiguous_date` and `missing_type` cases from the review.
+- **M3: WebP memory.** `effort: 0`, `sharp.concurrency(1)`, `cache(false)`, `sharp.block`; Linux VmHWM poll. 5000×4000 noisy WebP covered in `parser-runner.spec.ts`.
+- **M4: 7-day expiry backstop.** Retention step `imports.previews` → `gogospend_expire_due_import_previews`. Preview route treats past `expires_at` as `expired` (empty candidates) even before retention runs.
+- **Minors done:** repeated XLSX relIds/sheet cap; generic sign → `missing_type`; per-file amount separators; parse-job prune vs upload expiry; narrowed image read roots. **Left optional:** additive preview paging; `release(lease, 'ocr_paused')`.
+- **Also:** worker import-maintenance log reworded so it no longer matches the `import maintenance failed` alert prefix; `incident.md` and `retention.md` updated for the sandbox and `imports.previews`.
+- **Focused GREEN:** `import-preview.integration.spec.ts` + privacy retention specs; `parser-runner.spec.ts` + `privacy-steps.spec.ts` (238). Full gate and image smoke recorded below after squash.
+
+## Review fixes for P2c
+
+- **Status:** the independent P2c review's findings are fixed locally, test-first where a RED assertion existed. Nothing was pushed, deployed or written to a provider. Hosted, device and real-R2 checks stay SKIPPED.
+- **Base:** integration head `9606a3c` merged cleanly (no conflicts with the P2b review-fix merge). WIP commit `9b5aaf1` was finished into this commit.
+- **Migration edited in place:** `0017_attachments.sql` (undeployed):
+  - `gogospend_reserve_receipt_copy` takes the per-account advisory lock first, returns `retry_after`, and answers `pending` while an unexpired reservation exists for the same image and generation. TTL is 180 s. Limits: 4 in flight, 100 reservations per rolling 24 h; `retry_after` is the time until room truly returns.
+  - The two added CHECKs are `NOT VALID` then `VALIDATE`, with a "locks and rewrites" note for the release runbook.
+- **Server-side copy:** `ObjectStore.copy` (S3 CopyObject with `if-none-match: *`; a 200 body holding `<Error>` is a failure; `MemoryObjectStore` copies in memory) plus `listPages`; `head` takes a signal. The service HEADs the copy and feeds the measured size and digest to SQL, so the registration comparison is not circular. One `AbortSignal.timeout` covers copy and HEAD.
+- **Bounded copies:** a process semaphore (503 + `retry_after`), state checks before any copy, one copy for several records retaining one image (reservation reuse), refused retains copy nothing, a store failure is 503 without any error text.
+- **Bounded downloads:** per-process and per-account caps, idle and total timeouts, the first chunk read before headers (so a failure is a real 503), the last chunk held until size and digest verify, a mid-stream failure closes the connection.
+- **Grants:** the MAC binds the account, binding and session generation; `SnapshotGrants` takes a `minutes` option (S1 callers unchanged).
+- **Gating:** retain and replace are `@Gated('imports','writes')`.
+- **Orphan sweep:** receipts are scanned only for accounts with reservations in the last 7 days; the account sweep covers all its purposes; pages are streamed.
+- **Alert:** the job worker reports receipt objects over an hour overdue (`incident.md`, `retention.md`).
+- **Minor 6:** cross-owner tests pinned for replace and remove.
+- **Mutation checks:** 22 guards mutated, 21 killed; the survivor was an equivalent clause and was removed.
+- **Not done / decisions for the owner:**
+  - `remove_no_undo` wording ("permanently") needs E2 copy approval; unchanged.
+  - A receipt held only by a deleted record can be re-attached by its id while the undo window lasts; left as designed.
+  - Optional paging polish not done.
+  - R2's CopyObject (including `if-none-match`) is unverified: hosted check SKIPPED.
+- **Gate (local):** `typecheck`, `typecheck:app`, `test:api` (918), `test:db` (666; attachments spec 45), `test:app`, `test:unit`, `test:dev`, `test:ops` (DB required), `test:render` (66), API build, release-graph check, web export and `git diff --check` all pass. Release-image smoke (Docker) not run.
+- **Test fix found by the gate:** concurrent supertest requests each opened and closed their own listener, so one test saw `ECONNREFUSED`; the spec now keeps the server listening.
+
+## Review fixes for P3
+
+- **Status:** the two major findings of the independent P3 review (M-1, M-2) and the optional minor m-2 are fixed locally, test-first (RED observed, then GREEN). Nothing was pushed, deployed or written to a provider; no packages were added. Hosted and device checks stay SKIPPED.
+- **Base:** integration head `7930d12`.
+- **Migration edited in place:** `0018_import_confirmation.sql` (undeployed): `gogospend_prune_import_selections` only. The local `gogospend_v1` dev database, if it already applied `0018`, will be refused by the journal check; recreate it after confirming it holds no data (it was not touched here).
+- **M-1: older clients no longer stall on new sync entity types.**
+  - Policy (no per-client sync gate exists beyond the 426 minimum version, so the skip policy was chosen and the floor documented): a reader skips a change whose entity type it has no validator for. The cursor and applied revision advance, the change is not stored, every known change in the same page or snapshot is applied.
+  - `@gogospend/contracts`: `isEntityChange`, `isCommittedChangeGroup`, `isSnapshotChunk` and `isSyncChangesPage` take `{ unknownEntities: 'skip' }` (default `reject`, the server's own strict check, unchanged); new `isKnownSyncEntity`. A skipped change still needs a well-formed envelope (entity name, uuid id, version >= 1, valid state, an object snapshot with that id, or `null` when purged); a known entity whose snapshot fails its validator still refuses the page.
+  - App: `diaryRepository.applyChangeGroups` and `replaceConfirmed` validate with skip and store only known entities; `spend/v1/resources.ts` validates delta pages and snapshot chunks with skip (otherwise the transport would have failed first with `invalid_response`).
+  - RED then GREEN: `diaryRepository.test.ts` (a store with the pre-P3 validator set receives `import_review` / `import_selection` in deltas and in a snapshot: it threw `A change group does not match the sync contract` before; now the cursor and revision advance and the known transaction and totals apply; malformed known and unknown envelopes still refuse and change nothing), `resources.test.ts` (page and chunk with an unknown entity accepted, a malformed one still `invalid_response`), `contracts.spec.ts` (strict default, skip, envelope checks).
+  - `rollback.md` (P3 paragraph) records the client floor and the unknown-entity policy: a build from before this policy has no skip behaviour, so the minimum client versions must exclude it at the import release step, before any account can produce import entities.
+- **M-2: re-freeze after a partial confirmation.** `checkSelectable` now reads `import_row_progress` for the chosen rows. A committed row is no longer checked for an archived wallet or category, tracking start or a future date; it only has to have its labels mapped to an existing wallet and category of its direction, which its frozen copy needs. Rows still to be written are validated as before.
+  - RED then GREEN (`import-confirmation.integration.spec.ts`): partial confirm of two rows, archive the wallet (its opening balance corrected to zero first, as wallet archive requires) and the category used by committed rows; the full re-freeze reports only the open rows (`row:4`, `row:5`, `row:6`), previously also the committed `row:2`; a selection of the committed rows plus the one open row freezes and confirms with committed records untouched; a re-freeze of only committed rows succeeds.
+- **m-2: prune starvation** (`gogospend_prune_import_selections`). Accounts being erased are filtered out of the candidate query before any limit; the limit now counts accounts actually worked on, so an account whose lock a user write holds (`SKIP LOCKED`) is passed over without using it up. Previously such accounts at the head of the order used the whole limit, the call removed nothing and the runner (which stops at the first empty call) never reached the accounts behind them. RED then GREEN: erasing first, lock held first, and the limit still bounding one call.
+- **Left open:**
+  - m-1 (replay after prune: a replay of a committed confirmation after its frozen copies are pruned reports `IMPORT_PREVIEW_UNAVAILABLE`, not the original batch outcome): not straightforward, since the original `conflicted` and `remaining` rows are not recoverable from durable progress after the copies go. Needs an owner decision on what a post-prune replay should report.
+  - m-3 (receipt copied before the batch is checked): moving the checks ahead of `attachments.prepare` needs a read-only pre-validation of the selection and rows; not done here.
+  - `release.md` still says 141 files for the release graph; the check now reports 145 (the count was already stale at `7930d12`; this change adds no files).
+- **Gate (local, Node 26.10.0), all PASS:** `typecheck`, `typecheck:app`, `test:api` (41 suites, 921 tests), `test:db` (40 suites, 671 tests), `test:app` (28), `test:unit` (246), `test:dev` (7), `test:ops` (107, `GOGOSPEND_OPS_REQUIRE_DB=1`), `test:render` (66), API build, `release-graph.mjs check` (145 files, 9 direct and 123 closure packages, no problems), `export:web`, `git diff --check`. Release-image smoke (Docker) not run.
+
+## Local follow-ups after the P2b/P2c/P3 review fixes
+
+- **Status:** three of the handover's local follow-ups are done, test-first (RED observed on the old code, then GREEN). Nothing was pushed, deployed or written to a provider; no packages, lockfile or migration changed. Hosted and device checks stay SKIPPED.
+- **Base:** integration head `bc5ff8c`. Commits: `001ef70` (receipt pre-checks), `28b520f` (`ocr_paused`), `d16c528` (device draft store); this section and the handover update are the commit after them.
+- **Release file count:** `docs/operations/release.md` now says 145 files, which `release-graph.mjs check` reports (no file was added to the release graph by these changes). Verified, not regressed.
+- **P3, receipt before batch (m-3).** `ConfirmationService.confirm` made the receipt copy (`attachments.prepare`) before any batch check.
+  - Now, when the batch carries a receipt, a read-only snapshot pre-check runs first: the selection exists for the job, the preview is ready and unexpired, the frozen revision matches and is not stale, every batch row is in the selection, and the receipt is this import's own image. Consent and the image row's presence in the batch were already checked by `parseConfirmBody`. The checks are the same functions `confirmIn` uses under the lock (`openSelection`, `batchRows`, `assertInsideSelection`, `assertOwnReceipt`), so the two cannot drift.
+  - A failed pre-check does **not** answer for the command: it only skips the copy. The command then runs and refuses with its own error, so a replay of an already finished command still replays. If the image row would be saved without a copy (the pre-check failed but the state then moved), `confirmIn` refuses with `503` instead of saving the record without the receipt the user asked to keep. `finally` still releases a prepared copy.
+  - RED then GREEN (`import-confirmation.integration.spec.ts`): a wrong frozen revision, an unknown selection and a stale selection each leave **no** `object_publications` receipt row (before: a due one), no record and no attachment, and the same receipt then works after a re-freeze; the wrong-image case now reserves nothing. The valid receipt, replay, expired-receipt and record-without-receipt paths are unchanged.
+- **P2b, `ocr_paused` release.** A paused `ocr` gate left already queued image parses running (one `import_parse` kind covers images and spreadsheets).
+  - `ParseHandler` takes `gates` (worker `buildHandlers` passes the worker's `FeatureGates`). After the source lookup and the raw-file expiry test, an image format with `ocr` paused is given back with `jobs.release(lease, 'ocr_paused', { delaySeconds: retryAfterSeconds })`: attempt returned, nothing read from quarantine, no preview recorded. Spreadsheets are untouched, and a raw file about to expire still fails visibly (`import_unavailable`) rather than parking.
+  - `JobRepository.release` gained an optional bounded delay (0-3600 s). Without it a released job is due at once and the worker would claim and release it in a tight loop while the gate stays paused; the delay is the gate's retry-after (default 300 s). The 0009 trigger already allows the single attempt decrement and does not restrict `run_after`, so no migration.
+  - RED then GREEN: `operational-safety.spec.ts` (jpeg/png/webp released, csv/xlsx not, open gate and no gates unchanged, expiring file fails), `import-preview.integration.spec.ts` (real DB: queued image parked with `attempts` 0, `last_error = 'ocr_paused'`, delayed; spreadsheet still parsed; the same job parses as its first attempt after the gate reopens), `operational-hardening.integration.spec.ts` (delay semantics and bounds).
+  - `incident.md` (the `ocr` row) now says an OCR pause parks queued image parses attempt-neutrally; `feature-gates.ts` comments follow.
+- **P3, device-backed `ImportDraftStore`.** `importReview.ts` had only `memoryDraftStore`.
+  - New `spend/v1/importDraftStore.ts` (pure, over an AsyncStorage-shaped port) and `deviceImportDraftStore.ts` (the AsyncStorage binding, like `localReminders.ts`). One draft per account under `gogospend.import-draft.v1.<account id>`; the envelope records account and job id. The port is single-slot and a journey exists before it has a job, so the job id is not part of the key. A corrupt or foreign envelope is dropped, a newer-version draft is left untouched, a failed write rejects.
+  - Cleared by `clear()` (journey finished or discarded: `confirmBatches`, `discardImport`) and by the explicit sign-out erase: `spendDiary.eraseForSignOut` calls the new optional `eraseWithDiary(accountId)` dep, wired in `DeviceDiaryProvider`. A locked diary's discard and an ordinary sign-out keep the draft, like the diary's own drafts. `eraseImportDrafts(storage)` erases every account's draft.
+  - `memoryDraftStore` is kept for tests. The review screen is **not routed** and no locale catalog was touched (E2). Tests: `importDraftStore.test.ts` (load/save/clear, exact round trip, restart persistence resuming a pending confirmation batch to completion and clearing at the end, account isolation, erase scope, corrupt/newer/foreign drafts, write failure) and `spendDiary.test.ts` (erased at sign-out, not at discard).
+  - **Not encrypted at rest.** AsyncStorage is plain storage, unlike the SQLCipher diary, and on iOS it falls under the backup exclusion that S2 still lacks. A draft holds the preview's rows (amounts, merchants, notes) and the user's corrections. Before the review screen is routed the owner must accept that, or the native exclusion must cover it, or the draft must move into the encrypted diary (decision added to the handover).
+- **S2 seam.** `storage/deviceDiary.ts` now carries a `TODO(S2)` documenting the missing iOS `NSURLIsExcludedFromBackupKey` step (a config plugin or native module: needs authorization), for the diary and the draft directory.
+- **Not done (authority):** the S2 native backup-exclusion plugin (needs a package or native module); pinning OCR model assets (needs dependencies); raising `MIN_CLIENT_VERSION` and the rollback floor (import release checklist in `rollback.md`, not executed). P3 post-prune replay shape stays open; it needs the owner's decision. S4 reminder and needs-review screens stay unbuilt until visual approval (E2).
+- **Additive preview paging (done in the follow-up commit after this section's first gate).** `GET /v1/imports/:id/preview?offset=&limit=` pages candidates only and adds `page`. No query parameters still return the whole preview with no `page` key. App helpers: `preview(jobId, paging?)` and `fetchWholePreview`. The review screen is still not routed.
+- **Hygiene:** `gogospend_v1` was confirmed empty (0 accounts, 0 transactions, 0 wallets) and recreated empty; `gogospend_test_*` databases were not touched. Local images `gogospend-local-integration` and `gogospend-local` were removed.
+- **Gate after paging (local, Node 26.10.0), all PASS:** `typecheck`, `typecheck:app`, `test:api` (41 suites, 929), `test:db` (40 suites, 681), `test:app` (28), `test:unit` (263), `test:dev` (7), `test:ops` (107, `GOGOSPEND_OPS_REQUIRE_DB=1`), `test:render` (66), API build, `release-graph.mjs check` (145 files, no problems), `export:web`, `git diff --check`.
+- **Image smoke** on this tree: `docker build` + `release-smoke.cjs` → `ok: true` on Node v24.22.0, parsers `sandbox_unsupported` (fail closed). The check image was removed afterwards.

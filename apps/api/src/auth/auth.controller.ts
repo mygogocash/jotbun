@@ -6,6 +6,7 @@ import { AccountLifecycleService } from '../accounts/account-lifecycle.service';
 import { AccountLinkingService } from '../accounts/account-linking.service';
 import { SessionRevocationService } from '../accounts/session-revocation.service';
 import { ProblemException } from '../common/api-problem.filter';
+import { Gated } from '../common/feature-gates';
 import { AuthBootstrapService } from './auth-bootstrap.service';
 import { Access } from './auth-route.decorator';
 import { MAX_TOKEN_LENGTH } from './auth0-token-verifier';
@@ -70,6 +71,7 @@ export class AuthController {
   /** Links a second sign-in method (F6c); needs fresh logins of both identities for this Idempotency-Key. */
   @Post('me/identities')
   @Access('recent_proof')
+  @Gated('writes')
   @HttpCode(202)
   linkIdentity(
     @CurrentSession() session: SessionContext,
