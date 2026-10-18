@@ -52,6 +52,14 @@ test('local rehearsal: erased accounts stay erased in a private restored copy', 
   assert.deepEqual(receipt.erased_owner_rows, []);
   assert.deepEqual(receipt.missing_retained_objects, []);
   assert.equal(receipt.accounts_erased, 3);
+  // P2c's real reference query: the kept account's retained receipts - one held
+  // by an active record, one by a record deleted within its undo window - are
+  // in the copy; its released receipt (object gone) is not a reference, and the
+  // erased accounts' receipt objects are not restored.
+  assert.equal(receipt.attachments.schema_has_references, true);
+  assert.equal(receipt.attachments.references_checked, 2);
+  assert.equal(receipt.attachments.objects_in_copy, 5);
+  assert.equal(receipt.attachments.unreferenced_objects_not_restored, 3);
   // P5: the in-progress erasure (marker without purged_at) and the copy's own
   // accepted-but-unmarked deletion are re-queued with their aliases captured
   // and holds left open; the purged one is replayed, not re-queued.

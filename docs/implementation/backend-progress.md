@@ -2207,3 +2207,116 @@ Observed, not changed (pre-existing):
     - no legacy path or package is present.
   - This closes P2b's SKIPPED "sharp under `--permission` on Linux" for arm64; x64 was not run.
 - **Still SKIPPED:** everything P6b lists (hosted CI, the staging performance smoke, devices, hosted receipts, E3/E4, deployment), and the lockfile regeneration, which needs authorization. P6b has not been independently reviewed yet.
+
+## P2c: retained receipt attachments (local work)
+
+- **Status:** built test-first and passing the full local gate. The real R2 upload/retain/grant/cleanup is **SKIPPED** (P1's hosted gate, E1). Receipts can only come from image imports, so they stay unexposed while `IMPORT_UPLOADS_ENABLED` is off. Not independently reviewed yet.
+- **Base:** the worktree started at `afd5dff`, main's merge commit of PR #1. Its tree equals `ccd3fb0`, but it is not an ancestor of `d0eb98d`, so `git merge --ff-only d0eb98d` refused. With nothing changed yet, the worktree's own branch was reset to `d0eb98d`, then fast-forwarded to `5be44c9` (P5 review fixes and P6b) when the integration branch moved, before any P2c change. Checked again before the final gate: still `5be44c9`.
+- **Migration `0017_attachments`:**
+  - `attachments`, keyed `(account_id, id)`, cascading from `accounts`. One row per retained receipt: its own `receipt/<account>/<attachment>/<copy token>/image.<jpg|png|webp>` key, type, size (at most 12 MiB), SHA-256, dimensions (at most 20 MP), `retained_at` (the consent) and `retained → released` (final). One receipt per import image (`UNIQUE (account_id, source_job_id)`; no foreign key, a receipt outlives its import's rows).
+  - `transaction_attachments`: primary key `(account_id, transaction_id)`, so a record holds at most one receipt. Composite owner foreign keys to `transactions (account_id, id)` (cascade) and `attachments (account_id, id)`, plus `accounts` (cascade). Several records may share one receipt.
+  - **RLS and grants:** owner policies on both tables. The app may only SELECT `attachments` (written only by routines), and may SELECT, INSERT, DELETE and `UPDATE (attachment_id, attached_at)` its own `transaction_attachments` inside commands. Worker logins see neither table.
+  - **Triggers:**
+    - `transaction_attachments_retained` (BEFORE INSERT/UPDATE): a record can only come to hold a retained receipt.
+    - `transaction_attachments_unheld` (AFTER DELETE/UPDATE, SECURITY DEFINER): when no record holds a receipt any more it is released and its object is made due. That covers an explicit removal or replacement, P5's 30-day purge of a deleted record (its row cascades), shedding and erasure.
+    - `import_previews_attachment_id`: gives every preview with an image a random `image_attachment_id` (new column, unique, set when `image_key` is; existing rows backfilled). It cannot be changed afterwards.
+  - **Registry:** P1's 7-day CHECK on published objects (found by its definition and dropped) is recreated as `object_publications_published_expiry_check`, exempting only purpose `receipt`. A retained receipt is published with `delete_after = 'infinity'`, so P1's sweep, the orphan pass and P5's deletion objects stage treat it like any other published object: never due while held, due at once on release or erasure.
+  - **App routines** (owner transaction):
+    - `gogospend_reserve_receipt_copy(attachment, copy_token)`. For the owner's own ready preview whose image is still published with at least 2 minutes left, it registers the copy's key for 10 minutes before any PUT. Outcomes: `reserved`, `existing` (the receipt exists), `limited` (4 copies already in flight) or `unavailable`.
+    - `gogospend_retain_attachment(attachment, copy_key, bytes, sha256)`, under the account lock. It answers `retained` (existing, or recorded now), `released`, `expired` or `unknown`. A new receipt needs this account's own unexpired reservation for this attachment, at the account's lifecycle generation, whose stored size and digest equal the import image's registration. A copy made for an existing receipt is due at once.
+    - `gogospend_release_receipt_copy(copy_key)`: an unused reservation is due now.
+    - `gogospend_import_image_attachable_until(job)`: the preview's retain deadline.
+    - `gogospend_transaction_attachment(account, record)`: the record DTO's lookup. It is not a definer, so owner RLS applies.
+  - **Jobs and security routines:** `gogospend_prune_attachments(limit)` (retention) and `gogospend_attachment_erasure(job, lease)` (erasure step).
+  - **Job policies:** no `jobs` policy or routine is recreated, and no job kind is added.
+- **How the client learns an attachable image's id:** `GET /v1/imports/:id/preview` now gives `summary.image = {width, height, attachment_id, attachable_until}`. `attachment_id` is the preview's random `image_attachment_id`, and it becomes the receipt's id once retained.
+  - Why a stored random id rather than the import job id or a key-derived id:
+    - it is opaque, and unrelated to any key or job id;
+    - it names the image rather than the import, so a later multi-image import still works;
+    - one stable id lets a second record share the same receipt.
+  - A foreign or unknown id is the same 404.
+  - `attachable_until` is the image's 24-hour deadline minus 2 minutes, or null once it can no longer be copied. A receipt already retained stays attachable to more records by the same id.
+- **Retain by copy (not re-registration):** a key names its purpose, and only an `import_parse` lease may publish `import_image`. So retaining copies the sanitized image under the new `receipt` purpose (added to `PUBLICATION_PURPOSES`, so the sweep's orphan pass lists it; `import_quarantine` was added too). The copy is made by the API, before the command:
+  1. it checks that the command id has no receipt yet (a resend copies nothing), and that the named record is the caller's, live and at `If-Match` (otherwise the command refuses it and nothing is copied);
+  2. it reserves the key, committed before the PUT;
+  3. it streams the import image into it, checking the size and SHA-256 against the registry as it streams, then the stored object (HEAD);
+  4. it runs the M1 command, which publishes the copy and records the attachment in the same transaction as the record's new version.
+
+  A copy the command did not use (refused, resend, a receipt already shared) is made due at once, and anything never published is swept at its reservation deadline. A failing storage call is `503` with `retry_after_seconds`; a source that is missing or differs is `422 errors.attachment_expired`. No database rollback is relied on to undo a PUT.
+- **Versioning and sync:** retain, replace and remove are M1 commands on the record (entity `transaction`, outcome `updated`, schema 1, current policies). They need `If-Match` = the record's version and move it to its next version. The record's snapshot (sync deltas and snapshots, `GET /v1/transactions/:id`, history) carries `attachment_id` while it holds a receipt and omits the key otherwise.
+  - **Compatibility:**
+    - `isTransactionSnapshot` accepts both shapes, so every stored snapshot stays valid (S1's rule);
+    - every existing command kind and schema is unchanged;
+    - the new kinds accept schema 1.
+  - An app or API older than P2c refuses a snapshot with `attachment_id`. `rollback.md` now says the rollback floor and the minimum client versions move to P2c at the import release step, before receipts can exist.
+  - A deleted record keeps its receipt (its snapshot still names it). A restore within 30 days brings the grant back; the purge at 30 days releases the receipt unless another record holds it.
+- **Routes** (`AttachmentsModule`, after P6b's gates):
+  - `POST /v1/transactions/:id/attachment` (retain), `PUT …` (replace), `DELETE …` (remove): `current_policy`, `@Gated('writes')`, `Idempotency-Key`, `If-Match`.
+  - Retain and replace need `{attachment_id, consent: "retain_receipt"}`; anything else is `422 errors.consent_required` on `consent`. The consent is recorded as the audit code `consent=retain_receipt`; replace and remove also record `previous=released|shared`.
+  - State refusals are 422 on `attachment_id`: `errors.attachment_present`, `_missing`, `_unchanged`, `_removed` (no undo) and `_expired`. A deleted record is `409 ENTITY_DELETED`; a stale version `409 VERSION_CONFLICT` with the current record.
+  - `GET /v1/attachments/:id/grant` (`bound_session`, not gated) returns `{url, expires_at, content_type, bytes, sha256}`. The receipt must be retained, held by one of the caller's active (not deleted) records, and the account active. Grants reuse S1's opaque account-bound HMAC grants under `deriveKeys('gogospend.attachment-grant.v1')`, last five minutes, and name no key.
+  - `GET /v1/attachment-files/:grant` (`bound_session`) re-authorizes now and streams the image with its recorded length and type. It checks the digest as it streams, sends `Content-Disposition: attachment` and `no-store`, and runs at most 8 at once per process (more get 503).
+  - Every unusable id - unknown, another account's, an unretained preview image, an import id, a receipt only deleted records hold, an expired or foreign grant - gets the same 404 body.
+- **Contracts:**
+  - `v1/attachments.ts`: `AttachmentCommand` (the plan's `{transaction_id, attachment_id?}` plus `consent?`), request types, `RECEIPT_RETENTION_CONSENT`, `ATTACHMENT_CONTENT_TYPES`, `ATTACHMENT_MAX_BYTES`, `ATTACHMENT_GRANT_MINUTES`, `ATTACHMENT_DOWNLOAD_PATH`, `AttachmentGrant` with the strict `isAttachmentGrant`, `ATTACHMENT_MESSAGE_KEYS` and `ATTACHMENT_COPY_REQUIREMENTS`.
+  - `TransactionDto.attachment_id?`.
+  - `ImportPreviewSummary.image` gains `attachment_id` and `attachable_until`.
+- **Client copy (no UI in P2c; for P3/E2):**
+  - `ATTACHMENT_MESSAGE_KEYS.removeNoUndo` = `attachments.remove_no_undo`, which must say that removing a receipt deletes its image permanently, cannot be undone, and is not brought back by restoring the record;
+  - `retainConsent` = `attachments.retain_consent`, asked before a retain or replace sends `consent`.
+  - No locale text was added: it needs E2 approval.
+- **P5 (`privacy-steps.ts`):**
+  - Retention `attachments.obsolete` runs `gogospend_prune_attachments`. It releases any retained receipt nothing holds (a safety net; the trigger normally does it), skipping accounts whose lock is held. It drops a released receipt's row 30 days after release, once its object is no longer live.
+  - Erasure `attachments.objects`: under the deletion lease it makes any of the account's receipt objects still live due, and throws while one is (the purge waits). P5's objects stage already deletes them, so this is a guard.
+  - `ERASURE_HANDLED_TABLES` is unchanged. Both new tables cascade from `accounts`, and the P5 table-coverage test refuses a cascading table in that allowlist. The object half goes through `object_publications`, which is already listed.
+- **P6a:** the `rehearsal_attachment_refs` stand-in is gone.
+  - `scripts/ops/local-postgres.mjs` exports `RETAINED_ATTACHMENT_REFERENCES_SQL`: every `retained` receipt, including one held by a record deleted within its undo window; released ones are not references. It is the restorer's default; a copy from before P2c (no `attachments` table) has nothing to check.
+  - The Docker rehearsal seeds real receipts (registry row, `attachments`, `transaction_attachments`) for all four accounts. The kept account also has one held by a deleted record and one released receipt whose object is not in the copy.
+  - It asserts 2 references checked, 5 objects in the copy, 3 not restored (the erased accounts'), no missing object, and the kept account byte-identical including its receipts. `restore.md` is updated.
+- **AttachmentService for P3:** `prepare(ctx, attachmentId, commandId, record?)` (outside any transaction), `attachIn(tx, prepared, transactionId)` (inside the confirm command, after creating the record) and `release(ctx, prepared)` (in a `finally`). This is how P3 links a retained receipt atomically with the confirmed rows.
+- **RED → GREEN** (assertion-level RED against seams: the migration with the real tables, constraints, column and preview trigger but stub routine bodies (no copy, no retain, no release, no guard, `NULL` deadline, `0` from prune and erasure); a typed stub `AttachmentService` returning fake acknowledgements and no grants; the real controller, contracts, routes and gates; no module errors):
+  - `npm run test:db -w gogospend-api -- --runTestsByPath src/attachments/attachments.integration.spec.ts`: RED 18 of 19 failed, all on assertions; the Drizzle drift check held (`p2c-red-final.log`). The first RED run had three `TypeError`s from reading a missing row's key; a helper now asserts the row first.
+  - GREEN 19 of 19. GREEN needed two test fixes: a JSON 404 read through the binary download parser, and the retained-receipt trigger answering `23514` before the composite key's `23503` (the test now checks both, the key with the trigger disabled inside a rolled-back transaction). One implementation change: a copy is skipped when the named record is not the caller's, live and at the version, so a refused cross-owner retain copies nothing.
+  - Coverage added after GREEN, for guards read as likely survivors: a source that differs from its registration, the retain routine's own fences (digest, size, generation, deadline, another attachment's reservation), the 4-copy limit, the spare copy of a refused command, a resend copying nothing, a held receipt untouched by the prune, a released row kept while its object is live, and the no-expiry CHECK for other purposes. Then 22 of 22.
+  - Pinned `foreign_attachment_grant_is_denied`: `expect(foreignGrantResponse.status).toBe(404)`. The body equals an unknown id's, and the owner's grant does not download for the other account.
+  - Contract tests (`src/v1/contracts.spec.ts`, 3 new) were written against the real validators, not RED first.
+- **Mutation check** (`p2c-mutate.mjs`, `p2c-mutants.log`; copy, mutate, run the focused tests, restore, then verify checksums with `shasum -c`): 31 of 32 killed.
+  - **SQL (16):** the preview owner checks in reserve and retain, the retain window, the in-flight limit, the retain routine's digest, deadline, generation and attachment fences, the still-held check in release, the unheld and retained-receipt triggers, both prune guards, the no-expiry CHECK, the erasure count, and making a released object due.
+  - **Service (12):** consent, version, deleted record, the resend and record pre-checks, releasing an unused copy, grants for deleted records, the download's grant expiry, remove or replace without a change, and a second receipt on retain.
+  - **Contracts (2) and restore (2):** the `attachment_id` checks in the record and preview validators; the reference query's `retained` filter and the reference check itself (the Docker rehearsal fails).
+  - **First survivors:** M12 (the prune's held filter) and S4 (the resend check) survived the first run, masked by the release function's own held check and by the record pre-check. Two tests were added: a one-row prune batch must reach an unheld receipt past an older held one, and `prepare` for a committed command id with another image must copy nothing. Both then failed as intended.
+  - **The survivor:** S11, dropping the copy's source size/digest pre-check. It is equivalent: the streamed copy is re-hashed byte by byte (`verified`) and refused before the PUT completes. The stored object is HEAD-checked, and the SQL routine compares the digest with the import image's registration (M5 kills that).
+- **Full gate** (on `5be44c9` plus this work): typecheck PASS, typecheck:app PASS, test:api PASS (40 suites, 778 tests), test:db PASS (38 suites, 599 tests), test:app PASS (28), test:unit PASS (221), test:dev PASS (7), test:ops PASS (94, `GOGOSPEND_OPS_REQUIRE_DB=1`, Docker rehearsal included), test:render PASS (60), build PASS, `node apps/api/scripts/release-graph.mjs check` PASS (136 dist files, the same 9 direct packages, 123 closure packages, no problems), export:web PASS, `git diff --check` PASS. No test, rehearsal or restore database of mine was left. The four `gogospend_test_*` databases seen afterwards were created on 17 October by other runs and were left alone.
+- **Deviations, for review:**
+  - **Routes on the record** (`/v1/transactions/:id/attachment`), since every command must name its primary entity as `id` and the version is the record's. The plan names only the service interface and the grant route.
+  - **`AttachmentCommand` gains `consent?`**, so the consent is in the command digest and the audit row.
+  - **The copy is made by the API**, not a worker job: synchronous, registry-first, with no `pending` receipt state. The `receipt` purpose is API-published like `import_quarantine` (`API_PUBLISHED_PURPOSES`; `reserveKey` refuses it).
+  - **Release is final:** a removed receipt cannot be attached again, even while its import image still exists. That is the "no undo".
+  - **Released `attachments` rows stay 30 days** after release (then retention drops them).
+  - **New migration objects beyond the planned tables:** `import_previews.image_attachment_id` and its trigger, and the relaxed P1 CHECK.
+  - **Extra files and changes:** `v1-client.ts` gains `del`. `RECORD_COLUMNS` calls `gogospend_transaction_attachment`.
+- **SKIPPED:**
+  - real R2 upload, copy, retain, grant, expiry and cleanup on synthetic data (P1's hosted gate, E1);
+  - the R2 accepted-attachment recovery copy (P6a hosted part, E1);
+  - the client UI and copy (P3/E2);
+  - device checks;
+  - `dev:v1` (it would migrate `gogospend_v1`).
+- **Risks:**
+  - **Orphan pass cost:** each sweep lists every `receipt/` object (all retained receipts) for its orphan pass, and that grows with retained receipts. P1 noted the same for other purposes; revisit with real volumes (a dated prefix or an inventory).
+  - **API write scope:** the API holds write access to the receipt scope (it already writes quarantine).
+  - **Copy timing:** a copy takes up to 60 s inside the request.
+  - **Compatibility:** an old client refuses `attachment_id` snapshots (see the rollback floor).
+  - **Preview shape:** `isImportPreview` is stricter about `summary.image` (P3's adapter must use the new shape).
+- **Notes for the integrator:**
+  - **Gating:** P6b is merged here. Retain, replace and remove carry `@Gated('writes')`; the grant and file GETs are ungated. `operational-safety.spec.ts`'s gate and command-schema tables include them, and `release.md`'s table lists `attachment.remove|replace|retain`.
+  - **Expected conflicts with P3 (`0018_import_confirmation`):**
+    - `drizzle/meta/_journal.json` and `migrations.spec.ts` (the pinned prefix);
+    - `schema.ts`;
+    - `privacy-steps.ts`, `privacy-steps.spec.ts` and `retention.integration.spec.ts` (the step lists);
+    - `operational-safety.spec.ts` (both tables);
+    - `packages/contracts/src/index.ts` and `v1/imports.ts`;
+    - `imports/preview-query.ts`;
+    - `v1-app.module.ts`;
+    - this log, the master plan's migration table and `release.md`.
+  - **Renumbering:** if P3 integrates first, renumber `0017` in the file name, the journal, the pinned prefix, the plan table and this receipt.
+  - **Release graph:** no new package; `release-graph.mjs check` passes.

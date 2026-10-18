@@ -152,8 +152,23 @@ export function defaultPrivacySteps(): PrivacySteps {
       // P2a: upload rows 30 days after they finished or expired (quarantine objects go at 24 hours through P1's
       // sweep and P2a's own maintenance; names are cleared after 8 days).
       .retention({ name: 'imports.uploads', run: (pool) => batched(pool, 'gogospend_prune_import_uploads') })
+      // P2c: a receipt is released (its object due for P1's sweep) the moment no record holds it - removed,
+      // replaced, or its record purged by records.purge above - by a trigger; this releases any retained
+      // receipt nothing holds (a safety net) and drops released receipts' rows 30 days on, once their object is gone.
+      .retention({ name: 'attachments.obsolete', run: (pool) => batched(pool, 'gogospend_prune_attachments') })
+      // P2c: erasure must not purge while a receipt object of the account is still stored. The objects stage
+      // already deleted every published object (retained receipts included); this re-checks the receipts,
+      // makes any left due and stops the purge until the sweep has deleted them.
+      .erasure({ name: 'attachments.objects', run: (context) => assertReceiptsErased(context) })
     // P2b: .retention({ name: 'imports.preview', ... }) - unconfirmed candidates at 7 days, unattached sanitized images at 24 hours.
-    // P2c: .retention({ name: 'attachments.obsolete', ... }) - receipts of purged or replaced records, once unreferenced.
     // P2a-P3: .erasure({ name: '<domain>.<step>', run }) - only for data the cascade and object stage cannot reach.
   );
+}
+
+/** The attachments.objects erasure step: throws (the job retries) while a receipt object of the account is live. */
+export async function assertReceiptsErased({ lease, pool }: ErasureContext): Promise<void> {
+  const { rows } = await pool.query<{ live: number | null }>('SELECT gogospend_attachment_erasure($1, $2) AS live', [lease.jobId, lease.leaseToken]);
+  const live = rows[0]?.live;
+  if (live === null || live === undefined) throw new Error('the deletion lease is no longer current');
+  if (live > 0) throw new Error('receipt objects are still stored');
 }

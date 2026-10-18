@@ -196,3 +196,21 @@ export type {
   ImportPreviewSummary,
   ImportPreview,
 } from "./v1/imports.ts";
+export {
+  RECEIPT_RETENTION_CONSENT,
+  ATTACHMENT_CONTENT_TYPES,
+  ATTACHMENT_MAX_BYTES,
+  ATTACHMENT_GRANT_MINUTES,
+  ATTACHMENT_DOWNLOAD_PATH,
+  ATTACHMENT_MESSAGE_KEYS,
+  ATTACHMENT_COPY_REQUIREMENTS,
+  isAttachmentGrant,
+} from "./v1/attachments.ts";
+export type {
+  ReceiptRetentionConsent,
+  AttachmentCommand,
+  RetainAttachmentRequest,
+  ReplaceAttachmentRequest,
+  AttachmentContentType,
+  AttachmentGrant,
+} from "./v1/attachments.ts";
