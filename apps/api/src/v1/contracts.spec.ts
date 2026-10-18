@@ -19,6 +19,8 @@ import {
   isCommittedChangeGroup,
   isEntityChange,
   isSnapshotChunk,
+  isSyncChangesPage,
+  SYNC_ENTITY_VALIDATORS,
   isSnapshotChunkGrant,
   isUuid,
   isTransactionSnapshot,
@@ -424,5 +426,42 @@ describe('sync wire validators', () => {
     expect(isSnapshotChunk({ ...chunk, entities: [change({ snapshot: null })] })).toBe(false);
     expect(isSnapshotChunkGrant({ index: 0, bytes: 10, sha256: 'a'.repeat(64), grant: 'A'.repeat(55), grant_expires_at: '2026-10-17T00:05:00.000Z' })).toBe(true);
     expect(isSnapshotChunkGrant({ index: 0, bytes: 10, sha256: 'a'.repeat(64), grant: 'sync_snapshot/x', grant_expires_at: '2026-10-17T00:05:00.000Z' })).toBe(false);
+  });
+  describe('older validator sets (an entity type the reader does not know yet)', () => {
+    // A build from before P3 knows no import_review / import_selection.
+    const { import_review: _review, import_selection: _selection, ...older } = SYNC_ENTITY_VALIDATORS;
+    const job = '0000003d-0000-4000-8000-000000000001';
+    const importChange = (overrides: Record<string, unknown> = {}) => ({ entity: 'import_review', id: job, version: 1, state: 'active', snapshot: { id: job, review_revision: '2' }, ...overrides });
+    const group = (...changes: unknown[]) => ({ revision: '12', command_id: '0000000c-0000-4000-8000-000000000001', changes });
+    const page = (...groups: unknown[]) => ({ groups, next_cursor: 'cursor', has_more: false });
+    const skip = { unknownEntities: 'skip' } as const;
+
+    it('rejects an unknown entity strictly (the default), but tolerates it when the reader skips unknown entities', () => {
+      expect(isEntityChange(importChange(), older)).toBe(false);
+      expect(isCommittedChangeGroup(group(change(), importChange()), older)).toBe(false);
+      expect(isEntityChange(importChange(), older, skip)).toBe(true);
+      expect(isCommittedChangeGroup(group(change(), importChange()), older, skip)).toBe(true);
+      expect(isSyncChangesPage(page(group(importChange())), older, skip)).toBe(true);
+      const chunk = { schema_version: 1, snapshot_id: '0000000d-0000-4000-8000-000000000001', high_water: '12', index: 0, entities: [change(), importChange()] };
+      expect(isSnapshotChunk(chunk, older)).toBe(false);
+      expect(isSnapshotChunk(chunk, older, skip)).toBe(true);
+    });
+
+    it('still checks the envelope of an unknown entity and the snapshot of every known one', () => {
+      expect(isEntityChange(importChange({ id: 'nope' }), older, skip)).toBe(false);
+      expect(isEntityChange(importChange({ version: 0 }), older, skip)).toBe(false);
+      expect(isEntityChange(importChange({ state: 'gone' }), older, skip)).toBe(false);
+      expect(isEntityChange(importChange({ state: 'purged' }), older, skip)).toBe(false);
+      expect(isEntityChange(importChange({ state: 'purged', snapshot: null }), older, skip)).toBe(true);
+      expect(isEntityChange({ ...importChange(), extra: 1 }, older, skip)).toBe(false);
+      expect(isEntityChange(importChange({ entity: 'constructor' }), older, skip)).toBe(true);
+      expect(isEntityChange(change({ snapshot: { ...wallet, extra: true } }), older, skip)).toBe(false);
+      expect(isCommittedChangeGroup(group(change({ snapshot: { ...wallet, extra: true } }), importChange()), older, skip)).toBe(false);
+    });
+
+    it('a reader that knows the entity still validates its snapshot strictly', () => {
+      expect(isEntityChange(importChange(), SYNC_ENTITY_VALIDATORS, skip)).toBe(true);
+      expect(isEntityChange(importChange({ snapshot: { id: job, review_revision: 2 } }), SYNC_ENTITY_VALIDATORS, skip)).toBe(false);
+    });
   });
 });

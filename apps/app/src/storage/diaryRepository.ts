@@ -1,4 +1,4 @@
-import { SYNC_ENTITY_VALIDATORS, isCommittedChangeGroup, isEntityChange, isUuid, normalizeCommand, normalizeMerchant, normalizeNote, validateOccurredOn } from '@gogospend/contracts';
+import { SYNC_ENTITY_VALIDATORS, isCommittedChangeGroup, isEntityChange, isKnownSyncEntity, isUuid, normalizeCommand, normalizeMerchant, normalizeNote, validateOccurredOn } from '@gogospend/contracts';
 import type { CategoryDto, CommittedChangeGroup, EntityChange, Minor, Revision, WalletSnapshot } from '@gogospend/contracts';
 
 import { CursorMoved, DiaryLocked, DraftReferenceUnavailable, StaleEpochError } from './types.ts';
@@ -60,6 +60,13 @@ export type DiaryStoreOptions = {
   onClose?: () => void;
   validators?: Readonly<Record<string, (snapshot: unknown) => boolean>>;
 };
+
+/**
+ * A reader skips the entity types it has no validator for: a newer server may
+ * send types this build cannot show, and refusing the page would stall sync
+ * for good. Their cursor and revision still advance; they are not stored.
+ */
+const SKIP_UNKNOWN = { unknownEntities: 'skip' } as const;
 
 const REVISION = /^(0|[1-9][0-9]{0,18})$/;
 const AMOUNT = /^[1-9][0-9]{0,10}$/;
@@ -271,7 +278,7 @@ export function createDiaryStore(options: DiaryStoreOptions): DiaryStore {
       if (previousCursor !== null) assertCursor(previousCursor);
       let previous = -1n;
       for (const group of groups) {
-        if (!isCommittedChangeGroup(group, validators)) throw new TypeError('A change group does not match the sync contract.');
+        if (!isCommittedChangeGroup(group, validators, SKIP_UNKNOWN)) throw new TypeError('A change group does not match the sync contract.');
         const revision = BigInt(group.revision);
         if (revision <= previous) throw new RangeError('Change groups must be in increasing revision order.');
         previous = revision;
@@ -281,7 +288,7 @@ export function createDiaryStore(options: DiaryStoreOptions): DiaryStore {
         if ((meta.get('cursor') ?? null) !== previousCursor) throw new CursorMoved();
         const applied = meta.has('applied_revision') ? { value: meta.get('applied_revision') as string } : undefined;
         if (groups.length > 0 && BigInt(groups[0].revision) <= BigInt(applied?.value ?? '0')) throw new RangeError('A change group was already applied.');
-        for (const group of groups) for (const change of group.changes) await upsert(tx, change, true);
+        for (const group of groups) for (const change of group.changes) if (isKnownSyncEntity(change.entity, validators)) await upsert(tx, change, true);
         await recomputeTotals(tx);
         await setMeta(tx, groups.length > 0 ? { cursor, applied_revision: groups[groups.length - 1].revision } : { cursor });
       });
@@ -293,14 +300,15 @@ export function createDiaryStore(options: DiaryStoreOptions): DiaryStore {
       if (typeof highWater !== 'string' || !REVISION.test(highWater)) throw new TypeError('A high-water mark is a revision.');
       const seen = new Set<string>();
       for (const entity of snapshot.entities) {
-        if (!isEntityChange(entity, validators)) throw new TypeError('A snapshot entity does not match the sync contract.');
+        if (!isEntityChange(entity, validators, SKIP_UNKNOWN)) throw new TypeError('A snapshot entity does not match the sync contract.');
+        if (!isKnownSyncEntity(entity.entity, validators)) continue;
         const key = `${entity.entity}\u0000${entity.id}`;
         if (seen.has(key)) throw new TypeError('A snapshot repeats an entity.');
         seen.add(key);
       }
       await write(async (tx) => {
         await tx.run('DELETE FROM confirmed_entities');
-        for (const entity of snapshot.entities) await upsert(tx, entity, false);
+        for (const entity of snapshot.entities) if (isKnownSyncEntity(entity.entity, validators)) await upsert(tx, entity, false);
         await recomputeTotals(tx);
         await setMeta(tx, { cursor: snapshot.cursor, applied_revision: highWater });
       });

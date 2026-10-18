@@ -288,6 +288,11 @@ export class ConfirmationService {
    * direction and an amount, and labels the mapping names; every mapped
    * wallet and category is the owner's, active and of the row's direction;
    * no date is before its wallet's tracking start or after today in Bangkok.
+   * A row that already has durable progress is a record now: a freeze that
+   * includes it only has to carry its frozen copy (labels mapped to an
+   * existing wallet and category of its direction), not find the wallet,
+   * category and date still open - archiving them afterwards must not make
+   * the rest of the import unfreezable.
    */
   private async checkSelectable(tx: OwnerTx, jobId: string, ids: readonly string[], mapping: ImportMapping): Promise<void> {
     const candidates = await tx.query<CandidateRow>(
@@ -299,6 +304,9 @@ export class ConfirmationService {
     const unknown = ids.filter((id) => !known.has(id));
     if (unknown.length > 0) throw rowProblems(new Map(unknown.map((id) => [id, 'errors.import_row_unknown'])), 'errors.import_rows_unknown');
 
+    const committed = new Set(
+      (await tx.query<{ source_row_id: string }>('SELECT source_row_id FROM import_row_progress WHERE job_id = $1 AND source_row_id = ANY ($2::text[])', [jobId, ids])).map((row) => row.source_row_id),
+    );
     const walletIds = [...new Set(Object.values(mapping.wallets))];
     const categoryIds = [...new Set([...Object.values(mapping.categories.expense), ...Object.values(mapping.categories.income)])];
     const wallets = new Map(
@@ -319,11 +327,13 @@ export class ConfirmationService {
         if (!hasOwn(byType, row.category_label)) return 'errors.import_category_unmapped';
         const wallet = wallets.get(mapping.wallets[row.wallet_label]);
         if (!wallet) return 'errors.wallet_not_found';
-        if (wallet.archived) return 'errors.wallet_archived';
+        const open = !committed.has(row.source_row_id);
+        if (open && wallet.archived) return 'errors.wallet_archived';
         const category = categories.get(byType[row.category_label]);
         if (!category) return 'errors.category_not_found';
         if (category.type !== row.type) return 'errors.category_type_mismatch';
-        if (category.archived) return 'errors.category_archived';
+        if (open && category.archived) return 'errors.category_archived';
+        if (!open) return null;
         if (row.occurred_on < wallet.tracking_start) return 'errors.date_before_tracking_start';
         if (row.occurred_on > today) return 'errors.date_in_future';
         return null;

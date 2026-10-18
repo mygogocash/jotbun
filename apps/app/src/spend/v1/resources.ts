@@ -5,6 +5,7 @@
 import {
   COMMAND_OUTCOMES,
   ENTITY_STATES,
+  SYNC_ENTITY_VALIDATORS,
   isBudgetSnapshot,
   isCategorySnapshot,
   isSnapshotChunk,
@@ -35,6 +36,9 @@ import type { SyncRemote } from '../../sync/types.ts';
 
 /** The command schema this build emits (`X-GoGoSpend-Command-Schema`). */
 export const V1_COMMAND_SCHEMA = 1;
+
+/** Sync pages and chunks may carry entity types a newer server added; this build skips them instead of failing the page. */
+const SKIP_UNKNOWN_ENTITIES = { unknownEntities: 'skip' } as const;
 
 export type CreateEntryInput = { id: string; type: 'expense' | 'income'; amount_minor: string; occurred_on: string; wallet_id: string; category_id: string; note?: string | null; merchant?: string | null };
 export type CreateTransferInput = { id: string; amount_minor: string; occurred_on: string; source_wallet_id: string; destination_wallet_id: string; note?: string | null; merchant?: string | null };
@@ -189,7 +193,7 @@ export function createSyncResources(transport: V1Transport, options: { sha256Hex
       if (cursor !== null) query.set('cursor', cursor);
       if (limit !== undefined) query.set('limit', String(limit));
       const search = query.toString();
-      return transport.request('GET', `/v1/sync/changes${search ? `?${search}` : ''}`, { validate: (value) => isSyncChangesPage(value) });
+      return transport.request('GET', `/v1/sync/changes${search ? `?${search}` : ''}`, { validate: (value) => isSyncChangesPage(value, SYNC_ENTITY_VALIDATORS, SKIP_UNKNOWN_ENTITIES) });
     },
     requestSnapshot: (key) =>
       transport.request('POST', '/v1/sync/snapshots', { body: {}, command: { id: segment(key), schemaVersion: V1_COMMAND_SCHEMA }, validate: isSnapshotDto }),
@@ -204,7 +208,7 @@ export function createSyncResources(transport: V1Transport, options: { sha256Hex
       } catch {
         throw invalid();
       }
-      if (!isSnapshotChunk(chunk) || chunk.index !== grant.index) throw invalid();
+      if (!isSnapshotChunk(chunk, SYNC_ENTITY_VALIDATORS, SKIP_UNKNOWN_ENTITIES) || chunk.index !== grant.index) throw invalid();
       return chunk;
     },
   };

@@ -305,7 +305,14 @@ DECLARE
   v_entity text;
   v_deleted integer;
   v_count integer := 0;
+  v_accounts integer := 0;
+  v_limit integer := least(greatest(coalesce(p_limit, 1), 1), 1000);
 BEGIN
+  -- The limit counts accounts actually worked on. Accounts being erased are
+  -- filtered out before it applies, and one whose lock a user write holds is
+  -- passed over without using it up, so such accounts at the head of the
+  -- order can never starve the ones behind them (the runner stops at the
+  -- first call that removes nothing).
   FOR v_account IN
     SELECT x.account_id FROM (
       SELECT s.account_id FROM public.import_selections s WHERE s.expires_at <= now()
@@ -314,13 +321,15 @@ BEGIN
         JOIN public.entity_changes c ON c.account_id = h.account_id AND c.revision = h.revision AND c.entity = h.entity AND c.entity_id = h.entity_id
        WHERE h.entity IN ('import_selection', 'import_review') AND h.state <> 'purged' AND c.committed_at < now() - interval '30 days'
     ) x
+      JOIN public.accounts a ON a.id = x.account_id AND a.status <> 'deleting'
      ORDER BY x.account_id
-     LIMIT least(greatest(coalesce(p_limit, 1), 1), 1000)
   LOOP
+    EXIT WHEN v_accounts >= v_limit;
     PERFORM 1 FROM public.account_sync_state s WHERE s.account_id = v_account FOR UPDATE SKIP LOCKED;
     IF NOT FOUND OR NOT EXISTS (SELECT 1 FROM public.accounts a WHERE a.id = v_account AND a.status <> 'deleting') THEN
       CONTINUE;
     END IF;
+    v_accounts := v_accounts + 1;
     WITH gone AS (
       DELETE FROM public.import_selections s WHERE s.account_id = v_account AND s.expires_at <= now() RETURNING s.selection_id)
     SELECT count(*) INTO v_deleted FROM gone;

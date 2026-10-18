@@ -209,6 +209,23 @@ async function importTransactions(setup: Setup): Promise<{ id: string; type: str
   );
 }
 
+/** Archives a wallet that already holds records: its opening balance is corrected so the derived balance is zero (a wallet archives only at zero). */
+async function archiveWalletWithRecords(setup: Setup, walletId: string): Promise<void> {
+  const [row] = await adminRows<{ opening: string; delta: string }>(
+    `SELECT w.opening_minor::text AS opening,
+            coalesce((SELECT sum(CASE t.type WHEN 'income' THEN t.amount_minor ELSE -t.amount_minor END) FROM transactions t WHERE t.wallet_id = w.id AND t.deleted_at IS NULL), 0)::text AS delta
+       FROM wallets w WHERE w.id = $1`,
+    [walletId],
+  );
+  const opening = (BigInt(row.opening) - BigInt(row.delta)).toString();
+  const wallet = await as(setup.user).get(`/v1/wallets/${walletId}`);
+  const version = (wallet.body as { version: number }).version;
+  const corrected = await as(setup.user).patch(`/v1/wallets/${walletId}`, { opening_minor: opening, correction_reason: 'balance_reconciliation' }, { ifMatch: version });
+  expect(corrected.status).toBe(200);
+  const archived = await as(setup.user).post(`/v1/wallets/${walletId}/archive`, {}, { ifMatch: version + 1 });
+  expect([archived.status, archived.body.code]).toEqual([200, undefined]);
+}
+
 /** Kills the request after the executor committed: the client never hears back. */
 function killAfterCommitOnce(): void {
   const executor = v1.app.get(CommandExecutor);
@@ -464,6 +481,47 @@ describe('the frozen selection and its batches', () => {
     expect(await count('transactions', setup.user.accountId)).toBe(6 - bankRows.length);
   });
 
+  it('a re-freeze after a partial confirmation does not re-validate rows already committed, even if their wallet or category was archived since', async () => {
+    const setup = await parsedImport(fileRows(6));
+    const all = ids(setup.rows);
+    const firstSelection = await frozen(setup, all);
+    // row:2 (Bank, food) and row:3 (Cash, travel) become records.
+    expect((await confirmed(setup, firstSelection, ['row:2', 'row:3'])).committed).toEqual(['row:2', 'row:3']);
+    const before = await importTransactions(setup);
+
+    await archiveWalletWithRecords(setup, setup.wallets.bank);
+    const foodId = builtinId(setup.user, 'food');
+    const categories = (await as(setup.user).get('/v1/categories')).body as { id: string; version: number }[];
+    const food = categories.find((category) => category.id === foodId);
+    const archivedFood = await as(setup.user).post(`/v1/categories/${foodId}/archive`, {}, { ifMatch: food?.version });
+    expect([archivedFood.status, archivedFood.body.code]).toEqual([200, undefined]);
+
+    // Only the rows still to be written are problems: row:4 (food), row:5 (Bank) and row:6 (food).
+    const refused = await freeze(setup, all);
+    expect([refused.status, refused.body.code]).toEqual([422, 'VALIDATION_FAILED']);
+    expect(refused.body.fields).toEqual({ 'row:4': 'errors.category_archived', 'row:5': 'errors.wallet_archived', 'row:6': 'errors.category_archived' });
+
+    // Dropping them, the full selection of committed rows plus the one open row freezes.
+    const second = await frozen(setup, ['row:2', 'row:3', 'row:7']);
+    const result = await confirmed(setup, second, ['row:2', 'row:3', 'row:7']);
+    expect(result.committed).toEqual(['row:2', 'row:3', 'row:7']);
+    expect(result.conflicted).toEqual([]);
+    const after = await importTransactions(setup);
+    expect(after).toHaveLength(3);
+    for (const record of before) expect(after).toContainEqual(record);
+  });
+
+  it('a re-freeze of only committed rows succeeds after their wallet and category are archived', async () => {
+    const setup = await parsedImport(fileRows(4));
+    const firstSelection = await frozen(setup, ids(setup.rows));
+    expect((await confirmed(setup, firstSelection, ['row:2'])).committed).toEqual(['row:2']);
+    await archiveWalletWithRecords(setup, setup.wallets.bank);
+    const second = await frozen(setup, ['row:2']);
+    const result = await confirmed(setup, second, ['row:2']);
+    expect([result.committed, result.conflicted, result.remaining]).toEqual([['row:2'], [], []]);
+    expect(await count('transactions', setup.user.accountId)).toBe(1);
+  });
+
   it('a row dated before its wallet\'s tracking start, moved after the freeze, is conflicted', async () => {
     const setup = await parsedImport(fileRows(6));
     const selectionId = await frozen(setup, ids(setup.rows));
@@ -672,6 +730,57 @@ describe('expiry and retention', () => {
     expect(await step?.run(jobsPool)).toBe(2);
     expect(await heads()).toEqual([{ entity: 'import_review', state: 'purged' }, { entity: 'import_selection', state: 'purged' }]);
     expect(await step?.run(jobsPool)).toBe(0);
+  });
+});
+
+describe('import retention is not starved by accounts it must skip', () => {
+  /** Two accounts, each with a frozen selection that is already due; returns [first, second] in the routine's account order. */
+  async function twoDueAccounts(): Promise<[Setup, Setup]> {
+    const pair: Setup[] = [];
+    for (let n = 0; n < 2; n += 1) {
+      const setup = await parsedImport(fileRows(2));
+      await frozen(setup, ids(setup.rows));
+      await db.admin((client) => client.query(`UPDATE import_selections SET expires_at = now() - interval '1 day' WHERE job_id = $1`, [setup.jobId]));
+      pair.push(setup);
+    }
+    return pair.sort((a, b) => (a.user.accountId < b.user.accountId ? -1 : 1)) as [Setup, Setup];
+  }
+  const prune = async (limit: number): Promise<number> => Number((await jobsPool.query<{ n: number }>('SELECT gogospend_prune_import_selections($1) AS n', [limit])).rows[0].n);
+  const dueFor = async (accountId: string): Promise<number> => (await adminRows<{ n: string }>(`SELECT count(*) AS n FROM import_selections WHERE account_id = $1 AND expires_at <= now()`, [accountId]).then((rows) => Number(rows[0].n)));
+
+  it('an account being erased that sorts first does not use up the limit', async () => {
+    // Other test accounts may hold due selections too: keep only this pair due.
+    await db.admin((client) => client.query(`UPDATE import_selections SET expires_at = now() + interval '1 day' WHERE expires_at <= now()`));
+    const [first, second] = await twoDueAccounts();
+    await db.admin((client) => client.query(`UPDATE accounts SET status = 'deleting' WHERE id = $1`, [first.user.accountId]));
+    expect(await prune(1)).toBe(1);
+    expect(await dueFor(second.user.accountId)).toBe(0);
+    expect(await dueFor(first.user.accountId)).toBe(1);
+  });
+
+  it('an account whose lock is held by a user write that sorts first does not use up the limit', async () => {
+    await db.admin((client) => client.query(`UPDATE import_selections SET expires_at = now() + interval '1 day' WHERE expires_at <= now()`));
+    const [first, second] = await twoDueAccounts();
+    const pruned = await db.admin(async (client) => {
+      await client.query('BEGIN');
+      try {
+        await client.query('SELECT 1 FROM account_sync_state WHERE account_id = $1 FOR UPDATE', [first.user.accountId]);
+        return await prune(1);
+      } finally {
+        await client.query('ROLLBACK');
+      }
+    });
+    expect(pruned).toBe(1);
+    expect(await dueFor(second.user.accountId)).toBe(0);
+    expect(await dueFor(first.user.accountId)).toBe(1);
+  });
+
+  it('the limit still bounds how many accounts one call prunes', async () => {
+    await db.admin((client) => client.query(`UPDATE import_selections SET expires_at = now() + interval '1 day' WHERE expires_at <= now()`));
+    const [first, second] = await twoDueAccounts();
+    expect(await prune(1)).toBe(1);
+    expect([await dueFor(first.user.accountId), await dueFor(second.user.accountId)]).toEqual([0, 1]);
+    expect(await prune(1)).toBe(1);
   });
 });
 

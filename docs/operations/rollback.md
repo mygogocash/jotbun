@@ -37,6 +37,24 @@ deployed revision that contains P3 (`0018_import_confirmation`). Imports stay
 disabled until their gates pass, so until then the P4 floor above still
 holds; the release that enables imports records the raised floor.
 
+Client floor and unknown entity types (P3): the minimum client versions
+(`MIN_CLIENT_VERSION_IOS`, `_ANDROID`) are raised at the import release step
+to at least the first app build that carries P3's sync validators for
+`import_review` and `import_selection`; an older build then gets `426
+CLIENT_UPGRADE_REQUIRED` and keeps its drafts. That floor is the gate, but sync
+no longer depends on it alone: from P3 on, the app skips a change whose entity
+type it has no validator for, instead of refusing the page. Its cursor and
+applied revision advance, the change is not stored, every known change in the
+same page or snapshot is applied, and a snapshot restores the entity once the
+app is updated. Only the envelope of a skipped change (entity name, uuid id,
+version, state, `snapshot` an object with that id, or `null` when purged) is
+still checked, and a known entity whose snapshot fails its validator still
+refuses the page. A build from before P3 has no such policy and stalls on an
+unknown entity type, so the floor must exclude it before any account can
+produce `import_review` or `import_selection` changes. Every later new synced
+type relies on this skip policy plus a floor at or above the first build that
+has it.
+
 ## Before rolling back
 
 1. **Target at or above the floor**, and its image digest is the one that was

@@ -116,13 +116,14 @@ export {
   SNAPSHOT_STATUSES,
   SYNC_ENTITY_VALIDATORS,
   isEntityChange,
+  isKnownSyncEntity,
   isCommittedChangeGroup,
   isSnapshotChunk,
   isSnapshotChunkGrant,
   isSyncChangesPage,
   isSnapshotDto,
 } from "./v1/sync.ts";
-export type { SyncChangesPage, SnapshotStatus, SnapshotChunkGrant, SnapshotDto, SnapshotChunk } from "./v1/sync.ts";
+export type { SyncChangesPage, SyncEntityValidators, SyncReadOptions, SnapshotStatus, SnapshotChunkGrant, SnapshotDto, SnapshotChunk } from "./v1/sync.ts";
 export {
   EXPORT_TTL_HOURS,
   EXPORT_GRANT_MINUTES,

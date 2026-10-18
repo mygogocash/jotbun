@@ -105,36 +105,55 @@ function hasExactly(value: Record<string, unknown>, keys: readonly string[]): bo
   return own.length === keys.length && keys.every((key) => Object.prototype.hasOwnProperty.call(value, key));
 }
 
+export type SyncEntityValidators = Readonly<Record<string, (snapshot: unknown) => boolean>>;
+
 /**
- * An entity change whose snapshot matches its entity's persisted DTO
- * (`validators`, default SYNC_ENTITY_VALIDATORS). Unknown entities fail.
+ * What a reader does with a change of an entity it has no validator for (a
+ * type added by a newer release). `reject` (the default, the server's own
+ * check) fails it. `skip` is for clients: the change must still be a
+ * well-formed envelope, but its snapshot is not read and the change is not
+ * applied, so an older build keeps syncing past entities it cannot show.
  */
-export function isEntityChange(value: unknown, validators: Readonly<Record<string, (snapshot: unknown) => boolean>> = SYNC_ENTITY_VALIDATORS): value is EntityChange {
-  if (!isObject(value) || !hasExactly(value, ["entity", "id", "version", "state", "snapshot"])) return false;
-  const validate = typeof value.entity === "string" && Object.prototype.hasOwnProperty.call(validators, value.entity) ? validators[value.entity] : undefined;
-  if (!validate || !isUuid(value.id) || !Number.isInteger(value.version) || (value.version as number) < 1) return false;
-  if (!ENTITY_STATES.includes(value.state as never)) return false;
-  if (value.state === "purged") return value.snapshot === null;
-  const snapshot = value.snapshot;
-  return isObject(snapshot) && snapshot.id === value.id && (snapshot.version === undefined || snapshot.version === value.version) && validate(snapshot);
+export type SyncReadOptions = { unknownEntities?: "reject" | "skip" };
+
+/** Whether `validators` know this entity type (own keys only). */
+export function isKnownSyncEntity(entity: unknown, validators: SyncEntityValidators = SYNC_ENTITY_VALIDATORS): boolean {
+  return typeof entity === "string" && Object.prototype.hasOwnProperty.call(validators, entity);
 }
 
-export function isCommittedChangeGroup(value: unknown, validators = SYNC_ENTITY_VALIDATORS): value is CommittedChangeGroup {
+/**
+ * An entity change whose snapshot matches its entity's persisted DTO
+ * (`validators`, default SYNC_ENTITY_VALIDATORS). Unknown entities fail,
+ * unless `options.unknownEntities` is `skip` (then only their envelope is checked).
+ */
+export function isEntityChange(value: unknown, validators: SyncEntityValidators = SYNC_ENTITY_VALIDATORS, options: SyncReadOptions = {}): value is EntityChange {
+  if (!isObject(value) || !hasExactly(value, ["entity", "id", "version", "state", "snapshot"])) return false;
+  if (!isUuid(value.id) || !Number.isInteger(value.version) || (value.version as number) < 1) return false;
+  if (!ENTITY_STATES.includes(value.state as never)) return false;
+  const known = isKnownSyncEntity(value.entity, validators);
+  if (!known && (options.unknownEntities !== "skip" || typeof value.entity !== "string" || value.entity.length === 0)) return false;
+  if (value.state === "purged") return value.snapshot === null;
+  const snapshot = value.snapshot;
+  if (!isObject(snapshot) || snapshot.id !== value.id || (snapshot.version !== undefined && snapshot.version !== value.version)) return false;
+  return known ? validators[value.entity as string](snapshot) : true;
+}
+
+export function isCommittedChangeGroup(value: unknown, validators: SyncEntityValidators = SYNC_ENTITY_VALIDATORS, options: SyncReadOptions = {}): value is CommittedChangeGroup {
   return (
     isObject(value) && hasExactly(value, ["revision", "command_id", "changes"]) &&
     typeof value.revision === "string" && REVISION.test(value.revision) && value.revision !== "0" &&
     isUuid(value.command_id) && Array.isArray(value.changes) && value.changes.length > 0 &&
-    value.changes.every((change) => isEntityChange(change, validators))
+    value.changes.every((change) => isEntityChange(change, validators, options))
   );
 }
 
-export function isSnapshotChunk(value: unknown, validators = SYNC_ENTITY_VALIDATORS): value is SnapshotChunk {
+export function isSnapshotChunk(value: unknown, validators: SyncEntityValidators = SYNC_ENTITY_VALIDATORS, options: SyncReadOptions = {}): value is SnapshotChunk {
   return (
     isObject(value) && hasExactly(value, ["schema_version", "snapshot_id", "high_water", "index", "entities"]) &&
     value.schema_version === SNAPSHOT_SCHEMA_VERSION && isUuid(value.snapshot_id) &&
     typeof value.high_water === "string" && REVISION.test(value.high_water) &&
     Number.isInteger(value.index) && (value.index as number) >= 0 &&
-    Array.isArray(value.entities) && value.entities.every((entity) => isEntityChange(entity, validators))
+    Array.isArray(value.entities) && value.entities.every((entity) => isEntityChange(entity, validators, options))
   );
 }
 
@@ -152,12 +171,12 @@ export function isSnapshotChunkGrant(value: unknown): value is SnapshotChunkGran
 const CURSOR = /^[A-Za-z0-9_-]{1,512}$/;
 
 /** A delta page: whole valid groups in strictly increasing revision order. */
-export function isSyncChangesPage(value: unknown, validators = SYNC_ENTITY_VALIDATORS): value is SyncChangesPage {
+export function isSyncChangesPage(value: unknown, validators: SyncEntityValidators = SYNC_ENTITY_VALIDATORS, options: SyncReadOptions = {}): value is SyncChangesPage {
   if (!isObject(value) || !hasExactly(value, ["groups", "next_cursor", "has_more"])) return false;
   if (typeof value.next_cursor !== "string" || !CURSOR.test(value.next_cursor) || typeof value.has_more !== "boolean" || !Array.isArray(value.groups)) return false;
   let previous = -1n;
   for (const group of value.groups) {
-    if (!isCommittedChangeGroup(group, validators)) return false;
+    if (!isCommittedChangeGroup(group, validators, options)) return false;
     const revision = BigInt(group.revision);
     if (revision <= previous) return false;
     previous = revision;
