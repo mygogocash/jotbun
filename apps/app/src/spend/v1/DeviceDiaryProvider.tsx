@@ -16,6 +16,7 @@ import type { AccountDatabase } from '@mobile/storage/accountDatabase';
 import { createDeviceAccountDatabase } from '@mobile/storage/deviceDiary';
 import { createDeviceSync } from '@mobile/sync/deviceSync';
 import { createDiarySessionResolver } from './diarySession';
+import { eraseDeviceImportDraft } from './deviceImportDraftStore';
 import { createKnownAccount } from './knownAccount';
 import { V1_COMMAND_SCHEMA } from './resources';
 import { SpendDiaryProvider } from './SpendDiaryContext';
@@ -49,6 +50,7 @@ function createDeviceDiary(): { diary: SpendDiary; refresh: () => Promise<void>;
   const diary = createSpendDiary({
     open: (accountId, epoch) => database.open(accountId, epoch),
     discard: (accountId) => database.discard(accountId),
+    eraseWithDiary: eraseDeviceImportDraft,
     session: resolver.current,
     now: () => Date.now(),
     newId: () => Crypto.randomUUID(),

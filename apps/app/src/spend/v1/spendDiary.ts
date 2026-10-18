@@ -35,6 +35,8 @@ export type SpendDiaryDeps = {
   open(accountId: string, epoch: number): Promise<DiaryStore>;
   /** Closes the account's diary and deletes its key and file. */
   discard(accountId: string): Promise<void>;
+  /** Other on-device copies of the account's data that leave with its diary at an explicit sign-out erase (not at a locked diary's discard): the import review draft. */
+  eraseWithDiary?(accountId: string): Promise<void>;
   session(): DiarySession;
   /** The sync for one open store, flushing only as `session` (the session the store was opened for). */
   makeSync(store: DiaryStore, session: SyncSession, report: SyncReport): { engine: SyncEngine; scheduler: SyncScheduler };
@@ -270,6 +272,7 @@ export function createSpendDiary(deps: SpendDiaryDeps): SpendDiary {
       if (!session) return;
       erasedFor = session;
       emit(EMPTY);
+      if (session.accountId) await deps.eraseWithDiary?.(session.accountId);
     },
 
     async retry() {
