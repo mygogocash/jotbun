@@ -331,8 +331,8 @@ describe('feature gates', () => {
       await expect(result).rejects.toMatchObject({ code: 'OCR_PAUSED' });
       await expect(result).rejects.toBeInstanceOf(ProblemException);
       expect(intakeCalls).toEqual([]);
-      expect(req.resume).toHaveBeenCalled();
-      // P2a: the unread rest of the body closes the connection after the reply.
+      expect(req.resume).not.toHaveBeenCalled();
+      // The unread rest of the body closes the connection after the reply.
       expect(res.setHeader).toHaveBeenCalledWith('Connection', 'close');
     });
 

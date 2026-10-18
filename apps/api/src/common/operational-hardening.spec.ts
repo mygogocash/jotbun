@@ -482,7 +482,7 @@ async function streamUpload(app: NestExpressApplication, totalMiB: number): Prom
   const chunk = Buffer.alloc(64 * 1024, 0x61);
   const frame = Buffer.concat([Buffer.from(`${chunk.length.toString(16)}\r\n`), chunk, Buffer.from('\r\n')]);
   // Like a client that reads an early reply while it is still sending.
-  for (let sent = 0; sent < totalMiB * 16 && !closed; sent += 1) {
+  for (let sent = 0; sent < totalMiB * 16 && !closed && !response.includes('\r\n\r\n'); sent += 1) {
     if (!socket.write(frame)) await Promise.race([new Promise((resolve) => socket.once('drain', resolve)), sleep(2_000)]);
     else await new Promise((resolve) => setImmediate(resolve));
   }

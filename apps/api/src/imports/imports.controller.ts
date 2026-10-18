@@ -70,13 +70,11 @@ export class ImportsController {
         declaredBytes: contentLength(req),
       });
     } catch (error) {
-      // The rest of the body is not wanted: close the connection once the
-      // error reply is sent, instead of reading whatever the client still sends.
+      // The rest of the body is not wanted. sendProblem writes the refusal
+      // and half-closes the socket; do not resume the body (that keeps
+      // reading it, and on Node 24 the reply is then lost).
       if (!req.complete) res.setHeader('Connection', 'close');
       throw error;
-    } finally {
-      // Until then, what arrives is discarded unbuffered.
-      if (!req.complete) req.resume();
     }
   }
 

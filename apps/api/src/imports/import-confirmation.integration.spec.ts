@@ -28,6 +28,7 @@ import { builtinId, moneyFixtures } from '../testing/money-fixtures';
 import { createTestDatabase } from '../testing/postgres-harness';
 import type { TestDatabase } from '../testing/postgres-harness';
 import { v1Client } from '../testing/v1-client';
+import { parsingRunner } from './fixtures/parsing-runner';
 import { csv, imageWithMetadata } from './fixtures/synthetic-parse';
 
 // P3: explicit, resumable confirmation of a parsed import, against the real
@@ -56,7 +57,9 @@ async function startApp(): Promise<void> {
   const store = v1.app.get<MemoryObjectStore>(OBJECT_STORE);
   const jobs = new JobRepository(jobsPool);
   const deps: WorkerDeps = { jobs, reader: new LeasedAccountRead(await db.loginPool(['gogospend_leased_read'], 2)), store, publication: new ObjectPublicationService(jobsPool, store), pool: jobsPool };
-  worker = new JobWorker(jobs, buildHandlers(deps));
+  // Parsing behaviour, not the sandbox gate: on Node 24 the real runner refuses
+  // every parse (the network cannot be denied). The gate is proven in parser-runner.spec.
+  worker = new JobWorker(jobs, buildHandlers(deps, { parse: { runner: parsingRunner() } }));
 }
 
 beforeAll(async () => {
