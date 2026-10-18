@@ -13,13 +13,12 @@ import { Pressable, View } from 'react-native';
 import type { AccessibilityActionEvent } from 'react-native';
 
 import { useCopy } from '@mobile/i18n/useCopy';
-import { formatMinor } from '@mobile/spend/v1/money';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 
+import { AmountText, useAmountWords } from './Amount';
 import { BunText } from './BunText';
 import { CategoryIcon } from './categoryIcons';
 import type { CategoryLook } from './categoryIcons';
-import { MoneyText, useMoneyLocale } from './entryKitPrivate';
 import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE, BUN_TOUCH } from './layout';
 
 export type RecordRowState = 'confirmed' | 'saving' | 'checking' | 'needs_look';
@@ -59,12 +58,12 @@ export function runRecordRowAction(name: string, handlers: RecordRowActionHandle
 export function RecordRow({ title, detail, type, amountMinor, category, state = 'confirmed', onPress, onEdit, onCopy, onDelete }: RecordRowProps) {
   const colors = useBunColors();
   const tc = useCopy();
-  const locale = useMoneyLocale();
+  const amountWords = useAmountWords();
   const [menu, setMenu] = useState(false);
   const handlers = { onEdit, onCopy, onDelete };
   const actions = recordRowActions(handlers, tc);
 
-  const amount = formatMinor(amountMinor, locale);
+  const amount = amountWords(amountMinor).shown;
   const shown = type === 'expense' ? `-${amount}` : type === 'income' ? `+${amount}` : amount;
   const kind = type === 'expense' ? tc('Expense') : type === 'income' ? tc('Income') : tc('Transfer');
   const stateWords: Record<RecordRowState, { shown: string; spoken: string } | null> = {
@@ -112,7 +111,7 @@ export function RecordRow({ title, detail, type, amountMinor, category, state = 
             ) : null}
           </View>
         </View>
-        <MoneyText variant="body">{shown}</MoneyText>
+        <AmountText variant="body">{shown}</AmountText>
       </Pressable>
       {menu && actions.length > 0 ? (
         <View role="toolbar" accessibilityLabel={tc('Actions for {title}', { title })} style={{ flexDirection: 'row', flexWrap: 'wrap', gap: BUN_SPACE.xs, paddingBottom: BUN_SPACE.xs }}>

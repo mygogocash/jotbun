@@ -1,7 +1,7 @@
 // Every category as a grid of icons and names (redesign R2b), ready to sit in
 // a sheet behind "More". One choice: the chosen cell gets a heavier outline
-// and its name on an ink pill. Names wrap rather than truncate, so long Thai
-// and Vietnamese names and large text sizes stay whole.
+// and its name, in bold, on an ink pill. Names wrap rather than truncate, so
+// long Thai and Vietnamese names and large text sizes stay whole.
 import type { CategoryDto } from '@gogospend/contracts';
 import { Pressable, View } from 'react-native';
 
@@ -46,7 +46,7 @@ export function CategoryGrid({ categories, selectedId, onSelect }: CategoryGridP
           >
             <CategoryIcon look={categoryLook(category, name)} size={48} selected={checked} />
             <View style={{ borderRadius: BUN_RADIUS.pill, backgroundColor: checked ? colors.ink : 'transparent', paddingHorizontal: BUN_SPACE.xs }}>
-              <BunText variant="caption" tone={checked ? 'onInk' : 'ink'} style={{ textAlign: 'center' }}>{name}</BunText>
+              <BunText variant="caption" tone={checked ? 'onInk' : 'ink'} style={checked ? { textAlign: 'center', fontWeight: '700' } : { textAlign: 'center' }}>{name}</BunText>
             </View>
           </Pressable>
         );

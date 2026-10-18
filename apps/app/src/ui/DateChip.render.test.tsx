@@ -1,11 +1,6 @@
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
 
-// react-native-svg's web build resolves image hrefs through React Native's
-// asset registry, which only Metro provides. The kit draws no images, so that
-// one resolver is stubbed and the real SVG elements still render (as in R1).
-vi.mock('../../../../node_modules/react-native-svg/lib/module/lib/resolveAssetUri.web.js', () => ({ resolveAssetUri: () => null }));
-
 import { DateChip } from './DateChip';
 import { MATRIX, leading, mountKit, rgb } from './entryKitTestHarness';
 

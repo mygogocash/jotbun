@@ -341,3 +341,361 @@ Built on `2e6bf6e`, in `src/ui/`. Nothing is routed and no existing screen chang
   - test:render PASS (126, 20 files);
   - export:web PASS;
   - `git diff --check` clean.
+
+## R2c: dev screen catalogue
+
+- **What it is:** one route that renders every R2a component and the R1 mascot, a section at a time, with sample data. It needs no sign-in and no API, so the E2 screenshots can be taken in the simulator now.
+- **Files:**
+  - `app/dev/catalogue.tsx`: the route. Nothing else in `app/` changed.
+  - `src/dev/catalogue/`:
+    - `CatalogueScreen.tsx`: the header controls, the index and the section body;
+    - `registry.tsx`: the sections, in order;
+    - `kitSections.tsx` and `mascotSections.tsx`: what each section draws;
+    - `params.ts`: the deep link;
+    - `samples.ts`: sample data;
+    - `parts.tsx`: shared layout pieces.
+  - Tests:
+    - `params.test.ts` (pure);
+    - `CatalogueScreen.render.test.tsx` and `catalogueRoute.render.test.tsx`;
+    - `catalogueTestHarness.tsx` and `safeAreaTestStub.tsx` (test use only).
+  - No R0, R1 or R2a file, screen, locale catalog, package or lockfile changed.
+- **Gate:** the route shows the catalogue only when `__DEV__ && isRedesignEnabled('catalogue')` (`EXPO_PUBLIC_REDESIGN=catalogue`, or `all`). Otherwise it shows "Not available", and a development build adds one line saying how to turn it on.
+  - The catalogue is loaded with `if (__DEV__) require('@mobile/dev/catalogue/CatalogueScreen')`, never imported.
+  - The route imports only a type from it, which is erased.
+- **Deep link:** `gogospend://dev/catalogue?section=<id>&theme=<light|dark|system>&locale=<en|th|vi>`, for example `gogospend://dev/catalogue?section=receipt&theme=dark&locale=th`.
+  - Scripted: `xcrun simctl openurl booted "gogospend://dev/catalogue?section=receipt&theme=dark&locale=th"`.
+  - In Expo Go the same path follows `exp://<host>:8081/--/`.
+  - Every param is optional:
+    - With no `section`, the catalogue shows an index of every section.
+    - An unknown section says so above the index.
+    - With no `theme` or `locale`, it follows the app.
+  - Case and surrounding spaces are ignored, and a repeated param takes its first value.
+  - Values the app doesn't ship (a `jp` locale, a `sepia` theme) are ignored rather than guessed.
+  - A new link while the catalogue is open replaces the header's choices.
+- **Header controls:**
+  - ‹ and › step through the sections in order and stop at the ends; ≡ returns to the index.
+  - **Theme** (Light, Dark, System) uses `ThemePreferenceOverride`. The status bar follows it.
+  - **Language** (EN, TH, VI) uses an `IntlProvider` around the catalogue only, which is how `useCopy`, `BunText` and `Amount` read the locale.
+  - **Bun** (Full, Quiet, Off): see the deviations below.
+  - The stored theme and language are never touched.
+- **Sections (21).** Each fits one 402 × 874 pt screen with the header.
+
+  | id | Shows |
+  | --- | --- |
+  | `amount` | sizes s to xl; income, transfer, untyped negative; receipt serif at l and xl |
+  | `amount-states` | confirmed, saving, conflict (m and l); saving on the stage and on ink |
+  | `pill-button` | primary and secondary: plain, busy, disabled (primary with a reason); full width |
+  | `card` | `Card`, `OutlinedCard`, small padding |
+  | `stage-header` | month switcher with the total, a card with a `BunPeek` against the stage; no-later-month header with the bun in its slot |
+  | `receipt` | today's slip (rows, a saving row, total, footer); a record slip (category, date, note, amount) |
+  | `tab-bar` | interactive selection, Budget selected, labels only |
+  | `sheet` | buttons open a `Sheet`, a `ConfirmSheet` and a destructive `ConfirmSheet` with the quiet bun; confirming shows busy for 1.5 s, then closes |
+  | `empty-state` | first run: `hello` bun at l, primary action |
+  | `empty-state-card` | in an outlined card: `thinking` bun at m, secondary action |
+  | `sync-banner` | offline; saving 1 and 3; checking 1 and 2 |
+  | `sync-banner-review` | needs review, update needed and locked, each with an action; update without one |
+  | `undo-bar` | a short and a long message |
+  | `flag-chip` | warning and info, and on import rows |
+  | `promise-list` | the plan's four privacy promises with icons; default ticks without a title |
+  | `staged-progress` | in progress (done, active, waiting) and a failed stage |
+  | `bun-m` | all 12 poses at m |
+  | `bun-l-1`, `bun-l-2` | the 12 poses at l, 6 each |
+  | `speech-bubble` | four bubbles (highlighted amount, cheer, oops-kind, no highlight) |
+  | `bun-peek` | top edge (default and centred), right edge, left edge |
+
+- **Sample data** (`samples.ts`):
+  - Amounts come from `goldenSeed()`: the ฿182.00 lunch, ฿12,268.00 rent, ฿28,000.00 salary, the ฿1,500.00 move and both wallets' balances. The ฿65 coffee, ฿18,000 budget, ฿420 a day and ฿120 over come from the plan's own examples.
+  - Words a person would type (wallet names, items, notes, a merchant) are given in each language, so Thai and Vietnamese script runs through every component.
+  - Interface copy goes through `tc`, as on a screen. New strings therefore show in English under TH and VI until E2 approves copy for the catalogs, which is what the app would show today. That copy (for example the promise list) is sample copy, not approved copy.
+- **Fit on one screen:** happy-dom has no layout, so this was measured in a browser.
+  - Method: `expo start --web` with the flag on, at 402 × 874, adding iPhone 17 Pro insets (62 pt top, 34 pt bottom) to the measured header and body.
+  - Every section fits in EN, TH and VI. The tallest is the Thai receipt at 841 pt; EN and VI peak at 805 pt.
+  - The first cut had `empty-state` at 928 pt (949 pt in Thai), so it was split in two, and long titles were shortened to keep the header on one line.
+  - The simulator itself was not run (see SKIPPED).
+- **RED → GREEN:** RED ran against compile-safe seams with the real types and wrong output: an empty registry, a parser that returns nulls, a screen and a route that render nothing.
+  - **Pure:** `npm run test:unit -w gogospend-app -- src/dev/catalogue/params.test.ts`.
+    - RED: 4 of 5 failed, all `ERR_ASSERTION`. The one that held, "missing params leave the defaults", is true of an all-null stub.
+    - GREEN: 5 of 5.
+  - **Render:** `vitest run --config vitest.render.config.ts src/dev`.
+    - RED: 35 of 35 failed, with no module errors:
+      - 21 were assertion errors;
+      - 13 were elements not found;
+      - 1 was a `TypeError` from stepping an empty registry.
+    - GREEN: 36 of 36. One case was added while green, for the split-off `empty-state-card`.
+  - **What the render tests check:**
+    - Every registered section, including any added later, renders in light and dark, in EN, TH and VI (126 renders), with no `console.error`. Each section's own content is asserted, for example 12 bun SVGs at 56 pt in `bun-m`.
+    - The flag off (unset, empty, `core`, a misspelling) shows "Not available" and never loads the catalogue.
+    - A release build (`__DEV__` false) never loads it, even with the flag on.
+    - A development build with the flag on requests exactly the catalogue module and opens the deep-linked section.
+    - The deep link selects the section, theme and locale.
+    - The index, previous and next, and the controls work.
+    - The bun control previews Full, Quiet and Off and restores the setting on leave.
+    - Every sheet opens and closes, and a confirm shows busy and then closes.
+- **Mutations:** 12 guards were mutated one at a time. All 12 were caught, and every file was restored byte-identical. The script is `r2c-mutate.py` in the scratchpad.
+
+  | Mutation | Caught by |
+  | --- | --- |
+  | route ignores the flag | route, flag off |
+  | route loads outside `__DEV__` | route, release build |
+  | route requires another path | route, development build |
+  | deep-link theme ignored | 24 tests |
+  | deep-link locale ignored | 24 tests |
+  | no `IntlProvider` override | 23 tests |
+  | no `ThemePreferenceOverride` | 23 tests |
+  | a new link does not replace the choices | 2 tests |
+  | bun setting not restored on leave | the bun control test |
+  | next not disabled at the last section | the stepping test |
+  | params keep their case | pure, hand-typed links |
+  | Thai sample data in English | the deep-link test |
+
+- **Production-bundle check:** PASS. The catalogue, its samples and the fakes are not in a release bundle.
+  - **Default flag:** `npm run export:web -w gogospend-app -- --max-workers 2`, then `grep -rlF` over `dist`.
+    - Not found: `catalogue-section-`, "Screen catalogue", "Open a delete confirm", "Bun poses at m", "Previous section", the sample note "Lunch with Mai at the market", goldenSeed's "September salary" and its record id `0000000b-…-000000000003`, the dev hint `EXPO_PUBLIC_REDESIGN=catalogue`, and the module path `dev/catalogue/CatalogueScreen`.
+    - Found once: "Not available".
+  - **The route's chunk:** `catalogue-<hash>.js` is 830 bytes.
+    - Metro folded the loader to `(isRedesignEnabled('catalogue'), null)` and the dev hint to `null`.
+    - Its seven dependencies are expo-router, `View`, the flags, `useCopy`, `Text`, the theme and the JSX runtime.
+  - **Flag on** (`EXPO_PUBLIC_REDESIGN=all`, production): the same result, and a byte-identical route chunk.
+  - **Positive control:** a development export (`--dev`, flag on) contains every one of those strings except the Thai sample, which the dev bundle writes as `\u` escapes. So the search would have found them.
+- **App gate:** every step passed.
+  - typecheck:app PASS.
+  - test:unit PASS (294: 289 before, 5 new).
+  - test:render PASS (197 in 27 files: 161 before, 36 new).
+  - export:web PASS (`--max-workers 2`).
+  - `git diff --check` clean.
+- **Deviations:**
+  - **Bun intensity control:** R1 has no subtree override for the intensity; its context isn't exported, and R1's files were out of bounds. So the Bun control calls the app's own `setIntensity`.
+    - It changes the real, stored setting while the catalogue is open, and puts back the value the person had when the catalogue closes.
+    - If the app is killed while the catalogue is open, the preview value stays.
+    - For that reason there is no `bun` deep-link param.
+    - A small `BunIntensityOverride` in `BunIntensityProvider.tsx` would make it a pure preview.
+  - **More sections than components:** 21 sections, not one per component. `Amount`, `SyncBanner`, `EmptyState` and the l poses each needed two screens, and `Card`/`OutlinedCard` got a section too.
+  - **The route test answers one `require` itself.** vitest hands modules Node's own `require`, which can't load TSX. The route test therefore patches Node's loader for that one request, returning the module vitest already loaded, and records every request so a wrong path fails.
+  - **Safe-area stub:** the catalogue tests replace `react-native-safe-area-context` with a small context-backed stub (`safeAreaTestStub.tsx`), because the real package loads React Native itself under vitest. The kit's own tests mock only `useSafeAreaInsets`; the catalogue also uses `SafeAreaInsetsContext`, to give mid-page stage headers and tab bars zero insets.
+  - **Test fakes in a dev screen:** `samples.ts` imports `goldenSeed` from `fakeResources.ts`, whose header says "Test use only". That is development only, and the bundle check shows it never ships.
+- **Findings for the R2a owner (not fixed here):**
+  - **Web:** react-native-web's `Modal` adds its own unnamed `role="dialog" aria-modal` container. On the web, a `Sheet` is therefore a named dialog inside an unnamed one. Native is unaffected.
+  - Tests that query `getByRole('dialog')` without a name see two dialogs.
+- **Slots for later work:** add one entry to `CATALOGUE_SECTIONS` per section (`registry.tsx` lists them as comments).
+  - **R2b** (group `Kit`): `keypad`, `type-switch`, `category-chips`, `category-grid`, `wallet-picker`, `date-chip`, `note-field`, `record-row`, `day-header`, `budget-bar`, `pace-ring`.
+  - **R3** (group `Screens`), one entry per §6.1 state:
+    - Home: loading, first run, no budget, offline or saving, over budget, upgrade required, terms required, signed out, diary locked.
+    - Quick add: saving, saved, queued offline, validation, opening balance needed, move.
+    - History, and record detail with its conflict view.
+  - The every-section render test covers new entries automatically. Content checks go in its `SHOWS` table.
+- **SKIPPED:**
+  - **Simulator screenshots (E2):** each section in light and dark, in TH, EN and VI.
+  - **One-screen fit on iOS:** checked on web only. Real iOS font metrics may differ slightly from web; the tightest section has 33 pt to spare.
+
+## R2 unification
+
+Built on `d86001c`, after R2a, R2b, R1 and R3 logic were merged.
+
+- **What changed:** `src/ui/`, `src/testing/` and `vitest.render.config.ts`; the three R1 render tests lost their stubs; and `spend/v1/redesign/shared.ts` gained a doc comment.
+- **What did not:** no screen or route, no package and no lockfile. Every public kit export still imports from its old path; only the private `entryKitPrivate.tsx` is gone. No existing render test changed except for the removed per-file stubs.
+- **R2b's private parts:** `entryKitPrivate.tsx` is deleted.
+
+  | R2b private part | Now |
+  | --- | --- |
+  | `MoneyText` | `AmountText` in `Amount.tsx`. It draws money in tabular figures, and `Amount` now draws its own number through it. R2b components get the text from `useAmountWords()(minor).shown`; untyped, that is exactly `formatMinor`. They keep their own signs and spoken labels (see findings 2 and 3). |
+  | `useMoneyLocale` | Exported from `Amount.tsx`, and `useAmountWords` uses it. BudgetBar and PaceRing pass it to `budgetWords`. |
+  | `useDateLocale` | `useActiveLocale()`. `DateLocale` is the same three locales. |
+  | `Decorative` | `<View {...DECORATIVE}>` from `a11y.ts`, as R2a does it. |
+  | `Glyph` | `src/ui/Glyph.tsx`: `Glyph`, `GlyphName` and `GlyphProps`. The unused `arrow-right` is dropped. |
+  | `KitError` | `src/ui/FieldError.tsx`: `FieldError`, with the same alert role, polite reading, ink words and hidden mark. |
+  | `KitSheet` | **Not replaced; see finding 1.** It is now `CalendarSheet`, private to `DateChip.tsx`. Its backdrop comes from `sheetBackdrop.ts`, which `Sheet` uses too. |
+
+  New exports: `AmountText`, `AmountTextProps` and `useMoneyLocale` (`Amount.tsx`), `Glyph`, `FieldError`, `sheetBackdrop` and `SHEET_BACKDROP_OPACITY`, and `toKitPace`.
+- **The SVG asset-registry stub:**
+  - **Alias:** one alias in `vitest.render.config.ts` maps `@react-native/assets-registry/registry` to `src/testing/svgAssetRegistryStub.ts`, a registry with no assets.
+  - **Why the registry, not the resolver:** that is the module vitest cannot load, so the real `resolveAssetUri` now runs. A link `href` resolves, and a bundled asset id throws "could not be found" instead of passing quietly.
+  - **Per-file stubs removed:** the 14 `vi.mock(…resolveAssetUri.web.js)` stubs are gone, 11 in R2b and 3 in R1. A branch that still has one keeps working; it is just redundant now.
+  - **Kept out of the app bundle:**
+    - Only the test config names the stub, and Metro resolves the registry itself.
+    - `svgAssetRegistryStub.test.ts` fails if any file under `src/` or `app/` imports the stub. A mutation check confirmed it.
+    - After `export:web`, the bundle's `getAssetByID` is Expo's registry, and no part of the stub appears in it.
+- **The pace adapter:** `toKitPace(pace)` is in `src/ui/paceAdapter.ts`. It takes the logic's `BudgetPace` from `budgetPace()` and returns the kit's `BudgetPace`, ready for BudgetBar and PaceRing. It only picks fields; its one change is the sign of the over amount.
+  - **State:** the same four words.
+  - **Spent:** `spent.estimatedMinor`, which is confirmed spending plus expense drafts waiting to sync. Drafts being checked and drafts that need a look are left out. State, left and per day are decided on the same figure, so the words and the colour always agree. Screens show `paceCopy().pendingNote` and `checkingNote` beside the bar.
+  - **Limit:** passed through; null without a budget.
+  - **Left:** the logic's `leftMinor` while not over. When over, it is minus `overByMinor`, so the kit says the logic's own over amount, even for a pace whose left reads zero. Null without a budget.
+  - **Per day and days left:** passed through. Per day is rounded down, `'0'` at exactly zero left, and null when over, after the month or without a budget. Days left counts today.
+  - **Phases:** the kit has none.
+    - `before`: the whole month is left, so it reads like the first day.
+    - `after`: no days left and no per day, so it reads "฿X left" or "฿X over" with no days line. The logic never calls a finished month tight.
+  - **Tests:** 10, built from real `budgetPace()` output. They cover on track, tight, pending money, zero spent, zero left, over by one satang, over with left reading zero, no budget, the last day, before and after.
+- **Day labels:** both helpers stay.
+  - **Screens draw with `src/ui/dateStep.ts`:** `dayLabel` and `fullDateLabel`, through DayHeader and DateChip. Its words are locale data, so they read the same on every phone, Vietnamese has its own, and the chip and the history headers agree.
+  - **The view models keep `spend/v1/redesign/shared.ts`'s `dayLabel`:** it is used through `Intl`, with en-GB for Vietnamese, for `DayGroup.label` and its spoken summary, and those are not drawn.
+  - Both doc comments now say this.
+- **Accessibility and colour pass (`src/ui/`):**
+  - **Raw hex:** none outside the palette. Category pastels arrive as data, from `CATEGORY_COLORS`.
+  - **Text pairs:** every text tone was checked against its ground, in both modes.
+    - Each pair is in `BUN_TEXT_PAIRS`, plus `BUN_TILE_TEXT` on category pastels, so the list did not change.
+    - No muted, accent or state colour text sits on the stage.
+    - Disabled controls fade with opacity. WCAG 1.4.3 exempts them.
+  - **Roles and labels:** every control has a role and a label. The exceptions are findings 1, 5 and 6.
+  - **Fixed:**
+    - The chosen segment, category chip, category grid cell and calendar day were marked by fill alone. Their labels are now bold as well, as TabBar already did.
+    - The calendar's weekday initials were hidden on the web only. They now use `DECORATIVE`, so native screen readers skip them too.
+    - At night, the calendar's backdrop was a 35% veil of near-white ink. It now dims like `Sheet`'s.
+    - VoiceOver's escape gesture now closes the calendar.
+- **Tests added:** unit +12 (`paceAdapter.test.ts` 10, `svgAssetRegistryStub.test.ts` 2) and render +7 (`svgAssetRegistryStub.render.test.tsx` 3, `kitUnification.render.test.tsx` 4).
+  - The alias test has no per-file stub. It renders a kit glyph and the bun as real SVG, and proves that the real resolver runs.
+- **Mutation check:** each mutation was made one at a time and restored (`r2u-mutate.py`, in the scratchpad). All 10 were caught.
+
+  | Mutation | Caught by |
+  | --- | --- |
+  | TypeSwitch, CategoryChips or calendar choice not bold (3 mutations) | `kitUnification`, 1 test each |
+  | The calendar backdrop is a light veil at night | `kitUnification`, 2 tests |
+  | Glyph exposed to screen readers | `kitUnification` (field error mark) |
+  | `AmountText` drops tabular figures | `Amount`, 1 test |
+  | Adapter: spent from confirmed only | adapter, 2 tests |
+  | Adapter: left passed through when over | adapter, 1 test |
+  | Adapter: per day dropped | adapter, 6 tests |
+  | Alias removed | the alias render file fails to load |
+- **Findings reported, not fixed:**
+  1. **`Sheet` is two dialogs on the web.**
+     - **The problem:** react-native-web's `Modal` gives its full-screen layer `role="dialog"` once it has shown. `Sheet` shows at once, so it reads as an unnamed dialog around its own named one. That fails "every role has a name".
+     - **Why DateChip can't move to `Sheet` yet:** DateChip's tests query `getByRole('dialog')` without a name and expect one dialog. `CalendarSheet` nests the same way in a browser once its slide ends; it passes only because happy-dom never ends a CSS animation.
+     - **Fix A:** name the dialog in those two DateChip queries, then switch DateChip to `Sheet`.
+     - **Fix B:** give the name to the Modal's layer on the web and drop the inner role there. That changes `Sheet`'s own tests, which read the cream panel as the named dialog.
+  2. **Two minus signs.** `Amount` signs an expense with U+2212 (−). RecordRow and DayHeader use a hyphen (-), and the tests pin both. Choose one at E2.
+  3. **Two ways to say "Expense ฿65.00".**
+     - `Amount` speaks `tc('Expense {amount}')`, which is not in the catalogs, so Thai hears English.
+     - RecordRow speaks `` `${tc('Expense')} ${amount}` ``, which is in Thai today.
+     - Pick one form when the catalogs are updated.
+  4. **Two icon styles.** R2a draws glyphs as text (× ‹ › + ✓ !), R2b as vectors (`Glyph`). StageHeader's month arrows are text, and DateChip's day arrows are vector chevrons. This is a design decision.
+  5. **The calendar's chosen day uses `aria-selected` on a button.** ARIA ignores that on the web; native readers do say "selected". It needs grid and gridcell semantics, or `aria-pressed`. The tests pin `aria-selected`.
+  6. **RecordRow's long-press actions have no keyboard path on the web.** Accessibility actions are native only. A row given only actions, with no `onPress`, has a label but no role.
+  7. **A finished month reads "On track".** The kit's `BudgetPace` has no phase. For a past month, screens should show `paceCopy().headline` ("฿X left this month"), or the kit needs a phase.
+  8. **`CalendarSheet` does not pad the bottom safe area,** as `KitSheet` never did. That goes away with the move to `Sheet`.
+  9. **Dates in two styles.** The record receipt's date row comes from `recordModel`'s `longDateLabel` (Intl, en-GB for Vietnamese), while headers and the chip use `dateStep` (with Vietnamese words). In Vietnamese, the same date reads two ways across screens.
+- **Gate** (from the worktree root):
+
+  | Step | Before (`d86001c`) | After |
+  | --- | --- | --- |
+  | typecheck:app | PASS | PASS |
+  | test:unit | PASS, 397 | PASS, 409 |
+  | test:render | PASS, 219 in 36 files | PASS, 226 in 38 files |
+  | export:web (`--max-workers 2`) | PASS | PASS |
+  | `git diff --check` | clean | clean |
+
+## R3: Home and navigation shell
+
+Built on `d86001c`. Behind `isRedesignEnabled('core')`: with the flag off, the routes, the layout and the current screens are exactly as before, and their tests are untouched. No package or lockfile change, the locale catalogs are untouched, and no text pair was added.
+
+- **Files:**
+  - `src/screens/redesign/HomeScreen.tsx`: the redesigned Home, on `homeModel()`.
+  - `src/screens/redesign/SpendTabShell.tsx`: the tab shell and `spendTab(pathname)`.
+  - `app/spend/_layout.tsx`: wraps the screens in the shell only under the flag. The auth redirect and the legacy branch are unchanged.
+  - `app/spend/index.tsx`: legacy flag first, then the new Home under the flag (inside the same `SpendV1Provider`), else the v1 Home.
+  - Tests: `src/screens/redesign/HomeScreen.render.test.tsx` (34) and `SpendLayout.render.test.tsx` (14).
+- **Home, ready:**
+  - **Stage:** the month as the title ("September 2026", "กันยายน 2569", "Tháng 9 năm 2026"), then the month's **confirmed** spending, against the budget when there is one ("฿12,450.00 of ฿18,000.00"). Under it come the month's "Waiting to sync: …" and "Checking with Jotbun: …" lines, in ink, the only tone allowed on the stage.
+  - **Pace:** a `PaceRing` card, "This month". The ring shows the logic's estimate (confirmed plus waiting) and says so ("Includes ฿70.00 saving on this device", "฿9.00 more is being checked with Jotbun").
+  - **No budget:** the ring is left out, with one quiet line ("Set a monthly budget to see what's left each day") and no action, which comes in R4.
+  - **Today's receipt:** a `ReceiptSlip` with a `RecordRow` per record or draft, then `ReceiptTotal`s for the day's confirmed money out (and money in, when any), then the day's draft money on its own lines. An empty today says "Nothing logged today yet" with a secondary Add an entry.
+  - **Earlier days:** up to 5, each a `DayHeader` with confirmed totals, its draft lines and its rows.
+  - **Wallets:** the total and each balance. An archived wallet says "Archived" in words, not only in a muted colour.
+  - **See all entries:** a secondary pill.
+  - **Rows:** a record opens `/spend/record/<id>`. A draft is not a record yet, so it does not.
+- **Loading:**
+  - Today's records are read across every page (up to 20 × 200), so the receipt's total is never a partial sum.
+  - Earlier days come from one 50-record page cut back to whole days: when more pages follow, the oldest day on the page is left out rather than shown with a partial total.
+  - Confirmed money reloads in place when a draft resolves, as on the current Home.
+- **Drafts:** inline with their state ("saving…", "checking…", "needs a look"). Remove appears only for a draft never sent, Discard only for one that needs review, with the same labels as today ("Remove Food ฿65.00").
+- **Sync:** one `SyncBanner` per state:
+  - **offline:** a network load failure with an open diary, or sync backing off with entries waiting. Retry is a secondary pill beside it, because the banner's offline state takes no action.
+  - **saving:** unsent and sending drafts.
+  - **checking:** uncertain drafts.
+  - **needs_review:** its action, Review, opens a `Sheet` listing those drafts with Discard.
+  - **paused_upgrade.**
+  - **locked:** its reason follows in `SyncStatus`'s words.
+
+  The `SyncStatus` news the kit has no state for is said in its existing words as a polite live region: sync paused, terms needed to send, sign in again to send, getting the full diary, "Syncing 1 of 3". Without a diary (the web) nothing claims to be offline.
+- **Load problems:** each kind has its own card and heading: "Update Jotbun", "Updated terms", "Signed out", "Use the Jotbun app" and "Diary not loaded". The messages and the retry rule are `classifyLoadProblem`'s, and only a plain failure has Try again. With an open diary, the device's drafts by day, the waiting money and Add (when the device has wallets) still show; the offline receipt's footer reads "Saved on this device".
+- **Locked diary:** the banner and the reason. Its drafts are hidden. Start over appears only for `key_missing`, `key_rejected` and `wrong_account`, and only after a destructive `ConfirmSheet` (the existing copy; Keep it keeps the ink fill).
+- **First run:**
+  - An `EmptyState` with the `hello` bun and the action "Add a wallet". The action opens the form, so each view has one primary.
+  - **Form fields:**
+    - a NoteField-style name field;
+    - an opening balance (zero by default and allowed, parsed by `parseAmountInput` so Thai digits work, with the exact amount previewed under it);
+    - a `DateChip` tracking start, which cannot pass today.
+  - **Rules kept from `FirstWallet`:** the same errors, `validateTrackingStart`, the server field mapping (`name`, `tracking_start`) and one command key per payload. A definite refusal settles the key. An unconfirmed save freezes the form and resends the same command. `isOwnCreate` counts as created, and the device diary is asked to sync.
+- **The bun:**
+  - At Full, the stage peek (`peek`, turning `oops-kind` when over budget) and the first-run `hello`.
+  - At Quiet, the first-run `hello` only, which is an empty state.
+  - At Off, none.
+  - Every bun is decorative; the facts are in words.
+  - The peek sits in `StageHeader`'s bun slot on a zero-height anchor, so it slides up from the slot's lower edge and keeps its own box.
+- **Shell:**
+  - **Bar:** the kit `TabBar` sits as a row under the screen: Home (`/spend`), the centre add (`/spend/add`), then History (`/spend/all`). Insights joins in R5 (D7).
+  - **Navigation:** tabs use `router.navigate`, and re-selecting the active tab does nothing. Add uses `router.push`.
+  - **Where it shows:** hidden on `/spend/add…` and `/spend/record…`; shown with no tab selected elsewhere, for example `/spend/import`.
+  - **Icons:** small line drawings in the tab's own colour.
+- **Accessibility:**
+  - Headings for the stage, sections, days and problems.
+  - Rows speak their state ("Food, Expense ฿65.00, saving, Cash").
+  - Totals speak their type ("Money out, Expense ฿120.00").
+  - Polite live regions for sync, and alerts for problems.
+  - Every control is at least 44 pt.
+  - Errors are ink with a mark, never red.
+- **Text pairs:** none new. A render check walks every visible text node on the Home and on its open sheets. It asserts that the colour and its nearest ground are a `BUN_TEXT_PAIRS` pair with at least 4.5:1, in light and dark: ready in en/th/vi, first run with errors, offline, a problem with a locked diary and its confirm sheet, and over budget with the review sheet.
+- **RED → GREEN:**
+  - **RED:** `vitest run --config vitest.render.config.ts src/screens/redesign`, against typed seams (a `HomeScreen` that renders nothing, a shell that draws no bar and a `spendTab` that says hidden) with the route and layout unwired. 39 of 46 failed: 38 because an element was not found, and 1 `AssertionError` (`spendTab`). There were no module or type errors. The 7 that held are the flag-off, hidden-route, legacy-first and auth-redirect guards, which the unchanged layout already satisfies.
+  - **GREEN:** 46 of 46.
+  - **One test corrected:** its expected total balance had ignored today's ฿120.00 lunch from Cash, so ฿21,050.00 became ฿20,930.00.
+  - **Two tests added while green:** today's total across two pages (201 records, ฿203.01), and the page-split earlier day being left out. That makes 48.
+- **Mutation check:** 18 guards were mutated one at a time with `r3h-mutate.py` (in the scratchpad). All 18 were caught, and every file was restored.
+
+  | Mutation | Failing tests |
+  | --- | --- |
+  | Stage total includes waiting drafts | 7 |
+  | A draft opens the record screen | 1 |
+  | Remove offered for any draft | 1 |
+  | Offline claimed without a diary | 1 |
+  | Quiet keeps the stage bun | 1 |
+  | Over budget keeps the plain peek | 2 |
+  | A page-split earlier day kept | 1 |
+  | Today's records read from one page only | 1 |
+  | Start over without confirming | 3 |
+  | An unconfirmed wallet not frozen | 1 |
+  | `isOwnCreate` treated as a failure | 1 |
+  | Muted text on the stage | 8 |
+  | "Update to send" row looks confirmed | 1 |
+  | Needs review counted as checking | 1 |
+  | Tab bar shown on Add | 2 |
+  | Re-selecting the active tab navigates | 1 |
+  | Flag-off layout gets the shell | 1 |
+  | Redesign checked before legacy | 1 |
+
+- **Deviations:**
+  - **The stage shows confirmed spending, not `paceCopy().total`.** The logic's total is the estimate including waiting drafts. The current Home never mixes waiting money into confirmed money, so the stage keeps them apart, and only the ring (which says so) uses the estimate. The same `{spent} of {limit}` and `{spent} spent this month` copy is used.
+  - **First run is two steps.** `EmptyState` always draws its action as the view's primary.
+  - **The name field is local, in NoteField's style.** `NoteField` applies note and merchant limits and a counter. Errors use a local ink mark, because `KitError` is private to the kit.
+  - **The opening balance is a text field with an exact preview,** not the `Keypad`.
+  - **The stage peek is anchored in the bun slot.** `StageHeader` has no peek slot of its own.
+- **Kit gaps, reported and not changed:**
+  - `RecordRow` has no "update to send" state. Those rows show "saving…" (they are waiting on the device), with "Update Jotbun to send" under them.
+  - `SyncBanner`'s `offline` takes no action, and it has no state for terms, resync or progress.
+  - `EmptyState` cannot leave out its action, or make it anything but primary unless asked.
+  - Screens have no public field error (`KitError` is private).
+- **For the integrator:**
+  - `kitPace()` in `HomeScreen.tsx` maps the logic's pace to the kit's. Switch it to the shared adapter in `src/ui/budgetWords.ts`.
+  - Both test files carry the react-native-svg `resolveAssetUri.web.js` stub. Drop it once the shared vitest config has it.
+  - **Routes:** `/spend/record/<id>` comes from the History and Record work. The push is cast to `Href` until that route exists, because typed routes are on. Drafts do not navigate. History (`/spend/all`) and Add (`/spend/add`) are the other agents' screens: the bar shows on History and hides on Add.
+  - **New English strings** (they show in English in th and vi until E2): `Today's receipt`, `Earlier days`, `Add a wallet`, `Archived`, `Review`, `Start over?`, `History`, `Update Jotbun`, `Updated terms`, `Signed out`, `Use the Jotbun app` and `Diary not loaded`. The R3 logic's strings are used as they are: `{spent} of {limit}`, `{spent} spent this month`, `Needs a look`, `Nothing logged today yet`, the pace notes and the set-budget line.
+- **App gate:**
+  - typecheck:app PASS;
+  - test:unit PASS (397);
+  - test:render PASS (267 in 38 files: 219 + 48 new);
+  - export:web PASS (`--max-workers 2`);
+  - `git diff --check` clean.
+- **SKIPPED (E2):**
+  - simulator screenshots of every state in light and dark, in TH, EN and VI, at 320 pt;
+  - VoiceOver and TalkBack on the Home and the tab bar;
+  - the stage peek's geometry and spring on iOS and Android;
+  - Dynamic Type at the largest size.
+
+  The flag stays off until the screenshots are approved.

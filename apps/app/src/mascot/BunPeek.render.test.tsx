@@ -2,11 +2,6 @@ import { act, cleanup, screen } from '@testing-library/react';
 import { AccessibilityInfo, Animated, Text, View } from 'react-native';
 import { afterEach, beforeAll, expect, test, vi } from 'vitest';
 
-// react-native-svg's web build resolves image hrefs through React Native's
-// asset registry, which only Metro provides. The bun draws no images, so that
-// one resolver is stubbed and the real SVG elements still render.
-vi.mock('../../../../node_modules/react-native-svg/lib/module/lib/resolveAssetUri.web.js', () => ({ resolveAssetUri: () => null }));
-
 import { motion } from '@mobile/theme/motion';
 import { BunPeek, type BunPeekEdge } from './BunPeek';
 import { installBrowserStorage, mountMascot } from './mascotTestHarness';

@@ -10,10 +10,11 @@ import Svg, { Circle } from 'react-native-svg';
 import { useCopy } from '@mobile/i18n/useCopy';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 
+import { DECORATIVE } from './a11y';
+import { AmountText, useMoneyLocale } from './Amount';
 import { BunText } from './BunText';
 import { budgetWords } from './budgetWords';
 import type { BudgetPace } from './budgetWords';
-import { Decorative, MoneyText, useMoneyLocale } from './entryKitPrivate';
 import { BUN_SPACE } from './layout';
 
 export type PaceRingProps = BudgetPace & {
@@ -37,7 +38,7 @@ export function PaceRing({ size = 128, ...pace }: PaceRingProps) {
 
   const ring = (
     <View style={{ width: drawn, height: drawn, alignItems: 'center', justifyContent: 'center' }}>
-      <Decorative style={{ position: 'absolute', top: 0, left: 0 }}>
+      <View {...DECORATIVE} style={{ position: 'absolute', top: 0, left: 0 }}>
         <Svg width={drawn} height={drawn} viewBox={`0 0 ${drawn} ${drawn}`}>
           <Circle cx={drawn / 2} cy={drawn / 2} r={radius} stroke={colors.rule} strokeWidth={STROKE} fill="none" />
           {share !== null ? (
@@ -54,9 +55,9 @@ export function PaceRing({ size = 128, ...pace }: PaceRingProps) {
             />
           ) : null}
         </Svg>
-      </Decorative>
+      </View>
       <View style={{ alignItems: 'center', paddingHorizontal: STROKE + BUN_SPACE.xxs }}>
-        <MoneyText variant="label" tone={tone} style={{ fontWeight: '700', textAlign: 'center' }}>{words.figure}</MoneyText>
+        <AmountText variant="label" tone={tone} style={{ fontWeight: '700', textAlign: 'center' }}>{words.figure}</AmountText>
         <BunText variant="caption" tone={tone === 'over' ? 'over' : 'muted'} style={{ textAlign: 'center' }}>{words.figureWord}</BunText>
       </View>
     </View>
