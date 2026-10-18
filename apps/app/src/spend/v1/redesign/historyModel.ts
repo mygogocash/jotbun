@@ -98,7 +98,12 @@ function matchesFilters(item: EntryLike, filters: HistoryFilters): boolean {
   return true;
 }
 
-function summaryLine(count: number, out: string | null, income: string | null): CopyLine {
+/**
+ * The summary words for a count and its money out and in (formatted, or null
+ * when nothing moved that way). Exported so a screen can word the server's
+ * exact totals for a filter the same way.
+ */
+export function summaryLine(count: number, out: string | null, income: string | null): CopyLine {
   if (count === 0) return { text: 'No entries match' };
   const one = count === 1;
   if (out && income) return { text: one ? '1 entry, {out} out, {in} in' : '{count} entries, {out} out, {in} in', values: { count, out, in: income } };

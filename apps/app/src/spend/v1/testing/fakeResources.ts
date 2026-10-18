@@ -80,9 +80,14 @@ export function createFakeResources(seed: { wallets?: WalletSnapshot[]; records?
     return result;
   }
 
+  // A wallet scope matches a transfer on either side, as the server's does.
+  const inWallet = (record: TransactionDto, walletId: string) =>
+    record.type === 'transfer' ? record.source_wallet_id === walletId || record.destination_wallet_id === walletId : record.wallet_id === walletId;
   const inMonth = (record: TransactionDto, filter: HistoryFilter) =>
     !record.deleted_at && record.occurred_on >= filter.from && record.occurred_on <= filter.through &&
-    (!filter.type || record.type === filter.type);
+    (!filter.type || record.type === filter.type) &&
+    (!filter.wallet_id || inWallet(record, filter.wallet_id)) &&
+    (!filter.category_id || (record.type !== 'transfer' && record.category_id === filter.category_id));
 
   const resources: SpendV1Resources = {
     async wallets() {

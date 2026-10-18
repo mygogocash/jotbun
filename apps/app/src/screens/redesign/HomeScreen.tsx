@@ -21,7 +21,6 @@
 import type { HistoryFilter, HistoryPage, Minor, TransactionDto } from '@gogospend/contracts';
 import { HISTORY_MAX_LIMIT, TRACKING_START_MIN, validateTrackingStart } from '@gogospend/contracts';
 import { useRouter } from 'expo-router';
-import type { Href } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
@@ -607,7 +606,7 @@ export function HomeScreen({ now }: { now?: Date }) {
         const category = byId.get(categoryOf.get(row.recordId) ?? '');
         return category ? categoryLook(category, row.title) : null;
       },
-      onOpen: (row) => router.push(`/spend/record/${row.recordId}` as Href),
+      onOpen: (row) => router.push(`/spend/record/${row.recordId}`),
     };
   }, [categories, records, diaryView.outbox, router]);
 
