@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { BUN_TEXT_PAIRS, bunDark, bunLight, getBunColors } from './bunPalette.ts';
+import { CATEGORY_COLORS } from '@gogospend/contracts';
+
+import { BUN_TEXT_PAIRS, BUN_TILE_TEXT, bunDark, bunLight, getBunColors } from './bunPalette.ts';
 import type { BunColors } from './bunPalette.ts';
 import { contrastRatio, relativeLuminance } from './contrast.ts';
 
@@ -73,5 +75,15 @@ test('outlines are visible (3:1) and budget states are distinct', () => {
     // (WCAG 1.4.1). The palette's part is a clearly different hue.
     const gap = Math.abs(hue(colors.over) - hue(colors.under));
     assert.ok(Math.min(gap, 360 - gap) >= 90, `${mode}: over and under differ in hue`);
+  }
+});
+
+test('category tiles: the tile ink meets AA on every category pastel in both modes', () => {
+  for (const [mode, colors] of modes) {
+    const ink = colors[BUN_TILE_TEXT[colors.isDark ? 'dark' : 'light']];
+    for (const hue of CATEGORY_COLORS) {
+      const ratio = contrastRatio(ink, hue);
+      assert.ok(ratio >= 4.5, `${mode}: tile ink on ${hue} is ${ratio.toFixed(2)}:1`);
+    }
   }
 });

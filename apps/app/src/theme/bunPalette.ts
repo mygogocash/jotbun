@@ -88,3 +88,10 @@ export const BUN_TEXT_PAIRS: readonly (readonly [TextToken, Ground])[] = [
   ['over', 'background'], ['over', 'card'], ['over', 'paper'],
   ['onInk', 'ink'],
 ];
+
+/**
+ * The text token drawn on a category's own pastel (a user category's coloured
+ * initial tile, or a built-in's icon tile). The pastels are light in both
+ * modes, so the tile always takes the dark ink of the mode.
+ */
+export const BUN_TILE_TEXT: Readonly<Record<'light' | 'dark', TextToken>> = { light: 'ink', dark: 'onInk' };
