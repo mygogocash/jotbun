@@ -35,7 +35,7 @@ test('ahead of pace stays tight, not over', () => {
   assert.equal(words(pace).detail, 'Tight · ฿189.99 left · 21 days to go');
 });
 
-test('pending money: confirmed spending plus waiting drafts; checking and refused drafts are left out', () => {
+test('pending money: confirmed spending plus waiting drafts; sending, checking and refused drafts are left out', () => {
   const outbox = [
     command(pending({ amount_minor: '1000' }), 'unsent'),
     command(pending({ amount_minor: '2000' }), 'sending'),
@@ -44,14 +44,15 @@ test('pending money: confirmed spending plus waiting drafts; checking and refuse
     command(pending({ amount_minor: '9000' }), 'needs_review'),
   ];
   const pace = logic('2026-10-16', '31000', '20000', { outbox });
-  assert.deepEqual([pace.spent.confirmedMinor, pace.spent.pendingMinor, pace.spent.checkingMinor, pace.spent.estimatedMinor], ['20000', '3500', '700', '23500']);
+  // A `sending` command may already be committed, so it counts as checking, never as spent.
+  assert.deepEqual([pace.spent.confirmedMinor, pace.spent.pendingMinor, pace.spent.checkingMinor, pace.spent.estimatedMinor], ['20000', '1500', '2700', '21500']);
   const kit = toKitPace(pace);
-  assert.equal(kit.spentMinor, '23500');
-  assert.equal(kit.leftMinor, '7500');
+  assert.equal(kit.spentMinor, '21500');
+  assert.equal(kit.leftMinor, '9500');
   assert.equal(BigInt(kit.limitMinor ?? '0') - BigInt(kit.spentMinor), BigInt(kit.leftMinor ?? 'x'));
   // The state was decided on the same estimate, so the words and the state agree.
-  assert.deepEqual([pace.state, kit.state, kit.perDayMinor], ['tight', 'tight', '468']);
-  assert.equal(words(pace).detail, 'Tight · ฿75.00 left · 16 days to go');
+  assert.deepEqual([pace.state, kit.state, kit.perDayMinor], ['tight', 'tight', '593']);
+  assert.equal(words(pace).detail, 'Tight · ฿95.00 left · 16 days to go');
 });
 
 test('zero: nothing spent on the first day, and exactly nothing left', () => {

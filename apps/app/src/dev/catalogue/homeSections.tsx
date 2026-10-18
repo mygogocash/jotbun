@@ -48,10 +48,10 @@ export const HOME_SECTIONS: readonly CatalogueSection[] = [
   screenSection({
     id: 'home-saving',
     title: 'Home: saving, checking',
-    // One draft on its way, one being checked with Jotbun before it is sent again.
+    // One draft waiting to send, one being checked with Jotbun before it is sent again.
     fixture: () => ({
       resources: withBudget(goldenFake().resources, BUDGET),
-      diary: deviceDiary({ outbox: [queued(draftEntry(), 'sending'), queued(draftEntry({ amount_minor: '900' }), 'uncertain')] }).diary,
+      diary: deviceDiary({ outbox: [queued(draftEntry(), 'unsent'), queued(draftEntry({ amount_minor: '900' }), 'uncertain')] }).diary,
     }),
     script: loaded('home-total'),
     render: home,
