@@ -174,9 +174,15 @@ or swap in a part from another backup made with the same key.
    `erasures_requeued`.
 9. Every retained attachment reference must resolve, with a matching SHA-256,
    in the backup's attachment copy (`missing_retained_objects`, else
-   `ATTACHMENT_REFERENCES_MISSING`). A schema with attachment tables but no
-   reference query is refused (`ATTACHMENT_VALIDATOR_MISSING`); P2c supplies
-   the query.
+   `ATTACHMENT_REFERENCES_MISSING`). The references are P2c's
+   `RETAINED_ATTACHMENT_REFERENCES_SQL` (`scripts/ops/local-postgres.mjs`):
+   every `attachments` row with status `retained`, whether the record holding
+   it is active or deleted within its 30-day undo window. Released receipts are
+   not references (their objects are deleted). A copy taken before P2c (no
+   `attachments` table) has nothing to check; a restorer given no query for a
+   schema with attachment tables is refused (`ATTACHMENT_VALIDATOR_MISSING`).
+   Erased accounts' receipts are gone with their rows, and their objects in
+   the copy are not restored (`unreferenced_objects_not_restored`).
 10. Never switch traffic. The receipt says `ready_for_serving_switch` and
     `serving_switch: "not_performed"`. Drop the target (always on failure) and
     mark it dropped in the ledger.
@@ -252,8 +258,10 @@ restored:
 1. creates `gogospend_rehearsal_src_<random>`, applies the migrations and seeds
    four synthetic accounts. Each has an alias, a wallet, a category, three
    expenses, a queued job, a verified provider-event receipt, a reconcile
-   check, and one retained-attachment reference in the stand-in table
-   `rehearsal_attachment_refs` (until P2c exists). One has a deletion accepted
+   check, and one P2c receipt (registry row, `attachments` and
+   `transaction_attachments`) held by its first expense. The kept account also
+   has a receipt held by a record deleted within its undo window, and a
+   released receipt whose object is gone. One account has a deletion accepted
    (P5's request, captured alias and job) but no marker yet;
 2. takes an encrypted backup with an in-memory key (or `--key-fd N`);
 3. records markers (one by account id still in progress - no `purged_at` -,
@@ -267,7 +275,10 @@ restored:
    - the in-progress erasure and the copy's accepted-but-unmarked deletion
      re-queued by P5's routine (a detached job, one captured alias each, holds
      open), and the purged one not re-queued;
-   - the kept account byte-identical, with its event receipt and attachment;
+   - the kept account byte-identical, with its event receipt and receipts;
+   - the kept account's two retained receipts (one held by a deleted record)
+     checked against the copy by P2c's reference query, and the erased
+     accounts' receipt objects not restored;
    - no PUBLIC or non-superuser `CONNECT` and no PUBLIC `TEMPORARY`;
 6. tampers one ciphertext byte and proves the restore is refused with
    `BACKUP_INTEGRITY` and its target is gone;

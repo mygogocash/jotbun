@@ -1,6 +1,13 @@
 import {
+  ATTACHMENT_COPY_REQUIREMENTS,
+  ATTACHMENT_DOWNLOAD_PATH,
+  ATTACHMENT_MAX_BYTES,
+  ATTACHMENT_MESSAGE_KEYS,
   ContractValidationError,
   MINOR_AMOUNT_MAX,
+  RECEIPT_RETENTION_CONSENT,
+  isAttachmentGrant,
+  isImportPreview,
   assertKnownFields,
   bangkokDate,
   compareVersions,
@@ -297,6 +304,61 @@ describe('v1 records', () => {
     expect(isTransactionSnapshot({ ...common, type: 'transfer', source_wallet_id: 'w', destination_wallet_id: 'v', category_id: 'c' })).toBe(false);
     expect(isTransactionSnapshot({ ...common, type: 'expense', wallet_id: 'w', category_id: 'c', amount_minor: '0' })).toBe(false);
     expect(isTransactionSnapshot({ ...common, type: 'refund', wallet_id: 'w', category_id: 'c' })).toBe(false);
+  });
+
+  it('P2c: a record snapshot may name its receipt; older snapshots without one stay valid', () => {
+    const common = { id: 'a', amount_minor: '6500', occurred_on: '2026-09-20', note: null, merchant: null, deleted_at: null, version: 2 };
+    const receipt = '0b8f6a52-1c3d-4e5f-8a7b-9c0d1e2f3a4b';
+    expect(isTransactionSnapshot({ ...common, type: 'expense', wallet_id: 'w', category_id: 'c', attachment_id: receipt })).toBe(true);
+    expect(isTransactionSnapshot({ ...common, type: 'transfer', source_wallet_id: 'w', destination_wallet_id: 'v', attachment_id: receipt })).toBe(true);
+    for (const bad of [null, '', 'receipt/x/y', receipt.toUpperCase(), 7]) {
+      expect(isTransactionSnapshot({ ...common, type: 'expense', wallet_id: 'w', category_id: 'c', attachment_id: bad })).toBe(false);
+    }
+    expect(isTransactionSnapshot({ ...common, type: 'expense', wallet_id: 'w', category_id: 'c', attachment_key: receipt })).toBe(false);
+  });
+});
+
+describe('v1 receipt attachments (P2c)', () => {
+  const grant = {
+    url: `${ATTACHMENT_DOWNLOAD_PATH}AbC_d-1`,
+    expires_at: '2026-10-18T10:05:00.000Z',
+    content_type: 'image/jpeg',
+    bytes: 1234,
+    sha256: 'a'.repeat(64),
+  };
+
+  it('recognizes exactly a grant: a relative download path, the image type, size and digest', () => {
+    expect(isAttachmentGrant(grant)).toBe(true);
+    expect(isAttachmentGrant({ ...grant, url: 'https://bucket.example/receipt/x.jpg' })).toBe(false);
+    expect(isAttachmentGrant({ ...grant, url: `${ATTACHMENT_DOWNLOAD_PATH}../x` })).toBe(false);
+    expect(isAttachmentGrant({ ...grant, content_type: 'image/heic' })).toBe(false);
+    expect(isAttachmentGrant({ ...grant, bytes: 0 })).toBe(false);
+    expect(isAttachmentGrant({ ...grant, bytes: ATTACHMENT_MAX_BYTES + 1 })).toBe(false);
+    expect(isAttachmentGrant({ ...grant, sha256: 'A'.repeat(64) })).toBe(false);
+    expect(isAttachmentGrant({ ...grant, object_key: 'receipt/x' })).toBe(false);
+    expect(isAttachmentGrant({ ...grant, expires_at: 'soon' })).toBe(false);
+  });
+
+  it('names the consent literal and the copy the client must show, including that removal has no undo', () => {
+    expect(RECEIPT_RETENTION_CONSENT).toBe('retain_receipt');
+    expect(ATTACHMENT_MESSAGE_KEYS.removeNoUndo).toBe('attachments.remove_no_undo');
+    expect(ATTACHMENT_COPY_REQUIREMENTS[ATTACHMENT_MESSAGE_KEYS.removeNoUndo]).toMatch(/cannot be undone/);
+    expect(ATTACHMENT_COPY_REQUIREMENTS[ATTACHMENT_MESSAGE_KEYS.retainConsent]).toBeDefined();
+  });
+
+  it('a preview image carries its opaque attachment id and retain deadline, never a key', () => {
+    const preview = {
+      job_id: '1b8f6a52-1c3d-4e5f-8a7b-9c0d1e2f3a4b', status: 'ready', candidates: [], issues: [], duplicate_advice: [], review_revision: '1', expires_at: '2026-10-25T10:00:00.000Z',
+      summary: {
+        layout: 'receipt', candidate_count: 0, review_required_count: 0, totals: { expense_minor: '0', income_minor: '0', transfer_minor: '0' },
+        image: { width: 64, height: 48, attachment_id: '2b8f6a52-1c3d-4e5f-8a7b-9c0d1e2f3a4b', attachable_until: '2026-10-19T09:58:00.000Z' },
+      },
+    };
+    expect(isImportPreview(preview)).toBe(true);
+    expect(isImportPreview({ ...preview, summary: { ...preview.summary, image: { ...preview.summary.image, attachable_until: null } } })).toBe(true);
+    expect(isImportPreview({ ...preview, summary: { ...preview.summary, image: { width: 64, height: 48 } } })).toBe(false);
+    expect(isImportPreview({ ...preview, summary: { ...preview.summary, image: { ...preview.summary.image, attachment_id: 'import_image/x' } } })).toBe(false);
+    expect(isImportPreview({ ...preview, summary: { ...preview.summary, image: { ...preview.summary.image, image_key: 'import_image/x' } } })).toBe(false);
   });
 });
 

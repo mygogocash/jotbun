@@ -21,6 +21,15 @@ names the current floor. At this revision the floor is the first deployed
 revision that contains P4 (`0013_exports`); nothing earlier has been
 deployed, so in practice the floor is the first beta release.
 
+P2c raises it again once any receipt is retained: a record's snapshot then
+carries `attachment_id`, which an API (or app) older than P2c refuses in its
+record validator. The floor becomes the first deployed revision containing
+P2c (`0017_attachments`), and the minimum client versions must be at or above
+the first app build whose validator accepts `attachment_id` before receipts
+are exposed. Receipts can only come from image imports, which stay off
+(`IMPORT_UPLOADS_ENABLED`) until the import release step, so that step is
+where the floor and minimums move together.
+
 ## Before rolling back
 
 1. **Target at or above the floor**, and its image digest is the one that was

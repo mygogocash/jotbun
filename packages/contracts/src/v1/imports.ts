@@ -344,8 +344,13 @@ export type ImportPreviewSummary = {
   review_required_count: number;
   /** Exact sums of the candidates with a known type and amount. */
   totals: { expense_minor: Minor; income_minor: Minor; transfer_minor: Minor };
-  /** The sanitized (re-encoded, metadata-free) receipt image, when the file was one. */
-  image: { width: number; height: number } | null;
+  /**
+   * The sanitized (re-encoded, metadata-free) receipt image, when the file
+   * was one. `attachment_id` is the opaque id a P2c retain names (never an
+   * object key); the image can be retained until `attachable_until`, null
+   * once it no longer can.
+   */
+  image: { width: number; height: number; attachment_id: string; attachable_until: string | null } | null;
 };
 
 export type ImportPreview = {
@@ -439,7 +444,9 @@ function isSummary(value: unknown): value is ImportPreviewSummary {
     [totals.expense_minor, totals.income_minor, totals.transfer_minor].every((total) => typeof total === "string" && TOTAL.test(total)) &&
     (image === null ||
       (isRecord(image) &&
-        hasKeys(image, ["width", "height"]) &&
+        hasKeys(image, ["width", "height", "attachment_id", "attachable_until"]) &&
+        isUuid(image.attachment_id) &&
+        (image.attachable_until === null || isInstant(image.attachable_until)) &&
         Number.isSafeInteger(image.width) &&
         Number.isSafeInteger(image.height) &&
         (image.width as number) >= 1 &&

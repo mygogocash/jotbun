@@ -32,7 +32,8 @@ for it.
 | Finished jobs (succeeded, superseded, cancelled) | 30 days | deleted; failed jobs stay for the runbook | `jobs.finished` |
 | Completed deletion requests | 30 days after the purge (and its registry record) | deleted | `privacy.deletion_requests` |
 | P2a upload rows | 30 days after they were refused, failed or expired (or after an accepted upload's 24-hour expiry); never a receiving one or one inside the 24-hour quota window | deleted (P2a's maintenance clears names after 8 days; quarantine objects go at 24 hours) | `imports.uploads` |
-| Unconfirmed previews and unattached sanitized images (P2b), receipts of purged or replaced records (P2c), import selections (P3) | per their task | - | **registration point**: each task adds its step (below) |
+| Retained receipts (P2c) | while any record holds them, including a record deleted within its 30-day undo window | released the moment no record holds one (removed, replaced, its record purged at 30 days, or the account erased; a trigger in `0017_attachments`): the release is final and its object is due at once for P1's sweep. The step also releases any retained receipt nothing holds (a safety net), and drops a released receipt's row 30 days after the release once its object is gone | trigger + `attachments.obsolete`; erasure: P5's objects stage, re-checked by the erasure step `attachments.objects` |
+| Unconfirmed previews and unattached sanitized images (P2b), import selections (P3) | per their task | - | **registration point**: each task adds its step (below) |
 
 ## Purged records and sync
 

@@ -31,6 +31,8 @@ export function v1Client(app: INestApplication, issuer: JwksFixture) {
         request(app.getHttpServer()).patch(path).set({ ...(await auth()), ...commandHeaders(options) }).send(body as object),
       put: async (path: string, body: unknown, options: CommandOptions = {}) =>
         request(app.getHttpServer()).put(path).set({ ...(await auth()), ...commandHeaders(options) }).send(body as object),
+      del: async (path: string, options: CommandOptions = {}) =>
+        request(app.getHttpServer()).delete(path).set({ ...(await auth()), ...commandHeaders(options) }),
       /** A request with only the session headers (no command headers). */
       raw: async (method: 'post' | 'patch' | 'delete', path: string, body: unknown = {}, extra: Record<string, string> = {}) =>
         request(app.getHttpServer())[method](path).set({ ...(await auth()), ...extra }).send(body as object),

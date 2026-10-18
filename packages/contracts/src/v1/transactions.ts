@@ -5,7 +5,7 @@
  */
 import type { Minor } from "./common.ts";
 import { ContractValidationError } from "./errors.ts";
-import { BIDI_CONTROL, LONE_SURROGATE, isInvisible } from "./validation.ts";
+import { BIDI_CONTROL, LONE_SURROGATE, isInvisible, isUuid } from "./validation.ts";
 
 export const TRANSACTION_TYPES = ["expense", "income", "transfer"] as const;
 export type TransactionType = (typeof TRANSACTION_TYPES)[number];
@@ -25,6 +25,12 @@ type RecordFields = {
   /** When it was deleted (ISO instant), or null while active. */
   deleted_at: string | null;
   version: number;
+  /**
+   * P2c: the receipt this record holds (`GET /v1/attachments/:id/grant`).
+   * Present only while it has one; snapshots written before P2c never carry
+   * it, and both shapes stay valid.
+   */
+  attachment_id?: string;
 };
 
 export type EntryDto = RecordFields & { type: EntryType; wallet_id: string; category_id: string };
@@ -83,11 +89,15 @@ const TRANSFER_KEYS = ["amount_minor", "deleted_at", "destination_wallet_id", "i
 const AMOUNT = /^[1-9][0-9]{0,10}$/;
 const DATE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
 
-/** True for exactly the persisted record shape of its type. */
+/**
+ * True for exactly the persisted record shape of its type: with or without
+ * `attachment_id` (P2c), which when present is a lower-case UUID.
+ */
 export function isTransactionSnapshot(value: unknown): value is TransactionDto {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
   const record = value as Record<string, unknown>;
-  const keys = Object.keys(record).sort().join(",");
+  if ("attachment_id" in record && !isUuid(record.attachment_id)) return false;
+  const keys = Object.keys(record).filter((key) => key !== "attachment_id").sort().join(",");
   const shape =
     record.type === "transfer"
       ? keys === TRANSFER_KEYS && typeof record.source_wallet_id === "string" && typeof record.destination_wallet_id === "string" && record.source_wallet_id !== record.destination_wallet_id
