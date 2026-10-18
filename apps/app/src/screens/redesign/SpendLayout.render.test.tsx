@@ -11,7 +11,6 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 // react-native-svg's web build resolves image hrefs through React Native's
 // asset registry, which only Metro provides. The tab icons draw no images, so
 // that one resolver is stubbed and the real SVG elements still render.
-vi.mock('../../../../../node_modules/react-native-svg/lib/module/lib/resolveAssetUri.web.js', () => ({ resolveAssetUri: () => null }));
 
 import type { Locale } from '@mobile/i18n/locales';
 import { translateCopy } from '@mobile/i18n/messages';

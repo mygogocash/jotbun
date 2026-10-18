@@ -50,6 +50,7 @@ import { bunText } from '@mobile/theme/bunType';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { DECORATIVE, POLITE_LIVE_REGION, useAnnouncement } from '@mobile/ui/a11y';
 import type { BudgetPace as KitPace } from '@mobile/ui/budgetWords';
+import { toKitPace } from '@mobile/ui/paceAdapter';
 import { BunText, useBunScript } from '@mobile/ui/BunText';
 import { Card } from '@mobile/ui/Card';
 import { categoryLook } from '@mobile/ui/categoryIcons';
@@ -124,10 +125,10 @@ function useRefreshOnResolve(outbox: readonly OutboxCommand[], refresh: () => vo
  * The view model's pace (`spend/v1/redesign/budgetPace.ts`) in the shape the
  * kit's ring takes (`ui/budgetWords.ts`). The ring shows the estimate (money
  * confirmed plus money waiting on this device), and the card says so.
- * INTEGRATOR: replace with the shared adapter in `ui/budgetWords.ts`.
+ * Delegates to the shared adapter, `ui/paceAdapter.ts`.
  */
 export function kitPace(pace: LogicPace): KitPace {
-  return { state: pace.state, spentMinor: pace.spent.estimatedMinor, limitMinor: pace.limitMinor, leftMinor: pace.leftMinor, perDayMinor: pace.perDayMinor, daysLeft: pace.daysLeft };
+  return toKitPace(pace);
 }
 
 // ---------------------------------------------------------------------------

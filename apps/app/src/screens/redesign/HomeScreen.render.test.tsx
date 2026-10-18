@@ -9,7 +9,6 @@ import { afterEach, beforeAll, beforeEach, expect, test, vi } from 'vitest';
 // asset registry, which only Metro provides. Nothing here draws images, so
 // that one resolver is stubbed and the real SVG elements still render (as in
 // the mascot and kit tests).
-vi.mock('../../../../../node_modules/react-native-svg/lib/module/lib/resolveAssetUri.web.js', () => ({ resolveAssetUri: () => null }));
 
 import type { BudgetDto, CreateWalletRequest, TransactionDto } from '@gogospend/contracts';
 
