@@ -5,6 +5,7 @@ import type { Response } from 'express';
 import { createHash } from 'node:crypto';
 
 import { Access } from '../auth/auth-route.decorator';
+import { Gated } from '../common/feature-gates';
 import { CurrentSession } from '../auth/request-context';
 import { ProblemException } from '../common/api-problem.filter';
 import { DatabaseService } from '../database/database.service';
@@ -38,6 +39,7 @@ export class SyncController {
    */
   @Post('snapshots')
   @Access('bound_session')
+  @Gated('jobs')
   async request(
     @CurrentSession() session: SessionContext,
     @Headers('idempotency-key') key: string | undefined,

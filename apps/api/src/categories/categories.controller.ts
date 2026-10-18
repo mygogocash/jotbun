@@ -2,6 +2,7 @@ import { Body, Controller, Get, Headers, HttpCode, Param, Patch, Post } from '@n
 import type { CategoryDto, CommandAck, SessionContext } from '@gogospend/contracts';
 
 import { Access } from '../auth/auth-route.decorator';
+import { Gated } from '../common/feature-gates';
 import { CurrentSession } from '../auth/request-context';
 import { commandHeaders } from '../commands/command-headers';
 import { CategoriesService } from './categories.service';
@@ -22,6 +23,7 @@ export class CategoriesController {
   /** Ensures every built-in category exists (idempotent), then returns all categories. */
   @Post('categories/builtins')
   @Access('current_policy')
+  @Gated('writes')
   @HttpCode(200)
   seedBuiltins(@CurrentSession() session: SessionContext): Promise<CategoryDto[]> {
     return this.categories.seedBuiltins(session);
@@ -29,12 +31,14 @@ export class CategoriesController {
 
   @Post('categories')
   @Access('current_policy')
+  @Gated('writes')
   create(@CurrentSession() session: SessionContext, @Headers() headers: HeaderBag, @Body() body: unknown): Promise<CommandAck> {
     return this.categories.create(session, commandHeaders(headers, 'forbidden'), body);
   }
 
   @Patch('categories/:id')
   @Access('current_policy')
+  @Gated('writes')
   @HttpCode(200)
   update(@CurrentSession() session: SessionContext, @Headers() headers: HeaderBag, @Param('id') id: string, @Body() body: unknown): Promise<CommandAck> {
     return this.categories.update(session, commandHeaders(headers, 'required'), id, body);
@@ -42,6 +46,7 @@ export class CategoriesController {
 
   @Post('categories/:id/archive')
   @Access('current_policy')
+  @Gated('writes')
   @HttpCode(200)
   archive(@CurrentSession() session: SessionContext, @Headers() headers: HeaderBag, @Param('id') id: string, @Body() body: unknown): Promise<CommandAck> {
     return this.categories.archive(session, commandHeaders(headers, 'required'), id, body);
@@ -49,6 +54,7 @@ export class CategoriesController {
 
   @Post('categories/:id/unarchive')
   @Access('current_policy')
+  @Gated('writes')
   @HttpCode(200)
   unarchive(@CurrentSession() session: SessionContext, @Headers() headers: HeaderBag, @Param('id') id: string, @Body() body: unknown): Promise<CommandAck> {
     return this.categories.unarchive(session, commandHeaders(headers, 'required'), id, body);

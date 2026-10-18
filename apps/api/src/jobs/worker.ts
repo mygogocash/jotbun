@@ -1,10 +1,11 @@
 import { setTimeout as sleep } from 'node:timers/promises';
 
+import type { FeatureGates } from '../common/feature-gates';
 import { HandlerRegistry } from './handler-registry';
 import { JobRepository, leaseSafetyMs } from './job.repository';
 import type { ClaimedJob } from './job-types';
 
-export type WorkerOptions = { leaseSeconds?: number; heartbeatMs?: number };
+export type WorkerOptions = { leaseSeconds?: number; heartbeatMs?: number; gates?: FeatureGates };
 export type WorkerOutcome = 'idle' | 'ran';
 
 /**
@@ -23,17 +24,25 @@ export type WorkerOutcome = 'idle' | 'ran';
 export class JobWorker {
   private readonly leaseSeconds: number;
   private readonly heartbeatMs: number;
+  private readonly gates: FeatureGates | undefined;
 
   constructor(private readonly jobs: JobRepository, private readonly handlers: HandlerRegistry, options: WorkerOptions = {}) {
     this.leaseSeconds = options.leaseSeconds ?? 30;
     this.heartbeatMs = options.heartbeatMs ?? 10_000;
+    this.gates = options.gates;
     if (!Number.isInteger(this.heartbeatMs) || this.heartbeatMs < 100 || this.heartbeatMs >= this.leaseSeconds * 1000 - leaseSafetyMs(this.leaseSeconds)) {
       throw new RangeError('heartbeatMs must be at least 100 and leave the lease safety margin');
     }
   }
 
+  /**
+   * Claims and runs at most one job. With `gates`, a paused `jobs` gate
+   * claims nothing and a kind whose JOB_KIND_GATES are paused is not claimed
+   * (it stays queued without spending an attempt).
+   */
   async runOnce(stop?: AbortSignal): Promise<WorkerOutcome> {
-    const kinds = this.handlers.kinds();
+    const registered = this.handlers.kinds();
+    const kinds = this.gates ? this.gates.claimableKinds(registered) : registered;
     if (kinds.length === 0 || stop?.aborted) return 'idle';
     const [claimed] = await this.jobs.claim(kinds, { limit: 1, leaseSeconds: this.leaseSeconds });
     if (!claimed) return 'idle';

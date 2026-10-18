@@ -16,11 +16,21 @@
 // reports - counts only - open, overdue (over 20 hours) and failed deletions.
 // Never logs subjects, account ids, payloads or error text.
 // See apps/api/.env.deletion-worker.example and docs/operations/deletion.md.
+//
+// P6b: OPERATIONAL_PAUSE=jobs stops claiming (accepted deletions stay
+// locked and pending; the over-20-hour alert still fires). Each report also
+// logs `deletion worker: queue due=N oldest_due_seconds=S` (the heartbeat)
+// and `deletion worker: alert queue_age …` past 5 minutes. SIGTERM aborts the
+// running stage (resumed later from its recorded progress) and exits within
+// SHUTDOWN_TIMEOUT_SECONDS.
 import { closeSync, readFileSync } from 'node:fs';
 
 import { Pool } from 'pg';
 
 import { maintenanceGatewayFromEnv } from '../auth/auth0-management.client';
+import { featureGatesFromEnv } from '../common/feature-gates';
+import { failureName, queueAge, queueAgeLines } from '../common/operational-metrics';
+import { handleShutdownSignals, runMain, shutdownTimeoutMsFromEnv } from '../common/process-lifecycle';
 import { poolConfigFromUrl } from '../database/database-config';
 import { HandlerRegistry } from '../jobs/handler-registry';
 import { JobRepository } from '../jobs/job.repository';
@@ -62,6 +72,8 @@ function intervalSeconds(value: string | undefined): number {
 async function main(): Promise<void> {
   const once = process.argv.includes('--once');
   const interval = intervalSeconds(process.env.DELETION_WORKER_INTERVAL_SECONDS);
+  const gates = featureGatesFromEnv(process.env);
+  const shutdownMs = shutdownTimeoutMsFromEnv(process.env.SHUTDOWN_TIMEOUT_SECONDS);
   const registrySettings = readRegistrySettings(process.argv);
   const fd = Number(process.argv[process.argv.indexOf('--registry-fd') + 1]);
   try {
@@ -79,7 +91,7 @@ async function main(): Promise<void> {
   const registryPool = new Pool(poolConfigFromUrl(registrySettings.databaseUrl, 2));
   registryPool.on('error', () => console.error('deletion worker: idle registry connection failed'));
   const stop = new AbortController();
-  for (const signal of ['SIGTERM', 'SIGINT'] as const) process.once(signal, () => stop.abort());
+  handleShutdownSignals({ name: 'deletion worker', timeoutMs: shutdownMs, exitWhenStopped: false, stop: () => stop.abort() });
   let reporter: NodeJS.Timeout | undefined;
   try {
     await assertLoginRoles(pool, ['gogospend_jobs', 'gogospend_security'], 'DATABASE_URL');
@@ -97,7 +109,7 @@ async function main(): Promise<void> {
       steps: defaultPrivacySteps(),
     });
     const handlers = new HandlerRegistry({ security: true }).register('account_deletion', (job) => handler.run(job.lease));
-    const worker = new JobWorker(jobs, handlers);
+    const worker = new JobWorker(jobs, handlers, { gates });
     const report = async () => {
       try {
         const backlog = await repository.backlog();
@@ -106,7 +118,16 @@ async function main(): Promise<void> {
         if (backlog.overdue > 0) console.error(`deletion worker: ${backlog.overdue} deletion(s) open for over 20 hours`);
         if (backlog.failed > 0) console.error(`deletion worker: ${backlog.failed} deletion job(s) failed terminally`);
       } catch (error) {
-        console.error(`deletion worker: backlog report failed (${error instanceof Error ? error.name : 'unknown'})`);
+        console.error(`deletion worker: backlog report failed (${failureName(error)})`);
+      }
+      try {
+        // Alert on `alert queue_age`; the summary line is the heartbeat.
+        const lines = queueAgeLines('deletion worker', await queueAge(pool, ['account_deletion']));
+        for (const line of lines.info) console.log(line);
+        for (const line of lines.alerts) console.error(line);
+        if (gates.isPaused('jobs')) console.error('deletion worker: paused jobs');
+      } catch (error) {
+        console.error(`deletion worker: queue report failed (${failureName(error)})`);
       }
     };
     if (once) {
@@ -117,7 +138,7 @@ async function main(): Promise<void> {
     await report();
     reporter = setInterval(() => void report(), 5 * 60_000);
     await worker.runUntil(stop.signal, interval * 1000, (error) => {
-      console.error(`deletion worker: claim failed (${error instanceof Error ? error.name : 'unknown'})`);
+      console.error(`deletion worker: claim failed (${failureName(error)})`);
     });
   } finally {
     clearInterval(reporter);
@@ -125,9 +146,4 @@ async function main(): Promise<void> {
   }
 }
 
-if (require.main === module) {
-  main().catch((error: unknown) => {
-    console.error(`deletion worker startup failed: ${error instanceof Error ? error.message : 'unknown error'}`);
-    process.exitCode = 1;
-  });
-}
+if (require.main === module) void runMain('deletion worker', main);

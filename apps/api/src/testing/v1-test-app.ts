@@ -2,7 +2,7 @@
 // parsing, but test doubles for the token verifier, session/policy ports and
 // rate limiter. No database or provider is touched.
 import { Module } from '@nestjs/common';
-import type { Type } from '@nestjs/common';
+import type { Provider, Type } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 
@@ -25,6 +25,8 @@ export type V1TestDoubles = {
   policies?: PolicyGate;
   limiter?: RateLimiter;
   minimums?: MinimumClientVersions;
+  /** Extra providers the controllers under test need. */
+  providers?: Provider[];
 };
 
 const rejectAll: TokenVerifier = {
@@ -47,6 +49,7 @@ export async function createV1TestApp(controllers: Type[], doubles: V1TestDouble
       ApplicationSessionGuard,
       { provide: APP_GUARD, useClass: V1AccessGuard },
       { provide: APP_FILTER, useClass: ApiProblemFilter },
+      ...(doubles.providers ?? []),
     ],
   })
   class V1TestModule {}
