@@ -1,11 +1,6 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, expect, test, vi } from 'vitest';
 
-// react-native-svg's web build resolves image hrefs through React Native's
-// asset registry, which only Metro provides. Nothing here draws images, so
-// that one resolver is stubbed and the real SVG elements still render.
-vi.mock('../../../../../node_modules/react-native-svg/lib/module/lib/resolveAssetUri.web.js', () => ({ resolveAssetUri: () => null }));
-
 const nav = vi.hoisted(() => ({
   router: { push: vi.fn(), replace: vi.fn(), back: vi.fn(), canGoBack: vi.fn(() => true) },
   /** The screen's focus effect: calling it again is "the screen came back into view". */
@@ -311,6 +306,17 @@ test('offline, the month still shows what this device holds, under an offline ba
   expect(screen.queryByText('Offline. New entries are saved on this phone.')).toBeNull();
 });
 
+test('a draft waiting for an app update never looks confirmed and says why it waits', async () => {
+  const fake = createFakeResources(goldenSeed());
+  const paused = outboxCommand(pendingExpense({ amount_minor: '6500', occurred_on: '2026-09-29' }), 'paused_upgrade');
+  const diary = createFakeDiary({ ...DIARY_REFERENCES, outbox: [paused] });
+  mountScreen(<HistoryScreen now={NOW} />, { resources: fake.resources, diary: diary.diary });
+  expect(await screen.findByRole('button', { name: 'Food, Expense ฿65.00, saving, Cash' })).toBeTruthy();
+  expect(screen.getByText('Update Jotbun to send')).toBeTruthy();
+  expect(screen.getByText('Update Jotbun to send the entries saved on this device')).toBeTruthy();
+  expect(screen.getByText('Waiting to sync: money out ฿65.00')).toBeTruthy();
+});
+
 // ---------------------------------------------------------------------------
 // Search, filters and the summary
 
@@ -421,7 +427,7 @@ test.each(MATRIX)('reads in $locale, $mode: palette ground, the stage, the month
   expect(screen.getByTestId('history-screen').style.backgroundColor).toEqual(rgb(colors.background));
   expect(screen.getByTestId('stage-header').style.backgroundColor).toEqual(rgb(colors.stage));
   expect(screen.getByText(monthLabel('2026-09', locale))).toBeTruthy();
-  const title = screen.getByText(translateCopy('All entries', locale));
+  const title = screen.getByRole('heading', { name: translateCopy('History', locale) });
   expect(title.style.lineHeight).toBe(leading('title', locale));
   expect(title.style.color).toEqual(rgb(colors.ink));
   expect(within(screen.getByRole('button', { name: /฿12,268\.00/ })).getByText('-฿12,268.00').style.color).toEqual(rgb(colors.ink));

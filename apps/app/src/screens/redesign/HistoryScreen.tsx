@@ -320,19 +320,22 @@ export function HistoryScreen({ now, initialMonth, onMonthChange }: HistoryScree
     const category = entry && entry.type !== 'transfer' ? lookups?.categories.get(entry.category_id) : undefined;
     const record = item.state === 'confirmed' ? records.get(item.recordId) : undefined;
     return (
-      <RecordRow
-        key={item.key}
-        title={item.title}
-        detail={[item.detail, item.merchant, item.note].filter((part): part is string => Boolean(part)).join(' · ')}
-        type={item.type}
-        amountMinor={item.amountMinor}
-        category={lookOf(category, item.title)}
-        state={recordRowState(item.state)}
-        onPress={() => router.push(recordRoute(item.recordId))}
-        onEdit={item.canEdit ? () => router.push(recordRoute(item.recordId, true)) : undefined}
-        onCopy={() => router.push(copyRoute(item.recordId))}
-        onDelete={record && !busy && pendingDelete === null ? () => void remove(record) : undefined}
-      />
+      <View key={item.key}>
+        <RecordRow
+          title={item.title}
+          detail={[item.detail, item.merchant, item.note].filter((part): part is string => Boolean(part)).join(' · ')}
+          type={item.type}
+          amountMinor={item.amountMinor}
+          category={lookOf(category, item.title)}
+          state={recordRowState(item.state)}
+          onPress={() => router.push(recordRoute(item.recordId))}
+          onEdit={item.canEdit ? () => router.push(recordRoute(item.recordId, true)) : undefined}
+          onCopy={() => router.push(copyRoute(item.recordId))}
+          onDelete={record && !busy && pendingDelete === null ? () => void remove(record) : undefined}
+        />
+        {/* RecordRow has no "update to send" state: it reads "saving…", and this line says why it waits. */}
+        {item.state === 'update_to_send' && item.stateText ? <BunText variant="caption" tone="ink" style={{ fontWeight: '700' }}>{item.stateText}</BunText> : null}
+      </View>
     );
   });
 
@@ -340,7 +343,7 @@ export function HistoryScreen({ now, initialMonth, onMonthChange }: HistoryScree
     <View testID="history-screen" style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView stickyHeaderIndices={[1]} contentContainerStyle={{ paddingBottom: BUN_SPACE.xl }} keyboardShouldPersistTaps="handled">
         <StageHeader
-          title={tc('All entries')}
+          title={tc('History')}
           month={{
             label: monthLabel(month, dateLocale),
             onPrevious: () => changeMonth(shiftMonth(month, -1)),

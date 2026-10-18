@@ -1,11 +1,6 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, expect, test, vi } from 'vitest';
 
-// react-native-svg's web build resolves image hrefs through React Native's
-// asset registry, which only Metro provides. Nothing here draws images, so
-// that one resolver is stubbed and the real SVG elements still render.
-vi.mock('../../../../../node_modules/react-native-svg/lib/module/lib/resolveAssetUri.web.js', () => ({ resolveAssetUri: () => null }));
-
 const nav = vi.hoisted(() => ({ router: { push: vi.fn(), replace: vi.fn(), back: vi.fn(), canGoBack: vi.fn(() => true) } }));
 vi.mock('expo-router', () => ({ useRouter: () => nav.router }));
 vi.mock('expo-status-bar', () => ({ StatusBar: () => null }));
@@ -268,6 +263,21 @@ test('Delete shows the undo bar; Undo restores with the new version and its own 
   expect(restore.args.slice(0, 2)).toEqual([RENT, 2]);
   expect(restore.args[2]).not.toBe(removal.args[2]);
   expect(screen.queryByText('Entry deleted')).toBeNull();
+});
+
+test('an unconfirmed undo keeps the bar and resends the same restore', async () => {
+  const fake = mountRecord(RENT);
+  fireEvent.click(await screen.findByRole('button', { name: 'Delete' }));
+  await screen.findByText('Entry deleted');
+  fake.loseResponse('restoreTransaction');
+  fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+  expect(await screen.findByText(NOT_CONFIRMED)).toBeTruthy();
+  expect(screen.getByText('Entry deleted')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+  expect(await screen.findByRole('button', { name: 'Edit' })).toBeTruthy();
+  const [first, second] = fake.callsOf('restoreTransaction');
+  expect(second.args).toEqual(first.args);
+  expect(first.args.slice(0, 2)).toEqual([RENT, 2]);
 });
 
 test('an unconfirmed delete is frozen and resent with the same key', async () => {
