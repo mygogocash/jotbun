@@ -153,7 +153,17 @@ function shortDate(date: Parts, locale: DateLocale, withYear: boolean): string {
   return `${day} ${date.day} ${month}${withYear ? ` ${year}` : ''}`;
 }
 
-/** The chip and day-header label: "Today", "Yesterday", or "Thu 15 Oct" (with the year when it is not this year). */
+/**
+ * The chip and day-header label: "Today", "Yesterday", or "Thu 15 Oct" (with
+ * the year when it is not this year).
+ *
+ * Screens draw every day label with this one (through DayHeader and DateChip,
+ * or directly), and the whole date with `fullDateLabel`: the words are the
+ * same on every phone, Vietnamese gets its own, and the chip and the history
+ * headers always agree. The view models' `dayLabel` in
+ * `spend/v1/redesign/shared.ts` stays for their own strings (`DayGroup.label`
+ * and its spoken summary) and is not drawn.
+ */
 export function dayLabel(date: string, today: string, locale: DateLocale): { kind: DayKind; text: string } {
   const day = partsOf(date);
   const now = partsOf(today);

@@ -13,7 +13,7 @@ import { useSpringPop } from '@mobile/theme/useSpringPop';
 
 import { BunText } from './BunText';
 import { CategoryIcon, categoryLook } from './categoryIcons';
-import { Glyph } from './entryKitPrivate';
+import { Glyph } from './Glyph';
 import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE, BUN_TOUCH } from './layout';
 
 export type CategoryChipsProps = {
@@ -59,7 +59,8 @@ export function CategoryChips({ ranked, selectedId, onSelect, onMore, disabled =
                 style={{ ...pill, backgroundColor: checked ? colors.ink : colors.card }}
               >
                 <CategoryIcon look={categoryLook(category, name)} size={32} />
-                <BunText variant="label" tone={checked ? 'onInk' : 'ink'}>{name}</BunText>
+                {/* Bold as well as filled, so the choice never rests on the fill alone. */}
+                <BunText variant="label" tone={checked ? 'onInk' : 'ink'} style={checked ? { fontWeight: '700' } : undefined}>{name}</BunText>
               </Pressable>
             </Animated.View>
           );

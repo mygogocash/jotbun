@@ -486,3 +486,97 @@ Built on `2e6bf6e`, in `src/ui/`. Nothing is routed and no existing screen chang
 - **SKIPPED:**
   - **Simulator screenshots (E2):** each section in light and dark, in TH, EN and VI.
   - **One-screen fit on iOS:** checked on web only. Real iOS font metrics may differ slightly from web; the tightest section has 33 pt to spare.
+
+## R2 unification
+
+Built on `d86001c`, after R2a, R2b, R1 and R3 logic were merged.
+
+- **What changed:** `src/ui/`, `src/testing/` and `vitest.render.config.ts`; the three R1 render tests lost their stubs; and `spend/v1/redesign/shared.ts` gained a doc comment.
+- **What did not:** no screen or route, no package and no lockfile. Every public kit export still imports from its old path; only the private `entryKitPrivate.tsx` is gone. No existing render test changed except for the removed per-file stubs.
+- **R2b's private parts:** `entryKitPrivate.tsx` is deleted.
+
+  | R2b private part | Now |
+  | --- | --- |
+  | `MoneyText` | `AmountText` in `Amount.tsx`. It draws money in tabular figures, and `Amount` now draws its own number through it. R2b components get the text from `useAmountWords()(minor).shown`; untyped, that is exactly `formatMinor`. They keep their own signs and spoken labels (see findings 2 and 3). |
+  | `useMoneyLocale` | Exported from `Amount.tsx`, and `useAmountWords` uses it. BudgetBar and PaceRing pass it to `budgetWords`. |
+  | `useDateLocale` | `useActiveLocale()`. `DateLocale` is the same three locales. |
+  | `Decorative` | `<View {...DECORATIVE}>` from `a11y.ts`, as R2a does it. |
+  | `Glyph` | `src/ui/Glyph.tsx`: `Glyph`, `GlyphName` and `GlyphProps`. The unused `arrow-right` is dropped. |
+  | `KitError` | `src/ui/FieldError.tsx`: `FieldError`, with the same alert role, polite reading, ink words and hidden mark. |
+  | `KitSheet` | **Not replaced; see finding 1.** It is now `CalendarSheet`, private to `DateChip.tsx`. Its backdrop comes from `sheetBackdrop.ts`, which `Sheet` uses too. |
+
+  New exports: `AmountText`, `AmountTextProps` and `useMoneyLocale` (`Amount.tsx`), `Glyph`, `FieldError`, `sheetBackdrop` and `SHEET_BACKDROP_OPACITY`, and `toKitPace`.
+- **The SVG asset-registry stub:**
+  - **Alias:** one alias in `vitest.render.config.ts` maps `@react-native/assets-registry/registry` to `src/testing/svgAssetRegistryStub.ts`, a registry with no assets.
+  - **Why the registry, not the resolver:** that is the module vitest cannot load, so the real `resolveAssetUri` now runs. A link `href` resolves, and a bundled asset id throws "could not be found" instead of passing quietly.
+  - **Per-file stubs removed:** the 14 `vi.mock(…resolveAssetUri.web.js)` stubs are gone, 11 in R2b and 3 in R1. A branch that still has one keeps working; it is just redundant now.
+  - **Kept out of the app bundle:**
+    - Only the test config names the stub, and Metro resolves the registry itself.
+    - `svgAssetRegistryStub.test.ts` fails if any file under `src/` or `app/` imports the stub. A mutation check confirmed it.
+    - After `export:web`, the bundle's `getAssetByID` is Expo's registry, and no part of the stub appears in it.
+- **The pace adapter:** `toKitPace(pace)` is in `src/ui/paceAdapter.ts`. It takes the logic's `BudgetPace` from `budgetPace()` and returns the kit's `BudgetPace`, ready for BudgetBar and PaceRing. It only picks fields; its one change is the sign of the over amount.
+  - **State:** the same four words.
+  - **Spent:** `spent.estimatedMinor`, which is confirmed spending plus expense drafts waiting to sync. Drafts being checked and drafts that need a look are left out. State, left and per day are decided on the same figure, so the words and the colour always agree. Screens show `paceCopy().pendingNote` and `checkingNote` beside the bar.
+  - **Limit:** passed through; null without a budget.
+  - **Left:** the logic's `leftMinor` while not over. When over, it is minus `overByMinor`, so the kit says the logic's own over amount, even for a pace whose left reads zero. Null without a budget.
+  - **Per day and days left:** passed through. Per day is rounded down, `'0'` at exactly zero left, and null when over, after the month or without a budget. Days left counts today.
+  - **Phases:** the kit has none.
+    - `before`: the whole month is left, so it reads like the first day.
+    - `after`: no days left and no per day, so it reads "฿X left" or "฿X over" with no days line. The logic never calls a finished month tight.
+  - **Tests:** 10, built from real `budgetPace()` output. They cover on track, tight, pending money, zero spent, zero left, over by one satang, over with left reading zero, no budget, the last day, before and after.
+- **Day labels:** both helpers stay.
+  - **Screens draw with `src/ui/dateStep.ts`:** `dayLabel` and `fullDateLabel`, through DayHeader and DateChip. Its words are locale data, so they read the same on every phone, Vietnamese has its own, and the chip and the history headers agree.
+  - **The view models keep `spend/v1/redesign/shared.ts`'s `dayLabel`:** it is used through `Intl`, with en-GB for Vietnamese, for `DayGroup.label` and its spoken summary, and those are not drawn.
+  - Both doc comments now say this.
+- **Accessibility and colour pass (`src/ui/`):**
+  - **Raw hex:** none outside the palette. Category pastels arrive as data, from `CATEGORY_COLORS`.
+  - **Text pairs:** every text tone was checked against its ground, in both modes.
+    - Each pair is in `BUN_TEXT_PAIRS`, plus `BUN_TILE_TEXT` on category pastels, so the list did not change.
+    - No muted, accent or state colour text sits on the stage.
+    - Disabled controls fade with opacity. WCAG 1.4.3 exempts them.
+  - **Roles and labels:** every control has a role and a label. The exceptions are findings 1, 5 and 6.
+  - **Fixed:**
+    - The chosen segment, category chip, category grid cell and calendar day were marked by fill alone. Their labels are now bold as well, as TabBar already did.
+    - The calendar's weekday initials were hidden on the web only. They now use `DECORATIVE`, so native screen readers skip them too.
+    - At night, the calendar's backdrop was a 35% veil of near-white ink. It now dims like `Sheet`'s.
+    - VoiceOver's escape gesture now closes the calendar.
+- **Tests added:** unit +12 (`paceAdapter.test.ts` 10, `svgAssetRegistryStub.test.ts` 2) and render +7 (`svgAssetRegistryStub.render.test.tsx` 3, `kitUnification.render.test.tsx` 4).
+  - The alias test has no per-file stub. It renders a kit glyph and the bun as real SVG, and proves that the real resolver runs.
+- **Mutation check:** each mutation was made one at a time and restored (`r2u-mutate.py`, in the scratchpad). All 10 were caught.
+
+  | Mutation | Caught by |
+  | --- | --- |
+  | TypeSwitch, CategoryChips or calendar choice not bold (3 mutations) | `kitUnification`, 1 test each |
+  | The calendar backdrop is a light veil at night | `kitUnification`, 2 tests |
+  | Glyph exposed to screen readers | `kitUnification` (field error mark) |
+  | `AmountText` drops tabular figures | `Amount`, 1 test |
+  | Adapter: spent from confirmed only | adapter, 2 tests |
+  | Adapter: left passed through when over | adapter, 1 test |
+  | Adapter: per day dropped | adapter, 6 tests |
+  | Alias removed | the alias render file fails to load |
+- **Findings reported, not fixed:**
+  1. **`Sheet` is two dialogs on the web.**
+     - **The problem:** react-native-web's `Modal` gives its full-screen layer `role="dialog"` once it has shown. `Sheet` shows at once, so it reads as an unnamed dialog around its own named one. That fails "every role has a name".
+     - **Why DateChip can't move to `Sheet` yet:** DateChip's tests query `getByRole('dialog')` without a name and expect one dialog. `CalendarSheet` nests the same way in a browser once its slide ends; it passes only because happy-dom never ends a CSS animation.
+     - **Fix A:** name the dialog in those two DateChip queries, then switch DateChip to `Sheet`.
+     - **Fix B:** give the name to the Modal's layer on the web and drop the inner role there. That changes `Sheet`'s own tests, which read the cream panel as the named dialog.
+  2. **Two minus signs.** `Amount` signs an expense with U+2212 (−). RecordRow and DayHeader use a hyphen (-), and the tests pin both. Choose one at E2.
+  3. **Two ways to say "Expense ฿65.00".**
+     - `Amount` speaks `tc('Expense {amount}')`, which is not in the catalogs, so Thai hears English.
+     - RecordRow speaks `` `${tc('Expense')} ${amount}` ``, which is in Thai today.
+     - Pick one form when the catalogs are updated.
+  4. **Two icon styles.** R2a draws glyphs as text (× ‹ › + ✓ !), R2b as vectors (`Glyph`). StageHeader's month arrows are text, and DateChip's day arrows are vector chevrons. This is a design decision.
+  5. **The calendar's chosen day uses `aria-selected` on a button.** ARIA ignores that on the web; native readers do say "selected". It needs grid and gridcell semantics, or `aria-pressed`. The tests pin `aria-selected`.
+  6. **RecordRow's long-press actions have no keyboard path on the web.** Accessibility actions are native only. A row given only actions, with no `onPress`, has a label but no role.
+  7. **A finished month reads "On track".** The kit's `BudgetPace` has no phase. For a past month, screens should show `paceCopy().headline` ("฿X left this month"), or the kit needs a phase.
+  8. **`CalendarSheet` does not pad the bottom safe area,** as `KitSheet` never did. That goes away with the move to `Sheet`.
+  9. **Dates in two styles.** The record receipt's date row comes from `recordModel`'s `longDateLabel` (Intl, en-GB for Vietnamese), while headers and the chip use `dateStep` (with Vietnamese words). In Vietnamese, the same date reads two ways across screens.
+- **Gate** (from the worktree root):
+
+  | Step | Before (`d86001c`) | After |
+  | --- | --- | --- |
+  | typecheck:app | PASS | PASS |
+  | test:unit | PASS, 397 | PASS, 409 |
+  | test:render | PASS, 219 in 36 files | PASS, 226 in 38 files |
+  | export:web (`--max-workers 2`) | PASS | PASS |
+  | `git diff --check` | clean | clean |

@@ -1,6 +1,7 @@
 // Expense / Income / Move, one segmented control (redesign R2b). A radio
-// group: one choice, the chosen one an ink pill. "Move" is a transfer between
-// the user's own wallets.
+// group: one choice, the chosen one an ink pill with a bold label, so the
+// choice never rests on the fill alone. "Move" is a transfer between the
+// user's own wallets.
 import { Animated, Pressable, View } from 'react-native';
 
 import { useCopy } from '@mobile/i18n/useCopy';
@@ -63,7 +64,7 @@ export function TypeSwitch({ value, onChange, disabled = false }: TypeSwitchProp
                 opacity: disabled ? 0.5 : 1,
               }}
             >
-              <BunText variant="label" tone={checked ? 'onInk' : 'ink'} style={{ textAlign: 'center' }}>{labels[kind]}</BunText>
+              <BunText variant="label" tone={checked ? 'onInk' : 'ink'} style={checked ? { textAlign: 'center', fontWeight: '700' } : { textAlign: 'center' }}>{labels[kind]}</BunText>
             </Pressable>
           </Animated.View>
         );

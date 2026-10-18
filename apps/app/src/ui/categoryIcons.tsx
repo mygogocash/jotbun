@@ -11,8 +11,8 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { BUN_TILE_TEXT } from '@mobile/theme/bunPalette';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 
+import { DECORATIVE } from './a11y';
 import { BunText } from './BunText';
-import { Decorative } from './entryKitPrivate';
 import { BUN_OUTLINE, BUN_RADIUS } from './layout';
 
 /** What an icon needs to know about a category; 'transfer' draws a move between wallets. */
@@ -76,7 +76,7 @@ export function CategoryIcon({ look, size = 40, selected = false }: { readonly l
       }}
     >
       {drawing ? (
-        <Decorative>
+        <View {...DECORATIVE}>
           <Svg width={glyph} height={glyph} viewBox="0 0 24 24">
             {drawing.map((part, index) => {
               const stroke = { stroke: ink, strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, fill: 'none' };
@@ -85,12 +85,12 @@ export function CategoryIcon({ look, size = 40, selected = false }: { readonly l
               return <Rect key={index} x={part.rect[0]} y={part.rect[1]} width={part.rect[2]} height={part.rect[3]} rx={2} {...stroke} />;
             })}
           </Svg>
-        </Decorative>
+        </View>
       ) : (
-        <Decorative>
+        <View {...DECORATIVE}>
           {/* The tile is a fixed square, so the initial stays a single line at any text size. */}
           <BunText variant="label" allowFontScaling={false} style={{ color: ink, fontWeight: '700' }}>{categoryInitial(look.name)}</BunText>
-        </Decorative>
+        </View>
       )}
     </View>
   );
