@@ -261,6 +261,9 @@ describe('feature gates', () => {
         'PATCH /v1/transactions/:id': 'writes',
         'DELETE /v1/transactions/:id': 'writes',
         'POST /v1/transactions/:id/restore': 'writes',
+        'POST /v1/transactions/:id/attachment': 'writes',
+        'PUT /v1/transactions/:id/attachment': 'writes',
+        'DELETE /v1/transactions/:id/attachment': 'writes',
         'PUT /v1/budgets/:month': 'writes',
         // Requests that queue background work.
         'POST /v1/exports': 'jobs',
@@ -286,6 +289,7 @@ describe('feature gates', () => {
     try {
       const schemas = app.get(CommandRegistry).commandSchemas();
       expect(schemas).toEqual(Object.fromEntries([
+        'attachment.remove', 'attachment.replace', 'attachment.retain',
         'budget.create', 'budget.replace',
         'category.archive', 'category.create', 'category.seed_builtins', 'category.unarchive', 'category.update',
         'export.request',

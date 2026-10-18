@@ -7,6 +7,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 
+import { AttachmentsModule } from '../attachments/attachments.module';
 import { AuthModule } from '../auth/auth.module';
 import { BudgetsModule } from '../budgets/budgets.module';
 import { CategoriesModule } from '../categories/categories.module';
@@ -36,7 +37,7 @@ import { WalletsModule } from '../wallets/wallets.module';
  * pauses) and HealthModule (`/live`, `/ready`) are P6b's.
  */
 @Module({
-  imports: [FeatureGatesModule, DatabaseModule, HealthModule, AuthModule, CommandsModule, WalletsModule, CategoriesModule, TransactionsModule, BudgetsModule, SyncModule, ExportsModule, ImportsModule, PrivacyModule],
+  imports: [FeatureGatesModule, DatabaseModule, HealthModule, AuthModule, CommandsModule, WalletsModule, CategoriesModule, TransactionsModule, BudgetsModule, SyncModule, ExportsModule, ImportsModule, AttachmentsModule, PrivacyModule],
 })
 export class V1AppModule {}
 

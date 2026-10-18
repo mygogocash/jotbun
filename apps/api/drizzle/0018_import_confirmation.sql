@@ -1,6 +1,4 @@
--- P3: explicit, resumable import confirmation. Provisionally 0018 (after
--- P2c's 0017_attachments); numbered 0017 on its own branch because the
--- journal must be contiguous. Renumber it at integration.
+-- P3: explicit, resumable import confirmation (after P2c's 0017_attachments).
 --   import_selections     - one per freeze command: the preview it froze, at
 --                           which review revision, and how many rows. Written
 --                           only by gogospend_freeze_import_selection.

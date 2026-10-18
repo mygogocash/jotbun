@@ -462,6 +462,8 @@ export const importPreviews = pgTable('import_previews', {
   imageKey: text('image_key').unique(),
   imageWidth: integer('image_width'),
   imageHeight: integer('image_height'),
+  // P2c: the opaque id a retain names (set by a trigger when there is an image).
+  imageAttachmentId: uuid('image_attachment_id').unique(),
   reviewRevision: bigint('review_revision', { mode: 'bigint' }).notNull().default(1n),
   createdAt: instant('created_at').notNull().defaultNow(),
   expiresAt: instant('expires_at').notNull(),
@@ -539,6 +541,40 @@ export const importRowProgress = pgTable(
   (table) => [primaryKey({ columns: [table.jobId, table.sourceRowId] })],
 );
 
+// P2c: receipts the owner explicitly retained (written only by SQL routines)
+// and which record holds which (one per record; shared receipts allowed).
+export const ATTACHMENT_STATUSES = ['retained', 'released'] as const;
+
+export const attachments = pgTable(
+  'attachments',
+  {
+    accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+    id: uuid('id').notNull(),
+    sourceJobId: uuid('source_job_id').notNull(),
+    status: text('status', { enum: ATTACHMENT_STATUSES }).notNull().default('retained'),
+    objectKey: text('object_key').notNull().unique(),
+    contentType: text('content_type', { enum: ['image/jpeg', 'image/png', 'image/webp'] }).notNull(),
+    bytes: bigint('bytes', { mode: 'bigint' }).notNull(),
+    sha256: bytea('sha256').notNull(),
+    width: integer('width').notNull(),
+    height: integer('height').notNull(),
+    retainedAt: instant('retained_at').notNull().defaultNow(),
+    releasedAt: instant('released_at'),
+  },
+  (table) => [primaryKey({ columns: [table.accountId, table.id] })],
+);
+
+export const transactionAttachments = pgTable(
+  'transaction_attachments',
+  {
+    accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+    transactionId: uuid('transaction_id').notNull(),
+    attachmentId: uuid('attachment_id').notNull(),
+    attachedAt: instant('attached_at').notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.accountId, table.transactionId] })],
+);
+
 export const schema = {
   accounts,
   accountIdentities,
@@ -573,4 +609,6 @@ export const schema = {
   importSelections,
   importSelectionRows,
   importRowProgress,
+  attachments,
+  transactionAttachments,
 };

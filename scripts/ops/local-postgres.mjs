@@ -138,12 +138,25 @@ const DIGEST_TABLES = `
 const DIGESTS = `(SELECT decode(d, 'hex') FROM unnest($1::text[]) AS d)`;
 
 /**
+ * P2c's attachment-reference query: every retained receipt (`account_id`,
+ * object key as `ref`, hex `sha256`), whether the record holding it is
+ * active or deleted within its 30-day undo window. Released receipts are not
+ * references: their objects are deleted (and need not be in the copy).
+ */
+export const RETAINED_ATTACHMENT_REFERENCES_SQL = `
+  SELECT a.account_id::text AS account_id, a.object_key AS ref, encode(a.sha256, 'hex') AS sha256
+    FROM attachments a
+   WHERE a.status = 'retained'
+   ORDER BY a.account_id, a.object_key`;
+
+/**
  * Restore adapter for the local container. `attachmentReferenceSql` returns
- * `account_id, ref[, sha256]` for every retained attachment reference; P2c
- * supplies the real query. Without it, a schema that has attachment tables is
+ * `account_id, ref[, sha256]` for every retained attachment reference; it
+ * defaults to P2c's query, which a copy taken before P2c (no `attachments`
+ * table) skips. Passed as null, a schema that has attachment tables is
  * refused rather than passed unchecked.
  */
-export function localDockerRestorer({ attachmentReferenceSql, spawnImpl = spawn } = {}) {
+export function localDockerRestorer({ attachmentReferenceSql = RETAINED_ATTACHMENT_REFERENCES_SQL, spawnImpl = spawn } = {}) {
   const databases = databaseRegistry();
   return {
     kind: 'local-docker',
@@ -262,13 +275,15 @@ export function localDockerRestorer({ attachmentReferenceSql, spawnImpl = spawn 
     }),
 
     attachmentReferences: (target) => withClient(target.database, async (client) => {
-      if (attachmentReferenceSql) {
-        const rows = await client.query(attachmentReferenceSql);
-        return rows.rows.map((row) => ({ account_id: String(row.account_id), ref: String(row.ref), ...(row.sha256 ? { sha256: String(row.sha256) } : {}) }));
-      }
       const tables = await client.query(`SELECT to_regclass('public.attachments') IS NOT NULL OR to_regclass('public.transaction_attachments') IS NOT NULL AS present`);
-      if (tables.rows[0].present) throw new OpsError('ATTACHMENT_VALIDATOR_MISSING');
-      return null;
+      if (!attachmentReferenceSql) {
+        if (tables.rows[0].present) throw new OpsError('ATTACHMENT_VALIDATOR_MISSING');
+        return null;
+      }
+      // A copy from before P2c has no receipts to check.
+      if (attachmentReferenceSql === RETAINED_ATTACHMENT_REFERENCES_SQL && !tables.rows[0].present) return null;
+      const rows = await client.query(attachmentReferenceSql);
+      return rows.rows.map((row) => ({ account_id: String(row.account_id), ref: String(row.ref), ...(row.sha256 ? { sha256: String(row.sha256) } : {}) }));
     }),
 
     databases,
@@ -276,22 +291,47 @@ export function localDockerRestorer({ attachmentReferenceSql, spawnImpl = spawn 
 }
 
 const ISSUER = 'https://auth.gogospend.invalid/';
-const ATTACHMENT_REFS_SQL = 'SELECT account_id::text AS account_id, object_key AS ref, sha256 FROM rehearsal_attachment_refs';
 
 /**
- * Synthetic data in a fresh migrated database: three accounts, each with an
+ * A P2c receipt as the API leaves it: the registry row of its copy (purpose
+ * `receipt`, published with no expiry), the attachment and, when given, the
+ * record holding it. A released receipt has a deleted registry row and no
+ * holder, and its object is not in the copy.
+ */
+async function seedReceipt(client, accountId, { holder = null, released = false } = {}) {
+  const id = randomUUID();
+  const token = randomUUID();
+  const ref = `receipt/${accountId}/${id}/${token}/image.jpg`;
+  const bytes = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.from('synthetic jpeg '), randomBytes(512)]);
+  const sha256 = createHash('sha256').update(bytes).digest('hex');
+  await client.query(
+    released
+      ? `INSERT INTO object_publications (key, job_id, account_id, lease_token, lifecycle_generation, purpose, status, delete_after, bytes, sha256, published_at, deleted_at)
+         VALUES ($1, $2, $3, $4, 0, 'receipt', 'deleted', now() - interval '1 day', $5, decode($6, 'hex'), now() - interval '3 days', now() - interval '1 day')`
+      : `INSERT INTO object_publications (key, job_id, account_id, lease_token, lifecycle_generation, purpose, status, delete_after, bytes, sha256, published_at)
+         VALUES ($1, $2, $3, $4, 0, 'receipt', 'published', 'infinity', $5, decode($6, 'hex'), now() - interval '3 days')`,
+    [ref, id, accountId, token, bytes.length, sha256],
+  );
+  await client.query(
+    `INSERT INTO attachments (account_id, id, source_job_id, status, object_key, content_type, bytes, sha256, width, height, released_at)
+     VALUES ($1, $2, $3, $4, $5, 'image/jpeg', $6, decode($7, 'hex'), 64, 48, $8)`,
+    [accountId, id, randomUUID(), released ? 'released' : 'retained', ref, bytes.length, sha256, released ? new Date() : null],
+  );
+  if (holder) await client.query('INSERT INTO transaction_attachments (account_id, transaction_id, attachment_id) VALUES ($1, $2, $3)', [accountId, holder, id]);
+  return { ref, bytes };
+}
+
+/**
+ * Synthetic data in a fresh migrated database: four accounts, each with an
  * Auth0 alias, a wallet, a category, three expenses, a queued job, a verified
- * provider-event receipt, a reconcile check and one retained-attachment
- * reference. `rehearsal_attachment_refs` stands in for P2c's attachment
- * tables (not built yet) and cascades from accounts.
+ * provider-event receipt, a reconcile check and one retained receipt (P2c)
+ * held by its first expense. The kept account also has a retained receipt
+ * held by a record deleted within its undo window, and a released receipt
+ * whose object is gone (not a reference).
  */
 async function seedSyntheticSource(name) {
   await withClient(name, async (client) => {
     await migrate(drizzle(client), { migrationsFolder: join(REPO_ROOT, 'apps/api/drizzle') });
-    await client.query(`CREATE TABLE rehearsal_attachment_refs (
-      account_id uuid NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
-      object_key text PRIMARY KEY,
-      sha256 text NOT NULL)`);
   });
   const people = {
     kept: { id: randomUUID(), subject: `apple|synthetic-kept-${randomBytes(4).toString('hex')}` },
@@ -310,18 +350,25 @@ async function seedSyntheticSource(name) {
       await client.query('INSERT INTO account_identities (issuer, subject, account_id, created_at) VALUES ($1, $2, $3, now() - interval \'10 days\')', [ISSUER, person.subject, person.id]);
       await client.query(`INSERT INTO wallets (account_id, id, name, opening_minor, tracking_start) VALUES ($1, $2, 'Synthetic wallet', 100000, DATE '2026-10-01')`, [person.id, wallet]);
       await client.query(`INSERT INTO categories (account_id, id, type, builtin_key) VALUES ($1, $2, 'expense', 'food')`, [person.id, category]);
+      const records = [];
       for (let index = 1; index <= 3; index += 1) {
+        const record = randomUUID();
+        records.push(record);
         await client.query(
           `INSERT INTO transactions (account_id, id, type, amount_minor, occurred_on, wallet_id, category_id, note)
            VALUES ($1, $2, 'expense', $3, DATE '2026-10-10', $4, $5, 'synthetic rehearsal row')`,
-          [person.id, randomUUID(), 1000 * index + 7, wallet, category],
+          [person.id, record, 1000 * index + 7, wallet, category],
         );
       }
       await client.query(`INSERT INTO jobs (id, kind, account_id, payload, max_attempts) VALUES ($1, 'export', $2, '{}'::jsonb, 3)`, [randomUUID(), person.id]);
-      const ref = `receipt/${person.id}/${randomUUID()}.jpg`;
-      const bytes = Buffer.concat([Buffer.from('synthetic jpeg '), randomBytes(512)]);
-      objects.set(ref, bytes);
-      await client.query('INSERT INTO rehearsal_attachment_refs (account_id, object_key, sha256) VALUES ($1, $2, $3)', [person.id, ref, createHash('sha256').update(bytes).digest('hex')]);
+      const receipt = await seedReceipt(client, person.id, { holder: records[0] });
+      objects.set(receipt.ref, receipt.bytes);
+      if (person === people.kept) {
+        await client.query(`UPDATE transactions SET deleted_at = now() - interval '2 days' WHERE account_id = $1 AND id = $2`, [person.id, records[1]]);
+        const undoable = await seedReceipt(client, person.id, { holder: records[1] });
+        objects.set(undoable.ref, undoable.bytes);
+        await seedReceipt(client, person.id, { released: true });
+      }
       await client.query(
         `INSERT INTO auth_event_receipts (event_id, source, type, principal_digest, occurred_at, outcome, account_id)
          VALUES ($1, 'event', 'password_changed', gogospend_principal_digest($2, $3), now() - interval '9 days', 'applied', $4)`,
@@ -348,7 +395,8 @@ const KEPT_DIGEST_SQL = `
     UNION ALL SELECT 'i:' || i::text FROM account_identities i WHERE account_id = $1::uuid
     UNION ALL SELECT 'w:' || w::text FROM wallets w WHERE account_id = $1::uuid
     UNION ALL SELECT 't:' || t::text FROM transactions t WHERE account_id = $1::uuid
-    UNION ALL SELECT 'r:' || r::text FROM rehearsal_attachment_refs r WHERE account_id = $1::uuid
+    UNION ALL SELECT 'r:' || r::text FROM attachments r WHERE account_id = $1::uuid
+    UNION ALL SELECT 'h:' || h::text FROM transaction_attachments h WHERE account_id = $1::uuid
   ) rows`;
 
 /**
@@ -370,7 +418,7 @@ export async function runLocalSyntheticRehearsal({ restoreRehearsal, keyFd, log 
   const tamperedName = `gogospend_restore_${suffix}t`;
   const recoveryDir = await mkdtemp(join(tmpdir(), 'gogospend-recovery-'));
   const sources = databaseRegistry();
-  const restorer = localDockerRestorer({ attachmentReferenceSql: ATTACHMENT_REFS_SQL });
+  const restorer = localDockerRestorer();
   const key = keyFd === undefined ? RecoveryKey.generate() : readRecoveryKeyFromFd(keyFd);
   const lookupKey = SubjectLookupKey.generate();
   try {
@@ -497,7 +545,9 @@ export async function runLocalSyntheticRehearsal({ restoreRehearsal, keyFd, log 
       && checks.erased_digest_rows === 0 && checks.kept_digest_rows === 1
       && checks.temp_revoked_from_public && checks.connect_revoked_from_public && checks.connect_revoked_from_app_roles
       && checks.restore_target_dropped && checks.tampered_backup_refused && checks.tampered_target_absent
-      && receipt.erased_owner_rows.length === 0 && receipt.missing_retained_objects.length === 0 && receipt.accounts_erased === 3;
+      && receipt.erased_owner_rows.length === 0 && receipt.missing_retained_objects.length === 0 && receipt.accounts_erased === 3
+      // P2c: the kept account's two retained receipts (one held by a deleted record) were checked against the copy.
+      && receipt.attachments.schema_has_references && receipt.attachments.references_checked === 2;
     const result = {
       rehearsal: 'local-isolated-synthetic',
       passed,

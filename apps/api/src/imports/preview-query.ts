@@ -19,6 +19,8 @@ type HeadRow = {
   transfer: string | null;
   image_width: number | null;
   image_height: number | null;
+  image_attachment_id: string | null;
+  attachable_until: Date | null;
   review_revision: string | null;
   expires_at: Date | null;
 };
@@ -63,7 +65,8 @@ export class PreviewQuery {
       `SELECT u.job_id, u.status AS upload_status, gogospend_import_job_status(u.job_id) AS job_status, gogospend_import_parse_failure(u.job_id) AS failure,
               p.status, p.layout, p.issues, p.candidate_count, p.review_required_count,
               p.expense_total_minor::text AS expense, p.income_total_minor::text AS income, p.transfer_total_minor::text AS transfer,
-              p.image_width, p.image_height, p.review_revision::text AS review_revision, p.expires_at
+              p.image_width, p.image_height, p.image_attachment_id, gogospend_import_image_attachable_until(p.job_id) AS attachable_until,
+              p.review_revision::text AS review_revision, p.expires_at
          FROM import_uploads u
          LEFT JOIN import_previews p ON p.job_id = u.job_id
         WHERE u.job_id = $1 AND u.accepted_at IS NOT NULL`,
@@ -125,7 +128,11 @@ export class PreviewQuery {
         candidate_count: head.candidate_count ?? 0,
         review_required_count: head.review_required_count ?? 0,
         totals: { expense_minor: head.expense ?? '0', income_minor: head.income ?? '0', transfer_minor: head.transfer ?? '0' },
-        image: head.image_width !== null && head.image_height !== null ? { width: head.image_width, height: head.image_height } : null,
+        // P2c: the image's opaque attachment id (never its object key) and until when it can be retained.
+        image:
+          head.image_width !== null && head.image_height !== null && head.image_attachment_id !== null
+            ? { width: head.image_width, height: head.image_height, attachment_id: head.image_attachment_id, attachable_until: head.attachable_until ? head.attachable_until.toISOString() : null }
+            : null,
       },
     };
   }

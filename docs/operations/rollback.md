@@ -21,10 +21,19 @@ names the current floor. At this revision the floor is the first deployed
 revision that contains P4 (`0013_exports`); nothing earlier has been
 deployed, so in practice the floor is the first beta release.
 
+P2c raises it again once any receipt is retained: a record's snapshot then
+carries `attachment_id`, which an API (or app) older than P2c refuses in its
+record validator. The floor becomes the first deployed revision containing
+P2c (`0017_attachments`), and the minimum client versions must be at or above
+the first app build whose validator accepts `attachment_id` before receipts
+are exposed. Receipts can only come from image imports, which stay off
+(`IMPORT_UPLOADS_ENABLED`) until the import release step, so that step is
+where the floor and minimums move together.
+
 P3 adds two synced entity types, `import_review` (an import's correction
 revision) and `import_selection` (a frozen selection's progress counts). Once
 any account has corrected or frozen an import, the floor is the first
-deployed revision that contains P3's confirmation migration. Imports stay
+deployed revision that contains P3 (`0018_import_confirmation`). Imports stay
 disabled until their gates pass, so until then the P4 floor above still
 holds; the release that enables imports records the raised floor.
 
