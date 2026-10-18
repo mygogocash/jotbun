@@ -94,6 +94,7 @@ The job worker logs, counts only:
 - `job worker: retention <step>=<n> …` - what each pass removed;
 - `job worker: retention step(s) failed: <names>` - **alert** when it repeats;
 - `job worker: N export object(s) overdue for deletion` - **alert** (P4);
+- `job worker: N receipt object(s) overdue for deletion` - **alert** (P2c review fix): a receipt image was due over an hour ago;
 - `job worker: N <kind> job(s) failed` - **alert** (P1).
 
 ## Checks (operator, admin connection)

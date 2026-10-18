@@ -18,16 +18,23 @@ const BODY_BYTES = 1 + 16 + 2 + 6;
  */
 export class SnapshotGrants {
   private readonly keys: readonly Buffer[];
+  private readonly minutes: number;
 
-  /** Issues with the first key; verifies with any (the rest are keys from before a rotation). */
-  constructor(keys: Buffer | readonly Buffer[]) {
+  /**
+   * Issues with the first key; verifies with any (the rest are keys from
+   * before a rotation). Grants last `options.minutes`, SNAPSHOT_GRANT_MINUTES
+   * unless a caller (receipts) names its own.
+   */
+  constructor(keys: Buffer | readonly Buffer[], options: { minutes?: number } = {}) {
+    this.minutes = options.minutes ?? SNAPSHOT_GRANT_MINUTES;
+    if (!Number.isInteger(this.minutes) || this.minutes < 1 || this.minutes > 60) throw new RangeError('grants last 1-60 minutes');
     this.keys = Array.isArray(keys) ? [...keys] : [keys as Buffer];
     if (this.keys.length === 0 || this.keys.some((key) => key.length < 32)) throw new RangeError('grant keys are at least 32 bytes');
   }
 
   issue(accountId: string, target: GrantTarget, now: Date = new Date(), notAfter?: Date): { grant: string; expiresAt: Date } {
     if (!Number.isInteger(target.index) || target.index < 0 || target.index > 0xffff) throw new RangeError('chunk index out of range');
-    let expires = Math.floor(now.getTime() / 1000) + SNAPSHOT_GRANT_MINUTES * 60;
+    let expires = Math.floor(now.getTime() / 1000) + this.minutes * 60;
     if (notAfter) expires = Math.min(expires, Math.floor(notAfter.getTime() / 1000));
     const body = Buffer.alloc(BODY_BYTES);
     body.writeUInt8(VERSION, 0);

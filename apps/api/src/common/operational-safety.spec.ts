@@ -262,8 +262,8 @@ describe('feature gates', () => {
         'PATCH /v1/transactions/:id': 'writes',
         'DELETE /v1/transactions/:id': 'writes',
         'POST /v1/transactions/:id/restore': 'writes',
-        'POST /v1/transactions/:id/attachment': 'writes',
-        'PUT /v1/transactions/:id/attachment': 'writes',
+        'POST /v1/transactions/:id/attachment': 'imports,writes',
+        'PUT /v1/transactions/:id/attachment': 'imports,writes',
         'DELETE /v1/transactions/:id/attachment': 'writes',
         'PUT /v1/budgets/:month': 'writes',
         // Requests that queue background work.

@@ -14,8 +14,8 @@
 // expiry), runs P5's retention steps (privacy/privacy-steps.ts: purged
 // records, change log, receipt digests, security records, finished jobs,
 // completed deletion requests), and reports - counts only - failed jobs,
-// queued kinds no handler here runs and export and quarantine objects whose
-// deletion is overdue. Before each sweep it runs the import maintenance
+// queued kinds no handler here runs and export, quarantine and receipt objects
+// whose deletion is overdue. Before each sweep it runs the import maintenance
 // (stale uploads, imports to end, names past their preview window). Never
 // logs payloads,
 // object keys or error text. See apps/api/.env.jobs-worker.example.
@@ -35,6 +35,7 @@ import { failureName, queueAge, queueAgeLines, startQueueReports } from './commo
 import { handleShutdownSignals, runMain, shutdownTimeoutMsFromEnv } from './common/process-lifecycle';
 import { poolConfigFromUrl } from './database/database-config';
 import { LeasedAccountRead } from './database/leased-account-read';
+import { receiptCleanupOverdue } from './attachments/receipt-cleanup';
 import { exportCleanupOverdue } from './exports/export-handler';
 import { importMaintenance, quarantineCleanupOverdue } from './imports/import-expiry';
 import { importParsingStartup } from './imports/import-parsing';
@@ -114,6 +115,13 @@ async function main(): Promise<void> {
         if (overdue > 0) console.error(`job worker: ${overdue} quarantine object(s) overdue for deletion`);
       } catch (error) {
         console.error(`job worker: quarantine cleanup check failed (${failureName(error)})`);
+      }
+      try {
+        // Alert on this line: released receipts past their deletion deadline are still stored.
+        const overdue = await receiptCleanupOverdue(jobsPool);
+        if (overdue > 0) console.error(`job worker: ${overdue} receipt object(s) overdue for deletion`);
+      } catch (error) {
+        console.error(`job worker: receipt cleanup check failed (${failureName(error)})`);
       }
       try {
         const report = await retention.run();

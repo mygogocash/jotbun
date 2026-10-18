@@ -21,8 +21,10 @@
 -- Object lifecycle (P1's registry is the source of truth; a database rollback
 -- never undoes a PUT):
 --   1. gogospend_reserve_receipt_copy registers receipt/<account>/<attachment>
---      /<copy token>/image.<ext> (purpose `receipt`) for ten minutes, before
---      the API copies the import image there;
+--      /<copy token>/image.<ext> (purpose `receipt`) for three minutes (the
+--      copy's own one-minute deadline plus the command that publishes it),
+--      before the API copies the import image there - inside the object
+--      store, never through the API's memory;
 --   2. gogospend_retain_attachment, in the command's transaction under the
 --      account lock, publishes that reservation with no expiry
 --      (delete_after = infinity) once the copy matches the import image's
@@ -35,6 +37,16 @@
 --
 -- A preview image's opaque attachment id (import_previews.image_attachment_id)
 -- is what the client names; the object keys never leave the server.
+--
+-- Locks and rewrites (docs/operations/release.md): this migration rewrites
+-- every import_previews row that has an image (the UPDATE giving it an
+-- attachment id) and builds a unique index on that table, which holds
+-- SHARE ROW EXCLUSIVE or stronger on import_previews for the duration. The
+-- two CHECK constraints it adds are created NOT VALID and then validated, so
+-- the validation scans object_publications and import_previews without
+-- blocking their writes (SHARE UPDATE EXCLUSIVE). Previews live seven days and
+-- are few, so the window is short; run it with OPERATIONAL_PAUSE=writes on the
+-- API (incident.md#pausing) and record that in the release record.
 
 -- Retained receipts outlive P1's 7-day limit on published objects: they are
 -- kept until released. Every other purpose keeps the limit.
@@ -53,14 +65,18 @@ BEGIN
 END $$;
 --> statement-breakpoint
 ALTER TABLE object_publications ADD CONSTRAINT object_publications_published_expiry_check
-  CHECK (status <> 'published' OR purpose = 'receipt' OR delete_after <= published_at + interval '7 days 1 minute');
+  CHECK (status <> 'published' OR purpose = 'receipt' OR delete_after <= published_at + interval '7 days 1 minute') NOT VALID;
+--> statement-breakpoint
+ALTER TABLE object_publications VALIDATE CONSTRAINT object_publications_published_expiry_check;
 --> statement-breakpoint
 -- The opaque id a client names to retain a preview's sanitized image.
 ALTER TABLE import_previews ADD COLUMN image_attachment_id uuid UNIQUE;
 --> statement-breakpoint
 UPDATE import_previews SET image_attachment_id = gen_random_uuid() WHERE image_key IS NOT NULL;
 --> statement-breakpoint
-ALTER TABLE import_previews ADD CONSTRAINT import_previews_attachment_id_check CHECK ((image_attachment_id IS NULL) = (image_key IS NULL));
+ALTER TABLE import_previews ADD CONSTRAINT import_previews_attachment_id_check CHECK ((image_attachment_id IS NULL) = (image_key IS NULL)) NOT VALID;
+--> statement-breakpoint
+ALTER TABLE import_previews VALIDATE CONSTRAINT import_previews_attachment_id_check;
 --> statement-breakpoint
 CREATE FUNCTION gogospend_assign_image_attachment_id() RETURNS trigger
   LANGUAGE plpgsql
@@ -212,15 +228,23 @@ CREATE TRIGGER transaction_attachments_unheld AFTER DELETE OR UPDATE OF attachme
 -- Owner transaction (API), before a retain copies anything: for the owner's
 -- own ready preview whose image p_attachment_id names, while the image is
 -- published with at least two minutes left, registers the copy's receipt key
--- for ten minutes (committed before the PUT) and returns it with the image's
--- key, type, size and digest. Outcomes:
+-- for three minutes (committed before the copy) and returns it with the
+-- image's key, type, size and digest. One account's reservations are
+-- serialized by an advisory lock, so the limits below hold under concurrency.
+-- Outcomes:
 --   reserved    - copy the image to copy_key now;
 --   existing    - the receipt already exists (retained or released): copy nothing;
---   limited     - the account already has 4 copies in flight;
+--   pending     - another request of this account is already copying this
+--                 image: wait for it (its receipt, or its reservation going
+--                 due) instead of making a second copy; retry_after is a
+--                 polling hint in seconds;
+--   limited     - the account has 4 copies in flight, or has reserved 100 in
+--                 the last 24 hours; retry_after is the seconds until the
+--                 oldest of them is due or leaves that window;
 --   unavailable - nothing of the owner's to copy (unknown, another account's,
 --                 not an image, or past its window).
 CREATE FUNCTION gogospend_reserve_receipt_copy(p_attachment_id uuid, p_copy_token uuid)
-  RETURNS TABLE (outcome text, copy_key text, source_key text, content_type text, bytes bigint, sha256 text)
+  RETURNS TABLE (outcome text, copy_key text, source_key text, content_type text, bytes bigint, sha256 text, retry_after integer)
   LANGUAGE plpgsql VOLATILE SECURITY DEFINER
   SET search_path = pg_catalog
 AS $$
@@ -231,17 +255,20 @@ DECLARE
   v_source record;
   v_ext text;
   v_key text;
+  v_oldest timestamptz;
+  v_wait integer;
 BEGIN
   IF v_account IS NULL THEN
     RAISE EXCEPTION 'retaining a receipt needs an owner transaction';
   END IF;
+  PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('gogospend.receipt-copy:' || v_account::text, 0));
   SELECT a.lifecycle_generation INTO v_generation FROM public.accounts a WHERE a.id = v_account AND a.status = 'active';
   IF NOT FOUND OR p_attachment_id IS NULL OR p_copy_token IS NULL THEN
-    RETURN QUERY SELECT 'unavailable'::text, NULL::text, NULL::text, NULL::text, NULL::bigint, NULL::text;
+    RETURN QUERY SELECT 'unavailable'::text, NULL::text, NULL::text, NULL::text, NULL::bigint, NULL::text, NULL::integer;
     RETURN;
   END IF;
   IF EXISTS (SELECT 1 FROM public.attachments a WHERE a.account_id = v_account AND a.id = p_attachment_id) THEN
-    RETURN QUERY SELECT 'existing'::text, NULL::text, NULL::text, NULL::text, NULL::bigint, NULL::text;
+    RETURN QUERY SELECT 'existing'::text, NULL::text, NULL::text, NULL::text, NULL::bigint, NULL::text, NULL::integer;
     RETURN;
   END IF;
   SELECT p.image_key AS key, o.bytes AS bytes, o.sha256 AS sha256 INTO v_source
@@ -250,21 +277,38 @@ BEGIN
    WHERE p.account_id = v_account AND p.image_attachment_id = p_attachment_id AND p.status = 'ready'
      AND o.purpose = 'import_image' AND o.status = 'published' AND o.delete_after > now() + interval '2 minutes';
   IF NOT FOUND THEN
-    RETURN QUERY SELECT 'unavailable'::text, NULL::text, NULL::text, NULL::text, NULL::bigint, NULL::text;
+    RETURN QUERY SELECT 'unavailable'::text, NULL::text, NULL::text, NULL::text, NULL::bigint, NULL::text, NULL::integer;
     RETURN;
   END IF;
-  IF (SELECT count(*) FROM public.object_publications o
-       WHERE o.account_id = v_account AND o.purpose = 'receipt' AND o.status = 'reserved' AND o.delete_after > now()) >= 4 THEN
-    RETURN QUERY SELECT 'limited'::text, NULL::text, NULL::text, NULL::text, NULL::bigint, NULL::text;
+  IF EXISTS (SELECT 1 FROM public.object_publications o
+              WHERE o.account_id = v_account AND o.purpose = 'receipt' AND o.job_id = p_attachment_id AND o.status = 'reserved'
+                AND o.delete_after > now() AND o.lifecycle_generation = v_generation) THEN
+    RETURN QUERY SELECT 'pending'::text, NULL::text, NULL::text, NULL::text, NULL::bigint, NULL::text, 1;
+    RETURN;
+  END IF;
+  SELECT min(o.delete_after) INTO v_oldest FROM public.object_publications o
+   WHERE o.account_id = v_account AND o.purpose = 'receipt' AND o.status = 'reserved' AND o.delete_after > now()
+  HAVING count(*) >= 4;
+  IF FOUND THEN
+    v_wait := greatest(1, ceil(extract(epoch FROM v_oldest - now()))::integer);
+    RETURN QUERY SELECT 'limited'::text, NULL::text, NULL::text, NULL::text, NULL::bigint, NULL::text, v_wait;
+    RETURN;
+  END IF;
+  SELECT min(o.created_at) INTO v_oldest FROM public.object_publications o
+   WHERE o.account_id = v_account AND o.purpose = 'receipt' AND o.created_at > now() - interval '24 hours'
+  HAVING count(*) >= 100;
+  IF FOUND THEN
+    v_wait := greatest(1, ceil(extract(epoch FROM v_oldest + interval '24 hours' - now()))::integer);
+    RETURN QUERY SELECT 'limited'::text, NULL::text, NULL::text, NULL::text, NULL::bigint, NULL::text, v_wait;
     RETURN;
   END IF;
   v_ext := substring(v_source.key from '\.(jpg|png|webp)$');
   v_key := format('receipt/%s/%s/%s/image.%s', v_account, p_attachment_id, p_copy_token, v_ext);
   INSERT INTO public.object_publications (key, job_id, account_id, lease_token, lifecycle_generation, purpose, delete_after)
-  VALUES (v_key, p_attachment_id, v_account, p_copy_token, v_generation, 'receipt', now() + interval '10 minutes');
+  VALUES (v_key, p_attachment_id, v_account, p_copy_token, v_generation, 'receipt', now() + interval '180 seconds');
   RETURN QUERY SELECT 'reserved'::text, v_key, v_source.key::text,
                       CASE v_ext WHEN 'jpg' THEN 'image/jpeg' WHEN 'png' THEN 'image/png' ELSE 'image/webp' END,
-                      v_source.bytes::bigint, encode(v_source.sha256, 'hex');
+                      v_source.bytes::bigint, encode(v_source.sha256, 'hex'), NULL::integer;
 END
 $$;
 --> statement-breakpoint
