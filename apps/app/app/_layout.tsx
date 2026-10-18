@@ -9,6 +9,7 @@ import { spendRuntimeFonts } from '@mobile/theme/appFonts';
 import { deviceLocale } from '@mobile/i18n/deviceLocale';
 import { syncUiFontFamily } from '@mobile/theme/uiFontFamily';
 import { useReminderUpkeep } from '@mobile/notifications/useReminderUpkeep';
+import { BunIntensityProvider } from '@mobile/mascot/BunIntensityProvider';
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(spendRuntimeFonts);
@@ -18,5 +19,5 @@ export default function RootLayout() {
   useReminderUpkeep(locale);
   useEffect(() => { if (fontError) console.warn('Bundled fonts could not load; using the system fallback.'); }, [fontError]);
   if (!fontsLoaded && !fontError) return <View style={{ flex: 1, justifyContent: 'center' }}><ActivityIndicator accessibilityLabel="Loading Jotbun" /></View>;
-  return <SafeAreaProvider><IntlProvider locale={locale}><ThemeProvider><ThemedStatusBar /><Stack screenOptions={{ headerShown: false }} /></ThemeProvider></IntlProvider></SafeAreaProvider>;
+  return <BunIntensityProvider><SafeAreaProvider><IntlProvider locale={locale}><ThemeProvider><ThemedStatusBar /><Stack screenOptions={{ headerShown: false }} /></ThemeProvider></IntlProvider></SafeAreaProvider></BunIntensityProvider>;
 }
