@@ -55,6 +55,71 @@ produce `import_review` or `import_selection` changes. Every later new synced
 type relies on this skip policy plus a floor at or above the first build that
 has it.
 
+## Import release checklist
+
+Do this, in order, at the release that turns imports on (stage 3 in
+[release.md](release.md#staged-enablement)). Until then every item stays
+**not done**: `MIN_CLIENT_VERSION_IOS`, `MIN_CLIENT_VERSION_ANDROID` and
+`IMPORT_UPLOADS_ENABLED` keep their current values (`1.0.0`, `1.0.0` and off),
+and no step below is taken early. Record each step, its date and who approved
+it in the release record.
+
+**A. Preconditions (nothing changes in production yet)**
+
+1. **P1 hosted R2 contract passed** (`npm run test:storage-contract` against
+   the E1 non-production bucket), and P2a's hosted upload check passed.
+2. **Worker runtime is Node 25 or newer** (recommended 26) in the Docker base
+   image and in CI (new digest pin), so the parser child can be denied
+   network access. Imports fail closed on an older runtime; do not enable them
+   on it.
+3. **Parser dependency/security gate** passed, and the P2b/P2c/P3 review fixes
+   are in the release (they are done locally; confirm the release commit
+   contains them).
+4. **Release image smoke re-run** on the release commit: `docker build` and
+   `release-smoke.cjs` (the worker, parse handler and job repository changed
+   after the last smoke).
+5. **Import review screen is routed and approved** (E2: visuals, copy, the
+   import draft at-rest decision, receipt consent copy). Imports are never
+   enabled for a client that cannot review what it uploaded.
+
+**B. Client floor (before any import data can exist)**
+
+6. **Identify the first app build** that has *both* the unknown-entity skip
+   policy (commit `6367a9e`; skips a synced entity type it has no validator
+   for and still advances its cursor) *and* the validators for P3's
+   `import_review` / `import_selection` and for `attachment_id` in a record
+   snapshot (P2c). Take its version from the store/build record, not from a
+   commit.
+7. **Ship that build to both stores** and confirm it is the current release
+   on each, so users are not locked out by step 8.
+8. **Set `MIN_CLIENT_VERSION_IOS` and `MIN_CLIENT_VERSION_ANDROID`** to that
+   build's `major.minor.patch` (each platform's own first build). Older
+   builds then get `426 CLIENT_UPGRADE_REQUIRED` and keep their drafts. This
+   is the first change to those values since `1.0.0`; record the date, the
+   affected builds and the store state.
+
+**C. Rollback floor (before enabling uploads)**
+
+9. **Raise the rollback floor** in the release record to the first deployed
+   revision that contains all of: `0013_exports` (P4), `0017_attachments`
+   (P2c) and `0018_import_confirmation` (P3). No rollback target older than it
+   is allowed from here on (see the floors above).
+10. **Deploy that revision with `IMPORT_UPLOADS_ENABLED` still off** and hold
+    stage 0's success signals; this is the last revision a rollback may go
+    back to.
+
+**D. Enable (only after A, B and C are done)**
+
+11. **Flip `IMPORT_UPLOADS_ENABLED=1`** on the API (stage 3), only now.
+    Keep `OPERATIONAL_PAUSE=uploads,imports` (or `ocr`) ready.
+12. **Watch** the stage-3 signals: quarantine and parse queues drain, no
+    `quarantine … overdue`, no `import maintenance failed`, no `426` spike
+    from builds below the new minimum that were not expected.
+
+**If a step fails:** before step 11, nothing has been exposed; fix and repeat.
+After step 11, `OPERATIONAL_PAUSE=uploads,imports` first; do not lower a
+minimum and do not roll back below the step-9 floor.
+
 ## Before rolling back
 
 1. **Target at or above the floor**, and its image digest is the one that was

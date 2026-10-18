@@ -25,6 +25,7 @@ type HeadRow = {
   expires_at: Date | null;
 };
 type CandidateRow = Omit<ImportCandidate, 'ordinal'> & { ordinal: number; issues: { field: ImportField | null; code: string }[] };
+export type PreviewPaging = { offset: number; limit: number };
 type AdviceRow = { source_row_id: string; kind: ImportDuplicateAdvice['kind']; matches: string[] };
 
 /**
@@ -34,7 +35,11 @@ type AdviceRow = { source_row_id: string; kind: ImportDuplicateAdvice['kind']; m
  * transactions_duplicate_advice_idx (at most 5 ids per candidate). Rows with
  * a null date, type or amount are excluded — they cannot be duplicates.
  */
-export const DUPLICATE_ADVICE_SQL = `SELECT source_row_id, kind, matches FROM (
+function duplicateAdviceSql(paged: boolean): string {
+  // A page names advice for its own rows only: $2 and $3 are its first and last ordinal.
+  const existingScope = paged ? '\n            AND c.ordinal BETWEEN $2 AND $3' : '';
+  const sameScope = paged ? ' AND ordinal BETWEEN $2 AND $3' : '';
+  return `SELECT source_row_id, kind, matches FROM (
          SELECT c.source_row_id, c.ordinal, 'existing_transaction' AS kind, x.matches
            FROM import_candidates c
            CROSS JOIN LATERAL (
@@ -49,7 +54,7 @@ export const DUPLICATE_ADVICE_SQL = `SELECT source_row_id, kind, matches FROM (
            ) x
           WHERE c.job_id = $1
             AND c.occurred_on IS NOT NULL AND c.type IS NOT NULL AND c.amount_minor IS NOT NULL
-            AND x.matches IS NOT NULL
+            AND x.matches IS NOT NULL${existingScope}
          UNION ALL
          SELECT source_row_id, ordinal, 'same_file', matches
            FROM (
@@ -66,8 +71,12 @@ export const DUPLICATE_ADVICE_SQL = `SELECT source_row_id, kind, matches FROM (
               WHERE c.job_id = $1
                 AND c.occurred_on IS NOT NULL AND c.type IS NOT NULL AND c.amount_minor IS NOT NULL
            ) same
-          WHERE cardinality(matches) > 0
+          WHERE cardinality(matches) > 0${sameScope}
        ) advice ORDER BY ordinal, kind`;
+}
+
+export const DUPLICATE_ADVICE_SQL = duplicateAdviceSql(false);
+const DUPLICATE_ADVICE_PAGE_SQL = duplicateAdviceSql(true);
 
 // Job error codes that mean the quarantined file could not be read.
 const UNAVAILABLE = new Set(['quarantine_corrupt', 'quarantine_missing', 'storage_unavailable', 'import_unavailable']);
@@ -98,11 +107,12 @@ function pendingStatus(head: HeadRow): ImportPreviewStatus {
 export class PreviewQuery {
   constructor(private readonly db: DatabaseService) {}
 
-  find(ctx: SessionContext, jobId: string): Promise<ImportPreview | null> {
-    return this.db.withOwnerTransaction(ctx, (tx) => this.read(tx, jobId), { snapshot: true });
+  /** `paging` null is the whole preview; otherwise only the candidates of that page (see `ImportPreview.page`). */
+  find(ctx: SessionContext, jobId: string, paging: PreviewPaging | null = null): Promise<ImportPreview | null> {
+    return this.db.withOwnerTransaction(ctx, (tx) => this.read(tx, jobId, paging), { snapshot: true });
   }
 
-  private async read(tx: OwnerTx, jobId: string): Promise<ImportPreview | null> {
+  private async read(tx: OwnerTx, jobId: string, paging: PreviewPaging | null): Promise<ImportPreview | null> {
     const [head] = await tx.query<HeadRow>(
       `SELECT u.job_id, u.status AS upload_status, gogospend_import_job_status(u.job_id) AS job_status, gogospend_import_parse_failure(u.job_id) AS failure,
               p.status, p.layout, p.issues, p.candidate_count, p.review_required_count,
@@ -150,20 +160,43 @@ export class PreviewQuery {
       };
     }
 
-    const rows = await tx.query<CandidateRow>(
-      `SELECT source_row_id, ordinal, to_char(occurred_on, 'YYYY-MM-DD') AS occurred_on, type, amount_minor::text AS amount_minor,
-              wallet_label, category_label, merchant, note, review_required, issues
-         FROM import_candidates WHERE job_id = $1 ORDER BY ordinal`,
-      [jobId],
-    );
-    const candidates: ImportCandidate[] = rows.map(({ issues: _issues, ...candidate }) => candidate);
+    const columns = `source_row_id, ordinal, to_char(occurred_on, 'YYYY-MM-DD') AS occurred_on, type, amount_minor::text AS amount_minor,
+              wallet_label, category_label, merchant, note, review_required, issues`;
     const issues: ImportIssue[] = [];
     for (const code of head.issues as string[]) issues.push({ code, source_row_id: null, field: null });
-    for (const row of rows) for (const issue of row.issues) issues.push({ code: issue.code, source_row_id: row.source_row_id, field: issue.field });
 
-    // At most 5 matches are named per row.
-    const advice = await tx.query<AdviceRow>(DUPLICATE_ADVICE_SQL, [jobId]);
+    if (paging === null) {
+      const rows = await tx.query<CandidateRow>(`SELECT ${columns} FROM import_candidates WHERE job_id = $1 ORDER BY ordinal`, [jobId]);
+      const candidates: ImportCandidate[] = rows.map(({ issues: _issues, ...candidate }) => candidate);
+      for (const row of rows) for (const issue of row.issues) issues.push({ code: issue.code, source_row_id: row.source_row_id, field: issue.field });
 
+      // At most 5 matches are named per row.
+      const advice = await tx.query<AdviceRow>(DUPLICATE_ADVICE_SQL, [jobId]);
+      return {
+        job_id: head.job_id,
+        status: head.status,
+        candidates,
+        issues,
+        duplicate_advice: advice.map((row) => ({ source_row_id: row.source_row_id, kind: row.kind, matches: row.matches })),
+        review_revision: head.review_revision,
+        expires_at: head.expires_at ? head.expires_at.toISOString() : null,
+        summary,
+      };
+    }
+
+    // A page: candidates only. Row issues stay whole-file (a reviewer needs
+    // every problem, not just the visible ones), so they come from their own
+    // narrow read; advice covers the page's rows.
+    const rows = await tx.query<CandidateRow>(`SELECT ${columns} FROM import_candidates WHERE job_id = $1 ORDER BY ordinal LIMIT $2 OFFSET $3`, [jobId, paging.limit, paging.offset]);
+    const candidates: ImportCandidate[] = rows.map(({ issues: _issues, ...candidate }) => candidate);
+    const flagged = await tx.query<Pick<CandidateRow, 'source_row_id' | 'issues'>>(
+      'SELECT source_row_id, issues FROM import_candidates WHERE job_id = $1 AND jsonb_array_length(issues) > 0 ORDER BY ordinal',
+      [jobId],
+    );
+    for (const row of flagged) for (const issue of row.issues) issues.push({ code: issue.code, source_row_id: row.source_row_id, field: issue.field });
+    const advice = rows.length === 0 ? [] : await tx.query<AdviceRow>(DUPLICATE_ADVICE_PAGE_SQL, [jobId, rows[0].ordinal, rows[rows.length - 1].ordinal]);
+    const total = summary.candidate_count;
+    const end = paging.offset + rows.length;
     return {
       job_id: head.job_id,
       status: head.status,
@@ -173,6 +206,7 @@ export class PreviewQuery {
       review_revision: head.review_revision,
       expires_at: head.expires_at ? head.expires_at.toISOString() : null,
       summary,
+      page: { offset: paging.offset, limit: paging.limit, total, next_offset: rows.length > 0 && end < total ? end : null },
     };
   }
 }

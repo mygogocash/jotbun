@@ -7,7 +7,9 @@ import {
   MINOR_AMOUNT_MAX,
   RECEIPT_RETENTION_CONSENT,
   isAttachmentGrant,
+  IMPORT_PREVIEW_PAGE_MAX_LIMIT,
   isImportPreview,
+  parseImportPreviewPaging,
   assertKnownFields,
   bangkokDate,
   compareVersions,
@@ -361,6 +363,25 @@ describe('v1 receipt attachments (P2c)', () => {
     expect(isImportPreview({ ...preview, summary: { ...preview.summary, image: { width: 64, height: 48 } } })).toBe(false);
     expect(isImportPreview({ ...preview, summary: { ...preview.summary, image: { ...preview.summary.image, attachment_id: 'import_image/x' } } })).toBe(false);
     expect(isImportPreview({ ...preview, summary: { ...preview.summary, image: { ...preview.summary.image, image_key: 'import_image/x' } } })).toBe(false);
+  });
+
+  it('preview paging is additive: no parameters is the whole preview, a page is announced by an exact page object', () => {
+    const preview = { job_id: '1b8f6a52-1c3d-4e5f-8a7b-9c0d1e2f3a4b', status: 'ready', candidates: [], issues: [], duplicate_advice: [], review_revision: '1', expires_at: '2026-10-25T10:00:00.000Z', summary: null };
+    expect(parseImportPreviewPaging({})).toBeNull();
+    expect(parseImportPreviewPaging({ limit: '50' })).toEqual({ offset: 0, limit: 50 });
+    expect(parseImportPreviewPaging({ offset: '100' })).toEqual({ offset: 100, limit: IMPORT_PREVIEW_PAGE_MAX_LIMIT });
+    expect(parseImportPreviewPaging({ offset: '0', limit: '1' })).toEqual({ offset: 0, limit: 1 });
+    for (const query of [{ limit: '0' }, { limit: String(IMPORT_PREVIEW_PAGE_MAX_LIMIT + 1) }, { limit: '-1' }, { limit: '1.5' }, { limit: '01' }, { limit: ['1', '2'] }, { offset: '-1' }, { offset: '5001' }, { offset: 'x' }, { offset: '007' }]) {
+      expect(failure(() => parseImportPreviewPaging(query))).toMatchObject({ code: 'VALIDATION_FAILED' });
+    }
+    expect(failure(() => parseImportPreviewPaging({ limit: '5', cursor: 'x' }))).toEqual({ code: 'UNKNOWN_FIELD', field: 'cursor' });
+    expect(isImportPreview(preview)).toBe(true);
+    const page = { offset: 0, limit: 50, total: 120, next_offset: 50 };
+    expect(isImportPreview({ ...preview, page })).toBe(true);
+    expect(isImportPreview({ ...preview, page: { ...page, next_offset: null } })).toBe(true);
+    for (const bad of [{ ...page, extra: 1 }, { ...page, offset: -1 }, { ...page, limit: 0 }, { ...page, limit: IMPORT_PREVIEW_PAGE_MAX_LIMIT + 1 }, { ...page, total: -1 }, { ...page, next_offset: 'x' }, { offset: 0, limit: 50 }, { ...page, next_offset: 120 }, { ...page, offset: 120, next_offset: 170 }]) {
+      expect(isImportPreview({ ...preview, page: bad })).toBe(false);
+    }
   });
 });
 

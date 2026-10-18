@@ -1,5 +1,5 @@
-import { Controller, Get, HttpCode, Inject, Param, Post, Req, Res } from '@nestjs/common';
-import { ContractValidationError, IMPORT_FILE_NAME_HEADER, importFormatForContentType, isUuid } from '@gogospend/contracts';
+import { Controller, Get, HttpCode, Inject, Param, Post, Query, Req, Res } from '@nestjs/common';
+import { ContractValidationError, IMPORT_FILE_NAME_HEADER, importFormatForContentType, isUuid, parseImportPreviewPaging } from '@gogospend/contracts';
 import type { ImportJobDto, ImportPreview, SessionContext, UploadAccepted } from '@gogospend/contracts';
 import type { Request, Response } from 'express';
 
@@ -93,13 +93,15 @@ export class ImportsController {
   /**
    * P2b: the caller's own import as a reviewable preview (candidates,
    * issues, advisory duplicates); any other id is the same 404. Reading it
-   * never saves anything.
+   * never saves anything. With no query parameters it is the whole preview;
+   * `offset` / `limit` page its candidates only (`ImportPreview.page`).
    */
   @Get(':id/preview')
   @Access('bound_session')
-  async preview(@CurrentSession() session: SessionContext, @Param('id') id: string): Promise<ImportPreview> {
+  async preview(@CurrentSession() session: SessionContext, @Param('id') id: string, @Query() query: Record<string, unknown>): Promise<ImportPreview> {
     if (!isUuid(id)) throw new ProblemException(404, 'NOT_FOUND');
-    const found = await this.previews.find(session, id);
+    const paging = parseImportPreviewPaging(query);
+    const found = await this.previews.find(session, id, paging);
     if (!found) throw new ProblemException(404, 'NOT_FOUND');
     return found;
   }

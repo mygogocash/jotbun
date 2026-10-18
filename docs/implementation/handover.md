@@ -167,17 +167,17 @@ Local items 1–3 from the prior handover are **done**, and so are the follow-up
 
 ### 1. Smaller follow-ups (local; no provider)
 
-- **Rollback floor / client versions:** raise them at the import release step (`rollback.md`). New synced types and `attachment_id` in record snapshots are rejected by older APIs; clients without the unknown-entity skip still stall until that floor.
+- ~~**Rollback floor / client versions:** raise them at the import release step~~ **Checklist written** ([`rollback.md`, Import release checklist](../operations/rollback.md#import-release-checklist)): preconditions, `MIN_CLIENT_VERSION_IOS`/`_ANDROID` to the first build with the unknown-entity skip plus the `attachment_id` validators, the rollback floor past P2c/P3 (`0017`, `0018`), then `IMPORT_UPLOADS_ENABLED`. **Not executed:** the env values are still `1.0.0` and uploads are still off; that happens only at the import release.
 - ~~**P3 drafts:** a device-backed store for the review draft~~ **Done locally** (`d16c528`): `importDraftStore.ts` / `deviceImportDraftStore.ts`, erased with the diary at explicit sign-out. **Open before the screen is routed (E2):** the draft is plain AsyncStorage, not encrypted and not backup-excluded (decision 7 below).
 - **S4 screens:** reminder settings and needs-review, once visuals are approved.
 - **S2:** iOS backup-exclusion native step. Still open (needs authorization for a config plugin or package); a `TODO(S2)` marks the seam in `storage/deviceDiary.ts`.
 - **OCR:** if wanted, pin model assets and checksums at build time (needs dependencies).
-- **Dev database:** recreate local `gogospend_v1` before the next `dev:v1` (confirm empty first).
-- **Image cleanup:** remove stale local images (`gogospend-local-integration`, probe tags) if desired.
+- ~~**Dev database:** recreate local `gogospend_v1` before the next `dev:v1`~~ **Done:** confirmed 0 accounts, 0 transactions and 0 wallets, then dropped and recreated the empty database. Every `gogospend_test_*` database was left alone. The next `dev:v1` applies the current migrations (including the in-place edits of `0009` and `0015`–`0018`).
+- ~~**Image cleanup**~~ **Done:** removed local images `gogospend-local-integration` and `gogospend-local`. The unrelated `ghcr.io/mygogocash/gogocash-app-web` image was left in place.
 - **Optional P3 leftovers:** post-prune confirmation replay shape (open; owner decision). ~~Move receipt `prepare` after batch pre-checks~~ **Done locally** (`001ef70`).
-- **Optional P2b leftovers:** additive preview paging (open). ~~`release(lease, 'ocr_paused')` for a narrower OCR pause~~ **Done locally** (`28b520f`; `release` takes a bounded delay so a paused gate does not spin).
+- **Optional P2b leftovers:** ~~additive preview paging~~ **Done locally:** `GET /v1/imports/:id/preview?offset=&limit=` (limit 1-500, offset 0-5,000; either alone is enough) pages `candidates` only and adds `page: { offset, limit, total, next_offset }` to a ready preview; `summary`, `issues` and `review_revision` stay whole-file; `duplicate_advice` covers the page's rows. No parameters is today's whole response, with no `page` key. The app has `preview(jobId, paging?)` and `fetchWholePreview` (no screen uses them yet). ~~`release(lease, 'ocr_paused')` for a narrower OCR pause~~ **Done locally** (`28b520f`; `release` takes a bounded delay so a paused gate does not spin).
 - ~~**Stale `release.md` file count**~~ **Done:** `release.md` says 145, matching the graph check.
-- **Release image smoke:** worker, parse handler and job repository changed after the last smoke; re-run `docker build` and `release-smoke.cjs` before a release.
+- ~~**Release image smoke**~~ **Done** on the paging follow-up tree: `ok: true` on Node 24.22.0 with parsers `sandbox_unsupported`. The check image was removed. Re-run again only if workers, parsers or packages change.
 
 ### 2. Push and PR (only when the owner asks)
 

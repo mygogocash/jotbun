@@ -79,12 +79,12 @@ async function upload(user: SignedUp, body: Buffer, options: { name?: string; ty
   return res.body as ImportJobDto;
 }
 
-async function preview(user: SignedUp, id: string) {
-  return request(server).get(`/v1/imports/${id}/preview`).set(await sessionHeaders(user));
+async function preview(user: SignedUp, id: string, query = '') {
+  return request(server).get(`/v1/imports/${id}/preview${query}`).set(await sessionHeaders(user));
 }
 
-async function previewOf(user: SignedUp, id: string): Promise<ImportPreview> {
-  const res = await preview(user, id);
+async function previewOf(user: SignedUp, id: string, query = ''): Promise<ImportPreview> {
+  const res = await preview(user, id, query);
   expect(res.status).toBe(200);
   expect(isImportPreview(res.body)).toBe(true);
   return res.body as ImportPreview;
@@ -274,6 +274,102 @@ describe('duplicates are advice only', () => {
     const otherCash = await money.wallet(other, { name: 'Cash', tracking_start: '2026-01-01' });
     await money.record(other, { type: 'income', amount_minor: '100000', occurred_on: '2026-09-02', wallet_id: otherCash, category_id: builtinId(other, 'salary') });
     expect((await previewOf(user, accepted.job_id)).duplicate_advice.some((advice) => advice.source_row_id === 'row:4')).toBe(false);
+  });
+});
+
+describe('preview paging is additive (P2b)', () => {
+  const ROWS = [
+    '2026-09-01,expense,65.00,Cash,coffee',
+    '2026-09-01,expense,65.00,Cash,coffee',
+    '2026-09-02,income,10.00,Cash,a',
+    '2026-09-03,expense,11.00,,b',
+    '2026-09-04,expense,12.00,Cash,c',
+    '2026-09-05,expense,13.00,Cash,d',
+    '2026-09-06,expense,14.00,Cash,e',
+    '2026-09-07,expense,15.00,,f',
+    '2026-09-08,expense,16.00,Cash,g',
+    '2026-09-09,expense,17.00,Cash,h',
+    '2026-09-10,expense,18.00,Cash,twin',
+    '2026-09-10,expense,18.00,Cash,twin',
+  ];
+
+  async function parsed(): Promise<{ user: SignedUp; jobId: string; existing: string }> {
+    const user = await money.member();
+    const cash = await money.wallet(user, { name: 'Cash', tracking_start: '2026-01-01' });
+    const existing = await money.record(user, { type: 'expense', amount_minor: '6500', occurred_on: '2026-09-01', wallet_id: cash, category_id: builtinId(user, 'food') });
+    const accepted = await upload(user, csv(['date,type,amount,wallet,note', ...ROWS]));
+    expect((await runParse(accepted.job_id)).status).toBe('succeeded');
+    return { user, jobId: accepted.job_id, existing };
+  }
+
+  it('no parameters is exactly the whole preview, with no page key', async () => {
+    const { user, jobId } = await parsed();
+    const whole = await previewOf(user, jobId);
+    expect(whole.candidates).toHaveLength(ROWS.length);
+    expect(Object.keys(whole).sort()).toEqual(['candidates', 'duplicate_advice', 'expires_at', 'issues', 'job_id', 'review_revision', 'status', 'summary']);
+  });
+
+  it('pages only candidates: summary and issues stay whole-file, advice follows the page rows, pages rejoin the whole', async () => {
+    const { user, jobId, existing } = await parsed();
+    const whole = await previewOf(user, jobId);
+    expect(whole.issues.map((issue) => issue.source_row_id)).toEqual(['row:5', 'row:9']);
+    expect(whole.duplicate_advice.length).toBeGreaterThan(4);
+
+    const seen: ImportPreview['candidates'] = [];
+    let offset = 0;
+    let pages = 0;
+    for (;;) {
+      const page = await previewOf(user, jobId, `?offset=${offset}&limit=5`);
+      pages += 1;
+      expect(page.page).toEqual({ offset, limit: 5, total: ROWS.length, next_offset: offset + 5 < ROWS.length ? offset + 5 : null });
+      expect(page.candidates).toEqual(whole.candidates.slice(offset, offset + 5));
+      expect(page.summary).toEqual(whole.summary);
+      expect(page.issues).toEqual(whole.issues);
+      expect({ job_id: page.job_id, status: page.status, review_revision: page.review_revision, expires_at: page.expires_at }).toEqual({ job_id: whole.job_id, status: whole.status, review_revision: whole.review_revision, expires_at: whole.expires_at });
+      const ids = new Set(page.candidates.map((candidate) => candidate.source_row_id));
+      expect(page.duplicate_advice).toEqual(whole.duplicate_advice.filter((advice) => ids.has(advice.source_row_id)));
+      seen.push(...page.candidates);
+      if (page.page?.next_offset === null) break;
+      offset = page.page?.next_offset as number;
+    }
+    expect(pages).toBe(3);
+    expect(seen).toEqual(whole.candidates);
+    const first = await previewOf(user, jobId, '?limit=5');
+    expect(first.duplicate_advice).toContainEqual({ source_row_id: 'row:2', kind: 'existing_transaction', matches: [existing] });
+    // Twins named by a page point at rows that may be on another page.
+    expect((await previewOf(user, jobId, '?offset=10&limit=1')).duplicate_advice).toEqual([{ source_row_id: 'row:12', kind: 'same_file', matches: ['row:13'] }]);
+  });
+
+  it('defaults the missing parameter, and a page past the end is empty', async () => {
+    const { user, jobId } = await parsed();
+    const whole = await previewOf(user, jobId);
+    const fromStart = await previewOf(user, jobId, '?limit=3');
+    expect([fromStart.candidates.length, fromStart.page]).toEqual([3, { offset: 0, limit: 3, total: ROWS.length, next_offset: 3 }]);
+    const tail = await previewOf(user, jobId, '?offset=2');
+    expect(tail.candidates).toEqual(whole.candidates.slice(2));
+    expect(tail.page).toEqual({ offset: 2, limit: 500, total: ROWS.length, next_offset: null });
+    const beyond = await previewOf(user, jobId, `?offset=${ROWS.length}&limit=5`);
+    expect([beyond.candidates, beyond.duplicate_advice, beyond.page]).toEqual([[], [], { offset: ROWS.length, limit: 5, total: ROWS.length, next_offset: null }]);
+    expect(beyond.issues).toEqual(whole.issues);
+  });
+
+  it('refuses malformed paging as a validation error, and keeps owner-only 404s', async () => {
+    const { user, jobId } = await parsed();
+    for (const query of ['?limit=0', '?limit=501', '?limit=x', '?offset=-1', '?offset=5001', '?limit=1&limit=2', '?cursor=abc', '?limit=5&foo=1']) {
+      const res = await preview(user, jobId, query);
+      expect([query, res.status]).toEqual([query, 422]);
+    }
+    const stranger = await money.member();
+    expect((await preview(stranger, jobId, '?limit=5')).status).toBe(404);
+    expect((await preview(stranger, randomUUID(), '?limit=5')).status).toBe(404);
+  });
+
+  it('a preview that is not ready is served as before, whatever the paging', async () => {
+    const user = await money.member();
+    const accepted = await upload(user, MEOWJOT);
+    expect(await previewOf(user, accepted.job_id, '?offset=0&limit=5')).toEqual({
+      job_id: accepted.job_id, status: 'queued', candidates: [], issues: [], duplicate_advice: [], review_revision: null, expires_at: null, summary: null,
+    });
   });
 });
 

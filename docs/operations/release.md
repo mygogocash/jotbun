@@ -232,7 +232,7 @@ Current journal at this revision: `0001_identity` … `0018_import_confirmation`
 | 0. Dark | Deploy all services; `IMPORT_UPLOADS_ENABLED=0`; no client points at it | `/ready` 200 with every receipt `passed`; each worker's heartbeat line; no alert line for 1 hour | any alert, `/ready` 503 → stop, fix or roll back |
 | 1. Founder devices | Synthetic accounts on iOS and Android release builds | native smoke: sign in, accept terms, first wallet, expense, transfer, edit, undo, offline save and sync, export (grant, download), global logout, deletion of a synthetic account; no 5xx; queue age under 5 min | any failed step, 5xx, `queue_age` → pause the scope, roll back if not quickly fixed |
 | 2. Invited beta | A small named cohort; uploads still off | 48 hours: API 5xx < 0.5% of requests, warm p95 within the performance budget, no `failed terminally`, no overdue cleanup, deletions purged within 24 h, spend below 50% of the envelope pro rata | as above; cost at 80% → review usage before growing |
-| 3. Imports | Only after P1/P2a hosted gates and P2b/P2c/P3 all pass: `IMPORT_UPLOADS_ENABLED=1` | quarantine and parse queues drain, no `quarantine … overdue`, no `import maintenance failed` | `OPERATIONAL_PAUSE=uploads,imports` (or `ocr`), investigate |
+| 3. Imports | Only after P1/P2a hosted gates and P2b/P2c/P3 all pass, and the [import release checklist](rollback.md#import-release-checklist) is done through step 10 (client minimums, rollback floor): `IMPORT_UPLOADS_ENABLED=1` | quarantine and parse queues drain, no `quarantine … overdue`, no `import maintenance failed` | `OPERATIONAL_PAUSE=uploads,imports` (or `ocr`), investigate |
 
 ## Verify after deploying
 

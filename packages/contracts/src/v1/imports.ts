@@ -363,6 +363,16 @@ export type ImportPreviewSummary = {
   image: { width: number; height: number; attachment_id: string; attachable_until: string | null } | null;
 };
 
+/** Most candidates one preview page can carry (and the default page size when only `offset` is sent). */
+export const IMPORT_PREVIEW_PAGE_MAX_LIMIT = 500;
+
+/**
+ * Where a paged preview's candidates sit in the file. Present only when the
+ * request named `offset` or `limit`; `total` is the whole file's candidate
+ * count and `next_offset` the `offset` of the following page (null on the last).
+ */
+export type ImportPreviewPage = { offset: number; limit: number; total: number; next_offset: number | null };
+
 export type ImportPreview = {
   job_id: string;
   status: ImportPreviewStatus;
@@ -374,6 +384,15 @@ export type ImportPreview = {
   /** When unconfirmed candidates are deleted; null before a preview exists. */
   expires_at: string | null;
   summary: ImportPreviewSummary | null;
+  /**
+   * Additive paging (`GET /v1/imports/:id/preview?offset=&limit=`): with no
+   * query parameters the response is the whole preview and has no `page`.
+   * A page narrows `candidates` only, in file order. `summary`, `issues` and
+   * `review_revision` stay whole-file; `duplicate_advice` names only the
+   * page's rows (their matches may be rows on other pages). Only a ready
+   * preview carries `page`.
+   */
+  page?: ImportPreviewPage;
 };
 
 /** The `message_key` for an issue code (P3 supplies the Thai/English text). */
@@ -465,11 +484,49 @@ function isSummary(value: unknown): value is ImportPreviewSummary {
   );
 }
 
-/** True for exactly the `ImportPreview` wire shape. */
+const CANONICAL_COUNT = /^(?:0|[1-9][0-9]*)$/;
+
+/**
+ * Validates `GET /v1/imports/:id/preview` query parameters. Null (no `offset`,
+ * no `limit`) means the whole preview; otherwise the page to read, with the
+ * missing parameter defaulted (offset 0, limit `IMPORT_PREVIEW_PAGE_MAX_LIMIT`).
+ */
+export function parseImportPreviewPaging(query: Record<string, unknown>): { offset: number; limit: number } | null {
+  const input = assertKnownFields({ ...query }, ["offset", "limit"]);
+  const single = (field: string): string | undefined => {
+    const value = input[field];
+    if (value === undefined) return undefined;
+    if (typeof value !== "string" || !CANONICAL_COUNT.test(value) || value.length > 4) {
+      throw new ContractValidationError("VALIDATION_FAILED", `${field} must be a whole number.`, field);
+    }
+    return value;
+  };
+  const rawOffset = single("offset");
+  const rawLimit = single("limit");
+  if (rawOffset === undefined && rawLimit === undefined) return null;
+  const offset = rawOffset === undefined ? 0 : Number(rawOffset);
+  const limit = rawLimit === undefined ? IMPORT_PREVIEW_PAGE_MAX_LIMIT : Number(rawLimit);
+  if (offset > IMPORT_PARSE_LIMITS.candidateRows) throw new ContractValidationError("VALIDATION_FAILED", `offset is at most ${IMPORT_PARSE_LIMITS.candidateRows}.`, "offset");
+  if (limit < 1 || limit > IMPORT_PREVIEW_PAGE_MAX_LIMIT) throw new ContractValidationError("VALIDATION_FAILED", `limit must be 1-${IMPORT_PREVIEW_PAGE_MAX_LIMIT}.`, "limit");
+  return { offset, limit };
+}
+
+function isPreviewPage(value: unknown): value is ImportPreviewPage {
+  if (!isRecord(value) || !hasKeys(value, ["offset", "limit", "total", "next_offset"])) return false;
+  const { offset, limit, total, next_offset: next } = value;
+  if (!Number.isSafeInteger(offset) || !Number.isSafeInteger(limit) || !Number.isSafeInteger(total)) return false;
+  if ((offset as number) < 0 || (limit as number) < 1 || (limit as number) > IMPORT_PREVIEW_PAGE_MAX_LIMIT) return false;
+  if ((total as number) < 0 || (total as number) > IMPORT_PARSE_LIMITS.candidateRows) return false;
+  return next === null || (Number.isSafeInteger(next) && (next as number) > (offset as number) && (next as number) < (total as number));
+}
+
+/** True for exactly the `ImportPreview` wire shape (`page` only when the preview was paged). */
 export function isImportPreview(value: unknown): value is ImportPreview {
   if (!isRecord(value)) return false;
   const keys = ["job_id", "status", "candidates", "issues", "duplicate_advice", "review_revision", "expires_at", "summary"];
-  if (!hasKeys(value, keys) || !isUuid(value.job_id) || !IMPORT_PREVIEW_STATUSES.includes(value.status as ImportPreviewStatus)) return false;
+  const { page, ...rest } = value;
+  if (page !== undefined && !isPreviewPage(page)) return false;
+  if (!hasKeys(rest, keys) || !isUuid(value.job_id) || !IMPORT_PREVIEW_STATUSES.includes(value.status as ImportPreviewStatus)) return false;
   if (!Array.isArray(value.candidates) || value.candidates.length > IMPORT_PARSE_LIMITS.candidateRows || !value.candidates.every(isCandidate)) return false;
   if (!Array.isArray(value.issues) || !value.issues.every(isIssue)) return false;
   if (!Array.isArray(value.duplicate_advice) || !value.duplicate_advice.every(isAdvice)) return false;
