@@ -121,6 +121,30 @@ test('a search says how many entries and how much, drafts counted apart', () => 
   assert.equal(model({ query: 'starbucks', complete: false }).summary?.partial, true);
 });
 
+test('History-1: while more pages exist, the oldest loaded day (and any older one) is marked partial', () => {
+  const partialDays = (history: ReturnType<typeof model>) => history.groups.filter((group) => group.partial).map((group) => group.day);
+  const more = model({ complete: false });
+  assert.equal(more.pageEdgeDay, '2026-10-01');
+  assert.deepEqual(partialDays(more), ['2026-10-01']);
+  // The edge comes from what was loaded, not from what a filter shows: 3 October is whole.
+  const expenses = model({ complete: false, filters: { type: 'expense' } });
+  assert.equal(expenses.pageEdgeDay, '2026-10-01');
+  assert.deepEqual(partialDays(expenses), []);
+  // The page ended inside 5 October; a draft dated earlier sits on a day not loaded yet.
+  const cut = model({ complete: false, records: [a, b, c, f, e], drafts: [command(pending({ occurred_on: '2026-10-03' }), 'unsent')] });
+  assert.equal(cut.pageEdgeDay, '2026-10-05');
+  assert.deepEqual(partialDays(cut), ['2026-10-05', '2026-10-03']);
+  assert.deepEqual(cut.groups.map((group) => group.day), ['2026-10-18', '2026-10-17', '2026-10-16', '2026-10-05', '2026-10-03']);
+  // Nothing loaded yet but more to come: every day may be missing records.
+  const nothing = model({ complete: false, records: [], drafts: [command(pending({ occurred_on: '2026-10-12' }), 'unsent')] });
+  assert.equal(nothing.pageEdgeDay, '2026-10-31');
+  assert.deepEqual(partialDays(nothing), ['2026-10-12']);
+  // Every page loaded: nothing is partial.
+  const all = model({ complete: true });
+  assert.equal(all.pageEdgeDay, null);
+  assert.deepEqual(partialDays(all), []);
+});
+
 test('an empty month says so', () => {
   const empty = model({ records: [] });
   assert.deepEqual([empty.empty, empty.emptyText, empty.groups], [true, 'No entries in this month', []]);

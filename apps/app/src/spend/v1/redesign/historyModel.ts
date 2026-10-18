@@ -9,7 +9,7 @@ import type { Minor, TransactionDto, TransactionType } from '@gogospend/contract
 import type { OutboxCommand } from '../../../storage/types.ts';
 import type { MoneyLocale } from '../money.ts';
 import { categoryName, monthOf } from '../viewModels.ts';
-import { confirmedRow, dateTagFor, dayTotals, groupDays, mergeRows, openDrafts, say } from './shared.ts';
+import { confirmedRow, dateTagFor, dayTotals, daysInMonth, groupDays, mergeRows, openDrafts, say } from './shared.ts';
 import type { CopyLine, DateTag, DayGroup, EntryLike, Lookups, Translate } from './shared.ts';
 
 export type HistoryFilters = {
@@ -61,6 +61,14 @@ export type HistoryModel = {
   filtered: boolean;
   /** Present while a search or filter is on. */
   summary: SearchSummary | null;
+  /**
+   * While more pages exist (`complete` false): the oldest day loaded so far.
+   * Its records, and any earlier day's (where only a draft may show yet),
+   * may continue on the next page, so those day groups are marked `partial`.
+   * With nothing loaded yet, the month's last day. Null once every page is
+   * loaded. It comes from the loaded records, whatever the filter shows.
+   */
+  pageEdgeDay: string | null;
 };
 
 /**
@@ -112,17 +120,26 @@ export function summaryLine(count: number, out: string | null, income: string | 
   return one ? { text: '1 entry' } : { text: '{count} entries', values: { count } };
 }
 
+/** History pages run newest first: while more follow, the oldest loaded day may continue on the next page. */
+function pageEdgeOf(month: string, loaded: readonly TransactionDto[], complete: boolean): string | null {
+  if (complete) return null;
+  const lastDay = `${month}-${String(daysInMonth(month)).padStart(2, '0')}`;
+  return loaded.reduce((edge, record) => (record.occurred_on < edge ? record.occurred_on : edge), lastDay);
+}
+
 export function historyModel(input: HistoryInput): HistoryModel {
   const { month, tc, locale, lookups } = input;
   const filters = input.filters ?? {};
   const query = input.query ?? '';
   const filtered = foldForSearch(query).length > 0 || Boolean(filters.type || filters.walletId || filters.categoryId);
   const keep = (item: EntryLike) => matchesFilters(item, filters) && matchesSearch(searchFields(item, lookups, tc), query);
-  const records = input.records.filter((record) => monthOf(record.occurred_on) === month && keep(record));
+  const loaded = input.records.filter((record) => monthOf(record.occurred_on) === month);
+  const pageEdgeDay = pageEdgeOf(month, loaded, input.complete);
+  const records = loaded.filter(keep);
   const drafts = openDrafts(input.drafts).filter((command) => monthOf(command.payload.occurred_on) === month && keep(command.payload));
   const context = { lookups, tc, locale, today: input.today, dateTag: input.dateTag ?? dateTagFor(locale) };
   const rows = mergeRows(records, drafts, context);
-  const groups = groupDays(rows, context);
+  const groups = groupDays(rows, context, (day) => pageEdgeDay !== null && day <= pageEdgeDay);
   const empty = rows.length === 0;
   let summary: SearchSummary | null = null;
   if (filtered) {
@@ -140,7 +157,7 @@ export function historyModel(input: HistoryInput): HistoryModel {
     };
   }
   return {
-    month, groups, empty, filtered, summary,
+    month, groups, empty, filtered, summary, pageEdgeDay,
     emptyText: empty ? (filtered ? tc('No entries match') : tc('No entries in this month')) : null,
   };
 }

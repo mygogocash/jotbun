@@ -116,7 +116,7 @@ test('money stays exact beyond JavaScript numbers', () => {
   assert.equal(huge.overByMinor, String(9007199254740993n - 99999999999n));
 });
 
-test('drafts waiting to sync count as pending; drafts being checked are kept apart; refused ones never count', () => {
+test('drafts waiting to sync count as pending; sending and uncertain drafts are checked apart; refused ones never count', () => {
   const outbox = [
     command(pending({ amount_minor: '1000' }), 'unsent'),
     command(pending({ amount_minor: '2000' }), 'sending'),
@@ -129,14 +129,37 @@ test('drafts waiting to sync count as pending; drafts being checked are kept apa
     command(pending({ amount_minor: '5000', occurred_on: '2026-09-30' }), 'unsent'),
   ];
   const { pace: withDrafts, copy } = pace('2026-10-16', '31000', '30000', { outbox });
-  assert.deepEqual(withDrafts.spent, { confirmedMinor: '30000', pendingMinor: '3500', checkingMinor: '700', estimatedMinor: '33500' });
-  assert.deepEqual([withDrafts.state, withDrafts.leftMinor, withDrafts.overByMinor], ['over', '-2500', '2500']);
-  assert.equal(text(copy.total), '฿335.00 of ฿310.00');
-  assert.equal(text(copy.pendingNote), 'Includes ฿35.00 saving on this device');
-  assert.equal(text(copy.checkingNote), '฿7.00 more is being checked with Jotbun');
+  // A sending draft may already be committed (and in the summary), so it is checked, never added.
+  assert.deepEqual(withDrafts.spent, { confirmedMinor: '30000', pendingMinor: '1500', checkingMinor: '2700', estimatedMinor: '31500' });
+  assert.deepEqual([withDrafts.state, withDrafts.leftMinor, withDrafts.overByMinor], ['over', '-500', '500']);
+  assert.equal(text(copy.total), '฿315.00 of ฿310.00');
+  assert.equal(text(copy.pendingNote), 'Includes ฿15.00 saving on this device');
+  assert.equal(text(copy.checkingNote), '฿27.00 more is being checked with Jotbun');
   const none = pace('2026-10-16', '31000', '30000');
   assert.equal(none.copy.pendingNote, null);
   assert.equal(none.copy.checkingNote, null);
+});
+
+test('Home-3: a draft whose record is already confirmed is never counted again, waiting or checking', () => {
+  const lunch = 'r0000000-0000-4000-8000-00000000lunch';
+  const sent = 'r0000000-0000-4000-8000-0000000000sent';
+  const outbox = [
+    command(pending({ id: lunch, amount_minor: '12000' }), 'sending'),
+    command(pending({ id: sent, amount_minor: '3000' }), 'unsent'),
+    command(pending({ amount_minor: '1000' }), 'unsent'),
+    command(pending({ amount_minor: '700' }), 'uncertain'),
+  ];
+  const categoryBudget = budget(OCT, '1000000', [{ category_id: FOOD.id, limit_minor: '50000' }]);
+  const result = budgetPace({ budget: categoryBudget, summary: spentSummary(OCT, '15000'), today: '2026-10-18', outbox, confirmedIds: new Set([lunch, sent]) });
+  assert.deepEqual(result.spent, { confirmedMinor: '15000', pendingMinor: '1000', checkingMinor: '700', estimatedMinor: '16000' });
+  assert.equal(result.leftMinor, '984000');
+  assert.deepEqual(result.categories[0].spent, { confirmedMinor: '15000', pendingMinor: '1000', checkingMinor: '700', estimatedMinor: '16000' });
+  // The probe: ฿10,000.00 budget, the ฿120.00 lunch confirmed while its create is still sending.
+  const probe = budgetPace({ budget: budget(OCT, '1000000'), summary: spentSummary(OCT, '12000'), today: '2026-10-18', outbox: outbox.slice(0, 1), confirmedIds: new Set([lunch]) });
+  assert.deepEqual([probe.leftMinor, probe.spent.pendingMinor, probe.spent.checkingMinor], ['988000', '0', '0']);
+  // Even without the confirmed ids, a sending draft is never added to the estimate.
+  const unknown = budgetPace({ budget: budget(OCT, '1000000'), summary: spentSummary(OCT, '12000'), today: '2026-10-18', outbox: outbox.slice(0, 1) });
+  assert.deepEqual([unknown.leftMinor, unknown.spent.pendingMinor, unknown.spent.checkingMinor], ['988000', '0', '12000']);
 });
 
 test('each category limit gets its own left and state', () => {

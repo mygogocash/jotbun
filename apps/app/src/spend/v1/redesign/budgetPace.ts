@@ -7,7 +7,7 @@ import type { BudgetDto, Minor, MonthSummary } from '@gogospend/contracts';
 import type { OutboxCommand } from '../../../storage/types.ts';
 import { formatMinor } from '../money.ts';
 import type { MoneyLocale } from '../money.ts';
-import { CHECKING_STATES, WAITING_STATES, daysBetween, daysInMonth } from './shared.ts';
+import { daysBetween, daysInMonth, moneyGroupOf, unconfirmedDrafts } from './shared.ts';
 import type { CopyLine } from './shared.ts';
 
 /**
@@ -33,9 +33,9 @@ export const TIGHT_PACE_PERCENT = 110n;
 export type SpentBreakdown = {
   /** Expenses the server confirmed this month. */
   confirmedMinor: Minor;
-  /** Expense drafts waiting to sync this month (unsent, sending, update to send): included in the estimate. */
+  /** Expense drafts waiting to sync this month (unsent, update to send): never committed, so included in the estimate. */
   pendingMinor: Minor;
-  /** Expense drafts being checked (uncertain): possibly counted already, so never added. */
+  /** Expense drafts being checked (sending, uncertain): possibly counted already, so never added. */
   checkingMinor: Minor;
   /** confirmed + pending: what pace, left and per day use. */
   estimatedMinor: Minor;
@@ -79,8 +79,13 @@ export type BudgetPaceInput = {
   summary: MonthSummary;
   /** Today's Bangkok date. */
   today: string;
-  /** The device outbox: expense drafts in this month count as pending money. */
+  /** The device outbox: this month's expense drafts are pending money (waiting) or said apart (checking), by their money group. */
   outbox?: readonly OutboxCommand[];
+  /**
+   * Ids of records known to be confirmed (Home passes the records it loaded).
+   * A draft for one of them counts nowhere: the summary already has it.
+   */
+  confirmedIds?: ReadonlySet<string>;
 };
 
 type Days = { phase: PacePhase; daysInMonth: number; daysLeft: number; daysElapsed: number };
@@ -93,14 +98,15 @@ function daysOf(month: string, today: string): Days {
   return { phase: 'during', daysInMonth: total, daysLeft: total - intoMonth, daysElapsed: intoMonth + 1 };
 }
 
-/** Expense drafts of the month by category: waiting ones and checking ones, apart. */
-function draftExpenses(outbox: readonly OutboxCommand[], month: string) {
+/** Expense drafts of the month by category, not yet confirmed: waiting ones and checking ones, apart. */
+function draftExpenses(outbox: readonly OutboxCommand[], month: string, confirmedIds: ReadonlySet<string>) {
   const waiting = new Map<string, bigint>();
   const checking = new Map<string, bigint>();
-  for (const command of outbox) {
+  for (const command of unconfirmedDrafts(outbox, confirmedIds)) {
     const entry = command.payload;
     if (entry.type !== 'expense' || entry.occurred_on.slice(0, 7) !== month) continue;
-    const into = WAITING_STATES.includes(command.state) ? waiting : CHECKING_STATES.includes(command.state) ? checking : null;
+    const group = moneyGroupOf(command.state);
+    const into = group === 'waiting' ? waiting : group === 'checking' ? checking : null;
     if (into) into.set(entry.category_id, (into.get(entry.category_id) ?? 0n) + BigInt(entry.amount_minor));
   }
   const sum = (by: Map<string, bigint>) => [...by.values()].reduce((total, amount) => total + amount, 0n);
@@ -124,7 +130,7 @@ export function budgetPace(input: BudgetPaceInput): BudgetPace {
   const month = summary.month;
   if (budget && budget.month !== month) throw new TypeError(`The budget is for ${budget.month}, the summary for ${month}.`);
   const days = daysOf(month, today);
-  const drafts = draftExpenses(input.outbox ?? [], month);
+  const drafts = draftExpenses(input.outbox ?? [], month, input.confirmedIds ?? new Set());
   const confirmed = BigInt(summary.expense_minor);
   const spent = breakdown(confirmed, drafts.waitingTotal, drafts.checkingTotal);
   if (!budget) {
