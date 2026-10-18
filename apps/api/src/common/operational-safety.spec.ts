@@ -28,6 +28,7 @@ import { JobWorker } from '../jobs/worker';
 import { createV1TestApp } from '../testing/v1-test-app';
 import { V1AppModule, configureV1App } from '../v1/v1-app.module';
 import { ProblemException } from './api-problem.filter';
+import { ConfigurationError } from './configuration-error';
 import { FeatureGates, GATE_SCOPES, featureGatesFromEnv } from './feature-gates';
 import type { GateScope } from './feature-gates';
 import { OPERATIONAL_THRESHOLDS, OperationalLogger, describeFailure, queueAgeLines } from './operational-metrics';
@@ -464,7 +465,7 @@ describe('readiness', () => {
     expect(() => readinessReceiptsFromEnv({ READINESS_RECEIPTS_FILE: 'relative.json' }, () => json)).toThrow(/READINESS_RECEIPTS_FILE/);
   });
 
-  it('over HTTP: /live is 200 without touching the database, /ready is a 503 ApiProblem naming each check', async () => {
+  it('over HTTP: /live is 200 without touching the database, /ready is a 503 ApiProblem that names no check state', async () => {
     const pool = healthyPool();
     const app = await v1HealthApp(pool, {});
     try {
@@ -473,11 +474,9 @@ describe('readiness', () => {
       expect(pool.query).not.toHaveBeenCalled();
       const notReady = await request(app.getHttpServer()).get('/ready');
       expect(notReady.status).toBe(503);
-      expect(notReady.body).toMatchObject({
-        code: 'SERVICE_UNAVAILABLE',
-        message_key: 'errors.not_ready',
-        fields: { process: 'ok', database: 'ok', 'receipt.restore_rehearsal': 'missing', 'receipt.storage_contract': 'missing' },
-      });
+      expect(notReady.body).toMatchObject({ code: 'SERVICE_UNAVAILABLE', message_key: 'errors.not_ready' });
+      // The check states (receipts included) go to the operator's readiness log line only.
+      expect(notReady.body.fields).toBeUndefined();
       expect(notReady.body.retry_after_seconds).toBeGreaterThan(0);
     } finally {
       await app.close();
@@ -485,7 +484,7 @@ describe('readiness', () => {
     const readyApp = await v1HealthApp(healthyPool(), ALL_PASSED);
     try {
       const response = await request(readyApp.getHttpServer()).get('/ready');
-      expect([response.status, response.body.status]).toEqual([200, 'ready']);
+      expect([response.status, response.body]).toEqual([200, { status: 'ready' }]);
     } finally {
       await readyApp.close();
     }
@@ -547,18 +546,20 @@ describe('redaction', () => {
 
   it('worker and API startup failures log no credential or financial value', async () => {
     const lines: string[] = [];
+    // runMain's crash handlers go on a stand-in, never on the test runner's process.
+    const processDouble = { emitter: new EventEmitter(), exit: jest.fn() };
     const saved = process.exitCode;
     try {
-      await runMain('job worker', async () => { throw new Error(leakyText); }, (line) => lines.push(line));
-      await runMain('security worker', async () => { throw Object.assign(new Error(`password authentication failed: ${CONNECTION}`), { code: '28P01' }); }, (line) => lines.push(line));
-      await runMain('deletion worker', async () => { throw Object.assign(new Error(`getaddrinfo ENOTFOUND db.synthetic.invalid ${R2_SECRET}`), { code: 'ENOTFOUND' }); }, (line) => lines.push(line));
-      await runMain('v1', async () => { throw 'a thrown string ' + leakyText; }, (line) => lines.push(line));
+      await runMain('job worker', async () => { throw new Error(leakyText); }, (line) => lines.push(line), processDouble);
+      await runMain('security worker', async () => { throw Object.assign(new Error(`password authentication failed: ${CONNECTION}`), { code: '28P01' }); }, (line) => lines.push(line), processDouble);
+      await runMain('deletion worker', async () => { throw Object.assign(new Error(`getaddrinfo ENOTFOUND db.synthetic.invalid ${R2_SECRET}`), { code: 'ENOTFOUND' }); }, (line) => lines.push(line), processDouble);
+      await runMain('v1', async () => { throw 'a thrown string ' + leakyText; }, (line) => lines.push(line), processDouble);
       expect(process.exitCode).toBe(1);
     } finally {
       process.exitCode = saved;
     }
     expect(lines).toEqual([
-      'job worker startup failed: Error (message withheld)',
+      'job worker startup failed: Error',
       'security worker startup failed: Error 28P01',
       'deletion worker startup failed: Error ENOTFOUND',
       'v1 startup failed: unknown error',
@@ -575,14 +576,14 @@ describe('redaction', () => {
     logger.warn('Database URL is not configured.', 'InstanceLoader');
     logger.log(`mapped route with ${BEARER}`);
     expect(lines).toEqual([
-      '{"level":"error","source":"nest","context":"ExceptionHandler","message":"Error (message withheld)"}',
+      '{"level":"error","source":"nest","context":"ExceptionHandler","message":"Error"}',
       '{"level":"error","source":"nest","context":"InstanceLoader","message":"(message withheld)"}',
-      '{"level":"warn","source":"nest","context":"InstanceLoader","message":"Database URL is not configured."}',
+      '{"level":"warn","source":"nest","context":"InstanceLoader","message":"(message withheld)"}',
     ]);
     expectNoSecrets(lines.join('\n'));
   });
 
-  it('fixed configuration messages stay readable', () => {
+  it('fixed configuration messages stay readable; any other message is withheld', () => {
     for (const message of [
       'DATABASE_URL is not configured.',
       'JOB_SWEEP_INTERVAL_MINUTES must be 1-1440.',
@@ -590,10 +591,12 @@ describe('redaction', () => {
       'The erasure registry login must be a member of gogospend_erasure_registry only.',
       '--registry-fd <3-99> is required (the erasure registry settings, piped from the secret manager).',
     ]) {
-      expect(describeFailure(new Error(message))).toBe(`Error: ${message}`);
+      expect(describeFailure(new ConfigurationError(message))).toBe(`ConfigurationError: ${message}`);
+      expect(describeFailure(new Error(message))).toBe('Error');
     }
     for (const leaky of [CONNECTION, `token ${BEARER}`, `amount ${AMOUNT_MINOR}`, `total ${AMOUNT_BAHT}`, `owner ${ACCOUNT_ID}`, `key ${R2_SECRET}`, `password ${PASSWORD}`, 'a'.repeat(400)]) {
-      expect(describeFailure(new Error(leaky))).toBe('Error (message withheld)');
+      expect(describeFailure(new ConfigurationError(leaky))).toBe('ConfigurationError (message withheld)');
+      expect(describeFailure(new Error(leaky))).toBe('Error');
     }
   });
 

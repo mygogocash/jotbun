@@ -14,6 +14,7 @@ import type { PolicyGate, SessionResolver } from '../auth/application-session.gu
 import { V1AccessGuard } from '../auth/auth.module';
 import { ApiProblemFilter } from '../common/api-problem.filter';
 import { MIN_CLIENT_VERSIONS } from '../common/client-version.guard';
+import { FEATURE_GATES, FeatureGates } from '../common/feature-gates';
 import type { MinimumClientVersions } from '../common/client-version.guard';
 import { RATE_LIMITER } from '../common/shared-rate-limit';
 import type { RateLimiter } from '../common/shared-rate-limit';
@@ -25,6 +26,8 @@ export type V1TestDoubles = {
   policies?: PolicyGate;
   limiter?: RateLimiter;
   minimums?: MinimumClientVersions;
+  /** Operational gates (default: nothing paused, everything released). */
+  gates?: FeatureGates;
   /** Extra providers the controllers under test need. */
   providers?: Provider[];
 };
@@ -45,6 +48,7 @@ export async function createV1TestApp(controllers: Type[], doubles: V1TestDouble
       doubles.policies ? { provide: POLICY_GATE, useValue: doubles.policies } : { provide: POLICY_GATE, useClass: NoPolicyGate },
       { provide: RATE_LIMITER, useValue: doubles.limiter ?? allowAll },
       { provide: MIN_CLIENT_VERSIONS, useValue: doubles.minimums ?? { ios: '1.0.0', android: '1.0.0' } },
+      { provide: FEATURE_GATES, useValue: doubles.gates ?? new FeatureGates() },
       Auth0AccessTokenGuard,
       ApplicationSessionGuard,
       { provide: APP_GUARD, useClass: V1AccessGuard },

@@ -7,7 +7,7 @@
 // optional bindings (a separate, authorized dependency change), the Docker
 // build and CI run this after `npm ci`:
 //
-//   node scripts/ci/linux-native-bindings.mjs swc            # Docker build stage (compiler only)
+//   node scripts/ci/linux-native-bindings.mjs swc sharp      # Docker build stage (the compiler; sharp for P2b's image child)
 //   node scripts/ci/linux-native-bindings.mjs swc unrs sharp # CI (Jest and the legacy tests)
 //   node scripts/ci/linux-native-bindings.mjs --check        # pins agree with the lockfile (any OS)
 //

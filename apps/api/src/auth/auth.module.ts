@@ -1,4 +1,4 @@
-import { Inject, Injectable, Module, Optional } from '@nestjs/common';
+import { Inject, Injectable, Module } from '@nestjs/common';
 import type { CanActivate, ExecutionContext } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, Reflector } from '@nestjs/core';
 import type { Request } from 'express';
@@ -53,7 +53,8 @@ export class V1AccessGuard implements CanActivate {
     @Inject(RATE_LIMITER) private readonly limiter: RateLimiter,
     private readonly tokens: Auth0AccessTokenGuard,
     private readonly sessions: ApplicationSessionGuard,
-    @Optional() @Inject(FEATURE_GATES) private readonly gates: FeatureGates = new FeatureGates(),
+    // Required: a module without the gates must not start with nothing paused.
+    @Inject(FEATURE_GATES) private readonly gates: FeatureGates,
   ) {
     this.clientVersions = new ClientVersionGuard(minimums);
   }

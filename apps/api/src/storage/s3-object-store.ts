@@ -2,6 +2,7 @@ import { createHash, createHmac } from 'node:crypto';
 
 import { MAX_OBJECT_BYTES, ObjectStoreError, assertObjectKey, assertObjectPrefix, collectBody } from './object-store';
 import type { ObjectBody, ObjectInfo, ObjectStore } from './object-store';
+import { ConfigurationError } from '../common/configuration-error';
 
 export type S3Config = { endpoint: string; region: string; bucket: string; accessKeyId: string; secretAccessKey: string };
 
@@ -188,11 +189,11 @@ const TEST_BUCKET_PREFIX = 'gogospend-test-';
 export function storageContractTarget(env: NodeJS.ProcessEnv): { target: 'failure-adapter' } | { target: 'r2-test'; config: S3Config } {
   if (env.STORAGE_CONTRACT_SCRIPT !== '1' || env.STORAGE_CONTRACT_TARGET !== 'r2-test') return { target: 'failure-adapter' };
   const missing = R2_SETTINGS.filter((name) => !env[name]);
-  if (missing.length > 0) throw new Error(`The hosted storage contract needs ${missing.join(', ')}.`);
+  if (missing.length > 0) throw new ConfigurationError(`The hosted storage contract needs ${missing.join(', ')}.`);
   const endpoint = env.R2_TEST_ENDPOINT as string;
   const bucket = env.R2_TEST_BUCKET as string;
-  if (!/^https:\/\/[^/\s]+\/?$/.test(endpoint)) throw new Error('R2_TEST_ENDPOINT must be an https origin.');
-  if (!bucket.startsWith(TEST_BUCKET_PREFIX)) throw new Error(`R2_TEST_BUCKET must be in the test scope (${TEST_BUCKET_PREFIX}*).`);
+  if (!/^https:\/\/[^/\s]+\/?$/.test(endpoint)) throw new ConfigurationError('R2_TEST_ENDPOINT must be an https origin.');
+  if (!bucket.startsWith(TEST_BUCKET_PREFIX)) throw new ConfigurationError(`R2_TEST_BUCKET must be in the test scope (${TEST_BUCKET_PREFIX}*).`);
   return {
     target: 'r2-test',
     config: { endpoint, bucket, region: env.R2_TEST_REGION || 'auto', accessKeyId: env.R2_TEST_ACCESS_KEY_ID as string, secretAccessKey: env.R2_TEST_SECRET_ACCESS_KEY as string },

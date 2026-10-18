@@ -6,6 +6,7 @@ import type { Reflector } from '@nestjs/core';
 
 import { GATE_METADATA } from '../common/feature-gates';
 import type { GateScope } from '../common/feature-gates';
+import { ConfigurationError } from '../common/configuration-error';
 
 /**
  * Every v1 route declares exactly one access class:
@@ -72,6 +73,6 @@ export function routeManifest(app: INestApplication): RouteManifestEntry[] {
 export function assertRoutesClassified(app: INestApplication): void {
   const missing = routeManifest(app).filter((entry) => !entry.access);
   if (missing.length > 0) {
-    throw new Error(`Unclassified v1 routes: ${missing.map((entry) => entry.route).join(', ')}`);
+    throw new ConfigurationError(`Unclassified v1 routes: ${missing.map((entry) => entry.route).join(', ')}`);
   }
 }

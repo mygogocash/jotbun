@@ -23,3 +23,19 @@ export type ClaimedJob = { lease: JobLease; kind: JobKind; payload: unknown };
 
 /** Retryable failures are requeued with backoff until max attempts; others fail terminally. */
 export type JobFailure = { code: string; retryable: boolean };
+
+/**
+ * The reason a JobWorker aborts a running handler's lease signal when the
+ * worker itself is stopping (SIGTERM), as opposed to a lost or expired lease.
+ */
+export class WorkerStopped extends Error {
+  constructor() {
+    super('The worker is stopping.');
+    this.name = 'WorkerStopped';
+  }
+}
+
+/** True when `signal` was aborted because its worker is stopping. */
+export function stoppedByWorker(signal: AbortSignal | undefined): boolean {
+  return signal?.aborted === true && signal.reason instanceof WorkerStopped;
+}

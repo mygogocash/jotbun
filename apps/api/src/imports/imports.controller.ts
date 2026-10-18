@@ -1,4 +1,4 @@
-import { Controller, Get, HttpCode, Inject, Optional, Param, Post, Req, Res } from '@nestjs/common';
+import { Controller, Get, HttpCode, Inject, Param, Post, Req, Res } from '@nestjs/common';
 import { ContractValidationError, IMPORT_FILE_NAME_HEADER, importFormatForContentType, isUuid } from '@gogospend/contracts';
 import type { ImportJobDto, ImportPreview, SessionContext, UploadAccepted } from '@gogospend/contracts';
 import type { Request, Response } from 'express';
@@ -41,7 +41,8 @@ export class ImportsController {
     private readonly imports: ImportRepository,
     private readonly previews: PreviewQuery,
     @Inject(IMPORT_INTAKE_CONFIG) private readonly config: ImportIntakeConfig,
-    @Optional() @Inject(FEATURE_GATES) private readonly gates: FeatureGates = new FeatureGates(),
+    // Required: without the gates the OCR pause would silently do nothing.
+    @Inject(FEATURE_GATES) private readonly gates: FeatureGates,
   ) {}
 
   /**

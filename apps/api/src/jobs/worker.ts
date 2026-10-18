@@ -3,6 +3,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import type { FeatureGates } from '../common/feature-gates';
 import { HandlerRegistry } from './handler-registry';
 import { JobRepository, leaseSafetyMs } from './job.repository';
+import { WorkerStopped } from './job-types';
 import type { ClaimedJob } from './job-types';
 
 export type WorkerOptions = { leaseSeconds?: number; heartbeatMs?: number; gates?: FeatureGates };
@@ -16,10 +17,13 @@ export type WorkerOutcome = 'idle' | 'ran';
  * expired, reclaimed or cancelled), when the local budget of the last granted
  * lease runs out (a transient heartbeat error alone does not abort), or when
  * the worker is stopped. A handler that throws is failed as retryable
- * (`handler_error`, `handler_timeout` after its signal aborted, or
- * `worker_stopped`); one that returns while still holding its lease never
- * transitioned the job, which is a bug, so it fails terminally
- * (`handler_incomplete`). Error text is never logged: it may carry user data.
+ * (`handler_error`, or `handler_timeout` after its signal aborted); one that
+ * returns while still holding its lease never transitioned the job, which is
+ * a bug, so it fails terminally (`handler_incomplete`). A stop is not the
+ * job's failure: the signal aborts with WorkerStopped and the job is
+ * released (`worker_stopped`, due now, the attempt not spent), also when the
+ * handler records its own retryable failure (JobRepository.fail). Error text
+ * is never logged: it may carry user data.
  */
 export class JobWorker {
   private readonly leaseSeconds: number;
@@ -71,7 +75,7 @@ export class JobWorker {
     let stopped = false;
     const onStop = () => {
       stopped = true;
-      controller.abort();
+      controller.abort(new WorkerStopped());
     };
     stop?.addEventListener('abort', onStop, { once: true });
     const onExpire = () => {
@@ -113,8 +117,10 @@ export class JobWorker {
       stop?.removeEventListener('abort', onStop);
       claimed.lease.signal.removeEventListener('abort', onExpire);
     }
-    if (thrown) {
-      await this.jobs.fail(lease, { code: stopped ? 'worker_stopped' : controller.signal.aborted ? 'handler_timeout' : 'handler_error', retryable: true });
+    if (stopped && (thrown || (await this.jobs.isHeld(lease)))) {
+      await this.jobs.release(lease, 'worker_stopped');
+    } else if (thrown) {
+      await this.jobs.fail(lease, { code: controller.signal.aborted ? 'handler_timeout' : 'handler_error', retryable: true });
     } else if (await this.jobs.isHeld(lease)) {
       await this.jobs.fail(lease, { code: 'handler_incomplete', retryable: false });
     }

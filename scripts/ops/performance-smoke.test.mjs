@@ -181,3 +181,32 @@ test('failed requests count against the verdict', async () => {
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+// P6b review (m5): reads and writes are spread over the accounts separately,
+// so every synthetic account writes, each well inside its write budget.
+test('every account writes, at no more than half of the 60-per-minute write budget', async () => {
+  const accounts = parseAccounts(JSON.stringify(Array.from({ length: 20 }, (_, n) => account(n))), 20);
+  const perAccount = new Map();
+  const fetchImpl = async (_url, init) => {
+    const key = init.headers.authorization;
+    const entry = perAccount.get(key) ?? { read: 0, write: 0 };
+    entry[init.method === 'POST' ? 'write' : 'read'] += 1;
+    perAccount.set(key, entry);
+    return new Response('{}', { status: 200 });
+  };
+  // One minute of the plan's load (20 req/s, 20% writes = 1,200 requests), sent fast.
+  await runLoad({ base: 'http://127.0.0.1:1', accounts, rate: 1_000, warmupMs: 0, durationMs: 1_200, fetchImpl, now: () => NOW });
+  const writes = [...perAccount.values()].map((entry) => entry.write);
+  assert.equal(perAccount.size, 20);
+  assert.deepEqual({ writers: writes.filter((count) => count > 0).length, withinHalfBudget: Math.max(...writes) <= 30 }, { writers: 20, withinHalfBudget: true });
+  assert.ok([...perAccount.values()].every((entry) => entry.read > 0));
+});
+
+test('a staging origin must look like staging, not merely avoid "prod" or "live"', () => {
+  for (const origin of ['https://api.gogospend.app', 'https://gogospend.example', 'https://api.gogospend-prd.example']) {
+    assert.throws(() => assertStagingAuthorization(record({ origin }), NOW), refusedWith('TARGET_REFUSED'), origin);
+  }
+  for (const origin of ['https://api.staging.gogospend.example', 'https://gogospend-api-staging.up.railway.app', 'https://stg-api.gogospend.example']) {
+    assert.equal(assertStagingAuthorization(record({ origin }), NOW), origin);
+  }
+});

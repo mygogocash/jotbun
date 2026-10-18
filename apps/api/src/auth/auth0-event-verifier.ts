@@ -7,6 +7,7 @@
 // The MAC covers `${t}.${raw body}` under a shared secret (AUTH0_EVENTS_SIGNING_SECRETS,
 // comma-separated so a new secret can be added before the old one is removed).
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { ConfigurationError } from '../common/configuration-error';
 
 export const EVENT_SIGNATURE_HEADER = 'x-gogospend-event-signature';
 export const SECURITY_EVENT_TYPES = ['password_changed', 'user_blocked'] as const;
@@ -99,6 +100,6 @@ export function verifySecurityEvent(rawBody: Buffer, header: string | undefined,
 export function eventVerifierConfigFromEnv(env: NodeJS.ProcessEnv): EventVerifierConfig | null {
   const secrets = (env.AUTH0_EVENTS_SIGNING_SECRETS ?? '').split(',').map((secret) => secret.trim()).filter(Boolean);
   if (secrets.length === 0 || !env.AUTH0_ISSUER) return null;
-  if (secrets.some((secret) => secret.length < 32)) throw new Error('Each AUTH0_EVENTS_SIGNING_SECRETS entry must be at least 32 characters.');
+  if (secrets.some((secret) => secret.length < 32)) throw new ConfigurationError('Each AUTH0_EVENTS_SIGNING_SECRETS entry must be at least 32 characters.');
   return { secrets, issuer: env.AUTH0_ISSUER };
 }

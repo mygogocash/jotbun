@@ -21,8 +21,15 @@ export class ProblemException extends HttpException {
   }
 }
 
-/** Writes an ApiProblem response; also used by middleware outside Nest's filters. */
+/**
+ * Writes an ApiProblem response; also used by middleware outside Nest's
+ * filters. A refusal sent before the request body was read (a gate, the
+ * access guard, a body parser limit) closes the connection afterwards, so
+ * Node does not read whatever the client still sends - up to the 9-minute
+ * request timeout for a refused upload - just to keep the socket alive.
+ */
 export function sendProblem(req: Request, res: Response, status: number, code: ApiErrorCode, problem: ProblemOptions = {}): void {
+  if (!req.complete && !res.headersSent) res.setHeader('Connection', 'close');
   const body: ApiProblem = {
     code,
     request_id: requestContext(req).requestId,

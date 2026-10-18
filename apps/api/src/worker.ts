@@ -18,16 +18,17 @@
 // object keys or error text. See apps/api/.env.jobs-worker.example.
 //
 // P6b: OPERATIONAL_PAUSE=jobs stops claiming (imports stops import parsing
-// only); maintenance and reports carry on. Each pass logs the queue
-// (`job worker: queue due=N oldest_due_seconds=S`), which is also the
-// worker's heartbeat, and `job worker: alert queue_age …` for a kind whose
-// oldest due job waited over 5 minutes. SIGTERM stops claiming, aborts the
-// running handler (requeued as worker_stopped) and exits within
-// SHUTDOWN_TIMEOUT_SECONDS.
+// only); maintenance and reports carry on. Every minute, on its own timer, it
+// logs the queue (`job worker: queue due=N oldest_due_seconds=S`), which is
+// also the worker's heartbeat, and `job worker: alert queue_age …` for a kind
+// whose oldest due job waited over 5 minutes. SIGTERM stops claiming, aborts
+// the running handler, releases its job (requeued as worker_stopped, due now,
+// the attempt not spent) and exits within SHUTDOWN_TIMEOUT_SECONDS.
 import { Pool } from 'pg';
 
+import { ConfigurationError } from './common/configuration-error';
 import { featureGatesFromEnv } from './common/feature-gates';
-import { failureName, queueAge, queueAgeLines } from './common/operational-metrics';
+import { failureName, queueAge, queueAgeLines, startQueueReports } from './common/operational-metrics';
 import { handleShutdownSignals, runMain, shutdownTimeoutMsFromEnv } from './common/process-lifecycle';
 import { poolConfigFromUrl } from './database/database-config';
 import { LeasedAccountRead } from './database/leased-account-read';
@@ -43,12 +44,12 @@ import { objectStoreFromEnv } from './storage/object-store-config';
 
 function sweepMinutes(value: string | undefined): number {
   const minutes = Number(value ?? 15);
-  if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) throw new Error('JOB_SWEEP_INTERVAL_MINUTES must be 1-1440.');
+  if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) throw new ConfigurationError('JOB_SWEEP_INTERVAL_MINUTES must be 1-1440.');
   return minutes;
 }
 
 function pool(url: string | undefined, setting: string): Pool {
-  if (!url) throw new Error(`${setting} is not configured.`);
+  if (!url) throw new ConfigurationError(`${setting} is not configured.`);
   const created = new Pool(poolConfigFromUrl(url, 2));
   created.on('error', () => console.error('job worker: idle database connection failed'));
   return created;
@@ -64,6 +65,7 @@ async function main(): Promise<void> {
   const stop = new AbortController();
   handleShutdownSignals({ name: 'job worker', timeoutMs: shutdownMs, exitWhenStopped: false, stop: () => stop.abort() });
   let sweeper: NodeJS.Timeout | undefined;
+  let stopQueueReports: (() => Promise<void>) | undefined;
   try {
     await assertLoginRoles(jobsPool, ['gogospend_jobs'], 'DATABASE_URL');
     await assertLoginRoles(readPool, ['gogospend_leased_read'], 'LEASED_READ_DATABASE_URL');
@@ -124,7 +126,11 @@ async function main(): Promise<void> {
         }
       } catch (error) {
         console.error(`job worker: backlog report failed (${failureName(error)})`);
+      } finally {
+        maintaining = false;
       }
+    };
+    const reportQueue = async () => {
       try {
         // Alert on `alert queue_age`: a due job waited over 5 minutes. The
         // summary line is the heartbeat: alert when it stops appearing.
@@ -134,10 +140,9 @@ async function main(): Promise<void> {
         if (gates.pausedScopes().length > 0) console.error(`job worker: paused ${gates.pausedScopes().join(',')}`);
       } catch (error) {
         console.error(`job worker: queue report failed (${failureName(error)})`);
-      } finally {
-        maintaining = false;
       }
     };
+    stopQueueReports = startQueueReports(reportQueue);
     await maintain();
     sweeper = setInterval(() => void maintain(), sweepEvery * 60_000);
     console.log(`job worker: running ${handlers.kinds().length} kind(s)`);
@@ -146,6 +151,7 @@ async function main(): Promise<void> {
     });
   } finally {
     clearInterval(sweeper);
+    await stopQueueReports?.();
     await Promise.allSettled([jobsPool.end(), readPool.end()]);
   }
 }

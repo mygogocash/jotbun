@@ -12,8 +12,8 @@
 //   "staging", "synthetic_data": true, "origin": "https://…",
 //   "approved_by": "<role>", "approved_at": ISO, "valid_until": ISO (≤7 days
 //   after approval)}. Without one it exits 3 (SKIPPED, E1 not authorized); an
-//   origin that is not https, looks like production, or does not match the
-//   record is refused.
+//   origin that is not https, has no staging label (staging, stage, stg),
+//   looks like production, or does not match the record is refused.
 // - `local-dry-run` runs only against a loopback http(s) base URL (a v1 app
 //   or a fake started locally). Without accounts it drives public routes.
 // Accounts (≥20 for staging) come from a descriptor as JSON:
@@ -34,6 +34,9 @@ export const THRESHOLDS = Object.freeze({ readP95Ms: 800, writeP95Ms: 1_200, max
 export const DEFAULTS = Object.freeze({ rate: 20, warmupSeconds: 30, seconds: 120, writeShare: 0.2, minStagingAccounts: 20, maxInFlight: 200 });
 const AUTHORIZATION_MAX_DAYS = 7;
 const PRODUCTION_HINT = /(^|[.-])(prod|production|live)([.-]|$)/i;
+// A staging origin must say so in a host label (api.staging.…, …-staging.up.railway.app,
+// stg-api.…): a host that merely avoids "prod" (api.gogospend.app) is refused.
+const STAGING_HINT = /(^|[.-])(staging|stage|stg)([.-]|$)/i;
 
 const MESSAGES = Object.freeze({
   ARGUMENT_REFUSED: 'An unknown, missing or secret-bearing argument was refused.',
@@ -74,7 +77,7 @@ export function assertStagingAuthorization(record, now = new Date()) {
     throw new SmokeError('TARGET_REFUSED');
   }
   if (origin.protocol !== 'https:' || origin.username || origin.password || origin.pathname !== '/' || origin.search || origin.hash) throw new SmokeError('TARGET_REFUSED');
-  if (PRODUCTION_HINT.test(origin.hostname) || isLoopbackHost(origin.hostname)) throw new SmokeError('TARGET_REFUSED');
+  if (PRODUCTION_HINT.test(origin.hostname) || !STAGING_HINT.test(origin.hostname) || isLoopbackHost(origin.hostname)) throw new SmokeError('TARGET_REFUSED');
   return origin.origin;
 }
 
@@ -178,6 +181,11 @@ export async function runLoad({ base, accounts = [], rate = DEFAULTS.rate, warmu
   let failed = 0;
   let skipped = 0;
   let sent = 0;
+  // Reads and writes rotate over the accounts separately, so every account
+  // writes and each stays well inside its session write budget (at the plan
+  // load, 20 req/s × 20% over 20 accounts is 12 writes a minute each).
+  let reads = 0;
+  let writes = 0;
   let inFlight = 0;
   const pending = new Set();
   const total = Math.floor(((warmupMs + durationMs) / 1000) * rate);
@@ -190,11 +198,11 @@ export async function runLoad({ base, accounts = [], rate = DEFAULTS.rate, warmu
       if (measured) skipped += 1;
       continue;
     }
-    const account = accounts.length > 0 ? accounts[index % accounts.length] : null;
-    const isWrite = account !== null && (index % Math.round(1 / writeShare)) === 0;
+    const isWrite = accounts.length > 0 && (index % Math.round(1 / writeShare)) === 0;
+    const account = accounts.length === 0 ? null : isWrite ? accounts[writes++ % accounts.length] : accounts[reads++ % accounts.length];
     const request = account === null
       ? { kind: 'read', url: `${base}${index % 2 === 0 ? '/live' : '/v1/policies'}`, init: { method: 'GET' } }
-      : isWrite ? writeRequest(base, account, now()) : readRequest(base, account, index, now());
+      : isWrite ? writeRequest(base, account, now()) : readRequest(base, account, reads, now());
     sent += 1;
     inFlight += 1;
     const begun = performance.now();

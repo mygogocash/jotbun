@@ -5,10 +5,11 @@
 // the error class and SQLSTATE only (driver text can echo the connection).
 import { runMain } from '../common/process-lifecycle';
 import { runMigrations } from './migrations';
+import { ConfigurationError } from '../common/configuration-error';
 
 async function main(): Promise<void> {
   const url = process.env.DATABASE_DIRECT_URL;
-  if (!url) throw new Error('DATABASE_DIRECT_URL is not configured.');
+  if (!url) throw new ConfigurationError('DATABASE_DIRECT_URL is not configured.');
   await runMigrations(url);
   console.log('Migrations are up to date.');
 }

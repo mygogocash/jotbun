@@ -72,8 +72,12 @@ jobs:
       # test:db starts the loopback PostgreSQL 17 container itself
       # (scripts/dev-v1.mjs db-up, compose.postgres.yml, pinned digest).
       - run: npm run test:db
-      # The ops suite (and P6a's local rehearsal) uses the same container.
+      # The ops suite (and P6a's local rehearsal) uses the same container; an
+      # unreachable database fails the rehearsal instead of skipping it, as
+      # in the local gate (scripts/ci/backend-workflow.test.mjs checks parity).
       - run: npm run test:ops
+        env:
+          GOGOSPEND_OPS_REQUIRE_DB: '1'
 
   image:
     name: Release image and smoke (never pushed)
