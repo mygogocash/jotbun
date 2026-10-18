@@ -10,9 +10,18 @@
 // (ambiguous_amount), any other currency (unsupported_currency), exponents,
 // spaces inside the number and other text (invalid_amount), zero
 // (zero_amount) and more than ฿999,999,999.99 (amount_over_cap).
+//
+// The separator convention is the file's, judged as a whole (as dates are):
+// "12,50" can only be a decimal comma and "1,234.56" only a decimal point,
+// while "1,500" or "1.500" could be either. In a file whose amounts prove a
+// decimal comma - or prove both conventions (mixed_amount_separators) - no
+// amount with a separator is read (ambiguous_amount), since "1,500" there may
+// be 1.5 baht. Otherwise the decimal point and grouping comma above apply.
 import { AMOUNT_MAX_MINOR } from './protocol.ts';
 
 export type AmountResult = { ok: true; minor: string; negative: boolean } | { ok: false; code: string };
+/** The decimal separator a file's amounts prove: `.`, `,`, both (`mixed`) or none. */
+export type AmountConvention = 'dot' | 'comma' | 'mixed' | null;
 
 const THAI_DIGITS = /[๐-๙]/g;
 const THB_PREFIX = /^(?:฿|thb|บาท)\s*/i;
@@ -22,8 +31,14 @@ const GROUPED = /^[0-9]{1,3}(?:,[0-9]{3})+$/;
 const PLAIN = /^[0-9]+$/;
 // Far beyond the cap, so BigInt never sees a huge string.
 const MAX_INTEGER_DIGITS = 15;
+// Forms only one convention can write.
+const DECIMAL_POINT = [/^[0-9]{1,3}(?:,[0-9]{3})+\.[0-9]+$/, /^[0-9]{1,3}(?:,[0-9]{3}){2,}$/, /^[0-9]+\.(?:[0-9]{1,2}|[0-9]{4,})$/];
+const DECIMAL_COMMA = [/^[0-9]{1,3}(?:\.[0-9]{3})+,[0-9]+$/, /^[0-9]{1,3}(?:\.[0-9]{3}){2,}$/, /^[0-9]+,(?:[0-9]{1,2}|[0-9]{4,})$/];
 
-export function parseAmountText(raw: string): AmountResult {
+type NumberText = { ok: true; text: string; negative: boolean } | { ok: false; code: string };
+
+/** The number itself: Thai digits read, currency markers and the sign taken off. */
+function numberText(raw: string): NumberText {
   let text = raw.replace(THAI_DIGITS, (digit) => String(digit.charCodeAt(0) - 0x0e50)).trim();
   if (text === '' || text === '-') return { ok: false, code: 'missing_amount' };
   if (OTHER_CURRENCY.test(text)) return { ok: false, code: 'unsupported_currency' };
@@ -43,6 +58,37 @@ export function parseAmountText(raw: string): AmountResult {
     text = text.slice(sign[0].length).replace(THB_PREFIX, '').trim();
   }
   if (text === '') return { ok: false, code: 'invalid_amount' };
+  return { ok: true, text, negative };
+}
+
+/** The convention one amount proves, or null when it fits either (or is not a number). */
+function conventionOf(raw: string): 'dot' | 'comma' | null {
+  const number = numberText(raw);
+  if (!number.ok) return null;
+  if (DECIMAL_POINT.some((form) => form.test(number.text))) return 'dot';
+  if (DECIMAL_COMMA.some((form) => form.test(number.text))) return 'comma';
+  return null;
+}
+
+/** The decimal separator a file's amounts prove, judged over all of them. */
+export function detectAmountConvention(raws: readonly string[]): AmountConvention {
+  let dot = false;
+  let comma = false;
+  for (const raw of raws) {
+    const convention = conventionOf(raw);
+    if (convention === 'dot') dot = true;
+    if (convention === 'comma') comma = true;
+  }
+  if (dot && comma) return 'mixed';
+  return dot ? 'dot' : comma ? 'comma' : null;
+}
+
+export function parseAmountText(raw: string, convention: AmountConvention = null): AmountResult {
+  const number = numberText(raw);
+  if (!number.ok) return number;
+  const { text, negative } = number;
+  // A file that writes decimal commas (or both conventions): no separator can be trusted.
+  if ((convention === 'comma' || convention === 'mixed') && /[.,]/.test(text)) return { ok: false, code: 'ambiguous_amount' };
 
   const dot = text.indexOf('.');
   const integerPart = dot === -1 ? text : text.slice(0, dot);

@@ -277,11 +277,138 @@ AS $$
    WHERE j.id = p_job_id AND j.kind = 'import_parse' AND j.status = 'failed' AND j.account_id = public.gogospend_current_account()
 $$;
 --> statement-breakpoint
+-- P2b review fixes (M1): duplicate advice names at most 5 of the owner's
+-- active records per candidate, looked up through this index (date, type and
+-- amount, then id order), so 5,000 rows against 5,000 identical records stay
+-- linear whatever join the planner would have chosen.
+CREATE INDEX transactions_duplicate_advice_idx ON transactions (account_id, occurred_on, type, amount_minor, id) WHERE deleted_at IS NULL;
+--> statement-breakpoint
+-- P2b review fixes (M4): previews the retention backstop below has to visit.
+CREATE INDEX import_previews_due_idx ON import_previews (expires_at) WHERE status <> 'expired';
+--> statement-breakpoint
+-- P2b review fixes (M4): the retention backstop of the 7-day preview expiry
+-- (P5's imports.previews step). The expiry job ends superseded when its
+-- account was disabled or at another lifecycle generation when it fell due,
+-- and can fail; this expires every preview past expires_at whatever its
+-- account's state. Deleting is always safe, so there is no generation fence:
+-- the candidates are deleted, the preview marked expired and an unattached
+-- sanitized image made due, as gogospend_expire_import_preview does. At most
+-- p_limit (1-1,000) accounts per call, each under its account lock taken
+-- with SKIP LOCKED (an account a writer holds waits for the next pass).
+-- Returns how many previews it expired.
+CREATE FUNCTION gogospend_expire_due_import_previews(p_limit integer) RETURNS integer
+  LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+  SET search_path = pg_catalog
+AS $$
+DECLARE
+  v_account uuid;
+  v_jobs uuid[];
+  v_count integer := 0;
+BEGIN
+  FOR v_account IN
+    SELECT DISTINCT p.account_id FROM public.import_previews p
+     WHERE p.status <> 'expired' AND p.expires_at <= now()
+     ORDER BY p.account_id
+     LIMIT least(greatest(coalesce(p_limit, 1), 1), 1000)
+  LOOP
+    PERFORM 1 FROM public.account_sync_state s WHERE s.account_id = v_account FOR UPDATE SKIP LOCKED;
+    IF NOT FOUND THEN
+      CONTINUE;
+    END IF;
+    SELECT array_agg(d.job_id) INTO v_jobs FROM (
+      SELECT p.job_id FROM public.import_previews p
+       WHERE p.account_id = v_account AND p.status <> 'expired' AND p.expires_at <= now()
+       FOR UPDATE SKIP LOCKED) d;
+    IF v_jobs IS NULL THEN
+      CONTINUE;
+    END IF;
+    DELETE FROM public.import_candidates c WHERE c.job_id = ANY (v_jobs);
+    UPDATE public.import_previews p SET status = 'expired', expired_at = now() WHERE p.job_id = ANY (v_jobs);
+    UPDATE public.object_publications o SET delete_after = least(o.delete_after, now())
+     WHERE o.job_id = ANY (v_jobs) AND o.account_id = v_account AND o.purpose = 'import_image' AND o.status IN ('reserved', 'published');
+    v_count := v_count + cardinality(v_jobs);
+  END LOOP;
+  RETURN v_count;
+END
+$$;
+--> statement-breakpoint
+-- P2b review fixes (minor 4): a recorded preview means the import was parsed,
+-- even once P5 has pruned its succeeded parse job (30 days after it
+-- finished). P2a's routines below inferred "parsed" from that job alone, so
+-- the maintenance pass turned a parsed import into an expired upload (and
+-- restarted its 30-day retention) and the status route said `cancelled`.
+-- Replaced from 0014 with only that inference changed.
+CREATE OR REPLACE FUNCTION gogospend_end_import(p_import uuid, p_account uuid, p_clear_name boolean) RETURNS void
+  LANGUAGE plpgsql VOLATILE
+  SET search_path = pg_catalog
+AS $$
+BEGIN
+  UPDATE public.jobs j SET status = 'cancelled', lease_token = NULL, lease_expires_at = NULL, finished_at = now(), updated_at = now()
+   WHERE j.id = p_import AND j.kind = 'import_parse' AND j.account_id = p_account AND j.status IN ('queued', 'leased');
+  UPDATE public.import_uploads u SET status = 'expired', file_name = NULL, sha256 = NULL, finished_at = now()
+   WHERE u.job_id = p_import AND u.account_id = p_account AND u.status = 'accepted'
+     AND NOT EXISTS (SELECT 1 FROM public.jobs j WHERE j.id = p_import AND j.status = 'succeeded')
+     AND NOT EXISTS (SELECT 1 FROM public.import_previews p WHERE p.job_id = p_import);
+  IF p_clear_name THEN
+    UPDATE public.import_uploads u SET file_name = NULL WHERE u.job_id = p_import AND u.account_id = p_account AND u.file_name IS NOT NULL;
+  END IF;
+  UPDATE public.object_publications o SET delete_after = least(o.delete_after, now())
+   WHERE o.job_id = p_import AND o.account_id = p_account AND o.purpose = 'import_quarantine' AND o.status IN ('reserved', 'published');
+END
+$$;
+--> statement-breakpoint
+CREATE OR REPLACE FUNCTION gogospend_import_maintenance() RETURNS TABLE (stale integer, expired integer, names_cleared integer)
+  LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+  SET search_path = pg_catalog
+AS $$
+DECLARE
+  v_stale integer;
+  v_expired integer := 0;
+  v_names integer;
+  v_row record;
+BEGIN
+  v_stale := public.gogospend_fail_stale_import_uploads(NULL);
+  FOR v_row IN
+    SELECT u.job_id, u.account_id, (a.status <> 'active' OR a.lifecycle_generation <> u.lifecycle_generation) AS gone
+      FROM public.import_uploads u
+      JOIN public.accounts a ON a.id = u.account_id
+     WHERE u.status = 'accepted'
+       AND (u.expires_at <= now() OR a.status <> 'active' OR a.lifecycle_generation <> u.lifecycle_generation)
+       AND (NOT EXISTS (SELECT 1 FROM public.jobs j WHERE j.id = u.job_id AND j.status = 'succeeded')
+                AND NOT EXISTS (SELECT 1 FROM public.import_previews p WHERE p.job_id = u.job_id)
+            OR u.file_name IS NOT NULL AND (a.status <> 'active' OR a.lifecycle_generation <> u.lifecycle_generation)
+            OR EXISTS (SELECT 1 FROM public.object_publications o
+                        WHERE o.job_id = u.job_id AND o.purpose = 'import_quarantine' AND o.status IN ('reserved', 'published') AND o.delete_after > now()))
+     ORDER BY u.expires_at
+     LIMIT 1000
+     FOR UPDATE OF u SKIP LOCKED
+  LOOP
+    PERFORM public.gogospend_end_import(v_row.job_id, v_row.account_id, v_row.gone);
+    v_expired := v_expired + 1;
+  END LOOP;
+  UPDATE public.import_uploads u SET file_name = NULL
+   WHERE u.file_name IS NOT NULL AND u.accepted_at IS NOT NULL AND u.accepted_at < now() - interval '8 days';
+  GET DIAGNOSTICS v_names = ROW_COUNT;
+  RETURN QUERY SELECT v_stale, v_expired, v_names;
+END
+$$;
+--> statement-breakpoint
+CREATE OR REPLACE FUNCTION gogospend_import_job_status(p_job_id uuid) RETURNS text
+  LANGUAGE sql STABLE SECURITY DEFINER
+  SET search_path = pg_catalog
+AS $$
+  SELECT coalesce(
+    (SELECT j.status FROM public.jobs j
+      WHERE j.id = p_job_id AND j.kind = 'import_parse' AND j.account_id = public.gogospend_current_account()),
+    (SELECT 'succeeded'::text FROM public.import_previews p
+      WHERE p.job_id = p_job_id AND p.account_id = public.gogospend_current_account()))
+$$;
+--> statement-breakpoint
 REVOKE ALL ON FUNCTION gogospend_valid_import_file_issues(jsonb), gogospend_valid_import_row_issues(jsonb),
   gogospend_import_parse_source(uuid, uuid), gogospend_record_import_preview(uuid, uuid, jsonb, jsonb),
-  gogospend_expire_import_preview(uuid, uuid), gogospend_import_parse_failure(uuid) FROM PUBLIC;
+  gogospend_expire_import_preview(uuid, uuid), gogospend_import_parse_failure(uuid), gogospend_expire_due_import_previews(integer) FROM PUBLIC;
 --> statement-breakpoint
 GRANT EXECUTE ON FUNCTION gogospend_import_parse_source(uuid, uuid), gogospend_record_import_preview(uuid, uuid, jsonb, jsonb),
-  gogospend_expire_import_preview(uuid, uuid) TO gogospend_jobs;
+  gogospend_expire_import_preview(uuid, uuid), gogospend_expire_due_import_previews(integer) TO gogospend_jobs;
 --> statement-breakpoint
 GRANT EXECUTE ON FUNCTION gogospend_import_parse_failure(uuid) TO gogospend_app;

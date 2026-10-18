@@ -7,15 +7,19 @@
 //     dialog sheets;
 //   - formulas: any <f> in any sheet (no cached formula result is trusted);
 //   - external_references: external link parts, data connections or query
-//     tables, an external relationship, or a defined name that refers to
-//     another workbook;
+//     tables, an external relationship in any relationship part (the
+//     workbook's, a worksheet's - where Excel writes hyperlinks - or any
+//     other), or a defined name that refers to another workbook;
+//   - embedded_objects: embedded OLE objects or packages, ActiveX controls;
 //   - multiple_worksheets: more than one worksheet holding a value (none is
 //     silently skipped); empty_file: none;
 //   - too_many_columns / too_many_rows / cell_too_long: a value past column
 //     100, more than 5,001 non-empty rows (a header plus 5,000), a string over
 //     10,000 characters;
 //   - workbook_malformed: missing or inconsistent parts, a DOCTYPE or unknown
-//     entity, out-of-order rows or cells.
+//     entity, out-of-order rows or cells, more than 256 sheets, or a sheet
+//     named twice (one relationship, or one part, for two sheets): each part
+//     is inflated and read once at most.
 // Date-formatted numbers become `YYYY-MM-DD` (exact serial arithmetic, 1900 or
 // 1904 system); every other value stays the stored text.
 import { excelSerialToIso } from './date.ts';
@@ -25,6 +29,8 @@ import { decodeXml, xmlEvents } from './xml.ts';
 import { ZipArchive } from './zip.ts';
 
 const malformed = () => new ParseRejection('workbook_malformed');
+const MAX_SHEETS = 256;
+const RELATIONSHIP_PART = /(?:^|\/)_rels\/[^/]*\.rels$/i;
 const MAX_SHARED_STRINGS = (LIMITS.candidateRows + 1) * LIMITS.columns;
 // Built-in number formats that display a date (Excel, including Thai/East Asian locales).
 const BUILTIN_DATE_FORMATS = new Set([14, 15, 16, 17, 22, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 50, 51, 52, 53, 54, 55, 56, 57, 58, 71, 72, 73, 74, 75, 76]);
@@ -53,10 +59,29 @@ function checkPackage(zip: ZipArchive): void {
     const lower = name.toLowerCase();
     if (lower.startsWith('xl/externallinks/') || lower === 'xl/connections.xml' || lower.startsWith('xl/querytables/')) throw new ParseRejection('external_references');
   }
+  for (const name of zip.names()) {
+    const lower = name.toLowerCase();
+    if (lower.startsWith('xl/embeddings/') || lower.startsWith('xl/activex/')) throw new ParseRejection('embedded_objects');
+  }
   const types = part(zip, '[Content_Types].xml');
   if (types === null) throw malformed();
   if (/macroenabled|vbaproject|macrosheet|dialogsheet/i.test(types)) throw new ParseRejection('macros');
+  if (/oleobject|activex/i.test(types)) throw new ParseRejection('embedded_objects');
   for (const event of xmlEvents(types)) void event;
+  // Every relationship part, not only the workbook's: nothing may point outside the package.
+  for (const name of zip.names()) {
+    if (!RELATIONSHIP_PART.test(name)) continue;
+    const text = part(zip, name);
+    if (text === null) throw malformed();
+    for (const event of xmlEvents(text)) {
+      if (event.kind !== 'open' || event.local !== 'Relationship') continue;
+      const mode = event.attrs.TargetMode;
+      if (mode !== undefined && mode !== 'Internal') throw new ParseRejection('external_references');
+      if (/\/(externalLink|connections|queryTable|oleObject|package|control)$/i.test(event.attrs.Type ?? '')) {
+        throw new ParseRejection(/\/(oleObject|package|control)$/i.test(event.attrs.Type ?? '') ? 'embedded_objects' : 'external_references');
+      }
+    }
+  }
 }
 
 type Workbook = { date1904: boolean; sheets: { relId: string }[] };
@@ -305,6 +330,18 @@ export function readXlsx(bytes: Uint8Array): SourceTable {
   const rels = readRelationships(zip);
   const strings = readSharedStrings(zip);
   const dateStyles = readDateStyles(zip);
+  // Each sheet names its own relationship and part, so no part is read twice.
+  if (workbook.sheets.length > MAX_SHEETS) throw malformed();
+  const relIds = new Set<string>();
+  const targets = new Set<string>();
+  for (const sheet of workbook.sheets) {
+    const rel = rels.get(sheet.relId);
+    if (!rel || relIds.has(sheet.relId)) throw malformed();
+    const target = resolveTarget(rel.target);
+    if (targets.has(target)) throw malformed();
+    relIds.add(sheet.relId);
+    targets.add(target);
+  }
   const filled: Sheet[] = [];
   for (const sheet of workbook.sheets) {
     const rel = rels.get(sheet.relId);

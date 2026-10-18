@@ -8,7 +8,8 @@
 //     are both 12 or less needs the file's order (detectDateOrder), or it is
 //     ambiguous_date;
 //   - two-digit years are ambiguous_date; an instant with a zone is placed on
-//     its Asia/Bangkok calendar day; a time of day without a zone is dropped;
+//     its Asia/Bangkok calendar day; a time of day without a zone is dropped,
+//     but it must be one (hours 0-23, minutes and seconds 0-59) in every form;
 //   - dates before 1970-01-01 or after today (Bangkok) are date_out_of_range.
 // Ported concepts: the legacy importers' Thai export formats and the slip
 // reader's Thai month names.
@@ -55,6 +56,12 @@ function gregorianYear(written: string): number | null {
   if (written.length !== 4) return null;
   const year = Number(written);
   return year >= 2400 ? year - 543 : year;
+}
+
+/** A written time of day (absent parts are fine) is a real one. */
+function validTime(hour: string | undefined, minute: string | undefined, second: string | undefined): boolean {
+  if (hour === undefined) return true;
+  return Number(hour) <= 23 && Number(minute) <= 59 && (second === undefined || Number(second) <= 59);
 }
 
 /** `YYYY-MM-DD`, or null when the calendar has no such day. */
@@ -123,7 +130,7 @@ export function parseDateText(raw: string, options: { order: DateOrder | 'confli
       const day = bangkokDay(date, Number(yearFirst[4]), Number(yearFirst[5]), Number(yearFirst[6] ?? 0), yearFirst[7]);
       return day ? inRange(day, options.today) : { ok: false, code: 'invalid_date' };
     }
-    if (yearFirst[4] !== undefined && (Number(yearFirst[4]) > 23 || Number(yearFirst[5]) > 59)) return { ok: false, code: 'invalid_date' };
+    if (!validTime(yearFirst[4], yearFirst[5], yearFirst[6])) return { ok: false, code: 'invalid_date' };
     return inRange(date, options.today);
   }
 
@@ -132,6 +139,7 @@ export function parseDateText(raw: string, options: { order: DateOrder | 'confli
     const first = Number(numeric[1]);
     const second = Number(numeric[2]);
     const year = gregorianYear(numeric[3]);
+    if (!validTime(numeric[4], numeric[5], numeric[6])) return { ok: false, code: 'invalid_date' };
     if (year === null) return { ok: false, code: 'ambiguous_date' };
     let day: number;
     let month: number;

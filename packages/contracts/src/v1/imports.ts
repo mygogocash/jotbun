@@ -219,6 +219,12 @@ export const IMPORT_PARSE_LIMITS = {
   cellChars: 10_000,
   /** Image width × height. */
   imagePixels: 20_000_000,
+  /**
+   * Image width × height × channels × bytes per sample, as decoded (a 20 MP
+   * 16-bit image with alpha is over it; every 8-bit image within the pixel
+   * limit is not). Keeps one parse inside the worker's memory budget.
+   */
+  imageDecodedBytes: 120_000_000,
 } as const;
 /** The parser child is killed after this long. */
 export const IMPORT_PARSE_DEADLINE_SECONDS = 30;
@@ -264,6 +270,7 @@ export const IMPORT_FILE_ISSUE_CODES = [
   "zip_too_many_entries",
   "zip_unsupported",
   "workbook_malformed",
+  "embedded_objects",
   "macros",
   "formulas",
   "external_references",
@@ -279,6 +286,7 @@ export const IMPORT_FILE_ISSUE_CODES = [
   "unmapped_columns",
   "legacy_encoding",
   "receipt_fields_unread",
+  "mixed_amount_separators",
 ] as const;
 export type ImportFileIssueCode = (typeof IMPORT_FILE_ISSUE_CODES)[number];
 
@@ -303,6 +311,7 @@ export const IMPORT_ROW_ISSUE_CODES = [
   "text_too_long",
   "invalid_text",
   "excluded_in_source",
+  "legacy_encoding_text",
 ] as const;
 export type ImportRowIssueCode = (typeof IMPORT_ROW_ISSUE_CODES)[number];
 

@@ -149,6 +149,9 @@ export function defaultPrivacySteps(): PrivacySteps {
       .retention({ name: 'jobs.finished', run: (pool) => batched(pool, 'gogospend_prune_finished_jobs') })
       // P5: completed deletion requests 30 days after their purge.
       .retention({ name: 'privacy.deletion_requests', run: (pool) => batched(pool, 'gogospend_prune_deletion_requests') })
+      // P2b: every preview past expires_at (7 days), whatever the account's status or the single expiry job.
+      // Deletes candidates, marks the preview expired and makes an unattached sanitized image due.
+      .retention({ name: 'imports.previews', run: (pool) => batched(pool, 'gogospend_expire_due_import_previews', 1_000) })
       // P2a: upload rows 30 days after they finished or expired (quarantine objects go at 24 hours through P1's
       // sweep and P2a's own maintenance; names are cleared after 8 days).
       .retention({ name: 'imports.uploads', run: (pool) => batched(pool, 'gogospend_prune_import_uploads') })
@@ -164,7 +167,6 @@ export function defaultPrivacySteps(): PrivacySteps {
       // (selection progress counts, correction revision) purged 30 days after their last change; row progress
       // goes with its upload row (above), whose cascade removes it.
       .retention({ name: 'imports.selections', run: (pool) => batched(pool, 'gogospend_prune_import_selections', 100) })
-    // P2b: .retention({ name: 'imports.preview', ... }) - unconfirmed candidates at 7 days, unattached sanitized images at 24 hours.
     // P2a-P3: .erasure({ name: '<domain>.<step>', run }) - only for data the cascade and object stage cannot reach.
     // P3 needs none: import_selections, import_selection_rows and import_row_progress cascade from accounts and hold no objects.
   );

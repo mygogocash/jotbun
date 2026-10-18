@@ -36,7 +36,7 @@ for it.
 | P3 frozen selection copies (`import_selections`, `import_selection_rows`: the chosen rows' fields and mapped wallet/category) | until the preview expires (7 days after parsing) | deleted | `imports.selections` (`gogospend_prune_import_selections`) |
 | P3 synced import records (`import_selection` progress counts, `import_review` correction revision; no row fields) | 30 days after their last change, once the selection or preview is gone (inside S1's delta window, so no forced resync) | entity purged | `imports.selections` |
 | P3 row progress (`import_row_progress`: source row, transaction id, command id) | as long as its upload row (the transaction itself follows M3's rules; a purged transaction leaves `transaction_id` NULL) | deleted by the cascade from `import_uploads` | `imports.uploads` |
-| Unconfirmed previews and unattached sanitized images (P2b) | per their task | - | **registration point**: each task adds its step (below) |
+| Unconfirmed previews and candidates (P2b) | 7 days after parsing (`expires_at`); backstop expires every overdue preview whatever the account's status or the single expiry job | candidates deleted, preview marked expired, unattached sanitized image made due | `imports.previews` (`gogospend_expire_due_import_previews`); the preview route also treats past `expires_at` as expired |
 
 ## Purged records and sync
 
@@ -66,7 +66,7 @@ synced record's data, under the account lock:
 Register in `defaultPrivacySteps()` (`privacy-steps.ts`) and nowhere else:
 
 ```ts
-.retention({ name: 'imports.preview', run: (pool) => batched(pool, 'gogospend_prune_import_candidates') })
+.retention({ name: 'imports.previews', run: (pool) => batched(pool, 'gogospend_expire_due_import_previews', 1_000) })
 ```
 
 - one SECURITY DEFINER routine per step, granted to `gogospend_jobs`, with a

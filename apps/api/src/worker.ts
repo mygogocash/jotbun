@@ -6,7 +6,10 @@
 //                              reads through lease-validating routines).
 // One job at a time (CPU parser concurrency one). Import files are parsed in
 // a separate child process per job (imports/parser-runner.ts) that receives
-// none of this process's settings: its environment is TZ only. Periodically sweeps
+// none of this process's settings: its environment is TZ only. import_parse is
+// registered only when that child's sandbox holds on this runtime (Node 25 or
+// later; imports/import-parsing.ts), else `job worker: import parsing disabled
+// (…)` is logged at startup and imports wait. Periodically sweeps
 // unpublished, expired and orphaned objects (export files at their 24-hour
 // expiry), runs P5's retention steps (privacy/privacy-steps.ts: purged
 // records, change log, receipt digests, security records, finished jobs,
@@ -34,6 +37,7 @@ import { poolConfigFromUrl } from './database/database-config';
 import { LeasedAccountRead } from './database/leased-account-read';
 import { exportCleanupOverdue } from './exports/export-handler';
 import { importMaintenance, quarantineCleanupOverdue } from './imports/import-expiry';
+import { importParsingStartup } from './imports/import-parsing';
 import { buildHandlers } from './jobs/handlers';
 import { JobRepository } from './jobs/job.repository';
 import { JobWorker } from './jobs/worker';
@@ -71,7 +75,10 @@ async function main(): Promise<void> {
     await assertLoginRoles(readPool, ['gogospend_leased_read'], 'LEASED_READ_DATABASE_URL');
     const jobs = new JobRepository(jobsPool);
     const publication = new ObjectPublicationService(jobsPool, store);
-    const handlers = buildHandlers({ jobs, reader: new LeasedAccountRead(readPool), store, publication, pool: jobsPool });
+    // P2b review fixes: import_parse only behind a verified parser sandbox (Node 25+); otherwise one alert line.
+    const parsing = await importParsingStartup();
+    if (parsing.alert) console.error(parsing.alert);
+    const handlers = buildHandlers({ jobs, reader: new LeasedAccountRead(readPool), store, publication, pool: jobsPool }, { parse: parsing.parse });
     const retention = new RetentionHandler(jobsPool);
     let maintaining = false;
     const maintain = async () => {
@@ -83,7 +90,7 @@ async function main(): Promise<void> {
         // Before the sweep, so the quarantine parts it makes due are deleted in this pass.
         const ended = await importMaintenance(jobsPool);
         if (ended.stale + ended.expired + ended.namesCleared > 0) {
-          console.log(`job worker: import maintenance failed ${ended.stale} stale upload(s), ended ${ended.expired} import(s), cleared ${ended.namesCleared} name(s)`);
+          console.log(`job worker: import maintenance marked ${ended.stale} stale upload(s) failed, ended ${ended.expired} import(s), cleared ${ended.namesCleared} name(s)`);
         }
       } catch (error) {
         console.error(`job worker: import maintenance failed (${failureName(error)})`);

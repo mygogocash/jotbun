@@ -14,9 +14,11 @@
 //    loopback port): its whole module graph and configuration loaded, no
 //    module is missing, and no synthetic credential appears in its output.
 // 4. P2b's parser children run inside the image with their real flags
-//    (`--permission`, scrubbed environment): a synthetic CSV and a 1x1 PNG
-//    both parse, so the children are staged and sharp loads its Linux
-//    binding under the permission model.
+//    (`--permission`, scrubbed environment). On Node ≥25 a synthetic CSV and
+//    a 1x1 PNG both parse (children staged, sharp under the permission model).
+//    On Node 24 (the pinned image today) `--permission` does not deny
+//    sockets, so both answers are `sandbox_unsupported` — fail closed, and
+//    proof the children and probe still load.
 // 5. The v1 HTTP stack serves inside the image: the real V1AppModule (the
 //    startup login check needs a database, so the module is created
 //    directly) answers `GET /live` 200 and `GET /ready` 503 (no database, no
@@ -199,7 +201,13 @@ async function main() {
     return outcome.kind === 'result' ? (outcome.result.ok ? 'parsed' : 'refused') : outcome.kind;
   };
   report.parsers = { csv: await parsed('csv', Buffer.from(PARSER_CSV)), png: await parsed('png', Buffer.from(PARSER_PNG, 'base64')) };
-  if (report.parsers.csv !== 'parsed' || report.parsers.png !== 'parsed') failures.push('parsers');
+  // Node's permission model denies the network only from 25 on. Below that the
+  // runner must refuse every parse (B1); at 25+ the synthetic files must parse.
+  const major = Number.parseInt(process.versions.node.split('.')[0] ?? '0', 10);
+  const expectParsers = major >= 25 ? 'parsed' : 'sandbox_unsupported';
+  report.parsers.expected = expectParsers;
+  report.parsers.node_major = major;
+  if (report.parsers.csv !== expectParsers || report.parsers.png !== expectParsers) failures.push('parsers');
 
   report.legacy_absent = { paths_present: presentPaths, packages_present: presentPackages };
   if (presentPaths.length > 0 || presentPackages.length > 0) failures.push('legacy');

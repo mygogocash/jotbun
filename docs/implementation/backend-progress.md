@@ -2683,3 +2683,24 @@ Observed, not changed (pre-existing):
 - **For P2b's fixes:**
   - The parse handler can now let an image parse wait while `ocr` is paused, with `release(lease, 'ocr_paused')`. That attempt-neutral release makes the narrower `ocr` pause possible.
   - Startup checks should throw `ConfigurationError` when their message should stay readable.
+
+## Review fixes for P2b
+
+- **Status:** every finding of the independent P2b review is fixed locally, test-first, except optional paging (minor 5), the optional narrower `ocr_paused` release, and the totals/`excluded_in_source` nit. Hosted, OCR/QR and device checks stay SKIPPED. Nothing was pushed, deployed or written to a provider. Node ≥25 for a working parser sandbox remains an owner decision (imports fail closed on Node 24).
+- **Base:** the integration head `d036e75`. WIP commits `adc4bad` + `1edc37a` were finished and squashed into this commit.
+- **Migration edited in place:** `0016_import_candidates.sql` (undeployed):
+  - `transactions_duplicate_advice_idx` on `(account_id, occurred_on, type, amount_minor, id) WHERE deleted_at IS NULL`;
+  - `import_previews_due_idx`;
+  - `gogospend_expire_due_import_previews(p_limit)` (SECURITY DEFINER, SKIP LOCKED, batched) granted to `gogospend_jobs`;
+  - `gogospend_end_import` / `gogospend_import_maintenance` / `gogospend_import_job_status` treat a recorded preview as parsed even after the parse job is pruned (minor 4).
+- **B1 (blocker): fail closed without a network-denying sandbox.**
+  - `parsers/sandbox-check.ts` + `ParserRunner.verifySandbox` / `sandboxVerdict`: real children with parse flags; unsupported unless network, writes, children, workers (and the rest) are denied.
+  - `importParsingStartup` / worker: no `import_parse` registration when unsupported; one fixed alert line.
+  - Local Node 26 proves network deny; Node 24 path proves `sandbox_unsupported` and an unregistered handler. Image/CI remain Node 24.22.0 until the owner raises the runtime.
+- **M1: linear duplicate advice.** `DUPLICATE_ADVICE_SQL` uses a window over the same-file key and `LATERAL … LIMIT 5` for existing records (backed by the new index). Tests: 5,000 identical rows + stale `ANALYZE`, 5,000 distinct rows, hash/merge joins off, parity with the old self-join.
+- **M2: exact legacy header sets only** (`table.ts`). Day-first and sign-as-direction never apply to inferred/generic layouts. Tests: `ambiguous_date` and `missing_type` cases from the review.
+- **M3: WebP memory.** `effort: 0`, `sharp.concurrency(1)`, `cache(false)`, `sharp.block`; Linux VmHWM poll. 5000×4000 noisy WebP covered in `parser-runner.spec.ts`.
+- **M4: 7-day expiry backstop.** Retention step `imports.previews` → `gogospend_expire_due_import_previews`. Preview route treats past `expires_at` as `expired` (empty candidates) even before retention runs.
+- **Minors done:** repeated XLSX relIds/sheet cap; generic sign → `missing_type`; per-file amount separators; parse-job prune vs upload expiry; narrowed image read roots. **Left optional:** additive preview paging; `release(lease, 'ocr_paused')`.
+- **Also:** worker import-maintenance log reworded so it no longer matches the `import maintenance failed` alert prefix; `incident.md` and `retention.md` updated for the sandbox and `imports.previews`.
+- **Focused GREEN:** `import-preview.integration.spec.ts` + privacy retention specs; `parser-runner.spec.ts` + `privacy-steps.spec.ts` (238). Full gate and image smoke recorded below after squash.

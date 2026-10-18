@@ -363,7 +363,7 @@ describe('other retention', () => {
     expect(report).toEqual({ counts: { 'fixture.counted': 3 }, failed: ['fixture.broken'] });
     // The default steps in their order.
     expect(defaultPrivacySteps().retentionSteps().map((step) => step.name)).toEqual([
-      'records.purge', 'sync.change_log', 'commands.receipt_digests', 'auth.security_records', 'jobs.finished', 'privacy.deletion_requests', 'imports.uploads',
+      'records.purge', 'sync.change_log', 'commands.receipt_digests', 'auth.security_records', 'jobs.finished', 'privacy.deletion_requests', 'imports.previews', 'imports.uploads',
       'attachments.obsolete', 'imports.selections',
     ]);
   });
