@@ -19,6 +19,10 @@
 //     be split, into smaller batches with new command ids.
 //   - The draft (review, mapping, pending commands, progress) is kept until
 //     every outcome is known.
+//   - A receipt photo's image is kept with its record (P2c) only when the user
+//     explicitly chose to keep it; a receipt that can no longer be kept
+//     refuses its batch, and the record can then be saved without it.
+import { IMPORT_IMAGE_ROW_ID, RECEIPT_RETENTION_CONSENT } from '@gogospend/contracts';
 import type { ConfirmImportBatch, ConfirmImportBatchResult, FreezeImportSelectionRequest, ImportCandidate, ImportMapping, ImportPreview, ImportRowPatch } from '@gogospend/contracts';
 
 import { V1Error } from '../../api/client.ts';
@@ -50,7 +54,9 @@ export type ImportProblemKind =
   /** Saving cannot continue until the user acts elsewhere (update, sign in, terms, session). */
   | 'blocked'
   | 'parse_failed'
-  | 'rejected';
+  | 'rejected'
+  /** The receipt image can no longer be kept (its window passed, or it was removed). */
+  | 'receipt_unavailable';
 export type ImportProblem = { kind: ImportProblemKind; code?: string; fields?: Record<string, string> };
 
 export type ImportJourney = {
@@ -74,6 +80,8 @@ export type ImportJourney = {
   conflicted: string[];
   remaining: string[];
   problem: ImportProblem | null;
+  /** The user explicitly chose to keep the receipt image with its record (never chosen for them). */
+  keepReceipt: boolean;
 };
 
 export type ImportDraftStore = { load(): Promise<ImportJourney | null>; save(journey: ImportJourney): Promise<void>; clear(): Promise<void> };
@@ -117,7 +125,7 @@ export function newJourney(): ImportJourney {
   return {
     stage: 'idle', jobId: null, pendingUpload: null, preview: null, reviewRevision: null, selected: [], reviewed: {}, edits: {},
     mapping: { wallets: {}, categories: { expense: {}, income: {} } }, pendingPatch: null, pendingFreeze: null, selection: null,
-    pendingBatch: null, batchSize: MAX_ROWS_PER_COMMAND, committed: [], conflicted: [], remaining: [], problem: null,
+    pendingBatch: null, batchSize: MAX_ROWS_PER_COMMAND, committed: [], conflicted: [], remaining: [], problem: null, keepReceipt: false,
   };
 }
 
@@ -195,6 +203,17 @@ export function reviewBlockers(journey: ImportJourney): ReviewBlocker[] {
     }
   }
   return blockers;
+}
+
+/** The import's receipt image, when it has one that can still be kept (P2c's attachable window), or null. */
+export function receiptImage(journey: ImportJourney): { attachment_id: string; attachable_until: string } | null {
+  const image = journey.preview?.summary?.image;
+  return image && image.attachable_until ? { attachment_id: image.attachment_id, attachable_until: image.attachable_until } : null;
+}
+
+/** The user's explicit choice to keep (or not) the receipt image with the record its row becomes. */
+export function chooseReceipt(journey: ImportJourney, keep: boolean): ImportJourney {
+  return { ...journey, keepReceipt: keep && receiptImage(journey) !== null };
 }
 
 export function progressCounts(journey: ImportJourney): { selected: number; committed: number; remaining: number; conflicted: number } {
@@ -421,7 +440,9 @@ export async function confirmBatches(journey: ImportJourney, deps: ImportDeps, o
       }
       if (options.maxBatches !== undefined && sent >= options.maxBatches) return saved(current, deps);
       const rows = current.remaining.slice(0, Math.min(current.batchSize, MAX_ROWS_PER_COMMAND));
-      pending = { key: deps.newId(), body: { selection_id: selection.id, frozen_revision: selection.frozenRevision, batch_row_ids: rows } };
+      const image = current.keepReceipt && rows.includes(IMPORT_IMAGE_ROW_ID) ? current.preview?.summary?.image : null;
+      const receipt = image ? { receipt: { attachment_id: image.attachment_id, consent: RECEIPT_RETENTION_CONSENT } } : {};
+      pending = { key: deps.newId(), body: { selection_id: selection.id, frozen_revision: selection.frozenRevision, batch_row_ids: rows, ...receipt } };
       current = await saved({ ...current, pendingBatch: pending }, deps);
     }
     sent += 1;
@@ -444,6 +465,10 @@ export async function confirmBatches(journey: ImportJourney, deps: ImportDeps, o
       }
       if (v1?.code === 'IMPORT_PREVIEW_UNAVAILABLE' || v1?.outcome === 'not_found') {
         return saved({ ...current, pendingBatch: null, stage: 'expired', problem: { kind: 'preview_unavailable', code: v1.code } }, deps);
+      }
+      if (pending.body.receipt && v1?.fields && Object.keys(v1.fields).some((field) => field.includes('attachment_id'))) {
+        // Nothing was saved; the user may save the record without the receipt (a new command).
+        return saved({ ...current, pendingBatch: null, problem: { kind: 'receipt_unavailable', code: v1.code, fields: v1.fields } }, deps);
       }
       return saved({ ...current, pendingBatch: null, problem: { kind: 'invalid', code: v1?.code, fields: v1?.fields } }, deps);
     }

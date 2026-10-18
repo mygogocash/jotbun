@@ -16,6 +16,7 @@ import { useCopy } from '@mobile/i18n/useCopy';
 import {
   REVIEW_FIELDS,
   awaitPreview,
+  chooseReceipt,
   confirmBatches,
   editRow,
   freezeSelection,
@@ -24,6 +25,7 @@ import {
   markReviewed,
   newJourney,
   progressCounts,
+  receiptImage,
   reloadPreview,
   resumeImport,
   reviewBlockers,
@@ -58,6 +60,7 @@ const PROBLEM_COPY: Readonly<Record<ImportProblem['kind'], ImportCopyKey>> = {
   blocked: 'blocked',
   parse_failed: 'rejected',
   rejected: 'rejected',
+  receipt_unavailable: 'receiptUnavailable',
 };
 
 type Busy = 'loading' | 'saving' | null;
@@ -139,7 +142,9 @@ export function ImportReviewScreen({ jobId, imports, store, pollMs }: { jobId: s
           ? { label: t('tryAgain'), onPress: () => void run(() => (journey.pendingPatch ? saveCorrections(journey, deps.current) : journey.pendingFreeze ? freezeSelection(journey, deps.current) : confirmBatches(journey, deps.current))) }
           : journey.problem.kind === 'review_changed' || journey.problem.kind === 'offline'
             ? { label: t('reload'), onPress: () => void run(() => reloadPreview(journey, deps.current)) }
-            : undefined
+            : journey.problem.kind === 'receipt_unavailable'
+              ? { label: t('saveWithoutReceipt'), onPress: () => void run(() => confirmBatches(chooseReceipt(journey, false), deps.current)) }
+              : undefined
       }
     />
   ) : null;
@@ -238,6 +243,9 @@ export function ImportReviewScreen({ jobId, imports, store, pollMs }: { jobId: s
             </ChipRow>
           ))}
         </Card>
+      ) : null}
+      {receiptImage(journey) ? (
+        <Chip label={t('keepReceipt')} selected={journey.keepReceipt} disabled={working} onPress={() => update((current) => chooseReceipt(current, !current.keepReceipt))} />
       ) : null}
       <Text accessibilityRole="header" style={{ color: colors.ink, fontWeight: '700' }}>{t('rowsHeading', { count: rows.length })}</Text>
       {rows.slice(0, shown).map((candidate) => {

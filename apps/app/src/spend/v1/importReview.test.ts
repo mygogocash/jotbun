@@ -7,6 +7,7 @@ import { V1Error, createV1Transport } from '../../api/client.ts';
 import type { V1Credentials } from '../../api/client.ts';
 import {
   awaitPreview,
+  chooseReceipt,
   confirmBatches,
   discardImport,
   editRow,
@@ -17,6 +18,7 @@ import {
   memoryDraftStore,
   newJourney,
   progressCounts,
+  receiptImage,
   reloadPreview,
   resumeImport,
   reviewBlockers,
@@ -28,7 +30,7 @@ import {
 import type { ImportDeps, ImportJourney } from './importReview.ts';
 import { createImportResources } from './imports.ts';
 import type { ImportFile } from './imports.ts';
-import { JOB_ID, createFakeImportServer, syntheticCandidates } from './testing/fakeImportServer.ts';
+import { JOB_ID, RECEIPT_ID, createFakeImportServer, syntheticCandidates } from './testing/fakeImportServer.ts';
 
 const CASH = '0000000a-0000-4000-8000-000000000001';
 const BANK = '0000000a-0000-4000-8000-000000000002';
@@ -321,6 +323,53 @@ describe('confirmation', () => {
     assert.ok(await store.load());
     await discardImport(deps);
     assert.equal(await store.load(), null);
+  });
+});
+
+describe('a receipt photo (P2c)', () => {
+  /** A receipt import: its one row, corrected and checked, with its labels mapped. */
+  async function receiptJourney() {
+    const server = createFakeImportServer({ candidates: [{ source_row_id: 'image:1', ordinal: 1, occurred_on: null, type: null, amount_minor: null, wallet_label: null, category_label: null, merchant: null, note: null, review_required: true }], receiptImage: true });
+    const store = memoryDraftStore();
+    const deps: ImportDeps = { resources: server.resources, store, newId, sleep: async () => undefined, pollMs: 1, maxPolls: 5 };
+    let journey = await awaitPreview(await startUpload(newJourney(), FILE, deps), deps);
+    journey = editRow(journey, 'image:1', { occurred_on: '2026-03-03', type: 'expense', amount_minor: '6500', wallet_label: 'Cash', category_label: 'food' });
+    journey = await saveCorrections(journey, deps);
+    journey = markReviewed(selectRows(journey, ['image:1'], true), ['image:1']);
+    journey = mapCategory(mapWallet(journey, 'Cash', CASH), 'expense', 'food', FOOD);
+    return { server, deps, journey: await freezeSelection(journey, deps) };
+  }
+
+  test('the image is kept with its record only when the user chose to keep it', async () => {
+    const { server, deps, journey } = await receiptJourney();
+    assert.equal(journey.keepReceipt, false);
+    assert.deepEqual(receiptImage(journey), { attachment_id: RECEIPT_ID, attachable_until: '2026-10-19T02:58:00.000Z' });
+    const kept = await confirmBatches(chooseReceipt(journey, true), deps);
+    assert.equal(kept.stage, 'done');
+    assert.deepEqual(server.callsOf('confirm').map((call) => (call.body as { receipt?: unknown }).receipt), [{ attachment_id: RECEIPT_ID, consent: 'retain_receipt' }]);
+    assert.equal(server.keptReceipts().size, 1);
+  });
+
+  test('without the choice no receipt is sent', async () => {
+    const { server, deps, journey } = await receiptJourney();
+    assert.equal((await confirmBatches(journey, deps)).stage, 'done');
+    assert.equal((server.callsOf('confirm')[0].body as { receipt?: unknown }).receipt, undefined);
+    assert.equal(server.keptReceipts().size, 0);
+  });
+
+  test('a receipt that can no longer be kept saves nothing; the record can then be saved without it, as a new command', async () => {
+    const { server, deps, journey } = await receiptJourney();
+    server.expireReceipt();
+    let current = await confirmBatches(chooseReceipt(journey, true), deps);
+    assert.equal(current.problem?.kind, 'receipt_unavailable');
+    assert.equal(current.pendingBatch, null);
+    assert.equal(server.transactions().length, 0);
+    current = await confirmBatches(chooseReceipt(current, false), deps);
+    assert.equal(current.stage, 'done');
+    const [first, second] = server.callsOf('confirm');
+    assert.notEqual(second.key, first.key);
+    assert.equal((second.body as { receipt?: unknown }).receipt, undefined);
+    assert.equal(server.transactions().length, 1);
   });
 });
 

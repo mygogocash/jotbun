@@ -60,6 +60,17 @@ export const IMPORT_REVIEW_COPY_DRAFT = {
   expired: { en: 'This import has expired. Nothing more can be saved from it.', th: 'รายการนำเข้านี้หมดอายุแล้ว บันทึกเพิ่มจากไฟล์นี้ไม่ได้' },
   rejected: { en: "This file couldn't be read. Nothing was saved.", th: 'อ่านไฟล์นี้ไม่ได้ ไม่มีการบันทึกรายการใด' },
   loading: { en: 'Loading', th: 'กำลังโหลด' },
+  // P2c's consent (approved catalog key: `attachments.retain_consent`, ATTACHMENT_MESSAGE_KEYS.retainConsent;
+  // the approved text must say what ATTACHMENT_COPY_REQUIREMENTS lists for it). Draft wording below.
+  keepReceipt: {
+    en: 'Keep the receipt photo with this entry. It stays until you remove it, delete the entry for good (30 days after deleting it) or delete your account.',
+    th: 'เก็บรูปใบเสร็จไว้กับรายการนี้ รูปจะอยู่จนกว่าคุณจะลบรูป ลบรายการถาวร (30 วันหลังลบ) หรือลบบัญชี',
+  },
+  receiptUnavailable: {
+    en: "The receipt photo can no longer be kept. Nothing was saved. You can save the entry without it.",
+    th: 'เก็บรูปใบเสร็จไม่ได้แล้ว ยังไม่มีการบันทึก คุณบันทึกรายการโดยไม่มีรูปได้',
+  },
+  saveWithoutReceipt: { en: 'Save without the photo', th: 'บันทึกโดยไม่มีรูป' },
 } as const;
 
 export type ImportCopyKey = keyof typeof IMPORT_REVIEW_COPY_DRAFT;

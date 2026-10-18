@@ -32,6 +32,7 @@
  * `GET /v1/imports/:job_id` returns the caller's own accepted import;
  * another account's id and an unknown id are the same `404 NOT_FOUND`.
  */
+import type { ReceiptRetentionConsent } from "./attachments.ts";
 import type { CommandAck, Minor, Revision } from "./common.ts";
 import { ContractValidationError } from "./errors.ts";
 import { MERCHANT_MAX_CHARS, NOTE_MAX_CHARS, TRANSACTION_TYPES, normalizeMerchant, normalizeNote } from "./transactions.ts";
@@ -497,6 +498,13 @@ export function isImportPreview(value: unknown): value is ImportPreview {
 //     (`ConfirmImportBatchResult`). Rows committed earlier, by any batch, are
 //     acknowledged and never written again; rows whose wallet or category can
 //     no longer take them are `conflicted` (nothing is written for them).
+//     A batch that contains a receipt image's row (`image:1`) may carry
+//     `receipt` - the preview's `summary.image.attachment_id` and the user's
+//     explicit consent - and the record it creates then holds that retained
+//     receipt (P2c), in the same command. A receipt that can no longer be kept
+//     (`attachable_until` passed, removed) refuses the batch with 422 and
+//     saves nothing: send it again without `receipt` (a new command) to save
+//     the record alone.
 //   GET   /v1/imports/:job_id/selections/:selection_id
 //     the selection's durable progress (`ImportSelectionProgress`).
 //
@@ -543,7 +551,11 @@ export type ImportMapping = {
 export type FreezeImportSelection = { job_id: string; review_revision: Revision; selected_row_ids: readonly string[]; mapping: ImportMapping };
 export type FreezeImportSelectionRequest = Omit<FreezeImportSelection, "job_id">;
 
-export type ConfirmImportBatch = { selection_id: string; frozen_revision: Revision; batch_row_ids: readonly string[] };
+/** Keep the import's receipt image with the record its row becomes (P2c), by explicit consent. */
+export type ImportReceiptChoice = { attachment_id: string; consent: ReceiptRetentionConsent };
+/** The source row id of an image import's one candidate. */
+export const IMPORT_IMAGE_ROW_ID = "image:1";
+export type ConfirmImportBatch = { selection_id: string; frozen_revision: Revision; batch_row_ids: readonly string[]; receipt?: ImportReceiptChoice };
 /**
  * `committed`: the batch's rows that are saved (now or by an earlier batch);
  * `conflicted`: the batch's rows that could not be saved now; `remaining`:

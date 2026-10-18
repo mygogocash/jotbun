@@ -1,7 +1,9 @@
-import { Inject, Injectable, Optional } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
+  ATTACHMENT_MESSAGE_KEYS,
   ContractValidationError,
   IMPORT_CONFIRM_BATCH_MAX_ROWS,
+  IMPORT_IMAGE_ROW_ID,
   IMPORT_PATCH_MAX_ROWS,
   IMPORT_SELECTION_MAX_ROWS,
   assertKnownFields,
@@ -12,6 +14,7 @@ import {
   parseImportMapping,
   parseImportRowIds,
   parseImportRowPatch,
+  RECEIPT_RETENTION_CONSENT,
 } from '@gogospend/contracts';
 import type {
   CommandAck,
@@ -22,6 +25,7 @@ import type {
   FreezeImportSelection,
   FreezeImportSelectionRequest,
   ImportMapping,
+  ImportReceiptChoice,
   ImportRowPatch,
   ImportSelectionProgress,
   ImportSelectionSnapshot,
@@ -30,18 +34,19 @@ import type {
   SessionContext,
 } from '@gogospend/contracts';
 
+import { AttachmentService } from '../attachments/attachments.service';
+import type { PreparedReceipt } from '../attachments/attachments.service';
 import { CommandExecutor } from '../commands/command-executor';
-import type { MutationResult } from '../commands/command-executor';
+import type { AuditMetadata, MutationResult } from '../commands/command-executor';
 import { CommandRegistry } from '../commands/command-registry';
 import { derivedUuid } from '../commands/derived-id';
 import { entityHead } from '../commands/entity-state';
+import { stateProblem } from '../commands/versioned-entity';
 import { ProblemException } from '../common/api-problem.filter';
 import { DatabaseService } from '../database/database.service';
 import type { OwnerTx } from '../database/owner-transaction';
 import { RECORD_COLUMNS, toDto } from '../transactions/transactions.repository';
 import type { RecordRow } from '../transactions/transactions.repository';
-import { IMPORT_RECEIPT_LINKS, NO_RECEIPT_LINKS } from './import-receipt-links';
-import type { ConfirmedImportRow, ImportReceiptLinks } from './import-receipt-links';
 
 export const REVIEW_ENTITY = 'import_review';
 export const SELECTION_ENTITY = 'import_selection';
@@ -81,15 +86,25 @@ export function parseFreezeBody(body: unknown): FreezeImportSelectionRequest {
   };
 }
 
-/** `ConfirmImportBatch`: the selection, its frozen revision and 1-500 distinct rows of it. */
+/**
+ * `ConfirmImportBatch`: the selection, its frozen revision and 1-500 distinct
+ * rows of it; `receipt` only with the receipt image's row in the batch and the
+ * user's explicit consent (P2c's literal).
+ */
 export function parseConfirmBody(body: unknown): ConfirmImportBatch {
-  const input = assertKnownFields(body, ['selection_id', 'frozen_revision', 'batch_row_ids']);
+  const input = assertKnownFields(body, ['selection_id', 'frozen_revision', 'batch_row_ids', 'receipt']);
   if (!isUuid(input.selection_id)) throw new ContractValidationError('VALIDATION_FAILED', 'selection_id must be a lower-case UUID.', 'selection_id');
-  return {
+  const batch: ConfirmImportBatch = {
     selection_id: input.selection_id,
     frozen_revision: revisionField(input.frozen_revision, 'frozen_revision'),
     batch_row_ids: parseImportRowIds(input.batch_row_ids, IMPORT_CONFIRM_BATCH_MAX_ROWS, 'batch_row_ids'),
   };
+  if (input.receipt === undefined) return batch;
+  const receipt = assertKnownFields(input.receipt, ['attachment_id', 'consent'], 'receipt');
+  if (receipt.consent !== RECEIPT_RETENTION_CONSENT) throw stateProblem(ATTACHMENT_MESSAGE_KEYS.consentRequired, 'receipt.consent');
+  if (!isUuid(receipt.attachment_id)) throw new ContractValidationError('VALIDATION_FAILED', 'attachment_id must be a lower-case UUID.', 'receipt.attachment_id');
+  if (!batch.batch_row_ids.includes(IMPORT_IMAGE_ROW_ID)) throw new ContractValidationError('VALIDATION_FAILED', 'A receipt goes with its image row.', 'receipt');
+  return { ...batch, receipt: { attachment_id: receipt.attachment_id, consent: RECEIPT_RETENTION_CONSENT } };
 }
 
 /** A 422 naming at most 50 rows (in file order) and why each cannot be used. */
@@ -130,7 +145,7 @@ export class ConfirmationService {
     private readonly db: DatabaseService,
     private readonly executor: CommandExecutor,
     registry: CommandRegistry,
-    @Optional() @Inject(IMPORT_RECEIPT_LINKS) private readonly receiptLinks: ImportReceiptLinks = NO_RECEIPT_LINKS,
+    private readonly attachments: AttachmentService,
   ) {
     registry.defineEntity({ entity: REVIEW_ENTITY, validate: isImportReviewSnapshot });
     registry.defineEntity({ entity: SELECTION_ENTITY, validate: isImportSelectionSnapshot });
@@ -214,10 +229,17 @@ export class ConfirmationService {
   async confirm(ctx: SessionContext, input: CommandInput<ConfirmImportBatch>, options: { jobId?: string } = {}): Promise<ConfirmImportBatchResult> {
     if (input.kind !== CONFIRM_KIND) throw new Error(`a confirmation uses ${CONFIRM_KIND}`);
     const batch = parseConfirmBody(input.payload);
-    const ack = await this.executor.run(ctx, { ...input, payload: { id: batch.selection_id, frozen_revision: batch.frozen_revision, batch_row_ids: batch.batch_row_ids } }, (tx) =>
-      this.confirmIn(tx, ctx, input.commandId, batch, options.jobId),
-    );
-    return this.outcome(ctx, batch, ack, options.jobId);
+    const { selection_id: id, ...rest } = batch;
+    // P2c: a kept receipt is copied to the account's own receipt key before the
+    // command (registry first, outside any transaction); the command links it.
+    const prepared = batch.receipt ? await this.attachments.prepare(ctx, batch.receipt.attachment_id, input.commandId) : null;
+    try {
+      const ack = await this.executor.run(ctx, { ...input, payload: { id, ...rest } }, (tx) => this.confirmIn(tx, ctx, input.commandId, batch, options.jobId, prepared));
+      return await this.outcome(ctx, batch, ack, options.jobId);
+    } finally {
+      // A copy the command did not publish is due at once.
+      if (prepared) await this.attachments.release(ctx, prepared).catch(() => undefined);
+    }
   }
 
   /** The selection's durable progress, or null for an unknown or foreign one. */
@@ -311,7 +333,7 @@ export class ConfirmationService {
     if (problems.size > 0) throw rowProblems(problems, 'errors.import_selection_invalid');
   }
 
-  private async confirmIn(tx: OwnerTx, ctx: SessionContext, commandId: string, batch: ConfirmImportBatch, jobId: string | undefined): Promise<MutationResult> {
+  private async confirmIn(tx: OwnerTx, ctx: SessionContext, commandId: string, batch: ConfirmImportBatch, jobId: string | undefined, prepared: PreparedReceipt | null): Promise<MutationResult> {
     const selection = await this.selection(tx, batch.selection_id);
     if (!selection || (jobId !== undefined && selection.job_id !== jobId)) throw new ProblemException(404, 'NOT_FOUND');
     if (selection.preview_status !== 'ready' || selection.expired) throw new ProblemException(409, 'IMPORT_PREVIEW_UNAVAILABLE', { messageKey: 'errors.import_preview_expired' });
@@ -368,12 +390,17 @@ export class ConfirmationService {
         [selection.job_id, selection.selection_id, commandId, JSON.stringify(saving)],
       );
     }
-    const byId = new Map(records.map((record) => [record.id, record]));
-    const confirmedRows: ConfirmedImportRow[] = saving.map((row) => ({ sourceRowId: row.source_row_id, transactionId: row.id, transactionVersion: (byId.get(row.id) as RecordRow).version }));
-    // P2C HOOK: retained receipts are linked here, in this transaction, once P2c binds IMPORT_RECEIPT_LINKS.
-    const linked: readonly EntityChange[] = confirmedRows.length > 0
-      ? await this.receiptLinks.linkConfirmedRows(tx, { jobId: selection.job_id, selectionId: selection.selection_id, commandId, rows: confirmedRows })
-      : [];
+    const audit: Record<string, string> = {};
+    // P2c: the record the receipt image's row becomes holds the kept receipt,
+    // in this transaction, under P2c's ownership and retention rules (a
+    // receipt past its window or removed refuses the whole batch).
+    const imageRecord = saving.find((row) => row.source_row_id === IMPORT_IMAGE_ROW_ID);
+    if (batch.receipt && prepared && imageRecord) {
+      await this.linkReceipt(tx, selection.job_id, batch.receipt, prepared, imageRecord.id);
+      const [held] = await tx.query<RecordRow>(`SELECT ${RECORD_COLUMNS} FROM transactions WHERE id = $1`, [imageRecord.id]);
+      records = records.map((record) => (record.id === held.id ? held : record));
+      audit.consent = RECEIPT_RETENTION_CONSENT;
+    }
 
     const [{ committed }] = await tx.query<{ committed: number }>(
       `SELECT count(*)::int AS committed FROM import_selection_rows r
@@ -394,10 +421,19 @@ export class ConfirmationService {
     const changes: EntityChange[] = [
       { entity: SELECTION_ENTITY, id: selection.selection_id, version, state: 'active', snapshot },
       ...records.map((record): EntityChange => ({ entity: 'transaction', id: record.id, version: record.version, state: 'active', snapshot: toDto(record) })),
-      ...linked,
     ];
     const conflicted = rows.length - rows.filter((row) => row.committed).length - saving.length;
-    return { entityId: selection.selection_id, version, changes, audit: { rows: String(saving.length), conflicted: String(conflicted) } };
+    const codes: AuditMetadata = { rows: String(saving.length), conflicted: String(conflicted), ...audit };
+    return { entityId: selection.selection_id, version, changes, audit: codes };
+  }
+
+  /** Only this import's own receipt image (the preview's attachment id) may be kept with its record. */
+  private async linkReceipt(tx: OwnerTx, jobId: string, receipt: ImportReceiptChoice, prepared: PreparedReceipt, transactionId: string): Promise<void> {
+    const [preview] = await tx.query<{ attachment_id: string | null }>('SELECT image_attachment_id AS attachment_id FROM import_previews WHERE job_id = $1', [jobId]);
+    if (!preview?.attachment_id || preview.attachment_id !== receipt.attachment_id || prepared.attachmentId !== receipt.attachment_id) {
+      throw stateProblem('errors.import_receipt_not_this_import', 'receipt.attachment_id');
+    }
+    await this.attachments.attachIn(tx, prepared, transactionId);
   }
 
   /** The batch's outcome from durable progress (the same for a replay of the same command). */

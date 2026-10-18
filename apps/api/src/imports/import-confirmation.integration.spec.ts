@@ -28,7 +28,7 @@ import { builtinId, moneyFixtures } from '../testing/money-fixtures';
 import { createTestDatabase } from '../testing/postgres-harness';
 import type { TestDatabase } from '../testing/postgres-harness';
 import { v1Client } from '../testing/v1-client';
-import { csv } from './fixtures/synthetic-parse';
+import { csv, imageWithMetadata } from './fixtures/synthetic-parse';
 
 // P3: explicit, resumable confirmation of a parsed import, against the real
 // v1 app, the real parser child and a disposable PostgreSQL.
@@ -121,13 +121,13 @@ async function sessionHeaders(user: SignedUp): Promise<Record<string, string>> {
   return { 'x-gogospend-client': 'ios/1.0.0', authorization: `Bearer ${await issuer.accessToken({ sub: user.who.subject })}`, 'x-gogospend-session': user.binding };
 }
 
-async function upload(user: SignedUp, body: Buffer): Promise<ImportJobDto> {
+async function upload(user: SignedUp, body: Buffer, file: { type: string; name: string } = { type: 'text/csv', name: 'statement.csv' }): Promise<ImportJobDto> {
   const res = await request(server)
     .post('/v1/imports')
     .set(await sessionHeaders(user))
     .set('idempotency-key', randomUUID())
-    .set('content-type', 'text/csv')
-    .set('x-gogospend-file-name', encodeURIComponent('statement.csv'))
+    .set('content-type', file.type)
+    .set('x-gogospend-file-name', encodeURIComponent(file.name))
     .send(body);
   if (res.status !== 202) throw new Error(`upload refused: ${res.status} ${JSON.stringify(res.body)}`);
   return res.body as ImportJobDto;
@@ -182,11 +182,12 @@ async function frozen(setup: Setup, ids: readonly string[], options: { revision?
   return (res.body as CommandAck).entity_id;
 }
 
-function confirm(setup: Setup, selectionId: string, ids: readonly string[], options: { frozenRevision?: string; key?: string } = {}) {
-  return as(setup.user).post(`/v1/imports/${setup.jobId}/confirmations`, { selection_id: selectionId, frozen_revision: options.frozenRevision ?? '1', batch_row_ids: ids }, { key: options.key });
+function confirm(setup: Setup, selectionId: string, ids: readonly string[], options: { frozenRevision?: string; key?: string; receipt?: unknown } = {}) {
+  const body = { selection_id: selectionId, frozen_revision: options.frozenRevision ?? '1', batch_row_ids: ids, ...(options.receipt === undefined ? {} : { receipt: options.receipt }) };
+  return as(setup.user).post(`/v1/imports/${setup.jobId}/confirmations`, body, { key: options.key });
 }
 
-async function confirmed(setup: Setup, selectionId: string, ids: readonly string[], options: { frozenRevision?: string; key?: string } = {}): Promise<ConfirmImportBatchResult> {
+async function confirmed(setup: Setup, selectionId: string, ids: readonly string[], options: { frozenRevision?: string; key?: string; receipt?: unknown } = {}): Promise<ConfirmImportBatchResult> {
   const res = await confirm(setup, selectionId, ids, options);
   expect([res.status, res.body.code]).toEqual([200, undefined]);
   return res.body as ConfirmImportBatchResult;
@@ -543,6 +544,80 @@ describe('the frozen selection and its batches', () => {
     const transfer = await freeze(setup, ['row:2'], { revision: '2' });
     expect([transfer.status, transfer.body.code, transfer.body.fields]).toEqual([422, 'VALIDATION_FAILED', { 'row:2': 'errors.import_row_transfer' }]);
     expect(await count('import_selections', setup.user.accountId)).toBe(0);
+  });
+});
+
+describe('receipts (P2c) kept with a confirmed image row', () => {
+  /** A member with Cash, a parsed receipt photo, its single row corrected (revision 2) and frozen. */
+  async function receiptImport(owner?: SignedUp) {
+    const user = owner ?? (await money.member());
+    const cash = owner ? null : await money.wallet(user, { name: 'Cash' });
+    const accepted = await upload(user, await imageWithMetadata('jpeg'), { type: 'image/jpeg', name: 'receipt.jpg' });
+    await runParse(accepted.job_id);
+    const preview = await previewOf(user, accepted.job_id);
+    expect(preview.candidates.map((row) => row.source_row_id)).toEqual(['image:1']);
+    const attachmentId = preview.summary?.image?.attachment_id as string;
+    expect(attachmentId).toMatch(/^[0-9a-f-]{36}$/);
+    const setup: Setup = { user, jobId: accepted.job_id, rows: [], wallets: { cash: cash ?? '', bank: '' }, mapping: { wallets: {}, categories: { expense: {}, income: {} } } };
+    return { setup, attachmentId };
+  }
+
+  it('the record an image row becomes holds the kept receipt, in the same command, only with consent', async () => {
+    const { setup, attachmentId } = await receiptImport();
+    const other = await receiptImport(setup.user);
+    const corrected = await patchRows(setup, 1, [{ source_row_id: 'image:1', occurred_on: '2026-03-03', type: 'expense', amount_minor: '6500', wallet_label: 'Cash', category_label: 'food' }]);
+    expect(corrected.status).toBe(200);
+    const mapping: ImportMapping = { wallets: { Cash: setup.wallets.cash }, categories: { expense: { food: builtinId(setup.user, 'food') }, income: {} } };
+    const selectionId = await frozen({ ...setup, mapping }, ['image:1'], { revision: '2', mapping });
+    const noConsent = await confirm(setup, selectionId, ['image:1'], { frozenRevision: '2', receipt: { attachment_id: attachmentId, consent: 'yes' } });
+    expect([noConsent.status, noConsent.body.message_key]).toEqual([422, 'errors.consent_required']);
+    const elsewhere = await confirm(setup, selectionId, ['image:1'], { frozenRevision: '2', receipt: { attachment_id: other.attachmentId, consent: 'retain_receipt' } });
+    expect([elsewhere.status, elsewhere.body.message_key]).toEqual([422, 'errors.import_receipt_not_this_import']);
+    expect(await count('transactions', setup.user.accountId)).toBe(0);
+    expect(await count('attachments', setup.user.accountId)).toBe(0);
+    // The copy made for the refused command is due at once, not left reserved.
+    expect(await adminRows(`SELECT key FROM object_publications WHERE account_id = $1 AND purpose = 'receipt' AND delete_after > now()`, [setup.user.accountId])).toEqual([]);
+
+    const key = randomUUID();
+    const receipt = { attachment_id: attachmentId, consent: 'retain_receipt' };
+    const result = await confirmed(setup, selectionId, ['image:1'], { frozenRevision: '2', key, receipt });
+    expect(result.committed).toEqual(['image:1']);
+    const recordId = transactionId(setup, 'image:1');
+    const record = await as(setup.user).get(`/v1/transactions/${recordId}`);
+    expect(record.body).toMatchObject({ id: recordId, amount_minor: '6500', occurred_on: '2026-03-03', version: 1, attachment_id: attachmentId });
+    const [change] = await adminRows<{ snapshot: { attachment_id?: string } }>(`SELECT snapshot FROM entity_changes WHERE account_id = $1 AND entity = 'transaction' AND entity_id = $2`, [setup.user.accountId, recordId]);
+    expect(change.snapshot.attachment_id).toBe(attachmentId);
+    const [audit] = await adminRows<{ metadata: Record<string, string> }>(`SELECT metadata FROM audit_events WHERE command_id = $1`, [key]);
+    expect(audit.metadata).toMatchObject({ consent: 'retain_receipt', rows: '1' });
+    // A replay keeps exactly one receipt and one published copy.
+    expect(await confirmed(setup, selectionId, ['image:1'], { frozenRevision: '2', key, receipt })).toEqual(result);
+    expect(await adminRows(`SELECT status FROM attachments WHERE account_id = $1`, [setup.user.accountId])).toEqual([{ status: 'retained' }]);
+    expect(await adminRows(`SELECT status FROM object_publications WHERE account_id = $1 AND purpose = 'receipt' AND status = 'published'`, [setup.user.accountId])).toEqual([{ status: 'published' }]);
+    expect((await as(setup.user).get(`/v1/attachments/${attachmentId}/grant`)).status).toBe(200);
+  });
+
+  it('a receipt that can no longer be kept refuses the batch, and the record can be saved without it', async () => {
+    const { setup, attachmentId } = await receiptImport();
+    expect((await patchRows(setup, 1, [{ source_row_id: 'image:1', occurred_on: '2026-03-03', type: 'expense', amount_minor: '6500', wallet_label: 'Cash', category_label: 'food' }])).status).toBe(200);
+    const mapping: ImportMapping = { wallets: { Cash: setup.wallets.cash }, categories: { expense: { food: builtinId(setup.user, 'food') }, income: {} } };
+    const selectionId = await frozen({ ...setup, mapping }, ['image:1'], { revision: '2', mapping });
+    // The sanitized image is past its window (less than two minutes left).
+    await db.admin((client) => client.query(`UPDATE object_publications SET delete_after = now() + interval '1 minute' WHERE job_id = $1 AND purpose = 'import_image'`, [setup.jobId]));
+    const late = await confirm(setup, selectionId, ['image:1'], { frozenRevision: '2', receipt: { attachment_id: attachmentId, consent: 'retain_receipt' } });
+    expect([late.status, late.body.message_key]).toEqual([422, 'errors.attachment_expired']);
+    expect(await count('transactions', setup.user.accountId)).toBe(0);
+    const alone = await confirmed(setup, selectionId, ['image:1'], { frozenRevision: '2' });
+    expect(alone.committed).toEqual(['image:1']);
+    const record = await as(setup.user).get(`/v1/transactions/${transactionId(setup, 'image:1')}`);
+    expect(record.body.attachment_id).toBeUndefined();
+    expect(await count('attachments', setup.user.accountId)).toBe(0);
+  });
+
+  it('a receipt goes only with its image row', async () => {
+    const setup = await parsedImport(fileRows(2));
+    const selectionId = await frozen(setup, ids(setup.rows));
+    const res = await confirm(setup, selectionId, ids(setup.rows), { receipt: { attachment_id: randomUUID(), consent: 'retain_receipt' } });
+    expect([res.status, res.body.fields]).toEqual([422, { receipt: 'VALIDATION_FAILED' }]);
   });
 });
 

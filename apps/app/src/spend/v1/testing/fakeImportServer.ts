@@ -57,7 +57,9 @@ export function syntheticCandidates(count: number, note: (i: number) => string |
   });
 }
 
-export function createFakeImportServer(options: { candidates: ImportCandidate[]; statuses?: ImportPreview['status'][]; groupBudgetBytes?: number }) {
+export const RECEIPT_ID = '9e8d7c6b-5a49-4382-a716-151413121110';
+
+export function createFakeImportServer(options: { candidates: ImportCandidate[]; statuses?: ImportPreview['status'][]; groupBudgetBytes?: number; receiptImage?: boolean }) {
   const candidates = new Map(options.candidates.map((row) => [row.source_row_id, { ...row }]));
   const statuses = [...(options.statuses ?? [])];
   const budget = options.groupBudgetBytes ?? 1024 * 1024;
@@ -72,6 +74,9 @@ export function createFakeImportServer(options: { candidates: ImportCandidate[];
   const calls: FakeImportCall[] = [];
   /** Rows whose wallet or category can no longer take them: reported conflicted, never saved. */
   const blocked = new Set<string>();
+  /** P2c: the record each kept receipt is held by. */
+  const keptReceipts = new Map<string, string>();
+  let receiptExpired = false;
   const scripts = new Map<ImportMethod, ImportScript[]>();
 
   const nextAck = (key: string, entityId: string, version: number, outcome: CommandAck['outcome']): CommandAck => {
@@ -106,7 +111,10 @@ export function createFakeImportServer(options: { candidates: ImportCandidate[];
     duplicate_advice: [],
     review_revision: String(revision),
     expires_at: '2026-10-25T03:00:00.000Z',
-    summary: { layout: 'generic', candidate_count: candidates.size, review_required_count: 0, totals: { expense_minor: '0', income_minor: '0', transfer_minor: '0' }, image: null },
+    summary: {
+      layout: options.receiptImage ? 'receipt' : 'generic', candidate_count: candidates.size, review_required_count: 0, totals: { expense_minor: '0', income_minor: '0', transfer_minor: '0' },
+      image: options.receiptImage ? { width: 64, height: 48, attachment_id: RECEIPT_ID, attachable_until: '2026-10-19T02:58:00.000Z' } : null,
+    },
   });
 
   const batchOutcome = (selectionId: string, batch: ConfirmImportBatch, ack: CommandAck): ConfirmImportBatchResult => {
@@ -196,11 +204,16 @@ export function createFakeImportServer(options: { candidates: ImportCandidate[];
           // One change group: each saved record's snapshot, about 300 bytes plus its note.
           const bytes = saving.reduce((sum, id) => sum + 300 + new TextEncoder().encode(selection.fields.get(id)?.note ?? '').length, 0);
           if (bytes > budget) throw new V1Error('too_large', 413, 'COMMAND_TOO_LARGE');
+          if (batch.receipt) {
+            if (batch.receipt.consent !== 'retain_receipt' || batch.receipt.attachment_id !== RECEIPT_ID) throw new V1Error('invalid', 422, 'VALIDATION_FAILED', { fields: { 'receipt.consent': 'errors.consent_required' } });
+            if (receiptExpired && saving.includes('image:1')) throw new V1Error('invalid', 422, 'VALIDATION_FAILED', { fields: { attachment_id: 'errors.attachment_expired' } });
+          }
           for (const id of saving) {
             sequence += 1;
             const transaction = uuid(1_000_000 + sequence);
             progress.set(id, transaction);
             transactions.set(transaction, { source_row_id: id, selection: batch.selection_id });
+            if (id === 'image:1' && batch.receipt) keptReceipts.set(batch.receipt.attachment_id, transaction);
           }
           selection.version += 1;
           return batchOutcome(batch.selection_id, batch, nextAck(key, batch.selection_id, selection.version, 'updated'));
@@ -243,6 +256,12 @@ export function createFakeImportServer(options: { candidates: ImportCandidate[];
         transactions.set(transaction, { source_row_id: id, selection: selectionId });
       }
     },
+    /** The receipt image's window passes. */
+    expireReceipt() {
+      receiptExpired = true;
+    },
+    /** Kept receipts: attachment id -> the record holding it. */
+    keptReceipts: () => new Map(keptReceipts),
     /** Their wallet or category was archived after the freeze. */
     blockRows(rowIds: readonly string[]) {
       for (const id of rowIds) blocked.add(id);

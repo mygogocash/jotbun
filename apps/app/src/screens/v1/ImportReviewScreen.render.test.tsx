@@ -3,7 +3,7 @@ import { afterEach, expect, test, vi } from 'vitest';
 
 import { memoryDraftStore } from '@mobile/spend/v1/importReview';
 import { BUILTINS, createFakeResources, goldenSeed } from '@mobile/spend/v1/testing/fakeResources';
-import { JOB_ID, createFakeImportServer, syntheticCandidates } from '@mobile/spend/v1/testing/fakeImportServer';
+import { JOB_ID, RECEIPT_ID, createFakeImportServer, syntheticCandidates } from '@mobile/spend/v1/testing/fakeImportServer';
 import { ImportReviewScreen } from './ImportReviewScreen';
 import { mountV1 } from './renderHarness';
 
@@ -82,6 +82,23 @@ test('changing a direction is a correction saved before anything can be saved', 
   expect(imports.callsOf('patchRows')[0].body).toEqual([{ source_row_id: 'row:2', type: 'income' }]);
   await waitFor(() => expect(screen.queryByRole('button', { name: 'Save corrections' })).toBeNull());
   expect(imports.transactions()).toHaveLength(0);
+});
+
+const RECEIPT_ROW = { source_row_id: 'image:1', ordinal: 1, occurred_on: '2026-09-02', type: 'expense' as const, amount_minor: '6500', wallet_label: 'Cash', category_label: 'food', merchant: null, note: null, review_required: true };
+
+test.each([[true, 1], [false, 0]])('a receipt photo is kept with its entry only when the user chooses it (chosen: %s)', async (choose, kept) => {
+  const imports = createFakeImportServer({ candidates: [RECEIPT_ROW], receiptImage: true });
+  mountV1(<ImportReviewScreen jobId={JOB_ID} imports={imports.resources} store={memoryDraftStore()} pollMs={1} />, createFakeResources(goldenSeed()).resources);
+  await screen.findByText('Nothing from this file has been saved yet. Choose the rows to save and check each one.');
+  click('Include row 1');
+  click('Row 1: date, direction, category and wallet are right');
+  click('Cash: use Cash');
+  click('food: use Food');
+  if (choose) click(/Keep the receipt photo with this entry/);
+  click('Save 1 rows');
+  expect(await screen.findByText('Saved 1 entries from this file.')).toBeTruthy();
+  expect(imports.keptReceipts().size).toBe(kept);
+  if (choose) expect(imports.keptReceipts().has(RECEIPT_ID)).toBe(true);
 });
 
 test('Thai shows the draft Thai copy', async () => {
