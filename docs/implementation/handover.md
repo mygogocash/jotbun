@@ -192,7 +192,7 @@ Beta stays blocked without hosted evidence. The next product-critical gate is **
 1. **Worker runtime ≥ Node 25 (recommended: 26).** Without it, the parser child can't be denied network access, and imports must fail closed (already implemented). This changes the Docker base image and CI's Node version (a new digest pin).
 2. **Lockfile regeneration with Linux native bindings** (`@swc/core`, `unrs-resolver`, `sharp`). Until it happens, Linux builds and hosted CI rely on `scripts/ci/linux-native-bindings.mjs`.
 3. **Pushing** the local commits (integration branch and any task branches), and the next PR.
-4. **Recreating `gogospend_v1`** (local dev data, if any).
+4. ~~**Recreating `gogospend_v1`**~~ **Done** (empty: 0 accounts, 0 transactions, 0 wallets). The next `dev:v1` applies the current migrations.
 5. **E1–E4 authority** (next section) for every hosted, native and release step.
 6. **Visual approvals** (E2): M5 states, the S4 banner, sign-out confirmation, F5 login UX, the P4 export screen, the P5 privacy and deletion screen, the P3 import review and progress screens, receipt copy (P2c), and the S4 settings and needs-review screens.
 7. **Import draft at rest.** The device-backed import draft (`d16c528`) is in AsyncStorage: unencrypted, and not covered by iOS backup exclusion until S2's native step exists. Accept that for the review screen, or require the native exclusion first, or move the draft into the encrypted diary.
