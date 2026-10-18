@@ -30,6 +30,13 @@ are exposed. Receipts can only come from image imports, which stay off
 (`IMPORT_UPLOADS_ENABLED`) until the import release step, so that step is
 where the floor and minimums move together.
 
+P3 adds two synced entity types, `import_review` (an import's correction
+revision) and `import_selection` (a frozen selection's progress counts). Once
+any account has corrected or frozen an import, the floor is the first
+deployed revision that contains P3 (`0018_import_confirmation`). Imports stay
+disabled until their gates pass, so until then the P4 floor above still
+holds; the release that enables imports records the raised floor.
+
 ## Before rolling back
 
 1. **Target at or above the floor**, and its image digest is the one that was

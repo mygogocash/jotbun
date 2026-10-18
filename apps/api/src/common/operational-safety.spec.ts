@@ -125,6 +125,10 @@ const PROBES: readonly Probe[] = [
   { name: 'request export', method: 'post', path: '/v1/exports', scopes: ['jobs'] },
   { name: 'request snapshot', method: 'post', path: '/v1/sync/snapshots', scopes: ['jobs'] },
   { name: 'upload import', method: 'post', path: '/v1/imports', scopes: ['uploads', 'imports'], contentType: 'text/csv' },
+  { name: 'correct import rows', method: 'patch', path: `/v1/imports/${ID}/rows`, scopes: ['imports'] },
+  { name: 'freeze import selection', method: 'post', path: `/v1/imports/${ID}/selections`, scopes: ['imports'] },
+  { name: 'confirm import batch', method: 'post', path: `/v1/imports/${ID}/confirmations`, scopes: ['imports', 'writes'] },
+  { name: 'read import selection', method: 'get', path: `/v1/imports/${ID}/selections/${ID}`, scopes: [] },
   { name: 'read wallets', method: 'get', path: '/v1/wallets', scopes: [] },
   { name: 'read history', method: 'get', path: '/v1/history?from=2026-10-01&through=2026-10-31', scopes: [] },
   { name: 'read export', method: 'get', path: `/v1/exports/${ID}`, scopes: [] },
@@ -266,6 +270,10 @@ describe('feature gates', () => {
         'POST /v1/sync/snapshots': 'jobs',
         // Uploads start an import.
         'POST /v1/imports': 'imports,uploads',
+        // P3: review corrections and the frozen selection; confirmation also writes records.
+        'PATCH /v1/imports/:id/rows': 'imports',
+        'POST /v1/imports/:id/selections': 'imports',
+        'POST /v1/imports/:id/confirmations': 'imports,writes',
       });
       expect(routeManifest(app).filter((entry) => entry.route.startsWith('GET ') && entry.gates.length > 0)).toEqual([]);
     } finally {
@@ -285,6 +293,7 @@ describe('feature gates', () => {
         'budget.create', 'budget.replace',
         'category.archive', 'category.create', 'category.seed_builtins', 'category.unarchive', 'category.update',
         'export.request',
+        'import.review.patch', 'import.selection.confirm', 'import.selection.freeze',
         'transaction.create', 'transaction.delete', 'transaction.restore', 'transaction.update',
         'wallet.archive', 'wallet.create', 'wallet.unarchive', 'wallet.update',
       ].map((kind) => [kind, [1]])));

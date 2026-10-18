@@ -152,9 +152,9 @@ A migration that needs a long lock or rewrites rows must say so in its file
 and in the release record, and runs with `OPERATIONAL_PAUSE=writes` on the
 API for its duration ([incident.md](incident.md#pausing)).
 
-Current journal at this revision: `0001_identity` … `0017_attachments`
-(P2b's `0016_import_candidates`, P2c's `0017_attachments`). P3 adds the next
-number at integration.
+Current journal at this revision: `0001_identity` … `0018_import_confirmation`
+(P2b's `0016_import_candidates`, P2c's `0017_attachments`, P3's
+`0018_import_confirmation`).
 
 ## Command-schema and minimum-client-version compatibility
 
@@ -162,6 +162,7 @@ number at integration.
   `X-GoGoSpend-Command-Schema: 1`: `attachment.remove|replace|retain` (P2c),
   `budget.create`, `budget.replace`,
   `category.archive|create|seed_builtins|unarchive|update`, `export.request`,
+  `import.review.patch`, `import.selection.confirm|freeze` (P3),
   `transaction.create|delete|restore|update`,
   `wallet.archive|create|unarchive|update`. The table is pinned by
   `operational-safety.spec.ts` ("the command-schema compatibility table"), so
