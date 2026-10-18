@@ -11,6 +11,9 @@ vi.mock('../../../../../node_modules/react-native-svg/lib/module/lib/resolveAsse
 vi.mock('react-native-safe-area-context', () => import('./safeAreaTestStub'));
 const router = vi.hoisted(() => ({ params: {} as Record<string, string> }));
 vi.mock('expo-router', () => ({ useLocalSearchParams: () => router.params }));
+// The catalogue's screen sections import the real screens and the route params context; none is opened here.
+vi.mock('expo-router/build/Route', () => import('./routerTestStub'));
+vi.mock('expo-crypto', () => ({ randomUUID: () => globalThis.crypto.randomUUID() }));
 
 import DevCatalogueRoute from '../../../app/dev/catalogue';
 import { installBrowserStorage } from '@mobile/mascot/mascotTestHarness';

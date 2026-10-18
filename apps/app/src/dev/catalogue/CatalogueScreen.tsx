@@ -1,7 +1,9 @@
 // The screen catalogue (redesign R2c): every redesigned component and screen
 // state on its own screen, for the E2 visual-approval screenshots. Development
 // only; app/dev/catalogue.tsx loads it behind `__DEV__` and the `catalogue`
-// redesign flag. It needs no sign-in and no data: sections draw sample data.
+// redesign flag. It needs no sign-in and no data: component sections draw
+// sample data, and screen sections draw the real screens on the test fakes
+// (./screenSection.tsx), with no network.
 //
 // The header picks the section, the theme (Light, Dark, System), the locale
 // (EN, TH, VI) and the bun intensity (Full, Quiet, Off). Theme and locale wrap
@@ -241,6 +243,15 @@ function SectionBody({ section }: { section: CatalogueSection }) {
   );
 }
 
+/** A whole screen: edge to edge under the header, scrolling on its own as it does in the app. */
+function ScreenBody({ section }: { section: CatalogueSection }) {
+  return (
+    <View testID={`catalogue-section-${section.id}`} style={{ flex: 1 }}>
+      {section.render()}
+    </View>
+  );
+}
+
 function CatalogueBody({ view, onView }: { view: CatalogueView; onView: (change: Partial<CatalogueView>) => void }) {
   const colors = useBunColors();
   const insets = useSafeAreaInsets();
@@ -251,13 +262,17 @@ function CatalogueBody({ view, onView }: { view: CatalogueView; onView: (change:
     <View testID="catalogue" style={{ flex: 1, backgroundColor: colors.background }}>
       <ThemedStatusBar />
       <CatalogueHeader view={view} at={at} onView={onView} onSection={openSection} />
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ padding: PAGE_PADDING, paddingBottom: insets.bottom + PAGE_PADDING }}
-        keyboardShouldPersistTaps="handled"
-      >
-        {section ? <SectionBody key={section.id} section={section} /> : <CatalogueIndex missing={view.section} onOpen={openSection} />}
-      </ScrollView>
+      {section?.layout === 'screen' ? (
+        <ScreenBody key={section.id} section={section} />
+      ) : (
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ padding: PAGE_PADDING, paddingBottom: insets.bottom + PAGE_PADDING }}
+          keyboardShouldPersistTaps="handled"
+        >
+          {section ? <SectionBody key={section.id} section={section} /> : <CatalogueIndex missing={view.section} onOpen={openSection} />}
+        </ScrollView>
+      )}
     </View>
   );
 }

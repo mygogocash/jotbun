@@ -80,13 +80,27 @@ type SampleWords = {
   readonly salary: string;
   readonly note: string;
   readonly merchant: string;
+  /** Categories a person made themselves. */
+  readonly pets: string;
+  readonly misc: string;
+  /** An archived wallet's name. */
+  readonly oldPurse: string;
 };
 
 // What a person types, in their own language. Not interface copy.
 const WORDS: Readonly<Record<Locale, SampleWords>> = {
-  en: { cash: cash!.name, daily: daily!.name, coffee: 'Coffee', lunch: 'Chicken rice', rent: 'Rent', salary: 'September salary', note: 'Lunch with Mai at the market', merchant: 'Corner café' },
-  th: { cash: 'เงินสด', daily: 'บัญชีใช้จ่าย', coffee: 'กาแฟ', lunch: 'ข้าวมันไก่', rent: 'ค่าเช่าห้อง', salary: 'เงินเดือนกันยายน', note: 'กินข้าวกับใหม่ที่ตลาด', merchant: 'ร้านกาแฟหัวมุม' },
-  vi: { cash: 'Tiền mặt', daily: 'Tài khoản chi tiêu', coffee: 'Cà phê', lunch: 'Cơm gà', rent: 'Tiền nhà', salary: 'Lương tháng 9', note: 'Ăn trưa với Mai ở chợ', merchant: 'Quán cà phê góc phố' },
+  en: {
+    cash: cash!.name, daily: daily!.name, coffee: 'Coffee', lunch: 'Chicken rice', rent: 'Rent', salary: 'September salary', note: 'Lunch with Mai at the market', merchant: 'Corner café',
+    pets: 'Pets', misc: 'Odds and ends', oldPurse: 'Old purse',
+  },
+  th: {
+    cash: 'เงินสด', daily: 'บัญชีใช้จ่าย', coffee: 'กาแฟ', lunch: 'ข้าวมันไก่', rent: 'ค่าเช่าห้อง', salary: 'เงินเดือนกันยายน', note: 'กินข้าวกับใหม่ที่ตลาด', merchant: 'ร้านกาแฟหัวมุม',
+    pets: 'สัตว์เลี้ยง', misc: 'เบ็ดเตล็ด', oldPurse: 'กระเป๋าเก่า',
+  },
+  vi: {
+    cash: 'Tiền mặt', daily: 'Tài khoản chi tiêu', coffee: 'Cà phê', lunch: 'Cơm gà', rent: 'Tiền nhà', salary: 'Lương tháng 9', note: 'Ăn trưa với Mai ở chợ', merchant: 'Quán cà phê góc phố',
+    pets: 'Thú cưng', misc: 'Linh tinh', oldPurse: 'Ví cũ',
+  },
 };
 
 const DATE_TAG: Readonly<Record<Locale, string>> = { en: 'en-GB', th: 'th-TH', vi: 'vi-VN' };
@@ -100,6 +114,11 @@ export type Samples = SampleWords & {
   /** A satang amount as drawn, e.g. "฿182.00". */
   readonly money: (minor: Minor) => string;
 };
+
+/** What a person types, in `locale`: the words the sections show (tests read them here too). */
+export function sampleWords(locale: Locale): SampleWords {
+  return WORDS[locale];
+}
 
 export function useSamples(): Samples {
   const locale = useActiveLocale();

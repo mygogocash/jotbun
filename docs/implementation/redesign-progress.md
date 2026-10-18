@@ -966,3 +966,108 @@ Built on `d86001c`, then merged with the integration branch at `7d1baea` (kit un
   - Dynamic Type at the largest size.
 
   The flag stays off until the screenshots are approved.
+
+## R2c+: catalogue entries for R2b and Home
+
+Built on `7d1baea`. At the coordinator's request it was then fast-forwarded to `add1158` (R3 Quick add) and `4043db3` (R3 History and Record), and those screens' states were added as well. All three now have sections, so no placeholders are left.
+
+- **What changed:** files under `src/dev/catalogue/` only.
+  - **New:**
+    - `entrySections.tsx`: R2b;
+    - `screenSection.tsx`: the screen stage and the script runner;
+    - `screenFixtures.ts`: the fakes;
+    - `homeSections.tsx`, `quickAddSections.tsx`, `historySections.tsx` and `recordSections.tsx`;
+    - `routerTestStub.tsx`: test use only.
+  - **Changed:** `registry.tsx`, `CatalogueScreen.tsx` (a screen section fills the body), `samples.ts` (more typed words), and both catalogue tests.
+  - **Not changed:** no component, screen, route, locale catalog, package, lockfile or `vendor/` file.
+- **Sections:** 53 new, 74 in all. Deep link: `gogospend://dev/catalogue?section=<id>&theme=<light|dark|system>&locale=<en|th|vi>`.
+
+  | Group | ids | Shows |
+  | --- | --- | --- |
+  | Kit (R2b) | `keypad` | `12.50 + 7.25` typed, its exact sum (−฿19.75) live above a working keypad, refusals in words |
+  | | `type-switch` | Expense (live), Income, Move, disabled |
+  | | `category-chips` | top three by use with More opening the grid; a pick from More kept in view; income with no choice; disabled. Built-ins and the person's own (pastel and plain) |
+  | | `category-grid` | expense (6 built-ins + 3 of the person's own) and income |
+  | | `wallet-picker`, `wallet-picker-move` | one wallet (live, disabled; an archived one never offered); move with Swap and Move all, and the same-wallet error |
+  | | `date-chip` | today (forward disabled), yesterday, a past date with the tracking start as earliest, last year (Thai 2568) |
+  | | `note-field` | empty, filled, merchant over 120 characters, note with a server problem |
+  | | `record-row` | confirmed (long-press for actions), saving, checking, needs a look; income, move, a category of the person's own |
+  | | `day-header` | today, yesterday with out and in kept apart, in only, last year (Buddhist era), nothing confirmed |
+  | | `budget-bar`, `pace-ring`, `pace-ring-over` | on track, tight, over, no budget, from real `budgetPace()` output on 21 September through `toKitPace` |
+  | Home | `home-ready`, `home-over-budget`, `home-no-budget`, `home-first-run`, `home-offline`, `home-saving`, `home-needs-review`, `home-upgrade`, `home-signed-out`, `home-locked` | the golden month with the plan's ฿18,000.00 budget (฿10,000.00 when over, none for no budget); device drafts for offline, saving and checking, and needs review; load problems; a locked diary |
+  | Quick add | `quick-add-empty`, `quick-add-sum`, `quick-add-categories`, `quick-add-move`, `quick-add-details`, `quick-add-saving`, `quick-add-unconfirmed`, `quick-add-saved`, `quick-add-copy`, `quick-add-no-wallet`, `quick-add-device-error` | as the render test reaches them: the keys typed, the More sheet open, Move with Cash on both sides, details typed, a held save, a lost answer, the saved moment with the cheer, `copyOf` the rent, no wallet, a refused device save |
+  | History | `history-month`, `history-search`, `history-search-thai`, `history-search-partial`, `history-filters`, `history-empty`, `history-no-match`, `history-undo`, `history-drafts`, `history-refresh`, `history-offline` | "rent"; "ปู่" over Thai notes; Food over a two-page month; Expense + Cash + Food; no records; Travel; the rent deleted; device drafts in their days; `refresh_suggested`; history unreachable with a draft kept |
+  | Record | `record-expense`, `record-income`, `record-move`, `record-draft`, `record-edit`, `record-conflict`, `record-deleted`, `record-unconfirmed` | the golden rent, salary and move; a device draft; edit mode; the rent edited to ฿12,000.00 while another device changes it, deletes it (Restore, 30 days), or the answer is lost |
+
+- **Screen sections:** `screenSection({ id, title, fixture, script?, render })` in `screenSection.tsx`. A future screen state is one entry; see the comment in `registry.tsx`.
+  - **The screen:** the real screen, with `now` pinned to `CATALOGUE_NOW`: 29 September 2026, 10:00 in Bangkok, the day after the last golden record. It is drawn edge to edge under the catalogue's header (`layout: 'screen'`) and scrolls as it does in the app.
+  - **Fakes:** each visit builds fresh ones (`fixture`).
+    - The resources are `createFakeResources` on `goldenSeed`, and the diary, where a state needs one, is `createFakeDiary`. There is no network and no sign-in. The render test asserts that `fetch` is never called, and the web check saw no request leave the dev server.
+    - The helpers in `screenFixtures.ts` mirror the screens' render-test harnesses, which import testing libraries and so cannot load in the app.
+    - Load problems use `alwaysFails`, not the fake's one-shot `fail`, so a retry, remount or refocus shows the same state.
+  - **Providers:** the stage provides `SpendV1Provider`, `SpendDiaryProvider` and expo-router's `LocalRouteParamsContext` (Quick add's `copyOf`; `expo-router/build/Route` is a declared package export). Insets are zero at the top, because the header covers the status bar, and real at the bottom.
+  - **The cheer bun:** the cheer shows once per stored day, and the catalogue's day never changes. So `quick-add-saved` moves a stored `2026-09-29` back one day before it opens. The app compares the stored day with the real today, so a September 2026 date changes nothing there.
+- **Scripts (deviation):** the screens take no initial state, and they were not to be changed. Their in-between states (a typed sum, an open sheet, a save in flight, a conflict) are therefore reached the way their render tests reach them.
+  - **How:** a class component reads its own fiber (`_reactInternals`), finds the current tree from the root, and calls the `onPress` or `onChangeText` the screen gave a control, found by its accessibility label. It can also call a row's `onDelete`, change the fakes "on another device", and wait for a label, text or testID.
+  - **This is a React internal.** It lives only in development code that never ships, and the render tests fail if it stops working. It was checked on react-dom (vitest and a Metro web bundle) but not on React Native's renderer, which keeps the same fiber fields.
+  - **Status:** the section reads `catalogue-screen-running` until the script is done. If a step cannot be done within 8 s, an ink strip over the screen says which step stopped (`catalogue-screen-stopped`), so a screenshot cannot pass for the state.
+  - **Navigation:** the screens' own navigation (Close, Done, Back, Add, a row) uses the app's real router and leaves the catalogue.
+- **Fit on one screen** (R2b sections). Measured as in R2c: `expo start --web` with the flag on, at 402 × 874, header plus body plus 62/34 pt insets.
+  - Every section fits in EN, TH and VI. The tallest are `record-row` in Thai at 859 pt (15 pt spare) and `category-chips` at 835 pt.
+  - All 74 titles keep the header on one line.
+  - Screen sections scroll, as the screens do.
+- **RED → GREEN:** `vitest run --config vitest.render.config.ts src/dev`, against seams with the real types (a `screenSection` that draws nothing, empty slots, and `sampleWords` with blank words).
+  - **RED:** 56 of 91 failed: 53 `AssertionError`s (each new id unregistered), 1 registry `AssertionError` and 2 elements not found. There were no module or type errors. The 35 that held are the 21 existing sections, the other existing catalogue tests and the 3 route tests. Before counting, one harness bug was fixed: the screen wait ran `waitFor` under the confirm test's fake timers.
+  - **GREEN:** 91 of 91.
+  - **Changes while green:**
+    - A specimen label was renamed: "Yesterday" collided with the chip's own text.
+    - One test was added after the mutation run: a load-problem state stays put when retried.
+    - The top and bottom inset assertion was added to the edge-to-edge test.
+    - That makes 92.
+  - **Content checks:** every new id has its own entry in `SHOWS`, checked in light and dark in every locale. Examples: the golden `฿12,450.00 of ฿18,000.00`, `฿2,775.00` a day and `฿21,050.00` balance; "It happens. ฿12,450.00 of ฿10,000.00 spent."; `12.50 + 7.25` and `฿19.75`; the cheer bun; one "Choose two different wallets"; the conflict panel.
+- **Mutation check:** 12 guards were mutated one at a time with `r2cp-mutate.py` (scratchpad). All 12 were caught, and every file was restored byte for byte.
+
+  | Mutation | Caught by |
+  | --- | --- |
+  | route params not overridden | `quick-add-copy` |
+  | script presses nothing | `quick-add-sum`, `history-filters` |
+  | script types nothing | `quick-add-details`, `history-search` |
+  | a step never found counts as done | the stopped-script test |
+  | top inset kept under the header | edge-to-edge test |
+  | screens inside the padded scroll view | edge-to-edge test |
+  | cheer day not reset | `quick-add-saved` |
+  | Home ready without the budget | `home-ready` |
+  | load problems fail once, not always | the stays-put test (added for this; it was missed first) |
+  | budget pace on the fixtures' day (tight impossible) | `budget-bar`, `pace-ring` |
+  | the over sample under its limit | `budget-bar`, `pace-ring-over` |
+  | conflict without the other device's change | `record-conflict` |
+
+- **Production-bundle check:** PASS. `r2cp-bundle-check.sh` (scratchpad) greps `dist` for 25 markers: R2c's 10, plus 15 new ones (section titles, the runner's testID and stop message, sample words, the fakes' ids and messages, the budget label).
+  - **Default flag** (`npm run export:web -w gogospend-app -- --max-workers 2`): 0 of 25 found. "Not available" is in 1 file. The route chunk `catalogue-<hash>.js` is still 830 bytes.
+  - **Flag on** (`EXPO_PUBLIC_REDESIGN=all`, production): 0 of 25, and a byte-identical route chunk.
+  - **Positive control** (`--dev`, flag on): all 25 found.
+- **App gate** (from the worktree root):
+
+  | Step | Before (`4043db3`) | After |
+  | --- | --- | --- |
+  | typecheck:app | PASS | PASS |
+  | test:unit | PASS, 414 | PASS, 414 |
+  | test:render | PASS, 432 in 45 files | PASS, 488 in 45 files |
+  | export:web (`--max-workers 2`) | PASS | PASS |
+  | `git diff --check` | clean | clean |
+
+- **Findings, not fixed (other owners' files):**
+  1. **Typed routes break the typecheck once generated.**
+     - **What happens:** `expo start` writes `.expo/types/router.d.ts` and `expo-env.d.ts`. Both are git-ignored, so a clean checkout never has them. Once they exist, `typecheck:app` fails 6 times:
+       - in `HistoryScreen.tsx`, at lines 297 and 331–333;
+       - in `RecordScreen.tsx`, at lines 320 and 412.
+     - **Why:** `recordRoute()` and `copyRoute()` in `HistoryParts.tsx` return `string`, which typed routes refuse for `router.push`.
+     - **Fix:** type the helpers' results as `Href`.
+     - **Here:** the web check created both files; they were deleted before the gate.
+  2. **"None" is not in the catalogs.** The conflict panel's empty fields read "None" in Thai and Vietnamese. It is missing from History's list of new strings.
+  3. **The Home stage peek** shows only the top of the bun's head at the stage's lower right on the web. It is as R3 built it (the peek rises from the slot); its geometry is already an E2 item.
+  4. Nothing else drew wrongly in the web spot-check: `quick-add-sum`, `home-ready` (TH), `quick-add-saved` (dark), `quick-add-categories` (VI), `history-filters`, `record-conflict` (dark TH) and `history-undo`. There were no console errors.
+- **SKIPPED:**
+  - simulator screenshots (E2);
+  - the scripts on iOS and Android (checked on the web only);
+  - the one-screen fit with iOS font metrics. The tightest section, `record-row` in Thai, has 15 pt to spare on the web.
