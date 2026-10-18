@@ -832,3 +832,137 @@ Built on `d86001c`, then fast-forwarded onto `7d1baea` (kit unification, Home an
   - haptics on device.
 
   The flag stays off until the screenshots are approved.
+
+## R3: History and record
+
+Built on `d86001c`, then merged with the integration branch at `7d1baea` (kit unification, Home and the tab shell) and `add1158` (Quick add). Behind `isRedesignEnabled('core')`. The current `TransactionsScreen` and its tests are untouched. No package or lockfile change, and the locale catalogs are untouched.
+
+- **Files:**
+  - `src/screens/redesign/HistoryScreen.tsx`, `RecordScreen.tsx` and `HistoryParts.tsx` (filter chips, search field, notice, loading block, routes, Back);
+  - `HistoryTestHarness.tsx` (test only), `HistoryScreen.render.test.tsx` and `RecordScreen.render.test.tsx`;
+  - routes: `app/spend/all.tsx` picks History when the flag is on (the month lives in `?month=`), and the new `app/spend/record/[id].tsx` redirects to `/spend/all` when the flag is off, in the legacy build, or without an id.
+- **Outside the new files:**
+  - `historyModel.ts` exports `summaryLine`, so a filter's summary can word the server's exact totals.
+  - `fakeResources.history` honours `wallet_id` and `category_id` as the server does (a move matches on either side).
+  - `HomeScreen.tsx` drops its `as Href` cast now that the record route exists (the coordinator asked for this).
+- **History (`/spend/all`):**
+  - **Header:** `StageHeader` titled "History" (to match the tab), with the month switcher and the month's money in and out from the server. Next is disabled after the current month, because entries are never in the future.
+  - **Search:** a sticky field, searched on this device over the loaded pages with `historyModel` (category name, merchant, note; Thai folding).
+  - **Filters:** type, wallet and category chips (radio groups). A move has no category, so choosing Transfer hides the category chips and clears that filter. All three filters are sent to `/v1/history` too, so paging and totals cover the whole filter. `historyModel` applies them again, which also filters the drafts.
+  - **Summary bar:** a polite live region with "2 entries, ฿12,450.00 out", the drafts counted apart, and Clear filters.
+    - With filters only, the count and money are the server's exact totals.
+    - With a search, they come from the loaded pages, and the bar says "Only loaded entries are searched. Load more to search the rest." until every page is in.
+  - **List:** day groups with `DayHeader` (confirmed money only), the waiting and checking draft lines, then `RecordRow`s.
+    - Rows read "Bills, Expense ฿12,268.00, Daily account · Rent", with the merchant and note after the wallet.
+    - Drafts show "saving…", "checking…" or "needs a look". An update-to-send draft reads "saving…" with "Update Jotbun to send" under it.
+    - Keyset pages with no hidden cap, and "Load more".
+  - **Row actions:**
+    - Tapping a row opens the record. Drafts open too: the record screen reads them from the device.
+    - Long-press and the screen reader's actions menu offer Edit (`/spend/record/<id>?mode=edit`), Copy (`/spend/add?copyOf=<id>`) and Delete. Drafts offer Copy only.
+    - Delete shows an `UndoBar`, and Undo restores with the version the delete returned. While a delete is unconfirmed, no other delete starts, and Try again resends it with the same key.
+  - **States:**
+    - loading;
+    - an empty month: `EmptyState` with the `thinking` bun, which is passed only while the bun intensity shows it;
+    - under a filter, "No entries match" with Clear filters, and no bun;
+    - load problems with `loadProblem`'s words and retry rule;
+    - offline: with a diary, an offline `SyncBanner`, the problem with Try again, and the month's drafts from the device;
+    - the refresh suggestion.
+  - **Sync banner:** one at a time, most pressing first: locked, offline, update to send, needs review (its Review action opens the first such draft), checking, saving.
+  - **Freshness:** the list refreshes in place, keeping the number of entries shown, when the screen comes back into focus and when a draft resolves.
+- **Record (`/spend/record/[id]`):**
+  - **Receipt:** `recordDetail()` as a `ReceiptSlip`: the category (or Transfer) as its title; Type, Category and Wallet or From → To, Date, Merchant and Note rows; Status for a draft; and the amount as `ReceiptTotal` with its sign and state ("Amount, Expense ฿65.00, saving").
+  - **Sources:** the API, or this device's diary when the id is an open draft. A draft is never fetched. Copy is offered for it, Remove while it was never sent, and Discard once it needs a look.
+  - **Actions:** Edit (the one primary), Copy, Delete with the undo bar, and a Back pill (`router.back()`, or `/spend/all` when there is nothing to go back to).
+  - **Edit:**
+    - The amount uses the `Keypad`, starting from `keypadFromMinor`. The amount line is spoken as the exact amount, or as the sum while one is being typed.
+    - Date uses `DateChip`, which never goes before the wallet's tracking start. Note and merchant use `NoteField`.
+    - `editDraftFrom` and `buildEditChanges` send only the changed fields, with the version you saw, under `edit:<id>`. An unchanged save sends nothing.
+    - Keypad refusals are said in words. Divide by zero and below zero use Quick add's wording.
+  - **After an edit:**
+    - The receipt is read again after the acknowledgement. If that read fails, it is a load problem, not an unconfirmed save.
+    - **Conflict:** `conflictModel` rows side by side ("Yours" and "On the server") in a polite live region. A changed field is bold and says "Applying your change replaces this." Reload drops the edit. "Apply my change" sends `rebaseEdit` on the server's version as a new command. A conflict with no usable record reloads instead.
+    - **Deleted on another device:** says so, drops the edit, and offers Restore while `recentlyDeletedModel` says it is inside the 30-day window ("30 days left to restore").
+    - **Unconfirmed:** keypad, date and fields frozen. Try again is the only action, and it resends the same key. The same holds for delete and undo.
+- **Copy and colour:**
+  - All words go through `useCopy()`. Dates on the receipt and in the conflict rows use the kit's `fullDateLabel` rather than the model's Intl `longDateLabel`: Intl's en-GB writes "Sunday, 27 September 2026", and has no Vietnamese words.
+  - Colours are tokens only. No new text pair: every text is ink, muted or accent on the page, card or paper, ink on the stage, or onInk on an ink fill.
+  - A chosen chip is an ink fill with bold text, and a changed conflict field is bold with words, so colour is never the only signal.
+- **RED → GREEN** (`vitest run --config vitest.render.config.ts src/screens/redesign`):
+  - **RED:** typed seams, two components that render an empty view. 52 of 52 failed (History 27, Record 25), all because an element or label was not found or an assertion failed. There were no module or type errors.
+    - The react-native-svg stub path in the two files was one directory short. It was fixed as GREEN started; the empty seams never loaded the SVG module.
+  - **GREEN:**
+    - Record passed 25 of 25 on the first run. History passed 20 of 27: 7 tests looked for a signed amount that a day header also shows, so they now look inside the row.
+    - Added while green: an unconfirmed undo on the record screen, and the update-to-send row. That makes 54 (History 28, Record 26).
+  - After the merge, the per-file SVG stubs were dropped for the shared alias.
+- **Mutation check:** `r3s-mutate.py` (in the scratchpad) mutated 9 guards one at a time against both suites. All were caught, and the files were restored byte-identical.
+
+  | Mutation | Caught by |
+  | --- | --- |
+  | Edit sends the original version instead of the version the edit carries | 1 (Apply my change) |
+  | Apply my change skips `rebaseEdit` | 1 (Apply my change) |
+  | Edit re-reads the server's version just before sending (a silent overwrite) | 6 (both conflict tests, unusable conflict, failed reload, unconfirmed edit, edit with version) |
+  | An unconfirmed edit's key settled, so Try again takes a new one | 1 (unconfirmed edit) |
+  | History's Undo restores the pre-delete version | 2 (delete then undo, unconfirmed undo) |
+  | History settles the restore key when unconfirmed | 1 (unconfirmed undo) |
+  | Record's Undo restores the pre-delete version | 2 (delete then undo, unconfirmed undo) |
+  | Record settles the restore key when unconfirmed | 1 (unconfirmed undo) |
+  | History settles the delete key when unconfirmed | 1 (unconfirmed delete) |
+
+- **Parity with the current tests** (`TransactionsScreen.render.test.tsx` and the list's tests in `M5Hardening.render.test.tsx`):
+
+  | Current test | Ported to |
+  | --- | --- |
+  | Lists the month's entries with signed amounts and the month's totals | History "lists the month's entries in day groups…": the same rows, signs, `Money in`/`Money out` labels and first filter, plus the day headers |
+  | Filters by type and moves between months | History "filters by type and moves between months…" |
+  | Pages through every entry with Load more | History "pages through every entry…" (rows counted, 50 then 64, Load more gone) |
+  | Edits with the current version, then shows the server record | Record "edits with the version you saw and its own command key…" (`[RENT, 1, { amount_minor: '1200000' }]`, read again) |
+  | A conflicting edit offers reload or an explicit reapply | Record "a conflict shows yours and the server side by side…" (version 2, a new key) |
+  | Reload after a conflict drops the edit | Record "Reload after a conflict…" |
+  | Delete hides the entry; Undo restores it | History and Record "delete … Undo restores with the new version and its own key" (`[RENT, 1]`, then `[RENT, 2]`, keys differ) |
+  | M5: a failed reload after an acknowledged edit is a load problem | Record, the same name |
+  | M5: an unconfirmed edit is frozen and retried as the same command | Record, the same name |
+  | M5: an unconfirmed delete keeps its own key while another entry is edited | History "an unconfirmed delete is frozen and resent with the same key, even after the list refreshes"; Record "an unconfirmed delete…" |
+  | M5: a conflict shows the other device's values before reapplying | Record conflict test (the server's ฿13,000.00 and "Rent and water") |
+  | M5: a conflict without a usable current record reloads | Record, the same name |
+  | M5: deleting an entry another device already deleted | History, the same name |
+  | M5: editing after Load more keeps every loaded entry | History "returning to the list refreshes it in place and keeps every loaded page" (64 rows, limit 64) |
+
+  New here: refresh suggested; load problems (network with retry; upgrade, terms and signed out without); a delete that meets a newer version; an unconfirmed undo (both screens); deleted on another device with Restore; search, including Thai marks (a tone typed before the lower vowel, sara am as nikhahit plus sara aa, and marks never stripped); a partial search; wallet and category chips; the summary text; drafts in their days, a draft resolving, offline, and update-to-send; the receipt rows (expense, move, merchant, draft); the exact keypad (0.1 + 0.2 → `'30'`, 100 ÷ 3 → `'3333'`); only changed fields; Cancel and unchanged saves; Copy with `copyOf`; Back; the bun and its setting; and TH, EN and VI in light and dark.
+- **Deviations:**
+  - **Edit lives on the record screen,** as asked, so the list's inline-edit tests moved there.
+  - **Rows read with the wallet,** from `RecordRow`, so labels are "Bills, Expense ฿12,268.00, Daily account · Rent".
+  - **The type filter is a radio group,** the kit's pattern, not buttons.
+  - **The empty month under a filter** reads "No entries match" (historyModel). "No entries in this month" and the bun appear once the filter is cleared.
+  - **No confirm sheet for Delete:** Undo makes it reversible, as it is today. `Sheet` and `ConfirmSheet` are unused.
+  - **The undo bar never times out:** with no Recently deleted list, it is the only way back.
+  - **Edit does not change the wallet or category:** the brief lists amount, note, merchant and date.
+- **Gaps:**
+  - **Recently deleted:** there is no list API. `/v1/history` returns active records only, and `DiaryView` exposes no records (`RECENTLY_DELETED_GAP`). What exists is the undo bar for this session's delete, and the record screen's Restore for an entry opened by id.
+  - **No swipe:** there is no gesture library. Long-press and the actions menu stand in (the R2b decision).
+  - **No receipt thumbnail** on the record (plan §6.1): the client has no attachment read.
+  - **Loaded pages on a remount:** the spend layout is a `Slot`, which unmounts History while a record is open. The month comes back from the URL, but the filters, the search and pages after the first do not. Under a stack, the focus refresh keeps them.
+- **Kit gaps, reported and not changed:**
+  - `RecordRow` has no "update to send" state (Home reported this too).
+  - `RecordRow` and `DayHeader` sign money out with a hyphen; `Amount` uses U+2212. The receipt and the rows differ.
+  - `Amount` has no "checking" state, so a draft being checked speaks "saving" in its amount, while its Status row says "Checking with Jotbun".
+  - There is no kit filter chip or search field; both are local in `HistoryParts.tsx`, built from tokens.
+  - `StageHeader` has no back slot, so the record screen has its own top row and no stage.
+  - `EmptyState` draws its art wrapper even when the art renders nothing (bun off), so History passes no art then.
+- **For the integrator:**
+  - Home's rows do not open drafts. The record screen now reads drafts from the device.
+  - Copy passes a confirmed record's id or a draft's record id. Quick add takes both.
+  - **New English strings** (English in th and vi until E2): `History`, `Search entries`, `Category, merchant or note`, `Clear search`, `All wallets`, `All categories`, `Clear filters`, `Only loaded entries are searched. Load more to search the rest.`, `Entries you add for this month show up here.`, `Review`, `Edit entry`, `Applying your change replaces this.`, `{label}. {yoursLabel}: {yours}. {serverLabel}: {server}.`, `Restore`, `This entry isn't in your diary.` and `Couldn't change this device's copy. Try again.`. Quick add's `The sum can't go below zero.` and `You can't divide by zero.` are reused. The R3 logic's strings are used as they are: `Yours`, `On the server`, the summaries, the restore countdown and the draft states.
+  - **Timing:** once, in a full render run before the merge, the current list's "reload after a conflict" hit `findByLabelText`'s 1 s default. It passed alone three times and in every later full run. Untouched.
+- **App gate (merged tree, `add1158` + R3 History and Record):**
+  - typecheck:app PASS;
+  - test:unit PASS (414);
+  - test:render PASS (432 in 45 files: 378 + 54 new);
+  - export:web PASS (`--max-workers 2`; the bundle has the `[id]` and `all` routes);
+  - `git diff --check` clean.
+- **SKIPPED (E2):**
+  - simulator screenshots of every state in light and dark, in TH, EN and VI, at 320 pt;
+  - VoiceOver and TalkBack on rows (the actions menu), the undo bar and the conflict panel;
+  - the sticky search and sideways chip scrolling on iOS and Android;
+  - Dynamic Type at the largest size.
+
+  The flag stays off until the screenshots are approved.

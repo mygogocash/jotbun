@@ -79,8 +79,8 @@ const KEYPAD_PROBLEM_TEXT: Readonly<Record<KeypadProblem, string>> = {
   zero: 'Enter an amount above zero',
   too_precise: 'Use at most two decimal places',
   too_large: 'Amounts go up to ฿999,999,999.99',
-  negative: "The amount can't be below zero",
-  divide_by_zero: "You can't divide by zero",
+  negative: "The sum can't go below zero.",
+  divide_by_zero: "You can't divide by zero.",
 };
 
 const AMOUNT_STATE: Readonly<Record<RowState, AmountState>> = {

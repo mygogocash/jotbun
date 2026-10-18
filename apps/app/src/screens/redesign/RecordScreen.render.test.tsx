@@ -152,7 +152,7 @@ test('an unchanged edit sends nothing; an amount the keypad cannot save says why
   save();
   expect(await screen.findByText('Enter an amount')).toBeTruthy();
   press('5', 'Divided by', '0', 'Equals');
-  expect(await screen.findByText("You can't divide by zero")).toBeTruthy();
+  expect(await screen.findByText("You can't divide by zero.")).toBeTruthy();
   expect(fake.callsOf('updateTransaction')).toHaveLength(0);
 });
 
