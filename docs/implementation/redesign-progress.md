@@ -197,3 +197,148 @@ Receipts for the [redesign plan](../superpowers/plans/2026-10-18-jotbun-redesign
   - test:render PASS (142: 68 before, 74 new).
   - export:web PASS (`--max-workers 2`).
   - `git diff --check` clean.
+
+## R2c: dev screen catalogue
+
+- **What it is:** one route that renders every R2a component and the R1 mascot, a section at a time, with sample data. It needs no sign-in and no API, so the E2 screenshots can be taken in the simulator now.
+- **Files:**
+  - `app/dev/catalogue.tsx`: the route. Nothing else in `app/` changed.
+  - `src/dev/catalogue/`:
+    - `CatalogueScreen.tsx`: the header controls, the index and the section body;
+    - `registry.tsx`: the sections, in order;
+    - `kitSections.tsx` and `mascotSections.tsx`: what each section draws;
+    - `params.ts`: the deep link;
+    - `samples.ts`: sample data;
+    - `parts.tsx`: shared layout pieces.
+  - Tests:
+    - `params.test.ts` (pure);
+    - `CatalogueScreen.render.test.tsx` and `catalogueRoute.render.test.tsx`;
+    - `catalogueTestHarness.tsx` and `safeAreaTestStub.tsx` (test use only).
+  - No R0, R1 or R2a file, screen, locale catalog, package or lockfile changed.
+- **Gate:** the route shows the catalogue only when `__DEV__ && isRedesignEnabled('catalogue')` (`EXPO_PUBLIC_REDESIGN=catalogue`, or `all`). Otherwise it shows "Not available", and a development build adds one line saying how to turn it on.
+  - The catalogue is loaded with `if (__DEV__) require('@mobile/dev/catalogue/CatalogueScreen')`, never imported.
+  - The route imports only a type from it, which is erased.
+- **Deep link:** `gogospend://dev/catalogue?section=<id>&theme=<light|dark|system>&locale=<en|th|vi>`, for example `gogospend://dev/catalogue?section=receipt&theme=dark&locale=th`.
+  - Scripted: `xcrun simctl openurl booted "gogospend://dev/catalogue?section=receipt&theme=dark&locale=th"`.
+  - In Expo Go the same path follows `exp://<host>:8081/--/`.
+  - Every param is optional:
+    - With no `section`, the catalogue shows an index of every section.
+    - An unknown section says so above the index.
+    - With no `theme` or `locale`, it follows the app.
+  - Case and surrounding spaces are ignored, and a repeated param takes its first value.
+  - Values the app doesn't ship (a `jp` locale, a `sepia` theme) are ignored rather than guessed.
+  - A new link while the catalogue is open replaces the header's choices.
+- **Header controls:**
+  - ‹ and › step through the sections in order and stop at the ends; ≡ returns to the index.
+  - **Theme** (Light, Dark, System) uses `ThemePreferenceOverride`. The status bar follows it.
+  - **Language** (EN, TH, VI) uses an `IntlProvider` around the catalogue only, which is how `useCopy`, `BunText` and `Amount` read the locale.
+  - **Bun** (Full, Quiet, Off): see the deviations below.
+  - The stored theme and language are never touched.
+- **Sections (21).** Each fits one 402 × 874 pt screen with the header.
+
+  | id | Shows |
+  | --- | --- |
+  | `amount` | sizes s to xl; income, transfer, untyped negative; receipt serif at l and xl |
+  | `amount-states` | confirmed, saving, conflict (m and l); saving on the stage and on ink |
+  | `pill-button` | primary and secondary: plain, busy, disabled (primary with a reason); full width |
+  | `card` | `Card`, `OutlinedCard`, small padding |
+  | `stage-header` | month switcher with the total, a card with a `BunPeek` against the stage; no-later-month header with the bun in its slot |
+  | `receipt` | today's slip (rows, a saving row, total, footer); a record slip (category, date, note, amount) |
+  | `tab-bar` | interactive selection, Budget selected, labels only |
+  | `sheet` | buttons open a `Sheet`, a `ConfirmSheet` and a destructive `ConfirmSheet` with the quiet bun; confirming shows busy for 1.5 s, then closes |
+  | `empty-state` | first run: `hello` bun at l, primary action |
+  | `empty-state-card` | in an outlined card: `thinking` bun at m, secondary action |
+  | `sync-banner` | offline; saving 1 and 3; checking 1 and 2 |
+  | `sync-banner-review` | needs review, update needed and locked, each with an action; update without one |
+  | `undo-bar` | a short and a long message |
+  | `flag-chip` | warning and info, and on import rows |
+  | `promise-list` | the plan's four privacy promises with icons; default ticks without a title |
+  | `staged-progress` | in progress (done, active, waiting) and a failed stage |
+  | `bun-m` | all 12 poses at m |
+  | `bun-l-1`, `bun-l-2` | the 12 poses at l, 6 each |
+  | `speech-bubble` | four bubbles (highlighted amount, cheer, oops-kind, no highlight) |
+  | `bun-peek` | top edge (default and centred), right edge, left edge |
+
+- **Sample data** (`samples.ts`):
+  - Amounts come from `goldenSeed()`: the ฿182.00 lunch, ฿12,268.00 rent, ฿28,000.00 salary, the ฿1,500.00 move and both wallets' balances. The ฿65 coffee, ฿18,000 budget, ฿420 a day and ฿120 over come from the plan's own examples.
+  - Words a person would type (wallet names, items, notes, a merchant) are given in each language, so Thai and Vietnamese script runs through every component.
+  - Interface copy goes through `tc`, as on a screen. New strings therefore show in English under TH and VI until E2 approves copy for the catalogs, which is what the app would show today. That copy (for example the promise list) is sample copy, not approved copy.
+- **Fit on one screen:** happy-dom has no layout, so this was measured in a browser.
+  - Method: `expo start --web` with the flag on, at 402 × 874, adding iPhone 17 Pro insets (62 pt top, 34 pt bottom) to the measured header and body.
+  - Every section fits in EN, TH and VI. The tallest is the Thai receipt at 841 pt; EN and VI peak at 805 pt.
+  - The first cut had `empty-state` at 928 pt (949 pt in Thai), so it was split in two, and long titles were shortened to keep the header on one line.
+  - The simulator itself was not run (see SKIPPED).
+- **RED → GREEN:** RED ran against compile-safe seams with the real types and wrong output: an empty registry, a parser that returns nulls, a screen and a route that render nothing.
+  - **Pure:** `npm run test:unit -w gogospend-app -- src/dev/catalogue/params.test.ts`.
+    - RED: 4 of 5 failed, all `ERR_ASSERTION`. The one that held, "missing params leave the defaults", is true of an all-null stub.
+    - GREEN: 5 of 5.
+  - **Render:** `vitest run --config vitest.render.config.ts src/dev`.
+    - RED: 35 of 35 failed, with no module errors:
+      - 21 were assertion errors;
+      - 13 were elements not found;
+      - 1 was a `TypeError` from stepping an empty registry.
+    - GREEN: 36 of 36. One case was added while green, for the split-off `empty-state-card`.
+  - **What the render tests check:**
+    - Every registered section, including any added later, renders in light and dark, in EN, TH and VI (126 renders), with no `console.error`. Each section's own content is asserted, for example 12 bun SVGs at 56 pt in `bun-m`.
+    - The flag off (unset, empty, `core`, a misspelling) shows "Not available" and never loads the catalogue.
+    - A release build (`__DEV__` false) never loads it, even with the flag on.
+    - A development build with the flag on requests exactly the catalogue module and opens the deep-linked section.
+    - The deep link selects the section, theme and locale.
+    - The index, previous and next, and the controls work.
+    - The bun control previews Full, Quiet and Off and restores the setting on leave.
+    - Every sheet opens and closes, and a confirm shows busy and then closes.
+- **Mutations:** 12 guards were mutated one at a time. All 12 were caught, and every file was restored byte-identical. The script is `r2c-mutate.py` in the scratchpad.
+
+  | Mutation | Caught by |
+  | --- | --- |
+  | route ignores the flag | route, flag off |
+  | route loads outside `__DEV__` | route, release build |
+  | route requires another path | route, development build |
+  | deep-link theme ignored | 24 tests |
+  | deep-link locale ignored | 24 tests |
+  | no `IntlProvider` override | 23 tests |
+  | no `ThemePreferenceOverride` | 23 tests |
+  | a new link does not replace the choices | 2 tests |
+  | bun setting not restored on leave | the bun control test |
+  | next not disabled at the last section | the stepping test |
+  | params keep their case | pure, hand-typed links |
+  | Thai sample data in English | the deep-link test |
+
+- **Production-bundle check:** PASS. The catalogue, its samples and the fakes are not in a release bundle.
+  - **Default flag:** `npm run export:web -w gogospend-app -- --max-workers 2`, then `grep -rlF` over `dist`.
+    - Not found: `catalogue-section-`, "Screen catalogue", "Open a delete confirm", "Bun poses at m", "Previous section", the sample note "Lunch with Mai at the market", goldenSeed's "September salary" and its record id `0000000b-…-000000000003`, the dev hint `EXPO_PUBLIC_REDESIGN=catalogue`, and the module path `dev/catalogue/CatalogueScreen`.
+    - Found once: "Not available".
+  - **The route's chunk:** `catalogue-<hash>.js` is 830 bytes.
+    - Metro folded the loader to `(isRedesignEnabled('catalogue'), null)` and the dev hint to `null`.
+    - Its seven dependencies are expo-router, `View`, the flags, `useCopy`, `Text`, the theme and the JSX runtime.
+  - **Flag on** (`EXPO_PUBLIC_REDESIGN=all`, production): the same result, and a byte-identical route chunk.
+  - **Positive control:** a development export (`--dev`, flag on) contains every one of those strings except the Thai sample, which the dev bundle writes as `\u` escapes. So the search would have found them.
+- **App gate:** every step passed.
+  - typecheck:app PASS.
+  - test:unit PASS (294: 289 before, 5 new).
+  - test:render PASS (197 in 27 files: 161 before, 36 new).
+  - export:web PASS (`--max-workers 2`).
+  - `git diff --check` clean.
+- **Deviations:**
+  - **Bun intensity control:** R1 has no subtree override for the intensity; its context isn't exported, and R1's files were out of bounds. So the Bun control calls the app's own `setIntensity`.
+    - It changes the real, stored setting while the catalogue is open, and puts back the value the person had when the catalogue closes.
+    - If the app is killed while the catalogue is open, the preview value stays.
+    - For that reason there is no `bun` deep-link param.
+    - A small `BunIntensityOverride` in `BunIntensityProvider.tsx` would make it a pure preview.
+  - **More sections than components:** 21 sections, not one per component. `Amount`, `SyncBanner`, `EmptyState` and the l poses each needed two screens, and `Card`/`OutlinedCard` got a section too.
+  - **The route test answers one `require` itself.** vitest hands modules Node's own `require`, which can't load TSX. The route test therefore patches Node's loader for that one request, returning the module vitest already loaded, and records every request so a wrong path fails.
+  - **Safe-area stub:** the catalogue tests replace `react-native-safe-area-context` with a small context-backed stub (`safeAreaTestStub.tsx`), because the real package loads React Native itself under vitest. The kit's own tests mock only `useSafeAreaInsets`; the catalogue also uses `SafeAreaInsetsContext`, to give mid-page stage headers and tab bars zero insets.
+  - **Test fakes in a dev screen:** `samples.ts` imports `goldenSeed` from `fakeResources.ts`, whose header says "Test use only". That is development only, and the bundle check shows it never ships.
+- **Findings for the R2a owner (not fixed here):**
+  - **Web:** react-native-web's `Modal` adds its own unnamed `role="dialog" aria-modal` container. On the web, a `Sheet` is therefore a named dialog inside an unnamed one. Native is unaffected.
+  - Tests that query `getByRole('dialog')` without a name see two dialogs.
+- **Slots for later work:** add one entry to `CATALOGUE_SECTIONS` per section (`registry.tsx` lists them as comments).
+  - **R2b** (group `Kit`): `keypad`, `type-switch`, `category-chips`, `category-grid`, `wallet-picker`, `date-chip`, `note-field`, `record-row`, `day-header`, `budget-bar`, `pace-ring`.
+  - **R3** (group `Screens`), one entry per §6.1 state:
+    - Home: loading, first run, no budget, offline or saving, over budget, upgrade required, terms required, signed out, diary locked.
+    - Quick add: saving, saved, queued offline, validation, opening balance needed, move.
+    - History, and record detail with its conflict view.
+  - The every-section render test covers new entries automatically. Content checks go in its `SHOWS` table.
+- **SKIPPED:**
+  - **Simulator screenshots (E2):** each section in light and dark, in TH, EN and VI.
+  - **One-screen fit on iOS:** checked on web only. Real iOS font metrics may differ slightly from web; the tightest section has 33 pt to spare.
