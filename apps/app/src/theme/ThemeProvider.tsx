@@ -15,6 +15,7 @@ import {
   getColorsForTheme,
   type ThemeColors,
 } from "@mobile/theme/colorPalettes";
+import { getBunColors, type BunColors } from "@mobile/theme/bunPalette";
 import { resolveTheme, type ResolvedTheme } from "@mobile/theme/resolveTheme";
 import {
   colorSchemeMetaContent,
@@ -31,6 +32,8 @@ type ThemeContextValue = {
   readonly preference: ThemePreference;
   readonly resolved: ResolvedTheme;
   readonly colors: ThemeColors;
+  /** The redesign's "Bun diary" palette for the same resolved theme. */
+  readonly bun: BunColors;
   readonly ready: boolean;
   readonly setPreference: (next: ThemePreference) => void;
 };
@@ -92,6 +95,7 @@ export function ThemeProvider({ children }: PropsWithChildren) {
     [preference, systemScheme],
   );
   const colors = useMemo(() => getColorsForTheme(resolved), [resolved]);
+  const bun = useMemo(() => getBunColors(resolved), [resolved]);
 
   useEffect(() => {
     applyWebColorScheme(resolved, preference);
@@ -108,10 +112,11 @@ export function ThemeProvider({ children }: PropsWithChildren) {
       preference,
       resolved,
       colors,
+      bun,
       ready: true,
       setPreference,
     }),
-    [preference, resolved, colors, setPreference],
+    [preference, resolved, colors, bun, setPreference],
   );
 
   return (
@@ -131,6 +136,10 @@ export function useThemeColors(): ThemeColors {
   return useTheme().colors;
 }
 
+export function useBunColors(): BunColors {
+  return useTheme().bun;
+}
+
 type ThemePreferenceOverrideProps = PropsWithChildren<{
   preference: ThemePreference;
 }>;
@@ -147,14 +156,16 @@ export function ThemePreferenceOverride({
     [preference, systemScheme],
   );
   const overrideColors = useMemo(() => getColorsForTheme(resolved), [resolved]);
+  const overrideBun = useMemo(() => getBunColors(resolved), [resolved]);
   const value = useMemo<ThemeContextValue>(
     () => ({
       ...parent,
       preference,
       resolved,
       colors: overrideColors,
+      bun: overrideBun,
     }),
-    [parent, preference, resolved, overrideColors],
+    [parent, preference, resolved, overrideColors, overrideBun],
   );
 
   return (
