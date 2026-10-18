@@ -10,6 +10,7 @@ import type { Pool } from 'pg';
 import sharp from 'sharp';
 import request from 'supertest';
 
+import { FeatureGates } from '../common/feature-gates';
 import { LeasedAccountRead } from '../database/leased-account-read';
 import { importCandidates, importPreviews } from '../database/schema';
 import { HandlerRegistry } from '../jobs/handler-registry';
@@ -806,6 +807,55 @@ describe('the job worker never claims a parse it cannot sandbox (B1)', () => {
     expect((await runParse(second.job_id, workerWith(fakeRunner(claimed(image.toString('base64'), 16))))).status).toBe('succeeded');
     expect((await previewOf(user, second.job_id)).issues).toEqual([{ code: 'parse_failed', source_row_id: null, field: null }]);
     expect(await stored(`import_image/${user.accountId}/`)).toEqual([]);
+  });
+});
+
+describe('a paused OCR gate parks queued image parses attempt-neutrally (P2b)', () => {
+  const pausedOcr = () => new FeatureGates({ paused: ['ocr'], retryAfterSeconds: 120 });
+  const attemptsOf = async (id: string) =>
+    (await adminRows<{ status: string; attempts: number; last_error: string | null; delayed: boolean }>(
+      `SELECT status, attempts, last_error, run_after > now() + interval '60 seconds' AS delayed FROM jobs WHERE id = $1`,
+      [id],
+    ))[0];
+
+  it('releases a claimed image job (no attempt spent, nothing read or recorded) and still parses a spreadsheet', async () => {
+    const user = await money.member();
+    const image = await imageWithMetadata('jpeg', 16, 16);
+    const receipt = await upload(user, image, { name: 'receipt.jpg', type: 'image/jpeg' });
+    const sheet = await upload(user, MEOWJOT);
+    const gated = new JobWorker(jobs, buildHandlers(deps, { parse: { runner: parsingRunner() }, gates: pausedOcr() }));
+    expect((await runParse(sheet.job_id, gated)).status).toBe('succeeded');
+    for (let round = 0; round < 3; round += 1) await gated.runOnce();
+    // Released with its attempt given back, and held back for the retry-after rather than spun on.
+    expect(await attemptsOf(receipt.job_id)).toEqual({ status: 'queued', attempts: 0, last_error: 'ocr_paused', delayed: true });
+    expect(await stored(`import_image/${user.accountId}/`)).toEqual([]);
+    expect(await count('import_previews', user.accountId)).toBe(1);
+  });
+
+  it('parses the same job after the gate reopens, as its first attempt', async () => {
+    const user = await money.member();
+    const receipt = await upload(user, await imageWithMetadata('jpeg', 16, 16), { name: 'receipt.jpg', type: 'image/jpeg' });
+    const gated = new JobWorker(jobs, buildHandlers(deps, { parse: { runner: parsingRunner() }, gates: pausedOcr() }));
+    await gated.runOnce();
+    expect(await attemptsOf(receipt.job_id)).toMatchObject({ status: 'queued', attempts: 0, last_error: 'ocr_paused' });
+    await db.admin((client) => client.query('UPDATE jobs SET run_after = now() WHERE id = $1', [receipt.job_id]));
+    expect(await runParse(receipt.job_id)).toEqual({ status: 'succeeded', last_error: null });
+    expect((await previewOf(user, receipt.job_id)).status).toBe('ready');
+  });
+
+  it('does not park a raw file past its expiry: it still fails visibly', async () => {
+    const user = await money.member();
+    const receipt = await upload(user, await imageWithMetadata('jpeg', 16, 16), { name: 'receipt.jpg', type: 'image/jpeg' });
+    await db.admin((client) =>
+      client.query(
+        `UPDATE import_uploads SET created_at = created_at - interval '25 hours', receive_deadline = receive_deadline - interval '25 hours',
+                accepted_at = accepted_at - interval '25 hours', expires_at = expires_at - interval '25 hours' WHERE job_id = $1`,
+        [receipt.job_id],
+      ),
+    );
+    const gated = new JobWorker(jobs, buildHandlers(deps, { parse: { runner: parsingRunner() }, gates: pausedOcr() }));
+    await gated.runOnce();
+    expect(await jobOf(receipt.job_id)).toEqual({ status: 'failed', last_error: 'import_unavailable' });
   });
 });
 

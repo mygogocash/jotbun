@@ -33,6 +33,7 @@ import {
 } from '@gogospend/contracts';
 import type { Pool } from 'pg';
 
+import type { FeatureGates } from '../common/feature-gates';
 import type { JobRepository } from '../jobs/job.repository';
 import type { ClaimedJob, JobLease } from '../jobs/job-types';
 import type { ObjectPublicationService, PublishedObject } from '../storage/object-publication.service';
@@ -62,7 +63,8 @@ export type PreviewRecord = {
 };
 
 export type ParseHandlerDeps = { jobs: JobRepository; publication: ObjectPublicationService; store: ObjectStore; pool: Pool };
-export type ParseHandlerOptions = { runner?: ParserRunnerPort; memoryBudgetKb?: number };
+/** `gates`: while its `ocr` scope is paused, an image parse is released (attempt-neutral) instead of run. */
+export type ParseHandlerOptions = { runner?: ParserRunnerPort; memoryBudgetKb?: number; gates?: FeatureGates };
 
 type Source = { format: ParseFormat; bytes: number; sha256: string; partCount: number; expiresAt: Date; parts: { key: string; bytes: number; sha256: string }[] };
 type SourceRow = { format: string; bytes: string; sha256: string; part_count: number; expires_at: Date; part_keys: string[]; part_bytes: string[]; part_sha256: string[] };
@@ -138,6 +140,7 @@ export function toPreviewRecord(result: ParseSuccess, today: string = bangkokDat
 export class ParseHandler {
   private readonly runner: ParserRunnerPort;
   private readonly memoryBudgetKb: number;
+  private readonly gates: FeatureGates | undefined;
 
   constructor(
     private readonly deps: ParseHandlerDeps,
@@ -145,6 +148,7 @@ export class ParseHandler {
   ) {
     this.runner = options.runner ?? new ParserRunner();
     this.memoryBudgetKb = options.memoryBudgetKb ?? PARSER_CHILD_MEMORY_MIB * 1024;
+    this.gates = options.gates;
   }
 
   async run(job: ClaimedJob): Promise<void> {
@@ -154,6 +158,13 @@ export class ParseHandler {
     if (!source || source.expiresAt.getTime() - Date.now() < MIN_RAW_LIFETIME_MS) {
       // Not this lease's, the account changed, or the raw file is (nearly) gone: never parse it.
       if (await jobs.isHeld(lease)) await jobs.fail(lease, { code: 'import_unavailable', retryable: false });
+      return;
+    }
+    // An OCR pause parks image parses only (spreadsheets are unaffected): given back with
+    // their attempt, held for the retry-after so the worker does not claim the job again at once.
+    // Checked after the expiry test above, so a raw file about to expire still fails visibly.
+    if (this.gates?.isPaused('ocr') && (IMAGE_FORMATS as readonly string[]).includes(source.format)) {
+      await jobs.release(lease, 'ocr_paused', { delaySeconds: this.gates.retryAfterSeconds });
       return;
     }
     let bytes: Buffer;

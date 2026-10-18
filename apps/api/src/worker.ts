@@ -79,7 +79,7 @@ async function main(): Promise<void> {
     // P2b review fixes: import_parse only behind a verified parser sandbox (Node 25+); otherwise one alert line.
     const parsing = await importParsingStartup();
     if (parsing.alert) console.error(parsing.alert);
-    const handlers = buildHandlers({ jobs, reader: new LeasedAccountRead(readPool), store, publication, pool: jobsPool }, { parse: parsing.parse });
+    const handlers = buildHandlers({ jobs, reader: new LeasedAccountRead(readPool), store, publication, pool: jobsPool }, { parse: parsing.parse, gates });
     const retention = new RetentionHandler(jobsPool);
     let maintaining = false;
     const maintain = async () => {

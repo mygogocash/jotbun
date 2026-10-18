@@ -15,10 +15,12 @@ import { ConfigurationError } from './configuration-error';
  *              command executor except privacy and security operations;
  * - `imports`: starting an import (`POST /v1/imports`) and the worker's
  *              import parsing (`import_parse`); P3 confirmation joins it;
- * - `ocr`:     image imports: image uploads are refused at the door. P2b
- *              parses images and spreadsheets under one job kind
- *              (`import_parse`), so image parses already queued still run;
- *              pause `imports` as well to stop them;
+ * - `ocr`:     image imports: image uploads are refused at the door, and the
+ *              parse handler releases a queued image parse
+ *              (`release(lease, 'ocr_paused')`: attempt-neutral, held for the
+ *              retry-after) instead of running it. P2b parses images and
+ *              spreadsheets under one job kind (`import_parse`), so the claim
+ *              stays open and spreadsheets keep parsing;
  * - `uploads`: accepting file bytes into quarantine (`POST /v1/imports`);
  * - `jobs`:    requests that only queue background work (exports, snapshot
  *              builds), and every worker's claim loop (job, security and
@@ -39,8 +41,9 @@ import { ConfigurationError } from './configuration-error';
  * which writes records) on each new mutating route; call
  * `gates.assertOpen('ocr')` (inject `FEATURE_GATES`) where a request would
  * start image work; list a new job kind that needs more than `jobs` in
- * `JOB_KIND_GATES` (an image-parsing kind would be `['imports', 'ocr']`, so
- * a paused OCR gate leaves those jobs queued without spending attempts).
+ * `JOB_KIND_GATES` (a kind that only ever parses images would be
+ * `['imports', 'ocr']`, so a paused OCR gate leaves those jobs queued without
+ * spending attempts; `import_parse` mixes formats, so its handler releases).
  * `operational-safety.spec.ts` fails until a new mutating route is either
  * gated or listed as deliberately exempt.
  */

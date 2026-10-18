@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { Controller, Get } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
+import type { Pool } from 'pg';
 import request from 'supertest';
 
 import { Access } from '../auth/auth-route.decorator';
@@ -19,6 +20,8 @@ import { HealthController } from '../health/health.controller';
 import { HEALTH_OPTIONS, HealthService, READINESS_RECEIPTS, readinessReceiptsFromEnv } from '../health/health.service';
 import type { HealthOptions, ReadinessReceipts } from '../health/health.service';
 import { ImportsController } from '../imports/imports.controller';
+import { ParseHandler } from '../imports/parse-handler';
+import type { ObjectStore } from '../storage/object-store';
 import type { ImportRepository } from '../imports/import.repository';
 import type { PreviewQuery } from '../imports/preview-query';
 import type { UploadIntake } from '../imports/upload-intake';
@@ -366,6 +369,52 @@ describe('feature gates', () => {
       const { worker, claimed } = workerWith(new FeatureGates({ paused: ['writes', 'uploads', 'ocr'] }));
       await worker.runOnce();
       expect(claimed).toEqual([['export', 'import_parse', 'import_expire']]);
+    });
+  });
+
+  describe('OCR pause inside the parse handler', () => {
+    const lease = { jobId: ID, accountId: ID, lifecycleGeneration: 1, leaseToken: ID, attempt: 1, maxAttempts: 3, deadline: '2099-01-01T00:00:00.000Z', signal: new AbortController().signal };
+    const sourceRow = (format: string, expiresInMs = 3_600_000) => ({
+      format, bytes: '4', sha256: 'a'.repeat(64), part_count: 1, expires_at: new Date(Date.now() + expiresInMs), part_keys: ['quarantine/a'], part_bytes: ['4'], part_sha256: ['a'.repeat(64)],
+    });
+    function handlerWith(format: string, gates: FeatureGates | undefined, expiresInMs?: number) {
+      const calls: string[] = [];
+      const jobs = {
+        isHeld: async () => true,
+        fail: async (_lease: unknown, failure: { code: string }) => (calls.push(`fail:${failure.code}`), true),
+        release: async (_lease: unknown, code: string, options: { delaySeconds?: number }) => (calls.push(`release:${code}:${options.delaySeconds}`), true),
+      } as unknown as JobRepository;
+      const pool = { query: async () => ({ rows: [sourceRow(format, expiresInMs)] }) } as unknown as Pool;
+      const store = { get: async () => (calls.push('read'), null) } as unknown as ObjectStore;
+      const runner = { run: async () => (calls.push('run'), { kind: 'spawn_failed' as const }) };
+      const handler = new ParseHandler({ jobs, pool, store, publication: {} as never }, { runner, gates });
+      return { calls, run: () => handler.run({ lease, kind: 'import_parse', payload: {} }) };
+    }
+
+    it.each(['jpeg', 'png', 'webp'])('releases a queued %s parse as ocr_paused for the retry-after, reading and running nothing', async (format) => {
+      const { calls, run } = handlerWith(format, new FeatureGates({ paused: ['ocr'], retryAfterSeconds: 90 }));
+      await run();
+      expect(calls).toEqual(['release:ocr_paused:90']);
+    });
+
+    it.each(['csv', 'xlsx'])('leaves a %s parse alone while OCR is paused', async (format) => {
+      const { calls, run } = handlerWith(format, new FeatureGates({ paused: ['ocr'] }));
+      await run();
+      expect(calls).toEqual(['read', 'fail:quarantine_missing']);
+    });
+
+    it('parses images as before when OCR is open, or when no gates are given', async () => {
+      for (const gates of [new FeatureGates({ paused: ['writes', 'uploads'] }), undefined]) {
+        const { calls, run } = handlerWith('jpeg', gates);
+        await run();
+        expect(calls).toEqual(['read', 'fail:quarantine_missing']);
+      }
+    });
+
+    it('still fails a raw file about to expire instead of parking it', async () => {
+      const { calls, run } = handlerWith('jpeg', new FeatureGates({ paused: ['ocr'] }), 60_000);
+      await run();
+      expect(calls).toEqual(['fail:import_unavailable']);
     });
   });
 });

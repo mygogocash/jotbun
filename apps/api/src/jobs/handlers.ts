@@ -1,5 +1,6 @@
 import type { Pool } from 'pg';
 
+import type { FeatureGates } from '../common/feature-gates';
 import type { LeasedAccountRead } from '../database/leased-account-read';
 import { ExportHandler } from '../exports/export-handler';
 import type { ExportHandlerOptions } from '../exports/export-handler';
@@ -23,7 +24,7 @@ export type WorkerDeps = { jobs: JobRepository; reader: LeasedAccountRead; store
  * candidates at 7 days. `parse: null` leaves `import_parse` unregistered (the
  * job worker does so when its parser sandbox check fails: imports/import-parsing.ts).
  */
-export function buildHandlers(deps: WorkerDeps, options: { snapshot?: SnapshotBuilderOptions; export?: ExportHandlerOptions; parse?: ParseHandlerOptions | null } = {}): HandlerRegistry {
+export function buildHandlers(deps: WorkerDeps, options: { snapshot?: SnapshotBuilderOptions; export?: ExportHandlerOptions; parse?: ParseHandlerOptions | null; gates?: FeatureGates } = {}): HandlerRegistry {
   const snapshots = new SnapshotBuilder(deps, options.snapshot);
   const exporter = new ExportHandler(deps, options.export);
   const imports = new ImportExpiry(deps);
@@ -37,7 +38,7 @@ export function buildHandlers(deps: WorkerDeps, options: { snapshot?: SnapshotBu
     .register('export', (job) => exporter.run(job.lease))
     .register('import_expire', (job) => imports.run(job));
   if (options.parse !== null) {
-    const parser = new ParseHandler(deps, options.parse);
+    const parser = new ParseHandler(deps, { gates: options.gates, ...options.parse });
     // P2b: one reviewable preview per accepted upload; the handler completes or fails its job.
     registry.register('import_parse', (job) => parser.run(job));
   }

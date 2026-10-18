@@ -184,6 +184,16 @@ describe('M4: a stopped worker releases its job without spending the attempt', (
     expect(await jobs.release(again.lease)).toBe(false);
   });
 
+  it('release(lease, code, { delaySeconds }) holds the job back for that long and stays attempt-neutral', async () => {
+    const id = await queued(0);
+    const [claimed] = await jobs.claim(['test_task'], { leaseSeconds: 30 });
+    expect(await jobs.release(claimed.lease, 'ocr_paused', { delaySeconds: 120 })).toBe(true);
+    expect(await row(id)).toEqual({ status: 'queued', attempts: 0, last_error: 'ocr_paused', due: false });
+    expect(await jobs.claim(['test_task'], { leaseSeconds: 30 })).toEqual([]);
+    await expect(jobs.release(claimed.lease, 'ocr_paused', { delaySeconds: -1 })).rejects.toThrow(RangeError);
+    await expect(jobs.release(claimed.lease, 'ocr_paused', { delaySeconds: 7200 })).rejects.toThrow(RangeError);
+  });
+
   it('the database still refuses any other attempt change from a worker login', async () => {
     const id = await queued(2);
     expect(await code(jobsPool.query('UPDATE jobs SET attempts = attempts - 1 WHERE id = $1', [id]))).toBe('42501');

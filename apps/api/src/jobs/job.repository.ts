@@ -145,16 +145,20 @@ export class JobRepository {
    * attempt back (attempts returns to its value before this claim), so the
    * next claim is the same attempt again with a fresh token. For work that
    * stopped through no fault of the job: the worker is shutting down, or a
-   * gate it needs is paused. `code` is recorded as last_error. True only for
+   * gate it needs is paused. `code` is recorded as last_error. It is due
+   * again now, or after `delaySeconds` (a paused gate: so the worker does not
+   * claim and release the same job in a tight loop). True only for
    * the current, unexpired lease holder (0009's guard allows this one
    * decrement, for an unexpired lease, and nothing else).
    */
-  async release(lease: JobLease, code = 'released'): Promise<boolean> {
+  async release(lease: JobLease, code = 'released', options: { delaySeconds?: number } = {}): Promise<boolean> {
     if (!ERROR_CODE.test(code)) throw new RangeError('job error codes are short lowercase identifiers');
+    const delay = options.delaySeconds ?? 0;
+    if (!Number.isFinite(delay) || delay < 0 || delay > 3600) throw new RangeError('a release delay is 0-3600 seconds');
     const { rowCount } = await this.pool.query(
-      `UPDATE jobs SET status = 'queued', attempts = attempts - 1, run_after = now(), last_error = $3, lease_token = NULL, lease_expires_at = NULL, updated_at = now()
+      `UPDATE jobs SET status = 'queued', attempts = attempts - 1, run_after = now() + make_interval(secs => $4::double precision), last_error = $3, lease_token = NULL, lease_expires_at = NULL, updated_at = now()
         WHERE id = $1 AND status = 'leased' AND lease_token = $2 AND lease_expires_at > clock_timestamp()`,
-      [lease.jobId, lease.leaseToken, code],
+      [lease.jobId, lease.leaseToken, code, delay],
     );
     return rowCount === 1;
   }
