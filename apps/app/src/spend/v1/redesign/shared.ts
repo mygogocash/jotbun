@@ -4,6 +4,7 @@
 // canonical strings); dates are Asia/Bangkok calendar dates (`YYYY-MM-DD`).
 import type { CategoryDto, Minor, TransactionDto, TransactionType, WalletSnapshot } from '@gogospend/contracts';
 
+import { OUTBOX_STATES } from '../../../storage/types.ts';
 import type { OutboxCommand, OutboxState } from '../../../storage/types.ts';
 import { formatMinor } from '../money.ts';
 import type { MoneyLocale } from '../money.ts';
@@ -94,19 +95,22 @@ export function longDateLabel(date: string, tag: DateTag): string {
 // Device drafts
 
 /**
- * What a draft on this device shows instead of looking confirmed. The mapping
- * follows the current Home screen's money groups:
- * - `saving`: unsent or sending (queued on the device, not yet at the server);
- * - `checking`: uncertain (possibly committed already; the server is asked);
+ * What a draft on this device shows instead of looking confirmed:
+ * - `saving`: unsent (queued on the device; never committed);
+ * - `checking`: sending or uncertain. Either may already be committed: the
+ *   sync engine counts both as uncertain (`summarize`), and so does v1's
+ *   SyncStatus. A `session_changed` refusal leaves a command `sending` until
+ *   the next session asks the server about it;
  * - `needs_look`: needs_review (the server refused it; the draft is kept);
- * - `update_to_send`: paused_upgrade (waits for an app update).
+ * - `update_to_send`: paused_upgrade (waits for an app update; refused
+ *   before any commit).
  * `acknowledged` is committed and is not a draft any more.
  */
 export type DraftState = 'saving' | 'checking' | 'needs_look' | 'update_to_send';
 
 const DRAFT_STATES: Readonly<Record<OutboxState, DraftState | null>> = {
   unsent: 'saving',
-  sending: 'saving',
+  sending: 'checking',
   uncertain: 'checking',
   needs_review: 'needs_look',
   paused_upgrade: 'update_to_send',
@@ -125,14 +129,52 @@ export const DRAFT_STATE_TEXT: Readonly<Record<DraftState, string>> = {
   update_to_send: 'Update Jotbun to send',
 };
 
-/** Queued on the device and not yet at the server: "waiting to sync" money (HomeScreen `WAITING`). */
-export const WAITING_STATES: readonly OutboxState[] = ['unsent', 'sending', 'paused_upgrade'];
-/** Possibly committed already, so kept apart from waiting money (HomeScreen `CHECKING`). */
-export const CHECKING_STATES: readonly OutboxState[] = ['uncertain'];
+/**
+ * Where a draft's money goes. It is decided by the draft's state (its label),
+ * so a draft's label, its money group and every total it joins agree:
+ * - `waiting` (saving, update to send): never committed, so it is added to
+ *   the budget estimate and said as "Waiting to sync";
+ * - `checking`: possibly committed already, so possibly in the server's
+ *   totals: never added, only said apart ("Checking with Jotbun");
+ * - none (needs a look): the server refused it, so it counts nowhere.
+ */
+export type MoneyGroup = 'waiting' | 'checking';
+
+const MONEY_GROUPS: Readonly<Record<DraftState, MoneyGroup | null>> = {
+  saving: 'waiting',
+  update_to_send: 'waiting',
+  checking: 'checking',
+  needs_look: null,
+};
+
+/** The money group of a draft's state. */
+export function moneyGroupOfDraft(state: DraftState): MoneyGroup | null {
+  return MONEY_GROUPS[state];
+}
+
+/** The money group of an outbox state; null for a refused or acknowledged command. */
+export function moneyGroupOf(state: OutboxState): MoneyGroup | null {
+  const draft = draftStateOf(state);
+  return draft === null ? null : moneyGroupOfDraft(draft);
+}
+
+/** Never committed: "waiting to sync" money, added to the budget estimate. */
+export const WAITING_STATES: readonly OutboxState[] = OUTBOX_STATES.filter((state) => moneyGroupOf(state) === 'waiting');
+/** Possibly committed already: kept apart from waiting money and never added. */
+export const CHECKING_STATES: readonly OutboxState[] = OUTBOX_STATES.filter((state) => moneyGroupOf(state) === 'checking');
 
 /** Drafts still on the device: every command that is not acknowledged. */
 export function openDrafts(outbox: readonly OutboxCommand[]): OutboxCommand[] {
   return outbox.filter((command) => draftStateOf(command.state) !== null);
+}
+
+/**
+ * Open drafts whose record is not among the confirmed ones. A confirmed
+ * record wins over its own draft (a create the server committed before its
+ * acknowledgement landed), so its money is never counted twice.
+ */
+export function unconfirmedDrafts(outbox: readonly OutboxCommand[], confirmedIds: ReadonlySet<string>): OutboxCommand[] {
+  return openDrafts(outbox).filter((command) => !confirmedIds.has(command.payload.id));
 }
 
 /** Undo is `diary.removeDraft(commandId)`: only for a draft never transmitted. */
@@ -260,9 +302,7 @@ const newestFirst = (a: OutboxCommand, b: OutboxCommand) => (a.createdAt < b.cre
  * counted twice. Drafts come first, newest first; records keep their order.
  */
 export function mergeRows(records: readonly TransactionDto[], drafts: readonly OutboxCommand[], context: RowContext): DiaryRow[] {
-  const confirmed = new Set(records.map((record) => record.id));
-  const draftRows = openDrafts(drafts)
-    .filter((command) => !confirmed.has(command.payload.id))
+  const draftRows = unconfirmedDrafts(drafts, new Set(records.map((record) => record.id)))
     .sort(newestFirst)
     .map((command) => draftRow(command, context))
     .filter((row): row is DiaryRow => row !== null);
@@ -285,18 +325,21 @@ export type DayGroup = {
   pendingLines: string[];
   /** Day header for screen readers: the label and the confirmed total. */
   accessibilityLabel: string;
+  /**
+   * Some of the day's confirmed records may not be loaded, so `totals` and
+   * `totalText` may fall short: today past Home's page limit, or History's
+   * oldest loaded day (and any earlier one) while more pages exist.
+   */
+  partial: boolean;
 };
 
 export type DayContext = RowContext & { today: string; dateTag: DateTag };
 
 type Bucket = keyof DayTotals;
 
-/** Confirmed, waiting or checking money; a draft that needs review counts nowhere (the server refused it). */
+/** Confirmed money, or the money group of the row's draft state (its label); a draft that needs review counts nowhere. */
 function bucketOf(row: DiaryRow): Bucket | null {
-  if (row.state === 'confirmed') return 'confirmed';
-  if (row.outboxState && WAITING_STATES.includes(row.outboxState)) return 'waiting';
-  if (row.outboxState && CHECKING_STATES.includes(row.outboxState)) return 'checking';
-  return null;
+  return row.state === 'confirmed' ? 'confirmed' : moneyGroupOfDraft(row.state);
 }
 
 export function dayTotals(rows: readonly DiaryRow[], locale: MoneyLocale): DayTotals {
@@ -323,7 +366,7 @@ export function pendingMoneyLines(waiting: MoneyPair, checking: MoneyPair, tc: T
   ].filter((line): line is string => line !== null);
 }
 
-function dayGroup(day: string, rows: DiaryRow[], context: DayContext): DayGroup {
+function dayGroup(day: string, rows: DiaryRow[], context: DayContext, partial: boolean): DayGroup {
   const { tc } = context;
   const totals = dayTotals(rows, context.locale);
   const parts = [
@@ -336,21 +379,28 @@ function dayGroup(day: string, rows: DiaryRow[], context: DayContext): DayGroup 
     day, label, isToday: day === context.today, rows, totals, totalText,
     pendingLines: pendingMoneyLines(totals.waiting, totals.checking, tc),
     accessibilityLabel: totalText ? `${label}, ${totalText}` : label,
+    partial,
   };
 }
 
-/** Rows grouped by day, newest day first, each with its totals. Rows keep their order within a day. */
-export function groupDays(rows: readonly DiaryRow[], context: DayContext): DayGroup[] {
+const notPartial = () => false;
+
+/**
+ * Rows grouped by day, newest day first, each with its totals. Rows keep
+ * their order within a day. `isPartial` marks the days whose confirmed
+ * records may not all be loaded.
+ */
+export function groupDays(rows: readonly DiaryRow[], context: DayContext, isPartial: (day: string) => boolean = notPartial): DayGroup[] {
   const byDay = new Map<string, DiaryRow[]>();
   for (const row of rows) {
     const list = byDay.get(row.occurredOn);
     if (list) list.push(row);
     else byDay.set(row.occurredOn, [row]);
   }
-  return [...byDay.keys()].sort((a, b) => (a < b ? 1 : a > b ? -1 : 0)).map((day) => dayGroup(day, byDay.get(day) ?? [], context));
+  return [...byDay.keys()].sort((a, b) => (a < b ? 1 : a > b ? -1 : 0)).map((day) => dayGroup(day, byDay.get(day) ?? [], context, isPartial(day)));
 }
 
 /** A group for one day from whatever rows fall on it (Home's "today" receipt, possibly empty). */
-export function dayOf(day: string, rows: readonly DiaryRow[], context: DayContext): DayGroup {
-  return dayGroup(day, rows.filter((row) => row.occurredOn === day), context);
+export function dayOf(day: string, rows: readonly DiaryRow[], context: DayContext, partial = false): DayGroup {
+  return dayGroup(day, rows.filter((row) => row.occurredOn === day), context, partial);
 }

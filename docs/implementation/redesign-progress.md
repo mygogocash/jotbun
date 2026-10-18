@@ -1071,3 +1071,80 @@ Built on `7d1baea`. At the coordinator's request it was then fast-forwarded to `
   - simulator screenshots (E2);
   - the scripts on iOS and Android (checked on the web only);
   - the one-screen fit with iOS font metrics. The tightest section, `record-row` in Thai, has 15 pt to spare on the web.
+
+## Review fixes: redesign logic
+
+These fix the logic-layer findings from the independent review of the redesign. The work started on `4043db3`, was fast-forwarded to `1b68acf` (the catalogue entries) before the gate, and touches only `src/spend/v1/redesign/*` and its tests. No package, lockfile, catalog or `vendor/` change.
+
+- **M1: a `sending` draft was counted twice in the pace and labelled "saving…". Fixed.**
+  - **Why it was wrong:** a `sending` command may already be committed. The sync engine counts it as uncertain (`summarize`), and so does v1's `SyncStatus`. After a `session_changed` refusal, it stays `sending` until the next session.
+  - **Label:** `sending` now maps to `checking` ("Checking with Jotbun"). `WAITING_STATES` is now `unsent` and `paused_upgrade`; `CHECKING_STATES` is `sending` and `uncertain`.
+  - **One mapping:** both lists are derived from `moneyGroupOf()`, which reads the draft state. Day totals bucket a row by its own label, and the pace and the waiting lines use the same function, so a draft's label, its money group and its totals cannot disagree. A test walks every outbox state through the row, the day totals, the pace and the waiting lines.
+  - **Confirmed ids:** `unconfirmedDrafts()` drops drafts whose record id is among the confirmed records. `mergeRows`, the pace (new `confirmedIds` input) and `waitingMoneyLines` (new optional argument) all use it. Home passes the ids of the records it loaded.
+  - **Probe Home-3:** the ring reads ฿9,880.00 left, not ฿9,760.00. The model test checks it, and the render probe passes with the model change alone.
+- **M3 (model half): Review had nothing to open for older drafts. Fixed in the model.** The ready model and `OfflineHome` gain `openDrafts`: every open draft from an open diary, newest first, as `DiaryRow`s, whatever its date. That includes one whose record already shows as confirmed, because the banner counts it too. The screen builds the review list and Remove/Discard from it. No total reads it.
+- **m1: a draft brought back a cut-off day without its confirmed money. Fixed in the model.**
+  - New `HomeData.oldestWholeDay`. Drafts dated before it stay out of the day groups but remain in `openDrafts`, and the month's money still counts them.
+  - New `earlierWholeDays(page)` does what the screen's `wholeDaysOf` does and also names that day: the day after the cut one, or null on the last page.
+- **Nit: `wholeDay` threw above 4,000 records. Fixed in the model.** New `readWholeDay(read, maxPages)` returns what it read, with `complete: false`, instead of throwing. New `HomeData.todayComplete` marks today's group `partial`.
+- **M2 support (History): done.** `HistoryModel.pageEdgeDay` is set while more pages exist. It is the oldest loaded day, or the month's last day when nothing has loaded. That day's group and any older one are marked `partial`. The edge comes from the loaded records, not from what a filter shows.
+- **New and changed fields** (all additions; existing callers keep working):
+
+  | Where | Name and shape |
+  | --- | --- |
+  | `shared.ts` | `draftStateOf('sending')` is now `'checking'`; `WAITING_STATES` and `CHECKING_STATES` changed as above |
+  | `shared.ts` | `type MoneyGroup = 'waiting' \| 'checking'`; `moneyGroupOf(state: OutboxState): MoneyGroup \| null`; `moneyGroupOfDraft(state: DraftState): MoneyGroup \| null` |
+  | `shared.ts` | `unconfirmedDrafts(outbox, confirmedIds: ReadonlySet<string>): OutboxCommand[]` |
+  | `shared.ts` | `DayGroup.partial: boolean`; `groupDays(rows, context, isPartial?: (day: string) => boolean)`; `dayOf(day, rows, context, partial = false)` |
+  | `budgetPace.ts` | `BudgetPaceInput.confirmedIds?: ReadonlySet<string>` |
+  | `homeModel.ts` | `HomeData.oldestWholeDay?: string \| null`; `HomeData.todayComplete?: boolean` |
+  | `homeModel.ts` | ready model and `OfflineHome`: `openDrafts: DiaryRow[]` |
+  | `homeModel.ts` | `waitingMoneyLines(outbox, month, tc, locale, confirmedIds?: ReadonlySet<string>)` |
+  | `homeModel.ts` | `earlierWholeDays(page: Pick<HistoryPage, 'items' \| 'next_cursor'>): { records: TransactionDto[]; oldestWholeDay: string \| null }` |
+  | `homeModel.ts` | `type HistoryPageReader = (cursor: string \| undefined) => Promise<Pick<HistoryPage, 'items' \| 'next_cursor'>>`; `readWholeDay(read: HistoryPageReader, maxPages: number): Promise<{ records: TransactionDto[]; complete: boolean }>` |
+  | `historyModel.ts` | `HistoryModel.pageEdgeDay: string \| null`; its groups carry `partial` |
+
+- **For the screen agent:**
+  - **Home loader:** read today with `readWholeDay((cursor) => resources.history({ from: today, through: today, sort: 'date_desc' }, cursor, HISTORY_MAX_LIMIT), TODAY_PAGES)`. Cut the earlier page with `earlierWholeDays(earlier)`. Pass `oldestWholeDay` and `todayComplete` in `HomeData`.
+  - **Review sheet:** build it from `openDrafts` where `state === 'needs_look'`, in both the ready and the offline model.
+  - **Banner counts:** `syncPlan` should count `sending` as checking, not saving. That matches v1's `SyncStatus` and the model's `sync.drafts`.
+  - **Partial days:** say when `today.partial` is set. On History, a group with `partial` set needs its total hidden or qualified, or the next page loaded first.
+  - Probes Home-1, Home-2 and History-1 still fail at render level until the screens read these fields.
+- **RED → GREEN:** `npm run test:unit -w gogospend-app -- src/spend/v1/redesign/{shared,budgetPace,homeModel,historyModel}.test.ts`, against typed seams.
+  - **RED:** 15 of 51 failed. 14 failed on assertions. The 15th failed when the stub `readWholeDay` threw "Too many records on one day", which is the nit itself.
+  - **The 36 that held:** the existing tests left unchanged, plus the label/group agreement test. The old mapping already agreed with itself (`sending` was both saving and waiting), so that test guards against them drifting apart.
+  - **GREEN:** 51 of 51 (9 new tests, 7 updated for `sending`).
+- **Mutation check** (`rlf-mutate.py` in the scratchpad): 17 of 17 were caught, and every file was restored.
+
+  | Mutation | Failing tests |
+  | --- | --- |
+  | `sending` labelled saving (so counted as waiting) | 9 |
+  | `sending` added to the pace while labelled checking | 5 |
+  | Checking money added to the estimate | 5 |
+  | Confirmed-id exclusion removed | 6 |
+  | Home not passing record ids to the pace | 1 |
+  | Home not passing record ids to the waiting lines | 1 |
+  | `openDrafts` from the visible days only | 3 |
+  | `openDrafts` limited to this month | 1 |
+  | `openDrafts` leaving out a draft already confirmed | 1 |
+  | Offline `openDrafts` empty | 1 |
+  | Drafts before the oldest whole day kept | 1 |
+  | Cut-off off by one day | 1 |
+  | `earlierWholeDays` keeping the split day | 1 |
+  | `readWholeDay` throwing past its page limit | 1 |
+  | Today never marked partial | 1 |
+  | History edge taken from the filtered records | 1 |
+  | History marking only days before the edge | 1 |
+
+- **App gate** (from the worktree root, on `1b68acf` plus this change):
+
+  | Step | Result |
+  | --- | --- |
+  | typecheck:app | PASS |
+  | test:unit | 422 of 423 (414 + 9 new); 1 fails on purpose, below |
+  | test:render | 487 of 488 in 45 files; 1 fails on purpose, below |
+  | `git diff --check` | clean |
+
+- **Tests that fail because of the intended model change** (other owners' files, not edited):
+  - **`src/ui/paceAdapter.test.ts`, "pending money: confirmed spending plus waiting drafts; …"** (line 38): it counts a `sending` ฿20.00 draft as pending. The logic now gives `['20000', '1500', '2700', '21500']` (confirmed, pending, checking, estimated) instead of `['20000', '3500', '700', '23500']`. The rest of that test follows from the new estimate: spent `21500`, left `9500`, still `tight`, per day `593`, "Tight · ฿95.00 left · 16 days to go".
+  - **`src/dev/catalogue/CatalogueScreen.render.test.tsx`, section `home-saving`:** the fixture (`homeSections.tsx`, "one draft on its way") makes that draft `sending`, but the assertions expect "Waiting to sync: money out ฿65.00" and "Includes ฿65.00 saving on this device". Making the fixture's first draft `unsent` keeps the section's intent, and every assertion holds again.

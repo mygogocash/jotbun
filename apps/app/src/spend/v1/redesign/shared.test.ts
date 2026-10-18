@@ -4,11 +4,14 @@ import { test } from 'node:test';
 import { OUTBOX_STATES } from '../../../storage/types.ts';
 import type { OutboxState } from '../../../storage/types.ts';
 import { byId, recordView } from '../viewModels.ts';
+import { budgetPace } from './budgetPace.ts';
+import { waitingMoneyLines } from './homeModel.ts';
 import {
   CHECKING_STATES, DRAFT_STATE_TEXT, WAITING_STATES, addDays, canDiscardDraft, canUndoDraft, confirmedRow, countDrafts, dateTagFor, dayLabel, dayNumber,
-  dayTotals, daysBetween, daysInMonth, draftRow, draftStateOf, groupDays, longDateLabel, mergeRows, openDrafts,
+  dayTotals, daysBetween, daysInMonth, draftRow, draftStateOf, groupDays, longDateLabel, mergeRows, moneyGroupOf, openDrafts, unconfirmedDrafts,
 } from './shared.ts';
-import { BANK, CASH, SALARY, WALLETS, command, entry, lookups, marked, pending, tc, transfer } from './testing/fixtures.ts';
+import type { DraftState, MoneyGroup } from './shared.ts';
+import { BANK, CASH, SALARY, WALLETS, budget, command, entry, lookups, marked, pending, spentSummary, tc, transfer } from './testing/fixtures.ts';
 
 const context = { lookups: lookups(), tc, locale: 'en' as const };
 const days = { ...context, today: '2026-10-18', dateTag: 'en-GB' as const };
@@ -44,10 +47,11 @@ test('day labels: today, yesterday, then the short date the current list shows',
   assert.match(long, /Tuesday/);
 });
 
-test('every outbox state maps to the Home screen draft state', () => {
+test('every outbox state maps to a draft state; a sending draft may be committed, so it is being checked', () => {
   const expected: Record<OutboxState, string | null> = {
     unsent: 'saving',
-    sending: 'saving',
+    // The sync engine and v1's banner count sending as uncertain (syncEngine summarize, SyncStatus).
+    sending: 'checking',
     uncertain: 'checking',
     needs_review: 'needs_look',
     paused_upgrade: 'update_to_send',
@@ -55,9 +59,42 @@ test('every outbox state maps to the Home screen draft state', () => {
   };
   for (const state of OUTBOX_STATES) assert.equal(draftStateOf(state), expected[state], state);
   assert.deepEqual(DRAFT_STATE_TEXT, { saving: 'Saving…', checking: 'Checking with Jotbun', needs_look: 'Needs a look', update_to_send: 'Update Jotbun to send' });
-  // HomeScreen's money groups: waiting is queued on the device, checking may already be counted.
-  assert.deepEqual([...WAITING_STATES].sort(), ['paused_upgrade', 'sending', 'unsent']);
-  assert.deepEqual([...CHECKING_STATES], ['uncertain']);
+  // Waiting is queued on the device and never committed; checking may already be counted.
+  assert.deepEqual([...WAITING_STATES].sort(), ['paused_upgrade', 'unsent']);
+  assert.deepEqual([...CHECKING_STATES].sort(), ['sending', 'uncertain']);
+});
+
+test("a draft's label, its money group and every total it joins agree in each state", () => {
+  const GROUP: Record<DraftState, MoneyGroup | null> = { saving: 'waiting', update_to_send: 'waiting', checking: 'checking', needs_look: null };
+  for (const state of OUTBOX_STATES) {
+    const label = draftStateOf(state);
+    const group = moneyGroupOf(state);
+    assert.equal(group, label === null ? null : GROUP[label], `group ${state}`);
+    assert.equal(WAITING_STATES.includes(state), group === 'waiting', `waiting ${state}`);
+    assert.equal(CHECKING_STATES.includes(state), group === 'checking', `checking ${state}`);
+    const draft = command(pending({ amount_minor: '6500' }), state);
+    const waiting = group === 'waiting' ? '6500' : '0';
+    const checking = group === 'checking' ? '6500' : '0';
+    // The row and its day.
+    const rows = mergeRows([], [draft], context);
+    assert.deepEqual(rows.map((row) => row.state), label === null ? [] : [label], `row ${state}`);
+    const totals = dayTotals(rows, 'en');
+    assert.deepEqual([totals.confirmed.outMinor, totals.waiting.outMinor, totals.checking.outMinor], ['0', waiting, checking], `day ${state}`);
+    // The budget pace: waiting money is added to the estimate, checking money only said apart.
+    const pace = budgetPace({ budget: budget('2026-10', '100000'), summary: spentSummary('2026-10', '0'), today: '2026-10-18', outbox: [draft] });
+    assert.deepEqual([pace.spent.pendingMinor, pace.spent.checkingMinor, pace.spent.estimatedMinor], [waiting, checking, waiting], `pace ${state}`);
+    // The month's waiting-money lines.
+    const lines = [group === 'waiting' ? 'Waiting to sync: money out ฿65.00' : null, group === 'checking' ? 'Checking with Jotbun: money out ฿65.00' : null];
+    assert.deepEqual(waitingMoneyLines([draft], '2026-10', tc, 'en'), lines.filter((line) => line !== null), `lines ${state}`);
+  }
+});
+
+test('a draft whose record is already confirmed is left out of the open drafts that count', () => {
+  const echo = command(pending({ id: 'r-1' }), 'sending');
+  const fresh = command(pending({ id: 'r-2' }), 'unsent');
+  const done = command(pending({ id: 'r-3' }), 'acknowledged');
+  assert.deepEqual(unconfirmedDrafts([echo, fresh, done], new Set(['r-1'])).map((draft) => draft.payload.id), ['r-2']);
+  assert.deepEqual(unconfirmedDrafts([echo, fresh, done], new Set()).map((draft) => draft.payload.id), ['r-1', 'r-2']);
 });
 
 test('undo only for a draft never transmitted; discard only for one that needs review', () => {
@@ -69,7 +106,7 @@ test('undo only for a draft never transmitted; discard only for one that needs r
   assert.equal(canUndoDraft(command(pending(), 'unsent', { firstTransmissionAt: '2026-10-18T03:00:01.000Z' })), false, 'a transmitted draft cannot be undone');
   const outbox = OUTBOX_STATES.map((state) => command(pending(), state));
   assert.equal(openDrafts(outbox).length, 5);
-  assert.deepEqual(countDrafts(outbox), { saving: 2, checking: 1, needs_look: 1, update_to_send: 1 });
+  assert.deepEqual(countDrafts(outbox), { saving: 1, checking: 2, needs_look: 1, update_to_send: 1 });
 });
 
 test('a confirmed row reads exactly as the current record view', () => {
@@ -88,7 +125,7 @@ test('a confirmed row reads exactly as the current record view', () => {
 
 test('a draft row says its state in words and never looks confirmed', () => {
   const expected: Record<Exclude<OutboxState, 'acknowledged'>, string> = {
-    unsent: 'Saving…', sending: 'Saving…', uncertain: 'Checking with Jotbun', needs_review: 'Needs a look', paused_upgrade: 'Update Jotbun to send',
+    unsent: 'Saving…', sending: 'Checking with Jotbun', uncertain: 'Checking with Jotbun', needs_review: 'Needs a look', paused_upgrade: 'Update Jotbun to send',
   };
   for (const [state, text] of Object.entries(expected) as [Exclude<OutboxState, 'acknowledged'>, string][]) {
     const draft = command(pending({ note: 'latte' }), state);
@@ -132,8 +169,8 @@ test('day totals: out and in apart, transfers neither, drafts never in confirmed
   );
   const totals = dayTotals(rows, 'en');
   assert.deepEqual([totals.confirmed.outMinor, totals.confirmed.inMinor], [String(6500n + 99999999999n), '2800000']);
-  assert.deepEqual([totals.waiting.outMinor, totals.waiting.inMinor], ['3000', '3000']);
-  assert.deepEqual([totals.checking.outMinor, totals.checking.inMinor], ['4000', '0']);
+  assert.deepEqual([totals.waiting.outMinor, totals.waiting.inMinor], ['3000', '0']);
+  assert.deepEqual([totals.checking.outMinor, totals.checking.inMinor], ['4000', '3000'], 'a sending draft is being checked');
   assert.equal(totals.confirmed.outText, '฿1,000,000,064.99');
   const onlyTransfer = dayTotals(mergeRows([transfer()], [], context), 'en');
   assert.deepEqual([onlyTransfer.confirmed.outMinor, onlyTransfer.confirmed.inMinor], ['0', '0']);
