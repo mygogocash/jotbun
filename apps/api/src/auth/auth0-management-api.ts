@@ -1,4 +1,5 @@
 import { isLoopbackHost } from '../database/database-config';
+import { ConfigurationError } from '../common/configuration-error';
 
 export type ManagementClientConfig = { managementUrl: string; clientId: string; clientSecret: string };
 
@@ -84,11 +85,11 @@ export function managementConfigFromEnv(env: NodeJS.ProcessEnv, clientId: string
   try {
     url = new URL(managementUrl);
   } catch {
-    throw new Error('AUTH0_MANAGEMENT_URL must be an absolute URL.');
+    throw new ConfigurationError('AUTH0_MANAGEMENT_URL must be an absolute URL.');
   }
   const loopbackTest = url.protocol === 'http:' && isLoopbackHost(url.hostname) && env.NODE_ENV !== 'production';
   if ((url.protocol !== 'https:' && !loopbackTest) || !managementUrl.endsWith('/') || url.search || url.hash) {
-    throw new Error('AUTH0_MANAGEMENT_URL must be an https URL ending in "/".');
+    throw new ConfigurationError('AUTH0_MANAGEMENT_URL must be an https URL ending in "/".');
   }
   return { managementUrl, clientId, clientSecret };
 }

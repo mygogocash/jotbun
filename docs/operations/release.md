@@ -15,31 +15,66 @@ Related: [rollback.md](rollback.md), [incident.md](incident.md),
 
 One image (`apps/api/Dockerfile`), one process per service. The image holds
 only the release graph (`apps/api/scripts/release-graph.mjs`): the compiled
-files the five entries below reach, the migrations, the contracts TypeScript
-source and the package closure of eight reviewed runtime packages (117
-packages in all at this revision). Legacy `/spend`, internal shared-key, Salt
+files its 7 entries reach (the five processes below and P2b's two parser
+children; 141 files at this revision), the migrations, the contracts
+TypeScript source and the package closure of 9 reviewed direct runtime
+packages (123 packages in all). Legacy `/spend`, internal shared-key, Salt
 Edge, cashback, autolog, Firebase and Mongo code and packages, tests, fixtures
 and the app are not in it; their source stays in the repository.
+`multer` is in the closure only because `@nestjs/platform-express` depends on
+it and loads its file interceptors with the package; no v1 route uses a
+multer interceptor (the v1 upload streams the raw body into quarantine), and
+the legacy multer limits file is refused by the graph.
 
 | Service | Command (WORKDIR `/app/apps/api`) | Database login (exact roles, checked at startup) | Other settings | Health |
 | --- | --- | --- | --- | --- |
 | Migration (release step) | `node dist/database/migrate-cli.js` | `DATABASE_DIRECT_URL`: migration owner | none | exit 0, `Migrations are up to date.` |
-| API | `node dist/v1/main.js` (default) | `DATABASE_URL`: `gogospend_app` + `gogospend_bootstrap` | `apps/api/.env.example` | deploy check `GET /ready`; liveness `GET /live` |
-| Job worker | `node dist/worker.js` | `DATABASE_URL`: `gogospend_jobs`; `LEASED_READ_DATABASE_URL`: `gogospend_leased_read` | `.env.jobs-worker.example` | heartbeat line every sweep (default 15 min) |
-| Security worker | `node dist/jobs/security-worker.js` | `DATABASE_URL`: `gogospend_jobs` + `gogospend_security` | `.env.worker.example` | heartbeat line every 5 min |
-| Deletion worker | `node dist/privacy/deletion-worker.js --registry-fd 3` | `DATABASE_URL`: `gogospend_jobs` + `gogospend_security`; registry login (fd 3): `gogospend_erasure_registry` | `.env.deletion-worker.example` | heartbeat line every 5 min |
+| API | `node dist/v1/main.js` (default) | `DATABASE_URL`: `gogospend_app` + `gogospend_bootstrap` | `apps/api/.env.example` | deploy health check `GET /live` (also liveness); readiness `GET /ready` for monitoring |
+| Job worker | `node dist/worker.js` | `DATABASE_URL`: `gogospend_jobs`; `LEASED_READ_DATABASE_URL`: `gogospend_leased_read` | `.env.jobs-worker.example` | heartbeat line every minute |
+| Security worker | `node dist/jobs/security-worker.js` | `DATABASE_URL`: `gogospend_jobs` + `gogospend_security` | `.env.worker.example` | heartbeat line every minute |
+| Deletion worker | `node dist/privacy/deletion-worker.js --registry-fd 3` | `DATABASE_URL`: `gogospend_jobs` + `gogospend_security`; registry login (fd 3): `gogospend_erasure_registry` | `.env.deletion-worker.example` | heartbeat line every minute |
+
+**Health checks (P6b review).** The platform's deploy health check (Railway
+`healthcheckPath`) is `GET /live`, never `/ready`. `/ready` fails while the
+database check fails or any receipt is missing, failed or expired, so a
+deploy gated on it could not go live exactly when an emergency pause or a
+rollback is needed. `/live` answers only after startup, which has already
+verified the database login (exact roles), so a misconfigured deploy still
+never becomes healthy. `/ready` stays the readiness signal: an external
+monitor alerts when it is 503 for 5 minutes, and the release preflight below
+enforces the receipts. During a full database outage a new API deploy cannot
+start at all (the startup login check needs the database): the previous
+deployment keeps serving until the database is back. The API logs
+`receipt_expiring` 7 days before a passed receipt expires.
 
 Every process: `NODE_ENV=production` (set in the image), runs as the `node`
 user over a read-only release tree, stops on SIGTERM within
 `SHUTDOWN_TIMEOUT_SECONDS` (default 25; keep the platform's stop grace period,
 for Railway `RAILWAY_DEPLOYMENT_DRAINING_SECONDS`, at least 30), and reports a
 startup failure as one redacted line (`<name> startup failed: <class>[: fixed
-message | code]`, exit 1). There is no startup migration and no fallback to
-Mongo or to the legacy API.
+message | code]`, exit 1; only a configuration error prints its fixed
+message), and a later crash as `<name> crashed: <class>[ code]` (exit 1, no
+stack). A second SIGTERM during the stop is ignored. There is no startup
+migration and no fallback to Mongo or to the legacy API.
+
+The API's stop: `/ready` turns 503 and every response says `Connection:
+close`; after `SHUTDOWN_DRAIN_DELAY_SECONDS` (default 2, 0-30, at most half
+the timeout) it stops accepting connections, closes idle keep-alive sockets
+and waits for in-flight requests; only then does the application close and
+end its database pool. An upload still streaming when the timeout ends (an
+upload may take up to 8 minutes) is cut; P2a's stale-upload pass in the job
+worker ends it and deletes its quarantine parts, and the app retries. A
+worker's stop releases its running job: queued again, due now, attempt not
+spent.
 
 The API's HTTP bounds: 9-minute request timeout (the upload intake's 8-minute
 receive bound plus 60 s, so the intake always answers a stalled upload first),
-66 s for headers, 65 s keep-alive.
+66 s for headers, 65 s keep-alive. Node applies the request timeout to every
+request, so a client that stalls a JSON body (at most 2 MiB) can also hold
+one socket for up to 9 minutes; real clients send JSON at once, and the
+proxy's connection limits bound how many such sockets one client holds. A
+request refused before its body was read (a gate, the access guard, a body
+limit) is answered with `Connection: close`, so its body is not read.
 
 Build and prove the image locally (never pushed):
 
@@ -51,8 +86,9 @@ docker run --rm gogospend-local node scripts/release-smoke.cjs
 The smoke proves that every API and worker process loads
 `@gogospend/contracts` runtime exports, that each command starts with
 production settings and fails closed at its first database connection with no
-missing module and no credential in its output, and that legacy paths and
-packages are absent. The build itself fails if a legacy file, a test file or an
+missing module and no credential in its output, that the v1 HTTP stack serves
+`GET /live` (200) and `GET /ready` (503: no database, no receipts) inside the
+image, and that legacy paths and packages are absent. The build itself fails if a legacy file, a test file or an
 unreviewed package becomes reachable (`release-graph.json`).
 
 **Lockfile finding.** `package-lock.json` records only the darwin-arm64
@@ -91,6 +127,7 @@ files. No secret is baked into the image, passed as an argument, or logged.
 | `OPERATIONAL_PAUSE`, `OPERATIONAL_PAUSE_RETRY_AFTER_SECONDS` | no | yes | `OPERATIONAL_PAUSE` | `OPERATIONAL_PAUSE` | `OPERATIONAL_PAUSE` | - |
 | `READINESS_RECEIPTS` or `READINESS_RECEIPTS_FILE` | no (redacted outcomes) | yes | - | - | - | - |
 | `SHUTDOWN_TIMEOUT_SECONDS`, `DATABASE_POOL_MAX` | no | yes | shutdown only | shutdown only | shutdown only | - |
+| `SHUTDOWN_DRAIN_DELAY_SECONDS` | no | yes | - | - | - | - |
 | `JOB_SWEEP_INTERVAL_MINUTES` | no | - | yes | - | - | - |
 | `SECURITY_WORKER_INTERVAL_SECONDS`, `SECURITY_RECONCILE_*` | no | - | - | yes | - | - |
 | `DELETION_WORKER_INTERVAL_SECONDS` | no | - | - | - | yes | - |
@@ -111,12 +148,20 @@ with the hosted registry placement.
 ## Preflight (every release)
 
 1. **Receipts current.** Every mandatory readiness receipt is `passed` and
-   valid for the release window (`READINESS_RECEIPTS`; see
-   [beta-receipts.md](../implementation/beta-receipts.md)). A restore
+   stays valid for at least the release window: pipe the exact
+   `READINESS_RECEIPTS` value the services will get into
+   `node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON
+   scripts/ops/readiness-receipts.mjs --min-valid-days 7`, which must exit 0
+   (it applies the API's own rules; see
+   [beta-receipts.md](../implementation/beta-receipts.md)). This is where
+   receipts are enforced for a release: the deploy health check is `/live`,
+   so an emergency pause or rollback deploy is not blocked by them. A restore
    rehearsal older than 31 days, or failed, keeps `/ready` at 503.
-2. **Backup.** The newest daily logical backup is under 26 hours old
-   (`node scripts/ops/recovery-inventory.mjs --recovery-dir <dir> | node
-   scripts/ops/backup-age.mjs` exits 0), and a fresh on-demand backup is
+2. **Backup.** The newest verified daily logical backup is under 26 hours
+   old (`node scripts/ops/recovery-inventory.mjs --recovery-dir <dir>
+   --key-fd 3 3<… | node scripts/ops/backup-age.mjs` exits 0; without the
+   key no set is verified and the age reports `unverified`; a partial write
+   from a failed backup never counts), and a fresh on-demand backup is
    taken just before migrating. Record its id in the release record.
 3. **Compatibility.** The command-schema table and minimum versions below
    are unchanged, or the change is an explicit, dated decision in the
@@ -192,8 +237,10 @@ Current journal at this revision: `0001_identity` … `0018_import_confirmation`
 ## Verify after deploying
 
 1. The deployed image digest and git commit equal the release record's.
-2. `GET /ready` → 200 with `process`, `database` and every `receipt.*`
-   `passed`; `GET /live` → 200.
+2. `GET /live` → 200 (the deploy health check); `GET /ready` → 200, and
+   the API's `readiness` log line shows `process`, `database` and every
+   `receipt.*` ok/`passed` (the response itself names no check), with no
+   `receipt_expiring` line.
 3. Each worker printed its heartbeat (`<worker>: queue due=…`) and no alert.
 4. The native smoke of the current stage passes on both platforms.
 5. Sign-off records the revision, the receipts, the backup id and who
@@ -223,4 +270,5 @@ authorization record. No performance claim is made without its receipt.
   counts, kinds and codes). Keep them **7 days**, then delete; restrict
   access to the operator role. No request body, query string, token,
   binding, amount, note, object key, signed URL, subject or account id is
-  logged, and startup errors pass through `describeFailure`.
+  logged, and startup errors and crashes pass through `describeFailure`
+  (class and code; a message only for a configuration error).

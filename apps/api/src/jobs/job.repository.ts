@@ -1,6 +1,7 @@
 import type { Pool, PoolClient } from 'pg';
 
 import { SECURITY_JOB_KINDS } from '../database/schema';
+import { stoppedByWorker } from './job-types';
 import type { ClaimedJob, JobFailure, JobKind, JobLease } from './job-types';
 
 export type EnqueueInput = { id: string; kind: JobKind; accountId: string | null; payload: unknown; maxAttempts: number; lifecycleGeneration?: number; maxRuntimeSeconds?: number };
@@ -116,9 +117,17 @@ export class JobRepository {
     return rowCount === 1;
   }
 
-  /** Requeues a retryable failure with backoff, or fails terminally. True only for the current, unexpired lease holder. */
+  /**
+   * Requeues a retryable failure with backoff, or fails terminally. True only
+   * for the current, unexpired lease holder. A retryable failure recorded
+   * after the worker started stopping (the lease's signal aborted with
+   * WorkerStopped) was caused by the stop, not by the job: it is a release
+   * (`worker_stopped`), so a handler that turns the abort into its own
+   * failure code (deletion, export, snapshot, parse) spends no attempt either.
+   */
   async fail(lease: JobLease, failure: JobFailure): Promise<boolean> {
     if (!ERROR_CODE.test(failure.code)) throw new RangeError('job error codes are short lowercase identifiers');
+    if (failure.retryable && stoppedByWorker(lease.signal)) return this.release(lease, 'worker_stopped');
     const { rowCount } = await this.pool.query(
       `UPDATE jobs
           SET status = CASE WHEN $3 AND attempts < max_attempts THEN 'queued' ELSE 'failed' END,
@@ -127,6 +136,25 @@ export class JobRepository {
               last_error = $4, lease_token = NULL, lease_expires_at = NULL, updated_at = now()
         WHERE id = $1 AND status = 'leased' AND lease_token = $2 AND lease_expires_at > clock_timestamp()`,
       [lease.jobId, lease.leaseToken, failure.retryable, failure.code],
+    );
+    return rowCount === 1;
+  }
+
+  /**
+   * Puts a current lease's job back in the queue, due now, and gives its
+   * attempt back (attempts returns to its value before this claim), so the
+   * next claim is the same attempt again with a fresh token. For work that
+   * stopped through no fault of the job: the worker is shutting down, or a
+   * gate it needs is paused. `code` is recorded as last_error. True only for
+   * the current, unexpired lease holder (0009's guard allows this one
+   * decrement, for an unexpired lease, and nothing else).
+   */
+  async release(lease: JobLease, code = 'released'): Promise<boolean> {
+    if (!ERROR_CODE.test(code)) throw new RangeError('job error codes are short lowercase identifiers');
+    const { rowCount } = await this.pool.query(
+      `UPDATE jobs SET status = 'queued', attempts = attempts - 1, run_after = now(), last_error = $3, lease_token = NULL, lease_expires_at = NULL, updated_at = now()
+        WHERE id = $1 AND status = 'leased' AND lease_token = $2 AND lease_expires_at > clock_timestamp()`,
+      [lease.jobId, lease.leaseToken, code],
     );
     return rowCount === 1;
   }

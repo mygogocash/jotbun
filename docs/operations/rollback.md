@@ -53,7 +53,12 @@ holds; the release that enables imports records the raised floor.
    target work; a client below the target's expectations gets `426` and
    keeps its drafts.
 5. **Receipts.** The target reads the same `READINESS_RECEIPTS`; keep them in
-   the service settings so `/ready` passes after the rollback.
+   the service settings so `/ready` passes after the rollback. A lapsed or
+   failed receipt does not block the rollback: the deploy health check is
+   `/live` ([release.md](release.md#what-ships)), so the target goes live and
+   `/ready` simply keeps reporting the receipt until it is renewed.
+   (A target older than this review fix checks `/ready` itself; there is no
+   deployed revision that old.)
 
 ## Procedure
 
@@ -62,8 +67,13 @@ holds; the release that enables imports records the raised floor.
    first ([incident.md](incident.md#pausing)). Reads, sign-in, sign-out,
    global logout, export downloads and account deletion keep working; apps
    keep unsent drafts and retry after `retry_after_seconds`.
-2. **Roll back the API** to the target image (same settings). Wait for
-   `/ready` 200.
+2. **Roll back the API** to the target image (same settings). The platform
+   switches over when the deploy health check, `GET /live`, answers 200; this
+   works during a database incident or after a receipt lapsed. Then check
+   `/ready` and its `readiness` log line; while the database is the incident
+   it stays 503, which does not block the rollback. During a full database
+   outage the target cannot start (its startup checks the database login), so
+   the current deployment keeps serving until the database is back.
 3. **Roll back workers only if they are the problem.** A newer worker can
    keep running with an older API. If a worker is rolled back, any job kind
    only the newer worker handles stays queued and the job worker reports
@@ -80,7 +90,8 @@ holds; the release that enables imports records the raised floor.
 
 | Signal | Success | Failure → next step |
 | --- | --- | --- |
-| `GET /ready` | 200, every check `passed`/`ok` | 503: read `fields` (`database`, `receipt.*`) and fix; do not unpause |
+| `GET /live` (deploy health) | 200 | not 200: the target cannot start; read its `startup failed` line |
+| `GET /ready` | 200, and the `readiness` log line shows every check `passed`/`ok` | 503: read the API's `readiness` log line (`database`, `receipt.*`; the response names no check) and fix; do not unpause |
 | API 5xx rate (request log `status` ≥ 500) | back to baseline within 10 minutes | still elevated: keep writes paused, escalate |
 | App behaviour | no `426`, no `422 COMMAND_SCHEMA_UNSUPPORTED` | either one means the target is not compatible: roll forward instead |
 | Workers | heartbeat lines, no `queue_age` alert | `no handler` lines for new kinds: roll the worker forward again |

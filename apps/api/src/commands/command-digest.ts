@@ -2,6 +2,7 @@ import { createHash, createHmac, hkdfSync, timingSafeEqual } from 'node:crypto';
 
 import { normalizeCommand } from '@gogospend/contracts';
 import type { CommandInput } from '@gogospend/contracts';
+import { ConfigurationError } from '../common/configuration-error';
 
 export type DigestKey = { id: string; secret: Buffer };
 export type StoredDigest = { keyId: string; digest: Buffer };
@@ -64,7 +65,7 @@ export class CommandDigester {
 }
 
 function digestKey(secret: string, name: string): DigestKey {
-  if (secret.length < 32) throw new Error(`${name} keys must be at least 32 characters.`);
+  if (secret.length < 32) throw new ConfigurationError(`${name} keys must be at least 32 characters.`);
   const bytes = Buffer.from(secret, 'utf8');
   return { id: keyIdOf(bytes), secret: bytes };
 }
@@ -77,7 +78,7 @@ function digestKey(secret: string, name: string): DigestKey {
  */
 export function commandDigesterFromEnv(env: NodeJS.ProcessEnv): CommandDigester {
   const current = env.COMMAND_DIGEST_KEY ?? '';
-  if (current.length < 32) throw new Error('COMMAND_DIGEST_KEY must be at least 32 characters.');
+  if (current.length < 32) throw new ConfigurationError('COMMAND_DIGEST_KEY must be at least 32 characters.');
   const previous = (env.COMMAND_DIGEST_PREVIOUS_KEYS ?? '').split(',').map((key) => key.trim()).filter(Boolean);
   return new CommandDigester(digestKey(current, 'COMMAND_DIGEST_KEY'), previous.map((key) => digestKey(key, 'COMMAND_DIGEST_PREVIOUS_KEYS')));
 }

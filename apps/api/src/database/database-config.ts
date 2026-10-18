@@ -1,4 +1,5 @@
 import type { PoolConfig } from 'pg';
+import { ConfigurationError } from '../common/configuration-error';
 
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1']);
 const DEFAULT_POOL_MAX = 10;
@@ -15,19 +16,19 @@ export function isLoopbackHost(host: string): boolean {
  * which contains the password.
  */
 export function poolConfigFromUrl(databaseUrl: string | undefined, poolMax = DEFAULT_POOL_MAX): PoolConfig {
-  if (!databaseUrl) throw new Error('Database URL is not configured.');
+  if (!databaseUrl) throw new ConfigurationError('Database URL is not configured.');
   let url: URL;
   try {
     url = new URL(databaseUrl);
   } catch {
-    throw new Error('Database URL is not a valid URL.');
+    throw new ConfigurationError('Database URL is not a valid URL.');
   }
   if (url.protocol !== 'postgres:' && url.protocol !== 'postgresql:') {
-    throw new Error('Database URL must use the postgres:// scheme.');
+    throw new ConfigurationError('Database URL must use the postgres:// scheme.');
   }
   const host = url.hostname.replace(/^\[|\]$/g, '');
   const database = decodeURIComponent(url.pathname.replace(/^\//, ''));
-  if (!host || !database) throw new Error('Database URL needs a host and a database name.');
+  if (!host || !database) throw new ConfigurationError('Database URL needs a host and a database name.');
   return {
     host,
     port: url.port ? Number(url.port) : 5432,

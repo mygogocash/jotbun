@@ -17,7 +17,11 @@
 //    (`--permission`, scrubbed environment): a synthetic CSV and a 1x1 PNG
 //    both parse, so the children are staged and sharp loads its Linux
 //    binding under the permission model.
-// 5. Legacy code and packages are absent from the image.
+// 5. The v1 HTTP stack serves inside the image: the real V1AppModule (the
+//    startup login check needs a database, so the module is created
+//    directly) answers `GET /live` 200 and `GET /ready` 503 (no database, no
+//    receipts) over loopback, and stops with the graceful HTTP stop.
+// 6. Legacy code and packages are absent from the image.
 // Prints a JSON report; exit 0 only when every check passes.
 'use strict';
 
@@ -34,7 +38,7 @@ const ENTRIES = {
   'migration': { file: 'dist/database/migrate-cli.js', args: [], contracts: false },
 };
 const LEGACY_PATHS = ['dist/main.js', 'dist/app.module.js', 'dist/spend', 'dist/user', 'dist/offer', 'dist/legal-documents', 'dist/product-access', 'dist/analytics', 'dist/auth/firebase-auth.guard.js', 'dist/testing', 'src'];
-const LEGACY_PACKAGES = ['mongoose', 'mongodb', '@nestjs/mongoose', 'firebase-admin', '@nestjs/schedule', '@nestjs/swagger', 'exceljs', 'tesseract.js', 'jsqr'];
+const LEGACY_PACKAGES = ['mongoose', 'mongodb', '@nestjs/mongoose', 'firebase-admin', '@nestjs/schedule', '@nestjs/swagger', '@nestjs/jwt', 'class-validator', 'class-transformer', 'exceljs', 'tesseract.js', 'jsqr'];
 // Synthetic inputs for the parser children: one CSV row and a 1x1 PNG.
 const PARSER_CSV = 'date,amount,type\n2024-01-02,12.50,expense\n';
 const PARSER_PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
@@ -99,11 +103,38 @@ require(process.argv[1]);
 process.stdout.write('\\nPROBE_RESULT ' + JSON.stringify({ requests: seen.length, runtime_exports: seen.length > 0 && seen.every(Boolean) }) + '\\n');
 `;
 
+// Serves the real v1 module on loopback and reports the health answers.
+const HTTP_PROBE = `
+const { NestFactory } = require('@nestjs/core');
+const { V1AppModule, configureV1App } = require('./dist/v1/v1-app.module.js');
+const { OperationalLogger } = require('./dist/common/operational-metrics.js');
+const { applyHttpTimeouts, gracefulHttpStop, trackHttpDrain } = require('./dist/common/process-lifecycle.js');
+(async () => {
+  const app = await NestFactory.create(V1AppModule, { bodyParser: false, logger: new OperationalLogger(), abortOnError: false });
+  configureV1App(app);
+  const server = app.getHttpServer();
+  applyHttpTimeouts(server);
+  const drain = trackHttpDrain(server);
+  await app.listen(0, '127.0.0.1');
+  const base = 'http://127.0.0.1:' + server.address().port;
+  const live = await fetch(base + '/live');
+  const ready = await fetch(base + '/ready');
+  const result = { live: live.status, live_body: await live.json(), ready: ready.status, ready_code: (await ready.json()).code };
+  const started = Date.now();
+  await gracefulHttpStop({ markDraining: () => undefined, delayMs: 0, drain, closeApp: () => app.close() });
+  result.stopped_ms = Date.now() - started;
+  process.stdout.write('\\nHTTP_RESULT ' + JSON.stringify(result) + '\\n');
+})().catch((error) => {
+  process.stdout.write('\\nHTTP_RESULT ' + JSON.stringify({ error: error instanceof Error ? error.name : 'unknown' }) + '\\n');
+  process.exitCode = 1;
+});
+`;
+
 const leaks = (text) => [SECRET, PASSWORD, 'U21va2VTeW50aGV0aWNMb29rdXBLZXkwMTIzNDU2Nzg'].filter((value) => text.includes(value)).length;
 const missingModule = (text) => /Cannot find module|ERR_MODULE_NOT_FOUND|ERR_REQUIRE_|ERR_UNKNOWN_FILE_EXTENSION|ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING/.test(text);
 
 async function main() {
-  const report = { node: process.version, contracts: null, processes: {}, parsers: null, legacy_absent: null, ok: false };
+  const report = { node: process.version, contracts: null, processes: {}, http: null, parsers: null, legacy_absent: null, ok: false };
   const failures = [];
 
   const contracts = require(require.resolve('@gogospend/contracts', { paths: [API] }));
@@ -136,6 +167,20 @@ async function main() {
     };
     report.processes[name] = result;
     if ((entry.contracts && !graph.runtime_exports) || !result.fails_closed_at_database || result.missing_module || result.secret_values_printed > 0) failures.push(name);
+  }
+
+  const http = await run(['-e', HTTP_PROBE]);
+  const httpMarker = http.output.split('\n').find((line) => line.startsWith('HTTP_RESULT '));
+  try {
+    report.http = httpMarker ? JSON.parse(httpMarker.slice('HTTP_RESULT '.length)) : { error: 'no result' };
+  } catch {
+    report.http = { error: 'unreadable result' };
+  }
+  report.http.secret_values_printed = leaks(http.output);
+  report.http.missing_module = missingModule(http.output);
+  if (report.http.live !== 200 || report.http.live_body?.status !== 'live' || report.http.ready !== 503 || report.http.ready_code !== 'SERVICE_UNAVAILABLE'
+      || !(report.http.stopped_ms < 5_000) || report.http.secret_values_printed > 0 || report.http.missing_module) {
+    failures.push('http');
   }
 
   const presentPaths = LEGACY_PATHS.filter((path) => existsSync(join(API, path)));

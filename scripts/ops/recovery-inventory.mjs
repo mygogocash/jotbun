@@ -1,6 +1,7 @@
 // Recovery inventory (P6a): every recoverable copy of production data —
 // database history (PITR window), branches, manual snapshots, logical backups,
-// object backups and restore-created copies — with its expiry. Every copy must
+// object backups, partial backup writes and restore-created copies — with
+// its expiry. Every copy must
 // expire no more than 7 days after it was taken; a copy without an expiry,
 // still present past it, or non-production but not synthetic is a violation.
 // A source that fails makes the inventory fail: provider errors never become a
@@ -17,7 +18,10 @@ import { assertIsolatedDirectory, LEDGER_FILE, localRecoveryStore } from './back
 import { isoDate, OpsError, parseArgs, RETENTION_LIMIT_MS, runCli, silentLog } from './ops-safety.mjs';
 import { readRecoveryKeyFromFd } from './recovery-crypto.mjs';
 
-export const COPY_KINDS = Object.freeze(['database_history', 'database_branch', 'manual_snapshot', 'logical_backup', 'object_backup', 'restore_copy']);
+// `partial_backup`: a write a failed backup left behind. It may hold data, so
+// it counts for retention and erasure-marker clearing, but it is not a
+// backup: the backup age never counts it (P6b review).
+export const COPY_KINDS = Object.freeze(['database_history', 'database_branch', 'manual_snapshot', 'logical_backup', 'partial_backup', 'object_backup', 'restore_copy']);
 
 /** Hosted copy sources that exist only once E1 authorizes Neon/R2 access. */
 export const HOSTED_INVENTORY_SKIPPED = Object.freeze([
@@ -53,7 +57,10 @@ function checkCopy(entry, source, now) {
   if (expires - now > RETENTION_LIMIT_MS) return { id, reason: 'expiry_beyond_7_days' };
   if (expires <= now) return { id, reason: 'past_expiry' };
   if (entry.environment === 'non_production' && entry.synthetic !== true) return { id, reason: 'non_production_real_data' };
-  return { copy: Object.freeze({ id, kind: entry.kind, source, environment: entry.environment, synthetic: entry.synthetic === true, created_at: createdAt, expires_at: expiresAt }) };
+  // `verified`: the source checked the copy's integrity (the recovery store,
+  // with the key: the manifest's MAC). Only verified logical backups count
+  // for the backup age.
+  return { copy: Object.freeze({ id, kind: entry.kind, source, environment: entry.environment, synthetic: entry.synthetic === true, verified: entry.verified === true, created_at: createdAt, expires_at: expiresAt }) };
 }
 
 export class RecoveryInventory {
@@ -153,9 +160,11 @@ function strayId(name) {
 
 /**
  * Local recovery store: each backup set is a logical backup plus an object
- * backup, dated by the store's retention dates (not the manifest's claims).
- * With the key, a manifest that fails its MAC is a violation. A partial write
- * is a copy bounded by its 24-hour cleanup; any other stray is a violation.
+ * backup, dated by the store's retention dates (not the manifest's claims),
+ * and `verified` only when the key checked its manifest. With the key, a
+ * manifest that fails its MAC is a violation. A partial write is a
+ * `partial_backup` copy bounded by its 24-hour cleanup (never a backup); any
+ * other stray is a violation.
  */
 export function recoveryStoreSource(store) {
   return {
@@ -163,14 +172,14 @@ export function recoveryStoreSource(store) {
     async list() {
       const copies = [];
       for (const set of await store.sets()) {
-        const common = { environment: set.environment, synthetic: set.synthetic, created_at: set.created_at, expires_at: set.expires_at };
+        const common = { environment: set.environment, synthetic: set.synthetic, verified: set.verified === true, created_at: set.created_at, expires_at: set.expires_at };
         const unaccounted = set.verified === false ? { unaccounted: 'manifest_unverified' } : {};
         copies.push({ id: set.id, kind: 'logical_backup', ...common, ...unaccounted }, { id: `${set.id}.objects`, kind: 'object_backup', ...common, ...unaccounted });
       }
       for (const stray of await store.strays()) {
         const modified = Date.parse(stray.modified_at);
         copies.push(stray.kind === 'partial'
-          ? { id: strayId(stray.name), kind: 'logical_backup', environment: 'production', synthetic: false, created_at: stray.modified_at, expires_at: new Date(modified + 24 * 3_600_000).toISOString() }
+          ? { id: strayId(stray.name), kind: 'partial_backup', environment: 'production', synthetic: false, created_at: stray.modified_at, expires_at: new Date(modified + 24 * 3_600_000).toISOString() }
           : { id: strayId(stray.name), unaccounted: 'unaccounted_file' });
       }
       return copies;

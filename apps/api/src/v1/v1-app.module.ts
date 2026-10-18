@@ -28,6 +28,7 @@ import { PrivacyModule } from '../privacy/privacy.module';
 import { SyncModule } from '../sync/sync.module';
 import { TransactionsModule } from '../transactions/transactions.module';
 import { WalletsModule } from '../wallets/wallets.module';
+import { ConfigurationError } from '../common/configuration-error';
 
 /**
  * Root of the standalone v1 API: PostgreSQL and Auth0 only. It must never
@@ -49,11 +50,11 @@ export class V1AppModule {}
  */
 export function trustProxyHopsFromEnv(value: string | undefined, nodeEnv = process.env.NODE_ENV): number {
   if (value === undefined || value === '') {
-    if (nodeEnv === 'production') throw new Error('TRUST_PROXY_HOPS must be set explicitly in production.');
+    if (nodeEnv === 'production') throw new ConfigurationError('TRUST_PROXY_HOPS must be set explicitly in production.');
     return 0;
   }
   const hops = Number(value);
-  if (!Number.isInteger(hops) || hops < 0 || hops > 3) throw new Error('TRUST_PROXY_HOPS must be an integer from 0 to 3.');
+  if (!Number.isInteger(hops) || hops < 0 || hops > 3) throw new ConfigurationError('TRUST_PROXY_HOPS must be an integer from 0 to 3.');
   return hops;
 }
 

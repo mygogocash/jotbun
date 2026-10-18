@@ -1,5 +1,6 @@
 import { ManagementApi, ManagementUnavailableError, managementConfigFromEnv } from './auth0-management-api';
 import type { ManagementClientConfig } from './auth0-management-api';
+import { ConfigurationError } from '../common/configuration-error';
 
 /** Typed outcome of a provider operation; never contains tokens or subjects. */
 export type MaintenanceOutcome =
@@ -153,7 +154,7 @@ export class Auth0MaintenanceClient implements IdentityErasureGateway {
 export function maintenanceGatewayFromEnv(env: NodeJS.ProcessEnv): IdentityErasureGateway | null {
   const clientId = env.AUTH0_MAINTENANCE_CLIENT_ID;
   if (clientId && clientId === env.AUTH0_PROFILE_LINK_CLIENT_ID) {
-    throw new Error('AUTH0_MAINTENANCE_CLIENT_ID must be a separate Auth0 application from the profile client.');
+    throw new ConfigurationError('AUTH0_MAINTENANCE_CLIENT_ID must be a separate Auth0 application from the profile client.');
   }
   const config = managementConfigFromEnv(env, clientId, env.AUTH0_MAINTENANCE_CLIENT_SECRET);
   return config ? new Auth0MaintenanceClient(config) : null;

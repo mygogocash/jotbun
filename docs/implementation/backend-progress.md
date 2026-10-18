@@ -2492,3 +2492,172 @@ Observed, not changed (pre-existing):
   - A device-backed review draft store.
   - The rollback floor and minimum client versions move at the import release step: new synced types `import_review`/`import_selection`, and `attachment_id` in record snapshots.
   - The import flag stays off.
+
+## Review fixes for P6b
+
+- **Status:** every finding of the independent P6b review is fixed locally, test-first, except one nit kept as documented behaviour (the 540 s bound on JSON bodies). Hosted CI, a hosted deploy and every hosted check stay SKIPPED. Nothing was pushed, deployed or written to a provider.
+- **Base:** the integration head `9e1a857` (P6b as merged at `5be44c9`, plus P2c and P3). The work started on `5be44c9`, moved to `e14669f` (P2c) before any test ran, and was rebased onto `9e1a857` (P3) without conflicts.
+- **The reviewer's probes** (`p6b-review` in the coordinator's scratchpad) were reused as the RED tests: probe A (refused upload body), B (graceful stop with the pool), C (SIGTERM during a job), D (redaction), E (receipt edges), F (gates wiring), KA (busy keep-alive), `backup-age-partial.mjs` and `perf-distribution.mjs`.
+
+### Findings, tests and fixes
+
+- **M1, graceful API shutdown** (`common/process-lifecycle.ts`, `v1/main.ts`).
+  - Tests:
+    - `operational-hardening.spec.ts` (probe KA): a busy keep-alive request finishes 200 with `Connection: close`, and the process exits 0 in under 2 s with a 4 s timeout. Before the fix it waited out the 65 s keep-alive and exited 1 at the timeout.
+    - A response whose headers were already sent when the stop began is closed once idle, so the stop still ends early.
+    - Through the drain delay the API keeps serving with `Connection: close`, and `app.close()` runs only after it.
+    - `SHUTDOWN_DRAIN_DELAY_SECONDS` bounds.
+    - `main.ts` wiring.
+    - `operational-hardening.integration.spec.ts` (probe B): a request that needs the pool after SIGTERM returns 200 `{ok: 1}`, and the process exits 0 in under 3 s. Before the fix it got a 500 (`Cannot use a pool after calling end`) and exited 1.
+  - Fix:
+    - `trackHttpDrain(server)` is installed before `listen`. While draining, every response that has not started gets `Connection: close` (the ones in flight when the stop begins too). `close()` then calls `server.close()` and closes idle sockets every 100 ms until the server has none.
+    - `gracefulHttpStop` runs in order: mark draining, end keep-alive, wait `SHUTDOWN_DRAIN_DELAY_SECONDS` (default 2, 0–30, at most half the shutdown timeout), close HTTP and wait for in-flight requests, then `app.close()`, whose destroy hook ends the pool.
+- **M2, pause and rollback blocked by `/ready`.** Design:
+  - The platform's deploy health check is `GET /live` (`DEPLOY_HEALTH_PATH` in `health.controller.ts`).
+  - `/ready` stays the readiness signal, for monitoring and any proxy that routes by readiness. It still fails on the database, a draining process or any missing, failed, expired or invalid receipt, as the plan's interface requires.
+  - Receipts are enforced in the release preflight: `scripts/ops/readiness-receipts.mjs --min-valid-days 7` must exit 0. It loads the API's own rules from `health/readiness-receipts.ts` through Node's type stripping, so there is one copy of them.
+  - The API logs `{"event":"receipt_expiring","receipt":…,"hours_left":…,"warning_days":7}` at startup and hourly, at most once a day per receipt, once a passed receipt is within 7 days of expiry.
+  - Why `/live` is enough to deploy: it answers only after startup, which already verified the exact database login, so a misconfigured deploy still never goes live.
+  - Limit: during a full database outage a new API deploy cannot start, because the startup login check needs the database. The previous deployment keeps serving. The runbooks say so.
+  - Tests:
+    - The deploy health path answers 200 on the real `V1AppModule` with a closed database port and two expired receipts, while `/ready` is 503.
+    - `release.md` names the same deploy path.
+    - The expiry warning fires inside the window and at most daily, and runs at startup and every hour.
+    - The preflight needs every receipt to stay valid for the release window, in `operational-hardening.spec.ts` and in `readiness-receipts.test.mjs` (with the CLI).
+  - Runbooks:
+    - `release.md`: the health column, a "Health checks" note, preflight step 1 and verification.
+    - `rollback.md`: step 5 and procedure step 2. A rollback switches over on `/live` and is not blocked by `/ready`.
+    - `incident.md`: a pause redeploy goes live on `/live`.
+    - `beta-receipts.md`.
+- **M3, a crashed backup silenced the age alert.**
+  - Fix in `recovery-inventory.mjs`:
+    - A `.partial` stray is now its own kind, `partial_backup`, in `COPY_KINDS`. It still counts for retention and marker clearing, with its 24-hour bound.
+    - Every copy carries `verified` (true only when the store checked its manifest with the key).
+  - Fix in `backup-age.mjs`: the age counts only `logical_backup` copies with `verified: true`. Logical backups that exist but are unverified alert as `unverified`, which means the inventory must run with `--key-fd`.
+  - Tests in `backup-age.test.mjs`:
+    - The reviewer's probe through the real `RecoveryInventory` and `recoveryStoreSource`: the last complete set 50 h old plus a 1 h old partial gives `alert: true`, reason `too_old`, 50 h.
+    - A partial or an unverified set never resets the age.
+    - A store without the key yields `unverified`.
+  - `recovery-inventory.test.mjs` now lists `partial_backup` among the kinds.
+- **M4, SIGTERM spent attempts.**
+  - `JobRepository.release(lease, code = 'released')` puts a current, unexpired lease's job back to `queued`, due now, with `attempts - 1` (its value before the claim), `last_error = code`. It is fenced by the lease token in its `WHERE`, like every transition.
+  - **Edited in place: `apps/api/drizzle/0009_jobs_storage.sql`, `gogospend_guard_job_transition`.** It is undeployed. The guard now also allows exactly that decrement: leased → queued, lease cleared, unexpired lease, `attempts = OLD.attempts - 1`. Any other attempt change stays refused (42501). No policy changed, so the four security kinds stay out of every `gogospend_jobs` policy and the app-only kinds out of the worker insert policy. No later migration redefines the function.
+  - `JobWorker` aborts a stopping handler's signal with `WorkerStopped` (`jobs/job-types.ts`), and releases the job when the handler throws or returns still holding the lease. Before, it failed with `worker_stopped` (spending the attempt; terminal on the last one) or with `handler_incomplete`.
+  - `JobRepository.fail` turns a retryable failure recorded on a lease aborted by `WorkerStopped` into a release. This covers handlers that convert the abort into their own code: the deletion handler's `lease_expired`/`worker_error`, export, snapshot, and P2b's parse handler, which is not edited here. Terminal failures are unchanged.
+  - Per worker:
+    - The job and deletion workers both run `JobWorker`, so both are covered.
+    - The security worker never aborted a running job (`runSecurityJobsOnce` finishes the job in hand). It now also stops claiming once SIGTERM arrives (`SecurityJobDeps.stop`).
+  - Docs: the `worker.ts`, deletion and security worker headers, and `incident.md`.
+  - Tests in `operational-hardening.integration.spec.ts`:
+    - Probe C for attempt 1 and attempt 3 of 3 gives `queued`, attempts unchanged, `worker_stopped`, due now.
+    - A handler that just returns on the stop is released.
+    - A handler that records `lease_expired` itself is released; a terminal failure still fails.
+    - `release` is fenced (forged token, second release, expired lease) and the next claim is the same attempt with a new token.
+    - The guard still refuses other decrements: a queued job, a kept lease, −2, to failed, an expired lease.
+    - `operational-hardening.spec.ts`: a stopped security pass claims nothing.
+- **M5, CI could skip the database rehearsal.**
+  - `backend.yml`'s `test:ops` step sets `GOGOSPEND_OPS_REQUIRE_DB: '1'`.
+  - New `scripts/ci/backend-workflow.test.mjs` (in `test:ops`) is the parity check. It reads the workflow structurally (no YAML dependency) and the local full gate from `handover.md`, and asserts:
+    - every local command runs in CI with the same settings;
+    - `test:ops` has the flag;
+    - `contents: read`;
+    - no `secrets.`;
+    - every action is pinned by a 40-hex commit;
+    - the image's Node is 24.22.0.
+- **m1, a refused upload read its body.**
+  - Fix: `sendProblem` sets `Connection: close` whenever the request body is incomplete. This covers the guard's 404/503/401, the filter and the body-parser limits.
+  - Test (probe A, 16 MiB chunked): 404, 503 and 401 each answer with `Connection: close`, and the server reads under 1 MiB. It read about 200 KB; before the fix it read the whole body.
+  - The test client yields between frames, like a client that reads an early reply while it sends. A client that reads nothing until it has sent everything may see a reset instead of the reply. The app treats that as a network error and retries, and these refusals happen only for unreleased or paused routes.
+- **m2, redaction heuristic.**
+  - Fix:
+    - `describeFailure` prints a message only for the new `ConfigurationError` (`common/configuration-error.ts`), still filtered by `isSafeOperationalText`. Any other error prints its class, plus SQLSTATE or system code.
+    - `OperationalLogger` never prints Nest's string messages.
+    - Every startup configuration throw in the release graph is now a `ConfigurationError`, so its fixed text stays readable. That covers settings, URLs, keys, receipts, login roles, object storage, `TRUST_PROXY_HOPS`, the worker intervals, the registry descriptor, unclassified routes and the migration journal.
+  - Tests:
+    - Probe D's values all print as `Error`/`TypeError`.
+    - Sixteen settings' errors are `ConfigurationError` with a readable message.
+    - The worker entries have no plain `throw new Error(`.
+    - The four existing expectations in `operational-safety.spec.ts` are updated.
+  - `incident.md`'s redaction wording now says the tests check known shapes; it is not a guarantee.
+- **m3, receipts.**
+  - Fix:
+    - An all-zero `evidence_sha256` is invalid.
+    - `recorded_at` and `valid_until` must round-trip through `toISOString()`, with zero milliseconds optional. This rejects hour 24 and day 31 of September.
+    - `/ready` returns `{status: "ready"}` or a 503 problem without `fields`; check states go only to the `readiness` log line.
+    - `beta-receipts.md` says "format- and time-checked attestations".
+  - Tests: probe E's cases, accepted canonical forms, and `/ready` without states, in both specs.
+- **m4, late queue-age alert.**
+  - `startQueueReports(report, QUEUE_REPORT_INTERVAL_MS = 60 s)` in `operational-metrics.ts` reports at once and then every minute on an unref'd timer, never overlapping. Its stop waits for a running report before the pool ends.
+  - All three workers use it. The job worker's queue report left `maintain()`, the security worker's left its pass, and the deletion worker's left its 5-minute backlog report.
+  - The heartbeat is now every minute; `incident.md` alerts after 5 minutes without it.
+  - Tests: timing with fake timers, and a source check that each worker schedules it and that the job worker's sweep has no `queueAge`.
+- **m5, performance smoke distribution.** Reads and writes rotate over the accounts with separate counters. Test: one simulated minute at the plan's load across 20 accounts: every account reads and writes, at most 30 writes per account (12 in practice).
+- **m6, docs drift.**
+  - `release.md`: 7 entries, 141 files, 9 direct and 123 closure packages at this tree, from the `release-graph.mjs check` below. The journal line already ended at `0018_import_confirmation` (P3).
+  - `beta-receipts.md`: P2b, P2c and P3 are built and merged.
+  - `incident.md`: `ocr` is checked after authentication, in the controller; the heartbeat goes to stdout.
+  - The Dockerfile and `linux-native-bindings.mjs` comments now name `swc sharp`.
+- **Nits:**
+  - A second signal is ignored: `emitter.on`, and the handlers stay installed.
+  - `runMain` installs `uncaughtException`/`unhandledRejection` handlers that log `<name> crashed: <class>[ code]` and exit 1.
+  - The `/ready` query carries `query_timeout`.
+  - `FEATURE_GATES` is required in `V1AccessGuard` and `ImportsController` (no `@Optional` fail-open). `createV1TestApp` provides it, and specs pin both the wiring and the refusal without it.
+  - `performance-smoke.mjs` needs a staging label (`staging`, `stage`, `stg`), so `api.gogospend.app` is refused.
+  - `release-smoke.cjs` adds `@nestjs/jwt`, `class-validator` and `class-transformer` to the absent list. It also serves the real `V1AppModule` in the image (`/live` 200, `/ready` 503 `SERVICE_UNAVAILABLE`) and stops it with `gracefulHttpStop`.
+  - `multer` is documented in `release.md` as a load-time dependency of `@nestjs/platform-express` that no v1 route uses. Excluding it would break loading.
+  - The runbook says a shutdown cuts a streaming upload, and P2a's stale-upload pass ends it.
+  - The 540 s bound on JSON bodies is documented (`release.md`, `HTTP_TIMEOUTS`) rather than split per route.
+
+### Evidence
+
+- **RED** (assertion failures against compile-safe seams: no-op drain and expiry check, a `release` that called `fail`, a run-once queue report, unchanged rules; no module errors; logs `p6bfix-red-*.log`):
+  - `npm run test -w gogospend-api -- --runTestsByPath src/common/operational-hardening.spec.ts src/common/operational-safety.spec.ts`: 46 failed, 38 passed of 84.
+    - The new spec: 42 of 45 failed. The three that held were the `valid_until` round trip (already NaN), the accepted canonical forms, and the real module's gates wiring, which was correct.
+    - The existing spec: the 4 changed expectations failed, 35 passed.
+  - `npm run test:db -w gogospend-api -- --runTestsByPath src/common/operational-hardening.integration.spec.ts`: 5 failed, 1 passed of 6. The guard-refusal test held.
+  - `node --test` over the five changed or new ops/CI test files: 10 failed, 33 passed of 43.
+- **GREEN:** the same commands give 86 of 86 (unit), 7 of 7 (database) and test:ops 107 of 107.
+  - Added after RED: the idle-socket stop test, the early-return release test and the security-worker stop test. Each was added for a mutation that survived, or with its fix, and was proved by mutation.
+  - The m1 test client was changed to yield (see m1), and the queue-report test to async fake timers.
+- **Mutation check** (`p6bfix-mutate.py`; each guard mutated alone, its tests run, the file restored; the SHA-256 of all 18 touched files was identical before and after): 41 of 42 killed.
+  - The two first-run survivors were killed after adding tests:
+    - idle sockets not polled (the streaming test);
+    - releasing only on throw (the early-return test).
+  - The one survivor is equivalent: `JobWorker` calling `fail(…, retryable)` instead of `release` on a stop. `fail` already turns that into a release.
+  - A spot check confirmed the database mutants fail on assertions (`attempts` 3 for 2).
+- **Full gate** on this tree (Node 26.10.0), all PASS:
+  - typecheck and typecheck:app;
+  - test:api (41 suites, 825 tests);
+  - test:db (40 suites, 630 tests);
+  - test:app (28);
+  - test:unit (241);
+  - test:dev (7);
+  - test:ops (107, `GOGOSPEND_OPS_REQUIRE_DB=1`, Docker rehearsal included);
+  - test:render (66);
+  - build;
+  - `release-graph.mjs check` (141 files, 9 direct packages, 123 closure packages, no problems);
+  - export:web;
+  - `git diff --check` (and against `9e1a857`).
+- **Image** (local Docker, linux/arm64; never pushed):
+  - `docker build -f apps/api/Dockerfile -t p6bfix-probe .` PASS (release graph inside the build: 141 files, 123 closure packages, no problems).
+  - `docker run --rm p6bfix-probe node scripts/release-smoke.cjs` → `ok: true` on Node v24.22.0:
+    - five processes load the contracts and fail closed at the database (`Error ECONNREFUSED`), with no missing module and 0 secrets printed;
+    - `http`: `/live` 200 `{status: "live"}`, `/ready` 503 `SERVICE_UNAVAILABLE`, graceful stop in 3 ms;
+    - both parser children parse;
+    - no legacy path or package, including `@nestjs/jwt`, `class-validator` and `class-transformer`.
+  - The default command with no settings prints `v1 startup failed: ConfigurationError: Database URL is not configured.`
+  - `docker rmi p6bfix-probe` done.
+- **SKIPPED:** hosted CI (E4); the platform's health check setting and an external `/ready` monitor (E3); hosted receipts, hence a real preflight pass (E1); a staging performance run (E1); x64 image build; device journeys (E2). As before, no provider resource, credential or MCP tool was used.
+
+### For the integrator
+
+- **Migration edited in place:** `0009_jobs_storage.sql`, function `gogospend_guard_job_transition` only. A local database that already applied 0009 is refused by the journal check (`gogospend_v1` from `npm run dev:v1`). It was not touched here; recreate it when convenient. Test databases are created fresh.
+- **P2b-fix (`worker.ts`):**
+  - My edits are the header comment, the `ConfigurationError` import and two throws, and the queue report moved to `reportQueue`/`startQueueReports` (`stopQueueReports` in `finally`).
+  - Their parser-sandbox startup check should throw `ConfigurationError` if its message should be readable: a plain `Error` now logs only its class.
+  - Their `parse-handler.ts` can use `jobs.release(lease, 'ocr_paused')` to let an image parse wait without spending an attempt. Any retryable `fail` it records after a worker stop is already a release.
+- **P2b-fix, P2c, P3 (shared docs):** `release.md` (What ships, health, stop, preflight, verify, logs), `incident.md` (first moves, pausing, alert table, logs) and `rollback.md` (steps 2 and 5, signals) changed. Expect conflicts near the Node runtime notes.
+- **New tests and modules:**
+  - Any new test module that includes `V1AccessGuard` or `ImportsController` must provide `FEATURE_GATES`, or import `FeatureGatesModule`. `createV1TestApp` does.
+  - New startup settings should throw `ConfigurationError`.
+- **Not fixed, outside this review:** `worker.ts` prints its import-maintenance summary as `job worker: import maintenance failed N stale upload(s) …` (P2a's wording). An alert on the prefix `import maintenance failed` would match that info line. It was left alone to keep this change out of P2b-fix's area; reword it to `marked N stale upload(s) failed`.

@@ -58,13 +58,13 @@ test('enumerate lists every recoverable copy kind with its source and expiry', a
       staticSource('neon-history', [copy({ id: 'pitr_window', kind: 'database_history', created_at: at(-7 * DAY + 60_000), expires_at: at(60_000) })]),
       staticSource('neon-branches', [copy({ id: 'br_1', kind: 'database_branch', created_at: at(-2 * DAY), expires_at: at(DAY) })]),
       staticSource('neon-snapshots', [copy({ id: 'snap_1', kind: 'manual_snapshot', created_at: at(-3 * DAY), expires_at: at(2 * DAY) })]),
-      staticSource('recovery-store', [copy({ id: 'bk_1' }), copy({ id: 'bk_1_objects', kind: 'object_backup' })]),
+      staticSource('recovery-store', [copy({ id: 'bk_1' }), copy({ id: 'bk_1_objects', kind: 'object_backup' }), copy({ id: 'bk_2.partial', kind: 'partial_backup', created_at: at(-3_600_000), expires_at: at(DAY - 3_600_000) })]),
       staticSource('restore-ledger', [copy({ id: 'gogospend_restore_abcdef12', kind: 'restore_copy', environment: 'non_production', synthetic: true, created_at: at(-3_600_000), expires_at: at(DAY) })]),
     ],
   });
   const copies = await inventory.enumerate();
   assert.deepEqual(new Set(copies.map((entry) => entry.kind)), new Set(COPY_KINDS));
-  assert.equal(copies.length, 6);
+  assert.equal(copies.length, 7);
   assert.deepEqual(copies.map((entry) => entry.created_at), copies.map((entry) => entry.created_at).sort());
   for (const entry of copies) {
     assert.ok(entry.source.length > 0);

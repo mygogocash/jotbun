@@ -4,6 +4,7 @@ import { jwtVerify } from 'jose';
 import { isLoopbackHost } from '../database/database-config';
 import { Auth0KeySource } from './auth0-key-source';
 import type { JwksOptions } from './auth0-key-source';
+import { ConfigurationError } from '../common/configuration-error';
 
 export type Auth0Config = {
   issuer: string;
@@ -104,15 +105,15 @@ export function auth0ConfigFromEnv(env: NodeJS.ProcessEnv): Auth0Config {
   try {
     url = new URL(issuer);
   } catch {
-    throw new Error('AUTH0_ISSUER must be an absolute URL.');
+    throw new ConfigurationError('AUTH0_ISSUER must be an absolute URL.');
   }
   const loopbackTest = url.protocol === 'http:' && isLoopbackHost(url.hostname) && env.NODE_ENV !== 'production';
   if ((url.protocol !== 'https:' && !loopbackTest) || !issuer.endsWith('/') || url.search || url.hash) {
-    throw new Error('AUTH0_ISSUER must be an https URL ending in "/".');
+    throw new ConfigurationError('AUTH0_ISSUER must be an https URL ending in "/".');
   }
   const audience = (env.AUTH0_AUDIENCE ?? '').trim();
-  if (!audience) throw new Error('AUTH0_AUDIENCE is not configured.');
+  if (!audience) throw new ConfigurationError('AUTH0_AUDIENCE is not configured.');
   const allowedClientIds = (env.AUTH0_ALLOWED_CLIENT_IDS ?? '').split(',').map((id) => id.trim()).filter(Boolean);
-  if (allowedClientIds.length === 0) throw new Error('AUTH0_ALLOWED_CLIENT_IDS is not configured.');
+  if (allowedClientIds.length === 0) throw new ConfigurationError('AUTH0_ALLOWED_CLIENT_IDS is not configured.');
   return { issuer, audience, allowedClientIds };
 }

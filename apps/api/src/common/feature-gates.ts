@@ -4,6 +4,7 @@ import type { Reflector } from '@nestjs/core';
 import type { ApiErrorCode } from '@gogospend/contracts';
 
 import { ProblemException } from './api-problem.filter';
+import { ConfigurationError } from './configuration-error';
 
 /**
  * Operational gates (P6b). Each scope can be paused on its own, without a
@@ -138,7 +139,7 @@ export function releaseFlagFromEnv(env: NodeJS.ProcessEnv, name: string): boolea
   const value = env[name];
   if (value === undefined || value === '' || value === '0' || value === 'false') return false;
   if (value === '1' || value === 'true') return true;
-  throw new Error(`${name} must be 1/true or 0/false (off by default).`);
+  throw new ConfigurationError(`${name} must be 1/true or 0/false (off by default).`);
 }
 
 /**
@@ -149,11 +150,11 @@ export function releaseFlagFromEnv(env: NodeJS.ProcessEnv, name: string): boolea
 export function featureGatesFromEnv(env: NodeJS.ProcessEnv): FeatureGates {
   const names = (env.OPERATIONAL_PAUSE ?? '').split(',').map((name) => name.trim()).filter(Boolean);
   const unknown = names.filter((name) => !isScope(name));
-  if (unknown.length > 0) throw new Error(`OPERATIONAL_PAUSE may list only ${GATE_SCOPES.join(', ')}.`);
+  if (unknown.length > 0) throw new ConfigurationError(`OPERATIONAL_PAUSE may list only ${GATE_SCOPES.join(', ')}.`);
   const retryRaw = env.OPERATIONAL_PAUSE_RETRY_AFTER_SECONDS;
   const retryAfterSeconds = retryRaw === undefined || retryRaw === '' ? DEFAULT_RETRY_AFTER_SECONDS : Number(retryRaw);
   if (!Number.isInteger(retryAfterSeconds) || retryAfterSeconds < 30 || retryAfterSeconds > 3600) {
-    throw new Error('OPERATIONAL_PAUSE_RETRY_AFTER_SECONDS must be 30-3600.');
+    throw new ConfigurationError('OPERATIONAL_PAUSE_RETRY_AFTER_SECONDS must be 30-3600.');
   }
   const unexposed = (Object.entries(RELEASE_FLAGS) as [GateScope, string][]).filter(([, flag]) => !releaseFlagFromEnv(env, flag)).map(([scope]) => scope);
   return new FeatureGates({ paused: names as GateScope[], unexposed, retryAfterSeconds });

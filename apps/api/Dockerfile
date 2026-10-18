@@ -35,9 +35,11 @@ COPY apps/api/package.json apps/api/
 COPY apps/app/package.json apps/app/
 COPY packages/contracts/package.json packages/contracts/
 RUN npm ci --workspace gogospend-api --include-workspace-root=false --ignore-scripts --no-audit --no-fund
-# The lockfile records only the darwin-arm64 @swc/core binding (P6b finding):
-# add the Linux one at the exact locked version, refused unless its sha512
-# matches the pin. Build stage only; the compiler never reaches the runtime.
+# The lockfile records only the darwin-arm64 bindings of @swc/core and sharp
+# (P6b finding): add the Linux ones at the exact locked versions, refused
+# unless their sha512 matches the pin. The swc compiler stays in the build
+# stage; sharp's binding is staged into the runtime with the release graph,
+# because P2b's image parser child loads it.
 COPY scripts/ci/linux-native-bindings.mjs scripts/ci/
 RUN node scripts/ci/linux-native-bindings.mjs swc sharp
 COPY packages/contracts/src packages/contracts/src
