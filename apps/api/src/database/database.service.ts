@@ -18,7 +18,9 @@ export const PG_POOL = Symbol('PG_POOL');
 const insideOwnerTransaction = new AsyncLocalStorage<true>();
 
 // Transaction-local bounds so a stuck request cannot hold the account lock.
-const STATEMENT_TIMEOUT = '15s';
+// One statement: a 500-row import confirmation (the batch cap) exceeded 15s
+// on the CI runner and came back as a 500. 30s still bounds a stuck lock.
+const STATEMENT_TIMEOUT = '30s';
 const IDLE_IN_TRANSACTION_TIMEOUT = '30s';
 
 @Injectable()

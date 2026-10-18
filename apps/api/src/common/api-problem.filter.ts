@@ -42,11 +42,21 @@ export function sendProblem(req: Request, res: Response, status: number, code: A
   // A client still writing a chunked body never sees Express's json() reply on
   // Node 24: ending that reply with Connection: close aborts the socket (RST)
   // and drops the bytes. Write the refusal on the socket and half-close it,
-  // without reading the rest of the body.
-  if (!req.complete && !res.headersSent && refuseUnread(req, status, Buffer.from(JSON.stringify(body)), problem.retryAfterSeconds)) return;
+  // without reading the rest of the body. GETs and finished bodies stay on
+  // Express so Cache-Control and the request log still apply.
+  if (hasUnreadBody(req) && !res.headersSent && refuseUnread(req, status, Buffer.from(JSON.stringify(body)), problem.retryAfterSeconds)) return;
   if (!req.complete && !res.headersSent) res.setHeader('Connection', 'close');
   if (problem.retryAfterSeconds !== undefined) res.setHeader('Retry-After', String(problem.retryAfterSeconds));
   res.status(status).json(body);
+}
+
+/** A request that still has a body the handler did not read. */
+function hasUnreadBody(req: Request): boolean {
+  if (req.complete) return false;
+  const length = req.headers['content-length'];
+  if (typeof length === 'string' && /^\d+$/.test(length) && Number(length) > 0) return true;
+  const encoding = req.headers['transfer-encoding'];
+  return typeof encoding === 'string' && encoding.length > 0;
 }
 
 /** True when the refusal was written and the socket half-closed. */
