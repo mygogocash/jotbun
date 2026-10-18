@@ -10,8 +10,11 @@ default 15), through `RetentionHandler` and the steps registered in
 `apps/api/src/privacy/privacy-steps.ts`. Every deadline is the database clock,
 so no worker clock can shorten one. Each step is a SECURITY DEFINER routine
 that deletes only what is past its deadline, never waits on an account lock a
-user write holds (that account is retried next pass), and can run any number
-of times. A failing step does not stop the others.
+user write holds (that account is retried next pass), works in bounded batches
+(at most 10,000 rows per call, called again until a call removes nothing) and
+can run any number of times. A failing step does not stop the others. An
+account being erased is left to its erasure: retention writes no purge group
+for it.
 
 ## What is kept, and for how long
 
@@ -21,14 +24,15 @@ of times. A failing step does not stop the others.
 | Export request (`exports` row and `export` entity) | 30 days after the request (the file itself 24 hours) | row deleted, entity purged as above | `records.purge` |
 | Export file, snapshot chunks | 24 hours | deleted by P1's sweep at expiry; an overdue export file alerts | P1 sweep (`worker.ts`) |
 | Snapshot manifest rows | a week past expiry | deleted | `sync.change_log` (S1) |
-| Superseded change-log rows | 30 days | deleted; the retention line (`pruned_through`) moves and older cursors get `410 RESYNC_REQUIRED` | `sync.change_log` (S1; P5 also removes rows superseded after an earlier pass) |
+| Superseded change-log rows | 30 days | deleted; the retention line (`pruned_through`) moves and older cursors get `410 RESYNC_REQUIRED` | `sync.change_log` (S1). P5 also removes rows superseded after an earlier pass, still incrementally: only the history of entities changed since the last pass is visited (50,000 entities: 1.6 ms per pass, against 27 ms for a full scan) |
 | Command receipt request digests | 30 days (the outbox lifetime) | digest dropped; the compact acknowledgement stays, so status still answers, and a replay is `409 IDEMPOTENCY_MISMATCH` (never executed again) | `commands.receipt_digests` |
 | Provider-event receipts, reconcile checks | 30 days (past the 7-day event window) | deleted | `auth.security_records` |
 | Expired reauthentication challenges | a day past expiry | deleted | `auth.security_records` |
 | `deleted` holds | one hour past provider verification of the erasure | deleted | `auth.security_records` |
 | Finished jobs (succeeded, superseded, cancelled) | 30 days | deleted; failed jobs stay for the runbook | `jobs.finished` |
-| Completed deletion requests | 30 days after the purge | deleted | `privacy.deletion_requests` |
-| Raw uploads / quarantine (P2a), unconfirmed previews and unattached sanitized images (P2b), receipts of purged or replaced records (P2c), import selections (P3) | per their task | - | **registration point**: each task adds its step (below) |
+| Completed deletion requests | 30 days after the purge (and its registry record) | deleted | `privacy.deletion_requests` |
+| P2a upload rows | 30 days after they were refused, failed or expired (or after an accepted upload's 24-hour expiry); never a receiving one or one inside the 24-hour quota window | deleted (P2a's maintenance clears names after 8 days; quarantine objects go at 24 hours) | `imports.uploads` |
+| Unconfirmed previews and unattached sanitized images (P2b), receipts of purged or replaced records (P2c), import selections (P3) | per their task | - | **registration point**: each task adds its step (below) |
 
 ## Purged records and sync
 
@@ -44,7 +48,11 @@ synced record's data, under the account lock:
   record cannot be edited), so only cursors older than S1's own 30-day
   guarantee resync;
 - snapshot manifests built before the purge are dropped and their chunk
-  objects become due for the sweep;
+  objects become due for the sweep, and the account's purge watermark
+  (`account_sync_state.purge_revision`) moves to the purge's revision: a
+  snapshot whose read view predates it is refused by
+  `gogospend_record_snapshot` (the builder retries with a fresh view), so no
+  view read before the purge can be served afterwards;
 - compact receipts stay: a replay of the original command returns its
   acknowledgement with `entity_state: "purged"`, and any new create, edit or
   restore for that id is `410 ENTITY_PURGED`. Nothing can resurrect the record.
@@ -54,7 +62,7 @@ synced record's data, under the account lock:
 Register in `defaultPrivacySteps()` (`privacy-steps.ts`) and nowhere else:
 
 ```ts
-.retention({ name: 'uploads.quarantine', run: (pool) => count(pool, 'gogospend_expire_quarantine') })
+.retention({ name: 'imports.preview', run: (pool) => batched(pool, 'gogospend_prune_import_candidates') })
 ```
 
 - one SECURITY DEFINER routine per step, granted to `gogospend_jobs`, with a

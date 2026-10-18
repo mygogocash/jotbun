@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { inspect } from 'node:util';
 
 import { findRecoveryCredentialNames, localDockerDump, localRecoveryStore, memoryAttachmentSource, runDailyBackup } from './backup.mjs';
-import { SubjectLookupKey, memoryMarkerSource } from './erasure-markers.mjs';
+import { SubjectLookupKey, memoryMarkerSource, planErasure } from './erasure-markers.mjs';
 import { createOpsLog, OpsError } from './ops-safety.mjs';
 import { decryptStream, encryptStream, manifestMac, readRecoveryKeyFromFd, RecoveryKey } from './recovery-crypto.mjs';
 import { localRestoreLedger } from './recovery-inventory.mjs';
@@ -286,6 +286,30 @@ test('restore_reapplies_external_erasure_registry', async () => {
     for (const subject of Object.values(SUBJECT)) assert.ok(!JSON.stringify(receipt).includes(subject));
     for (const subject of Object.values(SUBJECT)) assert.ok(!JSON.stringify(receipt).includes(digestOf(subject)));
   });
+});
+
+test('P5: erasures still in progress, or accepted in the copy without a marker, are re-queued; purged ones are only replayed', () => {
+  const lookupKey = SubjectLookupKey.generate();
+  const created = '2026-10-10T00:00:00.000Z';
+  const identities = [
+    { issuer: ISSUER, subject: SUBJECT.erased, account_id: ACCOUNT.erased, created_at: created },
+    { issuer: ISSUER, subject: SUBJECT.folded, account_id: ACCOUNT.folded, created_at: created },
+    { issuer: ISSUER, subject: SUBJECT.reborn, account_id: ACCOUNT.reborn, created_at: created },
+    { issuer: ISSUER, subject: SUBJECT.kept, account_id: ACCOUNT.kept, created_at: created },
+  ];
+  const marker = (accountId, subject, extras = {}) => ({
+    marker_id: randomUUID(), account_id: accountId, subject_lookups: [lookupKey.lookup(ISSUER, subject)], lookup_key_id: lookupKey.id, recorded_at: '2026-10-16T20:00:00.000Z', ...extras,
+  });
+  const end = '2026-10-17T05:00:00.000Z';
+  const plan = planErasure(identities, [
+    marker(ACCOUNT.erased, SUBJECT.erased),
+    marker(ACCOUNT.folded, SUBJECT.folded, { purged_at: '2026-10-16T21:00:00.000Z', blocked_until: end }),
+  ], lookupKey, [ACCOUNT.erased, ACCOUNT.folded], NOW, [ACCOUNT.reborn]);
+  assert.deepEqual(plan.accountIds, [ACCOUNT.erased, ACCOUNT.folded, ACCOUNT.reborn].sort());
+  assert.deepEqual(plan.reapply, [ACCOUNT.erased, ACCOUNT.reborn].sort());
+  // The purged erasure replays its block end; the others are held with no end until they purge again.
+  assert.deepEqual(plan.blocks.map((block) => `${block.digest}:${block.until}`).sort(),
+    [`${digestOf(SUBJECT.erased)}:null`, `${digestOf(SUBJECT.folded)}:${end}`, `${digestOf(SUBJECT.reborn)}:null`].sort());
 });
 
 test('principal-digest rows left behind block the serving switch', async () => {

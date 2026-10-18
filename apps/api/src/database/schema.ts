@@ -33,6 +33,8 @@ export const accountSyncState = pgTable('account_sync_state', {
   accountId: uuid('account_id').primaryKey().references(() => accounts.id, { onDelete: 'cascade' }),
   revision: bigint('revision', { mode: 'bigint' }).notNull().default(0n),
   prunedThrough: bigint('pruned_through', { mode: 'bigint' }).notNull().default(0n),
+  // P5: the latest retention purge's revision; no snapshot below it is recorded.
+  purgeRevision: bigint('purge_revision', { mode: 'bigint' }).notNull().default(0n),
 });
 
 // Reached only through gogospend_consume_rate_limit/gogospend_purge_rate_limits;
@@ -189,12 +191,14 @@ export const exportsTable = pgTable('exports', {
   expiresAt: instant('expires_at'),
 });
 
-/** P5: one per account being erased; outlives the account (routines only). */
+/** P5: one per account being erased - the erasure's work item; outlives the account (routines only). */
 export const deletionRequests = pgTable('deletion_requests', {
   requestId: uuid('request_id').primaryKey(),
-  accountId: uuid('account_id').notNull().unique(),
+  // Not account_id: a work item, not the account's data (a restore keeps it).
+  erasedAccountId: uuid('erased_account_id').notNull().unique(),
+  jobId: uuid('job_id').notNull().unique(),
   commandId: uuid('command_id').notNull(),
-  // Null for an erasure re-queued after a restore.
+  // Null for an erasure re-queued after a restore; the principal digest is cleared at the purge.
   initiatorBindingDigest: bytea('initiator_binding_digest').unique(),
   initiatorPrincipalDigest: bytea('initiator_principal_digest'),
   initiatorClientId: text('initiator_client_id'),
@@ -203,7 +207,20 @@ export const deletionRequests = pgTable('deletion_requests', {
   providerVerifiedAt: instant('provider_verified_at'),
   objectsSweptAt: instant('objects_swept_at'),
   purgedAt: instant('purged_at'),
+  blockedUntil: instant('blocked_until'),
+  markerPurgeRecordedAt: instant('marker_purge_recorded_at'),
 });
+
+/** P5: the provider aliases an erasure still has to clean up (until its purge). */
+export const deletionRequestSubjects = pgTable(
+  'deletion_request_subjects',
+  {
+    requestId: uuid('request_id').notNull().references(() => deletionRequests.requestId, { onDelete: 'cascade' }),
+    issuer: text('issuer').notNull(),
+    subject: text('subject').notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.requestId, table.issuer, table.subject] })],
+);
 
 /** P5: the independent erasure registry (maintenance role only; its own database in production). */
 export const erasureRegistry = pgSchema('erasure_registry');
@@ -213,6 +230,8 @@ export const erasureMarkers = erasureRegistry.table('erasure_markers', {
   subjectLookups: text('subject_lookups').array().notNull(),
   lookupKeyId: text('lookup_key_id').notNull(),
   recordedAt: instant('recorded_at').notNull().defaultNow(),
+  purgedAt: instant('purged_at'),
+  blockedUntil: instant('blocked_until'),
 });
 
 export const reauthChallenges = pgTable('reauth_challenges', {
@@ -497,6 +516,7 @@ export const schema = {
   exports: exportsTable,
   importUploads,
   deletionRequests,
+  deletionRequestSubjects,
   importPreviews,
   importCandidates,
 };

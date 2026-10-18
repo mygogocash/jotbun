@@ -15,12 +15,15 @@
 //   recorded_at      ISO-8601 UTC time the marker was durably written
 //   purged_at        optional, ISO-8601 or null: when P5 verified the last
 //                    server-side copy of the account's rows and objects was
-//                    purged. Until it is set the marker can never be cleared
-//                    (recovery-inventory.mjs canClearMarker).
+//                    purged (P5 writes it once, after its purge). Until it is
+//                    set the marker can never be cleared
+//                    (recovery-inventory.mjs canClearMarker), and a restore
+//                    re-queues the account's erasure (`reapply` below).
 //   blocked_until    optional, ISO-8601 or null: the end of the account's
-//                    blocked-principal hold as P5 last set it. A restore
-//                    replays it; absent or null means no end (permanent until
-//                    P5's tooling lifts it).
+//                    blocked-principal hold as P5 set it at the purge (one
+//                    hour past provider verification). A restore replays it;
+//                    absent or null means no end yet - the re-queued erasure
+//                    sets it when it purges again.
 // No email, name, raw subject, token, amount or other financial value.
 //
 // ErasureMarkerSource (what P5 supplies to restores):
@@ -166,8 +169,10 @@ export function hostedMarkerSource() {
  * - `blocks`: those aliases re-blocked with the block end their marker
  *   records. Several markers on one account: no end wins, else the latest.
  *   An end already past adds no block.
+ * - `reapply`: the accounts whose erasure was still in progress (a marker
+ *   without purged_at, or a request held by the copy), for P5's re-queue.
  */
-export function planErasure(identities, markers, lookupKey, existingAccountIds, now = new Date()) {
+export function planErasure(identities, markers, lookupKey, existingAccountIds, now = new Date(), requestedAccountIds = []) {
   const existing = new Set(existingAccountIds);
   const byLookup = new Map();
   const byAccount = new Map();
@@ -177,12 +182,17 @@ export function planErasure(identities, markers, lookupKey, existingAccountIds, 
     byLookup.set(lookup, [...(byLookup.get(lookup) ?? []), entry]);
     byAccount.set(identity.account_id, [...(byAccount.get(identity.account_id) ?? []), entry]);
   }
-  // TODO(P5): a marker without blocked_until re-blocks with no end, which
-  // also stops that person signing up again until P5's tooling lifts the block.
-  // P5 should set blocked_until on the marker whenever it ends or shortens the
-  // hold, so a restore replays the same state.
+  // P5 sets purged_at and blocked_until on every marker once its purge is
+  // verified. A marker without them is an erasure still in progress at the
+  // registry's last write: its account is re-queued (`reapply`, P5's
+  // gogospend_reapply_erasure) so provider cleanup runs again, and its aliases
+  // are held with no end until that erasure purges and sets the end. The same
+  // goes for `requestedAccountIds`: deletions the restored copy itself holds
+  // as accepted but not purged (their marker may not exist yet).
   const blockEnd = new Map();
+  const pending = new Set();
   const erase = (accountId, marker) => {
+    if (!marker.purged_at) pending.add(accountId);
     const until = marker.blocked_until ?? null;
     const previous = blockEnd.has(accountId) ? blockEnd.get(accountId) : undefined;
     blockEnd.set(accountId, previous === null || until === null ? null : previous === undefined || Date.parse(until) > Date.parse(previous) ? until : previous);
@@ -202,6 +212,7 @@ export function planErasure(identities, markers, lookupKey, existingAccountIds, 
     }
     if (hit) applied += 1;
   }
+  for (const accountId of requestedAccountIds) erase(accountId, { purged_at: null, blocked_until: null });
   const principalDigests = [];
   const blocks = [];
   const nowMs = new Date(now).getTime();
@@ -215,5 +226,8 @@ export function planErasure(identities, markers, lookupKey, existingAccountIds, 
   // Every marker's own account id is erased too, present or not: deleting an
   // absent id is a no-op, and the after-check then covers it as well.
   const accountIds = new Set([...blockEnd.keys(), ...markers.map((marker) => marker.account_id)]);
-  return { accountIds: [...accountIds].sort(), accountsErased: blockEnd.size, applied, notPresent: markers.length - applied, principalDigests: principalDigests.sort(), blocks };
+  return {
+    accountIds: [...accountIds].sort(), accountsErased: blockEnd.size, applied, notPresent: markers.length - applied,
+    principalDigests: principalDigests.sort(), blocks, reapply: [...pending].filter((accountId) => blockEnd.has(accountId)).sort(),
+  };
 }

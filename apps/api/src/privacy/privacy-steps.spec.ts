@@ -21,10 +21,10 @@ describe('the privacy extension point', () => {
 
   it('lists every retention rule this release has, and the tables the cascade cannot reach', () => {
     expect(defaultPrivacySteps().retentionSteps().map((step) => step.name)).toEqual([
-      'records.purge', 'sync.change_log', 'commands.receipt_digests', 'auth.security_records', 'jobs.finished', 'privacy.deletion_requests',
+      'records.purge', 'sync.change_log', 'commands.receipt_digests', 'auth.security_records', 'jobs.finished', 'privacy.deletion_requests', 'imports.uploads',
     ]);
     expect(defaultPrivacySteps().erasureSteps()).toEqual([]);
-    expect(Object.keys(ERASURE_HANDLED_TABLES).sort()).toEqual(['auth_event_receipts', 'deletion_requests', 'jobs', 'object_publications']);
+    expect(Object.keys(ERASURE_HANDLED_TABLES).sort()).toEqual(['auth_event_receipts', 'jobs', 'object_publications']);
   });
 });
 

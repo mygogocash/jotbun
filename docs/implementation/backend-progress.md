@@ -1615,7 +1615,7 @@ Observed, not changed (pre-existing):
   - `gogospend_purge_entities` (internal): a purged tombstone in a new change group, earlier change rows of those entities deleted, `pruned_through` moved over them, and snapshots built before dropped (their objects become due).
   - Retention (jobs): `gogospend_retention_purge_candidates`/`_account`, `gogospend_drop_receipt_digests`, `gogospend_prune_security_records`, `gogospend_prune_finished_jobs` and `gogospend_prune_deletion_requests`.
   - `gogospend_reapply_erasure` (granted to no role; for P6a's restore operator).
-  - S1's `gogospend_prune_account` is replaced: a change that was an entity's head when an earlier pass moved the retention line, and was superseded later, was never removed. It now is, once its successor is past the cutoff.
+  - S1's `gogospend_prune_account` is replaced: a change that was an entity's head when an earlier pass moved the retention line, and was superseded later, was never removed. It now is, at the account's next prune pass (its successor sits above the old retention line, so the account is a candidate once that successor is 30 days old). Corrected in the review fixes below, which also restore an incremental bound.
 - **API:** `PrivacyModule`:
   - `POST /v1/me/deletion` (`recent_proof`; Idempotency-Key = the `deletion` proof's command id; 202 `{request_id, status: "accepted"}`). `DeletionService.request(ctx, proofId, commandId)` takes the lock, re-checks the session, consumes the proof and calls the routine in one transaction.
   - `POST /v1/auth/deletion-receipt` (`token_only`; the old binding header and `{command_id}`) answers only the initiating device: `accepted` or `completed`, otherwise 404.
@@ -1999,3 +1999,72 @@ Observed, not changed (pre-existing):
 - **One gate failure, fixed:** P6a's check that the API source holds no recovery-credential names flagged P2b's parser-isolation fixture, `RECOVERY_KEY_REF`. The fixture now builds that name at runtime, so the check stays strict.
 - **Full gate on the merged tree:** typecheck PASS, typecheck:app PASS, test:api PASS (734), test:db PASS (559), test:app PASS (28), test:unit PASS (221), test:dev PASS (7), test:render PASS (60), build PASS, export:web PASS, `git diff --check` PASS. test:ops first failed 1 of 78 on that check; after the fixture fix it passes 78 of 78 and the parser spec 149 of 149.
 - **Open for the P2b review:** a preview expiry job for an account at another lifecycle generation ends `superseded`, and P2a's maintenance does not know P2b's tables. That account's candidates then stay until it is deleted.
+
+## Review fixes for P5
+
+- **Review** (of `d972fde`, merged as `7646c43`): four majors (the linked-alias mutants M7–M10), six minor findings and five more surviving mutants (M6, M13, M14, M15, M17). Worked on `c68f1c0`; P5's privacy migration (now `0015_privacy`, undeployed) is edited in place.
+- **Fixed:**
+  - **Linked aliases (major).** New tests give an account a second sign-in method (an alias row, as F6c's linking leaves it). They assert that every alias is held at the request, captured for the provider stage, in the marker, revoked, deleted and confirmed at Auth0, and blocked with a lapsing hold after the purge, and that the second alias cannot sign in. M7–M10 are now killed.
+  - **Snapshot read before a purge (minor 2).** `account_sync_state.purge_revision` is a per-account purge watermark that `gogospend_purge_entities` raises. S1's `gogospend_record_snapshot` (replaced in place) refuses a high-water below it, so the builder retries with a fresh view. Manifests built earlier were already dropped. The reviewer's probe is now a test: the retention purge runs between the build's read and its record, nothing is recorded, nothing published carries the purged note, and a fresh build is recorded.
+  - **Accepted before the marker exists (minor 3).** The window is documented in [deletion.md](../operations/deletion.md) and [restore.md](../operations/restore.md), with an operator check before any serving switch. The restore tooling now also replays what it can see: deletion requests that the restored copy holds as accepted but unpurged are erased and re-queued (`restorer.openDeletions`; the rehearsal seeds one with no marker).
+  - **P5 and P6a's restore reconciled (minor 4).**
+    - P6a's `applyErasure` (`scripts/ops/local-postgres.mjs`) first calls `gogospend_reapply_erasure` for every erasure still in progress (`planErasure` now returns `reapply`: marker accounts without `purged_at`, plus the copy's open requests), then erases rows as before.
+    - To make that possible, the erasure's work items no longer carry `account_id`:
+      - `deletion_requests.account_id` became `erased_account_id`, with `job_id` naming its job;
+      - provider aliases are captured in the new `deletion_request_subjects` (until the purge), so provider cleanup no longer reads `account_identities`;
+      - a re-queued job has no `account_id`.
+    - P6a's row-level erase and its "no erased-owner rows" check therefore pass, and the re-queued job still knows which Auth0 users to delete.
+    - The registry now writes the marker fields P6a honours. After the purge, a new registry stage sets `purged_at` and `blocked_until` (the hold end) on every unpurged marker, once: the registry role gets UPDATE of those two columns only, and a trigger refuses any other change or a second purge record. The job completes only after that (`gogospend_deletion_finish`).
+    - `record` reuses only unpurged markers, so an erasure re-run after a restore gets a fresh, unclearable marker.
+    - The hold semantics match P5's: no end while pending, one hour past provider verification after the purge, and a restore replays it.
+  - **Performance (minor 5):**
+    - `jobs_account_idx` and `auth_event_receipts_account_idx` are new; with sequential scans disabled, the purge's statements use them (tested).
+    - The security-record, finished-job, deletion-request and upload prunes take a row limit (at most 10,000); the runner calls each until a call removes nothing (tested with a limit of 1 on the security-record and finished-job prunes).
+    - S1's replaced prune has an incremental bound again: besides the window, it visits only the history of entities changed since the last pass, through `entity_changes_entity_idx`. Measured on 50,000 entities: incremental 1.6 ms per pass, the first P5 version's full scan 27.2 ms, 0010's original 1.2 ms (it never removed rows superseded after an earlier pass).
+    - Before the purge, the worker deletes the account's change log, audit rows, receipts, records and entity heads in transactions of at most 5,000 rows each (`gogospend_deletion_shed`), so the final purge transaction stays small whatever the account's size.
+  - **Pseudonymous identifiers (minor 6).** The purge clears `initiator_principal_digest`; after that the receipt matches on the binding digest, client and command id. F6b's `gogospend_apply_credential_change` (replaced in place) records nothing for a principal under an active `deleted` hold and answers `no_account`; after the hold lapses, F6b's watermark applies as before. Both are tested.
+  - **M6 (minor 7).** A test calls `gogospend_cancel_account_jobs` in the owner context during a deletion; the deletion job (which keeps its `account_id` on the normal path) survives.
+  - **Other mutants:**
+    - M13: an expired deletion lease is refused by progress, identities, client ids, mark, objects, shed, purge and finish. The reviewer's M13 run had broken the migration; this test kills the real mutant.
+    - M14: a sign-in that had started (a bootstrap challenge, which has no account) is purged.
+    - M15: the intended rule is that retention leaves an account being erased to its erasure (no purge group, no new revision); it is now tested.
+    - M17: the receipt routine refuses another principal, client, command or binding.
+  - **Also:**
+    - A new `imports.uploads` retention step (`gogospend_prune_import_uploads`) closes the gap noted in the integration above. It deletes P2a's rows 30 days after they were rejected, failed or expired, or after an accepted upload's 24-hour expiry. It never touches a receiving one or one created in the last 24 hours, so the 24-hour quotas still count every upload. It is tested with failed, expired, accepted and receiving rows.
+    - The S1 prune comment and the matching receipt sentence in the P5 section above are corrected.
+    - Registry independence is explicitly SKIPPED in [deletion.md](../operations/deletion.md). `PostgresErasureRegistry` gains `independent` (false unless deployed outside the main database and its backups), `location` and `lookupKeyId`. It deliberately has no `lookupKey()`: the key's bytes never leave it and the API never imports the restore tooling, so P6a builds its marker source from a read login and its own key custody.
+- **RED, then GREEN.** Every fix was reverted at once, as a compile-safe seam (`p5fix-mutants.py seam`; the CHECK that pins the cleared digest was relaxed so that revert fails on an assertion):
+  - `npm run test:db -w gogospend-api -- --runTestsByPath src/privacy/deletion.integration.spec.ts src/privacy/retention.integration.spec.ts src/storage/deletion-publication.integration.spec.ts`: 14 of 46 failed, all on assertions.
+  - `GOGOSPEND_OPS_REQUIRE_DB=1 npm run test:ops`: 2 of 79 failed (the new `planErasure` test, on an assertion, and the Docker rehearsal's checks).
+  - The shed-loop test was added after a mutant survived (below), making 47.
+  - GREEN: 47 of 47 (61 of 61 with `migrations.integration.spec.ts`) and 79 of 79. Unit: `privacy-steps.spec.ts` 6 of 6.
+- **Mutants:** 23 of 23 killed (`p5fix-mutants.log`):
+  - the reviewer's M6, M7, M8, M9, M10, M13, M14, M15 and M17;
+  - one reversion of each fix: the purge watermark, copy requests not replayed, nothing re-queued, no captured aliases, a re-queued job keeping `account_id`, no registry purge record, purged markers reused, prunes ignoring the batch limit, each new index, no shedding, the principal digest kept, events recorded for erased principals, and upload rows never pruned.
+  - "No shedding" first survived: the purge's cascade removes the same rows. A test now spies on the worker's batches.
+- **Deviations, for review:**
+  - **Registry purge record.** The registry is append-only except for the once-only purge record. Appending a second marker instead would not work, because P6a's `planErasure` lets a marker with no end win over one with an end.
+  - **Job completion moved.** The job completes after the registry record, not inside the purge.
+  - **Raw provider subjects** sit in `deletion_request_subjects` from acceptance until the purge, the same lifetime they had in `account_identities`.
+  - **`gogospend_reapply_erasure`** always queues a fresh, detached job (cancelling or removing the earlier one) and answers `requeued` or `absent`. The `running` outcome is gone.
+  - **Replaced routines.** S1's `gogospend_record_snapshot` and F6b's `gogospend_apply_credential_change` are replaced in place in the privacy migration.
+  - **P6a's scripts** gain the `reapply` and `requested` paths, `openDeletions`, an `erasures_requeued` receipt field, a seeded pending deletion and a `planErasure` test. The rehearsal now erases 3 accounts.
+- **Risks:**
+  - The window between acceptance and the marker is only covered by the operator check, unless the copy holds the request.
+  - Until the registry has an independent placement, a main-database restore rolls the markers back with it.
+  - P2a's `import_quarantine` purpose is not in `PUBLICATION_PURPOSES`, so the erasure's orphan listing does not cover that prefix. Its registered objects are still deleted, but a P1/P2a follow-up should add it.
+  - A restored copy must run the deletion worker after the switch; a provider outage then leaves those erasures pending and alerted.
+- **Full gate:** typecheck PASS, typecheck:app PASS, test:api PASS (585), test:db PASS (551), test:app PASS (28), test:unit PASS (221), test:dev PASS (7), test:ops PASS (79, with `GOGOSPEND_OPS_REQUIRE_DB=1`, including the Docker rehearsal), test:render PASS (60), build PASS, export:web PASS, `git diff --check` PASS.
+- **Leftover databases:** the four `gogospend_test_*` databases seen afterwards hold none of these routines, so this work did not create them; they were left alone.
+- **SKIPPED:** hosted proofs (Apple revocation, the 24-hour target, real storage), an independent registry placement, and E2's deletion screen.
+
+## Integration: P5 review fixes merged
+
+- **Merged:** the P5 review fixes (`da9640d`, built on `c68f1c0`). They edit the undeployed `0015_privacy` in place.
+- **Conflicts:** two, both combined. `schema.ts` now has P5's `deletionRequestSubjects` and P2b's `importPreviews`/`importCandidates`, and the progress log keeps both sections.
+- **Checked:**
+  - `0016_import_candidates` redefines none of the routines the fixes replace in `0015` (`gogospend_record_snapshot`, `gogospend_apply_credential_change`, the deletion and purge routines) and creates no `jobs` policy.
+  - P2b's tables cascade from `accounts` and `import_uploads`, so the erasure purge covers them without an `ERASURE_HANDLED_TABLES` entry.
+  - The fixes' new `imports.uploads` retention step (`gogospend_prune_import_uploads`) also removes P2b's expired preview rows with their upload. That closes the "no retention step for `import_uploads`" gap noted at the P2a and P2b merges.
+- **Full gate on the merged tree:** typecheck PASS, typecheck:app PASS, test:api PASS (734), test:db PASS (573), test:app PASS (28), test:unit PASS (221), test:dev PASS (7), test:ops PASS (79, `GOGOSPEND_OPS_REQUIRE_DB=1`, Docker rehearsal included), test:render PASS (60), build PASS, export:web PASS, `git diff --check` PASS. The 4 `gogospend_test_*` databases seen afterwards are not from this run and were left alone.
+- **Still open from the P5 review:** `PUBLICATION_PURPOSES` does not list P2a's `import_quarantine`, so the erasure orphan listing misses that prefix. Registered quarantine objects are still deleted. This waits for P2c, which also adds a purpose there.

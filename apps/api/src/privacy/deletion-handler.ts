@@ -7,7 +7,7 @@ import type { ObjectPublicationService } from '../storage/object-publication.ser
 import type { ErasureRegistry, ProviderSubjectKey } from './erasure-registry';
 import type { PrivacySteps } from './privacy-steps';
 
-export type DeletionStage = 'marker' | 'provider' | 'objects' | 'steps' | 'purge';
+export type DeletionStage = 'marker' | 'provider' | 'objects' | 'steps' | 'purge' | 'registry';
 
 export type DeletionProgress = {
   requestId: string;
@@ -16,10 +16,15 @@ export type DeletionProgress = {
   providerVerifiedAt: Date | null;
   objectsSweptAt: Date | null;
   purgedAt: Date | null;
+  /** The aliases' hold end set at the purge. */
+  blockedUntil: Date | null;
+  /** When the registry learned the purge. */
+  markerPurgeRecordedAt: Date | null;
 };
 
 export type DeletionBacklog = { open: number; overdue: number; oldestSeconds: number; failed: number };
 export type PurgeResult = 'purged' | 'not_ready' | 'stale_lease';
+export type FinishResult = 'finished' | 'not_ready' | 'stale_lease';
 
 /**
  * The deletion worker's routines (login: gogospend_jobs + gogospend_security).
@@ -31,7 +36,8 @@ export class DeletionRepository {
 
   async progress(lease: JobLease): Promise<DeletionProgress | null> {
     const { rows } = await this.pool.query<{
-      request_id: string; account_id: string; marker_recorded_at: Date | null; provider_verified_at: Date | null; objects_swept_at: Date | null; purged_at: Date | null;
+      request_id: string; account_id: string; marker_recorded_at: Date | null; provider_verified_at: Date | null; objects_swept_at: Date | null;
+      purged_at: Date | null; blocked_until: Date | null; marker_purge_recorded_at: Date | null;
     }>('SELECT * FROM gogospend_deletion_progress($1, $2)', [lease.jobId, lease.leaseToken]);
     const row = rows[0];
     if (!row) return null;
@@ -42,10 +48,12 @@ export class DeletionRepository {
       providerVerifiedAt: row.provider_verified_at,
       objectsSweptAt: row.objects_swept_at,
       purgedAt: row.purged_at,
+      blockedUntil: row.blocked_until,
+      markerPurgeRecordedAt: row.marker_purge_recorded_at,
     };
   }
 
-  /** The account's provider aliases (until the purge). */
+  /** The provider aliases captured with the request (until the purge). */
   async identities(lease: JobLease): Promise<ProviderSubjectKey[]> {
     const { rows } = await this.pool.query<{ issuer: string; subject: string }>('SELECT issuer, subject FROM gogospend_deletion_identities($1, $2)', [lease.jobId, lease.leaseToken]);
     return rows.map((row) => ({ issuer: row.issuer, subject: row.subject }));
@@ -74,9 +82,21 @@ export class DeletionRepository {
     return { pending: row.pending, quietAfter: row.quiet_after };
   }
 
-  /** The last stage: purge the account's rows and complete the job, in one transaction. */
+  /** Deletes up to `limit` rows of the account's largest tables; 0 when nothing is left, null when the lease is no longer current. */
+  async shed(lease: JobLease, limit: number): Promise<number | null> {
+    const { rows } = await this.pool.query<{ n: number | null }>('SELECT gogospend_deletion_shed($1, $2, $3) AS n', [lease.jobId, lease.leaseToken, limit]);
+    return rows[0]?.n ?? null;
+  }
+
+  /** The purge of the account's rows, in one transaction (the job stays leased). */
   async purge(lease: JobLease): Promise<PurgeResult> {
     const { rows } = await this.pool.query<{ result: PurgeResult }>('SELECT gogospend_deletion_purge($1, $2) AS result', [lease.jobId, lease.leaseToken]);
+    return rows[0].result;
+  }
+
+  /** After the registry recorded the purge: records that and completes the job. */
+  async finish(lease: JobLease): Promise<FinishResult> {
+    const { rows } = await this.pool.query<{ result: FinishResult }>('SELECT gogospend_deletion_finish($1, $2) AS result', [lease.jobId, lease.leaseToken]);
     return rows[0].result;
   }
 
@@ -105,6 +125,8 @@ export type DeletionHandlerOptions = {
   afterStage?: (stage: DeletionStage) => Promise<void>;
   /** How long after the last publisher deadline the objects stage runs again (default 5 s). */
   quietMarginMs?: number;
+  /** Rows per short transaction before the purge (default 5,000). */
+  shedBatch?: number;
 };
 
 /**
@@ -115,7 +137,7 @@ export type DeletionHandlerOptions = {
  *                 registry must hold a marker covering every provider alias;
  *                 if it cannot be written (or read back) the job retries and
  *                 nothing is destroyed;
- *   2. provider - for each alias: revoke refresh grants (every native
+ *   2. provider - for each alias captured with the request: revoke refresh grants (every native
  *                 client), delete the Auth0 user and confirm it is gone. An
  *                 outage keeps the job pending (backoff; a terminal failure
  *                 is visible and alerted), never "complete";
@@ -123,11 +145,15 @@ export type DeletionHandlerOptions = {
  *                 cancelled publisher may still write wait until that
  *                 publisher's final deadline (the job is deferred), then the
  *                 sweep removes them and any orphan under the account;
- *   4. steps    - registered per-domain erasure steps (privacy-steps.ts);
- *   5. purge    - one transaction deletes the account's private rows and
- *                 completes the job; its aliases stay blocked for an hour past
- *                 provider verification, so no access token issued before
- *                 can bootstrap.
+ *   4. steps    - registered per-domain erasure steps (privacy-steps.ts),
+ *                 then the account's largest tables are deleted in short
+ *                 batches, so the purge transaction stays small;
+ *   5. purge    - one transaction deletes the account's remaining private
+ *                 rows and captured aliases; the aliases stay blocked for an
+ *                 hour past provider verification, so no access token issued
+ *                 before can bootstrap;
+ *   6. registry - the markers get purged_at and that hold end (only then may
+ *                 a restore's inventory clear them), and the job completes.
  * Needs no user login. Logs nothing; failures are short codes.
  */
 export class DeletionHandler {
@@ -206,11 +232,32 @@ export class DeletionHandler {
         }
       }
       await this.after('steps');
+
+      for (;;) {
+        if (lease.signal.aborted) return fail('lease_expired');
+        const shed = await deps.repository.shed(lease, this.options.shedBatch ?? 5_000);
+        if (shed === null) return;
+        if (shed === 0) break;
+      }
+
+      const result = await deps.repository.purge(lease);
+      if (result === 'stale_lease') return;
+      if (result === 'not_ready') return fail('deletion_not_ready');
+      await this.after('purge');
     }
 
-    const result = await deps.repository.purge(lease);
-    if (result === 'not_ready') return fail('deletion_not_ready');
-    if (result === 'purged') await this.after('purge');
+    const purged = progress.purgedAt ? progress : await deps.repository.progress(lease);
+    if (!purged?.purgedAt) return;
+    if (!purged.markerPurgeRecordedAt) {
+      try {
+        await deps.registry.recordPurge(purged.accountId, purged.purgedAt, purged.blockedUntil);
+      } catch {
+        return fail('registry_unavailable');
+      }
+      await this.after('registry');
+    }
+    const finished = await deps.repository.finish(lease);
+    if (finished === 'not_ready') return fail('deletion_not_ready');
   }
 
   private async after(stage: DeletionStage): Promise<void> {
