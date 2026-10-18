@@ -232,7 +232,12 @@ export class ConfirmationService {
     const { selection_id: id, ...rest } = batch;
     // P2c: a kept receipt is copied to the account's own receipt key before the
     // command (registry first, outside any transaction); the command links it.
-    const prepared = batch.receipt ? await this.attachments.prepare(ctx, batch.receipt.attachment_id, input.commandId) : null;
+    // The copy is made only once the read-only checks the command repeats under
+    // its lock (selection, revisions, rows, the preview's own image) pass: an
+    // invalid batch creates no copy and reserves nothing. A failed pre-check
+    // does not answer for the command (a replay of a finished one must still
+    // replay): the command runs without a copy and refuses with its own error.
+    const prepared = batch.receipt && (await this.receiptAllowed(ctx, batch, batch.receipt, options.jobId)) ? await this.attachments.prepare(ctx, batch.receipt.attachment_id, input.commandId) : null;
     try {
       const ack = await this.executor.run(ctx, { ...input, payload: { id, ...rest } }, (tx) => this.confirmIn(tx, ctx, input.commandId, batch, options.jobId, prepared));
       return await this.outcome(ctx, batch, ack, options.jobId);
@@ -240,6 +245,31 @@ export class ConfirmationService {
       // A copy the command did not publish is due at once.
       if (prepared) await this.attachments.release(ctx, prepared).catch(() => undefined);
     }
+  }
+
+  /**
+   * The read-only half of the receipt checks, outside the command: the
+   * selection, preview, revisions and rows `confirmIn` requires, and that the
+   * receipt is this import's own image. True when the command can go on to use
+   * a copy; false when it would refuse (or the receipt belongs to a row that
+   * is not there to take it).
+   */
+  private receiptAllowed(ctx: SessionContext, batch: ConfirmImportBatch, receipt: ImportReceiptChoice, jobId: string | undefined): Promise<boolean> {
+    return this.db.withOwnerTransaction(
+      ctx,
+      async (tx) => {
+        try {
+          const selection = await this.openSelection(tx, batch, jobId);
+          this.assertInsideSelection(await this.batchRows(tx, selection, batch));
+          await this.assertOwnReceipt(tx, selection.job_id, receipt);
+          return true;
+        } catch (error) {
+          if (error instanceof ProblemException) return false;
+          throw error;
+        }
+      },
+      { snapshot: true },
+    );
   }
 
   /** The selection's durable progress, or null for an unknown or foreign one. */
@@ -343,7 +373,8 @@ export class ConfirmationService {
     if (problems.size > 0) throw rowProblems(problems, 'errors.import_selection_invalid');
   }
 
-  private async confirmIn(tx: OwnerTx, ctx: SessionContext, commandId: string, batch: ConfirmImportBatch, jobId: string | undefined, prepared: PreparedReceipt | null): Promise<MutationResult> {
+  /** The batch's selection, still matching the ready, unexpired preview at the frozen revision the client names. */
+  private async openSelection(tx: OwnerTx, batch: ConfirmImportBatch, jobId: string | undefined): Promise<SelectionRow> {
     const selection = await this.selection(tx, batch.selection_id);
     if (!selection || (jobId !== undefined && selection.job_id !== jobId)) throw new ProblemException(404, 'NOT_FOUND');
     if (selection.preview_status !== 'ready' || selection.expired) throw new ProblemException(409, 'IMPORT_PREVIEW_UNAVAILABLE', { messageKey: 'errors.import_preview_expired' });
@@ -354,7 +385,11 @@ export class ConfirmationService {
       // The preview was corrected after this freeze: freeze the current revision again.
       throw new ProblemException(409, 'IMPORT_SELECTION_CONFLICT', { messageKey: 'errors.import_selection_stale', current: { review_revision: selection.review_revision } });
     }
-    const rows = await tx.query<BatchRow>(
+    return selection;
+  }
+
+  private batchRows(tx: OwnerTx, selection: SelectionRow, batch: ConfirmImportBatch): Promise<BatchRow[]> {
+    return tx.query<BatchRow>(
       `SELECT b.source_row_id, r.ordinal, to_char(r.occurred_on, 'YYYY-MM-DD') AS occurred_on, (g.source_row_id IS NOT NULL) AS committed,
               w.archived AS wallet_archived, to_char(w.tracking_start, 'YYYY-MM-DD') AS tracking_start, c.archived AS category_archived
          FROM unnest($2::text[]) AS b(source_row_id)
@@ -364,6 +399,9 @@ export class ConfirmationService {
          LEFT JOIN categories c ON c.id = r.category_id`,
       [selection.selection_id, batch.batch_row_ids, selection.job_id],
     );
+  }
+
+  private assertInsideSelection(rows: readonly BatchRow[]): void {
     const outside = rows.filter((row) => row.ordinal === null).map((row) => row.source_row_id);
     if (outside.length > 0) {
       throw new ProblemException(409, 'IMPORT_SELECTION_CONFLICT', {
@@ -371,6 +409,12 @@ export class ConfirmationService {
         fields: Object.fromEntries(outside.slice(0, MAX_ROW_PROBLEMS).map((id) => [id, 'errors.import_row_outside_selection'])),
       });
     }
+  }
+
+  private async confirmIn(tx: OwnerTx, ctx: SessionContext, commandId: string, batch: ConfirmImportBatch, jobId: string | undefined, prepared: PreparedReceipt | null): Promise<MutationResult> {
+    const selection = await this.openSelection(tx, batch, jobId);
+    const rows = await this.batchRows(tx, selection, batch);
+    this.assertInsideSelection(rows);
     // Under the lock: references and dates as M3 checks them for a new record.
     const today = bangkokDate(new Date());
     const open = rows
@@ -405,6 +449,12 @@ export class ConfirmationService {
     // in this transaction, under P2c's ownership and retention rules (a
     // receipt past its window or removed refuses the whole batch).
     const imageRecord = saving.find((row) => row.source_row_id === IMPORT_IMAGE_ROW_ID);
+    if (batch.receipt && imageRecord && !prepared) {
+      // No copy was made: the pre-check failed (and this refuses for the same reason) or the state moved
+      // since it ran. Never save the image's record without the receipt the user asked to keep.
+      await this.assertOwnReceipt(tx, selection.job_id, batch.receipt);
+      throw new ProblemException(503, 'SERVICE_UNAVAILABLE', { retryAfterSeconds: 1 });
+    }
     if (batch.receipt && prepared && imageRecord) {
       await this.linkReceipt(tx, selection.job_id, batch.receipt, prepared, imageRecord.id);
       const [held] = await tx.query<RecordRow>(`SELECT ${RECORD_COLUMNS} FROM transactions WHERE id = $1`, [imageRecord.id]);
@@ -439,11 +489,14 @@ export class ConfirmationService {
 
   /** Only this import's own receipt image (the preview's attachment id) may be kept with its record. */
   private async linkReceipt(tx: OwnerTx, jobId: string, receipt: ImportReceiptChoice, prepared: PreparedReceipt, transactionId: string): Promise<void> {
-    const [preview] = await tx.query<{ attachment_id: string | null }>('SELECT image_attachment_id AS attachment_id FROM import_previews WHERE job_id = $1', [jobId]);
-    if (!preview?.attachment_id || preview.attachment_id !== receipt.attachment_id || prepared.attachmentId !== receipt.attachment_id) {
-      throw stateProblem('errors.import_receipt_not_this_import', 'receipt.attachment_id');
-    }
+    await this.assertOwnReceipt(tx, jobId, receipt);
+    if (prepared.attachmentId !== receipt.attachment_id) throw stateProblem('errors.import_receipt_not_this_import', 'receipt.attachment_id');
     await this.attachments.attachIn(tx, prepared, transactionId);
+  }
+
+  private async assertOwnReceipt(tx: OwnerTx, jobId: string, receipt: ImportReceiptChoice): Promise<void> {
+    const [preview] = await tx.query<{ attachment_id: string | null }>('SELECT image_attachment_id AS attachment_id FROM import_previews WHERE job_id = $1', [jobId]);
+    if (!preview?.attachment_id || preview.attachment_id !== receipt.attachment_id) throw stateProblem('errors.import_receipt_not_this_import', 'receipt.attachment_id');
   }
 
   /** The batch's outcome from durable progress (the same for a replay of the same command). */

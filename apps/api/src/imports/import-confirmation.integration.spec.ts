@@ -635,8 +635,8 @@ describe('receipts (P2c) kept with a confirmed image row', () => {
     expect([elsewhere.status, elsewhere.body.message_key]).toEqual([422, 'errors.import_receipt_not_this_import']);
     expect(await count('transactions', setup.user.accountId)).toBe(0);
     expect(await count('attachments', setup.user.accountId)).toBe(0);
-    // The copy made for the refused command is due at once, not left reserved.
-    expect(await adminRows(`SELECT key FROM object_publications WHERE account_id = $1 AND purpose = 'receipt' AND delete_after > now()`, [setup.user.accountId])).toEqual([]);
+    // Refused by the read-only pre-checks, before any copy: nothing was reserved, not even a due one.
+    expect(await adminRows(`SELECT key FROM object_publications WHERE account_id = $1 AND purpose = 'receipt'`, [setup.user.accountId])).toEqual([]);
 
     const key = randomUUID();
     const receipt = { attachment_id: attachmentId, consent: 'retain_receipt' };
@@ -654,6 +654,34 @@ describe('receipts (P2c) kept with a confirmed image row', () => {
     expect(await adminRows(`SELECT status FROM attachments WHERE account_id = $1`, [setup.user.accountId])).toEqual([{ status: 'retained' }]);
     expect(await adminRows(`SELECT status FROM object_publications WHERE account_id = $1 AND purpose = 'receipt' AND status = 'published'`, [setup.user.accountId])).toEqual([{ status: 'published' }]);
     expect((await as(setup.user).get(`/v1/attachments/${attachmentId}/grant`)).status).toBe(200);
+  });
+
+  it('an invalid batch makes no copy: a wrong revision, a stale selection or an unknown selection never reaches the receipt copy', async () => {
+    const { setup, attachmentId } = await receiptImport();
+    expect((await patchRows(setup, 1, [{ source_row_id: 'image:1', occurred_on: '2026-03-03', type: 'expense', amount_minor: '6500', wallet_label: 'Cash', category_label: 'food' }])).status).toBe(200);
+    const mapping: ImportMapping = { wallets: { Cash: setup.wallets.cash }, categories: { expense: { food: builtinId(setup.user, 'food') }, income: {} } };
+    const selectionId = await frozen({ ...setup, mapping }, ['image:1'], { revision: '2', mapping });
+    const receipt = { attachment_id: attachmentId, consent: 'retain_receipt' };
+    const copies = () => adminRows(`SELECT key FROM object_publications WHERE account_id = $1 AND purpose = 'receipt'`, [setup.user.accountId]);
+
+    const wrongRevision = await confirm(setup, selectionId, ['image:1'], { frozenRevision: '1', receipt });
+    expect([wrongRevision.status, wrongRevision.body.code]).toEqual([409, 'IMPORT_SELECTION_CONFLICT']);
+    const unknown = await confirm(setup, randomUUID(), ['image:1'], { frozenRevision: '2', receipt });
+    expect(unknown.status).toBe(404);
+    // Corrected after the freeze: the selection is stale.
+    expect((await patchRows(setup, 2, [{ source_row_id: 'image:1', note: 'later' }])).status).toBe(200);
+    const stale = await confirm(setup, selectionId, ['image:1'], { frozenRevision: '2', receipt });
+    expect([stale.status, stale.body.message_key]).toEqual([409, 'errors.import_selection_stale']);
+
+    expect(await copies()).toEqual([]);
+    expect(await count('transactions', setup.user.accountId)).toBe(0);
+    expect(await count('attachments', setup.user.accountId)).toBe(0);
+    // Nothing was spent or half-done: after freezing again the same receipt still works.
+    const again = await frozen({ ...setup, mapping }, ['image:1'], { revision: '3', mapping });
+    const done = await confirmed(setup, again, ['image:1'], { frozenRevision: '3', receipt });
+    expect(done.committed).toEqual(['image:1']);
+    expect(await adminRows(`SELECT status FROM attachments WHERE account_id = $1`, [setup.user.accountId])).toEqual([{ status: 'retained' }]);
+    expect((await copies()).length).toBe(1);
   });
 
   it('a receipt that can no longer be kept refuses the batch, and the record can be saved without it', async () => {
