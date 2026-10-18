@@ -392,7 +392,7 @@ export function CustomerSpendAllScreen() {
   }, [months, selectedMonth, summary]);
 
   if (!isSpendEnabled() || !spendLive) {
-    return <Redirect href="/profile" />;
+    return <Redirect href="/" />;
   }
   if (!isAuthed) {
     return <Redirect href="/login" />;
@@ -592,7 +592,7 @@ export function CustomerSpendAllScreen() {
           {filterSection}
         </>
       }
-      title={tc("GoGoSpend")}
+      title={tc("Jotbun")}
     >
       {/* ── add one from here ───────────────────────────────────────── */}
       <View style={styles.addCard}>

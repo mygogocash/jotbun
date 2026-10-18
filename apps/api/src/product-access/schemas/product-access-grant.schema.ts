@@ -15,13 +15,13 @@ export type ProductAccessGrantDocument = HydratedDocument<ProductAccessGrant>;
 })
 export class ProductAccessGrant {
   @Prop({ type: String, required: true, enum: PRODUCT_ACCESS_PRODUCTS })
-  product: ProductAccessProduct;
+  product!: ProductAccessProduct;
 
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true })
-  user_id: Types.ObjectId;
+  user_id!: Types.ObjectId;
 
   @Prop({ type: String, required: true })
-  granted_by: string;
+  granted_by!: string;
 }
 
 export const ProductAccessGrantSchema =

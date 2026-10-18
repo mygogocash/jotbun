@@ -10,23 +10,23 @@ export type SpendBankConnectionDocument = HydratedDocument<SpendBankConnection>;
 })
 export class SpendBankConnection {
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, index: true })
-  user_id: Types.ObjectId;
+  user_id!: Types.ObjectId;
 
   @Prop({ type: String, required: true })
-  saltedge_customer_id: string;
+  saltedge_customer_id!: string;
 
   @Prop({ type: String, default: null })
-  connection_id: string | null;
+  connection_id!: string | null;
 
   @Prop({ type: String, default: null })
-  provider_code: string | null;
+  provider_code!: string | null;
 
   @Prop({
     type: String,
     enum: ['pending', 'active', 'failed'],
     default: 'pending',
   })
-  status: 'pending' | 'active' | 'failed';
+  status!: 'pending' | 'active' | 'failed';
 }
 
 export const SpendBankConnectionSchema =

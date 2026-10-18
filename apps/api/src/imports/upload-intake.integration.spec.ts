@@ -1,0 +1,968 @@
+import { createHash, randomUUID } from 'node:crypto';
+import { once } from 'node:events';
+import { readFileSync } from 'node:fs';
+import { request as httpRequest } from 'node:http';
+import type { Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import { join } from 'node:path';
+
+import { IMPORT_LIMIT_MESSAGE_KEYS, IMPORT_UPLOAD_MAX_BYTES, IMPORT_UPLOAD_RECEIVE_SECONDS, isImportJobDto } from '@gogospend/contracts';
+import type { ImportJobDto } from '@gogospend/contracts';
+import { getTableConfig } from 'drizzle-orm/pg-core';
+import type { Pool } from 'pg';
+import request from 'supertest';
+
+import { LeasedAccountRead } from '../database/leased-account-read';
+import { importUploads } from '../database/schema';
+import { HandlerRegistry } from '../jobs/handler-registry';
+import { buildHandlers } from '../jobs/handlers';
+import { JobRepository } from '../jobs/job.repository';
+import { JobWorker } from '../jobs/worker';
+import { ObjectPublicationService } from '../storage/object-publication.service';
+import type { MemoryObjectStore, ObjectStore } from '../storage/object-store';
+import { OBJECT_STORE } from '../storage/storage.module';
+import { authFixtures } from '../testing/auth-fixtures';
+import type { SignedUp } from '../testing/auth-fixtures';
+import { acceptPolicies, publishPolicies, startV1App } from '../testing/command-fixtures';
+import { startJwksFixture } from '../testing/jwks-server';
+import type { JwksFixture } from '../testing/jwks-server';
+import { createTestDatabase } from '../testing/postgres-harness';
+import type { TestDatabase } from '../testing/postgres-harness';
+import { V1_REQUEST_TIMEOUT_MS } from '../v1/v1-app.module';
+import { SYNTHETIC, meteredStream } from './fixtures/synthetic-uploads';
+import { importMaintenance, quarantineCleanupOverdue } from './import-expiry';
+
+const MiB = 1024 * 1024;
+const CAP = IMPORT_UPLOAD_MAX_BYTES;
+const HOUR_MS = 3_600_000;
+// A legacy sample, read-only: accepted into quarantine, never parsed here.
+const LEGACY_SAMPLE = readFileSync(join(__dirname, '..', 'spend', 'fixtures', 'spendee-th-sample.csv'));
+
+let db: TestDatabase;
+let issuer: JwksFixture;
+let fx: ReturnType<typeof authFixtures>;
+let v1: Awaited<ReturnType<typeof startV1App>>;
+let server: Server;
+let port: number;
+let store: ObjectStore;
+let jobsPool: Pool;
+let jobs: JobRepository;
+let publication: ObjectPublicationService;
+let worker: JobWorker;
+let handled: string[];
+let ownerPool: Pool;
+
+async function member(): Promise<SignedUp> {
+  const user = await fx.signUp();
+  await acceptPolicies(db, user.accountId);
+  return user;
+}
+
+async function sessionHeaders(user: SignedUp): Promise<Record<string, string>> {
+  return {
+    'x-gogospend-client': 'ios/1.0.0',
+    authorization: `Bearer ${await issuer.accessToken({ sub: user.who.subject })}`,
+    'x-gogospend-session': user.binding,
+  };
+}
+
+type Reply = { status: number; body: Record<string, unknown> & Partial<ImportJobDto>; headers: Record<string, string | string[] | undefined> };
+type UploadOptions = {
+  name?: string;
+  /** Sent as is (already percent-encoded, or deliberately malformed). */
+  rawName?: string;
+  type?: string;
+  key?: string;
+  /** Stream without Content-Length (chunked). */
+  chunked?: boolean;
+  /** A Content-Length to declare instead of the real one; the body is then held back until the reply. */
+  declaredLength?: number;
+  /** Destroy the request after writing this many bytes (a client that goes away). */
+  abortAfter?: number;
+  /** After writing `bytes`, wait for `then` before writing the rest. */
+  pauseAfter?: { bytes: number; then: () => Promise<void> };
+};
+
+/** A raw HTTP upload (node:http), so bodies can stream, stall or abort. */
+async function upload(user: SignedUp, body: Uint8Array | AsyncIterable<Uint8Array>, options: UploadOptions = {}): Promise<Reply> {
+  const headers: Record<string, string> = {
+    ...(await sessionHeaders(user)),
+    'idempotency-key': options.key ?? randomUUID(),
+    'content-type': options.type ?? 'text/csv',
+    'x-gogospend-file-name': options.rawName ?? encodeURIComponent(options.name ?? 'statement.csv'),
+  };
+  const isBytes = body instanceof Uint8Array;
+  if (options.declaredLength !== undefined) headers['content-length'] = String(options.declaredLength);
+  else if (isBytes && !options.chunked) headers['content-length'] = String(body.byteLength);
+  return new Promise<Reply>((resolve, reject) => {
+    let settled = false;
+    // No reply in time (a server waiting for a body that is held back) reads as status 0.
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      resolve({ status: 0, body: {}, headers: {} });
+      req.destroy();
+    }, 15_000);
+    const req = httpRequest({ host: '127.0.0.1', port, method: 'POST', path: '/v1/imports', headers }, (res) => {
+      const chunks: Buffer[] = [];
+      res.on('data', (chunk: Buffer) => chunks.push(chunk));
+      res.on('end', () => {
+        clearTimeout(timer);
+        if (settled) return;
+        settled = true;
+        const text = Buffer.concat(chunks).toString('utf8');
+        resolve({ status: res.statusCode ?? 0, body: text ? (JSON.parse(text) as Reply['body']) : {}, headers: res.headers });
+        if (options.declaredLength !== undefined) req.destroy();
+      });
+    });
+    req.on('error', (error) => {
+      clearTimeout(timer);
+      if (!settled) {
+        settled = true;
+        if (options.abortAfter !== undefined) resolve({ status: 0, body: {}, headers: {} });
+        else reject(error);
+      }
+    });
+    if (options.declaredLength !== undefined) {
+      req.flushHeaders();
+      return;
+    }
+    void (async () => {
+      let written = 0;
+      let paused = false;
+      const source: AsyncIterable<Uint8Array> = isBytes ? (async function* () { yield body; })() : body;
+      for await (const chunk of source) {
+        if (req.destroyed) return;
+        if (options.abortAfter !== undefined && written + chunk.byteLength > options.abortAfter) {
+          req.write(chunk.subarray(0, options.abortAfter - written));
+          await new Promise((done) => setTimeout(done, 100));
+          req.destroy();
+          return;
+        }
+        if (!req.write(chunk)) await once(req, 'drain');
+        written += chunk.byteLength;
+        if (options.pauseAfter && !paused && written >= options.pauseAfter.bytes) {
+          paused = true;
+          await options.pauseAfter.then();
+        }
+      }
+      req.end();
+    })().catch(() => req.destroy());
+  });
+}
+
+async function get(user: SignedUp, id: string) {
+  return request(server).get(`/v1/imports/${id}`).set(await sessionHeaders(user));
+}
+
+const adminRows = async <T extends Record<string, unknown>>(text: string, values: unknown[] = []): Promise<T[]> =>
+  (await db.admin((client) => client.query<T>(text, values))).rows;
+
+async function quarantined(accountId: string): Promise<string[]> {
+  return (await store.list(`import_quarantine/${accountId}/`)).map((object) => object.key);
+}
+
+async function liveRegistry(accountId: string): Promise<{ key: string; status: string }[]> {
+  return adminRows(`SELECT key, status FROM object_publications WHERE account_id = $1 AND purpose = 'import_quarantine' AND status IN ('reserved', 'published') ORDER BY key`, [accountId]);
+}
+
+async function jobsOf(accountId: string): Promise<{ id: string; kind: string; status: string; payload: { import_job_id?: string } }[]> {
+  return adminRows(`SELECT id, kind, status, payload FROM jobs WHERE account_id = $1 ORDER BY kind, created_at`, [accountId]);
+}
+
+async function transactionCount(): Promise<number> {
+  return Number((await adminRows<{ n: string }>('SELECT count(*) AS n FROM transactions'))[0].n);
+}
+
+async function eventually<T>(read: () => Promise<T>, ok: (value: T) => boolean, ms = 5_000): Promise<T> {
+  const until = Date.now() + ms;
+  for (;;) {
+    const value = await read();
+    if (ok(value) || Date.now() > until) return value;
+    await new Promise((done) => setTimeout(done, 50));
+  }
+}
+
+/** Accepted uploads `minutesAgo`, straight into the ledger (quota fixtures). */
+async function seedAccepted(accountId: string, rows: { bytes: number; minutesAgo: number }[]): Promise<void> {
+  for (const row of rows) {
+    await db.admin((client) =>
+      client.query(
+        `INSERT INTO import_uploads (job_id, account_id, lifecycle_generation, intake_token, status, file_name, declared_type, format, bytes, sha256, part_count,
+                                     created_at, receive_deadline, accepted_at, expires_at)
+         SELECT gen_random_uuid(), a.id, a.lifecycle_generation, gen_random_uuid(), 'accepted', 'seed.csv', 'text/csv', 'csv', $2::bigint, decode(repeat('ab', 32), 'hex'),
+                greatest(1, ceil($2::bigint / 1048576.0))::int, t.at, t.at + interval '10 minutes', t.at + interval '1 minute', t.at + interval '1 minute' + interval '24 hours'
+           FROM accounts a, (SELECT now() - make_interval(mins => $3::int) AS at) t
+          WHERE a.id = $1`,
+        [accountId, row.bytes, row.minutesAgo],
+      ),
+    );
+  }
+}
+
+/** Moves an upload (and its expiry job) `hours` into the past. */
+async function age(jobId: string, hours: number): Promise<void> {
+  await db.admin(async (client) => {
+    await client.query(
+      `UPDATE import_uploads SET created_at = created_at - make_interval(hours => $2), receive_deadline = receive_deadline - make_interval(hours => $2),
+              accepted_at = accepted_at - make_interval(hours => $2), expires_at = expires_at - make_interval(hours => $2)
+        WHERE job_id = $1`,
+      [jobId, hours],
+    );
+    await client.query(`UPDATE jobs SET run_after = run_after - make_interval(hours => $2) WHERE kind = 'import_expire' AND payload ->> 'import_job_id' = $1::text`, [jobId, hours]);
+  });
+}
+
+/** One owner-context statement in its own transaction (the app login), as the API's owner transactions run them. */
+async function asOwner(user: SignedUp, text: string, values: unknown[]): Promise<Record<string, unknown>[]> {
+  const client = await ownerPool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(`SELECT set_config('gogospend.account_id', $1, true)`, [user.accountId]);
+    const { rows } = await client.query<Record<string, unknown>>(text, values);
+    await client.query('COMMIT');
+    return rows;
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+function gate() {
+  let open: () => void = () => undefined;
+  const opened = new Promise<void>((resolve) => {
+    open = resolve;
+  });
+  return { opened, open };
+}
+
+/** `head` now, then `rest` once released: a body that stalls. */
+function stalled(head: Buffer, rest: Buffer, released: Promise<void>): AsyncIterable<Uint8Array> {
+  return (async function* () {
+    yield head;
+    await released;
+    yield rest;
+  })();
+}
+
+/** Synthetic CSV text of exactly `bytes` bytes. */
+function csvText(bytes: number): Buffer {
+  const line = Buffer.from('2026-03-01,expense,food,65.00,synthetic coffee\n');
+  const out = Buffer.alloc(bytes);
+  for (let at = 0; at < bytes; at += line.length) line.copy(out, at, 0, Math.min(line.length, bytes - at));
+  return out;
+}
+
+async function receiving(accountId: string): Promise<number> {
+  const [row] = await adminRows<{ n: string }>(`SELECT count(*) AS n FROM import_uploads WHERE account_id = $1 AND status = 'receiving'`, [accountId]);
+  return Number(row.n);
+}
+
+beforeAll(async () => {
+  db = await createTestDatabase();
+  issuer = await startJwksFixture();
+  const pool = await db.loginPool(['gogospend_app', 'gogospend_bootstrap'], 4);
+  fx = authFixtures(issuer, pool);
+  await publishPolicies(db);
+  process.env.IMPORT_UPLOADS_ENABLED = '1';
+  try {
+    v1 = await startV1App(db, issuer);
+  } finally {
+    delete process.env.IMPORT_UPLOADS_ENABLED;
+  }
+  server = v1.app.getHttpServer() as Server;
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  port = (server.address() as AddressInfo).port;
+  store = v1.app.get<ObjectStore>(OBJECT_STORE);
+  jobsPool = await db.loginPool(['gogospend_jobs'], 3);
+  jobs = new JobRepository(jobsPool);
+  publication = new ObjectPublicationService(jobsPool, store);
+  const all = buildHandlers({ jobs, reader: new LeasedAccountRead(await db.loginPool(['gogospend_leased_read'], 2)), store, publication, pool: jobsPool });
+  // This spec covers intake and quarantine expiry: its worker runs only the
+  // expiry handler, so parse jobs stay queued (parsing is import-preview.integration.spec's).
+  const handlers = new HandlerRegistry().register('import_expire', all.handler('import_expire'));
+  handled = handlers.kinds();
+  worker = new JobWorker(jobs, handlers);
+  ownerPool = await db.loginPool(['gogospend_app'], 2);
+});
+
+afterAll(async () => {
+  await v1?.close();
+  await issuer?.close();
+  await db?.drop();
+});
+
+describe('POST /v1/imports streams into bounded private quarantine', () => {
+  it('oversized_stream_is_rejected_before_buffering', async () => {
+    const user = await member();
+    let stored = 0;
+    const original = store.putStream.bind(store);
+    store.putStream = async (key, body, options) => {
+      const written = await original(key, body, options);
+      if (key.includes(user.accountId)) stored += written.bytes;
+      return written;
+    };
+    let response: Reply;
+    try {
+      response = await upload(user, meteredStream(SYNTHETIC.csv, CAP + 1).stream, { chunked: true });
+    } finally {
+      store.putStream = original;
+    }
+    const bytesBufferedBeyondCap = Math.max(0, stored - CAP);
+    expect(response.status).toBe(413);
+    expect(bytesBufferedBeyondCap).toBe(0);
+    expect(response.body.code).toBe('UPLOAD_TOO_LARGE');
+    expect(await quarantined(user.accountId)).toEqual([]);
+    expect(await liveRegistry(user.accountId)).toEqual([]);
+    expect(await jobsOf(user.accountId)).toEqual([]);
+    const [row] = await adminRows<{ status: string; outcome_code: string }>('SELECT status, outcome_code FROM import_uploads WHERE account_id = $1', [user.accountId]);
+    expect(row).toEqual({ status: 'rejected', outcome_code: 'too_large' });
+  });
+
+  it('a declared Content-Length over 12 MiB is refused before the body is read', async () => {
+    const user = await member();
+    const response = await upload(user, SYNTHETIC.csv, { declaredLength: CAP + 1 });
+    expect(response.status).toBe(413);
+    expect(response.body.code).toBe('UPLOAD_TOO_LARGE');
+    expect(await adminRows('SELECT 1 FROM import_uploads WHERE account_id = $1', [user.accountId])).toEqual([]);
+  });
+
+  it('accepts a CSV into private quarantine and queues exactly one parse job; nothing is parsed or saved', async () => {
+    const user = await member();
+    const before = await transactionCount();
+    const response = await upload(user, LEGACY_SAMPLE, { name: 'spendee-th-sample.csv' });
+    expect(response.status).toBe(202);
+    const accepted = response.body as ImportJobDto;
+    expect(isImportJobDto(accepted)).toBe(true);
+    expect(accepted).toMatchObject({ status: 'queued', format: 'csv', file_name: 'spendee-th-sample.csv', bytes: LEGACY_SAMPLE.byteLength });
+    expect(Date.parse(accepted.expires_at) - Date.parse(accepted.received_at)).toBe(24 * HOUR_MS);
+    expect(JSON.stringify(accepted)).not.toMatch(/import_quarantine|part-/);
+
+    // Quarantine: server-generated keys only, registered and published until expiry, holding exactly the upload.
+    const keys = await quarantined(user.accountId);
+    expect(keys).toEqual([expect.stringMatching(new RegExp(`^import_quarantine/${user.accountId}/${accepted.job_id}/[0-9a-f-]{36}/part-0000$`))]);
+    expect(keys.join()).not.toContain('spendee');
+    const registry = await adminRows<{ key: string; status: string; delete_after: Date; bytes: string }>(
+      `SELECT key, status, delete_after, bytes::text AS bytes FROM object_publications WHERE account_id = $1 ORDER BY key`,
+      [user.accountId],
+    );
+    expect(registry.map((row) => [row.key, row.status, row.bytes])).toEqual([[keys[0], 'published', String(LEGACY_SAMPLE.byteLength)]]);
+    expect(registry[0].delete_after.toISOString()).toBe(accepted.expires_at);
+    const whole = Buffer.from((await store.get(keys[0])) as Uint8Array);
+    expect(createHash('sha256').update(whole).digest('hex')).toBe(createHash('sha256').update(LEGACY_SAMPLE).digest('hex'));
+
+    // One parse job (the import's own id) and one expiry job; this spec's worker does not run the parser, so the parse job stays queued.
+    const queued = await jobsOf(user.accountId);
+    expect(queued.map((job) => [job.kind, job.status])).toEqual([['import_expire', 'queued'], ['import_parse', 'queued']]);
+    expect(queued.find((job) => job.kind === 'import_parse')?.id).toBe(accepted.job_id);
+    expect(queued.find((job) => job.kind === 'import_expire')?.payload).toEqual({ import_job_id: accepted.job_id });
+    expect(handled).not.toContain('import_parse');
+    expect(await worker.runOnce()).toBe('idle');
+    expect((await jobs.backlog()).some((row) => row.kind === 'import_parse' && row.status === 'queued')).toBe(true);
+
+    expect(await transactionCount()).toBe(before);
+    const read = await get(user, accepted.job_id);
+    expect(read.status).toBe(200);
+    expect(read.body).toEqual(accepted);
+  });
+
+  it.each<[string, Buffer, UploadOptions, number, string]>([
+    ['a PNG named and declared as JPEG', SYNTHETIC.png, { name: 'receipt.jpg', type: 'image/jpeg' }, 422, 'UPLOAD_TYPE_MISMATCH'],
+    ['a HEIC photo named and declared as JPEG', SYNTHETIC.heic, { name: 'receipt.jpg', type: 'image/jpeg' }, 415, 'UPLOAD_UNSUPPORTED_TYPE'],
+    ['a ZIP named and declared as CSV', SYNTHETIC.xlsx, { name: 'statement.csv' }, 422, 'UPLOAD_TYPE_MISMATCH'],
+    ['a declared HEIC type', SYNTHETIC.heic, { name: 'IMG_0001.heic', type: 'image/heic' }, 415, 'UPLOAD_UNSUPPORTED_TYPE'],
+    ['a path-like name', SYNTHETIC.csv, { name: '../../etc/passwd.csv' }, 422, 'INVALID_FILE_NAME'],
+    ['an encoded backslash path', SYNTHETIC.csv, { rawName: '..%5C..%5Cboot.csv' }, 422, 'INVALID_FILE_NAME'],
+    ['an undecodable name', SYNTHETIC.csv, { rawName: 'bad%E0%A4%A.csv' }, 422, 'INVALID_FILE_NAME'],
+    ['an empty body', Buffer.alloc(0), {}, 422, 'UPLOAD_EMPTY'],
+  ])('refuses %s: nothing quarantined, published, parsed or saved', async (_label, body, options, status, code) => {
+    const user = await member();
+    const before = await transactionCount();
+    const response = await upload(user, body, options);
+    expect([response.status, response.body.code]).toEqual([status, code]);
+    expect(await quarantined(user.accountId)).toEqual([]);
+    expect(await liveRegistry(user.accountId)).toEqual([]);
+    expect(await jobsOf(user.accountId)).toEqual([]);
+    expect(await transactionCount()).toBe(before);
+    // A refused upload keeps no file name.
+    const rows = await adminRows<{ file_name: string | null }>('SELECT file_name FROM import_uploads WHERE account_id = $1', [user.accountId]);
+    expect(rows.filter((row) => row.file_name !== null)).toEqual([]);
+  });
+
+  it('keeps Thai file names as labels and replays an accepted key without a second job', async () => {
+    const user = await member();
+    const key = randomUUID();
+    const first = await upload(user, SYNTHETIC.csvBom, { key, name: 'รายการ มีนาคม.csv' });
+    expect(first.status).toBe(202);
+    expect(first.body.file_name).toBe('รายการ มีนาคม.csv');
+    const again = await upload(user, SYNTHETIC.csvBom, { key, name: 'รายการ มีนาคม.csv' });
+    expect(again.status).toBe(202);
+    expect(again.body).toEqual(first.body);
+    const other = await upload(user, SYNTHETIC.csv, { key, name: 'other.csv' });
+    expect([other.status, other.body.code]).toEqual([409, 'IDEMPOTENCY_MISMATCH']);
+    expect((await jobsOf(user.accountId)).filter((job) => job.kind === 'import_parse')).toHaveLength(1);
+    expect(await adminRows('SELECT 1 FROM import_uploads WHERE account_id = $1', [user.accountId])).toHaveLength(1);
+    // The same key from another account is a different upload.
+    const stranger = await member();
+    const theirs = await upload(stranger, SYNTHETIC.csv, { key });
+    expect(theirs.status).toBe(202);
+    expect(theirs.body.job_id).not.toBe(first.body.job_id);
+  });
+
+  it('is disabled by default: 404 with the body unread and nothing recorded', async () => {
+    const off = await startV1App(db, issuer);
+    const offServer = off.app.getHttpServer() as Server;
+    try {
+      const user = await member();
+      const response = await request(offServer)
+        .post('/v1/imports')
+        .set({ ...(await sessionHeaders(user)), 'idempotency-key': randomUUID(), 'content-type': 'text/csv', 'x-gogospend-file-name': 'statement.csv' })
+        .send(SYNTHETIC.csv);
+      expect([response.status, response.body.code]).toEqual([404, 'NOT_FOUND']);
+      expect(await adminRows('SELECT 1 FROM import_uploads WHERE account_id = $1', [user.accountId])).toEqual([]);
+    } finally {
+      await off.close();
+    }
+  });
+});
+
+describe('per-account quotas hold under concurrent uploads', () => {
+  it('at most 5 upload attempts in 15 minutes', async () => {
+    const user = await member();
+    // In concurrent pairs (an account streams at most 2 at once): the third pair races for the last slot.
+    const replies: Reply[] = [];
+    for (let pair = 0; pair < 4; pair += 1) {
+      replies.push(...(await Promise.all([0, 1].map((index) => upload(user, SYNTHETIC.csv, { name: `s${pair}-${index}.csv` })))));
+    }
+    const statuses = replies.map((reply) => reply.status).sort();
+    expect(statuses).toEqual([202, 202, 202, 202, 202, 429, 429, 429]);
+    expect(replies.slice(4, 6).map((reply) => reply.status).sort()).toEqual([202, 429]);
+    for (const reply of replies.filter((r) => r.status === 429)) {
+      expect(reply.body).toMatchObject({ code: 'UPLOAD_LIMIT_REACHED', message_key: IMPORT_LIMIT_MESSAGE_KEYS.uploads });
+      expect(reply.body.retry_after_seconds).toBeGreaterThan(0);
+      expect(reply.body.retry_after_seconds).toBeLessThanOrEqual(15 * 60);
+      expect(reply.headers['retry-after']).toBe(String(reply.body.retry_after_seconds));
+    }
+    expect(await adminRows('SELECT 1 FROM import_uploads WHERE account_id = $1', [user.accountId])).toHaveLength(5);
+    expect((await jobsOf(user.accountId)).filter((job) => job.kind === 'import_parse')).toHaveLength(5);
+  });
+
+  it('at most 50 MiB of accepted bytes per 24 hours, decided under the account lock', async () => {
+    const user = await member();
+    await seedAccepted(user.accountId, [
+      { bytes: 12 * MiB, minutesAgo: 60 },
+      { bytes: 12 * MiB, minutesAgo: 60 },
+      { bytes: 12 * MiB, minutesAgo: 60 },
+      { bytes: 12 * MiB, minutesAgo: 60 },
+      { bytes: 2 * MiB - 3 * 1024, minutesAgo: 60 },
+    ]);
+    const body = Buffer.concat([SYNTHETIC.csv, Buffer.alloc(2048 - SYNTHETIC.csv.length, 0x61)]);
+    const replies = await Promise.all([upload(user, body, { chunked: true }), upload(user, body, { chunked: true })]);
+    expect(replies.map((reply) => reply.status).sort()).toEqual([202, 429]);
+    const refused = replies.find((reply) => reply.status === 429) as Reply;
+    expect(refused.body).toMatchObject({ code: 'UPLOAD_LIMIT_REACHED', message_key: IMPORT_LIMIT_MESSAGE_KEYS.bytes });
+    // Room returns when the seeded uploads (accepted 59 minutes ago) leave the 24-hour window.
+    expect(refused.body.retry_after_seconds).toBeGreaterThan(23 * 3600);
+    expect(refused.body.retry_after_seconds).toBeLessThanOrEqual(23 * 3600 + 60);
+    expect(await quarantined(user.accountId)).toHaveLength(1);
+    expect(await liveRegistry(user.accountId)).toHaveLength(1);
+    // A declared length that cannot fit is refused before streaming.
+    const declared = await upload(user, body);
+    expect(declared.body.message_key).toBe(IMPORT_LIMIT_MESSAGE_KEYS.bytes);
+  });
+
+  it('at most 10 parse jobs per 24 hours', async () => {
+    const user = await member();
+    await seedAccepted(user.accountId, Array.from({ length: 10 }, () => ({ bytes: 100, minutesAgo: 120 })));
+    const reply = await upload(user, SYNTHETIC.csv);
+    expect(reply.status).toBe(429);
+    expect(reply.body).toMatchObject({ code: 'UPLOAD_LIMIT_REACHED', message_key: IMPORT_LIMIT_MESSAGE_KEYS.parse_jobs });
+    // The oldest seeded upload was accepted 119 minutes ago.
+    expect(reply.body.retry_after_seconds).toBeGreaterThan(22 * 3600);
+    expect(reply.body.retry_after_seconds).toBeLessThanOrEqual(22 * 3600 + 60);
+    expect(await jobsOf(user.accountId)).toEqual([]);
+  });
+});
+
+describe('job ids belong to their account', () => {
+  it('another account gets the same 404 for an existing import as for an unknown id', async () => {
+    const owner = await member();
+    const stranger = await member();
+    const accepted = (await upload(owner, SYNTHETIC.csv)).body as ImportJobDto;
+    expect((await get(owner, accepted.job_id)).status).toBe(200);
+    const foreign = await get(stranger, accepted.job_id);
+    const unknown = await get(stranger, randomUUID());
+    expect([foreign.status, foreign.body.code, foreign.body.message_key]).toEqual([404, 'NOT_FOUND', 'errors.not_found']);
+    expect({ ...foreign.body, request_id: '' }).toEqual({ ...unknown.body, request_id: '' });
+    expect((await get(stranger, 'not-a-uuid')).status).toBe(404);
+    // A refused upload never becomes a readable import either.
+    const refused = await upload(owner, SYNTHETIC.png, { name: 'receipt.jpg', type: 'image/jpeg', key: randomUUID() });
+    expect(refused.status).toBe(422);
+    const [rejected] = await adminRows<{ job_id: string }>(`SELECT job_id FROM import_uploads WHERE account_id = $1 AND status = 'rejected'`, [owner.accountId]);
+    expect((await get(owner, rejected.job_id)).status).toBe(404);
+  });
+});
+
+describe('cancelled, failed and expired uploads are swept', () => {
+  it('expires quarantine after 24 hours through the import_expire job: objects deleted, the parse job cancelled', async () => {
+    const user = await member();
+    const key = randomUUID();
+    const accepted = (await upload(user, SYNTHETIC.png, { name: 'receipt.png', type: 'image/png', key })).body as ImportJobDto;
+    expect(await quarantined(user.accountId)).toHaveLength(1);
+    // Not due yet: nothing runs.
+    expect(await worker.runOnce()).toBe('idle');
+    await age(accepted.job_id, 25);
+    expect(await worker.runOnce()).toBe('ran');
+    expect(await quarantined(user.accountId)).toEqual([]);
+    expect(await liveRegistry(user.accountId)).toEqual([]);
+    const after = await jobsOf(user.accountId);
+    expect(after.map((job) => [job.kind, job.status])).toEqual([['import_expire', 'succeeded'], ['import_parse', 'cancelled']]);
+    const read = await get(user, accepted.job_id);
+    expect(read.body).toMatchObject({ job_id: accepted.job_id, status: 'expired', file_name: null });
+    const [row] = await adminRows<{ status: string; sha256: Buffer | null; bytes: string }>('SELECT status, sha256, bytes::text AS bytes FROM import_uploads WHERE job_id = $1', [accepted.job_id]);
+    expect(row).toEqual({ status: 'expired', sha256: null, bytes: String(SYNTHETIC.png.byteLength) });
+    // Its name is gone, so the same key replays the expired import under any name (never under another type).
+    const replay = await upload(user, SYNTHETIC.png, { name: 'renamed.png', type: 'image/png', key });
+    expect([replay.status, replay.body.status, replay.body.job_id]).toEqual([202, 'expired', accepted.job_id]);
+  });
+
+  it('an expiry job that is not due yet changes nothing', async () => {
+    const user = await member();
+    const accepted = (await upload(user, SYNTHETIC.csv)).body as ImportJobDto;
+    // Due by the queue, but the upload itself is only 23 hours old.
+    await db.admin((client) => client.query(`UPDATE jobs SET run_after = now() - interval '1 minute' WHERE kind = 'import_expire' AND payload ->> 'import_job_id' = $1::text`, [accepted.job_id]));
+    expect(await worker.runOnce()).toBe('ran');
+    expect(await quarantined(user.accountId)).toHaveLength(1);
+    expect((await get(user, accepted.job_id)).body.status).toBe('queued');
+    const [expiry] = (await jobsOf(user.accountId)).filter((job) => job.kind === 'import_expire');
+    expect(expiry.status).toBe('queued');
+  });
+
+  it('the P1 sweep deletes quarantine past its 24-hour registry deadline even if the expiry job never runs', async () => {
+    const user = await member();
+    await upload(user, SYNTHETIC.csv);
+    await db.admin((client) => client.query(`UPDATE jobs SET status = 'cancelled', finished_at = now() WHERE account_id = $1`, [user.accountId]));
+    expect(await publication.sweep(user.accountId)).toEqual([]);
+    const swept = await publication.sweep(user.accountId, new Date(Date.now() + 25 * HOUR_MS));
+    expect(swept).toHaveLength(1);
+    expect(await quarantined(user.accountId)).toEqual([]);
+    expect(await liveRegistry(user.accountId)).toEqual([]);
+  });
+
+  it('a client that goes away mid-stream leaves nothing in quarantine', async () => {
+    const user = await member();
+    const reply = await upload(user, meteredStream(SYNTHETIC.csv, 4 * MiB).stream, { chunked: true, abortAfter: 2.5 * MiB });
+    expect(reply.status).toBe(0);
+    const [row] = await eventually(
+      () => adminRows<{ status: string; outcome_code: string }>('SELECT status, outcome_code FROM import_uploads WHERE account_id = $1', [user.accountId]),
+      (rows) => rows[0]?.status === 'failed',
+    );
+    expect(row).toEqual({ status: 'failed', outcome_code: 'upload_incomplete' });
+    expect(await adminRows('SELECT file_name FROM import_uploads WHERE account_id = $1', [user.accountId])).toEqual([{ file_name: null }]);
+    expect(await quarantined(user.accountId)).toEqual([]);
+    expect(await jobsOf(user.accountId)).toEqual([]);
+    // Its reservations are due now, so the next sweep closes them.
+    await publication.sweep(user.accountId);
+    expect(await liveRegistry(user.accountId)).toEqual([]);
+  });
+
+  it('an upload whose session ended while it streamed is not accepted and leaves nothing', async () => {
+    const user = await member();
+    const reply = await upload(user, meteredStream(SYNTHETIC.csv, 3 * MiB).stream, {
+      chunked: true,
+      pauseAfter: {
+        bytes: 1.5 * MiB,
+        then: async () => {
+          await eventually(() => quarantined(user.accountId), (keys) => keys.length > 0);
+          await db.admin((client) => client.query('UPDATE accounts SET session_generation = session_generation + 1 WHERE id = $1', [user.accountId]));
+        },
+      },
+    });
+    expect([reply.status, reply.body.code]).toEqual([401, 'SESSION_REQUIRED']);
+    expect(await quarantined(user.accountId)).toEqual([]);
+    expect(await jobsOf(user.accountId)).toEqual([]);
+    const [row] = await adminRows<{ status: string; outcome_code: string }>('SELECT status, outcome_code FROM import_uploads WHERE account_id = $1', [user.accountId]);
+    expect(row).toEqual({ status: 'failed', outcome_code: 'session_ended' });
+  });
+
+  it('an API that died between a PUT and finishing: the reservation is swept after its deadline, and the upload counts as failed', async () => {
+    const user = await member();
+    // Simulate the dead API with the app login: begin, reserve, PUT - and nothing else.
+    const jobId = randomUUID();
+    const token = randomUUID();
+    const [begun] = await asOwner(user, 'SELECT outcome FROM gogospend_begin_import_upload($1, $2, $3, $4, $5)', [jobId, token, 'statement.csv', 'text/csv', null]);
+    expect(begun).toEqual({ outcome: 'started' });
+    const [reserved] = await asOwner(user, 'SELECT gogospend_reserve_import_part($1, $2, 0) AS key', [jobId, token]);
+    const key = String(reserved.key);
+    expect(key).toBe(`import_quarantine/${user.accountId}/${jobId}/${token}/part-0000`);
+    await store.putStream(key, SYNTHETIC.csv);
+    // Before the deadline the registry protects it from the orphan pass.
+    expect(await publication.sweep(user.accountId)).toEqual([]);
+    expect(await quarantined(user.accountId)).toEqual([key]);
+    // After it, the sweep deletes it.
+    expect(await publication.sweep(user.accountId, new Date(Date.now() + 30 * 60_000))).toEqual([key]);
+    expect(await quarantined(user.accountId)).toEqual([]);
+    // The dead upload is marked failed once its deadline passed, when the account next uploads.
+    await db.admin((client) => client.query(`UPDATE import_uploads SET created_at = created_at - interval '20 minutes', receive_deadline = receive_deadline - interval '20 minutes' WHERE job_id = $1`, [jobId]));
+    expect((await upload(user, SYNTHETIC.csv)).status).toBe(202);
+    const [row] = await adminRows<{ status: string; outcome_code: string }>('SELECT status, outcome_code FROM import_uploads WHERE job_id = $1', [jobId]);
+    expect(row).toEqual({ status: 'failed', outcome_code: 'deadline_passed' });
+  });
+});
+
+describe('privileges', () => {
+  it('the app login only reads its own rows; quarantine keys and jobs are reached through routines; the worker cannot mint import jobs', async () => {
+    const user = await member();
+    const app = await db.loginPool(['gogospend_app'], 1);
+    const worker = await db.loginPool(['gogospend_jobs'], 1);
+    const client = await app.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query(`SELECT set_config('gogospend.account_id', $1, true)`, [user.accountId]);
+      await expect(
+        client.query(`INSERT INTO import_uploads (job_id, account_id, lifecycle_generation, intake_token, status, declared_type, receive_deadline)
+                      VALUES (gen_random_uuid(), $1, 0, gen_random_uuid(), 'accepted', 'text/csv', now() + interval '1 minute')`, [user.accountId]),
+      ).rejects.toMatchObject({ code: '42501' });
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
+    }
+    await expect(app.query('SELECT * FROM object_publications')).rejects.toMatchObject({ code: '42501' });
+    for (const kind of ['import_parse', 'import_expire']) {
+      await expect(
+        worker.query(`INSERT INTO jobs (id, kind, account_id, lifecycle_generation, payload, max_attempts) VALUES (gen_random_uuid(), $1, $2, 0, '{}', 3)`, [kind, user.accountId]),
+      ).rejects.toMatchObject({ code: '42501' });
+    }
+    await expect(worker.query('SELECT * FROM import_uploads')).rejects.toMatchObject({ code: '42501' });
+  });
+
+  it('Drizzle definitions match the migrated import_uploads columns', async () => {
+    const config = getTableConfig(importUploads);
+    const fromDatabase = await adminRows<{ column_name: string; is_nullable: string }>(
+      `SELECT column_name, is_nullable FROM information_schema.columns WHERE table_schema = 'public' AND table_name = $1 ORDER BY column_name`,
+      [config.name],
+    );
+    expect(fromDatabase.map((row) => [row.column_name, row.is_nullable === 'NO'])).toEqual(
+      config.columns.map((column) => [column.name, column.notNull]).sort((a, b) => String(a[0]).localeCompare(String(b[0]))),
+    );
+  });
+});
+
+/** Seeded uploads `hours` further into the past (their quota window moves on). */
+async function ageSeeds(accountId: string, hours: number): Promise<void> {
+  await db.admin((client) =>
+    client.query(
+      `UPDATE import_uploads SET created_at = created_at - make_interval(hours => $2), receive_deadline = receive_deadline - make_interval(hours => $2),
+              accepted_at = accepted_at - make_interval(hours => $2), expires_at = expires_at - make_interval(hours => $2)
+        WHERE account_id = $1 AND file_name = 'seed.csv'`,
+      [accountId, hours],
+    ),
+  );
+}
+
+describe('review fixes: stalled uploads and request timeouts', () => {
+  it('an account streams at most 2 uploads at once (429 in_progress), so stalled uploads cannot starve other accounts', async () => {
+    const [a, b, bystander] = [await member(), await member(), await member()];
+    const release = gate();
+    const held: Promise<Reply>[] = [];
+    try {
+      for (const user of [a, b]) {
+        held.push(upload(user, stalled(csvText(200), csvText(200), release.opened), { chunked: true }));
+        held.push(upload(user, stalled(csvText(200), csvText(200), release.opened), { chunked: true }));
+        expect(await eventually(() => receiving(user.accountId), (n) => n === 2)).toBe(2);
+        const third = await upload(user, stalled(csvText(200), csvText(200), release.opened), { chunked: true });
+        expect([third.status, third.body.code, third.body.message_key]).toEqual([429, 'UPLOAD_LIMIT_REACHED', IMPORT_LIMIT_MESSAGE_KEYS.in_progress]);
+        expect(third.body.retry_after_seconds).toBeGreaterThan(0);
+        expect(third.body.retry_after_seconds).toBeLessThanOrEqual(60);
+      }
+      expect((await upload(bystander, SYNTHETIC.csv)).status).toBe(202);
+    } finally {
+      release.open();
+    }
+    expect((await Promise.all(held)).map((reply) => reply.status)).toEqual([202, 202, 202, 202]);
+  }, 60_000);
+
+  it('the HTTP server lets an upload use its whole receive bound before Node ends the request', () => {
+    expect(V1_REQUEST_TIMEOUT_MS).toBeGreaterThan(IMPORT_UPLOAD_RECEIVE_SECONDS * 1000);
+    expect(server.requestTimeout).toBe(V1_REQUEST_TIMEOUT_MS);
+  });
+
+  it('after an error reply the server closes the connection instead of reading an endless body', async () => {
+    const user = await member();
+    const headers = { ...(await sessionHeaders(user)), 'idempotency-key': randomUUID(), 'content-type': 'text/csv', 'x-gogospend-file-name': 'big.csv' };
+    const result = await new Promise<{ status: number; closedByServer: boolean }>((resolve) => {
+      let status = 0;
+      let repliedAt = 0;
+      let closedByServer = false;
+      let closingOurselves = false;
+      const req = httpRequest({ host: '127.0.0.1', port, method: 'POST', path: '/v1/imports', headers }, (res) => {
+        status = res.statusCode ?? 0;
+        repliedAt = Date.now();
+        res.resume();
+      });
+      const closed = () => {
+        if (!closingOurselves) closedByServer = true;
+      };
+      req.on('error', closed);
+      req.on('close', closed);
+      void (async () => {
+        const started = Date.now();
+        req.write(SYNTHETIC.png);
+        const chunk = csvText(64 * 1024);
+        while (!req.destroyed && !closedByServer && Date.now() - started < 15_000) {
+          if (repliedAt && Date.now() - repliedAt > 3_000) break;
+          const ok = req.write(chunk);
+          if (!ok) await Promise.race([once(req, 'drain').catch(() => undefined), new Promise((done) => setTimeout(done, 200))]);
+        }
+        // A reply already on its way is still read.
+        await new Promise((done) => setTimeout(done, 200));
+        closingOurselves = true;
+        req.destroy();
+        resolve({ status, closedByServer });
+      })();
+    });
+    expect(result).toEqual({ status: 422, closedByServer: true });
+  }, 30_000);
+});
+
+describe('review fixes: quotas while streaming and refusals that are not permanent', () => {
+  it('a chunked upload is refused as soon as it passes the bytes left today, before any part is written', async () => {
+    const user = await member();
+    await seedAccepted(user.accountId, [...Array.from({ length: 4 }, () => ({ bytes: 12 * MiB, minutesAgo: 60 })), { bytes: 2 * MiB - 1024, minutesAgo: 60 }]);
+    let stored = 0;
+    const original = store.putStream.bind(store);
+    store.putStream = async (key, body, options) => {
+      const written = await original(key, body, options);
+      if (key.includes(user.accountId)) stored += written.bytes;
+      return written;
+    };
+    let reply: Reply;
+    try {
+      const body = csvText(CAP);
+      reply = await upload(user, (async function* () {
+        for (let at = 0; at < body.length; at += 64 * 1024) yield body.subarray(at, at + 64 * 1024);
+      })(), { chunked: true });
+    } finally {
+      store.putStream = original;
+    }
+    expect([reply.status, reply.body.message_key]).toEqual([429, IMPORT_LIMIT_MESSAGE_KEYS.bytes]);
+    expect(reply.body.retry_after_seconds).toBeGreaterThan(23 * 3600);
+    expect(stored).toBe(0);
+    expect(await adminRows('SELECT 1 FROM object_publications WHERE account_id = $1', [user.accountId])).toEqual([]);
+  }, 30_000);
+
+  it('a quota refusal does not stick to its key: the same key gets 429 with a retry time, then succeeds once room returns', async () => {
+    const user = await member();
+    await seedAccepted(user.accountId, [...Array.from({ length: 4 }, () => ({ bytes: 12 * MiB, minutesAgo: 60 })), { bytes: 2 * MiB - 3 * 1024, minutesAgo: 60 }]);
+    const key = randomUUID();
+    const body = csvText(4 * 1024);
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const reply = await upload(user, body, { chunked: true, key });
+      expect([reply.status, reply.body.message_key]).toEqual([429, IMPORT_LIMIT_MESSAGE_KEYS.bytes]);
+      expect(reply.body.retry_after_seconds).toBeGreaterThan(23 * 3600);
+    }
+    await ageSeeds(user.accountId, 24);
+    const later = await upload(user, body, { chunked: true, key });
+    expect(later.status).toBe(202);
+    expect((await jobsOf(user.accountId)).filter((job) => job.kind === 'import_parse').map((job) => job.id)).toEqual([later.body.job_id]);
+  });
+
+  it('a parse-job refusal decided at finish does not stick to its key either', async () => {
+    const user = await member();
+    await seedAccepted(user.accountId, Array.from({ length: 9 }, () => ({ bytes: 1024, minutesAgo: 60 })));
+    // Another upload takes the last slot while this one streams.
+    const key = randomUUID();
+    const pending = upload(user, meteredStream(SYNTHETIC.csv, 3 * MiB).stream, {
+      chunked: true,
+      key,
+      pauseAfter: {
+        bytes: 1.5 * MiB,
+        then: async () => {
+          await eventually(() => quarantined(user.accountId), (keys) => keys.length > 0);
+          await seedAccepted(user.accountId, [{ bytes: 1024, minutesAgo: 1 }]);
+        },
+      },
+    });
+    const refused = await pending;
+    expect([refused.status, refused.body.message_key]).toEqual([429, IMPORT_LIMIT_MESSAGE_KEYS.parse_jobs]);
+    expect(refused.body.retry_after_seconds).toBeGreaterThan(22 * 3600);
+    const again = await upload(user, SYNTHETIC.csv, { key });
+    expect([again.status, again.body.message_key]).toEqual([429, IMPORT_LIMIT_MESSAGE_KEYS.parse_jobs]);
+    expect(again.body.retry_after_seconds).toBeGreaterThan(22 * 3600);
+    await ageSeeds(user.accountId, 24);
+    expect((await upload(user, SYNTHETIC.csv, { key })).status).toBe(202);
+  });
+
+  it('the 10 parse jobs per day hold under concurrent uploads', async () => {
+    const user = await member();
+    await seedAccepted(user.accountId, Array.from({ length: 9 }, () => ({ bytes: 1024, minutesAgo: 60 })));
+    const replies = await Promise.all(Array.from({ length: 4 }, () => upload(user, meteredStream(SYNTHETIC.csv, 2 * MiB).stream, { chunked: true })));
+    expect(replies.map((reply) => reply.status).sort()).toEqual([202, 429, 429, 429]);
+    const [today] = await adminRows<{ n: string }>(`SELECT count(*) AS n FROM import_uploads WHERE account_id = $1 AND accepted_at > now() - interval '24 hours'`, [user.accountId]);
+    expect(Number(today.n)).toBe(10);
+  });
+});
+
+describe('review fixes: fencing through the real upload', () => {
+  it('every quarantine part is registered before its PUT', async () => {
+    const user = await member();
+    const unregistered: string[] = [];
+    let puts = 0;
+    const original = store.putStream.bind(store);
+    store.putStream = async (key, body, options) => {
+      if (key.startsWith(`import_quarantine/${user.accountId}/`)) {
+        puts += 1;
+        const [row] = await adminRows<{ status: string }>('SELECT status FROM object_publications WHERE key = $1', [key]);
+        if (row?.status !== 'reserved') unregistered.push(key);
+      }
+      return original(key, body, options);
+    };
+    let reply: Reply;
+    try {
+      reply = await upload(user, meteredStream(SYNTHETIC.csv, 2.5 * MiB).stream, { chunked: true });
+    } finally {
+      store.putStream = original;
+    }
+    expect(reply.status).toBe(202);
+    expect(puts).toBe(3);
+    expect(unregistered).toEqual([]);
+  });
+
+  it('a lifecycle generation that moved while the body streamed refuses the finish and leaves nothing', async () => {
+    const user = await member();
+    const reply = await upload(user, csvText(1024 * 1024), {
+      chunked: true,
+      pauseAfter: {
+        bytes: 1024 * 1024,
+        then: async () => {
+          await eventually(() => quarantined(user.accountId), (keys) => keys.length === 1);
+          await db.admin((client) => client.query('UPDATE accounts SET lifecycle_generation = lifecycle_generation + 1 WHERE id = $1', [user.accountId]));
+        },
+      },
+    });
+    expect([reply.status, reply.body.code]).toEqual([409, 'UPLOAD_FAILED']);
+    expect(await adminRows('SELECT status, outcome_code FROM import_uploads WHERE account_id = $1', [user.accountId])).toEqual([{ status: 'failed', outcome_code: 'account_changed' }]);
+    expect(await quarantined(user.accountId)).toEqual([]);
+    expect(await jobsOf(user.accountId)).toEqual([]);
+  });
+
+  it('a receive deadline that passed while the body streamed refuses the next part', async () => {
+    const user = await member();
+    let puts = 0;
+    const original = store.putStream.bind(store);
+    store.putStream = async (key, body, options) => {
+      if (key.includes(user.accountId)) puts += 1;
+      return original(key, body, options);
+    };
+    let reply: Reply;
+    try {
+      reply = await upload(user, meteredStream(SYNTHETIC.csv, 3 * MiB).stream, {
+        chunked: true,
+        pauseAfter: {
+          bytes: 1.5 * MiB,
+          then: async () => {
+            await eventually(() => quarantined(user.accountId), (keys) => keys.length === 1);
+            await db.admin((client) => client.query(`UPDATE import_uploads SET created_at = created_at - interval '20 minutes', receive_deadline = receive_deadline - interval '20 minutes' WHERE account_id = $1`, [user.accountId]));
+          },
+        },
+      });
+    } finally {
+      store.putStream = original;
+    }
+    expect([reply.status, reply.body.code]).toEqual([409, 'UPLOAD_FAILED']);
+    expect(puts).toBe(1);
+    expect(await adminRows('SELECT status, outcome_code FROM import_uploads WHERE account_id = $1', [user.accountId])).toEqual([{ status: 'failed', outcome_code: 'reservation_refused' }]);
+    expect(await quarantined(user.accountId)).toEqual([]);
+  });
+
+  it('finish accepts only the parts reserved by the same upload, with sizes that add up', async () => {
+    const user = await member();
+    const other = (await upload(user, SYNTHETIC.csv)).body as ImportJobDto;
+    const [{ key: otherKey }] = await adminRows<{ key: string }>('SELECT key FROM object_publications WHERE job_id = $1', [other.job_id]);
+    const jobId = randomUUID();
+    const token = randomUUID();
+    await asOwner(user, 'SELECT outcome FROM gogospend_begin_import_upload($1, $2, $3, $4, $5)', [jobId, token, 'statement.csv', 'text/csv', null]);
+    const finish = (parts: unknown[], bytes: number) =>
+      asOwner(user, `SELECT outcome FROM gogospend_finish_import_upload($1, $2, 'csv', $3, decode(repeat('ab', 32), 'hex'), $4::jsonb)`, [jobId, token, bytes, JSON.stringify(parts)]);
+    await expect(finish([{ key: otherKey, bytes: SYNTHETIC.csv.byteLength, sha256: 'ab'.repeat(32) }], SYNTHETIC.csv.byteLength)).rejects.toThrow(/do not match/);
+    const [{ key }] = await asOwner(user, 'SELECT gogospend_reserve_import_part($1, $2, 0) AS key', [jobId, token]);
+    await expect(finish([{ key, bytes: 10, sha256: 'ab'.repeat(32) }], 11)).rejects.toThrow(/do not match/);
+    expect(await adminRows('SELECT status FROM import_uploads WHERE job_id = $1', [jobId])).toEqual([{ status: 'receiving' }]);
+    expect((await jobsOf(user.accountId)).filter((job) => job.kind === 'import_parse')).toHaveLength(1);
+  });
+});
+
+describe('review fixes: maintenance, retention and alerts', () => {
+  it('imports of an account being deleted or at another lifecycle generation are expired at once; their expiry job does not fail', async () => {
+    const deleting = await member();
+    const moved = await member();
+    const accepted = (await upload(deleting, SYNTHETIC.csv)).body as ImportJobDto;
+    const movedImport = (await upload(moved, SYNTHETIC.csv)).body as ImportJobDto;
+    await db.admin((client) => client.query(`UPDATE accounts SET status = 'deleting', lifecycle_generation = lifecycle_generation + 1 WHERE id = $1`, [deleting.accountId]));
+    await db.admin((client) => client.query('UPDATE accounts SET lifecycle_generation = lifecycle_generation + 1 WHERE id = $1', [moved.accountId]));
+    expect((await importMaintenance(jobsPool)).expired).toBeGreaterThanOrEqual(2);
+    for (const [user, id] of [[deleting, accepted.job_id], [moved, movedImport.job_id]] as const) {
+      expect(await adminRows('SELECT status, file_name, sha256 FROM import_uploads WHERE job_id = $1', [id])).toEqual([{ status: 'expired', file_name: null, sha256: null }]);
+      expect((await jobsOf(user.accountId)).find((job) => job.kind === 'import_parse')?.status).toBe('cancelled');
+      await publication.sweep(user.accountId);
+      expect(await quarantined(user.accountId)).toEqual([]);
+      expect(await liveRegistry(user.accountId)).toEqual([]);
+    }
+    // When its expiry job comes due it ends as superseded instead of failing three times.
+    await age(accepted.job_id, 25);
+    while ((await worker.runOnce()) === 'ran');
+    expect((await jobsOf(deleting.accountId)).find((job) => job.kind === 'import_expire')?.status).toBe('superseded');
+  });
+
+  it('fails uploads left receiving past their deadline (clearing their names) without waiting for another upload', async () => {
+    const user = await member();
+    const jobId = randomUUID();
+    const token = randomUUID();
+    await asOwner(user, 'SELECT outcome FROM gogospend_begin_import_upload($1, $2, $3, $4, $5)', [jobId, token, 'statement.csv', 'text/csv', null]);
+    const [{ key }] = await asOwner(user, 'SELECT gogospend_reserve_import_part($1, $2, 0) AS key', [jobId, token]);
+    await store.putStream(String(key), SYNTHETIC.csv);
+    await importMaintenance(jobsPool);
+    expect(await adminRows('SELECT status FROM import_uploads WHERE job_id = $1', [jobId])).toEqual([{ status: 'receiving' }]);
+    await db.admin((client) => client.query(`UPDATE import_uploads SET created_at = created_at - interval '20 minutes', receive_deadline = receive_deadline - interval '20 minutes' WHERE job_id = $1`, [jobId]));
+    expect((await importMaintenance(jobsPool)).stale).toBeGreaterThanOrEqual(1);
+    expect(await adminRows('SELECT status, outcome_code, file_name FROM import_uploads WHERE job_id = $1', [jobId])).toEqual([{ status: 'failed', outcome_code: 'deadline_passed', file_name: null }]);
+    // Its reservation is due now, so the next sweep deletes the object.
+    await publication.sweep(user.accountId);
+    expect(await quarantined(user.accountId)).toEqual([]);
+    expect(await liveRegistry(user.accountId)).toEqual([]);
+  });
+
+  it('a parsed import keeps its file name for its 7-day preview window only (the retention hook)', async () => {
+    const user = await member();
+    await seedAccepted(user.accountId, [{ bytes: 100, minutesAgo: 9 * 24 * 60 }, { bytes: 100, minutesAgo: 60 }]);
+    const seeds = await adminRows<{ job_id: string }>('SELECT job_id FROM import_uploads WHERE account_id = $1 ORDER BY accepted_at', [user.accountId]);
+    for (const seed of seeds) {
+      await db.admin((client) =>
+        client.query(`INSERT INTO jobs (id, kind, account_id, lifecycle_generation, payload, max_attempts, status, finished_at) VALUES ($1, 'import_parse', $2, 0, '{}', 3, 'succeeded', now())`, [seed.job_id, user.accountId]),
+      );
+    }
+    await importMaintenance(jobsPool);
+    expect(await adminRows('SELECT status, file_name FROM import_uploads WHERE account_id = $1 ORDER BY accepted_at', [user.accountId])).toEqual([
+      { status: 'accepted', file_name: null },
+      { status: 'accepted', file_name: 'seed.csv' },
+    ]);
+    expect((await get(user, seeds[0].job_id)).body).toMatchObject({ status: 'parsed', file_name: null });
+  });
+
+  it('counts quarantine objects whose deletion is overdue, for the worker alert line', async () => {
+    const user = await member();
+    await upload(user, SYNTHETIC.csv);
+    expect(await quarantineCleanupOverdue(jobsPool, user.accountId)).toBe(0);
+    await db.admin((client) => client.query(`UPDATE object_publications SET delete_after = now() - interval '2 hours' WHERE account_id = $1 AND purpose = 'import_quarantine'`, [user.accountId]));
+    expect(await quarantineCleanupOverdue(jobsPool, user.accountId)).toBe(1);
+    (store as MemoryObjectStore).failNext('delete');
+    await publication.sweep(user.accountId);
+    // The storage delete failed: still overdue (left deleting for the next sweep).
+    expect(await quarantineCleanupOverdue(jobsPool, user.accountId)).toBe(1);
+    await publication.sweep(user.accountId);
+    expect(await quarantineCleanupOverdue(jobsPool, user.accountId)).toBe(0);
+    expect(await quarantined(user.accountId)).toEqual([]);
+  });
+});

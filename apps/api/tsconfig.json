@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "es2021",
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "strict": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -11,13 +11,24 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "useDefineForClassFields": false,
-    "baseUrl": ".",
     "paths": {
-      "src/*": ["./src/*"],
-      "@gogospend/contracts": ["../../packages/contracts/src/index.ts"]
+      "src/*": [
+        "./src/*"
+      ],
+      "@gogospend/contracts": [
+        "../../packages/contracts/src/index.ts"
+      ]
     },
-    "types": ["node", "jest"],
-    "noEmit": true
+    "types": [
+      "node",
+      "jest",
+      "express",
+      "multer"
+    ],
+    "noEmit": true,
+    "allowImportingTsExtensions": true
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }

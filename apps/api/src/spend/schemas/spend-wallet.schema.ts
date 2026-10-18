@@ -6,22 +6,22 @@ export type SpendWalletDocument = HydratedDocument<SpendWallet>;
 @Schema({ collection: 'spend_wallets', timestamps: true, autoIndex: false })
 export class SpendWallet {
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, index: true })
-  user_id: Types.ObjectId;
+  user_id!: Types.ObjectId;
 
   @Prop({ type: String, required: true, trim: true })
-  name: string;
+  name!: string;
 
   @Prop({ type: String, enum: ['cash', 'bank', 'card'], default: 'cash' })
-  kind: 'cash' | 'bank' | 'card';
+  kind!: 'cash' | 'bank' | 'card';
 
   @Prop({ type: String, default: 'THB' })
-  currency: string;
+  currency!: string;
 
   @Prop({ type: String, default: 'manual' })
-  source: string;
+  source!: string;
 
   @Prop({ type: MongooseSchema.Types.ObjectId, default: null })
-  import_id: Types.ObjectId | null;
+  import_id!: Types.ObjectId | null;
 }
 
 export const SpendWalletSchema = SchemaFactory.createForClass(SpendWallet);

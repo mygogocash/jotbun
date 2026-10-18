@@ -425,7 +425,7 @@ export class SpendController {
   }
 
   private async requireAllowlisted(req: Request): Promise<string> {
-    const user = req['user'] as { sub?: string } | undefined;
+    const user = (req as Request & { user?: { sub?: string } }).user;
     const sub = user?.sub?.trim();
     if (!sub) {
       throw new UnauthorizedException('Authenticated subject missing');

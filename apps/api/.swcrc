@@ -17,6 +17,7 @@
       },
       "target": "es2021",
       "keepClassNames": true,
+      "rewriteRelativeImportExtensions": true,
       "baseUrl": ".",
       "paths": {
         "src/*": ["./src/*"]
@@ -42,6 +43,7 @@
       },
       "target": "es2021",
       "keepClassNames": true,
+      "rewriteRelativeImportExtensions": true,
       "baseUrl": ".",
       "paths": {
         "src/*": ["./src/*"]

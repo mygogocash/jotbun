@@ -270,7 +270,7 @@ function makeImportService(claimed: {
   };
   const walletModel = {
     createIndexes: jest.fn().mockResolvedValue([]),
-    findOneAndUpdate: jest.fn(async (filter: { name: string }) => ({
+    findOneAndUpdate: jest.fn(async (filter: { name: string }): Promise<{ _id: Types.ObjectId; name: string } | null> => ({
       _id: new Types.ObjectId(),
       name: filter.name,
     })),

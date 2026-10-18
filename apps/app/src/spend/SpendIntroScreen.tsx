@@ -89,7 +89,7 @@ export function SpendIntro({
   ] as const;
 
   return (
-    <ProfileSubPageFrame title={tc("GoGoSpend")}>
+    <ProfileSubPageFrame title={tc("Jotbun")}>
       {/*
        * ONE child, on purpose. The frame puts its shared 24 between every child
        * it is given, and that rhythm is locked across all the profile sub-pages

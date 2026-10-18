@@ -8,28 +8,28 @@ export type SpendTxDocument = HydratedDocument<SpendTx>;
 @Schema({ collection: 'spend_txs', timestamps: true, autoIndex: false })
 export class SpendTx {
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, index: true })
-  user_id: Types.ObjectId;
+  user_id!: Types.ObjectId;
 
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true })
-  wallet_id: Types.ObjectId;
+  wallet_id!: Types.ObjectId;
 
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true })
-  category_id: Types.ObjectId;
+  category_id!: Types.ObjectId;
 
   @Prop({ type: String, enum: [...SPEND_TX_TYPES], required: true })
-  type: (typeof SPEND_TX_TYPES)[number];
+  type!: (typeof SPEND_TX_TYPES)[number];
 
   @Prop({ type: Number, required: true, min: 0 })
-  amount_minor: number;
+  amount_minor!: number;
 
   @Prop({ type: String, required: true })
-  occurred_on: string;
+  occurred_on!: string;
 
   @Prop({ type: String, default: '' })
-  note: string;
+  note!: string;
 
   @Prop({ type: String, default: '' })
-  merchant: string;
+  merchant!: string;
 
   /**
    * The provider's own id for a row GoGoCash filled in — today the cashback
@@ -41,19 +41,19 @@ export class SpendTx {
    * 2026-09-07). Empty for every row a member typed themselves.
    */
   @Prop({ type: String, default: '' })
-  external_ref: string;
+  external_ref!: string;
 
   @Prop({ type: [String], default: [] })
-  tags: string[];
+  tags!: string[];
 
   @Prop({ type: String, enum: [...SPEND_TX_SOURCES], required: true })
-  source: (typeof SPEND_TX_SOURCES)[number];
+  source!: (typeof SPEND_TX_SOURCES)[number];
 
   @Prop({ type: MongooseSchema.Types.ObjectId, default: null })
-  import_id: Types.ObjectId | null;
+  import_id!: Types.ObjectId | null;
 
   @Prop({ type: String, required: true })
-  fingerprint: string;
+  fingerprint!: string;
 }
 
 export const SpendTxSchema = SchemaFactory.createForClass(SpendTx);

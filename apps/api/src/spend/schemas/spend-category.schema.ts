@@ -6,16 +6,16 @@ export type SpendCategoryDocument = HydratedDocument<SpendCategory>;
 @Schema({ collection: 'spend_categories', timestamps: true, autoIndex: false })
 export class SpendCategory {
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, index: true })
-  user_id: Types.ObjectId;
+  user_id!: Types.ObjectId;
 
   @Prop({ type: String, required: true, trim: true })
-  name: string;
+  name!: string;
 
   @Prop({ type: String, enum: ['expense', 'income'], required: true })
-  type: 'expense' | 'income';
+  type!: 'expense' | 'income';
 
   @Prop({ type: String, default: 'manual' })
-  source: string;
+  source!: string;
 
   /**
    * The member's own mark for this category, and the colour its chip wears.

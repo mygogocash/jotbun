@@ -1,6 +1,6 @@
 import { getSharedMobileApiClient } from "@mobile/api/sharedClient";
 import { getMobileEnv } from "@mobile/config/env";
-import { planSpendAutologFromListCheck } from "@mobile/spend/spendAutolog";
+import { ApiError } from "@mobile/api/client";
 
 export type SpendTxType = "expense" | "income" | "transfer";
 
@@ -254,17 +254,9 @@ export async function autologCashbackPurchases(): Promise<{
   added: number;
   skipped: number;
 }> {
-  const client = await requireSpendClient();
-  const payload = await client.post<{ allConversions?: unknown }>(
-    "/withdraw/list-check",
-    {},
+  throw new ApiError(
+    'Cashback history sync is not connected to this standalone app yet.',
+    503,
+    'CASHBACK_SYNC_UNAVAILABLE',
   );
-  let added = 0;
-  let skipped = 0;
-  for (const row of planSpendAutologFromListCheck(payload)) {
-    const result = await addSpendTx(row);
-    if (result.duplicate) skipped += 1;
-    else added += 1;
-  }
-  return { added, skipped };
 }

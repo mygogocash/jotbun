@@ -10,10 +10,22 @@
     "node": ">=24"
   },
   "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:v1": "node scripts/dev-v1.mjs",
+    "db:v1:up": "node scripts/dev-v1.mjs db-up",
+    "test:dev": "node --experimental-vm-modules --test scripts/dev.test.mjs scripts/dev-v1.test.mjs",
+    "test:ops": "node --test scripts/ops/recovery-inventory.test.mjs scripts/ops/restore-safety.test.mjs scripts/ops/local-rehearsal.test.mjs",
+    "ops:rehearsal:local": "node scripts/dev-v1.mjs db-up && node scripts/ops/restore-rehearsal.mjs --target local-isolated-synthetic",
+    "test:db": "npm run test:db -w gogospend-api",
+    "test:app": "npm run test -w gogospend-app",
+    "test:unit": "npm run test:unit -w gogospend-app",
     "typecheck": "npm run typecheck -w @gogospend/contracts && npm run typecheck -w gogospend-api",
     "typecheck:app": "npm run typecheck -w gogospend-app",
     "test:api": "npm run test -w gogospend-api",
     "diff:api-spend": "diff -r vendor/gogocash-apps-api-spend apps/api/src/spend || true",
     "diff:app-spend": "diff -r vendor/gogocash-apps-app-spend apps/app/src/spend || true"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.14.6"
   }
 }
