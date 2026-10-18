@@ -488,6 +488,57 @@ export const importCandidates = pgTable(
   (table) => [primaryKey({ columns: [table.jobId, table.sourceRowId] })],
 );
 
+// P3: frozen selections (written only by gogospend_freeze_import_selection),
+// their frozen rows, and per-row progress (append-only, one per committed
+// source row). The owner reads its own rows.
+export const importSelections = pgTable(
+  'import_selections',
+  {
+    accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+    selectionId: uuid('selection_id').notNull().unique(),
+    jobId: uuid('job_id').notNull().references(() => importPreviews.jobId, { onDelete: 'cascade' }),
+    frozenRevision: bigint('frozen_revision', { mode: 'bigint' }).notNull(),
+    rowCount: integer('row_count').notNull(),
+    createdAt: instant('created_at').notNull().defaultNow(),
+    expiresAt: instant('expires_at').notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.accountId, table.selectionId] })],
+);
+
+export const importSelectionRows = pgTable(
+  'import_selection_rows',
+  {
+    accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+    selectionId: uuid('selection_id').notNull(),
+    sourceRowId: text('source_row_id').notNull(),
+    ordinal: integer('ordinal').notNull(),
+    type: text('type', { enum: ['expense', 'income'] }).notNull(),
+    amountMinor: bigint('amount_minor', { mode: 'bigint' }).notNull(),
+    occurredOn: date('occurred_on', { mode: 'string' }).notNull(),
+    walletId: uuid('wallet_id').notNull(),
+    categoryId: uuid('category_id').notNull(),
+    categoryType: text('category_type').generatedAlwaysAs(sql`type`),
+    note: text('note'),
+    merchant: text('merchant'),
+  },
+  (table) => [primaryKey({ columns: [table.accountId, table.selectionId, table.sourceRowId] })],
+);
+
+export const importRowProgress = pgTable(
+  'import_row_progress',
+  {
+    accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+    jobId: uuid('job_id').notNull().references(() => importPreviews.jobId, { onDelete: 'cascade' }),
+    sourceRowId: text('source_row_id').notNull(),
+    selectionId: uuid('selection_id').notNull(),
+    // NULL only once the transaction was purged.
+    transactionId: uuid('transaction_id'),
+    commandId: uuid('command_id').notNull(),
+    committedAt: instant('committed_at').notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.jobId, table.sourceRowId] })],
+);
+
 export const schema = {
   accounts,
   accountIdentities,
@@ -519,4 +570,7 @@ export const schema = {
   deletionRequestSubjects,
   importPreviews,
   importCandidates,
+  importSelections,
+  importSelectionRows,
+  importRowProgress,
 };

@@ -21,6 +21,13 @@ names the current floor. At this revision the floor is the first deployed
 revision that contains P4 (`0013_exports`); nothing earlier has been
 deployed, so in practice the floor is the first beta release.
 
+P3 adds two synced entity types, `import_review` (an import's correction
+revision) and `import_selection` (a frozen selection's progress counts). Once
+any account has corrected or frozen an import, the floor is the first
+deployed revision that contains P3's confirmation migration. Imports stay
+disabled until their gates pass, so until then the P4 floor above still
+holds; the release that enables imports records the raised floor.
+
 ## Before rolling back
 
 1. **Target at or above the floor**, and its image digest is the one that was

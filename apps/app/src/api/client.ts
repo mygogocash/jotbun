@@ -126,8 +126,15 @@ export class V1Error extends Error {
 }
 
 export type V1CommandHeaders = { id: string; schemaVersion: number; ifMatch?: number };
+/**
+ * A raw (non-JSON) request body, e.g. an import file (P3): sent byte for
+ * byte with its own Content-Type and, for an upload, its percent-encoded
+ * original file name. Never combined with `body`.
+ */
+export type V1RawBody = { bytes: Uint8Array; contentType: string; fileName?: string };
 export type V1RequestOptions<T> = {
   body?: unknown;
+  raw?: V1RawBody;
   command?: V1CommandHeaders;
   /** Hand the raw response text to `validate` (e.g. to check a digest) instead of parsed JSON. */
   text?: boolean;
@@ -295,16 +302,21 @@ export function createV1Transport(options: {
         'X-GoGoSpend-Client': `${options.client.platform}/${options.client.version}`,
       };
       if (binding) headers['X-GoGoSpend-Session'] = binding;
+      if (request.body !== undefined && request.raw) throw new V1Error('invalid', 0, 'INVALID_BODY');
       if (request.body !== undefined) headers['Content-Type'] = 'application/json';
+      if (request.raw) {
+        headers['Content-Type'] = request.raw.contentType;
+        if (request.raw.fileName !== undefined) headers['X-GoGoSpend-File-Name'] = encodeURIComponent(request.raw.fileName);
+      }
       if (request.command) {
         headers['Idempotency-Key'] = request.command.id;
         headers['X-GoGoSpend-Command-Schema'] = String(request.command.schemaVersion);
         if (request.command.ifMatch !== undefined) headers['If-Match'] = `"${request.command.ifMatch}"`;
       }
       // Serialized once, so every retry sends byte-identical content.
-      const body = request.body === undefined ? undefined : JSON.stringify(request.body);
+      const body: string | Uint8Array | undefined = request.raw ? request.raw.bytes : request.body === undefined ? undefined : JSON.stringify(request.body);
       const send = async (): Promise<{ status: number; payload: unknown; readable: boolean; text: string }> => {
-        const init: RequestInit = { method, headers, body };
+        const init: RequestInit = { method, headers, body: body as BodyInit | undefined };
         for (let attempt = 0; ; attempt += 1) {
           try {
             return await once(`${baseUrl}${path}`, init);

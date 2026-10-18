@@ -160,6 +160,7 @@ and P3 add the next numbers at integration.
 - Every v1 command kind accepts schema **1**, and the app sends
   `X-GoGoSpend-Command-Schema: 1`: `budget.create`, `budget.replace`,
   `category.archive|create|seed_builtins|unarchive|update`, `export.request`,
+  `import.review.patch`, `import.selection.confirm|freeze` (P3),
   `transaction.create|delete|restore|update`,
   `wallet.archive|create|unarchive|update`. The table is pinned by
   `operational-safety.spec.ts` ("the command-schema compatibility table"), so

@@ -32,7 +32,10 @@ for it.
 | Finished jobs (succeeded, superseded, cancelled) | 30 days | deleted; failed jobs stay for the runbook | `jobs.finished` |
 | Completed deletion requests | 30 days after the purge (and its registry record) | deleted | `privacy.deletion_requests` |
 | P2a upload rows | 30 days after they were refused, failed or expired (or after an accepted upload's 24-hour expiry); never a receiving one or one inside the 24-hour quota window | deleted (P2a's maintenance clears names after 8 days; quarantine objects go at 24 hours) | `imports.uploads` |
-| Unconfirmed previews and unattached sanitized images (P2b), receipts of purged or replaced records (P2c), import selections (P3) | per their task | - | **registration point**: each task adds its step (below) |
+| P3 frozen selection copies (`import_selections`, `import_selection_rows`: the chosen rows' fields and mapped wallet/category) | until the preview expires (7 days after parsing) | deleted | `imports.selections` (`gogospend_prune_import_selections`) |
+| P3 synced import records (`import_selection` progress counts, `import_review` correction revision; no row fields) | 30 days after their last change, once the selection or preview is gone (inside S1's delta window, so no forced resync) | entity purged | `imports.selections` |
+| P3 row progress (`import_row_progress`: source row, transaction id, command id) | as long as its upload row (the transaction itself follows M3's rules; a purged transaction leaves `transaction_id` NULL) | deleted by the cascade from `import_uploads` | `imports.uploads` |
+| Unconfirmed previews and unattached sanitized images (P2b), receipts of purged or replaced records (P2c) | per their task | - | **registration point**: each task adds its step (below) |
 
 ## Purged records and sync
 

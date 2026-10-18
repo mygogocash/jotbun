@@ -113,6 +113,13 @@
       "when": 1792195216000,
       "tag": "0016_import_candidates",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792195218000,
+      "tag": "0017_import_confirmation",
+      "breakpoints": true
     }
   ]
 }

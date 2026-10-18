@@ -32,11 +32,11 @@
  * `GET /v1/imports/:job_id` returns the caller's own accepted import;
  * another account's id and an unknown id are the same `404 NOT_FOUND`.
  */
-import type { Minor, Revision } from "./common.ts";
+import type { CommandAck, Minor, Revision } from "./common.ts";
 import { ContractValidationError } from "./errors.ts";
-import { MERCHANT_MAX_CHARS, NOTE_MAX_CHARS, TRANSACTION_TYPES } from "./transactions.ts";
+import { MERCHANT_MAX_CHARS, NOTE_MAX_CHARS, TRANSACTION_TYPES, normalizeMerchant, normalizeNote } from "./transactions.ts";
 import type { TransactionType } from "./transactions.ts";
-import { MINOR_AMOUNT_MAX, NAME_MAX_CHARS, isUuid } from "./validation.ts";
+import { MINOR_AMOUNT_MAX, NAME_MAX_CHARS, TRACKING_START_MIN, assertKnownFields, isUuid, normalizeName, parseMinor, validateOccurredOn } from "./validation.ts";
 
 /** The hard cap for one upload, enforced while the body streams. */
 export const IMPORT_UPLOAD_MAX_BYTES = 12 * 1024 * 1024;
@@ -463,4 +463,205 @@ export function isImportPreview(value: unknown): value is ImportPreview {
     (value.expires_at === null) === (revision === null) &&
     (value.summary === null || isSummary(value.summary))
   );
+}
+
+// ---------------------------------------------------------------------------
+// P3: explicit, resumable confirmation.
+//
+// Review corrections, the frozen selection and every confirmation batch are
+// M1 commands (Idempotency-Key, X-GoGoSpend-Command-Schema, one account-locked
+// transaction, a compact receipt). Nothing is saved as a transaction before a
+// confirmation batch commits: a parsed, corrected or frozen import has saved
+// nothing.
+//
+//   PATCH /v1/imports/:job_id/rows          If-Match: "<review_revision>"
+//     body `PatchImportRowsRequest` (at most 500 rows). Replaces the named
+//     fields of rows not committed yet; the preview's review revision moves
+//     forward by one (`PatchImportRowsResult`). A stale revision is `409
+//     VERSION_CONFLICT` with `current: { review_revision }`.
+//   POST  /v1/imports/:job_id/selections
+//     body `FreezeImportSelectionRequest`: the whole chosen set (at most
+//     5,000 rows) at the current review revision, with the wallet and
+//     category of every file label it uses. `201` with the acknowledgement,
+//     whose `entity_id` is the selection id.
+//   POST  /v1/imports/:job_id/confirmations
+//     body `ConfirmImportBatch` (at most 500 rows of that selection). Creates
+//     the batch's transactions and their row progress in one command
+//     (`ConfirmImportBatchResult`). Rows committed earlier, by any batch, are
+//     acknowledged and never written again; rows whose wallet or category can
+//     no longer take them are `conflicted` (nothing is written for them).
+//   GET   /v1/imports/:job_id/selections/:selection_id
+//     the selection's durable progress (`ImportSelectionProgress`).
+//
+// A batch whose selection no longer matches the preview (corrected after the
+// freeze), whose `frozen_revision` is not the selection's, or that names a row
+// outside the selection is `409 IMPORT_SELECTION_CONFLICT` and writes nothing:
+// freeze a new selection. An expired or unready preview is `409
+// IMPORT_PREVIEW_UNAVAILABLE`; correcting a committed row is `409
+// IMPORT_ROW_COMMITTED`. A batch whose change group exceeds the 1 MiB budget
+// (long notes) is `413 COMMAND_TOO_LARGE` before anything commits: smaller
+// batches, with new command ids, may follow.
+// ---------------------------------------------------------------------------
+
+/** Rows per correction command. */
+export const IMPORT_PATCH_MAX_ROWS = 500;
+/** Rows in one frozen selection (every candidate a preview can hold). */
+export const IMPORT_SELECTION_MAX_ROWS = 5_000;
+/** Rows per confirmation command. */
+export const IMPORT_CONFIRM_BATCH_MAX_ROWS = 500;
+
+/** One row's corrections: each named field is replaced (null makes it unknown again). */
+export type ImportRowPatch = {
+  source_row_id: string;
+  occurred_on?: string | null;
+  type?: TransactionType | null;
+  amount_minor?: Minor | null;
+  wallet_label?: string | null;
+  category_label?: string | null;
+  merchant?: string | null;
+  note?: string | null;
+};
+export type PatchImportRowsRequest = { rows: ImportRowPatch[] };
+export type PatchImportRowsResult = { ack: CommandAck; review_revision: Revision };
+
+/**
+ * The owned wallet for each file wallet label, and the owned category for
+ * each file category label per direction. Every selected row needs both,
+ * including rows the parser marked as needing no review.
+ */
+export type ImportMapping = {
+  wallets: Readonly<Record<string, string>>;
+  categories: { expense: Readonly<Record<string, string>>; income: Readonly<Record<string, string>> };
+};
+export type FreezeImportSelection = { job_id: string; review_revision: Revision; selected_row_ids: readonly string[]; mapping: ImportMapping };
+export type FreezeImportSelectionRequest = Omit<FreezeImportSelection, "job_id">;
+
+export type ConfirmImportBatch = { selection_id: string; frozen_revision: Revision; batch_row_ids: readonly string[] };
+/**
+ * `committed`: the batch's rows that are saved (now or by an earlier batch);
+ * `conflicted`: the batch's rows that could not be saved now; `remaining`:
+ * the selection's rows not saved yet, apart from this batch's conflicted ones.
+ */
+export type ConfirmImportBatchResult = {
+  ack: CommandAck;
+  selection_id: string;
+  frozen_revision: Revision;
+  committed: string[];
+  remaining: string[];
+  conflicted: string[];
+};
+
+/** `stale`: the preview was corrected after the freeze (freeze again); `expired`: the preview is gone. */
+export const IMPORT_SELECTION_STATUSES = ["open", "stale", "expired"] as const;
+export type ImportSelectionStatus = (typeof IMPORT_SELECTION_STATUSES)[number];
+export type ImportSelectionProgress = {
+  selection_id: string;
+  job_id: string;
+  frozen_revision: Revision;
+  row_count: number;
+  status: ImportSelectionStatus;
+  committed: string[];
+  remaining: string[];
+};
+
+/** The synced record of a preview's corrections: its revision only, never row fields. */
+export type ImportReviewSnapshot = { id: string; review_revision: Revision };
+/** The synced record of a frozen selection's progress: counts only, never row fields. */
+export type ImportSelectionSnapshot = { id: string; job_id: string; frozen_revision: Revision; row_count: number; committed_count: number };
+
+export function isImportReviewSnapshot(value: unknown): value is ImportReviewSnapshot {
+  return isRecord(value) && hasKeys(value, ["id", "review_revision"]) && isUuid(value.id) && typeof value.review_revision === "string" && REVISION.test(value.review_revision);
+}
+
+export function isImportSelectionSnapshot(value: unknown): value is ImportSelectionSnapshot {
+  return (
+    isRecord(value) &&
+    hasKeys(value, ["id", "job_id", "frozen_revision", "row_count", "committed_count"]) &&
+    isUuid(value.id) &&
+    isUuid(value.job_id) &&
+    typeof value.frozen_revision === "string" &&
+    REVISION.test(value.frozen_revision) &&
+    Number.isSafeInteger(value.row_count) &&
+    (value.row_count as number) >= 1 &&
+    (value.row_count as number) <= IMPORT_SELECTION_MAX_ROWS &&
+    Number.isSafeInteger(value.committed_count) &&
+    (value.committed_count as number) >= 0 &&
+    (value.committed_count as number) <= (value.row_count as number)
+  );
+}
+
+/** A source-row id as candidates spell it (`row:<n>` or `image:1`). */
+export function isImportSourceRowId(value: unknown): value is string {
+  return typeof value === "string" && SOURCE_ROW_ID.test(value);
+}
+
+/** 1..max distinct source-row ids; throws `VALIDATION_FAILED` on `field` otherwise. */
+export function parseImportRowIds(value: unknown, max: number, field: string): string[] {
+  if (!Array.isArray(value) || value.length < 1 || value.length > max || !value.every(isImportSourceRowId)) {
+    throw new ContractValidationError("VALIDATION_FAILED", `Expected 1-${max} source row ids.`, field);
+  }
+  if (new Set(value).size !== value.length) throw new ContractValidationError("VALIDATION_FAILED", "Source row ids must not repeat.", field);
+  return [...value];
+}
+
+function labelMap(value: unknown, field: string): Record<string, string> {
+  if (!isRecord(value)) throw new ContractValidationError("VALIDATION_FAILED", "Expected an object of labels.", field);
+  const labels = Object.keys(value);
+  if (labels.length > IMPORT_SELECTION_MAX_ROWS) throw new ContractValidationError("VALIDATION_FAILED", "Too many labels.", field);
+  const map: Record<string, string> = {};
+  for (const label of labels) {
+    // Labels are matched exactly as the parser stored them (normalized names).
+    if (label.length === 0 || [...label].length > NAME_MAX_CHARS || !isUuid(value[label])) {
+      throw new ContractValidationError("VALIDATION_FAILED", "Each label maps to an owned id.", field);
+    }
+    Object.defineProperty(map, label, { value: value[label], enumerable: true, writable: true, configurable: true });
+  }
+  return map;
+}
+
+/** Validates an `ImportMapping` (file labels to lower-case UUIDs), without unknown keys. */
+export function parseImportMapping(value: unknown, field = "mapping"): ImportMapping {
+  const input = assertKnownFields(value, ["wallets", "categories"], field);
+  const categories = assertKnownFields(input.categories, ["expense", "income"], `${field}.categories`);
+  return {
+    wallets: labelMap(input.wallets, `${field}.wallets`),
+    categories: { expense: labelMap(categories.expense, `${field}.categories.expense`), income: labelMap(categories.income, `${field}.categories.income`) },
+  };
+}
+
+const PATCH_FIELDS = ["occurred_on", "type", "amount_minor", "wallet_label", "category_label", "merchant", "note"] as const;
+
+/**
+ * One row's corrections, normalized exactly as the parser stores values
+ * (labels through M2's `normalizeName`, merchant and note through M3's
+ * normalizers; dates from 1970 to `todayBangkok`; positive amounts within the
+ * cap). Empty text clears a merchant or note; `null` makes a field unknown.
+ */
+export function parseImportRowPatch(value: unknown, todayBangkok: string, field = "rows"): ImportRowPatch {
+  const input = assertKnownFields(value, ["source_row_id", ...PATCH_FIELDS], field);
+  if (!isImportSourceRowId(input.source_row_id)) throw new ContractValidationError("VALIDATION_FAILED", "Expected a source row id.", `${field}.source_row_id`);
+  const patch: ImportRowPatch = { source_row_id: input.source_row_id };
+  const present = PATCH_FIELDS.filter((name) => input[name] !== undefined);
+  if (present.length === 0) throw new ContractValidationError("VALIDATION_FAILED", "Nothing to correct.", field);
+  for (const name of present) {
+    const raw = input[name];
+    const at = `${field}.${name}`;
+    if (raw === null) {
+      patch[name] = null;
+    } else if (name === "occurred_on") {
+      patch.occurred_on = validateOccurredOn(raw, TRACKING_START_MIN, todayBangkok, at);
+    } else if (name === "type") {
+      if (!TRANSACTION_TYPES.includes(raw as TransactionType)) throw new ContractValidationError("VALIDATION_FAILED", "type must be expense, income or transfer.", at);
+      patch.type = raw as TransactionType;
+    } else if (name === "amount_minor") {
+      patch.amount_minor = parseMinor(raw, { allowZero: false, allowNegative: false, max: MINOR_AMOUNT_MAX }, at).toString();
+    } else if (name === "wallet_label" || name === "category_label") {
+      patch[name] = normalizeName(raw, at);
+    } else if (name === "merchant") {
+      patch.merchant = normalizeMerchant(raw, at);
+    } else {
+      patch.note = normalizeNote(raw, at);
+    }
+  }
+  return patch;
 }

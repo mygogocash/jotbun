@@ -51,6 +51,10 @@ export const API_ERROR_CODES = [
   "UPLOAD_LIMIT_REACHED",
   "UPLOAD_IN_PROGRESS",
   "UPLOAD_FAILED",
+  // Import confirmation (P3): 409
+  "IMPORT_PREVIEW_UNAVAILABLE",
+  "IMPORT_SELECTION_CONFLICT",
+  "IMPORT_ROW_COMMITTED",
   // Server side (500/503); never carries internal detail
   "INTERNAL_ERROR",
   "SERVICE_UNAVAILABLE",

@@ -152,8 +152,13 @@ export function defaultPrivacySteps(): PrivacySteps {
       // P2a: upload rows 30 days after they finished or expired (quarantine objects go at 24 hours through P1's
       // sweep and P2a's own maintenance; names are cleared after 8 days).
       .retention({ name: 'imports.uploads', run: (pool) => batched(pool, 'gogospend_prune_import_uploads') })
+      // P3: frozen selection copies when their preview expires (7 days); the import's compact synced records
+      // (selection progress counts, correction revision) purged 30 days after their last change; row progress
+      // goes with its upload row (above), whose cascade removes it.
+      .retention({ name: 'imports.selections', run: (pool) => batched(pool, 'gogospend_prune_import_selections', 100) })
     // P2b: .retention({ name: 'imports.preview', ... }) - unconfirmed candidates at 7 days, unattached sanitized images at 24 hours.
     // P2c: .retention({ name: 'attachments.obsolete', ... }) - receipts of purged or replaced records, once unreferenced.
     // P2a-P3: .erasure({ name: '<domain>.<step>', run }) - only for data the cascade and object stage cannot reach.
+    // P3 needs none: import_selections, import_selection_rows and import_row_progress cascade from accounts and hold no objects.
   );
 }
