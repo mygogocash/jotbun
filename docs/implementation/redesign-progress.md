@@ -699,3 +699,136 @@ Built on `d86001c`. Behind `isRedesignEnabled('core')`: with the flag off, the r
   - Dynamic Type at the largest size.
 
   The flag stays off until the screenshots are approved.
+
+## R3: Quick add
+
+Built on `d86001c`, then fast-forwarded onto `7d1baea` (kit unification, Home and the tab shell) before the gate. Nothing in `src/ui/`, the catalogs, the API or `vendor/` changed, and no package or lockfile changed.
+
+- **Files:**
+  - `src/screens/redesign/QuickAddScreen.tsx`: the screen.
+  - `src/screens/redesign/quickAddCheer.ts`: the day the cheer bun last showed.
+  - `src/screens/redesign/QuickAddScreen.render.test.tsx`: 68 tests.
+  - `app/spend/add.tsx`: `isRedesignEnabled('core')` chooses Quick add; otherwise the current `AddTransactionScreen`, whose code and tests are untouched.
+- **Layout, top to bottom:**
+  - the title and Close (Quick add has no stack header);
+  - `TypeSwitch`;
+  - the `Amount` at XL, worked out live from the keypad, with what was typed above it ("12.50 + 7.25");
+  - `CategoryChips` from `rankRecentCategories` (top 3), with More opening a `Sheet` holding the `CategoryGrid`;
+  - in Move mode, `WalletPicker` in move mode (From → To, swap and move all) and no category;
+  - a row with the `DateChip`, the wallet (a pill that opens a `Sheet` with `WalletPicker` in single mode) and the More details toggle;
+  - More details: merchant and note `NoteField`s;
+  - the `Keypad`, then Save as the one primary `PillButton`.
+- **Saving** is the current form's, rule for rule, on the R3 logic (`settleForSave`, then `buildQuickAdd`):
+  - With a ready diary, a device save first, shown as saved only once the local commit succeeds. Otherwise one immutable online command through `useCommandKeys`.
+  - An unconfirmed online save freezes the type, keypad, chips, More, date, wallet and details, and offers only Try again. Try again resends the stored command online (the same input and key), never re-queued on the device, even if the diary opens meanwhile.
+  - One record id and one device command id per draft. Add another (`anotherDraft`) and Copy (`duplicateDraft`) always take new ones.
+  - `isOwnCreate` counts a create refused for this draft's own id as saved.
+  - The lists the form first showed stay for its whole life.
+  - Errors map to fields as before: `saveProblem` fields go under the amount, date, wallet, move or category, and note and merchant problems reopen More details. The device errors keep their words.
+- **Saved moment:** a spring pop (`useSpringPop`, still under reduced motion) on the stage, with the exact amount, "Food · Cash" or "Cash → Daily account", **Add another** and **Done** (`/spend`). It is a polite live region and is announced on iOS.
+  - A device save reads "Saved on this device · Waiting to sync"; only an acknowledged online save reads "Saved".
+  - **The bun:** the `cheer` pose at most once per Bangkok day, at full intensity only. The day is stored under `gogospend.bun.cheerDay`, in browser storage on web and the secure store on native, like the intensity. A store that cannot be read means no bun. Quiet and Off show none. The only other bun is `hello` on the no-wallet empty state, which follows intensity (Quiet keeps it, Off hides it).
+- **Copy:** `/spend/add?copyOf=<id>`.
+  - A draft still on the device is copied from the diary; anything else loads with `resources.transaction` (the id must be a UUID).
+  - The copy is `duplicateDraft`: new ids, dated today. A closed wallet or category stays unchosen and must be picked. Only the modes the record never had (a move's wallets on an expense copy, say) take the usual defaults.
+  - Gone (not found, deleted, purged): "This entry isn't available to copy." with Start a new entry. Other problems use the load-problem words, with Try again where a retry can help.
+- **States:** loading; load problems through `classifyLoadProblem` (the `loadProblem` words and retry rule; blocked loads offer Home); no wallet ("Add a wallet on the home screen first."); saving (busy "Saving…"); saved; unconfirmed; blocked (upgrade or a changed session: the draft stays and Save is disabled); and the locked, missing-reference and failed device saves.
+- **Category order:** one history page (up to 200 records) of the last 60 days plus the device's drafts. The load never blocks the form. Until the first touch the order, and a new draft's default category, may still follow it; after that nothing moves under the thumb.
+- **Money:** exact throughout. The keypad keeps satang in BigInt, and the source test refuses `parseFloat`, `parseInt`, `toFixed`, `Number(`, `Math.` and `keyboardType` in the screen. The amount never opens the system keyboard; the only text fields are merchant and note.
+- **Accessibility:**
+  - Targets are at least 44 pt (keypad keys 56).
+  - Spoken amounts come from `Amount` ("Expense ฿65.00", "Transfer ฿1,500.00").
+  - Save problems are alerts and are announced; field problems use the kit's `FieldError`.
+- **Text pairs:** none new. Only ink sits on the stage, and muted text sits only on the page.
+- **RED → GREEN** (`vitest run --config vitest.render.config.ts src/screens/redesign`):
+  - **RED,** against seams that compile with the real props (a `QuickAddScreen` that renders an empty view, a cheer store that reads nothing, and the route switch in place): 66 of 66 failed, 65 because an element was not found and 1 `AssertionError` (the source scan). There were no module or type errors. The first RED run had one `TypeError` from the test reading its own source path, which was fixed in the test before counting.
+  - **GREEN:** 66 of 66. One test was corrected: a merchant with a line break became one over 120 characters, because a single-line input on the web drops line breaks before the screen sees them.
+  - **Added while green, then shown to catch a mutation:** the order frozen at the first touch, and a copy whose wallet is closed. That makes 68.
+  - **Strengthened after the first mutation run:** C4 (a new record id per attempt) got past the `isOwnCreate` test, because the second attempt quietly created a duplicate. The test now asserts the same id and no second record.
+- **Mutation check:** 11 guards were mutated one at a time with `r3q-mutate.py` (scratchpad) on the merged tree. All 11 were caught, and the file was restored byte for byte (SHA-256).
+
+  | Mutation | Failing tests |
+  | --- | --- |
+  | F1 Unconfirmed no longer locks the entry | 2 |
+  | F2 Try again rebuilds and re-queues on the device once the diary opens | 1 |
+  | F3 An unconfirmed entry offers Save instead of only Try again | 4 |
+  | F4 The keypad still types while unconfirmed | 2 |
+  | C1 An unconfirmed save frees its command key | 3 |
+  | C2 Every send takes a new command key | 3 |
+  | C3 Every device save takes a new command id | 1 |
+  | C4 Every save attempt takes a new record id | 3 |
+  | C5 Add another keeps the saved ids | 2 |
+  | R1 The category order keeps following the load after the first touch | 1 |
+  | W1 A copy with a closed wallet guesses the first wallet | 1 |
+
+- **Parity:** every behaviour assertion of the current Add tests, and where it now lives in `QuickAddScreen.render.test.tsx`.
+
+  | Current test | Quick add test |
+  | --- | --- |
+  | Add: exact command, home only after the acknowledgement | "saves an expense as one exact command and shows it saved only after the acknowledgement" (the same input object; key ≠ id; Done goes to `/spend`) |
+  | Add: refuses `1,5` | Unreachable: the keypad has no comma and only makes canonical amounts |
+  | Add: refuses `0` and `''` | "refuses zero", "refuses zero from 000" and "refuses nothing typed" |
+  | Add: refuses `1.234` | "a third decimal is refused as it is typed" (also "an amount above the cap") |
+  | Add: refuses an impossible date | Unreachable: `DateChip` makes only real dates. The model check stays and is unit-tested. Future dates: "a future date can never be chosen" |
+  | Add: unconfirmed keeps the entry frozen, retries the same command | "an unconfirmed save freezes the whole entry and offers only Try again…" |
+  | Add: a transfer between two different wallets | "records a move between two different wallets, with no category" (also "swap… move a whole balance") |
+  | Add: an upgrade blocks saving, keeps the draft | "an upgrade requirement blocks saving but keeps the draft" (also "a changed session blocks saving too") |
+  | Add: a refused entry's field problem; the correction is a new command | "…a new command for the same record" |
+  | Offline: device save first, never sent directly | "with a device diary… shown saved only once that commit succeeds…" |
+  | Offline: a failed local save never claims saved | same name |
+  | Offline: Add works from the device's lists | "offline, Quick add works from the wallets and categories synced to the device" |
+  | Offline: unconfirmed stays online when the diary opens | same name |
+  | Offline: a device save that fails says why (locked, missing reference) | "…and every attempt of one draft keeps its record id and command id" |
+  | M5: a garbled acknowledgement is unconfirmed; the retry finishes | same name |
+  | M5: a lost response resolves by replay, no duplicate | same name |
+  | M5: an existing entry under an earlier command counts as saved | "…counts as saved (isOwnCreate)", now with no duplicate; also "…another record has the id is not mistaken for this one" |
+  | M5: Thai (the Home's first-wallet form) | Not an Add test. Thai is covered by the en/th/vi × light/dark matrix and "Thai: the screen speaks Thai…" |
+  | (normalization, in the model) | "note and merchant sit behind More details and are normalized…" and "a merchant over 120 characters is refused once…" |
+
+- **New tests beyond parity:**
+  - keypad maths into the save input (`12.50 + 7.25` → `1975`, `10 ÷ 3` → `333`, `10 ÷ 3 × 3` → `1000`, `65 +` → `6500`, `1 000` → `100000`, `0.1 + 0.2` → `30`);
+  - the live, spoken amount;
+  - the ranking (and drafts in it);
+  - the More sheet;
+  - Copy of a record, a move and a device draft, a closed wallet, and an unavailable record;
+  - Add another on the device and online;
+  - the saved moment's live region;
+  - the cheer once a day, and Quiet and Off;
+  - loading, retryable and blocked loads, and the no-wallet bun at each intensity;
+  - Close;
+  - target sizes;
+  - no text field for the amount;
+  - the source scan;
+  - en/th/vi × light/dark;
+  - the route switch with the flag on and off.
+- **Deviations:**
+  - **The default category is the most used one,** not the first built-in. Ported tests that relied on Food being the default now pick it.
+  - **After saving, Quick add shows the saved moment** instead of going straight back. Done returns to `/spend`, as the current form did.
+  - **An extra client check:** a date before the chosen wallet's tracking start is refused before sending, with the server's own words. `DateChip`'s `earliest` is that start.
+  - **Offline, wallets are chosen by name.** With no known balance, a small radio list stands in for `WalletPicker`, and a move has From, To and Swap but no move all. A guessed balance would be a wrong number.
+  - **Save works out a sum and shows its result,** but a plain amount stays as typed, so a failed save does not make the next digit start a new amount.
+  - **Close is always offered,** also while saving or unconfirmed. It leaves without changing the draft; Try again is still the only action on the entry.
+  - **The hero shows the type's sign** (`−฿65.00`). An empty or zero amount shows `฿0.00` unsigned.
+- **Kit gaps, reported and not changed:**
+  - `WalletPicker` needs `balance_minor` for every wallet, and the device's synced wallets have none.
+  - `NoteField` draws its own problem and the caller's `error` with the same React key, so passing its own message would duplicate the key. The screen passes only the server's problems.
+  - `EmptyState` must have an action, so no-wallet offers Home.
+- **For the integrator:**
+  - **History and Record:** navigate to `/spend/add?copyOf=<id>` with a confirmed record's id or a device draft's id.
+  - **New English strings** (they show in English in th and vi until E2): `No wallets yet`, `Loading the entry to copy`, `This entry isn't available to copy.`, `Start a new entry`, `Wallet: {name}`, `More details`, `Saving…`, `Add another`, `Done`, `The sum can't go below zero.` and `You can't divide by zero.`. R2b's uncatalogued `Choose a wallet` and `Swap` are reused.
+  - **Catalog oddity:** `Plus` has `"Plus"` as its Thai and Vietnamese value, so the keypad's + key is read in English everywhere.
+  - **Timing:** once, under machine load during a mutation run, the `isOwnCreate` test hit `findByText`'s 1 s default while waiting for "Saved". It passed every other run.
+- **App gate (merged tree, `7d1baea` + R3 Quick add):**
+  - typecheck:app PASS;
+  - test:unit PASS (414);
+  - test:render PASS (378 in 43 files: 310 + 68 new);
+  - export:web PASS (`--max-workers 2`; the `add` route bundle includes Quick add);
+  - `git diff --check` clean.
+- **SKIPPED (E2):**
+  - simulator screenshots of every state in light and dark, in TH, EN and VI, at 320 pt;
+  - VoiceOver and TalkBack on the keypad, the sheets and the saved moment;
+  - the spring pop and reduced motion on iOS and Android;
+  - Dynamic Type at the largest size;
+  - haptics on device.
+
+  The flag stays off until the screenshots are approved.
