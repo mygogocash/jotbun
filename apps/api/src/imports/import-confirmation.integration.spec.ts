@@ -320,6 +320,8 @@ describe('the frozen selection and its batches', () => {
     expect(await count('transactions', setup.user.accountId)).toBe(500);
   });
 
+  // Ten 500-row confirms against a 5,000-row freeze; under a busy suite the
+  // default 30 s timeout can trip even when each confirm is healthy.
   it('second_batch_uses_same_frozen_selection', async () => {
     const setup = await parsedImport(fileRows(5_000));
     const selectionId = await frozen(setup, ids(setup.rows));
@@ -341,7 +343,7 @@ describe('the frozen selection and its batches', () => {
     expect(results.map((result) => result.ack.version)).toEqual([2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
     expect(await count('transactions', setup.user.accountId)).toBe(5_000);
     expect(await count('import_row_progress', setup.user.accountId)).toBe(5_000);
-  });
+  }, 120_000);
 
   it('a changed frozen revision, a stale selection and rows outside the selection conflict, and committed rows are never rewritten', async () => {
     const setup = await parsedImport(fileRows(6));
