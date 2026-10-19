@@ -4,6 +4,7 @@
 // file picker. No network, no device storage, no real upload. Reached with the
 // same steps as ImportScreen.render.test.tsx, which imports the fixtures here.
 // Not registered yet: the main session adds IMPORT_SECTIONS to registry.tsx.
+import { randomUUID } from 'expo-crypto';
 import type { ImportCandidate, ImportPreview } from '@gogospend/contracts';
 
 import { V1Error } from '@mobile/api/client';
@@ -126,7 +127,7 @@ export function importFixture(options: ImportFixtureOptions = {}): ImportFixture
     confirm: gated('confirm', (...args) => base.confirm(...args)),
     selectionProgress: gated('selectionProgress', (...args) => base.selectionProgress(...args)),
   };
-  const newId = () => globalThis.crypto.randomUUID();
+  const newId = () => randomUUID();
   const ports: ImportPorts = {
     resources,
     newId,
