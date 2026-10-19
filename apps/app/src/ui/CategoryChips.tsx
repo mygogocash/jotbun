@@ -44,7 +44,8 @@ export function CategoryChips({ ranked, selectedId, onSelect, onMore, disabled =
   const pill = { minHeight: BUN_TOUCH, borderRadius: BUN_RADIUS.pill, borderWidth: BUN_OUTLINE.control, borderColor: colors.ink, flexDirection: 'row' as const, alignItems: 'center' as const, gap: BUN_SPACE.xs, paddingVertical: BUN_SPACE.xxs, paddingLeft: BUN_SPACE.xxs, paddingRight: BUN_SPACE.sm, opacity: disabled ? 0.5 : 1 };
   return (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: BUN_SPACE.xs, alignItems: 'center' }}>
-      <View role="radiogroup" accessibilityLabel={tc('Category')} style={{ flexDirection: 'row', flexWrap: 'wrap', gap: BUN_SPACE.xs }}>
+      {/* Shrinks to the row, so its chips wrap inside it on a narrow screen instead of running past the edge. */}
+      <View role="radiogroup" accessibilityLabel={tc('Category')} style={{ flexDirection: 'row', flexWrap: 'wrap', flexShrink: 1, gap: BUN_SPACE.xs }}>
         {chips.map((category) => {
           const name = categoryName(category, tc);
           const checked = category.id === selectedId;

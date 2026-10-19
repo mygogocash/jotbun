@@ -72,3 +72,11 @@ test('names follow the locale; the chosen chip is an ink pill in light and dark'
     cleanup();
   }
 });
+
+test('the chips shrink to the row and wrap inside it, so at 320 pt none runs past the edge', () => {
+  // The chips sit in a row with More; without shrinking, the group keeps its
+  // one-line width and pushes past a narrow screen (the 320 pt check found it).
+  mountKit(<CategoryChips ranked={ranked} selectedId="pets" onSelect={() => undefined} onMore={() => undefined} />);
+  const group = screen.getByRole('radiogroup', { name: 'Category' });
+  expect([group.style.flexShrink, group.style.flexWrap]).toEqual(['1', 'wrap']);
+});
