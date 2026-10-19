@@ -630,6 +630,23 @@ test('a tour steps through the sections on a timer and stops at the last one', a
   }
 });
 
+test('re-opening the same link with a new run restarts the tour from its section', async () => {
+  vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+  try {
+    const first = CATALOGUE_SECTIONS[0]!;
+    const second = CATALOGUE_SECTIONS[1]!;
+    const view = await open({ section: first.id, tour: '1000', run: '1' });
+    act(() => { vi.advanceTimersByTime(1000); });
+    expect(screen.getByTestId(`catalogue-section-${second.id}`)).toBeTruthy();
+    act(() => { view.rerenderInApp(<CatalogueScreen params={{ section: first.id, tour: '1000', run: '2' }} />); });
+    expect(screen.getByTestId(`catalogue-section-${first.id}`)).toBeTruthy();
+    act(() => { vi.advanceTimersByTime(1000); });
+    expect(screen.getByTestId(`catalogue-section-${second.id}`)).toBeTruthy();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
 test('without a tour nothing moves on its own', async () => {
   vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
   try {

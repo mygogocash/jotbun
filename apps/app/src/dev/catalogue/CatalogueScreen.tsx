@@ -14,7 +14,7 @@
 //
 // Deep link (Expo Router search params, all optional):
 //   gogospend://dev/catalogue?section=receipt&theme=dark&locale=th
-//   gogospend://dev/catalogue?section=amount&theme=light&locale=en&tour=3000   (steps every 3 s)
+//   gogospend://dev/catalogue?section=amount&theme=light&locale=en&tour=3000&run=1   (steps every 3 s; a new run restarts)
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { IntlProvider } from 'react-intl';
@@ -285,7 +285,9 @@ export function CatalogueScreen({ params }: CatalogueScreenProps) {
   const fromLink = (): CatalogueView => ({ section: link.section, theme: link.theme ?? app.preference, locale: link.locale ?? appLocale });
 
   // A new deep link while the catalogue is open replaces the header's choices.
-  const linkKey = `${link.section}|${link.theme}|${link.locale}`;
+  // Every param counts, so re-opening a link with a new `run` value restarts
+  // a tour from its first section.
+  const linkKey = JSON.stringify(Object.entries(params).filter(([, value]) => value !== undefined).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
   const [seenLink, setSeenLink] = useState(linkKey);
   const [view, setView] = useState(fromLink);
   if (seenLink !== linkKey) {

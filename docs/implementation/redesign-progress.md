@@ -1324,4 +1324,7 @@ Built together with the kit polish above, in one change. These fix the screen-le
   - The render test "a tour steps through the sections…" failed and now passes.
   - "Without a tour nothing moves" held on the stub, as it should.
   - The catalogue render suite: 94 of 94.
+- **Restarting a tour:** re-opening the same link did nothing, because the catalogue only noticed a new link when its section, theme or locale changed. The first recording stayed on the last section for all 471 frames. The link is now identified by every param, so adding a fresh `&run=<n>` restarts the tour from its section.
+  - RED: "re-opening the same link with a new run restarts the tour from its section" failed (1 failed, 2 passed).
+  - GREEN: the catalogue render suite, 95 of 95; `tsc` clean.
 - **Dev only:** like the rest of the catalogue, it never reaches production bundles.
