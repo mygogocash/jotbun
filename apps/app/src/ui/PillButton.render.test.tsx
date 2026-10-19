@@ -83,6 +83,20 @@ test('an explicit accessibility label names the button', () => {
   expect(screen.getByRole('button', { name: 'Delete Coffee ฿65.00' })).toBeTruthy();
 });
 
+test('the label is always the spoken name, busy or not, so Android never announces only the state', () => {
+  // On Android a button without an explicit accessibility label gets its state
+  // words as its whole description: a busy secondary button was read as just
+  // "busy" (found in the Android accessibility tree, R8).
+  for (const props of [{}, { busy: true }, { disabled: true }, { kind: 'secondary' as const, busy: true }]) {
+    mount(<PillButton label="Add another" onPress={() => undefined} {...props} />);
+    expect([JSON.stringify(props), screen.getByRole('button').getAttribute('aria-label')]).toEqual([JSON.stringify(props), 'Add another']);
+    cleanup();
+  }
+  // A busy label replaces it while busy; an explicit label still wins otherwise.
+  mount(<PillButton label="Save entry" busy busyLabel="Saving…" onPress={() => undefined} />);
+  expect(screen.getByRole('button').getAttribute('aria-label')).toBe('Saving…');
+});
+
 test('labels use the locale\'s leading so Thai marks are not clipped', () => {
   for (const locale of LOCALES) {
     mount(<PillButton label="บันทึกรายการ" onPress={() => undefined} />, locale);

@@ -46,7 +46,8 @@ export function PillButton({
       <Pressable
         testID={testID}
         accessibilityRole="button"
-        accessibilityLabel={busy && busyLabel ? busyLabel : accessibilityLabel}
+        // Always a name: on Android a button without one is described by its state alone ("busy").
+        accessibilityLabel={busy && busyLabel ? busyLabel : (accessibilityLabel ?? label)}
         accessibilityHint={reason ?? accessibilityHint}
         accessibilityState={{ disabled, busy }}
         aria-disabled={disabled}
