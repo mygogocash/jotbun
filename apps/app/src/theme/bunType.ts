@@ -18,6 +18,26 @@ export const BUN_TYPE_SCALE: Readonly<Record<BunTextRole, { size: number; weight
   micro: { size: 11, weight: '500' },
 };
 
+/**
+ * How far each role grows with the person's text size (iOS Dynamic Type,
+ * Android's font scale), as React Native's `maxFontSizeMultiplier`. Every
+ * ceiling is above iOS's largest standard size (xxxLarge, 1.353x), so text
+ * follows all the standard sizes untouched. Only the accessibility sizes, which
+ * go up to 3.571x, meet a ceiling: reading text still more than doubles, and
+ * display text stops near 42–48 pt, as Apple's large titles grow less than
+ * body text. So at the largest size a heading stays above body text, words
+ * stay whole and an amount stays on one line.
+ */
+export const BUN_MAX_FONT_SCALE: Readonly<Record<BunTextRole, number>> = {
+  hero: 1.4,
+  title: 1.5,
+  heading: 1.8,
+  body: 2.2,
+  label: 2.2,
+  caption: 2.4,
+  micro: 2.6,
+};
+
 export type BunTextStyle = { fontSize: number; lineHeight: number; fontWeight: BunWeight; fontFamily: string };
 
 // Leading as a multiple of the size. Thai needs room for marks above and below.

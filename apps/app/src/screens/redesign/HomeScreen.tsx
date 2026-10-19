@@ -45,7 +45,7 @@ import { useSpendV1 } from '@mobile/spend/v1/SpendV1Context';
 import { monthOf, todayInBangkok } from '@mobile/spend/v1/viewModels';
 import type { OutboxCommand } from '@mobile/storage/types';
 import { TextInput } from '@mobile/theme/AppText';
-import { bunText } from '@mobile/theme/bunType';
+import { BUN_MAX_FONT_SCALE, bunText } from '@mobile/theme/bunType';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { DECORATIVE, POLITE_LIVE_REGION, useAnnouncement } from '@mobile/ui/a11y';
 import type { BudgetPace as KitPace } from '@mobile/ui/budgetWords';
@@ -449,6 +449,7 @@ function Field({ label, value, onChangeText, error, editable, keyboardType, auto
     <View style={{ gap: BUN_SPACE.xxs }}>
       <BunText variant="caption" tone="muted">{label}</BunText>
       <TextInput
+        maxFontSizeMultiplier={BUN_MAX_FONT_SCALE.body}
         accessibilityLabel={label}
         aria-invalid={error !== undefined}
         value={value}

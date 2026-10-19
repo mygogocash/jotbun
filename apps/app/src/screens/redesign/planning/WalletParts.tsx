@@ -13,7 +13,7 @@ import type { LoadProblem, LoadProblemKind } from '@mobile/spend/v1/redesign/hom
 import type { ConflictRow, WalletPreview } from '@mobile/spend/v1/redesign/planning/walletsModel';
 import { formatMinor } from '@mobile/spend/v1/money';
 import { TextInput } from '@mobile/theme/AppText';
-import { bunText } from '@mobile/theme/bunType';
+import { BUN_MAX_FONT_SCALE, bunText } from '@mobile/theme/bunType';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { DECORATIVE, POLITE_LIVE_REGION } from '@mobile/ui/a11y';
 import { AmountText, useAmountWords, useMoneyLocale } from '@mobile/ui/Amount';
@@ -233,6 +233,7 @@ export function NameField({ value, onChangeText, error, editable }: { value: str
     <View testID="wallet-name-field" style={{ gap: BUN_SPACE.xxs }}>
       <BunText variant="caption" tone="muted">{label}</BunText>
       <TextInput
+        maxFontSizeMultiplier={BUN_MAX_FONT_SCALE.body}
         accessibilityLabel={label}
         aria-invalid={error !== undefined}
         value={value}

@@ -8,7 +8,7 @@ import { View } from 'react-native';
 
 import { useCopy } from '@mobile/i18n/useCopy';
 import { TextInput } from '@mobile/theme/AppText';
-import { bunText } from '@mobile/theme/bunType';
+import { BUN_MAX_FONT_SCALE, bunText } from '@mobile/theme/bunType';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 
 import { BunText, useBunScript } from './BunText';
@@ -60,6 +60,7 @@ export function NoteField({ kind, value, onChangeText, error, editable = true, l
         </BunText>
       </View>
       <TextInput
+        maxFontSizeMultiplier={BUN_MAX_FONT_SCALE.body}
         accessibilityLabel={name}
         aria-invalid={invalid}
         value={value}

@@ -22,6 +22,7 @@ import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { moveAccessibilityFocus } from './a11y';
 import { AmountText, useAmountWords } from './Amount';
 import { BunText } from './BunText';
+import { useLargeText } from './largeText';
 import { CategoryIcon } from './categoryIcons';
 import type { CategoryLook } from './categoryIcons';
 import { Glyph } from './Glyph';
@@ -86,6 +87,8 @@ export function RecordRow({ title, detail, type, amountMinor, category, state = 
   // Spoken unsigned with its type ("Expense ฿65.00"); drawn with Amount's sign ("−฿65.00").
   const amount = amountWords(amountMinor).shown;
   const shown = amountWords(amountMinor, type).shown;
+  // At the accessibility text sizes the amount goes under the title, so the title keeps the row's width.
+  const large = useLargeText();
   const kind = type === 'expense' ? tc('Expense') : type === 'income' ? tc('Income') : tc('Transfer');
   const stateWords: Record<RecordRowState, { shown: string; spoken: string } | null> = {
     confirmed: null,
@@ -131,6 +134,7 @@ export function RecordRow({ title, detail, type, amountMinor, category, state = 
           <CategoryIcon look={look} size={40} />
           <View style={{ flex: 1, gap: 2 }}>
             <BunText variant="body">{title}</BunText>
+            {large ? <AmountText variant="body">{shown}</AmountText> : null}
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: BUN_SPACE.xs }}>
               <BunText variant="caption" tone="muted">{detail}</BunText>
               {words ? (
@@ -138,7 +142,7 @@ export function RecordRow({ title, detail, type, amountMinor, category, state = 
               ) : null}
             </View>
           </View>
-          <AmountText variant="body">{shown}</AmountText>
+          {large ? null : <AmountText variant="body">{shown}</AmountText>}
         </Pressable>
         {keyboardPath ? (
           // A sibling of the row, never inside it: a button cannot hold another button.

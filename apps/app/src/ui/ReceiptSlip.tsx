@@ -14,6 +14,7 @@ import { DECORATIVE } from './a11y';
 import { Amount, useAmountWords } from './Amount';
 import type { AmountState, AmountType } from './Amount';
 import { BunText, useBunScript } from './BunText';
+import { useLargeText } from './largeText';
 import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE } from './layout';
 
 export type ReceiptSlipProps = {
@@ -75,6 +76,16 @@ export function ReceiptRow({ label, value, accessibilityLabel }: ReceiptRowProps
   const colors = useBunColors();
   const words = typeof value === 'string';
   const spoken = accessibilityLabel ?? (words ? tc('{label}, {value}', { label, value }) : undefined);
+  // At the accessibility text sizes the value goes under its label, with no dotted rule between.
+  const large = useLargeText();
+  if (large) {
+    return (
+      <View accessible={spoken !== undefined} accessibilityLabel={spoken} style={{ flexDirection: 'column', gap: BUN_SPACE.xxs }}>
+        <BunText tone="muted">{label}</BunText>
+        {words ? <BunText>{value}</BunText> : <View style={{ alignItems: 'flex-start' }}>{value}</View>}
+      </View>
+    );
+  }
   return (
     <View
       accessible={spoken !== undefined}

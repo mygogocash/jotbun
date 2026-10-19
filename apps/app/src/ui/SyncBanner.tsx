@@ -12,6 +12,7 @@ import { useCopy } from '@mobile/i18n/useCopy';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { POLITE_LIVE_REGION, useAnnouncement } from './a11y';
 import { BunText } from './BunText';
+import { useLargeText } from './largeText';
 import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE } from './layout';
 import { PillButton } from './PillButton';
 
@@ -70,6 +71,8 @@ export function SyncBanner(props: SyncBannerProps) {
   const tc = useCopy();
   const colors = useBunColors();
   const line = lineFor(props, tc);
+  // At the accessibility text sizes the words take the whole line and the action goes under them.
+  const large = useLargeText();
   const live = props.live ?? true;
   useAnnouncement(live ? line : null);
   if (!line) return null;
@@ -90,7 +93,7 @@ export function SyncBanner(props: SyncBannerProps) {
         backgroundColor: colors.card,
       }}
     >
-      <BunText variant="caption" style={{ flexGrow: 1, flexShrink: 1, flexBasis: 160 }}>{line}</BunText>
+      <BunText variant="caption" style={{ flexGrow: 1, flexShrink: 1, flexBasis: large ? '100%' : 160 }}>{line}</BunText>
       {action ? <PillButton kind="secondary" label={action.label} onPress={action.onPress} /> : null}
     </View>
   );

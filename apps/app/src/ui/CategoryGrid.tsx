@@ -10,6 +10,7 @@ import { categoryName } from '@mobile/spend/v1/viewModels';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 
 import { BunText } from './BunText';
+import { useLargeText } from './largeText';
 import { CategoryIcon, categoryLook } from './categoryIcons';
 import { BUN_RADIUS, BUN_SPACE, BUN_TOUCH } from './layout';
 
@@ -23,6 +24,8 @@ export type CategoryGridProps = {
 export function CategoryGrid({ categories, selectedId, onSelect }: CategoryGridProps) {
   const colors = useBunColors();
   const tc = useCopy();
+  // Two columns at the accessibility text sizes, so each name stays whole.
+  const large = useLargeText();
   return (
     <View role="radiogroup" accessibilityLabel={tc('Categories')} style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: BUN_SPACE.sm }}>
       {categories.filter((category) => !category.archived).map((category) => {
@@ -36,7 +39,7 @@ export function CategoryGrid({ categories, selectedId, onSelect }: CategoryGridP
             aria-checked={checked}
             onPress={() => onSelect(category.id)}
             style={({ pressed }) => ({
-              width: '25%',
+              width: large ? '50%' : '25%',
               minHeight: BUN_TOUCH,
               alignItems: 'center',
               gap: BUN_SPACE.xxs,

@@ -50,6 +50,7 @@ import { ReceiptRow, ReceiptSlip, ReceiptTotal } from '@mobile/ui/ReceiptSlip';
 import { UndoBar } from '@mobile/ui/UndoBar';
 import { saveProblem, useCommandKeys, useMoneyLocale } from '../v1/parts';
 import { StageHeader } from '@mobile/ui/StageHeader';
+import { useLargeText } from '@mobile/ui/largeText';
 import { ActionFooter, ActionRow, EntryPage } from './ActionFooter';
 import { RecordReceipt } from './import/RecordReceipt';
 import { LoadingBlock, Notice, copyHref, useDateLocale, useGoBack } from './HistoryParts';
@@ -478,6 +479,7 @@ function ConflictPanel({ editing, server, context, busy, onApply, onReload }: {
   const tc = useCopy();
   const colors = useBunColors();
   const dateLocale = useDateLocale();
+  const large = useLargeText();
   const model = conflictModel(editing.draft, server, context);
   useAnnouncement(model.message);
   if (model.kind === 'deleted') return <Notice tone="alert" message={model.message} />;
@@ -491,19 +493,31 @@ function ConflictPanel({ editing, server, context, busy, onApply, onReload }: {
       style={{ gap: BUN_SPACE.sm, padding: BUN_SPACE.md, borderRadius: BUN_RADIUS.card, borderWidth: BUN_OUTLINE.card, borderColor: colors.ink, backgroundColor: colors.card }}
     >
       <BunText variant="heading" role="heading" accessibilityRole="header">{model.message}</BunText>
-      <View aria-hidden style={{ flexDirection: 'row', gap: BUN_SPACE.sm }}>
-        <BunText variant="label" style={{ flex: 1, fontWeight: '700' }}>{model.yoursLabel}</BunText>
-        <BunText variant="label" style={{ flex: 1, fontWeight: '700' }}>{model.serverLabel}</BunText>
-      </View>
+      {large ? null : (
+        <View aria-hidden style={{ flexDirection: 'row', gap: BUN_SPACE.sm }}>
+          <BunText variant="label" style={{ flex: 1, fontWeight: '700' }}>{model.yoursLabel}</BunText>
+          <BunText variant="label" style={{ flex: 1, fontWeight: '700' }}>{model.serverLabel}</BunText>
+        </View>
+      )}
       {rows.map((row) => {
         const spoken = tc('{label}. {yoursLabel}: {yours}. {serverLabel}: {server}.', { label: row.label, yoursLabel: model.yoursLabel, yours: row.yours, serverLabel: model.serverLabel, server: row.server });
         return (
           <View key={row.key} accessible accessibilityLabel={row.differs ? `${spoken} ${replaces}` : spoken} style={{ gap: BUN_SPACE.xxs, paddingTop: BUN_SPACE.xs, borderTopWidth: BUN_OUTLINE.rule, borderColor: colors.rule }}>
             <BunText variant="caption" tone="muted">{row.label}</BunText>
-            <View style={{ flexDirection: 'row', gap: BUN_SPACE.sm }}>
-              <BunText style={{ flex: 1, fontWeight: row.differs ? '700' : '400' }}>{row.yours}</BunText>
-              <BunText style={{ flex: 1 }}>{row.server}</BunText>
-            </View>
+            {large ? (
+              // At the accessibility text sizes the two values stack, each named, so an amount stays whole.
+              <View style={{ gap: BUN_SPACE.xxs }}>
+                <BunText variant="label" style={{ fontWeight: '700' }}>{model.yoursLabel}</BunText>
+                <BunText style={{ fontWeight: row.differs ? '700' : '400' }}>{row.yours}</BunText>
+                <BunText variant="label" style={{ fontWeight: '700' }}>{model.serverLabel}</BunText>
+                <BunText>{row.server}</BunText>
+              </View>
+            ) : (
+              <View style={{ flexDirection: 'row', gap: BUN_SPACE.sm }}>
+                <BunText style={{ flex: 1, fontWeight: row.differs ? '700' : '400' }}>{row.yours}</BunText>
+                <BunText style={{ flex: 1 }}>{row.server}</BunText>
+              </View>
+            )}
             {row.differs ? <BunText variant="caption">{replaces}</BunText> : null}
           </View>
         );

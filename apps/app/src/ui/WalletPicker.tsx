@@ -16,6 +16,7 @@ import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { DECORATIVE } from './a11y';
 import { AmountText, useAmountWords } from './Amount';
 import { BunText } from './BunText';
+import { useLargeText } from './largeText';
 import { FieldError } from './FieldError';
 import { Glyph } from './Glyph';
 import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE, BUN_TOUCH } from './layout';
@@ -110,6 +111,8 @@ function MovePicker({ wallets, fromId, toId, onChangeFrom, onChangeTo, onSwap, o
   const colors = useBunColors();
   const tc = useCopy();
   const amountWords = useAmountWords();
+  // At the accessibility text sizes From stacks above To, so each balance stays on one line.
+  const large = useLargeText();
   const [open, setOpen] = useState<Side | null>(null);
   const from = wallets.find((wallet) => wallet.id === fromId) ?? null;
   const to = wallets.find((wallet) => wallet.id === toId) ?? null;
@@ -133,7 +136,7 @@ function MovePicker({ wallets, fromId, toId, onChangeFrom, onChangeTo, onSwap, o
         disabled={disabled}
         onPress={() => setOpen((current) => (current === side ? null : side))}
         style={{
-          flex: 1,
+          flex: large ? undefined : 1,
           minHeight: BUN_TOUCH,
           gap: BUN_SPACE.xxs,
           padding: BUN_SPACE.sm,
@@ -154,9 +157,9 @@ function MovePicker({ wallets, fromId, toId, onChangeFrom, onChangeTo, onSwap, o
   const pill = { minHeight: BUN_TOUCH, flexDirection: 'row' as const, alignItems: 'center' as const, gap: BUN_SPACE.xs, paddingHorizontal: BUN_SPACE.sm, borderRadius: BUN_RADIUS.pill, borderWidth: BUN_OUTLINE.control, borderColor: colors.ink, backgroundColor: colors.background, opacity: disabled ? 0.5 : 1 };
   return (
     <View style={{ gap: BUN_SPACE.sm }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: BUN_SPACE.xs }}>
+      <View testID="wallet-move-cards" style={{ flexDirection: large ? 'column' : 'row', alignItems: large ? 'stretch' : 'center', gap: BUN_SPACE.xs }}>
         {card('from', from)}
-        <View {...DECORATIVE}><BunText variant="heading">→</BunText></View>
+        <View {...DECORATIVE} style={large ? { alignItems: 'center' } : undefined}><BunText variant="heading">{large ? '↓' : '→'}</BunText></View>
         {card('to', to)}
       </View>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: BUN_SPACE.xs }}>

@@ -11,6 +11,7 @@ import { KeyboardAvoidingView, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useBunColors } from '@mobile/theme/ThemeProvider';
+import { useLargeText } from '@mobile/ui/largeText';
 import { BUN_OUTLINE, BUN_SPACE } from '@mobile/ui/layout';
 
 export function ActionFooter({ testID, children }: { testID: string; children: ReactNode }) {
@@ -36,10 +37,12 @@ export function ActionFooter({ testID, children }: { testID: string; children: R
 
 /** Two actions side by side in a footer, the first (secondary) narrower than the second (primary). */
 export function ActionRow({ secondary, primary }: { secondary: ReactNode; primary: ReactNode }) {
+  // At the accessibility text sizes the two actions stack, so each label stays whole.
+  const large = useLargeText();
   return (
-    <View style={{ flexDirection: 'row', gap: BUN_SPACE.xs }}>
-      <View style={{ flex: 2 }}>{secondary}</View>
-      <View style={{ flex: 3 }}>{primary}</View>
+    <View testID="action-row" style={{ flexDirection: large ? 'column' : 'row', gap: BUN_SPACE.xs }}>
+      <View style={large ? undefined : { flex: 2 }}>{secondary}</View>
+      <View style={large ? undefined : { flex: 3 }}>{primary}</View>
     </View>
   );
 }

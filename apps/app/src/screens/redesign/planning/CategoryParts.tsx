@@ -12,7 +12,7 @@ import { useCopy } from '@mobile/i18n/useCopy';
 import type { CategoryItem, ConflictView } from '@mobile/spend/v1/redesign/planning/categoriesModel';
 import { SWATCHES, labelLength } from '@mobile/spend/v1/redesign/planning/categoriesModel';
 import { TextInput } from '@mobile/theme/AppText';
-import { bunText } from '@mobile/theme/bunType';
+import { BUN_MAX_FONT_SCALE, bunText } from '@mobile/theme/bunType';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { useSpringPop } from '@mobile/theme/useSpringPop';
 import { DECORATIVE, POLITE_LIVE_REGION, useAnnouncement } from '@mobile/ui/a11y';
@@ -176,6 +176,7 @@ export function LabelField({ value, onChangeText, error, editable, placeholder }
         </BunText>
       </View>
       <TextInput
+        maxFontSizeMultiplier={BUN_MAX_FONT_SCALE.body}
         accessibilityLabel={name}
         aria-invalid={error !== null}
         value={value}
@@ -303,6 +304,7 @@ export function LimitField({ value, onChangeText, error, editable, overall, prev
     <View style={{ gap: BUN_SPACE.xxs }}>
       <BunText variant="caption" tone="muted">{name}</BunText>
       <TextInput
+        maxFontSizeMultiplier={BUN_MAX_FONT_SCALE.body}
         accessibilityLabel={name}
         aria-invalid={error !== null}
         value={value}

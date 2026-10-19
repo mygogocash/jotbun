@@ -9,6 +9,7 @@ import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { useSpringPop } from '@mobile/theme/useSpringPop';
 
 import { BunText } from './BunText';
+import { useLargeText } from './largeText';
 import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE, BUN_TOUCH } from './layout';
 
 export type EntryKind = 'expense' | 'income' | 'transfer';
@@ -27,12 +28,14 @@ export function TypeSwitch({ value, onChange, disabled = false }: TypeSwitchProp
   // One spring for the row, handed to whichever segment is chosen; still under reduced motion.
   const pop = useSpringPop(value);
   const labels: Record<EntryKind, string> = { expense: tc('Expense'), income: tc('Income'), transfer: tc('Move') };
+  // At the accessibility text sizes the three choices stack, so each word stays whole.
+  const large = useLargeText();
   return (
     <View
       role="radiogroup"
       accessibilityLabel={tc('Record type')}
       style={{
-        flexDirection: 'row',
+        flexDirection: large ? 'column' : 'row',
         borderColor: colors.ink,
         borderWidth: BUN_OUTLINE.control,
         borderRadius: BUN_RADIUS.pill,
@@ -44,7 +47,7 @@ export function TypeSwitch({ value, onChange, disabled = false }: TypeSwitchProp
       {KINDS.map((kind) => {
         const checked = kind === value;
         return (
-          <Animated.View key={kind} style={[{ flex: 1 }, checked ? pop : null]}>
+          <Animated.View key={kind} style={[large ? null : { flex: 1 }, checked ? pop : null]}>
             <Pressable
               accessibilityRole="radio"
               accessibilityLabel={labels[kind]}

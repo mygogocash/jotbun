@@ -6,10 +6,11 @@ import { View } from 'react-native';
 
 import { useCopy } from '@mobile/i18n/useCopy';
 import { TextInput } from '@mobile/theme/AppText';
-import { bunText } from '@mobile/theme/bunType';
+import { BUN_MAX_FONT_SCALE, bunText } from '@mobile/theme/bunType';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 
 import { useBunScript } from './BunText';
+import { useLargeText } from './largeText';
 import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE, BUN_TOUCH } from './layout';
 import { PillButton } from './PillButton';
 
@@ -28,9 +29,12 @@ export function SearchField({ label, value, onChangeText, placeholder, clearLabe
   const colors = useBunColors();
   const tc = useCopy();
   const script = useBunScript();
+  // At the accessibility text sizes the field takes the whole line, with Clear search under it.
+  const large = useLargeText();
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: BUN_SPACE.xs }}>
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: BUN_SPACE.xs }}>
       <TextInput
+        maxFontSizeMultiplier={BUN_MAX_FONT_SCALE.body}
         accessibilityLabel={label}
         role="searchbox"
         value={value}
@@ -42,6 +46,7 @@ export function SearchField({ label, value, onChangeText, placeholder, clearLabe
         style={{
           ...bunText('body', script),
           flex: 1,
+          flexBasis: large ? '100%' : undefined,
           color: colors.ink,
           minHeight: BUN_TOUCH,
           paddingHorizontal: BUN_SPACE.sm,
