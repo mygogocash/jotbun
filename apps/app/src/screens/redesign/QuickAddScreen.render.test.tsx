@@ -979,14 +979,16 @@ test('Thai: the screen speaks Thai and the amount stays in exact baht', async ()
   expect(screen.getByLabelText(translateCopy('Expense {amount}', 'th', { amount: '฿1,234.50' }))).toBeTruthy();
 });
 
-test('the route opens Quick add only when the core redesign is switched on', async () => {
+test('the route opens Quick add unless the core redesign is switched off', async () => {
   const fake = createFakeResources(goldenSeed());
   shared.resources = fake.resources;
-  vi.stubEnv('EXPO_PUBLIC_REDESIGN', 'core');
-  mount(<SpendAddRoute />, fake.resources);
-  expect(await screen.findByRole('group', { name: 'Keypad' })).toBeTruthy();
-  cleanup();
-  vi.stubEnv('EXPO_PUBLIC_REDESIGN', '');
+  for (const flag of ['core', '']) {
+    vi.stubEnv('EXPO_PUBLIC_REDESIGN', flag);
+    mount(<SpendAddRoute />, fake.resources);
+    expect(await screen.findByRole('group', { name: 'Keypad' })).toBeTruthy();
+    cleanup();
+  }
+  vi.stubEnv('EXPO_PUBLIC_REDESIGN', 'off');
   mount(<SpendAddRoute />, fake.resources);
   expect(await screen.findByRole('textbox', { name: 'Amount' })).toBeTruthy();
   expect(screen.queryByRole('group', { name: 'Keypad' })).toBeNull();

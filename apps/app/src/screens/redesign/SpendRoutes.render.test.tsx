@@ -51,8 +51,14 @@ afterEach(() => {
 });
 
 test('History: the legacy flag wins, then the redesign under the flag, else the current list', () => {
+  flags({ redesign: 'off' });
   render(<SpendAllRoute />);
   expect(screen.getByText('current list')).toBeTruthy();
+  cleanup();
+  // Approved (E2 checkpoint 1): the default.
+  flags({});
+  render(<SpendAllRoute />);
+  expect(screen.getByText(/^redesigned history/)).toBeTruthy();
   cleanup();
   flags({ redesign: 'core' });
   nav.params = { month: '2026-08' };
@@ -72,13 +78,19 @@ test('History: the legacy flag wins, then the redesign under the flag, else the 
 
 test('a record: only under the flag, with an id; otherwise back to the list', () => {
   nav.params = { id: 'r1' };
+  flags({ redesign: 'off' });
   render(<SpendRecordRoute />);
   expect(screen.getByText('redirect to /spend/all')).toBeTruthy();
   expect(screen.queryByText(/^record /)).toBeNull();
   cleanup();
-  flags({ redesign: 'catalogue' });
+  flags({ redesign: '-core' });
   render(<SpendRecordRoute />);
   expect(screen.getByText('redirect to /spend/all')).toBeTruthy();
+  cleanup();
+  // Approved (E2 checkpoint 1): the default.
+  flags({});
+  render(<SpendRecordRoute />);
+  expect(screen.getByText('record r1 in view mode')).toBeTruthy();
   cleanup();
   flags({ redesign: 'core', legacy: '1' });
   render(<SpendRecordRoute />);

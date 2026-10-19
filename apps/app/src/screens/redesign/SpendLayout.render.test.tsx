@@ -86,14 +86,24 @@ function mount(ui: ReactElement, locale: Locale = 'en', mode: 'light' | 'dark' =
 const rgb = (hex: string) => expect.stringMatching(new RegExp(`^rgba?\\(${[1, 3, 5].map((at) => Number.parseInt(hex.slice(at, at + 2), 16)).join(', ')}(, 1(\\.0+)?)?\\)$`));
 
 test('flag off: exactly the current layout, with no tab bar', () => {
-  mount(<SpendLayout />);
-  expect(within(screen.getByTestId('device-diary')).getByText('current screen')).toBeTruthy();
-  expect(screen.queryByRole('tablist')).toBeNull();
-  expect(screen.queryByTestId('tab-bar')).toBeNull();
-  cleanup();
-  flags({ redesign: 'catalogue' });
-  mount(<SpendLayout />);
-  expect(screen.queryByRole('tablist')).toBeNull();
+  for (const redesign of ['off', '-core']) {
+    flags({ redesign });
+    mount(<SpendLayout />);
+    expect(within(screen.getByTestId('device-diary')).getByText('current screen')).toBeTruthy();
+    expect(screen.queryByRole('tablist')).toBeNull();
+    expect(screen.queryByTestId('tab-bar')).toBeNull();
+    cleanup();
+  }
+});
+
+// E2 checkpoint 1 approved the core loop: with no flag set (or only other areas), the tab bar shows.
+test('approved: the redesigned layout is the default', () => {
+  for (const redesign of [undefined, '', 'catalogue']) {
+    flags({ redesign });
+    mount(<SpendLayout />);
+    expect(screen.getByTestId('tab-bar')).toBeTruthy();
+    cleanup();
+  }
 });
 
 test('flag on: Home and History tabs under the screen, with the add button in the centre', () => {
@@ -187,6 +197,10 @@ test('which tab a path belongs to', () => {
 });
 
 test('the Home route: the new Home under the flag, the legacy flag first, else the current Home', () => {
+  mount(<SpendHomeRoute />);
+  expect(screen.getByText('redesigned home with shared resources')).toBeTruthy();
+  cleanup();
+  flags({ redesign: 'off' });
   mount(<SpendHomeRoute />);
   expect(screen.getByText('v1 home with shared resources')).toBeTruthy();
   cleanup();

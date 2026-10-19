@@ -10,15 +10,25 @@ export function isLegacySpendEnabled(): boolean {
   return process.env.EXPO_PUBLIC_LEGACY_SPEND === '1';
 }
 
-/** Redesign areas that can be switched on before the owner approves them (E2). */
+/** Areas of the "Bun diary" redesign, each switched on once its screenshots are approved (E2). */
 export type RedesignArea = 'core' | 'catalogue';
 
 /**
- * The "Bun diary" redesign, one area at a time. `EXPO_PUBLIC_REDESIGN` is a
- * comma list of areas, or `all`. Off unless set: the current screens stay the
- * default until each area's screenshots are approved.
+ * Approved areas, on by default. The core loop (Home, Quick add, History,
+ * Record) passed E2 checkpoint 1 on 19 October 2026. The catalogue is a
+ * development tool and stays opt-in.
+ */
+const APPROVED: readonly RedesignArea[] = ['core'];
+
+/**
+ * Whether a redesign area is on. `EXPO_PUBLIC_REDESIGN` is a comma list:
+ * - `off` (or `0`) switches every area off, back to the current screens;
+ * - `-<area>` switches one area off;
+ * - `<area>` or `all` switches areas on.
+ * An approved area is on unless switched off; any other area only when named.
  */
 export function isRedesignEnabled(area: RedesignArea, value: string | undefined = process.env.EXPO_PUBLIC_REDESIGN): boolean {
-  const areas = (value ?? '').split(',').map((part) => part.trim()).filter((part) => part.length > 0);
-  return areas.includes('all') || areas.includes(area);
+  const parts = (value ?? '').split(',').map((part) => part.trim().toLowerCase()).filter((part) => part.length > 0);
+  if (parts.includes('off') || parts.includes('0') || parts.includes(`-${area}`)) return false;
+  return APPROVED.includes(area) || parts.includes('all') || parts.includes(area);
 }

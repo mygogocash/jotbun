@@ -1408,3 +1408,21 @@ Built together with the kit polish above, in one change. These fix the screen-le
     - export:web and `git diff --check`.
   - **API and database steps:** they passed in the same session's full gate: test:api 929, test:db 681, test:ops 107, the API build and the release graph. No file outside `apps/app` and `docs` has changed since `4a2a447`.
   - **Stale test databases:** 14, not ours, left alone.
+
+## E2 checkpoint 1 approved: the core loop is switched on (19 October 2026)
+
+- **Approval:** the owner approved the E2 screenshots on 19 October 2026: "E2 approved. Go ahead with the Thai and Vietnamese translations for the new copy and switch the redesign on behind the flag/routes as planned."
+- **Flag:** `isRedesignEnabled` now has an approved list, holding `core`. An approved area is on by default; the catalogue stays opt-in. `EXPO_PUBLIC_REDESIGN` is still a comma list:
+  - `off` (or `0`) switches every area off, back to the current v1 screens;
+  - `-core` switches the core loop off alone;
+  - `<area>` or `all` switches an area on.
+  - An empty or unset value used to mean "off" and now means "approved areas on".
+- **Routes:** `/spend`, `/spend/add`, `/spend/all`, `/spend/record/[id]` and the Home/History tab shell now show the redesign by default. The legacy flag (`EXPO_PUBLIC_LEGACY_SPEND=1`) still wins over the redesign.
+- **RED → GREEN:**
+  - `featureFlags.test.ts`: 3 of 3 failed against "off unless set" and now pass.
+  - The route, layout and Quick add route tests (5 failed) now test the default, `off` and `-core`. They pass with the catalogue route tests, 99 of 99.
+  - The full render suite: 561 of 561.
+- **Copy:**
+  - 137 new English strings entered `en.json` under `redesign*` keys (`cdcb821`). They were found by a static scan of `tc()` literals and a runtime capture of catalog misses across the redesign render tests. Not included: the dev-only catalogue, the import review's draft copy (its flag stays off), login and legacy screens.
+  - `catalogs.test.ts` fails until `th.json` and `vi.json` translate every key with the same placeholders. It also checks that every `tc()` literal in the redesign is in `en.json`.
+  - Vietnamese also lacked 110 existing keys, 93 of which the redesign shows ("Save entry", "Try again" and others). They are being filled with the new copy.
