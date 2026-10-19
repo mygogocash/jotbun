@@ -40,9 +40,9 @@ const CALL = /\btc\(\s*(['"])((?:\\.|(?!\1).)*)\1/g;
  * Areas still awaiting their E2 approval keep their copy out of the catalogs
  * (it shows in English until approved): `planning/` folders hold R4 until
  * E2 checkpoint 2, `insights/` folders R5 until E2 checkpoint 3, `account/`
- * folders R6 until E2 checkpoint 4.
+ * folders R6 until E2 checkpoint 4, `import/` folders R7 until checkpoint 5.
  */
-const AWAITING_E2 = new Set(['planning', 'insights', 'account']);
+const AWAITING_E2 = new Set(['planning', 'insights', 'account', 'import']);
 
 function sources(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {

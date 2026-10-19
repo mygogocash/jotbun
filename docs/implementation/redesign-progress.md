@@ -1524,3 +1524,23 @@ Built together with the kit polish above, in one change. These fix the screen-le
   - RED: the flag, the header action, Home's Settings button and the routes (no files yet).
   - The routes test mocks today's login frame, which pulls in native-only modules.
   - GREEN: test:unit 437 of 437; test:render 575 of 575; `tsc` and `typecheck:routes` clean.
+
+## R4 and R5 merged; R6 and R7 under way
+
+- **Merged agent branches:**
+  - Budget (`196c50f`), Categories (`77ab368`) and Wallets (`73c6a28`);
+  - Insights (`f76e816`), Month recap (`c2a0d2f`) and Reminders (`d65c3b9`, which adds weekday reminders to the S4 service with fixed ids per weekday).
+  Each followed RED → GREEN → mutation (5 to 14 mutations per screen, all caught). Their receipts are in each merge's branch report.
+- **Integration fixes:**
+  - `useGoBack` takes the screen's parent as its fallback: Home for Budget and Wallets, Budget for Categories, Insights for a recap and for reminders.
+  - All 75 new catalogue sections are registered (Planning 75–120, Insights 121–149).
+- **Gate on `3a13660`, all passing:**
+  - typecheck and typecheck:app;
+  - test:api 929, test:db 681, test:app 28, test:unit 545, test:dev 7, test:ops 107, test:render 906;
+  - the API build, export:web, `git diff --check` and `typecheck:routes`.
+- **E2 checkpoints 2 and 3 screenshots are blocked:** the "GoGoCash Expo58" simulator and Xcode's DerivedData (the dev build) were removed outside this session. Rebuilding is the owner's call.
+- **R7 groundwork:**
+  - An `import` area, opt-in until E2 checkpoint 5, covers the import journey and receipts.
+  - `/spend/import` keeps the legacy screen in the legacy build, shows the redesigned journey under the area, and otherwise redirects to `/spend`.
+  - Record renders `import/RecordReceipt`, which draws nothing with the area off.
+  - The server's `IMPORT_UPLOADS_ENABLED` stays off.

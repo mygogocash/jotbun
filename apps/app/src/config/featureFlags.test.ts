@@ -56,3 +56,11 @@ test('account is opt-in until approved', () => {
   assert.equal(isRedesignEnabled('account', 'account'), true);
   assert.equal(isRedesignEnabled('account', 'all'), true);
 });
+
+// R7: the import journey and receipts are built behind their own area until E2 checkpoint 5.
+test('import is opt-in until approved', () => {
+  assert.equal(isRedesignEnabled('import', undefined), false);
+  assert.equal(isRedesignEnabled('import', 'account'), false);
+  assert.equal(isRedesignEnabled('import', 'import'), true);
+  assert.equal(isRedesignEnabled('import', 'all'), true);
+});

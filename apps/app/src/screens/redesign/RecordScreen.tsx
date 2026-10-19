@@ -51,6 +51,7 @@ import { UndoBar } from '@mobile/ui/UndoBar';
 import { saveProblem, useCommandKeys, useMoneyLocale } from '../v1/parts';
 import { StageHeader } from '@mobile/ui/StageHeader';
 import { ActionFooter, ActionRow, EntryPage } from './ActionFooter';
+import { RecordReceipt } from './import/RecordReceipt';
 import { LoadingBlock, Notice, copyHref, useDateLocale, useGoBack } from './HistoryParts';
 
 export type RecordScreenProps = {
@@ -411,6 +412,7 @@ export function RecordScreen({ id, mode = 'view', now }: RecordScreenProps) {
       body = (
         <>
           <Receipt detail={detail} minor={record.amount_minor} date={record.occurred_on} />
+          <RecordReceipt recordId={record.id} version={record.version} />
           {notice ? (
             <Notice tone="alert" message={notice} action={pending === 'delete' ? { label: tc('Try again'), busy, onPress: () => void remove(record) } : undefined} />
           ) : null}

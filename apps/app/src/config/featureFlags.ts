@@ -11,7 +11,7 @@ export function isLegacySpendEnabled(): boolean {
 }
 
 /** Areas of the "Bun diary" redesign, each switched on once its screenshots are approved (E2). */
-export type RedesignArea = 'core' | 'catalogue' | 'planning' | 'insights' | 'account';
+export type RedesignArea = 'core' | 'catalogue' | 'planning' | 'insights' | 'account' | 'import';
 
 /**
  * Approved areas, on by default. The core loop (Home, Quick add, History,
@@ -19,7 +19,9 @@ export type RedesignArea = 'core' | 'catalogue' | 'planning' | 'insights' | 'acc
  * development tool and stays opt-in. Planning (R4: Budget, Wallets,
  * Categories) is built behind its own area until E2 checkpoint 2, and
  * Insights (R5: recap, calendar, streak, reminders) until E2 checkpoint 3,
- * and Account (R6: first run, sign-in, Settings, privacy) until checkpoint 4.
+ * Account (R6: first run, sign-in, Settings, privacy) until checkpoint 4, and
+ * Import (R7: the import journey and receipts) until checkpoint 5. The
+ * server's uploads switch (IMPORT_UPLOADS_ENABLED) is separate and stays off.
  */
 const APPROVED: readonly RedesignArea[] = ['core'];
 
