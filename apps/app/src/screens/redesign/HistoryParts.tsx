@@ -49,7 +49,7 @@ export const copyHref = copyRoute;
 /** Back to the list: the screen below it when there is one, else the list itself. */
 /**
  * Back, or, with nothing to go back to (a deep link), the screen this one
- * opens from: History by default; Home for Budget; Budget for Categories;
+ * opens from: History by default; Home for Budget and Wallets; Budget for Categories;
  * Insights for a recap and for reminders.
  */
 export function useGoBack(fallback: typeof HISTORY_ROUTE | '/spend' | '/spend/budget' | '/spend/insights' = HISTORY_ROUTE): () => void {

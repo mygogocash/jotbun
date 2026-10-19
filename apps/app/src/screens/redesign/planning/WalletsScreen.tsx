@@ -138,7 +138,7 @@ function Page({ header, footer, children }: { header: ReactNode; footer?: ReactN
 export function WalletsScreen({ now }: WalletsScreenProps) {
   const resources = useSpendV1();
   const tc = useCopy();
-  const goBack = useGoBack();
+  const goBack = useGoBack('/spend');
   const diaryView = useDiaryView();
   const today = todayInBangkok(now ?? new Date());
   const loaded = useLoad(() => resources.wallets(), [resources]);

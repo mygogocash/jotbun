@@ -263,13 +263,13 @@ test('an unarchive that meets a newer version shows theirs, and Reload reads the
   expect(fake.callsOf('unarchiveWallet')).toHaveLength(1);
 });
 
-test('Back on the stage goes back to Budget, or to History when there is nothing to go back to', async () => {
+test('Back on the stage goes back, or to Home (where Manage wallets opens it) when there is nothing to go back to', async () => {
   await openList();
   click('Back');
   expect(router.back).toHaveBeenCalledTimes(1);
   router.canGoBack.mockReturnValue(false);
   click('Back');
-  expect(router.replace).toHaveBeenCalledWith('/spend/all');
+  expect(router.replace).toHaveBeenCalledWith('/spend');
 });
 
 // ---------------------------------------------------------------------------

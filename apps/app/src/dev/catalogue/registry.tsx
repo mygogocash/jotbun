@@ -28,6 +28,7 @@ import { REMINDERS_SECTIONS } from './insights/remindersSections';
 import { MASCOT_SECTIONS } from './mascotSections';
 import { BUDGET_SECTIONS } from './planning/budgetSections';
 import { CATEGORY_SECTIONS } from './planning/categorySections';
+import { WALLET_SECTIONS } from './planning/walletSections';
 import { QUICK_ADD_SECTIONS } from './quickAddSections';
 import { RECORD_SECTIONS } from './recordSections';
 
@@ -56,6 +57,7 @@ export const SCREEN_SECTIONS: readonly CatalogueSection[] = [
 /** R4 Planning (behind `planning` until E2 checkpoint 2): Budget, Wallets, Categories. */
 export const PLANNING_SECTIONS: readonly CatalogueSection[] = [
   ...BUDGET_SECTIONS,
+  ...WALLET_SECTIONS,
   ...CATEGORY_SECTIONS,
 ];
 
