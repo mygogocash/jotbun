@@ -49,7 +49,8 @@ import { PillButton } from '@mobile/ui/PillButton';
 import { ReceiptRow, ReceiptSlip, ReceiptTotal } from '@mobile/ui/ReceiptSlip';
 import { UndoBar } from '@mobile/ui/UndoBar';
 import { saveProblem, useCommandKeys, useMoneyLocale } from '../v1/parts';
-import { LoadingBlock, Notice, copyRoute, useDateLocale, useGoBack } from './HistoryParts';
+import { StageHeader } from '@mobile/ui/StageHeader';
+import { LoadingBlock, Notice, copyHref, useDateLocale, useGoBack } from './HistoryParts';
 
 export type RecordScreenProps = {
   id: string;
@@ -83,8 +84,9 @@ const KEYPAD_PROBLEM_TEXT: Readonly<Record<KeypadProblem, string>> = {
   divide_by_zero: "You can't divide by zero.",
 };
 
+/** The amount's state word matches the Status row: a draft being checked says "checking", not "saving". */
 const AMOUNT_STATE: Readonly<Record<RowState, AmountState>> = {
-  confirmed: 'confirmed', saving: 'saving', checking: 'saving', update_to_send: 'saving', needs_look: 'conflict',
+  confirmed: 'confirmed', saving: 'saving', checking: 'checking', update_to_send: 'saving', needs_look: 'conflict',
 };
 
 const lookupsOf = (wallets: readonly { id: string; name: string }[], categories: readonly CategoryDto[]): Lookups => ({
@@ -280,6 +282,8 @@ export function RecordScreen({ id, mode = 'view', now }: RecordScreenProps) {
       }
       setPending(result.unconfirmed ? 'restore' : null);
       setNotice(result.message);
+      // A definite refusal: read the entry again, so a deleted one never looks live.
+      if (!result.unconfirmed) void load();
       return;
     } finally {
       acting.current = false;
@@ -317,7 +321,7 @@ export function RecordScreen({ id, mode = 'view', now }: RecordScreenProps) {
         <Receipt detail={detail} minor={draftCommand.payload.amount_minor} date={draftCommand.payload.occurred_on} />
         {notice ? <Notice tone="alert" message={notice} /> : null}
         <View style={{ gap: BUN_SPACE.sm }}>
-          <PillButton kind="secondary" label={tc('Copy')} onPress={() => router.push(copyRoute(detail.recordId))} />
+          <PillButton kind="secondary" label={tc('Copy')} onPress={() => router.push(copyHref(detail.recordId))} />
           {detail.actions.undo ? <PillButton kind="secondary" label={tc('Remove')} onPress={() => void settleDraft(draftCommand.commandId, 'remove')} /> : null}
           {detail.actions.discard ? <PillButton kind="secondary" label={tc('Discard')} onPress={() => void settleDraft(draftCommand.commandId, 'discard')} /> : null}
         </View>
@@ -409,7 +413,7 @@ export function RecordScreen({ id, mode = 'view', now }: RecordScreenProps) {
                 setNotice(null);
                 setEditing(startEdit(record));
               }} />
-              <PillButton kind="secondary" label={tc('Copy')} onPress={() => router.push(copyRoute(record.id))} />
+              <PillButton kind="secondary" label={tc('Copy')} onPress={() => router.push(copyHref(record.id))} />
               <PillButton kind="secondary" label={tc('Delete')} busy={busy} onPress={() => void remove(record)} />
             </View>
           )}
@@ -420,14 +424,10 @@ export function RecordScreen({ id, mode = 'view', now }: RecordScreenProps) {
 
   return (
     <View testID="record-screen" style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + BUN_SPACE.md, paddingHorizontal: BUN_SPACE.md, paddingBottom: BUN_SPACE.xl, gap: BUN_SPACE.md }} keyboardShouldPersistTaps="handled">
-        {showBack || editHeading ? (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: BUN_SPACE.sm }}>
-            {showBack ? <PillButton kind="secondary" label={tc('Back')} onPress={goBack} /> : null}
-            {editHeading ? <BunText variant="title" role="heading" accessibilityRole="header">{tc('Edit entry')}</BunText> : null}
-          </View>
-        ) : null}
-        {body}
+      <ScrollView contentContainerStyle={{ paddingBottom: BUN_SPACE.xl, gap: BUN_SPACE.md }} keyboardShouldPersistTaps="handled">
+        {/* The stage names the screen; Back is its own 44 pt button there, left out while editing (Cancel leaves the edit). */}
+        <StageHeader title={editHeading ? tc('Edit entry') : tc('Entry')} back={showBack ? { onPress: goBack } : undefined} />
+        <View style={{ paddingHorizontal: BUN_SPACE.md, gap: BUN_SPACE.md }}>{body}</View>
       </ScrollView>
       {deleted ? (
         <View style={{ paddingHorizontal: BUN_SPACE.md, paddingBottom: insets.bottom + BUN_SPACE.md }}>
@@ -438,17 +438,25 @@ export function RecordScreen({ id, mode = 'view', now }: RecordScreenProps) {
   );
 }
 
-/** The keypad's amount as it is typed, spoken as the exact amount whenever it is one. */
+/**
+ * The keypad's amount as it is typed, spoken as the exact amount whenever it
+ * is one. A sum shows what was typed and, as Quick add does, its exact
+ * result live ("100 ÷ 3" then "฿33.33"), so what Save sends is never a
+ * surprise. It is a polite live region.
+ */
 function AmountLine({ keypad }: { keypad: KeypadState }) {
   const tc = useCopy();
   const locale = useMoneyLocale();
   const display = keypadDisplay(keypad);
-  const outcome = keypadHasOperator(keypad) ? null : evaluateKeypad(keypad);
-  const value = outcome?.ok ? formatMinor(outcome.minor, locale) : display;
+  const sum = keypadHasOperator(keypad);
+  const outcome = evaluateKeypad(keypad, { allowZero: sum });
+  const result = outcome.ok ? formatMinor(outcome.minor, locale) : null;
+  const value = sum ? (result ? `${display} = ${result}` : display) : (result ?? display);
   return (
     <View testID="edit-amount" {...POLITE_LIVE_REGION} accessible accessibilityLabel={tc('{label}, {value}', { label: tc('Amount'), value })} style={{ gap: BUN_SPACE.xxs }}>
       <BunText variant="caption" tone="muted">{tc('Amount')}</BunText>
-      <BunText variant="hero" style={{ fontVariant: ['tabular-nums'] }}>{`฿${display}`}</BunText>
+      {sum ? <BunText variant="label" tone="muted" style={{ fontVariant: ['tabular-nums'] }}>{display}</BunText> : null}
+      <BunText variant="hero" style={{ fontVariant: ['tabular-nums'] }}>{sum ? result ?? display : `฿${display}`}</BunText>
     </View>
   );
 }

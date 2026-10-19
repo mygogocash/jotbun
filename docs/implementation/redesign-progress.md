@@ -1148,3 +1148,169 @@ These fix the logic-layer findings from the independent review of the redesign. 
 - **Tests that fail because of the intended model change** (other owners' files, not edited):
   - **`src/ui/paceAdapter.test.ts`, "pending money: confirmed spending plus waiting drafts; …"** (line 38): it counts a `sending` ฿20.00 draft as pending. The logic now gives `['20000', '1500', '2700', '21500']` (confirmed, pending, checking, estimated) instead of `['20000', '3500', '700', '23500']`. The rest of that test follows from the new estimate: spent `21500`, left `9500`, still `tight`, per day `593`, "Tight · ฿95.00 left · 16 days to go".
   - **`src/dev/catalogue/CatalogueScreen.render.test.tsx`, section `home-saving`:** the fixture (`homeSections.tsx`, "one draft on its way") makes that draft `sending`, but the assertions expect "Waiting to sync: money out ฿65.00" and "Includes ฿65.00 saving on this device". Making the fixture's first draft `unsent` keeps the section's intent, and every assertion holds again.
+
+## Kit polish after R3
+
+Built on `8979879` (the logic review fixes), in `src/ui/` and the screens that use the kit. It closes the kit gaps that the R2 unification, Home and History reports listed. Everything stays behind `isRedesignEnabled('core')`; with the flag off, nothing a person sees changed. No package, lockfile, catalog or `vendor/` change, no new text pair, and no raw hex. Every public kit export still imports from its old path, and `HistoryParts.tsx` re-exports `FilterChips`, `ChipOption` and History's `SearchField`.
+
+| # | Item | What changed | Pinned by |
+| --- | --- | --- | --- |
+| A1 | One minus sign | `RecordRow` and `DayHeader` draw amounts with `Amount`'s words (`useAmountWords()(minor, type).shown`), so money out reads "−฿65.00" (U+2212) in rows, day headers and receipt totals alike. The spoken labels are unchanged ("Expense ฿65.00", "Money out ฿65.00"). An untyped negative balance in `WalletPicker` keeps `formatMinor`'s own sign, because it is not an expense. | `kitUnification` "one minus rule", `RecordRow`, `DayHeader`, Home and History |
+| A2 | Draft states | `RecordRowState` gains `update_to_send` ("Update Jotbun to send", ink and bold, never "saving"). `AmountState` gains `checking` ("checking…", spoken "Expense ฿40.00, checking"). Home and History map update-to-send to the row state, so the extra line under the row is gone. The record screen's amount now says checking, as its Status row does. | `RecordRow`, `Amount`, Home, History, Record |
+| A3 | Unknown balances | `WalletChoice.balance_minor` is optional (`Minor \| null`). Without it the wallet shows its name only, on screen and in its label ("From Cash"). Move all is offered only when the From wallet's own balance is known. Quick add's offline `NameChoices` and `MoveByName` fallback is removed: offline, it uses `WalletPicker` by name. | `WalletPicker`, Quick add's offline move |
+| A4 | NoteField keys | Problems are keyed by source (`own`, `caller`), and a caller's problem with the field's own words is said once. | `NoteField` |
+| A5 | EmptyState | `action` is optional. The art wrapper (`empty-state-art`) is drawn only when there is art and the bun intensity shows the bun: Off collapses it, Quiet keeps it. History now always passes the thinking bun. Home's first run uses the optional action: the empty state has none, and the first-wallet form follows at once, so Create wallet stays the one primary. The separate "Add a wallet" step is gone. | `EmptyState`, Home's first run, catalogue `home-first-run` |
+| A6 | Back slot | `StageHeader` takes `back?: { onPress, label? }`, a 44 pt "‹ Back" button and the stage's first control. The record screen uses the stage: "Entry", or "Edit entry" while editing, when Back is left out because Cancel leaves the edit. | `StageHeader`, Record |
+| A7 | Kit chips and search | `src/ui/FilterChip.tsx` (`FilterChip`, `FilterChips`, `ChipOption`) and `src/ui/SearchField.tsx` (`label`, `value`, `onChangeText`, `placeholder?`, `clearLabel?`). History imports both from the kit. | `FilterChip`, `SearchField`, History |
+| A8 | One dialog | On the web, react-native-web's `Modal` already makes its full-screen layer `role="dialog"` with `aria-modal`. `Sheet` now names that layer and drops the panel's own role there; on native the panel stays the dialog. DateChip's private `CalendarSheet` is replaced by `Sheet`: one named dialog with its heading, the bottom safe area padded, and the same backdrop and ways to close. | `Sheet` "exactly one dialog", `DateChip` "the calendar is the kit sheet" |
+| A9 | Chosen day | `aria-pressed` on the web, where ARIA ignores `aria-selected` on a button; native keeps `aria-selected`, which its readers say. | `DateChip` |
+| A10 | Keyboard actions | On the web, a row with actions gets a sibling More button named "Actions for {title}" (44 pt, `aria-expanded`). It opens the same toolbar and moves focus to its first action. It is never inside the row's own button. | `RecordRow`, History |
+| A11 | Pace phase | The kit's `BudgetPace` has `phase?: 'before' \| 'during' \| 'after'`, and `toKitPace` passes it through. After the month: "฿X under budget" (or "Right on budget") with "฿spent of ฿limit", or "฿X over". No On track or Tight, no days and no per day. | `budgetWords`, `paceAdapter` |
+| A12 | Vietnamese dates | The receipt's date row and the conflict rows use `fullDateLabel` from `src/ui/dateStep.ts`, as the day headers do ("Chủ Nhật, 27 tháng 9, 2026"). This was already so since R3 History; a Vietnamese test now pins it, and the `zzDates` probe prints the same words. | Record "in Vietnamese the receipt date…" |
+| A13 | Typed routes | `recordRoute(id, edit?)` returns `{ pathname: '/spend/record/[id]', params: { id } }` (plus `mode: 'edit'`) and `copyRoute(id)` returns `{ pathname: '/spend/add', params: { copyOf: id } }`, both typed `Href`, with no casts. `recordHref` and `copyHref` are the same functions; Home, History and Record use them. | History, Home and Record `router.push` assertions |
+
+- **Typed routes, how to check:**
+  - **Clean checkout:** `npm run typecheck:app` from the root. Without generated route types, hrefs are checked as strings.
+  - **With route types, no server:** `npm run typecheck:routes -w gogospend-app`. It generates the declarations with Expo's own generator into a temporary folder inside `.expo/`, runs `tsc` with them, and removes the folder. It never reads `.expo/types/router.d.ts`, so a stale copy cannot hide a broken link.
+  - **As a developer machine has them:** in `apps/app`, run `CI=1 npx expo start --port 8099` until it prints "Waiting on http://localhost:8099", then stop it. Make sure no Metro is left (`lsof -nP -iTCP:8099 -sTCP:LISTEN` prints nothing). Run `npm run typecheck:app` from the root, then delete `apps/app/.expo` and `apps/app/expo-env.d.ts`.
+  - **Negative control:** with the generated types, `router.push('/spend/record/' + id)` fails with TS2345, so the check does narrow hrefs.
+
+## Review fixes: redesign screens
+
+Built together with the kit polish above, in one change. These fix the screen-level findings of the independent review, and wire the fields that the logic fixes added (see "For the screen agent" under "Review fixes: redesign logic").
+
+- **B1: a Quick add draft whose save may have committed could be edited and then shown as "Saved" with an amount the server never held. Fixed.**
+  - **Rule:** once any attempt of a draft is unconfirmed, the draft stays frozen with its record id and command key until that command's outcome is known. A refusal that comes before the server processes the command (`signed_out`, `session_changed`, `policy_required`, `upgrade_required`, `unsupported_platform`, `schema_unsupported`, `rate_limited`; `refusedBeforeProcessing()` in `screens/v1/parts.tsx`) says nothing about the first attempt, so the draft stays frozen. Try again resends the same command. It is disabled while resending must wait (a changed session, an update).
+  - **`isOwnCreate`:** Jotbun's copy (`error.current`) is compared with the draft field by field (`ownCreateMatches`). The same details show the saved moment. Other details are a conflict ("This entry is already saved in Jotbun as ฿60.00. Check it in History."), never "Saved", and nothing more is sent.
+  - **The same rule** holds in v1's `AddTransactionScreen` and in Home's first-wallet form.
+  - **Tests:** Quick add (signed out; then terms, a changed session and an update; and a create that meets its own record with other details), v1 Add, and Home's first wallet. Probe QA-1 passes: the keypad stays frozen after the refused retry.
+- **M2: History showed the loaded part of the oldest loaded day as that day's total. Fixed.** The model marks that day `partial` (`pageEdgeDay`). With each load, the screen reads that day's exact confirmed totals from the server (the same filter, that one day, one row) and shows them; if they cannot be read, the header shows no total. A day before the edge (only a draft can show there) shows no total, and neither does the edge day under a search. Test and probe History-1: "Money out ฿30.00" before Load more.
+- **M3: Review on Home could only open drafts in the five days shown. Fixed.** The Review sheet is built from the model's `openDrafts` (`needs_look`), in the ready and the offline model alike. When some waiting drafts are older than the days shown, the saving banner offers Show all: a "Waiting to sync" sheet with every waiting draft, and Remove for one never sent. Test and probe Home-1.
+- **Home loader:** today is read with `readWholeDay` (up to 20 pages; it never throws), and earlier records are cut with `earlierWholeDays`. `oldestWholeDay` and `todayComplete` go into `HomeData`. A partial today drops the receipt's total and says "Today has more entries than Home shows. History has them all." Probe Home-2 passes; Home-3 passes as before.
+- **Banner:** `syncPlan` counts `sending` as checking through `moneyGroupOf`, as the rows, v1's `SyncStatus` and the pace do. A new test: one unsent and one sending draft read "Saving 1 entry…" and "Checking 1 entry with Jotbun before sending it again".
+- **M4: the History and record routes had no tests. Fixed.** `SpendRoutes.render.test.tsx`: `app/spend/all.tsx` picks legacy first, then History under `core`, else the current list. `app/spend/record/[id].tsx` redirects to `/spend/all` with the flag off, under `catalogue` only, in the legacy build or without an id, and otherwise opens the record in view or edit mode.
+- **m2:** the record edit's amount line shows and says the keypad's live result ("100 ÷ 3" over "฿33.33", spoken "Amount, 100 ÷ 3 = ฿33.33"). It is a polite live region.
+- **m3:** Home's stage says the month's confirmed money in and out again, quietly, as v1's Home did ("Money in ฿28,000.00 · Money out ฿12,450.00"). Drafts are never added in.
+- **m4:** after a definite restore refusal, the record screen reads the entry again, so a deleted entry never looks live.
+- **m5:** a test pins the record edit's double-submit guard: two Save presses in one tick send one edit. The R3 review's "no acting guard" mutation survived before; it is caught now.
+- **m6:**
+  - Quick add's amount is a polite live region.
+  - Home's banners and sync lines share one polite live region and are announced once, as one sentence. No banner is a live region of its own inside it (`SyncBanner` takes `live={false}`, and `syncBannerLine()` gives its words).
+  - TabBar's Add button is outside the tablist. The list keeps a hidden space in its centre, and the button is drawn over it from outside, so screen readers meet the tabs, then Add.
+  - Sheets return focus to what opened them when they close. On the web this is react-native-web's modal focus trap, pinned by a `Sheet` test. On native it is the platform's own modal presentation; see SKIPPED.
+- **m7: History search redrew every row on every keystroke. Fixed.**
+  - The list is a virtualized `FlatList`. The stage is its header; the search is its first item and stays sticky (`stickyHeaderIndices={[1]}`); then come the controls, then each day's header and rows. Load more and the empty month are its footer. It draws 24 items before it has measured the screen, then keeps 11 screens' worth around the one in view.
+  - Each row is a memoized `HistoryRow` built from plain values, with one row-actions object for the screen's life. A keystroke, a banner or a re-read redraws no row whose words did not change.
+  - The model and the rows follow the search through `useDeferredValue`, as before.
+  - **Tests:** `HistoryList.render.test.tsx`. Mounted as the app mounts it, a 50-row page draws only a first window. Typing "r", "re", "ren", "rent" draws no row again, and the matching row stays. Re-reading the month draws no row again, and a changed rent redraws only its own row.
+  - **Test harness:** happy-dom has no layout, so a virtualized list there never grows past its first window. `src/ui/listWindow.tsx` adds `DrawWholeLists`, which `HistoryTestHarness`'s `mountScreen` wraps around the screen by default (`wholeLists: false` mounts it as the app does). The app never uses it.
+  - The `zzPerf` probe's model cost is unchanged: 7 keystrokes over 2,000 rows in 32 to 39 ms in Node.
+- **m8:** Move all offers the wallet's balance less what drafts waiting on this device take out of it, plus what they bring in. Drafts being checked may already be in the server's balance, so they are left out, as the pace leaves them out. Add another reloads the balances in place.
+- **m9:** `BunIntensityProvider` treats a secure-store read that rejects as "no stored setting". A write that rejects still applies the choice for the session.
+- **Nits:**
+  - **Sign-out erase:** `DeviceDiaryProvider`'s `eraseWithDiary` also erases the bun intensity and the cheer day, after the import draft. A setting that cannot be erased never stops it. A new test calls the hook itself.
+  - **Search summary:** announced once it has stayed the same for 800 ms (`useSettledAnnouncement`), not once per keystroke. The web reads the polite live region.
+  - **Copy by URL:** a deleted record is not copied; Quick add says "This entry isn't available to copy."
+  - **"None"** (the conflict panel's empty fields) belongs on R3 History's list of new strings. It is in the list below.
+- **New English strings** (not in the catalogs, so English in th and vi until E2): `Entry`, `From {name}`, `To {name}`, `Show all`, `Right on budget`, `under budget`, `{amount} under budget`, `{amount}, checking`, `This entry is already saved in Jotbun as {amount}. Check it in History.` and `Today has more entries than Home shows. History has them all.` Also `None`, which R3 History used without listing it. Reused as they are: `Update Jotbun to send`, `checking…`, `Back`, `Waiting to sync`, `Create wallet` and `Edit entry`.
+- **Probes** (`rdr/probes` in the scratchpad, copied in for the run and removed afterwards): 10 of 10 pass.
+
+  | Probe | Result |
+  | --- | --- |
+  | QA-1 | PASS: the keypad stays frozen after the refused retry, so the saved moment can only show what the server holds |
+  | Home-1 | PASS: Review opens the sheet with Discard for a draft older than the days shown |
+  | Home-2 | PASS: 27 September is left out (the page cut it), so it is never shown without its confirmed money |
+  | Home-3 | PASS: "฿9,880.00 left" |
+  | History-1 | PASS: "Thursday 10 September 2026, Money out ฿30.00" before Load more |
+  | History-2 | PASS (it prints the summary per keystroke; the announcement is the settled one) |
+  | `zzDates` | PASS; the en, th and vi words are printed |
+  | `zzKeypadFuzz` | PASS, both tests |
+  | `zzPerf` | PASS (it prints the model's cost) |
+
+- **Mutation check** (`kpf-mutate.py` in the scratchpad, one mutation at a time, every file restored byte-identical): 35 of 35 caught. The banner mutation survived the first run, so the sending-banner test was added, and it is caught now.
+
+  | Mutation | Failing tests |
+  | --- | --- |
+  | B1: Quick add unfreezes after a refusal before processing | 4 |
+  | B1: v1 Add unfreezes after a refusal before processing | 1 |
+  | B1: Home's first wallet unfreezes after a refusal before processing | 1 |
+  | B1: `refusedBeforeProcessing` always false | 6 |
+  | B1: own create with other details shown as Saved | 1 |
+  | M3: Review and Show all built from the days shown, not `openDrafts` | 2 |
+  | Minus: `Amount` signs an expense with a hyphen | 10 |
+  | Minus: `RecordRow` back to its own hyphen | 3 |
+  | Minus: `DayHeader` back to its own hyphen | 5 |
+  | Balance: an unknown balance guessed as zero in `WalletPicker` | 4 |
+  | Balance: Quick add guesses zero for a device wallet | 2 |
+  | Dialog: the panel is a second dialog on the web | 10 |
+  | Dialog: the web layer left unnamed | 8 |
+  | m7: History rows not memoized | 2 |
+  | m7: History list not windowed | 1 |
+  | M2: the cut day shows its loaded part as the total | 1 |
+  | M4: the record route ignores the flag | 1 |
+  | M4: History checks the redesign before legacy | 1 |
+  | Banner: sending counted as saving | 1 |
+  | m2: the edit amount drops its live result | 1 |
+  | m4: no reload after a definite restore refusal | 1 |
+  | m5: no double-submit guard on the record edit | 1 |
+  | m6: Quick add's amount not a live region | 1 |
+  | m8: Move all ignores waiting drafts | 1 |
+  | m9: a secure-store rejection escapes | 1 |
+  | Nit: the sign-out erase leaves the bun settings | 1 |
+  | Nit: the settled announcement says every keystroke | 1 |
+  | Nit: a deleted record can be copied by URL | 1 |
+  | A2: Home maps update-to-send to saving | 1 |
+  | A5: the art space kept with the bun off | 2 |
+  | A9: the chosen day keeps `aria-selected` on the web | 1 |
+  | A10: no keyboard path to row actions | 2 |
+  | A11: a finished month reads as a pace | 2 (unit) |
+  | A12: the receipt date back to the model's Intl words | 8 |
+  | A13: the record route back to a hand-built string | 4 |
+
+- **App gate** (from the worktree root):
+
+  | Step | Before (`e14541a`, the work in progress) | After |
+  | --- | --- | --- |
+  | typecheck:app, no route types | PASS | PASS |
+  | typecheck:app, with `.expo/types/router.d.ts` from `expo start` | PASS | PASS |
+  | `typecheck:routes` | PASS | PASS |
+  | test:unit | PASS, 424 | PASS, 424 |
+  | test:render | PASS, 536 in 51 files | PASS, 541 in 52 files |
+  | export:web (`--max-workers 2`) | not run | PASS |
+  | `git diff --check` | clean | clean |
+
+- **Test assertions changed, and why:**
+
+  | File | Changed | Why |
+  | --- | --- | --- |
+  | `ui/RecordRow.render.test.tsx` | 2: `-฿65.00` → `−฿65.00` | A1 |
+  | `ui/DayHeader.render.test.tsx` | 3: `-฿420.00` and `-฿65.00` → U+2212 | A1 |
+  | `ui/kitUnification.render.test.tsx` | 1: the day's `-฿1,234.56` → `−฿1,234.56` (the untyped `-฿65.00` balance is kept) | A1 |
+  | `screens/redesign/HistoryScreen.render.test.tsx` | 2: `-฿12,268.00` → U+2212 | A1 |
+  | `screens/redesign/HomeScreen.render.test.tsx` | 1: one `−฿120.00` → two (the row and the day's total) | A1: the row now draws U+2212 too |
+  | `dev/catalogue/CatalogueScreen.render.test.tsx` | 1: `-฿247.00` → `−฿247.00` | A1 |
+  | `screens/redesign/HistoryScreen.render.test.tsx` | 1: the paused row `…, saving, Cash` → `…, Update Jotbun to send, Cash` | A2 |
+  | `screens/redesign/HomeScreen.render.test.tsx` | 1: the same for Home's paused row | A2 |
+  | `screens/redesign/HomeScreen.render.test.tsx` | 3: `openFirstWallet` no longer expects the form hidden or presses Add a wallet, and the Thai first run no longer presses it | A5: first run is one step |
+  | `screens/redesign/HomeScreen.render.test.tsx` | 1: "no svg at all" with the bun off → no svg except the form's 24-unit kit glyphs | A5: the form, with its date chip, now shows at once |
+  | `dev/catalogue/CatalogueScreen.render.test.tsx` | 1: `home-first-run` expects Create wallet, and no Add a wallet | A5 |
+  | `ui/Sheet.render.test.tsx` | 6, in 3 tests: the panel's colour, radius, padding and slide are read from `sheet-panel`, inside the one dialog | A8 |
+  | `ui/DateChip.render.test.tsx` | 1: `aria-selected` → `aria-pressed` | A9 |
+  | `ui/paceAdapter.test.ts` | 9: `toKitPace` results gain `phase` | A11 |
+  | `ui/paceAdapter.test.ts` | 1: after the month, `['฿10.00 left', 'On track', null]` → `['฿10.00 under budget', '฿300.00 of ฿310.00', null]` | A11 |
+  | `screens/redesign/HistoryScreen.render.test.tsx` | 5: `router.push` strings → href objects | A13 |
+  | `screens/redesign/HomeScreen.render.test.tsx` | 3: the same | A13 |
+  | `screens/redesign/RecordScreen.render.test.tsx` | 2: the same | A13 |
+  | `screens/redesign/RecordScreen.render.test.tsx` | 1: `Amount, 0.1 + 0.2` → `Amount, 0.1 + 0.2 = ฿0.30` | m2 |
+  | `ui/TabBar.render.test.tsx` | 2: Add was in the tablist's order → it is outside, over the hidden centre space | m6 |
+  | `screens/redesign/SpendLayout.render.test.tsx` | 3: the same for the spend layout's bar | m6 |
+
+  Everything else is added. Two test supports changed without changing an assertion: `HistoryTestHarness`'s `mountScreen` wraps the screen in `DrawWholeLists` (m7), and the erase test's `expo-secure-store` mock gains the keychain constant that `DeviceDiaryProvider` reads when it loads.
+- **Catalogue:** every section still reaches its state, and its render test passes. One catalogue file changed: `homeSections.tsx`'s first-run script waits for Create wallet instead of Add a wallet (A5).
+- **Left as they are:**
+  - The record screen's amount for an update-to-send draft says "saving", because `Amount` has no update-to-send state. Its Status row says "Update Jotbun to send".
+  - The sign-out erase clears the stored bun settings, but `BunIntensityProvider` keeps the choice in memory until it remounts. The erase runs only with a device diary (iOS and Android); the web keeps no diary.
+- **SKIPPED (E2):**
+  - VoiceOver and TalkBack: focus back on the opener after a sheet closes (native relies on the platform's modal), the row actions menu where native has no More button, the single banner announcement, and the live amount lines;
+  - the sticky search and the windowed list on iOS and Android, including Load more far down a long month;
+  - simulator screenshots of the changed states in light and dark, in TH, EN and VI, at 320 pt.

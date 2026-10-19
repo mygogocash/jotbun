@@ -75,6 +75,29 @@ test('an unconfirmed save keeps the entry frozen and retries the same command', 
   expect(second.args).toEqual(first.args);
 });
 
+// Review B1: a retry refused before processing (signed out, terms, an update, a
+// changed session) says nothing about the unconfirmed first attempt, so the
+// entry stays frozen with its key until that command's outcome is known.
+test('an unconfirmed save stays frozen with its key when the retry is refused before processing', async () => {
+  const fake = await ready();
+  fake.loseResponse('createTransaction');
+  type('Amount', '65');
+  fireEvent.click(screen.getByRole('button', { name: 'Save entry' }));
+  expect(await screen.findByText('Not confirmed yet. Your entry is kept; try again.')).toBeTruthy();
+  fake.fail('createTransaction', 'signed_out', { status: 401 });
+  fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+  expect(await screen.findByText('Sign in again to save.')).toBeTruthy();
+  const amount = screen.getByLabelText('Amount') as HTMLInputElement;
+  expect(amount.disabled || amount.readOnly).toBe(true);
+  expect(screen.queryByRole('button', { name: 'Save entry' })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+  await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/spend'));
+  const calls = fake.callsOf('createTransaction').map((call) => call.args);
+  expect(calls).toHaveLength(3);
+  for (const call of calls) expect(call).toEqual(calls[0]);
+  expect(fake.records.get((calls[0][0] as { id: string }).id)?.amount_minor).toBe('6500');
+});
+
 test('records a transfer between two different wallets', async () => {
   const fake = await ready();
   fireEvent.click(screen.getByRole('button', { name: 'Transfer' }));

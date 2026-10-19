@@ -31,7 +31,8 @@ export const HOME_SECTIONS: readonly CatalogueSection[] = [
     title: 'Home: first run',
     // No wallet yet, on the server or on the device.
     fixture: () => ({ resources: createFakeResources().resources, diary: deviceDiary({ wallets: [], categories: [] }).diary }),
-    script: (tc) => [{ waitFor: tc('Add a wallet') }],
+    // First run is one step: the empty state and the first-wallet form together.
+    script: (tc) => [{ waitFor: tc('Create wallet') }],
     render: home,
   }),
   screenSection({

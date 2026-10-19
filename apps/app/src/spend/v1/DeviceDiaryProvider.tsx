@@ -12,6 +12,8 @@ import * as SecureStore from 'expo-secure-store';
 
 import { fetchAccountId } from '@mobile/api/sharedV1';
 import { getV1SessionSnapshot, subscribeSession } from '@mobile/auth/session';
+import { eraseStoredBunIntensity } from '@mobile/mascot/bunIntensityStorage';
+import { eraseCheerDay } from '@mobile/screens/redesign/quickAddCheer';
 import type { AccountDatabase } from '@mobile/storage/accountDatabase';
 import { createDeviceAccountDatabase } from '@mobile/storage/deviceDiary';
 import { createDeviceSync } from '@mobile/sync/deviceSync';
@@ -39,6 +41,17 @@ const knownAccount = createKnownAccount(
   (text) => Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, text),
 );
 
+/**
+ * The explicit sign-out erase, with the diary: this account's import draft,
+ * and the bun's device settings (its intensity and the day the Quick add
+ * cheer last showed), so the next person starts from the defaults. A setting
+ * that cannot be erased never stops the diary's erase. Exported for its test.
+ */
+export async function eraseWithDiary(accountId: string): Promise<void> {
+  await eraseDeviceImportDraft(accountId);
+  await Promise.all([eraseStoredBunIntensity().catch(() => undefined), eraseCheerDay()]);
+}
+
 function createDeviceDiary(): { diary: SpendDiary; refresh: () => Promise<void>; dispose: () => Promise<void> } {
   const database = deviceDatabase();
   const resolver = createDiarySessionResolver({
@@ -50,7 +63,7 @@ function createDeviceDiary(): { diary: SpendDiary; refresh: () => Promise<void>;
   const diary = createSpendDiary({
     open: (accountId, epoch) => database.open(accountId, epoch),
     discard: (accountId) => database.discard(accountId),
-    eraseWithDiary: eraseDeviceImportDraft,
+    eraseWithDiary: eraseWithDiary,
     session: resolver.current,
     now: () => Date.now(),
     newId: () => Crypto.randomUUID(),

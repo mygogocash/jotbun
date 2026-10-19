@@ -3,6 +3,10 @@ import { afterEach, expect, test, vi } from 'vitest';
 
 import { DateChip } from './DateChip';
 import { MATRIX, leading, mountKit, rgb } from './entryKitTestHarness';
+import { BUN_SPACE } from './layout';
+
+// The calendar is the kit Sheet, which pads the bottom safe area.
+vi.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ top: 47, right: 0, bottom: 34, left: 0 }) }));
 
 afterEach(() => cleanup());
 
@@ -46,7 +50,12 @@ test('the chip says the full date and opens a calendar with no future days', () 
   fireEvent.click(chip);
   const sheet = screen.getByRole('dialog', { name: 'Pick another date' });
   expect(within(sheet).getByText('October 2026')).toBeTruthy();
-  expect(within(sheet).getByRole('button', { name: 'Thursday 15 October 2026' }).getAttribute('aria-selected')).toBe('true');
+  // The chosen day is a pressed toggle on the web: ARIA ignores aria-selected on a button.
+  const chosen = within(sheet).getByRole('button', { name: 'Thursday 15 October 2026', pressed: true });
+  expect(chosen.getAttribute('aria-pressed')).toBe('true');
+  expect(chosen.hasAttribute('aria-selected')).toBe(false);
+  expect(within(sheet).getByRole('button', { name: 'Friday 16 October 2026' }).getAttribute('aria-pressed')).toBe('false');
+  expect(within(sheet).getAllByRole('button', { pressed: true })).toEqual([chosen]);
   expect(within(sheet).getByRole('button', { name: 'Monday 19 October 2026' }).getAttribute('aria-disabled')).toBe('true');
   expect(within(sheet).getByRole('button', { name: 'Next month' }).getAttribute('aria-disabled')).toBe('true');
   fireEvent.click(within(sheet).getByRole('button', { name: 'Monday 12 October 2026' }));
@@ -66,6 +75,19 @@ test('the calendar walks back a month, keeps days before the earliest date shut,
   fireEvent.click(within(sheet).getByRole('button', { name: 'Close' }));
   expect(screen.queryByRole('dialog')).toBeNull();
   expect(onChange).not.toHaveBeenCalled();
+});
+
+test('the calendar is the kit sheet: one named dialog with its heading, padded clear of the bottom safe area', () => {
+  mountKit(<DateChip value={TODAY} today={TODAY} onChange={() => undefined} />);
+  fireEvent.click(screen.getByRole('button', { name: /^Pick another date/ }));
+  expect(screen.getAllByRole('dialog')).toHaveLength(1);
+  const sheet = screen.getByRole('dialog', { name: 'Pick another date' });
+  expect(within(sheet).getByRole('heading', { name: 'Pick another date' })).toBeTruthy();
+  const panel = screen.getByTestId('sheet-panel');
+  expect(sheet.contains(panel)).toBe(true);
+  expect(panel.style.paddingBottom).toBe(`${34 + BUN_SPACE.lg}px`);
+  fireEvent.click(within(sheet).getByRole('button', { name: 'Close' }));
+  expect(screen.queryByRole('dialog')).toBeNull();
 });
 
 test('disabled, nothing moves', () => {

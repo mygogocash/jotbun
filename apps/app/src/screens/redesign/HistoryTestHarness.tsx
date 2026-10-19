@@ -19,6 +19,7 @@ import { bunDark, bunLight } from '@mobile/theme/bunPalette';
 import type { BunColors } from '@mobile/theme/bunPalette';
 import { bunText } from '@mobile/theme/bunType';
 import { ThemePreferenceOverride, ThemeProvider } from '@mobile/theme/ThemeProvider';
+import { DrawWholeLists } from '@mobile/ui/listWindow';
 
 /** 29 September 2026, 10:00 in Bangkok: the golden month is the current month. */
 export const NOW = new Date('2026-09-29T03:00:00Z');
@@ -56,18 +57,25 @@ export function extraRecords(count = 60): TransactionDto[] {
   }));
 }
 
+/**
+ * Mounts a screen in the app's contexts. happy-dom has no layout, so History's
+ * virtualized list would never grow past its first items here: by default the
+ * harness asks it to draw every row (`DrawWholeLists`), as a device does once
+ * the person scrolls. `wholeLists: false` mounts it exactly as the app does.
+ */
 export function mountScreen(
   element: ReactElement,
-  options: { resources: SpendV1Resources; diary?: SpendDiary | null; locale?: string; mode?: 'light' | 'dark' },
+  options: { resources: SpendV1Resources; diary?: SpendDiary | null; locale?: string; mode?: 'light' | 'dark'; wholeLists?: boolean },
 ) {
-  const { resources, diary = null, locale = 'en', mode = 'light' } = options;
+  const { resources, diary = null, locale = 'en', mode = 'light', wholeLists = true } = options;
+  const screenElement = <SpendDiaryProvider diary={diary}>{element}</SpendDiaryProvider>;
   return render(
     <IntlProvider locale={locale}>
       <ThemeProvider>
         <ThemePreferenceOverride preference={mode}>
           <BunIntensityProvider>
             <SpendV1Provider resources={resources}>
-              <SpendDiaryProvider diary={diary}>{element}</SpendDiaryProvider>
+              {wholeLists ? <DrawWholeLists>{screenElement}</DrawWholeLists> : screenElement}
             </SpendV1Provider>
           </BunIntensityProvider>
         </ThemePreferenceOverride>

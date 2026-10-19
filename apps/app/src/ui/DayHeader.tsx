@@ -1,7 +1,8 @@
 // The heading over one day of records (redesign R2b): "Today", "Yesterday"
 // or the date, and the day's money out and money in, kept apart rather than
 // netted. A side with nothing in it is left out. Screen readers hear the full
-// date and the words "Money out" and "Money in" with each amount.
+// date and the words "Money out" and "Money in" with each amount. The signs
+// are Amount's: money out takes the minus sign (U+2212), money in a plus.
 import type { Minor } from '@gogospend/contracts';
 import { View } from 'react-native';
 
@@ -43,8 +44,8 @@ export function DayHeader({ date, today, outMinor, inMinor }: DayHeaderProps) {
     >
       <BunText variant="label" style={{ fontWeight: '700' }}>{label.text}</BunText>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: BUN_SPACE.sm }}>
-        {out ? <AmountText variant="caption" tone="muted">{`-${out}`}</AmountText> : null}
-        {into ? <AmountText variant="caption" tone="muted">{`+${into}`}</AmountText> : null}
+        {out ? <AmountText variant="caption" tone="muted">{amountWords(outMinor, 'expense').shown}</AmountText> : null}
+        {into ? <AmountText variant="caption" tone="muted">{amountWords(inMinor, 'income').shown}</AmountText> : null}
       </View>
     </View>
   );

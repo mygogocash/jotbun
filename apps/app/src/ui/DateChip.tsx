@@ -1,19 +1,18 @@
 // "‹ Today ›" on the entry sheet (redesign R2b). The arrows step one day and
 // never go past today or before the earliest date (the wallet's tracking
-// start); tapping the chip opens a month calendar in a sheet.
+// start); tapping the chip opens a month calendar in the kit's `Sheet`, which
+// is one named dialog, pads the bottom safe area and closes like every sheet.
 //
 // Why not SpendDatePicker: that component draws its own "Date" heading and
 // field as the trigger, uses the legacy green palette, has no way to be opened
-// from another control, and has no earliest-date bound. This file keeps a
-// small calendar sheet of its own, built on the same pure grid
+// from another control, and has no earliest-date bound. This file draws a
+// small month calendar of its own, built on the same pure grid
 // (`spendCalendarWeeks`) and on `dateStep` for the labels, so Thai shows
 // Buddhist-era years.
 import { TRACKING_START_MIN } from '@gogospend/contracts';
 import { useState } from 'react';
-import type { ReactNode } from 'react';
-import { Modal, Pressable, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
 
-import { useReducedMotion } from '@mobile/hooks/useReducedMotion';
 import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
 import { spendCalendarWeeks } from '@mobile/spend/spendCalendar';
 import { shiftMonth } from '@mobile/spend/v1/viewModels';
@@ -24,7 +23,16 @@ import { BunText } from './BunText';
 import { canStepBack, canStepForward, dayLabel, fullDateLabel, monthLabel, stepDay, weekdayInitials } from './dateStep';
 import { Glyph } from './Glyph';
 import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE, BUN_TOUCH } from './layout';
-import { sheetBackdrop } from './sheetBackdrop';
+import { Sheet } from './Sheet';
+
+/**
+ * The chosen day's state. On the web it is a pressed toggle button: ARIA
+ * ignores `aria-selected` on a button, so browsers would never say it. Native
+ * readers say "selected" for the selected state, so they keep that.
+ */
+function chosenState(chosen: boolean): object {
+  return Platform.OS === 'web' ? { 'aria-pressed': chosen } : { 'aria-selected': chosen };
+}
 
 export type DateChipProps = {
   /** The chosen Bangkok date, `YYYY-MM-DD`. */
@@ -85,7 +93,7 @@ export function DateChip({ value, today, earliest, onChange, disabled = false }:
       <Pressable accessibilityRole="button" accessibilityLabel={tc('Next day')} disabled={!forward} onPress={() => step(1)} style={{ ...arrow, opacity: forward ? 1 : 0.35 }}>
         <Glyph name="chevron-right" color={colors.ink} />
       </Pressable>
-      <CalendarSheet visible={open} onClose={() => setOpen(false)} label={tc('Pick another date')}>
+      <Sheet visible={open} onClose={() => setOpen(false)} title={tc('Pick another date')}>
         <CalendarMonth
           month={month}
           value={value}
@@ -97,7 +105,7 @@ export function DateChip({ value, today, earliest, onChange, disabled = false }:
             onChange(date);
           }}
         />
-      </CalendarSheet>
+      </Sheet>
     </View>
   );
 }
@@ -137,7 +145,7 @@ function CalendarMonth({ month, value, today, floor, onMonth, onPick }: { month:
                 key={day.date}
                 accessibilityRole="button"
                 accessibilityLabel={fullDateLabel(day.date, locale)}
-                aria-selected={chosen}
+                {...chosenState(chosen)}
                 disabled={shut}
                 onPress={() => onPick(day.date)}
                 // Seven across a 320 pt phone leaves each day about 41 pt wide;
@@ -152,61 +160,5 @@ function CalendarMonth({ month, value, today, floor, onMonth, onPick }: { month:
         </View>
       ))}
     </View>
-  );
-}
-
-/**
- * The calendar's bottom sheet: a cream card with an ink outline, a Close
- * button, and the dimmed page (`sheetBackdrop`, as `Sheet` draws it), which
- * also closes it. It slides up, and simply appears under reduced motion.
- *
- * It is not the kit's `Sheet` yet, only because of DateChip's render tests.
- * On the web, react-native-web's `Modal` marks its full-screen layer as a
- * dialog once it has shown, so `Sheet` reads as an unnamed dialog around its
- * own named one. This sheet nests the same way in a browser once its slide
- * ends, but happy-dom never ends a CSS animation, and DateChip's tests ask
- * for exactly one dialog. Fixing `Sheet`'s web dialog and then switching is
- * recorded under "R2 unification" in docs/implementation/redesign-progress.md.
- */
-function CalendarSheet({ visible, onClose, label, children }: { visible: boolean; onClose: () => void; label: string; children: ReactNode }) {
-  const colors = useBunColors();
-  const tc = useCopy();
-  const reducedMotion = useReducedMotion();
-  if (!visible) return null;
-  return (
-    <Modal transparent visible animationType={reducedMotion ? 'none' : 'slide'} onRequestClose={onClose} statusBarTranslucent>
-      <View style={{ flex: 1, justifyContent: 'flex-end' }}>
-        {/* The dimmed page closes the sheet on a tap; screen readers use the Close button instead. */}
-        <Pressable {...DECORATIVE} testID="sheet-backdrop" focusable={false} onPress={onClose} style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, ...sheetBackdrop(colors) }} />
-        <View
-          role="dialog"
-          aria-modal
-          accessibilityLabel={label}
-          accessibilityViewIsModal
-          onAccessibilityEscape={onClose}
-          style={{
-            backgroundColor: colors.card,
-            borderColor: colors.ink,
-            borderWidth: BUN_OUTLINE.card,
-            borderTopLeftRadius: BUN_RADIUS.sheet,
-            borderTopRightRadius: BUN_RADIUS.sheet,
-            padding: BUN_SPACE.md,
-            gap: BUN_SPACE.sm,
-          }}
-        >
-          <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={tc('Close')}
-              onPress={onClose}
-              style={{ minHeight: BUN_TOUCH, minWidth: BUN_TOUCH, alignItems: 'center', justifyContent: 'center' }}
-            >
-              <Glyph name="close" color={colors.ink} />
-            </Pressable>
-          </View>
-          {children}
-        </View>
-      </View>
-    </Modal>
   );
 }

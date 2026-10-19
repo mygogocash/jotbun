@@ -22,13 +22,12 @@
 // - **Per day:** the logic's `perDayMinor`, rounded down to the satang; '0' at
 //   exactly zero left; null when over, after the month or without a budget.
 // - **Days left:** the logic's `daysLeft`, today included.
-// - **Phases:** the kit has none, so the phase shows only through the days.
-//   `during` maps as above, and the last day reads "Last day". `before` (a
-//   month not started yet) has the whole month left, so it reads like its
-//   first day: "฿X a day left", "N days to go". `after` (a month that has
-//   ended) has no days left and no per day, so the kit says "฿X left" or
-//   "฿X over" with no days line. The logic never calls a finished month
-//   tight.
+// - **Phase:** passed through. `during` maps as above, and the last day reads
+//   "Last day". `before` (a month not started yet) has the whole month left,
+//   so it reads like its first day: "฿X a day left", "N days to go". `after`
+//   (a month that has ended) reads as a plain result: "฿X under budget" (or
+//   "Right on budget") and "฿X over", with no pace words, no days and no per
+//   day. The logic never calls a finished month tight.
 import type { BudgetPace as LogicPace } from '../spend/v1/redesign/budgetPace.ts';
 import type { BudgetPace as KitPace } from './budgetWords.ts';
 
@@ -43,6 +42,7 @@ export function toKitPace(pace: LogicPace): KitPace {
     leftMinor: kitLeft(pace),
     perDayMinor: pace.perDayMinor,
     daysLeft: pace.daysLeft,
+    phase: pace.phase,
   };
 }
 

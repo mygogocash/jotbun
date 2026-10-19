@@ -1,7 +1,11 @@
 // Choosing wallets on the entry sheet (redesign R2b). One wallet for an
 // expense or income; "From → To" for a move, with a swap button, a "move all"
 // chip and a plain error when both sides are the same wallet. Each wallet
-// shows its exact balance. Archived wallets are never offered.
+// shows its exact balance when one is known. A wallet synced to this device
+// has none (offline there is no server list), so it shows its name only, and
+// "move all" is offered only for a From wallet whose balance is known: a
+// guessed balance would be a wrong number on screen. Archived wallets are
+// never offered.
 import type { Minor, WalletDto } from '@gogospend/contracts';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
@@ -16,7 +20,12 @@ import { FieldError } from './FieldError';
 import { Glyph } from './Glyph';
 import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE, BUN_TOUCH } from './layout';
 
-export type WalletChoice = Pick<WalletDto, 'id' | 'name' | 'balance_minor' | 'archived'>;
+export type WalletChoice = Pick<WalletDto, 'id' | 'name' | 'archived'> & {
+  /** The exact balance; leave out (or null) when it is not known, as for a wallet synced to this device. */
+  readonly balance_minor?: Minor | null;
+};
+
+const balanceOf = (wallet: WalletChoice): Minor | null => wallet.balance_minor ?? null;
 
 export type WalletPickerProps =
   | {
@@ -51,12 +60,13 @@ function WalletList({ label, wallets, selectedId, onSelect, disabled }: { label:
     <View role="radiogroup" accessibilityLabel={label} style={{ gap: BUN_SPACE.xs }}>
       {wallets.map((wallet) => {
         const checked = wallet.id === selectedId;
-        const balance = amountWords(wallet.balance_minor).shown;
+        const known = balanceOf(wallet);
+        const balance = known === null ? null : amountWords(known).shown;
         return (
           <Pressable
             key={wallet.id}
             accessibilityRole="radio"
-            accessibilityLabel={tc('{name}, balance {amount}', { name: wallet.name, amount: balance })}
+            accessibilityLabel={balance === null ? wallet.name : tc('{name}, balance {amount}', { name: wallet.name, amount: balance })}
             aria-checked={checked}
             disabled={disabled}
             onPress={() => onSelect(wallet.id)}
@@ -79,7 +89,7 @@ function WalletList({ label, wallets, selectedId, onSelect, disabled }: { label:
               {checked ? <View style={{ width: 10, height: 10, borderRadius: BUN_RADIUS.pill, backgroundColor: colors.ink }} /> : null}
             </View>
             <BunText variant="label" style={{ flex: 1 }}>{wallet.name}</BunText>
-            <AmountText variant="label" tone="muted">{balance}</AmountText>
+            {balance === null ? null : <AmountText variant="label" tone="muted">{balance}</AmountText>}
           </Pressable>
         );
       })}
@@ -104,14 +114,17 @@ function MovePicker({ wallets, fromId, toId, onChangeFrom, onChangeTo, onSwap, o
   const from = wallets.find((wallet) => wallet.id === fromId) ?? null;
   const to = wallets.find((wallet) => wallet.id === toId) ?? null;
   const same = fromId !== null && fromId === toId;
-  const fromBalance = from ? BigInt(from.balance_minor) : 0n;
+  // Move all needs the From wallet's own, known balance.
+  const fromKnown = from ? balanceOf(from) : null;
 
   const card = (side: Side, wallet: WalletChoice | null) => {
     const word = side === 'from' ? tc('From') : tc('To');
-    const balance = wallet ? amountWords(wallet.balance_minor).shown : null;
-    const label = wallet && balance
-      ? side === 'from' ? tc('From {name}, balance {amount}', { name: wallet.name, amount: balance }) : tc('To {name}, balance {amount}', { name: wallet.name, amount: balance })
-      : side === 'from' ? tc('From: choose a wallet') : tc('To: choose a wallet');
+    const known = wallet ? balanceOf(wallet) : null;
+    const balance = known === null ? null : amountWords(known).shown;
+    let label: string;
+    if (!wallet) label = side === 'from' ? tc('From: choose a wallet') : tc('To: choose a wallet');
+    else if (balance === null) label = side === 'from' ? tc('From {name}', { name: wallet.name }) : tc('To {name}', { name: wallet.name });
+    else label = side === 'from' ? tc('From {name}, balance {amount}', { name: wallet.name, amount: balance }) : tc('To {name}, balance {amount}', { name: wallet.name, amount: balance });
     return (
       <Pressable
         accessibilityRole="button"
@@ -151,16 +164,16 @@ function MovePicker({ wallets, fromId, toId, onChangeFrom, onChangeTo, onSwap, o
           <Glyph name="swap" color={colors.ink} />
           <BunText variant="label">{tc('Swap')}</BunText>
         </Pressable>
-        {onMoveAll && from && fromBalance > 0n ? (
+        {onMoveAll && fromKnown !== null && BigInt(fromKnown) > 0n ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={tc('Move all {amount}', { amount: amountWords(from.balance_minor).shown })}
+            accessibilityLabel={tc('Move all {amount}', { amount: amountWords(fromKnown).shown })}
             disabled={disabled}
-            onPress={() => onMoveAll(from.balance_minor)}
+            onPress={() => onMoveAll(fromKnown)}
             style={pill}
           >
             <BunText variant="label">{tc('Move all')}</BunText>
-            <AmountText variant="label">{amountWords(from.balance_minor).shown}</AmountText>
+            <AmountText variant="label">{amountWords(fromKnown).shown}</AmountText>
           </Pressable>
         ) : null}
       </View>

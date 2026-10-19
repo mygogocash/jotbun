@@ -21,7 +21,7 @@ import { DiaryLocked, DraftReferenceUnavailable } from '@mobile/storage/types';
 import { categoryName, todayInBangkok } from '@mobile/spend/v1/viewModels';
 import { Text } from '@mobile/theme/AppText';
 import { useTheme } from '@mobile/theme/ThemeProvider';
-import { Button, Card, Chip, ChipRow, Field, Frame, Loading, Notice, isOwnCreate, loadProblem, newId, saveProblem, useCommandKeys, useLoad, useMoneyLocale } from './parts';
+import { Button, Card, Chip, ChipRow, Field, Frame, Loading, Notice, isOwnCreate, loadProblem, newId, refusedBeforeProcessing, saveProblem, useCommandKeys, useLoad, useMoneyLocale } from './parts';
 import type { Translate } from './parts';
 
 type EntryType = 'expense' | 'income' | 'transfer';
@@ -97,6 +97,8 @@ function EntryForm({ wallets, categories, today }: { wallets: WalletSnapshot[]; 
   const [message, setMessage] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>('editing');
   const locked = status === 'unconfirmed' || status === 'saving';
+  // Unconfirmed, and resending must wait (a changed session, an update): frozen, and Try again is disabled.
+  const [resendBlocked, setResendBlocked] = useState(false);
 
   function build(): CreateEntryInput | CreateTransferInput | null {
     const next: Record<string, string> = {};
@@ -136,8 +138,11 @@ function EntryForm({ wallets, categories, today }: { wallets: WalletSnapshot[]; 
   }
 
   async function save() {
+    if (resendBlocked) return;
     const input = build();
     if (!input) return;
+    // An earlier attempt of this draft may have committed: until its outcome is known, the entry stays frozen with its key.
+    const wasUnconfirmed = status === 'unconfirmed';
     // An online save whose outcome is unknown is resent online as itself, never re-queued on the device.
     if (diary && diaryView.phase === 'ready' && status !== 'unconfirmed') {
       setStatus('saving');
@@ -168,11 +173,16 @@ function EntryForm({ wallets, categories, today }: { wallets: WalletSnapshot[]; 
         return;
       }
       const problem = saveProblem(error, tc);
-      // A definite refusal frees the key; an unknown outcome keeps it.
-      if (!problem.unconfirmed) keys.settle('create');
+      // A definite refusal frees the key; an unknown outcome keeps it. A
+      // refusal before processing (signed out, terms, an update, a changed
+      // session) says nothing about an unconfirmed earlier attempt, so that
+      // entry stays frozen with its key too.
+      const stillUnknown = problem.unconfirmed || (wasUnconfirmed && refusedBeforeProcessing(error));
+      if (!stillUnknown) keys.settle('create');
+      setResendBlocked(stillUnknown && problem.blocked);
       setErrors(problem.fields);
       setMessage(problem.message);
-      setStatus(problem.unconfirmed ? 'unconfirmed' : problem.blocked ? 'blocked' : 'editing');
+      setStatus(stillUnknown ? 'unconfirmed' : problem.blocked ? 'blocked' : 'editing');
     }
   }
 
@@ -224,7 +234,7 @@ function EntryForm({ wallets, categories, today }: { wallets: WalletSnapshot[]; 
       {message ? <Notice tone="warning" message={message} /> : null}
       <View>
         {status === 'unconfirmed'
-          ? <Button label={tc('Try again')} onPress={save} />
+          ? <Button label={tc('Try again')} onPress={save} disabled={resendBlocked} />
           : <Button label={tc('Save entry')} onPress={save} disabled={status === 'saving' || status === 'blocked'} />}
       </View>
     </Frame>

@@ -190,6 +190,31 @@ test('loading, then the golden month: exact figures, an empty today receipt and 
   expect(filters).toContainEqual(expect.objectContaining({ through: '2026-09-28', sort: 'date_desc' }));
 });
 
+// Review m3: the month's confirmed money in and out, as v1 Home showed them, quietly on the stage.
+test("the stage says the month's confirmed money in and out", async () => {
+  const { diary } = draftsDiary();
+  mountHome(createFakeResources(goldenSeed()).resources, { diary: diary.diary });
+  const header = await screen.findByTestId('stage-header');
+  const line = within(header).getByLabelText('Money in ฿28,000.00, Money out ฿12,450.00');
+  expect(line.textContent).toBe('Money in ฿28,000.00 · Money out ฿12,450.00');
+  // Waiting drafts are never added into it.
+  expect(within(header).getByText('Waiting to sync: money out ฿70.00')).toBeTruthy();
+});
+
+// Review m6: several sync banners are one polite live region, said once, not one announcement each.
+test('the sync banners share one live region', async () => {
+  const { diary } = draftsDiary();
+  mountHome(createFakeResources(goldenSeed()).resources, { diary: diary.diary });
+  const saving = await screen.findByText('Saving 1 entry…');
+  const region = saving.closest('[aria-live="polite"]') as HTMLElement;
+  expect(region).not.toBeNull();
+  for (const line of ['Checking 1 entry with Jotbun before sending it again', 'Entries that need your review: 1', 'Update Jotbun to send the entries saved on this device']) {
+    expect(screen.getByText(line).closest('[aria-live="polite"]')).toBe(region);
+  }
+  // No banner is a live region of its own inside it.
+  expect(region.querySelectorAll('[aria-live]')).toHaveLength(0);
+});
+
 test("today's records sit on a receipt with the day's confirmed totals; rows open the record", async () => {
   const fake = createFakeResources({ ...seed, records: [...seed.records, LUNCH, GIFTED] });
   mountHome(fake.resources);
@@ -198,14 +223,17 @@ test("today's records sit on a receipt with the day's confirmed totals; rows ope
   expect(within(receipt).queryByText('Nothing logged today yet')).toBeNull();
   expect(within(receipt).getByLabelText('Money out, Expense ฿120.00')).toBeTruthy();
   expect(within(receipt).getByLabelText('Money in, Income ฿50.00')).toBeTruthy();
-  expect(within(receipt).getByText('−฿120.00')).toBeTruthy();
+  // One minus sign everywhere: the lunch row and the day's money-out total both read −฿120.00.
+  expect(within(receipt).getAllByText('−฿120.00')).toHaveLength(2);
+  expect(within(within(receipt).getByRole('button', { name: 'Food, Expense ฿120.00, Cash' })).getByText('−฿120.00')).toBeTruthy();
+  expect(within(receipt).queryByText('-฿120.00')).toBeNull();
 
   fireEvent.click(within(receipt).getByRole('button', { name: 'Food, Expense ฿120.00, Cash' }));
-  expect(router.push).toHaveBeenLastCalledWith(`/spend/record/${LUNCH.id}`);
+  expect(router.push).toHaveBeenLastCalledWith({ pathname: '/spend/record/[id]', params: { id: LUNCH.id } });
   fireEvent.click(within(receipt).getByRole('button', { name: 'Gift, Income ฿50.00, Daily account' }));
-  expect(router.push).toHaveBeenLastCalledWith(`/spend/record/${GIFTED.id}`);
+  expect(router.push).toHaveBeenLastCalledWith({ pathname: '/spend/record/[id]', params: { id: GIFTED.id } });
   fireEvent.click(screen.getByRole('button', { name: 'Bills, Expense ฿12,268.00, Daily account' }));
-  expect(router.push).toHaveBeenLastCalledWith(`/spend/record/${RENT}`);
+  expect(router.push).toHaveBeenLastCalledWith({ pathname: '/spend/record/[id]', params: { id: RENT } });
 
   fireEvent.click(screen.getByRole('button', { name: 'See all entries' }));
   expect(router.push).toHaveBeenLastCalledWith('/spend/all');
@@ -285,7 +313,11 @@ test('the bun respects its intensity: quiet keeps only the first-run bun, off sh
   mountHome(createFakeResources().resources, { intensity: 'off' });
   expect(await screen.findByRole('heading', { name: 'Add your first wallet' })).toBeTruthy();
   expect(screen.queryByTestId('home-bun-hello')).toBeNull();
-  expect(document.querySelector('svg')).toBeNull();
+  // No bun drawing at all: the only vectors left are the form's 24-unit kit glyphs (the date chip's chevrons).
+  const art = [...document.querySelectorAll('svg')].filter((svg) => svg.getAttribute('viewBox') !== '0 0 24 24');
+  expect(art).toEqual([]);
+  // And the art space collapses with it.
+  expect(screen.queryByTestId('empty-state-art')).toBeNull();
 });
 
 // ---------------------------------------------------------------------------
@@ -306,8 +338,11 @@ test('drafts show their state; an unsent one can be removed and one that needs r
   expect(within(receipt).getByLabelText('Food, Expense ฿65.00, saving, Cash')).toBeTruthy();
   expect(within(receipt).getByLabelText('Food, Expense ฿12.00, needs a look, Cash')).toBeTruthy();
   expect(within(receipt).getByLabelText('Food, Expense ฿9.00, checking, Cash')).toBeTruthy();
-  expect(screen.getByLabelText('Food, Expense ฿5.00, saving, Cash')).toBeTruthy();
+  // A draft waiting for an app update says so in its own row (RecordRow's update-to-send state), not "saving".
+  const paused = screen.getByLabelText('Food, Expense ฿5.00, Update Jotbun to send, Cash');
+  expect(within(paused).getByText('Update Jotbun to send')).toBeTruthy();
   expect(screen.getByText('Update Jotbun to send')).toBeTruthy();
+  expect(screen.getAllByText('saving…')).toHaveLength(1);
   // A draft is not a record yet: it does not open the record screen.
   expect(screen.queryByRole('button', { name: /^Food, Expense ฿(65|12|9|5)\.00/ })).toBeNull();
 
@@ -358,6 +393,68 @@ test('the sync banner says saving, checking, needs review and update, and the re
   await waitFor(() => expect(diary.calls.discarded).toEqual([review.commandId]));
   await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Needs a look' })).toBeNull());
   expect(screen.queryByText('Entries that need your review: 1')).toBeNull();
+});
+
+// Review (banner counts): a draft that is sending may already be committed, so the banner counts it as checking, as its row says.
+test('a sending draft is counted as checking in the banner, never as saving', async () => {
+  const unsent = queued(draftEntry(), 'unsent', '2026-09-29T05:00:00.000Z');
+  const sending = queued(draftEntry({ amount_minor: '900' }), 'sending', '2026-09-29T04:00:00.000Z');
+  mountHome(createFakeResources(goldenSeed()).resources, { diary: deviceDiary({ outbox: [unsent, sending] }).diary });
+  expect(await screen.findByText('Saving 1 entry…')).toBeTruthy();
+  expect(screen.getByText('Checking 1 entry with Jotbun before sending it again')).toBeTruthy();
+  expect(within(await screen.findByTestId('receipt-slip')).getByLabelText('Food, Expense ฿9.00, checking, Cash')).toBeTruthy();
+});
+
+// Review M3 (probe Home-1): Home shows five earlier days, but drafts can be older.
+test('drafts older than the days on Home can still be reviewed, discarded and removed', async () => {
+  // One record a day from 15 to 28 September, so Home's five earlier days are 24 to 28 September.
+  const records = Array.from({ length: 14 }, (_, i) => expense(i + 1, `2026-09-${String(15 + i).padStart(2, '0')}`, '1000'));
+  const review = queued(draftEntry({ occurred_on: '2026-09-16', amount_minor: '4200' }), 'needs_review');
+  const unsent = queued(draftEntry({ occurred_on: '2026-09-17', amount_minor: '3100' }), 'unsent');
+  const diary = deviceDiary({ outbox: [review, unsent] });
+  mountHome(createFakeResources({ wallets: seed.wallets, records }).resources, { diary: diary.diary });
+  expect(await screen.findByText('Entries that need your review: 1')).toBeTruthy();
+  // Neither draft is in the days shown.
+  expect(screen.queryByLabelText(/^Food, Expense ฿(42|31)\.00/)).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Review' }));
+  const sheet = await screen.findByRole('dialog', { name: 'Needs a look' });
+  expect(within(sheet).getByLabelText('Food, Expense ฿42.00, needs a look, Cash')).toBeTruthy();
+  fireEvent.click(within(sheet).getByRole('button', { name: 'Discard Food ฿42.00' }));
+  await waitFor(() => expect(diary.calls.discarded).toEqual([review.commandId]));
+  await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Needs a look' })).toBeNull());
+  // The saving banner leads to every draft waiting on this device, older ones included, with Remove.
+  fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
+  const waiting = await screen.findByRole('dialog', { name: 'Waiting to sync' });
+  expect(within(waiting).getByLabelText('Food, Expense ฿31.00, saving, Cash')).toBeTruthy();
+  fireEvent.click(within(waiting).getByRole('button', { name: 'Remove Food ฿31.00' }));
+  await waitFor(() => expect(diary.calls.removed).toEqual([unsent.commandId]));
+});
+
+// Review m1 (probe Home-2): the earlier page may cut a day; a draft on that day must not bring it back without its confirmed money.
+test('a draft on a day the earlier page cut does not bring that day back without its confirmed money', async () => {
+  // 49 records yesterday and 3 on 27 September (฿10.00 each): the 50-record page ends inside 27 September.
+  const records = [
+    ...Array.from({ length: 49 }, (_, i) => expense(100 + i, '2026-09-28', '100')),
+    expense(200, '2026-09-27', '1000'), expense(201, '2026-09-27', '1000'), expense(202, '2026-09-27', '1000'),
+  ];
+  const diary = deviceDiary({ outbox: [queued(draftEntry({ occurred_on: '2026-09-27', amount_minor: '6500' }), 'unsent')] });
+  mountHome(createFakeResources({ wallets: seed.wallets, records }).resources, { diary: diary.diary });
+  await screen.findByText('Earlier days');
+  const sept27 = screen.getAllByRole('heading').map((node) => node.getAttribute('aria-label') ?? node.textContent ?? '').find((label) => label.includes('27 September'));
+  if (sept27) expect(sept27).toContain('Money out ฿30.00');
+  // The draft is still reachable: the saving banner lists every waiting draft.
+  fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
+  expect(within(await screen.findByRole('dialog', { name: 'Waiting to sync' })).getByLabelText('Food, Expense ฿65.00, saving, Cash')).toBeTruthy();
+});
+
+// Probe Home-3: a sending draft whose record Jotbun already confirmed counts once.
+test('a sending draft whose record is already confirmed is not counted twice in the pace', async () => {
+  const lunch = expense(300, '2026-09-29', '12000');
+  const sending = queued({ id: lunch.id, type: 'expense', amount_minor: '12000', occurred_on: '2026-09-29', wallet_id: CASH.id, category_id: FOOD.id, note: null, merchant: null } as PendingEntry, 'sending');
+  mountHome(withBudget(createFakeResources({ wallets: seed.wallets, records: [lunch] }), '1000000'), { diary: deviceDiary({ outbox: [sending] }).diary });
+  const ring = await screen.findByRole('progressbar', { name: 'Budget' });
+  expect(screen.getAllByRole('button', { name: /Expense ฿120\.00/ })).toHaveLength(1);
+  expect(ring.getAttribute('aria-valuetext')).toContain('฿9,880.00 left');
 });
 
 test('a paused sync reads as offline and can be retried; other sync news is said in words', async () => {
@@ -471,11 +568,18 @@ test('a diary that cannot open right now is never offered a start over; a locked
 // ---------------------------------------------------------------------------
 // First run: an explicit first wallet
 
-async function openFirstWallet() {
+/**
+ * First run is one step now that EmptyState's action is optional: the empty
+ * state names the space (with the hello bun), and the form follows at once.
+ * The view still has exactly one primary action, Create wallet.
+ */
+async function openFirstWallet(colors: BunColors = bunLight) {
   expect(await screen.findByRole('heading', { name: 'Add your first wallet' })).toBeTruthy();
-  expect(screen.queryByLabelText('Wallet name')).toBeNull();
-  fireEvent.click(screen.getByRole('button', { name: 'Add a wallet' }));
+  expect(screen.getAllByRole('heading', { name: 'Add your first wallet' })).toHaveLength(1);
+  expect(screen.queryByRole('button', { name: 'Add a wallet' })).toBeNull();
   expect(await screen.findByLabelText('Wallet name')).toBeTruthy();
+  const primaries = screen.getAllByRole('button').filter((button) => hexOf(button.style.backgroundColor) === colors.ink.toUpperCase());
+  expect(primaries.map((button) => button.getAttribute('aria-label') ?? button.textContent)).toEqual(['Create wallet']);
 }
 
 test('first run: the hello bun, then a first wallet with an exact opening balance and a tracking start', async () => {
@@ -529,6 +633,27 @@ test('an unconfirmed first wallet is frozen and resent as the same command', asy
   expect(fake.wallets.size).toBe(1);
 });
 
+// Review B1, applied to the first wallet too: a retry refused before processing keeps the unconfirmed wallet frozen.
+test('an unconfirmed first wallet stays frozen with its key when the retry is refused before processing', async () => {
+  const fake = createFakeResources();
+  fake.loseResponse('createWallet');
+  mountHome(fake.resources);
+  await openFirstWallet();
+  type('Wallet name', 'Cash');
+  fireEvent.click(screen.getByRole('button', { name: 'Create wallet' }));
+  expect(await screen.findByText('Not confirmed yet. Your entry is kept; try again.')).toBeTruthy();
+  fake.fail('createWallet', 'signed_out', { status: 401 });
+  fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+  expect(await screen.findByText('Sign in again to save.')).toBeTruthy();
+  expect(isLocked('Wallet name')).toBe(true);
+  fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+  expect(await screen.findByLabelText('Cash ฿0.00')).toBeTruthy();
+  const calls = fake.callsOf('createWallet').map((call) => call.args);
+  expect(calls).toHaveLength(3);
+  for (const call of calls) expect(call).toEqual(calls[0]);
+  expect(fake.wallets.size).toBe(1);
+});
+
 test('server field problems land on their fields, and a wallet that already committed counts as created', async () => {
   const fake = createFakeResources();
   fake.fail('createWallet', 'invalid', { status: 422, code: 'DATE_IN_FUTURE', fields: { tracking_start: 'x' } });
@@ -558,7 +683,8 @@ test('Thai digits are understood in the first-wallet form', async () => {
   const fake = createFakeResources();
   mountHome(fake.resources, { locale: 'th' });
   expect(await screen.findByRole('heading', { name: 'เพิ่มกระเป๋าเงินใบแรก' })).toBeTruthy();
-  fireEvent.click(screen.getByRole('button', { name: translateCopy('Add a wallet', 'th') }));
+  // One step: the form is already there under the empty state.
+  expect(screen.queryByRole('button', { name: translateCopy('Add a wallet', 'th') })).toBeNull();
   type('ชื่อกระเป๋าเงิน', 'เงินสด');
   type('ยอดเริ่มต้น', '๑,๐๐๐');
   fireEvent.click(screen.getByRole('button', { name: 'สร้างกระเป๋าเงิน' }));
@@ -594,7 +720,7 @@ test.each(MATRIX)('$locale $mode: the stage, the receipt and the days read in th
 test.each(['light', 'dark'] as const)('%s: first run, problems, offline, over budget and the sheets use approved text pairs only', async (mode) => {
   const colors = PALETTES[mode];
   mountHome(createFakeResources().resources, { mode });
-  await openFirstWallet();
+  await openFirstWallet(colors);
   fireEvent.click(screen.getByRole('button', { name: 'Create wallet' }));
   await screen.findByText('Enter a wallet name');
   expectApprovedTextPairs(document.body, colors);

@@ -95,6 +95,26 @@ test('a pending state is a word, never colour alone; a confirmed amount has no s
   }
 });
 
+test('checking is its own state: a word beside the number, spoken in full, in every locale and on every ground', () => {
+  for (const locale of LOCALES) {
+    for (const [mode, colors] of MODES) {
+      mount(<Amount minor="4000" type="expense" state="checking" />, locale, mode);
+      const word = screen.getByText(translateCopy('checking…', locale));
+      expect(word.style.color).toBe(rgb(colors.accent));
+      expect(screen.queryByText(translateCopy('saving…', locale))).toBeNull();
+      const base = translateCopy('Expense {amount}', locale, { amount: '฿40.00' });
+      expect(screen.getByLabelText(translateCopy('{amount}, checking', locale, { amount: base }))).toBeTruthy();
+      cleanup();
+    }
+  }
+  mount(<Amount minor="4000" type="expense" state="checking" on="stage" />);
+  expect(screen.getByText('checking…').style.color).toBe(rgb(bunLight.ink));
+  cleanup();
+  mount(<Amount minor="4000" type="expense" state="checking" on="ink" />);
+  expect(screen.getByText('checking…').style.color).toBe(rgb(bunLight.onInk));
+  expect(screen.getByLabelText('Expense ฿40.00, checking')).toBeTruthy();
+});
+
 test('on the stage everything is ink; inside an ink fill everything is onInk', () => {
   for (const [mode, colors] of MODES) {
     mount(<Amount minor="6500" type="expense" state="saving" on="stage" />, 'en', mode);

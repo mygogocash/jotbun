@@ -3,6 +3,7 @@
 // items come from the caller. The bar sits in the layout above the bottom
 // safe area; where it floats over a scrolling page, the page reserves room
 // for it.
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -64,42 +65,63 @@ export function TabBar({ items, active, onSelect, onAdd, addLabel }: TabBarProps
   const colors = useBunColors();
   const insets = useSafeAreaInsets();
   const middle = Math.ceil(items.length / 2);
+  const [space, setSpace] = useState<{ x: number; y: number } | null>(null);
   const tab = (item: TabBarItem) => <Tab key={item.key} item={item} selected={item.key === active} onSelect={onSelect} />;
+  // A tablist holds only tabs, so the add button is not inside it: the list
+  // keeps an empty, hidden space in its centre, and the button is drawn over
+  // that space from outside the list. It looks the same, and screen readers
+  // meet the tabs, then Add.
   return (
     <View testID="tab-bar" style={{ paddingHorizontal: BUN_SPACE.md, paddingTop: BUN_SPACE.xs, paddingBottom: insets.bottom + BUN_SPACE.xs }}>
-      <View
-        role="tablist"
-        accessibilityRole="tablist"
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: BUN_SPACE.xxs,
-          padding: BUN_SPACE.xs,
-          borderRadius: BUN_RADIUS.pill,
-          backgroundColor: colors.ink,
-        }}
-      >
-        {items.slice(0, middle).map(tab)}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={addLabel}
-          onPress={onAdd}
+      <View>
+        <View
+          role="tablist"
+          accessibilityRole="tablist"
           style={{
-            minHeight: ADD_SIZE,
-            minWidth: ADD_SIZE,
-            borderRadius: BUN_RADIUS.pill,
-            backgroundColor: colors.card,
-            borderWidth: BUN_OUTLINE.card,
-            borderColor: colors.ink,
+            flexDirection: 'row',
             alignItems: 'center',
-            justifyContent: 'center',
+            gap: BUN_SPACE.xxs,
+            padding: BUN_SPACE.xs,
+            borderRadius: BUN_RADIUS.pill,
+            backgroundColor: colors.ink,
           }}
         >
-          <View {...DECORATIVE}>
-            <BunText variant="title" tone="ink">+</BunText>
-          </View>
-        </Pressable>
-        {items.slice(middle).map(tab)}
+          {items.slice(0, middle).map(tab)}
+          <View
+            {...DECORATIVE}
+            testID="tab-bar-add-space"
+            onLayout={(event) => setSpace({ x: event.nativeEvent.layout.x, y: event.nativeEvent.layout.y })}
+            style={{ width: ADD_SIZE, height: ADD_SIZE }}
+          />
+          {items.slice(middle).map(tab)}
+        </View>
+        {/* Over the space once it is measured (an odd number of tabs puts it off centre); centred until then. */}
+        <View
+          pointerEvents="box-none"
+          style={space
+            ? { position: 'absolute', top: space.y, left: space.x }
+            : { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={addLabel}
+            onPress={onAdd}
+            style={{
+              minHeight: ADD_SIZE,
+              minWidth: ADD_SIZE,
+              borderRadius: BUN_RADIUS.pill,
+              backgroundColor: colors.card,
+              borderWidth: BUN_OUTLINE.card,
+              borderColor: colors.ink,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <View {...DECORATIVE}>
+              <BunText variant="title" tone="ink">+</BunText>
+            </View>
+          </Pressable>
+        </View>
       </View>
     </View>
   );

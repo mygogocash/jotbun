@@ -18,7 +18,7 @@
 // The bun appears only at moments (first run, the stage peek, over budget)
 // and follows the bun intensity: Quiet keeps it on the first-run empty state
 // only, Off removes it everywhere.
-import type { HistoryFilter, HistoryPage, Minor, TransactionDto } from '@gogospend/contracts';
+import type { HistoryFilter, Minor } from '@gogospend/contracts';
 import { HISTORY_MAX_LIMIT, TRACKING_START_MIN, validateTrackingStart } from '@gogospend/contracts';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -34,9 +34,9 @@ import { BUN_POSES, BUN_SIZES, bunHeight } from '@mobile/mascot/poses';
 import type { BunPoseName } from '@mobile/mascot/poses';
 import { AmountInputError, formatMinor, parseAmountInput } from '@mobile/spend/v1/money';
 import type { BudgetPace as LogicPace } from '@mobile/spend/v1/redesign/budgetPace';
-import { homeModel } from '@mobile/spend/v1/redesign/homeModel';
+import { earlierWholeDays, homeModel, readWholeDay } from '@mobile/spend/v1/redesign/homeModel';
 import type { HomeData, LoadProblem, LoadProblemKind } from '@mobile/spend/v1/redesign/homeModel';
-import { addDays } from '@mobile/spend/v1/redesign/shared';
+import { addDays, moneyGroupOf } from '@mobile/spend/v1/redesign/shared';
 import type { DayGroup, DiaryRow, MoneyPair, RowState } from '@mobile/spend/v1/redesign/shared';
 import type { SpendV1Resources } from '@mobile/spend/v1/resources';
 import type { DiaryView } from '@mobile/spend/v1/spendDiary';
@@ -66,8 +66,10 @@ import { RecordRow } from '@mobile/ui/RecordRow';
 import type { RecordRowState } from '@mobile/ui/RecordRow';
 import { ConfirmSheet, Sheet } from '@mobile/ui/Sheet';
 import { StageHeader } from '@mobile/ui/StageHeader';
-import { SyncBanner } from '@mobile/ui/SyncBanner';
-import { isOwnCreate, newId, saveProblem, useCommandKeys, useLoad, useMoneyLocale } from '../v1/parts';
+import { SyncBanner, syncBannerLine } from '@mobile/ui/SyncBanner';
+import type { SyncBannerProps } from '@mobile/ui/SyncBanner';
+import { isOwnCreate, newId, refusedBeforeProcessing, saveProblem, useCommandKeys, useLoad, useMoneyLocale } from '../v1/parts';
+import { recordHref } from './HistoryParts';
 
 type Tc = ReturnType<typeof useCopy>;
 
@@ -75,35 +77,16 @@ type Tc = ReturnType<typeof useCopy>;
 const EARLIER_DAYS = 5;
 /** Earlier records read for those days (one page, cut back to whole days). */
 const EARLIER_RECORDS = 50;
-/** Pages of today's records read before giving up (each up to HISTORY_MAX_LIMIT). */
+/** Pages of today's records read (each up to HISTORY_MAX_LIMIT); a busier day is shown as partial, never as an error. */
 const TODAY_PAGES = 20;
 
 // ---------------------------------------------------------------------------
 // Loading
 
-/** Every record of one day, every page: the receipt's day total is never a partial sum. */
-async function wholeDay(resources: SpendV1Resources, day: string): Promise<TransactionDto[]> {
+/** Every record of today, page by page (`readWholeDay`): the receipt's day total is never a partial sum without saying so. */
+function readToday(resources: SpendV1Resources, day: string) {
   const filter: HistoryFilter = { from: day, through: day, sort: 'date_desc' };
-  const items: TransactionDto[] = [];
-  let cursor: string | undefined;
-  for (let page = 0; page < TODAY_PAGES; page += 1) {
-    const result = await resources.history(filter, cursor, HISTORY_MAX_LIMIT);
-    items.push(...result.items);
-    if (result.next_cursor === null) return items;
-    cursor = result.next_cursor;
-  }
-  throw new Error('Too many records on one day to total them on Home.');
-}
-
-/**
- * Newest-first earlier records cut back to whole days: when more pages
- * follow, the oldest day on this page may continue on the next one, so it is
- * left out rather than shown with a partial total.
- */
-function wholeDaysOf(page: HistoryPage): TransactionDto[] {
-  if (page.next_cursor === null || page.items.length === 0) return page.items;
-  const oldest = page.items[page.items.length - 1].occurred_on;
-  return page.items.filter((record) => record.occurred_on !== oldest);
+  return readWholeDay((cursor) => resources.history(filter, cursor, HISTORY_MAX_LIMIT), TODAY_PAGES);
 }
 
 /** Reloads confirmed money in place whenever a draft it was waiting on resolves (as the current Home does). */
@@ -180,8 +163,9 @@ export function syncPlan(view: DiaryView | null, unreachable: boolean, tc: Tc): 
   return {
     offline: unreachable || backingOff,
     retry: backingOff,
-    saving: count('unsent', 'sending'),
-    checking: count('uncertain'),
+    // Sending may already be committed, so it is checked, as v1's SyncStatus says and the money groups count it.
+    saving: count('unsent'),
+    checking: view.outbox.filter((command) => moneyGroupOf(command.state) === 'checking').length,
     needsLook: count('needs_review'),
     upgrade: count('paused_upgrade') > 0 || status === 'upgrade_required',
     locked: null,
@@ -255,14 +239,13 @@ function ProblemCard({ problem, onRetry }: { problem: LoadProblem; onRetry: () =
   );
 }
 
+/** Every draft state has its own words in RecordRow, "Update Jotbun to send" included. */
 const ROW_STATE: Readonly<Record<RowState, RecordRowState>> = {
   confirmed: 'confirmed',
   saving: 'saving',
   checking: 'checking',
   needs_look: 'needs_look',
-  // KIT GAP: RecordRow has no "update to send" state. It is waiting on the
-  // device, so the row says "saving…" and the exact words follow under it.
-  update_to_send: 'saving',
+  update_to_send: 'update_to_send',
 };
 
 type RowContext = { lookOf: (row: DiaryRow) => CategoryLook | null; onOpen: (row: DiaryRow) => void };
@@ -273,12 +256,10 @@ function DraftActions({ row }: { row: DiaryRow }) {
   const tc = useCopy();
   const locale = useMoneyLocale();
   const commandId = row.commandId;
-  const extra = row.state === 'update_to_send' ? row.stateText : null;
-  if (commandId === null || (!extra && !row.canUndo && !row.canDiscard)) return null;
+  if (commandId === null || (!row.canUndo && !row.canDiscard)) return null;
   const entry = `${row.title} ${formatMinor(row.amountMinor, locale)}`;
   return (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: BUN_SPACE.xs, paddingBottom: BUN_SPACE.xs }}>
-      {extra ? <BunText variant="caption" tone="accent">{extra}</BunText> : null}
       {row.canUndo && diary ? (
         <PillButton kind="secondary" label={tc('Remove')} accessibilityLabel={tc('Remove {entry}', { entry })} onPress={() => void diary.removeDraft(commandId).catch(() => undefined)} />
       ) : null}
@@ -336,7 +317,9 @@ function TodayReceipt({ group, emptyText, footer, context, onAdd }: { group: Day
         </>
       ) : null}
       {group.rows.map((row) => <DiaryRowView key={row.key} row={row} context={context} />)}
-      {empty ? null : <DayTotals confirmed={group.totals.confirmed} />}
+      {/* A day too busy to read whole on Home: no total that falls short, and a quiet word on where the rest is. */}
+      {empty || group.partial ? null : <DayTotals confirmed={group.totals.confirmed} />}
+      {group.partial ? <BunText variant="caption" tone="muted">{tc("Today has more entries than Home shows. History has them all.")}</BunText> : null}
       <PendingLines lines={group.pendingLines} />
     </ReceiptSlip>
   );
@@ -388,31 +371,52 @@ function Wallets({ balance }: { balance: Balance }) {
   );
 }
 
-/** The sync strip: one banner per state, the lock's reason, sync news in words, and the review and start-over sheets. */
-function SyncSection({ plan, needsLook, context }: { plan: SyncPlan; needsLook: readonly DiaryRow[]; context: RowContext }) {
+/**
+ * The sync strip: one banner per state, the lock's reason, sync news in
+ * words, and the review, waiting and start-over sheets. All of it is one
+ * polite live region, announced once (on iOS) as one sentence, rather than
+ * each banner reading itself out on arrival.
+ *
+ * The sheets list every draft on this device, not only the ones in the days
+ * Home shows: Review opens every draft that needs a look (with Discard), and
+ * when some waiting drafts are older than those days, "Show all" lists every
+ * waiting draft (with Remove for one never sent).
+ */
+function SyncSection({ plan, drafts, shownKeys, context }: { plan: SyncPlan; drafts: readonly DiaryRow[]; shownKeys: ReadonlySet<string>; context: RowContext }) {
   const tc = useCopy();
   const diary = useSpendDiary();
   const [reviewing, setReviewing] = useState(false);
+  const [listing, setListing] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const needsLook = drafts.filter((row) => row.state === 'needs_look');
+  const waiting = drafts.filter((row) => row.state === 'saving' || row.state === 'update_to_send');
+  const someHidden = waiting.some((row) => !shownKeys.has(row.key));
   const lines = [plan.locked?.reason ?? null, ...plan.notes].filter((line): line is string => line !== null);
-  useAnnouncement(lines.join(' '));
   const startOver = plan.locked?.startOver && diary;
+  const banners: SyncBannerProps[] = [
+    ...(plan.locked ? [{ state: 'locked' as const, action: startOver ? { label: tc('Start over'), onPress: () => setConfirming(true) } : undefined }] : []),
+    ...(plan.offline ? [{ state: 'offline' as const }] : []),
+    ...(plan.saving > 0 ? [{ state: 'saving' as const, count: plan.saving, action: someHidden ? { label: tc('Show all'), onPress: () => setListing(true) } : undefined }] : []),
+    ...(plan.checking > 0 ? [{ state: 'checking' as const, count: plan.checking }] : []),
+    ...(plan.needsLook > 0 ? [{ state: 'needs_review' as const, count: plan.needsLook, action: { label: tc('Review'), onPress: () => setReviewing(true) } }] : []),
+    ...(plan.upgrade ? [{ state: 'paused_upgrade' as const }] : []),
+  ];
+  const spoken = [...banners.map((banner) => syncBannerLine(banner, tc)), ...lines].filter((line): line is string => Boolean(line)).join(' ');
+  useAnnouncement(spoken);
   return (
     <>
-      {plan.locked ? <SyncBanner state="locked" action={startOver ? { label: tc('Start over'), onPress: () => setConfirming(true) } : undefined} /> : null}
-      {plan.offline ? <SyncBanner state="offline" /> : null}
-      {plan.saving > 0 ? <SyncBanner state="saving" count={plan.saving} /> : null}
-      {plan.checking > 0 ? <SyncBanner state="checking" count={plan.checking} /> : null}
-      {plan.needsLook > 0 ? <SyncBanner state="needs_review" count={plan.needsLook} action={{ label: tc('Review'), onPress: () => setReviewing(true) }} /> : null}
-      {plan.upgrade ? <SyncBanner state="paused_upgrade" /> : null}
-      {lines.length > 0 ? (
-        <View {...POLITE_LIVE_REGION} style={{ gap: BUN_SPACE.xxs }}>
+      {spoken ? (
+        <View {...POLITE_LIVE_REGION} style={{ gap: BUN_SPACE.xs }}>
+          {banners.map((banner) => <SyncBanner key={banner.state} {...banner} live={false} />)}
           {lines.map((line) => <BunText key={line} variant="caption" tone="muted">{line}</BunText>)}
         </View>
       ) : null}
       {plan.retry && diary ? <PillButton kind="secondary" label={tc('Retry')} onPress={() => void diary.retry()} /> : null}
       <Sheet visible={reviewing && needsLook.length > 0} onClose={() => setReviewing(false)} title={tc('Needs a look')}>
         {needsLook.map((row) => <DiaryRowView key={row.key} row={row} context={context} />)}
+      </Sheet>
+      <Sheet visible={listing && waiting.length > 0} onClose={() => setListing(false)} title={tc('Waiting to sync')}>
+        {waiting.map((row) => <DiaryRowView key={row.key} row={row} context={context} />)}
       </Sheet>
       <ConfirmSheet
         visible={confirming}
@@ -489,6 +493,8 @@ function FirstWalletForm({ today, onCreated }: { today: string; onCreated: () =>
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
   const [frozen, setFrozen] = useState(false);
+  // Frozen, and resending must wait (a changed session, an update): Try again is disabled.
+  const [resendBlocked, setResendBlocked] = useState(false);
   const [busy, setBusy] = useState(false);
 
   async function create() {
@@ -521,8 +527,11 @@ function FirstWalletForm({ today, onCreated }: { today: string; onCreated: () =>
         return;
       }
       const problem = saveProblem(error, tc);
-      if (!problem.unconfirmed) keys.settle('create');
-      setFrozen(problem.unconfirmed);
+      // Once unconfirmed, a refusal before processing says nothing about the earlier attempt: stay frozen with the key.
+      const stillUnknown = problem.unconfirmed || (frozen && refusedBeforeProcessing(error));
+      if (!stillUnknown) keys.settle('create');
+      setFrozen(stillUnknown);
+      setResendBlocked(stillUnknown && problem.blocked);
       setMessage(problem.message);
       setErrors({ ...(problem.fields.name ? { name: problem.fields.name } : {}), ...(problem.fields.tracking_start ? { start: problem.fields.tracking_start } : {}) });
     } finally {
@@ -538,9 +547,7 @@ function FirstWalletForm({ today, onCreated }: { today: string; onCreated: () =>
   }
   return (
     <Card>
-      <BunText variant="heading" role="heading" accessibilityRole="header">{tc('Add your first wallet')}</BunText>
-      <BunText tone="muted">{tc('A wallet is where money sits, like cash or a bank account. Its opening balance is not income.')}</BunText>
-      <Field label={tc('Wallet name')} value={name} onChangeText={setName} error={errors.name} editable={!frozen} autoFocus />
+      <Field label={tc('Wallet name')} value={name} onChangeText={setName} error={errors.name} editable={!frozen} />
       <Field label={tc('Opening balance')} value={opening} onChangeText={setOpening} error={errors.opening} editable={!frozen} keyboardType="decimal-pad" />
       {preview ? <BunText variant="caption" tone="muted" accessibilityLabel={`${tc('Opening balance')} ${preview}`} style={{ fontVariant: ['tabular-nums'] }}>{preview}</BunText> : null}
       <View style={{ gap: BUN_SPACE.xxs }}>
@@ -549,17 +556,23 @@ function FirstWalletForm({ today, onCreated }: { today: string; onCreated: () =>
         {errors.start ? <Problem message={errors.start} /> : null}
       </View>
       {message ? <Problem message={message} /> : null}
-      <PillButton label={frozen ? tc('Try again') : tc('Create wallet')} onPress={() => void create()} busy={busy} />
+      <PillButton label={frozen ? tc('Try again') : tc('Create wallet')} onPress={() => void create()} busy={busy} disabled={resendBlocked} />
     </Card>
   );
 }
 
-/** First run: the hello bun names the space, then the form. */
+/**
+ * First run, in one step: the hello bun and the empty state name the space,
+ * and the form follows at once. The empty state has no action of its own, so
+ * Create wallet stays the view's one primary.
+ */
 function FirstRun({ headline, body, today, onCreated }: { headline: string; body: string; today: string; onCreated: () => void }) {
-  const tc = useCopy();
-  const [open, setOpen] = useState(false);
-  if (open) return <FirstWalletForm today={today} onCreated={onCreated} />;
-  return <EmptyState art={<Bun pose="hello" size="l" testID="home-bun-hello" />} title={headline} body={body} action={{ label: tc('Add a wallet'), onPress: () => setOpen(true) }} />;
+  return (
+    <>
+      <EmptyState art={<Bun pose="hello" size="l" testID="home-bun-hello" />} title={headline} body={body} />
+      <FirstWalletForm today={today} onCreated={onCreated} />
+    </>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -584,10 +597,17 @@ export function HomeScreen({ now }: { now?: Date }) {
       resources.wallets(),
       resources.summary(month),
       resources.budget(month),
-      wholeDay(resources, today),
+      readToday(resources, today),
       resources.history({ from: TRACKING_START_MIN, through: addDays(today, -1), sort: 'date_desc' }, undefined, EARLIER_RECORDS),
     ]);
-    return { categories, wallets, summary, budget, records: [...todays, ...wholeDaysOf(earlier)] };
+    // Earlier records cut back to whole days; the model keeps drafts on a cut day out too.
+    const whole = earlierWholeDays(earlier);
+    return {
+      categories, wallets, summary, budget,
+      records: [...todays.records, ...whole.records],
+      oldestWholeDay: whole.oldestWholeDay,
+      todayComplete: todays.complete,
+    };
   }, [resources, month, today]);
   useRefreshOnResolve(diaryView.outbox, loaded.refresh);
 
@@ -606,7 +626,7 @@ export function HomeScreen({ now }: { now?: Date }) {
         const category = byId.get(categoryOf.get(row.recordId) ?? '');
         return category ? categoryLook(category, row.title) : null;
       },
-      onOpen: (row) => router.push(`/spend/record/${row.recordId}`),
+      onOpen: (row) => router.push(recordHref(row.recordId)),
     };
   }, [categories, records, diaryView.outbox, router]);
 
@@ -614,8 +634,10 @@ export function HomeScreen({ now }: { now?: Date }) {
   const unreachable = loaded.state === 'error' && loaded.error instanceof V1Error && loaded.error.outcome === 'network';
   const plan = syncPlan(view, unreachable, tc);
   const allRows = model.kind === 'ready' ? [model.today, ...model.earlier] : model.kind === 'problem' && model.offline ? [model.offline.today, ...model.offline.earlier] : [];
-  const needsLook = allRows.flatMap((group) => group.rows).filter((row) => row.state === 'needs_look');
-  const sync = <SyncSection plan={plan} needsLook={needsLook} context={context} />;
+  const shownKeys = new Set(allRows.flatMap((group) => group.rows).map((row) => row.key));
+  // Every draft on this device, older than the days shown or not (the model's `openDrafts`), for the review and waiting sheets.
+  const drafts = model.kind === 'ready' ? model.openDrafts : model.kind === 'problem' && model.offline ? model.offline.openDrafts : [];
+  const sync = <SyncSection plan={plan} drafts={drafts} shownKeys={shownKeys} context={context} />;
   const appHeader = <StageHeader title={tc('Jotbun')} />;
 
   if (model.kind === 'loading') {
@@ -667,6 +689,9 @@ export function HomeScreen({ now }: { now?: Date }) {
 
   const { pace } = model.budget;
   const confirmedSpent = formatMinor(pace.spent.confirmedMinor, locale);
+  const monthSummary = loaded.state === 'ready' ? loaded.data.summary : null;
+  const monthIn = formatMinor(monthSummary?.income_minor ?? '0', locale);
+  const monthOut = formatMinor(monthSummary?.expense_minor ?? pace.spent.confirmedMinor, locale);
   const total = pace.limitMinor === null
     ? tc('{spent} spent this month', { spent: confirmedSpent })
     : tc('{spent} of {limit}', { spent: confirmedSpent, limit: formatMinor(pace.limitMinor, locale) });
@@ -678,6 +703,10 @@ export function HomeScreen({ now }: { now?: Date }) {
       header={(
         <StageHeader title={monthLabel(model.month, activeLocale)} bun={stageBun ? <StageBun pose={stageBun} /> : undefined}>
           <BunText testID="home-total" variant="heading" tone="ink" style={{ fontVariant: ['tabular-nums'] }}>{total}</BunText>
+          {/* The month's confirmed money in and out, as the v1 Home showed them: quiet, and never with drafts added. */}
+          <BunText variant="caption" tone="ink" accessibilityLabel={`${tc('Money in')} ${monthIn}, ${tc('Money out')} ${monthOut}`} style={{ fontVariant: ['tabular-nums'] }}>
+            {`${tc('Money in')} ${monthIn} · ${tc('Money out')} ${monthOut}`}
+          </BunText>
           <PendingLines lines={model.waitingMoney} tone="ink" />
         </StageHeader>
       )}

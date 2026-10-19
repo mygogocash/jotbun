@@ -74,6 +74,33 @@ test('the bun and extra content sit in their own slots', () => {
   expect(screen.getByText('฿420 a day left')).toBeTruthy();
 });
 
+test('an optional back button: named, 44 pt, ink on the stage, in every locale', () => {
+  for (const locale of LOCALES) {
+    for (const [mode, colors] of MODES) {
+      const onPress = vi.fn();
+      mount(<StageHeader title="Coffee" back={{ onPress }} />, locale, mode);
+      const back = screen.getByRole('button', { name: translateCopy('Back', locale) });
+      expect(back.style.minHeight).toBe('44px');
+      expect(back.style.minWidth).toBe('44px');
+      // Only ink sits on the stage.
+      const coloured = [...back.querySelectorAll<HTMLElement>('*')].filter((node) => node.style.color);
+      expect(coloured.length).toBeGreaterThan(0);
+      for (const node of coloured) expect(node.style.color).toBe(rgb(colors.ink));
+      fireEvent.click(back);
+      expect(onPress).toHaveBeenCalledTimes(1);
+      // It comes before the title, so it is reached first.
+      const heading = screen.getByRole('heading', { name: 'Coffee' });
+      expect(back.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      cleanup();
+    }
+  }
+  mount(<StageHeader title="Coffee" back={{ onPress: vi.fn(), label: 'Back to History' }} />);
+  expect(screen.getByRole('button', { name: 'Back to History' })).toBeTruthy();
+  cleanup();
+  mount(<StageHeader title="Coffee" />);
+  expect(screen.queryByRole('button')).toBeNull();
+});
+
 test('Thai titles get Thai leading', () => {
   mount(<StageHeader title="เดือนนี้" subtitle="ใช้ไป ฿12,480" />, 'th');
   expect(screen.getByText('เดือนนี้').style.lineHeight).toBe(`${bunText('title', 'thai').lineHeight}px`);

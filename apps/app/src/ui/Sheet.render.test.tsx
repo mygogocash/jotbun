@@ -76,13 +76,49 @@ test('focus moves into the sheet when it opens', async () => {
   before.remove();
 });
 
+test('on the web there is exactly one dialog, and it carries the sheet\'s name', () => {
+  for (const locale of LOCALES) {
+    mount(sheet(), locale);
+    // react-native-web's Modal makes its own full-screen layer the dialog; the sheet names
+    // that layer instead of nesting a second dialog inside an unnamed one.
+    const dialogs = screen.getAllByRole('dialog');
+    expect(dialogs).toHaveLength(1);
+    expect(dialogs[0].getAttribute('aria-label')).toBe('Pick a wallet');
+    expect(dialogs[0].getAttribute('aria-modal')).toBe('true');
+    const panel = screen.getByTestId('sheet-panel');
+    expect(dialogs[0].contains(panel)).toBe(true);
+    expect(panel.getAttribute('role')).toBeNull();
+    expect(panel.getAttribute('aria-label')).toBeNull();
+    cleanup();
+  }
+  // A confirm sheet is a sheet too.
+  mount(<ConfirmSheet visible title="Delete this entry?" consequence="It moves to Recently deleted." confirmLabel="Delete entry" onConfirm={vi.fn()} onCancel={vi.fn()} />);
+  expect(screen.getAllByRole('dialog').map((dialog) => dialog.getAttribute('aria-label'))).toEqual(['Delete this entry?']);
+});
+
+// Review m6: closing a sheet puts focus back on the control that opened it.
+test('closing the sheet returns focus to the control that opened it', async () => {
+  const opener = document.createElement('button');
+  document.body.appendChild(opener);
+  opener.focus();
+  const view = mount(sheet());
+  const dialog = screen.getByRole('dialog', { name: 'Pick a wallet' });
+  await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
+  view.rerender(<IntlProvider locale="en"><ThemeProvider><ThemePreferenceOverride preference="light">{sheet(vi.fn(), false)}</ThemePreferenceOverride></ThemeProvider></IntlProvider>);
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  await waitFor(() => expect(document.activeElement).toBe(opener));
+  opener.remove();
+});
+
 test('a cream sheet over a dimmed backdrop the screen reader skips', () => {
   for (const [mode, colors] of MODES) {
     mount(sheet(), 'en', mode);
-    const dialog = screen.getByRole('dialog', { name: 'Pick a wallet' });
-    expect(dialog.style.backgroundColor).toBe(rgb(colors.card));
-    expect(dialog.style.borderTopLeftRadius).toBe('24px');
-    expect(dialog.style.paddingBottom).toBe(`${34 + BUN_SPACE.lg}px`);
+    // The cream panel sits inside the one dialog (see the single-dialog test above).
+    const panel = screen.getByTestId('sheet-panel');
+    expect(screen.getByRole('dialog', { name: 'Pick a wallet' }).contains(panel)).toBe(true);
+    expect(panel.style.backgroundColor).toBe(rgb(colors.card));
+    expect(panel.style.borderTopLeftRadius).toBe('24px');
+    expect(panel.style.paddingBottom).toBe(`${34 + BUN_SPACE.lg}px`);
     const backdrop = screen.getByTestId('sheet-backdrop');
     expect(backdrop.getAttribute('aria-hidden')).toBe('true');
     expect(backdrop.style.backgroundColor).toBe(rgb(colors.isDark ? colors.background : colors.ink));
@@ -105,7 +141,7 @@ test('the sheet springs up from below, except under reduced motion', () => {
   motion.reduced = true;
   mount(sheet());
   expect(spring).not.toHaveBeenCalled();
-  expect(screen.getByRole('dialog', { name: 'Pick a wallet' }).style.transform).toBe('translateY(0px)');
+  expect(screen.getByTestId('sheet-panel').style.transform).toBe('translateY(0px)');
   spring.mockRestore();
 });
 
@@ -117,7 +153,7 @@ test('the slide starts the sheet below its resting place', () => {
   });
   mount(sheet());
   expect(values).toEqual([SHEET_SLIDE_FROM]);
-  expect(screen.getByRole('dialog', { name: 'Pick a wallet' }).style.transform).toBe(`translateY(${SHEET_SLIDE_FROM}px)`);
+  expect(screen.getByTestId('sheet-panel').style.transform).toBe(`translateY(${SHEET_SLIDE_FROM}px)`);
   spring.mockRestore();
 });
 

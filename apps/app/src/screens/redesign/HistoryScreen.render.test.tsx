@@ -71,7 +71,7 @@ test("lists the month's entries in day groups with signed exact amounts and the 
   expect(screen.getByText('September 2026')).toBeTruthy();
   for (const row of Object.values(ROWS)) expect(screen.getByRole('button', { name: row })).toBeTruthy();
   expect(within(screen.getByRole('button', { name: ROWS.salary })).getByText('+฿28,000.00')).toBeTruthy();
-  expect(within(screen.getByRole('button', { name: ROWS.rent })).getByText('-฿12,268.00')).toBeTruthy();
+  expect(within(screen.getByRole('button', { name: ROWS.rent })).getByText('−฿12,268.00')).toBeTruthy();
   expect(within(screen.getByRole('button', { name: ROWS.move })).getByText('฿1,500.00')).toBeTruthy();
   expect(screen.getByLabelText('Money in ฿28,000.00')).toBeTruthy();
   expect(screen.getByLabelText('Money out ฿12,450.00')).toBeTruthy();
@@ -230,19 +230,55 @@ test('returning to the list refreshes it in place and keeps every loaded page', 
   expect(fake.callsOf('history').at(-1)?.args[2]).toBe(64);
 });
 
+// Review M2 (probe History-1): a page can end inside a day, so the oldest loaded
+// day must not show a partial confirmed total.
+test('the oldest day on a page that continues shows its whole confirmed total, not the loaded part', async () => {
+  const seed = goldenSeed();
+  const expense = (id: number, day: string, amount: string): TransactionDto => ({
+    id: `0000000c-0000-4000-8000-${String(id).padStart(12, '0')}`, type: 'expense', amount_minor: amount, occurred_on: day,
+    wallet_id: CASH, category_id: CATEGORIES.FOOD.id, note: null, merchant: null, deleted_at: null, version: 1,
+  });
+  // 49 records on 20 September and 3 on 10 September (฿10.00 each): the first page of 50 ends inside 10 September.
+  const records = [
+    ...Array.from({ length: 49 }, (_, i) => expense(400 + i, '2026-09-20', '100')),
+    expense(500, '2026-09-10', '1000'), expense(501, '2026-09-10', '1000'), expense(502, '2026-09-10', '1000'),
+  ];
+  const fake = createFakeResources({ wallets: seed.wallets, records });
+  mountScreen(<HistoryScreen now={NOW} />, { resources: fake.resources });
+  await screen.findByRole('button', { name: 'Load more' });
+  expect(await screen.findByRole('heading', { name: 'Thursday 10 September 2026, Money out ฿30.00' })).toBeTruthy();
+  expect(screen.getByRole('heading', { name: 'Sunday 20 September 2026, Money out ฿49.00' })).toBeTruthy();
+  // Only the one row loaded so far is listed; Load more brings the rest, and the total stays the same.
+  expect(recordRows()).toHaveLength(50);
+  fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
+  await waitFor(() => expect(recordRows()).toHaveLength(52));
+  expect(screen.getByRole('heading', { name: 'Thursday 10 September 2026, Money out ฿30.00' })).toBeTruthy();
+});
+
 // ---------------------------------------------------------------------------
 // Rows, actions and drafts
 
 test('a row opens its record; long-press offers Edit, Copy and Delete', async () => {
   await golden();
   fireEvent.click(screen.getByRole('button', { name: ROWS.rent }));
-  expect(nav.router.push).toHaveBeenLastCalledWith(`/spend/record/${RENT}`);
+  // Typed routes: the record screen by its pattern and id, never a hand-built string.
+  expect(nav.router.push).toHaveBeenLastCalledWith({ pathname: '/spend/record/[id]', params: { id: RENT } });
   nav.router.push.mockReset();
   rowAction(ROWS.rent, 'Edit');
   expect(nav.router.push).toHaveBeenCalledTimes(1);
-  expect(nav.router.push).toHaveBeenLastCalledWith(`/spend/record/${RENT}?mode=edit`);
+  expect(nav.router.push).toHaveBeenLastCalledWith({ pathname: '/spend/record/[id]', params: { id: RENT, mode: 'edit' } });
   rowAction(ROWS.food, 'Copy');
-  expect(nav.router.push).toHaveBeenLastCalledWith(`/spend/add?copyOf=${FOOD_ID}`);
+  expect(nav.router.push).toHaveBeenLastCalledWith({ pathname: '/spend/add', params: { copyOf: FOOD_ID } });
+});
+
+test('on the web a row\'s actions are reachable by keyboard through its More button', async () => {
+  await golden();
+  const more = screen.getByRole('button', { name: 'Actions for Bills' });
+  fireEvent.click(more);
+  const bar = screen.getByRole('toolbar', { name: 'Actions for Bills' });
+  fireEvent.click(within(bar).getByRole('button', { name: 'Edit' }));
+  expect(nav.router.push).toHaveBeenLastCalledWith({ pathname: '/spend/record/[id]', params: { id: RENT, mode: 'edit' } });
+  expect(screen.queryByRole('toolbar')).toBeNull();
 });
 
 test("drafts on the device join their days with their state, and never count in the day's total", async () => {
@@ -271,11 +307,11 @@ test("drafts on the device join their days with their state, and never count in 
   expect(within(bar).queryByRole('button', { name: 'Edit' })).toBeNull();
   expect(within(bar).queryByRole('button', { name: 'Delete' })).toBeNull();
   fireEvent.click(within(bar).getByRole('button', { name: 'Copy' }));
-  expect(nav.router.push).toHaveBeenLastCalledWith(`/spend/add?copyOf=${saving.payload.id}`);
+  expect(nav.router.push).toHaveBeenLastCalledWith({ pathname: '/spend/add', params: { copyOf: saving.payload.id } });
   // The banner names what needs a look, and leads to it.
   expect(screen.getByText('Entries that need your review: 1')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Review' }));
-  expect(nav.router.push).toHaveBeenLastCalledWith(`/spend/record/${review.payload.id}`);
+  expect(nav.router.push).toHaveBeenLastCalledWith({ pathname: '/spend/record/[id]', params: { id: review.payload.id } });
 });
 
 test('a draft that resolves refreshes the list in place', async () => {
@@ -311,8 +347,11 @@ test('a draft waiting for an app update never looks confirmed and says why it wa
   const paused = outboxCommand(pendingExpense({ amount_minor: '6500', occurred_on: '2026-09-29' }), 'paused_upgrade');
   const diary = createFakeDiary({ ...DIARY_REFERENCES, outbox: [paused] });
   mountScreen(<HistoryScreen now={NOW} />, { resources: fake.resources, diary: diary.diary });
-  expect(await screen.findByRole('button', { name: 'Food, Expense ฿65.00, saving, Cash' })).toBeTruthy();
+  // The row's own state says why it waits (RecordRow's update-to-send state), never "saving".
+  const row = await screen.findByRole('button', { name: 'Food, Expense ฿65.00, Update Jotbun to send, Cash' });
+  expect(within(row).getByText('Update Jotbun to send')).toBeTruthy();
   expect(screen.getByText('Update Jotbun to send')).toBeTruthy();
+  expect(screen.queryByText('saving…')).toBeNull();
   expect(screen.getByText('Update Jotbun to send the entries saved on this device')).toBeTruthy();
   expect(screen.getByText('Waiting to sync: money out ฿65.00')).toBeTruthy();
 });
@@ -430,7 +469,7 @@ test.each(MATRIX)('reads in $locale, $mode: palette ground, the stage, the month
   const title = screen.getByRole('heading', { name: translateCopy('History', locale) });
   expect(title.style.lineHeight).toBe(leading('title', locale));
   expect(title.style.color).toEqual(rgb(colors.ink));
-  expect(within(screen.getByRole('button', { name: /฿12,268\.00/ })).getByText('-฿12,268.00').style.color).toEqual(rgb(colors.ink));
+  expect(within(screen.getByRole('button', { name: /฿12,268\.00/ })).getByText('−฿12,268.00').style.color).toEqual(rgb(colors.ink));
   expect(screen.getByRole('radio', { name: translateCopy('Expense', locale) })).toBeTruthy();
   expect(screen.getByLabelText(`${translateCopy('Money out', locale)} ฿12,450.00`)).toBeTruthy();
 });

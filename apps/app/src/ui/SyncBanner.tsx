@@ -17,11 +17,21 @@ import { PillButton } from './PillButton';
 
 export type SyncBannerAction = { label: string; onPress: () => void };
 
-export type SyncBannerProps =
+export type SyncBannerProps = SyncBannerState & {
+  /**
+   * Default true: the banner is its own polite live region and announces
+   * itself on iOS. Pass false when a screen shows several banners inside one
+   * live region of its own and announces them once, so they are not each
+   * read out on arrival.
+   */
+  live?: boolean;
+};
+
+type SyncBannerState =
   /** No connection; new entries are kept on the phone. */
   | { state: 'offline' }
-  /** Entries on their way to Jotbun. */
-  | { state: 'saving'; count: number }
+  /** Entries on their way to Jotbun; the action can list them. */
+  | { state: 'saving'; count: number; action?: SyncBannerAction }
   /** Sent, but the outcome is unknown, so Jotbun is asked before resending. */
   | { state: 'checking'; count: number }
   /** Entries Jotbun refused that the person needs to look at. */
@@ -32,6 +42,11 @@ export type SyncBannerProps =
   | { state: 'locked'; action?: SyncBannerAction };
 
 type Tc = ReturnType<typeof useCopy>;
+
+/** The banner's words, or null when it shows nothing: for a screen that announces several banners once. */
+export function syncBannerLine(props: SyncBannerProps, tc: Tc): string | null {
+  return lineFor(props, tc);
+}
 
 function lineFor(props: SyncBannerProps, tc: Tc): string | null {
   switch (props.state) {
@@ -55,12 +70,13 @@ export function SyncBanner(props: SyncBannerProps) {
   const tc = useCopy();
   const colors = useBunColors();
   const line = lineFor(props, tc);
-  useAnnouncement(line);
+  const live = props.live ?? true;
+  useAnnouncement(live ? line : null);
   if (!line) return null;
   const action = 'action' in props ? props.action : undefined;
   return (
     <View
-      {...POLITE_LIVE_REGION}
+      {...(live ? POLITE_LIVE_REGION : null)}
       style={{
         flexDirection: 'row',
         flexWrap: 'wrap',

@@ -44,6 +44,22 @@ test('a merchant must be one line; a caller error is shown too', () => {
   expect(screen.getByRole('alert').textContent).toBe('This note could not be saved.');
 });
 
+test("a caller's error that matches the field's own problem is said once, with no duplicate key", () => {
+  const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  try {
+    const own = 'Use one line of up to 120 characters.';
+    mountKit(<NoteField kind="merchant" value={'a'.repeat(121)} onChangeText={() => undefined} error={own} />);
+    expect(screen.getAllByRole('alert').map((alert) => alert.textContent)).toEqual([own]);
+    cleanup();
+    // A different problem from the caller is said after the field's own.
+    mountKit(<NoteField kind="merchant" value={'a'.repeat(121)} onChangeText={() => undefined} error="This merchant could not be saved." />);
+    expect(screen.getAllByRole('alert').map((alert) => alert.textContent)).toEqual([own, 'This merchant could not be saved.']);
+    expect(consoleError.mock.calls.filter((call) => String(call[0]).includes('same key'))).toEqual([]);
+  } finally {
+    consoleError.mockRestore();
+  }
+});
+
 test('a locked field cannot be edited', () => {
   mountKit(<NoteField kind="note" value="Saved" onChangeText={() => undefined} editable={false} />);
   const input = screen.getByRole('textbox', { name: 'Note' }) as HTMLInputElement;
