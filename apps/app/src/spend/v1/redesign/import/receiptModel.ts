@@ -147,6 +147,21 @@ export function freezes(problem: ReceiptProblem): boolean {
   return problem === 'unconfirmed' || problem === 'paused' || problem === 'busy';
 }
 
+/** What a frozen command says beside its Try again (English, for the panel's `tc`). */
+export const FROZEN_WORDS: Readonly<Partial<Record<ReceiptProblem, string>>> = {
+  unconfirmed: 'Not confirmed yet. Try again.',
+  paused: 'Jotbun has paused this for a moment. Try again later.',
+  busy: 'Too many photos at once. Try again in a moment.',
+};
+
+/** What a definite refusal of the photo says; any other refusal reads as `failed`. */
+export const REFUSED_WORDS: Readonly<Partial<Record<ReceiptProblem, string>>> = {
+  expired: "That photo can't be attached any more. Choose it again.",
+  removed: "That receipt photo was removed and can't be attached again.",
+  unsupported: 'Choose a JPEG, PNG or WebP photo.',
+  failed: "The photo wasn't saved. Attach it again.",
+};
+
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 /** Bytes per joined piece, so a 12 MiB photo is not built one character at a time. */
 const PIECE = 3 * 4096;

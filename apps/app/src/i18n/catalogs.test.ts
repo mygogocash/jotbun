@@ -37,12 +37,14 @@ const REDESIGN = ['src/screens/redesign', 'src/ui', 'src/mascot', 'src/spend/v1/
 const CALL = /\btc\(\s*(['"])((?:\\.|(?!\1).)*)\1/g;
 
 /**
- * Areas still awaiting their E2 approval keep their copy out of the catalogs
- * (it shows in English until approved): `planning/` folders hold R4 until
- * E2 checkpoint 2, `insights/` folders R5 until E2 checkpoint 3, `account/`
- * folders R6 until E2 checkpoint 4, `import/` folders R7 until checkpoint 5.
+ * Folders skipped here while their area's copy stays out of the catalogs. None
+ * is skipped now: R4–R7's copy (`planning/`, `insights/`, `account/` and
+ * `import/` folders) is in the catalogs, with Thai, pending the owner's E2
+ * approval of checkpoints 2–5, so every literal in those folders is checked
+ * too. Their templates that reach `tc` through a variable or a table are
+ * checked from each model's own test (`spend/v1/redesign/testing/catalog.ts`).
  */
-const AWAITING_E2 = new Set(['planning', 'insights', 'account', 'import']);
+const AWAITING_E2 = new Set<string>();
 
 function sources(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {

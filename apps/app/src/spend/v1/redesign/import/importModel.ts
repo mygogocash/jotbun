@@ -161,7 +161,8 @@ export function importPhase(journey: ImportJourney | null, ui: ImportUi): Import
 
 export type RowFlag = { readonly key: string; readonly label: CopyLine; readonly tone: 'warning' | 'info' };
 
-const ISSUE_WORDS: Readonly<Record<string, string>> = {
+/** A row issue's flag, by its code (English, for the screen's `tc`); an unknown code reads "Check this row". */
+export const ISSUE_WORDS: Readonly<Record<string, string>> = {
   missing_date: 'No date',
   invalid_date: 'Date unreadable',
   ambiguous_date: 'Date unclear',
@@ -544,7 +545,8 @@ export const REFUSAL_WORDS: Readonly<Record<Exclude<UploadRefusal, 'uploads_off'
   unavailable: "Couldn't open your files. Try again.",
 };
 
-const FILE_ISSUE_WORDS: Readonly<Record<string, string>> = {
+/** Why a rejected file can't be used, by its issue code; an unknown code reads "Part of this file couldn't be read." */
+export const FILE_ISSUE_WORDS: Readonly<Record<string, string>> = {
   empty_file: 'The file has no rows.',
   unrecognized_columns: "Jotbun couldn't find a date, a type and an amount in this file's columns.",
   ambiguous_columns: 'Some columns could mean more than one thing.',
@@ -583,7 +585,8 @@ export function fileIssueLines(journey: ImportJourney): CopyLine[] {
   return (lines.length > 0 ? lines : ["This file couldn't be read."]).map((text) => ({ text }));
 }
 
-const FILE_NOTICE_WORDS: Readonly<Record<string, string>> = {
+/** What is worth knowing about a readable file as a whole, by its issue code. */
+export const FILE_NOTICE_WORDS: Readonly<Record<string, string>> = {
   unmapped_columns: 'Some columns were not used',
   legacy_encoding: 'Old text encoding: check names and notes',
   receipt_fields_unread: "The receipt's details couldn't be read",

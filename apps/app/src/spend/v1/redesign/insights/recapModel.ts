@@ -15,8 +15,8 @@
 // - The share is plain text with exact amounts (decision D6: an image waits
 //   for a capture package).
 //
-// Copy is English for `tc()`. R5 waits for E2 checkpoint 3, so these strings
-// are not in the catalogs yet (the catalog guard skips `insights/` folders).
+// Copy is English for `tc()`, in the catalogs with Thai pending E2
+// checkpoint 3 (the catalog guard checks every literal here).
 import type { CategoryDto, CategoryTotal, HistoryPage, Minor, MonthSummary } from '@gogospend/contracts';
 
 import { V1Error } from '../../../../api/client.ts';

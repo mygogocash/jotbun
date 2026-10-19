@@ -10,6 +10,7 @@ import { Pressable, View } from 'react-native';
 
 import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
 import type { LoadProblem, LoadProblemKind } from '@mobile/spend/v1/redesign/homeModel';
+import { CORRECTION_REASONS } from '@mobile/spend/v1/redesign/planning/walletsModel';
 import type { ConflictRow, WalletPreview } from '@mobile/spend/v1/redesign/planning/walletsModel';
 import { formatMinor } from '@mobile/spend/v1/money';
 import { TextInput } from '@mobile/theme/AppText';
@@ -296,11 +297,6 @@ export function StartField({ children, error }: { children: ReactNode; error?: s
   );
 }
 
-const REASONS: readonly { value: WalletCorrectionReason; label: string }[] = [
-  { value: 'entry_error', label: 'A mistake when I set it up' },
-  { value: 'balance_reconciliation', label: 'Match my real balance' },
-];
-
 /**
  * Why a wallet with entries is being corrected, asked before anything is
  * sent: a named radio group of two full-width choices. The chosen one is an
@@ -314,7 +310,7 @@ export function ReasonQuestion({ value, onChange, error, disabled }: { value: Wa
     <View testID="wallet-reason" role="radiogroup" accessibilityLabel={question} style={{ gap: BUN_SPACE.xs }}>
       <BunText variant="label" style={{ fontWeight: '700' }}>{question}</BunText>
       <BunText variant="caption" tone="muted">{tc('This wallet already has entries, so Jotbun keeps a note of why.')}</BunText>
-      {REASONS.map((reason) => {
+      {CORRECTION_REASONS.map((reason) => {
         const checked = reason.value === value;
         const label = tc(reason.label);
         return (

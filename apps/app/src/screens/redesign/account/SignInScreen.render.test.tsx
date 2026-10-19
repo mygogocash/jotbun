@@ -231,14 +231,15 @@ test('signing in: the chosen provider is busy and the others wait; active opens 
 // ---------------------------------------------------------------------------
 // Thai, dark mode and the bun
 
-test('Thai: Thai leading, catalogued copy in Thai, and R6\'s own copy in English until E2', () => {
+test('Thai: Thai leading, and the core\'s and R6\'s own copy in Thai', () => {
   const th = (english: string) => translateCopy(english, 'th');
   const leading = (role: Parameters<typeof bunText>[0]) => `${bunText(role, 'thai').lineHeight}px`;
   mount(<SignInScreen />, { locale: 'th' });
   const title = screen.getByRole('heading', { name: th(COPY.title) });
   expect(title.textContent).toBe('เข้าสู่ระบบ');
   expect(title.style.lineHeight).toBe(leading('title'));
-  // A key the catalogs lack shows the English, in Thai type, never blank and never a key.
+  // R6's own copy is in the catalogs too (pending E2 checkpoint 4): Thai, in Thai type, never blank and never a key.
+  expect(th(COPY.line)).not.toBe(COPY.line);
   expect(screen.getByText(th(COPY.line)).style.lineHeight).toBe(leading('body'));
   expect(screen.getByText(th(COPY.private))).toBeTruthy();
   expect(button(th(COPY.apple))).toBeTruthy();

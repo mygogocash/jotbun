@@ -338,7 +338,7 @@ test('reduced motion: the coins simply appear, with no animation at all', async 
 // ---------------------------------------------------------------------------
 // Thai, dark mode and the bun
 
-test('Thai: Thai leading, catalogued copy in Thai, and R6\'s own copy in English until E2', async () => {
+test('Thai: Thai leading, and the core\'s and R6\'s own copy in Thai', async () => {
   const th = (english: string, values?: Record<string, string>) => translateCopy(english, 'th', values);
   const leading = (role: Parameters<typeof bunText>[0]) => `${bunText(role, 'thai').lineHeight}px`;
   mount(<OnboardingScreen reminders={reminders('scheduled')} />, { locale: 'th' });
@@ -352,7 +352,8 @@ test('Thai: Thai leading, catalogued copy in Thai, and R6\'s own copy in English
   expect(button(th(COPY.next))).toBeTruthy();
   expect(button(th(COPY.skip))).toBeTruthy();
   expect(progress()?.getAttribute('aria-label')).toBe(th(COPY.step, { step: '1', total: '3' }));
-  // R6's copy waits for E2 checkpoint 4: a missing key shows the English, in Thai type, never a blank or a key.
+  // R6's own copy is in the catalogs too (pending E2 checkpoint 4): Thai, in Thai type, never a blank or a key.
+  expect(th(COPY.first)).not.toBe(COPY.first);
   fireEvent.click(button(th(COPY.next)));
   fireEvent.click(button(th(COPY.next)));
   const first = heading(th(COPY.first));

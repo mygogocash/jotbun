@@ -14,8 +14,13 @@ import { confirmBatches, freezeSelection, mapCategory, mapWallet, memoryDraftSto
 import type { ImportDeps, ImportJourney, ImportProblem } from '../../importReview.ts';
 import type { ImportFile } from '../../imports.ts';
 import { JOB_ID, createFakeImportServer } from '../../testing/fakeImportServer.ts';
+import { untranslated } from '../testing/catalog.ts';
 import {
+  FILE_ISSUE_WORDS,
+  FILE_NOTICE_WORDS,
+  ISSUE_WORDS,
   NO_UI,
+  REFUSAL_WORDS,
   backToReview,
   blockerLines,
   blockerSummary,
@@ -27,6 +32,7 @@ import {
   clearSelection,
   confirmStages,
   fileIssueLines,
+  fileNotices,
   filterRows,
   frozenSummary,
   importPhase,
@@ -427,4 +433,56 @@ test('saving corrections then freezing sends the patch before the freeze, and th
   const frozen = await freezeSelection(saved, ready.deps);
   assert.deepEqual(server.calls.filter((call) => call.method !== 'preview').map((call) => call.method), ['patchRows', 'freeze']);
   assert.equal(importPhase(frozen, NO_UI), 'frozen');
+});
+
+// ---------------------------------------------------------------------------
+// The catalogs
+
+// Copy is looked up by its English text, and every line here reaches the
+// screen's `tc` as a CopyLine or from a table, where the literal guard can't
+// see it: one missing from the catalogs shows English in every locale (R7, E2
+// checkpoint 5).
+test('every flag, blocker, stage, summary, notice and file reason is copy in en.json, with Thai', () => {
+  const texts: string[] = [];
+  const add = (lines: readonly { text: string }[]) => texts.push(...lines.map((line) => line.text));
+  const flags = (candidates: ImportCandidate[], extra: Partial<ImportPreview> = {}, more: Partial<ImportJourney> = {}) => {
+    const base = reviewing(candidates, more);
+    return rowFlags({ ...base, preview: { ...(base.preview as ImportPreview), issues: [], duplicate_advice: [], ...extra } }, 'row:2').map((flag) => flag.label);
+  };
+  const issueFlags = flags([row(1, {})], { issues: [...Object.keys(ISSUE_WORDS), 'something_new'].map((code) => ({ code, source_row_id: 'row:2', field: null })) });
+  assert.deepEqual(issueFlags.map((label) => label.text).sort(), [...new Set([...Object.values(ISSUE_WORDS), 'Check this row'])].sort(), 'every issue code is walked');
+  add(issueFlags);
+  add(flags([row(1, { occurred_on: null, type: null, amount_minor: null, wallet_label: null, category_label: null })]));
+  add(flags([row(1, { type: 'transfer', category_label: null })]));
+  add(flags([row(1, {})], {}, { committed: ['row:2'] }));
+  add(flags([row(1, {}), row(2, {})], { duplicate_advice: [{ source_row_id: 'row:2', kind: 'existing_transaction', matches: [EXISTING] }, { source_row_id: 'row:2', kind: 'same_file', matches: ['row:3'] }] }));
+  for (const count of [1, 2]) add(blockerLines({ nothingSelected: true, missing: count, transfer: count, unchecked: count, walletUnmapped: count, categoryUnmapped: count }));
+  add(parseStages('review', 3).map((stage) => stage.label));
+  add(confirmStages(reviewing(), false).map((stage) => stage.label));
+  const upload = { ...newJourney(), stage: 'uploading' as const, pendingUpload: { key: 'k', body: { name: 'a.csv', contentType: 'text/csv', bytes: 1 } } };
+  const confirming = { ...reviewing(), stage: 'confirming' as const, selection: { id: 's', frozenRevision: '1', rowIds: ['row:2'] }, remaining: ['row:2'] };
+  add([upload, { ...newJourney(), stage: 'parsing' as const, jobId: JOB_ID }, reviewing(), confirming].map((journey) => resumeSummary(journey) ?? { text: '' }));
+  const kinds: ImportProblem['kind'][] = [
+    'unconfirmed', 'offline', 'review_changed', 'selection_conflict', 'preview_unavailable', 'row_committed', 'invalid', 'rate_limited', 'blocked', 'parse_failed', 'rejected', 'receipt_unavailable',
+  ];
+  for (const kind of kinds) {
+    for (const phase of ['unconfirmed', 'upload_unconfirmed', 'review', 'paused', 'start', 'uploads_off'] as const) {
+      const notice = problemNotice({ kind }, phase);
+      if (notice) texts.push(notice.text.text);
+    }
+  }
+  texts.push(...Object.values(REFUSAL_WORDS));
+  const rejected = (codes: readonly string[]) => ({
+    ...newJourney(), stage: 'failed' as const, problem: { kind: 'rejected' as const },
+    preview: preview([], { status: 'rejected', issues: codes.map((code) => ({ code, source_row_id: null, field: null })) }),
+  });
+  const reasons = fileIssueLines(rejected([...Object.keys(FILE_ISSUE_WORDS), 'something_new']));
+  assert.deepEqual(reasons.map((line) => line.text).sort(), [...new Set([...Object.values(FILE_ISSUE_WORDS), "Part of this file couldn't be read."])].sort(), 'every file issue code is walked');
+  add(reasons);
+  add(fileIssueLines({ ...rejected([]), preview: null }));
+  const readable = reviewing();
+  const notices = fileNotices({ ...readable, preview: { ...(readable.preview as ImportPreview), issues: Object.keys(FILE_NOTICE_WORDS).map((code) => ({ code, source_row_id: null, field: null })) } });
+  assert.deepEqual(notices.map((notice) => notice.label.text).sort(), [...new Set(Object.values(FILE_NOTICE_WORDS))].sort(), 'every file notice code is walked');
+  add(notices.map((notice) => notice.label));
+  assert.deepEqual(untranslated(texts.filter((text) => text !== '')), []);
 });

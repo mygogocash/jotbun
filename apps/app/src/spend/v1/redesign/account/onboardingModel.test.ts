@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { SPEND_INTRO_YEARLY_BAHT } from '../../../spendIntro.ts';
+import { untranslated } from '../testing/catalog.ts';
 import {
   COFFEE_PER_DAY_BAHT, FIRST_REMINDER, PRIVACY_PROMISES, SIGN_IN_METHODS, STORY_STEPS,
   afterOnboarding, afterSignInAttempt, canChooseProvider, coffeeMaths, primingAnswer, stepAfter, storyProgress, SKIP_TO,
@@ -51,6 +52,13 @@ test('the three promises are plain, distinct sentences', () => {
   assert.equal(PRIVACY_PROMISES.length, 3);
   assert.equal(new Set(PRIVACY_PROMISES.map((promise) => promise.key)).size, 3);
   for (const promise of PRIVACY_PROMISES) assert.match(promise.text, /^[A-Z].*\.$/);
+});
+
+// Copy is looked up by its English text, and the screens pass these promises to
+// `tc` from the table, where the literal guard can't see them (R6, E2
+// checkpoint 4).
+test('each promise is copy in en.json, with Thai', () => {
+  assert.deepEqual(untranslated(PRIVACY_PROMISES.map((promise) => promise.text)), []);
 });
 
 test('Apple, Google and email, in that order, and none of them first among equals', () => {

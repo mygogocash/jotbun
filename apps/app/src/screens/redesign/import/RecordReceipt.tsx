@@ -27,8 +27,8 @@ import { View } from 'react-native';
 import { V1Error } from '@mobile/api/client';
 import { isRedesignEnabled } from '@mobile/config/featureFlags';
 import { useCopy } from '@mobile/i18n/useCopy';
-import { attachableFrom, classifyFailure, dataUriOf, freezes, grantUsable, receiptFile } from '@mobile/spend/v1/redesign/import/receiptModel';
-import type { ReceiptCommand, ReceiptMode, ReceiptProblem } from '@mobile/spend/v1/redesign/import/receiptModel';
+import { FROZEN_WORDS, REFUSED_WORDS, attachableFrom, classifyFailure, dataUriOf, freezes, grantUsable, receiptFile } from '@mobile/spend/v1/redesign/import/receiptModel';
+import type { ReceiptCommand, ReceiptMode } from '@mobile/spend/v1/redesign/import/receiptModel';
 import type { ImportFile } from '@mobile/spend/v1/imports';
 import { useSpendV1 } from '@mobile/spend/v1/SpendV1Context';
 import { BunText } from '@mobile/ui/BunText';
@@ -76,17 +76,6 @@ type Step =
   | { kind: 'gone' };
 type Photo = { state: 'none' } | { state: 'loading' } | { state: 'ready'; uri: string; grant: AttachmentGrant } | { state: 'problem'; message: string };
 
-const FROZEN: Readonly<Partial<Record<ReceiptProblem, string>>> = {
-  unconfirmed: 'Not confirmed yet. Try again.',
-  paused: 'Jotbun has paused this for a moment. Try again later.',
-  busy: 'Too many photos at once. Try again in a moment.',
-};
-const REFUSED: Readonly<Partial<Record<ReceiptProblem, string>>> = {
-  expired: "That photo can't be attached any more. Choose it again.",
-  removed: "That receipt photo was removed and can't be attached again.",
-  unsupported: 'Choose a JPEG, PNG or WebP photo.',
-  failed: "The photo wasn't saved. Attach it again.",
-};
 const MEGABYTE = 1024 * 1024;
 
 /** The panel itself, with no area check (the catalogue draws it directly). */
@@ -187,7 +176,7 @@ export function ReceiptPanel({ recordId, version, ports: injected, onChanged }: 
 
   function failed(command: ReceiptCommand, error: unknown) {
     const problem = classifyFailure(error, command.kind);
-    const frozen = FROZEN[problem];
+    const frozen = FROZEN_WORDS[problem];
     if (freezes(problem) && frozen) {
       setStep({ kind: 'frozen', command, message: tc(frozen) });
       return;
@@ -197,7 +186,7 @@ export function ReceiptPanel({ recordId, version, ports: injected, onChanged }: 
     if (problem === 'uploads_off') setUploadsOff(true);
     else if (problem === 'blocked') setNotice(saveProblem(error, tc).message);
     else if (problem === 'too_large') setNotice(tc('Choose a photo up to {size} MB.', { size: ATTACHMENT_MAX_BYTES / MEGABYTE }));
-    else setNotice(tc(REFUSED[problem] ?? (REFUSED.failed as string)));
+    else setNotice(tc(REFUSED_WORDS[problem] ?? (REFUSED_WORDS.failed as string)));
     setStep({ kind: 'idle' });
   }
 

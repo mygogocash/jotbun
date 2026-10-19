@@ -75,13 +75,13 @@ async function openStart(options: Options = {}): Promise<ImportFixture> {
 }
 
 /** Choose a file from the expectation sheet. */
-function chooseFromSheet() {
-  fireEvent.click(within(sheet()).getByRole('button', { name: 'Choose a file' }));
+function chooseFromSheet(locale: Locale = 'en') {
+  fireEvent.click(within(sheet()).getByRole('button', { name: translateCopy('Choose a file', locale) }));
 }
 
 async function toLabels(options: Options = {}): Promise<ImportFixture> {
   const fixture = await openStart(options);
-  chooseFromSheet();
+  chooseFromSheet(options.locale);
   await screen.findByTestId('import-labels');
   return fixture;
 }
@@ -127,7 +127,11 @@ async function toFrozen(count = 5, options: Options = {}): Promise<ImportFixture
 
 const checkbox = (row: number) => screen.getByRole('checkbox', { name: `Choose row ${row}` });
 const checked = (row: number) => checkbox(row).getAttribute('aria-checked') === 'true';
-const rowButton = (row: number) => screen.getByRole('button', { name: new RegExp(`^Row ${row}: `) });
+/** A row's own button, whose name starts "Row 2: " (in the locale's words). */
+const rowButton = (row: number, locale: Locale = 'en') => {
+  const start = translateCopy('Row {row}: {details}', locale, { row, details: '' });
+  return screen.getByRole('button', { name: (name) => name.startsWith(start) });
+};
 
 // ---------------------------------------------------------------------------
 // The expectation sheet
@@ -606,8 +610,8 @@ test.each(MATRIX)('reads in $locale, $mode: the stage, the review rows, exact mo
   fireEvent.click(screen.getByRole('button', { name: say('Select all') }));
   const total = screen.getByTestId('import-total');
   expect(within(total).getByText('฿290.50').style.lineHeight).toBe(leading('label', locale));
-  expect(within(rowButton(1)).getByText('Coffee').style.lineHeight).toBe(leading('body', locale));
-  expect(within(rowButton(1)).getByText('−฿65.00').style.color).toEqual(rgb(colors.ink));
+  expect(within(rowButton(1, locale)).getByText('Coffee').style.lineHeight).toBe(leading('body', locale));
+  expect(within(rowButton(1, locale)).getByText('−฿65.00').style.color).toEqual(rgb(colors.ink));
   expect(screen.getByRole('button', { name: say('Continue') })).toBeTruthy();
   expectApprovedTextPairs(document.body, colors);
 });
@@ -632,15 +636,16 @@ test.each(['light', 'dark'] as const)('%s: the expectation sheet, progress, froz
   expectApprovedTextPairs(document.body, colors);
 });
 
-test('Thai: words already in the catalogs read Thai, the rest wait for E2 in English, and money stays exact baht', async () => {
+test('Thai: the journey reads Thai, and money stays exact baht', async () => {
   await toLabels({ locale: 'th' });
   fireEvent.click(screen.getByRole('button', { name: translateCopy('Next: check rows', 'th') }));
   await screen.findByTestId('import-rows');
-  // "Back" and "Continue" are approved catalog words.
-  expect(screen.getByRole('button', { name: translateCopy('Back', 'th') })).toBeTruthy();
-  expect(translateCopy('Back', 'th')).not.toBe('Back');
-  expect(screen.getByRole('button', { name: translateCopy('Continue', 'th') })).toBeTruthy();
-  fireEvent.click(screen.getByRole('button', { name: 'Select all' }));
+  // "Back" and "Continue" are the core's catalog words; the journey's own, such as "Select all", are in the catalogs too (R7, pending E2).
+  for (const english of ['Back', 'Continue', 'Select all']) {
+    expect(translateCopy(english, 'th')).not.toBe(english);
+    expect(screen.getByRole('button', { name: translateCopy(english, 'th') })).toBeTruthy();
+  }
+  fireEvent.click(screen.getByRole('button', { name: translateCopy('Select all', 'th') }));
   expect(within(screen.getByTestId('import-total')).getByText('฿290.50')).toBeTruthy();
   expect(within(screen.getByTestId('import-total')).getByText('฿290.50').style.lineHeight).toBe(leading('label', 'th'));
 });
