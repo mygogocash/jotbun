@@ -21,12 +21,16 @@ import type {
   CategoryDto,
   CommandAck,
   CommandStatus,
+  CreateCategoryRequest,
   CreateWalletRequest,
   HistoryFilter,
   HistoryPage,
   MonthSummary,
+  SetMonthlyBudgetRequest,
   TransactionDto,
+  UpdateCategoryRequest,
   UpdateTransactionRequest,
+  UpdateWalletRequest,
   WalletDto,
 } from '@gogospend/contracts';
 
@@ -58,6 +62,19 @@ export type SpendV1Resources = {
   history(filter: HistoryFilter, cursor?: string, limit?: number): Promise<HistoryPage>;
   summary(month: string): Promise<MonthSummary>;
   budget(month: string): Promise<BudgetDto | null>;
+  /**
+   * Sets a month's whole budget (R4). Without `existing` it creates, and the
+   * server derives the budget's id; with the version and id the screen read,
+   * it replaces.
+   */
+  setBudget(month: string, input: SetMonthlyBudgetRequest, commandId: string, existing?: { version: number; id: string }): Promise<CommandAck>;
+  updateWallet(id: string, version: number, changes: UpdateWalletRequest, commandId: string): Promise<CommandAck>;
+  archiveWallet(id: string, version: number, commandId: string): Promise<CommandAck>;
+  unarchiveWallet(id: string, version: number, commandId: string): Promise<CommandAck>;
+  createCategory(input: CreateCategoryRequest, commandId: string): Promise<CommandAck>;
+  updateCategory(id: string, version: number, changes: UpdateCategoryRequest, commandId: string): Promise<CommandAck>;
+  archiveCategory(id: string, version: number, commandId: string): Promise<CommandAck>;
+  unarchiveCategory(id: string, version: number, commandId: string): Promise<CommandAck>;
   commandStatus(ids: readonly string[]): Promise<CommandStatus[]>;
 };
 
@@ -130,6 +147,12 @@ const command = (id: string, ifMatch?: number) => ({ id, schemaVersion: V1_COMMA
 /** An acknowledgement must be for this command and this entity. */
 const ackFor = (commandId: string, entityId: string) => (value: unknown): value is CommandAck =>
   isCommandAck(value) && value.command_id === commandId && value.entity_id === entityId;
+/** An acknowledgement must be for this command (the server derives the entity, as for a new budget). */
+const ackForCommand = (commandId: string) => (value: unknown): value is CommandAck => isCommandAck(value) && value.command_id === commandId;
+const monthSegment = (month: string) => {
+  if (!MONTH.test(month)) throw new V1Error('invalid', 0, 'INVALID_MONTH');
+  return month;
+};
 const segment = (id: string) => {
   if (!isUuid(id)) throw new V1Error('invalid', 0, 'INVALID_ID');
   return id;
@@ -166,6 +189,26 @@ export function createSpendV1Resources(transport: V1Transport): SpendV1Resources
         throw error;
       }
     },
+    // Async, so a malformed month or id is a rejection like any other refusal.
+    setBudget: async (month, input, commandId, existing) =>
+      transport.request('PUT', `/v1/budgets/${monthSegment(month)}`, {
+        body: input,
+        command: command(commandId, existing?.version),
+        validate: existing ? ackFor(commandId, existing.id) : ackForCommand(commandId),
+      }),
+    updateWallet: async (id, version, changes, commandId) =>
+      transport.request('PATCH', `/v1/wallets/${segment(id)}`, { body: changes, command: command(commandId, version), validate: ackFor(commandId, id) }),
+    archiveWallet: async (id, version, commandId) =>
+      transport.request('POST', `/v1/wallets/${segment(id)}/archive`, { body: {}, command: command(commandId, version), validate: ackFor(commandId, id) }),
+    unarchiveWallet: async (id, version, commandId) =>
+      transport.request('POST', `/v1/wallets/${segment(id)}/unarchive`, { body: {}, command: command(commandId, version), validate: ackFor(commandId, id) }),
+    createCategory: async (input, commandId) => transport.request('POST', '/v1/categories', { body: input, command: command(commandId), validate: ackFor(commandId, input.id) }),
+    updateCategory: async (id, version, changes, commandId) =>
+      transport.request('PATCH', `/v1/categories/${segment(id)}`, { body: changes, command: command(commandId, version), validate: ackFor(commandId, id) }),
+    archiveCategory: async (id, version, commandId) =>
+      transport.request('POST', `/v1/categories/${segment(id)}/archive`, { body: {}, command: command(commandId, version), validate: ackFor(commandId, id) }),
+    unarchiveCategory: async (id, version, commandId) =>
+      transport.request('POST', `/v1/categories/${segment(id)}/unarchive`, { body: {}, command: command(commandId, version), validate: ackFor(commandId, id) }),
     commandStatus: (ids) => fetchCommandStatus(transport, ids),
   };
 }

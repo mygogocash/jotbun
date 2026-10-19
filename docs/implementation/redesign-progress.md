@@ -1460,3 +1460,23 @@ Built together with the kit polish above, in one change. These fix the screen-le
   - All 40 Thai screen states were shot at phone size (`chrome=off`).
   - The redesign reads Thai throughout. The only English left is the sample user data: wallet names, custom categories and notes.
   - History's type and category chip rows still scroll sideways and cut off mid-word at the edge.
+
+## R4 (Planning): client write adapters
+
+- **What:** the nine commands the server already has, in `resources.ts`:
+  - `setBudget(month, input, key, existing?)`: PUT `/v1/budgets/:month`. It creates without If-Match, and replaces with the version read.
+  - `updateWallet`, `archiveWallet` and `unarchiveWallet`.
+  - `createCategory`, `updateCategory`, `archiveCategory` and `unarchiveCategory`.
+- **How they work:**
+  - Each is an immutable command with its own key and the command schema.
+  - A change sends If-Match with the version the screen read, and archive and unarchive send `{}`.
+  - An ack must be for this command and this entity. For a budget create the server derives the id (an id derived from the account and the month), so only the command is checked.
+  - A malformed month or id is refused before anything is sent, as a rejection.
+- **The fake:**
+  - `createFakeResources` now holds budgets (by month) and custom categories (both seedable).
+  - It follows the server's rules: version conflicts carry the current entity; you can't archive a wallet with a non-zero balance; you can't change an archived wallet or category; a custom category needs a label; you can't create a second budget for a month; category limits can't exceed the overall budget.
+  - The month summary reports budget use when a budget is seeded. Without one it is `null`, as before.
+- **RED → GREEN:**
+  - Two `resources.test.ts` tests failed, because the adapters didn't exist, and now pass: 19 of 19. They cover the method, path, key, If-Match and exact body of all nine commands, and an ack for another entity, a bad month and a bad id.
+  - Mutation: dropping If-Match from wallet archive fails the first test.
+  - test:unit 434 of 434; test:render 562 of 562.

@@ -3,14 +3,19 @@
 // call log. It mirrors the server's rules only as far as the screens need.
 // Test use only.
 import type {
+  BudgetDto,
   CategoryDto,
   CommandAck,
   CommandOutcome,
+  CreateCategoryRequest,
   CreateWalletRequest,
   HistoryFilter,
   HistoryPage,
   MonthSummary,
+  SetMonthlyBudgetRequest,
   TransactionDto,
+  UpdateCategoryRequest,
+  UpdateWalletRequest,
   WalletDto,
   WalletSnapshot,
 } from '@gogospend/contracts';
@@ -32,10 +37,12 @@ export const BUILTINS: CategoryDto[] = [
   ['salary', 'income', '#A8CC4A'], ['gift', 'income', '#F291C4'],
 ].map(([key, type, color], i) => ({ id: `0000000c-0000-4000-8000-00000000000${i + 1}`, type: type as 'expense' | 'income', builtin_key: key as CategoryDto['builtin_key'], label: null, color, archived: false, version: 1 }));
 
-export function createFakeResources(seed: { wallets?: WalletSnapshot[]; records?: TransactionDto[] } = {}) {
+export function createFakeResources(seed: { wallets?: WalletSnapshot[]; records?: TransactionDto[]; categories?: CategoryDto[]; budgets?: BudgetDto[] } = {}) {
   const wallets = new Map((seed.wallets ?? []).map((wallet) => [wallet.id, { ...wallet }]));
   const records = new Map((seed.records ?? []).map((record) => [record.id, { ...record }]));
-  const categories = new Map<string, CategoryDto>();
+  const categories = new Map<string, CategoryDto>((seed.categories ?? []).map((category) => [category.id, { ...category }]));
+  // Budgets by month, as the server keeps one per account and month.
+  const budgets = new Map((seed.budgets ?? []).map((budget) => [budget.month, { ...budget, category_limits: [...budget.category_limits] }]));
   const calls: FakeCall[] = [];
   const failures = new Map<keyof SpendV1Resources, V1Error[]>();
   // Errors thrown after the write committed: the response was lost or garbled.
@@ -63,6 +70,41 @@ export function createFakeResources(seed: { wallets?: WalletSnapshot[]; records?
     revision += 1;
     return { command_id: commandId, entity_id: entityId, version, committed_revision: String(revision), outcome, entity_state: state };
   };
+
+  const conflict = (current: unknown) => new V1Error('conflict', 409, 'VERSION_CONFLICT', { current });
+  /** A 422 state problem, as the server words it: one field and its message key. */
+  const stateProblem = (field: string, key: string) => new V1Error('invalid', 422, 'VALIDATION_FAILED', { fields: { [field]: key } });
+  const notFound = () => new V1Error('not_found', 404, 'NOT_FOUND');
+  function lockedWallet(id: string, version: number): WalletSnapshot {
+    const wallet = wallets.get(id);
+    if (!wallet) throw notFound();
+    if (wallet.version !== version) throw conflict({ ...wallet, balance_minor: balance(wallet) });
+    return wallet;
+  }
+  function lockedCategory(id: string, version: number): CategoryDto {
+    const category = categories.get(id);
+    if (!category) throw notFound();
+    if (category.version !== version) throw conflict(category);
+    return category;
+  }
+  function budgetUsage(month: string): MonthSummary['budget'] {
+    const budget = budgets.get(month);
+    if (!budget) return null;
+    const expenses = [...records.values()].filter((record) => !record.deleted_at && record.type === 'expense' && record.occurred_on.startsWith(month));
+    const spentOn = (categoryId?: string) => expenses.filter((record) => categoryId === undefined || (record.type !== 'transfer' && record.category_id === categoryId)).reduce((sum, record) => sum + BigInt(record.amount_minor), 0n);
+    const spent = spentOn();
+    return {
+      overall_limit_minor: budget.overall_limit_minor,
+      spent_minor: spent.toString(),
+      remaining_minor: (BigInt(budget.overall_limit_minor) - spent).toString(),
+      categories: budget.category_limits.map((limit) => ({
+        category_id: limit.category_id,
+        limit_minor: limit.limit_minor,
+        spent_minor: spentOn(limit.category_id).toString(),
+        remaining_minor: (BigInt(limit.limit_minor) - spentOn(limit.category_id)).toString(),
+      })),
+    };
+  }
 
   async function step(method: keyof SpendV1Resources, args: unknown[]): Promise<void> {
     calls.push({ method, args });
@@ -191,13 +233,106 @@ export function createFakeResources(seed: { wallets?: WalletSnapshot[]; records?
       const sum = (type: string) => scoped.filter((r) => r.type === type).reduce((s, r) => s + BigInt(r.amount_minor), 0n);
       const summary: MonthSummary = {
         month, income_minor: sum('income').toString(), expense_minor: sum('expense').toString(), balance_minor: (sum('income') - sum('expense')).toString(),
-        by_wallet: {}, categories: [], budget: null, as_of_revision: String(revision),
+        by_wallet: {}, categories: [], budget: budgetUsage(month), as_of_revision: String(revision),
       };
       return summary;
     },
     async budget(month: string) {
       await step('budget', [month]);
-      return null;
+      const budget = budgets.get(month);
+      return budget ? { ...budget, category_limits: [...budget.category_limits] } : null;
+    },
+    async setBudget(month: string, input: SetMonthlyBudgetRequest, commandId: string, existing?: { version: number; id: string }) {
+      await step('setBudget', [month, input, commandId, existing]);
+      return command('setBudget', commandId, () => {
+        const current = budgets.get(month);
+        const limits = [...(input.category_limits ?? [])].sort((a, b) => a.category_id.localeCompare(b.category_id));
+        if (limits.reduce((sum, limit) => sum + BigInt(limit.limit_minor), 0n) > BigInt(input.overall_limit_minor)) {
+          throw new V1Error('invalid', 422, 'VALIDATION_FAILED', { fields: { category_limits: 'Category limits add up to more than the overall budget.' } });
+        }
+        if (!existing) {
+          if (current) throw conflict(current);
+          const created: BudgetDto = { id: uuid(), month, overall_limit_minor: input.overall_limit_minor, category_limits: limits, version: 1 };
+          budgets.set(month, created);
+          return ack(commandId, created.id, 1, 'created');
+        }
+        if (!current) throw notFound();
+        if (current.version !== existing.version) throw conflict(current);
+        const replaced: BudgetDto = { ...current, overall_limit_minor: input.overall_limit_minor, category_limits: limits, version: current.version + 1 };
+        budgets.set(month, replaced);
+        return ack(commandId, replaced.id, replaced.version, 'updated');
+      });
+    },
+    async updateWallet(id: string, version: number, changes: UpdateWalletRequest, commandId: string) {
+      await step('updateWallet', [id, version, changes, commandId]);
+      return command('updateWallet', commandId, () => {
+        const wallet = lockedWallet(id, version);
+        if (wallet.archived) throw stateProblem('archived', 'errors.wallet_archived');
+        const { correction_reason: reason, ...change } = changes;
+        const corrected = change.opening_minor !== undefined || change.tracking_start !== undefined;
+        const hasRecords = [...records.values()].some((record) => !record.deleted_at && (record.type === 'transfer' ? record.source_wallet_id === id || record.destination_wallet_id === id : record.wallet_id === id));
+        if (corrected && hasRecords && !reason) throw stateProblem('correction_reason', 'errors.correction_reason_required');
+        const updated = { ...wallet, ...change, version: wallet.version + 1 };
+        wallets.set(id, updated);
+        return ack(commandId, id, updated.version, 'updated');
+      });
+    },
+    async archiveWallet(id: string, version: number, commandId: string) {
+      await step('archiveWallet', [id, version, commandId]);
+      return command('archiveWallet', commandId, () => {
+        const wallet = lockedWallet(id, version);
+        if (wallet.archived) throw stateProblem('archived', 'errors.already_archived');
+        if (balance(wallet) !== '0') throw stateProblem('balance_minor', 'errors.wallet_balance_not_zero');
+        wallets.set(id, { ...wallet, archived: true, version: wallet.version + 1 });
+        return ack(commandId, id, wallet.version + 1, 'archived');
+      });
+    },
+    async unarchiveWallet(id: string, version: number, commandId: string) {
+      await step('unarchiveWallet', [id, version, commandId]);
+      return command('unarchiveWallet', commandId, () => {
+        const wallet = lockedWallet(id, version);
+        if (!wallet.archived) throw stateProblem('archived', 'errors.not_archived');
+        wallets.set(id, { ...wallet, archived: false, version: wallet.version + 1 });
+        return ack(commandId, id, wallet.version + 1, 'unarchived');
+      });
+    },
+    async createCategory(input: CreateCategoryRequest, commandId: string) {
+      await step('createCategory', [input, commandId]);
+      return command('createCategory', commandId, () => {
+        const existing = categories.get(input.id);
+        if (existing) throw conflict(existing);
+        categories.set(input.id, { id: input.id, type: input.type, builtin_key: null, label: input.label, color: input.color ?? null, archived: false, version: 1 });
+        return ack(commandId, input.id, 1, 'created');
+      });
+    },
+    async updateCategory(id: string, version: number, changes: UpdateCategoryRequest, commandId: string) {
+      await step('updateCategory', [id, version, changes, commandId]);
+      return command('updateCategory', commandId, () => {
+        const category = lockedCategory(id, version);
+        if (category.archived) throw stateProblem('archived', 'errors.category_archived');
+        if (changes.label === null && category.builtin_key === null) throw stateProblem('label', 'errors.custom_category_needs_label');
+        const updated = { ...category, ...changes, version: category.version + 1 };
+        categories.set(id, updated);
+        return ack(commandId, id, updated.version, 'updated');
+      });
+    },
+    async archiveCategory(id: string, version: number, commandId: string) {
+      await step('archiveCategory', [id, version, commandId]);
+      return command('archiveCategory', commandId, () => {
+        const category = lockedCategory(id, version);
+        if (category.archived) throw stateProblem('archived', 'errors.already_archived');
+        categories.set(id, { ...category, archived: true, version: category.version + 1 });
+        return ack(commandId, id, category.version + 1, 'archived');
+      });
+    },
+    async unarchiveCategory(id: string, version: number, commandId: string) {
+      await step('unarchiveCategory', [id, version, commandId]);
+      return command('unarchiveCategory', commandId, () => {
+        const category = lockedCategory(id, version);
+        if (!category.archived) throw stateProblem('archived', 'errors.not_archived');
+        categories.set(id, { ...category, archived: false, version: category.version + 1 });
+        return ack(commandId, id, category.version + 1, 'unarchived');
+      });
     },
     async commandStatus(ids) {
       await step('commandStatus', [ids]);
@@ -229,6 +364,8 @@ export function createFakeResources(seed: { wallets?: WalletSnapshot[]; records?
     },
     records,
     wallets,
+    categories,
+    budgets,
     newId: uuid,
   };
 }
