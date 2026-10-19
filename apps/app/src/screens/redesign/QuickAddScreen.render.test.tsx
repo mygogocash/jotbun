@@ -41,7 +41,6 @@ import { BUILTINS, createFakeResources, goldenSeed } from '@mobile/spend/v1/test
 import { DiaryLocked, DraftReferenceUnavailable } from '@mobile/storage/types';
 import type { OutboxCommand, PendingEntry } from '@mobile/storage/types';
 import { bunDark, bunLight } from '@mobile/theme/bunPalette';
-import { bunText } from '@mobile/theme/bunType';
 import { ThemePreferenceOverride, ThemeProvider } from '@mobile/theme/ThemeProvider';
 import { rgb } from '@mobile/ui/entryKitTestHarness';
 import SpendAddRoute from '../../../app/spend/add';
@@ -955,9 +954,10 @@ test.each(MATRIX)('speaks $locale in $mode, in palette colours', async ({ locale
   await open({ locale, mode });
   const page = screen.getByTestId('quick-add-screen');
   expect(page.style.backgroundColor).toEqual(rgb(colors.background));
-  const title = screen.getByRole('heading', { name: say('Add an entry') });
-  expect(title.style.color).toEqual(rgb(colors.ink));
-  expect(title.style.lineHeight).toBe(`${bunText('title', locale === 'th' ? 'thai' : 'latin').lineHeight}px`);
+  // The title is a heading for screen readers only; the form opens on the type switch.
+  expect(screen.getByRole('heading', { name: say('Add an entry') })).toBeTruthy();
+  const close = screen.getByRole('button', { name: say('Close') });
+  expect(close.style.borderColor).toEqual(rgb(colors.ink));
   expect(screen.getByRole('radio', { name: say('Expense') }).getAttribute('aria-checked')).toBe('true');
   expect(screen.getByRole('radio', { name: say('Income') })).toBeTruthy();
   const saveButton = screen.getByRole('button', { name: say('Save entry') });
@@ -990,4 +990,35 @@ test('the route opens Quick add only when the core redesign is switched on', asy
   mount(<SpendAddRoute />, fake.resources);
   expect(await screen.findByRole('textbox', { name: 'Amount' })).toBeTruthy();
   expect(screen.queryByRole('group', { name: 'Keypad' })).toBeNull();
+});
+
+// E2 (19 October 2026): on a 402 × 874 pt phone the keypad pushed Save and any
+// save problem below the fold. They now sit in a footer pinned under the
+// scrolling form, and the form opens on the type switch with Close beside it
+// (plan §6.1 has no title row); the title stays a heading for screen readers.
+test('Save and any save problem are pinned under the scrolling form, within thumb reach', async () => {
+  const fake = await open();
+  const scroll = screen.getByTestId('quick-add-scroll');
+  const footer = screen.getByTestId('quick-add-footer');
+  expect(within(footer).getByRole('button', { name: 'Save entry' })).toBeTruthy();
+  expect(within(scroll).queryByRole('button', { name: 'Save entry' })).toBeNull();
+  expect(within(scroll).getByRole('group', { name: 'Keypad' })).toBeTruthy();
+  expect(scroll.contains(footer)).toBe(false);
+  expect(scroll.compareDocumentPosition(footer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  fake.fail('createTransaction', 'network');
+  typeAmount('65');
+  save();
+  const message = await within(footer).findByText('Not confirmed yet. Your entry is kept; try again.');
+  expect(within(footer).getByRole('button', { name: 'Try again' })).toBeTruthy();
+  // Said the way Record says it: a bold alert.
+  expect(message.style.fontWeight).toBe('700');
+});
+
+test('the form opens on the type switch with Close beside it; the title is a heading for screen readers only', async () => {
+  await open();
+  expect(screen.getByRole('heading', { name: 'Add an entry' })).toBeTruthy();
+  expect(screen.queryByText('Add an entry')).toBeNull();
+  const top = screen.getByTestId('quick-add-top');
+  expect(within(top).getByRole('radiogroup', { name: 'Record type' })).toBeTruthy();
+  expect(within(top).getByRole('button', { name: 'Close' })).toBeTruthy();
 });

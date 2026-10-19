@@ -50,6 +50,7 @@ import { ReceiptRow, ReceiptSlip, ReceiptTotal } from '@mobile/ui/ReceiptSlip';
 import { UndoBar } from '@mobile/ui/UndoBar';
 import { saveProblem, useCommandKeys, useMoneyLocale } from '../v1/parts';
 import { StageHeader } from '@mobile/ui/StageHeader';
+import { ActionFooter, ActionRow, EntryPage } from './ActionFooter';
 import { LoadingBlock, Notice, copyHref, useDateLocale, useGoBack } from './HistoryParts';
 
 export type RecordScreenProps = {
@@ -314,6 +315,8 @@ export function RecordScreen({ id, mode = 'view', now }: RecordScreenProps) {
   const showBack = !editing;
 
   let body: ReactNode;
+  // While editing: the message and the actions, pinned under the scrolling form (ActionFooter.tsx).
+  let footer: ReactNode = null;
   if (draftCommand) {
     const detail = recordDetail({ kind: 'draft', command: draftCommand }, context(lookupsOf(diaryView.wallets, diaryView.categories)));
     body = (
@@ -389,16 +392,20 @@ export function RecordScreen({ id, mode = 'view', now }: RecordScreenProps) {
           <NoteField kind="note" value={editing.draft.note} editable={!locked} error={editing.errors.note} onChangeText={(note) => setDraft({ note })} />
           <NoteField kind="merchant" value={editing.draft.merchant} editable={!locked} error={editing.errors.merchant} onChangeText={(merchant) => setDraft({ merchant })} />
           <Keypad onKey={pressKey} disabled={locked || busy} />
+        </View>
+      );
+      footer = (
+        <ActionFooter testID="record-edit-footer">
           {editing.message ? <Notice tone="alert" message={editing.message} /> : null}
           {locked ? (
             <PillButton label={tc('Try again')} busy={busy} onPress={() => void submitEdit(editing)} />
           ) : (
-            <View style={{ gap: BUN_SPACE.sm }}>
-              <PillButton label={tc('Save changes')} busy={busy} onPress={() => void submitEdit(editing)} />
-              <PillButton kind="secondary" label={tc('Cancel')} disabled={busy} onPress={() => setEditing(null)} />
-            </View>
+            <ActionRow
+              secondary={<PillButton kind="secondary" label={tc('Cancel')} disabled={busy} onPress={() => setEditing(null)} />}
+              primary={<PillButton label={tc('Save changes')} busy={busy} onPress={() => void submitEdit(editing)} />}
+            />
           )}
-        </View>
+        </ActionFooter>
       );
     } else {
       body = (
@@ -423,8 +430,8 @@ export function RecordScreen({ id, mode = 'view', now }: RecordScreenProps) {
   }
 
   return (
-    <View testID="record-screen" style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView contentContainerStyle={{ paddingBottom: BUN_SPACE.xl, gap: BUN_SPACE.md }} keyboardShouldPersistTaps="handled">
+    <EntryPage testID="record-screen">
+      <ScrollView testID="record-scroll" style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: footer ? BUN_SPACE.sm : BUN_SPACE.xl, gap: BUN_SPACE.md }} keyboardShouldPersistTaps="handled">
         {/* The stage names the screen; Back is its own 44 pt button there, left out while editing (Cancel leaves the edit). */}
         <StageHeader title={editHeading ? tc('Edit entry') : tc('Entry')} back={showBack ? { onPress: goBack } : undefined} />
         <View style={{ paddingHorizontal: BUN_SPACE.md, gap: BUN_SPACE.md }}>{body}</View>
@@ -434,7 +441,8 @@ export function RecordScreen({ id, mode = 'view', now }: RecordScreenProps) {
           <UndoBar message={tc('Entry deleted')} onUndo={() => void restore(deleted)} />
         </View>
       ) : null}
-    </View>
+      {footer}
+    </EntryPage>
   );
 }
 
@@ -455,8 +463,8 @@ function AmountLine({ keypad }: { keypad: KeypadState }) {
   return (
     <View testID="edit-amount" {...POLITE_LIVE_REGION} accessible accessibilityLabel={tc('{label}, {value}', { label: tc('Amount'), value })} style={{ gap: BUN_SPACE.xxs }}>
       <BunText variant="caption" tone="muted">{tc('Amount')}</BunText>
-      {sum ? <BunText variant="label" tone="muted" style={{ fontVariant: ['tabular-nums'] }}>{display}</BunText> : null}
-      <BunText variant="hero" style={{ fontVariant: ['tabular-nums'] }}>{sum ? result ?? display : `฿${display}`}</BunText>
+      {sum || display.includes('.') ? <BunText variant="label" tone="muted" style={{ fontVariant: ['tabular-nums'] }}>{display}</BunText> : null}
+      <BunText variant="hero" style={{ fontVariant: ['tabular-nums'] }}>{result ?? (sum ? display : `฿${display}`)}</BunText>
     </View>
   );
 }

@@ -408,3 +408,37 @@ test.each(MATRIX)('reads in $locale, $mode: paper slip, translated rows, the lon
   const title = within(slip()).getByRole('heading');
   expect(title.style.lineHeight).toBe(leading('heading', locale));
 });
+
+// E2 (19 October 2026): the keypad pushed Save changes and its message below
+// the fold; they are pinned under the scrolling form while editing.
+test('while editing, the message and Save changes with Cancel are pinned under the scrolling form', async () => {
+  const fake = await editRent();
+  const footer = screen.getByTestId('record-edit-footer');
+  const scroll = screen.getByTestId('record-scroll');
+  expect(within(footer).getByRole('button', { name: 'Save changes' })).toBeTruthy();
+  expect(within(footer).getByRole('button', { name: 'Cancel' })).toBeTruthy();
+  expect(within(scroll).queryByRole('button', { name: 'Save changes' })).toBeNull();
+  expect(within(scroll).getByRole('group', { name: 'Keypad' })).toBeTruthy();
+  expect(scroll.contains(footer)).toBe(false);
+  press('Clear', '1', '2', '0', '0', '0');
+  fake.loseResponse('updateTransaction');
+  save();
+  expect(await within(footer).findByText(NOT_CONFIRMED)).toBeTruthy();
+  expect(within(footer).getByRole('button', { name: 'Try again' })).toBeTruthy();
+});
+
+test('the receipt view has no pinned footer', async () => {
+  mountRecord(RENT);
+  expect(await screen.findByLabelText('Amount, Expense ฿12,268.00')).toBeTruthy();
+  expect(screen.queryByTestId('record-edit-footer')).toBeNull();
+});
+
+test('the amount being edited shows exactly, as Quick add does, with what was typed above it', async () => {
+  await editRent();
+  const line = screen.getByTestId('edit-amount');
+  expect(within(line).getByText('฿12,268.00')).toBeTruthy();
+  press('Clear', '1', '2', 'Decimal point', '5');
+  expect(within(line).getByText('12.5')).toBeTruthy();
+  expect(within(line).getByText('฿12.50')).toBeTruthy();
+  expect(screen.getByLabelText('Amount, ฿12.50')).toBeTruthy();
+});

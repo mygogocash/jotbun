@@ -1353,3 +1353,25 @@ Built together with the kit polish above, in one change. These fix the screen-le
      - the same "Not confirmed yet" message is regular weight in Quick add but bold in Record;
      - Record edit shows "฿12,268" while the record shows "฿12,268.00";
      - the History type and category chip rows cut off mid-word at the edge, although they scroll sideways.
+
+## E2 follow-up: actions within reach (findings 1 and 4)
+
+- **Quick add:**
+  - **Footer:** Save, Try again or Done is pinned in a footer under the scrolling form (`ActionFooter.tsx`), with any save problem right above the action it is about.
+  - **Top row:** the form opens on the type switch with Close beside it, as plan §6.1 lays it out (it has no title row). "Add an entry" stays a heading for screen readers. This is a visible change for the owner to review at E2.
+  - **Spacing:** the gaps between groups go from 16 to 12 pt.
+  - **Height budget (402 × 874 pt):** 62 pt top inset, then the form from the type switch to the keypad's last row. That comes to about 759 pt, against a footer that starts at about 780 pt. The 56 pt keys stay; keeping them was a kit decision, pinned by a test.
+- **Record edit:**
+  - The message and the actions are pinned the same way, with Cancel and Save changes side by side.
+  - The amount shows exactly ("฿12,268.00", where it showed "฿12,268"), with what was typed above it when that has a decimal point, as Quick add does.
+- **One way to say a save problem:** Quick add now uses the same bold `Notice` alert as Record. It announces itself, so Quick add's own announcement of the message is gone.
+- **Keyboard:** both pages are a `KeyboardAvoidingView` (iOS: padding), as `ProfileSubPageFrame` is, so the footer rises above the keyboard while merchant or note is typed. Not yet seen on device.
+- **RED → GREEN:**
+  - RED: four new tests failed, for the Quick add footer and its bold message, Close on the type-switch row with a screen-reader-only title, the Record edit footer, and the exact edit amount. The fifth new test, "the receipt view has no footer", is a guard.
+  - GREEN:
+    - Quick add 79 of 79;
+    - Record 32 of 32;
+    - catalogue, kit and screens 457 of 457;
+    - `tsc` clean.
+  - Two tests pinned the old layout and were updated: the locale/theme matrix's visible-title style, and the catalogue's page padding.
+  - Mutation: drawing the footer inside the scroll view fails the pinned-footer test.

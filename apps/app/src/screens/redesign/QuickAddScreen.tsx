@@ -23,6 +23,11 @@
 //
 // The bun appears only in the empty state and, at full intensity, as the
 // `cheer` pose in the saved moment at most once a day (quickAddCheer.ts).
+//
+// The form opens on the type switch with Close beside it, as plan §6.1 lays it
+// out (no title row; the title stays a heading for screen readers), and Save,
+// with any save problem above it, is pinned under the scrolling form
+// (ActionFooter.tsx), so on a 402 × 874 pt phone the keypad and Save both show.
 import { HISTORY_MAX_LIMIT, isUuid } from '@gogospend/contracts';
 import type { CategoryDto, Minor, TransactionDto, WalletDto, WalletSnapshot } from '@gogospend/contracts';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -71,6 +76,8 @@ import { TypeSwitch } from '@mobile/ui/TypeSwitch';
 import { WalletPicker } from '@mobile/ui/WalletPicker';
 import type { WalletChoice } from '@mobile/ui/WalletPicker';
 import { isOwnCreate, newId, ownCreateMatches, refusedBeforeProcessing, saveProblem, useCommandKeys, useLoad } from '../v1/parts';
+import { ActionFooter, EntryPage } from './ActionFooter';
+import { Notice } from './HistoryParts';
 import { readCheerDay, writeCheerDay } from './quickAddCheer';
 
 export type QuickAddScreenProps = {
@@ -186,20 +193,19 @@ export function QuickAddScreen({ now }: QuickAddScreenProps) {
 
   const balances = loaded.state === 'ready' ? availableBalances(loaded.data.wallets, diaryView.outbox) : null;
   return (
-    <Page title={title} onClose={leave}>
-      <EntryForm
-        key={source ? `copy:${source.id}` : 'new'}
-        wallets={references.wallets}
-        categories={references.categories}
-        balances={balances}
-        today={today}
-        records={recent.state === 'ready' ? recent.data.items : NO_RECORDS}
-        drafts={diaryView.pending}
-        source={source}
-        onDone={leave}
-        onAnother={loaded.refresh}
-      />
-    </Page>
+    <EntryForm
+      key={source ? `copy:${source.id}` : 'new'}
+      wallets={references.wallets}
+      categories={references.categories}
+      balances={balances}
+      today={today}
+      records={recent.state === 'ready' ? recent.data.items : NO_RECORDS}
+      drafts={diaryView.pending}
+      source={source}
+      title={title}
+      onDone={leave}
+      onAnother={loaded.refresh}
+    />
   );
 }
 
@@ -215,6 +221,8 @@ type EntryFormProps = {
   records: readonly TransactionDto[];
   drafts: readonly PendingEntry[];
   source: CopySource | null;
+  /** The page's title, said as its heading. */
+  title: string;
   onDone: () => void;
   /** Add another: the balances are read again in place, so move all is never stale after an online save. */
   onAnother?: () => void;
@@ -319,7 +327,7 @@ function keypadFor(source: CopySource | null): KeypadState {
   }
 }
 
-function EntryForm({ wallets, categories, balances, today, records, drafts, source, onDone, onAnother }: EntryFormProps) {
+function EntryForm({ wallets, categories, balances, today, records, drafts, source, title, onDone, onAnother }: EntryFormProps) {
   const resources = useSpendV1();
   const tc = useCopy();
   const keys = useCommandKeys();
@@ -354,7 +362,6 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
     );
     return () => { active = false; };
   }, [today]);
-  useAnnouncement(message);
 
   // A refusal while unconfirmed that forbids resending for now (a changed session, an update): frozen, and Try again waits.
   const [resendBlocked, setResendBlocked] = useState(false);
@@ -489,7 +496,11 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
   }
 
   if (status === 'saved' && saved) {
-    return <SavedMoment saved={saved} wallets={wallets} categories={categories} pop={pop} onAnother={addAnother} onDone={onDone} />;
+    return (
+      <Page title={title} onClose={onDone}>
+        <SavedMoment saved={saved} wallets={wallets} categories={categories} pop={pop} onAnother={addAnother} onDone={onDone} />
+      </Page>
+    );
   }
 
   const choices = walletChoices(wallets, balances);
@@ -510,136 +521,169 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
     edit((previous) => ({ ...previous, categoryByType: { ...previous.categoryByType, [type]: id } }));
   };
 
-  return (
-    <View style={{ gap: BUN_SPACE.md }}>
-      <TypeSwitch value={type} onChange={(next) => edit((previous) => ({ ...previous, type: next }))} disabled={locked} />
-      <AmountLine keypad={keypad} type={type} error={amountError} />
-      {type === 'transfer' ? (
-        <WalletPicker
-          mode="move"
-          wallets={choices}
-          fromId={current.fromWalletId}
-          toId={current.toWalletId}
-          onChangeFrom={setFrom}
-          onChangeTo={setTo}
-          onSwap={swap}
-          onMoveAll={(balance) => {
-            if (locked) return;
-            touch();
-            try {
-              setKeypad(keypadFromMinor(balance));
-            } catch {
-              setKeypad((previous) => ({ ...previous, problem: 'too_large' }));
-            }
-          }}
-          // WalletPicker states the same-wallet problem itself; say it once.
-          error={same ? null : moveError}
-          disabled={locked}
-        />
-      ) : (
-        <View style={{ gap: BUN_SPACE.xs }}>
-          <CategoryChips
-            ranked={typeCategories}
-            selectedId={current.categoryByType[type]}
-            onSelect={pickCategory}
-            onMore={() => {
-              if (locked) return;
-              touch();
-              setSheet('categories');
-            }}
-            disabled={locked}
-          />
-          {categoryError ? <FieldError message={categoryError} /> : null}
-        </View>
-      )}
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: BUN_SPACE.xs }}>
-        <DateChip value={current.occurredOn} today={today} earliest={earliest ?? undefined} onChange={(date) => edit((previous) => ({ ...previous, occurredOn: date }))} disabled={locked} />
-        {type !== 'transfer' ? (
-          <ChipButton
-            label={walletName ? tc('Wallet: {name}', { name: walletName }) : tc('Choose a wallet')}
-            text={walletName ?? tc('Choose a wallet')}
-            disabled={locked}
-            onPress={() => {
-              touch();
-              setSheet('wallet');
-            }}
-          />
-        ) : null}
-        <ChipButton label={tc('More details')} text={tc('More details')} expanded={details} disabled={locked} onPress={() => setDetails((open) => !open)} />
-      </View>
-      {dateError ? <FieldError message={dateError} /> : null}
-      {type !== 'transfer' && walletError ? <FieldError message={walletError} /> : null}
-      {details ? (
-        <View style={{ gap: BUN_SPACE.sm }}>
-          {/* NoteField states its own length and line rules; only the server's problems are passed in. */}
-          <NoteField kind="merchant" value={current.merchant} onChangeText={(text) => edit((previous) => ({ ...previous, merchant: text }))} error={serverErrors.merchant ?? null} editable={!locked} />
-          <NoteField kind="note" value={current.note} onChangeText={(text) => edit((previous) => ({ ...previous, note: text }))} error={serverErrors.note ?? null} editable={!locked} />
-        </View>
-      ) : null}
-      <Keypad onKey={onKey} disabled={locked} />
-      {message ? <SaveMessage message={message} /> : null}
+  const footer = (
+    <ActionFooter testID="quick-add-footer">
+      {message ? <Notice tone="alert" message={message} /> : null}
       {status === 'conflict' ? <PillButton label={tc('Done')} onPress={onDone} /> : null}
       {status === 'unconfirmed' ? <PillButton label={tc('Try again')} disabled={resendBlocked} onPress={() => void save()} /> : null}
       {status !== 'unconfirmed' && status !== 'conflict'
         ? <PillButton label={tc('Save entry')} busy={status === 'saving'} busyLabel={tc('Saving…')} disabled={status === 'blocked'} onPress={() => void save()} />
         : null}
-      <Sheet visible={sheet === 'categories'} onClose={() => setSheet(null)} title={tc('Choose a category')}>
-        {type !== 'transfer' ? (
-          <CategoryGrid
-            categories={typeCategories}
-            selectedId={current.categoryByType[type]}
+    </ActionFooter>
+  );
+
+  return (
+    <Page title={title} onClose={onDone} footer={footer}>
+      <View style={{ gap: BUN_SPACE.sm }}>
+        <View testID="quick-add-top" style={{ flexDirection: 'row', alignItems: 'center', gap: BUN_SPACE.sm }}>
+          <View style={{ flex: 1 }}>
+            <TypeSwitch value={type} onChange={(next) => edit((previous) => ({ ...previous, type: next }))} disabled={locked} />
+          </View>
+          <CloseButton onPress={onDone} />
+        </View>
+        <AmountLine keypad={keypad} type={type} error={amountError} />
+        {type === 'transfer' ? (
+          <WalletPicker
+            mode="move"
+            wallets={choices}
+            fromId={current.fromWalletId}
+            toId={current.toWalletId}
+            onChangeFrom={setFrom}
+            onChangeTo={setTo}
+            onSwap={swap}
+            onMoveAll={(balance) => {
+              if (locked) return;
+              touch();
+              try {
+                setKeypad(keypadFromMinor(balance));
+              } catch {
+                setKeypad((previous) => ({ ...previous, problem: 'too_large' }));
+              }
+            }}
+            // WalletPicker states the same-wallet problem itself; say it once.
+            error={same ? null : moveError}
+            disabled={locked}
+          />
+        ) : (
+          <View style={{ gap: BUN_SPACE.xs }}>
+            <CategoryChips
+              ranked={typeCategories}
+              selectedId={current.categoryByType[type]}
+              onSelect={pickCategory}
+              onMore={() => {
+                if (locked) return;
+                touch();
+                setSheet('categories');
+              }}
+              disabled={locked}
+            />
+            {categoryError ? <FieldError message={categoryError} /> : null}
+          </View>
+        )}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: BUN_SPACE.xs }}>
+          <DateChip value={current.occurredOn} today={today} earliest={earliest ?? undefined} onChange={(date) => edit((previous) => ({ ...previous, occurredOn: date }))} disabled={locked} />
+          {type !== 'transfer' ? (
+            <ChipButton
+              label={walletName ? tc('Wallet: {name}', { name: walletName }) : tc('Choose a wallet')}
+              text={walletName ?? tc('Choose a wallet')}
+              disabled={locked}
+              onPress={() => {
+                touch();
+                setSheet('wallet');
+              }}
+            />
+          ) : null}
+          <ChipButton label={tc('More details')} text={tc('More details')} expanded={details} disabled={locked} onPress={() => setDetails((open) => !open)} />
+        </View>
+        {dateError ? <FieldError message={dateError} /> : null}
+        {type !== 'transfer' && walletError ? <FieldError message={walletError} /> : null}
+        {details ? (
+          <View style={{ gap: BUN_SPACE.sm }}>
+            {/* NoteField states its own length and line rules; only the server's problems are passed in. */}
+            <NoteField kind="merchant" value={current.merchant} onChangeText={(text) => edit((previous) => ({ ...previous, merchant: text }))} error={serverErrors.merchant ?? null} editable={!locked} />
+            <NoteField kind="note" value={current.note} onChangeText={(text) => edit((previous) => ({ ...previous, note: text }))} error={serverErrors.note ?? null} editable={!locked} />
+          </View>
+        ) : null}
+        <Keypad onKey={onKey} disabled={locked} />
+        <Sheet visible={sheet === 'categories'} onClose={() => setSheet(null)} title={tc('Choose a category')}>
+          {type !== 'transfer' ? (
+            <CategoryGrid
+              categories={typeCategories}
+              selectedId={current.categoryByType[type]}
+              onSelect={(id) => {
+                pickCategory(id);
+                setSheet(null);
+              }}
+            />
+          ) : null}
+        </Sheet>
+        <Sheet visible={sheet === 'wallet'} onClose={() => setSheet(null)} title={tc('Wallet')}>
+          <WalletPicker
+            mode="single"
+            wallets={choices}
+            selectedId={current.walletId}
             onSelect={(id) => {
-              pickCategory(id);
+              edit((previous) => ({ ...previous, walletId: id }));
               setSheet(null);
             }}
           />
-        ) : null}
-      </Sheet>
-      <Sheet visible={sheet === 'wallet'} onClose={() => setSheet(null)} title={tc('Wallet')}>
-        <WalletPicker
-          mode="single"
-          wallets={choices}
-          selectedId={current.walletId}
-          onSelect={(id) => {
-            edit((previous) => ({ ...previous, walletId: id }));
-            setSheet(null);
-          }}
-        />
-      </Sheet>
-    </View>
+        </Sheet>
+      </View>
+    </Page>
   );
 }
 
 // ---------------------------------------------------------------------------
 // Pieces
 
-/** The page: background, the title and Close. Quick add has no stack header. */
-function Page({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
-  const colors = useBunColors();
-  const tc = useCopy();
+/**
+ * The page: background, the title and Close (Quick add has no stack header),
+ * and the form's pinned footer when it has one. A form with a footer draws
+ * Close itself, beside the type switch, and its title is a heading for
+ * screen readers only.
+ */
+function Page({ title, onClose, footer, children }: { title: string; onClose: () => void; footer?: ReactNode; children: ReactNode }) {
   const insets = useSafeAreaInsets();
   return (
-    <ScrollView
-      testID="quick-add-screen"
-      style={{ flex: 1, backgroundColor: colors.background }}
-      contentContainerStyle={{ paddingTop: insets.top + BUN_SPACE.sm, paddingBottom: insets.bottom + BUN_SPACE.lg, paddingHorizontal: BUN_SPACE.md, gap: BUN_SPACE.md }}
-      keyboardShouldPersistTaps="handled"
-    >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: BUN_SPACE.sm }}>
-        <BunText variant="title" role="heading" accessibilityRole="header" style={{ flex: 1 }}>{title}</BunText>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={tc('Close')}
-          onPress={onClose}
-          style={{ minHeight: BUN_TOUCH, minWidth: BUN_TOUCH, borderRadius: BUN_RADIUS.pill, borderWidth: BUN_OUTLINE.control, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' }}
-        >
-          <View {...DECORATIVE}>
-            <BunText variant="heading">×</BunText>
+    <EntryPage testID="quick-add-screen">
+      <ScrollView
+        testID="quick-add-scroll"
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingTop: insets.top + BUN_SPACE.sm, paddingBottom: footer ? BUN_SPACE.sm : insets.bottom + BUN_SPACE.lg, paddingHorizontal: BUN_SPACE.md, gap: BUN_SPACE.md }}
+        keyboardShouldPersistTaps="handled"
+      >
+        {footer ? (
+          <View accessible accessibilityRole="header" role="heading" accessibilityLabel={title} style={SCREEN_READER_ONLY} />
+        ) : (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: BUN_SPACE.sm }}>
+            <BunText variant="title" role="heading" accessibilityRole="header" style={{ flex: 1 }}>{title}</BunText>
+            <CloseButton onPress={onClose} />
           </View>
-        </Pressable>
+        )}
+        {children}
+      </ScrollView>
+      {footer}
+    </EntryPage>
+  );
+}
+
+/** Takes no room and draws nothing, but a screen reader still finds it. */
+const SCREEN_READER_ONLY = { position: 'absolute', top: 0, left: 0, width: 1, height: 1, overflow: 'hidden' } as const;
+
+function CloseButton({ onPress }: { onPress: () => void }) {
+  const colors = useBunColors();
+  const tc = useCopy();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={tc('Close')}
+      onPress={onPress}
+      style={{ minHeight: BUN_TOUCH, minWidth: BUN_TOUCH, borderRadius: BUN_RADIUS.pill, borderWidth: BUN_OUTLINE.control, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' }}
+    >
+      <View {...DECORATIVE}>
+        <BunText variant="heading">×</BunText>
       </View>
-      {children}
-    </ScrollView>
+    </Pressable>
   );
 }
 
@@ -682,16 +726,6 @@ function AmountLine({ keypad, type, error }: { keypad: KeypadState; type: EntryT
         {hero}
       </View>
       {error ? <FieldError message={error} /> : null}
-    </View>
-  );
-}
-
-/** A save problem for the whole entry, announced as an alert. */
-function SaveMessage({ message }: { message: string }) {
-  const colors = useBunColors();
-  return (
-    <View accessibilityRole="alert" style={{ borderRadius: BUN_RADIUS.card, borderWidth: BUN_OUTLINE.card, borderColor: colors.ink, backgroundColor: colors.card, padding: BUN_SPACE.md }}>
-      <BunText>{message}</BunText>
     </View>
   );
 }

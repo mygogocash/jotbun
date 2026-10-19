@@ -514,9 +514,11 @@ test('screen sections draw the real screens on today pinned to the fixtures, edg
   expect(CATALOGUE_NOW.toISOString()).toBe('2026-09-29T03:00:00.000Z');
   // The screen fills the body: no padded catalogue scroll view around it.
   expect(body.style.flexGrow).toBe('1');
-  // The header covers the status bar, so the screen pads by no top inset (12 pt is its own spacing), only the bottom one.
-  const page = within(body).getByTestId('quick-add-screen').firstElementChild as HTMLElement;
-  expect([page.style.paddingTop, page.style.paddingBottom]).toEqual(['12px', `${34 + 24}px`]);
+  // The header covers the status bar, so the screen pads by no top inset (12 pt is its own spacing); the bottom
+  // inset is the pinned footer's, under Save.
+  const page = within(body).getByTestId('quick-add-scroll').firstElementChild as HTMLElement;
+  expect([page.style.paddingTop, page.style.paddingBottom]).toEqual(['12px', '12px']);
+  expect(within(body).getByTestId('quick-add-footer').style.paddingBottom).toBe(`${34 + 8}px`);
   cleanup();
   await open({ section: 'home-ready', theme: 'light', locale: 'en' });
   expect(within(screen.getByTestId('catalogue-section-home-ready')).getByText('Yesterday')).toBeTruthy();
