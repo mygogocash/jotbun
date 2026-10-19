@@ -29,11 +29,13 @@ function textScale(fontScale: number) {
   vi.spyOn(Dimensions, 'get').mockImplementation((dimension) => ({ ...real(dimension), fontScale }));
 }
 
-test('the type switch stacks its three choices at large text', () => {
-  for (const [scale, direction] of [[1, 'row'], [AX5, 'column']] as const) {
+test('the type switch stacks its three choices at large text, in a card outline instead of a pill', () => {
+  // A pill's radius is half the box's height: on a stack it would round the ends and the choices would poke out.
+  for (const [scale, direction, radius] of [[1, 'row', '999px'], [AX5, 'column', '16px']] as const) {
     textScale(scale);
     mountKit(<TypeSwitch value="expense" onChange={() => undefined} />);
-    expect([scale, screen.getByRole('radiogroup', { name: 'Record type' }).style.flexDirection]).toEqual([scale, direction]);
+    const group = screen.getByRole('radiogroup', { name: 'Record type' });
+    expect([scale, group.style.flexDirection, group.style.borderTopLeftRadius || group.style.borderRadius]).toEqual([scale, direction, radius]);
     cleanup();
     vi.restoreAllMocks();
   }

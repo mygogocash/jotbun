@@ -3,7 +3,10 @@
 // what this checks is what they would announce:
 // - every control (button, radio, checkbox, switch, link, tab, field, image) has a name to speak;
 // - nothing hidden from screen readers can still take focus;
-// - every screen has a heading of its own, so the rotor's headings reach it.
+// - every screen has a heading of its own, so the rotor's headings reach it;
+// - every open sheet or dialog has a name, and the same checks hold inside it.
+//   A sheet is a Modal, which the web draws outside the section, so dialogs are
+//   looked for in the whole document.
 // It does not replace a pass on a device; it keeps the tree honest between them.
 import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeAll, expect, test, vi } from 'vitest';
@@ -59,6 +62,12 @@ test.each(CATALOGUE_SECTIONS.map((section) => [section.id, section] as const))('
     expect(unnamed(body), `${id} ${locale}`).toEqual([]);
     expect(hiddenButFocusable(body), `${id} ${locale}`).toEqual([]);
     if (section.layout === 'screen') expect(within(body).queryAllByRole('heading').length, `${id} ${locale}: a heading of its own`).toBeGreaterThan(0);
+    for (const dialog of [...document.querySelectorAll<HTMLElement>('[role="dialog"]')].filter((element) => !body.contains(element))) {
+      const name = dialog.getAttribute('aria-label') ?? '';
+      expect(name.trim(), `${id} ${locale}: a dialog with a name`).not.toBe('');
+      expect(unnamed(dialog), `${id} ${locale}: dialog ${name}`).toEqual([]);
+      expect(hiddenButFocusable(dialog), `${id} ${locale}: dialog ${name}`).toEqual([]);
+    }
     view.unmount();
   }
 }, 60_000);

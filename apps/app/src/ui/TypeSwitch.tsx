@@ -38,7 +38,8 @@ export function TypeSwitch({ value, onChange, disabled = false }: TypeSwitchProp
         flexDirection: large ? 'column' : 'row',
         borderColor: colors.ink,
         borderWidth: BUN_OUTLINE.control,
-        borderRadius: BUN_RADIUS.pill,
+        // A stack in a pill would round its ends past the choices, so it takes a card's corners.
+        borderRadius: large ? BUN_RADIUS.card : BUN_RADIUS.pill,
         backgroundColor: colors.card,
         padding: BUN_SPACE.xxs,
         gap: BUN_SPACE.xxs,
