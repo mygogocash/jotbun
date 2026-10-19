@@ -1595,7 +1595,8 @@ Built together with the kit polish above, in one change. These fix the screen-le
     - the API build, export:web, `git diff --check` and `typecheck:routes`.
   - **test:render:** 1202 of 1203. The one failure, Reminders "off", passed alone three times out of three.
 - **Timing flakes:** three render tests have now failed once each under load and passed alone: History long-press, Quick add, and Reminders "off". The render suite now waits up to 4 s in `findBy…`/`waitFor` (`src/testing/renderSetup.ts`), instead of Testing Library's 1 s. Full render suite after the change: 1203 of 1203.
-- **Still needed before the import flag can turn on:** E2 checkpoint 5; decision 7 (the device draft at rest); the E1 R2 and quarantine proofs; the parser gate and a Node 25+ worker runtime; the import release checklist in `rollback.md`; and E4.
+- **Still needed before the import flag can turn on:** E2 checkpoint 5; the E1 R2 and quarantine proofs; the parser gate and a Node 25+ worker runtime; the import release checklist in `rollback.md`; and E4.
+  - ~~Decision 7 (the device draft at rest)~~ **Decided 19 October 2026 and done locally:** the review draft is in the encrypted diary (migration 2). With no diary open (the web, or a locked diary) it is kept for one visit only, and the screen says so.
 
 ## E2 checkpoints 2–5: simulator captures (19 October 2026)
 

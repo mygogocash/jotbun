@@ -168,7 +168,7 @@ Local items 1–3 from the prior handover are **done**, and so are the follow-up
 ### 1. Smaller follow-ups (local; no provider)
 
 - ~~**Rollback floor / client versions:** raise them at the import release step~~ **Checklist written** ([`rollback.md`, Import release checklist](../operations/rollback.md#import-release-checklist)): preconditions, `MIN_CLIENT_VERSION_IOS`/`_ANDROID` to the first build with the unknown-entity skip plus the `attachment_id` validators, the rollback floor past P2c/P3 (`0017`, `0018`), then `IMPORT_UPLOADS_ENABLED`. **Not executed:** the env values are still `1.0.0` and uploads are still off; that happens only at the import release.
-- ~~**P3 drafts:** a device-backed store for the review draft~~ **Done locally** (`d16c528`): `importDraftStore.ts` / `deviceImportDraftStore.ts`, erased with the diary at explicit sign-out. **Open before the screen is routed (E2):** the draft is plain AsyncStorage, not encrypted and not backup-excluded (decision 7 below).
+- ~~**P3 drafts:** a device-backed store for the review draft~~ **Done locally** (`d16c528`): `importDraftStore.ts` / `deviceImportDraftStore.ts`, erased with the diary at explicit sign-out. Since decision 7 (below) the draft lives in the encrypted diary, not AsyncStorage.
 - **S4 screens:** reminder settings and needs-review, once visuals are approved.
 - **S2:** iOS backup-exclusion native step. Still open (needs authorization for a config plugin or package); a `TODO(S2)` marks the seam in `storage/deviceDiary.ts`.
 - **OCR:** if wanted, pin model assets and checksums at build time (needs dependencies).
@@ -195,7 +195,11 @@ Beta stays blocked without hosted evidence. The next product-critical gate is **
 4. ~~**Recreating `gogospend_v1`**~~ **Done** (empty: 0 accounts, 0 transactions, 0 wallets). The next `dev:v1` applies the current migrations.
 5. **E1–E4 authority** (next section) for every hosted, native and release step.
 6. **Visual approvals** (E2): M5 states, the S4 banner, sign-out confirmation, F5 login UX, the P4 export screen, the P5 privacy and deletion screen, the P3 import review and progress screens, receipt copy (P2c), and the S4 settings and needs-review screens.
-7. **Import draft at rest.** The device-backed import draft (`d16c528`) is in AsyncStorage: unencrypted, and not covered by iOS backup exclusion until S2's native step exists. Accept that for the review screen, or require the native exclusion first, or move the draft into the encrypted diary.
+7. ~~**Import draft at rest.**~~ **Decided 19 October 2026: the draft moves into the encrypted diary (done locally).**
+   - Diary migration 2 adds an `import_drafts` table. The import screen takes the open diary's draft store (`spendDiary.importDraftStore()`); nothing is written to AsyncStorage any more.
+   - With no diary open (the web, or a locked diary), the import is kept in memory for this visit only, and the screen says so.
+   - A plain-text draft left by an older build is erased before the diary draft's first use, and again at the sign-out erase.
+   - Like the rest of the diary, the file is still not backup-excluded until S2's native step; its key never leaves the device.
 
 ## 8. Waiting for authority
 
