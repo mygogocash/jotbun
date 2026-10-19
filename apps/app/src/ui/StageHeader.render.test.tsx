@@ -106,3 +106,17 @@ test('Thai titles get Thai leading', () => {
   expect(screen.getByText('เดือนนี้').style.lineHeight).toBe(`${bunText('title', 'thai').lineHeight}px`);
   expect(screen.getByText('ใช้ไป ฿12,480').style.lineHeight).toBe(`${bunText('body', 'thai').lineHeight}px`);
 });
+
+// R6 (decision D7: Settings from the header): an optional action at the top
+// right of the stage, on the same row as Back.
+test('an optional action sits at the top of the stage, before the title', () => {
+  mount(<StageHeader title="Home" back={{ onPress: () => undefined }} action={<View testID="stage-action" />} />);
+  const action = screen.getByTestId('stage-action');
+  const title = screen.getByRole('heading', { name: 'Home' });
+  expect(action.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  // One top row: Back on the left, the action on the right.
+  expect(screen.getByRole('button', { name: 'Back' }).parentElement).toBe(action.parentElement);
+  cleanup();
+  mount(<StageHeader title="Home" />);
+  expect(screen.queryByTestId('stage-action')).toBeNull();
+});

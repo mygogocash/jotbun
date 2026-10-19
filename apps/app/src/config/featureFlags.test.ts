@@ -48,3 +48,11 @@ test('insights is opt-in until approved', () => {
   assert.equal(isRedesignEnabled('insights', 'insights'), true);
   assert.equal(isRedesignEnabled('insights', 'all'), true);
 });
+
+// R6: first run, sign-in, Settings and privacy are built behind their own area until E2 checkpoint 4.
+test('account is opt-in until approved', () => {
+  assert.equal(isRedesignEnabled('account', undefined), false);
+  assert.equal(isRedesignEnabled('account', 'insights'), false);
+  assert.equal(isRedesignEnabled('account', 'account'), true);
+  assert.equal(isRedesignEnabled('account', 'all'), true);
+});

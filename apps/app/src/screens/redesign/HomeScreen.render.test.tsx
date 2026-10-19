@@ -768,3 +768,21 @@ test('with Planning on, Home opens Budget and Wallets', async () => {
     vi.unstubAllEnvs();
   }
 });
+
+// R6 (behind the `account` area until E2 checkpoint 4): Settings from the header (decision D7).
+test('with Account on, Home has Settings in its header', async () => {
+  vi.stubEnv('EXPO_PUBLIC_REDESIGN', 'account');
+  try {
+    mountHome(createFakeResources(goldenSeed()).resources);
+    const settings = await screen.findByRole('button', { name: 'Settings' });
+    expect(within(screen.getByTestId('stage-header')).getByRole('button', { name: 'Settings' })).toBe(settings);
+    fireEvent.click(settings);
+    expect(router.push).toHaveBeenLastCalledWith('/settings');
+  } finally {
+    vi.unstubAllEnvs();
+  }
+  cleanup();
+  mountHome(createFakeResources(goldenSeed()).resources);
+  await screen.findByRole('heading', { name: 'September 2026' });
+  expect(screen.queryByRole('button', { name: 'Settings' })).toBeNull();
+});

@@ -1510,3 +1510,17 @@ Built together with the kit polish above, in one change. These fix the screen-le
 - **Tests:**
   - RED: the Insights tab layout test and the routes test (no route files).
   - GREEN: flags and catalogs 9 of 9; the redesign screens 211 of 211; `tsc` and `typecheck:routes` clean.
+
+## R6 groundwork: the account area, Settings from the header, and its routes
+
+- **Flag:** `EXPO_PUBLIC_REDESIGN=account` (or `all`) switches R6 on. It stays opt-in until E2 checkpoint 4.
+- **First run and sign-in:** `/` shows the redesigned onboarding and `/login` the redesigned sign-in under the area. Without it they are today's screens, unchanged. Real sign-in still waits for F5 and E1/E2.
+- **Settings:** `/settings` and `/settings/privacy` exist only under the area. They need a session: `app/settings/_layout.tsx` redirects to `/login`, and provides the device diary for sign-out.
+- **Header action (decision D7):**
+  - `StageHeader` gains an optional `action`, at the top right on Back's row.
+  - Home's header holds a Settings button (`account/SettingsLink.tsx`). It draws nothing with the area off.
+- **Copy:** R6 lives in `account/` folders, which the catalog guard skips until checkpoint 4.
+- **Tests:**
+  - RED: the flag, the header action, Home's Settings button and the routes (no files yet).
+  - The routes test mocks today's login frame, which pulls in native-only modules.
+  - GREEN: test:unit 437 of 437; test:render 575 of 575; `tsc` and `typecheck:routes` clean.

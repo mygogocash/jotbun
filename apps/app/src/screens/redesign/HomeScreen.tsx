@@ -70,6 +70,7 @@ import { SyncBanner, syncBannerLine } from '@mobile/ui/SyncBanner';
 import type { SyncBannerProps } from '@mobile/ui/SyncBanner';
 import { isOwnCreate, newId, refusedBeforeProcessing, saveProblem, useCommandKeys, useLoad, useMoneyLocale } from '../v1/parts';
 import { recordHref } from './HistoryParts';
+import { SettingsLink } from './account/SettingsLink';
 import { PlanningLink } from './planning/PlanningLinks';
 
 type Tc = ReturnType<typeof useCopy>;
@@ -702,7 +703,7 @@ export function HomeScreen({ now }: { now?: Date }) {
   return (
     <Page
       header={(
-        <StageHeader title={monthLabel(model.month, activeLocale)} bun={stageBun ? <StageBun pose={stageBun} /> : undefined}>
+        <StageHeader title={monthLabel(model.month, activeLocale)} bun={stageBun ? <StageBun pose={stageBun} /> : undefined} action={<SettingsLink />}>
           <BunText testID="home-total" variant="heading" tone="ink" style={{ fontVariant: ['tabular-nums'] }}>{total}</BunText>
           {/* The month's confirmed money in and out, as the v1 Home showed them: quiet, and never with drafts added. */}
           <BunText variant="caption" tone="ink" accessibilityLabel={`${tc('Money in')} ${monthIn}, ${tc('Money out')} ${monthOut}`} style={{ fontVariant: ['tabular-nums'] }}>

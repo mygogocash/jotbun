@@ -36,6 +36,8 @@ export type StageHeaderProps = {
   month?: StageMonth;
   /** The bun, or any art. It manages its own accessibility (a decorative bun hides itself). */
   bun?: ReactNode;
+  /** A button at the top right, on Back's row (Settings from the header, decision D7). It brings its own name and 44 pt target. */
+  action?: ReactNode;
   /** Extra stage content under the subtitle, such as the month's total. Ink text only. */
   children?: ReactNode;
 };
@@ -86,7 +88,7 @@ function BackButton({ onPress, label }: StageBack) {
   );
 }
 
-export function StageHeader({ back, title, subtitle, month, bun, children }: StageHeaderProps) {
+export function StageHeader({ back, title, subtitle, month, bun, action, children }: StageHeaderProps) {
   const colors = useBunColors();
   const insets = useSafeAreaInsets();
   return (
@@ -102,7 +104,12 @@ export function StageHeader({ back, title, subtitle, month, bun, children }: Sta
         gap: BUN_SPACE.sm,
       }}
     >
-      {back ? <BackButton {...back} /> : null}
+      {back || action ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: BUN_SPACE.sm }}>
+          {back ? <BackButton {...back} /> : <View />}
+          {action ?? null}
+        </View>
+      ) : null}
       {month ? <MonthSwitcher {...month} /> : null}
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: BUN_SPACE.sm }}>
         <View style={{ flex: 1, gap: BUN_SPACE.xxs }}>
