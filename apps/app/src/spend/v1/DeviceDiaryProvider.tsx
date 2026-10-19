@@ -18,7 +18,7 @@ import type { AccountDatabase } from '@mobile/storage/accountDatabase';
 import { createDeviceAccountDatabase } from '@mobile/storage/deviceDiary';
 import { createDeviceSync } from '@mobile/sync/deviceSync';
 import { createDiarySessionResolver } from './diarySession';
-import { eraseLegacyImportDraft } from './deviceImportDraftStore';
+import { eraseAllLegacyImportDrafts, eraseLegacyImportDraft } from './deviceImportDraftStore';
 import { createKnownAccount } from './knownAccount';
 import { V1_COMMAND_SCHEMA } from './resources';
 import { SpendDiaryProvider } from './SpendDiaryContext';
@@ -65,7 +65,8 @@ function createDeviceDiary(): { diary: SpendDiary; refresh: () => Promise<void>;
     open: (accountId, epoch) => database.open(accountId, epoch),
     discard: (accountId) => database.discard(accountId),
     eraseWithDiary: eraseWithDiary,
-    eraseLegacyImportDraft,
+    // Every account's leftover, not just this one's: no plain-text draft outlives the first diary draft.
+    eraseLegacyImportDraft: () => eraseAllLegacyImportDrafts(),
     session: resolver.current,
     now: () => Date.now(),
     newId: () => Crypto.randomUUID(),
@@ -82,26 +83,69 @@ function createDeviceDiary(): { diary: SpendDiary; refresh: () => Promise<void>;
   };
 }
 
+type DeviceDiary = ReturnType<typeof createDeviceDiary>;
+
+/** Syncs on launch, foreground, session change; stops on background. Returns the detach. */
+function attach(device: DeviceDiary): () => void {
+  void device.refresh().then(() => {
+    // Launched without coming to the foreground (e.g. a background start): no timer.
+    if (AppState.currentState !== 'active') device.diary.background();
+  });
+  const unsubscribe = subscribeSession(() => void device.refresh());
+  const appState = AppState.addEventListener('change', (state) => {
+    if (state === 'active') {
+      // Re-check the session (an offline launch verifies its account now), then sync.
+      void device.refresh().then(() => device.diary.foreground());
+    } else device.diary.background();
+  });
+  return () => {
+    unsubscribe();
+    appState.remove();
+  };
+}
+
+// One device diary for the app. The spend and Settings route groups are
+// mounted together whenever Settings sits on top of a spend screen; two
+// diaries over the one database would each sync it, and the first to unmount
+// would lock the store the other still used. Each provider takes a share; the
+// diary closes a tick after the last share goes, so a provider that unmounts
+// and one that mounts in the same commit keep the same diary.
+let shared: { device: DeviceDiary; users: number; detach: (() => void) | null } | null = null;
+
+function sharedDeviceDiary(): DeviceDiary {
+  shared ??= { device: createDeviceDiary(), users: 0, detach: null };
+  return shared.device;
+}
+
+/** Takes a share of `device`; null when it was already closed (ask for the current one). */
+function retain(device: DeviceDiary): (() => void) | null {
+  const entry = shared;
+  if (!entry || entry.device !== device) return null;
+  entry.users += 1;
+  entry.detach ??= attach(device);
+  return () => {
+    entry.users -= 1;
+    if (entry.users > 0) return;
+    setTimeout(() => {
+      if (entry.users > 0) return;
+      if (shared === entry) shared = null;
+      entry.detach?.();
+      entry.detach = null;
+      void device.dispose();
+    }, 0);
+  };
+}
+
 export function DeviceDiaryProvider({ children }: { children: ReactNode }) {
-  const [device] = useState(() => (Platform.OS === 'ios' || Platform.OS === 'android' ? createDeviceDiary() : null));
+  const [device, setDevice] = useState(() => (Platform.OS === 'ios' || Platform.OS === 'android' ? sharedDeviceDiary() : null));
   useEffect(() => {
     if (!device) return undefined;
-    void device.refresh().then(() => {
-      // Launched without coming to the foreground (e.g. a background start): no timer.
-      if (AppState.currentState !== 'active') device.diary.background();
-    });
-    const unsubscribe = subscribeSession(() => void device.refresh());
-    const appState = AppState.addEventListener('change', (state) => {
-      if (state === 'active') {
-        // Re-check the session (an offline launch verifies its account now), then sync.
-        void device.refresh().then(() => device.diary.foreground());
-      } else device.diary.background();
-    });
-    return () => {
-      unsubscribe();
-      appState.remove();
-      void device.dispose();
-    };
+    const release = retain(device);
+    if (!release) {
+      setDevice(sharedDeviceDiary());
+      return undefined;
+    }
+    return release;
   }, [device]);
   return <SpendDiaryProvider diary={device?.diary ?? null}>{children}</SpendDiaryProvider>;
 }
