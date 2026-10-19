@@ -1086,5 +1086,6 @@
   "redesignNameWasnTArchivedItsBalanceIs": "ยังไม่ได้เก็บ {name} ถาวร: ยอดคงเหลือไม่ใช่ {zero} แล้ว",
   "redesignNameWonTShowInQuickAdd": "{name} จะไม่แสดงในหน้าเพิ่มรายการอีก รายการที่ผ่านมายังใช้หมวดหมู่นี้อยู่ และคุณนำกลับมาใช้ได้ที่นี่ทุกเมื่อ",
   "redesignRowsRowsToCheckSelectedChosen": "มี {rows} แถวให้ตรวจ เลือกแล้ว {selected} แถว",
-  "redesignName": "→ {name}"
+  "redesignName": "→ {name}",
+  "redesignCouldnTReachJotbunImportNeedsAOpen": "เชื่อมต่อ Jotbun ไม่ได้ การนำเข้าต้องใช้อินเทอร์เน็ต การนำเข้านี้เก็บไว้เฉพาะตอนที่หน้านี้เปิดอยู่"
 }

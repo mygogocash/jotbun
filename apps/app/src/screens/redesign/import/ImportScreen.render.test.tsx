@@ -33,6 +33,7 @@ import type { BunIntensity } from '@mobile/mascot/bunIntensity';
 import { BUN_INTENSITY_STORAGE_KEY } from '@mobile/mascot/bunIntensityStorage';
 import { installBrowserStorage } from '@mobile/mascot/mascotTestHarness';
 import { createFakeDiary } from '@mobile/spend/v1/testing/fakeDiary';
+import { DiaryLocked } from '@mobile/storage/types';
 import { BUN_TEXT_PAIRS } from '@mobile/theme/bunPalette';
 import type { BunColors } from '@mobile/theme/bunPalette';
 import { contrastRatio } from '@mobile/theme/contrast';
@@ -585,7 +586,8 @@ test("with no open diary (the web, or a locked one) the app's own ports keep the
     mountScreen(<ImportScreen now={NOW} />, { resources: fixture.fake.resources, diary });
     const expectations = await screen.findByRole('dialog', { name: 'What import does' });
     expect(within(expectations).getByText(NOT_KEPT)).toBeTruthy();
-    expect(within(screen.getByTestId('import-start')).getByText(NOT_KEPT)).toBeTruthy();
+    // The page says so too, above its content (every page does while the import is kept for this visit only).
+    expect(within(screen.getByTestId('import-screen')).getByText(NOT_KEPT)).toBeTruthy();
     expect(screen.queryByTestId('import-offline')).toBeNull();
     cleanup();
   }
@@ -599,6 +601,45 @@ test('with no durable draft the journey still runs, kept in memory: leaving and 
   mount({}, fixture);
   await screen.findByRole('dialog', { name: 'What import does' });
   expect(screen.queryByRole('heading', { name: 'Pick up where you left off?' })).toBeNull();
+});
+
+test('a diary that locks mid-visit: the import goes on for this visit, and every page says so', async () => {
+  const fixture = importFixture();
+  const journey = await keepReviewDraft(fixture);
+  const device = createFakeDiary();
+  await device.drafts.save(journey);
+  mountScreen(<ImportScreen now={NOW} />, { resources: fixture.fake.resources, diary: device.diary });
+  await screen.findByRole('heading', { name: 'Pick up where you left off?' });
+  click('Continue');
+  await screen.findByTestId('import-labels');
+  click('Next: check rows');
+  await screen.findByTestId('import-rows');
+  expect(screen.queryByTestId('import-visit-only')).toBeNull();
+  // The diary locks (signed out elsewhere, or a new session): saves into it now fail.
+  vi.spyOn(device.drafts, 'save').mockRejectedValue(new DiaryLocked('locked'));
+  click('Select all');
+  const note = await screen.findByTestId('import-visit-only');
+  expect(within(note).getByText(NOT_KEPT)).toBeTruthy();
+  expect(screen.getByTestId('import-rows')).toBeTruthy();
+});
+
+test('opened before the diary was ready, the screen moves onto the diary once it is, if nothing has started', async () => {
+  const fixture = importFixture();
+  const device = createFakeDiary({ phase: 'opening' });
+  mountScreen(<ImportScreen now={NOW} />, { resources: fixture.fake.resources, diary: device.diary });
+  expect((await screen.findAllByTestId('import-visit-only')).length).toBeGreaterThan(0);
+  act(() => device.set({ phase: 'ready' }));
+  await waitFor(() => expect(screen.queryAllByTestId('import-visit-only')).toHaveLength(0));
+  await screen.findByRole('dialog', { name: 'What import does' });
+});
+
+test('offline with no diary, the notice says the import is kept only while the screen is open', async () => {
+  const fixture = mount({ noDiary: true });
+  await screen.findByRole('dialog', { name: 'What import does' });
+  fixture.server.script('preview', { kind: 'network_before' });
+  chooseFromSheet();
+  const notice = await screen.findByTestId('import-offline');
+  expect(within(notice).getByText("Couldn't reach Jotbun. Import needs a connection; your import is kept only while this screen is open.")).toBeTruthy();
 });
 
 test('the no-diary note is in Thai too', async () => {

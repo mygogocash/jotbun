@@ -16,7 +16,8 @@
 import { IMPORT_UPLOAD_MAX_BYTES, importFormatForContentType, importFormatForExtension, parseImportFileName } from '@gogospend/contracts';
 import type { ImportCandidate, Minor, TransactionType } from '@gogospend/contracts';
 
-import { REVIEW_FIELDS, editRow, mapCategory, mapWallet, markReviewed, reviewBlockers, rowView, selectRows } from '../../importReview.ts';
+import { DiaryLocked, StaleEpochError } from '../../../../storage/types.ts';
+import { REVIEW_FIELDS, editRow, mapCategory, mapWallet, markReviewed, memoryDraftStore, reviewBlockers, rowView, selectRows } from '../../importReview.ts';
 import type { ImportDraftStore, ImportJourney, ImportProblem, ReviewBlocker } from '../../importReview.ts';
 import type { ImportFile, ImportResources } from '../../imports.ts';
 import type { CopyLine } from '../shared.ts';
@@ -507,7 +508,7 @@ export type NoticeAction = 'retry' | 'reload' | 'without_receipt';
 export type ProblemNotice = { readonly text: CopyLine; readonly tone: 'alert' | 'status'; readonly action: NoticeAction | null };
 
 /** The notice for a journey problem, or null when the phase itself says it (uploads off, a refused upload, a failed or expired file). */
-export function problemNotice(problem: ImportProblem | null, phase: ImportPhase): ProblemNotice | null {
+export function problemNotice(problem: ImportProblem | null, phase: ImportPhase, visitOnly = false): ProblemNotice | null {
   if (!problem) return null;
   const alert = (text: string, action: NoticeAction | null = null): ProblemNotice => ({ text: { text }, tone: 'alert', action });
   switch (problem.kind) {
@@ -516,7 +517,10 @@ export function problemNotice(problem: ImportProblem | null, phase: ImportPhase)
       if (phase === 'upload_unconfirmed') return alert("Not confirmed yet. Try again sends the same file with the same request, so it's never uploaded twice.", 'retry');
       return alert('Not confirmed yet. Your review is kept; try again.', 'retry');
     case 'offline':
-      return { text: { text: "Couldn't reach Jotbun. Import needs a connection; your import is kept on this phone." }, tone: 'status', action: 'reload' };
+      // With no diary (the web, or a locked one) the import is kept only while the screen is open.
+      return visitOnly
+        ? { text: { text: "Couldn't reach Jotbun. Import needs a connection; your import is kept only while this screen is open." }, tone: 'status', action: 'reload' }
+        : { text: { text: "Couldn't reach Jotbun. Import needs a connection; your import is kept on this phone." }, tone: 'status', action: 'reload' };
     case 'review_changed':
       return alert('This import changed on another device. Reload it; your changes are kept.', 'reload');
     case 'selection_conflict':
@@ -605,4 +609,53 @@ export function fileNotices(journey: ImportJourney): RowFlag[] {
     if (words && !notices.some((notice) => notice.label.text === words)) notices.push({ key: issue.code, label: { text: words }, tone: 'info' });
   }
   return notices;
+}
+
+/**
+ * The diary's import draft, falling back to this visit's memory when the
+ * diary locks or its session moves on while the screen is open (decision 7
+ * review). The memory copy starts from the latest journey this store saw, and
+ * `onFallback` runs once so the screen can say the import is now kept only
+ * while it is open. Any other failure still reaches the caller.
+ */
+export function withVisitFallback(durable: ImportDraftStore, onFallback: () => void): ImportDraftStore {
+  let latest: ImportJourney | null = null;
+  let memory: ImportDraftStore | null = null;
+  const fallBack = (error: unknown): ImportDraftStore => {
+    if (!(error instanceof DiaryLocked || error instanceof StaleEpochError)) throw error;
+    if (!memory) {
+      memory = memoryDraftStore(latest);
+      onFallback();
+    }
+    return memory;
+  };
+  return {
+    async load() {
+      if (memory) return memory.load();
+      try {
+        latest = await durable.load();
+        return latest;
+      } catch (error) {
+        return fallBack(error).load();
+      }
+    },
+    async save(journey) {
+      latest = journey;
+      if (memory) return memory.save(journey);
+      try {
+        await durable.save(journey);
+      } catch (error) {
+        await fallBack(error).save(journey);
+      }
+    },
+    async clear() {
+      latest = null;
+      if (memory) return memory.clear();
+      try {
+        await durable.clear();
+      } catch (error) {
+        await fallBack(error).clear();
+      }
+    },
+  };
 }

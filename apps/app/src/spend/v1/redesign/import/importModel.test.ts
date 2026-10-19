@@ -14,6 +14,7 @@ import { confirmBatches, freezeSelection, mapCategory, mapWallet, memoryDraftSto
 import type { ImportDeps, ImportJourney, ImportProblem } from '../../importReview.ts';
 import type { ImportFile } from '../../imports.ts';
 import { JOB_ID, createFakeImportServer } from '../../testing/fakeImportServer.ts';
+import { DiaryLocked, StaleEpochError } from '../../../../storage/types.ts';
 import { untranslated } from '../testing/catalog.ts';
 import {
   FILE_ISSUE_WORDS,
@@ -38,6 +39,7 @@ import {
   importPhase,
   isResumable,
   labelsToMap,
+  withVisitFallback,
   leaveOutUnsaveable,
   markChecked,
   parseStages,
@@ -485,4 +487,47 @@ test('every flag, blocker, stage, summary, notice and file reason is copy in en.
   assert.deepEqual(notices.map((notice) => notice.label.text).sort(), [...new Set(Object.values(FILE_NOTICE_WORDS))].sort(), 'every file notice code is walked');
   add(notices.map((notice) => notice.label));
   assert.deepEqual(untranslated(texts.filter((text) => text !== '')), []);
+});
+
+
+// Decision 7 review: the diary can lock (or its session move on) while the
+// screen is open. The draft then goes on in memory for this visit, starting
+// from the latest journey, and the screen is told once so it can say so.
+test('a diary draft that locks mid-visit falls back to this visit\'s memory, from the latest journey, and says so once', async () => {
+  const durable = memoryDraftStore();
+  let failure: Error | null = null;
+  const diaryStore = {
+    load: () => (failure ? Promise.reject(failure) : durable.load()),
+    save: (journey: ImportJourney) => (failure ? Promise.reject(failure) : durable.save(journey)),
+    clear: () => (failure ? Promise.reject(failure) : durable.clear()),
+  };
+  for (const error of [new DiaryLocked('locked'), new StaleEpochError()]) {
+    failure = null;
+    await durable.clear();
+    let told = 0;
+    const store = withVisitFallback(diaryStore, () => { told += 1; });
+    const first = { ...newJourney(), stage: 'review' as const, jobId: JOB_ID };
+    const second = { ...first, selected: ['row-1'] };
+    await store.save(first);
+    assert.deepEqual(durable.current(), first);
+    failure = error;
+    await store.save(second);
+    assert.equal(told, 1);
+    assert.deepEqual(await store.load(), second);
+    await store.clear();
+    assert.equal(await store.load(), null);
+    assert.equal(told, 1, error.name);
+  }
+  // Any other failure is not a lock: it still reaches the caller.
+  failure = new Error('disk full');
+  await assert.rejects(withVisitFallback(diaryStore, () => undefined).save(newJourney()), /disk full/);
+});
+
+test('offline, the notice says where the import is kept: on this phone, or only while the screen is open', () => {
+  const kept = problemNotice({ kind: 'offline' }, 'review');
+  const visit = problemNotice({ kind: 'offline' }, 'review', true);
+  assert.match(kept?.text.text ?? '', /kept on this phone/);
+  assert.match(visit?.text.text ?? '', /kept only while this screen is open/);
+  assert.doesNotMatch(visit?.text.text ?? '', /on this phone/);
+  assert.deepEqual(untranslated([kept?.text.text ?? '', visit?.text.text ?? '']), []);
 });

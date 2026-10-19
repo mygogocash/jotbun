@@ -79,9 +79,10 @@ import {
   uploadRefusal,
 } from '@mobile/spend/v1/redesign/import/importModel';
 import type { ImportPhase, ImportPorts, ImportUi, PickProblem, ReviewFilter } from '@mobile/spend/v1/redesign/import/importModel';
+import { withVisitFallback } from '@mobile/spend/v1/redesign/import/importModel';
 import { classifyLoadProblem } from '@mobile/spend/v1/redesign/homeModel';
 import { say } from '@mobile/spend/v1/redesign/shared';
-import { useSpendDiary } from '@mobile/spend/v1/SpendDiaryContext';
+import { useDiaryView, useSpendDiary } from '@mobile/spend/v1/SpendDiaryContext';
 import { useSpendV1 } from '@mobile/spend/v1/SpendV1Context';
 import { categoryName, todayInBangkok } from '@mobile/spend/v1/viewModels';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
@@ -96,7 +97,7 @@ import { useLoad } from '../../v1/parts';
 import { ActionRow } from '../ActionFooter';
 import { HISTORY_ROUTE, LoadingBlock, useGoBack } from '../HistoryParts';
 import { createDeviceImportPorts } from './ImportDeviceParts';
-import { BoxBun, CountLine, ExpectationContent, ImportNotice, ImportPage, MoneyLine, PageHeading, ProgressCard, VisitOnlyNote, grouped } from './ImportParts';
+import { BoxBun, CountLine, ExpectationContent, ImportNotice, ImportPage, MoneyLine, PageHeading, ProgressCard, VisitOnlyContext, grouped } from './ImportParts';
 import { BulkSheet, LabelStep, MatchSheet, RowSheet, RowsStep, useRowWords } from './ImportReviewParts';
 import type { BulkKind, ImportRefs, MatchTarget } from './ImportReviewParts';
 
@@ -126,7 +127,17 @@ const hasLabels = (journey: ImportJourney) => {
   return labels.wallets.length + labels.expense.length + labels.income.length > 0;
 };
 
-export function ImportScreen({ ports: given, now }: ImportScreenProps) {
+export function ImportScreen(props: ImportScreenProps) {
+  // Whether this visit's import is kept only in memory; every page says so.
+  const [visitOnly, setVisitOnly] = useState(false);
+  return (
+    <VisitOnlyContext.Provider value={visitOnly}>
+      <ImportJourneyScreen {...props} visitOnly={visitOnly} setVisitOnly={setVisitOnly} />
+    </VisitOnlyContext.Provider>
+  );
+}
+
+function ImportJourneyScreen({ ports: given, now, visitOnly, setVisitOnly }: ImportScreenProps & { visitOnly: boolean; setVisitOnly: (next: boolean) => void }) {
   const diary = useSpendDiary();
   const [ports] = useState<ImportPorts>(() => given ?? createDeviceImportPorts(diary));
   const tc = useCopy();
@@ -153,8 +164,6 @@ export function ImportScreen({ ports: given, now }: ImportScreenProps) {
   const store = useRef<ImportDraftStore | null>(null);
   const [opening, setOpening] = useState(true);
   const [openFailed, setOpenFailed] = useState(false);
-  /** No diary is open (web, locked, opening): the draft lives in memory for this visit only. */
-  const [visitOnly, setVisitOnly] = useState(false);
   const [resumeOffered, setResumeOffered] = useState(false);
   const [picking, setPicking] = useState(false);
   const [running, setRunningState] = useState<Running>(null);
@@ -209,7 +218,8 @@ export function ImportScreen({ ports: given, now }: ImportScreenProps) {
     setOpenFailed(false);
     try {
       const durable = await ports.openDraftStore();
-      const opened = durable ?? memoryDraftStore();
+      // A diary that locks while the screen is open: the import goes on in memory, and the screen says so.
+      const opened = durable ? withVisitFallback(durable, () => { if (alive.current) setVisitOnly(true); }) : memoryDraftStore();
       const kept = await resumeImport({ store: opened });
       if (!alive.current) return;
       store.current = opened;
@@ -228,6 +238,15 @@ export function ImportScreen({ ports: given, now }: ImportScreenProps) {
     }
   }, [ports, show]);
   useEffect(() => { void open(); }, [open]);
+  // Opened while the diary was opening (a cold start, a deep link): once it is
+  // ready, and while nothing has started, open again on it.
+  const diaryPhase = useDiaryView().phase;
+  useEffect(() => {
+    if (!visitOnly || diaryPhase !== 'ready' || given) return;
+    const from = current.current;
+    if (from && from.stage !== 'idle') return;
+    void open();
+  }, [visitOnly, diaryPhase, given, open]);
 
   const ui: ImportUi = { opening: opening || openFailed, resumeOffered, picking, running, parseWaiting };
   const phase: ImportPhase = importPhase(journey, ui);
@@ -371,7 +390,7 @@ export function ImportScreen({ ports: given, now }: ImportScreenProps) {
 
   // A request whose outcome is unknown is said so even when the draft was kept before its problem was (a restart mid-request).
   const unknown = phase === 'upload_unconfirmed' || phase === 'unconfirmed';
-  const problem = journey ? problemNotice(journey.problem ?? (unknown ? { kind: 'unconfirmed' } : null), phase) : null;
+  const problem = journey ? problemNotice(journey.problem ?? (unknown ? { kind: 'unconfirmed' } : null), phase, visitOnly) : null;
   const problemAction = problem?.action
     ? {
         label: problem.action === 'without_receipt'
@@ -453,7 +472,6 @@ export function ImportScreen({ ports: given, now }: ImportScreenProps) {
           <BoxBun />
           <PageHeading>{tc('Bring in your records')}</PageHeading>
           <BunText>{tc('Import an export from another money app, or a photo of a receipt. You check every row before anything is saved.')}</BunText>
-          {visitOnly ? <VisitOnlyNote /> : null}
           {phase === 'picking' ? (
             <View {...POLITE_LIVE_REGION}>
               <LoadingBlock label={tc('Opening your files…')} />

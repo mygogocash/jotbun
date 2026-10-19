@@ -1086,5 +1086,6 @@
   "redesignNameWasnTArchivedItsBalanceIs": "{name} wasn't archived: its balance is no longer {zero}.",
   "redesignNameWonTShowInQuickAdd": "{name} won't show in Quick add any more. Past entries keep it, and you can unarchive it here any time.",
   "redesignRowsRowsToCheckSelectedChosen": "{rows} rows to check, {selected} chosen.",
-  "redesignName": "→ {name}"
+  "redesignName": "→ {name}",
+  "redesignCouldnTReachJotbunImportNeedsAOpen": "Couldn't reach Jotbun. Import needs a connection; your import is kept only while this screen is open."
 }

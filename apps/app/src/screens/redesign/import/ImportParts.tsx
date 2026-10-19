@@ -4,6 +4,7 @@
 // (src/ui), BunText and the useBunColors() tokens only. Copy goes through
 // tc() and is in the catalogs, with Thai, approved at E2 checkpoint 5.
 import type { Minor } from '@gogospend/contracts';
+import { createContext, useContext } from 'react';
 import type { ReactNode } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,9 +30,13 @@ import { Notice, useGoBack } from '../HistoryParts';
 /** "1,234": a count grouped by thousands, from its digits (never through floating point). */
 export const grouped = (count: number): string => String(count).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
+/** Whether this visit's import is kept only in memory (no diary open, or it locked): every page then says so. */
+export const VisitOnlyContext = createContext(false);
+
 /** The import screen's frame: the stage header with Back, the scrolling content and, when given, the pinned footer. */
 export function ImportPage({ footer, children }: { footer?: ReactNode; children: ReactNode }) {
   const tc = useCopy();
+  const visitOnly = useContext(VisitOnlyContext);
   const colors = useBunColors();
   const insets = useSafeAreaInsets();
   const goBack = useGoBack('/spend');
@@ -44,6 +49,7 @@ export function ImportPage({ footer, children }: { footer?: ReactNode; children:
         contentContainerStyle={{ padding: BUN_SPACE.md, gap: BUN_SPACE.md, paddingBottom: footer ? BUN_SPACE.md : insets.bottom + BUN_SPACE.lg }}
         keyboardShouldPersistTaps="handled"
       >
+        {visitOnly ? <VisitOnlyNote /> : null}
         {children}
       </ScrollView>
       {footer ? <ActionFooter testID="import-footer">{footer}</ActionFooter> : null}
