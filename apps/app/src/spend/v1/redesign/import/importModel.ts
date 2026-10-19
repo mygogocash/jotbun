@@ -30,13 +30,17 @@ export type PickedFile = { readonly ok: true; readonly file: ImportFile } | { re
 
 /**
  * Everything the import screen talks to. The app binds them to the device
- * (document picker, file system, AsyncStorage draft, the v1 transport); tests
- * and the catalogue bind them to fakes.
+ * (document picker, file system, the encrypted diary's draft, the v1
+ * transport); tests and the catalogue bind them to fakes.
  */
 export type ImportPorts = {
   readonly resources: ImportResources;
-  /** This account's draft store; rejects when the account can't be read (offline). */
-  readonly openDraftStore: () => Promise<ImportDraftStore>;
+  /**
+   * This account's draft store, kept inside its encrypted diary; null when no
+   * diary is open (web, locked, opening), and the screen then keeps the import
+   * in memory for this visit only. A rejection is offered Try again.
+   */
+  readonly openDraftStore: () => Promise<ImportDraftStore | null>;
   /** Opens the system file picker for a CSV, XLSX or image file. */
   readonly pickFile: () => Promise<PickedFile>;
   readonly newId: () => string;

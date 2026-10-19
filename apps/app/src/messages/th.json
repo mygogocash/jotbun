@@ -986,6 +986,7 @@
   "redesignThisFileIsOver12MBExport": "ไฟล์นี้เกิน 12 MB ส่งออกช่วงวันที่ที่สั้นลงแล้วลองอีกครั้ง",
   "redesignThisImportChangedOnAnotherDeviceReload": "การนำเข้านี้ถูกแก้ไขจากอุปกรณ์อื่น โหลดใหม่ได้เลย การแก้ไขของคุณยังอยู่",
   "redesignThisImportHasExpired": "การนำเข้านี้หมดอายุแล้ว",
+  "redesignThisImportIsKeptOnlyWhile": "การนำเข้านี้เก็บไว้เฉพาะตอนที่หน้านี้เปิดอยู่",
   "redesignThisImportSReviewIsRemovedFrom": "สิ่งที่ตรวจไว้ในการนำเข้านี้จะถูกลบออกจากเครื่องนี้ รายการที่บันทึกแล้วยังอยู่",
   "redesignThisMonthHasnTStartedYet": "เดือนนี้ยังไม่เริ่ม",
   "redesignThisMonthSBudget": "งบประมาณเดือนนี้",

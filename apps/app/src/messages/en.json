@@ -986,6 +986,7 @@
   "redesignThisFileIsOver12MBExport": "This file is over 12 MB. Export a shorter date range and try again.",
   "redesignThisImportChangedOnAnotherDeviceReload": "This import changed on another device. Reload it; your changes are kept.",
   "redesignThisImportHasExpired": "This import has expired",
+  "redesignThisImportIsKeptOnlyWhile": "This import is kept only while this screen is open.",
   "redesignThisImportSReviewIsRemovedFrom": "This import's review is removed from this phone. Records already saved stay saved.",
   "redesignThisMonthHasnTStartedYet": "This month hasn't started yet.",
   "redesignThisMonthSBudget": "This month's budget",

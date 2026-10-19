@@ -18,7 +18,7 @@ import type { AccountDatabase } from '@mobile/storage/accountDatabase';
 import { createDeviceAccountDatabase } from '@mobile/storage/deviceDiary';
 import { createDeviceSync } from '@mobile/sync/deviceSync';
 import { createDiarySessionResolver } from './diarySession';
-import { eraseDeviceImportDraft } from './deviceImportDraftStore';
+import { eraseLegacyImportDraft } from './deviceImportDraftStore';
 import { createKnownAccount } from './knownAccount';
 import { V1_COMMAND_SCHEMA } from './resources';
 import { SpendDiaryProvider } from './SpendDiaryContext';
@@ -42,13 +42,14 @@ const knownAccount = createKnownAccount(
 );
 
 /**
- * The explicit sign-out erase, with the diary: this account's import draft,
- * and the bun's device settings (its intensity and the day the Quick add
- * cheer last showed), so the next person starts from the defaults. A setting
- * that cannot be erased never stops the diary's erase. Exported for its test.
+ * The explicit sign-out erase, with the diary (which takes its own import
+ * draft): a plain-text import draft an older build left for this account, and
+ * the bun's device settings (its intensity and the day the Quick add cheer
+ * last showed), so the next person starts from the defaults. A setting that
+ * cannot be erased never stops the diary's erase. Exported for its test.
  */
 export async function eraseWithDiary(accountId: string): Promise<void> {
-  await eraseDeviceImportDraft(accountId);
+  await eraseLegacyImportDraft(accountId);
   await Promise.all([eraseStoredBunIntensity().catch(() => undefined), eraseCheerDay()]);
 }
 
@@ -64,6 +65,7 @@ function createDeviceDiary(): { diary: SpendDiary; refresh: () => Promise<void>;
     open: (accountId, epoch) => database.open(accountId, epoch),
     discard: (accountId) => database.discard(accountId),
     eraseWithDiary: eraseWithDiary,
+    eraseLegacyImportDraft,
     session: resolver.current,
     now: () => Date.now(),
     newId: () => Crypto.randomUUID(),

@@ -32,6 +32,7 @@ import { translateCopy } from '@mobile/i18n/messages';
 import type { BunIntensity } from '@mobile/mascot/bunIntensity';
 import { BUN_INTENSITY_STORAGE_KEY } from '@mobile/mascot/bunIntensityStorage';
 import { installBrowserStorage } from '@mobile/mascot/mascotTestHarness';
+import { createFakeDiary } from '@mobile/spend/v1/testing/fakeDiary';
 import { BUN_TEXT_PAIRS } from '@mobile/theme/bunPalette';
 import type { BunColors } from '@mobile/theme/bunPalette';
 import { contrastRatio } from '@mobile/theme/contrast';
@@ -551,6 +552,59 @@ test('offline: opening without a connection says so and tries again; a read that
   expect(screen.getByTestId('import-progress')).toBeTruthy();
   fireEvent.click(within(notice).getByRole('button', { name: 'Try again' }));
   await screen.findByTestId('import-labels');
+});
+
+// ---------------------------------------------------------------------------
+// The draft at rest (decision 7): inside the encrypted diary, or for this visit only
+
+const NOT_KEPT = 'This import is kept only while this screen is open.';
+/** Import draft keys in the browser's storage (where AsyncStorage writes on the web). */
+const plainDrafts = () => Array.from({ length: window.localStorage.length }, (_, i) => window.localStorage.key(i) ?? '').filter((key) => key.startsWith('gogospend.import-draft'));
+
+test("the app's own ports take the draft from the open diary: a kept draft is offered, and Start over removes it there", async () => {
+  const fixture = importFixture();
+  const journey = await keepReviewDraft(fixture);
+  const device = createFakeDiary();
+  await device.drafts.save(journey);
+  mountScreen(<ImportScreen now={NOW} />, { resources: fixture.fake.resources, diary: device.diary });
+  expect(await screen.findByRole('heading', { name: 'Pick up where you left off?' })).toBeTruthy();
+  expect(screen.getByText('6 rows to check, 3 chosen.')).toBeTruthy();
+  expect(screen.queryByText(NOT_KEPT)).toBeNull();
+  click('Start over');
+  const ask = await screen.findByRole('dialog', { name: 'Start over?' });
+  fireEvent.click(within(ask).getByRole('button', { name: 'Start over' }));
+  const sheetShown = await screen.findByRole('dialog', { name: 'What import does' });
+  expect(within(sheetShown).queryByText(NOT_KEPT)).toBeNull();
+  expect(device.drafts.current()).toBeNull();
+  expect(plainDrafts()).toEqual([]);
+});
+
+test("with no open diary (the web, or a locked one) the app's own ports keep the import for this visit only, and the screen says so", async () => {
+  for (const diary of [null, createFakeDiary({ phase: 'locked', lockReason: 'key_unavailable' }).diary]) {
+    const fixture = importFixture();
+    mountScreen(<ImportScreen now={NOW} />, { resources: fixture.fake.resources, diary });
+    const expectations = await screen.findByRole('dialog', { name: 'What import does' });
+    expect(within(expectations).getByText(NOT_KEPT)).toBeTruthy();
+    expect(within(screen.getByTestId('import-start')).getByText(NOT_KEPT)).toBeTruthy();
+    expect(screen.queryByTestId('import-offline')).toBeNull();
+    cleanup();
+  }
+  expect(plainDrafts()).toEqual([]);
+});
+
+test('with no durable draft the journey still runs, kept in memory: leaving and coming back starts over', async () => {
+  const fixture = await toLabels({ noDiary: true });
+  expect(fixture.store.current()).toBeNull();
+  cleanup();
+  mount({}, fixture);
+  await screen.findByRole('dialog', { name: 'What import does' });
+  expect(screen.queryByRole('heading', { name: 'Pick up where you left off?' })).toBeNull();
+});
+
+test('the no-diary note is in Thai too', async () => {
+  await openStart({ noDiary: true, locale: 'th' });
+  expect(within(sheet()).getByText(translateCopy(NOT_KEPT, 'th'))).toBeTruthy();
+  expect(translateCopy(NOT_KEPT, 'th')).not.toBe(NOT_KEPT);
 });
 
 // ---------------------------------------------------------------------------

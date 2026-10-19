@@ -22,8 +22,10 @@
 //      with staged progress, then the server's committed, remaining and
 //      conflicted counts. A batch whose answer is lost is resent as itself
 //      (same key and body), after a restart too, so nothing is saved twice.
-// A kept device draft is offered on reopening. Offline never blocks the
-// screen: the import is kept and Try again is offered.
+// A draft kept in the encrypted diary is offered on reopening. With no diary
+// open (the web, or a locked one) the import is kept in memory for this visit
+// only, and the screen says so. Offline never blocks the screen: the import
+// is kept and Try again is offered.
 import type { CategoryDto } from '@gogospend/contracts';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -38,6 +40,7 @@ import {
   freezeSelection,
   mapCategory,
   mapWallet,
+  memoryDraftStore,
   newJourney,
   receiptImage,
   reloadPreview,
@@ -78,6 +81,7 @@ import {
 import type { ImportPhase, ImportPorts, ImportUi, PickProblem, ReviewFilter } from '@mobile/spend/v1/redesign/import/importModel';
 import { classifyLoadProblem } from '@mobile/spend/v1/redesign/homeModel';
 import { say } from '@mobile/spend/v1/redesign/shared';
+import { useSpendDiary } from '@mobile/spend/v1/SpendDiaryContext';
 import { useSpendV1 } from '@mobile/spend/v1/SpendV1Context';
 import { categoryName, todayInBangkok } from '@mobile/spend/v1/viewModels';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
@@ -92,7 +96,7 @@ import { useLoad } from '../../v1/parts';
 import { ActionRow } from '../ActionFooter';
 import { HISTORY_ROUTE, LoadingBlock, useGoBack } from '../HistoryParts';
 import { createDeviceImportPorts } from './ImportDeviceParts';
-import { BoxBun, CountLine, ExpectationContent, ImportNotice, ImportPage, MoneyLine, PageHeading, ProgressCard, grouped } from './ImportParts';
+import { BoxBun, CountLine, ExpectationContent, ImportNotice, ImportPage, MoneyLine, PageHeading, ProgressCard, VisitOnlyNote, grouped } from './ImportParts';
 import { BulkSheet, LabelStep, MatchSheet, RowSheet, RowsStep, useRowWords } from './ImportReviewParts';
 import type { BulkKind, ImportRefs, MatchTarget } from './ImportReviewParts';
 
@@ -123,7 +127,8 @@ const hasLabels = (journey: ImportJourney) => {
 };
 
 export function ImportScreen({ ports: given, now }: ImportScreenProps) {
-  const [ports] = useState<ImportPorts>(() => given ?? createDeviceImportPorts());
+  const diary = useSpendDiary();
+  const [ports] = useState<ImportPorts>(() => given ?? createDeviceImportPorts(diary));
   const tc = useCopy();
   const router = useRouter();
   const goBack = useGoBack('/spend');
@@ -148,6 +153,8 @@ export function ImportScreen({ ports: given, now }: ImportScreenProps) {
   const store = useRef<ImportDraftStore | null>(null);
   const [opening, setOpening] = useState(true);
   const [openFailed, setOpenFailed] = useState(false);
+  /** No diary is open (web, locked, opening): the draft lives in memory for this visit only. */
+  const [visitOnly, setVisitOnly] = useState(false);
   const [resumeOffered, setResumeOffered] = useState(false);
   const [picking, setPicking] = useState(false);
   const [running, setRunningState] = useState<Running>(null);
@@ -201,10 +208,12 @@ export function ImportScreen({ ports: given, now }: ImportScreenProps) {
     setOpening(true);
     setOpenFailed(false);
     try {
-      const opened = await ports.openDraftStore();
+      const durable = await ports.openDraftStore();
+      const opened = durable ?? memoryDraftStore();
       const kept = await resumeImport({ store: opened });
       if (!alive.current) return;
       store.current = opened;
+      setVisitOnly(durable === null);
       if (isResumable(kept)) {
         show(kept);
         setResumeOffered(true);
@@ -391,6 +400,7 @@ export function ImportScreen({ ports: given, now }: ImportScreenProps) {
       journey={journey}
       refs={refs}
       today={today}
+      visitOnly={visitOnly}
       onClose={() => setSheet(null)}
       onChoose={() => void choose()}
       onStartOver={() => void startOver(true)}
@@ -443,6 +453,7 @@ export function ImportScreen({ ports: given, now }: ImportScreenProps) {
           <BoxBun />
           <PageHeading>{tc('Bring in your records')}</PageHeading>
           <BunText>{tc('Import an export from another money app, or a photo of a receipt. You check every row before anything is saved.')}</BunText>
+          {visitOnly ? <VisitOnlyNote /> : null}
           {phase === 'picking' ? (
             <View {...POLITE_LIVE_REGION}>
               <LoadingBlock label={tc('Opening your files…')} />
@@ -707,12 +718,13 @@ function ResultView({ journey, refs, today }: { journey: ImportJourney; refs: Im
 
 /** Every sheet the journey opens; at most one shows at a time. */
 function ImportSheets({
-  sheet, journey, refs, today, onClose, onChoose, onStartOver, edit, openBulk,
+  sheet, journey, refs, today, visitOnly, onClose, onChoose, onStartOver, edit, openBulk,
 }: {
   sheet: SheetState | null;
   journey: ImportJourney | null;
   refs: ImportRefs;
   today: string;
+  visitOnly: boolean;
   onClose: () => void;
   onChoose: () => void;
   onStartOver: () => void;
@@ -724,7 +736,7 @@ function ImportSheets({
   if (sheet.kind === 'expect') {
     return (
       <Sheet visible onClose={onClose} title={tc('What import does')}>
-        <ExpectationContent onChoose={onChoose} />
+        <ExpectationContent onChoose={onChoose} visitOnly={visitOnly} />
       </Sheet>
     );
   }
