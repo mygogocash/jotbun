@@ -339,6 +339,13 @@ test('review: rows are calm, with flags for what the file left unclear, never fi
   expect(disabled(within(footer()).getByRole('button', { name: 'Continue' }))).toBe(true);
 });
 
+test('review: the Show chips run out to the screen edge, past the 16 pt gutter, as History’s do', async () => {
+  await toRows();
+  const group = within(screen.getByTestId('import-rows')).getByRole('radiogroup', { name: 'Show' });
+  const row = within(group).getAllByRole('radio')[0].parentElement!.parentElement!;
+  expect([row.style.marginLeft, row.style.marginRight]).toEqual(['-16px', '-16px']);
+});
+
 test('review: choosing rows shows an exact running total, and the blockers in words', async () => {
   await toRows();
   click('Select all');

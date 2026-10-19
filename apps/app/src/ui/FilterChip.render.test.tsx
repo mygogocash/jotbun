@@ -64,3 +64,18 @@ test('a single chip can be used on its own', () => {
   mountKit(<FilterChip label="Cash" checked onPress={onPress} />);
   expect(screen.getByRole('radio', { name: 'Cash' }).getAttribute('aria-checked')).toBe('true');
 });
+
+test('with a bleed, the chip row runs out to the screen edge, so a chip that does not fit is cut there, not at the gutter', () => {
+  mountKit(<FilterChips label="Type" options={OPTIONS} value="all" onChange={() => undefined} bleed={16} />);
+  // The row (the scroll view) reaches past the page's 16 pt gutter on both sides,
+  // and its content starts 16 pt in, so at rest the first chip still lines up with the gutter.
+  const content = screen.getByRole('radio', { name: 'All' }).parentElement!;
+  const row = content.parentElement!;
+  expect([row.style.marginLeft, row.style.marginRight]).toEqual(['-16px', '-16px']);
+  expect([content.style.paddingLeft, content.style.paddingRight]).toEqual(['16px', '16px']);
+  cleanup();
+  // Without one, the row stays inside its parent, as before.
+  mountKit(<FilterChips label="Type" options={OPTIONS} value="all" onChange={() => undefined} />);
+  const plain = screen.getByRole('radio', { name: 'All' }).parentElement!.parentElement!;
+  expect([plain.style.marginLeft, plain.style.marginRight]).toEqual(['', '']);
+});

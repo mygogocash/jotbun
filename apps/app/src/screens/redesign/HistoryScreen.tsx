@@ -506,12 +506,12 @@ export function HistoryScreen({ now, initialMonth, onMonthChange }: HistoryScree
     <View style={{ paddingHorizontal: BUN_SPACE.md, gap: BUN_SPACE.md }}>
       {banner ? <SyncBanner {...banner} /> : null}
       <View style={{ gap: BUN_SPACE.sm }}>
-        <FilterChips label={tc('Type')} options={typeOptions} value={type ?? ALL} onChange={(next) => changeType(next === ALL ? undefined : next)} />
+        <FilterChips label={tc('Type')} bleed={BUN_SPACE.md} options={typeOptions} value={type ?? ALL} onChange={(next) => changeType(next === ALL ? undefined : next)} />
         {walletOptions.length > 1 ? (
-          <FilterChips label={tc('Wallet')} options={walletOptions} value={walletId ?? ALL} onChange={(next) => setWalletId(next === ALL ? undefined : next)} />
+          <FilterChips label={tc('Wallet')} bleed={BUN_SPACE.md} options={walletOptions} value={walletId ?? ALL} onChange={(next) => setWalletId(next === ALL ? undefined : next)} />
         ) : null}
         {type !== 'transfer' && categoryOptions.length > 1 ? (
-          <FilterChips label={tc('Category')} options={categoryOptions} value={categoryId ?? ALL} onChange={(next) => setCategoryId(next === ALL ? undefined : next)} />
+          <FilterChips label={tc('Category')} bleed={BUN_SPACE.md} options={categoryOptions} value={categoryId ?? ALL} onChange={(next) => setCategoryId(next === ALL ? undefined : next)} />
         ) : null}
       </View>
       {summary ? (

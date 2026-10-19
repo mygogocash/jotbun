@@ -437,6 +437,15 @@ test('wallet and category chips scope the month, with exact totals from the serv
   expect(fake.callsOf('history').at(-1)?.args[0]).toEqual({ from: '2026-09-01', through: '2026-09-30', type: 'transfer', sort: 'date_desc' });
 });
 
+test('each chip row runs out to the screen edge, past the 16 pt gutter, so a chip that does not fit is cut at the edge', async () => {
+  await golden();
+  for (const name of ['Type', 'Wallet', 'Category']) {
+    const first = within(screen.getByRole('radiogroup', { name })).getAllByRole('radio')[0];
+    const row = first.parentElement!.parentElement!;
+    expect([name, row.style.marginLeft, row.style.marginRight]).toEqual([name, '-16px', '-16px']);
+  }
+});
+
 // ---------------------------------------------------------------------------
 // Empty month, the bun, locales and modes
 

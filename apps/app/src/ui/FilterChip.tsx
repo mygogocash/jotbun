@@ -1,8 +1,10 @@
 // Filter chips (redesign R3, moved into the kit from History): one
 // single-choice filter as a row of chips in a named radio group. The chosen
 // chip is an ink pill with bold words, so the choice never rests on colour
-// alone. The row scrolls sideways when the chips do not fit. Every chip is at
-// least 44 pt tall.
+// alone. The row scrolls sideways when the chips do not fit; given the page's
+// gutter as `bleed`, it runs out to the screen edge, so a chip that does not
+// fit is cut at the edge instead of at the gutter. Every chip is at least
+// 44 pt tall.
 import { Pressable, ScrollView, View } from 'react-native';
 
 import { useBunColors } from '@mobile/theme/ThemeProvider';
@@ -50,14 +52,21 @@ export type FilterChipsProps<T extends string> = {
   readonly value: T;
   /** Called with a newly chosen value; choosing the chip already chosen changes nothing. */
   readonly onChange: (next: T) => void;
+  /** The page's side gutter: the row reaches past it to the screen edge, and the first chip still lines up with it. */
+  readonly bleed?: number;
 };
 
 /** One single-choice filter as a named radio group of chips. */
-export function FilterChips<T extends string>({ label, options, value, onChange }: FilterChipsProps<T>) {
+export function FilterChips<T extends string>({ label, options, value, onChange, bleed }: FilterChipsProps<T>) {
   return (
     <View role="radiogroup" accessibilityLabel={label} style={{ gap: BUN_SPACE.xxs }}>
       <BunText variant="caption" tone="muted" aria-hidden>{label}</BunText>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: BUN_SPACE.xs }}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={bleed ? { marginHorizontal: -bleed } : undefined}
+        contentContainerStyle={{ gap: BUN_SPACE.xs, paddingHorizontal: bleed }}
+      >
         {options.map((option) => {
           const checked = option.value === value;
           return (

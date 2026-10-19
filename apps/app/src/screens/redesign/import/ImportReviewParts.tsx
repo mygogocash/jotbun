@@ -343,7 +343,7 @@ export function RowsStep({
         <PillButton kind="secondary" label={tc('Select all')} onPress={onSelectAll} />
         <PillButton kind="secondary" label={tc('Clear')} disabled={selected === 0} onPress={onClear} />
       </View>
-      <FilterChips label={tc('Show')} options={options} value={filter} onChange={onFilter} />
+      <FilterChips label={tc('Show')} bleed={BUN_SPACE.md} options={options} value={filter} onChange={onFilter} />
       {selected > 0 ? (
         <OutlinedCard padding="sm">
           <BunText variant="label" style={{ fontWeight: '700' }}>
