@@ -44,6 +44,8 @@ vi.mock('@mobile/screens/redesign/account/OnboardingScreen', stub('OnboardingScr
 vi.mock('@mobile/screens/redesign/account/SignInScreen', stub('SignInScreen', 'redesigned sign-in'));
 vi.mock('@mobile/screens/redesign/account/SettingsScreen', stub('SettingsScreen', 'settings'));
 vi.mock('@mobile/screens/redesign/account/PrivacyScreen', stub('PrivacyScreen', 'privacy and data'));
+// The app's own export and deletion wiring loads the real transport; the route only hands it to the screen.
+vi.mock('@mobile/screens/redesign/account/privacyServices', () => ({ appPrivacyServices: () => ({ marker: 'app privacy services' }) }));
 
 const render = (ui: ReactElement) => renderRaw(<IntlProvider locale="en"><ThemeProvider>{ui}</ThemeProvider></IntlProvider>);
 

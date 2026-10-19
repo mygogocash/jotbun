@@ -163,6 +163,7 @@ function CatalogueHeader({ view, at, onView, onSection }: {
   };
   return (
     <View
+      testID="catalogue-header"
       style={{
         paddingTop: insets.top + BUN_SPACE.xs,
         paddingBottom: BUN_SPACE.sm,

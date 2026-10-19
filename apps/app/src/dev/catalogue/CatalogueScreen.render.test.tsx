@@ -494,8 +494,10 @@ test.each(EVERY_SECTION)('section %s renders without errors in light and dark, i
       const heading = screen.getByRole('heading', { name: title });
       expect(heading.style.lineHeight).toBe(`${bunText('heading', scriptOf(locale)).lineHeight}px`);
       expect(screen.getByTestId('catalogue').style.backgroundColor).toBe(rgba(paletteFor(theme).background));
-      screen.getByRole('radio', { name: theme === 'dark' ? 'Dark' : 'Light', checked: true });
-      screen.getByRole('radio', { name: LOCALE_NAME[locale], checked: true });
+      // The header's own choices (a screen such as Settings has radios of the same names).
+      const header = screen.getByTestId('catalogue-header');
+      within(header).getByRole('radio', { name: theme === 'dark' ? 'Dark' : 'Light', checked: true });
+      within(header).getByRole('radio', { name: LOCALE_NAME[locale], checked: true });
       SHOWS[id as (typeof REQUIRED)[number]]?.(body, locale);
       expect(errors, `${id} ${theme} ${locale}`).not.toHaveBeenCalled();
       errors.mockRestore();

@@ -46,15 +46,14 @@ import { ConfirmSheet } from '@mobile/ui/Sheet';
 import { StageHeader } from '@mobile/ui/StageHeader';
 import { StagedProgress } from '@mobile/ui/StagedProgress';
 import { Notice } from '../HistoryParts';
-import { appPrivacyServices } from './PrivacyParts';
 import type { PrivacyServices } from './PrivacyParts';
 import { PAGE_STYLE, Section, useBackTo } from './SettingsParts';
 
 type Tc = ReturnType<typeof useCopy>;
 
 export type PrivacyScreenProps = {
-  /** The export, deletion, re-authentication and sign-out services; the app's own unless given. */
-  services?: PrivacyServices;
+  /** The export, deletion, re-authentication and sign-out services (the route passes the app's own: privacyServices.ts). */
+  services: PrivacyServices;
   /** The clock "today" is read from (tests and the catalogue pin it). */
   now?: Date;
 };
@@ -425,11 +424,10 @@ function DeleteCard({ services }: { services: PrivacyServices }) {
 
 // ---------------------------------------------------------------------------
 
-export function PrivacyScreen({ services: given, now }: PrivacyScreenProps) {
+export function PrivacyScreen({ services, now }: PrivacyScreenProps) {
   const tc = useCopy();
   const colors = useBunColors();
   const back = useBackTo('/settings');
-  const [services] = useState(() => given ?? appPrivacyServices());
   return (
     <View testID="privacy-screen" style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: BUN_SPACE.xl }}>
