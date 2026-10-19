@@ -13,15 +13,19 @@
 // The every-section render test picks a new entry up by itself; say what it
 // must show in that test's SHOWS table.
 //
-// Screens still to come (R4 onwards: Budget, Insights, Import, Settings) get
-// a list of their own here, in the 'Screens' group.
+// Screens built behind an area awaiting its E2 checkpoint have their own list
+// here, in the 'Screens' group, in plan order: Planning (R4), Insights (R5) and
+// Account (R6). Import (R7) comes later.
 import type { ReactNode } from 'react';
 
 import { ENTRY_SECTIONS } from './entrySections';
 import { HISTORY_SECTIONS } from './historySections';
 import { HOME_SECTIONS } from './homeSections';
 import { KIT_SECTIONS } from './kitSections';
+import { INSIGHTS_SECTIONS } from './insights/insightsSections';
 import { MASCOT_SECTIONS } from './mascotSections';
+import { BUDGET_SECTIONS } from './planning/budgetSections';
+import { CATEGORY_SECTIONS } from './planning/categorySections';
 import { QUICK_ADD_SECTIONS } from './quickAddSections';
 import { RECORD_SECTIONS } from './recordSections';
 
@@ -47,9 +51,22 @@ export const SCREEN_SECTIONS: readonly CatalogueSection[] = [
   ...RECORD_SECTIONS,
 ];
 
+/** R4 Planning (behind `planning` until E2 checkpoint 2): Budget, Wallets, Categories. */
+export const PLANNING_SECTIONS: readonly CatalogueSection[] = [
+  ...BUDGET_SECTIONS,
+  ...CATEGORY_SECTIONS,
+];
+
+/** R5 Insights (behind `insights` until E2 checkpoint 3): the hub, a month's recap, reminders. */
+export const INSIGHTS_SCREEN_SECTIONS: readonly CatalogueSection[] = [
+  ...INSIGHTS_SECTIONS,
+];
+
 export const CATALOGUE_SECTIONS: readonly CatalogueSection[] = [
   ...KIT_SECTIONS,
   ...ENTRY_SECTIONS,
   ...MASCOT_SECTIONS,
   ...SCREEN_SECTIONS,
+  ...PLANNING_SECTIONS,
+  ...INSIGHTS_SCREEN_SECTIONS,
 ];
