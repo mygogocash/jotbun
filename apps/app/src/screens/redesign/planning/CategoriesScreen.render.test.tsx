@@ -638,7 +638,7 @@ test('the screen draws with palette tokens only, and keeps money out of floating
 // ---------------------------------------------------------------------------
 // The catalogue's sections (registered by the main session)
 
-const SECTIONS: readonly (readonly [string, string, (tc: (english: string) => string) => string])[] = [
+const SECTIONS: readonly (readonly [string, string, (tc: (english: string, values?: Record<string, string>) => string) => string])[] = [
   ['categories-loading', 'Categories: loading', (tc) => tc('Loading your diary')],
   ['categories-load-problem', 'Categories: load problem', (tc) => tc("We couldn't load your diary.")],
   ['categories-expense', 'Categories: expense', (tc) => tc('Archived')],
@@ -652,7 +652,7 @@ const SECTIONS: readonly (readonly [string, string, (tc: (english: string) => st
   ['categories-archived', 'Categories: archived', (tc) => tc('Old hobby')],
   ['categories-archive-confirm', 'Categories: archive confirm', (tc) => tc('Archive {name}?').replace('{name}', 'Pets')],
   ['categories-limit-no-budget', 'Categories: limit, no budget', (tc) => tc("Category limits are part of a monthly budget. Set this month's budget first.")],
-  ['categories-limit-over', 'Categories: limit over the total', () => OVER],
+  ['categories-limit-over', 'Categories: limit over the total', (tc) => tc("Category limits would add up to {total}, more than this month's budget of {overall}.", { total: '฿20,000.01', overall: '฿20,000.00' })],
   ['categories-label-error', 'Categories: label error', (tc) => tc('Give the category a name.')],
 ];
 
@@ -669,7 +669,7 @@ test.each(SECTIONS)('catalogue section %s reaches its state in English and Thai,
     const view = mountInApp(<>{section.render()}</>, locale);
     await waitFor(() => expect(screen.queryByTestId('catalogue-screen-running')).toBeNull(), { timeout: 15_000 });
     expect(screen.queryByTestId('catalogue-screen-stopped'), screen.queryByTestId('catalogue-screen-stopped')?.textContent ?? '').toBeNull();
-    const tc = (english: string) => translateCopy(english, locale);
+    const tc = (english: string, values?: Record<string, string>) => translateCopy(english, locale, values);
     expect(screen.queryAllByText(shows(tc)).length + screen.queryAllByLabelText(shows(tc)).length, id).toBeGreaterThan(0);
     expect(errors).not.toHaveBeenCalled();
     errors.mockRestore();

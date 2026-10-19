@@ -23,6 +23,7 @@ import type {
   BudgetCategoryLimit, BudgetDto, BuiltinCategoryKey, CategoryDto, CategoryType, CreateCategoryRequest, Minor, SetMonthlyBudgetRequest, UpdateCategoryRequest,
 } from '@gogospend/contracts';
 
+import type { V1Outcome } from '../../../../api/client.ts';
 import { AmountInputError, formatMinor, minorToInputText, parseAmountInput } from '../../money.ts';
 import type { MoneyLocale } from '../../money.ts';
 import { BUILTIN_LABELS, categoryName } from '../../viewModels.ts';
@@ -260,6 +261,15 @@ export function limitProblem(draft: CategoryDraft, context: { budget: BudgetDto 
   if (fits.ok) return null;
   return { message: fits.problem === 'too_many' ? tc(LIMIT_PROBLEM_TEXT.too_many) : overTotalText(fits.total, fits.overall, context), minor: read.minor };
 }
+
+/** A refusal's words where the shared wording (`saveProblem`) speaks of an entry: said of the person's changes instead. */
+export const SAVE_PROBLEM_WORDS: Partial<Readonly<Record<V1Outcome, string>>> = {
+  network: 'Not confirmed yet. Your changes are kept; try again.',
+  unavailable: 'Not confirmed yet. Your changes are kept; try again.',
+  invalid_response: 'Not confirmed yet. Your changes are kept; try again.',
+  rate_limited: 'Too many changes at once. Your changes are kept; try again in a moment.',
+  upgrade_required: 'Update Jotbun to keep saving. Your changes are kept.',
+};
 
 /** What a save sends, in order, or the problems that stop it before anything is sent. */
 export function planSave(draft: CategoryDraft, context: { budget: BudgetDto | null; tc: Translate; locale: MoneyLocale }): SavePlan {

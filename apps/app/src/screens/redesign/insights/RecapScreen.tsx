@@ -17,8 +17,8 @@
 //   a month that has not started.
 //
 // Nothing here moves, so reduced motion has nothing to take away: the bun
-// stands on the stage. Copy stays out of the catalogs until E2 (the catalog
-// guard skips `insights/` folders).
+// stands on the stage. Copy is in the catalogs, with Thai, pending E2
+// checkpoint 3.
 import { HISTORY_MAX_LIMIT } from '@gogospend/contracts';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';

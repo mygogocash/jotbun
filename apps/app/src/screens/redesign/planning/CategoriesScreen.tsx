@@ -37,7 +37,7 @@ import { Bun } from '@mobile/mascot/Bun';
 import { formatMinor } from '@mobile/spend/v1/money';
 import { classifyLoadProblem } from '@mobile/spend/v1/redesign/homeModel';
 import {
-  LABEL_PROBLEM_TEXT, afterCategoryAck, archiveCommand, budgetConflict, categoryConflict, checkLabel, commandSlot, draftName, editCategoryDraft,
+  LABEL_PROBLEM_TEXT, SAVE_PROBLEM_WORDS, afterCategoryAck, archiveCommand, budgetConflict, categoryConflict, checkLabel, commandSlot, draftName, editCategoryDraft,
   groupCategories, hasLimitField, limitProblem, newCategoryDraft, planSave, readConflict, readLimit, suggestColor,
 } from '@mobile/spend/v1/redesign/planning/categoriesModel';
 import type { CategoryCommand, CategoryDraft, CategoryItem, ConflictView, FormErrors } from '@mobile/spend/v1/redesign/planning/categoriesModel';
@@ -69,21 +69,14 @@ type Origin = { success: string; draft: CategoryDraft | null; seen: BudgetDto | 
 type Status = 'idle' | 'saving' | 'unconfirmed';
 type Conflict = { view: ConflictView; withYours: boolean };
 
-/** The words for refusals whose shared wording speaks of an entry; the rest keep the shared words. */
-const OWN_WORDS: Partial<Readonly<Record<V1Outcome, string>>> = {
-  network: 'Not confirmed yet. Your changes are kept; try again.',
-  unavailable: 'Not confirmed yet. Your changes are kept; try again.',
-  invalid_response: 'Not confirmed yet. Your changes are kept; try again.',
-  rate_limited: 'Too many changes at once. Your changes are kept; try again in a moment.',
-  upgrade_required: 'Update Jotbun to keep saving. Your changes are kept.',
-};
+/** Refusals that keep the shared words; those that speak of an entry are said in a category's (`SAVE_PROBLEM_WORDS`). */
 const SHARED_WORDS: readonly V1Outcome[] = ['policy_required', 'signed_out', 'session_changed'];
 
 /** `saveProblem` (unconfirmed, blocked, fields) in a category's words. */
 function categoryProblem(error: unknown, tc: Translate): SaveProblem {
   const problem = saveProblem(error, tc);
   const outcome = error instanceof V1Error ? error.outcome : undefined;
-  const own = outcome ? OWN_WORDS[outcome] : undefined;
+  const own = outcome ? SAVE_PROBLEM_WORDS[outcome] : undefined;
   if (own) return { ...problem, message: tc(own) };
   if ((outcome && SHARED_WORDS.includes(outcome)) || (outcome === 'invalid' && Object.keys(problem.fields).length > 0)) return problem;
   return { ...problem, message: tc('Could not save that. Try again.') };

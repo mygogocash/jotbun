@@ -8,10 +8,11 @@ import { test } from 'node:test';
 import { CATEGORY_COLORS, NAME_MAX_CHARS } from '@gogospend/contracts';
 import type { BudgetDto, CategoryDto } from '@gogospend/contracts';
 
+import { recordingTc, untranslated } from '../testing/catalog.ts';
 import { ART, BILLS, BONUS, COFFEE_TH, FOOD, FUN, GIFT, HOUSEHOLD, OLD_HOBBY, PETS, SALARY, SHOPPING, SIDE_JOB, TRAVEL, tc } from '../testing/fixtures.ts';
 import {
-  LABEL_PROBLEM_TEXT, SWATCHES, SWATCH_NAMES, afterCategoryAck, archiveCommand, budgetConflict, budgetReplace, categoryConflict, checkLabel, checkLimits,
-  commandSlot, draftName, editCategoryDraft, groupCategories, labelLength, limitOf, newCategoryDraft, planSave, readConflict, readLimit, suggestColor, swatchName,
+  LABEL_PROBLEM_TEXT, LIMIT_PROBLEM_TEXT, SAVE_PROBLEM_WORDS, SWATCHES, SWATCH_NAMES, afterCategoryAck, archiveCommand, budgetConflict, budgetReplace, categoryConflict,
+  checkLabel, checkLimits, colourWords, commandSlot, draftName, editCategoryDraft, groupCategories, labelLength, limitOf, newCategoryDraft, planSave, readConflict, readLimit, suggestColor, swatchName,
 } from './categoriesModel.ts';
 import type { CategoryDraft } from './categoriesModel.ts';
 
@@ -314,4 +315,19 @@ test("a changed budget shows yours and the server's limit for this category and 
   ]);
   const removed = budgetConflict({ ...draft, limitText: '' }, seen, budget('1000000', [], 3), { tc, locale: 'en' });
   assert.deepEqual(removed.rows.map((row) => [row.yours, row.server, row.differs]), [['No limit', 'No limit', false], ['฿10,000.00', '฿10,000.00', false]]);
+});
+
+// ---------------------------------------------------------------------------
+// The catalogs
+
+// Copy is looked up by its English text: words this model looks up in a table
+// that are missing from the catalogs show English in every locale (found
+// translating R4, E2 checkpoint 2). The literal guard sees only `tc('…')`.
+test('every colour name and every problem word is copy in en.json, with Thai', () => {
+  const { tc: recording, asked } = recordingTc();
+  for (const color of [...CATEGORY_COLORS, null, '#000000']) colourWords(color, recording);
+  assert.deepEqual([...asked].sort(), [...SWATCH_NAMES, 'No colour', 'Custom colour'].sort());
+  assert.deepEqual(Object.keys(SAVE_PROBLEM_WORDS).sort(), ['invalid_response', 'network', 'rate_limited', 'unavailable', 'upgrade_required']);
+  const words = [...asked, ...Object.values(LABEL_PROBLEM_TEXT), ...Object.values(LIMIT_PROBLEM_TEXT), ...Object.values(SAVE_PROBLEM_WORDS)];
+  assert.deepEqual(untranslated(words), []);
 });

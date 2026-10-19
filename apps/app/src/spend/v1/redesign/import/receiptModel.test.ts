@@ -11,7 +11,8 @@ import { ATTACHMENT_MAX_BYTES } from '@gogospend/contracts';
 import type { AttachmentGrant, ImportPreview } from '@gogospend/contracts';
 
 import { V1Error } from '../../../../api/client.ts';
-import { GRANT_MARGIN_MS, attachableFrom, base64Of, classifyFailure, dataUriOf, freezes, grantUsable, receiptFile } from './receiptModel.ts';
+import { untranslated } from '../testing/catalog.ts';
+import { FROZEN_WORDS, GRANT_MARGIN_MS, REFUSED_WORDS, attachableFrom, base64Of, classifyFailure, dataUriOf, freezes, grantUsable, receiptFile } from './receiptModel.ts';
 
 const NOW = new Date('2026-09-29T03:00:00.000Z');
 const JOB = '7d1e2f3a-4b5c-4d6e-8f70-8192a3b4c5d6';
@@ -103,6 +104,17 @@ test('a receipt command: the record moved on, went away, or the photo can no lon
 
 test('only the outcomes that may have committed, or that wait for room, keep the command frozen', () => {
   assert.deepEqual(['unconfirmed', 'paused', 'busy', 'uploads_off', 'conflict', 'gone', 'expired', 'removed', 'unsupported', 'too_large', 'failed', 'blocked'].filter((kind) => freezes(kind as Parameters<typeof freezes>[0])), ['unconfirmed', 'paused', 'busy']);
+});
+
+// Copy is looked up by its English text, and the panel passes these words to
+// `tc` from the tables, where the literal guard can't see them (R7, E2
+// checkpoint 5).
+test('a frozen command and each refusal say so in words that are copy in en.json, with Thai', () => {
+  const frozen = ['unconfirmed', 'paused', 'busy'] as const;
+  assert.deepEqual(Object.keys(FROZEN_WORDS).sort(), [...frozen].sort(), 'every outcome that freezes has its words');
+  for (const kind of frozen) assert.ok(freezes(kind));
+  assert.deepEqual(Object.keys(REFUSED_WORDS).sort(), ['expired', 'failed', 'removed', 'unsupported']);
+  assert.deepEqual(untranslated([...Object.values(FROZEN_WORDS), ...Object.values(REFUSED_WORDS)]), []);
 });
 
 test('verified bytes become a base64 data URI in memory', () => {

@@ -9,8 +9,11 @@ import type { WalletDto } from '@gogospend/contracts';
 
 import { V1Error } from '../../../../api/client.ts';
 import { formatMinor } from '../../money.ts';
+import { recordingTc, untranslated } from '../testing/catalog.ts';
 import { tc, marked } from '../testing/fixtures.ts';
 import {
+  CORRECTION_REASONS,
+  FIELD_WORDS,
   archiveAdvice,
   archiveAdviceLine,
   buildCreateWallet,
@@ -293,4 +296,20 @@ test("the conflict shows theirs beside yours, field by field, and marks what dif
   assert.deepEqual(archived.map((row) => [row.key, row.yours, row.theirs]), [
     ['name', null, 'Pocket'], ['opening', null, '฿4,032.00'], ['tracking', null, 'day 2026-09-01'], ['balance', null, '฿2,350.00'], ['status', null, 'Archived'],
   ]);
+});
+
+// ---------------------------------------------------------------------------
+// The catalogs
+
+// Copy is looked up by its English text: words this model builds or looks up
+// that are missing from the catalogs show English in every locale (found
+// translating R4, E2 checkpoint 2). The literal guard sees only `tc('…')`.
+test("every line the Wallets screen is given, and each of Jotbun's field words, is copy in en.json, with Thai", () => {
+  const advice = [wallet({ balance_minor: '235000' }), wallet({ balance_minor: '-20050' })].map((each) => archiveAdviceLine(each, money)?.text ?? '');
+  const { tc: recording, asked } = recordingTc();
+  for (const [field, key] of [...Object.keys(FIELD_WORDS).map((key) => ['tracking_start', key]), ['name', 'SOMETHING_NEW']]) walletRefusal(refused({ [field]: key }, key), recording);
+  assert.deepEqual([...asked].sort(), [...new Set([...Object.values(FIELD_WORDS), 'Check this and try again.'])].sort(), 'every field word is asked through tc');
+  const reasons = CORRECTION_REASONS.map((reason) => reason.label);
+  assert.deepEqual(CORRECTION_REASONS.map((reason) => reason.value), ['entry_error', 'balance_reconciliation']);
+  assert.deepEqual(untranslated([...advice, ...asked, ...reasons]), []);
 });

@@ -142,6 +142,12 @@ export function isCorrection(wallet: Pick<WalletSnapshot, 'opening_minor' | 'tra
   return openingOf(form) !== wallet.opening_minor || form.trackingStart !== wallet.tracking_start;
 }
 
+/** Why a wallet with entries is corrected, as the question offers it: English, for the screen's `tc`. */
+export const CORRECTION_REASONS: readonly { readonly value: WalletCorrectionReason; readonly label: string }[] = [
+  { value: 'entry_error', label: 'A mistake when I set it up' },
+  { value: 'balance_reconciliation', label: 'Match my real balance' },
+];
+
 /** A correction needs its reason once the wallet has entries, and while that is not known yet. */
 export function correctionNeedsReason(wallet: Pick<WalletSnapshot, 'opening_minor' | 'tracking_start'>, form: WalletForm, hasRecords: HasRecords): boolean {
   return isCorrection(wallet, form) && hasRecords !== false;
@@ -210,7 +216,7 @@ export function buildWalletUpdate(wallet: WalletSnapshot, form: WalletForm, cont
 // What Jotbun said
 
 /** Jotbun's words for a field (its message key or error code) in the screen's English. */
-const FIELD_WORDS: Readonly<Record<string, string>> = {
+export const FIELD_WORDS: Readonly<Record<string, string>> = {
   'errors.records_before_tracking_start': 'This wallet has entries before this date.',
   'errors.correction_reason_required': "Choose why you're changing this.",
   DATE_IN_FUTURE: 'This date is in the future.',

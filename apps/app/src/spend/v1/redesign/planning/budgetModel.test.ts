@@ -5,6 +5,7 @@ import { MINOR_AMOUNT_MAX } from '@gogospend/contracts';
 
 import { budgetPace } from '../budgetPace.ts';
 import type { CopyLine } from '../shared.ts';
+import { untranslated } from '../testing/catalog.ts';
 import { BILLS, FOOD, PETS, SALARY, TRAVEL, budget, command, entry, pending, spentSummary, summary, tc } from '../testing/fixtures.ts';
 import {
   PREFILL_MONTHS,
@@ -270,4 +271,31 @@ test('a conflict, figure by figure: the total, then each category either side li
     { key: TRAVEL.id, categoryId: TRAVEL.id, yoursMinor: null, serverMinor: '100000', differs: true },
     { key: BILLS.id, categoryId: BILLS.id, yoursMinor: '500000', serverMinor: null, differs: true },
   ]);
+});
+
+// ---------------------------------------------------------------------------
+// The catalogs
+
+// Copy is looked up by its English text: a line this model builds that is
+// missing from the catalogs shows English in every locale (found translating
+// R4, E2 checkpoint 2).
+test('every line the Budget screen is given is copy in en.json, with Thai', () => {
+  const burn = (today: string, month: string, spent: string) => burnDown({ month, today, limitMinor: '3100000', spentByDay: days({ [`${month}-02`]: spent }) });
+  const lines: (CopyLine | null)[] = [
+    ...burnDownCopy(burn('2026-10-19', '2026-11', '0'), 'en'),
+    ...burnDownCopy(burn('2026-10-19', '2026-09', '3100000'), 'en'),
+    ...['600000', '450000', '500000'].flatMap((spent) => burnDownCopy(burn('2026-10-05', OCT, spent), 'en')),
+  ];
+  for (const [state, left] of [['on_track', '100000'], ['tight', '100000'], ['over', '-100000']] as const) {
+    const copy = categoryRowCopy({
+      categoryId: FOOD.id, category: FOOD, limitMinor: '300000', spentMinor: '200000', pendingMinor: '0', leftMinor: left, overByMinor: left.startsWith('-') ? left.slice(1) : '0', state, spentPermille: 666,
+    }, 'en');
+    lines.push(copy.amounts, copy.status, copy.reassurance);
+  }
+  const name = (month: string) => month;
+  lines.push(prefillCopy({ averageMinor: '150', months: ['2026-09'] }, name, 'en'), prefillCopy({ averageMinor: '150', months: ['2026-09', '2026-08'] }, name, 'en'));
+  lines.push(checkCopy(checkBudget('1000000', []), '1000000', 'en'), checkCopy(checkBudget('100', [{ categoryId: FOOD.id, limitMinor: '200' }]), '100', 'en'));
+  const texts = lines.filter((line): line is CopyLine => line !== null).map((line) => line.text);
+  assert.equal(new Set(texts).size, 17, 'every branch is walked');
+  assert.deepEqual(untranslated(texts), []);
 });

@@ -2,8 +2,7 @@
 // the expectation sheet's content, the staged progress with the box bun,
 // counts and exact money lines, and the result. Built from the kit
 // (src/ui), BunText and the useBunColors() tokens only. Copy goes through
-// tc() and stays out of the catalogs until E2 checkpoint 5 (the catalog
-// guard skips `import/` folders).
+// tc() and is in the catalogs, with Thai, pending E2 checkpoint 5.
 import type { Minor } from '@gogospend/contracts';
 import type { ReactNode } from 'react';
 import { ScrollView, View } from 'react-native';
