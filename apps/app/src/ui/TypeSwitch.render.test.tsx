@@ -8,7 +8,7 @@ afterEach(() => cleanup());
 
 const LABELS = {
   en: ['Expense', 'Income', 'Move'],
-  th: ['รายจ่าย', 'รายรับ', 'Move'],
+  th: ['รายจ่าย', 'รายรับ', 'โอนเงิน'],
   vi: ['Chi tiêu', 'Thu nhập', 'Move'],
 } as const;
 

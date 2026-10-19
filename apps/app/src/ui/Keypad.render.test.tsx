@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { translateCopy } from '@mobile/i18n/messages';
 import { afterEach, expect, test, vi } from 'vitest';
 
 import { haptics } from '@mobile/lib/haptics';
@@ -13,7 +14,7 @@ afterEach(() => {
 const KEYS: readonly (readonly [string, string])[] = [
   ['7', '7'], ['8', '8'], ['9', '9'], ['4', '4'], ['5', '5'], ['6', '6'], ['1', '1'], ['2', '2'], ['3', '3'], ['0', '0'],
   ['Triple zero', '000'], ['Decimal point', '.'], ['Delete', 'backspace'], ['Clear', 'clear'],
-  ['Plus', 'add'], ['Minus', 'subtract'], ['Times', 'multiply'], ['Divided by', 'divide'], ['Equals', 'equals'],
+  ['Plus sign', 'add'], ['Minus sign', 'subtract'], ['Times', 'multiply'], ['Divided by', 'divide'], ['Equals', 'equals'],
 ];
 
 test('every key has a spoken label and sends its key', () => {
@@ -68,10 +69,19 @@ test('labels follow the locale, and = is the ink key in light and dark', () => {
     mountKit(<Keypad onKey={() => undefined} />, { locale, mode });
     const remove = locale === 'th' ? 'ลบ' : 'Delete';
     expect(screen.getByRole('button', { name: remove })).toBeTruthy();
-    const equals = screen.getByRole('button', { name: 'Equals' });
+    const equals = screen.getByRole('button', { name: translateCopy('Equals', locale) });
     expect(equals.style.backgroundColor).toEqual(rgb(colors.ink));
     expect(screen.getByText('=').style.color).toEqual(rgb(colors.onInk));
     expect(screen.getByText('7').style.color).toEqual(rgb(colors.ink));
     cleanup();
   }
+});
+
+// Copy is looked up by its English text, and "Plus" is also the membership
+// tier, whose Thai is "Plus": the key needs English of its own.
+test('in Thai the + and − keys are spoken in Thai', () => {
+  mountKit(<Keypad onKey={() => undefined} />, { locale: 'th', mode: 'light' });
+  expect(screen.getByRole('button', { name: 'เครื่องหมายบวก' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'เครื่องหมายลบ' })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'Plus' })).toBeNull();
 });

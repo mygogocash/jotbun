@@ -472,7 +472,7 @@
   "redesignLastDay": "วันสุดท้าย",
   "redesignLastDayToRestore": "วันสุดท้ายที่กู้คืนได้",
   "redesignLoadingTheEntryToCopy": "กำลังโหลดรายการที่จะคัดลอก",
-  "redesignMinus": "เครื่องหมายลบ",
+  "redesignMinusSign": "เครื่องหมายลบ",
   "redesignMinusAmount": "ติดลบ {amount}",
   "redesignMore": "อื่นๆ",
   "redesignMoreCategories": "หมวดหมู่อื่นๆ",
@@ -565,5 +565,9 @@
   "redesignSpentOfLimit": "{spent} จาก {limit}",
   "redesignSpentSpentThisMonth": "เดือนนี้ใช้ไป {spent}",
   "redesignStageStatus": "{stage} {status}",
-  "redesignStageStatusCount": "{stage} {status} {count}"
+  "redesignStageStatusCount": "{stage} {status} {count}",
+  "redesignPlusSign": "เครื่องหมายบวก",
+  "redesign1EntryOutOutInIn": "1 รายการ จ่ายออก {out} รับเข้า {in}",
+  "redesignCountEntriesInIn": "{count} รายการ รับเข้า {in}",
+  "redesignCountEntries": "{count} รายการ"
 }

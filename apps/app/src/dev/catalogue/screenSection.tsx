@@ -91,7 +91,7 @@ export function screenSection<F extends ScreenFixture>(spec: ScreenSectionSpec<F
 }
 
 const KEY_LABELS: Readonly<Record<string, string>> = {
-  '.': 'Decimal point', '+': 'Plus', '-': 'Minus', '*': 'Times', '/': 'Divided by', '=': 'Equals', C: 'Clear', '<': 'Delete',
+  '.': 'Decimal point', '+': 'Plus sign', '-': 'Minus sign', '*': 'Times', '/': 'Divided by', '=': 'Equals', C: 'Clear', '<': 'Delete',
 };
 
 /** Keypad presses for `keys`: digits as themselves, `. + - * / =`, `C` (clear) and `<` (delete). */

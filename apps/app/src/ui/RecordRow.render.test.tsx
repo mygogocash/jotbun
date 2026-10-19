@@ -105,7 +105,7 @@ test('amounts are ink, never red or green, in every locale and mode; Thai has ro
     mountKit(<RecordRow title="ข้าวมันไก่" detail="Cash" type="expense" amountMinor="6500" category={coffee} state="saving" />, { locale, mode });
     expect(screen.getByText('−฿65.00').style.color).toEqual(rgb(colors.ink));
     expect(screen.getByText('ข้าวมันไก่').style.lineHeight).toBe(leading('body', locale));
-    const saving = locale === 'th' ? 'saving…' : 'saving…';
+    const saving = translateCopy('saving…', locale);
     expect(screen.getByText(saving).style.color).toEqual(rgb(colors.accent));
     const expense = { en: 'Expense', th: 'รายจ่าย', vi: 'Chi tiêu' }[locale];
     expect(screen.getByLabelText(new RegExp(`^ข้าวมันไก่, ${expense} ฿65.00`))).toBeTruthy();

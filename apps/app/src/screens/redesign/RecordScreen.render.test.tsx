@@ -122,7 +122,7 @@ test('Edit on the receipt opens the edit mode; Cancel leaves it without sending'
 
 test('the keypad sends an exact amount_minor: 0.1 + 0.2 is 30 satang, 100 ÷ 3 is ฿33.33', async () => {
   const fake = await editRent();
-  press('Clear', '0', 'Decimal point', '1', 'Plus', '0', 'Decimal point', '2');
+  press('Clear', '0', 'Decimal point', '1', 'Plus sign', '0', 'Decimal point', '2');
   // Review m2: a sum shows and says its exact result live, before it is saved.
   expect(screen.getByLabelText('Amount, 0.1 + 0.2 = ฿0.30')).toBeTruthy();
   expect(within(screen.getByTestId('edit-amount')).getByText('฿0.30')).toBeTruthy();
@@ -399,10 +399,10 @@ test.each(MATRIX)('reads in $locale, $mode: paper slip, translated rows, the lon
   mountRecord(RENT, { locale, theme: mode });
   const type = translateCopy('Type', locale);
   const expense = translateCopy('Expense', locale);
-  expect(await screen.findByLabelText(`${type}, ${expense}`)).toBeTruthy();
+  expect(await screen.findByLabelText(translateCopy('{label}, {value}', locale, { label: type, value: expense }))).toBeTruthy();
   expect(slip().style.backgroundColor).toEqual(rgb(colors.paper));
   expect(screen.getByTestId('record-screen').style.backgroundColor).toEqual(rgb(colors.background));
-  expect(within(slip()).getByLabelText(`${translateCopy('Date', locale)}, ${fullDateLabel('2026-09-27', locale)}`)).toBeTruthy();
+  expect(within(slip()).getByLabelText(translateCopy('{label}, {value}', locale, { label: translateCopy('Date', locale), value: fullDateLabel('2026-09-27', locale) }))).toBeTruthy();
   const amount = screen.getByText('−฿12,268.00');
   expect(amount.style.color).toEqual(rgb(colors.ink));
   const title = within(slip()).getByRole('heading');

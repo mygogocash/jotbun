@@ -1,4 +1,5 @@
 import { cleanup, screen } from '@testing-library/react';
+import { translateCopy } from '@mobile/i18n/messages';
 import { afterEach, expect, test } from 'vitest';
 
 import { BudgetBar } from './BudgetBar';
@@ -47,13 +48,14 @@ test('green and red appear only as budget state, always beside words, in light a
   for (const { locale, mode, colors } of MATRIX) {
     mountKit(<BudgetBar {...onTrack} />, { locale, mode });
     expect(screen.getByTestId('budget-fill').style.backgroundColor).toEqual(rgb(colors.under));
-    const headline = screen.getByText('฿420.00 a day left');
+    const headline = screen.getByText(translateCopy('{amount} a day left', locale, { amount: '฿420.00' }));
     expect(headline.style.color).toEqual(rgb(colors.ink));
     expect(headline.style.lineHeight).toBe(leading('heading', locale));
     cleanup();
     mountKit(<BudgetBar {...over} />, { locale, mode });
     expect(screen.getByTestId('budget-fill').style.backgroundColor).toEqual(rgb(colors.over));
-    expect(screen.getByText('฿120.00 over · 9 days to go').style.color).toEqual(rgb(colors.over));
+    const overWords = `${translateCopy('{amount} over', locale, { amount: '฿120.00' })} · ${translateCopy('{days} days to go', locale, { days: 9 })}`;
+    expect(screen.getByText(overWords).style.color).toEqual(rgb(colors.over));
     cleanup();
     mountKit(<BudgetBar {...tight} />, { locale, mode });
     expect(screen.getByTestId('budget-fill').style.backgroundColor).toEqual(rgb(colors.under));

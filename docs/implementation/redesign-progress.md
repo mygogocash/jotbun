@@ -1426,3 +1426,27 @@ Built together with the kit polish above, in one change. These fix the screen-le
   - 137 new English strings entered `en.json` under `redesign*` keys (`cdcb821`). They were found by a static scan of `tc()` literals and a runtime capture of catalog misses across the redesign render tests. Not included: the dev-only catalogue, the import review's draft copy (its flag stays off), login and legacy screens.
   - `catalogs.test.ts` fails until `th.json` and `vi.json` translate every key with the same placeholders. It also checks that every `tc()` literal in the redesign is in `en.json`.
   - Vietnamese also lacked 110 existing keys, 93 of which the redesign shows ("Save entry", "Try again" and others). They are being filled with the new copy.
+
+## Thai copy in, Vietnamese held (19 October 2026)
+
+- **Thai:**
+  - An agent translated the 137 new keys into `th.json`, reusing the catalog's existing terms (merged in `a99e2c0`).
+  - Glossary: wallet กระเป๋าเงิน, entry รายการ, Move โอนเงิน, budget งบประมาณ, saving กำลังบันทึก, checking กำลังตรวจสอบ, needs a look ต้องตรวจสอบ, over เกินงบ, left คงเหลือ, receipt ใบเสร็จ.
+  - **For a native speaker to review:**
+    - Move = โอนเงิน, which can sound like paying someone; ย้ายเงิน is the alternative;
+    - It happens = เกิดขึ้นได้กับทุกคน;
+    - Tight = ตึงมือ;
+    - Keep what's on the server = ใช้ข้อมูลบนเซิร์ฟเวอร์;
+    - "All wallets" may be tight on a chip.
+- **Vietnamese:**
+  - The owner decided not to translate Vietnamese for now, so its translator was stopped and nothing of it was merged.
+  - `vi.json` is unchanged: keys it lacks, including the 110 older ones, show English.
+  - `catalogs.test.ts` now requires every key only in Thai. For both catalogs it still checks that every key exists in `en.json` and keeps its placeholders.
+- **Found while translating, fixed test-first:**
+  - **The keypad's "+" was spoken "Plus" in Thai.** Lookup is by English text, and "Plus" is also the membership tier, which stays "Plus" in Thai. The arithmetic keys now say "Plus sign" and "Minus sign" (Thai เครื่องหมายบวก / เครื่องหมายลบ). RED was a Keypad test in Thai.
+  - **Three History summary templates were missing from `en.json`:** "1 entry, {out} out, {in} in", "{count} entries, {in} in" and "{count} entries". They showed English in every locale. A `historyModel.test.ts` test now walks every `summaryLine` branch and requires each template to be in `en.json` with Thai. RED: "1 entry, {out} out, {in} in" is not in en.json.
+- **Tests that expected the English fallback in Thai:** 11 of them now compute the expected Thai with `translateCopy`. That covers the keypad's spoken names and the `{label}, {value}` join, which in Thai is a space.
+- **Results:**
+  - test:unit 432 of 432; test:render 561 of 562.
+  - The one failure, a different Quick add test each time, passes alone: 79 of 79, three runs. A History long-press test did the same: 30 of 30, six runs.
+  - These are timing flakes under a busy host, not failures of this change.

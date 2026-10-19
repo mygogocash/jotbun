@@ -472,7 +472,7 @@
   "redesignLastDay": "Last day",
   "redesignLastDayToRestore": "Last day to restore",
   "redesignLoadingTheEntryToCopy": "Loading the entry to copy",
-  "redesignMinus": "Minus",
+  "redesignMinusSign": "Minus sign",
   "redesignMinusAmount": "Minus {amount}",
   "redesignMore": "More",
   "redesignMoreCategories": "More categories",
@@ -565,5 +565,9 @@
   "redesignSpentOfLimit": "{spent} of {limit}",
   "redesignSpentSpentThisMonth": "{spent} spent this month",
   "redesignStageStatus": "{stage}, {status}",
-  "redesignStageStatusCount": "{stage}, {status}, {count}"
+  "redesignStageStatusCount": "{stage}, {status}, {count}",
+  "redesignPlusSign": "Plus sign",
+  "redesign1EntryOutOutInIn": "1 entry, {out} out, {in} in",
+  "redesignCountEntriesInIn": "{count} entries, {in} in",
+  "redesignCountEntries": "{count} entries"
 }

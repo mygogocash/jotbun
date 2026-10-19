@@ -58,7 +58,7 @@ test('the state is shown as a word beside its tick in every locale', () => {
       const node = screen.getByText(translateCopy(word, locale));
       expect(node.style.lineHeight).toBe(`${bunText('caption', locale === 'th' ? 'thai' : 'latin').lineHeight}px`);
     }
-    expect(screen.getByText('1,234 of 1,234')).toBeTruthy();
+    expect(screen.getByText(translateCopy('{done} of {total}', locale, { done: '1,234', total: '1,234' }))).toBeTruthy();
     cleanup();
   }
   mount(<StagedProgress stages={stages} />, 'th');

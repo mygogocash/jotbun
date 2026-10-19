@@ -64,6 +64,7 @@ beforeAll(() => {
 });
 afterEach(() => {
   cleanup();
+  shownLocale = 'en';
   search.params = {};
   router.replace.mockReset();
   window.localStorage.clear();
@@ -105,18 +106,22 @@ async function open(options: OpenOptions = {}): Promise<Fake> {
   const fake = createFakeResources(options.seed ?? goldenSeed());
   options.before?.(fake);
   mount(<QuickAddScreen now={NOW} />, options.wrap ? options.wrap(fake) : fake.resources, options);
-  await screen.findByRole('group', { name: 'Keypad' });
+  shownLocale = (options.locale ?? 'en') as Locale;
+  await screen.findByRole('group', { name: keypadName() });
   await settle();
   return fake;
 }
 
 const KEY_NAMES: Readonly<Record<string, string>> = {
-  '.': 'Decimal point', '+': 'Plus', '-': 'Minus', '*': 'Times', '/': 'Divided by', '=': 'Equals', '000': 'Triple zero', C: 'Clear', '<': 'Delete',
+  '.': 'Decimal point', '+': 'Plus sign', '-': 'Minus sign', '*': 'Times', '/': 'Divided by', '=': 'Equals', '000': 'Triple zero', C: 'Clear', '<': 'Delete',
 };
-const keypad = () => screen.getByRole('group', { name: 'Keypad' });
+/** The locale the last `open` showed, so the keypad is found by its translated name. */
+let shownLocale: Locale = 'en';
+const keypadName = () => translateCopy('Keypad', shownLocale);
+const keypad = () => screen.getByRole('group', { name: keypadName() });
 /** Presses keypad keys: digits as themselves, `.`, `+ - * / =`, `000`, `C` (clear) and `<` (delete). */
 function press(...keys: string[]) {
-  for (const key of keys) fireEvent.click(within(keypad()).getByRole('button', { name: KEY_NAMES[key] ?? key }));
+  for (const key of keys) fireEvent.click(within(keypad()).getByRole('button', { name: KEY_NAMES[key] ? translateCopy(KEY_NAMES[key], shownLocale) : key }));
 }
 const typeAmount = (text: string) => press(...[...text]);
 const save = () => fireEvent.click(screen.getByRole('button', { name: 'Save entry' }));

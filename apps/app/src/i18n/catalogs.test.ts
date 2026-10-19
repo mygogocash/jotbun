@@ -1,7 +1,7 @@
 // The locale catalogs against the copy the app shows (redesign E2, approved
 // 19 October 2026). Copy is looked up by its English text, so a string missing
-// from en.json, or a key missing from th.json or vi.json, silently renders
-// English: these tests make that loud.
+// from en.json, or a key missing from th.json, silently renders English: these
+// tests make that loud.
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -14,14 +14,20 @@ const en = read('en');
 
 const placeholders = (text: string) => [...text.matchAll(/\{([a-zA-Z0-9_]+)\}/g)].map((match) => match[1]).sort();
 
+test('th.json translates every key in en.json', () => {
+  const th = read('th');
+  const missing = Object.keys(en).filter((key) => typeof th[key] !== 'string' || th[key].trim() === '');
+  assert.deepEqual(missing, [], `${missing.length} keys have no Thai text`);
+});
+
+// Vietnamese is not being translated for now (owner, 19 October 2026): a key it
+// lacks shows the English. What it does have must still fit en.json.
 for (const locale of ['th', 'vi'] as const) {
-  test(`${locale}.json translates every key in en.json, keeping its placeholders`, () => {
+  test(`${locale}.json has only en.json's keys, each keeping its placeholders`, () => {
     const catalog = read(locale);
-    const missing = Object.keys(en).filter((key) => typeof catalog[key] !== 'string' || catalog[key].trim() === '');
-    assert.deepEqual(missing, [], `${missing.length} keys have no ${locale} text`);
     const extra = Object.keys(catalog).filter((key) => !(key in en));
     assert.deepEqual(extra, [], `${locale}.json has keys en.json does not`);
-    const changed = Object.keys(en).filter((key) => placeholders(en[key]).join() !== placeholders(catalog[key]).join());
+    const changed = Object.keys(catalog).filter((key) => placeholders(en[key]).join() !== placeholders(catalog[key]).join());
     assert.deepEqual(changed, [], `${locale} text that drops or renames a {placeholder}`);
   });
 }

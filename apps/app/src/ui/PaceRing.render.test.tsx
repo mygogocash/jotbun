@@ -1,4 +1,5 @@
 import { cleanup, screen } from '@testing-library/react';
+import { translateCopy } from '@mobile/i18n/messages';
 import { afterEach, expect, test } from 'vitest';
 
 import { PaceRing } from './PaceRing';
@@ -59,11 +60,11 @@ test('under and over colour the arc only, in light and dark; Thai has room', () 
     expect(arcs(first.container)[1].getAttribute('stroke')).toBe(colors.under);
     expect(arcs(first.container)[0].getAttribute('stroke')).toBe(colors.rule);
     expect(screen.getByText('฿420.00').style.color).toEqual(rgb(colors.ink));
-    expect(screen.getByText('a day left').style.lineHeight).toBe(leading('caption', locale));
+    expect(screen.getByText(translateCopy('a day left', locale)).style.lineHeight).toBe(leading('caption', locale));
     cleanup();
     const second = mountKit(<PaceRing {...over} />, { locale, mode });
     expect(arcs(second.container)[1].getAttribute('stroke')).toBe(colors.over);
-    expect(screen.getByText('over').style.color).toEqual(rgb(colors.over));
+    expect(screen.getByText(translateCopy('over', locale)).style.color).toEqual(rgb(colors.over));
     cleanup();
   }
 });

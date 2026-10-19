@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import type { TransactionDto } from '@gogospend/contracts';
 
 import type { OutboxCommand } from '../../../storage/types.ts';
-import { RECENTLY_DELETED_GAP, foldForSearch, historyModel, matchesSearch, recentlyDeletedModel } from './historyModel.ts';
+import { RECENTLY_DELETED_GAP, foldForSearch, historyModel, matchesSearch, recentlyDeletedModel, summaryLine } from './historyModel.ts';
 import type { HistoryInput } from './historyModel.ts';
 import { BANK, CASH, COFFEE_TH, FOOD, GIFT, PETS, SALARY, SHOPPING, command, entry, lookups, pending, tc, transfer } from './testing/fixtures.ts';
 
@@ -172,4 +172,20 @@ test('recently deleted: restorable for 30 days by the server\'s rule, newest fir
   assert.equal(RECENTLY_DELETED_GAP.source, 'none');
   const nothing = recentlyDeletedModel({ records: [deleted('active', null)], now, lookups: lookups(), tc, locale: 'en' });
   assert.deepEqual([nothing.rows, nothing.emptyText], [[], 'Nothing deleted in the last 30 days']);
+});
+
+// Copy is looked up by its English text: a summary template missing from the
+// catalog shows English in every locale (found translating the redesign, E2).
+test('every summary line is copy in en.json, with Thai', async () => {
+  const { readFileSync } = await import('node:fs');
+  const catalog = (locale: string): Record<string, string> => JSON.parse(readFileSync(new URL(`../../../messages/${locale}.json`, import.meta.url), 'utf8'));
+  const en = catalog('en');
+  const th = catalog('th');
+  const keyOf = new Map(Object.entries(en).map(([key, value]) => [value, key]));
+  const lines = [0, 1, 3].flatMap((count) => [null, '฿10.00'].flatMap((out) => [null, '฿5.00'].map((income) => summaryLine(count, out, income).text)));
+  for (const text of new Set(lines)) {
+    const key = keyOf.get(text);
+    assert.ok(key, `"${text}" is not in en.json`);
+    assert.ok(th[key]?.trim(), `"${text}" has no Thai`);
+  }
 });

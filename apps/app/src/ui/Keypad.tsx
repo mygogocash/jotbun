@@ -34,8 +34,8 @@ function rows(tc: (english: string) => string): readonly (readonly KeySpec[])[] 
   return [
     [op('clear', 'C', 'Clear'), { ...op('backspace', '', 'Delete'), span: 2 }, op('divide', '÷', 'Divided by')],
     [digit('7'), digit('8'), digit('9'), op('multiply', '×', 'Times')],
-    [digit('4'), digit('5'), digit('6'), op('subtract', '−', 'Minus')],
-    [digit('1'), digit('2'), digit('3'), op('add', '+', 'Plus')],
+    [digit('4'), digit('5'), digit('6'), op('subtract', '−', 'Minus sign')],
+    [digit('1'), digit('2'), digit('3'), op('add', '+', 'Plus sign')],
     [{ key: '000', face: '000', label: tc('Triple zero'), look: 'digit' }, digit('0'), { key: '.', face: '.', label: tc('Decimal point'), look: 'digit' }, { key: 'equals', face: '=', label: tc('Equals'), look: 'equals' }],
   ];
 }
