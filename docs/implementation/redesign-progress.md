@@ -1314,3 +1314,14 @@ Built together with the kit polish above, in one change. These fix the screen-le
   - VoiceOver and TalkBack: focus back on the opener after a sheet closes (native relies on the platform's modal), the row actions menu where native has no More button, the single banner announcement, and the live amount lines;
   - the sticky search and the windowed list on iOS and Android, including Load more far down a long month;
   - simulator screenshots of the changed states in light and dark, in TH, EN and VI, at 320 pt.
+
+## Catalogue tour mode (for the E2 screenshots)
+
+- **What it does:** `?tour=<ms>` (1,000–10,000) steps the dev catalogue to the next section on a timer and stops at the last one. A script can then screenshot every section in order from one deep link, for example `gogospend://dev/catalogue?section=amount&theme=light&locale=en&tour=3000`.
+- **Parsing:** `parseCatalogueTour` is a separate parser, so the existing `parseCatalogueParams` contract is unchanged. Anything outside the range, or not plain digits, means no tour.
+- **RED → GREEN:**
+  - `params.test.ts`: 1 of 6 failed against a stub returning `null`; now 6 of 6 pass.
+  - The render test "a tour steps through the sections…" failed and now passes.
+  - "Without a tour nothing moves" held on the stub, as it should.
+  - The catalogue render suite: 94 of 94.
+- **Dev only:** like the rest of the catalogue, it never reaches production bundles.

@@ -33,3 +33,15 @@ export function parseCatalogueParams(params: CatalogueSearchParams): CatalogueLi
     locale: isSupportedLocale(locale) ? locale : null,
   };
 }
+
+/**
+ * `?tour=<ms>`: step to the next section every <ms> milliseconds (1,000 to
+ * 10,000) and stop at the last one, so a script can screenshot every section
+ * from one deep link. Anything else means no tour.
+ */
+export function parseCatalogueTour(params: CatalogueSearchParams): number | null {
+  const value = first(params, 'tour');
+  if (value === null || !/^[0-9]{4,5}$/.test(value)) return null;
+  const ms = Number(value);
+  return ms >= 1000 && ms <= 10000 ? ms : null;
+}

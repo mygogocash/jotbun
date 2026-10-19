@@ -14,6 +14,7 @@
 //
 // Deep link (Expo Router search params, all optional):
 //   gogospend://dev/catalogue?section=receipt&theme=dark&locale=th
+//   gogospend://dev/catalogue?section=amount&theme=light&locale=en&tour=3000   (steps every 3 s)
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { IntlProvider } from 'react-intl';
@@ -27,7 +28,7 @@ import type { ThemePreference } from '@mobile/theme/themePreference';
 import { ThemedStatusBar, ThemePreferenceOverride, useBunColors, useTheme } from '@mobile/theme/ThemeProvider';
 import { BunText } from '@mobile/ui/BunText';
 import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE, BUN_TOUCH } from '@mobile/ui/layout';
-import { parseCatalogueParams } from './params';
+import { parseCatalogueParams, parseCatalogueTour } from './params';
 import type { CatalogueSearchParams } from './params';
 import { PAGE_PADDING } from './parts';
 import { CATALOGUE_SECTIONS } from './registry';
@@ -292,6 +293,25 @@ export function CatalogueScreen({ params }: CatalogueScreenProps) {
     setView(fromLink());
   }
   const onView = useCallback((change: Partial<CatalogueView>) => setView((current) => ({ ...current, ...change })), []);
+
+  // `?tour=<ms>`: step to the next section on a timer and stop at the last
+  // one, so a script can screenshot every section from one deep link.
+  const tour = parseCatalogueTour(params);
+  useEffect(() => {
+    if (tour === null) return undefined;
+    const timer = setInterval(() => {
+      setView((current) => {
+        const at = CATALOGUE_SECTIONS.findIndex((section) => section.id === current.section);
+        const next = CATALOGUE_SECTIONS[at + 1];
+        if (!next) {
+          clearInterval(timer);
+          return current;
+        }
+        return { ...current, section: next.id };
+      });
+    }, tour);
+    return () => clearInterval(timer);
+  }, [tour, linkKey]);
 
   return (
     <IntlProvider locale={view.locale}>

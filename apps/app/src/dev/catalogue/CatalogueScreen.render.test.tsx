@@ -606,6 +606,42 @@ test('previous and next step through the sections in order and stop at the ends'
   expect(screen.getByRole('button', { name: 'Next section' }).getAttribute('aria-disabled')).toBe('true');
 });
 
+test('a tour steps through the sections on a timer and stops at the last one', async () => {
+  vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+  try {
+    const first = CATALOGUE_SECTIONS[0]!;
+    const second = CATALOGUE_SECTIONS[1]!;
+    const third = CATALOGUE_SECTIONS[2]!;
+    await open({ section: first.id, tour: '1000' });
+    expect(screen.getByTestId(`catalogue-section-${first.id}`)).toBeTruthy();
+    act(() => { vi.advanceTimersByTime(999); });
+    expect(screen.getByTestId(`catalogue-section-${first.id}`)).toBeTruthy();
+    act(() => { vi.advanceTimersByTime(1); });
+    expect(screen.getByTestId(`catalogue-section-${second.id}`)).toBeTruthy();
+    act(() => { vi.advanceTimersByTime(1000); });
+    expect(screen.getByTestId(`catalogue-section-${third.id}`)).toBeTruthy();
+    cleanup();
+    const last = CATALOGUE_SECTIONS[CATALOGUE_SECTIONS.length - 1]!;
+    await open({ section: last.id, tour: '1000' });
+    act(() => { vi.advanceTimersByTime(5000); });
+    expect(screen.getByTestId(`catalogue-section-${last.id}`)).toBeTruthy();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test('without a tour nothing moves on its own', async () => {
+  vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+  try {
+    const first = CATALOGUE_SECTIONS[0]!;
+    await open({ section: first.id });
+    act(() => { vi.advanceTimersByTime(20000); });
+    expect(screen.getByTestId(`catalogue-section-${first.id}`)).toBeTruthy();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
 test('the header switches theme and locale for the content without touching the app', async () => {
   await open({ section: 'stage-header', theme: 'light', locale: 'en' });
   fireEvent.click(screen.getByRole('radio', { name: 'Dark' }));
