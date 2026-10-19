@@ -86,7 +86,7 @@ function setup(options: Options = {}): Setup {
 }
 const record = (fake: Fake): TransactionDto => fake.records.get(FOOD_ID) as TransactionDto;
 
-/** The panel on its own, as Record renders it: the record's id and version only. */
+/** The panel on its own with the record's id and version only, so it reads the record itself. */
 function mount(options: Options = {}): Setup {
   const made = setup(options);
   mountScreen(
@@ -138,6 +138,28 @@ test('with the import area off nothing is drawn or read; under it (the default s
   const slip = screen.getByTestId('receipt-slip');
   expect(slip.compareDocumentPosition(panel()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(within(panel()).getByRole('heading', { name: 'Receipt photo' })).toBeTruthy();
+});
+
+test('opening a record with a receipt reads it once: Record hands the panel the receipt it read', async () => {
+  delete process.env.EXPO_PUBLIC_REDESIGN;
+  const made = setup({ withReceipt: true });
+  mountScreen(<ReceiptPortsProvider ports={made.ports}><RecordScreen id={FOOD_ID} now={NOW} /></ReceiptPortsProvider>, { resources: made.fake.resources });
+  await thumbnail();
+  expect(imageSrc('receipt-thumbnail-image')).toBe(PHOTO_URI);
+  await settle();
+  expect(made.fake.callsOf('transaction')).toHaveLength(1);
+  expect(made.files.callsOf('grant')).toHaveLength(1);
+});
+
+test('a receipt kept on Record costs one more read, Record\'s own, which the panel takes', async () => {
+  delete process.env.EXPO_PUBLIC_REDESIGN;
+  const made = setup();
+  mountScreen(<ReceiptPortsProvider ports={made.ports}><RecordScreen id={FOOD_ID} now={NOW} /></ReceiptPortsProvider>, { resources: made.fake.resources });
+  fireEvent.click(within(await toConsent()).getByRole('button', { name: 'Keep this photo' }));
+  await thumbnail();
+  await settle();
+  expect(made.fake.callsOf('transaction')).toHaveLength(2);
+  expect(imageSrc('receipt-thumbnail-image')).toBe(PHOTO_URI);
 });
 
 // ---------------------------------------------------------------------------
