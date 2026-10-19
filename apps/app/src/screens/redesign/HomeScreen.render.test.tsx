@@ -748,3 +748,23 @@ test.each(['light', 'dark'] as const)('%s: first run, problems, offline, over bu
   await screen.findByRole('dialog', { name: 'Needs a look' });
   expectApprovedTextPairs(document.body, colors);
 });
+
+// R4 (behind the `planning` area until E2 checkpoint 2): Home is the way into
+// Budget, and its wallets lead to Wallets. With the area off, nothing changes.
+test('with Planning on, Home opens Budget and Wallets', async () => {
+  vi.stubEnv('EXPO_PUBLIC_REDESIGN', 'planning');
+  try {
+    mountHome(createFakeResources(goldenSeed()).resources);
+    fireEvent.click(await screen.findByRole('button', { name: 'Set a budget' }));
+    expect(router.push).toHaveBeenLastCalledWith('/spend/budget');
+    fireEvent.click(screen.getByRole('button', { name: 'Manage wallets' }));
+    expect(router.push).toHaveBeenLastCalledWith('/spend/wallets');
+    cleanup();
+    const budget = { id: '0000000d-0000-4000-8000-000000000001', month: '2026-09', overall_limit_minor: '1800000', category_limits: [], version: 1 };
+    mountHome(createFakeResources({ ...goldenSeed(), budgets: [budget] }).resources);
+    fireEvent.click(await screen.findByRole('button', { name: 'See budget' }));
+    expect(router.push).toHaveBeenLastCalledWith('/spend/budget');
+  } finally {
+    vi.unstubAllEnvs();
+  }
+});

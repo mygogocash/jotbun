@@ -1,26 +1,26 @@
 // The redesign's navigation shell (R3, decision D7): the kit TabBar under the
 // spend screens, with Home and History as tabs and the centre add button
-// opening Add. Budget joins under the `planning` area (R4); Insights joins in
-// R5. The bar is a row of the layout, below the screen, never over it. It is
-// hidden while adding, on a record, and on Wallets and Categories (opened
-// from Budget), so those screens have the whole height and their own way back.
+// opening Add. Insights joins in R5; Planning (R4) adds no tab (decision D7):
+// Budget opens from Home, Wallets and Categories from Budget. The bar is a row
+// of the layout, below the screen, never over it. It is hidden while adding,
+// on a record and on the Planning screens, so those screens have the whole
+// height and their own way back.
 import { usePathname, useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-import { isRedesignEnabled } from '@mobile/config/featureFlags';
 import { useCopy } from '@mobile/i18n/useCopy';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { TabBar } from '@mobile/ui/TabBar';
 import type { TabBarItem } from '@mobile/ui/TabBar';
 
-export type SpendTabKey = 'home' | 'history' | 'budget';
+export type SpendTabKey = 'home' | 'history';
 export type SpendTab = { visible: boolean; active: SpendTabKey | '' };
 
-const ROUTES: Readonly<Record<SpendTabKey, '/spend' | '/spend/all' | '/spend/budget'>> = { home: '/spend', history: '/spend/all', budget: '/spend/budget' };
-/** Screens that take the whole height: Add, a record (with its edit screens), and Wallets and Categories. */
-const BAR_HIDDEN = new Set(['add', 'record', 'wallets', 'categories']);
+const ROUTES: Readonly<Record<SpendTabKey, '/spend' | '/spend/all'>> = { home: '/spend', history: '/spend/all' };
+/** Screens that take the whole height: Add, a record (with its edit screens), and Budget, Wallets and Categories. */
+const BAR_HIDDEN = new Set(['add', 'record', 'budget', 'wallets', 'categories']);
 
 /** Whether the bar shows on `pathname`, and which tab it selects ('' for none). */
 export function spendTab(pathname: string): SpendTab {
@@ -29,7 +29,6 @@ export function spendTab(pathname: string): SpendTab {
   const path = `/${parts.join('/')}`;
   if (path === ROUTES.home) return { visible: true, active: 'home' };
   if (path === ROUTES.history) return { visible: true, active: 'history' };
-  if (path === ROUTES.budget) return { visible: true, active: 'budget' };
   return { visible: true, active: '' };
 }
 
@@ -43,11 +42,6 @@ function TabIcon({ name, color }: { name: SpendTabKey; color: string }) {
           <Path d="M3 11l9-7 9 7" {...stroke} />
           <Path d="M6 9.5V20h12V9.5" {...stroke} />
           <Path d="M10 20v-5h4v5" {...stroke} />
-        </>
-      ) : name === 'budget' ? (
-        <>
-          <Path d="M12 3a9 9 0 1 0 9 9h-9z" {...stroke} />
-          <Path d="M15 3.5A9 9 0 0 1 20.5 9H15z" {...stroke} />
         </>
       ) : (
         <>
@@ -68,7 +62,6 @@ export function SpendTabShell({ children }: { children: ReactNode }) {
   const items: TabBarItem[] = [
     { key: 'home', label: tc('Home'), icon: ({ color }) => <TabIcon name="home" color={color} /> },
     { key: 'history', label: tc('History'), icon: ({ color }) => <TabIcon name="history" color={color} /> },
-    ...(isRedesignEnabled('planning') ? [{ key: 'budget', label: tc('Budget'), icon: ({ color }: { color: string }) => <TabIcon name="budget" color={color} /> }] : []),
   ];
   const select = (key: string) => {
     if (key === tab.active || !(key in ROUTES)) return;

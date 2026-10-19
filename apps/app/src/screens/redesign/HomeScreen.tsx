@@ -70,6 +70,7 @@ import { SyncBanner, syncBannerLine } from '@mobile/ui/SyncBanner';
 import type { SyncBannerProps } from '@mobile/ui/SyncBanner';
 import { isOwnCreate, newId, refusedBeforeProcessing, saveProblem, useCommandKeys, useLoad, useMoneyLocale } from '../v1/parts';
 import { recordHref } from './HistoryParts';
+import { PlanningLink } from './planning/PlanningLinks';
 
 type Tc = ReturnType<typeof useCopy>;
 
@@ -713,17 +714,22 @@ export function HomeScreen({ now }: { now?: Date }) {
     >
       {sync}
       {pace.state === 'no_budget' ? (
-        <BunText tone="muted">{model.budget.setBudget ?? model.budget.headline}</BunText>
+        <>
+          <BunText tone="muted">{model.budget.setBudget ?? model.budget.headline}</BunText>
+          <PlanningLink to="set-budget" />
+        </>
       ) : (
         <Card>
           <SectionTitle>{tc('This month')}</SectionTitle>
           <PaceRing {...kitPace(pace)} />
           {notes.map((note) => <BunText key={note} variant="caption" tone="muted">{note}</BunText>)}
+          <PlanningLink to="see-budget" />
         </Card>
       )}
       <TodayReceipt group={model.today} emptyText={model.todayEmptyText} context={context} onAdd={add} />
       <EarlierDays groups={model.earlier} today={today} context={context} />
       <Wallets balance={model.balance} />
+      <PlanningLink to="wallets" />
       <PillButton kind="secondary" label={tc('See all entries')} onPress={() => router.push('/spend/all')} />
     </Page>
   );
