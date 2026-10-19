@@ -22,6 +22,7 @@ import { ENTRY_SECTIONS } from './entrySections';
 import { HISTORY_SECTIONS } from './historySections';
 import { HOME_SECTIONS } from './homeSections';
 import { KIT_SECTIONS } from './kitSections';
+import { FIRST_RUN_SECTIONS } from './account/firstRunSections';
 import { INSIGHTS_SECTIONS } from './insights/insightsSections';
 import { RECAP_SECTIONS } from './insights/recapSections';
 import { REMINDERS_SECTIONS } from './insights/remindersSections';
@@ -68,6 +69,11 @@ export const INSIGHTS_SCREEN_SECTIONS: readonly CatalogueSection[] = [
   ...REMINDERS_SECTIONS,
 ];
 
+/** R6 Account (behind `account` until E2 checkpoint 4): first run, sign-in, Settings, privacy. */
+export const ACCOUNT_SECTIONS: readonly CatalogueSection[] = [
+  ...FIRST_RUN_SECTIONS,
+];
+
 export const CATALOGUE_SECTIONS: readonly CatalogueSection[] = [
   ...KIT_SECTIONS,
   ...ENTRY_SECTIONS,
@@ -75,4 +81,5 @@ export const CATALOGUE_SECTIONS: readonly CatalogueSection[] = [
   ...SCREEN_SECTIONS,
   ...PLANNING_SECTIONS,
   ...INSIGHTS_SCREEN_SECTIONS,
+  ...ACCOUNT_SECTIONS,
 ];

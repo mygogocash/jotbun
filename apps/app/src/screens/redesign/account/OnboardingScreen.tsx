@@ -21,12 +21,11 @@ import { ScrollView, View } from 'react-native';
 
 import { useAuthGuardSession } from '@mobile/auth/useAuthGuardSession';
 import type { Locale } from '@mobile/i18n/locales';
-import { translateCopy } from '@mobile/i18n/messages';
 import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
 import { Bun } from '@mobile/mascot/Bun';
 import { useBunIntensity } from '@mobile/mascot/BunIntensityProvider';
 import type { BunPoseName } from '@mobile/mascot/poses';
-import { createDeviceReminderService } from '@mobile/notifications/localReminders';
+import { createAppReminderService } from '@mobile/notifications/useReminderUpkeep';
 import type { LocalReminderService } from '@mobile/notifications/reminders';
 import {
   FIRST_REMINDER, FIRST_REMINDER_TIME, PRIVACY_PROMISES, SKIP_TO, STORY_STEPS, afterOnboarding, primingAnswer, stepAfter, storyProgress,
@@ -50,13 +49,9 @@ export type OnboardingScreenProps = {
   reminders?: OnboardingReminders;
 };
 
-/** The device's reminder, written as the root layout's upkeep writes it, so upkeep sees nothing to redo. */
+/** The device's reminder, built as the root layout's upkeep and the Reminders screen build it, so upkeep sees nothing to redo. */
 function deviceReminders(locale: Locale): OnboardingReminders {
-  return createDeviceReminderService(
-    () => ({ title: translateCopy("Log today's spending", locale), body: translateCopy('Add what you spent today in Jotbun.', locale) }),
-    () => `${Intl.DateTimeFormat().resolvedOptions().timeZone}|${locale}`,
-    () => translateCopy('Daily reminder', locale),
-  );
+  return createAppReminderService(locale);
 }
 
 type Priming = { readonly phase: 'asking' } | { readonly phase: 'waiting' } | { readonly phase: 'answered'; readonly answer: PrimingAnswer };

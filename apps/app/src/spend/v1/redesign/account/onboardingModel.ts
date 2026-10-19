@@ -12,7 +12,7 @@
 //   session the seam reports `active` leaves the screen; "not configured" and
 //   every other answer stay on it, so nothing pretends to sign in.
 import { SPEND_INTRO_YEARLY_BAHT, formatIntroBaht } from '../../../spendIntro.ts';
-import type { PermissionOutcome, ReminderPreference } from '../../../../notifications/reminders.ts';
+import type { PermissionOutcome, ReminderPreferenceInput } from '../../../../notifications/reminders.ts';
 
 // ---------------------------------------------------------------------------
 // The story
@@ -53,8 +53,8 @@ export function coffeeMaths(): { perDay: string; perYear: string } {
 
 export const FIRST_REMINDER_TIME = '20:00';
 
-/** What Turn on asks the reminder service for: on, at 20:00. Nothing else. */
-export const FIRST_REMINDER: ReminderPreference = { enabled: true, localTime: FIRST_REMINDER_TIME };
+/** What Turn on asks the reminder service for: on, at 20:00, every day (the service's default when no days are given). Nothing else. */
+export const FIRST_REMINDER: ReminderPreferenceInput = { enabled: true, localTime: FIRST_REMINDER_TIME };
 
 /** How the question ends, once the reminder service has answered Turn on. */
 export type PrimingAnswer = 'scheduled' | 'denied' | 'unsupported' | 'failed';
