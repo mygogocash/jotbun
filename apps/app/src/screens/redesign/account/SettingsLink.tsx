@@ -1,5 +1,5 @@
 // R6's way into Settings from the header (decision D7), behind the `account`
-// area until E2 checkpoint 4: with it off it draws nothing.
+// area (on since E2 checkpoint 4): with it off it draws nothing.
 import { useRouter } from 'expo-router';
 import { Pressable, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';

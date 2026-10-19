@@ -121,8 +121,8 @@ async function toConsent(): Promise<HTMLElement> {
 // ---------------------------------------------------------------------------
 // The area, and Record
 
-test('with the import area off nothing is drawn or read; under it the panel sits under Record\'s slip', async () => {
-  delete process.env.EXPO_PUBLIC_REDESIGN;
+test('with the import area off nothing is drawn or read; under it (the default since E2 checkpoint 5) the panel sits under Record\'s slip', async () => {
+  process.env.EXPO_PUBLIC_REDESIGN = '-import';
   const off = setup({ withReceipt: true });
   mountScreen(<ReceiptPortsProvider ports={off.ports}><RecordScreen id={FOOD_ID} now={NOW} /></ReceiptPortsProvider>, { resources: off.fake.resources });
   expect(await screen.findByTestId('receipt-slip')).toBeTruthy();
@@ -131,7 +131,7 @@ test('with the import area off nothing is drawn or read; under it the panel sits
   expect(off.files.calls).toEqual([]);
   cleanup();
 
-  process.env.EXPO_PUBLIC_REDESIGN = 'import';
+  delete process.env.EXPO_PUBLIC_REDESIGN;
   const on = setup({ withReceipt: true });
   mountScreen(<ReceiptPortsProvider ports={on.ports}><RecordScreen id={FOOD_ID} now={NOW} /></ReceiptPortsProvider>, { resources: on.fake.resources });
   await thumbnail();

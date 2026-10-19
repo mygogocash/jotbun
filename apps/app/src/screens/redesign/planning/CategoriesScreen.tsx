@@ -1,5 +1,5 @@
 // R4 Planning: the Categories screen (plan §6.2, /spend/categories), behind
-// the `planning` area until E2 checkpoint 2. It is opened from Budget, so the
+// the `planning` area (on since E2 checkpoint 2). It is opened from Budget, so the
 // stage has Back.
 //
 // - The grid: Expense or Income, built-in and custom categories together,

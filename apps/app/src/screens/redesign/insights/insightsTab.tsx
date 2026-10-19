@@ -1,5 +1,5 @@
-// R5 Insights' tab (decision D7), behind the `insights` area until E2
-// checkpoint 3: the tab shell asks for it, and gets nothing with the area off.
+// R5 Insights' tab (decision D7), behind the `insights` area (on since E2
+// checkpoint 3): the tab shell asks for it, and gets nothing with the area off.
 import type { ReactElement } from 'react';
 
 import { isRedesignEnabled } from '@mobile/config/featureFlags';

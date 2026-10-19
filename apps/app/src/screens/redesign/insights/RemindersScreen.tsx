@@ -1,5 +1,5 @@
 // R5 Insights: the Reminders screen (plan §6.3), behind the `insights` area
-// until E2 checkpoint 3. It replaces S4's unbuilt reminder settings and runs
+// (on since E2 checkpoint 3). It replaces S4's unbuilt reminder settings and runs
 // on S4's reminder service (src/notifications): an on/off switch, the time
 // chip (an hour and a 5-minute step in a sheet), seven day checks Monday
 // first (at least one stays chosen), and a live preview of the notification

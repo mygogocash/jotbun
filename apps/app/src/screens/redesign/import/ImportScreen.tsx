@@ -1,5 +1,5 @@
-// R7: the import journey (plan §6.5), behind the `import` area until E2
-// checkpoint 5; uploads stay off on the server (IMPORT_UPLOADS_ENABLED) until
+// R7: the import journey (plan §6.5), behind the `import` area (on since E2
+// checkpoint 5); uploads stay off on the server (IMPORT_UPLOADS_ENABLED) until
 // the import release. Built on the P3 client: importReview.ts holds the
 // journey, its commands and keys, and the device draft; importModel.ts says
 // what the screen shows. This file only runs the steps and draws.

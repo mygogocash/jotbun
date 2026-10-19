@@ -15,15 +15,16 @@ export type RedesignArea = 'core' | 'catalogue' | 'planning' | 'insights' | 'acc
 
 /**
  * Approved areas, on by default. The core loop (Home, Quick add, History,
- * Record) passed E2 checkpoint 1 on 19 October 2026. The catalogue is a
- * development tool and stays opt-in. Planning (R4: Budget, Wallets,
- * Categories) is built behind its own area until E2 checkpoint 2, and
- * Insights (R5: recap, calendar, streak, reminders) until E2 checkpoint 3,
- * Account (R6: first run, sign-in, Settings, privacy) until checkpoint 4, and
- * Import (R7: the import journey and receipts) until checkpoint 5. The
- * server's uploads switch (IMPORT_UPLOADS_ENABLED) is separate and stays off.
+ * Record) passed E2 checkpoint 1, and Planning (R4: Budget, Wallets,
+ * Categories), Insights (R5: recap, calendar, streak, reminders), Account (R6:
+ * first run, sign-in, Settings, privacy) and Import (R7: the import journey
+ * and receipts) passed checkpoints 2–5, all on 19 October 2026. The catalogue
+ * is a development tool and stays opt-in. Imports themselves stay off: the
+ * server's uploads switch (IMPORT_UPLOADS_ENABLED) is separate, and Settings
+ * links to import only in the legacy build, until every import gate passes
+ * (handover §8).
  */
-const APPROVED: readonly RedesignArea[] = ['core'];
+const APPROVED: readonly RedesignArea[] = ['core', 'planning', 'insights', 'account', 'import'];
 
 /**
  * Whether a redesign area is on. `EXPO_PUBLIC_REDESIGN` is a comma list:

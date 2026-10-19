@@ -46,11 +46,12 @@ afterEach(() => {
   flags(ENV);
 });
 
-test.each([[SpendInsightsRoute, 'insights'], [SpendRemindersRoute, 'reminders']] as const)('%#: the screen only under the insights area', (Route, name) => {
+test.each([[SpendInsightsRoute, 'insights'], [SpendRemindersRoute, 'reminders']] as const)('%#: the screen only under the insights area (on since E2 checkpoint 3)', (Route, name) => {
+  flags({ redesign: '-insights' });
   render(<Route />);
   expect(screen.getByText('redirect to /spend')).toBeTruthy();
   cleanup();
-  flags({ redesign: 'insights' });
+  flags({});
   render(<Route />);
   expect(screen.getByText(`${name} with shared resources`)).toBeTruthy();
   cleanup();
@@ -61,10 +62,11 @@ test.each([[SpendInsightsRoute, 'insights'], [SpendRemindersRoute, 'reminders']]
 
 test('a recap: only under the area, for a real month; otherwise back to Insights or Home', () => {
   nav.params = { month: '2026-09' };
+  flags({ redesign: '-insights' });
   render(<SpendRecapRoute />);
   expect(screen.getByText('redirect to /spend')).toBeTruthy();
   cleanup();
-  flags({ redesign: 'insights' });
+  flags({});
   render(<SpendRecapRoute />);
   expect(screen.getByText('recap of 2026-09 with shared resources')).toBeTruthy();
   cleanup();

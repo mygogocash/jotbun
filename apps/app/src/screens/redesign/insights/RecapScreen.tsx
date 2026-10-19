@@ -17,7 +17,7 @@
 //   a month that has not started.
 //
 // Nothing here moves, so reduced motion has nothing to take away: the bun
-// stands on the stage. Copy is in the catalogs, with Thai, pending E2
+// stands on the stage. Copy is in the catalogs, with Thai, approved at E2
 // checkpoint 3.
 import { HISTORY_MAX_LIMIT } from '@gogospend/contracts';
 import { useRouter } from 'expo-router';

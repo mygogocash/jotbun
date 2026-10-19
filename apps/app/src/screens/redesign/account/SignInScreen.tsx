@@ -1,5 +1,5 @@
 // R6: the Sign-in screen (plan §6.4), at `/login` behind the `account` area
-// until E2 checkpoint 4.
+// (on since E2 checkpoint 4).
 //
 // - The bun banner on the stage, one line ("If you already have an account,
 //   we'll sign you in") and the three promises.

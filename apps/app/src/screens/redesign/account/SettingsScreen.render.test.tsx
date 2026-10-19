@@ -140,18 +140,20 @@ test('choosing Quiet saves the bun intensity for the whole app', () => {
 // Links
 
 test('planning rows only under the planning area, Reminders only under insights; Privacy and data always', () => {
+  setEnv('EXPO_PUBLIC_REDESIGN', 'account,-planning,-insights');
   mountSettings();
   expect(linkNames()).toEqual(['Privacy and data']);
   cleanup();
-  setEnv('EXPO_PUBLIC_REDESIGN', 'account,planning');
+  setEnv('EXPO_PUBLIC_REDESIGN', '-insights');
   mountSettings();
   expect(linkNames()).toEqual(['Wallets', 'Categories', 'Budget', 'Privacy and data']);
   cleanup();
-  setEnv('EXPO_PUBLIC_REDESIGN', 'account,insights');
+  setEnv('EXPO_PUBLIC_REDESIGN', '-planning');
   mountSettings();
   expect(linkNames()).toEqual(['Reminders', 'Privacy and data']);
   cleanup();
-  setEnv('EXPO_PUBLIC_REDESIGN', 'all');
+  // The default since E2 checkpoints 2 and 3.
+  setEnv('EXPO_PUBLIC_REDESIGN', undefined);
   mountSettings();
   expect(linkNames()).toEqual(['Wallets', 'Categories', 'Budget', 'Reminders', 'Privacy and data']);
 });

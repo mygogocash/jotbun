@@ -1,5 +1,5 @@
 // R6: Settings (plan §6.4), reached from Home's header (decision D7), behind
-// the `account` area until E2 checkpoint 4. Calm grouped cards:
+// the `account` area (on since E2 checkpoint 4). Calm grouped cards:
 //
 // - Appearance (System, Light, Dark) through the theme preference; dark mode
 //   stays (D8).

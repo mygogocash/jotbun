@@ -1,7 +1,7 @@
 // Pieces the R6 account screens share (Settings, Privacy and data): the
 // account services they run on and the app's own wiring of them, going back,
 // a calm section card, a radio list and a link row. Behind the `account` area
-// until E2 checkpoint 4; built from the kit, BunText and useBunColors() only.
+// (on since E2 checkpoint 4); built from the kit, BunText and useBunColors() only.
 import { useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
 import { useCallback } from 'react';

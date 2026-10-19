@@ -1,6 +1,6 @@
 // R6 Onboarding's pieces (plan §6.4): the coffee maths with its pile of coins,
 // the story's dots, the reminder's preview and the reminder service's answer.
-// Behind the `account` area until E2 checkpoint 4.
+// Behind the `account` area (on since E2 checkpoint 4).
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, View } from 'react-native';
 

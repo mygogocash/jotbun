@@ -1,5 +1,5 @@
 // R4 Planning: the Wallets screen (plan §6.2, /spend/wallets), behind the
-// `planning` area until E2 checkpoint 2. It is opened from Budget, so its
+// `planning` area (on since E2 checkpoint 2). It is opened from Budget, so its
 // stage has Back.
 //
 // - The list: the active wallets' exact total on the stage, a card per

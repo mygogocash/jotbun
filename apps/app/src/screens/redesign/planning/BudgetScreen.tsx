@@ -1,5 +1,5 @@
-// Budget (R4 Planning, plan §6.2), behind the `planning` area until E2
-// checkpoint 2. It opens from Home, takes the whole height and has its own
+// Budget (R4 Planning, plan §6.2), behind the `planning` area (on since E2
+// checkpoint 2). It opens from Home, takes the whole height and has its own
 // way back.
 //
 // - The month: the lavender stage with Back, the month switcher (every
@@ -23,7 +23,7 @@
 //   exactly these figures counts as saved. A refusal says where it is.
 // - Set up: Wallets and Categories, until the Me tab holds them.
 //
-// Copy is English through `tc()`, in the catalogs with Thai pending E2
+// Copy is English through `tc()`, in the catalogs with Thai approved at E2
 // checkpoint 2. Nothing animates. The bun appears on the empty state
 // (`thinking`) and, at full intensity, on the stage when the month is over
 // (`oops-kind`); both are decorative.

@@ -1,5 +1,5 @@
-// R7: a record's receipt photo (plan §6.5), behind the `import` area until E2
-// checkpoint 5. With the area off it draws nothing, so the approved Record
+// R7: a record's receipt photo (plan §6.5), behind the `import` area (on since E2
+// checkpoint 5). With the area off it draws nothing, so the approved Record
 // screen is unchanged.
 //
 // Record renders it under the receipt slip with only the record's id and

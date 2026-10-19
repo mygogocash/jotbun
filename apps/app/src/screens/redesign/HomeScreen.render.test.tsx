@@ -156,10 +156,10 @@ test('loading, then the golden month: exact figures, an empty today receipt and 
   expect(await screen.findByRole('heading', { name: 'September 2026' })).toBeTruthy();
   expect(screen.getByTestId('home-total').textContent).toBe('฿12,450.00 spent this month');
 
-  // No budget: the pace is left out, with one quiet line and no budget action.
+  // No budget: the pace is left out, with one quiet line and the way to set one (Planning, on since E2 checkpoint 2).
   expect(screen.queryByRole('progressbar')).toBeNull();
   expect(screen.getByText("Set a monthly budget to see what's left each day")).toBeTruthy();
-  expect(screen.queryByRole('button', { name: /budget/i })).toBeNull();
+  expect(screen.getAllByRole('button', { name: /budget/i }).map((button) => button.getAttribute('aria-label') ?? button.textContent)).toEqual(['Set a budget']);
 
   const receipt = screen.getByTestId('receipt-slip');
   expect(within(receipt).getByRole('heading', { name: "Today's receipt" })).toBeTruthy();
@@ -749,7 +749,7 @@ test.each(['light', 'dark'] as const)('%s: first run, problems, offline, over bu
   expectApprovedTextPairs(document.body, colors);
 });
 
-// R4 (behind the `planning` area until E2 checkpoint 2): Home is the way into
+// R4 (the `planning` area, on since E2 checkpoint 2): Home is the way into
 // Budget, and its wallets lead to Wallets. With the area off, nothing changes.
 test('with Planning on, Home opens Budget and Wallets', async () => {
   vi.stubEnv('EXPO_PUBLIC_REDESIGN', 'planning');
@@ -764,13 +764,20 @@ test('with Planning on, Home opens Budget and Wallets', async () => {
     mountHome(createFakeResources({ ...goldenSeed(), budgets: [budget] }).resources);
     fireEvent.click(await screen.findByRole('button', { name: 'See budget' }));
     expect(router.push).toHaveBeenLastCalledWith('/spend/budget');
+    // Switched off, Home has no way into planning.
+    cleanup();
+    vi.stubEnv('EXPO_PUBLIC_REDESIGN', '-planning');
+    mountHome(createFakeResources(goldenSeed()).resources);
+    await screen.findByRole('heading', { name: 'September 2026' });
+    expect(screen.queryByRole('button', { name: /budget/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Manage wallets' })).toBeNull();
   } finally {
     vi.unstubAllEnvs();
   }
 });
 
-// R6 (behind the `account` area until E2 checkpoint 4): Settings from the header (decision D7).
-test('with Account on, Home has Settings in its header', async () => {
+// R6 (the `account` area, on since E2 checkpoint 4): Settings from the header (decision D7).
+test('with Account on, Home has Settings in its header; switched off, it has none', async () => {
   vi.stubEnv('EXPO_PUBLIC_REDESIGN', 'account');
   try {
     mountHome(createFakeResources(goldenSeed()).resources);
@@ -782,7 +789,12 @@ test('with Account on, Home has Settings in its header', async () => {
     vi.unstubAllEnvs();
   }
   cleanup();
-  mountHome(createFakeResources(goldenSeed()).resources);
-  await screen.findByRole('heading', { name: 'September 2026' });
-  expect(screen.queryByRole('button', { name: 'Settings' })).toBeNull();
+  vi.stubEnv('EXPO_PUBLIC_REDESIGN', '-account');
+  try {
+    mountHome(createFakeResources(goldenSeed()).resources);
+    await screen.findByRole('heading', { name: 'September 2026' });
+    expect(screen.queryByRole('button', { name: 'Settings' })).toBeNull();
+  } finally {
+    vi.unstubAllEnvs();
+  }
 });

@@ -41,11 +41,12 @@ afterEach(() => {
 
 const ROUTES = [[SpendBudgetRoute, 'budget'], [SpendWalletsRoute, 'wallets'], [SpendCategoriesRoute, 'categories']] as const;
 
-test.each(ROUTES)('%#: the screen only under the planning area, with the shared resources', (Route, name) => {
+test.each(ROUTES)('%#: the screen only under the planning area (on since E2 checkpoint 2), with the shared resources', (Route, name) => {
+  flags({ redesign: '-planning' });
   render(<Route />);
   expect(screen.getByText('redirect to /spend')).toBeTruthy();
   cleanup();
-  flags({ redesign: 'planning' });
+  flags({});
   render(<Route />);
   expect(screen.getByText(`${name} with shared resources`)).toBeTruthy();
   cleanup();

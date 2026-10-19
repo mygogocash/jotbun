@@ -107,7 +107,8 @@ test('approved: the redesigned layout is the default', () => {
 });
 
 test('flag on: Home and History tabs under the screen, with the add button in the centre', () => {
-  flags({ redesign: 'core' });
+  // Insights (its own tab, on since E2 checkpoint 3) is switched off here; the insights test below has three tabs.
+  flags({ redesign: 'core,-insights' });
   mount(<SpendLayout />);
   expect(within(screen.getByTestId('device-diary')).getByText('current screen')).toBeTruthy();
   const list = screen.getByRole('tablist');
@@ -216,10 +217,15 @@ test('the Home route: the new Home under the flag, the legacy flag first, else t
 // R4 under decision D7 (a small tab set): Planning adds no tab. Budget opens
 // from Home, Wallets and Categories from Budget; each takes the whole height
 // with its own way back.
-test('planning on: still Home and History; the bar hides on budget, wallets and categories', () => {
+test('planning on: no tab of its own; the bar hides on budget, wallets and categories', () => {
+  const tabNames = () => within(screen.getByRole('tablist')).getAllByRole('tab').map((tab) => tab.getAttribute('aria-label'));
   flags({ redesign: 'planning' });
   mount(<SpendLayout />);
-  expect(within(screen.getByRole('tablist')).getAllByRole('tab').map((tab) => tab.getAttribute('aria-label'))).toEqual(['Home', 'History']);
+  expect(tabNames()).toEqual(['Home', 'History', 'Insights']);
+  cleanup();
+  flags({ redesign: '-planning' });
+  mount(<SpendLayout />);
+  expect(tabNames()).toEqual(['Home', 'History', 'Insights']);
   cleanup();
   for (const path of ['/spend/budget', '/spend/wallets', '/spend/categories']) expect(spendTab(path)).toEqual({ visible: false, active: '' });
 });

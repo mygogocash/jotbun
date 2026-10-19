@@ -1,5 +1,5 @@
 // R6: the Onboarding screen (plan §6.4), at `/` behind the `account` area
-// until E2 checkpoint 4.
+// (on since E2 checkpoint 4).
 //
 // - Three story steps, with Skip, Next and the dots: the coffee maths (today's
 //   intro maths and copy, with coins piling up), "your diary stays private"

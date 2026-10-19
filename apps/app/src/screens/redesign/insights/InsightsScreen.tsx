@@ -1,5 +1,5 @@
 // R5 Insights (plan §6.3), the hub behind the Insights tab (decision D7) and
-// the `insights` area until E2 checkpoint 3:
+// the `insights` area (on since E2 checkpoint 3):
 //
 // - the lavender stage with the month switcher and the month's confirmed
 //   money out (the number is the hero);

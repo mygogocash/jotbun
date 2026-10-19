@@ -64,7 +64,8 @@ afterEach(() => {
   flag(ENV);
 });
 
-test('the first run and sign-in: redesigned under the account area, today\'s screens without it', () => {
+test('the first run and sign-in: redesigned under the account area (on since E2 checkpoint 4), today\'s screens with it off', () => {
+  flag('-account');
   render(<Welcome />);
   expect(screen.getByText('current welcome')).toBeTruthy();
   cleanup();
@@ -72,7 +73,7 @@ test('the first run and sign-in: redesigned under the account area, today\'s scr
   expect(screen.getByText('current login')).toBeTruthy();
   expect(screen.queryByText('redesigned sign-in')).toBeNull();
   cleanup();
-  flag('account');
+  flag(undefined);
   render(<Welcome />);
   expect(screen.getByText('redesigned onboarding')).toBeTruthy();
   cleanup();
@@ -80,14 +81,15 @@ test('the first run and sign-in: redesigned under the account area, today\'s scr
   expect(screen.getByText('redesigned sign-in')).toBeTruthy();
 });
 
-test('settings and privacy: only under the account area, and only signed in', () => {
+test('settings and privacy: only under the account area (on by default), and only signed in', () => {
+  flag('-account');
   render(<SettingsRoute />);
   expect(screen.getByText('redirect to /spend')).toBeTruthy();
   cleanup();
   render(<PrivacyRoute />);
   expect(screen.getByText('redirect to /spend')).toBeTruthy();
   cleanup();
-  flag('account');
+  flag(undefined);
   render(<SettingsRoute />);
   expect(screen.getByText('settings')).toBeTruthy();
   cleanup();

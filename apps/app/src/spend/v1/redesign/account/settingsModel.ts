@@ -28,9 +28,9 @@ export const BUN_CHOICES: readonly BunIntensity[] = BUN_INTENSITIES;
 export type SignInMethod = 'apple' | 'google' | 'email';
 
 /**
- * The areas whose rows Settings shows. Planning (Wallets, Categories, Budget)
- * and insights (Reminders) wait for their own E2 approval; import waits for
- * every import gate (handover §8).
+ * The areas whose rows Settings shows: Planning (Wallets, Categories, Budget)
+ * and insights (Reminders) follow their areas, on since E2 checkpoints 2 and
+ * 3; import waits for every import gate (handover §8).
  */
 export type SettingsAreas = { readonly planning: boolean; readonly insights: boolean; readonly imports: boolean };
 

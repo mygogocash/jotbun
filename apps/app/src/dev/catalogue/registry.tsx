@@ -13,9 +13,9 @@
 // The every-section render test picks a new entry up by itself; say what it
 // must show in that test's SHOWS table.
 //
-// Screens built behind an area awaiting its E2 checkpoint have their own list
-// here, in the 'Screens' group, in plan order: Planning (R4), Insights (R5) and
-// Account (R6) and Import (R7).
+// The screens of each later area have their own list here, in the 'Screens'
+// group, in plan order: Planning (R4), Insights (R5), Account (R6) and Import
+// (R7), all approved at E2 checkpoints 2–5.
 import type { ReactNode } from 'react';
 
 import { ENTRY_SECTIONS } from './entrySections';
@@ -58,27 +58,27 @@ export const SCREEN_SECTIONS: readonly CatalogueSection[] = [
   ...RECORD_SECTIONS,
 ];
 
-/** R4 Planning (behind `planning` until E2 checkpoint 2): Budget, Wallets, Categories. */
+/** R4 Planning (the `planning` area, on since E2 checkpoint 2): Budget, Wallets, Categories. */
 export const PLANNING_SECTIONS: readonly CatalogueSection[] = [
   ...BUDGET_SECTIONS,
   ...WALLET_SECTIONS,
   ...CATEGORY_SECTIONS,
 ];
 
-/** R5 Insights (behind `insights` until E2 checkpoint 3): the hub, a month's recap, reminders. */
+/** R5 Insights (the `insights` area, on since E2 checkpoint 3): the hub, a month's recap, reminders. */
 export const INSIGHTS_SCREEN_SECTIONS: readonly CatalogueSection[] = [
   ...INSIGHTS_SECTIONS,
   ...RECAP_SECTIONS,
   ...REMINDERS_SECTIONS,
 ];
 
-/** R6 Account (behind `account` until E2 checkpoint 4): first run, sign-in, Settings, privacy. */
+/** R6 Account (the `account` area, on since E2 checkpoint 4): first run, sign-in, Settings, privacy. */
 export const ACCOUNT_SECTIONS: readonly CatalogueSection[] = [
   ...FIRST_RUN_SECTIONS,
   ...SETTINGS_SECTIONS,
 ];
 
-/** R7 Import (behind `import` until E2 checkpoint 5): the import journey and a record's receipt. */
+/** R7 Import (the `import` area, on since E2 checkpoint 5): the import journey and a record's receipt. */
 export const IMPORT_SCREEN_SECTIONS: readonly CatalogueSection[] = [
   ...IMPORT_SECTIONS,
   ...RECEIPT_SECTIONS,

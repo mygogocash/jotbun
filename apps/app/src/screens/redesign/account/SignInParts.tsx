@@ -1,5 +1,5 @@
 // R6 Sign-in's pieces (plan §6.4): the explicit terms box and today's
-// "not configured" answer. Behind the `account` area until E2 checkpoint 4.
+// "not configured" answer. Behind the `account` area (on since E2 checkpoint 4).
 import { Pressable, View } from 'react-native';
 
 import { useCopy } from '@mobile/i18n/useCopy';

@@ -1,5 +1,5 @@
 // R6: Privacy and data (plan §6.4), from Settings, behind the `account` area
-// until E2 checkpoint 4. A calm data screen, no bun:
+// (on since E2 checkpoint 4). A calm data screen, no bun:
 //
 // - Promises in plain words: no bank connection, never sold, no ads, and not
 //   even Jotbun reads the diary.

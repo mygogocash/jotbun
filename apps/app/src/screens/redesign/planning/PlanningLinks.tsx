@@ -1,6 +1,6 @@
 // R4 Planning's ways in from the approved screens: Home opens Budget (to set
-// one, or to see it) and Wallets. Behind the `planning` area until E2
-// checkpoint 2: with it off they draw nothing, so Home is unchanged.
+// one, or to see it) and Wallets. Behind the `planning` area (on since E2
+// checkpoint 2): with it off they draw nothing, so Home is unchanged.
 import { useRouter } from 'expo-router';
 
 import { isRedesignEnabled } from '@mobile/config/featureFlags';

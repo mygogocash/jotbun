@@ -34,11 +34,12 @@ afterEach(() => {
   flags(ENV);
 });
 
-test('legacy first, then the redesigned journey under the import area, else Home', () => {
+test('legacy first, then the redesigned journey under the import area (on since E2 checkpoint 5), else Home', () => {
+  flags({ redesign: '-import' });
   render(<SpendImportRoute />);
   expect(screen.getByText('redirect to /spend')).toBeTruthy();
   cleanup();
-  flags({ redesign: 'import' });
+  flags({});
   render(<SpendImportRoute />);
   expect(screen.getByText('redesigned import')).toBeTruthy();
   cleanup();

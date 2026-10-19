@@ -15,7 +15,7 @@
 // - The share is plain text with exact amounts (decision D6: an image waits
 //   for a capture package).
 //
-// Copy is English for `tc()`, in the catalogs with Thai pending E2
+// Copy is English for `tc()`, in the catalogs with Thai approved at E2
 // checkpoint 3 (the catalog guard checks every literal here).
 import type { CategoryDto, CategoryTotal, HistoryPage, Minor, MonthSummary } from '@gogospend/contracts';
 

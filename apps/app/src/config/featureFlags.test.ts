@@ -32,35 +32,20 @@ test('an area not yet approved is on only by name, or all at once', () => {
   assert.equal(isRedesignEnabled('catalogue', '-catalogue,all'), false);
 });
 
-// R4: Planning is built behind its own area until E2 checkpoint 2.
-test('planning is opt-in until approved', () => {
-  assert.equal(isRedesignEnabled('planning', undefined), false);
-  assert.equal(isRedesignEnabled('planning', 'core'), false);
-  assert.equal(isRedesignEnabled('planning', 'planning'), true);
-  assert.equal(isRedesignEnabled('planning', 'all'), true);
-  assert.equal(isRedesignEnabled('planning', 'planning,off'), false);
-});
+// E2 checkpoints 2–5 approved Planning (R4), Insights (R5), Account (R6) and
+// Import (R7) on 19 October 2026: each is on unless switched off. The catalogue
+// stays opt-in.
+for (const area of ['planning', 'insights', 'account', 'import'] as const) {
+  test(`${area} is on by default since its approval, and -${area} or off switches it off`, () => {
+    assert.equal(isRedesignEnabled(area, undefined), true);
+    assert.equal(isRedesignEnabled(area, ''), true);
+    assert.equal(isRedesignEnabled(area, 'core'), true);
+    assert.equal(isRedesignEnabled(area, `-${area}`), false);
+    assert.equal(isRedesignEnabled(area, `core,-${area}`), false);
+    assert.equal(isRedesignEnabled(area, 'off'), false);
+  });
+}
 
-// R5: Insights is built behind its own area until E2 checkpoint 3.
-test('insights is opt-in until approved', () => {
-  assert.equal(isRedesignEnabled('insights', undefined), false);
-  assert.equal(isRedesignEnabled('insights', 'planning'), false);
-  assert.equal(isRedesignEnabled('insights', 'insights'), true);
-  assert.equal(isRedesignEnabled('insights', 'all'), true);
-});
-
-// R6: first run, sign-in, Settings and privacy are built behind their own area until E2 checkpoint 4.
-test('account is opt-in until approved', () => {
-  assert.equal(isRedesignEnabled('account', undefined), false);
-  assert.equal(isRedesignEnabled('account', 'insights'), false);
-  assert.equal(isRedesignEnabled('account', 'account'), true);
-  assert.equal(isRedesignEnabled('account', 'all'), true);
-});
-
-// R7: the import journey and receipts are built behind their own area until E2 checkpoint 5.
-test('import is opt-in until approved', () => {
-  assert.equal(isRedesignEnabled('import', undefined), false);
-  assert.equal(isRedesignEnabled('import', 'account'), false);
-  assert.equal(isRedesignEnabled('import', 'import'), true);
-  assert.equal(isRedesignEnabled('import', 'all'), true);
+test('the catalogue is still opt-in', () => {
+  assert.equal(isRedesignEnabled('catalogue', 'planning,insights,account,import'), false);
 });
