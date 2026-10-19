@@ -11,7 +11,7 @@ import { createMemoryKeyStore } from './testing/memoryKeys.ts';
 import { createTestDiaryFiles } from './testing/nodeSqlite.ts';
 import type { TestDiaryFiles } from './testing/nodeSqlite.ts';
 import { ACCOUNT_A, ACCOUNT_B, FOOD, SAVINGS, WALLET, category, change, draft, expense, group, outbox, references, wallet } from './testing/diaryFixtures.ts';
-import { CursorMoved } from './types.ts';
+import { CursorMoved, DiaryLocked, StaleEpochError } from './types.ts';
 
 let files: TestDiaryFiles;
 afterEach(() => files?.dispose());
@@ -283,4 +283,63 @@ test('a build that knows the import entities stores them', async () => {
   const store = await open();
   await store.applyChangeGroups([references(), group(2, importReview())], 'c2', null);
   assert.ok((await store.readState()).confirmed.some((entity) => entity.entity === 'import_review'));
+});
+
+// Decision 7: the import review draft lives in the diary (migration 2), in
+// rows the import draft store reads and writes by key.
+
+test('import draft rows are written, replaced, listed and removed, kept across a restart, and leave with the diary', async () => {
+  files?.dispose();
+  files = createTestDiaryFiles();
+  const database = new AccountDatabase({ files, keys: createMemoryKeyStore(), epoch: () => 1 });
+  const store = await database.open(ACCOUNT_A);
+  await store.applyChangeGroups([references()], 'c1', null);
+  const before = { state: await store.readState(), outbox: await store.readOutbox() };
+  assert.equal(await store.readImportDraft('draft.a'), null);
+  await store.writeImportDraft('draft.a', 'first');
+  await store.writeImportDraft('draft.a', 'second');
+  await store.writeImportDraft('draft.b', 'other');
+  assert.equal(await store.readImportDraft('draft.a'), 'second');
+  assert.deepEqual(await store.importDraftKeys(), ['draft.a', 'draft.b']);
+  await store.removeImportDraft('draft.b');
+  await store.removeImportDraft('never-written');
+  assert.deepEqual(await store.importDraftKeys(), ['draft.a']);
+  // Drafts are their own rows: the confirmed state and the outbox are untouched.
+  assert.deepEqual({ state: await store.readState(), outbox: await store.readOutbox() }, before);
+
+  await store.lock();
+  const reopened = await database.open(ACCOUNT_A);
+  assert.equal(await reopened.readImportDraft('draft.a'), 'second');
+  // The diary's erase takes its drafts with it.
+  await reopened.eraseAfterConfirmation();
+  assert.deepEqual(await (await database.open(ACCOUNT_A)).importDraftKeys(), []);
+});
+
+test('import draft rows follow the store: refused once it is locked or from an earlier session, and a write racing a session change rolls back', async () => {
+  files?.dispose();
+  files = createTestDiaryFiles();
+  const session = { epoch: 1 };
+  const database = new AccountDatabase({ files, keys: createMemoryKeyStore(), epoch: () => session.epoch });
+  const store = await database.open(ACCOUNT_A);
+  await store.writeImportDraft('draft.a', 'kept');
+  const every = (target: DiaryStore) => [
+    () => target.readImportDraft('draft.a'),
+    () => target.writeImportDraft('draft.a', 'late'),
+    () => target.removeImportDraft('draft.a'),
+    () => target.importDraftKeys(),
+  ];
+  await store.lock();
+  for (const call of every(store)) await assert.rejects(call(), (error) => error instanceof DiaryLocked && error.reason === 'locked');
+
+  const current = await database.open(ACCOUNT_A);
+  session.epoch = 2;
+  for (const call of every(current)) await assert.rejects(call(), (error) => error instanceof StaleEpochError);
+
+  const fresh = await database.open(ACCOUNT_A);
+  files.failWhen((sql) => {
+    if (/INSERT INTO import_drafts/i.test(sql)) session.epoch += 1;
+  });
+  await assert.rejects(fresh.writeImportDraft('draft.a', 'racing'), (error) => error instanceof StaleEpochError);
+  files.failWhen(null);
+  assert.equal(await (await database.open(ACCOUNT_A)).readImportDraft('draft.a'), 'kept');
 });

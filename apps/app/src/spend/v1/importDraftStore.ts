@@ -1,36 +1,35 @@
-// P3: a durable import review draft (`ImportDraftStore`) on the device's
-// key-value storage, the same AsyncStorage pattern as the daily reminder
-// (notifications/localReminders.ts). This module is pure: it only needs the
-// storage port below, so node tests run it against an in-memory map and a
-// "restart" is a second store over the same map. deviceImportDraftStore.ts
-// binds it to AsyncStorage. `memoryDraftStore` (importReview.ts) stays the
-// test double.
+// P3: a durable import review draft (`ImportDraftStore`). Since decision 7
+// (19 October 2026) it lives inside the account's encrypted diary (SQLCipher,
+// the `import_drafts` rows of migration 2): `spendDiary.importDraftStore()`
+// hands out `createDiaryDraftStore` over the open diary. This module is pure:
+// it only needs the key-value port below, so node tests run it against an
+// in-memory map or a test diary. `memoryDraftStore` (importReview.ts) keeps a
+// draft for one visit when no diary is open (web, locked, opening).
 //
 // Keying: one draft per account (`gogospend.import-draft.v1.<account id>`).
 // The store port is single-slot and a journey exists before it has a job
 // (`pendingUpload`), so the job id cannot be part of the key; the stored
 // envelope records it instead, next to the account id, and a draft whose
-// envelope names another account is never returned. Another account on the
-// same device therefore never sees this draft.
+// envelope names another account is never returned.
 //
 // What is erased, and when:
 //   - `clear()`: the journey finished (every outcome known) or the user
 //     discarded it (`confirmBatches` and `discardImport` call it);
-//   - `eraseImportDrafts(storage, accountId)`: the explicit sign-out erase
-//     (spendDiary `eraseForSignOut`); an ordinary sign-out keeps the draft
-//     with the account's diary drafts, like them;
-//   - `eraseImportDrafts(storage)`: every account's draft (device reset).
+//   - the diary's own erase (explicit sign-out, or a locked diary's discard)
+//     deletes the diary file and the draft with it; an ordinary sign-out keeps
+//     both;
+//   - `eraseImportDrafts(storage, accountId)` / `eraseImportDrafts(storage)`:
+//     one account's draft, or every account's, on any port.
 //
-// NOT ENCRYPTED: AsyncStorage is plain storage, unlike the SQLCipher diary.
-// A draft holds the preview's rows (amounts, merchants, notes) and the user's
-// corrections. Before the review screen is routed (E2), the owner must accept
-// that, or S2's iOS backup exclusion (a native step; see docs) must cover the
-// AsyncStorage directory, or the draft moves into the encrypted diary.
+// Builds before decision 7 kept the draft in plain AsyncStorage under the same
+// key. deviceImportDraftStore.ts binds that storage only to erase such a
+// leftover: before the diary draft's first use, and at the sign-out erase.
 import { isUuid } from '@gogospend/contracts';
 
+import type { DiaryStore } from '../../storage/diaryRepository.ts';
 import type { ImportDraftStore, ImportJourney, ImportStage } from './importReview.ts';
 
-/** The subset of AsyncStorage this module needs. */
+/** A key-value store with AsyncStorage's shape: the diary's draft rows, or a test map. */
 export type DraftStorage = {
   getItem(key: string): Promise<string | null>;
   setItem(key: string, value: string): Promise<unknown>;
@@ -106,7 +105,7 @@ export function createStorageDraftStore(storage: DraftStorage, accountId: string
 }
 
 /** Removes the account's draft, or with no account every account's (sign-out erase, device reset). */
-export async function eraseImportDrafts(storage: DraftStorage, accountId?: string): Promise<void> {
+export async function eraseImportDrafts(storage: Pick<DraftStorage, 'removeItem' | 'getAllKeys'>, accountId?: string): Promise<void> {
   if (accountId !== undefined) {
     assertAccount(accountId);
     await storage.removeItem(keyFor(accountId));
@@ -114,4 +113,51 @@ export async function eraseImportDrafts(storage: DraftStorage, accountId?: strin
   }
   const keys = (await storage.getAllKeys()).filter((key) => key.startsWith(IMPORT_DRAFT_KEY_PREFIX));
   for (const key of keys) await storage.removeItem(key);
+}
+
+/** What the diary store offers for drafts: its own account, and its draft rows. */
+export type DiaryDraftRows = Pick<DiaryStore, 'accountId' | 'readImportDraft' | 'writeImportDraft' | 'removeImportDraft' | 'importDraftKeys'>;
+
+/** The diary's draft rows as the storage port. A locked or superseded diary rejects, like its other reads and writes. */
+export function diaryDraftStorage(diary: DiaryDraftRows): DraftStorage {
+  return {
+    getItem: (key) => diary.readImportDraft(key),
+    setItem: (key, value) => diary.writeImportDraft(key, value),
+    removeItem: (key) => diary.removeImportDraft(key),
+    getAllKeys: () => diary.importDraftKeys(),
+  };
+}
+
+/**
+ * The diary account's draft, inside its open diary. Before its first use it
+ * calls `eraseLegacy` for the account: a plain-text draft an older build left
+ * in AsyncStorage is removed, not carried over. A removal that fails never
+ * blocks the draft and is tried again on the next use.
+ */
+export function createDiaryDraftStore(diary: DiaryDraftRows, eraseLegacy?: (accountId: string) => Promise<void>): ImportDraftStore {
+  const store = createStorageDraftStore(diaryDraftStorage(diary), diary.accountId);
+  let legacyGone = false;
+  const sweep = async () => {
+    if (legacyGone || !eraseLegacy) return;
+    try {
+      await eraseLegacy(diary.accountId);
+      legacyGone = true;
+    } catch {
+      // Tried again on the next use.
+    }
+  };
+  return {
+    load: async () => {
+      await sweep();
+      return store.load();
+    },
+    save: async (journey) => {
+      await sweep();
+      await store.save(journey);
+    },
+    clear: async () => {
+      await sweep();
+      await store.clear();
+    },
+  };
 }
