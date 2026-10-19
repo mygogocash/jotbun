@@ -20,6 +20,7 @@ import { categoryName } from '@mobile/spend/v1/viewModels';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { DECORATIVE, POLITE_LIVE_REGION, useAnnouncement } from '@mobile/ui/a11y';
 import { BunText } from '@mobile/ui/BunText';
+import { ComparedHeads, ComparedValues } from '@mobile/ui/ComparedValues';
 import { Card } from '@mobile/ui/Card';
 import { CategoryIcon, categoryLook } from '@mobile/ui/categoryIcons';
 import { evaluateKeypad, keypadDisplay, keypadHasOperator } from '@mobile/ui/keypadExpression';
@@ -270,10 +271,7 @@ export function BudgetConflictPanel({ rows, nameOf }: { rows: readonly BudgetCon
     >
       <BunText variant="heading" role="heading" accessibilityRole="header">{heading}</BunText>
       <BunText tone="muted">{tc("Reload to see it. Your changes here won't be saved.")}</BunText>
-      <View aria-hidden style={{ flexDirection: 'row', gap: BUN_SPACE.sm }}>
-        <BunText variant="label" style={{ flex: 1, fontWeight: '700' }}>{yoursLabel}</BunText>
-        <BunText variant="label" style={{ flex: 1, fontWeight: '700' }}>{serverLabel}</BunText>
-      </View>
+      <ComparedHeads yoursLabel={yoursLabel} serverLabel={serverLabel} />
       {rows.map((row) => {
         const label = row.categoryId === null ? tc('Monthly total') : nameOf(row.categoryId);
         const yours = shown(row.yoursMinor);
@@ -286,11 +284,15 @@ export function BudgetConflictPanel({ rows, nameOf }: { rows: readonly BudgetCon
             style={{ gap: BUN_SPACE.xxs, paddingTop: BUN_SPACE.xs, borderTopWidth: BUN_OUTLINE.rule, borderColor: colors.rule }}
           >
             <BunText variant="caption" tone="muted">{label}</BunText>
-            <View style={{ flexDirection: 'row', gap: BUN_SPACE.sm }}>
-              {/* A figure that differs is bold, so the difference never rests on colour. */}
-              <BunText style={[{ flex: 1, fontWeight: row.differs ? '700' : '400' }, TABULAR]}>{yours}</BunText>
-              <BunText style={[{ flex: 1, fontWeight: row.differs ? '700' : '400' }, TABULAR]}>{server}</BunText>
-            </View>
+            {/* A figure that differs is bold, so the difference never rests on colour. */}
+            <ComparedValues
+              yoursLabel={yoursLabel}
+              serverLabel={serverLabel}
+              yours={yours}
+              server={server}
+              yoursStyle={[{ fontWeight: row.differs ? '700' : '400' }, TABULAR]}
+              serverStyle={[{ fontWeight: row.differs ? '700' : '400' }, TABULAR]}
+            />
           </View>
         );
       })}

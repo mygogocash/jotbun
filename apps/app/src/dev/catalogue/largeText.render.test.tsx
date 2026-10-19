@@ -60,3 +60,27 @@ test('the edit footer stacks Cancel and Save changes at large text', async () =>
     vi.restoreAllMocks();
   }
 }, 60_000);
+
+test.each([['budget-conflict', 'budget-conflict'], ['categories-conflict', 'categories-conflict'], ['wallets-conflict', 'wallet-conflict']])('%s: at large text every field names Yours and On the server, one under the other', async (section, panelId) => {
+  textScale(3.571);
+  const panel = within(await open(section)).getByTestId(panelId);
+  expect(within(panel).getAllByText('Yours').length).toBeGreaterThan(1);
+  // A field this device holds no value for shows only the server's.
+  expect(within(panel).getAllByText('On the server').length).toBeGreaterThanOrEqual(within(panel).getAllByText('Yours').length);
+  cleanup();
+  vi.restoreAllMocks();
+  textScale(1);
+  const plain = within(await open(section)).getByTestId(panelId);
+  expect(within(plain).getAllByText('Yours')).toHaveLength(1);
+}, 60_000);
+
+test('the categories grid has two columns at large text, so a limit stays whole', async () => {
+  for (const [scale, width] of [[1, '33.333%'], [3.571, '50%']] as const) {
+    textScale(scale);
+    const body = await open('categories-expense');
+    const food = within(body).getAllByRole('button').find((button) => /^Food/.test(button.getAttribute('aria-label') ?? ''));
+    expect([scale, food?.style.width]).toEqual([scale, width]);
+    cleanup();
+    vi.restoreAllMocks();
+  }
+}, 60_000);

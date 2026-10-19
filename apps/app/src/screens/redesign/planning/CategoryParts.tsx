@@ -17,6 +17,8 @@ import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { useSpringPop } from '@mobile/theme/useSpringPop';
 import { DECORATIVE, POLITE_LIVE_REGION, useAnnouncement } from '@mobile/ui/a11y';
 import { BunText, useBunScript } from '@mobile/ui/BunText';
+import { ComparedHeads, ComparedValues } from '@mobile/ui/ComparedValues';
+import { useLargeText } from '@mobile/ui/largeText';
 import { CategoryIcon } from '@mobile/ui/categoryIcons';
 import { FieldError } from '@mobile/ui/FieldError';
 import { Glyph } from '@mobile/ui/Glyph';
@@ -80,6 +82,8 @@ export function TypeToggle({ value, onChange, disabled = false }: { value: Categ
 /** One category in the grid: its icon (a built-in's drawing, or the initial) in its colour, its name and this month's limit. */
 export function CategoryTile({ item, limit, onPress, disabled = false }: { item: CategoryItem; limit: string | null; onPress: () => void; disabled?: boolean }) {
   const tc = useCopy();
+  // Two columns at the accessibility text sizes, so a name and its limit stay whole.
+  const large = useLargeText();
   const label = limit ? tc('{label}, {value}', { label: item.name, value: limit }) : item.name;
   return (
     <Pressable
@@ -88,7 +92,7 @@ export function CategoryTile({ item, limit, onPress, disabled = false }: { item:
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => ({
-        width: '33.333%',
+        width: large ? '50%' : '33.333%',
         minHeight: BUN_TOUCH,
         alignItems: 'center',
         gap: BUN_SPACE.xxs,
@@ -363,12 +367,7 @@ export function ConflictPanel({ view, withYours, onReload }: { view: ConflictVie
       style={{ gap: BUN_SPACE.sm, padding: BUN_SPACE.md, borderRadius: BUN_RADIUS.card, borderWidth: BUN_OUTLINE.card, borderColor: colors.ink, backgroundColor: colors.card }}
     >
       <BunText variant="heading" role="heading" accessibilityRole="header">{view.message}</BunText>
-      {withYours ? (
-        <View {...DECORATIVE} style={{ flexDirection: 'row', gap: BUN_SPACE.sm }}>
-          <BunText variant="label" style={{ flex: 1, fontWeight: '700' }}>{yoursLabel}</BunText>
-          <BunText variant="label" style={{ flex: 1, fontWeight: '700' }}>{serverLabel}</BunText>
-        </View>
-      ) : null}
+      {withYours ? <ComparedHeads yoursLabel={yoursLabel} serverLabel={serverLabel} /> : null}
       {view.rows.map((row) => {
         const spoken = withYours
           ? tc('{label}. {yoursLabel}: {yours}. {serverLabel}: {server}.', { label: row.label, yoursLabel, yours: row.yours, serverLabel, server: row.server })
@@ -376,10 +375,11 @@ export function ConflictPanel({ view, withYours, onReload }: { view: ConflictVie
         return (
           <View key={row.key} accessible accessibilityLabel={spoken} style={{ gap: BUN_SPACE.xxs, paddingTop: BUN_SPACE.xs, borderTopWidth: BUN_OUTLINE.rule, borderColor: colors.rule }}>
             <BunText variant="caption" tone="muted">{row.label}</BunText>
-            <View style={{ flexDirection: 'row', gap: BUN_SPACE.sm }}>
-              {withYours ? <BunText style={{ flex: 1, fontWeight: row.differs ? '700' : '400' }}>{row.yours}</BunText> : null}
-              <BunText style={{ flex: 1 }}>{row.server}</BunText>
-            </View>
+            {withYours ? (
+              <ComparedValues yoursLabel={yoursLabel} serverLabel={serverLabel} yours={row.yours} server={row.server} yoursStyle={{ fontWeight: row.differs ? '700' : '400' }} />
+            ) : (
+              <BunText>{row.server}</BunText>
+            )}
           </View>
         );
       })}

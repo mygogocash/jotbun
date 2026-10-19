@@ -19,6 +19,7 @@ import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { DECORATIVE, POLITE_LIVE_REGION } from '@mobile/ui/a11y';
 import { AmountText, useAmountWords, useMoneyLocale } from '@mobile/ui/Amount';
 import { BunText, useBunScript } from '@mobile/ui/BunText';
+import { ComparedHeads, ComparedValues } from '@mobile/ui/ComparedValues';
 import { Card, OutlinedCard } from '@mobile/ui/Card';
 import { fullDateLabel } from '@mobile/ui/dateStep';
 import { FieldError } from '@mobile/ui/FieldError';
@@ -363,12 +364,7 @@ export function ConflictPanel({ rows, onReload }: { rows: readonly ConflictRow[]
       style={{ gap: BUN_SPACE.sm, padding: BUN_SPACE.md, borderRadius: BUN_RADIUS.card, borderWidth: BUN_OUTLINE.card, borderColor: colors.ink, backgroundColor: colors.card }}
     >
       <BunText variant="heading" role="heading" accessibilityRole="header">{tc('This wallet changed on another device.')}</BunText>
-      {rows.length > 0 ? (
-        <View aria-hidden style={{ flexDirection: 'row', gap: BUN_SPACE.sm }}>
-          {withYours ? <BunText variant="label" style={{ flex: 1, fontWeight: '700' }}>{yoursLabel}</BunText> : null}
-          <BunText variant="label" style={{ flex: 1, fontWeight: '700' }}>{serverLabel}</BunText>
-        </View>
-      ) : null}
+      {rows.length > 0 ? <ComparedHeads yoursLabel={yoursLabel} serverLabel={serverLabel} showYours={withYours} /> : null}
       {rows.map((row) => {
         const spoken = row.yours !== null
           ? tc('{label}. {yoursLabel}: {yours}. {serverLabel}: {server}.', { label: row.label, yoursLabel, yours: row.yours, serverLabel, server: row.theirs })
@@ -377,10 +373,7 @@ export function ConflictPanel({ rows, onReload }: { rows: readonly ConflictRow[]
         return (
           <View key={row.key} accessible accessibilityLabel={spoken} style={{ gap: BUN_SPACE.xxs, paddingTop: BUN_SPACE.xs, borderTopWidth: BUN_OUTLINE.rule, borderColor: colors.rule }}>
             <BunText variant="caption" tone="muted">{row.label}</BunText>
-            <View style={{ flexDirection: 'row', gap: BUN_SPACE.sm }}>
-              {withYours ? <BunText style={[{ flex: 1 }, weight]}>{row.yours ?? ''}</BunText> : null}
-              <BunText style={[{ flex: 1 }, weight]}>{row.theirs}</BunText>
-            </View>
+            <ComparedValues yoursLabel={yoursLabel} serverLabel={serverLabel} yours={row.yours} server={row.theirs} showYours={withYours} yoursStyle={weight} serverStyle={weight} />
           </View>
         );
       })}
