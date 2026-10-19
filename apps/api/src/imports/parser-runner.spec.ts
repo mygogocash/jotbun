@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, sep } from 'node:path';
 
@@ -24,7 +24,7 @@ import type { WorkerDeps } from '../jobs/handlers';
 import { NET_PERMISSION, OpenNetRunner, UngatedParserRunner, parsingRunner } from './fixtures/parsing-runner';
 import { importParsingStartup } from './import-parsing';
 import { sanitizedImageHeader, toPreviewRecord } from './parse-handler';
-import { PARSER_CHILD_MEMORY_MIB, PARSER_ENTRIES, PARSER_WORKER_HEADROOM_MIB, ParserRunner, sandboxVerdict, validateParseResult } from './parser-runner';
+import { PARSER_CHILD_MEMORY_MIB, PARSER_ENTRIES, PARSER_WORKER_HEADROOM_MIB, ParserRunner, imageReadRoots, sandboxVerdict, validateParseResult } from './parser-runner';
 import type { ChildLaunch, ParserRunOutcome, SandboxVerdict } from './parser-runner';
 import { detectAmountConvention, parseAmountText } from './parsers/amount';
 import { readCsv } from './parsers/csv';
@@ -782,8 +782,17 @@ describe('the parser child runs isolated and bounded', () => {
   it('the image child reads only the sharp, @img, detect-libc and semver package directories besides its own', () => {
     const reads = (launch: ChildLaunch) => launch.args.filter((arg) => arg.startsWith('--allow-fs-read=')).map((arg) => arg.slice('--allow-fs-read='.length));
     expect(reads(runner.launch('csv'))).toEqual([`${dirname(PARSER_ENTRIES.table)}${sep}`]);
-    const [own, ...packages] = reads(runner.launch('webp'));
+    const [own, ...rest] = reads(runner.launch('webp'));
     expect(own).toBe(`${dirname(PARSER_ENTRIES.image)}${sep}`);
+    // Besides directories, only the missing package.json files Node reads on the way to one of these packages.
+    const packages = rest.filter((path) => path.endsWith(sep));
+    for (const file of rest.filter((path) => !path.endsWith(sep))) {
+      expect(basename(file)).toBe('package.json');
+      const [name, parent, grandparent] = dirname(file).split(sep).filter(Boolean).reverse();
+      const full = parent === '@img' ? `@img/${name}` : name;
+      expect(parent === 'node_modules' || (parent === '@img' && grandparent === 'node_modules')).toBe(true);
+      expect(['sharp', 'detect-libc', 'semver'].includes(full as string) || full?.startsWith('@img/')).toBe(true);
+    }
     const names = packages.map((dir) => {
       const [last, parent, grandparent] = dir.split(sep).filter(Boolean).reverse();
       expect(parent === 'node_modules' || (parent === '@img' && grandparent === 'node_modules')).toBe(true);
@@ -793,6 +802,45 @@ describe('the parser child runs isolated and bounded', () => {
     expect(names.some((name) => name?.startsWith('@img/sharp-'))).toBe(true);
     expect(names.filter((name) => !['sharp', 'detect-libc', 'semver'].includes(name as string) && !name?.startsWith('@img/'))).toEqual([]);
     for (const dir of packages) expect(basename(dir)).not.toBe('node_modules');
+  });
+
+  it('the image child may read the package.json Node looks for in each node_modules on the way to a package (the release image\'s layout)', () => {
+    // The release image: sharp and its @img packages under the API's
+    // node_modules, detect-libc and semver hoisted to the root. Loading
+    // detect-libc from sharp, Node first reads apps/api/node_modules/detect-libc/package.json,
+    // which is not there; outside the child's roots the permission model
+    // answers that read with ERR_ACCESS_DENIED instead of "not found", and the
+    // child crashed (found by the Node 26 image smoke). Each such path is allowed exactly.
+    const root = realpathSync(mkdtempSync(join(tmpdir(), 'p2b-layout-')));
+    try {
+      const pkg = (dir: string, name: string) => {
+        mkdirSync(join(dir, name), { recursive: true });
+        writeFileSync(join(dir, name, 'package.json'), JSON.stringify({ name, version: '1.0.0' }));
+      };
+      const api = join(root, 'app', 'apps', 'api');
+      const entry = join(api, 'dist', 'imports', 'parsers', 'image-child.js');
+      mkdirSync(dirname(entry), { recursive: true });
+      writeFileSync(entry, '');
+      for (const name of ['sharp', '@img/colour', '@img/sharp-linux-arm64', '@img/sharp-libvips-linux-arm64']) pkg(join(api, 'node_modules'), name);
+      for (const name of ['detect-libc', 'semver']) pkg(join(root, 'app', 'node_modules'), name);
+      const roots = imageReadRoots(entry);
+      const apiModules = join(api, 'node_modules');
+      expect(roots).toEqual(expect.arrayContaining([
+        `${join(apiModules, 'sharp')}${sep}`,
+        `${join(root, 'app', 'node_modules', 'detect-libc')}${sep}`,
+        `${join(root, 'app', 'node_modules', 'semver')}${sep}`,
+        join(apiModules, 'detect-libc', 'package.json'),
+        join(apiModules, 'semver', 'package.json'),
+      ]));
+      // Only package.json files are allowed by exact path, and only in node_modules directories that exist.
+      for (const file of roots.filter((path) => !path.endsWith(sep))) {
+        expect(basename(file)).toBe('package.json');
+        expect(basename(dirname(dirname(file)))).toBe('node_modules');
+      }
+      expect(roots.some((path) => path.includes(`${sep}dist${sep}imports${sep}node_modules`))).toBe(false);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
   it('a child that cannot be started is a spawn failure (retried), not a parse failure', async () => {

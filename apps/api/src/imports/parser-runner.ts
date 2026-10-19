@@ -123,23 +123,45 @@ function packageDir(name: string, from: string): string | null {
 }
 
 /**
- * The package directories the image child reads to load sharp: sharp itself,
- * its dependencies (detect-libc, semver, @img/colour) and the prebuilt
- * binding and libvips packages installed for this platform (@img/sharp-*) -
- * each resolved as sharp resolves it, never a whole node_modules.
+ * The package.json files Node reads while looking for `name` from `from`, in
+ * the node_modules directories it tries before the one that holds the
+ * package. Node reads a candidate's package.json even when it is missing, and
+ * outside the child's roots the permission model answers that read with
+ * ERR_ACCESS_DENIED rather than "not found", so the child would crash (the
+ * release image hoists detect-libc and semver above sharp). Each is allowed
+ * by exact path; Node skips node_modules directories that do not exist.
  */
-function imageReadRoots(): string[] {
-  const sharpDir = packageDir('sharp', PARSER_ENTRIES.image);
+function lookupFiles(name: string, from: string): string[] {
+  const files: string[] = [];
+  for (const dir of createRequire(from).resolve.paths(name) ?? []) {
+    const candidate = join(dir, name, 'package.json');
+    if (existsSync(candidate)) return files;
+    if (existsSync(dir)) files.push(candidate);
+  }
+  return files;
+}
+
+/**
+ * What the image child reads to load sharp: the package directories of sharp
+ * itself, its dependencies (detect-libc, semver, @img/colour) and the
+ * prebuilt binding and libvips packages installed for this platform
+ * (@img/sharp-*) - each resolved as sharp resolves it, never a whole
+ * node_modules - and the missing package.json files Node reads on the way to
+ * each (`lookupFiles`). Exported for its test.
+ */
+export function imageReadRoots(entry: string = PARSER_ENTRIES.image): string[] {
+  const sharpDir = packageDir('sharp', entry);
   if (!sharpDir) return [];
   const fromSharp = join(sharpDir, 'package.json');
   const names = new Set(['detect-libc', 'semver', '@img/colour']);
   for (const dir of createRequire(fromSharp).resolve.paths('@img/colour') ?? []) {
     const scope = join(dir, '@img');
     if (!existsSync(scope)) continue;
-    for (const entry of readdirSync(scope)) if (entry.startsWith('sharp-')) names.add(`@img/${entry}`);
+    for (const scoped of readdirSync(scope)) if (scoped.startsWith('sharp-')) names.add(`@img/${scoped}`);
   }
   const dirs = [sharpDir, ...[...names].map((name) => packageDir(name, fromSharp)).filter((dir): dir is string => dir !== null)];
-  return [...new Set(dirs)].map(withSep);
+  const files = [...lookupFiles('sharp', entry), ...[...names].flatMap((name) => lookupFiles(name, fromSharp))];
+  return [...new Set([...dirs.map(withSep), ...files])];
 }
 
 type SpawnOptions = { timeoutMs: number; signal?: AbortSignal; onSpawn?: (pid: number) => void; memoryLimitKb?: number };
