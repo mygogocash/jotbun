@@ -140,6 +140,10 @@ test('loading: the stage names the month and offers Back at once, with no total 
   expect(screen.queryByRole('button', { name: 'Share as text' })).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Back' }));
   expect(router.back).toHaveBeenCalledTimes(1);
+  // A recap opens from Insights: with nothing to go back to, Back goes there.
+  router.canGoBack.mockReturnValue(false);
+  fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+  expect(router.replace).toHaveBeenLastCalledWith('/spend/insights');
 });
 
 test('offline: the records are safe, it is not an empty month, and Try again loads the recap', async () => {

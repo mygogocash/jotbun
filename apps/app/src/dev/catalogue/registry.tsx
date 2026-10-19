@@ -23,6 +23,8 @@ import { HISTORY_SECTIONS } from './historySections';
 import { HOME_SECTIONS } from './homeSections';
 import { KIT_SECTIONS } from './kitSections';
 import { INSIGHTS_SECTIONS } from './insights/insightsSections';
+import { RECAP_SECTIONS } from './insights/recapSections';
+import { REMINDERS_SECTIONS } from './insights/remindersSections';
 import { MASCOT_SECTIONS } from './mascotSections';
 import { BUDGET_SECTIONS } from './planning/budgetSections';
 import { CATEGORY_SECTIONS } from './planning/categorySections';
@@ -60,6 +62,8 @@ export const PLANNING_SECTIONS: readonly CatalogueSection[] = [
 /** R5 Insights (behind `insights` until E2 checkpoint 3): the hub, a month's recap, reminders. */
 export const INSIGHTS_SCREEN_SECTIONS: readonly CatalogueSection[] = [
   ...INSIGHTS_SECTIONS,
+  ...RECAP_SECTIONS,
+  ...REMINDERS_SECTIONS,
 ];
 
 export const CATALOGUE_SECTIONS: readonly CatalogueSection[] = [

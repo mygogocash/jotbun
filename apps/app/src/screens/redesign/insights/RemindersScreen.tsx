@@ -44,7 +44,7 @@ export function RemindersScreen({ service: given }: RemindersScreenProps) {
   const tc = useCopy();
   const colors = useBunColors();
   const locale = useActiveLocale();
-  const goBack = useGoBack();
+  const goBack = useGoBack('/spend/insights');
   const { intensity } = useBunIntensity();
   const service = useMemo(() => given ?? createAppReminderService(locale), [given, locale]);
   const names = useMemo(() => weekdayNames(locale), [locale]);

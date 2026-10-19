@@ -55,7 +55,7 @@ export function RecapScreen({ month, now }: { month: string; now?: Date }) {
   const colors = useBunColors();
   const insets = useSafeAreaInsets();
   const { intensity } = useBunIntensity();
-  const goBack = useGoBack();
+  const goBack = useGoBack('/spend/insights');
   const diaryView = useDiaryView();
   const today = todayInBangkok(now ?? new Date());
   const [shareProblem, setShareProblem] = useState<string | null>(null);

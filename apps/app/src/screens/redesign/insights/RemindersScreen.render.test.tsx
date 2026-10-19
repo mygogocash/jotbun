@@ -173,6 +173,14 @@ test('off: the switch is off and says so; Save keeps reminders off and asks noth
   expect(screen.getByTestId('reminders-screen').style.flexGrow).toBe('1');
   fireEvent.click(screen.getByRole('button', { name: 'Back' }));
   expect(router.back).toHaveBeenCalledTimes(1);
+  // Reminders opens from Insights: with nothing to go back to, Back goes there.
+  router.canGoBack.mockReturnValue(false);
+  try {
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(router.replace).toHaveBeenLastCalledWith('/spend/insights');
+  } finally {
+    router.canGoBack.mockReturnValue(true);
+  }
 });
 
 // ---------------------------------------------------------------------------
