@@ -1582,3 +1582,17 @@ Built together with the kit polish above, in one change. These fix the screen-le
   - **A longer timeout for retain and replace:** the server's copy can take 60 s, against the client's 20 s. Try again with the same key is safe.
   - **Hosted checks (E1):** R2 copy, grant and download; the iOS and Android photo pickers (HEIC to JPEG, large photos).
   - **E2 checkpoint 5:** check the consent line "only your signed-in account can open it" against the privacy promises.
+
+## R7 import merged; the R4–R7 gate
+
+- **Import journey merged** (`59b4dcf`): expectation, pick and upload, reading (the `box` bun), label mapping, review with flags, bulk fixes, duplicates kept by default, freeze, batched confirm and the result. It resumes from the device draft, and 6 of 6 mutations were caught.
+  - **Catalogue:** 19 import and 15 receipt sections are registered.
+  - **Two Thai fixes:** the import-reading and import-saving sections waited for an English stage label. They now build it as StagedProgress says it, so the Thai run passes.
+- **Gate on `f4f43ed`:**
+  - **Passing:**
+    - typecheck and typecheck:app;
+    - test:api 929, test:db 681, test:app 28, test:unit 605, test:dev 7, test:ops 107;
+    - the API build, export:web, `git diff --check` and `typecheck:routes`.
+  - **test:render:** 1202 of 1203. The one failure, Reminders "off", passed alone three times out of three.
+- **Timing flakes:** three render tests have now failed once each under load and passed alone: History long-press, Quick add, and Reminders "off". The render suite now waits up to 4 s in `findBy…`/`waitFor` (`src/testing/renderSetup.ts`), instead of Testing Library's 1 s. Full render suite after the change: 1203 of 1203.
+- **Still needed before the import flag can turn on:** E2 checkpoint 5; decision 7 (the device draft at rest); the E1 R2 and quarantine proofs; the parser gate and a Node 25+ worker runtime; the import release checklist in `rollback.md`; and E4.

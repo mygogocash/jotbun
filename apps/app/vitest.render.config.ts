@@ -11,5 +11,12 @@ export default defineConfig({
     '@mobile': fileURLToPath(new URL('./src', import.meta.url)),
   }, extensions: ['.web.js', '.js', '.web.ts', '.ts', '.tsx', '.json'] },
   oxc: { jsx: { runtime: 'automatic' } },
-  test: { environment: 'happy-dom', include: ['src/**/*.render.test.tsx'], maxWorkers: 2, server: { deps: { inline: ['react-native-svg'] } } },
+  test: {
+    environment: 'happy-dom',
+    include: ['src/**/*.render.test.tsx'],
+    maxWorkers: 2,
+    // Waits sized for a busy machine: see src/testing/renderSetup.ts.
+    setupFiles: ['./src/testing/renderSetup.ts'],
+    server: { deps: { inline: ['react-native-svg'] } },
+  },
 });
