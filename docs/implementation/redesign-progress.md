@@ -1610,3 +1610,108 @@ Built together with the kit polish above, in one change. These fix the screen-le
 - **What was captured:** all 149 sections of checkpoints 2–5 (Planning 75–120, Insights 121–149, Account 150–189, Import 190–223), at phone size (`chrome=off`), in light and dark English. Every frame was checked against its section title and for a settled state.
 - **Thai is not captured yet:** these areas' copy enters the catalogs only after approval, so their Thai frames would show English.
 - **The sheets** are in `e2-review/checkpoints/` (ignored by git), one folder per checkpoint.
+
+## R8: states, accessibility and polish (19 October 2026)
+
+- **History's chip rows (E2 finding 4c):** the type, wallet and category rows, and import review's Show row, scrolled sideways inside the page's 16 pt gutter, so the last chip was cut mid-word with empty space beside it.
+  - `FilterChips` takes the page gutter as `bleed`: the row runs out to the screen edge, and its first chip still lines up with the gutter.
+  - RED: a kit test and a History wiring test (mutation: History without `bleed` fails it), plus an import review test.
+- **Reduced motion:** every animation in the redesign already stopped under Reduce Motion: the sheet, the undo bar, the peek, the coin pile, the spring pop and the receipt viewer's fade.
+  - The one gap was moving between screens: the root stack slid in every case.
+  - It now cross-fades under Reduce Motion, as Apple's guidance says (`app/_layout.tsx`).
+  - RED: `RootLayout.render.test.tsx`.
+- **Dynamic Type, at the largest size (AX5, 3.571×), on the Jotbun E2 simulator.** The first capture showed headings at about 100 pt, "Septe / mber 2026", and amounts broken mid-number ("฿12,45 / 0.00").
+  - **Ceilings per role** (`BUN_MAX_FONT_SCALE` in `bunType.ts`): hero 1.4, title 1.5, heading 1.8, body and label 2.2, caption 2.4, micro 2.6.
+    - Every ceiling is above iOS's largest standard size (xxxLarge, 1.353×), so all the standard sizes are untouched.
+    - At AX5, reading text still more than doubles. Display text stops near 42–48 pt, as Apple's large titles grow less than body text.
+    - The scale keeps its order at every size.
+    - `BunText` applies its role's ceiling. The five text fields use the body ceiling.
+    - `dynamicType.test.ts` fails on any `TextInput` or raw `Text` in the redesign without `maxFontSizeMultiplier`.
+  - **Layouts stack at the accessibility sizes** (`useLargeText`, from 1.5×; AX1 is 1.786× and Android's largest 2×):
+    - the type switch stacks its three choices;
+    - the category grid goes to two columns;
+    - a move puts From above To;
+    - a record row puts its amount under the title;
+    - a banner with an action puts the action under its words;
+    - the search field takes the whole line;
+    - a receipt line puts its value under its label;
+    - the conflict panel names Yours and On the server on every field;
+    - a footer's two actions stack.
+    Each layout has a test at AX5 and at the default, and each failed first.
+  - **Found on the way:** Metro started with `CI=1` does not watch files, so a capture after a code change needs Metro restarted. The first recapture still showed the old code.
+- **Screen readers:**
+  - `screenReader.render.test.tsx` opens all 223 catalogue sections in English and Thai, and checks three things:
+    - every control (button, radio, checkbox, switch, link, tab, field, image) has a name to speak;
+    - nothing inside an `aria-hidden` subtree can take focus;
+    - every screen has a heading of its own.
+  - All 223 pass.
+  - Mutation: a filter chip with its label removed and its words hidden fails `history-month` with both unnamed radios listed.
+  - A pass with VoiceOver and TalkBack on a device is still to do (E2 devices). The simulator has no VoiceOver.
+- **Gate on `b3ae810`:** typecheck:app; test:unit 611; test:render 1440 (the screen-reader pass adds 223); export:web; `git diff --check`.
+- **Independent review** of the four R8 commits. Three confirmed findings, each fixed test-first in `13b9578`:
+  1. **The stacked type switch kept a pill's radius.** A radius is capped at half the box's height, so the stack got round ends, and the top and bottom choices poked out past them. It now takes a card's corners. RED: the large-text test, at 999px.
+  2. **The screen-reader pass never looked inside sheets.** They are Modals, drawn outside the section. Every open dialog is now checked too, and must have a name. Mutation: a Sheet without its web `aria-label` fails `categories-archive-confirm` and `settings-sign-out`.
+  3. **The text-size scan ended a tag at the first `>`.** An arrow or a comparison before the ceiling read as uncapped, and it missed `Animated.Text` and `RNTextInput`. It now reads through braces and strings, skips type arguments, and has its own cases. The old pattern fails all four.
+  - **Noted, not changed:**
+    - The fade covers moves between top-level routes only, because spend's screens swap inside a `Slot` with no animation.
+    - The ceilings and the 1.5× threshold follow iOS's sizes. Android's ordinary 1.5×–2× steps already reach them, so on Android the largest standard steps are capped and stacked.
+    - A stacked footer reads Cancel, then Save, matching its focus order.
+
+## Thai for R4–R7, and the four areas on by default (19 October 2026)
+
+- **Approval:** the owner approved E2 checkpoints 2–5 on 19 October 2026: "E2 approved for checkpoints 2 to 5. Add the Thai text for these areas, turn them on by default, and take the Thai screenshots."
+- **Thai** (an agent on its own branch, merged in `bb03cb5`):
+  - 516 new keys in `en.json` and `th.json`; `vi.json` is unchanged.
+  - `AWAITING_E2` is empty, so the catalog guard now checks every literal in `planning/`, `insights/`, `account/` and `import/`.
+  - **Templates that reach `tc` through a table** are checked from each model's test (`spend/v1/redesign/testing/catalog.ts`): budget, wallets, categories, onboarding, import and receipt. They failed first: 142 "not in en.json".
+  - Three of those tables moved from screens into their models, so they could be tested there.
+  - **For a native speaker to review** (English → Thai, with an alternative):
+    - Insights → ภาพรวม (ข้อมูลเชิงลึก);
+    - Quiet → เบาๆ (เงียบ);
+    - even pace → อัตราเฉลี่ย;
+    - category limit → วงเงินหมวดหมู่ (งบหมวดหมู่);
+    - Unarchive → นำกลับมาใช้ (เลิกเก็บถาวร);
+    - labels → ชื่อ (ป้ายกำกับ);
+    - row → แถว (บรรทัด);
+    - Spent / Earned / Kept → ใช้ไป / ได้รับ / เหลือเก็บ;
+    - Nothing logged → ไม่มีรายการ;
+    - times with "น.";
+    - Weekends → เสาร์-อาทิตย์;
+    - No ads, ever → ไม่มีโฆษณาเลย;
+    - "probably the same as row" → น่าจะซ้ำกับแถวที่;
+    - the two correction reasons;
+    - Coral and Lilac;
+    - Not now / Turn on → ไว้ทีหลัง / เปิด.
+- **On by default** (`b4598f8`): `APPROVED` is core, planning, insights, account and import; the catalogue stays opt-in.
+  - **Imports themselves stay off:**
+    - the server's `IMPORT_UPLOADS_ENABLED` is separate;
+    - Settings links to import only in the legacy build until every import gate passes (handover §8);
+    - `/spend/import` shows the redesigned journey, which says plainly when uploads are off.
+  - **Tests that read the old default** now switch an area off by name (`-planning`, `-insights`, `-account`, `-import`).
+  - **Record's read-counting tests** switch import off, because the receipt panel reads the entry too: one extra read per Record open, worth folding into Record's own read later.
+  - Comments that said an area waits for E2 now say it is on.
+- **Gate on `bb03cb5` + the switch + review fixes:** typecheck:app; test:unit 619; test:render 1440; export:web; `git diff --check`.
+
+## 320 pt (web, both languages)
+
+- **How:** the catalogue on the web at 320 × 568, every section in English and in Thai. Each section is opened in the page through Expo Router and checked for three things:
+  - an element past the screen edge that isn't in a sideways-scrolling row;
+  - text cut by overflow;
+  - a bare amount wrapping onto two lines.
+- **A first run was blind**, for two reasons:
+  - content wider than the screen stretches the emulated page, so `innerWidth` grew with it;
+  - every section sits in a vertical scroll view, whose `overflow-x: hidden` was excused.
+  The check now uses a fixed 320 and excuses only rows that scroll sideways. A 400 pt probe is flagged; the clean page is not.
+- **Found:**
+  - **Category chips** (Quick add, and the kit section) ran 11–30 pt past the edge in English and about 35 pt in Thai. The chip group kept its one-line width beside More. It now shrinks to the row and wraps. RED: a CategoryChips test. With the style applied live, the Thai Quick add and the kit section have nothing past the edge.
+  - **The kit's serif XL amount** wraps its minus sign at 320 in the catalogue's two-column demo. No screen shows an XL serif amount in a column that narrow, so it is left as is.
+- **Everything else is clean in both languages**: every Planning, Insights, Account and Import section, and every core section.
+- **Full gate on `b4598f8` + the chip fix, all passing:**
+  - typecheck and typecheck:app;
+  - test:api 929, test:db 681, test:app 28, test:unit 619, test:dev 7, test:ops 107, test:render 1441;
+  - the API build, export:web, `git diff --check` and typecheck:routes.
+  - Stale test databases: 14, not ours.
+- **Still open in R8:**
+  - VoiceOver and TalkBack on devices (E2 devices; the simulator has no VoiceOver);
+  - a native speaker's Thai review;
+  - removing the green theme and the legacy `Customer*` screens from the default route. That waits until every flag is on, and import's server switch is still off.
