@@ -1385,3 +1385,26 @@ Built together with the kit polish above, in one change. These fix the screen-le
   - the catalogue render suite 97 of 97;
   - `tsc` clean.
   - Mutation: zeroing the top inset regardless fails the new render test.
+
+## E2 follow-up: receipts (19 October 2026)
+
+- **Bun peek** (finding 2), fixed on its own branch by an agent and merged in `45e87ff`:
+  - `BunPeek` now places the bun with plain-number offsets: the far side sits at minus the bun's depth, and centring spans the edge.
+  - On device, the old percentage offsets did not resolve against an auto-sized card, so the bun fell back onto the card's text.
+  - RED: 9 of 14 failed on a no-percentages check. GREEN: 329 of 329 across the mascot, catalogue, Home and kit suites. Mutation: putting `bottom: '100%'` back fails 3 tests.
+  - The kit stage-header specimen's top margin grows from 24 to 32 pt, because the peek is 26.25 pt deep.
+- **Phone-size captures:**
+  - every section was opened by its own `chrome=off` link and screenshotted after 8 s, on the "GoGoCash Expo58" simulator at 402 × 874 pt;
+  - Home through Record (34–74) in light EN and dark EN, and the 40 screen states in light TH and light VI.
+- **What they show:**
+  - Quick add fits with the whole keypad above the pinned Save entry in all four variants.
+  - With a save message in the footer (device error, or Record edit unconfirmed), the keypad's last row scrolls under the footer. In the unconfirmed states the keypad is frozen anyway.
+  - Record edit keeps Cancel and Save changes side by side in reach.
+  - The four Bun peek specimens sit outside their cards, and Home's stage bun is unchanged.
+- **Gate:**
+  - **App steps on `c39dd03`, all passing:**
+    - typecheck and typecheck:app;
+    - test:app 28, test:unit 426, test:dev 7, test:render 560;
+    - export:web and `git diff --check`.
+  - **API and database steps:** they passed in the same session's full gate: test:api 929, test:db 681, test:ops 107, the API build and the release graph. No file outside `apps/app` and `docs` has changed since `4a2a447`.
+  - **Stale test databases:** 14, not ours, left alone.
