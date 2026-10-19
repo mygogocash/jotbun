@@ -1744,3 +1744,27 @@ Built together with the kit polish above, in one change. These fix the screen-le
   - Budget, Wallets, Insights, Recap, Reminders, Onboarding, Settings, Privacy, Import and Receipt.
 - **The sheets** are in `e2-review/th/` (Thai, light over dark) and `e2-review/ax5/` (AX5), one folder per checkpoint.
 - **Gate on `22bdddb` + this fix:** typecheck:app; test:unit 619; test:render 1445; export:web; `git diff --check`. Recaptured at AX5 on the simulator, Budget's, Wallets' and Categories' conflicts and the Categories grid keep every amount whole.
+
+## Decision 7: the import draft in the encrypted diary, and its review (19 October 2026)
+
+- **Decision:** the owner chose to move the import review draft into the encrypted diary.
+  - A helper built it on its own branch, merged in `ea394e4`.
+  - **Storage:** diary migration 2 adds `import_drafts`. The existing envelope rules run unchanged over the diary's rows. `spendDiary.importDraftStore()` hands out the open account's store, and nothing writes the draft to AsyncStorage.
+  - **No diary** (the web, a locked diary, or one still opening): the import is kept in memory for the visit, and the screen says so.
+  - **New copy:** "This import is kept only while this screen is open."
+- **Gate on the merge, all passing:**
+  - typecheck and typecheck:app;
+  - test:api 930, test:db 681, test:app 28, test:unit 633, test:dev 7, test:ops 108, test:render 1450;
+  - the API build, the parser sandbox check from dist, export:web, `git diff --check` and typecheck:routes.
+- **Independent review.** Account isolation, migration safety and privacy at rest hold. It confirmed these, each fixed test-first with a mutation check:
+  1. **Spend and Settings each mounted a device diary over the one database.** Settings sits on top of a spend screen, so both were mounted at once. Each synced the database, and leaving Settings locked the store the spend screens still used: Quick add saves and the import draft then failed with `DiaryLocked`. This bug predates decision 7.
+     - Now there is one shared device diary. Each provider takes a share, listeners attach once, and the diary closes a tick after the last share goes.
+     - RED: two providers created two diaries.
+     - Mutation: releasing without counting closed it when Settings left.
+  2. **A diary that locks mid-visit** left edits unsaved, silently. The screen now wraps the diary's store with `withVisitFallback`: on `DiaryLocked` or `StaleEpochError` it goes on in memory from the latest journey, and every import page shows the visit-only note (`VisitOnlyContext`). Any other failure still surfaces.
+  3. **A screen opened while the diary was opening** now moves onto it once it is ready, if nothing has started.
+  4. **Offline in visit-only mode**, the notice no longer says the import is "kept on this phone". New copy: "Couldn't reach Jotbun. Import needs a connection; your import is kept only while this screen is open." (in Thai too).
+  5. **Before a diary draft's first use**, every account's leftover plain-text draft is erased, not just the current account's.
+  - **Not changed:**
+    - The `plainDrafts() === []` checks guard against plain storage coming back; drafts no longer go there.
+    - A hidden old draft could be resumed after re-importing the same file. That is plausible but unverified, and needs the import flag on before it matters.
