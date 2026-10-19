@@ -1768,3 +1768,31 @@ Built together with the kit polish above, in one change. These fix the screen-le
   - **Not changed:**
     - The `plainDrafts() === []` checks guard against plain storage coming back; drafts no longer go there.
     - A hidden old draft could be resumed after re-importing the same file. That is plausible but unverified, and needs the import flag on before it matters.
+
+## R8: the Android accessibility tree, the closest check to TalkBack without a phone (19 October 2026)
+
+- **Why:** VoiceOver and TalkBack passes need real phones. The owner asked for the closest check meanwhile: build the app for an Android emulator and read each screen's native accessibility tree, which is what TalkBack reads.
+- **Setup:**
+  - The Android project was generated with `expo prebuild` (local only; `apps/app/android/` is in `.git/info/exclude`, like `ios/`).
+  - The debug build is arm64, with `-PreactNativeDevServerPort=8084`. The first build looked for Metro on the default 8081, where the emulator reaches the host's 8081: the other project's Metro. That was stopped at once; the app's data was cleared, and it now loads only Jotbun's Metro on 8084.
+  - A new emulator, `Jotbun_A11y` (Pixel 7, Android 36). The other projects' emulators were not used. Animations are off on it, as UI automation needs.
+  - Each catalogue section is opened through the Metro inspector, and `uiautomator dump` reads the tree.
+- **The check** (per section), for every interactive node (clickable, checkable or a text field):
+  - it has something to speak (its own text or content-desc, or a descendant's);
+  - its description is not just a state word ("busy", "selected", …);
+  - it is at least 44 dp, ignoring nodes clipped at their scroll area's edge, since uiautomator reports only the visible part.
+  - Positive control: the busy button below.
+- **Found and fixed test-first:**
+  - **A busy pill button with no busy wording was described only as "busy".** On Android a button without an explicit accessibility label is described by its state alone, and TalkBack reads that description, not the button's text.
+  - Fix: `PillButton` always passes its label as the spoken name (busy wording replaces it while busy).
+  - RED: a render test requires the name busy or not.
+  - On the emulator, the button now reads "Add another, busy".
+- **Result on the fixed code:** all 223 sections, 1,815 interactive nodes. Every one has a spoken name, none is only a state, and none is under 44 dp.
+  - Six dumps failed on the first pass and passed on a retry. They failed because the adb server crashes now and then on this macOS (`libunwind … invalid compact unwind encoding`, exit 134), and another tool on this Mac reset adb once.
+  - The early "small target" reports were all rows and keys clipped at the screen or scroll edge.
+- **Still for people with devices:** a real TalkBack pass (focus order, gestures, announcements) and VoiceOver on iPhone. This check covers names, roles and sizes in the native tree, not how they sound in use.
+- **Gate with the fix, all passing:**
+  - typecheck and typecheck:app;
+  - test:api 930, test:db 681, test:app 28, test:unit 635, test:dev 7, test:ops 107;
+  - the API build, export:web and `git diff --check`.
+  - test:render failed once, on History's "an unconfirmed undo keeps the bar…" (no toolbar found in time). It passed alone three times out of three, and the full suite passed 1457 of 1457 on the rerun: a timing flake, not this change.
