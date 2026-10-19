@@ -40,3 +40,11 @@ test('planning is opt-in until approved', () => {
   assert.equal(isRedesignEnabled('planning', 'all'), true);
   assert.equal(isRedesignEnabled('planning', 'planning,off'), false);
 });
+
+// R5: Insights is built behind its own area until E2 checkpoint 3.
+test('insights is opt-in until approved', () => {
+  assert.equal(isRedesignEnabled('insights', undefined), false);
+  assert.equal(isRedesignEnabled('insights', 'planning'), false);
+  assert.equal(isRedesignEnabled('insights', 'insights'), true);
+  assert.equal(isRedesignEnabled('insights', 'all'), true);
+});

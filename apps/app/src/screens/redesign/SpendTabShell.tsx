@@ -1,6 +1,8 @@
 // The redesign's navigation shell (R3, decision D7): the kit TabBar under the
 // spend screens, with Home and History as tabs and the centre add button
-// opening Add. Insights joins in R5; Planning (R4) adds no tab (decision D7):
+// opening Add. Insights joins as a tab under the `insights` area (R5, decision
+// D7); a recap and the reminder settings take the whole height. Planning (R4)
+// adds no tab:
 // Budget opens from Home, Wallets and Categories from Budget. The bar is a row
 // of the layout, below the screen, never over it. It is hidden while adding,
 // on a record and on the Planning screens, so those screens have the whole
@@ -14,13 +16,14 @@ import { useCopy } from '@mobile/i18n/useCopy';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { TabBar } from '@mobile/ui/TabBar';
 import type { TabBarItem } from '@mobile/ui/TabBar';
+import { insightsTab } from './insights/insightsTab';
 
-export type SpendTabKey = 'home' | 'history';
+export type SpendTabKey = 'home' | 'history' | 'insights';
 export type SpendTab = { visible: boolean; active: SpendTabKey | '' };
 
-const ROUTES: Readonly<Record<SpendTabKey, '/spend' | '/spend/all'>> = { home: '/spend', history: '/spend/all' };
-/** Screens that take the whole height: Add, a record (with its edit screens), and Budget, Wallets and Categories. */
-const BAR_HIDDEN = new Set(['add', 'record', 'budget', 'wallets', 'categories']);
+const ROUTES: Readonly<Record<SpendTabKey, '/spend' | '/spend/all' | '/spend/insights'>> = { home: '/spend', history: '/spend/all', insights: '/spend/insights' };
+/** Screens that take the whole height: Add, a record (with its edit screens), Budget, Wallets, Categories, a recap and reminders. */
+const BAR_HIDDEN = new Set(['add', 'record', 'budget', 'wallets', 'categories', 'recap', 'reminders']);
 
 /** Whether the bar shows on `pathname`, and which tab it selects ('' for none). */
 export function spendTab(pathname: string): SpendTab {
@@ -29,6 +32,7 @@ export function spendTab(pathname: string): SpendTab {
   const path = `/${parts.join('/')}`;
   if (path === ROUTES.home) return { visible: true, active: 'home' };
   if (path === ROUTES.history) return { visible: true, active: 'history' };
+  if (path === ROUTES.insights) return { visible: true, active: 'insights' };
   return { visible: true, active: '' };
 }
 
@@ -42,6 +46,10 @@ function TabIcon({ name, color }: { name: SpendTabKey; color: string }) {
           <Path d="M3 11l9-7 9 7" {...stroke} />
           <Path d="M6 9.5V20h12V9.5" {...stroke} />
           <Path d="M10 20v-5h4v5" {...stroke} />
+        </>
+      ) : name === 'insights' ? (
+        <>
+          <Path d="M4 20V10M10 20V4M16 20v-7M22 20H2" {...stroke} />
         </>
       ) : (
         <>
@@ -63,6 +71,8 @@ export function SpendTabShell({ children }: { children: ReactNode }) {
     { key: 'home', label: tc('Home'), icon: ({ color }) => <TabIcon name="home" color={color} /> },
     { key: 'history', label: tc('History'), icon: ({ color }) => <TabIcon name="history" color={color} /> },
   ];
+  const insights = insightsTab(tc, (color) => <TabIcon name="insights" color={color} />);
+  if (insights) items.push(insights);
   const select = (key: string) => {
     if (key === tab.active || !(key in ROUTES)) return;
     router.navigate(ROUTES[key as SpendTabKey]);

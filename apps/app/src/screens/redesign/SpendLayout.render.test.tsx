@@ -223,3 +223,24 @@ test('planning on: still Home and History; the bar hides on budget, wallets and 
   cleanup();
   for (const path of ['/spend/budget', '/spend/wallets', '/spend/categories']) expect(spendTab(path)).toEqual({ visible: false, active: '' });
 });
+
+// R5 under decision D7: Insights joins the bar as a tab; a month's recap and
+// the reminder settings take the whole height with their own way back.
+test('insights on: an Insights tab, selected on /spend/insights; the bar hides on a recap and on reminders', () => {
+  flags({ redesign: 'insights' });
+  nav.pathname = '/spend/insights';
+  mount(<SpendLayout />);
+  const tabs = within(screen.getByRole('tablist')).getAllByRole('tab');
+  expect(tabs.map((tab) => tab.getAttribute('aria-label'))).toEqual(['Home', 'History', 'Insights']);
+  expect(screen.getByRole('tab', { name: 'Insights' }).getAttribute('aria-selected')).toBe('true');
+  fireEvent.click(screen.getByRole('tab', { name: 'History' }));
+  expect(nav.router.navigate).toHaveBeenLastCalledWith('/spend/all');
+  cleanup();
+  nav.pathname = '/spend';
+  mount(<SpendLayout />);
+  fireEvent.click(screen.getByRole('tab', { name: 'Insights' }));
+  expect(nav.router.navigate).toHaveBeenLastCalledWith('/spend/insights');
+  cleanup();
+  expect(spendTab('/spend/insights')).toEqual({ visible: true, active: 'insights' });
+  for (const path of ['/spend/recap/2026-09', '/spend/reminders']) expect(spendTab(path)).toEqual({ visible: false, active: '' });
+});
