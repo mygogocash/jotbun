@@ -46,6 +46,12 @@ export type RecordReceiptProps = {
   version: number;
   /** Tests and the catalogue: fakes for any port (otherwise the provider's, then the app's). */
   ports?: Partial<ReceiptPorts>;
+  /**
+   * The record moved on: a receipt was kept, replaced or removed, at this new
+   * version. Record reads the record again, so its own Edit and Delete never
+   * send the version it held before.
+   */
+  onChanged?: (version: number) => void;
 };
 
 export function RecordReceipt(props: RecordReceiptProps) {
@@ -84,7 +90,7 @@ const REFUSED: Readonly<Partial<Record<ReceiptProblem, string>>> = {
 const MEGABYTE = 1024 * 1024;
 
 /** The panel itself, with no area check (the catalogue draws it directly). */
-export function ReceiptPanel({ recordId, version, ports: injected }: RecordReceiptProps) {
+export function ReceiptPanel({ recordId, version, ports: injected, onChanged }: RecordReceiptProps) {
   const tc = useCopy();
   const resources = useSpendV1();
   const ports = useReceiptPorts(injected);
@@ -241,6 +247,7 @@ export function ReceiptPanel({ recordId, version, ports: injected }: RecordRecei
         setStep({ kind: 'working', label: tc('Removing the photo…') });
         const ack = await attachments.remove(recordId, command.version, command.key);
         setHeld({ attachmentId: null, version: ack.version });
+        onChanged?.(ack.version);
         clearPhoto();
         setNotice(tc('Receipt photo removed.'));
         return setStep({ kind: 'idle' });
@@ -251,6 +258,7 @@ export function ReceiptPanel({ recordId, version, ports: injected }: RecordRecei
         ? await attachments.retain(recordId, command.version, input, command.key)
         : await attachments.replace(recordId, command.version, input, command.key);
       setHeld({ attachmentId: command.attachmentId, version: ack.version });
+      onChanged?.(ack.version);
       setStep({ kind: 'idle' });
       void loadPhoto(command.attachmentId);
     } catch (error) {

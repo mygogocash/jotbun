@@ -1562,3 +1562,23 @@ Built together with the kit polish above, in one change. These fix the screen-le
 - **E2 simulator:** a dedicated "Jotbun E2" simulator (iPhone 17 Pro, iOS 27) was created and the dev client rebuilt, with the owner's approval.
   - On its first launch the dev launcher connected to another project's Metro on 8081, the gogocash monorepo, and showed that project's worklets mismatch.
   - Loading Jotbun's Metro on 8084 needs one tap on "Open in Jotbun?", which waits for the owner to grant this new simulator to the simulator tool.
+
+## R7 receipts merged
+
+- **Merged:** `33b7c43`.
+  - `attachments.ts` is the P2c client: retain, replace, remove and grant, and a download checked against the grant's size and SHA-256. It comes with a fake.
+  - `RecordReceipt` lets you attach (consent before anything is sent), view (thumbnail and full screen through the grant), replace and remove (behind a "can't be undone" sheet).
+  - 14 of 14 mutations were caught.
+- **How an existing record gets a receipt:** the photo goes up as an image import. Its preview names the server's cleaned copy (`summary.image.attachment_id`, usable for 24 hours less 2 minutes), and the record retains it. The import is never confirmed and expires. So attaching needs the `imports`, `uploads` and `ocr` gates, and a server whose image parser runs: it can't on Node 24, where the sandbox is unsupported.
+- **Integration fix, test-first:**
+  - After a receipt change the record is at a new version, but Record kept the one it read, so a later Edit or Delete would have met a version conflict.
+  - `RecordReceipt` now calls `onChanged(version)` after each acknowledged change, and Record reads the record again.
+  - RED:
+    - `onChanged` was never called;
+    - Record didn't re-read (`transaction` called 1 time, expected 2).
+  - GREEN: 80 of 80; the catalogue 227 of 227.
+- **Still needed:**
+  - **A binary read on the v1 transport:** the download repeats the session-header logic, and a 401 there isn't refreshed.
+  - **A longer timeout for retain and replace:** the server's copy can take 60 s, against the client's 20 s. Try again with the same key is safe.
+  - **Hosted checks (E1):** R2 copy, grant and download; the iOS and Android photo pickers (HEIC to JPEG, large photos).
+  - **E2 checkpoint 5:** check the consent line "only your signed-in account can open it" against the privacy promises.

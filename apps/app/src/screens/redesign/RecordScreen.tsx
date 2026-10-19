@@ -412,7 +412,7 @@ export function RecordScreen({ id, mode = 'view', now }: RecordScreenProps) {
       body = (
         <>
           <Receipt detail={detail} minor={record.amount_minor} date={record.occurred_on} />
-          <RecordReceipt recordId={record.id} version={record.version} />
+          <RecordReceipt recordId={record.id} version={record.version} onChanged={() => void load()} />
           {notice ? (
             <Notice tone="alert" message={notice} action={pending === 'delete' ? { label: tc('Try again'), busy, onPress: () => void remove(record) } : undefined} />
           ) : null}

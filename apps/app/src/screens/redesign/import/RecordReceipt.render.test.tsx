@@ -613,3 +613,25 @@ function expectApprovedTextPairs(root: ParentNode, colors: BunColors) {
   }
   expect(checked).toBeGreaterThan(0);
 }
+
+// Record holds the record's version for its own Edit and Delete: a receipt
+// change moves the record on, so the panel tells Record, which reads it again.
+test('each receipt change tells Record the record moved on, with its new version', async () => {
+  const made = setup();
+  const onChanged = vi.fn();
+  mountScreen(
+    <ReceiptPortsProvider ports={made.ports}>
+      <RecordReceipt recordId={FOOD_ID} version={record(made.fake).version} onChanged={onChanged} />
+    </ReceiptPortsProvider>,
+    { resources: made.fake.resources },
+  );
+  fireEvent.click(within(await toConsent()).getByRole('button', { name: 'Keep this photo' }));
+  await thumbnail();
+  expect(onChanged).toHaveBeenCalledTimes(1);
+  expect(onChanged).toHaveBeenLastCalledWith(record(made.fake).version);
+  click('Remove photo');
+  fireEvent.click(within(await screen.findByRole('dialog', { name: 'Remove the receipt photo?' })).getByRole('button', { name: 'Remove the photo' }));
+  await screen.findByText('Receipt photo removed.');
+  expect(onChanged).toHaveBeenCalledTimes(2);
+  expect(onChanged).toHaveBeenLastCalledWith(record(made.fake).version);
+});

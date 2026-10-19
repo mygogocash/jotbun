@@ -15,7 +15,7 @@
 //
 // Screens built behind an area awaiting its E2 checkpoint have their own list
 // here, in the 'Screens' group, in plan order: Planning (R4), Insights (R5) and
-// Account (R6). Import (R7) comes later.
+// Account (R6) and Import (R7).
 import type { ReactNode } from 'react';
 
 import { ENTRY_SECTIONS } from './entrySections';
@@ -24,6 +24,7 @@ import { HOME_SECTIONS } from './homeSections';
 import { KIT_SECTIONS } from './kitSections';
 import { FIRST_RUN_SECTIONS } from './account/firstRunSections';
 import { SETTINGS_SECTIONS } from './account/settingsSections';
+import { RECEIPT_SECTIONS } from './import/receiptSections';
 import { INSIGHTS_SECTIONS } from './insights/insightsSections';
 import { RECAP_SECTIONS } from './insights/recapSections';
 import { REMINDERS_SECTIONS } from './insights/remindersSections';
@@ -76,6 +77,11 @@ export const ACCOUNT_SECTIONS: readonly CatalogueSection[] = [
   ...SETTINGS_SECTIONS,
 ];
 
+/** R7 Import (behind `import` until E2 checkpoint 5): the import journey and a record's receipt. */
+export const IMPORT_SCREEN_SECTIONS: readonly CatalogueSection[] = [
+  ...RECEIPT_SECTIONS,
+];
+
 export const CATALOGUE_SECTIONS: readonly CatalogueSection[] = [
   ...KIT_SECTIONS,
   ...ENTRY_SECTIONS,
@@ -84,4 +90,5 @@ export const CATALOGUE_SECTIONS: readonly CatalogueSection[] = [
   ...PLANNING_SECTIONS,
   ...INSIGHTS_SCREEN_SECTIONS,
   ...ACCOUNT_SECTIONS,
+  ...IMPORT_SCREEN_SECTIONS,
 ];
