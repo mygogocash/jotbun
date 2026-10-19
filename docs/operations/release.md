@@ -91,13 +91,13 @@ missing module and no credential in its output, that the v1 HTTP stack serves
 image, and that legacy paths and packages are absent. The build itself fails if a legacy file, a test file or an
 unreviewed package becomes reachable (`release-graph.json`).
 
-**Lockfile finding.** `package-lock.json` records only the darwin-arm64
-binding of the API workspace's nested `@swc/core`, `unrs-resolver` (Jest 30)
-and `sharp`. On Linux, `npm ci` alone cannot build the API or run Jest. The
-Docker build and CI add the exact locked versions with pinned sha512
-(`scripts/ci/linux-native-bindings.mjs`). Regenerating the lockfile with every
-platform's bindings is the proper fix and needs a separately authorized
-dependency change.
+**Lockfile.** `package-lock.json` pins the Linux glibc bindings (x64 and arm64)
+of the API workspace's nested `@swc/core`, `unrs-resolver` (Jest 30) and
+`sharp`, with their integrity. `npm ci` alone installs them in the Docker build
+and in CI (owner decision, 19 October 2026). The helper that used to fetch
+them is gone. `scripts/ci/lockfile-bindings.test.mjs` fails if a later
+lockfile rewrite loses them; npm keeps them when it rewrites the lockfile on
+macOS.
 
 ## Secrets and settings, by name and role
 

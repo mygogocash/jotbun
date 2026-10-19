@@ -37,14 +37,12 @@ COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/
 COPY apps/app/package.json apps/app/
 COPY packages/contracts/package.json packages/contracts/
+# The lockfile pins the Linux glibc bindings (x64, arm64) of @swc/core and
+# sharp with their integrity, so npm ci installs them here (owner decision
+# §7.2). The swc compiler stays in the build stage; sharp's binding is staged
+# into the runtime with the release graph, because P2b's image parser child
+# loads it.
 RUN npm ci --workspace gogospend-api --include-workspace-root=false --ignore-scripts --no-audit --no-fund
-# The lockfile records only the darwin-arm64 bindings of @swc/core and sharp
-# (P6b finding): add the Linux ones at the exact locked versions, refused
-# unless their sha512 matches the pin. The swc compiler stays in the build
-# stage; sharp's binding is staged into the runtime with the release graph,
-# because P2b's image parser child loads it.
-COPY scripts/ci/linux-native-bindings.mjs scripts/ci/
-RUN node scripts/ci/linux-native-bindings.mjs swc sharp
 COPY packages/contracts/src packages/contracts/src
 COPY apps/api/.swcrc apps/api/tsconfig.json apps/api/release-graph.json apps/api/
 COPY apps/api/drizzle apps/api/drizzle

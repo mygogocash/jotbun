@@ -37,10 +37,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - name: Install (lockfile only, no install scripts)
+      - name: Install (lockfile only, no install scripts; the lockfile pins the Linux native bindings)
         run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Add the Linux native bindings the lockfile lacks (pinned versions and sha512)
-        run: node scripts/ci/linux-native-bindings.mjs swc unrs sharp
       - run: npm run typecheck
       - run: npm run typecheck:app
       - run: npm run test:api
@@ -70,7 +68,6 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: node scripts/ci/linux-native-bindings.mjs swc unrs sharp
       # test:db starts the loopback PostgreSQL 17 container itself
       # (scripts/dev-v1.mjs db-up, compose.postgres.yml, pinned digest).
       - run: npm run test:db

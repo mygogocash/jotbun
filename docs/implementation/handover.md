@@ -192,7 +192,7 @@ Beta stays blocked without hosted evidence. The next product-critical gate is **
 ## 7. Decisions waiting for the owner
 
 1. ~~**Worker runtime ≥ Node 25 (recommended: 26).**~~ **Decided 19 October 2026: Node 26, done locally.** The Docker base image is `node:26.9.0-bookworm-slim` pinned by its index digest (built 19 September, past the dependency-age wait); CI and `.nvmrc` follow, and a test keeps the three in step. The image smoke parses both kinds.
-2. **Lockfile regeneration with Linux native bindings** (`@swc/core`, `unrs-resolver`, `sharp`). Until it happens, Linux builds and hosted CI rely on `scripts/ci/linux-native-bindings.mjs`.
+2. ~~**Lockfile regeneration with Linux native bindings**~~ **Decided 19 October 2026: done locally.** The lockfile pins the Linux glibc x64/arm64 bindings of `@swc/core`, `unrs-resolver` and `sharp` (eight entries, integrity included, nothing else changed). `npm ci` installs them in the Docker build and CI, and the helper script is removed.
 3. **Pushing** the local commits (integration branch and any task branches), and the next PR.
 4. ~~**Recreating `gogospend_v1`**~~ **Done** (empty: 0 accounts, 0 transactions, 0 wallets). The next `dev:v1` applies the current migrations.
 5. **E1–E4 authority** (next section) for every hosted, native and release step.

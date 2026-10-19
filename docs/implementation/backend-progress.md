@@ -2796,3 +2796,26 @@ Observed, not changed (pre-existing):
   2. **Nothing made the image run Node 26.** The release smoke now fails below Node 26 and always expects both parses. Before, an image on Node 24 passed, with imports off for good.
   3. The layout test's file check is scope-aware: `node_modules/@img/<name>/package.json`.
   - **`engines` stays `>=24`:** everything runs on Node 24, where imports fail closed. Changing it would also mean editing the lockfile, which waits for the owner. The image, CI and `.nvmrc` carry the Node 26 decision.
+
+## Lockfile: the Linux native bindings (owner decision §7.2, 19 October 2026)
+
+- **Decision:** the owner authorized the lockfile change. No new packages; only the Linux bindings the lockfile was missing.
+- **What changed:** eight entries under `apps/api/node_modules/`:
+  - `@swc/core-linux-{x64,arm64}-gnu` 1.16.18;
+  - `@unrs/resolver-binding-linux-{x64,arm64}-gnu` 1.12.2;
+  - `@img/sharp-linux-{x64,arm64}` 0.35.5;
+  - `@img/sharp-libvips-linux-{x64,arm64}` 1.3.4.
+  Each is the version its parent names, with the registry's tarball, integrity, `cpu`, `os`, `libc: glibc`, `optional`, license and engines. No existing entry changed, and key order is kept: the diff is 162 added lines.
+- **Why not a plain regeneration:**
+  - `npm install --package-lock-only` called the lockfile up to date.
+  - Re-resolving the three packages hoisted sharp and swc to the root and folded Jest's nested `unrs-resolver` into the root copy. That changes the image layout and a version.
+  - So the entries were added at their nested locations, from `npm view` metadata.
+  - npm then keeps the lockfile byte-for-byte on a macOS `npm install --package-lock-only`.
+- **Retired:** `scripts/ci/linux-native-bindings.mjs` and its test. The Dockerfile, both CI jobs and `.dockerignore` no longer use it.
+- **Guard:** `scripts/ci/lockfile-bindings.test.mjs` (in test:ops).
+  - Every nested native package has its Linux glibc x64 and arm64 bindings, at the parent's version, with a registry URL and integrity.
+  - Neither the Dockerfile nor CI fetches bindings any more.
+  - RED: both tests failed on the old lockfile and workflow.
+- **Image without the helper:**
+  - **arm64:** `docker build --no-cache` and `release-smoke.cjs` give `ok: true`, with CSV and PNG parsed on Node 26.9.0.
+  - **x64 under emulation on this Mac (QEMU):** the build installed the x64 swc binding, and the API compiled. The smoke then reported the sandbox unsupported, because Node added `UV_USE_IO_URING` to the children's environment under emulation. The same smoke passes on GitHub's native x64 runner (PR #70, "Release image and smoke"), so this is the emulation, not the image.
