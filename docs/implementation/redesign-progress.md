@@ -1450,3 +1450,13 @@ Built together with the kit polish above, in one change. These fix the screen-le
   - test:unit 432 of 432; test:render 561 of 562.
   - The one failure, a different Quick add test each time, passes alone: 79 of 79, three runs. A History long-press test did the same: 30 of 30, six runs.
   - These are timing flakes under a busy host, not failures of this change.
+- **Gate on `f07c693`, all passing:**
+  - typecheck and typecheck:app;
+  - test:api 929, test:db 681, test:app 28, test:unit 432, test:dev 7, test:ops 107, test:render 562 (no flakes this run);
+  - the API build, export:web and `git diff --check`.
+  - Stale test databases: 14, not ours.
+- **Simulator:**
+  - Metro ran with `EXPO_PUBLIC_REDESIGN=catalogue` only, so the core loop was on by default.
+  - All 40 Thai screen states were shot at phone size (`chrome=off`).
+  - The redesign reads Thai throughout. The only English left is the sample user data: wallet names, custom categories and notes.
+  - History's type and category chip rows still scroll sideways and cut off mid-word at the edge.
