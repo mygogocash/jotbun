@@ -99,7 +99,7 @@ function Promises() {
           { key: 'bank', text: tc('Jotbun never connects to your bank.') },
           { key: 'sold', text: tc('Your data is never sold.') },
           { key: 'ads', text: tc('No ads, ever.') },
-          { key: 'read', text: tc('Not even Jotbun can read your diary.') },
+          { key: 'yours', text: tc('Export or delete your diary any time.') },
         ]}
       />
     </OutlinedCard>

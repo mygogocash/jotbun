@@ -381,7 +381,7 @@ function PromiseListSection() {
           { key: 'bank', text: tc('No bank connection. You add every entry yourself.'), icon: icon(Bank) },
           { key: 'sold', text: tc('Your data is never sold.'), icon: icon(Prohibit) },
           { key: 'ads', text: tc('No ads.'), icon: icon(Megaphone) },
-          { key: 'read', text: tc('Not even Jotbun can read your diary.'), icon: icon(Lock) },
+          { key: 'yours', text: tc('Export or delete your diary any time.'), icon: icon(Lock) },
         ]}
       />
       <Specimen label="Default ticks, no title">

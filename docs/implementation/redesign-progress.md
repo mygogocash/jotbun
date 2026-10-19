@@ -1544,3 +1544,21 @@ Built together with the kit polish above, in one change. These fix the screen-le
   - `/spend/import` keeps the legacy screen in the legacy build, shows the redesigned journey under the area, and otherwise redirects to `/spend`.
   - Record renders `import/RecordReceipt`, which draws nothing with the area off.
   - The server's `IMPORT_UPLOADS_ENABLED` stays off.
+
+## R6 merged: first run, sign-in, Settings and privacy
+
+- **Merged:** onboarding and sign-in (`db5bdd5`), and Settings and privacy (`44bab78`). Both were test-first, with every mutation caught.
+- **Integration:**
+  - Onboarding's first reminder is a `ReminderPreferenceInput` (every day unless days are given), so it type-checks against R5's weekday service.
+  - Onboarding builds the device service with the shared `createAppReminderService` instead of a copy of its wording.
+- **A false promise removed:** "Not even Jotbun can read your diary" was untrue, because the server builds the export from the records. The fourth promise on Privacy, and the kit catalogue's sample, now say "Export or delete your diary any time.", which the app keeps. A test asserts the old claim is gone. **The owner should confirm the promise wording at E2 checkpoint 4.**
+- **What the build can't do yet:**
+  - **Language:** there is no setter (`app/_layout.tsx` reads the phone's language once), so Settings shows it read-only.
+  - **Sign-in method:** the session doesn't expose it, so the card says "Signed in".
+  - **Re-authentication:** there is none at runtime (no Auth0 until E1/E2 and F5), so requesting an export, deleting the account and signing out everywhere are disabled, each with a reason.
+  - **Sign out everywhere:** `POST /v1/me/global-logout` has no client yet.
+  - **Downloading an export:** a real file share needs a package such as `expo-sharing`, so the CSV is shared as text.
+- **Catalogue:** the first-run (13) and Settings and privacy (27) sections are registered.
+- **E2 simulator:** a dedicated "Jotbun E2" simulator (iPhone 17 Pro, iOS 27) was created and the dev client rebuilt, with the owner's approval.
+  - On its first launch the dev launcher connected to another project's Metro on 8081, the gogocash monorepo, and showed that project's worklets mismatch.
+  - Loading Jotbun's Metro on 8084 needs one tap on "Open in Jotbun?", which waits for the owner to grant this new simulator to the simulator tool.

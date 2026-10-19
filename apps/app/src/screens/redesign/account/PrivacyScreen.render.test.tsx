@@ -56,7 +56,9 @@ const press = (name: string, scope: HTMLElement = document.body) => fireEvent.cl
 // ---------------------------------------------------------------------------
 // Promises
 
-test('the promises: no bank connection, never sold, no ads, and not even Jotbun reads the diary', () => {
+// "Not even Jotbun can read your diary" was untrue (the server builds the
+// export from the records), so the fourth promise is one the app keeps.
+test('the promises: no bank connection, never sold, no ads, and export or delete any time', () => {
   mountPrivacy();
   expect(screen.getByRole('heading', { name: 'Privacy and data' })).toBeTruthy();
   const promises = screen.getByTestId('privacy-promises');
@@ -64,8 +66,9 @@ test('the promises: no bank connection, never sold, no ads, and not even Jotbun 
     'Jotbun never connects to your bank.',
     'Your data is never sold.',
     'No ads, ever.',
-    'Not even Jotbun can read your diary.',
+    'Export or delete your diary any time.',
   ]);
+  expect(screen.queryByText(/Not even Jotbun/)).toBeNull();
 });
 
 // ---------------------------------------------------------------------------
