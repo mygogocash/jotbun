@@ -31,3 +31,12 @@ test('an area not yet approved is on only by name, or all at once', () => {
   assert.equal(isRedesignEnabled('catalogue', 'catalog'), false);
   assert.equal(isRedesignEnabled('catalogue', '-catalogue,all'), false);
 });
+
+// R4: Planning is built behind its own area until E2 checkpoint 2.
+test('planning is opt-in until approved', () => {
+  assert.equal(isRedesignEnabled('planning', undefined), false);
+  assert.equal(isRedesignEnabled('planning', 'core'), false);
+  assert.equal(isRedesignEnabled('planning', 'planning'), true);
+  assert.equal(isRedesignEnabled('planning', 'all'), true);
+  assert.equal(isRedesignEnabled('planning', 'planning,off'), false);
+});

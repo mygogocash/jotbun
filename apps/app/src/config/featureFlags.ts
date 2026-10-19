@@ -11,12 +11,13 @@ export function isLegacySpendEnabled(): boolean {
 }
 
 /** Areas of the "Bun diary" redesign, each switched on once its screenshots are approved (E2). */
-export type RedesignArea = 'core' | 'catalogue';
+export type RedesignArea = 'core' | 'catalogue' | 'planning';
 
 /**
  * Approved areas, on by default. The core loop (Home, Quick add, History,
  * Record) passed E2 checkpoint 1 on 19 October 2026. The catalogue is a
- * development tool and stays opt-in.
+ * development tool and stays opt-in. Planning (R4: Budget, Wallets,
+ * Categories) is built behind its own area until E2 checkpoint 2.
  */
 const APPROVED: readonly RedesignArea[] = ['core'];
 

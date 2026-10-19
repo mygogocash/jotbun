@@ -212,3 +212,29 @@ test('the Home route: the new Home under the flag, the legacy flag first, else t
   mount(<SpendHomeRoute />);
   expect(screen.getByText('legacy home')).toBeTruthy();
 });
+
+// R4: with Planning on, Budget is a tab; Wallets and Categories are opened
+// from Budget and take the whole height, with their own way back.
+test('planning on: a Budget tab, selected on /spend/budget; the bar hides on wallets and categories', () => {
+  flags({ redesign: 'planning' });
+  nav.pathname = '/spend/budget';
+  mount(<SpendLayout />);
+  const tabs = within(screen.getByRole('tablist')).getAllByRole('tab');
+  expect(tabs.map((tab) => tab.getAttribute('aria-label'))).toEqual(['Home', 'History', 'Budget']);
+  expect(screen.getByRole('tab', { name: 'Budget' }).getAttribute('aria-selected')).toBe('true');
+  fireEvent.click(screen.getByRole('tab', { name: 'Home' }));
+  expect(nav.router.navigate).toHaveBeenCalledWith('/spend');
+  cleanup();
+  nav.pathname = '/spend';
+  mount(<SpendLayout />);
+  fireEvent.click(screen.getByRole('tab', { name: 'Budget' }));
+  expect(nav.router.navigate).toHaveBeenLastCalledWith('/spend/budget');
+  cleanup();
+  for (const path of ['/spend/wallets', '/spend/categories']) expect(spendTab(path)).toEqual({ visible: false, active: '' });
+  expect(spendTab('/spend/budget')).toEqual({ visible: true, active: 'budget' });
+});
+
+test('planning off: no Budget tab', () => {
+  mount(<SpendLayout />);
+  expect(within(screen.getByRole('tablist')).getAllByRole('tab').map((tab) => tab.getAttribute('aria-label'))).toEqual(['Home', 'History']);
+});
