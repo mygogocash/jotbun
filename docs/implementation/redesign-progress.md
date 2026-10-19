@@ -1715,3 +1715,31 @@ Built together with the kit polish above, in one change. These fix the screen-le
   - VoiceOver and TalkBack on devices (E2 devices; the simulator has no VoiceOver);
   - a native speaker's Thai review;
   - removing the green theme and the legacy `Customer*` screens from the default route. That waits until every flag is on, and import's server switch is still off.
+
+## R8: the rest, and the Thai and largest-size captures (19 October 2026)
+
+- **Every §6 state has a render test.** Each state is a catalogue section, and the every-section test renders all 223 in light and dark, in TH, EN and VI. Each screen's own render tests cover its states. Home's list (loading, first run, no budget, offline or saving, over budget, upgrade, terms, signed out, locked) is in `HomeScreen.render.test.tsx`.
+- **The green theme is off every default route.**
+  - With all five areas on:
+    - `/` and `/login` take their legacy branch only when `account` is switched off;
+    - the spend routes take theirs only under the development legacy flag;
+    - `/spend/import` shows the redesigned journey;
+    - Settings uses the theme only for the light/dark preference.
+  - The legacy source stays, as the plan says. Removing it is for after the import release, when no route needs it.
+- **Captures on the Jotbun E2 simulator.** Metro ran with only `EXPO_PUBLIC_REDESIGN=catalogue`, so the four areas were on by their new default.
+  - Thai, light and dark: all 149 sections of checkpoints 2–5. Thai reads throughout. The only English is the sample data a person would type (wallet, category and merchant names).
+  - The largest accessibility size (AX5), light EN: every screen section, 35–223, 189 frames.
+- **Thai findings for the owner:**
+  - The export-downloaded state names its file `jotbun-export-1970-01-01-to-2026-09-29.csv`. A 1970 start reads oddly.
+  - On the coffee-maths step, the heading breaks so that "วัน" sits alone on its second line.
+- **Found at AX5 and fixed test-first:**
+  - **The Categories screen's grid** split a limit mid-number ("฿3,000. / 00 a / month") in its three narrow columns. It now has two columns at the accessibility sizes.
+  - **The planning conflict panels** (Budget, Categories, Wallets) set Yours beside On the server and split "฿4,032.00". They now share a kit piece, `ComparedValues`, which stacks and names each value at the accessibility sizes, as Record's panel does.
+  - RED: four catalogue tests at AX5 (three panels and the grid).
+- **Seen at AX5 and holding:**
+  - Quick add: the stacked type switch in a card, the two-column category picker, From over To.
+  - History: the search field on its own line, row amounts under titles, chip rows to the edge.
+  - Record: receipt lines stacked, the conflict panel named, the footer stacked.
+  - Budget, Wallets, Insights, Recap, Reminders, Onboarding, Settings, Privacy, Import and Receipt.
+- **The sheets** are in `e2-review/th/` (Thai, light over dark) and `e2-review/ax5/` (AX5), one folder per checkpoint.
+- **Gate on `22bdddb` + this fix:** typecheck:app; test:unit 619; test:render 1445; export:web; `git diff --check`. Recaptured at AX5 on the simulator, Budget's, Wallets' and Categories' conflicts and the Categories grid keep every amount whole.
