@@ -10,6 +10,7 @@ import { deviceLocale } from '@mobile/i18n/deviceLocale';
 import { syncUiFontFamily } from '@mobile/theme/uiFontFamily';
 import { useReminderUpkeep } from '@mobile/notifications/useReminderUpkeep';
 import { BunIntensityProvider } from '@mobile/mascot/BunIntensityProvider';
+import { useReducedMotion } from '@mobile/hooks/useReducedMotion';
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(spendRuntimeFonts);
@@ -17,7 +18,9 @@ export default function RootLayout() {
   const locale = useMemo(deviceLocale, []);
   useEffect(() => { syncUiFontFamily(locale); }, [locale]);
   useReminderUpkeep(locale);
+  // Screens slide in; for a person who asked for less motion they cross-fade instead.
+  const reducedMotion = useReducedMotion();
   useEffect(() => { if (fontError) console.warn('Bundled fonts could not load; using the system fallback.'); }, [fontError]);
   if (!fontsLoaded && !fontError) return <View style={{ flex: 1, justifyContent: 'center' }}><ActivityIndicator accessibilityLabel="Loading Jotbun" /></View>;
-  return <BunIntensityProvider><SafeAreaProvider><IntlProvider locale={locale}><ThemeProvider><ThemedStatusBar /><Stack screenOptions={{ headerShown: false }} /></ThemeProvider></IntlProvider></SafeAreaProvider></BunIntensityProvider>;
+  return <BunIntensityProvider><SafeAreaProvider><IntlProvider locale={locale}><ThemeProvider><ThemedStatusBar /><Stack screenOptions={{ headerShown: false, animation: reducedMotion ? 'fade' : 'default' }} /></ThemeProvider></IntlProvider></SafeAreaProvider></BunIntensityProvider>;
 }
