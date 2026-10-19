@@ -2,9 +2,10 @@
 // checkpoint 5). With the area off it draws nothing, so the approved Record
 // screen is unchanged.
 //
-// Record renders it under the receipt slip with only the record's id and
-// version; the panel reads the record itself (which receipt it holds, at
-// which version) and takes everything else from its ports (ReceiptParts.tsx).
+// Record renders it under the receipt slip with the record's id, version and
+// receipt as Record read them, so opening an entry reads it once; given only
+// the id and version (the catalogue), the panel reads the record itself.
+// Everything else comes from its ports (ReceiptParts.tsx).
 //
 // - View: a thumbnail from bytes downloaded through a five-minute grant and
 //   checked against it. Full screen uses the grant while it has time left and
@@ -44,6 +45,12 @@ import type { ReceiptPorts, ViewerState } from './ReceiptParts';
 export type RecordReceiptProps = {
   recordId: string;
   version: number;
+  /**
+   * The receipt the record holds at `version` (null: none), as Record read it.
+   * Given, the panel takes it instead of reading the record; left out, the
+   * panel reads the record when it opens and whenever `version` moves.
+   */
+  attachmentId?: string | null;
   /** Tests and the catalogue: fakes for any port (otherwise the provider's, then the app's). */
   ports?: Partial<ReceiptPorts>;
   /**
@@ -79,7 +86,7 @@ type Photo = { state: 'none' } | { state: 'loading' } | { state: 'ready'; uri: s
 const MEGABYTE = 1024 * 1024;
 
 /** The panel itself, with no area check (the catalogue draws it directly). */
-export function ReceiptPanel({ recordId, version, ports: injected, onChanged }: RecordReceiptProps) {
+export function ReceiptPanel({ recordId, version, attachmentId, ports: injected, onChanged }: RecordReceiptProps) {
   const tc = useCopy();
   const resources = useSpendV1();
   const ports = useReceiptPorts(injected);
@@ -148,6 +155,14 @@ export function ReceiptPanel({ recordId, version, ports: injected, onChanged }: 
     setPhoto({ state: 'none' });
   };
 
+  /** Holds the receipt the record holds now, at which version, and shows its photo. */
+  const take = useCallback((next: Held) => {
+    setHeld(next);
+    setStep({ kind: 'idle' });
+    if (next.attachmentId) void loadPhoto(next.attachmentId);
+    else clearPhoto();
+  }, [loadPhoto]);
+
   /** Reads which receipt the record holds now, at which version. */
   const readRecord = useCallback(async () => {
     const turn = ++readTurn.current;
@@ -155,24 +170,29 @@ export function ReceiptPanel({ recordId, version, ports: injected, onChanged }: 
     try {
       const record = await resources.transaction(recordId);
       if (!alive.current || turn !== readTurn.current) return;
-      const next = { attachmentId: record.attachment_id ?? null, version: record.version };
-      setHeld(next);
-      setStep({ kind: 'idle' });
-      if (next.attachmentId) void loadPhoto(next.attachmentId);
-      else clearPhoto();
+      take({ attachmentId: record.attachment_id ?? null, version: record.version });
     } catch (error) {
       if (!alive.current || turn !== readTurn.current) return;
       const outcome = error instanceof V1Error ? error.outcome : undefined;
       if (outcome === 'not_found' || outcome === 'deleted' || outcome === 'purged') setStep({ kind: 'gone' });
       else setStep({ kind: 'load_problem', message: photoProblem(error) });
     }
-  }, [resources, recordId, loadPhoto, photoProblem]);
+  }, [resources, recordId, take, photoProblem]);
 
-  // The record's version moving (an edit on Record) means another read; never while a command is open.
+  // Opening, and the record's version moving (an edit on Record, or Record reading it again after
+  // a receipt change): take the receipt Record read with it, or read the record when Record gave
+  // none. Never while a command is open.
   useEffect(() => {
     const open = ['consent', 'confirm_remove', 'working', 'frozen', 'slow'].includes(stepRef.current.kind);
-    if (!open) void readRecord();
-  }, [readRecord, version]);
+    if (open) return;
+    if (attachmentId === undefined) {
+      void readRecord();
+      return;
+    }
+    // What Record read is newer than any read of the panel's still on its way.
+    readTurn.current += 1;
+    take({ attachmentId, version });
+  }, [readRecord, take, version, attachmentId]);
 
   function failed(command: ReceiptCommand, error: unknown) {
     const problem = classifyFailure(error, command.kind);

@@ -1,10 +1,10 @@
 // R7: the parts of a record's receipt photo (plan §6.5) and the ports it
-// works through. The panel (RecordReceipt.tsx) gets only the record's id and
-// version, so everything else comes from here: the attachment and upload
-// ports, the photo picker, ids and the clock. Tests and the catalogue give
-// their fakes through `ReceiptPortsProvider` (or props); the app falls back to
-// `appReceiptPorts()`, which reaches the real API over the session seam and
-// loads the native picker only when someone picks a photo.
+// works through. The panel (RecordReceipt.tsx) gets only the record's id,
+// version and receipt id, so everything else comes from here: the attachment
+// and upload ports, the photo picker, ids and the clock. Tests and the
+// catalogue give their fakes through `ReceiptPortsProvider` (or props); the app
+// falls back to `appReceiptPorts()`, which reaches the real API over the
+// session seam and loads the native picker only when someone picks a photo.
 //
 // A receipt is shown from bytes the adapter downloaded and checked against
 // its grant, as an in-memory data URI: never a storage URL, never a file on

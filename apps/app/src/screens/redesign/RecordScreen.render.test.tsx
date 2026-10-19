@@ -21,14 +21,9 @@ beforeAll(() => { installBrowserStorage(); });
 beforeEach(() => {
   for (const fn of [nav.router.push, nav.router.replace, nav.router.back]) fn.mockReset();
   nav.router.canGoBack.mockReturnValue(true);
-  // These tests count Record's own reads of the entry. The receipt panel under
-  // the slip (the import area, on since E2 checkpoint 5) reads it too; that
-  // panel is tested in import/RecordReceipt.render.test.tsx.
-  vi.stubEnv('EXPO_PUBLIC_REDESIGN', '-import');
 });
 afterEach(() => {
   cleanup();
-  vi.unstubAllEnvs();
 });
 
 const NOT_CONFIRMED = 'Not confirmed yet. Your entry is kept; try again.';
