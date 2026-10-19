@@ -1596,3 +1596,17 @@ Built together with the kit polish above, in one change. These fix the screen-le
   - **test:render:** 1202 of 1203. The one failure, Reminders "off", passed alone three times out of three.
 - **Timing flakes:** three render tests have now failed once each under load and passed alone: History long-press, Quick add, and Reminders "off". The render suite now waits up to 4 s in `findBy…`/`waitFor` (`src/testing/renderSetup.ts`), instead of Testing Library's 1 s. Full render suite after the change: 1203 of 1203.
 - **Still needed before the import flag can turn on:** E2 checkpoint 5; decision 7 (the device draft at rest); the E1 R2 and quarantine proofs; the parser gate and a Node 25+ worker runtime; the import release checklist in `rollback.md`; and E4.
+
+## E2 checkpoints 2–5: simulator captures (19 October 2026)
+
+- **Device:** the "Jotbun E2" simulator (iPhone 17 Pro, iOS 27, 402 × 874 pt), created and its dev client rebuilt with the owner's approval.
+  - The build has no Expo dev launcher, so it loads Metro from `RCT_METRO_PORT`. It was rebuilt with `RCT_METRO_PORT=8084`, since port 8081 belongs to another project's Metro (the gogocash monorepo).
+- **No "Open in Jotbun?" prompt:**
+  - iOS asks that once per app for every link from outside, and the simulator tool's grant never reached this device.
+  - So each section is opened inside the app instead: Expo Router's `router.replace`, called through the Metro inspector (Hermes, Chrome DevTools Protocol).
+  - Development log toasts (LogBox) are switched off for the captures in the same way, because a persistent "Open debugger to view warnings" toast had covered the bottom of later frames.
+- **Found on device:**
+  - The import catalogue fixtures made ids with `globalThis.crypto.randomUUID()`, which Hermes lacks, so every import upload threw. They now use `expo-crypto`, and `hermesGlobals.test.ts` guards app code against that global (`e28db6f`).
+- **What was captured:** all 149 sections of checkpoints 2–5 (Planning 75–120, Insights 121–149, Account 150–189, Import 190–223), at phone size (`chrome=off`), in light and dark English. Every frame was checked against its section title and for a settled state.
+- **Thai is not captured yet:** these areas' copy enters the catalogs only after approval, so their Thai frames would show English.
+- **The sheets** are in `e2-review/checkpoints/` (ignored by git), one folder per checkpoint.
