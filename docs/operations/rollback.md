@@ -71,7 +71,8 @@ it in the release record.
 2. **Worker runtime is Node 25 or newer** (recommended 26) in the Docker base
    image and in CI (new digest pin), so the parser child can be denied
    network access. Imports fail closed on an older runtime; do not enable them
-   on it.
+   on it. (In the code since 19 October 2026: Node 26.9.0 in the image and
+   CI. Confirm the release commit has it.)
 3. **Parser dependency/security gate** passed, and the P2b/P2c/P3 review fixes
    are in the release (they are done locally; confirm the release commit
    contains them).

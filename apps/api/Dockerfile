@@ -22,8 +22,11 @@
 # Firebase and Mongo code and packages, tests and the app are not in it.
 # No secret is baked in; every setting comes from the platform at run time.
 
-# node:24-bookworm-slim (Node 24.22.0), pinned by its multi-architecture digest.
-ARG NODE_IMAGE=node:24-bookworm-slim@sha256:a5f4366e834695d5f363b920c104953a535d3a9864d1bdf74566a0ebe01daee5
+# Node 26.9.0 (bookworm-slim), pinned by its multi-architecture index digest
+# (built 19 September 2026). Node 26, not 24, by the owner's decision
+# (19 October 2026): the permission model denies the parser child the
+# network only from Node 25 on, so on 24 imports fail closed.
+ARG NODE_IMAGE=node:26.9.0-bookworm-slim@sha256:582460f614631b59b824ac6020533b9bf339c7fdf3a6d7db31abb6b4065f0212
 
 FROM ${NODE_IMAGE} AS build
 WORKDIR /app

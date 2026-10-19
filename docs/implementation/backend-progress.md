@@ -2774,3 +2774,20 @@ Observed, not changed (pre-existing):
 - **Hygiene:** `gogospend_v1` was confirmed empty (0 accounts, 0 transactions, 0 wallets) and recreated empty; `gogospend_test_*` databases were not touched. Local images `gogospend-local-integration` and `gogospend-local` were removed.
 - **Gate after paging (local, Node 26.10.0), all PASS:** `typecheck`, `typecheck:app`, `test:api` (41 suites, 929), `test:db` (40 suites, 681), `test:app` (28), `test:unit` (263), `test:dev` (7), `test:ops` (107, `GOGOSPEND_OPS_REQUIRE_DB=1`), `test:render` (66), API build, `release-graph.mjs check` (145 files, no problems), `export:web`, `git diff --check`.
 - **Image smoke** on this tree: `docker build` + `release-smoke.cjs` → `ok: true` on Node v24.22.0, parsers `sandbox_unsupported` (fail closed). The check image was removed afterwards.
+
+## Node 26 worker runtime (owner decision §7.1, 19 October 2026)
+
+- **Decision:** the owner chose Node 26 for the worker runtime. Node's permission model denies the parser children the network only from Node 25 on; on Node 24 imports fail closed.
+- **What changed:**
+  - **Image:** `apps/api/Dockerfile` is pinned to `node:26.9.0-bookworm-slim@sha256:582460f614631b59b824ac6020533b9bf339c7fdf3a6d7db31abb6b4065f0212`, the multi-architecture index built 19 September 2026. 26.10.0's image was 13 days old, inside the dependency-age wait.
+  - **CI:** `NODE_VERSION: 26.9.0`. **`.nvmrc`:** 26.
+  - **Test:** `backend-workflow.test.mjs` requires the image, CI and `.nvmrc` to name the same Node, at least 26, with the image pinned by digest. RED: the workflow still said 24.22.0.
+- **Found by the first Node 26 image smoke:**
+  - `ok: false`, with `csv: parsed` and `png: sandbox_unsupported`. The image child crashed in its self-check with `ERR_ACCESS_DENIED` on `/app/apps/api/node_modules/detect-libc/package.json`.
+  - The release image keeps sharp under the API's node_modules and hoists detect-libc and semver to the root. Looking for detect-libc from sharp, Node reads each candidate's `package.json`, even a missing one. Outside the child's read roots the permission model answers with "access denied" rather than "not found", so the child crashed.
+  - The developer layout never showed it, because there detect-libc sits where Node looks first.
+  - Allowing the missing directory did not help. Allowing the exact file did.
+- **Fix:** `imageReadRoots` (now exported) adds `lookupFiles`: the exact `package.json` path of each candidate Node tries, in node_modules directories that exist, before the one that holds each package. Nothing else is opened up: only those `package.json` files, by exact path.
+  - RED: a spec builds the image's layout in a temp directory and requires those paths. Mutation: never adding them fails it.
+  - The existing read-roots test now accepts these files, and only for the same package names.
+- **Image smoke on Node 26.9.0:** `docker build` and `release-smoke.cjs` gave `ok: true` with `csv: parsed` and `png: parsed`. The processes still fail closed at the database, and `/live` is 200 with `/ready` 503. The image is arm64 (this Mac); x64 was not run. The check image was removed.

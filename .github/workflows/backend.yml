@@ -20,7 +20,7 @@ concurrency:
 
 env:
   # The release image's Node (apps/api/Dockerfile).
-  NODE_VERSION: 24.22.0
+  NODE_VERSION: 26.9.0
 
 jobs:
   gate:

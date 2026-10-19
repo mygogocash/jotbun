@@ -103,7 +103,22 @@ test('the workflow parser sees steps, their settings and the jobs they run in', 
   const runs = workflowRuns(workflow);
   assert.ok(runs.length >= 14, `found ${runs.length} run steps`);
   assert.deepEqual(new Set(runs.map((entry) => entry.job)), new Set(['gate', 'database', 'image']));
-  assert.ok(runs.every((entry) => entry.env.NODE_VERSION === '24.22.0'));
+  assert.ok(runs.every((entry) => entry.env.NODE_VERSION === '26.9.0'));
+});
+
+// Owner decision §7.1 (19 October 2026): the worker runs Node 26, where the
+// permission model denies the parser child the network, so imports can read
+// files instead of failing closed. CI, the release image and local
+// development run the same Node.
+test('CI, the release image and .nvmrc run the same Node, 26 or later, with the image pinned by digest', () => {
+  const dockerfile = readFileSync(`${ROOT}apps/api/Dockerfile`, 'utf8');
+  const image = /^ARG NODE_IMAGE=node:(\d+)\.(\d+)\.(\d+)-bookworm-slim@sha256:([0-9a-f]{64})$/m.exec(dockerfile);
+  assert.ok(image, 'the image names an exact Node version and its digest');
+  const imageVersion = image.slice(1, 4).join('.');
+  const ciVersion = workflowRuns(workflow)[0].env.NODE_VERSION;
+  assert.equal(imageVersion, ciVersion);
+  assert.ok(Number(image[1]) >= 26, `Node ${imageVersion} is older than the owner's 26`);
+  assert.equal(readFileSync(`${ROOT}.nvmrc`, 'utf8').trim(), image[1]);
 });
 
 test('every local gate command runs in CI with the same settings', () => {
@@ -122,12 +137,11 @@ test('the ops suite in CI fails, not skips, when its database is unreachable', (
   assert.deepEqual(ops.map((entry) => entry.env.GOGOSPEND_OPS_REQUIRE_DB), ['1']);
 });
 
-test('read-only, no secrets, every action pinned by commit, the image Node version', () => {
+test('read-only, no secrets, every action pinned by commit', () => {
   assert.match(workflow, /^permissions:\n {2}contents: read\n/m);
   assert.doesNotMatch(workflow, /secrets\./);
   const uses = [...workflow.matchAll(/uses:\s*(\S+)/g)].map((match) => match[1]);
   assert.ok(uses.length > 0);
   for (const action of uses) assert.match(action, /^[\w.-]+\/[\w.-]+@[0-9a-f]{40}$/, action);
-  const dockerfile = readFileSync(`${ROOT}apps/api/Dockerfile`, 'utf8');
-  assert.match(dockerfile, /\(Node 24\.22\.0\)/);
+  // The image's Node version is checked against CI's in the Node 26 test above.
 });

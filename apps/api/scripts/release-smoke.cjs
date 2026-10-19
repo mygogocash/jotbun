@@ -16,9 +16,9 @@
 // 4. P2b's parser children run inside the image with their real flags
 //    (`--permission`, scrubbed environment). On Node ≥25 a synthetic CSV and
 //    a 1x1 PNG both parse (children staged, sharp under the permission model).
-//    On Node 24 (the pinned image today) `--permission` does not deny
-//    sockets, so both answers are `sandbox_unsupported` — fail closed, and
-//    proof the children and probe still load.
+//    On Node 24 `--permission` does not deny sockets, so both answers are
+//    `sandbox_unsupported` — fail closed, and proof the children and probe
+//    still load. The image runs Node 26 (owner decision, 19 October 2026).
 // 5. The v1 HTTP stack serves inside the image: the real V1AppModule (the
 //    startup login check needs a database, so the module is created
 //    directly) answers `GET /live` 200 and `GET /ready` 503 (no database, no
