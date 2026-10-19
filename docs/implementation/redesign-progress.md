@@ -1375,3 +1375,13 @@ Built together with the kit polish above, in one change. These fix the screen-le
     - `tsc` clean.
   - Two tests pinned the old layout and were updated: the locale/theme matrix's visible-title style, and the catalogue's page padding.
   - Mutation: drawing the footer inside the scroll view fails the pinned-footer test.
+
+## Catalogue: `chrome=off` for phone-size screenshots
+
+- **Why:** the catalogue's 234 pt header sits above every screen section, so a frame never shows whether a screen fits a phone. With the pinned footer, the header pushed Quick add's last keypad rows under Save in the catalogue, although the real screen fits.
+- **What:** `?chrome=off` hides the header. Screen sections then pad by the real status-bar inset, and kit sections by the same inset at the top. Move between sections with a tour or a new link. Without the param, nothing changes.
+- **RED → GREEN:**
+  - `params.test.ts` 7 of 7;
+  - the catalogue render suite 97 of 97;
+  - `tsc` clean.
+  - Mutation: zeroing the top inset regardless fails the new render test.

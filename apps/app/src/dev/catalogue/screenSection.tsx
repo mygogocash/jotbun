@@ -28,7 +28,7 @@
 // The screens' own navigation (Close, Done, Back, a row's record) uses the
 // app's real router, so it leaves the catalogue.
 import { LocalRouteParamsContext } from 'expo-router/build/Route';
-import { Component, useEffect, useState } from 'react';
+import { Component, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
 import { SafeAreaInsetsContext, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -41,6 +41,7 @@ import { SpendV1Provider } from '@mobile/spend/v1/SpendV1Context';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { BunText } from '@mobile/ui/BunText';
 import { BUN_SPACE } from '@mobile/ui/layout';
+import { CatalogueChromeContext } from './parts';
 import type { CatalogueSection } from './registry';
 
 export type Translate = (english: string, values?: Readonly<Record<string, string | number>>) => string;
@@ -107,6 +108,7 @@ const COMMIT_MS = 300;
 function ScreenStage<F extends ScreenFixture>({ spec }: { spec: ScreenSectionSpec<F> }) {
   const tc = useCopy();
   const insets = useSafeAreaInsets();
+  const chrome = useContext(CatalogueChromeContext);
   const [fixture] = useState(spec.fixture);
   const [prepared, setPrepared] = useState(!fixture.prepare);
   useEffect(() => {
@@ -120,7 +122,7 @@ function ScreenStage<F extends ScreenFixture>({ spec }: { spec: ScreenSectionSpe
   if (!prepared) return <View testID="catalogue-screen-running" style={{ flex: 1 }} />;
   const steps = spec.script ? spec.script(tc, fixture) : [];
   return (
-    <SafeAreaInsetsContext.Provider value={{ ...insets, top: 0 }}>
+    <SafeAreaInsetsContext.Provider value={{ ...insets, top: chrome ? 0 : insets.top }}>
       <LocalRouteParamsContext.Provider value={fixture.params ?? NO_PARAMS}>
         <SpendV1Provider resources={fixture.resources}>
           <SpendDiaryProvider diary={fixture.diary}>

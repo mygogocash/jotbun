@@ -15,6 +15,7 @@
 // Deep link (Expo Router search params, all optional):
 //   gogospend://dev/catalogue?section=receipt&theme=dark&locale=th
 //   gogospend://dev/catalogue?section=amount&theme=light&locale=en&tour=3000&run=1   (steps every 3 s; a new run restarts)
+//   gogospend://dev/catalogue?section=quick-add-empty&chrome=off                      (no header: the screen as on a phone)
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { IntlProvider } from 'react-intl';
@@ -28,9 +29,9 @@ import type { ThemePreference } from '@mobile/theme/themePreference';
 import { ThemedStatusBar, ThemePreferenceOverride, useBunColors, useTheme } from '@mobile/theme/ThemeProvider';
 import { BunText } from '@mobile/ui/BunText';
 import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE, BUN_TOUCH } from '@mobile/ui/layout';
-import { parseCatalogueParams, parseCatalogueTour } from './params';
+import { parseCatalogueChromeHidden, parseCatalogueParams, parseCatalogueTour } from './params';
 import type { CatalogueSearchParams } from './params';
-import { PAGE_PADDING } from './parts';
+import { CatalogueChromeContext, PAGE_PADDING } from './parts';
 import { CATALOGUE_SECTIONS } from './registry';
 import type { CatalogueGroup, CatalogueSection } from './registry';
 
@@ -253,7 +254,7 @@ function ScreenBody({ section }: { section: CatalogueSection }) {
   );
 }
 
-function CatalogueBody({ view, onView }: { view: CatalogueView; onView: (change: Partial<CatalogueView>) => void }) {
+function CatalogueBody({ view, chrome, onView }: { view: CatalogueView; chrome: boolean; onView: (change: Partial<CatalogueView>) => void }) {
   const colors = useBunColors();
   const insets = useSafeAreaInsets();
   const at = CATALOGUE_SECTIONS.findIndex((section) => section.id === view.section);
@@ -262,13 +263,13 @@ function CatalogueBody({ view, onView }: { view: CatalogueView; onView: (change:
   return (
     <View testID="catalogue" style={{ flex: 1, backgroundColor: colors.background }}>
       <ThemedStatusBar />
-      <CatalogueHeader view={view} at={at} onView={onView} onSection={openSection} />
+      {chrome ? <CatalogueHeader view={view} at={at} onView={onView} onSection={openSection} /> : null}
       {section?.layout === 'screen' ? (
         <ScreenBody key={section.id} section={section} />
       ) : (
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={{ padding: PAGE_PADDING, paddingBottom: insets.bottom + PAGE_PADDING }}
+          contentContainerStyle={{ padding: PAGE_PADDING, paddingTop: (chrome ? 0 : insets.top) + PAGE_PADDING, paddingBottom: insets.bottom + PAGE_PADDING }}
           keyboardShouldPersistTaps="handled"
         >
           {section ? <SectionBody key={section.id} section={section} /> : <CatalogueIndex missing={view.section} onOpen={openSection} />}
@@ -302,6 +303,8 @@ export function CatalogueScreen({ params }: CatalogueScreenProps) {
   // thread delays the tour instead of firing late steps back to back and
   // skipping sections.
   const tour = parseCatalogueTour(params);
+  // `?chrome=off`: no header, so a screen shows exactly as on a phone (navigate with a tour or a new link).
+  const chrome = !parseCatalogueChromeHidden(params);
   const atLast = view.section === CATALOGUE_SECTIONS[CATALOGUE_SECTIONS.length - 1]?.id;
   useEffect(() => {
     if (tour === null || atLast) return undefined;
@@ -318,7 +321,9 @@ export function CatalogueScreen({ params }: CatalogueScreenProps) {
   return (
     <IntlProvider locale={view.locale}>
       <ThemePreferenceOverride preference={view.theme}>
-        <CatalogueBody view={view} onView={onView} />
+        <CatalogueChromeContext.Provider value={chrome}>
+          <CatalogueBody view={view} chrome={chrome} onView={onView} />
+        </CatalogueChromeContext.Provider>
       </ThemePreferenceOverride>
     </IntlProvider>
   );

@@ -45,3 +45,12 @@ export function parseCatalogueTour(params: CatalogueSearchParams): number | null
   const ms = Number(value);
   return ms >= 1000 && ms <= 10000 ? ms : null;
 }
+
+/**
+ * `?chrome=off`: no catalogue header, so a screen section shows exactly as it
+ * does on a phone, under the real status-bar inset (for E2 screenshots of
+ * whether a screen fits). Anything else keeps the header.
+ */
+export function parseCatalogueChromeHidden(params: CatalogueSearchParams): boolean {
+  return first(params, 'chrome') === 'off';
+}

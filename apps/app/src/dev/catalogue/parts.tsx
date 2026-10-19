@@ -1,4 +1,5 @@
 // Layout pieces the catalogue's sections share (redesign R2c, development only).
+import { createContext } from 'react';
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
@@ -43,6 +44,13 @@ export function FullBleed({ children }: { children: ReactNode }) {
 }
 
 const NO_INSETS = { top: 0, right: 0, bottom: 0, left: 0 };
+
+/**
+ * Whether the catalogue header is showing. It covers the status bar, so a
+ * screen under it pads by no top inset; with `?chrome=off` there is no header
+ * and a screen pads by the real one, as on a phone.
+ */
+export const CatalogueChromeContext = createContext(true);
 
 /**
  * Bars that pad by the safe area (the stage header, the tab bar) sit mid-page

@@ -524,6 +524,18 @@ test('screen sections draw the real screens on today pinned to the fixtures, edg
   expect(within(screen.getByTestId('catalogue-section-home-ready')).getByText('Yesterday')).toBeTruthy();
 });
 
+test('chrome=off drops the header: a screen pads by the real status-bar inset, as on a phone', async () => {
+  await open({ section: 'quick-add-empty', theme: 'light', locale: 'en', chrome: 'off' });
+  expect(screen.queryByRole('button', { name: 'Next section' })).toBeNull();
+  const body = screen.getByTestId('catalogue-section-quick-add-empty');
+  const page = within(body).getByTestId('quick-add-scroll').firstElementChild as HTMLElement;
+  expect(page.style.paddingTop).toBe(`${62 + 12}px`);
+  cleanup();
+  await open({ section: 'card', theme: 'light', locale: 'en', chrome: 'off' });
+  expect(screen.queryByRole('button', { name: 'Next section' })).toBeNull();
+  expect(screen.getByTestId('catalogue-section-card')).toBeTruthy();
+});
+
 test('a load-problem state stays put for review: Try again meets the same problem', async () => {
   await open({ section: 'home-offline', theme: 'light', locale: 'en' });
   const body = screen.getByTestId('catalogue-section-home-offline');
