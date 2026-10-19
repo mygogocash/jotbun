@@ -108,7 +108,7 @@ export function CategoriesScreen({ now }: CategoriesScreenProps = {}) {
   const tc = useCopy();
   const locale = useMoneyLocale();
   const router = useRouter();
-  const goBack = useGoBack();
+  const goBack = useGoBack('/spend/budget');
   const keys = useCommandKeys();
   const month = monthOf(todayInBangkok(now ?? new Date()));
   const loaded = useLoad(async (): Promise<Loaded> => {

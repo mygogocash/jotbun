@@ -47,12 +47,16 @@ export const recordHref = recordRoute;
 export const copyHref = copyRoute;
 
 /** Back to the list: the screen below it when there is one, else the list itself. */
-export function useGoBack(): () => void {
+/**
+ * Back, or, with nothing to go back to (a deep link), the screen this one
+ * opens from: History by default; Home for Budget; Budget for Categories.
+ */
+export function useGoBack(fallback: typeof HISTORY_ROUTE | '/spend' | '/spend/budget' = HISTORY_ROUTE): () => void {
   const router = useRouter();
   return useCallback(() => {
     if (router.canGoBack()) router.back();
-    else router.replace(HISTORY_ROUTE);
-  }, [router]);
+    else router.replace(fallback);
+  }, [router, fallback]);
 }
 
 /** The row's quiet state line: RecordRow has a state for every draft state, "Update Jotbun to send" included. */

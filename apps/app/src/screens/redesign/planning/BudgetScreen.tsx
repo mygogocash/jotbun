@@ -145,7 +145,7 @@ export function BudgetScreen({ now }: BudgetScreenProps) {
   const resources = useSpendV1();
   const tc = useCopy();
   const router = useRouter();
-  const goBack = useGoBack();
+  const goBack = useGoBack('/spend');
   const locale = useMoneyLocale();
   const dateLocale = useDateLocale();
   const diaryView = useDiaryView();

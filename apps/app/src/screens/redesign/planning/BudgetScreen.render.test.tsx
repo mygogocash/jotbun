@@ -490,7 +490,7 @@ test('refused by Jotbun: the problem is said under the limits, and the corrected
 // ---------------------------------------------------------------------------
 // Navigation
 
-test('Back is the stage’s first control and goes back (or to History with nothing to go back to); editing hides it', async () => {
+test('Back is the stage’s first control and goes back (or Home, where Budget opens from, with nothing to go back to); editing hides it', async () => {
   await monthView();
   const stage = screen.getByTestId('stage-header');
   expect(within(stage).getByRole('button', { name: 'Back' })).toBe(screen.getAllByRole('button')[0]);
@@ -498,7 +498,7 @@ test('Back is the stage’s first control and goes back (or to History with noth
   expect(router.back).toHaveBeenCalledTimes(1);
   router.canGoBack.mockReturnValue(false);
   click('Back');
-  expect(router.replace).toHaveBeenLastCalledWith('/spend/all');
+  expect(router.replace).toHaveBeenLastCalledWith('/spend');
   click('Edit budget');
   expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
   expect(screen.queryByRole('button', { name: 'Previous month' })).toBeNull();

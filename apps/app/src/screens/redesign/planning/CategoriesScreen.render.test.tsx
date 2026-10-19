@@ -676,3 +676,13 @@ test.each(SECTIONS)('catalogue section %s reaches its state in English and Thai,
     view.unmount();
   }
 }, 60_000);
+
+// Categories opens from Budget: with nothing to go back to, Back goes there.
+test('Back goes back, or to Budget with nothing to go back to', async () => {
+  await open();
+  fireEvent.click(within(screen.getByTestId('stage-header')).getByRole('button', { name: 'Back' }));
+  expect(router.back).toHaveBeenCalledTimes(1);
+  router.canGoBack.mockReturnValue(false);
+  fireEvent.click(within(screen.getByTestId('stage-header')).getByRole('button', { name: 'Back' }));
+  expect(router.replace).toHaveBeenLastCalledWith('/spend/budget');
+});
