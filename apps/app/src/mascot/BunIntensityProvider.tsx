@@ -40,7 +40,8 @@ export function BunIntensityProvider({ children }: PropsWithChildren) {
     let active = true;
     const hydrationVersion = versionRef.current;
     void (async () => {
-      const stored = await readStoredBunIntensity();
+      // A store that cannot be read (a locked keychain) keeps the default bun; it is never an unhandled rejection.
+      const stored = await readStoredBunIntensity().catch(() => null);
       if (active && stored !== null && versionRef.current === hydrationVersion) setIntensityState(stored);
     })();
     return () => { active = false; };
@@ -49,7 +50,8 @@ export function BunIntensityProvider({ children }: PropsWithChildren) {
   const setIntensity = useCallback((next: BunIntensity) => {
     versionRef.current += 1;
     setIntensityState(next);
-    void writeStoredBunIntensity(next);
+    // A choice that cannot be stored still applies for this session.
+    writeStoredBunIntensity(next).catch(() => undefined);
   }, []);
 
   const value = useMemo(() => ({ intensity, setIntensity }), [intensity, setIntensity]);

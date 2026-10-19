@@ -1,7 +1,9 @@
-// The lavender stage band at the top of a screen (redesign R2a): a title, an
-// optional subtitle, an optional month switcher and a slot for the bun. Only
-// `ink` text may sit on the stage (see BUN_TEXT_PAIRS). The band starts under
-// the status bar, so it pads by the top safe-area inset.
+// The lavender stage band at the top of a screen (redesign R2a): an optional
+// back button, a title, an optional subtitle, an optional month switcher and
+// a slot for the bun. Only `ink` text may sit on the stage (see
+// BUN_TEXT_PAIRS). The band starts under the status bar, so it pads by the
+// top safe-area inset. The back button comes first, so it is the first thing
+// a screen reader or the keyboard reaches.
 import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,7 +21,15 @@ export type StageMonth = {
   onNext?: () => void;
 };
 
+export type StageBack = {
+  onPress: () => void;
+  /** Defaults to "Back". */
+  label?: string;
+};
+
 export type StageHeaderProps = {
+  /** A back button above the title, for a screen pushed over another one. */
+  back?: StageBack;
   /** The screen's name; drawn as its heading. */
   title: string;
   subtitle?: string;
@@ -59,7 +69,24 @@ export function MonthSwitcher({ label, onPrevious, onNext }: StageMonth) {
   );
 }
 
-export function StageHeader({ title, subtitle, month, bun, children }: StageHeaderProps) {
+/** "‹ Back" on the stage: one 44 pt button whose name is its visible word. */
+function BackButton({ onPress, label }: StageBack) {
+  const tc = useCopy();
+  const name = label ?? tc('Back');
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={name}
+      onPress={onPress}
+      style={{ alignSelf: 'flex-start', minHeight: BUN_TOUCH, minWidth: BUN_TOUCH, flexDirection: 'row', alignItems: 'center', gap: BUN_SPACE.xxs, paddingRight: BUN_SPACE.xs, borderRadius: BUN_RADIUS.pill }}
+    >
+      <BunText variant="heading" tone="ink" aria-hidden>‹</BunText>
+      <BunText variant="label" tone="ink">{name}</BunText>
+    </Pressable>
+  );
+}
+
+export function StageHeader({ back, title, subtitle, month, bun, children }: StageHeaderProps) {
   const colors = useBunColors();
   const insets = useSafeAreaInsets();
   return (
@@ -75,6 +102,7 @@ export function StageHeader({ title, subtitle, month, bun, children }: StageHead
         gap: BUN_SPACE.sm,
       }}
     >
+      {back ? <BackButton {...back} /> : null}
       {month ? <MonthSwitcher {...month} /> : null}
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: BUN_SPACE.sm }}>
         <View style={{ flex: 1, gap: BUN_SPACE.xxs }}>

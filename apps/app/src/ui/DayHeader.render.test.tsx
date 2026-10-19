@@ -13,14 +13,16 @@ test('the day and its totals, money out and money in kept apart', () => {
   const header = screen.getByRole('heading');
   expect(header.getAttribute('aria-label')).toBe('Today, Sunday 18 October 2026, Money out ฿420.00, Money in ฿1,000.00');
   expect(screen.getByText('Today')).toBeTruthy();
-  expect(screen.getByText('-฿420.00')).toBeTruthy();
+  // Money out takes the true minus sign (U+2212), as Amount and RecordRow do.
+  expect(screen.getByText('−฿420.00')).toBeTruthy();
+  expect(screen.queryByText('-฿420.00')).toBeNull();
   expect(screen.getByText('+฿1,000.00')).toBeTruthy();
 });
 
 test('a side with nothing in it is left out', () => {
   mountKit(<DayHeader date="2026-10-17" today={TODAY} outMinor="6500" inMinor="0" />);
   expect(screen.getByText('Yesterday')).toBeTruthy();
-  expect(screen.getByText('-฿65.00')).toBeTruthy();
+  expect(screen.getByText('−฿65.00')).toBeTruthy();
   expect(screen.queryByText(/^\+/)).toBeNull();
   expect(screen.getByRole('heading').getAttribute('aria-label')).toBe('Yesterday, Saturday 17 October 2026, Money out ฿65.00');
   cleanup();
@@ -42,7 +44,7 @@ test('every locale and mode: ink words on the page, exact amounts, Thai leading'
     expect(screen.getByText(today).style.color).toEqual(rgb(colors.ink));
     expect(screen.getByText(today).style.lineHeight).toBe(leading('label', locale));
     expect(screen.getByRole('heading').getAttribute('aria-label')).toContain(`${out} ฿420.00, ${inWord} ฿1,000.00`);
-    expect(screen.getByText('-฿420.00').style.color).toEqual(rgb(colors.muted));
+    expect(screen.getByText('−฿420.00').style.color).toEqual(rgb(colors.muted));
     cleanup();
   }
 });

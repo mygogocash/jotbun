@@ -104,9 +104,11 @@ test('flag on: Home and History tabs under the screen, with the add button in th
   const tabs = within(list).getAllByRole('tab');
   expect(tabs.map((tab) => tab.getAttribute('aria-label'))).toEqual(['Home', 'History']);
   expect(tabs.map((tab) => tab.getAttribute('aria-selected'))).toEqual(['true', 'false']);
-  const add = within(list).getByRole('button', { name: 'Add an entry' });
-  const order = [...list.querySelectorAll('[role="tab"], [role="button"]')];
-  expect(order.indexOf(add)).toBe(1);
+  // The add button is drawn in the centre of the bar, outside the tablist (a tablist holds only tabs).
+  const add = within(screen.getByTestId('tab-bar')).getByRole('button', { name: 'Add an entry' });
+  expect(list.contains(add)).toBe(false);
+  const order = [...list.querySelectorAll('[role="tab"], [data-testid="tab-bar-add-space"]')];
+  expect(order.indexOf(screen.getByTestId('tab-bar-add-space'))).toBe(1);
   // The bar comes after the screen in the page, never over it.
   const screenNode = screen.getByText('current screen');
   expect(screenNode.compareDocumentPosition(screen.getByTestId('tab-bar')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

@@ -12,7 +12,8 @@
     "test": "node --test src/api/*.test.ts",
     "test:unit": "node scripts/test-unit.mjs",
     "test:render": "vitest run --config vitest.render.config.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "typecheck:routes": "node scripts/typecheck-with-routes.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/anuphan": "^0.4.1",

@@ -41,14 +41,14 @@ import type { EntryType, QuickAddDraft } from '@mobile/spend/v1/redesign/quickAd
 import { RECENT_WINDOW_DAYS, rankRecentCategories } from '@mobile/spend/v1/redesign/recentCategories';
 import type { RecentCategories } from '@mobile/spend/v1/redesign/recentCategories';
 import { duplicateDraft } from '@mobile/spend/v1/redesign/recordModel';
-import { addDays } from '@mobile/spend/v1/redesign/shared';
+import { WAITING_STATES, addDays, openDrafts } from '@mobile/spend/v1/redesign/shared';
 import type { Translate } from '@mobile/spend/v1/redesign/shared';
 import type { CreateEntryInput, CreateTransferInput } from '@mobile/spend/v1/resources';
 import { useDiaryView, useSpendDiary } from '@mobile/spend/v1/SpendDiaryContext';
 import { useSpendV1 } from '@mobile/spend/v1/SpendV1Context';
 import { categoryName, todayInBangkok } from '@mobile/spend/v1/viewModels';
 import { DiaryLocked, DraftReferenceUnavailable } from '@mobile/storage/types';
-import type { PendingEntry } from '@mobile/storage/types';
+import type { OutboxCommand, PendingEntry } from '@mobile/storage/types';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { useSpringPop } from '@mobile/theme/useSpringPop';
 import { DECORATIVE, POLITE_LIVE_REGION, useAnnouncement } from '@mobile/ui/a11y';
@@ -70,7 +70,7 @@ import { Sheet } from '@mobile/ui/Sheet';
 import { TypeSwitch } from '@mobile/ui/TypeSwitch';
 import { WalletPicker } from '@mobile/ui/WalletPicker';
 import type { WalletChoice } from '@mobile/ui/WalletPicker';
-import { isOwnCreate, newId, saveProblem, useCommandKeys, useLoad } from '../v1/parts';
+import { isOwnCreate, newId, ownCreateMatches, refusedBeforeProcessing, saveProblem, useCommandKeys, useLoad } from '../v1/parts';
 import { readCheerDay, writeCheerDay } from './quickAddCheer';
 
 export type QuickAddScreenProps = {
@@ -78,7 +78,13 @@ export type QuickAddScreenProps = {
   now?: Date;
 };
 
-type Status = 'editing' | 'saving' | 'unconfirmed' | 'blocked' | 'saved';
+/**
+ * `unconfirmed`: an attempt may have committed; the entry is frozen with its
+ * key and only Try again resends the same command. `conflict`: Jotbun
+ * already holds this draft's record with other details, so it is never shown
+ * as saved, and nothing more is sent.
+ */
+type Status = 'editing' | 'saving' | 'unconfirmed' | 'blocked' | 'saved' | 'conflict';
 type Errors = Record<string, string>;
 type Loaded = { wallets: WalletDto[]; categories: CategoryDto[] };
 type References = { wallets: WalletSnapshot[]; categories: CategoryDto[] };
@@ -164,7 +170,8 @@ export function QuickAddScreen({ now }: QuickAddScreenProps) {
   let source: CopySource | null = null;
   if (copyOf !== null && !blankInstead) {
     // A draft still on the device is copied from the device; anything else from the server.
-    source = diaryView.pending.find((entry) => entry.id === copyOf) ?? (copied.state === 'ready' ? copied.data : null);
+    // A deleted record is not offered for copying, even through the URL.
+    source = diaryView.pending.find((entry) => entry.id === copyOf) ?? (copied.state === 'ready' && !copied.data?.deleted_at ? copied.data : null);
     if (!source) {
       if (copied.state === 'loading') return <Page title={title} onClose={leave}><Waiting label={tc('Loading the entry to copy')} /></Page>;
       const problem = copied.state === 'error' ? copyProblem(copied.error, tc) : { message: tc("This entry isn't available to copy."), retry: false };
@@ -177,7 +184,7 @@ export function QuickAddScreen({ now }: QuickAddScreenProps) {
     }
   }
 
-  const balances = loaded.state === 'ready' ? new Map(loaded.data.wallets.map((wallet) => [wallet.id, wallet.balance_minor])) : null;
+  const balances = loaded.state === 'ready' ? availableBalances(loaded.data.wallets, diaryView.outbox) : null;
   return (
     <Page title={title} onClose={leave}>
       <EntryForm
@@ -190,6 +197,7 @@ export function QuickAddScreen({ now }: QuickAddScreenProps) {
         drafts={diaryView.pending}
         source={source}
         onDone={leave}
+        onAnother={loaded.refresh}
       />
     </Page>
   );
@@ -201,13 +209,15 @@ export function QuickAddScreen({ now }: QuickAddScreenProps) {
 type EntryFormProps = {
   wallets: readonly WalletSnapshot[];
   categories: readonly CategoryDto[];
-  /** Each wallet's balance, when the server's list loaded; offline there is none. */
+  /** Each wallet's balance less waiting drafts, when the server's list loaded; offline there is none. */
   balances: ReadonlyMap<string, Minor> | null;
   today: string;
   records: readonly TransactionDto[];
   drafts: readonly PendingEntry[];
   source: CopySource | null;
   onDone: () => void;
+  /** Add another: the balances are read again in place, so move all is never stale after an online save. */
+  onAnother?: () => void;
 };
 
 function rank(categories: readonly CategoryDto[], records: readonly TransactionDto[], drafts: readonly PendingEntry[], today: string): Ranking {
@@ -263,16 +273,41 @@ function earliestFor(draft: QuickAddDraft, wallets: readonly WalletSnapshot[]): 
   return latest;
 }
 
-/** Wallets with their balances for WalletPicker, or null when any balance is unknown (offline). */
-function walletChoices(wallets: readonly WalletSnapshot[], balances: ReadonlyMap<string, Minor> | null): WalletChoice[] | null {
-  if (!balances) return null;
-  const choices: WalletChoice[] = [];
-  for (const wallet of wallets) {
-    const balance = balances.get(wallet.id);
-    if (balance === undefined) return null;
-    choices.push({ id: wallet.id, name: wallet.name, balance_minor: balance, archived: wallet.archived });
+/**
+ * What each wallet holds as far as this device knows: the server's balance,
+ * less what drafts waiting on this device take out of it and plus what they
+ * bring in. Drafts being checked may already be in the server's balance, so
+ * they are left out, as the budget pace leaves them out. "Move all" offers
+ * this, so it never offers money a waiting draft already spent.
+ */
+function availableBalances(wallets: readonly { id: string; balance_minor: Minor }[], outbox: readonly OutboxCommand[]): Map<string, Minor> {
+  const held = new Map(wallets.map((wallet) => [wallet.id, BigInt(wallet.balance_minor)]));
+  const move = (id: string, delta: bigint) => {
+    const balance = held.get(id);
+    if (balance !== undefined) held.set(id, balance + delta);
+  };
+  for (const command of openDrafts(outbox)) {
+    if (!WAITING_STATES.includes(command.state)) continue;
+    const entry = command.payload;
+    const amount = BigInt(entry.amount_minor);
+    if (entry.type === 'transfer') {
+      move(entry.source_wallet_id, -amount);
+      move(entry.destination_wallet_id, amount);
+    } else {
+      move(entry.wallet_id, entry.type === 'expense' ? -amount : amount);
+    }
   }
-  return choices;
+  return new Map([...held].map(([id, balance]) => [id, balance.toString()]));
+}
+
+/**
+ * Wallets for WalletPicker, each with its balance when the server's list gave
+ * one. Offline (the device's synced wallets) there is none, and WalletPicker
+ * then shows the name only and offers no "move all": a guessed balance would
+ * be a wrong number on screen.
+ */
+function walletChoices(wallets: readonly WalletSnapshot[], balances: ReadonlyMap<string, Minor> | null): WalletChoice[] {
+  return wallets.map((wallet) => ({ id: wallet.id, name: wallet.name, archived: wallet.archived, balance_minor: balances?.get(wallet.id) ?? null }));
 }
 
 function keypadFor(source: CopySource | null): KeypadState {
@@ -284,7 +319,7 @@ function keypadFor(source: CopySource | null): KeypadState {
   }
 }
 
-function EntryForm({ wallets, categories, balances, today, records, drafts, source, onDone }: EntryFormProps) {
+function EntryForm({ wallets, categories, balances, today, records, drafts, source, onDone, onAnother }: EntryFormProps) {
   const resources = useSpendV1();
   const tc = useCopy();
   const keys = useCommandKeys();
@@ -321,7 +356,10 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
   }, [today]);
   useAnnouncement(message);
 
-  const locked = status === 'saving' || status === 'unconfirmed';
+  // A refusal while unconfirmed that forbids resending for now (a changed session, an update): frozen, and Try again waits.
+  const [resendBlocked, setResendBlocked] = useState(false);
+  const words = useAmountWords();
+  const locked = status === 'saving' || status === 'unconfirmed' || status === 'conflict';
   const type: EntryType = current.type;
 
   /** The first touch fixes the category order and the draft's defaults. */
@@ -364,25 +402,40 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
       finish(fields, 'online');
     } catch (error) {
       // The record id is fixed for this draft: if it already exists, an
-      // earlier attempt committed, so this entry is saved.
+      // earlier attempt committed. Jotbun's copy is what is shown: the same
+      // details are saved; other details are a conflict, never "Saved".
       if (isOwnCreate(error, input.id)) {
         keys.settle('create');
-        finish(fields, 'online');
+        unconfirmed.current = null;
+        setResendBlocked(false);
+        if (ownCreateMatches(error, input)) {
+          finish(fields, 'online');
+          return;
+        }
+        const held = (error as V1Error).current as { amount_minor?: unknown } | undefined;
+        const amount = typeof held?.amount_minor === 'string' ? words(held.amount_minor).shown : '';
+        setMessage(tc('This entry is already saved in Jotbun as {amount}. Check it in History.', { amount }));
+        setStatus('conflict');
         return;
       }
       const problem = saveProblem(error, tc);
-      // A definite refusal frees the key; an unknown outcome keeps it, and the entry stays frozen.
-      if (!problem.unconfirmed) keys.settle('create');
-      unconfirmed.current = problem.unconfirmed ? { input, fields } : null;
+      // Once an attempt is unconfirmed, it stays frozen with its key until that
+      // command's outcome is known: a refusal before processing (signed out,
+      // terms, an update, a changed session) says nothing about it. Only an
+      // answer the server processed settles it.
+      const stillUnknown = problem.unconfirmed || (unconfirmed.current !== null && refusedBeforeProcessing(error));
+      if (!stillUnknown) keys.settle('create');
+      unconfirmed.current = stillUnknown ? { input, fields } : null;
+      setResendBlocked(stillUnknown && problem.blocked);
       setServerErrors(problem.fields);
       setMessage(problem.message);
       if (problem.fields.note || problem.fields.merchant) setDetails(true);
-      setStatus(problem.unconfirmed ? 'unconfirmed' : problem.blocked ? 'blocked' : 'editing');
+      setStatus(stillUnknown ? 'unconfirmed' : problem.blocked ? 'blocked' : 'editing');
     }
   }
 
   async function save() {
-    if (status === 'saving' || status === 'saved' || status === 'blocked') return;
+    if (status === 'saving' || status === 'saved' || status === 'blocked' || status === 'conflict' || resendBlocked) return;
     // An online save whose outcome is unknown is resent online as itself, never re-queued on the device.
     const resend = status === 'unconfirmed' ? unconfirmed.current : null;
     if (resend) {
@@ -432,6 +485,7 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
     setSheet(null);
     setSaved(null);
     setStatus('editing');
+    onAnother?.();
   }
 
   if (status === 'saved' && saved) {
@@ -461,31 +515,27 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
       <TypeSwitch value={type} onChange={(next) => edit((previous) => ({ ...previous, type: next }))} disabled={locked} />
       <AmountLine keypad={keypad} type={type} error={amountError} />
       {type === 'transfer' ? (
-        choices ? (
-          <WalletPicker
-            mode="move"
-            wallets={choices}
-            fromId={current.fromWalletId}
-            toId={current.toWalletId}
-            onChangeFrom={setFrom}
-            onChangeTo={setTo}
-            onSwap={swap}
-            onMoveAll={(balance) => {
-              if (locked) return;
-              touch();
-              try {
-                setKeypad(keypadFromMinor(balance));
-              } catch {
-                setKeypad((previous) => ({ ...previous, problem: 'too_large' }));
-              }
-            }}
-            // WalletPicker states the same-wallet problem itself; say it once.
-            error={same ? null : moveError}
-            disabled={locked}
-          />
-        ) : (
-          <MoveByName wallets={wallets} fromId={current.fromWalletId} toId={current.toWalletId} onFrom={setFrom} onTo={setTo} onSwap={swap} error={same ? tc('Choose two different wallets') : moveError} disabled={locked} />
-        )
+        <WalletPicker
+          mode="move"
+          wallets={choices}
+          fromId={current.fromWalletId}
+          toId={current.toWalletId}
+          onChangeFrom={setFrom}
+          onChangeTo={setTo}
+          onSwap={swap}
+          onMoveAll={(balance) => {
+            if (locked) return;
+            touch();
+            try {
+              setKeypad(keypadFromMinor(balance));
+            } catch {
+              setKeypad((previous) => ({ ...previous, problem: 'too_large' }));
+            }
+          }}
+          // WalletPicker states the same-wallet problem itself; say it once.
+          error={same ? null : moveError}
+          disabled={locked}
+        />
       ) : (
         <View style={{ gap: BUN_SPACE.xs }}>
           <CategoryChips
@@ -528,9 +578,11 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
       ) : null}
       <Keypad onKey={onKey} disabled={locked} />
       {message ? <SaveMessage message={message} /> : null}
-      {status === 'unconfirmed'
-        ? <PillButton label={tc('Try again')} onPress={() => void save()} />
-        : <PillButton label={tc('Save entry')} busy={status === 'saving'} busyLabel={tc('Saving…')} disabled={status === 'blocked'} onPress={() => void save()} />}
+      {status === 'conflict' ? <PillButton label={tc('Done')} onPress={onDone} /> : null}
+      {status === 'unconfirmed' ? <PillButton label={tc('Try again')} disabled={resendBlocked} onPress={() => void save()} /> : null}
+      {status !== 'unconfirmed' && status !== 'conflict'
+        ? <PillButton label={tc('Save entry')} busy={status === 'saving'} busyLabel={tc('Saving…')} disabled={status === 'blocked'} onPress={() => void save()} />
+        : null}
       <Sheet visible={sheet === 'categories'} onClose={() => setSheet(null)} title={tc('Choose a category')}>
         {type !== 'transfer' ? (
           <CategoryGrid
@@ -544,27 +596,15 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
         ) : null}
       </Sheet>
       <Sheet visible={sheet === 'wallet'} onClose={() => setSheet(null)} title={tc('Wallet')}>
-        {choices ? (
-          <WalletPicker
-            mode="single"
-            wallets={choices}
-            selectedId={current.walletId}
-            onSelect={(id) => {
-              edit((previous) => ({ ...previous, walletId: id }));
-              setSheet(null);
-            }}
-          />
-        ) : (
-          <NameChoices
-            label={tc('Wallet')}
-            wallets={wallets}
-            selectedId={current.walletId}
-            onSelect={(id) => {
-              edit((previous) => ({ ...previous, walletId: id }));
-              setSheet(null);
-            }}
-          />
-        )}
+        <WalletPicker
+          mode="single"
+          wallets={choices}
+          selectedId={current.walletId}
+          onSelect={(id) => {
+            edit((previous) => ({ ...previous, walletId: id }));
+            setSheet(null);
+          }}
+        />
       </Sheet>
     </View>
   );
@@ -636,8 +676,11 @@ function AmountLine({ keypad, type, error }: { keypad: KeypadState; type: EntryT
     : sum ? <BunText variant="hero" style={{ fontVariant: ['tabular-nums'] }}>{typed}</BunText> : <Amount minor="0" size="xl" />;
   return (
     <View style={{ alignItems: 'center', gap: BUN_SPACE.xxs, paddingVertical: BUN_SPACE.xs }}>
-      {live.ok && (sum || typed.includes('.')) ? <BunText variant="label" tone="muted" style={{ fontVariant: ['tabular-nums'] }}>{typed}</BunText> : null}
-      {hero}
+      {/* A polite live region: each key's live result is read out (iOS hears the keypad's own key names). */}
+      <View testID="quick-add-amount" {...POLITE_LIVE_REGION} style={{ alignItems: 'center', gap: BUN_SPACE.xxs }}>
+        {live.ok && (sum || typed.includes('.')) ? <BunText variant="label" tone="muted" style={{ fontVariant: ['tabular-nums'] }}>{typed}</BunText> : null}
+        {hero}
+      </View>
       {error ? <FieldError message={error} /> : null}
     </View>
   );
@@ -677,63 +720,6 @@ function ChipButton({ label, text, onPress, disabled = false, expanded }: { labe
     >
       <BunText variant="label">{text}</BunText>
     </Pressable>
-  );
-}
-
-/**
- * Wallets by name only, for when no balance is known (offline, from the
- * device's synced list). WalletPicker needs a balance for every wallet, and a
- * guessed balance would be a wrong number on screen.
- */
-function NameChoices({ label, wallets, selectedId, onSelect, disabled = false }: { label: string; wallets: readonly WalletSnapshot[]; selectedId: string | null; onSelect: (id: string) => void; disabled?: boolean }) {
-  const colors = useBunColors();
-  return (
-    <View role="radiogroup" accessibilityLabel={label} style={{ flexDirection: 'row', flexWrap: 'wrap', gap: BUN_SPACE.xs }}>
-      {wallets.filter((wallet) => !wallet.archived).map((wallet) => {
-        const checked = wallet.id === selectedId;
-        return (
-          <Pressable
-            key={wallet.id}
-            accessibilityRole="radio"
-            accessibilityLabel={wallet.name}
-            aria-checked={checked}
-            disabled={disabled}
-            onPress={() => onSelect(wallet.id)}
-            style={{
-              minHeight: BUN_TOUCH,
-              justifyContent: 'center',
-              paddingHorizontal: BUN_SPACE.md,
-              borderRadius: BUN_RADIUS.pill,
-              borderWidth: BUN_OUTLINE.control,
-              borderColor: colors.ink,
-              backgroundColor: checked ? colors.ink : colors.card,
-              opacity: disabled ? 0.5 : 1,
-            }}
-          >
-            <BunText variant="label" tone={checked ? 'onInk' : 'ink'}>{wallet.name}</BunText>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
-/** A move offline: From and To by name, and Swap. */
-function MoveByName({ wallets, fromId, toId, onFrom, onTo, onSwap, error, disabled }: {
-  wallets: readonly WalletSnapshot[]; fromId: string | null; toId: string | null; onFrom: (id: string) => void; onTo: (id: string) => void; onSwap: () => void; error: string | null; disabled: boolean;
-}) {
-  const tc = useCopy();
-  return (
-    <View style={{ gap: BUN_SPACE.xs }}>
-      <BunText variant="caption" tone="muted">{tc('From')}</BunText>
-      <NameChoices label={tc('From')} wallets={wallets} selectedId={fromId} onSelect={onFrom} disabled={disabled} />
-      <BunText variant="caption" tone="muted">{tc('To')}</BunText>
-      <NameChoices label={tc('To')} wallets={wallets} selectedId={toId} onSelect={onTo} disabled={disabled} />
-      <View style={{ flexDirection: 'row' }}>
-        <ChipButton label={tc('Swap wallets')} text={tc('Swap')} onPress={onSwap} disabled={disabled} />
-      </View>
-      {error ? <FieldError message={error} /> : null}
-    </View>
   );
 }
 

@@ -1,5 +1,5 @@
-// The dimmed page behind a bottom sheet (redesign R2a), shared by `Sheet` and
-// DateChip's calendar sheet. Ink by day and the night ground at night, so the
+// The dimmed page behind a bottom sheet (redesign R2a), drawn by `Sheet` (and
+// so by DateChip's calendar). Ink by day and the night ground at night, so the
 // page always darkens and is never washed with a light veil. Decorative: the
 // sheet's Close button is how screen readers leave.
 import type { BunColors } from '@mobile/theme/bunPalette';

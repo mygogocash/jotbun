@@ -45,7 +45,10 @@ export function NoteField({ kind, value, onChangeText, error, editable = true, l
   } catch {
     own = kind === 'note' ? tc('Notes are up to 500 characters.') : tc('Use one line of up to 120 characters.');
   }
-  const problems = [own, error ?? null].filter((problem): problem is string => problem !== null && problem !== '');
+  // The caller's problem is said after the field's own, and only once when it is the same words.
+  const theirs = error && error !== own ? error : null;
+  const problems = [own === null ? null : { key: 'own', message: own }, theirs === null ? null : { key: 'caller', message: theirs }]
+    .filter((problem): problem is { key: string; message: string } => problem !== null);
   const name = label ?? (kind === 'note' ? tc('Note') : tc('Merchant'));
   const invalid = problems.length > 0;
   return (
@@ -80,7 +83,7 @@ export function NoteField({ kind, value, onChangeText, error, editable = true, l
           backgroundColor: editable ? colors.card : colors.background,
         }}
       />
-      {problems.map((problem) => <FieldError key={problem} message={problem} />)}
+      {problems.map((problem) => <FieldError key={problem.key} message={problem.message} />)}
     </View>
   );
 }

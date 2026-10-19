@@ -1,9 +1,9 @@
 // Checks added by the R2 unification: the shared pieces R2b now uses from
 // R2a, and the accessibility and colour fixes made across the kit.
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
-import { afterEach, expect, test } from 'vitest';
+import { afterEach, expect, test, vi } from 'vitest';
 
-import { AmountText } from './Amount';
+import { Amount, AmountText } from './Amount';
 import { CategoryChips } from './CategoryChips';
 import { CategoryGrid } from './CategoryGrid';
 import { DateChip } from './DateChip';
@@ -13,6 +13,9 @@ import { category, MODES, mountKit, rgb } from './entryKitTestHarness';
 import { RecordRow } from './RecordRow';
 import { TypeSwitch } from './TypeSwitch';
 import { WalletPicker } from './WalletPicker';
+
+// DateChip's calendar is the kit Sheet, which pads the safe area.
+vi.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 34, left: 0 }) }));
 
 afterEach(() => cleanup());
 
@@ -79,9 +82,24 @@ test('R2b money is drawn by AmountText from the same words as Amount, in every c
       <RecordRow title="Coffee" detail="Cash" type="income" amountMinor="99999999999" />
       <WalletPicker mode="single" wallets={[{ id: 'cash', name: 'Cash', balance_minor: '-6500', archived: false }]} selectedId="cash" onSelect={() => undefined} />
     </>, { locale });
-    expect(screen.getByText('-฿1,234.56')).toBeTruthy();
+    // The day's money out is an expense, so it takes the minus sign (U+2212).
+    expect(screen.getByText('−฿1,234.56')).toBeTruthy();
     expect(screen.getByText('+฿999,999,999.99')).toBeTruthy();
+    // A negative balance is not an expense: untyped, it keeps formatMinor's own sign, as Amount does.
     expect(screen.getByText('-฿65.00')).toBeTruthy();
+    cleanup();
+  }
+});
+
+test('one minus rule: an expense is signed with U+2212 by Amount, RecordRow and DayHeader alike', () => {
+  for (const locale of ['en', 'th', 'vi'] as const) {
+    mountKit(<>
+      <Amount minor="6500" type="expense" />
+      <RecordRow title="Coffee" detail="Cash" type="expense" amountMinor="6500" />
+      <DayHeader date={TODAY} today={TODAY} outMinor="6500" inMinor="0" />
+    </>, { locale });
+    expect(screen.getAllByText('−฿65.00')).toHaveLength(3);
+    expect(screen.queryAllByText(/^-/)).toHaveLength(0);
     cleanup();
   }
 });

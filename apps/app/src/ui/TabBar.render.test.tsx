@@ -52,8 +52,13 @@ test('the round add button sits in the centre and has its own label', () => {
   const add = screen.getByRole('button', { name: 'Add a record' });
   fireEvent.click(add);
   expect(onAdd).toHaveBeenCalledTimes(1);
-  const order = Array.from(screen.getByRole('tablist').querySelectorAll('[role="tab"], [role="button"]')).map((node) => node.getAttribute('aria-label'));
-  expect(order).toEqual(['Home', 'History', 'Add a record', 'Budgets', 'Me']);
+  // Review m6: a tablist holds only tabs, so the add button sits outside it, drawn over a gap in the centre of the pill.
+  const list = screen.getByRole('tablist');
+  expect(list.contains(add)).toBe(false);
+  const order = Array.from(list.querySelectorAll('[role="tab"], [data-testid="tab-bar-add-space"]')).map((node) => node.getAttribute('aria-label') ?? node.getAttribute('data-testid'));
+  expect(order).toEqual(['Home', 'History', 'tab-bar-add-space', 'Budgets', 'Me']);
+  expect(screen.getByTestId('tab-bar-add-space').getAttribute('aria-hidden')).toBe('true');
+  expect(list.compareDocumentPosition(add) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(add.style.minHeight).not.toBe('');
   expect(Number.parseFloat(add.style.minHeight)).toBeGreaterThanOrEqual(44);
   expect(add.style.borderTopLeftRadius || add.style.borderRadius).toBe('999px');

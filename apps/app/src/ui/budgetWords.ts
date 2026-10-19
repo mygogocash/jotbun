@@ -2,13 +2,17 @@
 // PaceRing. The numbers come in already worked out (another module computes
 // spent, left, per day and the state); this only says them. State is always
 // spelled out, so red and green are never the only signal (WCAG 1.4.1), and
-// going over is stated kindly and plainly: no scolding, no advice.
+// going over is stated kindly and plainly: no scolding, no advice. A finished
+// month (`phase: 'after'`) reads as its result, "฿X under budget" or
+// "฿X over", never as a pace.
 import type { Minor } from '@gogospend/contracts';
 
 import { formatMinor } from '../spend/v1/money.ts';
 import type { MoneyLocale } from '../spend/v1/money.ts';
 
 export type BudgetState = 'on_track' | 'tight' | 'over' | 'no_budget';
+/** Where today sits relative to the budget's month, as the budget logic says. */
+export type BudgetPhase = 'before' | 'during' | 'after';
 
 /** The presentational inputs of BudgetBar and PaceRing. Amounts are canonical satang. */
 export type BudgetPace = {
@@ -22,6 +26,12 @@ export type BudgetPace = {
   readonly perDayMinor: Minor | null;
   /** Days left in the month, counting today. */
   readonly daysLeft: number;
+  /**
+   * `after`: the month has ended, so it reads as a plain result ("฿X under
+   * budget", "฿X over") with no pace words. Left out, or `before`/`during`,
+   * the month reads as a pace.
+   */
+  readonly phase?: BudgetPhase;
 };
 
 export type BudgetWords = {
@@ -48,7 +58,8 @@ export function budgetWords(pace: BudgetPace, tc: Translate, locale: MoneyLocale
   const money = (minor: bigint) => formatMinor(minor.toString(), locale);
   const spent = BigInt(pace.spentMinor);
   const limit = pace.limitMinor === null ? null : BigInt(pace.limitMinor);
-  const days = pace.daysLeft >= 2 ? tc('{days} days to go', { days: pace.daysLeft }) : pace.daysLeft === 1 ? tc('Last day') : null;
+  const ended = pace.phase === 'after';
+  const days = ended ? null : pace.daysLeft >= 2 ? tc('{days} days to go', { days: pace.daysLeft }) : pace.daysLeft === 1 ? tc('Last day') : null;
   const join = (...pieces: (string | null)[]) => pieces.filter((piece): piece is string => piece !== null && piece !== '').join(SEPARATOR);
   const finish = (words: Omit<BudgetWords, 'spoken' | 'days'>): BudgetWords => ({
     ...words,
@@ -80,6 +91,19 @@ export function budgetWords(pace: BudgetPace, tc: Translate, locale: MoneyLocale
       detail: tc('It happens. {spent} of {limit} spent.', { spent: money(spent), limit: money(limit) }),
       spentPermille,
       tone: 'over',
+    });
+  }
+
+  if (ended) {
+    // A finished month is a result, not a pace: no "On track", no days, no per day.
+    const result = { spent: money(spent), limit: money(limit) };
+    return finish({
+      figure: money(left),
+      figureWord: tc('under budget'),
+      headline: left === 0n ? tc('Right on budget') : tc('{amount} under budget', { amount: money(left) }),
+      detail: tc('{spent} of {limit}', result),
+      spentPermille,
+      tone: 'under',
     });
   }
 

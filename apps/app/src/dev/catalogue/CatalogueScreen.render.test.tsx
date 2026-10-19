@@ -211,7 +211,8 @@ const SHOWS: Readonly<Record<(typeof REQUIRED)[number], (body: HTMLElement, loca
     const headings = within(body).getAllByRole('heading');
     expect(headings).toHaveLength(5);
     expect(headings.map((heading) => heading.getAttribute('aria-label')).join(' | ')).toContain(fullDateLabel('2025-12-31', locale));
-    expect(within(body).getByText('-฿247.00')).toBeTruthy();
+    // Money out takes the minus sign (U+2212), as Amount does.
+    expect(within(body).getByText('−฿247.00')).toBeTruthy();
     expect(within(body).getAllByText('+฿28,000.00')).toHaveLength(2);
   },
   'budget-bar': (body, locale) => {
@@ -256,7 +257,9 @@ const SHOWS: Readonly<Record<(typeof REQUIRED)[number], (body: HTMLElement, loca
   },
   'home-first-run': (body, locale) => {
     expect(within(body).getByRole('heading', { name: t('Add your first wallet', locale) })).toBeTruthy();
-    expect(within(body).getByRole('button', { name: t('Add a wallet', locale) })).toBeTruthy();
+    // One step: the form is under the empty state, with Create wallet its one primary.
+    expect(within(body).getByRole('button', { name: t('Create wallet', locale) })).toBeTruthy();
+    expect(within(body).queryByRole('button', { name: t('Add a wallet', locale) })).toBeNull();
     expect(within(body).getByTestId('home-bun-hello')).toBeTruthy();
   },
   'home-offline': (body, locale) => {

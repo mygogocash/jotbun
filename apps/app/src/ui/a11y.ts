@@ -1,5 +1,5 @@
 // Accessibility helpers shared by the "Bun diary" kit (redesign R2a).
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { AccessibilityInfo, Platform } from 'react-native';
 import type { HostInstance } from 'react-native';
 
@@ -34,6 +34,23 @@ export function useAnnouncement(text: string | null | undefined): void {
   useEffect(() => {
     if (text) announcePolitely(text);
   }, [text]);
+}
+
+/** How long a changing text must stay the same before `useSettledAnnouncement` says it. */
+export const SETTLED_ANNOUNCEMENT_MS = 800;
+
+/**
+ * Announces `text` (iOS) once it has stayed the same for a moment, such as a
+ * search summary that changes with every keystroke: it is said once, when the
+ * person stops typing, not once per key.
+ */
+export function useSettledAnnouncement(text: string | null | undefined): void {
+  const [settled, setSettled] = useState<string | null>(null);
+  useEffect(() => {
+    const timer = setTimeout(() => setSettled(text ?? null), SETTLED_ANNOUNCEMENT_MS);
+    return () => clearTimeout(timer);
+  }, [text]);
+  useAnnouncement(settled);
 }
 
 /**

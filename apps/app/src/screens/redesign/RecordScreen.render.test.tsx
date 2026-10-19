@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, expect, test, vi } from 'vitest';
 
 const nav = vi.hoisted(() => ({ router: { push: vi.fn(), replace: vi.fn(), back: vi.fn(), canGoBack: vi.fn(() => true) } }));
@@ -82,7 +82,10 @@ test('a move reads From → To, and a merchant gets its own row', async () => {
 test('Copy opens quick add with copyOf; Back returns to the list', async () => {
   mountRecord(RENT);
   fireEvent.click(await screen.findByRole('button', { name: 'Copy' }));
-  expect(nav.router.push).toHaveBeenLastCalledWith(`/spend/add?copyOf=${RENT}`);
+  expect(nav.router.push).toHaveBeenLastCalledWith({ pathname: '/spend/add', params: { copyOf: RENT } });
+  // Back is the stage header's own back button, the first control on the screen.
+  const stage = screen.getByTestId('stage-header');
+  expect(within(stage).getByRole('button', { name: 'Back' })).toBe(screen.getAllByRole('button')[0]);
   fireEvent.click(screen.getByRole('button', { name: 'Back' }));
   expect(nav.router.back).toHaveBeenCalledTimes(1);
   nav.router.canGoBack.mockReturnValue(false);
@@ -120,13 +123,19 @@ test('Edit on the receipt opens the edit mode; Cancel leaves it without sending'
 test('the keypad sends an exact amount_minor: 0.1 + 0.2 is 30 satang, 100 ÷ 3 is ฿33.33', async () => {
   const fake = await editRent();
   press('Clear', '0', 'Decimal point', '1', 'Plus', '0', 'Decimal point', '2');
-  expect(screen.getByLabelText('Amount, 0.1 + 0.2')).toBeTruthy();
+  // Review m2: a sum shows and says its exact result live, before it is saved.
+  expect(screen.getByLabelText('Amount, 0.1 + 0.2 = ฿0.30')).toBeTruthy();
+  expect(within(screen.getByTestId('edit-amount')).getByText('฿0.30')).toBeTruthy();
   save();
   await waitFor(() => expect(fake.callsOf('updateTransaction')).toHaveLength(1));
   expect(fake.callsOf('updateTransaction')[0].args[2]).toEqual({ amount_minor: '30' });
   cleanup();
   const again = await editRent();
   press('Clear', '1', '0', '0', 'Divided by', '3');
+  const line = screen.getByTestId('edit-amount');
+  expect(line.getAttribute('aria-live')).toBe('polite');
+  expect(within(line).getByText('฿33.33')).toBeTruthy();
+  expect(screen.getByLabelText('Amount, 100 ÷ 3 = ฿33.33')).toBeTruthy();
   save();
   await waitFor(() => expect(again.callsOf('updateTransaction')).toHaveLength(1));
   expect(again.callsOf('updateTransaction')[0].args[2]).toEqual({ amount_minor: '3333' });
@@ -280,6 +289,32 @@ test('an unconfirmed undo keeps the bar and resends the same restore', async () 
   expect(first.args.slice(0, 2)).toEqual([RENT, 2]);
 });
 
+// Review m4: a definite refusal of Undo must not leave a deleted entry looking live.
+test('an undo Jotbun definitely refuses reloads the entry, which then reads as deleted', async () => {
+  const fake = mountRecord(RENT);
+  fireEvent.click(await screen.findByRole('button', { name: 'Delete' }));
+  await screen.findByText('Entry deleted');
+  fake.fail('restoreTransaction', 'conflict', { status: 409, code: 'VERSION_CONFLICT' });
+  fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+  expect(await screen.findByText('This entry was already deleted.')).toBeTruthy();
+  await waitFor(() => expect(fake.callsOf('transaction')).toHaveLength(2));
+  expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Delete' })).toBeNull();
+});
+
+// Review m5: one press of Save sends one edit, however fast the second press comes.
+test('a second Save while the first is still on its way sends nothing', async () => {
+  const fake = await editRent();
+  press('Clear', '1', '2', '0', '0', '0');
+  const button = screen.getByRole('button', { name: 'Save changes' });
+  act(() => {
+    button.click();
+    button.click();
+  });
+  expect(await screen.findByLabelText('Amount, Expense ฿12,000.00')).toBeTruthy();
+  expect(fake.callsOf('updateTransaction')).toHaveLength(1);
+});
+
 test('an unconfirmed delete is frozen and resent with the same key', async () => {
   const fake = mountRecord(RENT);
   fake.loseResponse('deleteTransaction');
@@ -307,7 +342,7 @@ test('a draft on this device opens from the diary with its state, and can be cop
   expect(screen.queryByRole('button', { name: 'Delete' })).toBeNull();
   expect(fake.callsOf('transaction')).toHaveLength(0);
   fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
-  expect(nav.router.push).toHaveBeenLastCalledWith(`/spend/add?copyOf=${draft.payload.id}`);
+  expect(nav.router.push).toHaveBeenLastCalledWith({ pathname: '/spend/add', params: { copyOf: draft.payload.id } });
   fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
   await waitFor(() => expect(diary.calls.removed).toEqual([draft.commandId]));
   expect(nav.router.back).toHaveBeenCalledTimes(1);
@@ -326,6 +361,9 @@ test('a draft that needs a look can be discarded; one being checked can only wai
   cleanup();
   mountRecord(checking.payload.id, { diary: createFakeDiary({ ...DIARY_REFERENCES, outbox: [checking] }).diary });
   expect(await screen.findByLabelText('Status, Checking with Jotbun')).toBeTruthy();
+  // The amount says the same as the status row: checking, not saving.
+  expect(screen.getByLabelText('Amount, Expense ฿40.00, checking')).toBeTruthy();
+  expect(within(slip()).getByText('checking…')).toBeTruthy();
   expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
   expect(screen.queryByRole('button', { name: 'Discard' })).toBeNull();
   expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
@@ -348,6 +386,14 @@ test('load problems: a failed load can be tried again; a missing entry says so',
 
 // ---------------------------------------------------------------------------
 // Locales and modes
+
+// Kit polish item 12: in Vietnamese the receipt's date reads in the kit's words, as History's day headers say it.
+test('in Vietnamese the receipt date uses the same words as the day headers, never Intl English', async () => {
+  mountRecord(RENT, { locale: 'vi' });
+  const date = await screen.findByLabelText(`${translateCopy('Date', 'vi')}, ${fullDateLabel('2026-09-27', 'vi')}`);
+  expect(date.textContent).toContain('Chủ Nhật, 27 tháng 9, 2026');
+  expect(slip().textContent).not.toMatch(/Sunday|September/);
+});
 
 test.each(MATRIX)('reads in $locale, $mode: paper slip, translated rows, the long date and Thai leading', async ({ locale, mode, colors }) => {
   mountRecord(RENT, { locale, theme: mode });

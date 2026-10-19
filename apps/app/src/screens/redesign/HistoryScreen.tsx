@@ -16,44 +16,53 @@
 // menu offer Edit (the record screen in edit mode), Copy (quick add with
 // `copyOf`) and Delete (with an undo bar). The bun appears only on an empty
 // month.
+//
+// The list is virtualized (a `FlatList`, review m7): it draws its first items
+// at once and then only a window around what is on screen, so a long month
+// never mounts every row. Each row is memoized on what it shows, and search
+// follows typing through a deferred value, so a keystroke redraws only the
+// field until the list's answer is ready, and then only rows that changed.
 import { HISTORY_MAX_LIMIT } from '@gogospend/contracts';
-import type { CategoryDto, HistoryFilter, HistoryPage, TransactionDto, TransactionType, WalletSnapshot } from '@gogospend/contracts';
+import type { CategoryDto, HistoryFilter, HistoryPage, Minor, TransactionDto, TransactionType, WalletSnapshot } from '@gogospend/contracts';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { FlatList, View } from 'react-native';
+import type { ListRenderItemInfo } from 'react-native';
 
 import { V1Error } from '@mobile/api/client';
 import { useCopy } from '@mobile/i18n/useCopy';
 import { Bun } from '@mobile/mascot/Bun';
-import { showsBun } from '@mobile/mascot/bunIntensity';
-import { useBunIntensity } from '@mobile/mascot/BunIntensityProvider';
 import { formatMinor } from '@mobile/spend/v1/money';
 import { foldForSearch, historyModel, summaryLine } from '@mobile/spend/v1/redesign/historyModel';
 import type { HistoryModel, SearchSummary } from '@mobile/spend/v1/redesign/historyModel';
 import { classifyLoadProblem } from '@mobile/spend/v1/redesign/homeModel';
 import { countDrafts, openDrafts, say } from '@mobile/spend/v1/redesign/shared';
-import type { DayGroup, EntryLike, Lookups } from '@mobile/spend/v1/redesign/shared';
+import type { DayGroup, EntryLike, Lookups, RowState } from '@mobile/spend/v1/redesign/shared';
 import type { DiaryView } from '@mobile/spend/v1/spendDiary';
 import { useDiaryView } from '@mobile/spend/v1/SpendDiaryContext';
 import { useSpendV1 } from '@mobile/spend/v1/SpendV1Context';
 import { categoryName, monthOf, monthRange, shiftMonth, todayInBangkok } from '@mobile/spend/v1/viewModels';
 import type { OutboxCommand } from '@mobile/storage/types';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
-import { POLITE_LIVE_REGION, useAnnouncement } from '@mobile/ui/a11y';
+import { POLITE_LIVE_REGION, useSettledAnnouncement } from '@mobile/ui/a11y';
 import { BunText } from '@mobile/ui/BunText';
+import type { CategoryLook } from '@mobile/ui/categoryIcons';
 import { monthLabel } from '@mobile/ui/dateStep';
 import { DayHeader } from '@mobile/ui/DayHeader';
 import { EmptyState } from '@mobile/ui/EmptyState';
 import { BUN_OUTLINE, BUN_SPACE } from '@mobile/ui/layout';
+import { useFirstItems } from '@mobile/ui/listWindow';
 import { PillButton } from '@mobile/ui/PillButton';
 import { RecordRow } from '@mobile/ui/RecordRow';
 import { StageHeader } from '@mobile/ui/StageHeader';
 import { SyncBanner } from '@mobile/ui/SyncBanner';
 import type { SyncBannerProps } from '@mobile/ui/SyncBanner';
 import { UndoBar } from '@mobile/ui/UndoBar';
+import { FilterChips } from '@mobile/ui/FilterChip';
+import type { ChipOption } from '@mobile/ui/FilterChip';
+import { SearchField } from '@mobile/ui/SearchField';
 import { saveProblem, useCommandKeys, useMoneyLocale } from '../v1/parts';
-import { FilterChips, LoadingBlock, Notice, SearchField, copyRoute, lookOf, recordRoute, recordRowState, useDateLocale } from './HistoryParts';
-import type { ChipOption } from './HistoryParts';
+import { LoadingBlock, Notice, copyHref, lookOf, recordHref, recordRowState, useDateLocale } from './HistoryParts';
 
 export type HistoryScreenProps = {
   now?: Date;
@@ -69,6 +78,71 @@ const MONTH = /^[0-9]{4}-(0[1-9]|1[0-2])$/;
 
 type Lists = { page: HistoryPage; items: TransactionDto[] };
 type References = { wallets: readonly Pick<WalletSnapshot, 'id' | 'name'>[]; categories: readonly CategoryDto[] };
+/** The whole confirmed totals of the day a page may have cut, under the filter (as JSON) they were read for. */
+type Edge = { day: string; scope: string; outMinor: Minor; inMinor: Minor };
+
+/** Rows a phone shows on one screen and a little more: what the list draws before it has measured itself. */
+const FIRST_ITEMS = 24;
+/** The list keeps this many screens' worth of rows drawn around the visible one (5 above, 5 below). */
+const WINDOW_SCREENS = 11;
+/** The search field stays at the top while the list scrolls under it (the stage is the list's header, index 0). */
+const STICKY_SEARCH = [1];
+
+/** What a row shows, as plain values, so a row is drawn again only when one of them changes. */
+type RowItem = {
+  readonly kind: 'row';
+  readonly key: string;
+  readonly recordId: string;
+  readonly title: string;
+  readonly detail: string;
+  readonly type: TransactionType;
+  readonly amountMinor: Minor;
+  readonly state: RowState;
+  /** The category's icon, when the category is known here; undefined otherwise. */
+  readonly builtinKey: CategoryLook['builtinKey'] | undefined;
+  readonly color: string | null;
+  readonly canEdit: boolean;
+  /** A confirmed record, and no other delete is on its way. */
+  readonly deletable: boolean;
+};
+type DayItem = { readonly kind: 'day'; readonly key: string; readonly day: string; readonly outMinor: Minor; readonly inMinor: Minor; readonly pendingLines: readonly string[] };
+/** The list: the sticky search, the controls (banner, filters, summary, notices), then each day's header and rows. */
+type ListItem = { readonly kind: 'search'; readonly key: 'search' } | { readonly kind: 'controls'; readonly key: 'controls' } | DayItem | RowItem;
+
+/** Row actions by record id. The screen keeps one object for its life, so rows never redraw because of it. */
+type RowActions = { open: (id: string) => void; edit: (id: string) => void; copy: (id: string) => void; remove: (id: string) => void };
+
+/** One day's heading and its waiting-money lines, set apart from the day above by a rule. */
+const HistoryDay = memo(function HistoryDay({ day, today, outMinor, inMinor, pendingLines }: Omit<DayItem, 'kind' | 'key'> & { today: string }) {
+  const colors = useBunColors();
+  return (
+    <View style={{ marginTop: BUN_SPACE.md, marginHorizontal: BUN_SPACE.md, borderTopWidth: BUN_OUTLINE.rule, borderColor: colors.rule, paddingTop: BUN_SPACE.xs }}>
+      <DayHeader date={day} today={today} outMinor={outMinor} inMinor={inMinor} />
+      {pendingLines.map((line) => <BunText key={line} variant="caption" tone="muted">{line}</BunText>)}
+    </View>
+  );
+});
+
+/** One record or draft. Memoized: typing a search, a banner or a notice never redraws a row whose words did not change. */
+const HistoryRow = memo(function HistoryRow({ recordId, title, detail, type, amountMinor, state, builtinKey, color, canEdit, deletable, actions }: Omit<RowItem, 'kind' | 'key'> & { actions: RowActions }) {
+  return (
+    <View style={{ paddingHorizontal: BUN_SPACE.md }}>
+      <RecordRow
+        title={title}
+        detail={detail}
+        type={type}
+        amountMinor={amountMinor}
+        category={builtinKey === undefined ? null : { builtinKey, name: title, color }}
+        // Every draft state has its own words, "Update Jotbun to send" included.
+        state={recordRowState(state)}
+        onPress={() => actions.open(recordId)}
+        onEdit={canEdit ? () => actions.edit(recordId) : undefined}
+        onCopy={() => actions.copy(recordId)}
+        onDelete={deletable ? () => actions.remove(recordId) : undefined}
+      />
+    </View>
+  );
+});
 
 const lookupsOf = (refs: References): Lookups => ({
   wallets: new Map(refs.wallets.map((wallet) => [wallet.id, wallet])),
@@ -97,7 +171,6 @@ export function HistoryScreen({ now, initialMonth, onMonthChange }: HistoryScree
   const colors = useBunColors();
   const keys = useCommandKeys();
   const diaryView = useDiaryView();
-  const { intensity } = useBunIntensity();
   const today = todayInBangkok(now ?? new Date());
   const thisMonth = monthOf(today);
 
@@ -127,6 +200,24 @@ export function HistoryScreen({ now, initialMonth, onMonthChange }: HistoryScree
   };
   const filterKey = JSON.stringify(filter);
 
+  // A page can end inside a day. While more pages follow, the oldest loaded
+  // day's records may go on in the next page (the model's `pageEdgeDay`,
+  // whose group is `partial`), so its header never shows the loaded part as
+  // the day's total: with each load, that day's exact confirmed totals are
+  // read from the server too (the same filter, that one day, one row), and
+  // if they cannot be read the header shows no total at all.
+  const [edge, setEdge] = useState<Edge | null>(null);
+  const readEdge = useCallback(async (scope: HistoryFilter, items: readonly TransactionDto[], nextCursor: string | null): Promise<Edge | null> => {
+    if (nextCursor === null || items.length === 0) return null;
+    const day = items[items.length - 1].occurred_on;
+    try {
+      const totals = (await resources.history({ ...scope, from: day, through: day }, undefined, 1)).summary;
+      return { day, scope: JSON.stringify(scope), outMinor: totals.expense_minor, inMinor: totals.income_minor };
+    } catch {
+      return null;
+    }
+  }, [resources]);
+
   /** Loads the first page again; in place, as many entries as were on screen (up to the page cap). */
   const load = useCallback(async (keepShown = false) => {
     const round = ++generation.current;
@@ -139,14 +230,16 @@ export function HistoryScreen({ now, initialMonth, onMonthChange }: HistoryScree
         resources.ensureBuiltinCategories(),
         limit === undefined ? resources.history(scope) : resources.history(scope, undefined, limit),
       ]);
+      const pageEdge = await readEdge(scope, page.items, page.next_cursor);
       if (round !== generation.current) return;
       shown.current = page.items.length;
       setRefs({ wallets, categories });
+      setEdge(pageEdge);
       setLists({ page, items: page.items });
     } catch (problem) {
       if (round === generation.current) setError(problem);
     }
-  }, [resources, filterKey]);
+  }, [resources, filterKey, readEdge]);
 
   useEffect(() => {
     setLists(null);
@@ -181,9 +274,12 @@ export function HistoryScreen({ now, initialMonth, onMonthChange }: HistoryScree
     setLoadingMore(true);
     try {
       const page = await resources.history(filter, lists.page.next_cursor);
+      const items = [...lists.items, ...page.items];
+      const pageEdge = await readEdge(filter, items, page.next_cursor);
       if (round !== generation.current) return;
-      shown.current = lists.items.length + page.items.length;
-      setLists({ page, items: [...lists.items, ...page.items] });
+      shown.current = items.length;
+      setEdge(pageEdge);
+      setLists({ page, items });
       setNotice(null);
     } catch (problem) {
       if (round === generation.current) setNotice(classifyLoadProblem(problem, tc).message);
@@ -268,33 +364,43 @@ export function HistoryScreen({ now, initialMonth, onMonthChange }: HistoryScree
   const drafts = diaryView.phase === 'ready' ? diaryView.outbox : NO_DRAFTS;
   const offline = Boolean(error) && diaryView.phase === 'ready';
   const chipRefs: References | null = refs ?? (diaryView.phase === 'ready' ? { wallets: diaryView.wallets, categories: diaryView.categories } : null);
-  const shownRefs: References | null = error ? (offline ? { wallets: diaryView.wallets, categories: diaryView.categories } : null) : lists ? refs : null;
-  const lookups = shownRefs ? lookupsOf(shownRefs) : null;
-  const filters = { type, walletId, categoryId };
-  const model: HistoryModel | null = lookups
+  const lookups = useMemo(() => {
+    const shownRefs: References | null = error ? (offline ? { wallets: diaryView.wallets, categories: diaryView.categories } : null) : lists ? refs : null;
+    return shownRefs ? lookupsOf(shownRefs) : null;
+  }, [error, offline, diaryView.wallets, diaryView.categories, lists, refs]);
+  // Search follows typing a beat behind: the field answers at once, and the
+  // list (the model, then the rows) is worked out again only for the
+  // settled text, never for every keystroke while typing runs ahead.
+  const searchQuery = useDeferredValue(query);
+  const model: HistoryModel | null = useMemo(() => (lookups
     ? historyModel({
-      month, today, tc, locale, lookups, filters, query, drafts,
+      month, today, tc, locale, lookups, filters: { type, walletId, categoryId }, query: searchQuery, drafts,
       records: error ? [] : lists?.items ?? [],
       complete: error ? true : !lists?.page.next_cursor,
     })
-    : null;
+    : null), [lookups, month, today, tc, locale, type, walletId, categoryId, searchQuery, drafts, error, lists]);
+  const searching = foldForSearch(searchQuery) !== '';
 
   // Filters alone are scoped on the server, so its totals for them are exact.
   let summary: Pick<SearchSummary, 'text' | 'draftText' | 'partial'> | null = model?.summary ?? null;
-  if (summary && lists && !error && foldForSearch(query) === '') {
+  if (summary && lists && !error && !searching) {
     const totals = lists.page.summary;
     const out = totals.expense_minor === '0' ? null : formatMinor(totals.expense_minor, locale);
     const income = totals.income_minor === '0' ? null : formatMinor(totals.income_minor, locale);
     summary = { text: say(tc, summaryLine(totals.count, out, income)), draftText: summary.draftText, partial: false };
   }
   const spokenSummary = summary ? [summary.text, summary.draftText].filter(Boolean).join('. ') : null;
-  useAnnouncement(spokenSummary);
+  // Said once the summary settles, not once per keystroke (iOS; the web reads the polite live region).
+  useSettledAnnouncement(spokenSummary);
 
   // Entries by record id: what Delete sends, and each row's category.
-  const records = new Map((lists?.items ?? []).map((record) => [record.id, record]));
-  const entries = new Map<string, EntryLike>([...records.entries(), ...drafts.map((command) => [command.payload.id, command.payload] as const)]);
+  const records = useMemo(() => new Map((lists?.items ?? []).map((record) => [record.id, record])), [lists]);
+  const entries = useMemo(
+    () => new Map<string, EntryLike>([...records.entries(), ...drafts.map((command) => [command.payload.id, command.payload] as const)]),
+    [records, drafts],
+  );
   const firstReview = openDrafts(drafts).find((command) => command.state === 'needs_review');
-  const banner = bannerFor(diaryView, offline && error instanceof V1Error && error.outcome === 'network', firstReview ? () => router.push(recordRoute(firstReview.payload.id)) : null, tc);
+  const banner = bannerFor(diaryView, offline && error instanceof V1Error && error.outcome === 'network', firstReview ? () => router.push(recordHref(firstReview.payload.id)) : null, tc);
   const problem = error ? classifyLoadProblem(error, tc) : null;
 
   const typeOptions: ChipOption<TransactionType | typeof ALL>[] = [
@@ -313,101 +419,161 @@ export function HistoryScreen({ now, initialMonth, onMonthChange }: HistoryScree
   const moneyIn = lists && !error ? formatMinor(lists.page.summary.income_minor, locale) : null;
   const moneyOut = lists && !error ? formatMinor(lists.page.summary.expense_minor, locale) : null;
   const emptyMonth = model !== null && model.empty && !model.filtered && !error;
-  const bunArt = showsBun(intensity) ? <Bun pose="thinking" size="l" testID="history-empty-bun" /> : undefined;
 
-  const row = (group: DayGroup) => group.rows.map((item) => {
-    const entry = entries.get(item.recordId);
-    const category = entry && entry.type !== 'transfer' ? lookups?.categories.get(entry.category_id) : undefined;
-    const record = item.state === 'confirmed' ? records.get(item.recordId) : undefined;
-    return (
-      <View key={item.key}>
-        <RecordRow
-          title={item.title}
-          detail={[item.detail, item.merchant, item.note].filter((part): part is string => Boolean(part)).join(' · ')}
-          type={item.type}
-          amountMinor={item.amountMinor}
-          category={lookOf(category, item.title)}
-          state={recordRowState(item.state)}
-          onPress={() => router.push(recordRoute(item.recordId))}
-          onEdit={item.canEdit ? () => router.push(recordRoute(item.recordId, true)) : undefined}
-          onCopy={() => router.push(copyRoute(item.recordId))}
-          onDelete={record && !busy && pendingDelete === null ? () => void remove(record) : undefined}
-        />
-        {/* RecordRow has no "update to send" state: it reads "saving…", and this line says why it waits. */}
-        {item.state === 'update_to_send' && item.stateText ? <BunText variant="caption" tone="ink" style={{ fontWeight: '700' }}>{item.stateText}</BunText> : null}
+  const canDelete = !busy && pendingDelete === null;
+  const firstItems = useFirstItems(FIRST_ITEMS);
+
+  // Row actions read the newest router, records and delete through a ref, so
+  // the one actions object lasts as long as the screen and never redraws a row.
+  const latest = useRef({ router, records, remove });
+  latest.current = { router, records, remove };
+  const rowActions = useMemo<RowActions>(() => ({
+    open: (id) => latest.current.router.push(recordHref(id)),
+    edit: (id) => latest.current.router.push(recordHref(id, true)),
+    copy: (id) => latest.current.router.push(copyHref(id)),
+    remove: (id) => {
+      const record = latest.current.records.get(id);
+      if (record) void latest.current.remove(record);
+    },
+  }), []);
+
+  /**
+   * The list's items: the search, the controls, then each day's header and
+   * its rows. Worked out again only when what they show changes (the model,
+   * the cut day's totals, whether a delete may start), and each row is plain
+   * values, so a row is redrawn only when its own words change.
+   */
+  const items = useMemo<ListItem[]>(() => {
+    /** A day's confirmed money out and in; for the day a page may have cut, the server's whole-day totals (see `edge`). */
+    const dayTotals = (group: DayGroup): { outMinor: Minor; inMinor: Minor } => {
+      // The model marks the days whose records may go on in the next page (`partial`, from `pageEdgeDay`).
+      if (!group.partial) return { outMinor: group.totals.confirmed.outMinor, inMinor: group.totals.confirmed.inMinor };
+      if (!searching && group.day === model?.pageEdgeDay && edge && edge.day === group.day && edge.scope === filterKey) return { outMinor: edge.outMinor, inMinor: edge.inMinor };
+      // Not known yet (or a day before the edge, where only a draft can show): no total rather than a short one.
+      return { outMinor: '0', inMinor: '0' };
+    };
+    const row = (item: DayGroup['rows'][number]): RowItem => {
+      const entry = entries.get(item.recordId);
+      const category = entry && entry.type !== 'transfer' ? lookups?.categories.get(entry.category_id) : undefined;
+      const look = lookOf(category, item.title);
+      return {
+        kind: 'row',
+        key: item.key,
+        recordId: item.recordId,
+        title: item.title,
+        detail: [item.detail, item.merchant, item.note].filter((part): part is string => Boolean(part)).join(' · '),
+        type: item.type,
+        amountMinor: item.amountMinor,
+        state: item.state,
+        builtinKey: look ? look.builtinKey : undefined,
+        color: look ? look.color : null,
+        canEdit: item.canEdit,
+        deletable: item.state === 'confirmed' && records.has(item.recordId) && canDelete,
+      };
+    };
+    const list: ListItem[] = [{ kind: 'search', key: 'search' }, { kind: 'controls', key: 'controls' }];
+    for (const group of model?.groups ?? []) {
+      list.push({ kind: 'day', key: `day:${group.day}`, day: group.day, ...dayTotals(group), pendingLines: group.pendingLines });
+      for (const item of group.rows) list.push(row(item));
+    }
+    return list;
+  }, [model, searching, edge, filterKey, entries, records, lookups, canDelete]);
+
+  const stage = (
+    <StageHeader
+      title={tc('History')}
+      month={{
+        label: monthLabel(month, dateLocale),
+        onPrevious: () => changeMonth(shiftMonth(month, -1)),
+        // Entries are never in the future, so there is nothing after this month.
+        onNext: month < thisMonth ? () => changeMonth(shiftMonth(month, 1)) : undefined,
+      }}
+    >
+      {moneyIn !== null && moneyOut !== null ? (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: BUN_SPACE.md }}>
+          <BunText variant="label" tone="ink" accessibilityLabel={`${tc('Money in')} ${moneyIn}`} style={{ fontVariant: ['tabular-nums'] }}>{`${tc('Money in')} ${moneyIn}`}</BunText>
+          <BunText variant="label" tone="ink" accessibilityLabel={`${tc('Money out')} ${moneyOut}`} style={{ fontVariant: ['tabular-nums'] }}>{`${tc('Money out')} ${moneyOut}`}</BunText>
+        </View>
+      ) : null}
+    </StageHeader>
+  );
+  const searchBar = (
+    <View style={{ backgroundColor: colors.background, paddingHorizontal: BUN_SPACE.md, paddingVertical: BUN_SPACE.xs }}>
+      <SearchField label={tc('Search entries')} placeholder={tc('Category, merchant or note')} value={query} onChangeText={setQuery} />
+    </View>
+  );
+  const controls = (
+    <View style={{ paddingHorizontal: BUN_SPACE.md, gap: BUN_SPACE.md }}>
+      {banner ? <SyncBanner {...banner} /> : null}
+      <View style={{ gap: BUN_SPACE.sm }}>
+        <FilterChips label={tc('Type')} options={typeOptions} value={type ?? ALL} onChange={(next) => changeType(next === ALL ? undefined : next)} />
+        {walletOptions.length > 1 ? (
+          <FilterChips label={tc('Wallet')} options={walletOptions} value={walletId ?? ALL} onChange={(next) => setWalletId(next === ALL ? undefined : next)} />
+        ) : null}
+        {type !== 'transfer' && categoryOptions.length > 1 ? (
+          <FilterChips label={tc('Category')} options={categoryOptions} value={categoryId ?? ALL} onChange={(next) => setCategoryId(next === ALL ? undefined : next)} />
+        ) : null}
       </View>
-    );
-  });
+      {summary ? (
+        <View testID="history-summary" {...POLITE_LIVE_REGION} style={{ gap: BUN_SPACE.xs, paddingVertical: BUN_SPACE.xs, borderTopWidth: BUN_OUTLINE.rule, borderBottomWidth: BUN_OUTLINE.rule, borderColor: colors.rule }}>
+          <BunText variant="label" style={{ fontWeight: '700' }}>{summary.text}</BunText>
+          {summary.draftText ? <BunText variant="caption" tone="muted">{summary.draftText}</BunText> : null}
+          {summary.partial ? <BunText variant="caption" tone="muted">{tc('Only loaded entries are searched. Load more to search the rest.')}</BunText> : null}
+          <PillButton kind="secondary" label={tc('Clear filters')} onPress={clearAll} />
+        </View>
+      ) : null}
+      {notice ? (
+        <Notice tone="alert" message={notice} action={pendingDelete ? { label: tc('Try again'), busy, onPress: () => void remove(pendingDelete) } : undefined} />
+      ) : null}
+      {lists?.page.refresh_suggested && !error ? (
+        <Notice message={tc('Entries changed since you opened this list.')} action={{ label: tc('Refresh'), onPress: () => void load(true) }} />
+      ) : null}
+      {problem ? <Notice tone="alert" message={problem.message} action={problem.retry ? { label: tc('Try again'), onPress: () => void load(true) } : undefined} /> : null}
+      {!error && !lists ? <LoadingBlock label={tc('Loading entries')} /> : null}
+    </View>
+  );
+  const footer = (
+    <View style={{ paddingHorizontal: BUN_SPACE.md, paddingTop: BUN_SPACE.md, gap: BUN_SPACE.md }}>
+      {emptyMonth ? (
+        <EmptyState
+          // EmptyState leaves the art (and its space) out when the bun is off.
+          art={<Bun pose="thinking" size="l" testID="history-empty-bun" />}
+          title={tc('No entries in this month')}
+          body={tc('Entries you add for this month show up here.')}
+          action={{ label: tc('Add an entry'), onPress: () => router.push('/spend/add') }}
+        />
+      ) : null}
+      {lists?.page.next_cursor && !error ? (
+        <PillButton kind="secondary" label={tc('Load more')} busy={loadingMore} busyLabel={tc('Loading entries')} onPress={() => void loadMore()} />
+      ) : null}
+    </View>
+  );
+  const renderItem = ({ item }: ListRenderItemInfo<ListItem>) => {
+    switch (item.kind) {
+      case 'search': return searchBar;
+      case 'controls': return controls;
+      case 'day': return <HistoryDay day={item.day} today={today} outMinor={item.outMinor} inMinor={item.inMinor} pendingLines={item.pendingLines} />;
+      case 'row': {
+        const { kind: _kind, key: _key, ...shown } = item;
+        return <HistoryRow {...shown} actions={rowActions} />;
+      }
+    }
+  };
 
   return (
     <View testID="history-screen" style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView stickyHeaderIndices={[1]} contentContainerStyle={{ paddingBottom: BUN_SPACE.xl }} keyboardShouldPersistTaps="handled">
-        <StageHeader
-          title={tc('History')}
-          month={{
-            label: monthLabel(month, dateLocale),
-            onPrevious: () => changeMonth(shiftMonth(month, -1)),
-            // Entries are never in the future, so there is nothing after this month.
-            onNext: month < thisMonth ? () => changeMonth(shiftMonth(month, 1)) : undefined,
-          }}
-        >
-          {moneyIn !== null && moneyOut !== null ? (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: BUN_SPACE.md }}>
-              <BunText variant="label" tone="ink" accessibilityLabel={`${tc('Money in')} ${moneyIn}`} style={{ fontVariant: ['tabular-nums'] }}>{`${tc('Money in')} ${moneyIn}`}</BunText>
-              <BunText variant="label" tone="ink" accessibilityLabel={`${tc('Money out')} ${moneyOut}`} style={{ fontVariant: ['tabular-nums'] }}>{`${tc('Money out')} ${moneyOut}`}</BunText>
-            </View>
-          ) : null}
-        </StageHeader>
-        <View style={{ backgroundColor: colors.background, paddingHorizontal: BUN_SPACE.md, paddingVertical: BUN_SPACE.xs }}>
-          <SearchField value={query} onChangeText={setQuery} />
-        </View>
-        <View style={{ paddingHorizontal: BUN_SPACE.md, gap: BUN_SPACE.md }}>
-          {banner ? <SyncBanner {...banner} /> : null}
-          <View style={{ gap: BUN_SPACE.sm }}>
-            <FilterChips label={tc('Type')} options={typeOptions} value={type ?? ALL} onChange={(next) => changeType(next === ALL ? undefined : next)} />
-            {walletOptions.length > 1 ? (
-              <FilterChips label={tc('Wallet')} options={walletOptions} value={walletId ?? ALL} onChange={(next) => setWalletId(next === ALL ? undefined : next)} />
-            ) : null}
-            {type !== 'transfer' && categoryOptions.length > 1 ? (
-              <FilterChips label={tc('Category')} options={categoryOptions} value={categoryId ?? ALL} onChange={(next) => setCategoryId(next === ALL ? undefined : next)} />
-            ) : null}
-          </View>
-          {summary ? (
-            <View testID="history-summary" {...POLITE_LIVE_REGION} style={{ gap: BUN_SPACE.xs, paddingVertical: BUN_SPACE.xs, borderTopWidth: BUN_OUTLINE.rule, borderBottomWidth: BUN_OUTLINE.rule, borderColor: colors.rule }}>
-              <BunText variant="label" style={{ fontWeight: '700' }}>{summary.text}</BunText>
-              {summary.draftText ? <BunText variant="caption" tone="muted">{summary.draftText}</BunText> : null}
-              {summary.partial ? <BunText variant="caption" tone="muted">{tc('Only loaded entries are searched. Load more to search the rest.')}</BunText> : null}
-              <PillButton kind="secondary" label={tc('Clear filters')} onPress={clearAll} />
-            </View>
-          ) : null}
-          {notice ? (
-            <Notice tone="alert" message={notice} action={pendingDelete ? { label: tc('Try again'), busy, onPress: () => void remove(pendingDelete) } : undefined} />
-          ) : null}
-          {lists?.page.refresh_suggested && !error ? (
-            <Notice message={tc('Entries changed since you opened this list.')} action={{ label: tc('Refresh'), onPress: () => void load(true) }} />
-          ) : null}
-          {problem ? <Notice tone="alert" message={problem.message} action={problem.retry ? { label: tc('Try again'), onPress: () => void load(true) } : undefined} /> : null}
-          {!error && !lists ? <LoadingBlock label={tc('Loading entries')} /> : null}
-          {model?.groups.map((group) => (
-            <View key={group.day} style={{ borderTopWidth: BUN_OUTLINE.rule, borderColor: colors.rule, paddingTop: BUN_SPACE.xs }}>
-              <DayHeader date={group.day} today={today} outMinor={group.totals.confirmed.outMinor} inMinor={group.totals.confirmed.inMinor} />
-              {group.pendingLines.map((line) => <BunText key={line} variant="caption" tone="muted">{line}</BunText>)}
-              {row(group)}
-            </View>
-          ))}
-          {emptyMonth ? (
-            <EmptyState
-              art={bunArt}
-              title={tc('No entries in this month')}
-              body={tc('Entries you add for this month show up here.')}
-              action={{ label: tc('Add an entry'), onPress: () => router.push('/spend/add') }}
-            />
-          ) : null}
-          {lists?.page.next_cursor && !error ? (
-            <PillButton kind="secondary" label={tc('Load more')} busy={loadingMore} busyLabel={tc('Loading entries')} onPress={() => void loadMore()} />
-          ) : null}
-        </View>
-      </ScrollView>
+      <FlatList
+        data={items}
+        keyExtractor={(item) => item.key}
+        renderItem={renderItem}
+        ListHeaderComponent={stage}
+        ListFooterComponent={footer}
+        stickyHeaderIndices={STICKY_SEARCH}
+        initialNumToRender={firstItems}
+        windowSize={WINDOW_SCREENS}
+        contentContainerStyle={{ paddingBottom: BUN_SPACE.xl }}
+        keyboardShouldPersistTaps="handled"
+      />
       {deleted ? (
         <View style={{ paddingHorizontal: BUN_SPACE.md, paddingBottom: BUN_SPACE.md }}>
           <UndoBar message={tc('Entry deleted')} onUndo={() => void undo()} />

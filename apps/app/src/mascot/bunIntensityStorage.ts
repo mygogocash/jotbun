@@ -17,6 +17,17 @@ export async function readStoredBunIntensity(): Promise<BunIntensity | null> {
   return parseBunIntensity(await store.getItemAsync(BUN_INTENSITY_STORAGE_KEY));
 }
 
+/** Forgets the stored setting (the explicit sign-out erase); the next read is the default. */
+export async function eraseStoredBunIntensity(): Promise<void> {
+  if (Platform.OS === 'web') {
+    try { window.localStorage.removeItem(BUN_INTENSITY_STORAGE_KEY); }
+    catch { /* Browser storage can be blocked; nothing was kept there then. */ }
+    return;
+  }
+  const store = await import('expo-secure-store');
+  await store.deleteItemAsync(BUN_INTENSITY_STORAGE_KEY);
+}
+
 export async function writeStoredBunIntensity(intensity: BunIntensity): Promise<void> {
   if (Platform.OS === 'web') {
     try { window.localStorage.setItem(BUN_INTENSITY_STORAGE_KEY, intensity); }

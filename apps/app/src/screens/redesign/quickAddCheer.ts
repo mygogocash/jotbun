@@ -20,6 +20,20 @@ export async function readCheerDay(): Promise<string | null> {
   return parseDay(await store.getItemAsync(QUICK_ADD_CHEER_KEY));
 }
 
+/** Forgets the day (the explicit sign-out erase). Never throws. */
+export async function eraseCheerDay(): Promise<void> {
+  try {
+    if (Platform.OS === 'web') {
+      window.localStorage.removeItem(QUICK_ADD_CHEER_KEY);
+      return;
+    }
+    const store = await import('expo-secure-store');
+    await store.deleteItemAsync(QUICK_ADD_CHEER_KEY);
+  } catch {
+    // Nothing to do: at worst the cheer shows once less today.
+  }
+}
+
 export async function writeCheerDay(day: string): Promise<void> {
   try {
     if (Platform.OS === 'web') {

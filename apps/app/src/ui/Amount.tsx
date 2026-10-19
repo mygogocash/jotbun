@@ -22,8 +22,12 @@ import { BUN_SPACE } from './layout';
 
 export type AmountType = 'expense' | 'income' | 'transfer';
 export type AmountSize = 's' | 'm' | 'l' | 'xl';
-/** `saving`: not yet confirmed by Jotbun. `conflict`: changed in two places and needs a look. */
-export type AmountState = 'confirmed' | 'saving' | 'conflict';
+/**
+ * `saving`: not yet confirmed by Jotbun. `checking`: sent, and Jotbun is
+ * being asked whether it arrived. `conflict`: changed in two places and needs
+ * a look.
+ */
+export type AmountState = 'confirmed' | 'saving' | 'checking' | 'conflict';
 /** What the amount sits on: a cream/paper/page surface, the lavender stage, or an ink fill. */
 export type AmountGround = 'surface' | 'stage' | 'ink';
 
@@ -41,7 +45,7 @@ export type AmountProps = {
 export type AmountWords = {
   /** What is drawn: `−฿65.00`, `+฿65.00`, `฿65.00` or, untyped, `-฿65.00`. */
   shown: string;
-  /** "saving…" or "needs a look"; null when confirmed. */
+  /** "saving…", "checking…" or "needs a look"; null when confirmed. */
   stateWord: string | null;
   /** The full spoken label: "Expense ฿65.00, saving". */
   spoken: string;
@@ -76,6 +80,9 @@ export function useAmountWords(): (minor: Minor, type?: AmountType, state?: Amou
     if (state === 'saving') {
       stateWord = tc('saving…');
       spoken = tc('{amount}, saving', { amount: spoken });
+    } else if (state === 'checking') {
+      stateWord = tc('checking…');
+      spoken = tc('{amount}, checking', { amount: spoken });
     } else if (state === 'conflict') {
       stateWord = tc('needs a look');
       spoken = tc('{amount}, needs a look', { amount: spoken });

@@ -2,6 +2,7 @@ import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
 
 import { WalletPicker } from './WalletPicker';
+import type { WalletChoice } from './WalletPicker';
 import { MATRIX, leading, mountKit, rgb, wallet } from './entryKitTestHarness';
 
 afterEach(() => cleanup());
@@ -117,4 +118,44 @@ test('locale words, ink on cream in light and dark, Thai leading', () => {
     for (const radio of screen.getAllByRole('radio')) expect(Number.parseFloat(radio.style.minHeight)).toBeGreaterThanOrEqual(44);
     cleanup();
   }
+});
+
+// Wallets synced to this device carry no balance: a guessed one would be a wrong number on screen.
+const deviceWallets: WalletChoice[] = [
+  { id: 'cash', name: 'Cash', archived: false },
+  { id: 'bank', name: 'Bank', balance_minor: null, archived: false },
+  { id: 'old', name: 'Old purse', archived: true },
+];
+
+test('a wallet with no known balance shows its name only, in words and to screen readers', () => {
+  const onSelect = vi.fn();
+  mountKit(<WalletPicker mode="single" wallets={[...deviceWallets, wallet('save', 'Savings', '0')]} selectedId="bank" onSelect={onSelect} />);
+  const radios = screen.getAllByRole('radio');
+  expect(radios.map((radio) => radio.getAttribute('aria-label'))).toEqual(['Cash', 'Bank', 'Savings, balance ฿0.00']);
+  expect(within(radios[0]).queryByText(/฿/)).toBeNull();
+  expect(within(radios[1]).queryByText(/฿/)).toBeNull();
+  expect(screen.getByText('฿0.00')).toBeTruthy();
+  expect(radios[1].getAttribute('aria-checked')).toBe('true');
+  fireEvent.click(radios[0]);
+  expect(onSelect).toHaveBeenCalledWith('cash');
+});
+
+test('a move between wallets with no known balance: names only, swap still works, and no move all', () => {
+  const props = moveProps({ wallets: deviceWallets, fromId: 'cash', toId: 'bank' });
+  mountKit(<WalletPicker {...props} />);
+  const from = screen.getByRole('button', { name: 'From Cash' });
+  expect(screen.getByRole('button', { name: 'To Bank' })).toBeTruthy();
+  expect(within(from).queryByText(/฿/)).toBeNull();
+  expect(screen.queryByRole('button', { name: /Move all/ })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Swap wallets' }));
+  expect(props.onSwap).toHaveBeenCalledTimes(1);
+  fireEvent.click(from);
+  expect(within(screen.getByRole('radiogroup', { name: 'From' })).getAllByRole('radio').map((radio) => radio.getAttribute('aria-label'))).toEqual(['Cash', 'Bank']);
+  cleanup();
+  // Move all needs the From wallet's own balance: a balance known for another wallet does not count.
+  mountKit(<WalletPicker {...moveProps({ wallets: [...deviceWallets, wallet('save', 'Savings', '5000')], fromId: 'cash', toId: 'save' })} />);
+  expect(screen.queryByRole('button', { name: /Move all/ })).toBeNull();
+  cleanup();
+  mountKit(<WalletPicker {...moveProps({ wallets: [...deviceWallets, wallet('save', 'Savings', '5000')], fromId: 'save', toId: 'cash' })} />);
+  expect(screen.getByRole('button', { name: 'Move all ฿50.00' })).toBeTruthy();
 });

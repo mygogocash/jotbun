@@ -39,7 +39,7 @@ import { SpendV1Provider } from '@mobile/spend/v1/SpendV1Context';
 import { createFakeDiary } from '@mobile/spend/v1/testing/fakeDiary';
 import { BUILTINS, createFakeResources, goldenSeed } from '@mobile/spend/v1/testing/fakeResources';
 import { DiaryLocked, DraftReferenceUnavailable } from '@mobile/storage/types';
-import type { PendingEntry } from '@mobile/storage/types';
+import type { OutboxCommand, PendingEntry } from '@mobile/storage/types';
 import { bunDark, bunLight } from '@mobile/theme/bunPalette';
 import { bunText } from '@mobile/theme/bunType';
 import { ThemePreferenceOverride, ThemeProvider } from '@mobile/theme/ThemeProvider';
@@ -348,6 +348,30 @@ test('offline, Quick add works from the wallets and categories synced to the dev
   expect(fake.callsOf('createTransaction')).toHaveLength(0);
 });
 
+test('offline, a move uses the kit wallet picker by name: From and To cards, swap, and no move all without a balance', async () => {
+  const diary = createFakeDiary({ wallets: seed.wallets, categories: BUILTINS });
+  const fake = await open({ diary: diary.diary, before: (f) => f.fail('wallets', 'network') });
+  choose('Move');
+  typeAmount('100');
+  // The kit's From → To cards, by name only: no balance is known on the device.
+  expect(screen.getByRole('button', { name: 'From Cash' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'To Daily account' })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /Move all/ })).toBeNull();
+  expect(screen.queryByText(CASH_BALANCE)).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Swap wallets' }));
+  expect(screen.getByRole('button', { name: 'From Daily account' })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'To Cash' }));
+  fireEvent.click(within(screen.getByRole('radiogroup', { name: 'To' })).getByRole('radio', { name: 'Daily account' }));
+  // The same wallet twice is said once, by the picker.
+  expect(screen.getAllByText('Choose two different wallets')).toHaveLength(1);
+  fireEvent.click(screen.getByRole('button', { name: 'To Daily account' }));
+  fireEvent.click(within(screen.getByRole('radiogroup', { name: 'To' })).getByRole('radio', { name: 'Cash' }));
+  save();
+  expect(await screen.findByText('Saved on this device')).toBeTruthy();
+  expect(diary.saves[0]).toMatchObject({ type: 'transfer', amount_minor: '10000', source_wallet_id: daily.id, destination_wallet_id: cash.id });
+  expect(fake.callsOf('createTransfer')).toHaveLength(0);
+});
+
 test('an unconfirmed online save stays online when the diary opens: Try again resends the same command', async () => {
   const diary = createFakeDiary({ phase: 'opening' });
   const fake = await open({ diary: diary.diary, before: (f) => f.loseResponse('createTransaction') });
@@ -422,6 +446,68 @@ test('if this entry already exists under an earlier command, it counts as saved 
   // The same record was named again, so nothing was saved twice.
   expect(createCalls(fake)[1][0].id).toBe(input.id);
   expect(fake.records.size).toBe(seed.records.length + 1);
+});
+
+// Review B1 (probe QA-1): an unconfirmed save may have committed. A retry refused
+// before the server processes it (signed out, terms, an update, a changed
+// session) says nothing about the first attempt, so the entry stays frozen with
+// its key until that command's outcome is known.
+test('an unconfirmed save stays frozen with its key when the retry is refused before processing; the saved moment shows what the server holds', async () => {
+  const fake = await open({ before: (f) => f.loseResponse('createTransaction') });
+  typeAmount('65');
+  save();
+  fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+  fake.fail('createTransaction', 'signed_out', { status: 401 });
+  expect(await screen.findByText('Sign in again to save.')).toBeTruthy();
+  // Still frozen: the keypad, the type and the wallet cannot change, and Try again is the only action.
+  expect(disabled(within(keypad()).getByRole('button', { name: '5' }))).toBe(true);
+  expect(disabled(screen.getByRole('button', { name: 'Wallet: Cash' }))).toBe(true);
+  expect(screen.queryByRole('button', { name: 'Save entry' })).toBeNull();
+  press('5');
+  expect(screen.getByLabelText('Expense ฿65.00')).toBeTruthy();
+  // Signed in again, Try again resends the very same command, and Jotbun's copy is what is shown.
+  fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+  expect(await screen.findByText('Saved')).toBeTruthy();
+  expect(screen.getByTestId('quick-add-saved').textContent).toContain('฿65.00');
+  const calls = createCalls(fake);
+  expect(calls.length).toBeGreaterThanOrEqual(3);
+  for (const call of calls) expect(call).toEqual(calls[0]);
+  expect(fake.records.get(calls[0][0].id as string)?.amount_minor).toBe('6500');
+});
+
+test.each([
+  ['policy_required', 403, 'Review and accept the updated terms to continue.'],
+  ['session_changed', 401, 'Your session changed. Sign in again to save.'],
+  ['upgrade_required', 426, 'Update Jotbun to keep saving. Your entry is kept.'],
+] as const)('an unconfirmed save refused as %s on retry stays frozen with its key', async (outcome, status, message) => {
+  const fake = await open({ before: (f) => f.loseResponse('createTransaction') });
+  typeAmount('65');
+  save();
+  fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+  fake.fail('createTransaction', outcome, { status });
+  expect(await screen.findByText(message)).toBeTruthy();
+  expect(disabled(within(keypad()).getByRole('button', { name: '5' }))).toBe(true);
+  expect(screen.queryByRole('button', { name: 'Save entry' })).toBeNull();
+  const [first, second] = createCalls(fake);
+  expect(second).toEqual(first);
+});
+
+test('a create that meets this draft\'s own record with other details is never shown as saved', async () => {
+  const fake = await open();
+  fake.fail('createTransaction', 'invalid', { status: 422, code: 'DATE_BEFORE_TRACKING_START', fields: { occurred_on: 'x' } });
+  typeAmount('65');
+  save();
+  await screen.findByText('This date is before the wallet started tracking.');
+  // Jotbun already holds this record id, but with another amount.
+  const [[input]] = createCalls(fake);
+  fake.records.set(input.id as string, { ...input, amount_minor: '6000', deleted_at: null, version: 1 } as TransactionDto);
+  save();
+  const alert = await screen.findByText('This entry is already saved in Jotbun as ฿60.00. Check it in History.');
+  expect(alert).toBeTruthy();
+  expect(screen.queryByText('Saved')).toBeNull();
+  expect(screen.queryByTestId('quick-add-saved')).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Save entry' })).toBeNull();
+  expect(fake.records.get(input.id as string)?.amount_minor).toBe('6000');
 });
 
 test('a create refused because another record has the id is not mistaken for this one', async () => {
@@ -658,6 +744,47 @@ test('a record that cannot be copied says so and offers a blank entry', async ()
   expect(await screen.findByText("This entry isn't available to copy.")).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Start a new entry' }));
   expect(await screen.findByLabelText('฿0.00')).toBeTruthy();
+});
+
+// Review nit: a deleted record is not offered for copying through the URL.
+test('a deleted record cannot be copied through the URL', async () => {
+  search.params = { copyOf: RENT };
+  const fake = createFakeResources(goldenSeed());
+  const rent = fake.records.get(RENT) as TransactionDto;
+  fake.records.set(RENT, { ...rent, deleted_at: '2026-09-28T00:00:00.000Z', version: 2 });
+  mount(<QuickAddScreen now={NOW} />, fake.resources);
+  expect(await screen.findByText("This entry isn't available to copy.")).toBeTruthy();
+  expect(screen.queryByLabelText('Expense ฿12,268.00')).toBeNull();
+});
+
+// Review m6: the amount is a polite live region, so each key's result is read.
+test('the amount line is a polite live region that says the live result', async () => {
+  await open();
+  typeAmount('12');
+  const live = screen.getByLabelText('Expense ฿12.00').closest('[aria-live="polite"]');
+  expect(live).not.toBeNull();
+  press('+', '3');
+  expect(within(live as HTMLElement).getByLabelText('Expense ฿15.00')).toBeTruthy();
+});
+
+// Review m8: move all never offers money that waiting drafts on this device already spent.
+test('move all is the balance less what drafts waiting on this device take from the wallet', async () => {
+  const waiting = { id: crypto.randomUUID(), type: 'expense', amount_minor: '50000', occurred_on: TODAY, wallet_id: daily.id, category_id: food.id, note: null, merchant: null } as PendingEntry;
+  const incoming = { id: crypto.randomUUID(), amount_minor: '10000', occurred_on: TODAY, source_wallet_id: cash.id, destination_wallet_id: daily.id, note: null, merchant: null, type: 'transfer' } as PendingEntry;
+  // Being checked (sending or uncertain): Jotbun may count it already, so it is not taken off again.
+  const checking = { id: crypto.randomUUID(), type: 'expense', amount_minor: '70000', occurred_on: TODAY, wallet_id: daily.id, category_id: food.id, note: null, merchant: null } as PendingEntry;
+  const sent = { id: crypto.randomUUID(), type: 'expense', amount_minor: '30000', occurred_on: TODAY, wallet_id: daily.id, category_id: food.id, note: null, merchant: null } as PendingEntry;
+  const command = (payload: PendingEntry, state: OutboxCommand['state']): OutboxCommand => ({
+    commandId: crypto.randomUUID(), accountId: 'a0000000-0000-4000-8000-000000000001', schemaVersion: 1, kind: 'transaction.create', payload, state,
+    firstTransmissionAt: state === 'unsent' ? null : '2026-09-29T03:00:00.000Z', createdAt: '2026-09-29T03:00:00.000Z', ackedRevision: null,
+  });
+  const diary = createFakeDiary({ wallets: seed.wallets, categories: BUILTINS, outbox: [command(waiting, 'unsent'), command(incoming, 'unsent'), command(checking, 'uncertain'), command(sent, 'sending')] });
+  await open({ diary: diary.diary });
+  choose('Move');
+  fireEvent.click(screen.getByRole('button', { name: 'Swap wallets' }));
+  // Daily: ฿18,700.00 − ฿500.00 waiting to be spent + ฿100.00 waiting to arrive.
+  fireEvent.click(screen.getByRole('button', { name: 'Move all ฿18,300.00' }));
+  expect(screen.getByLabelText('Transfer ฿18,300.00')).toBeTruthy();
 });
 
 test('Add another starts a fresh draft with a new record id and a new command id, keeping the choices', async () => {

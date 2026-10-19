@@ -3,7 +3,9 @@
 // A sheet closes from its close button, the dimmed backdrop, Android's back
 // button (`onRequestClose`; Escape on the web) and VoiceOver's escape
 // gesture. When it opens, screen-reader focus moves to the sheet. It slides up
-// on a gentle spring; under reduced motion it simply appears.
+// on a gentle spring; under reduced motion it simply appears. It is one named
+// modal dialog on every platform (see the note in `Sheet`), and pads the
+// bottom safe area.
 //
 // ConfirmSheet states the consequence of an action before it happens. When the
 // action is destructive, the safe choice (cancel) keeps the ink fill and the
@@ -78,15 +80,22 @@ export function Sheet({ visible, onClose, title, children, closeLabel }: SheetPr
     return () => flight.stop();
   }, [offset, reducedMotion, visible]);
 
-  // The web focuses the dialog itself (keyboard and screen reader share focus
+  // The web focuses the sheet itself (keyboard and screen reader share focus
   // there). Native screen readers land on the title, which is one accessible
   // header element there.
   const web = Platform.OS === 'web';
   const focusSheet = () => moveAccessibilityFocus(web ? sheetRef.current : titleRef.current);
   const nativeTitle = web ? null : { accessible: true, accessibilityRole: 'header' as const, accessibilityLabel: title };
+  // Exactly one named dialog. On the web, react-native-web's Modal already
+  // makes its full-screen layer a `role="dialog"` with `aria-modal` (and it
+  // cannot be told otherwise), so that layer takes the sheet's name and the
+  // panel inside it is not a second dialog. Native Modal draws no role of its
+  // own, so there the panel is the modal dialog.
+  const webDialog = web ? { 'aria-label': title } : null;
+  const panelDialog = web ? null : { role: 'dialog' as const, 'aria-modal': true, 'aria-label': title };
 
   return (
-    <Modal visible={visible} transparent animationType="none" statusBarTranslucent onRequestClose={onClose} onShow={focusSheet}>
+    <Modal visible={visible} transparent animationType="none" statusBarTranslucent onRequestClose={onClose} onShow={focusSheet} {...webDialog}>
       <View style={{ flex: 1, justifyContent: 'flex-end' }}>
         <Pressable
           {...DECORATIVE}
@@ -97,9 +106,8 @@ export function Sheet({ visible, onClose, title, children, closeLabel }: SheetPr
         />
         <Animated.View
           ref={sheetRef}
-          role="dialog"
-          aria-modal
-          aria-label={title}
+          testID="sheet-panel"
+          {...panelDialog}
           accessibilityViewIsModal
           onAccessibilityEscape={onClose}
           tabIndex={-1}

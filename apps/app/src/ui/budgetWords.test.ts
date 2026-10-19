@@ -59,6 +59,33 @@ test('the last day and the end of the month read naturally', () => {
   assert.equal(budgetWords(pace({ state: 'over', leftMinor: '-1', perDayMinor: null, daysLeft: 1 }), tc, 'en').headline, '฿0.01 over · Last day');
 });
 
+test('a finished month reads as a plain result, never a pace', () => {
+  const PACE_WORDS = /On track|Tight|a day left|days to go|Last day/;
+  const under = budgetWords(pace({ phase: 'after', spentMinor: '1200000', leftMinor: '600000', perDayMinor: null, daysLeft: 0 }), tc, 'en');
+  assert.deepEqual([under.headline, under.detail, under.days], ['฿6,000.00 under budget', '฿12,000.00 of ฿18,000.00', null]);
+  assert.deepEqual([under.figure, under.figureWord, under.tone, under.spentPermille], ['฿6,000.00', 'under budget', 'under', 666]);
+  assert.equal(under.spoken, '฿6,000.00 under budget, ฿12,000.00 of ฿18,000.00');
+
+  // A tight month that has ended is just under budget: the phase wins over the old pace state.
+  const tight = budgetWords(pace({ phase: 'after', state: 'tight', leftMinor: '100', perDayMinor: null, daysLeft: 0 }), tc, 'en');
+  assert.equal(tight.headline, '฿1.00 under budget');
+
+  const exact = budgetWords(pace({ phase: 'after', spentMinor: '1800000', leftMinor: '0', perDayMinor: null, daysLeft: 0 }), tc, 'en');
+  assert.deepEqual([exact.headline, exact.figure, exact.tone], ['Right on budget', '฿0.00', 'under']);
+
+  const over = budgetWords(pace({ phase: 'after', state: 'over', spentMinor: '1812000', leftMinor: '-12000', perDayMinor: null, daysLeft: 0 }), tc, 'en');
+  assert.deepEqual([over.headline, over.figure, over.figureWord, over.tone, over.days], ['฿120.00 over', '฿120.00', 'over', 'over', null]);
+  assert.equal(over.detail, 'It happens. ฿18,120.00 of ฿18,000.00 spent.');
+
+  const none = budgetWords(pace({ phase: 'after', state: 'no_budget', limitMinor: null, leftMinor: null, perDayMinor: null, daysLeft: 0 }), tc, 'en');
+  assert.equal(none.headline, 'No budget this month');
+
+  for (const words of [under, tight, exact, over, none]) assert.doesNotMatch(`${words.headline} ${words.detail} ${words.figureWord} ${words.spoken}`, PACE_WORDS);
+  // During the month (and before it), the pace words stay.
+  assert.equal(budgetWords(pace({ phase: 'during' }), tc, 'en').detail, 'On track · ฿6,000.00 left · 10 days to go');
+  assert.equal(budgetWords(pace({ phase: 'before', daysLeft: 30 }), tc, 'en').detail, 'On track · ฿6,000.00 left · 30 days to go');
+});
+
 test('amounts stay exact and the fill never passes the limit', () => {
   const words = budgetWords(pace({ spentMinor: '99999999999', limitMinor: '99999999999', leftMinor: '0', perDayMinor: '0' }), tc, 'th');
   assert.equal(words.spentPermille, 1000);

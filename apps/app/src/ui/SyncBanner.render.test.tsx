@@ -98,6 +98,28 @@ test('a slim strip in the flow of the page, never floating over content', () => 
   }
 });
 
+test('a banner inside a screen\'s own live region is not a live region itself and does not announce', () => {
+  const announce = vi.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => undefined);
+  const os = Platform.OS;
+  Object.defineProperty(Platform, 'OS', { value: 'ios', configurable: true, writable: true });
+  try {
+    mount(<SyncBanner state="saving" count={2} live={false} />);
+    const line = screen.getByText('Saving 2 entries…');
+    expect(line.closest('[aria-live]')).toBeNull();
+    expect(line.closest('[role="status"]')).toBeNull();
+    expect(announce).not.toHaveBeenCalled();
+  } finally {
+    Object.defineProperty(Platform, 'OS', { value: os, configurable: true, writable: true });
+  }
+});
+
+test('saving may carry an action, such as listing the entries', () => {
+  const onPress = vi.fn();
+  mount(<SyncBanner state="saving" count={1} action={{ label: 'Show all', onPress }} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
+  expect(onPress).toHaveBeenCalledTimes(1);
+});
+
 test('iOS hears each new state, because VoiceOver skips live regions', () => {
   const announce = vi.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => undefined);
   const os = Platform.OS;
