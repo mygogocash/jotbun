@@ -607,7 +607,7 @@ test('previous and next step through the sections in order and stop at the ends'
 });
 
 test('a tour steps through the sections on a timer and stops at the last one', async () => {
-  vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+  vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
   try {
     const first = CATALOGUE_SECTIONS[0]!;
     const second = CATALOGUE_SECTIONS[1]!;
@@ -621,8 +621,13 @@ test('a tour steps through the sections on a timer and stops at the last one', a
     act(() => { vi.advanceTimersByTime(1000); });
     expect(screen.getByTestId(`catalogue-section-${third.id}`)).toBeTruthy();
     cleanup();
+    // The last section is a screen, and waiting for it to settle needs real
+    // timers; the tour starts once it has.
+    vi.useRealTimers();
     const last = CATALOGUE_SECTIONS[CATALOGUE_SECTIONS.length - 1]!;
-    await open({ section: last.id, tour: '1000' });
+    const view = await open({ section: last.id });
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
+    act(() => { view.rerenderInApp(<CatalogueScreen params={{ section: last.id, tour: '1000' }} />); });
     act(() => { vi.advanceTimersByTime(5000); });
     expect(screen.getByTestId(`catalogue-section-${last.id}`)).toBeTruthy();
   } finally {
@@ -631,7 +636,7 @@ test('a tour steps through the sections on a timer and stops at the last one', a
 });
 
 test('re-opening the same link with a new run restarts the tour from its section', async () => {
-  vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+  vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
   try {
     const first = CATALOGUE_SECTIONS[0]!;
     const second = CATALOGUE_SECTIONS[1]!;
@@ -647,8 +652,28 @@ test('re-opening the same link with a new run restarts the tour from its section
   }
 });
 
+// A busy JS thread delays timers, and an interval's late ticks then fire back
+// to back: the E2 recording in Thai skipped sections that way. Each step waits
+// a full interval after the section it leaves has rendered.
+test('a late tour step never skips a section: the next step waits for the section to show', async () => {
+  vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
+  try {
+    const second = CATALOGUE_SECTIONS[1]!;
+    const third = CATALOGUE_SECTIONS[2]!;
+    await open({ section: CATALOGUE_SECTIONS[0]!.id, tour: '1000' });
+    act(() => { vi.advanceTimersByTime(2500); });
+    expect(screen.getByTestId(`catalogue-section-${second.id}`)).toBeTruthy();
+    act(() => { vi.advanceTimersByTime(999); });
+    expect(screen.getByTestId(`catalogue-section-${second.id}`)).toBeTruthy();
+    act(() => { vi.advanceTimersByTime(1); });
+    expect(screen.getByTestId(`catalogue-section-${third.id}`)).toBeTruthy();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
 test('without a tour nothing moves on its own', async () => {
-  vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+  vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
   try {
     const first = CATALOGUE_SECTIONS[0]!;
     await open({ section: first.id });

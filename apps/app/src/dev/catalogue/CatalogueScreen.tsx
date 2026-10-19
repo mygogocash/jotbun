@@ -297,23 +297,23 @@ export function CatalogueScreen({ params }: CatalogueScreenProps) {
   const onView = useCallback((change: Partial<CatalogueView>) => setView((current) => ({ ...current, ...change })), []);
 
   // `?tour=<ms>`: step to the next section on a timer and stop at the last
-  // one, so a script can screenshot every section from one deep link.
+  // one, so a script can screenshot every section from one deep link. Each
+  // step is scheduled once the section it leaves has rendered, so a busy JS
+  // thread delays the tour instead of firing late steps back to back and
+  // skipping sections.
   const tour = parseCatalogueTour(params);
+  const atLast = view.section === CATALOGUE_SECTIONS[CATALOGUE_SECTIONS.length - 1]?.id;
   useEffect(() => {
-    if (tour === null) return undefined;
-    const timer = setInterval(() => {
+    if (tour === null || atLast) return undefined;
+    const timer = setTimeout(() => {
       setView((current) => {
         const at = CATALOGUE_SECTIONS.findIndex((section) => section.id === current.section);
         const next = CATALOGUE_SECTIONS[at + 1];
-        if (!next) {
-          clearInterval(timer);
-          return current;
-        }
-        return { ...current, section: next.id };
+        return next ? { ...current, section: next.id } : current;
       });
     }, tour);
-    return () => clearInterval(timer);
-  }, [tour, linkKey]);
+    return () => clearTimeout(timer);
+  }, [tour, linkKey, view.section, atLast]);
 
   return (
     <IntlProvider locale={view.locale}>

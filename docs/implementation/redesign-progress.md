@@ -1327,4 +1327,9 @@ Built together with the kit polish above, in one change. These fix the screen-le
 - **Restarting a tour:** re-opening the same link did nothing, because the catalogue only noticed a new link when its section, theme or locale changed. The first recording stayed on the last section for all 471 frames. The link is now identified by every param, so adding a fresh `&run=<n>` restarts the tour from its section.
   - RED: "re-opening the same link with a new run restarts the tour from its section" failed (1 failed, 2 passed).
   - GREEN: the catalogue render suite, 95 of 95; `tsc` clean.
+- **No skipped sections:** the Thai recording kept only 37 of 40 screen states. Some sections lasted under a second and others 8–9 s, because an interval's late ticks fire back to back when the JS thread is busy. In-app checks in Thai (a keypad tap, the › button) responded at once, so this is a capture artifact, not a slow Thai screen. Each step is now a timeout scheduled after the section it leaves has rendered.
+  - RED: "a late tour step never skips a section" moved two sections on one late advance.
+  - GREEN: the catalogue render suite, 96 of 96; `tsc` clean.
+  - Mutation: dropping the section from the effect's dependencies fails both tour tests.
+  - The stop-at-the-last-section check now opens that screen with real timers (its settle wait polls with `setTimeout`), then starts the tour under fake timers.
 - **Dev only:** like the rest of the catalogue, it never reaches production bundles.
