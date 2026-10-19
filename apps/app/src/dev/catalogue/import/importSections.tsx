@@ -257,7 +257,8 @@ export const IMPORT_SECTIONS: CatalogueSection[] = [
       fixture.hold('preview');
       return fixture;
     },
-    script: (tc) => [{ press: tc('Choose a file') }, { waitFor: tc('Read the file, In progress') }],
+    // The stage's spoken label is built as StagedProgress builds it, so the wait matches in every locale.
+    script: (tc) => [{ press: tc('Choose a file') }, { waitFor: tc('{stage}, {status}', { stage: tc('Read the file'), status: tc('In progress') }) }],
     render: screen,
   }),
   screenSection({
@@ -331,7 +332,7 @@ export const IMPORT_SECTIONS: CatalogueSection[] = [
     id: 'import-confirming',
     title: 'Import: saving in batches',
     fixture: () => importFixture({ rows: cleanRows(5) }),
-    script: (tc, fixture: ImportFixture) => [...toFrozen(tc, 5), { run: () => { fixture.hold('confirm'); } }, { press: tc('Save {count} records', { count: 5 }) }, { waitFor: tc('Save the records, In progress, {count}', { count: tc('{done} of {total}', { done: '0', total: '5' }) }) }],
+    script: (tc, fixture: ImportFixture) => [...toFrozen(tc, 5), { run: () => { fixture.hold('confirm'); } }, { press: tc('Save {count} records', { count: 5 }) }, { waitFor: tc('{stage}, {status}, {count}', { stage: tc('Save the records'), status: tc('In progress'), count: tc('{done} of {total}', { done: '0', total: '5' }) }) }],
     render: screen,
   }),
   screenSection({

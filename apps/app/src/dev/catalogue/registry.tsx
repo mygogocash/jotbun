@@ -24,6 +24,7 @@ import { HOME_SECTIONS } from './homeSections';
 import { KIT_SECTIONS } from './kitSections';
 import { FIRST_RUN_SECTIONS } from './account/firstRunSections';
 import { SETTINGS_SECTIONS } from './account/settingsSections';
+import { IMPORT_SECTIONS } from './import/importSections';
 import { RECEIPT_SECTIONS } from './import/receiptSections';
 import { INSIGHTS_SECTIONS } from './insights/insightsSections';
 import { RECAP_SECTIONS } from './insights/recapSections';
@@ -79,6 +80,7 @@ export const ACCOUNT_SECTIONS: readonly CatalogueSection[] = [
 
 /** R7 Import (behind `import` until E2 checkpoint 5): the import journey and a record's receipt. */
 export const IMPORT_SCREEN_SECTIONS: readonly CatalogueSection[] = [
+  ...IMPORT_SECTIONS,
   ...RECEIPT_SECTIONS,
 ];
 
