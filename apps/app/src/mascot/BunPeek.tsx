@@ -4,8 +4,16 @@
 // out from behind the edge with a small spring; under reduced motion it simply
 // appears. Honours the bun intensity: at `off` it draws nothing.
 //
+// Every inset is a plain number of points from the bun's own box: the far side
+// is minus the bun's depth, so the box ends on the edge, and centring spans the
+// whole edge and centres the bun with flexbox. Never percentages: on device they
+// do not resolve against an auto-sized parent, and the bun falls back to the
+// parent's top-left corner, over its content. Insets count from inside the
+// parent's border, so the bun's base sits over that border.
+//
 // Put it inside the parent it peeks over, and leave room outside that edge
-// (a margin or the screen's padding), since it covers whatever lies there.
+// (a margin or the screen's padding) at least as deep as the bun, since it
+// covers whatever lies there.
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, View, type ViewStyle } from 'react-native';
 
@@ -65,11 +73,21 @@ function usePeekProgress(): Animated.Value {
   return progress;
 }
 
-/** The host box, just outside `edge`, placed along it by `align`. */
-function placement(edge: BunPeekEdge, align: BunPeekAlign, across: number): ViewStyle {
-  const outside: ViewStyle = edge === 'top' ? { bottom: '100%' } : edge === 'left' ? { right: '100%' } : { left: '100%' };
-  const [start, end, margin] = edge === 'top' ? (['left', 'right', 'marginLeft'] as const) : (['top', 'bottom', 'marginTop'] as const);
-  const along: ViewStyle = align === 'start' ? { [start]: BUN_SPACE.md } : align === 'end' ? { [end]: BUN_SPACE.md } : { [start]: '50%', [margin]: -across / 2 };
+/**
+ * The host box, just outside `edge` and `out` deep, placed along it by `align`.
+ * Numbers only. `start` and `end` hold a bun-sized box `BUN_SPACE.md` from the
+ * corner; `center` spans the whole edge and centres the bun inside it.
+ */
+function placement(edge: BunPeekEdge, align: BunPeekAlign, across: number, out: number): ViewStyle {
+  const outside: ViewStyle = edge === 'top'
+    ? { top: -out, height: out }
+    : edge === 'left' ? { left: -out, width: out } : { right: -out, width: out };
+  const [start, end, length] = edge === 'top' ? (['left', 'right', 'width'] as const) : (['top', 'bottom', 'height'] as const);
+  const along: ViewStyle = align === 'start'
+    ? { [start]: BUN_SPACE.md, [length]: across }
+    : align === 'end'
+      ? { [end]: BUN_SPACE.md, [length]: across }
+      : { [start]: 0, [end]: 0, alignItems: 'center', justifyContent: 'center' };
   return { ...outside, ...along };
 }
 
@@ -82,9 +100,11 @@ export function BunPeek({ edge, pose = 'peek', size = 'm', align = 'end', testID
   const out = bunHeight(BUN_POSES[pose], across);
   const onTop = edge === 'top';
   const box = onTop ? { width: across, height: out } : { width: out, height: across };
-  const host: ViewStyle = { position: 'absolute', overflow: 'hidden', pointerEvents: 'none', ...box, ...placement(edge, align, across) };
+  const host: ViewStyle = { position: 'absolute', pointerEvents: 'none', ...placement(edge, align, across, out) };
+  // Exactly the bun's box, at the edge: it hides the bun while it slides out.
+  const clip: ViewStyle = { ...box, overflow: 'hidden' };
 
-  // Hidden: pushed back past the edge, where the host clips it.
+  // Hidden: pushed back past the edge, where the clip hides it.
   const hidden = edge === 'right' ? -out : out;
   const shift = progress.interpolate({ inputRange: [0, 1], outputRange: [hidden, 0] });
   const opacity = progress.interpolate({ inputRange: [0, 1], outputRange: [0, 1], extrapolate: 'clamp' });
@@ -97,11 +117,13 @@ export function BunPeek({ edge, pose = 'peek', size = 'm', align = 'end', testID
 
   return (
     <View testID={testID} style={host}>
-      <Animated.View style={slide}>
-        <View style={turn}>
-          <Bun pose={pose} size={size} {...(a11y as BunA11yProps)} />
-        </View>
-      </Animated.View>
+      <View style={clip}>
+        <Animated.View style={slide}>
+          <View style={turn}>
+            <Bun pose={pose} size={size} {...(a11y as BunA11yProps)} />
+          </View>
+        </Animated.View>
+      </View>
     </View>
   );
 }

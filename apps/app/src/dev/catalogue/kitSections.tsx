@@ -144,8 +144,8 @@ function StageHeaderSection() {
           </StageHeader>
         </NoInsets>
       </FullBleed>
-      {/* The bun peeks over the card's top edge, against the stage above it. */}
-      <View style={{ marginTop: BUN_SPACE.lg }}>
+      {/* The bun peeks over the card's top edge, against the stage above it, in a margin at least as deep as the peek. */}
+      <View style={{ marginTop: BUN_SPACE.xl }}>
         <Card>
           <BunPeek edge="top" />
           <BunText variant="label">{tc('{amount} a day left · on track', { amount: samples.money(SAMPLE_MINOR.dailyLeft) })}</BunText>
