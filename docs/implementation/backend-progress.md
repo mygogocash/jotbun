@@ -2785,9 +2785,14 @@ Observed, not changed (pre-existing):
 - **Found by the first Node 26 image smoke:**
   - `ok: false`, with `csv: parsed` and `png: sandbox_unsupported`. The image child crashed in its self-check with `ERR_ACCESS_DENIED` on `/app/apps/api/node_modules/detect-libc/package.json`.
   - The release image keeps sharp under the API's node_modules and hoists detect-libc and semver to the root. Looking for detect-libc from sharp, Node reads each candidate's `package.json`, even a missing one. Outside the child's read roots the permission model answers with "access denied" rather than "not found", so the child crashed.
-  - The developer layout never showed it, because there detect-libc sits where Node looks first.
+  - The tests never showed it, although this machine has the same layout. Jest starts the children from TypeScript, where sharp loads through its ES module build, and Node's ES module resolver checks that a package directory exists before it reads `package.json`. Only the built CommonJS files read the missing file.
   - Allowing the missing directory did not help. Allowing the exact file did.
 - **Fix:** `imageReadRoots` (now exported) adds `lookupFiles`: the exact `package.json` path of each candidate Node tries, in node_modules directories that exist, before the one that holds each package. Nothing else is opened up: only those `package.json` files, by exact path.
   - RED: a spec builds the image's layout in a temp directory and requires those paths. Mutation: never adding them fails it.
   - The existing read-roots test now accepts these files, and only for the same package names.
 - **Image smoke on Node 26.9.0:** `docker build` and `release-smoke.cjs` gave `ok: true` with `csv: parsed` and `png: parsed`. The processes still fail closed at the database, and `/live` is 200 with `/ready` 503. The image is arm64 (this Mac); x64 was not run. The check image was removed.
+- **Review of the two commits** (independent). No security or correctness bug in the fix: each grant is an exact `package.json` path, and the child cannot write one. Its sharp 0.35.5 load chain is covered on arm64, x64 and non-hoisted layouts. Fixed test-first:
+  1. **No gate step ran the path that crashed.** `apps/api/scripts/parser-sandbox-check.cjs` runs both children's self-check from `dist` after the build, in the Full gate (handover) and in CI. RED: the CI workflow test failed until CI ran it. With `lookupFiles` disabled and `dist` rebuilt, the check reports `probe_failed`; with it, `supported`.
+  2. **Nothing made the image run Node 26.** The release smoke now fails below Node 26 and always expects both parses. Before, an image on Node 24 passed, with imports off for good.
+  3. The layout test's file check is scope-aware: `node_modules/@img/<name>/package.json`.
+  - **`engines` stays `>=24`:** everything runs on Node 24, where imports fail closed. Changing it would also mean editing the lockfile, which waits for the owner. The image, CI and `.nvmrc` carry the Node 26 decision.

@@ -51,6 +51,8 @@ jobs:
       - run: npm run build -w gogospend-api
       - name: Release graph (no legacy code or unreviewed package reachable)
         run: node apps/api/scripts/release-graph.mjs check
+      - name: Parser sandbox from the built files (both children, Node 26)
+        run: node apps/api/scripts/parser-sandbox-check.cjs
       - run: npm run export:web -w gogospend-app -- --max-workers 2
       - name: Whitespace (the change under test)
         run: git diff --check ${{ github.event.pull_request.base.sha || 'HEAD^' }} HEAD

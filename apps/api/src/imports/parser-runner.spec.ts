@@ -835,7 +835,9 @@ describe('the parser child runs isolated and bounded', () => {
       // Only package.json files are allowed by exact path, and only in node_modules directories that exist.
       for (const file of roots.filter((path) => !path.endsWith(sep))) {
         expect(basename(file)).toBe('package.json');
-        expect(basename(dirname(dirname(file)))).toBe('node_modules');
+        // node_modules/<name>/package.json, or node_modules/@img/<name>/package.json for a scoped package.
+        const [, parent, grandparent] = dirname(file).split(sep).filter(Boolean).reverse();
+        expect(parent === 'node_modules' || (parent === '@img' && grandparent === 'node_modules')).toBe(true);
       }
       expect(roots.some((path) => path.includes(`${sep}dist${sep}imports${sep}node_modules`))).toBe(false);
     } finally {

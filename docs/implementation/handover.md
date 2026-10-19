@@ -63,6 +63,7 @@ GOGOSPEND_OPS_REQUIRE_DB=1 npm run test:ops
 npm run test:render -w gogospend-app
 npm run build -w gogospend-api
 node apps/api/scripts/release-graph.mjs check
+node apps/api/scripts/parser-sandbox-check.cjs
 npm run export:web -w gogospend-app -- --max-workers 2
 git diff --check
 ```
@@ -72,7 +73,7 @@ git diff --check
 docker build -f apps/api/Dockerfile -t gogospend-local-check .
 docker run --rm gogospend-local-check node scripts/release-smoke.cjs
 ```
-On Node 24 the smoke expects parser outcomes `sandbox_unsupported`; on Node ≥25 it expects `parsed`.
+The smoke requires Node 26 or later (owner decision §7.1) and expects both parser outcomes `parsed`. `parser-sandbox-check.cjs` runs the same self-check from `dist` on the host, in the gate and in CI.
 
 ## 3. Ground rules (set by the owner; keep them)
 

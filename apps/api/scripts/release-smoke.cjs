@@ -16,9 +16,9 @@
 // 4. P2b's parser children run inside the image with their real flags
 //    (`--permission`, scrubbed environment). On Node ≥25 a synthetic CSV and
 //    a 1x1 PNG both parse (children staged, sharp under the permission model).
-//    On Node 24 `--permission` does not deny sockets, so both answers are
-//    `sandbox_unsupported` — fail closed, and proof the children and probe
-//    still load. The image runs Node 26 (owner decision, 19 October 2026).
+//    The image runs Node 26 (owner decision, 19 October 2026); an older Node
+//    fails the smoke (there `--permission` does not deny sockets, every parse
+//    is refused and imports could never turn on).
 // 5. The v1 HTTP stack serves inside the image: the real V1AppModule (the
 //    startup login check needs a database, so the module is created
 //    directly) answers `GET /live` 200 and `GET /ready` 503 (no database, no
@@ -201,13 +201,15 @@ async function main() {
     return outcome.kind === 'result' ? (outcome.result.ok ? 'parsed' : 'refused') : outcome.kind;
   };
   report.parsers = { csv: await parsed('csv', Buffer.from(PARSER_CSV)), png: await parsed('png', Buffer.from(PARSER_PNG, 'base64')) };
-  // Node's permission model denies the network only from 25 on. Below that the
-  // runner must refuse every parse (B1); at 25+ the synthetic files must parse.
+  // The image runs Node 26 (owner decision §7.1), where the permission model
+  // denies the children the network, so the synthetic files must parse. An
+  // image on an older Node fails here: the runner would refuse every parse
+  // (fail closed) and imports could never turn on.
   const major = Number.parseInt(process.versions.node.split('.')[0] ?? '0', 10);
-  const expectParsers = major >= 25 ? 'parsed' : 'sandbox_unsupported';
-  report.parsers.expected = expectParsers;
+  report.parsers.expected = 'parsed';
   report.parsers.node_major = major;
-  if (report.parsers.csv !== expectParsers || report.parsers.png !== expectParsers) failures.push('parsers');
+  if (major < 26) failures.push('node');
+  if (report.parsers.csv !== 'parsed' || report.parsers.png !== 'parsed') failures.push('parsers');
 
   report.legacy_absent = { paths_present: presentPaths, packages_present: presentPackages };
   if (presentPaths.length > 0 || presentPackages.length > 0) failures.push('legacy');
