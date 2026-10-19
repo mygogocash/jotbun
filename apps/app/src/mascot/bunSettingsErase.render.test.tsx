@@ -12,7 +12,7 @@ vi.mock('expo-secure-store', () => store);
 // DeviceDiaryProvider's own erase hook, without the device database, sync or session behind it.
 const erased = vi.hoisted(() => ({ order: [] as string[] }));
 vi.mock('@mobile/spend/v1/deviceImportDraftStore', () => ({
-  eraseDeviceImportDraft: async (accountId: string) => { erased.order.push(`import draft ${accountId}`); },
+  eraseLegacyImportDraft: async (accountId: string) => { erased.order.push(`import draft ${accountId}`); },
 }));
 vi.mock('@mobile/storage/deviceDiary', () => ({ createDeviceAccountDatabase: () => { throw new Error('no device database in this test'); } }));
 vi.mock('@mobile/sync/deviceSync', () => ({ createDeviceSync: () => { throw new Error('no sync in this test'); } }));

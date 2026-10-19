@@ -76,6 +76,8 @@ export type ImportFixtureOptions = {
   readonly draft?: ImportJourney | null;
   /** Opening the draft store fails this many times first (offline). */
   readonly storeFailures?: number;
+  /** No diary is open (web, locked, opening): the screen keeps the import in memory for this visit only. */
+  readonly noDiary?: boolean;
   readonly maxPolls?: number;
 };
 
@@ -138,7 +140,7 @@ export function importFixture(options: ImportFixtureOptions = {}): ImportFixture
         storeFailures -= 1;
         throw new V1Error('network', 0, 'NETWORK_ERROR');
       }
-      return store;
+      return options.noDiary ? null : store;
     },
     async pickFile() {
       picks += 1;

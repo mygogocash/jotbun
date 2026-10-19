@@ -1,9 +1,10 @@
 // The import screen's device ports (R7): the system file picker
 // (expo-document-picker), reading the picked file's bytes (expo-file-system,
 // or the browser's File on the web), the v1 import port over the session's
-// transport, and this account's device draft store. Each native module loads
-// on first use, so a test or a build without them never loads them; the
-// screen takes fakes through the same `ImportPorts` type.
+// transport, and the open diary's import draft (decision 7: inside the
+// encrypted diary; none on the web or while the diary is locked or opening).
+// Each native module loads on first use, so a test or a build without them
+// never loads them; the screen takes fakes through the same `ImportPorts` type.
 //
 // The import resources use their own v1 transport built exactly as
 // sharedV1.ts builds the shared one (same base URL, client version and
@@ -15,6 +16,7 @@ import { IMPORT_CONTENT_TYPES, IMPORT_UPLOAD_MAX_BYTES, importFormatForExtension
 import { createImportResources } from '@mobile/spend/v1/imports';
 import type { ImportResources } from '@mobile/spend/v1/imports';
 import type { ImportPorts, PickedFile } from '@mobile/spend/v1/redesign/import/importModel';
+import type { SpendDiary } from '@mobile/spend/v1/spendDiary';
 import { newId } from '../../v1/parts';
 
 /** What the picker offers: the import formats' content types (the server checks the bytes again). */
@@ -74,13 +76,7 @@ async function pickFile(): Promise<PickedFile> {
   }
 }
 
-/** This account's draft on the device; the account is the one the server names for this session (rejects offline). */
-async function openDraftStore() {
-  const [{ fetchAccountId }, { createDeviceImportDraftStore }] = await Promise.all([import('@mobile/api/sharedV1'), import('@mobile/spend/v1/deviceImportDraftStore')]);
-  return createDeviceImportDraftStore(await fetchAccountId());
-}
-
-/** The ports the app's import screen uses. */
-export function createDeviceImportPorts(): ImportPorts {
-  return { resources: lazyResources(), openDraftStore, pickFile, newId };
+/** The ports the app's import screen uses; the draft is the open diary's, asked for each time the screen opens it. */
+export function createDeviceImportPorts(diary: SpendDiary | null): ImportPorts {
+  return { resources: lazyResources(), openDraftStore: async () => diary?.importDraftStore() ?? null, pickFile, newId };
 }

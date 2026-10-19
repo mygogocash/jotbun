@@ -60,8 +60,14 @@ export function BoxBun({ size = 'l' }: { size?: 'm' | 'l' }) {
   );
 }
 
+/** Said when no diary is open (web, locked, opening): the import lives in memory for this visit only. */
+export function VisitOnlyNote() {
+  const tc = useCopy();
+  return <ImportNotice testID="import-visit-only" tone="status" message={tc('This import is kept only while this screen is open.')} />;
+}
+
 /** What import can do, what it won't, and that nothing is saved until the person confirms. */
-export function ExpectationContent({ onChoose }: { onChoose: () => void }) {
+export function ExpectationContent({ onChoose, visitOnly = false }: { onChoose: () => void; visitOnly?: boolean }) {
   const tc = useCopy();
   const dash = <BunText style={{ fontWeight: '700' }}>–</BunText>;
   return (
@@ -86,6 +92,7 @@ export function ExpectationContent({ onChoose }: { onChoose: () => void }) {
         ]}
       />
       <BunText variant="caption" tone="muted">{tc("Files up to 12 MB. Jotbun deletes an uploaded file after 24 hours, and rows you didn't save after 7 days.")}</BunText>
+      {visitOnly ? <VisitOnlyNote /> : null}
       <PillButton label={tc('Choose a file')} onPress={onChoose} />
     </View>
   );

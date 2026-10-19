@@ -1,21 +1,17 @@
-// Binds the import draft store to the device's AsyncStorage (the daily
-// reminder's pattern). The review screen is not routed yet; nothing mounts
-// this until E2 approves the screen and the at-rest caveat in importDraftStore.ts.
+// Legacy only. Builds before decision 7 (19 October 2026) kept the import
+// review draft in plain AsyncStorage; it now lives in the encrypted diary
+// (importDraftStore.ts). This binding is kept only to erase such a leftover:
+// before the diary draft's first use, and at the explicit sign-out erase.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { createStorageDraftStore, eraseImportDrafts } from './importDraftStore.ts';
+import { eraseImportDrafts } from './importDraftStore.ts';
 import type { DraftStorage } from './importDraftStore.ts';
-import type { ImportDraftStore } from './importReview.ts';
 
-const storage: DraftStorage = {
-  getItem: (key) => AsyncStorage.getItem(key),
-  setItem: (key, value) => AsyncStorage.setItem(key, value),
+// Removal only: nothing reads or writes a draft here any more.
+const storage: Pick<DraftStorage, 'removeItem' | 'getAllKeys'> = {
   removeItem: (key) => AsyncStorage.removeItem(key),
   getAllKeys: () => AsyncStorage.getAllKeys(),
 };
 
-/** This account's import draft, kept on the device across restarts. */
-export const createDeviceImportDraftStore = (accountId: string): ImportDraftStore => createStorageDraftStore(storage, accountId);
-
-/** The explicit sign-out erase: this account's draft leaves the device with its diary. */
-export const eraseDeviceImportDraft = (accountId: string): Promise<void> => eraseImportDrafts(storage, accountId);
+/** Removes the plain-text import draft an older build kept for this account. */
+export const eraseLegacyImportDraft = (accountId: string): Promise<void> => eraseImportDrafts(storage, accountId);

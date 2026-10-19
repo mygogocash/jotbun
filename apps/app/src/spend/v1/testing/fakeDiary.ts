@@ -1,10 +1,12 @@
-// A SpendDiary for render tests: a settable view, recorded saves and an
-// optional save failure. Test use only.
+// A SpendDiary for render tests: a settable view, recorded saves, an optional
+// save failure, and an in-memory import draft while it is ready. Test use only.
 import type { PendingEntry } from '../../../storage/types';
+import { memoryDraftStore } from '../importReview';
 import type { DiaryView, SpendDiary } from '../spendDiary';
 
 export function createFakeDiary(view: Partial<DiaryView> = {}) {
   let current: DiaryView = { phase: 'ready', lockReason: null, outcome: null, progress: null, pending: [], outbox: [], wallets: [], categories: [], ...view };
+  const drafts = memoryDraftStore();
   const listeners = new Set<() => void>();
   const saves: PendingEntry[] = [];
   const commandIds: (string | undefined)[] = [];
@@ -41,6 +43,7 @@ export function createFakeDiary(view: Partial<DiaryView> = {}) {
     },
     discardDiary: async () => void (calls.discardDiary += 1),
     eraseForSignOut: async () => void (calls.eraseForSignOut += 1),
+    importDraftStore: () => (current.phase === 'ready' ? drafts : null),
     retry: async () => void (calls.retry += 1),
     foreground: async () => undefined,
     background: () => undefined,
@@ -48,6 +51,8 @@ export function createFakeDiary(view: Partial<DiaryView> = {}) {
   };
   return {
     diary,
+    /** The import draft the diary keeps (what `importDraftStore()` hands out while ready). */
+    drafts,
     saves,
     commandIds,
     calls,

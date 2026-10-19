@@ -49,6 +49,14 @@ export const DIARY_MIGRATIONS: readonly DiaryMigration[] = [
        ) STRICT`,
     ],
   },
+  {
+    version: 2,
+    statements: [
+      // The import review draft (spend/v1/importDraftStore.ts): one row per
+      // account, its key and JSON envelope as the store writes them.
+      `CREATE TABLE import_drafts (key TEXT PRIMARY KEY, value TEXT NOT NULL) STRICT`,
+    ],
+  },
 ];
 
 /** Applies pending migrations; refuses a diary written by a newer app version. Returns the version. */

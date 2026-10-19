@@ -8,6 +8,8 @@ import type { DiaryState } from '../../storage/diaryRepository.ts';
 import type { SyncScheduler } from '../../sync/scheduler.ts';
 import type { SyncEngine } from '../../sync/syncEngine.ts';
 import type { SyncOutcome, SyncSession } from '../../sync/types.ts';
+import { createDiaryDraftStore } from './importDraftStore.ts';
+import type { ImportDraftStore } from './importReview.ts';
 
 export type DiaryPhase = 'unavailable' | 'opening' | 'ready' | 'locked';
 
@@ -35,8 +37,10 @@ export type SpendDiaryDeps = {
   open(accountId: string, epoch: number): Promise<DiaryStore>;
   /** Closes the account's diary and deletes its key and file. */
   discard(accountId: string): Promise<void>;
-  /** Other on-device copies of the account's data that leave with its diary at an explicit sign-out erase (not at a locked diary's discard): the import review draft. */
+  /** Other on-device copies of the account's data that leave with its diary at an explicit sign-out erase (not at a locked diary's discard): an older build's plain-text import draft. */
   eraseWithDiary?(accountId: string): Promise<void>;
+  /** Removes the plain-text import draft an older build kept for the account; called before the diary's import draft is first used. */
+  eraseLegacyImportDraft?(accountId: string): Promise<void>;
   session(): DiarySession;
   /** The sync for one open store, flushing only as `session` (the session the store was opened for). */
   makeSync(store: DiaryStore, session: SyncSession, report: SyncReport): { engine: SyncEngine; scheduler: SyncScheduler };
@@ -64,6 +68,12 @@ export interface SpendDiary {
   discardDiary(): Promise<void>;
   /** Explicit sign-out: deletes this account's diary on the device (call after the user confirmed). */
   eraseForSignOut(): Promise<void>;
+  /**
+   * The open account's import review draft, kept inside its encrypted diary;
+   * null while no diary is open (web, opening, locked, signed out). A store
+   * handed out before a session change rejects from then on: ask again.
+   */
+  importDraftStore(): ImportDraftStore | null;
   retry(): Promise<void>;
   foreground(): Promise<void>;
   background(): void;
@@ -110,6 +120,8 @@ const sameSession = (a: DiarySession | null, b: DiarySession) => a !== null && a
 export function createSpendDiary(deps: SpendDiaryDeps): SpendDiary {
   let view: DiaryView = EMPTY;
   let store: DiaryStore | null = null;
+  // The import draft store over `store`, made once per open diary.
+  let drafts: { diary: DiaryStore; store: ImportDraftStore } | null = null;
   let sync: { engine: SyncEngine; scheduler: SyncScheduler } | null = null;
   let generation = 0;
   // The session whose diary is open or opening, and the run doing it.
@@ -139,6 +151,7 @@ export function createSpendDiary(deps: SpendDiaryDeps): SpendDiary {
     sync = null;
     const closing = store;
     store = null;
+    drafts = null;
     await closing?.lock().catch(() => undefined);
   }
 
@@ -273,6 +286,11 @@ export function createSpendDiary(deps: SpendDiaryDeps): SpendDiary {
       erasedFor = session;
       emit(EMPTY);
       if (session.accountId) await deps.eraseWithDiary?.(session.accountId);
+    },
+    importDraftStore() {
+      if (!store || view.phase !== 'ready') return null;
+      if (drafts?.diary !== store) drafts = { diary: store, store: createDiaryDraftStore(store, deps.eraseLegacyImportDraft) };
+      return drafts.store;
     },
 
     async retry() {

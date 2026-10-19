@@ -80,7 +80,8 @@ it in the release record.
    `release-smoke.cjs` (the worker, parse handler and job repository changed
    after the last smoke).
 5. **Import review screen is routed and approved** (E2: visuals, copy, the
-   import draft at-rest decision, receipt consent copy). Imports are never
+   import draft at-rest decision (decided 19 October 2026: the encrypted
+   diary), receipt consent copy). Imports are never
    enabled for a client that cannot review what it uploaded.
 
 **B. Client floor (before any import data can exist)**

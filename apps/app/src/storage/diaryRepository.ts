@@ -43,6 +43,14 @@ export interface DiaryStore {
   removePending(commandId: string): Promise<void>;
   /** Discards a draft the server never committed (needs review), with its command. */
   discardReviewed(commandId: string): Promise<void>;
+  /** The import review draft rows (spend/v1/importDraftStore.ts): a row's value, or null. */
+  readImportDraft(key: string): Promise<string | null>;
+  /** Writes a draft row, replacing any under the same key. */
+  writeImportDraft(key: string, value: string): Promise<void>;
+  /** Removes a draft row; a missing one is not an error. */
+  removeImportDraft(key: string): Promise<void>;
+  /** Every draft row's key. */
+  importDraftKeys(): Promise<string[]>;
   /** Closes the diary (sign-out, transient auth failure); data stays for the next unlock. */
   lock(): Promise<void>;
   /** Deletes this account's diary and key. Call only after the user confirmed. */
@@ -408,6 +416,18 @@ export function createDiaryStore(options: DiaryStoreOptions): DiaryStore {
         await tx.run('DELETE FROM pending_entries WHERE command_id = ?', [commandId]);
       });
     },
+
+    readImportDraft: (key) => read(async (sql) => (await sql.all<{ value: string }>('SELECT value FROM import_drafts WHERE key = ?', [key]))[0]?.value ?? null),
+
+    async writeImportDraft(key, value) {
+      await write((tx) => tx.run('INSERT INTO import_drafts (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value', [key, value]));
+    },
+
+    async removeImportDraft(key) {
+      await write((tx) => tx.run('DELETE FROM import_drafts WHERE key = ?', [key]));
+    },
+
+    importDraftKeys: () => read(async (sql) => (await sql.all<{ key: string }>('SELECT key FROM import_drafts ORDER BY key')).map((row) => row.key)),
 
     lock: close,
 

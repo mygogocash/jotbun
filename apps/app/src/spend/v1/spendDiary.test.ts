@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { afterEach, test } from 'node:test';
 
 import { AccountDatabase } from '../../storage/accountDatabase.ts';
+import { deviceDiaryFiles as webDiaryFiles } from '../../storage/database.web.ts';
 import { createMemoryKeyStore } from '../../storage/testing/memoryKeys.ts';
 import { createTestDiaryFiles } from '../../storage/testing/nodeSqlite.ts';
 import type { TestDiaryFiles } from '../../storage/testing/nodeSqlite.ts';
@@ -13,6 +14,8 @@ import { PROBLEMS, createFakeServer } from '../../sync/testing/fakeServer.ts';
 import type { DiaryStore } from '../../storage/diaryRepository.ts';
 import { DiarySchemaTooNew } from '../../storage/types.ts';
 import type { SyncSession } from '../../sync/types.ts';
+import { newJourney } from './importReview.ts';
+import type { ImportJourney } from './importReview.ts';
 import type { DiarySession } from './spendDiary.ts';
 import { createSpendDiary } from './spendDiary.ts';
 
@@ -28,7 +31,7 @@ async function setup(initial: DiarySession = { accountId: ACCOUNT_A, epoch: 1 },
   const database = new AccountDatabase({ files, keys, epoch: () => installation.epoch ?? session.epoch });
   const server = createFakeServer();
   if (options.seed !== false) server.commitElsewhere([change('wallet', wallet()), change('wallet', wallet({ id: SAVINGS, name: 'Savings', opening_minor: '0' })), change('category', category())]);
-  const record = { opens: 0, flushedAs: [] as SyncSession[], timers: [] as number[], erasedWithDiary: [] as string[] };
+  const record = { opens: 0, flushedAs: [] as SyncSession[], timers: [] as number[], erasedWithDiary: [] as string[], legacyErased: [] as string[] };
   const diary = createSpendDiary({
     open: (accountId, epoch) => {
       record.opens += 1;
@@ -36,6 +39,7 @@ async function setup(initial: DiarySession = { accountId: ACCOUNT_A, epoch: 1 },
     },
     discard: (accountId) => database.discard(accountId),
     eraseWithDiary: async (accountId) => void record.erasedWithDiary.push(accountId),
+    eraseLegacyImportDraft: async (accountId) => void record.legacyErased.push(accountId),
     session: () => session,
     now: () => Date.now(),
     newId: () => randomUUID(),
@@ -334,4 +338,91 @@ test('after launch a foreground timer is armed even when the first flush waits',
   await diary.sessionChanged();
   assert.equal(diary.getView().outcome?.status, 'waiting');
   assert.equal(timers.length, 1);
+});
+
+// Decision 7: the import review draft lives in the open account's diary.
+
+const IMPORT_JOB = '3a000000-0000-4000-8000-000000000001';
+const reviewing = (): ImportJourney => ({ ...newJourney(), stage: 'review', jobId: IMPORT_JOB });
+
+test("the import draft store is the open account's, inside its diary, and follows the session", async () => {
+  const { diary, session, record } = await setup();
+  const forA = diary.importDraftStore();
+  assert.ok(forA);
+  assert.equal(diary.importDraftStore(), forA, 'one store while the same diary is open');
+  await forA.save(reviewing());
+  // Its first use removed A's plain-text copy from an older build.
+  assert.deepEqual(record.legacyErased, [ACCOUNT_A]);
+
+  Object.assign(session, { accountId: ACCOUNT_B, epoch: 2 });
+  await diary.sessionChanged();
+  const forB = diary.importDraftStore();
+  assert.ok(forB);
+  assert.notEqual(forB, forA);
+  assert.equal(await forB.load(), null);
+  // A's store, held from before the switch, never reads or writes B's diary.
+  await assert.rejects(forA.load());
+  await assert.rejects(forA.save(newJourney()));
+  assert.equal(await forB.load(), null);
+
+  Object.assign(session, { accountId: ACCOUNT_A, epoch: 3 });
+  await diary.sessionChanged();
+  assert.equal((await diary.importDraftStore()?.load())?.jobId, IMPORT_JOB);
+});
+
+test('no import draft store while no diary is open: opening, locked, signed out, or no local diary (web)', async () => {
+  let release: () => void = () => undefined;
+  const opening = createSpendDiary({
+    open: async (accountId) => {
+      await new Promise<void>((resolve) => (release = resolve));
+      return { accountId, lock: async () => undefined, readState: async () => ({ cursor: null, appliedRevision: '0', confirmed: [], pending: [], walletTotals: {} }), readOutbox: async () => [] } as unknown as DiaryStore;
+    },
+    discard: async () => undefined,
+    session: () => ({ accountId: ACCOUNT_A, epoch: 1 }),
+    now: () => Date.now(), newId: () => randomUUID(), schemaVersion: 1,
+    makeSync: () => ({ engine: { flush: async () => ({}) } as never, scheduler: { launch: async () => undefined, stop: () => undefined } as never }),
+  });
+  const opened = opening.sessionChanged();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(opening.getView().phase, 'opening');
+  assert.equal(opening.importDraftStore(), null);
+  release();
+  await opened;
+  assert.ok(opening.importDraftStore());
+
+  const { diary, keys, session } = await setup();
+  await keys.delete(ACCOUNT_A);
+  session.epoch += 1;
+  await diary.sessionChanged();
+  assert.equal(diary.getView().phase, 'locked');
+  assert.equal(diary.importDraftStore(), null);
+  Object.assign(session, { accountId: null, epoch: session.epoch + 1 });
+  await diary.sessionChanged();
+  assert.equal(diary.importDraftStore(), null);
+
+  const web = createSpendDiary({
+    open: (accountId, epoch) => new AccountDatabase({ files: webDiaryFiles(), keys: createMemoryKeyStore(), epoch: () => 1 }).open(accountId, epoch),
+    discard: async () => undefined,
+    session: () => ({ accountId: ACCOUNT_A, epoch: 1 }),
+    now: () => Date.now(), newId: () => randomUUID(), schemaVersion: 1,
+    makeSync: () => {
+      throw new Error('never synced');
+    },
+  });
+  await web.sessionChanged();
+  assert.equal(web.getView().phase, 'unavailable');
+  assert.equal(web.importDraftStore(), null);
+});
+
+test("the explicit sign-out erase takes the diary's import draft with it", async () => {
+  const { diary, session, record } = await setup();
+  await diary.importDraftStore()?.save(reviewing());
+  await diary.eraseForSignOut();
+  assert.equal(diary.importDraftStore(), null);
+  // An older build's plain-text copy is erased with the diary too (eraseWithDiary).
+  assert.deepEqual(record.erasedWithDiary, [ACCOUNT_A]);
+  session.epoch += 1;
+  await diary.sessionChanged();
+  assert.equal(diary.getView().phase, 'ready');
+  assert.equal(await diary.importDraftStore()?.load(), null);
 });
