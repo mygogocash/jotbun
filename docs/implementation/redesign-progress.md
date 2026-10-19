@@ -1333,3 +1333,23 @@ Built together with the kit polish above, in one change. These fix the screen-le
   - Mutation: dropping the section from the effect's dependencies fails both tour tests.
   - The stop-at-the-last-section check now opens that screen with real timers (its settle wait polls with `setTimeout`), then starts the tour under fake timers.
 - **Dev only:** like the rest of the catalogue, it never reaches production bundles.
+
+## E2 checkpoint: simulator captures (19 October 2026)
+
+- **Where:** the iOS simulator "GoGoCash Expo58" (iOS 27.0, 402 × 874 pt), a dev client on Metro with `EXPO_PUBLIC_REDESIGN=all`, driven by catalogue tour links (`tour=5000`) and recorded at one frame per second. Each section's last settled frame was kept.
+- **What:**
+  - light EN and dark EN: all 74 sections;
+  - light TH and light VI: the 40 screen states (35–74);
+  - scrolled frames for four states whose message sits below the fold.
+- **Checks on the frames:**
+  - Every kept frame's header matches its section (all four contact sheets read back).
+  - VI "History: search" was caught mid-load (spinner), so it was recaptured on its own.
+  - The host was under load (load average about 13, with an Android emulator running), which made some sections slow to mount. In-app checks in Thai responded at once.
+- **Findings for the owner (not fixed; E2 decisions):**
+  1. **Save is below the fold on Quick add.** From the title to the bottom of Save entry is about 914 pt. The 402 × 874 pt phone has about 778 pt usable, so the keypad pushes Save entry and the save message (unconfirmed, device error) off-screen until the user scrolls. Record edit has the same layout. This is measured in the catalogue, and still needs confirming on the real route, which needs a signed-in session. Options: pin Save, together with its message, above the home indicator, or shorten the keypad rows.
+  2. **Bun peek covers field text** at the top-edge centre placement (over "the" in "Lunch with Mai at the market") and at the left edge (over the "C" of "Cash").
+  3. **TH and VI show the new copy in English.** This is expected: the locale catalogs stay frozen until E2 is approved. Examples are "Today's receipt", "On track", "Move", "More details", "History", "Entry", and "Yours / On the server".
+  4. **Small inconsistencies:**
+     - the same "Not confirmed yet" message is regular weight in Quick add but bold in Record;
+     - Record edit shows "฿12,268" while the record shows "฿12,268.00";
+     - the History type and category chip rows cut off mid-word at the edge, although they scroll sideways.
