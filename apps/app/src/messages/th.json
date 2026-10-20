@@ -728,7 +728,6 @@
   "redesignJotbunCouldnTUseThisPhotoTry": "Jotbun ใช้รูปนี้ไม่ได้ ลองรูปอื่น",
   "redesignJotbunDidnTAcceptTheRequestSo": "Jotbun ไม่รับคำขอนี้ จึงไม่มีอะไรถูกลบ",
   "redesignJotbunFinishesErasingYourDataWithinHours": "Jotbun จะลบข้อมูลของคุณให้เสร็จภายใน {hours} ชั่วโมง คุณไม่ต้องทำอะไรเพิ่ม",
-  "redesignJotbunFollowsYourPhoneSLanguageChange": "Jotbun ใช้ภาษาเดียวกับโทรศัพท์ เปลี่ยนภาษาได้ในการตั้งค่าของโทรศัพท์",
   "redesignJotbunHasPausedThisForAMoment": "Jotbun หยุดส่วนนี้ไว้ชั่วคราว ลองอีกครั้งภายหลัง",
   "redesignJotbunIsnTTakingFilesRightNow": "ตอนนี้ Jotbun ยังไม่รับไฟล์ ไฟล์ของคุณจึงไม่ได้อัปโหลด และไม่มีอะไรถูกบันทึก การนำเข้าจะเปิดให้ใช้ในการอัปเดตภายหลัง",
   "redesignJotbunKeepsACleanedCopyOfThis": "Jotbun จะเก็บสำเนาของรูปนี้ที่ลบตำแหน่งและข้อมูลกล้องออกแล้วไว้กับรายการนี้",

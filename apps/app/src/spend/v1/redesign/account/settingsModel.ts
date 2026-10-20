@@ -1,7 +1,8 @@
 // R6 Settings (plan §6.4), pure: the choices Settings offers, which links it
 // shows for the areas that are on, and what this phone's diary holds that a
 // sign-out erase would lose. The screen turns these into words.
-import type { Locale } from '../../../../i18n/locales.ts';
+import { LANGUAGE_PREFERENCES } from '../../../../i18n/languagePreference.ts';
+import type { LanguagePreference } from '../../../../i18n/languagePreference.ts';
 import { BUN_INTENSITIES } from '../../../../mascot/bunIntensity.ts';
 import type { BunIntensity } from '../../../../mascot/bunIntensity.ts';
 import type { OutboxState } from '../../../../storage/types.ts';
@@ -12,14 +13,14 @@ import type { DiaryView } from '../../spendDiary.ts';
 export const APPEARANCES: readonly ThemePreference[] = ['system', 'light', 'dark'];
 
 /**
- * The app's languages, each named in itself, so a person who cannot read the
- * current language still finds their own. Thai first, as the app's home.
+ * Language, saved through the language preference: System (the phone's), then
+ * the app's languages, Thai first as the app's home. Vietnamese waits for its
+ * translation, so it is not offered; a phone in Vietnamese keeps it under System.
  */
-export const LANGUAGES: readonly { readonly locale: Locale; readonly name: string }[] = [
-  { locale: 'th', name: 'ไทย' },
-  { locale: 'en', name: 'English' },
-  { locale: 'vi', name: 'Tiếng Việt' },
-];
+export const LANGUAGES: readonly LanguagePreference[] = LANGUAGE_PREFERENCES;
+
+/** Each language named in itself, so a person who cannot read the current one still finds their own. */
+export const LANGUAGE_NAMES: Readonly<Record<Exclude<LanguagePreference, 'system'>, string>> = { th: 'ไทย', en: 'English' };
 
 /** The bun's intensity (decision D9), saved through the bun intensity provider. */
 export const BUN_CHOICES: readonly BunIntensity[] = BUN_INTENSITIES;

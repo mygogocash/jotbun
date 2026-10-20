@@ -14,13 +14,18 @@ vi.mock('@mobile/api/sharedV1', () => ({
   getSharedV1Resources: () => { throw new Error('Settings never reads the real API in a test.'); },
 }));
 
+import { render } from '@testing-library/react';
 import type { ReactElement } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { mountInApp } from '@mobile/dev/catalogue/catalogueTestHarness';
+import { PHONE, mountInApp } from '@mobile/dev/catalogue/catalogueTestHarness';
 import { SETTINGS_SECTIONS, fakeAccount } from '@mobile/dev/catalogue/account/settingsSections';
 import { router } from '@mobile/dev/catalogue/routerTestStub';
+import { LanguageProvider } from '@mobile/i18n/LanguageProvider';
+import { LANGUAGE_PREFERENCE_STORAGE_KEY } from '@mobile/i18n/languagePreferenceStorage';
 import type { Locale } from '@mobile/i18n/locales';
 import { translateCopy } from '@mobile/i18n/messages';
+import { BunIntensityProvider } from '@mobile/mascot/BunIntensityProvider';
 import { BUN_INTENSITY_STORAGE_KEY } from '@mobile/mascot/bunIntensityStorage';
 import { installBrowserStorage } from '@mobile/mascot/mascotTestHarness';
 import { SpendDiaryProvider } from '@mobile/spend/v1/SpendDiaryContext';
@@ -28,9 +33,11 @@ import type { DiaryView } from '@mobile/spend/v1/spendDiary';
 import { createFakeDiary } from '@mobile/spend/v1/testing/fakeDiary';
 import { createFakeResources } from '@mobile/spend/v1/testing/fakeResources';
 import { bunDark, bunLight } from '@mobile/theme/bunPalette';
+import { ThemeProvider } from '@mobile/theme/ThemeProvider';
 import { THEME_PREFERENCE_STORAGE_KEY } from '@mobile/theme/themePreferenceStorage';
 import { leading, mountScreen, outboxCommand, pendingExpense, rgb } from '../HistoryTestHarness';
 import { SettingsScreen } from './SettingsScreen';
+import type { AccountServices } from './SettingsParts';
 import type { SettingsScreenProps } from './SettingsScreen';
 
 beforeAll(() => { installBrowserStorage(); });
@@ -62,6 +69,23 @@ function mountSettings({ diary, locale = 'en', mode, ...props }: Mount = {}) {
   const element: ReactElement = <SettingsScreen {...props} />;
   if (mode) return mountScreen(element, { resources: createFakeResources().resources, diary: diary?.diary ?? null, locale, mode });
   return mountInApp(<SpendDiaryProvider diary={diary?.diary ?? null}>{element}</SpendDiaryProvider>, locale);
+}
+
+/** Settings under the app's own language choice on a phone in `phone`, with no locale pinned: as the root layout mounts it. */
+function mountLive({ phone = 'en', services = fakeAccount().services }: { phone?: Locale; services?: AccountServices } = {}) {
+  return render(
+    <LanguageProvider device={phone}>
+      <BunIntensityProvider>
+        <SafeAreaProvider initialMetrics={PHONE}>
+          <ThemeProvider>
+            <SpendDiaryProvider diary={null}>
+              <SettingsScreen services={services} />
+            </SpendDiaryProvider>
+          </ThemeProvider>
+        </SafeAreaProvider>
+      </BunIntensityProvider>
+    </LanguageProvider>,
+  );
 }
 
 const group = (name: string) => screen.getByRole('radiogroup', { name });
@@ -106,13 +130,45 @@ test('choosing Dark saves it through the theme preference and the screen turns d
   expect(page().style.backgroundColor).toEqual(rgb(bunDark.background));
 });
 
-test.each([['th', 'ไทย'], ['en', 'English'], ['vi', 'Tiếng Việt']] as const)('language %s: shown read-only, because Jotbun follows the phone', (locale, name) => {
-  mountSettings({ locale });
-  const label = translateCopy('Language', locale);
-  expect(radioNames(label)).toEqual(['ไทย', 'English', 'Tiếng Việt']);
+test('language: System, ไทย and English, each language named in itself; System until a choice is made; no Vietnamese', () => {
+  mountLive();
+  expect(radioNames('Language')).toEqual(['System', 'ไทย', 'English']);
+  expect(checkedIn('Language')).toEqual(['System']);
+  for (const radio of within(group('Language')).getAllByRole('radio')) expect(radio.getAttribute('aria-disabled')).not.toBe('true');
+  expect(screen.queryByRole('radio', { name: 'Tiếng Việt' })).toBeNull();
+  expect(screen.queryByText("Jotbun follows your phone's language. Change it in your phone's settings.")).toBeNull();
+});
+
+test('choosing ไทย saves it under its own key and the screen reads in Thai at once; System goes back to the phone', () => {
+  window.localStorage.setItem(THEME_PREFERENCE_STORAGE_KEY, 'dark');
+  mountLive();
+  fireEvent.click(screen.getByRole('radio', { name: 'ไทย' }));
+  expect(window.localStorage.getItem(LANGUAGE_PREFERENCE_STORAGE_KEY)).toBe('th');
+  const title = screen.getByRole('heading', { name: translateCopy('Settings', 'th') });
+  expect(title.style.lineHeight).toBe(leading('title', 'th'));
+  expect(checkedIn(translateCopy('Language', 'th'))).toEqual(['ไทย']);
+  expect(screen.getByRole('button', { name: translateCopy('Sign out', 'th') })).toBeTruthy();
+  // Appearance has a System too: this one is the language's.
+  fireEvent.click(within(group(translateCopy('Language', 'th'))).getByRole('radio', { name: translateCopy('System', 'th') }));
+  expect(window.localStorage.getItem(LANGUAGE_PREFERENCE_STORAGE_KEY)).toBe('system');
+  expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy();
+  expect(checkedIn('Language')).toEqual(['System']);
+  // Its own key: the theme preference is as it was.
+  expect(window.localStorage.getItem(THEME_PREFERENCE_STORAGE_KEY)).toBe('dark');
+});
+
+test.each([['th', 'ไทย'], ['en', 'English']] as const)('language %s saved: the checked choice, whatever the phone speaks', (saved, name) => {
+  window.localStorage.setItem(LANGUAGE_PREFERENCE_STORAGE_KEY, saved);
+  mountLive({ phone: saved === 'th' ? 'en' : 'th' });
+  const label = translateCopy('Language', saved);
   expect(checkedIn(label)).toEqual([name]);
-  for (const radio of within(group(label)).getAllByRole('radio')) expect(radio.getAttribute('aria-disabled')).toBe('true');
-  expect(screen.getByText(translateCopy("Jotbun follows your phone's language. Change it in your phone's settings.", locale))).toBeTruthy();
+  expect(screen.getByRole('heading', { name: translateCopy('Settings', saved) })).toBeTruthy();
+});
+
+test('a phone in Vietnamese: System is checked, and Vietnamese is still not offered', () => {
+  mountLive({ phone: 'vi' });
+  expect(checkedIn(translateCopy('Language', 'vi'))).toEqual([translateCopy('System', 'vi')]);
+  expect(screen.queryByRole('radio', { name: 'Tiếng Việt' })).toBeNull();
 });
 
 test.each([['full', 'Full'], ['quiet', 'Quiet'], ['off', 'Off']] as const)('bun %s: the saved intensity is checked, and each choice says what it does in one line', (intensity, label) => {
@@ -329,6 +385,15 @@ test('the catalogue has one section per state, with settings- / privacy- ids and
   expect(new Set(SETTINGS_SECTIONS.map((section) => section.id)).size).toBe(SETTINGS_SECTIONS.length);
   expect(new Set(SETTINGS_SECTIONS.map((section) => section.title)).size).toBe(SETTINGS_SECTIONS.length);
 });
+
+test.each([['en', 'English'], ['th', 'ไทย'], ['vi', translateCopy('System', 'vi')]] as const)("catalogue in %s: the language card shows the catalogue's language as chosen (Vietnamese, offered only through the phone, as System)", async (locale, chosen) => {
+  const main = SETTINGS_SECTIONS.find((section) => section.id === 'settings-main');
+  mountInApp(<>{main?.render()}</>, locale);
+  await waitFor(() => expect(screen.queryByTestId('catalogue-screen-running')).toBeNull(), { timeout: 10_000 });
+  expect(checkedIn(translateCopy('Language', locale))).toEqual([chosen]);
+  // Shown, not saved: the app's own choice is untouched.
+  expect(window.localStorage.getItem(LANGUAGE_PREFERENCE_STORAGE_KEY)).toBeNull();
+}, 20_000);
 
 test.each(SETTINGS_SECTIONS.map((section) => [section.id, section] as const))('catalogue section %s reaches its state', async (id, section) => {
   const network = vi.spyOn(globalThis, 'fetch');

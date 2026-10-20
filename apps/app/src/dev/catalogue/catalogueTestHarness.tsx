@@ -6,6 +6,7 @@ import type { ReactElement } from 'react';
 import { IntlProvider } from 'react-intl';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { LanguageProvider } from '@mobile/i18n/LanguageProvider';
 import type { Locale } from '@mobile/i18n/locales';
 import { BunIntensityProvider } from '@mobile/mascot/BunIntensityProvider';
 import { bunDark, bunLight } from '@mobile/theme/bunPalette';
@@ -22,16 +23,18 @@ export const paletteFor = (theme: 'light' | 'dark') => (theme === 'dark' ? bunDa
 /** How react-native-web writes an inline colour. */
 export const rgba = (hex: string) => `rgba(${[1, 3, 5].map((at) => Number.parseInt(hex.slice(at, at + 2), 16)).join(', ')}, 1.00)`;
 
-/** The app's own providers, in the root layout's order, with the app in `appLocale`. */
+/** The app's own providers, in the root layout's order, on a phone in `appLocale` and pinned to it inside the language choice. */
 export function inApp(element: ReactElement, appLocale: Locale = 'en'): ReactElement {
   return (
-    <BunIntensityProvider>
-      <SafeAreaProvider initialMetrics={PHONE}>
-        <IntlProvider locale={appLocale}>
-          <ThemeProvider>{element}</ThemeProvider>
-        </IntlProvider>
-      </SafeAreaProvider>
-    </BunIntensityProvider>
+    <LanguageProvider device={appLocale}>
+      <BunIntensityProvider>
+        <SafeAreaProvider initialMetrics={PHONE}>
+          <IntlProvider locale={appLocale}>
+            <ThemeProvider>{element}</ThemeProvider>
+          </IntlProvider>
+        </SafeAreaProvider>
+      </BunIntensityProvider>
+    </LanguageProvider>
   );
 }
 

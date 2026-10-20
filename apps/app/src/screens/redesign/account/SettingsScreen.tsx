@@ -3,8 +3,10 @@
 //
 // - Appearance (System, Light, Dark) through the theme preference; dark mode
 //   stays (D8).
-// - Language (TH, EN, VI), shown read-only: the app follows the phone's
-//   language and keeps no choice of its own to change.
+// - Language (System, ไทย, English) through the language preference, which
+//   applies at once: every screen re-renders in the new language. Vietnamese
+//   waits for its translation, so it is not offered; a phone in Vietnamese
+//   keeps it under System.
 // - The bun (Full, Quiet, Off, decision D9) through the bun intensity.
 // - The diary's links: Wallets, Categories and Budget under the planning
 //   area, Reminders under insights, Import only with its flag. Each area
@@ -21,10 +23,11 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
-import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
+import { useLanguage } from '@mobile/i18n/LanguageProvider';
+import { useCopy } from '@mobile/i18n/useCopy';
 import type { BunIntensity } from '@mobile/mascot/bunIntensity';
 import { useBunIntensity } from '@mobile/mascot/BunIntensityProvider';
-import { APPEARANCES, BUN_CHOICES, LANGUAGES, SETTINGS_HREFS, deviceOffline, diaryLinks, unsyncedEntries } from '@mobile/spend/v1/redesign/account/settingsModel';
+import { APPEARANCES, BUN_CHOICES, LANGUAGES, LANGUAGE_NAMES, SETTINGS_HREFS, deviceOffline, diaryLinks, unsyncedEntries } from '@mobile/spend/v1/redesign/account/settingsModel';
 import type { DiaryLinkKey, SettingsAreas, SignInMethod } from '@mobile/spend/v1/redesign/account/settingsModel';
 import { useDiaryView, useSpendDiary } from '@mobile/spend/v1/SpendDiaryContext';
 import { useBunColors, useTheme } from '@mobile/theme/ThemeProvider';
@@ -70,12 +73,11 @@ function Appearance() {
 
 function Language() {
   const tc = useCopy();
-  const locale = useActiveLocale();
+  const { preference, setPreference } = useLanguage();
   const label = tc('Language');
   return (
     <Section title={label}>
-      <ChoiceGroup label={label} value={locale} disabled choices={LANGUAGES.map((language) => ({ value: language.locale, label: language.name }))} />
-      <BunText variant="caption" tone="muted">{tc("Jotbun follows your phone's language. Change it in your phone's settings.")}</BunText>
+      <ChoiceGroup label={label} value={preference} onChange={setPreference} choices={LANGUAGES.map((value) => ({ value, label: value === 'system' ? tc('System') : LANGUAGE_NAMES[value] }))} />
     </Section>
   );
 }

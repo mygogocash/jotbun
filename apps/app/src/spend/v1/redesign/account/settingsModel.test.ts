@@ -5,7 +5,7 @@ import type { OutboxState } from '../../../../storage/types.ts';
 import type { DiaryView } from '../../spendDiary.ts';
 import type { SyncStatus } from '../../../../sync/types.ts';
 import { command, pending } from '../testing/fixtures.ts';
-import { APPEARANCES, BUN_CHOICES, LANGUAGES, SETTINGS_HREFS, deviceOffline, diaryLinks, unsyncedEntries } from './settingsModel.ts';
+import { APPEARANCES, BUN_CHOICES, LANGUAGES, LANGUAGE_NAMES, SETTINGS_HREFS, deviceOffline, diaryLinks, unsyncedEntries } from './settingsModel.ts';
 
 const NONE = { planning: false, insights: false, imports: false };
 
@@ -17,11 +17,12 @@ function view(states: readonly OutboxState[], status: SyncStatus | null = null, 
   };
 }
 
-test('the choices: System, Light and Dark; TH, EN and VI by their own names; Full, Quiet and Off', () => {
+test('the choices: System, Light and Dark; System, TH and EN by their own names; Full, Quiet and Off', () => {
   assert.deepEqual(APPEARANCES, ['system', 'light', 'dark']);
-  assert.deepEqual(LANGUAGES.map((language) => language.locale), ['th', 'en', 'vi']);
+  // Vietnamese waits for its translation, so it is not offered; a phone in Vietnamese keeps it under System.
+  assert.deepEqual(LANGUAGES, ['system', 'th', 'en']);
   // A language is named in itself, so a person who can't read the current one still finds theirs.
-  assert.deepEqual(LANGUAGES.map((language) => language.name), ['ไทย', 'English', 'Tiếng Việt']);
+  assert.deepEqual(LANGUAGE_NAMES, { th: 'ไทย', en: 'English' });
   assert.deepEqual(BUN_CHOICES, ['full', 'quiet', 'off']);
 });
 

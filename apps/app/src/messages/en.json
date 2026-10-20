@@ -728,7 +728,6 @@
   "redesignJotbunCouldnTUseThisPhotoTry": "Jotbun couldn't use this photo. Try another one.",
   "redesignJotbunDidnTAcceptTheRequestSo": "Jotbun didn't accept the request, so nothing was deleted.",
   "redesignJotbunFinishesErasingYourDataWithinHours": "Jotbun finishes erasing your data within {hours} hours. You don't need to do anything else.",
-  "redesignJotbunFollowsYourPhoneSLanguageChange": "Jotbun follows your phone's language. Change it in your phone's settings.",
   "redesignJotbunHasPausedThisForAMoment": "Jotbun has paused this for a moment. Try again later.",
   "redesignJotbunIsnTTakingFilesRightNow": "Jotbun isn't taking files right now, so your file wasn't uploaded and nothing was saved. Import will open in a later update.",
   "redesignJotbunKeepsACleanedCopyOfThis": "Jotbun keeps a cleaned copy of this photo with this entry, without its location or camera details.",

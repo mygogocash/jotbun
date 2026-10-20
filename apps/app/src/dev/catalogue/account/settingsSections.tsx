@@ -6,9 +6,12 @@
 // Not registered yet: R6 waits for E2 checkpoint 4, and registry.tsx adds
 // these to SCREEN_SECTIONS then.
 import type { CommandAck, ExportDto, ExportFilter } from '@gogospend/contracts';
+import type { ReactNode } from 'react';
 
 import { V1Error } from '@mobile/api/client';
 import type { Proof } from '@mobile/auth/reauthentication';
+import { LanguagePreferenceOverride } from '@mobile/i18n/LanguageProvider';
+import { useActiveLocale } from '@mobile/i18n/useCopy';
 import { PrivacyScreen } from '@mobile/screens/redesign/account/PrivacyScreen';
 import type { ProofPurpose, PrivacyServices } from '@mobile/screens/redesign/account/PrivacyParts';
 import type { AccountServices, SignOutEverywhereResult } from '@mobile/screens/redesign/account/SettingsParts';
@@ -182,9 +185,11 @@ export function fakePrivacy(options: FakePrivacyOptions = {}) {
 // Sections
 //
 // Appearance, language and the bun follow the catalogue's own theme, locale
-// and bun switches, as Thai and dark mode do for every section. The areas
-// (planning, insights, import) are given to the screen directly, so both
-// sides show while their flags stay off.
+// and bun switches, as Thai and dark mode do for every section: the locale
+// switch shows as the language chosen (EN English, TH ไทย, and VI as System,
+// since Vietnamese is offered only through the phone). The areas (planning,
+// insights, import) are given to the screen directly, so both sides show
+// while their flags stay off.
 
 type AccountFixture = ScreenFixture & { readonly account: ReturnType<typeof fakeAccount> };
 type PrivacyFixture = ScreenFixture & { readonly fake: ReturnType<typeof fakePrivacy> };
@@ -200,7 +205,17 @@ function privacyFixture(options: FakePrivacyOptions = {}): PrivacyFixture {
   return { resources: goldenFake().resources, diary: deviceDiary().diary, fake: fakePrivacy(options) };
 }
 
-const settings = (areas: Partial<SettingsAreas> = {}) => (fixture: AccountFixture) => <SettingsScreen services={fixture.account.services} areas={{ ...NO_AREAS, ...areas }} />;
+/** The catalogue's locale as the language Settings shows chosen; nothing is saved. */
+function CatalogueLanguage({ children }: { children: ReactNode }) {
+  const locale = useActiveLocale();
+  return <LanguagePreferenceOverride preference={locale === 'vi' ? 'system' : locale}>{children}</LanguagePreferenceOverride>;
+}
+
+const settings = (areas: Partial<SettingsAreas> = {}) => (fixture: AccountFixture) => (
+  <CatalogueLanguage>
+    <SettingsScreen services={fixture.account.services} areas={{ ...NO_AREAS, ...areas }} />
+  </CatalogueLanguage>
+);
 const privacy = (fixture: PrivacyFixture) => <PrivacyScreen services={fixture.fake.services} now={CATALOGUE_NOW} />;
 
 /** Two drafts on this phone while sync backs off: offline, with entries a sign-out would lose. */
