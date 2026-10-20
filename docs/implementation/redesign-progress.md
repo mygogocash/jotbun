@@ -939,8 +939,8 @@ Built on `d86001c`, then merged with the integration branch at `7d1baea` (kit un
 - **Gaps:**
   - **Recently deleted:** there is no list API. `/v1/history` returns active records only, and `DiaryView` exposes no records (`RECENTLY_DELETED_GAP`). What exists is the undo bar for this session's delete, and the record screen's Restore for an entry opened by id.
   - **No swipe:** there is no gesture library. Long-press and the actions menu stand in (the R2b decision).
-  - **No receipt thumbnail** on the record (plan §6.1): the client has no attachment read.
-  - **Loaded pages on a remount:** the spend layout is a `Slot`, which unmounts History while a record is open. The month comes back from the URL, but the filters, the search and pages after the first do not. Under a stack, the focus refresh keeps them.
+  - **No receipt thumbnail** on the record (plan §6.1): the client has no attachment read. *Closed in R7: Record shows the receipt panel (`RecordReceipt`).*
+  - **Loaded pages on a remount:** the spend layout is a `Slot`, which unmounts History while a record is open. The month comes back from the URL, but the filters, the search and pages after the first do not. Under a stack, the focus refresh keeps them. *Closed on 20 October (`be07942`): see "History keeps its view across a record" below.*
 - **Kit gaps, reported and not changed:**
   - `RecordRow` has no "update to send" state (Home reported this too).
   - `RecordRow` and `DayHeader` sign money out with a hyphen; `Amount` uses U+2212. The receipt and the rows differ.
@@ -1906,3 +1906,18 @@ Built together with the kit polish above, in one change. These fix the screen-le
   - where Recently deleted sits (a button under History's filters), its Thai title "รายการที่เพิ่งลบ", and that a deleted row doesn't open the record screen;
   - the language order (System, ไทย, English);
   - the new wording on a lost sign-out-everywhere answer: "Couldn't reach Jotbun. You're still signed in on this phone. Try again to send the same request." The old wording said nothing had changed, which can be untrue.
+
+## History keeps its view across a record (20 October 2026)
+
+- **The gap:** the spend layout draws its screens in a `Slot`, so History unmounts while a record or Recently deleted is open. Coming back, the month returned (from the URL), but the filters, the search and the pages loaded after the first did not. A sub-agent closed it test-first in its own worktree (`be07942`), and it was reviewed and merged here.
+- **How:**
+  - A small keep in the spend layout (`HistoryKeepProvider`, `historyKeep.ts`) holds History's type, wallet and category filters, its search text and how many entries were loaded. It is filled when History itself opens a record (open, edit, the review banner) or Recently deleted.
+  - On the way back, and for the same month only, History starts from that view and reads the month again with as many entries, as Recently deleted does. An entry changed or deleted on the record shows its new state.
+- **Never across people:**
+  - The kept view is memory only and stamped with the session epoch, so it is never returned once the session changes (sign-out, another account, a new binding).
+  - The sign-out erase (`eraseWithDiary`) forgets it.
+  - Going anywhere but History, a record, Recently deleted, or Quick add from a record also forgets it, so Home, the History tab and Insights still open History clean.
+- **Tests:** the new tests run the real layout, routes and History, Record and Recently deleted screens over a small fake router. RED: 4 of 5 History tests failed on the missing view, and the erase test couldn't load. Mutation: 16 of 17 failed a test. The survivor removes only the immediate clear on a session change, which the epoch check on every read still covers; removing that check fails a test.
+- **Not kept:** the scroll position. The list is virtualized with rows of different heights, and its content can change on the record. Restoring an offset would depend on layout measurement the render tests can't check.
+- **Longer term (for the owner):** a Stack for the spend layout would keep History mounted, scroll included, and this keep could go. That is a larger navigation change, not made here.
+- **Gate on `be07942`, all passing:** typecheck, typecheck:app and typecheck:routes; test:api 942, test:db 694, test:app 28, test:unit 657, test:dev 7, test:ops 107; test:render 1544; the API build, the release-graph check, the parser sandbox check, export:web and `git diff --check`.
