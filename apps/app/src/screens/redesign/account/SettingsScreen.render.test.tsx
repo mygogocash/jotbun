@@ -14,13 +14,18 @@ vi.mock('@mobile/api/sharedV1', () => ({
   getSharedV1Resources: () => { throw new Error('Settings never reads the real API in a test.'); },
 }));
 
+import { render } from '@testing-library/react';
 import type { ReactElement } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { mountInApp } from '@mobile/dev/catalogue/catalogueTestHarness';
+import { PHONE, mountInApp } from '@mobile/dev/catalogue/catalogueTestHarness';
 import { SETTINGS_SECTIONS, fakeAccount } from '@mobile/dev/catalogue/account/settingsSections';
 import { router } from '@mobile/dev/catalogue/routerTestStub';
+import { LanguageProvider } from '@mobile/i18n/LanguageProvider';
+import { LANGUAGE_PREFERENCE_STORAGE_KEY } from '@mobile/i18n/languagePreferenceStorage';
 import type { Locale } from '@mobile/i18n/locales';
 import { translateCopy } from '@mobile/i18n/messages';
+import { BunIntensityProvider } from '@mobile/mascot/BunIntensityProvider';
 import { BUN_INTENSITY_STORAGE_KEY } from '@mobile/mascot/bunIntensityStorage';
 import { installBrowserStorage } from '@mobile/mascot/mascotTestHarness';
 import { SpendDiaryProvider } from '@mobile/spend/v1/SpendDiaryContext';
@@ -28,9 +33,12 @@ import type { DiaryView } from '@mobile/spend/v1/spendDiary';
 import { createFakeDiary } from '@mobile/spend/v1/testing/fakeDiary';
 import { createFakeResources } from '@mobile/spend/v1/testing/fakeResources';
 import { bunDark, bunLight } from '@mobile/theme/bunPalette';
+import { ThemeProvider } from '@mobile/theme/ThemeProvider';
 import { THEME_PREFERENCE_STORAGE_KEY } from '@mobile/theme/themePreferenceStorage';
 import { leading, mountScreen, outboxCommand, pendingExpense, rgb } from '../HistoryTestHarness';
 import { SettingsScreen } from './SettingsScreen';
+import { appAccountServices } from './accountServices';
+import type { AccountServices } from './SettingsParts';
 import type { SettingsScreenProps } from './SettingsScreen';
 
 beforeAll(() => { installBrowserStorage(); });
@@ -52,16 +60,33 @@ afterEach(() => {
   setEnv('EXPO_PUBLIC_LEGACY_SPEND', ENV.legacy);
 });
 
-type Mount = SettingsScreenProps & { diary?: ReturnType<typeof createFakeDiary>; locale?: Locale; mode?: 'light' | 'dark' };
+type Mount = Partial<SettingsScreenProps> & { diary?: ReturnType<typeof createFakeDiary>; locale?: Locale; mode?: 'light' | 'dark' };
 
 /**
  * Settings in the app's providers. With `mode` the theme is forced (as the
  * catalogue does); without it the app's own stored preference shows and saves.
  */
-function mountSettings({ diary, locale = 'en', mode, ...props }: Mount = {}) {
-  const element: ReactElement = <SettingsScreen {...props} />;
+function mountSettings({ diary, locale = 'en', mode, services = fakeAccount().services, ...props }: Mount = {}) {
+  const element: ReactElement = <SettingsScreen services={services} {...props} />;
   if (mode) return mountScreen(element, { resources: createFakeResources().resources, diary: diary?.diary ?? null, locale, mode });
   return mountInApp(<SpendDiaryProvider diary={diary?.diary ?? null}>{element}</SpendDiaryProvider>, locale);
+}
+
+/** Settings under the app's own language choice on a phone in `phone`, with no locale pinned: as the root layout mounts it. */
+function mountLive({ phone = 'en', services = fakeAccount().services }: { phone?: Locale; services?: AccountServices } = {}) {
+  return render(
+    <LanguageProvider device={phone}>
+      <BunIntensityProvider>
+        <SafeAreaProvider initialMetrics={PHONE}>
+          <ThemeProvider>
+            <SpendDiaryProvider diary={null}>
+              <SettingsScreen services={services} />
+            </SpendDiaryProvider>
+          </ThemeProvider>
+        </SafeAreaProvider>
+      </BunIntensityProvider>
+    </LanguageProvider>,
+  );
 }
 
 const group = (name: string) => screen.getByRole('radiogroup', { name });
@@ -106,13 +131,45 @@ test('choosing Dark saves it through the theme preference and the screen turns d
   expect(page().style.backgroundColor).toEqual(rgb(bunDark.background));
 });
 
-test.each([['th', 'ไทย'], ['en', 'English'], ['vi', 'Tiếng Việt']] as const)('language %s: shown read-only, because Jotbun follows the phone', (locale, name) => {
-  mountSettings({ locale });
-  const label = translateCopy('Language', locale);
-  expect(radioNames(label)).toEqual(['ไทย', 'English', 'Tiếng Việt']);
+test('language: System, ไทย and English, each language named in itself; System until a choice is made; no Vietnamese', () => {
+  mountLive();
+  expect(radioNames('Language')).toEqual(['System', 'ไทย', 'English']);
+  expect(checkedIn('Language')).toEqual(['System']);
+  for (const radio of within(group('Language')).getAllByRole('radio')) expect(radio.getAttribute('aria-disabled')).not.toBe('true');
+  expect(screen.queryByRole('radio', { name: 'Tiếng Việt' })).toBeNull();
+  expect(screen.queryByText("Jotbun follows your phone's language. Change it in your phone's settings.")).toBeNull();
+});
+
+test('choosing ไทย saves it under its own key and the screen reads in Thai at once; System goes back to the phone', () => {
+  window.localStorage.setItem(THEME_PREFERENCE_STORAGE_KEY, 'dark');
+  mountLive();
+  fireEvent.click(screen.getByRole('radio', { name: 'ไทย' }));
+  expect(window.localStorage.getItem(LANGUAGE_PREFERENCE_STORAGE_KEY)).toBe('th');
+  const title = screen.getByRole('heading', { name: translateCopy('Settings', 'th') });
+  expect(title.style.lineHeight).toBe(leading('title', 'th'));
+  expect(checkedIn(translateCopy('Language', 'th'))).toEqual(['ไทย']);
+  expect(screen.getByRole('button', { name: translateCopy('Sign out', 'th') })).toBeTruthy();
+  // Appearance has a System too: this one is the language's.
+  fireEvent.click(within(group(translateCopy('Language', 'th'))).getByRole('radio', { name: translateCopy('System', 'th') }));
+  expect(window.localStorage.getItem(LANGUAGE_PREFERENCE_STORAGE_KEY)).toBe('system');
+  expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy();
+  expect(checkedIn('Language')).toEqual(['System']);
+  // Its own key: the theme preference is as it was.
+  expect(window.localStorage.getItem(THEME_PREFERENCE_STORAGE_KEY)).toBe('dark');
+});
+
+test.each([['th', 'ไทย'], ['en', 'English']] as const)('language %s saved: the checked choice, whatever the phone speaks', (saved, name) => {
+  window.localStorage.setItem(LANGUAGE_PREFERENCE_STORAGE_KEY, saved);
+  mountLive({ phone: saved === 'th' ? 'en' : 'th' });
+  const label = translateCopy('Language', saved);
   expect(checkedIn(label)).toEqual([name]);
-  for (const radio of within(group(label)).getAllByRole('radio')) expect(radio.getAttribute('aria-disabled')).toBe('true');
-  expect(screen.getByText(translateCopy("Jotbun follows your phone's language. Change it in your phone's settings.", locale))).toBeTruthy();
+  expect(screen.getByRole('heading', { name: translateCopy('Settings', saved) })).toBeTruthy();
+});
+
+test('a phone in Vietnamese: System is checked, and Vietnamese is still not offered', () => {
+  mountLive({ phone: 'vi' });
+  expect(checkedIn(translateCopy('Language', 'vi'))).toEqual([translateCopy('System', 'vi')]);
+  expect(screen.queryByRole('radio', { name: 'Tiếng Việt' })).toBeNull();
 });
 
 test.each([['full', 'Full'], ['quiet', 'Quiet'], ['off', 'Off']] as const)('bun %s: the saved intensity is checked, and each choice says what it does in one line', (intensity, label) => {
@@ -243,36 +300,119 @@ test('offline with entries waiting: the banner says so, and Sign out counts what
   expect(within(dialog('Sign out?')).getByText(`${SIGN_OUT_CONSEQUENCE} 2 entries on this phone haven't synced yet.`)).toBeTruthy();
 });
 
-test('Sign out everywhere: a confirm, then the fresh sign-in and the global sign-out, then the erase and the local sign-out', async () => {
+// Sign out everywhere: a confirm, a fresh sign-in for `global_logout`, then
+// POST /v1/me/global-logout with that proof, then this phone's erase and the
+// sign-out here. Re-authentication is the fake's; the app build has none yet.
+
+/** Opens Sign out everywhere and confirms it. */
+function confirmEverywhere() {
+  fireEvent.click(screen.getByRole('button', { name: 'Sign out everywhere' }));
+  fireEvent.click(within(dialog('Sign out everywhere?')).getByRole('button', { name: 'Sign out everywhere' }));
+}
+
+const STILL_SIGNED_IN = "Couldn't reach Jotbun. You're still signed in on this phone. Try again to send the same request.";
+
+test('Sign out everywhere: a confirm; Stay signed in changes nothing; confirming signs in again, sends the request with that proof, then erases this phone and signs out here', async () => {
   const log: string[] = [];
   const diary = loggingDiary(log);
-  const account = fakeAccount({ log, everywhere: 'done' });
+  const account = fakeAccount({ log });
   mountSettings({ diary, services: account.services });
   fireEvent.click(screen.getByRole('button', { name: 'Sign out everywhere' }));
   const sheet = dialog('Sign out everywhere?');
   expect(within(sheet).getByText(EVERYWHERE_CONSEQUENCE)).toBeTruthy();
   fireEvent.click(within(sheet).getByRole('button', { name: 'Stay signed in' }));
+  expect(screen.queryByRole('dialog')).toBeNull();
   expect(log).toEqual([]);
-  fireEvent.click(screen.getByRole('button', { name: 'Sign out everywhere' }));
-  fireEvent.click(within(dialog('Sign out everywhere?')).getByRole('button', { name: 'Sign out everywhere' }));
-  await waitFor(() => expect(log).toEqual(['signOutEverywhere', 'erase', 'signOut']));
+  confirmEverywhere();
+  await waitFor(() => expect(log).toEqual(['reauth', 'globalLogout', 'erase', 'signOut']));
+  expect(account.calls.reauth).toEqual(['global_logout']);
+  // The request carries the fresh proof, and its command is the proof's.
+  expect(account.calls.globalLogouts).toHaveLength(1);
+  expect(account.calls.globalLogouts[0].proofId).toMatch(/^0000000a-/);
+  expect(account.calls.globalLogouts[0].commandId).toMatch(/^0000000c-/);
+  expect(screen.queryByRole('dialog')).toBeNull();
 });
 
-test('Sign out everywhere cancelled at the sign-in, or not reaching Jotbun: nothing is erased and nobody is signed out', async () => {
-  for (const [result, message] of [['cancelled', 'Nothing changed.'], ['failed', "Couldn't reach Jotbun. Nothing changed. Try again."]] as const) {
-    const log: string[] = [];
-    mountSettings({ diary: loggingDiary(log), services: fakeAccount({ log, everywhere: result }).services });
-    fireEvent.click(screen.getByRole('button', { name: 'Sign out everywhere' }));
-    fireEvent.click(within(dialog('Sign out everywhere?')).getByRole('button', { name: 'Sign out everywhere' }));
-    expect(await screen.findByText(message)).toBeTruthy();
-    expect(log).toEqual(['signOutEverywhere']);
-    cleanup();
-  }
-});
-
-test("Sign out everywhere without a fresh sign-in in this build: it says so plainly and can't be started", () => {
+test('cancelling the fresh sign-in: nothing is sent or erased, and the person stays signed in', async () => {
   const log: string[] = [];
-  mountSettings({ diary: loggingDiary(log), services: fakeAccount({ log, everywhere: null }).services });
+  const account = fakeAccount({ log, reauth: 'cancel' });
+  mountSettings({ diary: loggingDiary(log), services: account.services });
+  confirmEverywhere();
+  expect(await screen.findByText('Nothing changed.')).toBeTruthy();
+  expect(log).toEqual(['reauth']);
+  expect(screen.queryByRole('dialog')).toBeNull();
+});
+
+test('a sign-in that fails: nothing is sent or erased, still signed in, and saying so', async () => {
+  const log: string[] = [];
+  mountSettings({ diary: loggingDiary(log), services: fakeAccount({ log, reauth: 'unreachable' }).services });
+  confirmEverywhere();
+  expect(await screen.findByText("Couldn't reach the sign-in service. Nothing changed. Try again.")).toBeTruthy();
+  expect(log).toEqual(['reauth']);
+});
+
+test('Jotbun refuses the fresh sign-in (a used or stale proof): nothing changed, still signed in', async () => {
+  const log: string[] = [];
+  mountSettings({ diary: loggingDiary(log), services: fakeAccount({ log, globalLogouts: ['reauth'] }).services });
+  confirmEverywhere();
+  expect(await screen.findByText('Your sign-in check expired. Nothing changed.')).toBeTruthy();
+  expect(log).toEqual(['reauth', 'globalLogout']);
+});
+
+test('a resend after a lost answer meets 401 SESSION_REQUIRED: the first one landed, so this phone is signed out too', async () => {
+  const log: string[] = [];
+  mountSettings({ diary: loggingDiary(log), services: fakeAccount({ log, globalLogouts: ['signed_out'] }).services });
+  confirmEverywhere();
+  await waitFor(() => expect(log).toEqual(['reauth', 'globalLogout', 'erase', 'signOut']));
+});
+
+test('Jotbun cannot be reached: still signed in, and saying so; Try again resends the same request with no new sign-in, and its 401 SESSION_REQUIRED signs out here', async () => {
+  const log: string[] = [];
+  const account = fakeAccount({ log, globalLogouts: ['lost', 'signed_out'] });
+  mountSettings({ diary: loggingDiary(log), services: account.services });
+  confirmEverywhere();
+  expect(await screen.findByText(STILL_SIGNED_IN)).toBeTruthy();
+  expect(log).toEqual(['reauth', 'globalLogout']);
+  fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+  await waitFor(() => expect(log).toEqual(['reauth', 'globalLogout', 'globalLogout', 'erase', 'signOut']));
+  expect(account.calls.reauth).toHaveLength(1);
+  expect(account.calls.globalLogouts[1]).toEqual(account.calls.globalLogouts[0]);
+});
+
+test('Jotbun cannot be reached on Try again either: still signed in, and Try again stays', async () => {
+  const log: string[] = [];
+  const account = fakeAccount({ log, globalLogouts: ['lost'] });
+  mountSettings({ diary: loggingDiary(log), services: account.services });
+  confirmEverywhere();
+  fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+  await waitFor(() => expect(log).toEqual(['reauth', 'globalLogout', 'globalLogout']));
+  expect(await screen.findByText(STILL_SIGNED_IN)).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+});
+
+test('refused for another reason: nothing changed, try later', async () => {
+  const log: string[] = [];
+  mountSettings({ diary: loggingDiary(log), services: fakeAccount({ log, globalLogouts: ['refused'] }).services });
+  confirmEverywhere();
+  expect(await screen.findByText("Jotbun couldn't take your request right now. Try again later.")).toBeTruthy();
+  expect(log).toEqual(['reauth', 'globalLogout']);
+});
+
+test("signed out everywhere, but this phone's diary can't be erased: it says so, and this phone stays signed in to try again", async () => {
+  const log: string[] = [];
+  const diary = createFakeDiary();
+  diary.diary.eraseForSignOut = async () => { throw new Error('disk'); };
+  mountSettings({ diary, services: fakeAccount({ log }).services });
+  confirmEverywhere();
+  expect(await screen.findByText("You're signed out everywhere else, but this phone's diary couldn't be erased. Sign out to try again.")).toBeTruthy();
+  expect(log).toEqual(['reauth', 'globalLogout']);
+});
+
+test("the app's own wiring has no fresh sign-in yet: Sign out everywhere shows, disabled, says why, and can't be started", () => {
+  const log: string[] = [];
+  const services = appAccountServices();
+  expect(services.reauthenticate).toBeNull();
+  mountSettings({ diary: loggingDiary(log), services });
   const button = screen.getByRole('button', { name: 'Sign out everywhere' });
   expect(button.getAttribute('aria-disabled')).toBe('true');
   expect(screen.getByText("Signing out everywhere needs a fresh sign-in, which this build can't do yet.")).toBeTruthy();
@@ -329,6 +469,15 @@ test('the catalogue has one section per state, with settings- / privacy- ids and
   expect(new Set(SETTINGS_SECTIONS.map((section) => section.id)).size).toBe(SETTINGS_SECTIONS.length);
   expect(new Set(SETTINGS_SECTIONS.map((section) => section.title)).size).toBe(SETTINGS_SECTIONS.length);
 });
+
+test.each([['en', 'English'], ['th', 'ไทย'], ['vi', translateCopy('System', 'vi')]] as const)("catalogue in %s: the language card shows the catalogue's language as chosen (Vietnamese, offered only through the phone, as System)", async (locale, chosen) => {
+  const main = SETTINGS_SECTIONS.find((section) => section.id === 'settings-main');
+  mountInApp(<>{main?.render()}</>, locale);
+  await waitFor(() => expect(screen.queryByTestId('catalogue-screen-running')).toBeNull(), { timeout: 10_000 });
+  expect(checkedIn(translateCopy('Language', locale))).toEqual([chosen]);
+  // Shown, not saved: the app's own choice is untouched.
+  expect(window.localStorage.getItem(LANGUAGE_PREFERENCE_STORAGE_KEY)).toBeNull();
+}, 20_000);
 
 test.each(SETTINGS_SECTIONS.map((section) => [section.id, section] as const))('catalogue section %s reaches its state', async (id, section) => {
   const network = vi.spyOn(globalThis, 'fetch');

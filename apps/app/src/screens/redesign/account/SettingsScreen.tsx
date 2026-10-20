@@ -3,8 +3,10 @@
 //
 // - Appearance (System, Light, Dark) through the theme preference; dark mode
 //   stays (D8).
-// - Language (TH, EN, VI), shown read-only: the app follows the phone's
-//   language and keeps no choice of its own to change.
+// - Language (System, ไทย, English) through the language preference, which
+//   applies at once: every screen re-renders in the new language. Vietnamese
+//   waits for its translation, so it is not offered; a phone in Vietnamese
+//   keeps it under System.
 // - The bun (Full, Quiet, Off, decision D9) through the bun intensity.
 // - The diary's links: Wallets, Categories and Budget under the planning
 //   area, Reminders under insights, Import only with its flag. Each area
@@ -15,16 +17,29 @@
 //   entries not yet synced are lost. The diary is erased first, then the
 //   session ends; a diary that cannot be erased keeps the person signed in.
 //   Linking logins stays hidden until F6c.
+// - Sign out everywhere (F6a, globalLogout.ts): after the confirm, a fresh
+//   sign-in for `global_logout`, then POST /v1/me/global-logout with that
+//   proof. Accepted, or a resend that meets 401 SESSION_REQUIRED (the first
+//   one landed), signs this phone out too: erase, then the session ends. A
+//   cancelled or failed sign-in, a refused proof or a refusal changes nothing.
+//   An answer that never came keeps the person signed in, says so, and Try
+//   again resends the very same request with no new sign-in. Today's build
+//   has no fresh sign-in (the Auth0 SDK arrives with E1/E2), so the app's
+//   wiring shows the action disabled, with the reason, as Privacy does.
 //
 // No bun here: Settings is a calm data screen.
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
-import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
+import { requestGlobalLogout, submitGlobalLogout } from '@mobile/auth/globalLogout';
+import type { GlobalLogoutState, PendingGlobalLogout } from '@mobile/auth/globalLogout';
+import type { Proof } from '@mobile/auth/reauthentication';
+import { useLanguage } from '@mobile/i18n/LanguageProvider';
+import { useCopy } from '@mobile/i18n/useCopy';
 import type { BunIntensity } from '@mobile/mascot/bunIntensity';
 import { useBunIntensity } from '@mobile/mascot/BunIntensityProvider';
-import { APPEARANCES, BUN_CHOICES, LANGUAGES, SETTINGS_HREFS, deviceOffline, diaryLinks, unsyncedEntries } from '@mobile/spend/v1/redesign/account/settingsModel';
+import { APPEARANCES, BUN_CHOICES, LANGUAGES, LANGUAGE_NAMES, SETTINGS_HREFS, deviceOffline, diaryLinks, unsyncedEntries } from '@mobile/spend/v1/redesign/account/settingsModel';
 import type { DiaryLinkKey, SettingsAreas, SignInMethod } from '@mobile/spend/v1/redesign/account/settingsModel';
 import { useDiaryView, useSpendDiary } from '@mobile/spend/v1/SpendDiaryContext';
 import { useBunColors, useTheme } from '@mobile/theme/ThemeProvider';
@@ -36,14 +51,14 @@ import { ConfirmSheet } from '@mobile/ui/Sheet';
 import { StageHeader } from '@mobile/ui/StageHeader';
 import { SyncBanner } from '@mobile/ui/SyncBanner';
 import { Notice } from '../HistoryParts';
-import { ChoiceGroup, LinkRow, PAGE_STYLE, Section, appAccountServices, appSettingsAreas, useBackTo } from './SettingsParts';
-import type { AccountServices, SignOutEverywhereResult } from './SettingsParts';
+import { ChoiceGroup, LinkRow, PAGE_STYLE, Section, appSettingsAreas, useBackTo } from './SettingsParts';
+import type { AccountServices } from './SettingsParts';
 
 type Tc = ReturnType<typeof useCopy>;
 
 export type SettingsScreenProps = {
-  /** The account's services; the app's own (today's session seam) unless given. */
-  services?: AccountServices;
+  /** The account's services (the route passes the app's own: accountServices.ts). */
+  services: AccountServices;
   /** Which areas' rows show; the app's flags unless given (the catalogue shows both). */
   areas?: Partial<SettingsAreas>;
 };
@@ -70,12 +85,11 @@ function Appearance() {
 
 function Language() {
   const tc = useCopy();
-  const locale = useActiveLocale();
+  const { preference, setPreference } = useLanguage();
   const label = tc('Language');
   return (
     <Section title={label}>
-      <ChoiceGroup label={label} value={locale} disabled choices={LANGUAGES.map((language) => ({ value: language.locale, label: language.name }))} />
-      <BunText variant="caption" tone="muted">{tc("Jotbun follows your phone's language. Change it in your phone's settings.")}</BunText>
+      <ChoiceGroup label={label} value={preference} onChange={setPreference} choices={LANGUAGES.map((value) => ({ value, label: value === 'system' ? tc('System') : LANGUAGE_NAMES[value] }))} />
     </Section>
   );
 }
@@ -120,14 +134,24 @@ function methodLine(method: SignInMethod | null, tc: Tc): string {
 }
 
 type Confirming = 'sign_out' | 'everywhere' | null;
-type Note = { readonly text: string; readonly tone: 'alert' | 'status' };
+/** A line under the sign-outs; `resend` when the answer never came and Try again sends that very request. */
+type Note = { readonly text: string; readonly tone: 'alert' | 'status'; readonly resend?: PendingGlobalLogout };
 
-export function SettingsScreen({ services: given, areas: givenAreas }: SettingsScreenProps) {
+/** Why nothing changed after a sign out everywhere that did not sign out (still signed in here). */
+function everywhereNote(state: Exclude<GlobalLogoutState, { state: 'signed_out' }>, tc: Tc): Note {
+  switch (state.state) {
+    case 'cancelled': return { tone: 'status', text: tc('Nothing changed.') };
+    case 'reauth_required': return { tone: 'status', text: tc('Your sign-in check expired. Nothing changed.') };
+    case 'unconfirmed': return { tone: 'status', text: tc("Couldn't reach Jotbun. You're still signed in on this phone. Try again to send the same request."), resend: state.request };
+    case 'refused': return { tone: 'status', text: tc("Jotbun couldn't take your request right now. Try again later.") };
+  }
+}
+
+export function SettingsScreen({ services, areas: givenAreas }: SettingsScreenProps) {
   const tc = useCopy();
   const colors = useBunColors();
   const router = useRouter();
   const back = useBackTo('/spend');
-  const [services] = useState(() => given ?? appAccountServices());
   const areas: SettingsAreas = { ...appSettingsAreas(), ...givenAreas };
   const diary = useSpendDiary();
   const view = useDiaryView();
@@ -136,7 +160,7 @@ export function SettingsScreen({ services: given, areas: givenAreas }: SettingsS
   const [note, setNote] = useState<Note | null>(null);
 
   const lost = unsyncedLine(unsyncedEntries(diary ? view : null), tc);
-  const everywhere = services.signOutEverywhere;
+  const reauth = services.reauthenticate;
 
   /** Erases this phone's diary, then ends the session here. A diary that can't be erased keeps the person signed in. */
   async function eraseThenSignOut(afterEverywhere: boolean): Promise<void> {
@@ -166,20 +190,38 @@ export function SettingsScreen({ services: given, areas: givenAreas }: SettingsS
     setConfirming(null);
   }
 
+  /** Signed out everywhere: this phone too. Otherwise nothing changed here, and the note says why. */
+  async function settleEverywhere(state: GlobalLogoutState): Promise<void> {
+    if (state.state === 'signed_out') await eraseThenSignOut(true);
+    else setNote(everywhereNote(state, tc));
+  }
+
+  /** A fresh sign-in for `global_logout`, then the request with that proof. */
   async function signOutEverywhere() {
-    if (!everywhere) return;
+    if (!reauth) return;
     setWorking(true);
     setNote(null);
-    let result: SignOutEverywhereResult;
+    const seen: { proof: Proof | null } = { proof: null };
     try {
-      result = await everywhere();
+      await settleEverywhere(await requestGlobalLogout({ resources: services.sessions, reauthenticate: async () => (seen.proof = await reauth('global_logout')) }));
     } catch {
-      result = 'failed';
+      // No proof: the sign-in itself failed, and nothing was sent. After one, it is not Jotbun's answer: keep the request.
+      const sent = seen.proof;
+      setNote(sent ? everywhereNote({ state: 'unconfirmed', request: { proofId: sent.proofId, commandId: sent.commandId } }, tc) : { tone: 'status', text: tc("Couldn't reach the sign-in service. Nothing changed. Try again.") });
     }
-    if (result === 'done') await eraseThenSignOut(true);
-    else setNote({ tone: 'status', text: result === 'cancelled' ? tc('Nothing changed.') : tc("Couldn't reach Jotbun. Nothing changed. Try again.") });
     setWorking(false);
     setConfirming(null);
+  }
+
+  /** Resends exactly the request whose answer never came: no new sign-in, no new key. */
+  async function resendEverywhere(request: PendingGlobalLogout) {
+    setWorking(true);
+    try {
+      await settleEverywhere(await submitGlobalLogout(request, { resources: services.sessions }));
+    } catch {
+      setNote(everywhereNote({ state: 'unconfirmed', request }, tc));
+    }
+    setWorking(false);
   }
 
   return (
@@ -202,12 +244,18 @@ export function SettingsScreen({ services: given, areas: givenAreas }: SettingsS
               <PillButton
                 kind="secondary"
                 label={tc('Sign out everywhere')}
-                disabled={!everywhere}
+                disabled={!reauth}
                 disabledReason={tc("Signing out everywhere needs a fresh sign-in, which this build can't do yet.")}
                 onPress={() => setConfirming('everywhere')}
               />
             </View>
-            {note ? <Notice tone={note.tone} message={note.text} /> : null}
+            {note ? (
+              <Notice
+                tone={note.tone}
+                message={note.text}
+                action={note.resend ? { label: tc('Try again'), busy: working, onPress: () => { if (note.resend && !working) void resendEverywhere(note.resend); } } : undefined}
+              />
+            ) : null}
           </Section>
         </View>
       </ScrollView>

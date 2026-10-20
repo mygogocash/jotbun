@@ -8,6 +8,8 @@ import { IntlProvider } from 'react-intl';
 import { expect, vi } from 'vitest';
 
 import type { CategoryDto, TransactionDto, WalletSnapshot } from '@gogospend/contracts';
+import { LanguageProvider } from '@mobile/i18n/LanguageProvider';
+import { resolveLocale } from '@mobile/i18n/locales';
 import { BunIntensityProvider } from '@mobile/mascot/BunIntensityProvider';
 import { SpendDiaryProvider } from '@mobile/spend/v1/SpendDiaryContext';
 import { SpendV1Provider } from '@mobile/spend/v1/SpendV1Context';
@@ -69,18 +71,21 @@ export function mountScreen(
 ) {
   const { resources, diary = null, locale = 'en', mode = 'light', wholeLists = true } = options;
   const screenElement = <SpendDiaryProvider diary={diary}>{element}</SpendDiaryProvider>;
+  // The app's language choice (Settings reads it) around the test's own pinned locale.
   return render(
-    <IntlProvider locale={locale}>
-      <ThemeProvider>
-        <ThemePreferenceOverride preference={mode}>
-          <BunIntensityProvider>
-            <SpendV1Provider resources={resources}>
-              {wholeLists ? <DrawWholeLists>{screenElement}</DrawWholeLists> : screenElement}
-            </SpendV1Provider>
-          </BunIntensityProvider>
-        </ThemePreferenceOverride>
-      </ThemeProvider>
-    </IntlProvider>,
+    <LanguageProvider device={resolveLocale(locale)}>
+      <IntlProvider locale={locale}>
+        <ThemeProvider>
+          <ThemePreferenceOverride preference={mode}>
+            <BunIntensityProvider>
+              <SpendV1Provider resources={resources}>
+                {wholeLists ? <DrawWholeLists>{screenElement}</DrawWholeLists> : screenElement}
+              </SpendV1Provider>
+            </BunIntensityProvider>
+          </ThemePreferenceOverride>
+        </ThemeProvider>
+      </IntlProvider>
+    </LanguageProvider>,
   );
 }
 
