@@ -1862,3 +1862,47 @@ Built together with the kit polish above, in one change. These fix the screen-le
   - the policy text for checkpoint 4, which the founder writes and publishes; sign-in's consent line links to it;
   - VoiceOver and TalkBack on real phones (the automated checks are listed under the item);
   - the native Thai review (Vietnamese is held).
+
+## Gaps closed with sub-agents: receipts transport, Recently deleted, language, sign out everywhere (20 October 2026)
+
+- **How:** the owner asked for sub-agents to speed up development. Three worked in parallel, each in its own git worktree on `ef23a88`, test-first, and committed on their own branches. Their worktrees first came from `main`, which has no redesign; each moved itself to `ef23a88` before starting. Each branch was reviewed here and merged locally: `b918cfe` (fast-forward), `605df15` and `2978afd`. The merges had no conflicts, and both message catalogs still parse (1098 keys each in English and Thai).
+- **Receipts (P2c), the two client items left open:**
+  - The receipt download is now a binary read on the v1 transport (`client.ts` gained `bytes` and a per-request `timeoutMs`). It gets the same headers, session checks, session-change drop and one refresh-and-retry on a 401 as every read, and a refusal is still read as a JSON problem. The separate downloader is gone. The grant's path is still checked exactly, by `isAttachmentGrant`.
+  - Retain and replace wait 90 s, past the server's 60 s copy; a lost one is resent with the same key. The download has 60 s; everything else keeps 20 s.
+  - RED: the 401 download signed out with no refresh, and retain was cut off at 20 s. Mutation: 9 of 9 killed. Not yet tried against a real server (the E1 hosted checks).
+- **Recently deleted (§6.1):**
+  - `/spend/deleted`, opened from a "Recently deleted" button under History's filters (behind `core`; the tab bar hides there).
+  - It always states the policy: "Deleted entries can be restored for 30 days. After that, they are gone for good."
+  - Each row shows its days left and a Restore button. A restore whose answer is lost freezes with Try again (the same command), and a refusal is explained, e.g. an archived wallet or category.
+  - It has an empty state, Load more, refresh-suggested, and History's loading, offline and blocked states. Five catalogue sections (`recently-deleted-*`) are in the catalogue test and the screen-reader pass.
+  - The API is in `backend-progress.md`. `RECENTLY_DELETED_GAP` is removed.
+- **Language (§6.4):**
+  - The Settings card is a choice: System, ไทย, English (Thai first, as the app's other language lists). It is stored like the theme under `gogospend.language.preference`, kept by the sign-out erase, and applied at once through `LanguageProvider`, so the font and the reminders follow it.
+  - Vietnamese is held, so it isn't offered; a phone set to Vietnamese still gets it under System.
+  - On native the app waits for the saved choice before the first screen, and a failed read falls back to the phone's language.
+- **Sign out everywhere (§6.4):**
+  - `auth/globalLogout.ts` is the client for `POST /v1/me/global-logout`: the proof's command id is the Idempotency-Key, and a 202, or a resend answered 401 `SESSION_REQUIRED`, signs this phone out.
+  - Behind a ConfirmSheet. A cancelled or refused sign-in, a stale proof or a refusal changes nothing. A lost answer keeps the person signed in, and Try again resends the same request.
+  - The real app has no re-authentication yet (`reauthenticate: null`, as on Privacy), so the action shows disabled with its reason.
+- **Test evidence (from the branches):** each piece failed first on assertions. Mutants killed: 9/9 receipts, 8 API and 6 app for Recently deleted, 21/21 for Settings.
+- **Independent review of the merged work.** No blocking bugs. The findings were fixed test-first, two by sub-agents in their own worktrees (`1996d6c`, `26ef7f8`, `9e086ea`) and two here (`6369c5f`, `4f3cc55`):
+  1. **Sign out everywhere could claim success when nothing was sent.** The transport also raised `SESSION_REQUIRED` itself, with status 401, when this phone had no token or binding. A Try again after the session lost its binding would then erase the diary and say "signed out everywhere" while the other phones stayed signed in. The local refusal now has status 0, like the transport's other refusals before sending; only the server's own 401 means the request landed, and a local one stays unconfirmed. Nothing else in the app read that status.
+  2. **Retain and replace could hang for minutes.** Every resend restarted the 90 s limit, so a lost answer could take 4.5 to 9 minutes. A per-request `deadlineMs` now ends the whole command, resends included, within 100 s.
+  3. **The startup language read had no limit.** A secure store that never answers would have held every screen, `/login` too, on the spinner. After 1.5 s the app goes on in the phone's language. A read that arrives later applies only if nothing has been chosen since.
+  4. **Restore buttons could stay disabled for the rest of the visit** once a reload dropped an unconfirmed restore's row. They now hold only while that row is listed. Its "try again" notice goes in the same render (`4f3cc55`).
+  5. **Restore refusals blamed an archived item for any wallet or category problem.** They are now worded from the server's message key for each field.
+  - **Kept:** the deleted listing's index (see `backend-progress.md`).
+  - **Noted:** on iOS, `expo/fetch` sets no request timeout, so URLSession's default 60 s idle timeout applies. A retain whose server copy sends no bytes for about 60 s may fail early as a network error, then be resent within the 100 s deadline. This is to check on a device with E1.
+- **Two more things found merging:**
+  - **Two Sign out everywhere tests were flaky.** They checked for the confirm sheet straight after the last step, racing the render that closes it, and failed about one run in two. They now wait for it, and passed five times in five (`6369c5f`).
+  - **`typecheck:app` failed on a stale `.expo/types/router.d.ts`** (gitignored, written by an earlier Metro run) that didn't know `/spend/deleted`. A clean checkout has no such file, and `typecheck:routes` generates fresh ones and passes. The stale file was removed.
+- **Gate on the merged result (`636d5d7`), all passing:**
+  - typecheck, typecheck:app and typecheck:routes;
+  - test:api 942, test:db 694, test:app 28, test:unit 657, test:dev 7, test:ops 107;
+  - test:render 1537;
+  - the API build, the release-graph check, the parser sandbox check, export:web and `git diff --check`.
+  - The local database has two more leftover `gogospend_test_*` databases than before (16). They were created at 13:25 and 13:27 during the sub-agents' database runs. They weren't dropped, because it can't be shown which run made them.
+- **For the owner to confirm:**
+  - where Recently deleted sits (a button under History's filters), its Thai title "รายการที่เพิ่งลบ", and that a deleted row doesn't open the record screen;
+  - the language order (System, ไทย, English);
+  - the new wording on a lost sign-out-everywhere answer: "Couldn't reach Jotbun. You're still signed in on this phone. Try again to send the same request." The old wording said nothing had changed, which can be untrue.

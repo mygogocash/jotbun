@@ -309,7 +309,7 @@ Each task gets a feature flag (`redesign.<area>`) so the old screens keep workin
 - [x] Rank categories by recent use from the local diary.
   - `recentCategories.ts`: recent use from `/v1/history` plus this device's drafts, since the device diary keeps no confirmed records.
 - [x] Ship duplicate and undo.
-  - Copy an entry, undo in History and Record. The §6.1 "Recently deleted" list waits for an API that lists deleted records.
+  - Copy an entry, undo in History and Record, and "Recently deleted" (`/spend/deleted`, `GET /v1/history/deleted`), which restores anything deleted in the last 30 days and states that policy.
 - [x] Keep offline, pending and conflict states.
 - [x] **E2 checkpoint 1:** approve the screenshots, then switch the routes.
   - Approved 19 October; `core` is on by default.
@@ -344,7 +344,7 @@ Each task gets a feature flag (`redesign.<area>`) so the old screens keep workin
 
 **Steps:**
 - [x] Build against the existing session and F5 seam.
-  - Sign-in reports "not configured" until a provider is installed. App-side "Sign out everywhere" (the global-logout call) and account linking are still hidden.
+  - Sign-in reports "not configured" until a provider is installed. Settings chooses the language (System, ไทย, English) and has "Sign out everywhere" behind a ConfirmSheet, disabled with its reason until re-authentication exists. Account linking stays hidden until F6c.
 - [ ] Keep real Auth0 proof under E1/E2.
   - Kept: no Auth0 package, no provider installed outside tests. The proof waits for the owner's Auth0 test tenant (`docs/operations/e1-setup.md`) and signed-in devices.
 - [x] Wire export and deletion to `privacy.ts` and `deletion.ts`.
@@ -359,7 +359,7 @@ Each task gets a feature flag (`redesign.<area>`) so the old screens keep workin
 - [x] Build the import UI on the existing P3 client.
   - The review draft is kept in the encrypted diary (decision 7).
 - [x] Add the P2c client adapter.
-  - `attachments.ts`. Open: a 401 on download is not refreshed; hosted R2 and photo-picker checks wait for E1.
+  - `attachments.ts`; the download is a binary read on the v1 transport (refreshed after a 401), and retain and replace wait past the server's 60 s copy. Hosted R2 and photo-picker checks wait for E1.
 - [x] Keep the import flag off.
   - Server `IMPORT_UPLOADS_ENABLED=0`. The redesigned import screens are on (owner's checkpoint 5), and say politely that uploads aren't switched on yet.
 - [x] **E2 checkpoint 5.**
