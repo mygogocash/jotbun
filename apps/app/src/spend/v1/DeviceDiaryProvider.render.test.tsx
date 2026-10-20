@@ -40,7 +40,11 @@ vi.mock('@mobile/auth/session', () => ({
 }));
 vi.mock('expo-secure-store', () => ({ getItemAsync: async () => null, setItemAsync: async () => undefined, deleteItemAsync: async () => undefined, WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'when-unlocked-this-device-only' }));
 vi.mock('expo-crypto', () => ({ randomUUID: () => globalThis.crypto.randomUUID(), digestStringAsync: async () => '', CryptoDigestAlgorithm: { SHA256: 'SHA-256' } }));
+// History's kept view follows the route: a record is open over History here.
+vi.mock('expo-router', () => ({ usePathname: () => '/spend/record/r1' }));
 
+import { HistoryKeepProvider, useHistoryKeep } from '@mobile/screens/redesign/HistoryKeepProvider';
+import type { HistoryKeep } from '@mobile/screens/redesign/historyKeep';
 import { DeviceDiaryProvider } from './DeviceDiaryProvider';
 import { useSpendDiary } from './SpendDiaryContext';
 import { IMPORT_DRAFT_KEY_PREFIX } from './importDraftStore';
@@ -77,6 +81,22 @@ test("the device diary erases every leftover plain-text import draft before firs
   plain.set(`${IMPORT_DRAFT_KEY_PREFIX}${B}`, '{"version":1}');
   await deps.eraseWithDiary?.(B);
   expect([...plain.keys()]).toEqual([REMINDER]);
+});
+
+test("the sign-out erase also forgets History's view, kept while one of its entries is open", async () => {
+  Object.defineProperty(Platform, 'OS', { value: 'ios', configurable: true, writable: true });
+  const seen: { keep: HistoryKeep | null } = { keep: null };
+  const Probe = () => {
+    seen.keep = useHistoryKeep();
+    return null;
+  };
+  render(<DeviceDiaryProvider><HistoryKeepProvider><Probe /></HistoryKeepProvider></DeviceDiaryProvider>);
+  const view = { month: '2026-09', type: 'expense', walletId: undefined, categoryId: undefined, query: 'rent', shown: 62 } as const;
+  seen.keep?.keep(view);
+  expect(seen.keep?.kept()).toEqual(view);
+  const deps = captured.deps as { eraseWithDiary?: (accountId: string) => Promise<void> };
+  await deps.eraseWithDiary?.(A);
+  expect(seen.keep?.kept()).toBeNull();
 });
 
 test('spend and Settings share one device diary: leaving Settings never closes the diary the spend screens still use', async () => {

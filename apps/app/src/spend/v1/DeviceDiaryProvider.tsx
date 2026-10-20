@@ -13,6 +13,7 @@ import * as SecureStore from 'expo-secure-store';
 import { fetchAccountId } from '@mobile/api/sharedV1';
 import { getV1SessionSnapshot, subscribeSession } from '@mobile/auth/session';
 import { eraseStoredBunIntensity } from '@mobile/mascot/bunIntensityStorage';
+import { forgetKeptHistory } from '@mobile/screens/redesign/historyKeep';
 import { eraseCheerDay } from '@mobile/screens/redesign/quickAddCheer';
 import type { AccountDatabase } from '@mobile/storage/accountDatabase';
 import { createDeviceAccountDatabase } from '@mobile/storage/deviceDiary';
@@ -43,12 +44,14 @@ const knownAccount = createKnownAccount(
 
 /**
  * The explicit sign-out erase, with the diary (which takes its own import
- * draft): a plain-text import draft an older build left for this account, and
- * the bun's device settings (its intensity and the day the Quick add cheer
- * last showed), so the next person starts from the defaults. A setting that
- * cannot be erased never stops the diary's erase. Exported for its test.
+ * draft): a plain-text import draft an older build left for this account, the
+ * bun's device settings (its intensity and the day the Quick add cheer last
+ * showed), and History's view kept while a record is open (memory only), so
+ * the next person starts from the defaults. A setting that cannot be erased
+ * never stops the diary's erase. Exported for its test.
  */
 export async function eraseWithDiary(accountId: string): Promise<void> {
+  forgetKeptHistory();
   await eraseLegacyImportDraft(accountId);
   await Promise.all([eraseStoredBunIntensity().catch(() => undefined), eraseCheerDay()]);
 }

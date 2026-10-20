@@ -18,6 +18,12 @@
 // month. "Recently deleted", under the filters, opens the entries deleted in
 // the last 30 days (RecentlyDeletedScreen), where each can be restored.
 //
+// The spend layout draws its screens in a `Slot`, so a record or Recently
+// deleted unmounts History, and Back mounts it again. Opening one of them keeps
+// the filters, the search and how many entries were loaded (historyKeep); on
+// the way back, for the same month, History starts from them and reads that
+// many entries again, so a changed or deleted entry shows its new state.
+//
 // The list is virtualized (a `FlatList`, review m7): it draws its first items
 // at once and then only a window around what is on screen, so a long month
 // never mounts every row. Each row is memoized on what it shows, and search
@@ -26,6 +32,7 @@
 import { HISTORY_MAX_LIMIT } from '@gogospend/contracts';
 import type { CategoryDto, HistoryFilter, HistoryPage, Minor, TransactionDto, TransactionType, WalletSnapshot } from '@gogospend/contracts';
 import { useFocusEffect, useRouter } from 'expo-router';
+import type { Href } from 'expo-router';
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, View } from 'react-native';
 import type { ListRenderItemInfo } from 'react-native';
@@ -63,6 +70,8 @@ import { FilterChips } from '@mobile/ui/FilterChip';
 import type { ChipOption } from '@mobile/ui/FilterChip';
 import { SearchField } from '@mobile/ui/SearchField';
 import { saveProblem, useCommandKeys, useMoneyLocale } from '../v1/parts';
+import { useHistoryKeep } from './HistoryKeepProvider';
+import type { KeptHistoryView } from './historyKeep';
 import { LoadingBlock, Notice, RECENTLY_DELETED_ROUTE, copyHref, lookOf, recordHref, recordRowState, useDateLocale } from './HistoryParts';
 
 export type HistoryScreenProps = {
@@ -176,10 +185,17 @@ export function HistoryScreen({ now, initialMonth, onMonthChange }: HistoryScree
   const thisMonth = monthOf(today);
 
   const [month, setMonth] = useState(() => (initialMonth && MONTH.test(initialMonth) && initialMonth <= thisMonth ? initialMonth : thisMonth));
-  const [type, setType] = useState<TransactionType | undefined>(undefined);
-  const [walletId, setWalletId] = useState<string | undefined>(undefined);
-  const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
-  const [query, setQuery] = useState('');
+  // Back from a record or Recently deleted: the view kept when it opened, for the month it was kept for only (the
+  // URL's month stays the month). Nothing outside the spend layout, or on any other way in.
+  const keep = useHistoryKeep();
+  const [kept] = useState(() => {
+    const view = keep?.kept() ?? null;
+    return view?.month === month ? view : null;
+  });
+  const [type, setType] = useState<TransactionType | undefined>(kept?.type);
+  const [walletId, setWalletId] = useState<string | undefined>(kept?.walletId);
+  const [categoryId, setCategoryId] = useState<string | undefined>(kept?.categoryId);
+  const [query, setQuery] = useState(kept?.query ?? '');
   const [lists, setLists] = useState<Lists | null>(null);
   const [refs, setRefs] = useState<References | null>(null);
   const [error, setError] = useState<unknown>(null);
@@ -192,6 +208,14 @@ export function HistoryScreen({ now, initialMonth, onMonthChange }: HistoryScree
   const shown = useRef(0);
   const acting = useRef(false);
 
+  // Set when History opens a record or Recently deleted (`openOwn`): unmounting under it keeps the view for the way back.
+  const away = useRef(false);
+  const viewed = useRef<Omit<KeptHistoryView, 'shown'>>({ month, type, walletId, categoryId, query });
+  viewed.current = { month, type, walletId, categoryId, query };
+  useEffect(() => () => {
+    if (away.current) keep?.keep({ ...viewed.current, shown: shown.current });
+  }, [keep]);
+
   const filter: HistoryFilter = {
     ...monthRange(month),
     ...(type ? { type } : {}),
@@ -200,6 +224,8 @@ export function HistoryScreen({ now, initialMonth, onMonthChange }: HistoryScree
     sort: 'date_desc',
   };
   const filterKey = JSON.stringify(filter);
+  /** The entries the kept view had loaded, for its own month and filters only. */
+  const keptShown = useRef(kept ? { filterKey, shown: kept.shown } : null);
 
   // A page can end inside a day. While more pages follow, the oldest loaded
   // day's records may go on in the next page (the model's `pageEdgeDay`,
@@ -244,9 +270,11 @@ export function HistoryScreen({ now, initialMonth, onMonthChange }: HistoryScree
 
   useEffect(() => {
     setLists(null);
-    shown.current = 0;
-    void load();
-  }, [load]);
+    // On the way back, as many entries as were loaded are read again (as Recently deleted does); another filter starts at one page.
+    if (keptShown.current?.filterKey !== filterKey) keptShown.current = null;
+    shown.current = keptShown.current?.shown ?? 0;
+    void load(shown.current > 0);
+  }, [load, filterKey]);
 
   // Coming back from a record (or anywhere else) refreshes the list in place.
   const loadRef = useRef(load);
@@ -400,8 +428,13 @@ export function HistoryScreen({ now, initialMonth, onMonthChange }: HistoryScree
     () => new Map<string, EntryLike>([...records.entries(), ...drafts.map((command) => [command.payload.id, command.payload] as const)]),
     [records, drafts],
   );
+  /** Opens a record or Recently deleted: Back from it finds History as it was. */
+  const openOwn = (href: Href) => {
+    away.current = true;
+    router.push(href);
+  };
   const firstReview = openDrafts(drafts).find((command) => command.state === 'needs_review');
-  const banner = bannerFor(diaryView, offline && error instanceof V1Error && error.outcome === 'network', firstReview ? () => router.push(recordHref(firstReview.payload.id)) : null, tc);
+  const banner = bannerFor(diaryView, offline && error instanceof V1Error && error.outcome === 'network', firstReview ? () => openOwn(recordHref(firstReview.payload.id)) : null, tc);
   const problem = error ? classifyLoadProblem(error, tc) : null;
 
   const typeOptions: ChipOption<TransactionType | typeof ALL>[] = [
@@ -424,13 +457,13 @@ export function HistoryScreen({ now, initialMonth, onMonthChange }: HistoryScree
   const canDelete = !busy && pendingDelete === null;
   const firstItems = useFirstItems(FIRST_ITEMS);
 
-  // Row actions read the newest router, records and delete through a ref, so
-  // the one actions object lasts as long as the screen and never redraws a row.
-  const latest = useRef({ router, records, remove });
-  latest.current = { router, records, remove };
+  // Row actions read the newest router, records, delete and `openOwn` through a
+  // ref, so the one actions object lasts as long as the screen and never redraws a row.
+  const latest = useRef({ router, records, remove, openOwn });
+  latest.current = { router, records, remove, openOwn };
   const rowActions = useMemo<RowActions>(() => ({
-    open: (id) => latest.current.router.push(recordHref(id)),
-    edit: (id) => latest.current.router.push(recordHref(id, true)),
+    open: (id) => latest.current.openOwn(recordHref(id)),
+    edit: (id) => latest.current.openOwn(recordHref(id, true)),
     copy: (id) => latest.current.router.push(copyHref(id)),
     remove: (id) => {
       const record = latest.current.records.get(id);
@@ -515,7 +548,7 @@ export function HistoryScreen({ now, initialMonth, onMonthChange }: HistoryScree
           <FilterChips label={tc('Category')} bleed={BUN_SPACE.md} options={categoryOptions} value={categoryId ?? ALL} onChange={(next) => setCategoryId(next === ALL ? undefined : next)} />
         ) : null}
         {/* Plan §6.1: deleted entries stay restorable for 30 days, under the filters. Every month and filter, loaded or not. */}
-        <PillButton kind="secondary" label={tc('Recently deleted')} onPress={() => router.push(RECENTLY_DELETED_ROUTE)} />
+        <PillButton kind="secondary" label={tc('Recently deleted')} onPress={() => openOwn(RECENTLY_DELETED_ROUTE)} />
       </View>
       {summary ? (
         <View testID="history-summary" {...POLITE_LIVE_REGION} style={{ gap: BUN_SPACE.xs, paddingVertical: BUN_SPACE.xs, borderTopWidth: BUN_OUTLINE.rule, borderBottomWidth: BUN_OUTLINE.rule, borderColor: colors.rule }}>
