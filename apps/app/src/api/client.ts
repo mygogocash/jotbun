@@ -309,7 +309,8 @@ export function createV1Transport(options: {
       const token = own ? own.accessToken : await readToken();
       stillCurrent();
       const binding = request.tokenOnly ? null : own ? (own.binding ?? null) : before.binding;
-      if (!token || (!binding && !request.tokenOnly)) throw new V1Error('signed_out', 401, 'SESSION_REQUIRED');
+      // Status 0 like every refusal made here: nothing was sent, so it is never the server's 401.
+      if (!token || (!binding && !request.tokenOnly)) throw new V1Error('signed_out', 0, 'SESSION_REQUIRED');
       const headers: Record<string, string> = {
         Accept: request.bytes ? [...request.bytes.accept, 'application/json'].join(', ') : 'application/json',
         Authorization: `Bearer ${token}`,
