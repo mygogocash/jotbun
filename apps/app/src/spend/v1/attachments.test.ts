@@ -1,6 +1,7 @@
 // P2c client adapter (R7): retain, replace and remove a record's receipt, ask
 // for a five-minute grant and download the receipt's bytes through it, against
 // a local HTTP server that checks the method, path, headers and exact body.
+// The time limits are checked over a held fetch with mocked timers.
 import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
@@ -10,8 +11,8 @@ import { after, before, beforeEach, test } from 'node:test';
 import { RECEIPT_RETENTION_CONSENT } from '@gogospend/contracts';
 
 import { V1Error, createV1Transport } from '../../api/client.ts';
-import type { V1Credentials, V1SessionEnd } from '../../api/client.ts';
-import { createAttachmentResources, createReceiptDownload } from './attachments.ts';
+import type { V1Credentials, V1SessionEnd, V1Transport } from '../../api/client.ts';
+import { createAttachmentResources } from './attachments.ts';
 import { V1_COMMAND_SCHEMA } from './resources.ts';
 
 type Seen = { method: string; url: string; headers: IncomingHttpHeaders; body: string };
@@ -52,14 +53,38 @@ const server = createServer(async (req, res) => {
 let token: string | null = 'access-token';
 let snapshot = { binding: 'b'.repeat(43) as string | null, epoch: 1 };
 let ended: V1SessionEnd[] = [];
-const credentials: V1Credentials = { getAccessToken: async () => token, getSessionSnapshot: () => snapshot, sessionEnded: (event) => { ended.push(event); } };
+let refreshes = 0;
+const credentials: V1Credentials = {
+  getAccessToken: async () => token,
+  getSessionSnapshot: () => snapshot,
+  refreshAfterUnauthorized: async () => {
+    refreshes += 1;
+    token = 'renewed-token';
+    return true;
+  },
+  sessionEnded: (event) => { ended.push(event); },
+};
 const client = { platform: 'ios' as const, version: '1.2.3' };
-const download = () => createReceiptDownload({ baseUrl, credentials, client, timeoutMs: 2_000 });
-const attachments = () =>
-  createAttachmentResources(createV1Transport({ baseUrl, credentials, client, timeoutMs: 2_000 }), {
-    download: download(),
-    sha256Hex: async (bytes) => sha(bytes),
-  });
+const attachments = (transport: V1Transport = createV1Transport({ baseUrl, credentials, client, timeoutMs: 2_000 })) =>
+  createAttachmentResources(transport, { sha256Hex: async (bytes) => sha(bytes) });
+
+/**
+ * The app's transport (its default limit for an ordinary call) over a fetch
+ * that answers only when the test says, and fails as soon as its request is
+ * aborted: with mocked timers, a test moves the clock past a time limit.
+ */
+function heldAttachments() {
+  const sent: { headers: Record<string, string>; body: unknown; signal: AbortSignal; answer: (body: unknown) => void }[] = [];
+  const fetchImpl = ((_url: string | URL | Request, init: RequestInit = {}) => new Promise<Response>((resolve, reject) => {
+    const signal = init.signal as AbortSignal;
+    const answer = (body: unknown) => resolve(new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } }));
+    sent.push({ headers: init.headers as Record<string, string>, body: init.body, signal, answer });
+    signal.addEventListener('abort', () => reject(new DOMException('The operation was aborted.', 'AbortError')));
+  })) as typeof fetch;
+  return { sent, resources: attachments(createV1Transport({ baseUrl, credentials, client, fetchImpl })) };
+}
+/** Lets every pending promise step run (timers are mocked; setImmediate is not). */
+const settle = () => new Promise<void>((resolve) => { setImmediate(resolve); });
 
 async function outcome(run: () => Promise<unknown>): Promise<V1Error> {
   try {
@@ -82,6 +107,7 @@ beforeEach(() => {
   seen = [];
   replies = [];
   ended = [];
+  refreshes = 0;
   token = 'access-token';
   snapshot = { binding: 'b'.repeat(43), epoch: 1 };
 });
@@ -223,6 +249,7 @@ test('the file comes through the grant with the session\'s headers, byte for byt
   assert.equal(request.headers.authorization, 'Bearer access-token');
   assert.equal(request.headers['x-gogospend-session'], 'b'.repeat(43));
   assert.equal(request.headers['x-gogospend-client'], 'ios/1.2.3');
+  assert.equal(request.headers.accept, 'image/jpeg, image/png, image/webp, application/json');
   assert.equal(request.headers['idempotency-key'], undefined);
 
   const changed = Buffer.from(IMAGE);
@@ -230,6 +257,24 @@ test('the file comes through the grant with the session\'s headers, byte for byt
   replies.push({ status: 200, bytes: changed }, { status: 200, bytes: IMAGE.subarray(0, 10) });
   assert.equal((await outcome(() => attachments().file(GRANT))).outcome, 'invalid_response');
   assert.equal((await outcome(() => attachments().file(GRANT))).outcome, 'invalid_response');
+});
+
+test('a download whose access token expired is refreshed once and sent again, as every v1 read is', async () => {
+  replies.push({ status: 401, body: { code: 'UNAUTHENTICATED', message: 'expired' } }, { status: 200, bytes: IMAGE });
+  const bytes = await attachments().file(GRANT);
+  assert.deepEqual([...bytes], [...IMAGE]);
+  assert.equal(refreshes, 1);
+  assert.equal(seen.length, 2);
+  assert.equal(seen[1].url, GRANT.url);
+  assert.equal(seen[1].headers.authorization, 'Bearer renewed-token');
+  assert.equal(seen[1].headers['x-gogospend-session'], 'b'.repeat(43));
+  assert.deepEqual(ended, []);
+
+  // One refresh per download: a second 401 is a sign-out.
+  replies.push({ status: 401, body: { code: 'UNAUTHENTICATED' } }, { status: 401, body: { code: 'UNAUTHENTICATED' } });
+  assert.equal((await outcome(() => attachments().file(GRANT))).outcome, 'signed_out');
+  assert.equal(refreshes, 2);
+  assert.equal(seen.length, 4);
 });
 
 test('an expired or foreign grant is not found; a busy server is unavailable; nothing is sent for a malformed grant', async () => {
@@ -247,27 +292,96 @@ test('an expired or foreign grant is not found; a busy server is unavailable; no
 
 test('downloads need a session: signed out, unbound, another platform and a session that changed meanwhile', async () => {
   token = null;
-  assert.equal((await outcome(() => download()(GRANT.url))).outcome, 'signed_out');
+  assert.equal((await outcome(() => attachments().file(GRANT))).outcome, 'signed_out');
   token = 'access-token';
   snapshot = { binding: null, epoch: 1 };
-  assert.equal((await outcome(() => download()(GRANT.url))).outcome, 'signed_out');
+  assert.equal((await outcome(() => attachments().file(GRANT))).outcome, 'signed_out');
   snapshot = { binding: 'b'.repeat(43), epoch: 1 };
-  const web = createReceiptDownload({ baseUrl, credentials, client: null });
-  assert.equal((await outcome(() => web(GRANT.url))).outcome, 'unsupported_platform');
+  const web = attachments(createV1Transport({ baseUrl, credentials, client: null }));
+  assert.equal((await outcome(() => web.file(GRANT))).outcome, 'unsupported_platform');
   assert.equal(seen.length, 0);
-  assert.throws(() => createReceiptDownload({ baseUrl: 'http://example.com', credentials, client }), (error: unknown) => error instanceof V1Error && error.code === 'CONFIG_REQUIRED');
+  // The transport it goes through refuses a remote API without HTTPS.
+  assert.throws(() => createV1Transport({ baseUrl: 'http://example.com', credentials, client }), (error: unknown) => error instanceof V1Error && error.code === 'CONFIG_REQUIRED');
 
   // The session moves on while the image is on its way: its bytes are dropped.
   const moving: V1Credentials = { ...credentials, getSessionSnapshot: () => ({ binding: 'b'.repeat(43), epoch: seen.length > 0 ? 2 : 1 }) };
   replies.push({ status: 200, bytes: IMAGE });
-  assert.equal((await outcome(() => createReceiptDownload({ baseUrl, credentials: moving, client })(GRANT.url))).outcome, 'session_changed');
+  assert.equal((await outcome(() => attachments(createV1Transport({ baseUrl, credentials: moving, client })).file(GRANT))).outcome, 'session_changed');
 
-  // The server ended the session: reported with the epoch the request went under.
+  // The server ended the session: reported with the epoch the request went under, and not refreshed.
   replies.push({ status: 401, body: { code: 'SESSION_REQUIRED', message: 'ended' } });
-  assert.equal((await outcome(() => download()(GRANT.url))).outcome, 'signed_out');
+  assert.equal((await outcome(() => attachments().file(GRANT))).outcome, 'signed_out');
   assert.deepEqual(ended, [{ code: 'SESSION_REQUIRED', epoch: 1 }]);
+  assert.equal(refreshes, 0);
 
   // Nothing reachable: an outage, not a sign-out.
   replies.push({ status: 0, drop: true });
-  assert.equal((await outcome(() => download()(GRANT.url))).outcome, 'network');
+  assert.equal((await outcome(() => attachments().file(GRANT))).outcome, 'network');
+});
+
+test('retain and replace wait past the server\'s 60 s copy, where an ordinary call would have given up', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { sent, resources } = heldAttachments();
+  const retainKey = randomUUID();
+  const replaceKey = randomUUID();
+  const commands = [
+    { name: 'retain', key: retainKey, run: () => resources.retain(RECORD, 3, { attachment_id: RECEIPT }, retainKey) },
+    { name: 'replace', key: replaceKey, run: () => resources.replace(RECORD, 3, { attachment_id: OTHER }, replaceKey) },
+  ];
+  for (const command of commands) {
+    const answered = command.run();
+    await settle();
+    const request = sent.at(-1);
+    assert.ok(request, command.name);
+    t.mock.timers.tick(61_000);
+    assert.equal(request.signal.aborted, false, `${command.name} still waits for the copy at 61 s`);
+    request.answer(ack(command.key));
+    assert.deepEqual(await answered, ack(command.key), command.name);
+  }
+  assert.equal(sent.length, 2);
+});
+
+test('a retain that does give up is resent as the same command: same key, same If-Match, same body', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { sent, resources } = heldAttachments();
+  const key = randomUUID();
+  const retained = resources.retain(RECORD, 3, { attachment_id: RECEIPT }, key);
+  await settle();
+  // Not forever: by two minutes it gave up on that answer.
+  t.mock.timers.tick(120_000);
+  assert.equal(sent[0].signal.aborted, true);
+  await settle();
+  t.mock.timers.tick(250);
+  await settle();
+  assert.equal(sent.length, 2);
+  assert.equal(sent[1].headers['Idempotency-Key'], key);
+  assert.equal(sent[1].headers['If-Match'], '"3"');
+  assert.equal(sent[1].body, sent[0].body);
+  sent[1].answer(ack(key));
+  assert.deepEqual(await retained, ack(key));
+});
+
+test('remove and the grant keep the transport\'s own limit', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { sent, resources } = heldAttachments();
+  const granted = resources.grant(RECEIPT);
+  await settle();
+  t.mock.timers.tick(20_000);
+  assert.equal(sent[0].signal.aborted, true);
+  const timedOut = await outcome(() => granted);
+  assert.equal(timedOut.outcome, 'network');
+  assert.equal(timedOut.code, 'TIMEOUT');
+  assert.equal(sent.length, 1, 'a read is not resent');
+
+  const key = randomUUID();
+  const removed = resources.remove(RECORD, 3, key);
+  await settle();
+  t.mock.timers.tick(20_000);
+  assert.equal(sent[1].signal.aborted, true);
+  await settle();
+  t.mock.timers.tick(250);
+  await settle();
+  assert.equal(sent[2].headers['Idempotency-Key'], key);
+  sent[2].answer(ack(key));
+  assert.deepEqual(await removed, ack(key));
 });

@@ -23,7 +23,7 @@ import { v1SessionCredentials } from '@mobile/auth/session';
 import { getMobileEnv } from '@mobile/config/env';
 import { useReducedMotion } from '@mobile/hooks/useReducedMotion';
 import { useCopy } from '@mobile/i18n/useCopy';
-import { createAttachmentResources, createReceiptDownload } from '@mobile/spend/v1/attachments';
+import { createAttachmentResources } from '@mobile/spend/v1/attachments';
 import type { AttachmentResources } from '@mobile/spend/v1/attachments';
 import { createImportResources } from '@mobile/spend/v1/imports';
 import type { ImportResources } from '@mobile/spend/v1/imports';
@@ -83,7 +83,6 @@ function appServices() {
     const client = v1ClientVersion();
     const transport = createV1Transport({ baseUrl, client, credentials: v1SessionCredentials });
     const attachments = createAttachmentResources(transport, {
-      download: createReceiptDownload({ baseUrl, client, credentials: v1SessionCredentials }),
       // The download's bytes sit on a plain ArrayBuffer (never shared).
       sha256Hex: async (bytes) => hex(await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256, bytes as Uint8Array<ArrayBuffer>)),
     });

@@ -138,6 +138,14 @@ export type V1RequestOptions<T> = {
   command?: V1CommandHeaders;
   /** Hand the raw response text to `validate` (e.g. to check a digest) instead of parsed JSON. */
   text?: boolean;
+  /**
+   * Hand a success's raw bytes to `validate` instead of parsed JSON (a
+   * receipt's image, which a text read would change), asking for these media
+   * types; a refusal is still read as a JSON problem.
+   */
+  bytes?: { accept: readonly string[] };
+  /** This request's own time limit instead of the transport's (a slow server-side copy, a large download). */
+  timeoutMs?: number;
   /** Token-only routes (challenge, bootstrap, proof): no application binding is sent or required. */
   tokenOnly?: boolean;
   /**
@@ -222,6 +230,8 @@ const NETWORK_RETRIES = 2;
  * to the credentials with the epoch the request was sent under. A token that
  * can't be read right now (offline) is a `network` outcome, never a sign-out.
  * Responses must pass the caller's exact DTO validator; nothing is coerced.
+ * A binary read (a receipt's image) gets the same headers, refresh and
+ * session checks, with a success read as bytes.
  */
 export function createV1Transport(options: {
   baseUrl: string;
@@ -245,11 +255,15 @@ export function createV1Transport(options: {
   const timeoutMs = options.timeoutMs ?? 20_000;
   const credentials = options.credentials;
 
-  async function once(url: string, init: RequestInit): Promise<{ status: number; payload: unknown; readable: boolean; text: string }> {
+  type Answer = { status: number; payload: unknown; readable: boolean; text: string; bytes?: Uint8Array };
+  async function once(url: string, init: RequestInit, limitMs: number, binary: boolean): Promise<Answer> {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const timer = setTimeout(() => controller.abort(), limitMs);
     try {
       const response = await fetchImpl(url, { ...init, signal: controller.signal, redirect: 'error' });
+      if (binary && response.status >= 200 && response.status <= 299) {
+        return { status: response.status, payload: null, readable: true, text: '', bytes: new Uint8Array(await response.arrayBuffer()) };
+      }
       const text = await response.text();
       try {
         return { status: response.status, payload: text ? JSON.parse(text) : null, readable: true, text };
@@ -297,7 +311,7 @@ export function createV1Transport(options: {
       const binding = request.tokenOnly ? null : own ? (own.binding ?? null) : before.binding;
       if (!token || (!binding && !request.tokenOnly)) throw new V1Error('signed_out', 401, 'SESSION_REQUIRED');
       const headers: Record<string, string> = {
-        Accept: 'application/json',
+        Accept: request.bytes ? [...request.bytes.accept, 'application/json'].join(', ') : 'application/json',
         Authorization: `Bearer ${token}`,
         'X-GoGoSpend-Client': `${options.client.platform}/${options.client.version}`,
       };
@@ -315,11 +329,11 @@ export function createV1Transport(options: {
       }
       // Serialized once, so every retry sends byte-identical content.
       const body: string | Uint8Array | undefined = request.raw ? request.raw.bytes : request.body === undefined ? undefined : JSON.stringify(request.body);
-      const send = async (): Promise<{ status: number; payload: unknown; readable: boolean; text: string }> => {
+      const send = async (): Promise<Answer> => {
         const init: RequestInit = { method, headers, body: body as BodyInit | undefined };
         for (let attempt = 0; ; attempt += 1) {
           try {
-            return await once(`${baseUrl}${path}`, init);
+            return await once(`${baseUrl}${path}`, init, request.timeoutMs ?? timeoutMs, Boolean(request.bytes));
           } catch (error) {
             // Only a command may be resent blindly, and only as itself, and
             // never once the session changed; a read is retried from the screen.
@@ -347,7 +361,11 @@ export function createV1Transport(options: {
         result = await send();
       }
       stillCurrent();
-      const { status, payload, readable, text } = result;
+      const { status, payload, readable, text, bytes } = result;
+      if (status >= 200 && status <= 299 && request.bytes) {
+        if (!bytes || !request.validate(bytes)) throw new V1Error('invalid_response', status, 'INVALID_RESPONSE');
+        return bytes;
+      }
       if (status >= 200 && status <= 299 && request.text) {
         if (!request.validate(text)) throw new V1Error('invalid_response', status, 'INVALID_RESPONSE');
         return text as T;
