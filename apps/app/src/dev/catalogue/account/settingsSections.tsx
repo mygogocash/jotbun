@@ -1,7 +1,7 @@
 // Settings and Privacy and data in each of their states (redesign R6,
 // development only), drawn by the real screens on fakes: a fake account (its
-// sign-outs recorded), fake export and deletion clients and a fake
-// re-authentication. No network, no sign-in.
+// sign-outs and global sign-out client recorded), fake export and deletion
+// clients and a fake re-authentication. No network, no sign-in.
 //
 // Not registered yet: R6 waits for E2 checkpoint 4, and registry.tsx adds
 // these to SCREEN_SECTIONS then.
@@ -9,12 +9,13 @@ import type { CommandAck, ExportDto, ExportFilter } from '@gogospend/contracts';
 import type { ReactNode } from 'react';
 
 import { V1Error } from '@mobile/api/client';
+import type { GlobalLogoutProof } from '@mobile/auth/globalLogout';
 import type { Proof } from '@mobile/auth/reauthentication';
 import { LanguagePreferenceOverride } from '@mobile/i18n/LanguageProvider';
 import { useActiveLocale } from '@mobile/i18n/useCopy';
 import { PrivacyScreen } from '@mobile/screens/redesign/account/PrivacyScreen';
 import type { ProofPurpose, PrivacyServices } from '@mobile/screens/redesign/account/PrivacyParts';
-import type { AccountServices, SignOutEverywhereResult } from '@mobile/screens/redesign/account/SettingsParts';
+import type { AccountServices } from '@mobile/screens/redesign/account/SettingsParts';
 import { SettingsScreen } from '@mobile/screens/redesign/account/SettingsScreen';
 import type { DeletionProof, DeletionResources } from '@mobile/spend/v1/deletion';
 import type { PrivacyResources } from '@mobile/spend/v1/privacy';
@@ -30,25 +31,50 @@ import type { ScreenFixture, ScriptStep, Translate } from '../screenSection';
 
 export type FakeAccountOptions = {
   readonly signInMethod?: SignInMethod | null;
-  /** How a sign-out everywhere ends; null: this build cannot do it. Default `done`. */
-  readonly everywhere?: SignOutEverywhereResult | null;
-  /** Shared with a fake diary, so the order of erase and sign-out shows. */
+  /** The fresh sign-in: a proof; the person cancels; the sign-in service can't be reached; or this build can't re-authenticate. Default `proof`. */
+  readonly reauth?: 'proof' | 'cancel' | 'unreachable' | 'unavailable';
+  /**
+   * POST /v1/me/global-logout, one answer per call (the last repeats):
+   * accepted (202); already signed out, as a resend after a lost answer is
+   * (401 SESSION_REQUIRED); the answer lost; a used proof; refused. Default `accepted`.
+   */
+  readonly globalLogouts?: readonly ('accepted' | 'signed_out' | 'lost' | 'reauth' | 'refused')[];
+  /** Never answers a global sign-out, so its working state stays on screen. */
+  readonly holdGlobalLogout?: boolean;
+  /** Shared with a fake diary, so the order of sign-in, request, erase and sign-out shows. */
   readonly log?: string[];
 };
 
-/** An account whose sign-outs are recorded. */
+/** An account whose fresh sign-ins, global sign-outs and sign-outs are recorded. */
 export function fakeAccount(options: FakeAccountOptions = {}) {
   const log = options.log ?? [];
-  const everywhere = options.everywhere === undefined ? 'done' : options.everywhere;
+  const calls = { reauth: [] as 'global_logout'[], globalLogouts: [] as GlobalLogoutProof[] };
+  const reauth = options.reauth ?? 'proof';
   const services: AccountServices = {
     signInMethod: options.signInMethod ?? null,
     signOut: async () => { log.push('signOut'); },
-    signOutEverywhere: everywhere === null ? null : async () => {
-      log.push('signOutEverywhere');
-      return everywhere;
+    sessions: {
+      async globalLogout(proof) {
+        const answer = pick(options.globalLogouts, 'accepted', calls.globalLogouts.length);
+        calls.globalLogouts.push({ proofId: proof.proofId, commandId: proof.commandId });
+        log.push('globalLogout');
+        if (options.holdGlobalLogout) return new Promise(() => undefined);
+        if (answer === 'signed_out') throw new V1Error('signed_out', 401, 'SESSION_REQUIRED');
+        if (answer === 'lost') throw unreachable();
+        if (answer === 'reauth') throw new V1Error('signed_out', 401, 'REAUTH_REQUIRED');
+        if (answer === 'refused') throw new V1Error('invalid', 400, 'VALIDATION_FAILED');
+        return { generation: 2, provider_cleanup: 'pending' };
+      },
+    },
+    reauthenticate: reauth === 'unavailable' ? null : async (purpose) => {
+      calls.reauth.push(purpose);
+      log.push('reauth');
+      if (reauth === 'cancel') return null;
+      if (reauth === 'unreachable') throw new Error('Could not reach the sign-in service. Try again.');
+      return fakeProof();
     },
   };
-  return { services, log };
+  return { services, log, calls };
 }
 
 /** The fakes' one export and one deletion request. */
@@ -227,6 +253,9 @@ const offlineWithDrafts = (): Partial<DiaryView> => ({
 /** Opens a confirm and confirms it. Its confirm button shares the opening button's name, so the sheet's own handler is called. */
 const confirmVia = (open: string, title: string): ScriptStep[] => [{ press: open }, { waitFor: title }, { call: 'onConfirm', on: { title } }];
 
+/** Sign out everywhere, confirmed: then the fresh sign-in and the request run on the fakes. */
+const everywhereVia = (tc: Translate): ScriptStep[] => confirmVia(tc('Sign out everywhere'), tc('Sign out everywhere?'));
+
 const EXPORT_FILE = 'jotbun-export-1970-01-01-to-2026-09-29.csv';
 const requestExportStep = (tc: Translate): ScriptStep => ({ press: tc('Request export') });
 
@@ -293,16 +322,62 @@ const SETTINGS: CatalogueSection[] = [
     render: settings(),
   }),
   screenSection({
+    id: 'settings-everywhere-working',
+    title: 'Settings: sign out everywhere on its way',
+    fixture: () => accountFixture({ holdGlobalLogout: true }),
+    script: (tc) => everywhereVia(tc),
+    render: settings(),
+  }),
+  screenSection({
     id: 'settings-everywhere-cancelled',
     title: 'Settings: sign out everywhere cancelled',
-    fixture: () => accountFixture({ everywhere: 'cancelled' }),
-    script: (tc) => [...confirmVia(tc('Sign out everywhere'), tc('Sign out everywhere?')), { waitFor: tc('Nothing changed.') }],
+    fixture: () => accountFixture({ reauth: 'cancel' }),
+    script: (tc) => [...everywhereVia(tc), { waitFor: tc('Nothing changed.') }],
+    render: settings(),
+  }),
+  screenSection({
+    id: 'settings-everywhere-signin-unreachable',
+    title: 'Settings: sign out everywhere, sign-in unreachable',
+    fixture: () => accountFixture({ reauth: 'unreachable' }),
+    script: (tc) => [...everywhereVia(tc), { waitFor: tc("Couldn't reach the sign-in service. Nothing changed. Try again.") }],
+    render: settings(),
+  }),
+  screenSection({
+    id: 'settings-everywhere-reauth',
+    title: 'Settings: sign out everywhere, sign-in check expired',
+    fixture: () => accountFixture({ globalLogouts: ['reauth'] }),
+    script: (tc) => [...everywhereVia(tc), { waitFor: tc('Your sign-in check expired. Nothing changed.') }],
+    render: settings(),
+  }),
+  screenSection({
+    id: 'settings-everywhere-offline',
+    title: 'Settings: sign out everywhere offline',
+    fixture: () => accountFixture({ globalLogouts: ['lost'] }),
+    script: (tc) => [...everywhereVia(tc), { waitFor: tc("Couldn't reach Jotbun. You're still signed in on this phone. Try again to send the same request.") }],
+    render: settings(),
+  }),
+  screenSection({
+    id: 'settings-everywhere-refused',
+    title: 'Settings: sign out everywhere refused',
+    fixture: () => accountFixture({ globalLogouts: ['refused'] }),
+    script: (tc) => [...everywhereVia(tc), { waitFor: tc("Jotbun couldn't take your request right now. Try again later.") }],
+    render: settings(),
+  }),
+  screenSection({
+    id: 'settings-everywhere-erase-failed',
+    title: 'Settings: signed out everywhere, diary not erased',
+    fixture: () => {
+      const fixture = accountFixture();
+      if (fixture.diary) fixture.diary.eraseForSignOut = async () => { throw new Error('The diary could not be erased.'); };
+      return fixture;
+    },
+    script: (tc) => [...everywhereVia(tc), { waitFor: tc("You're signed out everywhere else, but this phone's diary couldn't be erased. Sign out to try again.") }],
     render: settings(),
   }),
   screenSection({
     id: 'settings-everywhere-unavailable',
     title: 'Settings: sign out everywhere unavailable',
-    fixture: () => accountFixture({ everywhere: null }),
+    fixture: () => accountFixture({ reauth: 'unavailable' }),
     script: (tc) => [{ waitFor: tc("Signing out everywhere needs a fresh sign-in, which this build can't do yet.") }],
     render: settings(),
   }),

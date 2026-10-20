@@ -1,13 +1,17 @@
 // Pieces the R6 account screens share (Settings, Privacy and data): the
-// account services they run on and the app's own wiring of them, going back,
-// a calm section card, a radio list and a link row. Behind the `account` area
-// (on since E2 checkpoint 4); built from the kit, BunText and useBunColors() only.
+// account services they run on, signing this device out, going back, a calm
+// section card, a radio list and a link row. The app's own wiring of the
+// account services lives in accountServices.ts, which only the route imports.
+// Behind the `account` area (on since E2 checkpoint 4); built from the kit,
+// BunText and useBunColors() only.
 import { useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
 import { useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 
+import type { GlobalLogoutResources } from '@mobile/auth/globalLogout';
+import type { Proof } from '@mobile/auth/reauthentication';
 import { getCredentialProvider, setSession } from '@mobile/auth/session';
 import { isLegacySpendEnabled, isRedesignEnabled } from '@mobile/config/featureFlags';
 import type { SettingsAreas, SignInMethod } from '@mobile/spend/v1/redesign/account/settingsModel';
@@ -20,22 +24,22 @@ import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE, BUN_TOUCH } from '@mobile/ui/layout
 // ---------------------------------------------------------------------------
 // Services
 
-/** How a sign-out everywhere ended: done; the person cancelled the fresh sign-in; or Jotbun could not be reached (nothing changed). */
-export type SignOutEverywhereResult = 'done' | 'cancelled' | 'failed';
-
-/** What Settings' account card runs on. Tests and the catalogue pass fakes; the app passes `appAccountServices()`. */
+/** What Settings' account card runs on. Tests and the catalogue pass fakes; the route passes the app's own (accountServices.ts). */
 export type AccountServices = {
   /** How this account signs in, when the session says. Today's session does not, so the card says "Signed in". */
   readonly signInMethod: SignInMethod | null;
   /** Ends the session on this device. The screen erases this phone's diary first. */
   signOut(): Promise<void>;
+  /** `POST /v1/me/global-logout` (F6a), through globalLogout.ts. */
+  readonly sessions: GlobalLogoutResources;
   /**
-   * A fresh sign-in through the person's own method (a `global_logout` proof),
-   * then `POST /v1/me/global-logout`. null when this build cannot do it: the
-   * Auth0 SDK arrives with E1/E2, and the app has no client for that endpoint
-   * yet. The screen then says so instead of offering it.
+   * A fresh, purpose-bound proof through the person's own sign-in method
+   * (`reauthenticate('global_logout', { auth0, api, newId })`); it answers
+   * null when they cancel. null itself when this build cannot re-authenticate:
+   * the Auth0 SDK arrives with E1/E2, and until then the screen says so
+   * instead of offering Sign out everywhere.
    */
-  readonly signOutEverywhere: (() => Promise<SignOutEverywhereResult>) | null;
+  readonly reauthenticate: ((purpose: 'global_logout') => Promise<Proof | null>) | null;
 };
 
 /**
@@ -47,10 +51,6 @@ export async function signOutOfThisDevice(): Promise<void> {
   const provider = getCredentialProvider();
   if (provider) await provider.signOut();
   else setSession(null);
-}
-
-export function appAccountServices(): AccountServices {
-  return { signInMethod: null, signOut: signOutOfThisDevice, signOutEverywhere: null };
 }
 
 /**
