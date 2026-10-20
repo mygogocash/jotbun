@@ -45,6 +45,9 @@ type Lists = { page: DeletedHistoryPage; items: DeletedTransactionDto[] };
 type References = { wallets: readonly Pick<WalletSnapshot, 'id' | 'name'>[]; categories: readonly CategoryDto[] };
 type Target = { id: string; version: number };
 
+/** Each entry's restore keeps its own command key. */
+const restoreSlot = (id: string) => `restore:${id}`;
+
 const lookupsOf = (refs: References): Lookups => ({
   wallets: new Map(refs.wallets.map((wallet) => [wallet.id, wallet])),
   categories: new Map(refs.categories.map((category) => [category.id, category])),
@@ -147,7 +150,7 @@ export function RecentlyDeletedScreen({ now }: RecentlyDeletedScreenProps) {
     if (acting.current) return;
     acting.current = true;
     const target: Target = { id: row.recordId, version: row.version };
-    const slot = `restore:${row.recordId}`;
+    const slot = restoreSlot(row.recordId);
     const key = keys.keyFor(slot, target);
     setRestoring(row.recordId);
     try {
@@ -162,7 +165,7 @@ export function RecentlyDeletedScreen({ now }: RecentlyDeletedScreenProps) {
       const saved = saveProblem(problem, tc);
       if (!saved.unconfirmed) keys.settle(slot);
       setPending(saved.unconfirmed ? target : null);
-      setNotice({ tone: 'alert', message: restoreRefusalText(v1?.outcome, Object.keys(v1?.fields ?? {}), tc) ?? saved.message });
+      setNotice({ tone: 'alert', message: restoreRefusalText(v1?.outcome, v1?.fields ?? {}, tc) ?? saved.message });
       // A definite refusal: read the list again, so it shows what can still be restored.
       if (!saved.unconfirmed) void load(true);
       return;
@@ -178,6 +181,15 @@ export function RecentlyDeletedScreen({ now }: RecentlyDeletedScreenProps) {
     () => (lists && lookups ? recentlyDeletedModel({ records: lists.items, now: now ?? new Date(), lookups, tc, locale }) : null),
     [lists, lookups, now, tc, locale],
   );
+  // A restore whose answer is unknown holds the other Restores only while its own row (and Try again) is listed. A
+  // read that no longer lists it (Refresh, or Try again after a failed read) shows it was restored after all, or can
+  // no longer be: its command is done.
+  const held = pending && model?.rows.some((row) => row.recordId === pending.id) ? pending : null;
+  useEffect(() => {
+    if (!pending || !model || held) return;
+    keys.settle(restoreSlot(pending.id));
+    setPending(null);
+  }, [pending, model, held, keys.settle]);
   // History's banners: the diary locked, or offline where this phone keeps a diary.
   const offline = error instanceof V1Error && error.outcome === 'network' && diaryView.phase === 'ready';
   const banner: SyncBannerProps | null = diaryView.phase === 'locked' ? { state: 'locked' } : offline ? { state: 'offline' } : null;
@@ -215,9 +227,9 @@ export function RecentlyDeletedScreen({ now }: RecentlyDeletedScreenProps) {
                   row={row}
                   lookups={lookups}
                   restoring={restoring === row.recordId}
-                  frozen={pending?.id === row.recordId}
+                  frozen={held?.id === row.recordId}
                   // One restore at a time; none other while one's answer is unknown.
-                  disabled={(busy && restoring !== row.recordId) || (pending !== null && pending.id !== row.recordId)}
+                  disabled={(busy && restoring !== row.recordId) || (held !== null && held.id !== row.recordId)}
                   onRestore={() => void restore(row)}
                 />
               ))

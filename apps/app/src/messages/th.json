@@ -1096,5 +1096,8 @@
   "redesignEntryAmountIsBackInHistory": "{entry} {amount} กลับมาอยู่ในประวัติแล้ว",
   "redesignThisEntryCanNoLongerBeRestored": "กู้คืนรายการนี้ไม่ได้แล้ว",
   "redesignThisEntrySWalletOrCategoryIsArchived": "กระเป๋าเงินหรือหมวดหมู่ของรายการนี้ถูกเก็บถาวรอยู่ นำกลับมาใช้ก่อน แล้วจึงกู้คืนรายการ",
-  "redesignThisEntryCouldNotBeRestored": "กู้คืนรายการนี้ไม่สำเร็จ"
+  "redesignThisEntryCouldNotBeRestored": "กู้คืนรายการนี้ไม่สำเร็จ",
+  "redesignThisEntryCanTBeRestoredItsWalletNoLongerExists": "กู้คืนรายการนี้ไม่ได้ เพราะกระเป๋าเงินของรายการไม่มีอยู่แล้ว",
+  "redesignThisEntryCanTBeRestoredItsCategoryNoLongerExists": "กู้คืนรายการนี้ไม่ได้ เพราะหมวดหมู่ของรายการไม่มีอยู่แล้ว",
+  "redesignThisEntryCanTBeRestoredItsCategoryIsForTheOtherType": "กู้คืนรายการนี้ไม่ได้ เพราะหมวดหมู่ของรายการเป็นของอีกประเภทหนึ่ง (รายจ่ายหรือรายรับ)"
 }

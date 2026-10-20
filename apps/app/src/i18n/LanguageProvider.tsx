@@ -14,9 +14,16 @@ import type { LanguagePreference } from '@mobile/i18n/languagePreference';
 import { readStoredLanguagePreference, readStoredLanguagePreferenceSync, writeStoredLanguagePreference } from '@mobile/i18n/languagePreferenceStorage';
 import type { Locale } from '@mobile/i18n/locales';
 
+/**
+ * How long native startup waits for the stored choice. A secure store that
+ * never answers would otherwise hold every screen, /login included, on the
+ * loading spinner; past this the app goes on in the phone's language.
+ */
+export const LANGUAGE_READ_TIMEOUT_MS = 1_500;
+
 type LanguageContextValue = {
   readonly preference: LanguagePreference;
-  /** False on native until the stored choice has been read, so nothing starts in the wrong language. */
+  /** False on native until the stored choice has been read (or the read has taken too long), so nothing starts in the wrong language. */
   readonly ready: boolean;
   readonly setPreference: (next: LanguagePreference) => void;
 };
@@ -37,14 +44,17 @@ export function LanguageProvider({ device, children }: PropsWithChildren<{ devic
     if (Platform.OS === 'web') return;
     let active = true;
     const hydrationVersion = versionRef.current;
+    const timer = setTimeout(() => { if (active) setReady(true); }, LANGUAGE_READ_TIMEOUT_MS);
     void (async () => {
       // A store that cannot be read (a locked keychain) keeps the phone's language; it is never an unhandled rejection.
       const stored = await readStoredLanguagePreference().catch(() => null);
+      clearTimeout(timer);
       if (!active) return;
+      // Even after the wait the stored choice applies, but only while it is the latest: a choice made since (System too) is newer.
       if (stored !== null && versionRef.current === hydrationVersion) setPreferenceState(stored);
       setReady(true);
     })();
-    return () => { active = false; };
+    return () => { active = false; clearTimeout(timer); };
   }, []);
 
   const setPreference = useCallback((next: LanguagePreference) => {

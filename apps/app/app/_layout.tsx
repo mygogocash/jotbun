@@ -23,7 +23,7 @@ export default function RootLayout() {
 
 function RootStack() {
   const [fontsLoaded, fontError] = useFonts(spendRuntimeFonts);
-  // On native the saved language is read first, so no screen (or reminder) starts in the wrong one.
+  // On native the saved language is read first (waiting 1.5 s at most), so no screen (or reminder) starts in the wrong one.
   const { ready } = useLanguage();
   // Screens slide in; for a person who asked for less motion they cross-fade instead.
   const reducedMotion = useReducedMotion();

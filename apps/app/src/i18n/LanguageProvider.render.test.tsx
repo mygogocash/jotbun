@@ -19,7 +19,7 @@ import { installBrowserStorage } from '@mobile/mascot/mascotTestHarness';
 import { THEME_PREFERENCE_STORAGE_KEY } from '@mobile/theme/themePreferenceStorage';
 import type { LanguagePreference } from './languagePreference';
 import type { Locale } from './locales';
-import { LanguagePreferenceOverride, LanguageProvider, useLanguage } from './LanguageProvider';
+import { LANGUAGE_READ_TIMEOUT_MS, LanguagePreferenceOverride, LanguageProvider, useLanguage } from './LanguageProvider';
 import { LANGUAGE_PREFERENCE_STORAGE_KEY } from './languagePreferenceStorage';
 import { useActiveLocale, useCopy } from './useCopy';
 
@@ -155,6 +155,57 @@ test('a secure store that refuses keeps the phone\'s language, still lets a choi
   expect(shown('locale')).toBe('en');
   await settle();
   expect(unhandled).toEqual([]);
+});
+
+/** A secure-store read that answers only when the test says so (or never). */
+function heldRead() {
+  let answer: (value: string | null) => void = () => undefined;
+  store.getItemAsync.mockImplementation(() => new Promise<string | null>((resolve) => { answer = resolve; }));
+  return { answer: (value: string | null) => act(async () => { answer(value); await Promise.resolve(); }) };
+}
+
+test('a secure store that never answers holds the app only briefly: it goes on in the phone\'s language', async () => {
+  vi.useFakeTimers();
+  try {
+    native();
+    phone.locale = 'th';
+    heldRead();
+    render(<LanguageProvider device={phone.locale}><Probe /></LanguageProvider>);
+    await act(async () => { await vi.advanceTimersByTimeAsync(LANGUAGE_READ_TIMEOUT_MS - 1); });
+    expect(shown('ready')).toBe('false');
+    await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+    expect([shown('ready'), shown('preference'), shown('locale')]).toEqual(['true', 'system', 'th']);
+    expect(LANGUAGE_READ_TIMEOUT_MS).toBeLessThanOrEqual(2_000);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test('a saved choice read after that wait still applies, unless the person has chosen since (System included)', async () => {
+  vi.useFakeTimers();
+  try {
+    native();
+    // Nothing chosen meanwhile: the saved choice is still theirs.
+    let read = heldRead();
+    render(<LanguageProvider device={phone.locale}><Probe /></LanguageProvider>);
+    await act(async () => { await vi.advanceTimersByTimeAsync(LANGUAGE_READ_TIMEOUT_MS); });
+    expect([shown('ready'), shown('locale')]).toEqual(['true', 'en']);
+    await read.answer('th');
+    expect([shown('ready'), shown('preference'), shown('locale')]).toEqual(['true', 'th', 'th']);
+    cleanup();
+    // Chosen meanwhile, even the very System the app had fallen back to: the late read is older than that choice.
+    for (const choice of ['en', 'system'] as const) {
+      read = heldRead();
+      render(<LanguageProvider device={phone.locale}><Probe /></LanguageProvider>);
+      await act(async () => { await vi.advanceTimersByTimeAsync(LANGUAGE_READ_TIMEOUT_MS); });
+      choose(choice);
+      await read.answer('th');
+      expect([shown('preference'), shown('locale')]).toEqual([choice, 'en']);
+      cleanup();
+    }
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 test('an override shows its own choice to the subtree without saving it; choosing there is still the app\'s choice', () => {

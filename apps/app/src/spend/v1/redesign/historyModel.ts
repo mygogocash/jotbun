@@ -206,28 +206,53 @@ export function restoredText(row: Pick<DeletedRow, 'title' | 'amountMinor'>, loc
   return tc('{entry} {amount} is back in History.', { entry: row.title, amount: formatMinor(row.amountMinor, locale) });
 }
 
-/** The fields the restore command names when a wallet or category the record uses is archived. */
-const REFERENCE_FIELDS = new Set(['wallet_id', 'category_id', 'source_wallet_id', 'destination_wallet_id']);
+/** The wallet fields the restore command can name (a category is always `category_id`). */
+const WALLET_FIELDS = new Set(['wallet_id', 'source_wallet_id', 'destination_wallet_id']);
+
+/**
+ * A wallet or category the record uses, refused by the server's reference
+ * check (`checkReferences`): the field it names, with its message key. Only
+ * an archived one can be unarchived; one that is gone, or a category of the
+ * other type, cannot be put right. Null for anything else.
+ */
+function referenceRefusal(field: string, key: string, tc: Translate): string | null {
+  if (field === 'category_id') {
+    switch (key) {
+      case 'errors.category_archived': return tc("This entry's wallet or category is archived. Unarchive it, then restore the entry.");
+      case 'errors.category_not_found': return tc("This entry can't be restored: its category no longer exists.");
+      case 'errors.category_type_mismatch': return tc("This entry can't be restored: its category is for the other type (expense or income).");
+      default: return null;
+    }
+  }
+  if (!WALLET_FIELDS.has(field)) return null;
+  switch (key) {
+    case 'errors.wallet_archived': return tc("This entry's wallet or category is archived. Unarchive it, then restore the entry.");
+    case 'errors.wallet_not_found': return tc("This entry can't be restored: its wallet no longer exists.");
+    default: return null;
+  }
+}
 
 /**
  * Why a restore was refused, for the refusals only Recently deleted meets
- * (`outcome` is the V1Error outcome; `fields` the fields it names), or null
- * to say it the way every save problem is said.
+ * (`outcome` is the V1Error outcome; `fields` the fields it names, each with
+ * its message key), or null to say it the way every save problem is said.
  * - deleted / purged / not_found: past the 30-day window, purged, or gone;
  * - conflict: another device changed it (restored it, most likely);
- * - invalid on a wallet or category: one it uses is archived;
+ * - invalid on a wallet or category: archived, gone, or of the other type;
  * - any other invalid: refused as it is (this list highlights no field).
  */
-export function restoreRefusalText(outcome: string | undefined, fields: readonly string[], tc: Translate): string | null {
+export function restoreRefusalText(outcome: string | undefined, fields: Readonly<Record<string, string>>, tc: Translate): string | null {
   switch (outcome) {
     case 'deleted':
     case 'purged':
     case 'not_found': return tc('This entry can no longer be restored.');
     case 'conflict': return tc('This entry changed on another device.');
     case 'invalid':
-      return fields.some((field) => REFERENCE_FIELDS.has(field))
-        ? tc("This entry's wallet or category is archived. Unarchive it, then restore the entry.")
-        : tc('This entry could not be restored.');
+      for (const [field, key] of Object.entries(fields)) {
+        const words = referenceRefusal(field, key, tc);
+        if (words) return words;
+      }
+      return tc('This entry could not be restored.');
     default: return null;
   }
 }

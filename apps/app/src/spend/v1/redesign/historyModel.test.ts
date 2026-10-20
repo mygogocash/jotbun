@@ -190,18 +190,28 @@ test('a restore says what happened in plain words', () => {
   assert.equal(restoredText({ title: 'Food', amountMinor: '6500' }, 'en', tc), 'Food ฿65.00 is back in History.');
   assert.equal(restoredText({ title: 'Salary', amountMinor: '2800000' }, 'th', tc), 'Salary ฿28,000.00 is back in History.');
   // Too late (past 30 days, or purged), or gone: it cannot come back.
-  for (const outcome of ['deleted', 'purged', 'not_found']) assert.equal(restoreRefusalText(outcome, [], tc), 'This entry can no longer be restored.');
-  assert.equal(restoreRefusalText('conflict', [], tc), 'This entry changed on another device.');
-  // The server refuses while a wallet or category it uses is archived, naming that field.
-  for (const field of ['wallet_id', 'category_id', 'source_wallet_id', 'destination_wallet_id']) {
-    assert.equal(restoreRefusalText('invalid', [field], tc), "This entry's wallet or category is archived. Unarchive it, then restore the entry.");
+  for (const outcome of ['deleted', 'purged', 'not_found']) assert.equal(restoreRefusalText(outcome, {}, tc), 'This entry can no longer be restored.');
+  assert.equal(restoreRefusalText('conflict', {}, tc), 'This entry changed on another device.');
+  // The server's reference check names the wallet or category field with why (apps/api checkReferences). Archived:
+  // unarchive it first.
+  const archived = "This entry's wallet or category is archived. Unarchive it, then restore the entry.";
+  for (const field of ['wallet_id', 'source_wallet_id', 'destination_wallet_id']) {
+    assert.equal(restoreRefusalText('invalid', { [field]: 'errors.wallet_archived' }, tc), archived);
+    // A wallet that no longer exists is not archived: nothing to unarchive.
+    assert.equal(restoreRefusalText('invalid', { [field]: 'errors.wallet_not_found' }, tc), "This entry can't be restored: its wallet no longer exists.");
   }
+  assert.equal(restoreRefusalText('invalid', { category_id: 'errors.category_archived' }, tc), archived);
+  assert.equal(restoreRefusalText('invalid', { category_id: 'errors.category_not_found' }, tc), "This entry can't be restored: its category no longer exists.");
+  assert.equal(restoreRefusalText('invalid', { category_id: 'errors.category_type_mismatch' }, tc), "This entry can't be restored: its category is for the other type (expense or income).");
+  // A key on the wrong kind of field, or one this list does not know: refused, without guessing why.
+  assert.equal(restoreRefusalText('invalid', { wallet_id: 'errors.category_archived' }, tc), 'This entry could not be restored.');
+  assert.equal(restoreRefusalText('invalid', { category_id: 'errors.something_new' }, tc), 'This entry could not be restored.');
   // Any other refusal of its fields (a date before the wallet's start, say): this list highlights no field.
-  assert.equal(restoreRefusalText('invalid', ['occurred_on'], tc), 'This entry could not be restored.');
-  assert.equal(restoreRefusalText('invalid', [], tc), 'This entry could not be restored.');
+  assert.equal(restoreRefusalText('invalid', { occurred_on: 'DATE_BEFORE_TRACKING_START' }, tc), 'This entry could not be restored.');
+  assert.equal(restoreRefusalText('invalid', {}, tc), 'This entry could not be restored.');
   // Anything else is said the way every save problem is (saveProblem).
-  for (const [outcome, fields] of [['network', []], ['signed_out', []], ['upgrade_required', []], [undefined, []]] as const) {
-    assert.equal(restoreRefusalText(outcome, fields, tc), null);
+  for (const outcome of ['network', 'signed_out', 'upgrade_required', undefined]) {
+    assert.equal(restoreRefusalText(outcome, {}, tc), null);
   }
 });
 
