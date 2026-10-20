@@ -46,12 +46,32 @@ test('over budget: a full ring, and the words say over', () => {
   expect(screen.getByText('It happens. ฿18,120.00 of ฿18,000.00 spent.')).toBeTruthy();
 });
 
+test('with a budget, the ring and its words are one element, so a screen reader reads them once', () => {
+  // The value already says every word beside the ring; read apart, VoiceOver
+  // said them twice (independent review of the R8 audit fixes).
+  for (const [pace, words] of [
+    [onTrack, ['฿420.00', 'a day left', 'On track · ฿6,000.00 left · 10 days to go']],
+    [over, ['฿120.00', 'over', '9 days to go', 'It happens. ฿18,120.00 of ฿18,000.00 spent.']],
+  ] as const) {
+    mountKit(<PaceRing {...pace} />);
+    const ring = screen.getByRole('progressbar', { name: 'Budget' });
+    expect(words.filter((text) => !ring.contains(screen.getByText(text)))).toEqual([]);
+    cleanup();
+  }
+});
+
 test('no budget: the track only, and words', () => {
   const { container } = mountKit(<PaceRing {...none} />);
   expect(arcs(container)).toHaveLength(1);
   expect(screen.getByText('No budget this month')).toBeTruthy();
   expect(screen.getByText('฿12,000.00 spent so far')).toBeTruthy();
   expect(screen.queryByRole('progressbar')).toBeNull();
+  // The centre says what the words beside it say, so a screen reader hears it
+  // once, from them (Apple's accessibility audit, R8).
+  for (const centre of ['฿12,000.00', 'spent']) {
+    expect([centre, screen.getByText(centre).closest('[aria-hidden="true"]') !== null]).toEqual([centre, true]);
+  }
+  expect(screen.getByText('฿12,000.00 spent so far').closest('[aria-hidden="true"]')).toBeNull();
 });
 
 test('under and over colour the arc only, in light and dark; Thai has room', () => {

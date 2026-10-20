@@ -25,6 +25,18 @@ test('on track: words first, a progress bar that speaks the same words', () => {
   expect(screen.getByTestId('budget-fill').style.width).toBe('66.6%');
 });
 
+test('with a budget, the bar and its words are one element, so a screen reader reads them once', () => {
+  // The value already says the headline and the detail; read apart, VoiceOver
+  // said them twice, and the 14 pt bar alone was too small to find by touch
+  // (independent review and Apple's accessibility audit, R8).
+  mountKit(<BudgetBar {...onTrack} />);
+  const bar = screen.getByRole('progressbar', { name: 'Budget' });
+  for (const text of ['฿420.00 a day left', 'On track · ฿6,000.00 left · 10 days to go']) {
+    expect([text, bar.contains(screen.getByText(text))]).toEqual([text, true]);
+  }
+  expect(bar.contains(screen.getByTestId('budget-fill'))).toBe(true);
+});
+
 test('tight says Tight in words; over says over in words, kindly', () => {
   mountKit(<BudgetBar {...tight} />);
   expect(screen.getByText('Tight · ฿1,200.00 left · 10 days to go')).toBeTruthy();

@@ -21,23 +21,27 @@ export function BudgetBar(props: BudgetBarProps) {
   const tc = useCopy();
   const words = budgetWords(props, tc, useMoneyLocale());
   const share = words.spentPermille;
+  const headline = <BunText variant="heading" tone={words.tone === 'over' ? 'over' : 'ink'} style={{ fontVariant: ['tabular-nums'] }}>{words.headline}</BunText>;
+  const detail = <BunText variant="caption" tone="muted">{words.detail}</BunText>;
+  if (share === null) return <View style={{ gap: BUN_SPACE.xs }}>{headline}{detail}</View>;
+  // The words and the bar are one element whose value says them all, so a
+  // screen reader reads them once, and finds it anywhere on the words or the bar.
   return (
-    <View style={{ gap: BUN_SPACE.xs }}>
-      <BunText variant="heading" tone={words.tone === 'over' ? 'over' : 'ink'} style={{ fontVariant: ['tabular-nums'] }}>{words.headline}</BunText>
-      {share !== null ? (
-        <View
-          role="progressbar"
-          accessibilityLabel={tc('Budget')}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={Math.floor(share / 10)}
-          aria-valuetext={words.spoken}
-          style={{ height: 14, borderRadius: BUN_RADIUS.pill, borderWidth: BUN_OUTLINE.control, borderColor: colors.ink, backgroundColor: colors.card, overflow: 'hidden' }}
-        >
-          <View testID="budget-fill" style={{ width: `${share / 10}%`, height: '100%', backgroundColor: words.tone === 'over' ? colors.over : colors.under }} />
-        </View>
-      ) : null}
-      <BunText variant="caption" tone="muted">{words.detail}</BunText>
+    <View
+      accessible
+      role="progressbar"
+      accessibilityLabel={tc('Budget')}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.floor(share / 10)}
+      aria-valuetext={words.spoken}
+      style={{ gap: BUN_SPACE.xs }}
+    >
+      {headline}
+      <View style={{ height: 14, borderRadius: BUN_RADIUS.pill, borderWidth: BUN_OUTLINE.control, borderColor: colors.ink, backgroundColor: colors.card, overflow: 'hidden' }}>
+        <View testID="budget-fill" style={{ width: `${share / 10}%`, height: '100%', backgroundColor: words.tone === 'over' ? colors.over : colors.under }} />
+      </View>
+      {detail}
     </View>
   );
 }

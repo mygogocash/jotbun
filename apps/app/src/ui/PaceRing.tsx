@@ -64,18 +64,24 @@ export function PaceRing({ size = 128, ...pace }: PaceRingProps) {
   );
 
   const side = share === null ? [words.headline, words.detail] : words.tone === 'over' ? [words.days, words.detail] : [words.detail];
+  const row = { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: BUN_SPACE.md } as const;
+  const sideWords = (
+    <View style={{ flex: 1, minWidth: 140, gap: BUN_SPACE.xxs }}>
+      {side.filter((line): line is string => line !== null).map((line, index) => (
+        <BunText key={index} variant={index === 0 && share === null ? 'label' : 'caption'} tone={index === 0 && share === null ? 'ink' : 'muted'}>{line}</BunText>
+      ))}
+    </View>
+  );
+  if (share === null) {
+    // No budget: the centre repeats the words beside it, so it is read once, from them.
+    return <View style={row}><View {...DECORATIVE}>{ring}</View>{sideWords}</View>;
+  }
+  // The ring and its words are one element whose value says them all, so a
+  // screen reader reads them once.
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: BUN_SPACE.md }}>
-      {share !== null ? (
-        <View role="progressbar" accessibilityLabel={tc('Budget')} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.floor(share / 10)} aria-valuetext={words.spoken}>
-          {ring}
-        </View>
-      ) : ring}
-      <View style={{ flex: 1, minWidth: 140, gap: BUN_SPACE.xxs }}>
-        {side.filter((line): line is string => line !== null).map((line, index) => (
-          <BunText key={index} variant={index === 0 && share === null ? 'label' : 'caption'} tone={index === 0 && share === null ? 'ink' : 'muted'}>{line}</BunText>
-        ))}
-      </View>
+    <View accessible role="progressbar" accessibilityLabel={tc('Budget')} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.floor(share / 10)} aria-valuetext={words.spoken} style={row}>
+      {ring}
+      {sideWords}
     </View>
   );
 }

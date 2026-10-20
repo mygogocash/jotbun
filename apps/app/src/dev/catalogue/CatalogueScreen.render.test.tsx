@@ -144,6 +144,10 @@ const SHOWS: Readonly<Record<(typeof REQUIRED)[number], (body: HTMLElement, loca
     expect(within(body).getByText('12.50 + 7.25')).toBeTruthy();
     expect(within(body).getByLabelText(t('Expense {amount}', locale, { amount: '฿19.75' }))).toBeTruthy();
     expect(within(within(body).getByRole('group', { name: t('Keypad', locale) })).getAllByRole('button')).toHaveLength(19);
+    // A zero still says what it is, never a bare "฿0.00" (Apple's accessibility audit, R8).
+    fireEvent.click(within(body).getByRole('button', { name: t('Clear', locale) }));
+    fireEvent.click(within(body).getByRole('button', { name: '0' }));
+    expect(within(body).getByLabelText(t('Expense {amount}', locale, { amount: '฿0.00' })).textContent).toBe('฿0.00');
   },
   'type-switch': (body, locale) => {
     const groups = within(body).getAllByRole('radiogroup', { name: t('Record type', locale) });
@@ -297,7 +301,7 @@ const SHOWS: Readonly<Record<(typeof REQUIRED)[number], (body: HTMLElement, loca
   // Quick add, each state reached the way its render test reaches it.
   'quick-add-empty': (body, locale) => {
     expect(within(body).getByRole('group', { name: t('Keypad', locale) })).toBeTruthy();
-    expect(within(body).getByLabelText('฿0.00')).toBeTruthy();
+    expect(within(body).getByLabelText(t('Expense {amount}', locale, { amount: '฿0.00' }))).toBeTruthy();
     expect(checked(within(body).getByRole('radio', { name: t('Expense', locale) }))).toBe(true);
   },
   'quick-add-sum': (body, locale) => {

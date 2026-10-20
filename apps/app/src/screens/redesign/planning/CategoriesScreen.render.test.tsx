@@ -210,6 +210,8 @@ test('creating: a name, a colour from the palette and a limit, with a live chip 
   expect(hasFill(preview(), CATEGORY_COLORS[3])).toBe(false);
   expect(screen.getByText("Part of this month's budget of ฿20,000.00. Leave it empty for no limit.")).toBeTruthy();
   type(limitField(), '500');
+  // The live preview says what it is, not a bare amount (Apple's accessibility audit, R8).
+  expect(screen.getByLabelText("This month's limit ฿500.00").textContent).toBe('฿500.00');
   const add = within(footer()).getByRole('button', { name: 'Add this category' });
   expect(within(footer()).getByRole('button', { name: 'Cancel' })).toBeTruthy();
   fireEvent.click(add);

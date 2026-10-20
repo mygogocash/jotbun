@@ -43,7 +43,7 @@ export type AmountProps = {
 };
 
 export type AmountWords = {
-  /** What is drawn: `−฿65.00`, `+฿65.00`, `฿65.00` or, untyped, `-฿65.00`. */
+  /** What is drawn: `−฿65.00`, `+฿65.00`, `฿65.00` or, untyped, `-฿65.00`. Zero has no sign. */
   shown: string;
   /** "saving…", "checking…" or "needs a look"; null when confirmed. */
   stateWord: string | null;
@@ -72,7 +72,8 @@ export function useAmountWords(): (minor: Minor, type?: AmountType, state?: Amou
   const locale = useMoneyLocale();
   return useCallback((minor, type, state = 'confirmed') => {
     const exact = formatMinor(type ? magnitude(minor) : minor, locale);
-    const shown = type ? `${SIGN[type]}${exact}` : exact;
+    // Zero has no sign to draw, but a typed zero is still spoken with its type.
+    const shown = type && magnitude(minor) !== '0' ? `${SIGN[type]}${exact}` : exact;
     let spoken = type
       ? tc(SPOKEN_TYPE[type], { amount: exact })
       : minor.startsWith('-') ? tc('Minus {amount}', { amount: formatMinor(magnitude(minor), locale) }) : exact;

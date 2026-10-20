@@ -330,7 +330,7 @@ export function LimitField({ value, onChangeText, error, editable, overall, prev
           fontVariant: ['tabular-nums'],
         }}
       />
-      {preview ? <BunText variant="caption" tone="muted" style={{ fontVariant: ['tabular-nums'] }}>{preview}</BunText> : null}
+      {preview ? <BunText variant="caption" tone="muted" accessibilityLabel={`${name} ${preview}`} style={{ fontVariant: ['tabular-nums'] }}>{preview}</BunText> : null}
       <BunText variant="caption" tone="muted">{tc("Part of this month's budget of {amount}. Leave it empty for no limit.", { amount: overall })}</BunText>
       {error ? <FieldError message={error} /> : null}
     </View>

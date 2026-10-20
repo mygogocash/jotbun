@@ -716,8 +716,8 @@ function AmountLine({ keypad, type, error }: { keypad: KeypadState; type: EntryT
   const sum = keypadHasOperator(keypad);
   // A sum still being typed that has no value yet (it is below zero, or divides by zero) shows as typed.
   const hero = live.ok
-    ? <Amount minor={live.minor} type={live.minor === '0' ? undefined : type} size="xl" />
-    : sum ? <BunText variant="hero" style={{ fontVariant: ['tabular-nums'] }}>{typed}</BunText> : <Amount minor="0" size="xl" />;
+    ? <Amount minor={live.minor} type={type} size="xl" />
+    : sum ? <BunText variant="hero" style={{ fontVariant: ['tabular-nums'] }}>{typed}</BunText> : <Amount minor="0" type={type} size="xl" />;
   return (
     <View style={{ alignItems: 'center', gap: BUN_SPACE.xxs, paddingVertical: BUN_SPACE.xs }}>
       {/* A polite live region: each key's live result is read out (iOS hears the keypad's own key names). */}

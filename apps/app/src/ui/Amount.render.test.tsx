@@ -53,6 +53,19 @@ test('money is exact in every locale: grouping, satang and the sign each type ca
   }
 });
 
+test('zero is drawn without a sign but still spoken with its type, so it is never a bare number', () => {
+  // Apple's accessibility audit flagged Quick add's empty "฿0.00" as a label
+  // with no words (R8): a typed zero now says what it is.
+  mount(<>
+    <Amount minor="0" type="expense" />
+    <Amount minor="0" type="income" />
+    <Amount minor="0" type="transfer" />
+  </>);
+  for (const [spoken, element] of [['Expense ฿0.00', 'expense'], ['Income ฿0.00', 'income'], ['Transfer ฿0.00', 'transfer']]) {
+    expect([element, screen.getByLabelText(spoken).textContent]).toEqual([element, '฿0.00']);
+  }
+});
+
 test('the spoken label says the type, the exact amount and the state in full', () => {
   mount(<>
     <Amount minor="6500" type="expense" state="saving" />

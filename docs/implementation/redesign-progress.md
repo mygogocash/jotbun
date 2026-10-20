@@ -1796,3 +1796,45 @@ Built together with the kit polish above, in one change. These fix the screen-le
   - test:api 930, test:db 681, test:app 28, test:unit 635, test:dev 7, test:ops 107;
   - the API build, export:web and `git diff --check`.
   - test:render failed once, on History's "an unconfirmed undo keeps the bar…" (no toolbar found in time). It passed alone three times out of three, and the full suite passed 1457 of 1457 on the rerun: a timing flake, not this change.
+
+## R8: Apple's accessibility audit on the iOS simulator, the closest check to VoiceOver without an iPhone (20 October 2026)
+
+- **Why:** the counterpart of the Android tree check. Xcode's UI tests include Apple's own accessibility audit (`performAccessibilityAudit`). It checks what VoiceOver relies on: element descriptions, hit regions, contrast, Dynamic Type, clipped text and traits.
+- **Setup** (local only; `apps/app/ios/` is in `.git/info/exclude`):
+  - A UI test target, `JotbunA11yUITests`, added to the generated Xcode project with the `xcodeproj` gem that CocoaPods already ships. No package was added.
+  - The app is the existing debug build on the `Jotbun E2` simulator, loading Jotbun's Metro on 8084. The other project's Metro servers were not touched.
+  - Each section is opened by deep link (`gogospend://dev/catalogue?section=…&chrome=off`), and the audit runs on the whole screen, sheets included. Every issue is logged; none fails the test, so every section is audited.
+  - Sections that open as a full-screen modal (`receipt-full-screen`, `receipt-grant-renewed`) cover the catalogue's marker, so they are audited without it.
+- **Found and fixed test-first:**
+  1. **The budget ring and bar were not one element on iOS.** Each set a progress-bar role and a label, but not `accessible`. On iOS that view is skipped: VoiceOver never said "Budget", and read the ring's bare centre ("฿2,775.00") on Home, Budget and the kit.
+     - Fix: the ring or bar and its words are one `accessible` element. Its value says them all, so they are read once. (Making only the ring accessible read the words twice; the independent review caught that.) The bar alone was 14 pt; the whole element is now easy to find by touch.
+     - Render tests run on the web, which drops `accessible`. `src/testing/nativeAccessible.ts` wraps React Native's `View` in a test so the prop shows as `data-native-accessible`.
+     - The screen-reader pass now also checks every progress bar with words in all 223 sections. Mutation: removing `accessible` from the ring and the bar fails `budget-bar`, `pace-ring`, `pace-ring-over`, `home-ready` and `budget-on-track`.
+  2. **Quick add's empty amount was a bare "฿0.00".** A typed zero is now drawn without a sign but still spoken with its type ("Expense ฿0.00"). Quick add and the keypad specimen always pass the type. No other caller can reach a typed zero except an import row, which now shows "฿0.00" rather than "−฿0.00".
+  3. **The category limit preview was a bare amount.** It now says "This month's limit ฿500.00", as Home's opening-balance preview already did.
+  4. **With no budget, the ring's centre repeated the words beside it** ("฿12,450.00 spent" beside "฿12,450.00 spent so far"). The ring is now decorative there.
+- **Reviewed and kept as they are:**
+  - **Dynamic Type "partially unsupported" on the text fields** (merchant, note, search, wallet and category names, limits, opening balance). They stop at the body ceiling, 2.2×, by design (the ceilings above). The audit can measure only native text fields, so it reports the ceiling there and not on text.
+  - **"Potentially inaccessible text"** where the words are deliberately hidden because something else already says them:
+    - the conflict panels' "Yours / On the server" heads (every row says both);
+    - the dimmed screen behind an open sheet, which `accessibilityViewIsModal` hides. The same screens without the sheet audit clean (`import-review` 0, `import-bulk` 5).
+  - **The onboarding step dots are under 44 pt.** They are a progress bar, not a control, and swiping reaches them. The Android check applies 44 dp to controls only. Making them 44 pt tall would add 28 pt of empty space to every onboarding step.
+  - **The kit's Cards specimen** shows a wallet name and an untyped amount side by side. This is catalogue-only; Home's wallet lines are one element each.
+- **Result on the final code:** all 223 sections audited, in English, light. 57 notices, every one of them in "Reviewed and kept" above:
+  - 35 Dynamic Type notices on text fields;
+  - 16 "potentially inaccessible text": the conflict heads in 4 sections, the dimmed screen behind a sheet in 3, and the category preview chip once;
+  - the 3 onboarding dots;
+  - the 3 Cards-specimen amounts.
+  - The first pass, before the fixes, had 74 notices, 19 of them bare amounts. 16 were on Home, Budget, Quick add, Categories and the kit's ring, and are fixed; the other 3 are the Cards specimen.
+  - The audit's text detection varies between runs. `import-labels` once had 2 notices and `categories-unconfirmed` once had 1, each a hidden-by-design preview or a screen still settling. Each was clean, or kept only its Dynamic Type notice, on a rerun.
+- **Still for people with devices:** VoiceOver on an iPhone (focus order, gestures, how it sounds). The audit checks the tree, not speech; the simulator has no VoiceOver.
+- **Independent review** of the fixes. Two findings fixed test-first, one design point taken:
+  1. The catalogue's own Quick add check still looked for the bare "฿0.00". It now looks for "Expense ฿0.00".
+  2. The keypad specimen still dropped the type at zero. It now always passes it (RED: C then 0 in the `keypad` check).
+  3. With only the ring or bar made accessible, VoiceOver read its value and then the same words beside it. They are now one element, as above.
+  - Also confirmed: the web is unchanged (react-native-web drops `accessible`); Android already spoke label and value, and no longer stops on the ring's centre on its own; no other view with a label and a non-container role lacks `accessible`.
+- **Gate with the fixes, all passing:**
+  - typecheck and typecheck:app;
+  - test:api 930, test:db 681, test:app 28, test:unit 635, test:dev 7, test:ops 107;
+  - test:render 1463 (6 new tests; the screen-reader pass checks progress bars too);
+  - the API build, the release-graph check, the parser sandbox check, export:web and `git diff --check`.

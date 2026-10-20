@@ -71,7 +71,7 @@ function KeypadSection() {
         <View style={{ alignItems: 'center', gap: BUN_SPACE.xxs }}>
           <BunText variant="label" tone="muted" style={{ fontVariant: ['tabular-nums'] }}>{keypadDisplay(state)}</BunText>
           {live.ok
-            ? <Amount minor={live.minor} type={live.minor === '0' ? undefined : 'expense'} size="xl" />
+            ? <Amount minor={live.minor} type="expense" size="xl" />
             : <BunText variant="hero" style={{ fontVariant: ['tabular-nums'] }}>{keypadDisplay(state)}</BunText>}
           {state.problem ? <FieldError message={tc(KEYPAD_PROBLEM[state.problem])} /> : null}
         </View>

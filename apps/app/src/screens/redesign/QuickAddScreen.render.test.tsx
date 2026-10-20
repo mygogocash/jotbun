@@ -589,7 +589,11 @@ test.each([
 
 test('the amount is live and spoken while a sum is typed', async () => {
   await open();
-  expect(screen.getByLabelText('฿0.00')).toBeTruthy();
+  // Even empty, the amount says what it is (Apple's accessibility audit, R8).
+  expect(screen.getByLabelText('Expense ฿0.00').textContent).toBe('฿0.00');
+  choose('Income');
+  expect(screen.getByLabelText('Income ฿0.00').textContent).toBe('฿0.00');
+  choose('Expense');
   press('1', '2', '.', '5', '0', '+', '7', '.', '2', '5');
   expect(screen.getByText('12.50 + 7.25')).toBeTruthy();
   expect(screen.getByLabelText('Expense ฿19.75')).toBeTruthy();
@@ -747,7 +751,7 @@ test('a record that cannot be copied says so and offers a blank entry', async ()
   mount(<QuickAddScreen now={NOW} />, fake.resources);
   expect(await screen.findByText("This entry isn't available to copy.")).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Start a new entry' }));
-  expect(await screen.findByLabelText('฿0.00')).toBeTruthy();
+  expect(await screen.findByLabelText('Expense ฿0.00')).toBeTruthy();
 });
 
 // Review nit: a deleted record is not offered for copying through the URL.
@@ -800,7 +804,7 @@ test('Add another starts a fresh draft with a new record id and a new command id
   save();
   expect(await screen.findByText('Saved on this device')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Add another' }));
-  expect(await screen.findByLabelText('฿0.00')).toBeTruthy();
+  expect(await screen.findByLabelText('Expense ฿0.00')).toBeTruthy();
   expect(screen.getByRole('radio', { name: 'Food' }).getAttribute('aria-checked')).toBe('true');
   typeAmount('12');
   save();
