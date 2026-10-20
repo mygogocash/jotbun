@@ -330,7 +330,8 @@ test('Sign out everywhere: a confirm; Stay signed in changes nothing; confirming
   expect(account.calls.globalLogouts).toHaveLength(1);
   expect(account.calls.globalLogouts[0].proofId).toMatch(/^0000000a-/);
   expect(account.calls.globalLogouts[0].commandId).toMatch(/^0000000c-/);
-  expect(screen.queryByRole('dialog')).toBeNull();
+  // The sheet stays up, busy, through the whole request, and closes on the render after it.
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
 });
 
 test('cancelling the fresh sign-in: nothing is sent or erased, and the person stays signed in', async () => {
@@ -340,7 +341,8 @@ test('cancelling the fresh sign-in: nothing is sent or erased, and the person st
   confirmEverywhere();
   expect(await screen.findByText('Nothing changed.')).toBeTruthy();
   expect(log).toEqual(['reauth']);
-  expect(screen.queryByRole('dialog')).toBeNull();
+  // The sheet stays up, busy, through the whole request, and closes on the render after it.
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
 });
 
 test('a sign-in that fails: nothing is sent or erased, still signed in, and saying so', async () => {
