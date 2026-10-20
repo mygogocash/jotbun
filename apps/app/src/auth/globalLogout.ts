@@ -9,7 +9,9 @@
 // own, or Try again - meets 401 SESSION_REQUIRED, because the first one
 // landed: that is signed out as well. Only those two let the screen erase
 // this phone's diary and end the session here. Anything Jotbun did not answer
-// keeps the person signed in, with the exact request kept to resend.
+// keeps the person signed in, with the exact request kept to resend - as does
+// a resend this phone could not send at all (no token or binding any more):
+// the transport's own SESSION_REQUIRED says nothing about the first one.
 import { isUuid } from '@gogospend/contracts';
 import type { GlobalLogoutResult } from '@gogospend/contracts';
 
@@ -58,7 +60,7 @@ export type GlobalLogoutState =
   | { state: 'signed_out' }
   /** The proof was stale or used: nothing changed. */
   | { state: 'reauth_required' }
-  /** Jotbun did not answer (network, gateway, rate limit, an unreadable success): still signed in here; resend this request. */
+  /** Jotbun did not answer (network, gateway, rate limit, an unreadable success), or nothing could be sent (no token or binding here): still signed in here; resend this request. */
   | { state: 'unconfirmed'; request: PendingGlobalLogout }
   /** Refused for another reason: nothing changed. */
   | { state: 'refused'; code: string };
@@ -85,8 +87,12 @@ export async function submitGlobalLogout(request: PendingGlobalLogout, deps: Pic
     await deps.resources.globalLogout(request);
   } catch (error) {
     if (!(error instanceof V1Error)) throw error;
-    // The binding is already dead: this request (or the one it resends) landed, or there is no session here at all.
-    if (error.code === 'SESSION_REQUIRED') return { state: 'signed_out' };
+    if (error.code === 'SESSION_REQUIRED') {
+      // Jotbun's own 401: the binding is already dead, so this request (or the one it resends) landed.
+      if (error.status === 401) return { state: 'signed_out' };
+      // Refused here, before sending (no token or binding now): an earlier send may still have landed.
+      return { state: 'unconfirmed', request };
+    }
     if (error.code === 'REAUTH_REQUIRED') return { state: 'reauth_required' };
     if (unknownOutcome(error)) return { state: 'unconfirmed', request };
     return { state: 'refused', code: error.code };

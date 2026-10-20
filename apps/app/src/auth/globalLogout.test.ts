@@ -35,7 +35,8 @@ const credentials: V1Credentials = {
   getSessionSnapshot: () => ({ binding: BINDING, epoch: 1 }),
   sessionEnded: (event) => void ended.push(event),
 };
-const resources = () => createGlobalLogoutResources(createV1Transport({ baseUrl, credentials, client: { platform: 'ios', version: '1.2.3' }, timeoutMs: 2_000 }));
+const resources = (session: V1Credentials = credentials) =>
+  createGlobalLogoutResources(createV1Transport({ baseUrl, credentials: session, client: { platform: 'ios', version: '1.2.3' }, timeoutMs: 2_000 }));
 const proof = (): Proof => ({ proofId: randomUUID(), commandId: randomUUID(), expiresAt: '2026-10-20T03:05:00.000Z' });
 const problem = (status: number, code: string): Reply => ({ status, body: { code, request_id: randomUUID(), message_key: 'errors.x' } });
 const ACCEPTED: Reply = { status: 202, body: { generation: 4, provider_cleanup: 'pending' } };
@@ -114,6 +115,27 @@ test('Jotbun cannot be reached at all: still signed in here, and Try again resen
   // Or it had not: the resend is accepted.
   replies.push(ACCEPTED);
   assert.deepEqual(await submitGlobalLogout(first.request, { resources: resources() }), { state: 'signed_out' });
+});
+
+test('Try again once this phone has no binding or token sends nothing, so it is never signed out: still unconfirmed, the same request kept', async () => {
+  const p = proof();
+  replies.push({ status: 0, drop: true }, { status: 0, drop: true }, { status: 0, drop: true });
+  const first = await requestGlobalLogout({ resources: resources(), reauthenticate: signIn(p).reauthenticate });
+  assert.equal(first.state, 'unconfirmed');
+  if (first.state !== 'unconfirmed') return;
+  const sent = seen.length;
+  // The session moved on meanwhile (e.g. to reauth_required, which holds no binding), or its token is gone.
+  const unbound: V1Credentials = { ...credentials, getSessionSnapshot: () => ({ binding: null, epoch: 1 }) };
+  const tokenless: V1Credentials = { ...credentials, getAccessToken: async () => null };
+  for (const session of [unbound, tokenless]) {
+    assert.deepEqual(await submitGlobalLogout(first.request, { resources: resources(session) }), { state: 'unconfirmed', request: first.request });
+  }
+  assert.equal(seen.length, sent, 'nothing left this phone');
+  assert.deepEqual(ended, []);
+  // Bound again, the same request goes out, and only Jotbun's own 401 SESSION_REQUIRED says it landed.
+  replies.push(problem(401, 'SESSION_REQUIRED'));
+  assert.deepEqual(await submitGlobalLogout(first.request, { resources: resources() }), { state: 'signed_out' });
+  assert.equal(seen[sent].headers['idempotency-key'], p.commandId);
 });
 
 test('a used or stale proof: nothing changed, and the session is not reported ended (the proof was refused, not the session)', async () => {
