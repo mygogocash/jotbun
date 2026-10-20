@@ -100,7 +100,8 @@ export function RecentlyDeletedScreen({ now }: RecentlyDeletedScreenProps) {
   const [restoring, setRestoring] = useState<string | null>(null);
   /** A restore whose answer is unknown: frozen until "Try again" resends the same command. */
   const [pending, setPending] = useState<Target | null>(null);
-  const [notice, setNotice] = useState<{ tone: 'alert' | 'status'; message: string } | null>(null);
+  // `about`: the entry an unconfirmed restore's notice is about, so the notice can go once that entry is.
+  const [notice, setNotice] = useState<{ tone: 'alert' | 'status'; message: string; about?: string } | null>(null);
   const generation = useRef(0);
   const shown = useRef(0);
   const acting = useRef(false);
@@ -165,7 +166,7 @@ export function RecentlyDeletedScreen({ now }: RecentlyDeletedScreenProps) {
       const saved = saveProblem(problem, tc);
       if (!saved.unconfirmed) keys.settle(slot);
       setPending(saved.unconfirmed ? target : null);
-      setNotice({ tone: 'alert', message: restoreRefusalText(v1?.outcome, v1?.fields ?? {}, tc) ?? saved.message });
+      setNotice({ tone: 'alert', message: restoreRefusalText(v1?.outcome, v1?.fields ?? {}, tc) ?? saved.message, ...(saved.unconfirmed ? { about: target.id } : {}) });
       // A definite refusal: read the list again, so it shows what can still be restored.
       if (!saved.unconfirmed) void load(true);
       return;
@@ -189,7 +190,11 @@ export function RecentlyDeletedScreen({ now }: RecentlyDeletedScreenProps) {
     if (!pending || !model || held) return;
     keys.settle(restoreSlot(pending.id));
     setPending(null);
+    setNotice((current) => (current?.about === pending.id ? null : current));
   }, [pending, model, held, keys.settle]);
+  // Its "try again" notice shows only while its row does: once a read no longer lists it, there is nothing left to
+  // try again. Decided here too, so it goes in the same frame as the row.
+  const shownNotice = notice?.about !== undefined && held?.id !== notice.about ? null : notice;
   // History's banners: the diary locked, or offline where this phone keeps a diary.
   const offline = error instanceof V1Error && error.outcome === 'network' && diaryView.phase === 'ready';
   const banner: SyncBannerProps | null = diaryView.phase === 'locked' ? { state: 'locked' } : offline ? { state: 'offline' } : null;
@@ -206,7 +211,7 @@ export function RecentlyDeletedScreen({ now }: RecentlyDeletedScreenProps) {
           <BunText testID="recently-deleted-retention">
             {tc('Deleted entries can be restored for {days} days. After that, they are gone for good.', { days: RESTORE_WINDOW_DAYS })}
           </BunText>
-          {notice ? <Notice tone={notice.tone} message={notice.message} /> : null}
+          {shownNotice ? <Notice tone={shownNotice.tone} message={shownNotice.message} /> : null}
           {lists?.page.refresh_suggested && !error ? (
             <Notice message={tc('Entries changed since you opened this list.')} action={{ label: tc('Refresh'), onPress: () => void load(true) }} />
           ) : null}

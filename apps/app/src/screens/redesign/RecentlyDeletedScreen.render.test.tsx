@@ -124,6 +124,8 @@ test('an unconfirmed restore that did commit stops holding the other Restores on
   fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
   await waitFor(() => expect(deletedRows()).toEqual([ROWS.food]));
   expect(screen.getByRole('button', { name: RESTORE.food }).getAttribute('aria-disabled')).not.toBe('true');
+  // Its "try again" notice goes with it: there is nothing left to try again.
+  expect(screen.queryByText(NOT_CONFIRMED)).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: RESTORE.food }));
   expect(await screen.findByText('Food ฿182.00 is back in History.')).toBeTruthy();
   expect(fake.callsOf('restoreTransaction').map((call) => call.args[0])).toEqual([RENT, FOOD_ID]);
@@ -140,6 +142,7 @@ test('the same after a failed reload and its Try again', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
   await waitFor(() => expect(deletedRows()).toEqual([ROWS.food]));
   expect(screen.getByRole('button', { name: RESTORE.food }).getAttribute('aria-disabled')).not.toBe('true');
+  expect(screen.queryByText(NOT_CONFIRMED)).toBeNull();
 });
 
 test('a refused restore says why in plain words and reads the list again', async () => {
