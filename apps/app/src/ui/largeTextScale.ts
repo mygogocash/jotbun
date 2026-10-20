@@ -3,6 +3,13 @@
 // stay on one line. iOS's largest standard size (xxxLarge) is 1.353x and its
 // first accessibility size (AX1) 1.786x; Android's largest is 2x.
 
+/**
+ * iOS's largest standard text size (xxxLarge). Text that must stay on its line
+ * in a fixed bar (the tab labels) stops here, as Apple's own bars do, and shows
+ * the large content viewer on a long press instead.
+ */
+export const LARGEST_STANDARD_SCALE = 1.353;
+
 /** The text scale from which side-by-side layouts stack. */
 export const LARGE_TEXT_SCALE = 1.5;
 

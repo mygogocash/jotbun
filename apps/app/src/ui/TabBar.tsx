@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { DECORATIVE } from './a11y';
 import { BunText } from './BunText';
+import { LARGEST_STANDARD_SCALE } from './largeTextScale';
 import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE, BUN_TOUCH } from './layout';
 
 /** An icon, or a function that draws one in the colour of its ground. */
@@ -40,6 +41,10 @@ function Tab({ item, selected, onSelect }: { item: TabBarItem; selected: boolean
       accessibilityRole="tab"
       accessibilityLabel={item.label}
       accessibilityState={{ selected }}
+      // As Apple's own tab bars: the label stops at the largest standard size,
+      // so it stays whole on its line, and a long press shows it large (iOS).
+      accessibilityShowsLargeContentViewer
+      accessibilityLargeContentTitle={item.label}
       aria-selected={selected}
       onPress={() => onSelect(item.key)}
       style={{
@@ -56,7 +61,7 @@ function Tab({ item, selected, onSelect }: { item: TabBarItem; selected: boolean
       }}
     >
       {icon ? <View {...DECORATIVE}>{icon}</View> : null}
-      <BunText variant="micro" tone={selected ? 'ink' : 'onInk'} style={{ textAlign: 'center', fontWeight: selected ? '700' : '500' }}>{item.label}</BunText>
+      <BunText variant="micro" tone={selected ? 'ink' : 'onInk'} maxFontSizeMultiplier={LARGEST_STANDARD_SCALE} style={{ textAlign: 'center', fontWeight: selected ? '700' : '500' }}>{item.label}</BunText>
     </Pressable>
   );
 }
@@ -105,6 +110,8 @@ export function TabBar({ items, active, onSelect, onAdd, addLabel }: TabBarProps
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={addLabel}
+            accessibilityShowsLargeContentViewer
+            accessibilityLargeContentTitle={addLabel}
             onPress={onAdd}
             style={{
               minHeight: ADD_SIZE,

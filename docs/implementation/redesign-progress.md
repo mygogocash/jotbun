@@ -1838,3 +1838,27 @@ Built together with the kit polish above, in one change. These fix the screen-le
   - test:api 930, test:db 681, test:app 28, test:unit 635, test:dev 7, test:ops 107;
   - test:render 1463 (6 new tests; the screen-reader pass checks progress bars too);
   - the API build, the release-graph check, the parser sandbox check, export:web and `git diff --check`.
+
+## R8: the same audit in Thai and dark, and at the largest text size (20 October 2026)
+
+- **Two more full runs**, side by side on two simulators: the first `Jotbun E2` in Thai and dark, and a new one, `Jotbun A11y AX`, at the largest accessibility size (AX5) in English and light. Both load Jotbun's Metro on 8084. The new simulator was given the Metro address (`RCT_jsLocation`) and is shut down after the run; the other booted simulator on this Mac was not touched.
+- **Thai, dark:** 223/223 sections, 45 notices, all in the groups kept above. There were no contrast notices in dark mode and no clipped Thai text.
+- **AX5:** 223/223 sections, 41 notices. All are in the groups kept above, except five new "potentially inaccessible text" notices:
+  - **The tab bar broke its labels mid-word** ("Ho/me", "Hist/ory", "Bud/get"): the audit's text detection found fragments that matched no label. This is a real defect, and the bar is the app's own navigation (`SpendTabShell`).
+    - Fix, as Apple's own tab bars do it: tab labels stop at iOS's largest standard size (`LARGEST_STANDARD_SCALE`, 1.353×), so standard sizes are untouched, and every tab and the add button show the large content viewer on a long press (`accessibilityShowsLargeContentViewer`, React Native 0.88 on iOS).
+    - RED: a render test reads both props through the test wrapper, which now also exposes `maxFontSizeMultiplier` and the viewer's props. Mutation: dropping the label ceiling fails it.
+    - On the AX5 simulator, the tab bar and Home now audit clean in English and Thai. In Thai, "งบประมาณ" wraps between its two words (งบ | ประมาณ).
+  - **Budget (limits, over the total, saving) and Import (frozen):** at AX5, the content scrolls under the fixed footer, and the detector catches the line cut at the footer's edge. The text is one whole element, and VoiceOver scrolls to it. Kept.
+- **Also:** a stale comment in `app/spend/add.tsx` said the old form was the default; it now says Quick add is the default since checkpoint 1.
+- **Gate with the fix, all passing:** typecheck and typecheck:app; test:api 930, test:db 681, test:app 28, test:unit 635, test:dev 7, test:ops 107; test:render 1464; the API build, the release-graph check, the parser sandbox check, export:web and `git diff --check`.
+
+## The design checklist (the redesign plan's §7), checked (20 October 2026)
+
+- Three read-only agents checked every §7 item against the code, the tests and this record, in parallel (R0–R2, R3–R5, R6–R8). Each item is now ticked in [the plan](../superpowers/plans/2026-10-18-jotbun-redesign.md) with its evidence, or left open with what it waits for.
+- **Ticked: 32 of 37.** Where the build differs from the wording, the note says so: the accent and under-budget green changed to pass AA; ranking and the rhythm read `/v1/history` plus device drafts, since the device diary keeps no confirmed records; the peek's motion stops under reduced motion, but the bun stays, still.
+- **Open: 5, none of them code:**
+  - the bun's final art (D2, an illustrator);
+  - the real Auth0 proof (the owner's test tenant, then signed-in devices);
+  - the policy text for checkpoint 4, which the founder writes and publishes; sign-in's consent line links to it;
+  - VoiceOver and TalkBack on real phones (the automated checks are listed under the item);
+  - the native Thai review (Vietnamese is held).

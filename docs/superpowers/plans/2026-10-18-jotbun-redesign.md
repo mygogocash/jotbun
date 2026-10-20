@@ -264,11 +264,16 @@ Each task gets a feature flag (`redesign.<area>`) so the old screens keep workin
 - a new `src/theme/contrast.test.ts`.
 
 **Steps:**
-- [ ] Add the §3 palette, light and dark.
-- [ ] Add a contrast test asserting WCAG AA for every text/background pair the kit uses. Write it RED first against the current values where they fail.
-- [ ] Add the type scale and the Thai line-height rule.
-- [ ] Add the receipt serif via the platform font, so no package is needed.
-- [ ] Keep the old token names working. Theme preference (System, Light, Dark) is unchanged.
+- [x] Add the §3 palette, light and dark.
+  - `src/theme/bunPalette.ts`, beside the green palette. Accent `#6A4BD4` and under `#1A6B43` replace the §3 values, which failed AA. Outlines use `ink`; there is no separate `outline` token.
+- [x] Add a contrast test asserting WCAG AA for every text/background pair the kit uses. Write it RED first against the current values where they fail.
+  - `bunPalette.test.ts` (4.5:1 for every pair in `BUN_TEXT_PAIRS`, both modes); RED 9 of 11.
+- [x] Add the type scale and the Thai line-height rule.
+  - `bunType.ts`, `bunType.test.ts` (Thai 1.5×, Latin 1.3×).
+- [x] Add the receipt serif via the platform font, so no package is needed.
+  - Georgia on iOS, `serif` on Android; no font package added.
+- [x] Keep the old token names working. Theme preference (System, Light, Dark) is unchanged.
+  - `colorPalettes.ts` and the theme preference are untouched.
 
 **Done:** the new tokens are available and tested, and nothing is routed differently yet.
 
@@ -276,76 +281,106 @@ Each task gets a feature flag (`redesign.<area>`) so the old screens keep workin
 **Files:** `src/mascot/{Bun,poses,SpeechBubble}.tsx`, plus render tests.
 
 **Steps:**
-- [ ] Build the props from §4 and the intensity setting (stored with the theme preference).
-- [ ] Make decorative buns hidden from screen readers.
-- [ ] Turn peeks off under reduced motion.
+- [x] Build the props from §4 and the intensity setting (stored with the theme preference).
+  - `Bun.tsx`, `BunPeek.tsx`, `SpeechBubble.tsx`; Full/Quiet/Off stored like the theme preference, under its own key.
+- [x] Make decorative buns hidden from screen readers.
+  - `Bun.render.test.tsx`; a decorative bun cannot take a label.
+- [x] Turn peeks off under reduced motion.
+  - The peek's motion is off (it waits for the OS answer, then snaps, with no spring). The bun itself still shows, still. Hiding it entirely under reduced motion would be a design change for the owner.
 - [ ] Use geometric placeholder poses until the final art arrives (D2).
+  - Placeholders done (`poses.ts`, all 12 poses). Open: the final art, from an illustrator (D2).
 
 ### R2: Component kit
 **Files:** `src/ui/*` per §5, render tests for every state at 320 pt in TH, EN and VI, light and dark.
 
 **Steps:**
-- [ ] Each component gets assertion-level RED first, then GREEN.
-- [ ] Add a screenshot catalogue route, available in dev builds only, for the E2 review.
+- [x] Each component gets assertion-level RED first, then GREEN.
+  - All §5 components in `src/ui/` (SpeechBubble in `src/mascot/`); R2a and R2b RED then GREEN, in TH, EN and VI, light and dark. 320 pt checked on the web in EN and TH (VI held by the owner).
+- [x] Add a screenshot catalogue route, available in dev builds only, for the E2 review.
+  - `app/dev/catalogue.tsx` (`__DEV__` and the opt-in `catalogue` flag); 223 sections.
 
 ### R3: Core loop
 **Screens:** Home, Quick add, History, Record detail, Edit, Move (§6.1).
 
 **Steps:**
-- [ ] Build on `viewModels.ts`, `pendingTotals.ts` and `spendDiary.ts`.
-- [ ] Unit-test keypad maths, which must be exact (no floats), and the `000` key.
-- [ ] Rank categories by recent use from the local diary.
-- [ ] Ship duplicate and undo.
-- [ ] Keep offline, pending and conflict states.
-- [ ] **E2 checkpoint 1:** approve the screenshots, then switch the routes.
+- [x] Build on `viewModels.ts`, `pendingTotals.ts` and `spendDiary.ts`.
+- [x] Unit-test keypad maths, which must be exact (no floats), and the `000` key.
+  - `keypadExpression.ts` (BigInt satang) and its tests; a source test bans float maths in Quick add.
+- [x] Rank categories by recent use from the local diary.
+  - `recentCategories.ts`: recent use from `/v1/history` plus this device's drafts, since the device diary keeps no confirmed records.
+- [x] Ship duplicate and undo.
+  - Copy an entry, undo in History and Record. The §6.1 "Recently deleted" list waits for an API that lists deleted records.
+- [x] Keep offline, pending and conflict states.
+- [x] **E2 checkpoint 1:** approve the screenshots, then switch the routes.
+  - Approved 19 October; `core` is on by default.
 
 ### R4: Planning
 **Screens:** Budget, Wallets, Categories (§6.2).
 
 **Steps:**
-- [ ] Add client write adapters for the existing commands:
+- [x] Add client write adapters for the existing commands:
+  - `resources.ts`; `resources.test.ts` checks method, path, idempotency key, If-Match and body for all nine. Budget create and replace share one PUT; the server chooses the command.
   - `budget.create`, `budget.replace`;
   - `wallet.update`, `wallet.archive`, `wallet.unarchive`;
   - `category.create`, `category.update`, `category.archive`, `category.unarchive`.
 
   Each adapter needs its own idempotency key and version handling, like the existing ones.
-- [ ] **E2 checkpoint 2.**
+- [x] **E2 checkpoint 2.**
+  - Approved 19 October; `planning` is on by default. No Budget tab (D7).
 
 ### R5: Insights and habit
 **Screens:** Month recap, Calendar, Streak (if D5 says yes), Reminders settings (§6.3).
 
 **Steps:**
-- [ ] Compute per-day totals and the streak from the local diary.
-- [ ] Recap sharing is text until D6.
-- [ ] **E2 checkpoint 3.**
+- [x] Compute per-day totals and the streak from the local diary.
+  - `insightsModel.ts` (`dayFacts`, `rhythmModel`): from `/v1/history` plus device drafts. The streak is the forgiving monthly rhythm (D5).
+- [x] Recap sharing is text until D6.
+  - `RecapScreen.tsx`, "Share as text".
+- [x] **E2 checkpoint 3.**
+  - Approved 19 October; `insights` is on by default.
 
 ### R6: First run, sign-in, settings, privacy
 **Screens:** Onboarding, Sign-in UI, Policy, Settings, Privacy and data (§6.4).
 
 **Steps:**
-- [ ] Build against the existing session and F5 seam.
+- [x] Build against the existing session and F5 seam.
+  - Sign-in reports "not configured" until a provider is installed. App-side "Sign out everywhere" (the global-logout call) and account linking are still hidden.
 - [ ] Keep real Auth0 proof under E1/E2.
-- [ ] Wire export and deletion to `privacy.ts` and `deletion.ts`.
+  - Kept: no Auth0 package, no provider installed outside tests. The proof waits for the owner's Auth0 test tenant (`docs/operations/e1-setup.md`) and signed-in devices.
+- [x] Wire export and deletion to `privacy.ts` and `deletion.ts`.
+  - `privacyServices.ts`, `PrivacyScreen.tsx`. Requesting an export and deleting the account stay disabled, with the reason shown, until re-authentication exists.
 - [ ] **E2 checkpoint 4**, including the actual policy text.
+  - Screens approved 19 October; `account` is on by default. Open: the policy text itself, which the founder must approve and publish. Sign-in's consent line links to nothing yet.
 
 ### R7: Import and receipts
 **Screens:** the import journey and receipts (§6.5).
 
 **Steps:**
-- [ ] Build the import UI on the existing P3 client.
-- [ ] Add the P2c client adapter.
-- [ ] Keep the import flag off.
-- [ ] **E2 checkpoint 5.**
+- [x] Build the import UI on the existing P3 client.
+  - The review draft is kept in the encrypted diary (decision 7).
+- [x] Add the P2c client adapter.
+  - `attachments.ts`. Open: a 401 on download is not refreshed; hosted R2 and photo-picker checks wait for E1.
+- [x] Keep the import flag off.
+  - Server `IMPORT_UPLOADS_ENABLED=0`. The redesigned import screens are on (owner's checkpoint 5), and say politely that uploads aren't switched on yet.
+- [x] **E2 checkpoint 5.**
+  - Approved 19 October. Turning imports on still needs the E1 proofs, the parser gate, the import release checklist (`rollback.md`) and E4.
 
 ### R8: States, accessibility and polish
 **Steps:**
-- [ ] Cover every state in §6 with a render test.
+- [x] Cover every state in §6 with a render test.
+  - 223 catalogue sections, rendered in light and dark in TH, EN and VI; the screen-reader pass covers each in EN and TH.
 - [ ] VoiceOver and TalkBack pass.
-- [ ] Largest Dynamic Type.
-- [ ] Reduced motion.
-- [ ] 320 pt width.
+  - Automated so far: the web screen-reader pass (223 sections, EN and TH); the Android accessibility tree on an emulator (223 sections, 1,815 controls); Apple's accessibility audit on the iOS simulator (223 sections in EN light, TH dark and at AX5). Open: a pass on a real iPhone and a real Android phone (focus order, gestures, what is spoken).
+- [x] Largest Dynamic Type.
+  - Per-role ceilings and stacked layouts from 1.5×; AX5 captures; Apple's audit at AX5 found the tab labels breaking mid-word, now fixed (they stop at the largest standard size and show the large content viewer).
+- [x] Reduced motion.
+  - Every redesign animation stops under Reduce Motion (sheet, undo bar, peek, coin pile, spring pop, receipt viewer fade).
+- [x] 320 pt width.
+  - Checked on the web in EN and TH; the category chip fix has a failing-first test. Not checked on a device.
 - [ ] Thai and Vietnamese copy review.
-- [ ] Remove the old green theme and the legacy `Customer*` screens from the default route once every flag is on (keep the source, per the backend plan's rules).
+  - Thai: every key translated; the native-speaker review is open, with its lists in the progress record. Vietnamese is held by the owner (not translated for now).
+- [x] Remove the old green theme and the legacy `Customer*` screens from the default route once every flag is on (keep the source, per the backend plan's rules).
+  - Off the default route: `Customer*` only under the development legacy flag, the old v1 screens only with `-<area>`. The source stays.
 
 **Verification for every task:**
 - `npm run typecheck:app`;
