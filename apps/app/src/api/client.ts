@@ -146,6 +146,12 @@ export type V1RequestOptions<T> = {
   bytes?: { accept: readonly string[] };
   /** This request's own time limit instead of the transport's (a slow server-side copy, a large download). */
   timeoutMs?: number;
+  /**
+   * One limit for the whole request, from the call: every resend (after a
+   * lost answer or a refreshed token) waits only for what is left of it, and
+   * none is sent once it passed. Without it, each attempt gets its full limit.
+   */
+  deadlineMs?: number;
   /** Token-only routes (challenge, bootstrap, proof): no application binding is sent or required. */
   tokenOnly?: boolean;
   /**
@@ -231,7 +237,8 @@ const NETWORK_RETRIES = 2;
  * can't be read right now (offline) is a `network` outcome, never a sign-out.
  * Responses must pass the caller's exact DTO validator; nothing is coerced.
  * A binary read (a receipt's image) gets the same headers, refresh and
- * session checks, with a success read as bytes.
+ * session checks, with a success read as bytes. A request with its own
+ * deadline ends by then, resends and a refreshed resend included.
  */
 export function createV1Transport(options: {
   baseUrl: string;
@@ -300,6 +307,7 @@ export function createV1Transport(options: {
     async request<T>(method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE', path: string, request: V1RequestOptions<T>): Promise<T> {
       if (!path.startsWith('/v1/') || path.includes('\\') || path.includes('//')) throw new V1Error('invalid', 0, 'INVALID_PATH');
       if (!options.client) throw new V1Error('unsupported_platform', 0, 'CLIENT_UNSUPPORTED');
+      const deadline = request.deadlineMs === undefined ? Infinity : Date.now() + request.deadlineMs;
       const before = credentials.getSessionSnapshot();
       const stillCurrent = () => {
         if (credentials.getSessionSnapshot().epoch !== before.epoch) throw new V1Error('session_changed', 0, 'SESSION_CHANGED');
@@ -333,8 +341,11 @@ export function createV1Transport(options: {
       const send = async (): Promise<Answer> => {
         const init: RequestInit = { method, headers, body: body as BodyInit | undefined };
         for (let attempt = 0; ; attempt += 1) {
+          // Each attempt waits for its own limit or what is left of the request's, whichever is less.
+          const limitMs = Math.min(request.timeoutMs ?? timeoutMs, deadline - Date.now());
+          if (limitMs <= 0) throw new V1Error('network', 0, 'TIMEOUT');
           try {
-            return await once(`${baseUrl}${path}`, init, request.timeoutMs ?? timeoutMs, Boolean(request.bytes));
+            return await once(`${baseUrl}${path}`, init, limitMs, Boolean(request.bytes));
           } catch (error) {
             // Only a command may be resent blindly, and only as itself, and
             // never once the session changed; a read is retried from the screen.

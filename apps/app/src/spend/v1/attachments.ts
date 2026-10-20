@@ -13,7 +13,8 @@
 // Retaining and replacing copy the image on the server, which can take up to
 // 60 s, so those two commands wait longer than an ordinary call; one that
 // still gets no answer is resent with the same key, which the server
-// recognizes.
+// recognizes, but only within 100 s for the whole command, so a lost answer
+// never keeps the person waiting for minutes.
 //
 // Where an attachment id comes from (a receipt for a record that already
 // exists): the photo is uploaded as an image import (`POST /v1/imports`); once
@@ -51,6 +52,8 @@ export type AttachmentResourceOptions = {
 
 /** Above the server's 60 s copy deadline, with room for the command around it. */
 const COPY_TIMEOUT_MS = 90_000;
+/** The whole retain or replace, every resend included: a resend gets only what is left. */
+const COPY_DEADLINE_MS = 100_000;
 /** A receipt is up to 12 MiB: more time than a JSON read. */
 const DOWNLOAD_TIMEOUT_MS = 60_000;
 const isBytes = (value: unknown): value is Uint8Array => value instanceof Uint8Array;
@@ -76,9 +79,9 @@ export function createAttachmentResources(transport: V1Transport, options: Attac
   return {
     // Async, so a malformed id, key or version is a rejection like any other refusal.
     retain: async (recordId, version, input, commandId) =>
-      transport.request('POST', path(recordId), { body: consentBody(input), command: commandOf(commandId, version), timeoutMs: COPY_TIMEOUT_MS, validate: ackFor(commandId, recordId, version) }),
+      transport.request('POST', path(recordId), { body: consentBody(input), command: commandOf(commandId, version), timeoutMs: COPY_TIMEOUT_MS, deadlineMs: COPY_DEADLINE_MS, validate: ackFor(commandId, recordId, version) }),
     replace: async (recordId, version, input, commandId) =>
-      transport.request('PUT', path(recordId), { body: consentBody(input), command: commandOf(commandId, version), timeoutMs: COPY_TIMEOUT_MS, validate: ackFor(commandId, recordId, version) }),
+      transport.request('PUT', path(recordId), { body: consentBody(input), command: commandOf(commandId, version), timeoutMs: COPY_TIMEOUT_MS, deadlineMs: COPY_DEADLINE_MS, validate: ackFor(commandId, recordId, version) }),
     remove: async (recordId, version, commandId) =>
       transport.request('DELETE', path(recordId), { command: commandOf(commandId, version), validate: ackFor(commandId, recordId, version) }),
     grant: async (attachmentId) => transport.request('GET', `/v1/attachments/${segment(attachmentId)}/grant`, { validate: isAttachmentGrant }),

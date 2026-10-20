@@ -1,7 +1,7 @@
 // P2c client adapter (R7): retain, replace and remove a record's receipt, ask
 // for a five-minute grant and download the receipt's bytes through it, against
 // a local HTTP server that checks the method, path, headers and exact body.
-// The time limits are checked over a held fetch with mocked timers.
+// The time limits are checked over a held fetch with mocked timers and clock.
 import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
@@ -74,10 +74,10 @@ const attachments = (transport: V1Transport = createV1Transport({ baseUrl, crede
  * aborted: with mocked timers, a test moves the clock past a time limit.
  */
 function heldAttachments() {
-  const sent: { headers: Record<string, string>; body: unknown; signal: AbortSignal; answer: (body: unknown) => void }[] = [];
+  const sent: { headers: Record<string, string>; body: unknown; signal: AbortSignal; answer: (body: unknown, status?: number) => void }[] = [];
   const fetchImpl = ((_url: string | URL | Request, init: RequestInit = {}) => new Promise<Response>((resolve, reject) => {
     const signal = init.signal as AbortSignal;
-    const answer = (body: unknown) => resolve(new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } }));
+    const answer = (body: unknown, status = 200) => resolve(new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } }));
     sent.push({ headers: init.headers as Record<string, string>, body: init.body, signal, answer });
     signal.addEventListener('abort', () => reject(new DOMException('The operation was aborted.', 'AbortError')));
   })) as typeof fetch;
@@ -342,13 +342,13 @@ test('retain and replace wait past the server\'s 60 s copy, where an ordinary ca
 });
 
 test('a retain that does give up is resent as the same command: same key, same If-Match, same body', async (t) => {
-  t.mock.timers.enable({ apis: ['setTimeout'] });
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'] });
   const { sent, resources } = heldAttachments();
   const key = randomUUID();
   const retained = resources.retain(RECORD, 3, { attachment_id: RECEIPT }, key);
   await settle();
-  // Not forever: by two minutes it gave up on that answer.
-  t.mock.timers.tick(120_000);
+  // Not forever: by 90 s it gave up on that answer.
+  t.mock.timers.tick(90_000);
   assert.equal(sent[0].signal.aborted, true);
   await settle();
   t.mock.timers.tick(250);
@@ -361,8 +361,69 @@ test('a retain that does give up is resent as the same command: same key, same I
   assert.deepEqual(await retained, ack(key));
 });
 
+test('a retain or replace ends by 100 s in all: a resend gets only what is left, never a fresh 90 s', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+  const { sent, resources } = heldAttachments();
+  const retainKey = randomUUID();
+  const replaceKey = randomUUID();
+  const commands = [
+    { name: 'retain', key: retainKey, run: () => resources.retain(RECORD, 3, { attachment_id: RECEIPT }, retainKey) },
+    { name: 'replace', key: replaceKey, run: () => resources.replace(RECORD, 3, { attachment_id: OTHER }, replaceKey) },
+  ];
+  for (const command of commands) {
+    const first = sent.length;
+    const failed = outcome(command.run);
+    await settle();
+    t.mock.timers.tick(90_000);
+    assert.equal(sent[first].signal.aborted, true, `${command.name} gives up on that answer at 90 s`);
+    await settle();
+    t.mock.timers.tick(250);
+    await settle();
+    const resend = sent[first + 1];
+    assert.ok(resend, `${command.name} is resent`);
+    assert.equal(resend.headers['Idempotency-Key'], command.key);
+    t.mock.timers.tick(8_750);
+    assert.equal(resend.signal.aborted, false, `${command.name}'s resend still waits at 99 s`);
+    t.mock.timers.tick(1_000);
+    assert.equal(resend.signal.aborted, true, `${command.name} has given up by 100 s`);
+    await settle();
+    t.mock.timers.tick(500);
+    await settle();
+    assert.equal(sent.length, first + 2, `${command.name}: nothing is sent past the limit`);
+    const timedOut = await failed;
+    assert.equal(timedOut.outcome, 'network', command.name);
+    assert.equal(timedOut.code, 'TIMEOUT', command.name);
+  }
+});
+
+test('a retain refreshed after a 401 stays within the same 100 s: its resend gets only what is left', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+  const { sent, resources } = heldAttachments();
+  const key = randomUUID();
+  const failed = outcome(() => resources.retain(RECORD, 3, { attachment_id: RECEIPT }, key));
+  await settle();
+  t.mock.timers.tick(60_000);
+  sent[0].answer({ code: 'UNAUTHENTICATED' }, 401);
+  for (let step = 0; step < 5 && sent.length < 2; step += 1) await settle();
+  assert.equal(refreshes, 1);
+  const resend = sent[1];
+  assert.ok(resend, 'resent with the renewed token');
+  assert.equal(resend.headers.Authorization, 'Bearer renewed-token');
+  assert.equal(resend.headers['Idempotency-Key'], key);
+  assert.equal(resend.body, sent[0].body);
+  t.mock.timers.tick(39_000);
+  assert.equal(resend.signal.aborted, false, 'still waits at 99 s');
+  t.mock.timers.tick(1_000);
+  assert.equal(resend.signal.aborted, true, 'given up by 100 s, not at 150 s');
+  await settle();
+  t.mock.timers.tick(250);
+  await settle();
+  assert.equal(sent.length, 2, 'nothing is sent past the limit');
+  assert.equal((await failed).code, 'TIMEOUT');
+});
+
 test('remove and the grant keep the transport\'s own limit', async (t) => {
-  t.mock.timers.enable({ apis: ['setTimeout'] });
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'] });
   const { sent, resources } = heldAttachments();
   const granted = resources.grant(RECEIPT);
   await settle();
@@ -382,6 +443,9 @@ test('remove and the grant keep the transport\'s own limit', async (t) => {
   t.mock.timers.tick(250);
   await settle();
   assert.equal(sent[2].headers['Idempotency-Key'], key);
+  // No overall limit here: the resend gets the transport's full 20 s again.
+  t.mock.timers.tick(19_999);
+  assert.equal(sent[2].signal.aborted, false);
   sent[2].answer(ack(key));
   assert.deepEqual(await removed, ack(key));
 });
