@@ -183,6 +183,40 @@ test('history builds its query from the filter; a month without a budget is null
   assert.equal(await resources().budget('2026-09'), null);
 });
 
+test('recently deleted pages by cursor and accepts only deleted records in the record shape', async () => {
+  const deleted = {
+    id: ACK.entity_id, type: 'expense', amount_minor: '6500', occurred_on: '2026-09-20', wallet_id: WALLET.id, category_id: '1d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f5a',
+    note: 'Latte', merchant: null, deleted_at: '2026-09-21T03:00:00.000Z', version: 2,
+  };
+  const page = { items: [deleted], next_cursor: 'abc_-1', as_of_revision: '12', refresh_suggested: false };
+  replies.push({ status: 200, body: page }, { status: 200, body: { ...page, next_cursor: null } });
+  assert.deepEqual(await resources().recentlyDeleted('abc_-1', 20), page);
+  assert.equal(seen[0].method, 'GET');
+  const url = new URL(seen[0].url, 'http://x');
+  assert.equal(url.pathname, '/v1/history/deleted');
+  assert.deepEqual(Object.fromEntries(url.searchParams), { cursor: 'abc_-1', limit: '20' });
+  // A read: no command headers. Without a cursor or limit there is no query at all.
+  assert.equal(seen[0].headers['idempotency-key'], undefined);
+  assert.equal(seen[0].headers['x-gogospend-session'], 'b'.repeat(43));
+  assert.deepEqual((await resources().recentlyDeleted()).next_cursor, null);
+  assert.equal(seen[1].url, '/v1/history/deleted');
+  // Refused, never coerced: an active record, history's page, number money, an unknown field, a bad cursor or revision.
+  const refused: unknown[] = [
+    { ...page, items: [{ ...deleted, deleted_at: null }] },
+    { ...page, items: [{ ...deleted, amount_minor: 6500 }] },
+    { ...page, items: [{ ...deleted, owner: 'x' }] },
+    { ...page, summary: { income_minor: '0', expense_minor: '0', balance_minor: '0', by_wallet: {}, count: 1 } },
+    { ...page, next_cursor: 'not a cursor' },
+    { ...page, as_of_revision: 12 },
+    { ...page, refresh_suggested: 'no' },
+    { items: [deleted], next_cursor: null, as_of_revision: '12' },
+  ];
+  for (const body of refused) {
+    replies.push({ status: 200, body });
+    assert.equal((await outcome(() => resources().recentlyDeleted())).outcome, 'invalid_response', JSON.stringify(body));
+  }
+});
+
 test('only https, or loopback http, API addresses are accepted', () => {
   assert.throws(() => createV1Transport({ baseUrl: 'http://api.example.com', credentials, client: null }), V1Error);
   assert.throws(() => createV1Transport({ baseUrl: 'https://user:pw@api.example.com', credentials, client: null }), V1Error);

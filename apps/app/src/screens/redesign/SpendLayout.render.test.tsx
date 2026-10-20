@@ -195,6 +195,8 @@ test('which tab a path belongs to', () => {
   expect(spendTab('/spend/record/abc')).toEqual({ visible: false, active: '' });
   expect(spendTab('/spend/record')).toEqual({ visible: false, active: '' });
   expect(spendTab('/spend/recorder')).toEqual({ visible: true, active: '' });
+  // Recently deleted is pushed over History with its own Back, like a record.
+  expect(spendTab('/spend/deleted')).toEqual({ visible: false, active: '' });
 });
 
 test('the Home route: the new Home under the flag, the legacy flag first, else the current Home', () => {

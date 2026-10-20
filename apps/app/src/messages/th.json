@@ -1087,5 +1087,13 @@
   "redesignNameWonTShowInQuickAdd": "{name} จะไม่แสดงในหน้าเพิ่มรายการอีก รายการที่ผ่านมายังใช้หมวดหมู่นี้อยู่ และคุณนำกลับมาใช้ได้ที่นี่ทุกเมื่อ",
   "redesignRowsRowsToCheckSelectedChosen": "มี {rows} แถวให้ตรวจ เลือกแล้ว {selected} แถว",
   "redesignName": "→ {name}",
-  "redesignCouldnTReachJotbunImportNeedsAOpen": "เชื่อมต่อ Jotbun ไม่ได้ การนำเข้าต้องใช้อินเทอร์เน็ต การนำเข้านี้เก็บไว้เฉพาะตอนที่หน้านี้เปิดอยู่"
+  "redesignCouldnTReachJotbunImportNeedsAOpen": "เชื่อมต่อ Jotbun ไม่ได้ การนำเข้าต้องใช้อินเทอร์เน็ต การนำเข้านี้เก็บไว้เฉพาะตอนที่หน้านี้เปิดอยู่",
+  "redesignRecentlyDeleted": "รายการที่เพิ่งลบ",
+  "redesignDeletedEntriesCanBeRestoredForDays": "รายการที่ลบแล้วกู้คืนได้ภายใน {days} วัน หลังจากนั้นจะถูกลบถาวร",
+  "redesignEntriesYouDeleteShowUpHere": "รายการที่คุณลบจะแสดงที่นี่",
+  "redesignRestoreEntry": "กู้คืน {entry}",
+  "redesignEntryAmountIsBackInHistory": "{entry} {amount} กลับมาอยู่ในประวัติแล้ว",
+  "redesignThisEntryCanNoLongerBeRestored": "กู้คืนรายการนี้ไม่ได้แล้ว",
+  "redesignThisEntrySWalletOrCategoryIsArchived": "กระเป๋าเงินหรือหมวดหมู่ของรายการนี้ถูกเก็บถาวรอยู่ นำกลับมาใช้ก่อน แล้วจึงกู้คืนรายการ",
+  "redesignThisEntryCouldNotBeRestored": "กู้คืนรายการนี้ไม่สำเร็จ"
 }

@@ -42,3 +42,41 @@ export function decodeCursor(filter: HistoryFilter, cursor: string): CursorPosit
   if (value.f !== filterKey(filter)) throw invalid('The cursor belongs to a different filter or order.');
   return { occurredOn: value.d, id: value.i, revision: value.r };
 }
+
+/** "Recently deleted" keyset position: the last row's deletion instant (microseconds, UTC) and id, plus the chain's first revision. */
+export type DeletedCursorPosition = { deletedAt: string; id: string; revision: string };
+
+// PostgreSQL keeps microseconds; a JS Date only milliseconds, so the instant
+// travels as the database's own text and is compared as timestamptz.
+const DELETED_INSTANT = /^([0-9]{4}-[0-9]{2}-[0-9]{2})T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\.[0-9]{6}Z$/;
+
+/**
+ * Opaque keyset cursor for GET /v1/history/deleted: the last row's
+ * (deleted_at, id) and the first page's account revision. Its kind sets it
+ * apart from a history cursor, so neither listing accepts the other's. Like
+ * history's, it grants nothing: rows are still read under the owner's RLS.
+ */
+export function encodeDeletedCursor(position: DeletedCursorPosition): string {
+  return Buffer.from(JSON.stringify({ v: 1, k: 'deleted', t: position.deletedAt, i: position.id, r: position.revision })).toString('base64url');
+}
+
+export function decodeDeletedCursor(cursor: string): DeletedCursorPosition {
+  let value: { v?: unknown; k?: unknown; t?: unknown; i?: unknown; r?: unknown } | null;
+  try {
+    if (cursor.length > 512 || !/^[A-Za-z0-9_-]+$/.test(cursor)) throw new Error('shape');
+    value = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8')) as typeof value;
+  } catch {
+    throw invalid('The cursor is malformed.');
+  }
+  const instant = typeof value?.t === 'string' ? DELETED_INSTANT.exec(value.t) : null;
+  if (value?.v !== 1 || value.k !== 'deleted' || !instant || !isUuid(value.i) || typeof value.r !== 'string' || !/^[0-9]{1,19}$/.test(value.r)) {
+    throw invalid('The cursor is malformed.');
+  }
+  try {
+    // A real Gregorian date, so a forged instant is a 422, not a database error.
+    validateOccurredOn(instant[1], '0001-01-01', '9999-12-31', 'cursor');
+  } catch {
+    throw invalid('The cursor is malformed.');
+  }
+  return { deletedAt: value.t as string, id: value.i, revision: value.r };
+}

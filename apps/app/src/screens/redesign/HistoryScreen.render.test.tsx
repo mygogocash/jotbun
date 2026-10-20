@@ -186,6 +186,24 @@ test('a delete that meets a newer version elsewhere reloads instead of overwriti
   expect(fake.callsOf('deleteTransaction')).toHaveLength(1);
 });
 
+test('Recently deleted opens from History, whatever the month, filter or load state', async () => {
+  await golden();
+  fireEvent.click(screen.getByRole('button', { name: 'Recently deleted' }));
+  expect(nav.router.push).toHaveBeenLastCalledWith('/spend/deleted');
+  // Also with a filter on and nothing matching, and when the month could not load.
+  fireEvent.click(screen.getByRole('radio', { name: 'Transfer' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Previous month' }));
+  expect(await screen.findByText('No entries match')).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Recently deleted' })).toBeTruthy();
+  cleanup();
+  const failing = createFakeResources(goldenSeed());
+  failing.fail('history', 'network');
+  mountScreen(<HistoryScreen now={NOW} />, { resources: failing.resources });
+  expect(await screen.findByText("We couldn't load your diary.")).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Recently deleted' }));
+  expect(nav.router.push).toHaveBeenLastCalledWith('/spend/deleted');
+});
+
 test('suggests a refresh when entries changed since the list opened', async () => {
   const { fake } = await golden({ wrap: (resources) => ({ ...resources, history: async (...args) => ({ ...(await resources.history(...args)), refresh_suggested: true }) as HistoryPage }) });
   expect(screen.getByText('Entries changed since you opened this list.')).toBeTruthy();

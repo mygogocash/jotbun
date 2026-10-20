@@ -40,6 +40,27 @@ export type Totals = {
 
 export type FilteredTotals = Totals & { count: number };
 
+/** A record inside the restore window: the persisted shape, always with its deletion instant. */
+export type DeletedTransactionDto = TransactionDto & { deleted_at: string };
+
+/**
+ * GET /v1/history/deleted ("Recently deleted"): the account's deleted records
+ * still restorable, i.e. deleted at most RESTORE_WINDOW_DAYS ago (the restore
+ * command's own rule), most recently deleted first. Keyset-paginated on
+ * (deleted_at, id) with an opaque cursor; the only query parameters are
+ * `limit` (1-HISTORY_MAX_LIMIT, default HISTORY_DEFAULT_LIMIT) and `cursor`.
+ * Restore with POST /v1/transactions/:id/restore and the item's version.
+ * Purged records are gone and never listed.
+ */
+export type DeletedHistoryPage = {
+  items: DeletedTransactionDto[];
+  next_cursor: string | null;
+  /** The account revision these rows were read at. */
+  as_of_revision: Revision;
+  /** As in HistoryPage: the account changed since the first page of this cursor chain. */
+  refresh_suggested: boolean;
+};
+
 /** GET /v1/history */
 export type HistoryPage = {
   items: TransactionDto[];

@@ -5,8 +5,8 @@
 // adds no tab:
 // Budget opens from Home, Wallets and Categories from Budget. The bar is a row
 // of the layout, below the screen, never over it. It is hidden while adding,
-// on a record and on the Planning screens, so those screens have the whole
-// height and their own way back.
+// on a record, on Recently deleted and on the Planning screens, so those
+// screens have the whole height and their own way back.
 import { usePathname, useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
@@ -22,8 +22,8 @@ export type SpendTabKey = 'home' | 'history' | 'insights';
 export type SpendTab = { visible: boolean; active: SpendTabKey | '' };
 
 const ROUTES: Readonly<Record<SpendTabKey, '/spend' | '/spend/all' | '/spend/insights'>> = { home: '/spend', history: '/spend/all', insights: '/spend/insights' };
-/** Screens that take the whole height: Add, a record (with its edit screens), Budget, Wallets, Categories, a recap and reminders. */
-const BAR_HIDDEN = new Set(['add', 'record', 'budget', 'wallets', 'categories', 'recap', 'reminders']);
+/** Screens that take the whole height: Add, a record (with its edit screens), Recently deleted, Budget, Wallets, Categories, a recap and reminders. */
+const BAR_HIDDEN = new Set(['add', 'record', 'deleted', 'budget', 'wallets', 'categories', 'recap', 'reminders']);
 
 /** Whether the bar shows on `pathname`, and which tab it selects ('' for none). */
 export function spendTab(pathname: string): SpendTab {

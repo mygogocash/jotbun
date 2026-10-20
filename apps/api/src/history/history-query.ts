@@ -26,10 +26,19 @@ function date(value: unknown, field: string): string {
 }
 const CONTROL = /[\p{Cc}\u2028\u2029]/u;
 
-function single(value: unknown, field: string): string | undefined {
+/** One query parameter as text; a repeated or structured one is refused. */
+export function single(value: unknown, field: string): string | undefined {
   if (value === undefined) return undefined;
   if (typeof value !== 'string') throw new ContractValidationError('VALIDATION_FAILED', 'Repeated or structured parameter.', field);
   return value;
+}
+
+/** A page size: canonical digits, 1 to HISTORY_MAX_LIMIT, HISTORY_DEFAULT_LIMIT when absent. */
+export function parseLimit(raw: string | undefined): number {
+  if (raw === undefined) return HISTORY_DEFAULT_LIMIT;
+  const limit = /^[1-9][0-9]{0,2}$/.test(raw) ? Number(raw) : 0;
+  if (limit < 1 || limit > HISTORY_MAX_LIMIT) throw new ContractValidationError('VALIDATION_FAILED', `limit must be 1-${HISTORY_MAX_LIMIT}.`, 'limit');
+  return limit;
 }
 
 /** Validates GET /v1/history query parameters into a filter, cursor and limit. */
@@ -63,12 +72,7 @@ export function parseHistoryRequest(query: Record<string, unknown>): { filter: H
     if (!HISTORY_SORTS.includes(sort as HistorySort)) throw new ContractValidationError('VALIDATION_FAILED', 'Unknown sort.', 'sort');
     filter.sort = sort as HistorySort;
   }
-  const rawLimit = single(input.limit, 'limit');
-  let limit = HISTORY_DEFAULT_LIMIT;
-  if (rawLimit !== undefined) {
-    limit = /^[1-9][0-9]{0,2}$/.test(rawLimit) ? Number(rawLimit) : 0;
-    if (limit < 1 || limit > HISTORY_MAX_LIMIT) throw new ContractValidationError('VALIDATION_FAILED', `limit must be 1-${HISTORY_MAX_LIMIT}.`, 'limit');
-  }
+  const limit = parseLimit(single(input.limit, 'limit'));
   return { filter, cursor: single(input.cursor, 'cursor'), limit };
 }
 
