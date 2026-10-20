@@ -135,6 +135,7 @@ const PROBES: readonly Probe[] = [
   { name: 'read import selection', method: 'get', path: `/v1/imports/${ID}/selections/${ID}`, scopes: [] },
   { name: 'read wallets', method: 'get', path: '/v1/wallets', scopes: [] },
   { name: 'read history', method: 'get', path: '/v1/history?from=2026-10-01&through=2026-10-31', scopes: [] },
+  { name: 'read recently deleted', method: 'get', path: '/v1/history/deleted', scopes: [] },
   { name: 'read export', method: 'get', path: `/v1/exports/${ID}`, scopes: [] },
   { name: 'read import', method: 'get', path: `/v1/imports/${ID}`, scopes: [] },
   { name: 'command status', method: 'post', path: '/v1/commands/status', scopes: [] },

@@ -103,7 +103,7 @@ export type { TransactionType, EntryType, EntryDto, TransferDto, TransactionDto,
 export { MAX_BUDGET_CATEGORY_LIMITS, parseMonth, isBudgetSnapshot } from "./v1/budgets.ts";
 export type { BudgetCategoryLimit, BudgetDto, SetMonthlyBudgetRequest } from "./v1/budgets.ts";
 export { HISTORY_SORTS, HISTORY_DEFAULT_LIMIT, HISTORY_MAX_LIMIT, HISTORY_QUERY_MAX_CHARS } from "./v1/history.ts";
-export type { HistorySort, HistoryFilter, Totals, FilteredTotals, HistoryPage } from "./v1/history.ts";
+export type { HistorySort, HistoryFilter, Totals, FilteredTotals, HistoryPage, DeletedTransactionDto, DeletedHistoryPage } from "./v1/history.ts";
 export type { CategoryTotal, BudgetCategoryUsage, BudgetUsage, MonthSummary } from "./v1/summary.ts";
 export {
   SYNC_DEFAULT_GROUPS,
