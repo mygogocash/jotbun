@@ -2,11 +2,13 @@
 // with day totals, device drafts merged into their days with their state,
 // type / wallet / category filters, and a search over the category name,
 // merchant and note with a summary ("5 entries, ฿420.00 out"). Also the
-// "Recently deleted" rows for records still restorable (30 days).
+// "Recently deleted" rows for records still restorable (30 days), and how a
+// restore's outcome is said.
 import { RESTORE_WINDOW_DAYS } from '@gogospend/contracts';
 import type { Minor, TransactionDto, TransactionType } from '@gogospend/contracts';
 
 import type { OutboxCommand } from '../../../storage/types.ts';
+import { formatMinor } from '../money.ts';
 import type { MoneyLocale } from '../money.ts';
 import { categoryName, monthOf } from '../viewModels.ts';
 import { confirmedRow, dateTagFor, dayTotals, daysInMonth, groupDays, mergeRows, openDrafts, say } from './shared.ts';
@@ -164,30 +166,25 @@ export function historyModel(input: HistoryInput): HistoryModel {
 
 // ---------------------------------------------------------------------------
 // Recently deleted
-
-/**
- * Documented gap: no existing API lists deleted records.
- * - `SpendV1Resources.history` (GET /v1/history) returns active records only;
- *   the server filters `deleted_at IS NULL`.
- * - `DiaryView` exposes the device's wallets and categories, not records.
- *   The diary's confirmed state does hold deleted transaction snapshots from
- *   sync (state `deleted`, with `deleted_at` and the post-delete version), so
- *   exposing them there, or a server listing, would feed this model.
- * Until one exists, the model takes whatever deleted records the caller has
- * (for example the one just deleted, from its acknowledgement) and computes
- * what is still restorable, exactly as the server's rule does.
- */
-export const RECENTLY_DELETED_GAP = {
-  source: 'none',
-  detail: 'No existing API lists deleted records: /v1/history returns active records only and DiaryView exposes no records. The device diary holds deleted transaction snapshots from sync; exposing them (or a server listing) is needed to fill this list.',
-} as const;
+//
+// The records come from the server's listing (`SpendV1Resources.recentlyDeleted`,
+// GET /v1/history/deleted: deleted records inside the restore window, newest
+// deletion first) or, on the record screen, the one record it read. The model
+// applies the same restore rule again on this device's clock, so a row never
+// offers a restore the server would refuse as expired.
 
 export type DeletedRow = {
   recordId: string;
   /** The version a restore must send (the deleted record's current version). */
   version: number;
+  type: TransactionType;
+  /** The record's category, for its icon; null for a move. */
+  categoryId: string | null;
   title: string;
   detail: string;
+  merchant: string | null;
+  note: string | null;
+  amountMinor: Minor;
   amountText: string;
   amountLabel: string;
   occurredOn: string;
@@ -202,8 +199,38 @@ export type DeletedRow = {
 export type RecentlyDeletedModel = {
   rows: DeletedRow[];
   emptyText: string | null;
-  gap: typeof RECENTLY_DELETED_GAP;
 };
+
+/** After a restore: "Food ฿65.00 is back in History." (the amount unsigned, as a sentence says it). */
+export function restoredText(row: Pick<DeletedRow, 'title' | 'amountMinor'>, locale: MoneyLocale, tc: Translate): string {
+  return tc('{entry} {amount} is back in History.', { entry: row.title, amount: formatMinor(row.amountMinor, locale) });
+}
+
+/** The fields the restore command names when a wallet or category the record uses is archived. */
+const REFERENCE_FIELDS = new Set(['wallet_id', 'category_id', 'source_wallet_id', 'destination_wallet_id']);
+
+/**
+ * Why a restore was refused, for the refusals only Recently deleted meets
+ * (`outcome` is the V1Error outcome; `fields` the fields it names), or null
+ * to say it the way every save problem is said.
+ * - deleted / purged / not_found: past the 30-day window, purged, or gone;
+ * - conflict: another device changed it (restored it, most likely);
+ * - invalid on a wallet or category: one it uses is archived;
+ * - any other invalid: refused as it is (this list highlights no field).
+ */
+export function restoreRefusalText(outcome: string | undefined, fields: readonly string[], tc: Translate): string | null {
+  switch (outcome) {
+    case 'deleted':
+    case 'purged':
+    case 'not_found': return tc('This entry can no longer be restored.');
+    case 'conflict': return tc('This entry changed on another device.');
+    case 'invalid':
+      return fields.some((field) => REFERENCE_FIELDS.has(field))
+        ? tc("This entry's wallet or category is archived. Unarchive it, then restore the entry.")
+        : tc('This entry could not be restored.');
+    default: return null;
+  }
+}
 
 const DAY_MS = 86_400_000;
 const WINDOW_MS = RESTORE_WINDOW_DAYS * DAY_MS;
@@ -224,10 +251,12 @@ export function recentlyDeletedModel(input: { records: readonly TransactionDto[]
       const row = confirmedRow(record, input);
       const daysLeft = Math.min(RESTORE_WINDOW_DAYS, Math.max(1, Math.ceil((until - now) / DAY_MS)));
       return {
-        recordId: record.id, version: record.version, title: row.title, detail: row.detail, amountText: row.amountText, amountLabel: row.amountLabel,
+        recordId: record.id, version: record.version, type: record.type, categoryId: record.type === 'transfer' ? null : record.category_id,
+        title: row.title, detail: row.detail, merchant: record.merchant, note: record.note,
+        amountMinor: record.amount_minor, amountText: row.amountText, amountLabel: row.amountLabel,
         occurredOn: record.occurred_on, deletedAt: record.deleted_at, restorableUntil: new Date(until).toISOString(), daysLeft,
         daysLeftText: daysLeft === 1 ? tc('Last day to restore') : tc('{days} days left to restore', { days: daysLeft }),
       };
     });
-  return { rows, emptyText: rows.length === 0 ? tc('Nothing deleted in the last 30 days') : null, gap: RECENTLY_DELETED_GAP };
+  return { rows, emptyText: rows.length === 0 ? tc('Nothing deleted in the last 30 days') : null };
 }

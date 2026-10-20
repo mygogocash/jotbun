@@ -33,6 +33,8 @@ export function useDateLocale(): DateLocale {
 
 /** Where History lives; Back falls back to it when there is no screen to go back to. */
 export const HISTORY_ROUTE = '/spend/all';
+/** "Recently deleted" (plan §6.1), opened from History. */
+export const RECENTLY_DELETED_ROUTE = '/spend/deleted';
 
 /**
  * Typed routes: the record screen by its pattern and id (edit mode with

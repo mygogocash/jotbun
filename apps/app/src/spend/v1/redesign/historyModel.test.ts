@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import type { TransactionDto } from '@gogospend/contracts';
 
 import type { OutboxCommand } from '../../../storage/types.ts';
-import { RECENTLY_DELETED_GAP, foldForSearch, historyModel, matchesSearch, recentlyDeletedModel, summaryLine } from './historyModel.ts';
+import { foldForSearch, historyModel, matchesSearch, recentlyDeletedModel, restoreRefusalText, restoredText, summaryLine } from './historyModel.ts';
 import type { HistoryInput } from './historyModel.ts';
 import { BANK, CASH, COFFEE_TH, FOOD, GIFT, PETS, SALARY, SHOPPING, command, entry, lookups, pending, tc, transfer } from './testing/fixtures.ts';
 
@@ -168,10 +168,41 @@ test('recently deleted: restorable for 30 days by the server\'s rule, newest fir
   ]);
   assert.deepEqual([view.rows[0].version, view.rows[0].title, view.rows[0].amountText, view.rows[0].restorableUntil], [7, 'Food', '-฿65.00', '2026-11-17T04:00:00.000Z']);
   assert.equal(view.emptyText, null);
-  assert.equal(view.gap, RECENTLY_DELETED_GAP);
-  assert.equal(RECENTLY_DELETED_GAP.source, 'none');
+  // No gap marker any more: the rows come from GET /v1/history/deleted.
+  assert.deepEqual(Object.keys(view).sort(), ['emptyText', 'rows']);
   const nothing = recentlyDeletedModel({ records: [deleted('active', null)], now, lookups: lookups(), tc, locale: 'en' });
   assert.deepEqual([nothing.rows, nothing.emptyText], [[], 'Nothing deleted in the last 30 days']);
+});
+
+test('recently deleted rows carry what a record row draws: type, exact amount, category, merchant and note', () => {
+  const now = new Date('2026-10-18T05:00:00.000Z');
+  const coffee = entry({ id: 'k', category_id: FOOD.id, merchant: 'Starbucks', note: 'Latte', amount_minor: '12000', deleted_at: '2026-10-10T00:00:00.000Z', version: 2 });
+  const move = transfer({ id: 'm', amount_minor: '50000', deleted_at: '2026-10-11T00:00:00.000Z', version: 4 });
+  const [moved, kept] = recentlyDeletedModel({ records: [coffee, move], now, lookups: lookups(), tc, locale: 'en' }).rows;
+  assert.deepEqual(
+    [kept.recordId, kept.type, kept.categoryId, kept.amountMinor, kept.merchant, kept.note, kept.title],
+    ['k', 'expense', FOOD.id, '12000', 'Starbucks', 'Latte', 'Food'],
+  );
+  assert.deepEqual([moved.recordId, moved.type, moved.categoryId, moved.amountMinor, moved.version], ['m', 'transfer', null, '50000', 4]);
+});
+
+test('a restore says what happened in plain words', () => {
+  assert.equal(restoredText({ title: 'Food', amountMinor: '6500' }, 'en', tc), 'Food ฿65.00 is back in History.');
+  assert.equal(restoredText({ title: 'Salary', amountMinor: '2800000' }, 'th', tc), 'Salary ฿28,000.00 is back in History.');
+  // Too late (past 30 days, or purged), or gone: it cannot come back.
+  for (const outcome of ['deleted', 'purged', 'not_found']) assert.equal(restoreRefusalText(outcome, [], tc), 'This entry can no longer be restored.');
+  assert.equal(restoreRefusalText('conflict', [], tc), 'This entry changed on another device.');
+  // The server refuses while a wallet or category it uses is archived, naming that field.
+  for (const field of ['wallet_id', 'category_id', 'source_wallet_id', 'destination_wallet_id']) {
+    assert.equal(restoreRefusalText('invalid', [field], tc), "This entry's wallet or category is archived. Unarchive it, then restore the entry.");
+  }
+  // Any other refusal of its fields (a date before the wallet's start, say): this list highlights no field.
+  assert.equal(restoreRefusalText('invalid', ['occurred_on'], tc), 'This entry could not be restored.');
+  assert.equal(restoreRefusalText('invalid', [], tc), 'This entry could not be restored.');
+  // Anything else is said the way every save problem is (saveProblem).
+  for (const [outcome, fields] of [['network', []], ['signed_out', []], ['upgrade_required', []], [undefined, []]] as const) {
+    assert.equal(restoreRefusalText(outcome, fields, tc), null);
+  }
 });
 
 // Copy is looked up by its English text: a summary template missing from the

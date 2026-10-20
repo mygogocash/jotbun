@@ -1,5 +1,5 @@
 // An in-memory SpendV1Resources for render tests: owned ids, versions,
-// soft deletion, history pages and month totals, with scripted failures and a
+// soft deletion, history and "Recently deleted" pages and month totals, with scripted failures and a
 // call log. It mirrors the server's rules only as far as the screens need.
 // Test use only.
 import type {
@@ -9,6 +9,8 @@ import type {
   CommandOutcome,
   CreateCategoryRequest,
   CreateWalletRequest,
+  DeletedHistoryPage,
+  DeletedTransactionDto,
   HistoryFilter,
   HistoryPage,
   MonthSummary,
@@ -224,6 +226,23 @@ export function createFakeResources(seed: { wallets?: WalletSnapshot[]; records?
         as_of_revision: String(revision),
         refresh_suggested: false,
         summary: { income_minor: sum('income').toString(), expense_minor: sum('expense').toString(), balance_minor: (sum('income') - sum('expense')).toString(), by_wallet: {}, count: all.length },
+      };
+      return page;
+    },
+    async recentlyDeleted(cursor?: string, limit = 50) {
+      await step('recentlyDeleted', [cursor, limit]);
+      // Newest deletion first, ties by id, as the server orders them. The
+      // server's 30-day window is not applied here: the screen's model applies
+      // it again on the device clock, so a fake can show that guard too.
+      const all = [...records.values()]
+        .filter((record): record is DeletedTransactionDto => record.deleted_at !== null)
+        .sort((a, b) => (a.deleted_at === b.deleted_at ? b.id.localeCompare(a.id) : b.deleted_at.localeCompare(a.deleted_at)));
+      const start = cursor ? Number(cursor.slice(1)) : 0;
+      const page: DeletedHistoryPage = {
+        items: all.slice(start, start + limit),
+        next_cursor: start + limit < all.length ? `d${start + limit}` : null,
+        as_of_revision: String(revision),
+        refresh_suggested: false,
       };
       return page;
     },

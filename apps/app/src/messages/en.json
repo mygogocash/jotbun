@@ -1087,5 +1087,13 @@
   "redesignNameWonTShowInQuickAdd": "{name} won't show in Quick add any more. Past entries keep it, and you can unarchive it here any time.",
   "redesignRowsRowsToCheckSelectedChosen": "{rows} rows to check, {selected} chosen.",
   "redesignName": "→ {name}",
-  "redesignCouldnTReachJotbunImportNeedsAOpen": "Couldn't reach Jotbun. Import needs a connection; your import is kept only while this screen is open."
+  "redesignCouldnTReachJotbunImportNeedsAOpen": "Couldn't reach Jotbun. Import needs a connection; your import is kept only while this screen is open.",
+  "redesignRecentlyDeleted": "Recently deleted",
+  "redesignDeletedEntriesCanBeRestoredForDays": "Deleted entries can be restored for {days} days. After that, they are gone for good.",
+  "redesignEntriesYouDeleteShowUpHere": "Entries you delete show up here.",
+  "redesignRestoreEntry": "Restore {entry}",
+  "redesignEntryAmountIsBackInHistory": "{entry} {amount} is back in History.",
+  "redesignThisEntryCanNoLongerBeRestored": "This entry can no longer be restored.",
+  "redesignThisEntrySWalletOrCategoryIsArchived": "This entry's wallet or category is archived. Unarchive it, then restore the entry.",
+  "redesignThisEntryCouldNotBeRestored": "This entry could not be restored."
 }

@@ -34,6 +34,7 @@ import { BUDGET_SECTIONS } from './planning/budgetSections';
 import { CATEGORY_SECTIONS } from './planning/categorySections';
 import { WALLET_SECTIONS } from './planning/walletSections';
 import { QUICK_ADD_SECTIONS } from './quickAddSections';
+import { RECENTLY_DELETED_SECTIONS } from './recentlyDeletedSections';
 import { RECORD_SECTIONS } from './recordSections';
 
 export type CatalogueGroup = 'Kit' | 'Mascot' | 'Screens';
@@ -50,11 +51,12 @@ export type CatalogueSection = {
   readonly layout?: 'screen';
 };
 
-/** The redesigned screens (R3), one section per state: Home, Quick add, History and the record. */
+/** The redesigned screens (R3), one section per state: Home, Quick add, History, Recently deleted and the record. */
 export const SCREEN_SECTIONS: readonly CatalogueSection[] = [
   ...HOME_SECTIONS,
   ...QUICK_ADD_SECTIONS,
   ...HISTORY_SECTIONS,
+  ...RECENTLY_DELETED_SECTIONS,
   ...RECORD_SECTIONS,
 ];
 

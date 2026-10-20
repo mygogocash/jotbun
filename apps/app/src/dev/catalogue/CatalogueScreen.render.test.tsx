@@ -61,10 +61,13 @@ const HISTORY = [
   'history-month', 'history-search', 'history-search-thai', 'history-search-partial', 'history-filters', 'history-empty',
   'history-no-match', 'history-undo', 'history-drafts', 'history-refresh', 'history-offline',
 ] as const;
+const RECENTLY_DELETED = [
+  'recently-deleted-list', 'recently-deleted-empty', 'recently-deleted-restored', 'recently-deleted-unconfirmed', 'recently-deleted-offline',
+] as const;
 const RECORD = [
   'record-expense', 'record-income', 'record-move', 'record-draft', 'record-edit', 'record-conflict', 'record-deleted', 'record-unconfirmed',
 ] as const;
-const SCREENS = [...HOME, ...QUICK_ADD, ...HISTORY, ...RECORD] as const;
+const SCREENS = [...HOME, ...QUICK_ADD, ...HISTORY, ...RECENTLY_DELETED, ...RECORD] as const;
 const REQUIRED = [...KIT_AND_MASCOT, ...ENTRY, ...SCREENS] as const;
 
 const LOCALE_NAME: Readonly<Record<Locale, string>> = { en: 'English', th: 'Thai', vi: 'Vietnamese' };
@@ -408,6 +411,32 @@ const SHOWS: Readonly<Record<(typeof REQUIRED)[number], (body: HTMLElement, loca
     expect(within(body).getByText(t('Offline. New entries are saved on this phone.', locale))).toBeTruthy();
     expect(within(body).getByText(t("We couldn't load your diary.", locale))).toBeTruthy();
     expect(within(body).getByRole('button', { name: rowName(locale, t('Food', locale), 'Expense', '฿65.00', 'Cash', 'saving') })).toBeTruthy();
+  },
+
+  // Recently deleted, each state reached the way its render test reaches it.
+  'recently-deleted-list': (body, locale) => {
+    expect(within(body).getByRole('heading', { name: t('Recently deleted', locale) })).toBeTruthy();
+    expect(within(body).getByText(t('Deleted entries can be restored for {days} days. After that, they are gone for good.', locale, { days: 30 }))).toBeTruthy();
+    expect(within(body).getByText(t('{days} days left to restore', locale, { days: 21 }))).toBeTruthy();
+    expect(within(body).getAllByRole('button', { name: new RegExp(`^${t('Restore', locale)} `) })).toHaveLength(2);
+  },
+  'recently-deleted-empty': (body, locale) => {
+    expect(within(body).getByText(t('Nothing deleted in the last 30 days', locale))).toBeTruthy();
+    expect(within(body).getByText(t('Deleted entries can be restored for {days} days. After that, they are gone for good.', locale, { days: 30 }))).toBeTruthy();
+    expect(within(body).getByTestId('recently-deleted-empty-bun')).toBeTruthy();
+  },
+  'recently-deleted-restored': (body, locale) => {
+    expect(within(body).getByText(t('{entry} {amount} is back in History.', locale, { entry: t('Bills', locale), amount: '฿12,268.00' }))).toBeTruthy();
+    expect(within(body).getAllByRole('button', { name: new RegExp(`^${t('Restore', locale)} `) })).toHaveLength(1);
+  },
+  'recently-deleted-unconfirmed': (body, locale) => {
+    expect(within(body).getByText(t(NOT_CONFIRMED, locale))).toBeTruthy();
+    expect(within(body).getByRole('button', { name: t('Try again', locale) })).toBeTruthy();
+  },
+  'recently-deleted-offline': (body, locale) => {
+    expect(within(body).getByText(t('Offline. New entries are saved on this phone.', locale))).toBeTruthy();
+    expect(within(body).getByText(t("We couldn't load your diary.", locale))).toBeTruthy();
+    expect(within(body).getByText(t('Deleted entries can be restored for {days} days. After that, they are gone for good.', locale, { days: 30 }))).toBeTruthy();
   },
 
   // Record detail, each state reached the way its render test reaches it.

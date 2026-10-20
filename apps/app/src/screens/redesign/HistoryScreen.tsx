@@ -15,7 +15,8 @@
 // Rows open the record screen; long-press and the screen reader's actions
 // menu offer Edit (the record screen in edit mode), Copy (quick add with
 // `copyOf`) and Delete (with an undo bar). The bun appears only on an empty
-// month.
+// month. "Recently deleted", under the filters, opens the entries deleted in
+// the last 30 days (RecentlyDeletedScreen), where each can be restored.
 //
 // The list is virtualized (a `FlatList`, review m7): it draws its first items
 // at once and then only a window around what is on screen, so a long month
@@ -62,7 +63,7 @@ import { FilterChips } from '@mobile/ui/FilterChip';
 import type { ChipOption } from '@mobile/ui/FilterChip';
 import { SearchField } from '@mobile/ui/SearchField';
 import { saveProblem, useCommandKeys, useMoneyLocale } from '../v1/parts';
-import { LoadingBlock, Notice, copyHref, lookOf, recordHref, recordRowState, useDateLocale } from './HistoryParts';
+import { LoadingBlock, Notice, RECENTLY_DELETED_ROUTE, copyHref, lookOf, recordHref, recordRowState, useDateLocale } from './HistoryParts';
 
 export type HistoryScreenProps = {
   now?: Date;
@@ -513,6 +514,8 @@ export function HistoryScreen({ now, initialMonth, onMonthChange }: HistoryScree
         {type !== 'transfer' && categoryOptions.length > 1 ? (
           <FilterChips label={tc('Category')} bleed={BUN_SPACE.md} options={categoryOptions} value={categoryId ?? ALL} onChange={(next) => setCategoryId(next === ALL ? undefined : next)} />
         ) : null}
+        {/* Plan §6.1: deleted entries stay restorable for 30 days, under the filters. Every month and filter, loaded or not. */}
+        <PillButton kind="secondary" label={tc('Recently deleted')} onPress={() => router.push(RECENTLY_DELETED_ROUTE)} />
       </View>
       {summary ? (
         <View testID="history-summary" {...POLITE_LIVE_REGION} style={{ gap: BUN_SPACE.xs, paddingVertical: BUN_SPACE.xs, borderTopWidth: BUN_OUTLINE.rule, borderBottomWidth: BUN_OUTLINE.rule, borderColor: colors.rule }}>
