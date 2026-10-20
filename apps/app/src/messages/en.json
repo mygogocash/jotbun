@@ -1096,5 +1096,8 @@
   "redesignEntryAmountIsBackInHistory": "{entry} {amount} is back in History.",
   "redesignThisEntryCanNoLongerBeRestored": "This entry can no longer be restored.",
   "redesignThisEntrySWalletOrCategoryIsArchived": "This entry's wallet or category is archived. Unarchive it, then restore the entry.",
-  "redesignThisEntryCouldNotBeRestored": "This entry could not be restored."
+  "redesignThisEntryCouldNotBeRestored": "This entry could not be restored.",
+  "redesignThisEntryCanTBeRestoredItsWalletNoLongerExists": "This entry can't be restored: its wallet no longer exists.",
+  "redesignThisEntryCanTBeRestoredItsCategoryNoLongerExists": "This entry can't be restored: its category no longer exists.",
+  "redesignThisEntryCanTBeRestoredItsCategoryIsForTheOtherType": "This entry can't be restored: its category is for the other type (expense or income)."
 }

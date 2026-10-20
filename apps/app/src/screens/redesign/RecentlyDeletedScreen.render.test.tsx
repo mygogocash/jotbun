@@ -108,6 +108,40 @@ test('an unconfirmed restore is frozen: only Try again, which resends the same c
   expect(screen.getByRole('button', { name: RESTORE.food }).getAttribute('aria-disabled')).not.toBe('true');
 });
 
+/** Every read of the list suggests a refresh, so Refresh is on screen. */
+const refreshSuggested = (resources: SpendV1Resources): SpendV1Resources => ({
+  ...resources,
+  recentlyDeleted: async (...args) => ({ ...(await resources.recentlyDeleted(...args)), refresh_suggested: true }) as DeletedHistoryPage,
+});
+
+test('an unconfirmed restore that did commit stops holding the other Restores once a reload no longer lists it', async () => {
+  const fake = await mount({ wrap: refreshSuggested });
+  fake.loseResponse('restoreTransaction');
+  fireEvent.click(await screen.findByRole('button', { name: RESTORE.rent }));
+  expect(await screen.findByText(NOT_CONFIRMED)).toBeTruthy();
+  expect(screen.getByRole('button', { name: RESTORE.food }).getAttribute('aria-disabled')).toBe('true');
+  // It committed: Refresh reads the list without it.
+  fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+  await waitFor(() => expect(deletedRows()).toEqual([ROWS.food]));
+  expect(screen.getByRole('button', { name: RESTORE.food }).getAttribute('aria-disabled')).not.toBe('true');
+  fireEvent.click(screen.getByRole('button', { name: RESTORE.food }));
+  expect(await screen.findByText('Food ฿182.00 is back in History.')).toBeTruthy();
+  expect(fake.callsOf('restoreTransaction').map((call) => call.args[0])).toEqual([RENT, FOOD_ID]);
+});
+
+test('the same after a failed reload and its Try again', async () => {
+  const fake = await mount({ wrap: refreshSuggested });
+  fake.loseResponse('restoreTransaction');
+  fireEvent.click(await screen.findByRole('button', { name: RESTORE.rent }));
+  expect(await screen.findByText(NOT_CONFIRMED)).toBeTruthy();
+  fake.fail('recentlyDeleted', 'network');
+  fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+  expect(await screen.findByText("We couldn't load your diary.")).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+  await waitFor(() => expect(deletedRows()).toEqual([ROWS.food]));
+  expect(screen.getByRole('button', { name: RESTORE.food }).getAttribute('aria-disabled')).not.toBe('true');
+});
+
 test('a refused restore says why in plain words and reads the list again', async () => {
   const fake = await mount();
   // Past the window (or purged) on the server.
@@ -119,13 +153,20 @@ test('a refused restore says why in plain words and reads the list again', async
   fake.fail('restoreTransaction', 'invalid', { status: 422, code: 'VALIDATION_FAILED', fields: { category_id: 'errors.category_archived' } });
   fireEvent.click(screen.getByRole('button', { name: RESTORE.food }));
   expect(await screen.findByText("This entry's wallet or category is archived. Unarchive it, then restore the entry.")).toBeTruthy();
+  // Its wallet is gone, or its category is for the other type: not archived, so nothing to unarchive.
+  fake.fail('restoreTransaction', 'invalid', { status: 422, code: 'VALIDATION_FAILED', fields: { wallet_id: 'errors.wallet_not_found' } });
+  fireEvent.click(screen.getByRole('button', { name: RESTORE.food }));
+  expect(await screen.findByText("This entry can't be restored: its wallet no longer exists.")).toBeTruthy();
+  fake.fail('restoreTransaction', 'invalid', { status: 422, code: 'VALIDATION_FAILED', fields: { category_id: 'errors.category_type_mismatch' } });
+  fireEvent.click(screen.getByRole('button', { name: RESTORE.food }));
+  expect(await screen.findByText("This entry can't be restored: its category is for the other type (expense or income).")).toBeTruthy();
   // Restored on another device meanwhile.
   fake.fail('restoreTransaction', 'conflict', { status: 409, code: 'VERSION_CONFLICT' });
   fireEvent.click(screen.getByRole('button', { name: RESTORE.food }));
   expect(await screen.findByText('This entry changed on another device.')).toBeTruthy();
   // A refusal is definite: the next press is a new command.
   const keys = fake.callsOf('restoreTransaction').map((call) => call.args[2]);
-  expect(new Set(keys).size).toBe(3);
+  expect(new Set(keys).size).toBe(5);
 });
 
 test('with nothing deleted it says so, and still says how long deleted entries are kept', async () => {
@@ -184,7 +225,7 @@ test('load problems as in History: offline under the banner with Try again; bloc
 });
 
 test('suggests a refresh when entries changed since the list opened', async () => {
-  const fake = await mount({ wrap: (resources) => ({ ...resources, recentlyDeleted: async (...args) => ({ ...(await resources.recentlyDeleted(...args)), refresh_suggested: true }) as DeletedHistoryPage }) });
+  const fake = await mount({ wrap: refreshSuggested });
   expect(await screen.findByText('Entries changed since you opened this list.')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
   await waitFor(() => expect(fake.callsOf('recentlyDeleted')).toHaveLength(2));
