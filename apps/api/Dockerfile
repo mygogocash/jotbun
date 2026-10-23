@@ -5,6 +5,9 @@
 #   security worker   node dist/jobs/security-worker.js
 #   deletion worker   node dist/privacy/deletion-worker.js --registry-fd 3
 #                     (fd 3 piped from the secret manager; never an env var)
+#   parse worker      node dist/imports/parse-worker.js
+#                     (import_parse only; the Cloudflare jobs Worker's parser
+#                     container, apps/edge src/roles/parser.ts)
 #   migration (a release step before any of the above starts; never on startup)
 #                     node dist/database/migrate-cli.js   (DATABASE_DIRECT_URL)
 #
@@ -14,7 +17,7 @@
 #   docker run --rm gogospend-local node scripts/release-smoke.cjs
 #
 # The runtime stage holds only the release graph (apps/api/scripts/
-# release-graph.mjs): the dist files the seven entries reach (the five
+# release-graph.mjs): the dist files the eight entries reach (the six
 # processes above and P2b's two parser children), the migrations,
 # the contracts TypeScript source (loaded through Node's type stripping, the
 # master contracts rule) and the package closure of the reviewed runtime

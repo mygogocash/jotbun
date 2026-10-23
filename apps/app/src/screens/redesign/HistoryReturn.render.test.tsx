@@ -82,7 +82,11 @@ vi.mock('expo-router', async () => {
   };
 });
 const shared = vi.hoisted(() => ({ resources: null as unknown }));
-vi.mock('@mobile/api/sharedV1', () => ({ getSharedV1Resources: () => shared.resources }));
+vi.mock('@mobile/api/sharedV1', () => ({
+  getSharedV1Resources: () => shared.resources,
+  // The layouts give their screens Bun's AI help; here it never answers, so it stays off.
+  getSharedAiResources: () => new Proxy({}, { get: () => () => new Promise(() => undefined) }),
+}));
 // The web keeps no device diary; the provider is only a wrapper here.
 vi.mock('@mobile/spend/v1/DeviceDiaryProvider', () => ({ DeviceDiaryProvider: ({ children }: { children: unknown }) => children }));
 vi.mock('expo-status-bar', () => ({ StatusBar: () => null }));

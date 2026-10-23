@@ -5,6 +5,7 @@
 import { Animated, Pressable, View } from 'react-native';
 
 import { useCopy } from '@mobile/i18n/useCopy';
+import { playHaptic } from '@mobile/lib/hapticMoment';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { useSpringPop } from '@mobile/theme/useSpringPop';
 
@@ -55,7 +56,9 @@ export function TypeSwitch({ value, onChange, disabled = false }: TypeSwitchProp
               aria-checked={checked}
               disabled={disabled}
               onPress={() => {
-                if (!checked) onChange(kind);
+                if (checked) return;
+                playHaptic('segmentChange');
+                onChange(kind);
               }}
               style={{
                 minHeight: BUN_TOUCH,

@@ -242,3 +242,50 @@ export type {
   AttachmentContentType,
   AttachmentGrant,
 } from "./v1/attachments.ts";
+export {
+  AI_NOTICE_VERSION,
+  AI_FEATURES,
+  AI_DAILY_LIMITS,
+  AI_LOCALES,
+  AI_TEXT_MAX_CHARS,
+  AI_QUESTION_MAX_CHARS,
+  AI_SLIP_MAX_BYTES,
+  AI_SLIP_MEDIA_TYPES,
+  AI_DRAFT_TYPES,
+  AI_CONFIDENCE,
+  AI_DRAFT_FLAGS,
+  AI_DRAFTS_MAX,
+  BUN_FACT_KINDS,
+  parseAiPreferencesUpdate,
+  parseAiLocale,
+  parseAiDate,
+  parseAiParseRequest,
+  parseAiAskRequest,
+  parseAiSlipRequest,
+} from "./v1/ai.ts";
+export type {
+  AiFeature,
+  AiLocale,
+  AiSlipMediaType,
+  AiPreferences,
+  AiPreferencesDto,
+  AiPreferencesUpdate,
+  AiDraftType,
+  AiConfidence,
+  AiDraftFlag,
+  AiDraft,
+  AiParseRequest,
+  AiParseResult,
+  AiSlipRequest,
+  AiSlipResult,
+  BunFactKind,
+  BunFact,
+  AiNoteResult,
+  AiAskRequest,
+  AiFigure,
+  AiAskResult,
+} from "./v1/ai.ts";
+export { parseQuickText, thaiWordsToNumber, draftFromQuickText } from "./v1/quickText.ts";
+export type { QuickTextGuess, QuickTextContext } from "./v1/quickText.ts";
+export { GOGOCASH_HOME, BUILTIN_CASHBACK_BRANDS, isCashbackBrand, isCashbackCatalogue, matchCashbackBrand } from "./v1/bridge.ts";
+export type { CashbackBrand, CashbackCatalogue } from "./v1/bridge.ts";

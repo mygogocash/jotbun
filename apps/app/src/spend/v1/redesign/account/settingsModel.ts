@@ -4,6 +4,7 @@
 import { LANGUAGE_PREFERENCES } from '../../../../i18n/languagePreference.ts';
 import type { LanguagePreference } from '../../../../i18n/languagePreference.ts';
 import { BUN_INTENSITIES } from '../../../../mascot/bunIntensity.ts';
+import { HAPTIC_PREFERENCES, type HapticPreference } from '../../../../lib/hapticPreference.ts';
 import type { BunIntensity } from '../../../../mascot/bunIntensity.ts';
 import type { OutboxState } from '../../../../storage/types.ts';
 import type { ThemePreference } from '../../../../theme/themePreference.ts';
@@ -24,6 +25,9 @@ export const LANGUAGE_NAMES: Readonly<Record<Exclude<LanguagePreference, 'system
 
 /** The bun's intensity (decision D9), saved through the bun intensity provider. */
 export const BUN_CHOICES: readonly BunIntensity[] = BUN_INTENSITIES;
+
+/** Haptics: On, Subtle, Off (premium plan A1). */
+export const HAPTIC_CHOICES: readonly HapticPreference[] = HAPTIC_PREFERENCES;
 
 /** How the session says this account signs in. The session does not say yet. */
 export type SignInMethod = 'apple' | 'google' | 'email';

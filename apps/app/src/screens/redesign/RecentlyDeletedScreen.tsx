@@ -17,6 +17,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
 import { V1Error } from '@mobile/api/client';
+import { playHaptic } from '@mobile/lib/hapticMoment';
 import { useCopy } from '@mobile/i18n/useCopy';
 import { Bun } from '@mobile/mascot/Bun';
 import { recentlyDeletedModel, restoreRefusalText, restoredText } from '@mobile/spend/v1/redesign/historyModel';
@@ -161,7 +162,9 @@ export function RecentlyDeletedScreen({ now }: RecentlyDeletedScreenProps) {
       // Off this list at once; the list is read again in place below.
       setLists((current) => (current ? { ...current, items: current.items.filter((item) => item.id !== row.recordId) } : current));
       setNotice({ tone: 'status', message: restoredText(row, locale, tc) });
+      playHaptic('saveLanded');
     } catch (problem) {
+      playHaptic('saveFailed');
       const v1 = problem instanceof V1Error ? problem : undefined;
       const saved = saveProblem(problem, tc);
       if (!saved.unconfirmed) keys.settle(slot);

@@ -26,6 +26,11 @@ import type { ReactNode } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 import { V1Error } from '@mobile/api/client';
+import { isRedesignEnabled } from '@mobile/config/featureFlags';
+import { BunNote } from './ai/BunNote';
+import { playHaptic } from '@mobile/lib/hapticMoment';
+import { budgetLevel, crossedLevel } from '@mobile/spend/v1/redesign/milestones';
+import type { LevelSeen } from '@mobile/spend/v1/redesign/milestones';
 import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
 import { Bun } from '@mobile/mascot/Bun';
 import { useBunIntensity } from '@mobile/mascot/BunIntensityProvider';
@@ -581,6 +586,20 @@ function FirstRun({ headline, body, today, onCreated }: { headline: string; body
 // ---------------------------------------------------------------------------
 // The screen
 
+// The month's budget level last seen in this app session. Module state, not a
+// ref: Home unmounts while Quick add is open, and the crossing happens there.
+let lastBudgetLevel: LevelSeen | null = null;
+
+/** Plays `thresholdCrossed` once when spending moves past 80% or 100% of the limit (milestones.ts). */
+function useBudgetThresholdHaptic(month: string, spentMinor: string | null, limitMinor: string | null): void {
+  useEffect(() => {
+    if (spentMinor === null) return;
+    const next: LevelSeen = { month, level: budgetLevel(spentMinor, limitMinor) };
+    if (crossedLevel(lastBudgetLevel, next) !== null) playHaptic('thresholdCrossed');
+    lastBudgetLevel = next;
+  }, [month, spentMinor, limitMinor]);
+}
+
 export function HomeScreen({ now }: { now?: Date }) {
   const resources = useSpendV1();
   const router = useRouter();
@@ -616,6 +635,8 @@ export function HomeScreen({ now }: { now?: Date }) {
 
   const view = diary ? diaryView : null;
   const model = homeModel({ today, tc, locale, load: loaded, diary: view, earlierDays: EARLIER_DAYS });
+  const readyPace = model.kind === 'ready' ? model.budget.pace : null;
+  useBudgetThresholdHaptic(month, readyPace?.spent.estimatedMinor ?? null, readyPace?.limitMinor ?? null);
 
   const categories = loaded.state === 'ready' ? loaded.data.categories : diaryView.categories;
   const records = loaded.state === 'ready' ? loaded.data.records : [];
@@ -715,6 +736,7 @@ export function HomeScreen({ now }: { now?: Date }) {
       )}
     >
       {sync}
+      {isRedesignEnabled('companion') ? <BunNote today={today} locale={activeLocale} /> : null}
       {pace.state === 'no_budget' ? (
         <>
           <BunText tone="muted">{model.budget.setBudget ?? model.budget.headline}</BunText>

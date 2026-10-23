@@ -25,7 +25,11 @@ vi.mock('expo-router', async () => {
     useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
   };
 });
-vi.mock('@mobile/api/sharedV1', () => ({ getSharedV1Resources: () => ({ marker: 'shared resources' }) }));
+vi.mock('@mobile/api/sharedV1', () => ({
+  getSharedV1Resources: () => ({ marker: 'shared resources' }),
+  // The layouts give their screens Bun's AI help; here it never answers, so it stays off.
+  getSharedAiResources: () => new Proxy({}, { get: () => () => new Promise(() => undefined) }),
+}));
 vi.mock('@mobile/spend/v1/DeviceDiaryProvider', async () => {
   const { createElement, Fragment } = await import('react');
   return { DeviceDiaryProvider: ({ children }: { children: unknown }) => createElement(Fragment, null, children as never) };

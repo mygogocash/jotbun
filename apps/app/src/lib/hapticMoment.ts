@@ -1,5 +1,6 @@
 import { haptics } from "@mobile/lib/haptics";
-import { motion } from "@mobile/theme/motion";
+import { currentHapticPreference, hapticVerbFor } from "@mobile/lib/hapticPreference";
+import type { HapticMoment as Moment, HapticVerb } from "@mobile/lib/hapticPreference";
 
 /*
  * The policy, read out loud.
@@ -15,21 +16,21 @@ import { motion } from "@mobile/theme/motion";
  * fires no motor, and a later author who changes the table changes every
  * call site with it.
  */
-export type HapticMoment = keyof typeof motion.haptic;
+export type HapticMoment = Moment;
 
 /** The verbs the table can name — `lib/haptics` minus its options argument. */
-export type HapticEngine = {
-  [Verb in Exclude<
-    (typeof motion.haptic)[HapticMoment],
-    "none"
-  >]: () => Promise<void>;
-};
+export type HapticEngine = { [Verb in HapticVerb]: () => Promise<void> };
 
+/*
+ * The person's Haptics setting (On, Subtle, Off) applies here, so no call
+ * site can play past it: Subtle keeps only outcomes, Off is silence.
+ */
 export function playHaptic(
   moment: HapticMoment,
   engine: HapticEngine = haptics,
+  preference = currentHapticPreference(),
 ): void {
-  const verb = motion.haptic[moment];
+  const verb = hapticVerbFor(moment, preference);
   if (verb === "none") return;
   /*
    * Fire-and-forget, and caught here as well as inside the wrapper: a press

@@ -688,3 +688,26 @@ test('Back goes back, or to Budget with nothing to go back to', async () => {
   fireEvent.click(within(screen.getByTestId('stage-header')).getByRole('button', { name: 'Back' }));
   expect(router.replace).toHaveBeenLastCalledWith('/spend/budget');
 });
+
+// ---------------------------------------------------------------------------
+// Thai everyday (premium plan A2): one press adds the missing categories,
+// named in the person's language, through the same commands as a new one.
+
+test('Thai everyday adds the missing categories in Thai (an English "Pets" already counts), then is no longer offered', async () => {
+  const fake = await open({}, { locale: 'th' });
+  const pack = screen.getByTestId('thai-everyday-pack');
+  expect(pack.textContent).toContain('ทำบุญ');
+  expect(pack.textContent).not.toContain('สัตว์เลี้ยง');
+  fireEvent.click(within(pack).getByRole('button', { name: 'เพิ่ม 6 หมวด' }));
+  await waitFor(() => expect(fake.callsOf('createCategory')).toHaveLength(6));
+  const labels = fake.callsOf('createCategory').map((call) => (call.args[0] as { label: string }).label);
+  expect(labels).toEqual(['ส่งเงินให้ครอบครัว', 'ทำบุญ', 'สั่งอาหารเดลิเวอรี่', 'ค่าโทรศัพท์และเน็ต', 'ลอตเตอรี่', 'เงินจากครอบครัว']);
+  await waitFor(() => expect(screen.queryByTestId('thai-everyday-pack')).toBeNull());
+});
+
+test('Thai everyday is off with the companion area off', async () => {
+  vi.stubEnv('EXPO_PUBLIC_REDESIGN', '-companion');
+  await open();
+  expect(screen.queryByTestId('thai-everyday-pack')).toBeNull();
+  vi.unstubAllEnvs();
+});

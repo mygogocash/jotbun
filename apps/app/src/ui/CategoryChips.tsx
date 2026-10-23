@@ -7,6 +7,7 @@ import type { CategoryDto } from '@gogospend/contracts';
 import { Animated, Pressable, View } from 'react-native';
 
 import { useCopy } from '@mobile/i18n/useCopy';
+import { playHaptic } from '@mobile/lib/hapticMoment';
 import { categoryName } from '@mobile/spend/v1/viewModels';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { useSpringPop } from '@mobile/theme/useSpringPop';
@@ -56,7 +57,10 @@ export function CategoryChips({ ranked, selectedId, onSelect, onMore, disabled =
                 accessibilityLabel={name}
                 aria-checked={checked}
                 disabled={disabled}
-                onPress={() => onSelect(category.id)}
+                onPress={() => {
+                  playHaptic('chipPick');
+                  onSelect(category.id);
+                }}
                 style={{ ...pill, backgroundColor: checked ? colors.ink : colors.card }}
               >
                 <CategoryIcon look={categoryLook(category, name)} size={32} />

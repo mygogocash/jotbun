@@ -575,6 +575,28 @@ export const transactionAttachments = pgTable(
   (table) => [primaryKey({ columns: [table.accountId, table.transactionId] })],
 );
 
+export const AI_FEATURES = ['parse', 'slip', 'note', 'ask'] as const;
+
+// 0019: the AI companion's consent and daily use counters (D15).
+export const aiPreferences = pgTable('ai_preferences', {
+  accountId: uuid('account_id').primaryKey().references(() => accounts.id, { onDelete: 'cascade' }),
+  companion: boolean('companion').notNull().default(false),
+  cashbackTips: boolean('cashback_tips').notNull().default(false),
+  noticeVersion: integer('notice_version'),
+  updatedAt: instant('updated_at').notNull().defaultNow(),
+});
+
+export const aiUsage = pgTable(
+  'ai_usage',
+  {
+    accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+    day: date('day').notNull(),
+    feature: text('feature', { enum: AI_FEATURES }).notNull(),
+    uses: integer('uses').notNull().default(0),
+  },
+  (table) => [primaryKey({ columns: [table.accountId, table.day, table.feature] })],
+);
+
 export const schema = {
   accounts,
   accountIdentities,
@@ -611,4 +633,6 @@ export const schema = {
   importRowProgress,
   attachments,
   transactionAttachments,
+  aiPreferences,
+  aiUsage,
 };

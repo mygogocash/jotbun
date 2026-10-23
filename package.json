@@ -3,7 +3,8 @@
   "private": true,
   "version": "0.0.0",
   "workspaces": [
-    "apps/*",
+    "apps/api",
+    "apps/app",
     "packages/*"
   ],
   "engines": {
@@ -13,6 +14,7 @@
     "dev": "node scripts/dev.mjs",
     "dev:v1": "node scripts/dev-v1.mjs",
     "db:v1:up": "node scripts/dev-v1.mjs db-up",
+    "dev:edge": "node apps/edge/scripts/dev.mjs",
     "test:dev": "node --experimental-vm-modules --test scripts/dev.test.mjs scripts/dev-v1.test.mjs",
     "test:ops": "node --test scripts/ops/recovery-inventory.test.mjs scripts/ops/restore-safety.test.mjs scripts/ops/local-rehearsal.test.mjs scripts/ops/performance-smoke.test.mjs scripts/ops/backup-age.test.mjs scripts/ops/readiness-receipts.test.mjs scripts/ci/lockfile-bindings.test.mjs scripts/ci/backend-workflow.test.mjs",
     "ops:rehearsal:local": "node scripts/dev-v1.mjs db-up && node scripts/ops/restore-rehearsal.mjs --target local-isolated-synthetic",
@@ -23,9 +25,24 @@
     "typecheck:app": "npm run typecheck -w gogospend-app",
     "test:api": "npm run test -w gogospend-api",
     "diff:api-spend": "diff -r vendor/gogocash-apps-api-spend apps/api/src/spend || true",
-    "diff:app-spend": "diff -r vendor/gogocash-apps-app-spend apps/app/src/spend || true"
+    "diff:app-spend": "diff -r vendor/gogocash-apps-app-spend apps/app/src/spend || true",
+    "install:edge": "npm ci --prefix apps/edge --no-audit --no-fund",
+    "typecheck:edge": "npm run typecheck --prefix apps/edge",
+    "test:edge": "npm test --prefix apps/edge",
+    "build:edge": "npm run build --prefix apps/edge",
+    "test:edge:db": "npm run test:db --prefix apps/edge"
   },
   "overrides": {
     "@grpc/grpc-js": "^1.14.6"
+  },
+  "allowScripts": {
+    "@swc/core": true,
+    "unrs-resolver": true,
+    "@parcel/watcher": true,
+    "fsevents@2.3.3": true,
+    "protobufjs@7.6.6": true,
+    "@scarf/scarf": false,
+    "tesseract.js": false,
+    "@firebase/util": false
   }
 }

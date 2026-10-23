@@ -36,6 +36,7 @@ import { WALLET_SECTIONS } from './planning/walletSections';
 import { QUICK_ADD_SECTIONS } from './quickAddSections';
 import { RECENTLY_DELETED_SECTIONS } from './recentlyDeletedSections';
 import { RECORD_SECTIONS } from './recordSections';
+import { COMPANION_SECTIONS } from './companion/companionSections';
 
 export type CatalogueGroup = 'Kit' | 'Mascot' | 'Screens';
 
@@ -95,4 +96,5 @@ export const CATALOGUE_SECTIONS: readonly CatalogueSection[] = [
   ...INSIGHTS_SCREEN_SECTIONS,
   ...ACCOUNT_SECTIONS,
   ...IMPORT_SCREEN_SECTIONS,
+  ...COMPANION_SECTIONS,
 ];

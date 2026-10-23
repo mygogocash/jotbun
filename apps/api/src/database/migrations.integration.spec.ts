@@ -8,7 +8,7 @@ import { GROUP_ROLES, createTestDatabase } from '../testing/postgres-harness';
 import type { GroupRole, TestDatabase } from '../testing/postgres-harness';
 import { poolConfigFromUrl } from './database-config';
 import { MIGRATIONS_FOLDER, readJournal, runMigrations } from './migrations';
-import { accountIdentities, accountSyncState, accounts, authEventReceipts, authSessions, blockedPrincipals, securityReconcileChecks, consents, policyVersions, rateLimitBuckets, reauthChallenges, jobs, commandReceipts, entityChanges, entityHeads, auditEvents, wallets, categories, transactions, monthlyBudgets, budgetCategoryLimits, objectPublications, snapshotManifests, snapshotChunks, exportsTable, deletionRequests, deletionRequestSubjects, erasureMarkers } from './schema';
+import { accountIdentities, accountSyncState, accounts, authEventReceipts, authSessions, blockedPrincipals, securityReconcileChecks, consents, policyVersions, rateLimitBuckets, reauthChallenges, jobs, commandReceipts, entityChanges, entityHeads, auditEvents, wallets, categories, transactions, monthlyBudgets, budgetCategoryLimits, objectPublications, snapshotManifests, snapshotChunks, exportsTable, deletionRequests, deletionRequestSubjects, erasureMarkers, aiPreferences, aiUsage } from './schema';
 
 const ISSUER = 'https://gogospend-test.example/';
 const ACCOUNT_A = '0192f0c1-7b3a-7c3e-9d4f-00000000000a';
@@ -118,7 +118,7 @@ describe('migrations', () => {
   });
 
   it('Drizzle definitions match the migrated columns', async () => {
-    for (const table of [accounts, accountIdentities, accountSyncState, rateLimitBuckets, policyVersions, consents, blockedPrincipals, authEventReceipts, securityReconcileChecks, reauthChallenges, authSessions, jobs, commandReceipts, entityChanges, entityHeads, auditEvents, wallets, categories, transactions, monthlyBudgets, budgetCategoryLimits, objectPublications, snapshotManifests, snapshotChunks, exportsTable, deletionRequests, deletionRequestSubjects, erasureMarkers]) {
+    for (const table of [accounts, accountIdentities, accountSyncState, rateLimitBuckets, policyVersions, consents, blockedPrincipals, authEventReceipts, securityReconcileChecks, reauthChallenges, authSessions, jobs, commandReceipts, entityChanges, entityHeads, auditEvents, wallets, categories, transactions, monthlyBudgets, budgetCategoryLimits, objectPublications, snapshotManifests, snapshotChunks, exportsTable, deletionRequests, deletionRequestSubjects, erasureMarkers, aiPreferences, aiUsage]) {
       const config = getTableConfig(table);
       const result = await db.admin((client) =>
         client.query<{ column_name: string; is_nullable: string }>(

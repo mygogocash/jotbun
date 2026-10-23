@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { Platform, Pressable, View } from 'react-native';
 
 import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
+import { playHaptic } from '@mobile/lib/hapticMoment';
 import { spendCalendarWeeks } from '@mobile/spend/spendCalendar';
 import { shiftMonth } from '@mobile/spend/v1/viewModels';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
@@ -59,7 +60,9 @@ export function DateChip({ value, today, earliest, onChange, disabled = false }:
 
   const step = (direction: -1 | 1) => {
     const next = stepDay(value, direction, { today, earliest });
-    if (next !== null) onChange(next);
+    if (next === null) return;
+    playHaptic('dateStep');
+    onChange(next);
   };
   const arrow = { minHeight: BUN_TOUCH, minWidth: BUN_TOUCH, alignItems: 'center' as const, justifyContent: 'center' as const, borderRadius: BUN_RADIUS.pill };
   return (

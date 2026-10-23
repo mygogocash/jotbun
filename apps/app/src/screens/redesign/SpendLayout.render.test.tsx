@@ -40,7 +40,11 @@ vi.mock('@mobile/spend/v1/DeviceDiaryProvider', async () => {
   const { View } = await import('react-native');
   return { DeviceDiaryProvider: ({ children }: { children: unknown }) => createElement(View, { testID: 'device-diary' }, children as never) };
 });
-vi.mock('@mobile/api/sharedV1', () => ({ getSharedV1Resources: () => ({ marker: 'shared resources' }) }));
+vi.mock('@mobile/api/sharedV1', () => ({
+  getSharedV1Resources: () => ({ marker: 'shared resources' }),
+  // The layouts give their screens Bun's AI help; here it never answers, so it stays off.
+  getSharedAiResources: () => new Proxy({}, { get: () => () => new Promise(() => undefined) }),
+}));
 vi.mock('@mobile/screens/CustomerSpendScreen', async () => {
   const { createElement } = await import('react');
   const { Text } = await import('react-native');

@@ -165,6 +165,34 @@ export const motion = {
     scroll: "none",
     navigate: "none",
     listPage: "none",
+    /*
+     * The premium layer (premium and AI plan, A1). Each moment is something
+     * the person did or something that happened to their money, never a
+     * scroll or a page turn.
+     *
+     * - Typing an amount ticks like a good calculator; clearing it is a
+     *   lighter tap, so the two feel different under the thumb.
+     * - Choosing (type, category, day, tab) is a selection tick.
+     * - Saved offline is light, not success: it has not reached the server,
+     *   and "saving" must never feel saved.
+     * - A delete lands with a rigid tap; its undo is light.
+     * - Crossing 80% or 100% of a budget is a warning, said once.
+     * - A logging milestone (a good week, the month recap) is the only
+     *   celebration, a three-beat pattern, at most once a day.
+     * - Bun's suggestions arrive lightly; accepting one is a press.
+     */
+    keyTap: "selection",
+    amountCleared: "light",
+    chipPick: "selection",
+    dateStep: "selection",
+    tabChange: "selection",
+    saveQueued: "light",
+    deleteDone: "rigid",
+    undoDone: "light",
+    thresholdCrossed: "warning",
+    celebration: "celebrate",
+    aiSuggestionReady: "light",
+    aiAccepted: "impact",
   },
   scale: {
     hover: 1.01,

@@ -46,6 +46,15 @@ for (const area of ['planning', 'insights', 'account', 'import'] as const) {
   });
 }
 
+// The companion area is on at the owner's request (24 October 2026), with
+// its E2 screenshots still to come; -companion switches it off.
+test('companion is on by default, and -companion or off switches it off', () => {
+  assert.equal(isRedesignEnabled('companion', undefined), true);
+  assert.equal(isRedesignEnabled('companion', '-companion'), false);
+  assert.equal(isRedesignEnabled('companion', 'core,-companion'), false);
+  assert.equal(isRedesignEnabled('companion', 'off'), false);
+});
+
 test('the catalogue is still opt-in', () => {
   assert.equal(isRedesignEnabled('catalogue', 'planning,insights,account,import'), false);
 });

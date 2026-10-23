@@ -1,0 +1,49 @@
+{
+  "name": "gogospend-edge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Jotbun v1 API, AI companion and web pages on TanStack Start, running on Cloudflare Workers with Hyperdrive (PostgreSQL), R2 and Queues.",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "vite dev --port 8092 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "npm run build && wrangler deploy && wrangler deploy -c dist/jotbun_jobs/wrangler.json && wrangler deploy -c dist/jotbun_security/wrangler.json && wrangler deploy -c dist/jotbun_deletion/wrangler.json",
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings src/worker-configuration.d.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:db": "node ../../scripts/dev-v1.mjs db-up && EDGE_TEST_DB=1 vitest run --config vitest.db.config.ts"
+  },
+  "allowScripts": {
+    "workerd": true,
+    "esbuild": true,
+    "fsevents": false
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "1.2.0",
+    "@gogospend/contracts": "file:../../packages/contracts",
+    "@tanstack/react-router": "1.170.46",
+    "@tanstack/react-start": "1.169.4",
+    "drizzle-orm": "0.45.3",
+    "jose": "6.2.12",
+    "pg": "8.23.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "1.65.0",
+    "@types/node": "^26.5.1",
+    "@types/pg": "8.23.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "6.1.2",
+    "typescript": "^6.0.3",
+    "vite": "8.3.5",
+    "vitest": "^4.1.11",
+    "wrangler": "4.152.0"
+  }
+}

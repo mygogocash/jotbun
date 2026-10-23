@@ -1,6 +1,6 @@
 {
   "$comment": "P6b release graph: what the v1 image may contain. Checked against built JS by scripts/release-graph.mjs (Docker build, CI) and against TypeScript sources by src/v1/v1-isolation.spec.ts. Adding a direct package needs the master plan's dependency gate (provenance, install scripts, advisories) first. Legacy /spend, internal shared-key, Salt Edge, cashback and autolog code stays in the repository but never reaches these entries or the image. P2b's parser children (imports/parsers/*-child) are spawned by path rather than required, so they are entries of their own; sharp, which only the image child loads, passed P2b's dependency review (Apache-2.0, no install script, prebuilt libvips).",
-  "entries": ["v1/main", "worker", "jobs/security-worker", "privacy/deletion-worker", "database/migrate-cli", "imports/parsers/table-child", "imports/parsers/image-child"],
+  "entries": ["v1/main", "worker", "jobs/security-worker", "privacy/deletion-worker", "imports/parse-worker", "database/migrate-cli", "imports/parsers/table-child", "imports/parsers/image-child"],
   "directPackages": ["@gogospend/contracts", "@nestjs/common", "@nestjs/core", "drizzle-orm", "express", "helmet", "jose", "pg", "sharp"],
   "implicitPackages": ["@nestjs/platform-express"],
   "forbiddenFiles": [

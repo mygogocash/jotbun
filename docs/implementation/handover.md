@@ -65,8 +65,15 @@ npm run build -w gogospend-api
 node apps/api/scripts/release-graph.mjs check
 node apps/api/scripts/parser-sandbox-check.cjs
 npm run export:web -w gogospend-app -- --max-workers 2
+npm run install:edge
+npm run typecheck:edge
+npm run test:edge
+npm run build:edge
+npm run test:edge:db
 git diff --check
 ```
+
+The edge lines (premium and AI plan, 24 October 2026) check `apps/edge`, the TanStack Start Worker: its own install, types, unit tests and build, then its PostgreSQL suites: dispatch, AI, the differential run against the built NestJS v1 server (`npm run build -w gogospend-api` comes first), and the built Worker in workerd.
 
 **Release image check**, after changes to workers, parsers or packages:
 ```bash

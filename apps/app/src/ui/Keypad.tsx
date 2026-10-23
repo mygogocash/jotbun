@@ -2,11 +2,12 @@
 // clear, and + − × ÷ =. Presentational: it reports keys and the screen keeps
 // the sum with `applyKey` from keypadExpression. It is made of buttons only, so
 // it never opens the system keyboard. Every key is at least 56 pt and gives a
-// light tick through the app's haptics (expo-haptics; silent on web).
+// light tick through the app's haptic moments (keyTap; clearing is the
+// lighter amountCleared), which follow the person's Haptics setting.
 import { Pressable, View } from 'react-native';
 
 import { useCopy } from '@mobile/i18n/useCopy';
-import { haptics } from '@mobile/lib/haptics';
+import { playHaptic } from '@mobile/lib/hapticMoment';
 import type { BunColors } from '@mobile/theme/bunPalette';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 
@@ -21,7 +22,7 @@ export const KEYPAD_KEY_MIN = 56;
 export type KeypadProps = {
   readonly onKey: (key: KeypadKey) => void;
   readonly disabled?: boolean;
-  /** Feedback on each press; defaults to the app's selection haptic. */
+  /** Feedback on each press; defaults to the keyTap / amountCleared moments. */
   readonly haptic?: () => void;
 };
 
@@ -51,7 +52,7 @@ export function Keypad({ onKey, disabled = false, haptic }: KeypadProps) {
   const tc = useCopy();
   const press = (key: KeypadKey) => {
     if (haptic) haptic();
-    else void haptics.selection();
+    else playHaptic(key === 'clear' ? 'amountCleared' : 'keyTap');
     onKey(key);
   };
   return (
