@@ -75,9 +75,36 @@ async function readJson(request: Request, limit: number): Promise<{ body: unknow
   if (!JSON_TYPE.test(type) || !request.body) return undefined
   const length = request.headers.get('content-length')
   if (length && /^\d+$/.test(length) && Number(length) > limit) throw new BodyError('too_large')
-  const bytes = new Uint8Array(await request.arrayBuffer())
-  if (bytes.byteLength > limit) throw new BodyError('too_large')
+  const bytes = await readBounded(request.body, limit)
   return { body: parseJson(bytes), raw: bytes }
+}
+
+/**
+ * The whole body, refusing it as soon as more than `limit` bytes have
+ * arrived: a body without a Content-Length (chunked), or with a false one,
+ * is never held beyond the limit. The rest is cancelled unread.
+ */
+async function readBounded(body: ReadableStream<Uint8Array>, limit: number): Promise<Uint8Array> {
+  const reader = body.getReader()
+  const chunks: Uint8Array[] = []
+  let total = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    total += value.byteLength
+    if (total > limit) {
+      await reader.cancel().catch(() => undefined)
+      throw new BodyError('too_large')
+    }
+    chunks.push(value)
+  }
+  const bytes = new Uint8Array(total)
+  let at = 0
+  for (const chunk of chunks) {
+    bytes.set(chunk, at)
+    at += chunk.byteLength
+  }
+  return bytes
 }
 
 function parseJson(bytes: Uint8Array): unknown {

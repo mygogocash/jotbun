@@ -31,6 +31,27 @@ describe('readJsonBody, like express.json({ strict: true })', () => {
     await expect(readJsonBody(post('{}', 'application/json', { 'content-length': String(JSON_BODY_LIMIT_BYTES + 1) }))).rejects.toEqual(new BodyError('too_large'))
     await expect(readJsonBody(post(`{"a":"${'x'.repeat(32)}"}`), 16)).rejects.toEqual(new BodyError('too_large'))
   })
+
+  it('stops reading a chunked body without a length as soon as it passes the limit', async () => {
+    const chunk = new TextEncoder().encode(`"${'x'.repeat(64 * 1024 - 2)}",`)
+    let pulled = 0
+    let cancelled = false
+    // Endless: only a bounded reader ever finishes with this body.
+    const body = new ReadableStream<Uint8Array>({
+      start: (controller) => controller.enqueue(new TextEncoder().encode('[')),
+      pull: (controller) => {
+        pulled += chunk.byteLength
+        controller.enqueue(chunk)
+      },
+      cancel: () => {
+        cancelled = true
+      },
+    })
+    const request = new Request('http://edge.test/v1/x', { method: 'POST', headers: { 'content-type': 'application/json' }, body, duplex: 'half' } as RequestInit)
+    await expect(readJsonBody(request)).rejects.toEqual(new BodyError('too_large'))
+    expect(pulled).toBeLessThanOrEqual(JSON_BODY_LIMIT_BYTES + 2 * chunk.byteLength)
+    expect(cancelled).toBe(true)
+  })
 })
 
 describe('readRawJsonBody, like jsonBody(\'8kb\', { keepRaw: true })', () => {
