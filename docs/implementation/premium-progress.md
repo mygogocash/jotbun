@@ -9,12 +9,12 @@ Receipts for the [premium, AI and edge plan](../superpowers/plans/2026-10-24-jot
   - the shared contracts;
   - the app's premium layer: haptics, Tell Bun, Ask Bun, the daily note, the cashback card and the Thai everyday categories;
   - eight catalogue sections for the companion area, checked in the browser in Thai, light and dark.
+  - the Mobbin research (plan §7, through the Mobbin connector) and its changes: Ask Bun's "can get things wrong" line, follow-up questions and settings link; the consent sheet's check-before-saving line; the slip beside Tell Bun's draft; "How cashback works". Mobbin holds no Thai apps, so Thai specifics rest on the plan's §2 findings.
 - **SKIPPED:**
   - hosted Cloudflare resources: wrangler is signed in to a GoGoCash account, but deploying waits for the owner to ask (handover rule), and no hosted PostgreSQL exists yet;
   - the parser container on Cloudflare (its image builds and passes the release smoke locally; its entry is proven end to end in Node);
   - live Claude calls (no API key on this machine);
   - real-device haptics;
-  - Mobbin searches (the Mobbin connector is not authorized and mobbin.com answers the in-app browser with 403; §2 of the plan names the searches to run);
   - E2 screenshot approval of the companion area (the sections exist; the owner's approval does not).
 
 ## E: the edge backend (`apps/edge`)
@@ -78,7 +78,7 @@ Gate after these changes (24 October 2026): `typecheck:app` and `typecheck:route
 
 ## Not done, or follow-ups
 
-- **Mobbin:** the planned searches (plan §7) once the connector is authorized; findings would refine the AI and cashback screens.
+- **From the Mobbin research:** Lifesum-style "often logged" chips in Tell Bun, from the person's own frequent entries.
 - **E2 screenshots** of the companion area. Its eight catalogue sections are in (`src/dev/catalogue/companion`): Ask Bun off and answering, Tell Bun reading a Thai sentence, Bun's note on Home, the cashback card asking and on, the Settings controls and the Thai pack. The area is on by default at the owner's request; `EXPO_PUBLIC_REDESIGN=-companion` switches it off.
 - **Hosted proofs, when the owner asks for a deployment:**
   - a hosted PostgreSQL and its least-privilege logins;

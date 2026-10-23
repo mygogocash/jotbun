@@ -9,6 +9,7 @@ import { AiCompanionProvider } from '@mobile/spend/v1/ai/AiCompanionProvider';
 import { fakeAiResources } from '@mobile/spend/v1/ai/testing/fakeAiResources';
 import { createFakeResources } from '@mobile/spend/v1/testing/fakeResources';
 
+import { router } from '../../../dev/catalogue/routerTestStub';
 import { mountScreen } from '../HistoryTestHarness';
 import { AskBunScreen } from './AskBunScreen';
 
@@ -54,4 +55,26 @@ test('the day’s questions left are shown under the question field', async () =
   mount(ai);
   expect(await screen.findByText('1 question left today')).toBeTruthy();
   await waitFor(() => expect(ai.resources.preferences).toHaveBeenCalled());
+});
+
+test('after an answer, two questions not asked yet are one tap away', async () => {
+  const ai = fakeAiResources({
+    ask: vi.fn(async () => ({ answer: 'You spent ฿105 on food this month.', figures: [], source: 'ai' as const })),
+  }, { companion: true, notice_version: 1 });
+  mount(ai);
+  fireEvent.click(await screen.findByRole('button', { name: 'How much did I spend on food this month?' }));
+  expect(await screen.findByText('Ask another:')).toBeTruthy();
+  const next = ['Where did I spend the most this month?', 'How much of my budget is left?'];
+  for (const question of next) expect(screen.getByRole('button', { name: question })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'How much did I spend on food this month?' })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: next[0] }));
+  await waitFor(() => expect(ai.resources.ask).toHaveBeenLastCalledWith({ question: next[0], today: '2026-10-24', locale: 'en' }));
+});
+
+test('says plainly that Bun can be wrong, with its settings one tap away', async () => {
+  const ai = fakeAiResources({}, { companion: true, notice_version: 1 });
+  mount(ai);
+  expect(await screen.findByText('Bun can get things wrong. Each answer shows the figures from your diary that it used.')).toBeTruthy();
+  fireEvent.click(screen.getByRole('link', { name: "Bun's AI help settings" }));
+  expect(router.push).toHaveBeenCalledWith('/settings');
 });

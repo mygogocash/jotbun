@@ -88,4 +88,7 @@ test('a scanned slip becomes a draft, with the bank named', async () => {
   expect(await screen.findByText('From a K PLUS slip.')).toBeTruthy();
   expect(screen.getByTestId('tell-bun-draft').textContent).toContain('฿1,250.00');
   expect(ai.resources.slip).toHaveBeenCalledWith({ image_base64: 'aGVsbG8=', media_type: 'image/jpeg', today: '2026-10-24', locale: 'en' });
+  // The slip stays beside what Bun read from it, to compare before Use this.
+  const slip = screen.getByTestId('tell-bun-slip');
+  expect(slip.getAttribute('aria-label')).toBe('The slip you chose');
 });

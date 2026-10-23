@@ -10,7 +10,7 @@
 import type { AiDraft, AiLocale, CategoryDto } from '@gogospend/contracts';
 import { AI_SLIP_MAX_BYTES } from '@gogospend/contracts';
 import { useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Image, View } from 'react-native';
 
 import { V1Error } from '@mobile/api/client';
 import { useCopy } from '@mobile/i18n/useCopy';
@@ -80,7 +80,7 @@ export type TellBunSheetProps = {
 type Phase =
   | { kind: 'idle' }
   | { kind: 'thinking'; about: 'text' | 'slip' }
-  | { kind: 'result'; drafts: AiDraft[]; note: string | null }
+  | { kind: 'result'; drafts: AiDraft[]; note: string | null; slipUri?: string }
   | { kind: 'problem'; message: string };
 
 const decodedBytes = (base64: string) => Math.floor((base64.length * 3) / 4);
@@ -105,13 +105,13 @@ export function TellBunSheet({ visible, onClose, context, locale, onUse, pickSli
     return tc('Bun read this on your phone.');
   }
 
-  function show(drafts: AiDraft[], note: string | null) {
+  function show(drafts: AiDraft[], note: string | null, slipUri?: string) {
     if (drafts.length === 0) {
       setPhase({ kind: 'problem', message: tc("Bun couldn't find an entry in that. Try something like “ข้าวมันไก่ 50”.") });
       return;
     }
     playHaptic('aiSuggestionReady');
-    setPhase({ kind: 'result', drafts, note });
+    setPhase({ kind: 'result', drafts, note, slipUri });
   }
 
   async function readText() {
@@ -150,7 +150,8 @@ export function TellBunSheet({ visible, onClose, context, locale, onUse, pickSli
     setPhase({ kind: 'thinking', about: 'slip' });
     try {
       const result = await resources.slip({ image_base64: picked.base64, media_type: picked.mediaType, today: context.today, locale });
-      show(result.drafts, result.bank ? tc('From a {bank} slip.', { bank: result.bank }) : null);
+      // The slip stays beside what Bun read from it, so the two can be compared before Use this.
+      show(result.drafts, result.bank ? tc('From a {bank} slip.', { bank: result.bank }) : null, `data:${picked.mediaType};base64,${picked.base64}`);
     } catch (error) {
       playHaptic('saveFailed');
       const limit = error instanceof V1Error && error.code === 'AI_LIMIT_REACHED';
@@ -226,6 +227,7 @@ export function TellBunSheet({ visible, onClose, context, locale, onUse, pickSli
               moneyLocale={moneyLocale}
               dateLocale={locale}
               note={[phase.note, moreDraftsLine(phase.drafts.length, tc)].filter((line): line is string => Boolean(line)).join(' ') || null}
+              slipUri={phase.slipUri}
               onUse={() => use(phase.drafts[0])}
             />
           ) : null}
@@ -236,12 +238,14 @@ export function TellBunSheet({ visible, onClose, context, locale, onUse, pickSli
   );
 }
 
-function DraftCard({ draft, categories, moneyLocale, dateLocale, note, onUse }: {
+function DraftCard({ draft, categories, moneyLocale, dateLocale, note, slipUri, onUse }: {
   draft: AiDraft;
   categories: readonly CategoryDto[];
   moneyLocale: 'th' | 'en';
   dateLocale: AiLocale;
   note: string | null;
+  /** The slip the draft was read from, shown beside it (kept on the phone only). */
+  slipUri?: string;
   onUse: () => void;
 }) {
   const tc = useCopy();
@@ -251,12 +255,25 @@ function DraftCard({ draft, categories, moneyLocale, dateLocale, note, onUse }: 
   const amount = draft.amount_minor ? formatMinor(draft.amount_minor, moneyLocale) : tc('Amount to check');
   return (
     <View testID="tell-bun-draft" style={{ gap: BUN_SPACE.xs, padding: BUN_SPACE.md, borderRadius: BUN_RADIUS.card, borderWidth: BUN_OUTLINE.card, borderColor: colors.ink, backgroundColor: colors.card }}>
-      <BunText variant="caption" tone="muted">{draft.type === 'income' ? tc('Money in') : tc('Money out')}</BunText>
-      <BunText variant="title" style={{ fontVariant: ['tabular-nums'] }}>{amount}</BunText>
-      {draft.merchant ? <BunText>{draft.merchant}</BunText> : null}
-      <BunText tone="muted">
-        {[category ? categoryName(category, tc) : null, draft.occurred_on ? fullDateLabel(draft.occurred_on, dateLocale) : null].filter(Boolean).join(' · ')}
-      </BunText>
+      <View style={{ flexDirection: 'row', gap: BUN_SPACE.sm }}>
+        {slipUri ? (
+          <Image
+            testID="tell-bun-slip"
+            source={{ uri: slipUri }}
+            accessibilityLabel={tc('The slip you chose')}
+            resizeMode="cover"
+            style={{ width: 72, height: 128, borderRadius: BUN_RADIUS.chip, borderWidth: BUN_OUTLINE.control, borderColor: colors.rule }}
+          />
+        ) : null}
+        <View style={{ flex: 1, gap: BUN_SPACE.xs }}>
+          <BunText variant="caption" tone="muted">{draft.type === 'income' ? tc('Money in') : tc('Money out')}</BunText>
+          <BunText variant="title" style={{ fontVariant: ['tabular-nums'] }}>{amount}</BunText>
+          {draft.merchant ? <BunText>{draft.merchant}</BunText> : null}
+          <BunText tone="muted">
+            {[category ? categoryName(category, tc) : null, draft.occurred_on ? fullDateLabel(draft.occurred_on, dateLocale) : null].filter(Boolean).join(' · ')}
+          </BunText>
+        </View>
+      </View>
       {note ? <BunText variant="caption" tone="muted">{note}</BunText> : null}
       {hints.map((hint) => <BunText key={hint} variant="caption">{hint}</BunText>)}
       <PillButton label={tc('Use this')} onPress={onUse} accessibilityHint={tc('Fills in Quick add. Nothing is saved until you press Save.')} />

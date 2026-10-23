@@ -54,6 +54,10 @@ test('with tips on, Open GoGoCash opens the home page with no diary data, and Wh
   expect(open).toHaveBeenCalledWith('https://gogocash.co');
   fireEvent.click(screen.getByRole('button', { name: 'Why am I seeing this?' }));
   expect(await screen.findByText('The comparing happens on your phone. Nothing from your diary is sent to GoGoCash or anyone else.')).toBeTruthy();
+  // How the money arrives, without a timing or an amount Jotbun would have to guess.
+  expect(screen.getByTestId('cashback-how').textContent).toBe(
+    "How cashback works1. Shop through GoGoCash's link to the shop.2. GoGoCash tracks the purchase.3. Cashback is paid once the shop confirms the order. Each shop's rates and conditions are in GoGoCash.",
+  );
 });
 
 test('nothing before 7 logged days, and nothing while the bridge is off on the server', async () => {

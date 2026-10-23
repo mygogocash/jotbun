@@ -54,9 +54,12 @@ These follow from the owner's request. Each can be overturned; the code keeps th
 
 ## 2. Research
 
-Mobbin's site returns 403 to an automated browser, and its MCP connector is not yet authorized for this session. Sources for this round:
+Sources:
 - The ~40 Mobbin references gathered for the redesign (appendix of the [redesign plan](2026-10-18-jotbun-redesign.md)). They still cover entry, budgets, trust and empty states.
-- Public research on Thai and SEA users and haptics guidance. The Mobbin searches listed in §7 run as soon as the connector is authorized, and their references are added to each section.
+- The Mobbin searches in §7, run through the Mobbin connector on 24 October 2026 (below).
+- Public research on Thai and SEA users and haptics guidance.
+
+Mobbin holds no Thai-language apps (a search for Thai banking, wallet and delivery apps returned nothing). Its Southeast Asian references are GoPay, Grab (OVO), foodpanda and ShopBack, so Thai specifics still come from the findings below rather than from Mobbin.
 
 **Findings that shape the design:**
 1. **Ease beats features for older and first-time Thai users.** Studies of Thai mobile-banking adoption find perceived ease of use and security dominate for users over 50. Fewer choices per screen, large type, and words over icons.
@@ -188,14 +191,20 @@ Each needs R2 streaming or a sandbox decision.
 - **Per-isolate state** (JWKS back-off, concurrency caps) is weaker than per-process. Rate limits stay in PostgreSQL, so they are shared.
 - **AI cost and latency:** quotas, effort per route and caching of the stable system prompt. `AI_MODEL` lets the owner trade quality for cost after measuring.
 
-## 7. Mobbin searches to run once the connector is authorized
+## 7. Mobbin research (24 October 2026)
 
-- AI money assistant chat (Cleo, Copilot)
-- Natural-language transaction entry
-- Receipt and slip scanning
-- Daily check-in and streak celebration (Finch, Duolingo)
-- Cashback offers and rewards wallet (ShopBack, Rakuten)
-- SEA wallets (GrabPay, TrueMoney, MoMo, GCash)
-- Haptic-heavy delight moments (confetti, success)
-- Consent sheets for AI features
-- Simple or large-text modes
+Each search's references, what Jotbun takes from them and where. All iOS.
+
+| Search | References | Taken, and where |
+| --- | --- | --- |
+| AI money assistant chat | [Cash App](https://mobbin.com/screens/56ff5f1d-e0ad-4657-90e3-ab6ba37081e2), [Lloyds](https://mobbin.com/screens/0b513db0-3b95-44c1-aa50-6ebd386b1c8a), [Cleo AI](https://mobbin.com/screens/73d8bc4c-bc92-4520-9633-40e0f6f4bec5), [Neo](https://mobbin.com/screens/06e53158-0027-4ee6-ba9f-a0d2b7da5b70), [Origin](https://mobbin.com/screens/c759f1aa-5c8a-46d2-a265-f2260a873275) | A standing "can make mistakes" line under the field, and follow-up questions after each answer (Ask Bun). Neo's numbered sources match Ask Bun's "From your diary" figures, which stay. |
+| Natural-language entry | [GoPay](https://mobbin.com/screens/e6486a1f-5931-4271-886a-013198d1788c), [Starling](https://mobbin.com/screens/12aafc6e-0b67-4506-9dbe-e5ae1038553e), [Noom](https://mobbin.com/screens/fa013b41-c500-41e0-9023-c036e4664fae), [Lifesum](https://mobbin.com/screens/bc0da8c1-0d21-4abf-8beb-5e2d82cc3c4b) | Starling's settings link inside the AI surface (Ask Bun). GoPay's `000` key and Noom's example placeholder were already in Quick add and Tell Bun. Lifesum's "often tracked" chips are a follow-up. |
+| Receipt and slip scanning | [Splitwise](https://mobbin.com/screens/ba220c78-9ede-4bd0-ba41-16c6476716fa), [Revolut Business](https://mobbin.com/screens/06fddf49-fce7-4440-a537-e9502a702803), [Upside](https://mobbin.com/screens/a4cb797c-2714-4c5c-9b74-d70baf5ee78c) | The chosen slip beside what Bun read from it, to compare before Use this (Tell Bun). |
+| Streak celebration | [Speak](https://mobbin.com/screens/7acbb2fc-3817-408f-9db3-25380bb43706), [Finch](https://mobbin.com/screens/aa4e5c2e-3cb5-48e5-8fa4-5441894d435a), [BitePal](https://mobbin.com/screens/b04e4b6c-9383-498a-b2d0-6541427e3cc6) | Confirms the rhythm card: seven day dots, forgiving copy, the mascot cheering. No change. |
+| Cashback offers | [ShopBack store](https://mobbin.com/screens/cdb60b38-5238-46a3-8871-891746dc9197), [ShopBack take note](https://mobbin.com/screens/d9ba304e-cc57-42f0-b6ff-43edfa78d973), [ShopBack rates and exclusions](https://mobbin.com/screens/474f4018-1b5b-45c9-997f-8dd7a454954b) | "How cashback works" in three steps (shop through GoGoCash, GoGoCash tracks it, paid once the shop confirms), with rates and conditions left to GoGoCash: no timing or amount Jotbun would have to guess (cashback card). |
+| SEA wallets | [GoPay](https://mobbin.com/screens/74bad8c9-6cc5-41e6-b94f-71fbd0e816af), [Grab (OVO)](https://mobbin.com/screens/8bff5e95-d9a5-48d2-ac8e-74636ac193a6), [foodpanda](https://mobbin.com/screens/65350476-0dd2-4a85-bbb1-8c444f9f9914) | Confirms Home's month total under the hero (GoPay's "spent in March"). GoPay's gambling warning is noted for the lottery category: no change while the diary only records it. |
+| Consent for AI features | [Starling](https://mobbin.com/screens/45677cbe-2d00-4f8c-bc1a-e5db637797fa), [Zopa](https://mobbin.com/screens/04b47865-a115-4dee-a21d-2e84a6235fb0), [Monzo](https://mobbin.com/screens/ae9c6069-35d6-4377-9573-a9b3fb1f633b) | "Bun can get things wrong, so you always check" added to the consent sheet; it already said what is read, what is never sent, who reads it, and how to turn it off. |
+| Success after saving | [Vivid](https://mobbin.com/screens/095e21f4-b72e-48a9-9677-078d4c01e1b5), [bunq](https://mobbin.com/screens/4042e77a-1c5c-43ce-a273-89cc23e423cc), [Wise](https://mobbin.com/screens/7454f035-bfdb-44cf-ae59-67a1b02622b5) | Kept Quick add's in-place save with its haptic: a full-screen confirmation would slow the daily log. |
+| Thai apps | None on Mobbin | Thai specifics come from §2's findings. |
+
+Large-text and simple modes were not searched again: Dynamic Type up to AX5 already enlarges every screen (R8).

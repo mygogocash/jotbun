@@ -4,6 +4,7 @@
 // are shown instead. Each answer lists the figures it used, so nothing is
 // taken on trust. No advice about financial products, ever.
 import type { AiAskResult, AiLocale } from '@gogospend/contracts';
+import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 
@@ -42,6 +43,7 @@ export function AskBunScreen({ now }: { now?: Date }) {
   const script = useBunScript();
   const locale = useActiveLocale() as AiLocale;
   const goBack = useGoBack('/spend/insights');
+  const router = useRouter();
   const { resources, enabled, preferences, refresh } = useAiCompanion();
   const [question, setQuestion] = useState('');
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -78,6 +80,10 @@ export function AskBunScreen({ now }: { now?: Date }) {
   }
 
   const left = preferences?.remaining.ask;
+  // After an answer, two of the suggestions not asked yet, so the next question is one tap away.
+  const lastTurn = turns[turns.length - 1];
+  const asked = new Set(turns.map((turn) => turn.question));
+  const followUps = !asking && lastTurn?.answer && left !== 0 ? SUGGESTIONS.map((suggestion) => tc(suggestion)).filter((text) => !asked.has(text)).slice(0, 2) : [];
 
   return (
     <KeyboardAvoidingView testID="ask-bun-screen" style={{ flex: 1, backgroundColor: colors.background }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -93,23 +99,9 @@ export function AskBunScreen({ now }: { now?: Date }) {
             />
           ) : (
             <>
-              {turns.length === 0 ? (
-                <View style={{ gap: BUN_SPACE.xs }}>
-                  <BunText tone="muted">{tc('Try one of these:')}</BunText>
-                  {SUGGESTIONS.map((suggestion) => (
-                    <Pressable
-                      key={suggestion}
-                      accessibilityRole="button"
-                      accessibilityLabel={tc(suggestion)}
-                      onPress={() => void ask(tc(suggestion))}
-                      style={({ pressed }) => ({ minHeight: BUN_TOUCH, justifyContent: 'center', paddingHorizontal: BUN_SPACE.sm, borderRadius: BUN_RADIUS.chip, borderWidth: BUN_OUTLINE.control, borderColor: colors.ink, backgroundColor: pressed ? colors.background : colors.card })}
-                    >
-                      <BunText>{tc(suggestion)}</BunText>
-                    </Pressable>
-                  ))}
-                </View>
-              ) : null}
+              {turns.length === 0 ? <Suggestions heading={tc('Try one of these:')} questions={SUGGESTIONS.map((suggestion) => tc(suggestion))} onAsk={(text) => void ask(text)} /> : null}
               {turns.map((turn) => <TurnView key={turn.id} turn={turn} moneyLocale={moneyLocale} />)}
+              {followUps.length > 0 ? <Suggestions heading={tc('Ask another:')} questions={followUps} onAsk={(text) => void ask(text)} /> : null}
               {asking ? (
                 <View accessibilityLiveRegion="polite" style={{ flexDirection: 'row', alignItems: 'center', gap: BUN_SPACE.sm }}>
                   <Bun pose="magnifier" size="s" />
@@ -140,10 +132,35 @@ export function AskBunScreen({ now }: { now?: Date }) {
             />
             <PillButton label={tc('Ask')} onPress={() => void ask(question)} disabled={asking || question.trim().length === 0 || left === 0} />
           </View>
+          <BunText variant="caption" tone="muted">{tc('Bun can get things wrong. Each answer shows the figures from your diary that it used.')}</BunText>
+          <Pressable accessibilityRole="link" onPress={() => router.push('/settings')} style={{ minHeight: BUN_TOUCH, justifyContent: 'center', alignSelf: 'flex-start' }}>
+            <BunText variant="caption" style={{ textDecorationLine: 'underline' }}>{tc("Bun's AI help settings")}</BunText>
+          </Pressable>
         </View>
       ) : null}
       <AiConsentSheet visible={consenting} onClose={() => setConsenting(false)} />
     </KeyboardAvoidingView>
+  );
+}
+
+/** Questions one tap away: before the first question, and after each answer. */
+function Suggestions({ heading, questions, onAsk }: { heading: string; questions: readonly string[]; onAsk: (text: string) => void }) {
+  const colors = useBunColors();
+  return (
+    <View style={{ gap: BUN_SPACE.xs }}>
+      <BunText tone="muted">{heading}</BunText>
+      {questions.map((text) => (
+        <Pressable
+          key={text}
+          accessibilityRole="button"
+          accessibilityLabel={text}
+          onPress={() => onAsk(text)}
+          style={({ pressed }) => ({ minHeight: BUN_TOUCH, justifyContent: 'center', paddingHorizontal: BUN_SPACE.sm, borderRadius: BUN_RADIUS.chip, borderWidth: BUN_OUTLINE.control, borderColor: colors.ink, backgroundColor: pressed ? colors.background : colors.card })}
+        >
+          <BunText>{text}</BunText>
+        </Pressable>
+      ))}
+    </View>
   );
 }
 

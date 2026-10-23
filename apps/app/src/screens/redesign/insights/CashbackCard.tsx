@@ -94,6 +94,13 @@ export function CashbackCard({ records, daysLogged, open = (url: string) => void
             { key: 'off', text: tc('You can turn cashback tips off in Settings.') },
           ]}
         />
+        {/* How the money arrives, in GoGoCash's own order of events, so cashback is never a surprise or a promise. */}
+        <View testID="cashback-how" style={{ gap: BUN_SPACE.xs }}>
+          <BunText variant="heading" role="heading" accessibilityRole="header">{tc('How cashback works')}</BunText>
+          <BunText>{tc("1. Shop through GoGoCash's link to the shop.")}</BunText>
+          <BunText>{tc('2. GoGoCash tracks the purchase.')}</BunText>
+          <BunText>{tc("3. Cashback is paid once the shop confirms the order. Each shop's rates and conditions are in GoGoCash.")}</BunText>
+        </View>
       </Sheet>
     </OutlinedCard>
   );

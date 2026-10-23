@@ -35,6 +35,7 @@ export function AiConsentSheet({ visible, onClose, onAgreed }: AiConsentSheetPro
     { key: 'never', text: tc('Your name, email and account are never sent, and slip images are never kept.') },
     { key: 'who', text: tc("Anthropic's Claude does the reading. Nothing you send is used to train it.") },
     { key: 'advice', text: tc('Bun explains your own numbers. It never advises on loans, investments or other financial products.') },
+    { key: 'mistakes', text: tc("Bun can get things wrong, so you always check an entry before it's saved.") },
     { key: 'off', text: tc('You can turn it off at any time in Settings.') },
   ];
 
