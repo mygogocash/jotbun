@@ -39,6 +39,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { V1Error } from '@mobile/api/client';
 import type { AiDraft } from '@gogospend/contracts';
 import { isRedesignEnabled } from '@mobile/config/featureFlags';
+import { oftenLogged } from '@mobile/spend/v1/ai/oftenLogged';
 import { applyDraft } from '@mobile/spend/v1/ai/tellBun';
 import { TellBunSheet } from './ai/TellBunSheet';
 import { playHaptic } from '@mobile/lib/hapticMoment';
@@ -342,6 +343,8 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
   const diaryView = useDiaryView();
   const { intensity } = useBunIntensity();
   const liveRanking = useMemo(() => rank(categories, records, drafts, today), [categories, records, drafts, today]);
+  // Tell Bun's "Often logged" chips, from the same recent records (worked out here; nothing is sent).
+  const often = useMemo(() => oftenLogged({ records, today, wallets, categories }), [records, today, wallets, categories]);
   const [frozenRanking, setFrozenRanking] = useState<Ranking | null>(null);
   const ranking = frozenRanking ?? liveRanking;
   // One record id and one device command id per draft, fixed when it opens.
@@ -643,6 +646,7 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
             context={{ today, wallets, categories }}
             locale={activeLocale}
             onUse={useBunDraft}
+            often={often}
           />
         ) : null}
         <Sheet visible={sheet === 'categories'} onClose={() => setSheet(null)} title={tc('Choose a category')}>

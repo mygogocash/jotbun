@@ -36,12 +36,14 @@ function catalogueAi(preferences: Partial<AiPreferencesDto> = {}, overrides: Par
     // Worded as the edge words them (fact-text.ts): in Thai for Thai, English otherwise.
     note: async (date, locale) => ({
       date,
-      facts: [{ kind: 'top_category', amount_minor: '18200', percent: 1, category_key: 'food', category_label: null }],
-      text: locale === 'th' ? 'เดือนนี้ใช้กับอาหารมากที่สุด ฿182' : 'Food leads this month at ฿182.',
+      // The golden month's own top category: the rent, ฿12,268 of ฿12,450 out.
+      facts: [{ kind: 'top_category', amount_minor: '1226800', percent: 99, category_key: 'bills', category_label: null }],
+      text: locale === 'th' ? 'เดือนนี้ใช้กับค่าบิลมากที่สุด ฿12,268' : 'Bills leads this month at ฿12,268.',
       source: 'facts',
     }),
     ask: async ({ locale }) => ({
-      answer: locale === 'th' ? 'เดือนนี้ใช้กับอาหารไป ฿182 ทั้งหมดเป็นของวันที่ 3' : 'You spent ฿182 on food this month, all of it on the 3rd.',
+      // The golden month's food: one entry, ฿182 on 26 September.
+      answer: locale === 'th' ? 'เดือนนี้ใช้กับอาหารไป ฿182 ทั้งหมดเป็นของวันที่ 26' : 'You spent ฿182 on food this month, all of it on the 26th.',
       figures: [{ label: locale === 'th' ? 'อาหาร 1–29 ก.ย. 2569' : 'Food, 1–29 Sep 2026', amount_minor: '18200' }],
       source: 'ai',
     }),

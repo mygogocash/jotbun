@@ -1195,6 +1195,8 @@
   "redesignTellBunHintWallet": "Choose which wallet paid.",
   "redesignTellBunHintNotMoney": "This doesn't look like money. Check the amount.",
   "redesignTellBunSlipImage": "The slip you chose",
+  "redesignTellBunOften": "Often logged:",
+  "redesignTellBunOftenNote": "From your own entries.",
   "redesignAskSuggestFood": "How much did I spend on food this month?",
   "redesignAskSuggestWhere": "Where did I spend the most this month?",
   "redesignAskSuggestBudget": "How much of my budget is left?",

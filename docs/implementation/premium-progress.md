@@ -68,7 +68,8 @@ Migration 0019 (`ai_preferences`, `ai_usage`, owner RLS, cascade on account dele
 - **A4 Daily love:**
   - Bun's daily note on Home, kept 2 hours per day and language so visits spend no new AI use.
   - The good-week celebration.
-  - Rotating reminder wording is a follow-up: reminders are scheduled with fixed content, and the preview tests pin it.
+  - "Often logged" chips in Tell Bun (Mobbin: Lifesum): an entry repeated at least twice in the last 60 days is one tap from a draft dated today, worked out on the phone with no AI use.
+  - Rotating reminder wording waits for an owner decision (see below).
 - **A5 GoGoCash bridge:**
   - A count of the month's purchases at cashback shops, never a baht figure (the rule the legacy screen already wrote down).
   - Shown after 7 logged days, asked once, "No thanks" remembered.
@@ -78,7 +79,7 @@ Gate after these changes (24 October 2026): `typecheck:app` and `typecheck:route
 
 ## Not done, or follow-ups
 
-- **From the Mobbin research:** Lifesum-style "often logged" chips in Tell Bun, from the person's own frequent entries.
+- **Rotating reminder wording (owner decision):** a repeating daily notification cannot change its text, so rotation needs "every day" to become seven weekly reminders, one wording per weekday. The reminders milestone (S4) chose one daily reminder on purpose, and its tests pin it. Cancelling all eight known ids first would still leave one reminder a day, so the change is safe to make if wanted.
 - **E2 screenshots** of the companion area. Its eight catalogue sections are in (`src/dev/catalogue/companion`): Ask Bun off and answering, Tell Bun reading a Thai sentence, Bun's note on Home, the cashback card asking and on, the Settings controls and the Thai pack. The area is on by default at the owner's request; `EXPO_PUBLIC_REDESIGN=-companion` switches it off.
 - **Hosted proofs, when the owner asks for a deployment:**
   - a hosted PostgreSQL and its least-privilege logins;
@@ -89,3 +90,17 @@ Gate after these changes (24 October 2026): `typecheck:app` and `typecheck:route
   - a GoGoCash catalogue URL.
 
   Wrangler on this machine is already signed in to a GoGoCash account.
+
+## Goal coverage (24 October 2026)
+
+What the owner asked for, and where each part stands. Commits on `claude/premium-ai-edge`: `b22c41c` (backend, premium, AI and bridge), `56558fd` (bounded request bodies), `5ad3463` (Mobbin research), and the commit with this section.
+
+| Asked for | Evidence | State |
+| --- | --- | --- |
+| Frontend on Expo | `apps/app`: Expo ~58.0.12, expo-router ~58.0.21, React Native 0.88. The app was already Expo (D12), so the redesign was kept. | Done. App gate green: typecheck, unit, render, routes, web export. |
+| Backend on TanStack with Cloudflare | `apps/edge`: TanStack Start 1.169.4 on Workers (Vite plugin 1.65.0, wrangler 4.152.0). Every v1 route, three background Workers, the parser container, R2, Queues, Hyperdrive. | Built and proven locally: parity with NestJS on three sessions, workerd runs of all four Workers. Not deployed (owner: not yet). |
+| UX research from Mobbin | Plan §7: nine searches with linked references, and what was taken from each. | Done. Mobbin holds no Thai apps. |
+| Easier for Thai and SEA users | Thai catalog for every string; Buddhist-era dates; the Thai everyday pack; the Thai sentence parser (Thai number words); bank slips; AI figures worded in Thai; the `000` key; Dynamic Type to AX5. | Done in code; the owner's screenshot approval (E2) is pending. Contact sheets sent 24 October. |
+| Premium haptic feedback | One vocabulary of moments (`motion.haptic`), an On/Subtle/Off setting, 22 screens and components calling `playHaptic`. | Done in code; not yet felt on a real device. |
+| AI that people love and use daily | Tell Bun (sentences and slips), Ask Bun (grounded figures, follow-ups), Bun's daily note, "often logged" chips; `claude-opus-5-5` with fallbacks; consent, daily limits and grounding on the server. | Done in code with a scripted model; live calls wait for an Anthropic key. |
+| Trust, and a bridge to GoGoCash | The cashback card: a count, never a guessed amount; asked once; "Why am I seeing this?" and "How cashback works"; matching on the phone, nothing sent; Open GoGoCash with no diary data. | Done. A hosted GoGoCash catalogue URL is still to come. |

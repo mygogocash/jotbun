@@ -8,6 +8,7 @@ import type { AiDraft } from '@gogospend/contracts';
 import { V1Error } from '@mobile/api/client';
 import { AiCompanionProvider } from '@mobile/spend/v1/ai/AiCompanionProvider';
 import { fakeAiResources } from '@mobile/spend/v1/ai/testing/fakeAiResources';
+import type { OftenLogged } from '@mobile/spend/v1/ai/oftenLogged';
 import { BUILTINS, createFakeResources, goldenSeed } from '@mobile/spend/v1/testing/fakeResources';
 
 import { mountScreen } from '../HistoryTestHarness';
@@ -20,10 +21,10 @@ const cash = golden.wallets[0];
 const food = BUILTINS.find((c) => c.builtin_key === 'food')!;
 const context = { today: '2026-10-24', wallets: [cash], categories: BUILTINS };
 
-function mount(ai: ReturnType<typeof fakeAiResources>, onUse = vi.fn(), pickSlip = vi.fn()) {
+function mount(ai: ReturnType<typeof fakeAiResources>, onUse = vi.fn(), pickSlip = vi.fn(), often: readonly OftenLogged[] = []) {
   mountScreen(
     <AiCompanionProvider resources={ai.resources}>
-      <TellBunSheet visible onClose={() => undefined} context={context} locale="en" onUse={onUse} pickSlip={pickSlip} />
+      <TellBunSheet visible onClose={() => undefined} context={context} locale="en" onUse={onUse} pickSlip={pickSlip} often={often} />
     </AiCompanionProvider>,
     { resources: createFakeResources().resources },
   );
@@ -91,4 +92,25 @@ test('a scanned slip becomes a draft, with the bank named', async () => {
   // The slip stays beside what Bun read from it, to compare before Use this.
   const slip = screen.getByTestId('tell-bun-slip');
   expect(slip.getAttribute('aria-label')).toBe('The slip you chose');
+});
+
+test('an often-logged entry is one tap from a draft, with no AI use', async () => {
+  const draft: AiDraft = { type: 'expense', amount_minor: '5000', occurred_on: '2026-10-24', category_id: food.id, wallet_id: cash.id, merchant: 'ข้าวมันไก่', note: null, confidence: 'high', flags: [] };
+  const ai = fakeAiResources({}, { companion: true, notice_version: 1 });
+  const { onUse } = mount(ai, vi.fn(), vi.fn(), [{ key: 'k', label: 'ข้าวมันไก่ 50', draft }]);
+  expect(await screen.findByText('Often logged:')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'ข้าวมันไก่ 50' }));
+  expect(await screen.findByText('From your own entries.')).toBeTruthy();
+  expect(screen.getByTestId('tell-bun-draft').textContent).toContain('฿50.00');
+  // The chips step aside while a draft is shown.
+  expect(screen.queryByTestId('tell-bun-often')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Use this' }));
+  expect(onUse).toHaveBeenCalledWith(draft);
+  expect(ai.resources.parse).not.toHaveBeenCalled();
+});
+
+test('without repeated entries there are no chips', async () => {
+  mount(fakeAiResources());
+  await screen.findByLabelText('What did you spend or receive?');
+  expect(screen.queryByText('Often logged:')).toBeNull();
 });

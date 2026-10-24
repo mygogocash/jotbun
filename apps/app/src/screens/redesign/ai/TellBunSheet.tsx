@@ -10,7 +10,7 @@
 import type { AiDraft, AiLocale, CategoryDto } from '@gogospend/contracts';
 import { AI_SLIP_MAX_BYTES } from '@gogospend/contracts';
 import { useState } from 'react';
-import { ActivityIndicator, Image, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, View } from 'react-native';
 
 import { V1Error } from '@mobile/api/client';
 import { useCopy } from '@mobile/i18n/useCopy';
@@ -19,6 +19,7 @@ import { Bun } from '@mobile/mascot/Bun';
 import { useAiCompanion } from '@mobile/spend/v1/ai/AiCompanionProvider';
 import { draftHints, localDrafts, moreDraftsLine } from '@mobile/spend/v1/ai/tellBun';
 import type { TellBunContext } from '@mobile/spend/v1/ai/tellBun';
+import type { OftenLogged } from '@mobile/spend/v1/ai/oftenLogged';
 import { formatMinor } from '@mobile/spend/v1/money';
 import { categoryName } from '@mobile/spend/v1/viewModels';
 import { TextInput } from '@mobile/theme/AppText';
@@ -75,6 +76,8 @@ export type TellBunSheetProps = {
   readonly onUse: (draft: AiDraft) => void;
   /** The slip picker; the photo library unless given (tests). */
   readonly pickSlip?: () => Promise<SlipPick>;
+  /** The person's own repeated entries, each one tap from a draft (no AI use). */
+  readonly often?: readonly OftenLogged[];
 };
 
 type Phase =
@@ -85,7 +88,7 @@ type Phase =
 
 const decodedBytes = (base64: string) => Math.floor((base64.length * 3) / 4);
 
-export function TellBunSheet({ visible, onClose, context, locale, onUse, pickSlip = pickSlipFromLibrary }: TellBunSheetProps) {
+export function TellBunSheet({ visible, onClose, context, locale, onUse, pickSlip = pickSlipFromLibrary, often = [] }: TellBunSheetProps) {
   const tc = useCopy();
   const colors = useBunColors();
   const script = useBunScript();
@@ -209,6 +212,28 @@ export function TellBunSheet({ visible, onClose, context, locale, onUse, pickSli
             </View>
           </View>
           {!companion.enabled ? <BunText variant="caption" tone="muted">{tc("Reading slips needs Bun's AI help. Typing works on your phone.")}</BunText> : null}
+
+          {often.length > 0 && (phase.kind === 'idle' || phase.kind === 'problem') ? (
+            <View testID="tell-bun-often" style={{ gap: BUN_SPACE.xs }}>
+              <BunText tone="muted">{tc('Often logged:')}</BunText>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: BUN_SPACE.xs }}>
+                {often.map((entry) => (
+                  <Pressable
+                    key={entry.key}
+                    accessibilityRole="button"
+                    accessibilityLabel={entry.label}
+                    onPress={() => {
+                      playHaptic('chipPick');
+                      setPhase({ kind: 'result', drafts: [entry.draft], note: tc('From your own entries.') });
+                    }}
+                    style={({ pressed }) => ({ minHeight: BUN_TOUCH, justifyContent: 'center', paddingHorizontal: BUN_SPACE.sm, borderRadius: BUN_RADIUS.chip, borderWidth: BUN_OUTLINE.control, borderColor: colors.ink, backgroundColor: pressed ? colors.background : colors.card })}
+                  >
+                    <BunText>{entry.label}</BunText>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          ) : null}
 
           {phase.kind === 'thinking' ? (
             <View accessibilityLiveRegion="polite" style={{ flexDirection: 'row', alignItems: 'center', gap: BUN_SPACE.sm }}>
