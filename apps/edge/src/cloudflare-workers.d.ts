@@ -1,7 +1,65 @@
 // The Workers runtime module the Cloudflare Vite plugin provides. Typed here
 // with the bindings the edge reads (see src/server/env.ts and wrangler.jsonc).
+// The Durable Object and KV names below are the global ones drizzle-orm's
+// durable-sqlite types and @cloudflare/vitest-plugin's types refer to. They
+// are declared here, not taken from @cloudflare/workers-types, which clashes
+// with the DOM lib. Only what the vault and its tests use is declared.
+
+// Durable Object SQLite storage.
+type SqlStorageValue = ArrayBuffer | string | number | null
+
+interface SqlStorageCursor<T> {
+  toArray(): T[]
+  one(): T
+}
+
+interface SqlStorage {
+  // Rows are loosely typed: the schema, not the driver, says what a column holds.
+  exec<T = Record<string, any>>(query: string, ...bindings: unknown[]): SqlStorageCursor<T>
+}
+
+interface DurableObjectStorage {
+  readonly sql: SqlStorage
+  transactionSync<T>(closure: () => T): T
+  getAlarm(): Promise<number | null>
+  setAlarm(scheduledTime: number | Date): Promise<void>
+  deleteAlarm(): Promise<void>
+}
+
+// Durable Object bindings. T names the class a stub reaches.
+interface DurableObjectId {
+  toString(): string
+}
+
+type DurableObjectLocationHint = 'wnam' | 'enam' | 'sam' | 'weur' | 'eeur' | 'apac' | 'oc' | 'afr' | 'me'
+
+interface DurableObjectStub<T = undefined> {
+  readonly id: DurableObjectId
+  fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>
+}
+
+interface DurableObjectNamespace<T = undefined> {
+  idFromName(name: string): DurableObjectId
+  get(id: DurableObjectId, options?: { locationHint?: DurableObjectLocationHint }): DurableObjectStub<T>
+}
+
+interface KVNamespace {
+  get(key: string, type: 'text'): Promise<string | null>
+  get(key: string, type: 'json'): Promise<unknown>
+  put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>
+}
+
+// The bindings `env` is typed with. The vault Worker's configuration is
+// wrangler.vault.jsonc; the test harness reads VAULT through `cloudflare:workers`.
+declare namespace Cloudflare {
+  interface Env extends Record<string, unknown> {
+    VAULT: DurableObjectNamespace<import('./vault/user-vault').UserVault>
+    CONFIG: KVNamespace
+  }
+}
+
 declare module 'cloudflare:workers' {
-  export const env: Record<string, unknown>
+  export const env: Cloudflare.Env
   /** Extends this invocation for `promise` without delaying the response (ctx.waitUntil). */
   export function waitUntil(promise: Promise<unknown>): void
 
@@ -15,6 +73,8 @@ declare module 'cloudflare:workers' {
 
   export interface DurableObjectStateLike {
     readonly container?: ContainerLike
+    readonly storage: DurableObjectStorage
+    blockConcurrencyWhile<T>(callback: () => Promise<T>): Promise<T>
     waitUntil(promise: Promise<unknown>): void
   }
 
@@ -24,3 +84,6 @@ declare module 'cloudflare:workers' {
     protected readonly env: Env
   }
 }
+
+/** The state a test's runInDurableObject callback receives. */
+type DurableObjectState = import('cloudflare:workers').DurableObjectStateLike

@@ -16,6 +16,7 @@
     "cf-typegen": "wrangler types --env-interface CloudflareBindings src/worker-configuration.d.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:workers": "vitest run --config vitest.workers.config.ts",
     "test:db": "node ../../scripts/dev-v1.mjs db-up && EDGE_TEST_DB=1 vitest run --config vitest.db.config.ts"
   },
   "allowScripts": {
@@ -36,6 +37,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.65.0",
+    "@cloudflare/vitest-plugin": "1.4.7",
     "@types/node": "^26.5.1",
     "@types/pg": "8.23.1",
     "@types/react": "^19",

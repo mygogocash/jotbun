@@ -11,7 +11,7 @@ export default mergeConfig(
     test: {
       environment: 'node',
       include: ['test/**/*.test.ts'],
-      exclude: ['test/**/*.db.test.ts'],
+      exclude: ['test/**/*.db.test.ts', 'test/workers/**'],
     },
   }),
 )
