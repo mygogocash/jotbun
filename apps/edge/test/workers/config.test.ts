@@ -33,6 +33,13 @@ it('client minimums missing from both config and env answer 503 with a retry, ne
   expect(() => config.clientVersions.check('public', {} as never)).not.toThrow()
 })
 
+it('a config whose published_at is not a date is malformed', async () => {
+  const policy = { ...TEST_POLICIES[0], published_at: 'not a date' }
+  const config = await readEdgeConfig({ get: async () => ({ policies: [policy] }) } as unknown as KVNamespace, {} as V1Env)
+  for (const scope of GATE_SCOPES) expect(() => config.gates.assertOpen(scope)).toThrow(ProblemException)
+  expect(config.policies).toBeNull()
+})
+
 it('GET /v1/policies answers the published policies from KV', async () => {
   const res = await (await startV1()).raw(new Request('http://vault.test/v1/policies'))
   expect(res.status).toBe(200)

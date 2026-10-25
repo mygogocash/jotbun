@@ -176,6 +176,7 @@ Phase 1A moves each person's ledger into one SQLite Durable Object, the UserVaul
   - Rate windows read `UserVault#clock`, so a test that makes many calls in a row must freeze it, as the invented-session test does.
   - `handleVaultV1` reads `config:v1` on every request, with no cache.
   - The test client copies the harness's `UserClient` and `CommandOptions`, and sends the command headers the same way the harness does.
+- **Fix round 1 (review findings):** two Important findings, each fixed test first. (1) A token's `iat` was unchecked against the clock, so a token issued up to 30 days ahead, or with `iat` after `exp`, was accepted for that long. jose now gets the API's 30-second `clockTolerance` and a `maxTokenAge` of 930 seconds, `exp <= iat` is refused, and any claim jose rejects is 401 UNAUTHENTICATED. (2) A policy version with a future `published_at` was listed and accepted. A `published_at` that is not an ISO date-time makes the config malformed (every gate paused, policies null), and the Worker drops versions not yet in force (`livePolicies`) once per request, before both the public list and the vault call. RED: 4 of 25 cases failed in `front-door.test.ts` and `config.test.ts`. GREEN: 25 passed. Mutants: dropping `maxTokenAge` fails the future-iat case, and passing unfiltered policies to the vault fails the pending assertion of the scheduled case. Both were restored with matching checksums. Gate: workers 33 passed (vault-schema 8, front-door 20, config 5); the other suites are unchanged.
 
 ## Not done, or follow-ups
 

@@ -5,7 +5,7 @@ import { ProblemException } from '@api/common/api-problem.filter'
 
 import { errorResponse, jsonResponse, problemResponse } from '../server/http/problem'
 import { queryOf, readJsonBody, reqLike } from '../server/http/request'
-import { readEdgeConfig } from './config'
+import { livePolicies, readEdgeConfig } from './config'
 import type { EdgeConfig } from './config'
 import type { V1Env } from './env'
 import { logFailure } from './log'
@@ -59,8 +59,10 @@ export async function handleVaultV1(request: Request, env: V1Env, deps: V1Deps =
   try {
     const body = await readJsonBody(request)
     const config = await (deps.config ?? ((e: V1Env) => readEdgeConfig(e.CONFIG, e)))(env)
+    // Versions published later are not in force yet. The list and the vault both get the live ones only.
+    const policies = livePolicies(config.policies, new Date())
     config.gates.assertOpen(...(route.gates ?? []))
-    if (route.access === 'public') return headOf(jsonResponse(200, latestPerKind(config.policies), requestId), method)
+    if (route.access === 'public') return headOf(jsonResponse(200, latestPerKind(policies), requestId), method)
     config.clientVersions.check(route.access, reqLike(request) as never)
     const client = parseClientHeader(request.headers.get(V1_HEADERS.client))
     if (!client) throw new ProblemException(426, 'CLIENT_UPGRADE_REQUIRED')
@@ -72,7 +74,7 @@ export async function handleVaultV1(request: Request, env: V1Env, deps: V1Deps =
       route: route.vault,
       access: route.access,
       claims,
-      policies: config.policies,
+      policies,
       params,
       query: queryOf(url),
       headers: headersOf(request),

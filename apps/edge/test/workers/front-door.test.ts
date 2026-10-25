@@ -75,6 +75,20 @@ describe('the access pipeline, in the API’s order', () => {
     expect((await res.json()).code).toBe('UNAUTHENTICATED')
   })
 
+  it('a token issued in the future is 401 UNAUTHENTICATED', async () => {
+    const now = Math.floor(Date.now() / 1000)
+    const res = await client.as(newUser(), { iat: now + 3600, exp: now + 3600 + 300 }).get('/v1/me')
+    expect(res.status).toBe(401)
+    expect((await res.json()).code).toBe('UNAUTHENTICATED')
+  })
+
+  it('a token issued after its own expiry is 401 UNAUTHENTICATED', async () => {
+    const now = Math.floor(Date.now() / 1000)
+    const res = await client.as(newUser(), { iat: now + 20, exp: now + 10 }).get('/v1/me')
+    expect(res.status).toBe(401)
+    expect((await res.json()).code).toBe('UNAUTHENTICATED')
+  })
+
   it('a token whose subject is not a UUID is 401 UNAUTHENTICATED', async () => {
     const res = await client.as({ ...newUser(), sub: 'auth0|someone' }).get('/v1/me')
     expect(res.status).toBe(401)
@@ -148,5 +162,34 @@ describe('policies and the account', () => {
     expect(await res.json()).toEqual({ analytics: true })
     expect((await (await client.as(user).get('/v1/me')).json()).privacy).toEqual({ analytics: true })
     expect((await client.as(user).put('/v1/me/privacy-preferences', { analytics: true, ads: true })).status).toBe(422)
+  })
+
+  // Ported from apps/api/src/policies/policy.integration.spec.ts ("a version scheduled for later is invisible
+  // and cannot be accepted"). All three versions are required, so the account owes privacy v1 and terms v1.
+  it('a version scheduled for later is invisible and cannot be accepted', async () => {
+    const day = 24 * 60 * 60 * 1000
+    const yesterday = new Date(Date.now() - day).toISOString()
+    const tomorrow = new Date(Date.now() + day).toISOString()
+    const scheduled = await startV1({
+      policies: [
+        { kind: 'privacy', version: 1, required: true, published_at: yesterday, text: { th: 'ความเป็นส่วนตัว', en: 'Privacy' } },
+        { kind: 'terms', version: 1, required: true, published_at: yesterday, text: { th: 'ข้อกำหนด', en: 'Terms' } },
+        { kind: 'terms', version: 2, required: true, published_at: tomorrow, text: { th: 'ข้อกำหนด 2', en: 'Terms 2' } },
+      ],
+      client_versions: { ios: '1.0.0', android: '1.0.0' },
+    })
+    const listed = await scheduled.raw(new Request(`${BASE}/v1/policies`))
+    expect(await listed.json()).toEqual([
+      expect.objectContaining({ kind: 'privacy', version: 1 }),
+      expect.objectContaining({ kind: 'terms', version: 1 }),
+    ])
+    const user = newUser()
+    expect(await (await scheduled.as(user).get('/v1/me')).json()).toMatchObject({ pending_policies: [{ kind: 'privacy', version: 1 }, { kind: 'terms', version: 1 }] })
+    // Refused exactly as an unpublished version is: 422 VALIDATION_FAILED on the version field.
+    for (const version of [2, 9]) {
+      const res = await scheduled.as(user).post('/v1/me/policy-acceptances', { kind: 'terms', version })
+      expect(res.status).toBe(422)
+      expect(await res.json()).toMatchObject({ code: 'VALIDATION_FAILED', fields: { version: 'VALIDATION_FAILED' } })
+    }
   })
 })

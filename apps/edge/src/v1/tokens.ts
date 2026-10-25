@@ -1,7 +1,7 @@
 import { createRemoteJWKSet, errors, jwtVerify } from 'jose'
 import type { JWTPayload, JWTVerifyGetKey } from 'jose'
 
-import { MAX_TOKEN_LENGTH } from '@api/auth/auth0-token-verifier'
+import { CLOCK_TOLERANCE_SECONDS, MAX_TOKEN_LENGTH } from '@api/auth/auth0-token-verifier'
 import { ProblemException } from '@api/common/api-problem.filter'
 import { ConfigurationError } from '@api/common/configuration-error'
 import { isUuid } from '@gogospend/contracts'
@@ -19,11 +19,14 @@ const BEARER = /^Bearer ([A-Za-z0-9._~+/=-]+)$/
 /**
  * Verifies `Authorization: Bearer <access token>` (§6.4). The signature is
  * checked against the JWKS, with EdDSA or RS256 only, and the issuer, audience
- * and required claims must hold. The lifetime is at most 900 seconds, `sub` is
- * the account (a UUID) and `sid` is the session (a UUID).
+ * and required claims must hold. jose also checks the clock with the API's
+ * 30-second tolerance: `iat` may not lie further ahead than that, and a token
+ * may be at most its lifetime plus that tolerance old (`maxTokenAge` is what
+ * checks `iat`). Then `exp` must come after `iat`, the lifetime is at most 900
+ * seconds, `sub` is the account (a UUID) and `sid` is the session (a UUID).
  *
- * A failing key source answers 503 with a retry, and any other bad token is
- * 401, the same split the API's Auth0AccessTokenGuard makes.
+ * A failing key source answers 503 with a retry. Any other bad token, including
+ * a claim jose rejects, is 401, the same split the API's Auth0AccessTokenGuard makes.
  */
 export function createTokenVerifier(o: { issuer: string; audience: string; keys: JWTVerifyGetKey; maxLifetimeSeconds?: number }): TokenVerifier {
   const lifetime = o.maxLifetimeSeconds ?? MAX_TOKEN_LIFETIME_SECONDS
@@ -37,6 +40,8 @@ export function createTokenVerifier(o: { issuer: string; audience: string; keys:
           issuer: o.issuer,
           audience: o.audience,
           algorithms: ['EdDSA', 'RS256'],
+          clockTolerance: CLOCK_TOLERANCE_SECONDS,
+          maxTokenAge: lifetime + CLOCK_TOLERANCE_SECONDS,
           requiredClaims: ['sub', 'iat', 'exp'],
         })
       } catch (error) {
@@ -44,7 +49,7 @@ export function createTokenVerifier(o: { issuer: string; audience: string; keys:
         throw new ProblemException(401, 'UNAUTHENTICATED')
       }
       const { sub, sid, iat, exp } = verified.payload
-      if (typeof sub !== 'string' || !isUuid(sub) || typeof iat !== 'number' || typeof exp !== 'number' || exp - iat > lifetime) {
+      if (typeof sub !== 'string' || !isUuid(sub) || typeof iat !== 'number' || typeof exp !== 'number' || exp <= iat || exp - iat > lifetime) {
         throw new ProblemException(401, 'UNAUTHENTICATED')
       }
       if (typeof sid !== 'string' || !isUuid(sid)) throw new ProblemException(401, 'SESSION_REQUIRED')

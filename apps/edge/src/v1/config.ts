@@ -43,6 +43,9 @@ const MINIMUMS_UNAVAILABLE: Pick<ClientVersionGuard, 'check'> = {
 
 const VERSION = /^(?:0|[1-9][0-9]{0,5})\.(?:0|[1-9][0-9]{0,5})\.(?:0|[1-9][0-9]{0,5})$/
 
+/** An ISO 8601 date and time with a zone, the form the API writes published_at in. */
+const ISO_DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/
+
 type ParsedConfig = {
   gates: { paused: GateScope[]; retryAfterSeconds?: number }
   policies: PolicyVersionDto[] | null
@@ -74,6 +77,16 @@ export async function readEdgeConfig(kv: KVNamespace, env: V1Env): Promise<EdgeC
     policies: parsed.policies,
     clientVersions: guardFor(parsed.clientVersions ?? fromEnv),
   }
+}
+
+/**
+ * The versions in force at `now`. A version published later is not yet in force:
+ * the API's row-level security hides it, so it is neither listed nor accepted
+ * until its time comes. The Worker drops such versions once per request, so the
+ * public list and the vault both see only the live ones.
+ */
+export function livePolicies(policies: PublishedPolicies, now: Date): PublishedPolicies {
+  return policies === null ? null : policies.filter((policy) => Date.parse(policy.published_at) <= now.getTime())
 }
 
 function failClosed(fromEnv: MinimumClientVersions | null): EdgeConfig {
@@ -129,6 +142,8 @@ function isPolicy(value: unknown): boolean {
     (value.version as number) >= 1 &&
     typeof value.required === 'boolean' &&
     typeof value.published_at === 'string' &&
+    ISO_DATE_TIME.test(value.published_at) &&
+    !Number.isNaN(Date.parse(value.published_at)) &&
     isRecord(text) &&
     onlyKeys(text, ['th', 'en']) &&
     typeof text.th === 'string' &&
