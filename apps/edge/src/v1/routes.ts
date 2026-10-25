@@ -28,7 +28,7 @@ export function vaultStatus(r: VaultRoute): number {
 /** Writes to wallets are commands, and every mutating route carries the writes gate (C12). */
 const WRITES: readonly GateScope[] = ['writes']
 
-/** The routes ported in Tasks 2 to 4 and 8a: the front door, wallets, categories, command status and the sync delta feed. */
+/** The routes ported in Tasks 2 to 5 and 8a: the front door, wallets, categories, transactions, command status and the sync delta feed. */
 export const VAULT_V1_ROUTES: readonly VaultRoute[] = [
   // policies/policy.controller.ts: the published text, answered from config:v1 by the Worker.
   { method: 'GET', path: '/v1/policies', access: 'public' },
@@ -51,6 +51,12 @@ export const VAULT_V1_ROUTES: readonly VaultRoute[] = [
   { method: 'PATCH', path: '/v1/categories/:id', access: 'current_policy', vault: 'categories.update', gates: WRITES, status: 200 },
   { method: 'POST', path: '/v1/categories/:id/archive', access: 'current_policy', vault: 'categories.archive', gates: WRITES, status: 200 },
   { method: 'POST', path: '/v1/categories/:id/unarchive', access: 'current_policy', vault: 'categories.unarchive', gates: WRITES, status: 200 },
+  // transactions/transactions.controller.ts
+  { method: 'GET', path: '/v1/transactions/:id', access: 'bound_session', vault: 'transactions.get' },
+  { method: 'POST', path: '/v1/transactions', access: 'current_policy', vault: 'transactions.create', gates: WRITES },
+  { method: 'PATCH', path: '/v1/transactions/:id', access: 'current_policy', vault: 'transactions.update', gates: WRITES, status: 200 },
+  { method: 'DELETE', path: '/v1/transactions/:id', access: 'current_policy', vault: 'transactions.delete', gates: WRITES, status: 200 },
+  { method: 'POST', path: '/v1/transactions/:id/restore', access: 'current_policy', vault: 'transactions.restore', gates: WRITES, status: 200 },
   // commands/command-status.controller.ts
   { method: 'POST', path: '/v1/commands/status', access: 'bound_session', vault: 'commands.status', status: 200 },
   // sync/sync.controller.ts: the delta feed (the snapshot routes are 1B).
@@ -71,13 +77,8 @@ export function vaultStatusOf(id: VaultRouteId): number {
   return vaultStatus(route)
 }
 
-/** Routes for Tasks 5 to 7 of Phase 1A: transactions, budgets, history and summary. */
+/** Routes for Tasks 6 and 7 of Phase 1A: budgets, history and summary. */
 export const VAULT_PENDING_ROUTES: readonly string[] = [
-  'GET /v1/transactions/:id',
-  'POST /v1/transactions',
-  'PATCH /v1/transactions/:id',
-  'DELETE /v1/transactions/:id',
-  'POST /v1/transactions/:id/restore',
   'GET /v1/budgets/:month',
   'PUT /v1/budgets/:month',
   'GET /v1/history',
