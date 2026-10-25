@@ -49,13 +49,13 @@ The builder's, not the owner's, unless marked as a controller ruling. Doc source
 - **K7. The vault's verifier reads Better Auth's keys in process:** 1A's private `verifierFor` builds a verifier over the JWKS endpoint called through `auth.handler` whenever `AUTH_DB` is bound, cached in its WeakMap, re-reading the keys at most once every 30 seconds for an unknown key id (R50).
 - **K8. One gate before every vault call:** right after the token check, every route that is not public (vault routes and 1B's Worker routes alike) reads `account_status` from `AUTH_DB` and the erasure registry from `ERASURE_DB` in parallel; the two deletion routes skip it (R49, R56).
 - **K9. Sign-in rate limits:** Better Auth's limiter with D1 storage, keyed by `cf-connecting-ip` (concepts/rate-limit.mdx), plus our own cap of **5 codes per address per 15 minutes** in a `before` hook. Thai mobile networks put many people behind one address (carrier-grade NAT), so the per-network limits are loose (10 code requests a minute) and the per-address cap does the real work (M14).
-- **K10. The second email provider is Resend behind a switch** (default pending owner Q4): `EMAIL_SECONDARY` = `off` (the default), `fallback` or `only`, and it stays off until `RESEND_API_KEY` exists.
+- **K10. The second email provider is Resend behind a switch** (decided, Q4): `EMAIL_SECONDARY` = `off` (the default), `fallback` or `only`, and it stays off until `RESEND_API_KEY` exists.
 - **K11. The sign-in code email is bilingual, Thai first**, because no language is known before sign-in. The deletion email uses the request's `Accept-Language` (read once, stored with the request; Thai unless it asks for English), because v1 request bodies cannot change (R46).
 - **K12. The local code log is compiled out by Vite mode** (`import.meta.env.MODE !== 'production'`, and `JOTBUN_ENV` local or test at run time); `npm run build` fails if its marker survives in `dist/`; `npm run build:local` builds the variant `wrangler dev` runs for the proof.
 - **K13. The app's session "binding" becomes the Better Auth session id**, and the transport stops sending `X-GoGoSpend-Session`. Every new session, including every fresh sign-in, moves the epoch, exactly as a new binding does today.
 - **K14. A fresh sign-in makes a new session with the account's own method**, then signs the old one out; the email is fixed to the account's own address, and an Apple or Google token is checked against the account's linked provider ids before anything is sent. Apple and Google run with `disableImplicitSignUp: true` (concepts/oauth.mdx); only the sign-in screen sends `requestSignUp: true`.
-- **K15. Apple sign-in is iOS only in phase 1** (default pending owner Q7): Android has no native Apple sheet, and an Apple account can always sign in on Android with an email code to its address (C14).
-- **K16. C15 on today's first run** (default pending owner Q7): the story stays, its first screen gains the board's "มีบัญชีแล้ว เข้าสู่ระบบ" link straight to sign-in, the story ends at sign-in, and today's reminder question moves to right after sign-in (R55), so the order is welcome, sign-in, then the budget question and setup. `bw-welcome` replaces the story in phase 2.
+- **K15. Apple sign-in is iOS only in phase 1** (decided, Q7): Android has no native Apple sheet, and an Apple account can always sign in on Android with an email code to its address (C14).
+- **K16. C15 on today's first run** (decided, Q7): the story stays, its first screen gains the board's "มีบัญชีแล้ว เข้าสู่ระบบ" link straight to sign-in, the story ends at sign-in, and today's reminder question moves to right after sign-in (R55), so the order is welcome, sign-in, then the budget question and setup. `bw-welcome` replaces the story in phase 2.
 - **K17. Deletion's records:** `account_status` rows have no foreign key to Better Auth's `user`. The deletion route marks `deleting` at once; step 5 writes the registry entry to `ERASURE_DB` first, then deletes Better Auth's rows and sets `deleted` in one `AUTH_DB` batch; step 8 runs one hour later. The Workflow's parameters carry only the request id; steps read the user id from `deletion_requests`, which forgets it at the final sweep (M11).
 - **K18. The deletion email address** sits in `deletion_requests` only until step 7 sends it, then it is nulled; no step returns it.
 - **K19. A social sign-in refused by C14 answers `403 { code: 'ACCOUNT_EXISTS', methods }`.** Better Auth refuses it as 401 `{ code: 'OAUTH_LINK_ERROR', message: 'account not linked' }` (M13); our handler rewrites that one answer and, when the provider verified the email, names the existing account's methods so the screen can say which to use (R54, C14).
@@ -66,7 +66,7 @@ The builder's, not the owner's, unless marked as a controller ruling. Doc source
 
 ## Owner questions
 
-The controller asks the owner. Each gated task carries its default, marked "default pending owner Qn"; nothing below blocks Tasks 1 to 6, 8 or 10a.
+The owner accepted the defaults for Q1, Q3, Q4, Q5 and Q7 on 25 October 2026 (items 4 to 8 of the combined question list of plans 1B, 1C and 1D, answered "defaults for all 16"), so each is now the decided value and the tasks mark it "decided, Qn". Q2 and Q6 were not on that list; they keep their defaults, marked "default pending owner Qn". Tasks 1 and 5, which are being built from the earlier text, still say "default pending owner Qn" in their briefs: for Q1, Q3, Q4, Q5 and Q7, read that as decided. Nothing below blocks Tasks 1 to 6, 8 or 10a.
 
 - **Q1. `@react-native-google-signin/google-signin` 16.1.5.** Its docs list Expo 52.0.40 to 57 and React Native 0.76 to 0.87; the app is on Expo 58 and React Native 0.88. Default: approved, gated on the development-build check, with the Google button hidden until that check passes. `expo-apple-authentication` (Expo's own module, 58.0.2) is covered by §4.
 - **Q2. `expo-network`.** Default: not installed; `@better-auth/expo` 1.6.33 lists it as an optional peer and the client treats it as optional.
@@ -347,7 +347,7 @@ it('a signed-in device gets a ten-minute EdDSA JWT naming only the user, the ses
   - `without a session /token is 401`: `GET /api/auth/token` with no cookie answers 401.
   - `auth answers are no-store`: `GET /api/auth/jwks` carries `cache-control: no-store`.
   - `an unknown auth path is 404`: `GET /api/auth/nothing-here` answers 404.
-  - `passkeys are mounted on D1`: `GET /api/auth/passkey/list-user-passkeys` with a cookie answers 200 `[]` (default pending owner Q3: the server side ships, the app offer waits).
+  - `passkeys are mounted on D1`: `GET /api/auth/passkey/list-user-passkeys` with a cookie answers 200 `[]` (decided, Q3: the server side ships, the app offer waits).
   - `Better Auth refuses to start without its secret`: `createAuth({ ...env, BETTER_AUTH_SECRET: undefined }, deps)` throws `AuthConfigError`.
 
 - [ ] **Step 4: Run them and see them fail.**
@@ -398,7 +398,7 @@ it('a signed-in device gets a ten-minute EdDSA JWT naming only the user, the ses
 
 ### Task 2: Sign-in email delivery (D30), the local code log and the per-address cap
 
-**Starts after:** 1C-T1. Its second provider is Resend, default pending owner Q4 (behind the switch, off until keys exist).
+**Starts after:** 1C-T1. Its second provider is Resend, decided, Q4 (behind the switch, off until keys exist).
 
 **Files:**
 - Modify: `apps/edge/src/auth/mailer.ts`, `apps/edge/src/auth/create-auth.ts` (record each send; the per-address cap), `apps/edge/package.json` (`build`, `build:local`), `apps/edge/wrangler.jsonc` (vars `EMAIL_FROM: ""`, `EMAIL_SECONDARY: "off"`; a comment naming the secret `RESEND_API_KEY`)
@@ -445,7 +445,7 @@ it('a signed-in device gets a ten-minute EdDSA JWT naming only the user, the ses
   - `only never calls the primary`: with `'only'`, the primary was not called.
   - `fallback with no secondary rejects with MailerUnavailable`.
   - `an unknown switch value reads as off`: `parseSecondaryMode('sometimes')` is `'off'`.
-  - `Resend is off until its key exists` (default pending owner Q4): `secondaryTransportFromEnv({ ...env, RESEND_API_KEY: undefined })` is null; with a key and `EMAIL_FROM` it is a transport.
+  - `Resend is off until its key exists` (decided, Q4): `secondaryTransportFromEnv({ ...env, RESEND_API_KEY: undefined })` is null; with a key and `EMAIL_FROM` it is a transport.
   - `the Resend transport posts the documented request`: with a recording `fetchImpl`, one call to `https://api.resend.com/emails`, method `POST`, `authorization: Bearer test-key`, and a JSON body equal to `{ from, to: [to], subject, html, text }`; with `idempotencyKey: 'k'` the request carries `idempotency-key: k`; a 500 answer rejects with `MailerUnavailable`.
   - `the code email is Thai first, then English, with the code and the Bangkok expiry`: `signInCodeEmail({ to, code: '482913', expiresAt: new Date('2026-10-25T13:52:00Z') })` has the subject `รหัสเข้าสู่ระบบ Jotbun ของคุณ`; `text` contains `482913`, `ใช้ได้ 10 นาที` and `20:52`; the Thai block comes before the English one; `text` contains no `<`.
   - `one address gets at most five codes in fifteen minutes, from any network` (Review Focus 2): five `requestCode(email)` calls from five random networks answer 200; the sixth answers 429 `{ code: 'CODE_LIMIT' }`; another address answers 200; after `vi.setSystemTime(Date.now() + 15 * 60_000 + 1)` the first address answers 200 again; `SELECT count(*) AS n FROM email_code_sends WHERE address_hash = ?` with the raw address is 0.
@@ -930,7 +930,7 @@ it('after a session ended, the same account sends the unsent records once; anoth
 
 ### Task 7: Native Apple and Google sign-in
 
-**Starts after:** 1C-T5. The Apple half starts at once (`expo-apple-authentication` is Expo's own module, covered by §4). The Google half is default pending owner Q1: approved, gated on the development-build check, with the Google button hidden until that check passes. Apple on iOS only is default pending owner Q7 (K15).
+**Starts after:** 1C-T5. The Apple half starts at once (`expo-apple-authentication` is Expo's own module, covered by §4). The Google half is decided, Q1: approved, gated on the development-build check, with the Google button hidden until that check passes. Apple on iOS only is decided, Q7 (K15).
 
 **Files:**
 - Modify: `apps/app/package.json`, root `package-lock.json`
@@ -969,7 +969,7 @@ it('after a session ended, the same account sends the unsent records once; anoth
 
 ### Task 8: The sign-in, devices, session-ended and reminder screens as drafts, with screenshots for E2
 
-**Starts after:** 1C-T5, 1C-T6. The welcome link and the reminder order are default pending owner Q7 (K16); there is no passkey offer, default pending owner Q3.
+**Starts after:** 1C-T5, 1C-T6. The welcome link and the reminder order are decided, Q7 (K16); there is no passkey offer, decided, Q3.
 
 **Files:**
 - Create in `apps/app/src/screens/redesign/signin/`: `draftCopy.ts`, `EmailCodeScreen.tsx`, `AccountExistsScreen.tsx`, `SessionEndedScreen.tsx`, `OtherAccountRecords.tsx`, `DevicesScreen.tsx`, `ConfirmItsYouSheet.tsx`, `useFreshSignIn.tsx`, `WelcomeSignInLink.tsx`, `ReminderQuestionScreen.tsx`, and a render test beside each screen
@@ -1346,7 +1346,7 @@ it('after a session ended, the same account sends the unsent records once; anoth
 
 ---
 
-### Task 13: Apple token revocation on deletion (default pending owner Q5)
+### Task 13: Apple token revocation on deletion (decided, Q5)
 
 **Starts after:** 1C-T7, 1C-T11. Default pending owner Q5: yes, before the beta, keeping Apple's `authorizationCode` at sign-in.
 
