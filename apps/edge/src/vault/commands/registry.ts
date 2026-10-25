@@ -1,4 +1,4 @@
-import { isWalletSnapshot } from '@gogospend/contracts'
+import { isCategorySnapshot, isWalletSnapshot } from '@gogospend/contracts'
 import type { CommandOutcome } from '@gogospend/contracts'
 
 import { CommandRegistry } from '@api/commands/command-registry'
@@ -8,6 +8,14 @@ const WALLET_COMMANDS: [string, CommandOutcome][] = [
   ['wallet.update', 'updated'],
   ['wallet.archive', 'archived'],
   ['wallet.unarchive', 'unarchived'],
+]
+
+const CATEGORY_COMMANDS: [string, CommandOutcome][] = [
+  ['category.seed_builtins', 'created'],
+  ['category.create', 'created'],
+  ['category.update', 'updated'],
+  ['category.archive', 'archived'],
+  ['category.unarchive', 'unarchived'],
 ]
 
 /**
@@ -20,5 +28,7 @@ export function buildVaultRegistry(): CommandRegistry {
   const registry = new CommandRegistry()
   registry.defineEntity({ entity: 'wallet', validate: isWalletSnapshot })
   for (const [kind, outcome] of WALLET_COMMANDS) registry.defineCommand({ kind, entity: 'wallet', outcome, schemaVersions: [1], policy: 'current' })
+  registry.defineEntity({ entity: 'category', validate: isCategorySnapshot })
+  for (const [kind, outcome] of CATEGORY_COMMANDS) registry.defineCommand({ kind, entity: 'category', outcome, schemaVersions: [1], policy: 'current' })
   return registry
 }

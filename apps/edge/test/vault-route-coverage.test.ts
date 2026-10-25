@@ -28,13 +28,20 @@ describe('the vault route table covers each v1 route exactly once', () => {
     expect(new Set(listed).size).toBe(listed.length)
   })
 
-  it('Task 3 ports the five Task 2 routes, the six wallet routes and command status, and nothing else', () => {
+  it('Tasks 2 to 4 and 8a port the front door, the wallet and category routes, command status and the sync delta feed, and nothing else', () => {
     expect(VAULT_V1_ROUTES.map((route) => keyOf(route.method, route.path)).sort()).toEqual([
+      'GET /v1/categories',
       'GET /v1/me',
       'GET /v1/policies',
+      'GET /v1/sync/changes',
       'GET /v1/wallets',
       'GET /v1/wallets/:id',
+      'PATCH /v1/categories/:id',
       'PATCH /v1/wallets/:id',
+      'POST /v1/categories',
+      'POST /v1/categories/:id/archive',
+      'POST /v1/categories/:id/unarchive',
+      'POST /v1/categories/builtins',
       'POST /v1/commands/status',
       'POST /v1/me/logout',
       'POST /v1/me/policy-acceptances',
