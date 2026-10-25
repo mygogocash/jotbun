@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Edit exchange rate</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;700&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F3F9; color: #111014; font-family: 'Anuphan', 'DM Sans', sans-serif; line-height: 1.4; position: relative; overflow: hidden">
+  <div aria-hidden="true" style="padding: 52px 18px 0">
+    <div style="height: 42px"></div>
+    <div style="height: 150px; border-radius: 20px; background: #FFFFFF; margin-top: 12px"></div>
+    <div style="height: 62px; border-radius: 20px; background: #FFFFFF; margin-top: 12px"></div>
+    <div style="height: 200px; border-radius: 22px; background: linear-gradient(135deg, #FFE2CF, #FFAE85); margin-top: 48px"></div>
+  </div>
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(17, 16, 20, 0.38)"></div>
+
+  <section aria-label="เรทของรายการนี้" style="position: absolute; left: 8px; right: 8px; bottom: 8px; height: 748px; background: #FFFFFF; border-radius: 34px; padding: 18px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 -10px 40px rgba(17, 16, 20, 0.18)">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <button type="button" aria-label="กลับ" style="width: 44px; height: 44px; border-radius: 50%; border: none; background: #F4F3F9; display: flex; align-items: center; justify-content: center; padding: 0"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="#111014" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+      <h2 style="margin: 0; font-size: 17px; font-weight: 700; line-height: 1.4">เรทของรายการนี้</h2>
+      <button type="button" aria-label="ปิด" style="width: 44px; height: 44px; border-radius: 50%; border: none; background: #F4F3F9; display: flex; align-items: center; justify-content: center; padding: 0"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="#111014" stroke-width="3" stroke-linecap="round"></path></svg></button>
+    </div>
+
+    <div style="text-align: center">
+      <div style="font-size: 14px; color: #6B6878">ร้านยา</div>
+      <div style="font-family: 'DM Sans', sans-serif; font-size: 40px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; font-variant-numeric: tabular-nums">¥4,620</div>
+    </div>
+
+    <fieldset style="margin: 0; padding: 0; border: none; min-width: 0; display: flex; flex-direction: column; gap: 10px">
+      <legend style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">คิดเป็นบาทด้วยเรทไหน</legend>
+
+      <label for="tc-rate-ref" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 18px; border: 2px solid #F4F3F9; background: #F4F3F9; cursor: pointer">
+        <input id="tc-rate-ref" type="radio" name="tc-rate" value="reference" style="-webkit-appearance: none; appearance: none; margin: 2px 0 0; width: 24px; height: 24px; border-radius: 50%; box-sizing: border-box; border: 2px solid #8A879A; background: #FFFFFF; flex: none">
+        <span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+          <span style="font-size: 16px; font-weight: 700; line-height: 1.4">ใช้เรทอ้างอิงของวันนั้น</span>
+          <span style="font-size: 13px; line-height: 1.45; color: #6B6878"><span style="font-family: 'DM Sans', sans-serif">1 ¥ = ฿0.2312</span> · <span style="white-space: nowrap">เรทอ้างอิงวันที่ 3 พ.ย. 2569</span></span>
+        </span>
+        <span style="font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; color: #4A4756; flex: none; margin-top: 1px">฿1,068.14</span>
+      </label>
+
+      <div style="display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 14px; border-radius: 18px; border: 2px solid #111014; background: #FFFFFF">
+        <label for="tc-rate-actual" style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer">
+          <input id="tc-rate-actual" type="radio" name="tc-rate" value="actual" checked="checked" style="-webkit-appearance: none; appearance: none; margin: 2px 0 0; width: 24px; height: 24px; border-radius: 50%; box-sizing: border-box; border: 7px solid #6A4BD4; background: #FFFFFF; flex: none">
+          <span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+            <span style="font-size: 16px; font-weight: 700; line-height: 1.4">ใส่ยอดที่ถูกตัดจริงเป็นบาท</span>
+            <span style="font-size: 13px; line-height: 1.45; color: #6B6878">ดูได้จากสลิปบัตรหรือแอปธนาคาร</span>
+          </span>
+        </label>
+        <div>
+          <label for="tc-rate-thb" style="display: block; font-size: 13px; line-height: 1.4; color: #4A4756; padding: 8px 14px 0; background: #E9E7F1; border-radius: 12px 12px 0 0">ยอดที่ถูกตัดจริง</label>
+          <input id="tc-rate-thb" type="text" inputmode="decimal" value="฿1,075.50" style="width: 100%; box-sizing: border-box; height: 48px; border: none; border-bottom: 2px solid #111014; border-radius: 0 0 4px 4px; background: #E9E7F1; padding: 0 14px 4px; font-family: 'DM Sans', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -0.02em; color: #111014; outline: none">
+        </div>
+        <div aria-live="polite" style="display: flex; align-items: flex-start; gap: 8px">
+          <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 3px"><circle cx="12" cy="12" r="10" fill="#6A4BD4"></circle><path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          <span style="display: flex; flex-direction: column">
+            <span style="font-size: 15px; line-height: 1.45">เรทที่ได้ <span style="font-family: 'DM Sans', sans-serif; font-weight: 700">1 ¥ = ฿0.2328</span></span>
+            <span style="font-size: 13px; line-height: 1.45; color: #6B6878">ต่างจากเรทอ้างอิง <span style="font-family: 'DM Sans', sans-serif">฿7.36</span> · ใช้กับรายการนี้เท่านั้น</span>
+          </span>
+        </div>
+      </div>
+    </fieldset>
+
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 8px; font-family: 'DM Sans', sans-serif">
+      <button type="button" style="height: 44px; border: none; border-radius: 14px; background: transparent; font-family: inherit; font-size: 24px; font-weight: 500; color: #111014">1</button>
+      <button type="button" style="height: 44px; border: none; border-radius: 14px; background: transparent; font-family: inherit; font-size: 24px; font-weight: 500; color: #111014">2</button>
+      <button type="button" style="height: 44px; border: none; border-radius: 14px; background: transparent; font-family: inherit; font-size: 24px; font-weight: 500; color: #111014">3</button>
+      <button type="button" style="height: 44px; border: none; border-radius: 14px; background: transparent; font-family: inherit; font-size: 24px; font-weight: 500; color: #111014">4</button>
+      <button type="button" style="height: 44px; border: none; border-radius: 14px; background: transparent; font-family: inherit; font-size: 24px; font-weight: 500; color: #111014">5</button>
+      <button type="button" style="height: 44px; border: none; border-radius: 14px; background: transparent; font-family: inherit; font-size: 24px; font-weight: 500; color: #111014">6</button>
+      <button type="button" style="height: 44px; border: none; border-radius: 14px; background: transparent; font-family: inherit; font-size: 24px; font-weight: 500; color: #111014">7</button>
+      <button type="button" style="height: 44px; border: none; border-radius: 14px; background: transparent; font-family: inherit; font-size: 24px; font-weight: 500; color: #111014">8</button>
+      <button type="button" style="height: 44px; border: none; border-radius: 14px; background: transparent; font-family: inherit; font-size: 24px; font-weight: 500; color: #111014">9</button>
+      <button type="button" aria-label="จุดทศนิยม" style="height: 44px; border: none; border-radius: 14px; background: transparent; font-family: inherit; font-size: 26px; font-weight: 700; color: #111014">.</button>
+      <button type="button" style="height: 44px; border: none; border-radius: 14px; background: transparent; font-family: inherit; font-size: 24px; font-weight: 500; color: #111014">0</button>
+      <button type="button" aria-label="ลบตัวเลข" style="height: 44px; border: none; border-radius: 14px; background: transparent; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11v12H9l-6-6Z M13 10l4 4M17 10l-4 4" fill="none" stroke="#111014" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"></path></svg></button>
+    </div>
+
+    <button type="button" style="margin-top: auto; height: 56px; border-radius: 18px; border: none; background: #111014; color: #FFFFFF; font-family: inherit; font-size: 17px; font-weight: 700">ใช้เรทนี้</button>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

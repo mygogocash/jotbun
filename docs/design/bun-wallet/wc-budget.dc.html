@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Budget</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;700&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F3F9; color: #111014; font-family: 'Anuphan', 'DM Sans', sans-serif; line-height: 1.5; position: relative; overflow: hidden">
+  <div style="padding: 52px 18px 0; display: flex; flex-direction: column; gap: 12px">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+      <button type="button" aria-label="กลับ" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid #E6E4EE; background: rgba(255, 255, 255, 0.85); display: flex; align-items: center; justify-content: center; padding: 0; flex: none"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="#111014" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+      <button type="button" aria-label="เลือกเดือน ตอนนี้ ตุลาคม 2569" style="height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid #E6E4EE; background: rgba(255, 255, 255, 0.85); display: flex; align-items: center; gap: 6px; font-family: inherit; font-size: 15px; font-weight: 500; color: #111014">ตุลาคม 2569<svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="#111014" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+      <a href="#" style="height: 44px; padding: 0 16px 0 12px; border-radius: 999px; background: #111014; color: #FFFFFF; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 700"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1-4.5L15.5 5a2.1 2.1 0 0 1 3 3L8 18.5Z M13.5 7l3 3" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>แก้ไขงบ</a>
+    </div>
+
+    <h1 style="margin: 0; font-size: 28px; font-weight: 700; line-height: 1.4">งบประมาณ</h1>
+
+    <div style="background: #FFFFFF; border-radius: 22px; padding: 16px 18px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline">
+        <span style="font-size: 14px; color: #6B6878">ใช้ไปเดือนนี้</span>
+        <span style="font-size: 14px; color: #6B6878">งบ <span style="font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700; color: #111014">฿18,000</span></span>
+      </div>
+      <div style="font-family: 'DM Sans', sans-serif; font-size: 36px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2">฿12,480</div>
+
+      <div role="img" aria-label="ใช้ไป 12,480 บาท จากงบ 18,000 บาท วันนี้วันที่ 24 จาก 31 วัน" style="position: relative; margin-top: 26px">
+        <span style="position: absolute; left: 77.4%; top: -22px; transform: translateX(-50%); font-size: 12px; font-weight: 700; color: #6A4BD4; line-height: 1.4; white-space: nowrap">วันนี้</span>
+        <div style="height: 10px; border-radius: 5px; background: #EEEDF4; position: relative">
+          <div style="width: 69.3%; height: 10px; border-radius: 5px; background: #111014"></div>
+          <span style="position: absolute; left: 77.4%; top: -4px; width: 3px; height: 18px; margin-left: -1.5px; border-radius: 2px; background: #6A4BD4"></span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #6B6878; margin-top: 6px; line-height: 1.4"><span>1 ต.ค.</span><span>31 ต.ค.</span></div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 500; color: #1A7F4B; margin-top: 6px">
+        <span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; background: #1A7F4B"></span>ใช้น้อยกว่าอัตราเฉลี่ยของเดือน
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px">
+        <div style="background: #F4F3F9; border-radius: 14px; padding: 9px 12px; line-height: 1.4"><div style="font-size: 12px; color: #6B6878">เหลือ</div><span style="font-family: 'DM Sans', sans-serif; font-size: 17px; font-weight: 700; color: #111014">฿5,520</span></div>
+        <div style="background: #F4F3F9; border-radius: 14px; padding: 9px 12px; line-height: 1.4"><div style="font-size: 12px; color: #6B6878">เหลือวันละ</div><span style="font-family: 'DM Sans', sans-serif; font-size: 17px; font-weight: 700; color: #1A7F4B">฿690</span></div>
+        <div style="background: #F4F3F9; border-radius: 14px; padding: 9px 12px; line-height: 1.4"><div style="font-size: 12px; color: #6B6878">อีก</div><span style="font-size: 17px; font-weight: 700"><span style="font-family: 'DM Sans', sans-serif; font-size: 17px; font-weight: 700; color: #111014">8</span> วัน</span></div>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 4px">
+      <h2 style="margin: 0; font-size: 18px; font-weight: 700; line-height: 1.4">วงเงินหมวดหมู่</h2>
+      <a href="#" style="font-size: 14px; font-weight: 500; color: #6A4BD4; text-decoration: none; padding: 10px 0">จัดการหมวด</a>
+    </div>
+
+    <div style="background: #FFFFFF; border-radius: 22px; overflow: hidden; margin-top: -8px">
+      
+      <a href="#" aria-label="อาหาร ใช้ไป 4,620 บาท จาก 6,000 บาท เหลือ 1,380 บาท" style="display: block; padding: 12px 16px; border-bottom: 1px solid #E6E4EE; text-decoration: none; color: #111014">
+        <span style="display: flex; align-items: center; gap: 12px">
+          <span style="width: 40px; height: 40px; border-radius: 12px; background: #FFE3CC; display: flex; align-items: center; justify-content: center; flex: none"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11h16a8 8 0 0 1-16 0Z M9 7c0-1 1-2 1-3M14 7c0-1 1-2 1-3" fill="none" stroke="#111014" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+          <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.4">
+            <span style="font-size: 16px; font-weight: 700">อาหาร</span>
+            <span style="font-size: 13px; color: #6B6878"><span style="font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700; color: #111014">฿4,620</span> จาก <span style="font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: #6B6878">฿6,000</span></span>
+          </span>
+          <span style="font-size: 14px; font-weight: 700; color: #1A7F4B; white-space: nowrap">เหลือ <span style="font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700; color: #1A7F4B">฿1,380</span></span>
+        </span>
+        <span aria-hidden="true" style="display: block; height: 6px; border-radius: 3px; background: #EEEDF4; margin: 8px 0 0 52px"><span style="display: block; width: 77%; height: 6px; border-radius: 3px; background: #111014"></span></span>
+      </a>
+      
+      <a href="#" aria-label="เดินทาง ใช้ไป 1,980 บาท จาก 2,500 บาท เหลือ 520 บาท" style="display: block; padding: 12px 16px; border-bottom: 1px solid #E6E4EE; text-decoration: none; color: #111014">
+        <span style="display: flex; align-items: center; gap: 12px">
+          <span style="width: 40px; height: 40px; border-radius: 12px; background: #DCE8FF; display: flex; align-items: center; justify-content: center; flex: none"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12a2 2 0 0 1 2 2v11H4V6a2 2 0 0 1 2-2Z M4 11h16 M6.5 17v2.5M17.5 17v2.5" fill="none" stroke="#111014" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="8" cy="14" r="1.2" fill="#111014"></circle><circle cx="16" cy="14" r="1.2" fill="#111014"></circle></svg></span>
+          <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.4">
+            <span style="font-size: 16px; font-weight: 700">เดินทาง</span>
+            <span style="font-size: 13px; color: #6B6878"><span style="font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700; color: #111014">฿1,980</span> จาก <span style="font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: #6B6878">฿2,500</span></span>
+          </span>
+          <span style="font-size: 14px; font-weight: 700; color: #1A7F4B; white-space: nowrap">เหลือ <span style="font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700; color: #1A7F4B">฿520</span></span>
+        </span>
+        <span aria-hidden="true" style="display: block; height: 6px; border-radius: 3px; background: #EEEDF4; margin: 8px 0 0 52px"><span style="display: block; width: 79.2%; height: 6px; border-radius: 3px; background: #111014"></span></span>
+      </a>
+      
+      <a href="#" aria-label="ช้อปปิ้ง ใช้ไป 2,310 บาท จาก 2,000 บาท เกินงบ 310 บาท" style="display: block; padding: 12px 16px; border-bottom: 1px solid #E6E4EE; text-decoration: none; color: #111014">
+        <span style="display: flex; align-items: center; gap: 12px">
+          <span style="width: 40px; height: 40px; border-radius: 12px; background: #E9E1FF; display: flex; align-items: center; justify-content: center; flex: none"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.2 12.1a1 1 0 0 1-1 .9H7.2a1 1 0 0 1-1-.9Z M9 10V7a3 3 0 0 1 6 0v3" fill="none" stroke="#111014" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+          <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.4">
+            <span style="font-size: 16px; font-weight: 700">ช้อปปิ้ง</span>
+            <span style="font-size: 13px; color: #6B6878"><span style="font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700; color: #111014">฿2,310</span> จาก <span style="font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: #6B6878">฿2,000</span></span>
+          </span>
+          <span style="font-size: 14px; font-weight: 700; color: #B4364F; white-space: nowrap">เกิน <span style="font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700; color: #B4364F">฿310</span></span>
+        </span>
+        <span aria-hidden="true" style="position: relative; display: flex; height: 6px; margin: 8px 0 0 52px"><span style="width: 86.6%; height: 6px; border-radius: 3px 0 0 3px; background: #111014"></span><span style="width: 13.4%; height: 6px; border-radius: 0 3px 3px 0; background: #B4364F"></span><span style="position: absolute; left: 86.6%; top: -3px; width: 2px; height: 12px; margin-left: -1px; background: #FFFFFF"></span></span>
+      </a>
+      <a href="#" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; text-decoration: none; color: #111014">
+        <span style="width: 40px; height: 40px; border-radius: 12px; background: #F4F3F9; display: flex; align-items: center; justify-content: center; flex: none"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11" fill="none" stroke="#111014" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="4.5" cy="6" r="1.3" fill="#111014"></circle><circle cx="4.5" cy="12" r="1.3" fill="#111014"></circle><circle cx="4.5" cy="18" r="1.3" fill="#111014"></circle></svg></span>
+        <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.4">
+          <span style="font-size: 16px; font-weight: 700">ไม่จำกัดวงเงิน · 3 หมวด</span>
+          <span style="font-size: 13px; color: #6B6878">ครอบครัว · ทำบุญ · ค่าบิล</span>
+        </span>
+        <span style="font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; color: #111014">฿3,570</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="#8A879A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </a>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

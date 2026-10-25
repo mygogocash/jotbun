@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Bun Wallet attach a photo</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;700&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F3F9; color: #111014; font-family: 'Anuphan', 'DM Sans', sans-serif; position: relative; overflow: hidden">
+  <div aria-hidden="true" style="padding: 52px 18px 0">
+    <div style="font-size: 28px; font-weight: 700; line-height: 1.4; margin-top: 52px">สวัสดี กานต์</div>
+    <div style="height: 92px; border-radius: 20px; background: #FFFFFF; margin-top: 12px"></div>
+    <div style="height: 200px; border-radius: 22px; background: linear-gradient(135deg, #D9CCFF, #A891F7 55%, #EFE9FF); margin-top: 52px"></div>
+  </div>
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(17, 16, 20, 0.38)"></div>
+
+  <section aria-label="แนบรูป" style="position: absolute; left: 8px; right: 8px; bottom: 8px; height: 560px; background: #FFFFFF; border-radius: 34px; padding: 18px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 -10px 40px rgba(17, 16, 20, 0.18)">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <button type="button" aria-label="กลับ" style="width: 36px; height: 36px; border-radius: 50%; border: none; background: #F4F3F9; display: flex; align-items: center; justify-content: center; padding: 0"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="#111014" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+      <span style="font-size: 17px; font-weight: 700">แนบรูป</span>
+      <button type="button" aria-label="ปิด" style="width: 36px; height: 36px; border-radius: 50%; border: none; background: #F4F3F9; display: flex; align-items: center; justify-content: center; padding: 0"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="#111014" stroke-width="3" stroke-linecap="round"></path></svg></button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+      <button type="button" style="height: 116px; border-radius: 22px; border: none; background: #111014; color: #FFFFFF; font-family: inherit; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; padding: 16px; text-align: left">
+        <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-2h6l2 2h3v11H4Z" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="12" cy="13" r="3.4" fill="none" stroke="#FFFFFF" stroke-width="1.8"></circle></svg>
+        <span><span style="display: block; font-size: 17px; font-weight: 700">ถ่ายรูป</span><span style="display: block; font-size: 13px; color: #C9C6D4">ใบเสร็จ สลิป หรือของที่ซื้อ</span></span>
+      </button>
+      <button type="button" style="height: 116px; border-radius: 22px; border: none; background: #F4F3F9; color: #111014; font-family: inherit; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; padding: 16px; text-align: left">
+        <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3" fill="none" stroke="#111014" stroke-width="1.8"></rect><circle cx="9" cy="10" r="1.8" fill="#111014"></circle><path d="M4 17l5-5 4 4 3-3 4 4" fill="none" stroke="#111014" stroke-width="1.8" stroke-linejoin="round"></path></svg>
+        <span><span style="display: block; font-size: 17px; font-weight: 700">เลือกจากอัลบั้ม</span><span style="display: block; font-size: 13px; color: #6B6878">รูปที่มีอยู่แล้วในเครื่อง</span></span>
+      </button>
+    </div>
+
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px">
+        <span style="font-size: 15px; font-weight: 700">รูปล่าสุด</span>
+        <a href="#" style="font-size: 14px; color: #6A4BD4; text-decoration: none">ดูทั้งหมด</a>
+      </div>
+      <div style="display: flex; gap: 8px">
+        <button type="button" aria-label="สลิปโอนเงิน ล่าสุด" style="position: relative; width: 78px; height: 100px; border-radius: 14px; border: none; background: #FFFFFF; box-shadow: inset 0 0 0 1px #E6E4EE, 0 0 0 2px #6A4BD4; padding: 10px 8px; box-sizing: border-box; display: flex; flex-direction: column; gap: 5px; align-items: stretch">
+          <span style="height: 10px; width: 50%; background: #3A57E8; border-radius: 3px"></span>
+          <span style="height: 3px; width: 85%; background: #CFCCDA; border-radius: 2px"></span>
+          <span style="height: 3px; width: 70%; background: #CFCCDA; border-radius: 2px"></span>
+          <span style="height: 6px; width: 60%; background: #111014; border-radius: 2px; margin-top: auto"></span>
+          <span style="position: absolute; right: 6px; top: 6px; width: 20px; height: 20px; border-radius: 50%; background: #6A4BD4; display: flex; align-items: center; justify-content: center"><svg width="10" height="10" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+        </button>
+        <button type="button" aria-label="ใบเสร็จร้านค้า" style="width: 78px; height: 100px; border-radius: 14px; border: none; background: #FFF8EC; box-shadow: inset 0 0 0 1px #EFE3CC; padding: 10px 8px; box-sizing: border-box; display: flex; flex-direction: column; gap: 5px">
+          <span style="height: 3px; width: 60%; background: #D8C9AA; border-radius: 2px; align-self: center"></span>
+          <span style="height: 3px; width: 90%; background: #D8C9AA; border-radius: 2px"></span>
+          <span style="height: 3px; width: 80%; background: #D8C9AA; border-radius: 2px"></span>
+          <span style="height: 3px; width: 85%; background: #D8C9AA; border-radius: 2px"></span>
+          <span style="height: 6px; width: 50%; background: #111014; border-radius: 2px; margin-top: auto; align-self: flex-end"></span>
+        </button>
+        <button type="button" aria-label="รูปอาหาร" style="width: 78px; height: 100px; border-radius: 14px; border: none; background: linear-gradient(160deg, #FFD9B8, #F2A877); display: flex; align-items: center; justify-content: center; padding: 0">
+          <span style="width: 46px; height: 46px; border-radius: 50%; background: #FFF6E6; box-shadow: inset 0 0 0 6px #F7E6CC"></span>
+        </button>
+        <button type="button" aria-label="รูปอื่น" style="width: 78px; height: 100px; border-radius: 14px; border: none; background: linear-gradient(160deg, #CFE6F7, #9CC6E6); padding: 0"></button>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 12px; background: #F4F3F9; border-radius: 16px; padding: 12px 14px">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex: none"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8Z" fill="#6A4BD4"></path></svg>
+      <div style="flex: 1; min-width: 0">
+        <label for="bw-read-slip" style="display: block; font-size: 15px; font-weight: 500">ให้บันอ่านยอดจากสลิป</label>
+        <div style="font-size: 12px; color: #6B6878">ใช้ AI อ่านเป็นร่าง คุณตรวจก่อนบันทึกเสมอ</div>
+      </div>
+      <input id="bw-read-slip" type="checkbox" checked="" role="switch" style="width: 50px; height: 30px; accent-color: #6A4BD4; margin: 0">
+    </div>
+
+    <div style="display: flex; gap: 8px; align-items: flex-start; font-size: 12px; line-height: 1.55; color: #6B6878; margin-top: auto">
+      <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 2px"><rect x="5" y="10" width="14" height="10" rx="2" fill="none" stroke="#6B6878" stroke-width="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="#6B6878" stroke-width="2"></path></svg>
+      <span>รูปเก็บแบบส่วนตัว เปิดดูได้เฉพาะคุณ ลบได้ทุกเมื่อ · ไฟล์ไม่เกิน 12 MB · Jotbun ขอสิทธิ์กล้องหรืออัลบั้มเมื่อคุณกดครั้งแรกเท่านั้น</span>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

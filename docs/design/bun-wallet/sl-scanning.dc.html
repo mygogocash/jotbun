@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Bun Wallet slip scanning</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;700&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0B0A0E; color: #FFFFFF; font-family: 'Anuphan', 'DM Sans', sans-serif; line-height: 1.45; position: relative; overflow: hidden; padding: 54px 20px 32px; display: flex; flex-direction: column; gap: 16px">
+  <button type="button" aria-label="ปิดหน้านี้ บันหาต่อเบื้องหลัง" style="width: 44px; height: 44px; border-radius: 50%; border: none; background: #24222B; display: flex; align-items: center; justify-content: center; padding: 0; flex: none"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"></path></svg></button>
+
+  <div aria-hidden="true" style="position: relative; height: 270px; flex: none">
+    <div style="position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(201, 184, 255, 0.55) 1px, transparent 1.6px); background-size: 7px 7px; opacity: 0.45; border-radius: 26px"></div>
+
+    <div style="position: absolute; left: 272px; top: 6px; width: 44px; height: 60px; border-radius: 7px; background: #FFFFFF; opacity: 0.4; transform: rotate(18deg); padding: 6px 5px; box-sizing: border-box; display: flex; flex-direction: column; gap: 3px">
+      <span style="height: 3px; width: 60%; background: #CFCCDA; border-radius: 2px"></span><span style="height: 2px; width: 80%; background: #E2E0EA; border-radius: 1px"></span><span style="height: 5px; width: 50%; background: #111014; border-radius: 1px; margin-top: auto"></span>
+    </div>
+    <div style="position: absolute; left: 222px; top: 18px; width: 54px; height: 74px; border-radius: 8px; background: #FFFFFF; opacity: 0.7; transform: rotate(9deg); padding: 7px 6px; box-sizing: border-box; display: flex; flex-direction: column; gap: 4px">
+      <span style="height: 4px; width: 60%; background: #CFCCDA; border-radius: 2px"></span><span style="height: 3px; width: 84%; background: #E2E0EA; border-radius: 2px"></span><span style="height: 3px; width: 64%; background: #E2E0EA; border-radius: 2px"></span><span style="height: 6px; width: 50%; background: #111014; border-radius: 2px; margin-top: auto"></span>
+    </div>
+    <div style="position: absolute; left: 70px; top: 70px; width: 72px; height: 98px; border-radius: 10px; background: #FFFFFF; transform: rotate(-12deg); padding: 9px 8px; box-sizing: border-box; display: flex; flex-direction: column; gap: 5px; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4)">
+      <span style="display: flex; align-items: center; gap: 4px"><span style="width: 12px; height: 12px; border-radius: 50%; background: #ECEAF2"></span><span style="height: 4px; width: 50%; background: #CFCCDA; border-radius: 2px"></span></span>
+      <span style="height: 3px; width: 80%; background: #E2E0EA; border-radius: 2px"></span><span style="height: 3px; width: 62%; background: #E2E0EA; border-radius: 2px"></span>
+      <span style="height: 7px; width: 48%; background: #111014; border-radius: 2px; margin-top: auto"></span>
+    </div>
+    <div style="position: absolute; left: 146px; top: 26px; width: 70px; height: 96px; border-radius: 10px; background: #FFFFFF; transform: rotate(-2deg); padding: 9px 8px; box-sizing: border-box; display: flex; flex-direction: column; gap: 5px; box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45); overflow: hidden">
+      <span style="display: flex; align-items: center; gap: 4px"><span style="width: 12px; height: 12px; border-radius: 50%; background: #ECEAF2"></span><span style="height: 4px; width: 52%; background: #CFCCDA; border-radius: 2px"></span></span>
+      <span style="height: 3px; width: 76%; background: #E2E0EA; border-radius: 2px"></span>
+      <span style="height: 5px; width: 70%; background: #CFCCDA; border-radius: 2px; box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 3.5px #6A4BD4"></span>
+      <span style="display: flex; align-items: flex-end; justify-content: space-between; margin-top: auto"><span style="height: 7px; width: 46%; background: #111014; border-radius: 2px; box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 3.5px #6A4BD4"></span><span style="width: 16px; height: 16px; border-radius: 2px; background: conic-gradient(#111014 25%, #FFFFFF 0 50%, #111014 0 75%, #FFFFFF 0) 0 0 / 4px 4px; box-shadow: 0 0 0 1.5px #111014"></span></span>
+      <span style="position: absolute; left: 0; right: 0; top: 48px; height: 2px; background: #B9A3F9; box-shadow: 0 0 10px 3px rgba(185, 163, 249, 0.7)"></span>
+    </div>
+
+    <div style="position: absolute; left: 16px; right: 16px; top: 118px; z-index: 2; height: 152px; border-radius: 22px; background: linear-gradient(135deg, #D9CCFF, #A891F7 55%, #EFE9FF); box-shadow: 0 24px 60px rgba(168, 145, 247, 0.35); padding: 16px 18px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; color: #111014">
+      <span style="display: flex; justify-content: space-between; align-items: flex-start"><span style="font-size: 15px; font-weight: 700">บัญชีหลัก</span></span>
+      <span style="display: flex; justify-content: space-between; align-items: flex-end">
+        <span style="font-family: 'DM Sans', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15">฿24,860</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.6); font-size: 12px; font-weight: 500"><span style="display: inline-flex; gap: 3px"><span style="width: 5px; height: 5px; border-radius: 50%; background: #6A4BD4"></span><span style="width: 5px; height: 5px; border-radius: 50%; background: #6A4BD4; opacity: 0.6"></span><span style="width: 5px; height: 5px; border-radius: 50%; background: #6A4BD4; opacity: 0.3"></span></span>กำลังเตรียมร่าง</span>
+      </span>
+    </div>
+
+    <svg width="350" height="270" viewBox="0 0 350 270" aria-hidden="true" style="position: absolute; left: 0; top: 0; z-index: 3">
+      <path d="M198 88L240 112" fill="none" stroke="#111014" stroke-width="9" stroke-linecap="round"></path>
+      <path d="M198 88L240 112" fill="none" stroke="#FFF6E6" stroke-width="4.5" stroke-linecap="round"></path>
+      <circle cx="181" cy="72" r="24" fill="rgba(255, 255, 255, 0.16)" stroke="#111014" stroke-width="8"></circle>
+      <circle cx="181" cy="72" r="24" fill="none" stroke="#FFF6E6" stroke-width="4"></circle>
+      <path d="M168 62Q173 55 181 54" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" opacity="0.8"></path>
+    </svg>
+    <svg width="64" height="57" viewBox="4 6 56 50" aria-hidden="true" style="position: absolute; left: 238px; top: 66px; z-index: 4"><ellipse cx="9" cy="40" rx="5" ry="6" fill="#FFF6E6" stroke="#111014" stroke-width="3"></ellipse><path d="M6 44C6 22 18 8 32 8C46 8 58 22 58 44C58 51 52 54 44 54H20C12 54 6 51 6 44Z" fill="#FFF6E6" stroke="#111014" stroke-width="3"></path><circle cx="21" cy="29" r="3.4" fill="#111014"></circle><circle cx="37" cy="29" r="3.4" fill="#111014"></circle><ellipse cx="16.5" cy="36" rx="4" ry="2.4" fill="#F6B6CE"></ellipse><ellipse cx="43.5" cy="36" rx="4" ry="2.4" fill="#F6B6CE"></ellipse><path d="M26 36Q29 38 32 36" fill="none" stroke="#111014" stroke-width="2.6" stroke-linecap="round"></path></svg>
+  </div>
+
+  <div role="status" aria-live="polite">
+    <div style="font-size: 15px; color: #A9A6B6">ตรวจแล้ว</div>
+    <div style="display: flex; align-items: baseline; gap: 6px; line-height: 1.15">
+      <span style="font-family: 'DM Sans', sans-serif; font-size: 52px; font-weight: 700; letter-spacing: -0.03em">132<span style="font-size: 28px; color: #A9A6B6">/186</span></span>
+      <span style="font-size: 18px; color: #A9A6B6; line-height: 1.4">รูป</span>
+    </div>
+    <div aria-hidden="true" style="height: 8px; border-radius: 4px; background: #2C2A33; margin-top: 10px"><div style="width: 71%; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #8F74EE, #B9A3F9)"></div></div>
+    <div style="display: flex; align-items: baseline; justify-content: space-between; margin-top: 10px">
+      <span style="font-size: 16px">พบสลิป <span style="font-family: 'DM Sans', sans-serif; font-size: 22px; font-weight: 700">118</span></span>
+      <span style="font-size: 14px; color: #A9A6B6">อีกประมาณ 1 นาที</span>
+    </div>
+  </div>
+
+  <div style="background: #1C1B22; border-radius: 16px; padding: 10px 14px">
+    <div style="font-size: 12px; color: #A9A6B6; margin-bottom: 2px">เพิ่งอ่าน · ร่างรอคุณตรวจ</div>
+    <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #2C2A33">
+      <span aria-hidden="true" style="width: 22px; height: 30px; border-radius: 5px; background: #FFFFFF; padding: 4px 3px; box-sizing: border-box; display: flex; flex-direction: column; gap: 2px; flex: none"><span style="height: 3px; width: 60%; background: #CFCCDA; border-radius: 1px"></span><span style="height: 2px; width: 85%; background: #E2E0EA; border-radius: 1px"></span><span style="height: 4px; width: 55%; background: #111014; border-radius: 1px; margin-top: auto"></span></span>
+      <span style="flex: 1; min-width: 0; font-size: 15px">7-Eleven</span>
+      <span style="font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 700">฿89</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0">
+      <span aria-hidden="true" style="width: 22px; height: 30px; border-radius: 5px; background: #FFFFFF; padding: 4px 3px; box-sizing: border-box; display: flex; flex-direction: column; gap: 2px; flex: none"><span style="height: 3px; width: 60%; background: #CFCCDA; border-radius: 1px"></span><span style="height: 2px; width: 85%; background: #E2E0EA; border-radius: 1px"></span><span style="height: 4px; width: 55%; background: #111014; border-radius: 1px; margin-top: auto"></span></span>
+      <span style="flex: 1; min-width: 0; font-size: 15px">ร้านป้าแดง ข้าวแกง</span>
+      <span style="font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 700">฿60</span>
+    </div>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #DCD9E6">
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="flex: none"><rect x="5" y="10" width="14" height="10" rx="2" fill="none" stroke="#B9A3F9" stroke-width="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="#B9A3F9" stroke-width="2"></path></svg>
+    รูปที่ไม่ใช่สลิปไม่ถูกส่งออกจากเครื่อง
+  </div>
+
+  <div style="margin-top: auto; text-align: center">
+    <div style="font-size: 14px; color: #A9A6B6">ปิดหน้านี้ได้ เราจะแจ้งเมื่อเสร็จ</div>
+    <button type="button" style="margin-top: 4px; height: 44px; padding: 0 18px; border-radius: 999px; border: none; background: transparent; color: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 500; text-decoration: underline; text-underline-offset: 4px">หยุดหาสลิป</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

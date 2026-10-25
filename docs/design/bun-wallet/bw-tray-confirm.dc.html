@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Bun Wallet add tray confirm</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;700&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F3F9; color: #111014; font-family: 'Anuphan', 'DM Sans', sans-serif; position: relative; overflow: hidden">
+  <div aria-hidden="true" style="padding: 52px 18px 0">
+    <div style="font-size: 28px; font-weight: 700; line-height: 1.4; margin-top: 52px">สวัสดี กานต์</div>
+    <div style="height: 92px; border-radius: 20px; background: #FFFFFF; margin-top: 12px"></div>
+    <div style="height: 200px; border-radius: 22px; background: linear-gradient(135deg, #D9CCFF, #A891F7 55%, #EFE9FF); margin-top: 52px"></div>
+  </div>
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(17, 16, 20, 0.38)"></div>
+
+  <section aria-label="ตรวจก่อนบันทึก" style="position: absolute; left: 8px; right: 8px; bottom: 8px; height: 556px; background: #FFFFFF; border-radius: 34px; padding: 18px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 -10px 40px rgba(17, 16, 20, 0.18)">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <button type="button" aria-label="กลับ" style="width: 36px; height: 36px; border-radius: 50%; border: none; background: #F4F3F9; display: flex; align-items: center; justify-content: center; padding: 0"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="#111014" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+      <span style="font-size: 17px; font-weight: 700">ตรวจก่อนบันทึก</span>
+      <button type="button" aria-label="ปิด" style="width: 36px; height: 36px; border-radius: 50%; border: none; background: #F4F3F9; display: flex; align-items: center; justify-content: center; padding: 0"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="#111014" stroke-width="3" stroke-linecap="round"></path></svg></button>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 14px">
+      <span style="width: 52px; height: 52px; border-radius: 16px; background: #FFE3CC; display: flex; align-items: center; justify-content: center; flex: none"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11h16a8 8 0 0 1-16 0Z M9 7c0-1 1-2 1-3M14 7c0-1 1-2 1-3" fill="none" stroke="#111014" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+      <div style="flex: 1">
+        <div style="font-size: 18px; font-weight: 700">ข้าวมันไก่</div>
+        <div style="font-size: 13px; color: #6A4BD4">บันอ่านจาก “ข้าวมันไก่ 50”</div>
+      </div>
+      <span style="font-family: 'DM Sans', sans-serif; font-size: 32px; font-weight: 700; letter-spacing: -0.02em">฿50</span>
+    </div>
+
+    <div style="background: #F4F3F9; border-radius: 18px; overflow: hidden">
+      <a href="#" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #E6E4EE; text-decoration: none; color: #111014; font-size: 16px"><span style="color: #6B6878">หมวด</span><span style="display: flex; align-items: center; gap: 8px"><span style="font-size: 11px; color: #6A4BD4; background: #ECE7FC; padding: 2px 8px; border-radius: 6px">บันเดา</span>อาหาร<svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="#8A879A" stroke-width="2.6" stroke-linecap="round"></path></svg></span></a>
+      <a href="#" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #E6E4EE; text-decoration: none; color: #111014; font-size: 16px"><span style="color: #6B6878">กระเป๋า</span><span style="display: flex; align-items: center; gap: 8px"><span style="width: 30px; height: 20px; border-radius: 5px; background: linear-gradient(135deg, #D9CCFF, #A891F7 55%, #EFE9FF)"></span>บัญชีหลัก<svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="#8A879A" stroke-width="2.6" stroke-linecap="round"></path></svg></span></a>
+      <a href="#" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #E6E4EE; text-decoration: none; color: #111014; font-size: 16px"><span style="color: #6B6878">วันที่</span><span style="display: flex; align-items: center; gap: 8px">วันนี้ 12:10<svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="#8A879A" stroke-width="2.6" stroke-linecap="round"></path></svg></span></a>
+      <a href="#" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #E6E4EE; text-decoration: none; color: #111014; font-size: 16px"><span style="color: #6B6878">โน้ต</span><span style="display: flex; align-items: center; gap: 8px; color: #6B6878">เพิ่มโน้ต<svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="#8A879A" stroke-width="2.6" stroke-linecap="round"></path></svg></span></a>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px">
+        <span style="color: #6B6878; font-size: 16px">รูป</span>
+        <span style="display: flex; align-items: center; gap: 10px">
+          <span style="font-size: 13px; color: #6B6878">ใบเสร็จ 1 รูป</span>
+          <span style="position: relative; width: 46px; height: 58px; border-radius: 8px; background: #FFFFFF; border: 1px solid #E6E4EE; box-sizing: border-box; padding: 7px 6px; display: flex; flex-direction: column; gap: 4px">
+            <span style="height: 3px; width: 70%; background: #CFCCDA; border-radius: 2px"></span>
+            <span style="height: 3px; width: 90%; background: #CFCCDA; border-radius: 2px"></span>
+            <span style="height: 3px; width: 55%; background: #CFCCDA; border-radius: 2px"></span>
+            <span style="height: 5px; width: 60%; background: #111014; border-radius: 2px; margin-top: auto"></span>
+          </span>
+          <button type="button" aria-label="ลบรูป" style="width: 32px; height: 32px; border-radius: 50%; border: none; background: #E6E4EE; display: flex; align-items: center; justify-content: center; padding: 0"><svg width="10" height="10" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="#111014" stroke-width="3.2" stroke-linecap="round"></path></svg></button>
+        </span>
+      </div>
+    </div>
+
+    <button type="button" style="margin-top: auto; height: 56px; border-radius: 18px; border: none; background: #111014; color: #FFFFFF; font-family: inherit; font-size: 17px; font-weight: 700">บันทึก</button>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

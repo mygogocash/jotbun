@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Bun Wallet import parsing</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;700&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F3F9; color: #111014; font-family: 'Anuphan', 'DM Sans', sans-serif; line-height: 1.5; position: relative; overflow: hidden; padding: 54px 20px 32px; display: flex; flex-direction: column; gap: 10px">
+  <button type="button" aria-label="ปิดหน้านี้" style="width: 44px; height: 44px; border-radius: 14px; border: none; background: #E9E7F1; display: flex; align-items: center; justify-content: center; padding: 0; flex: none"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="#111014" stroke-width="2.4" stroke-linecap="round"></path></svg></button>
+
+  <div aria-hidden="true" style="position: absolute; right: 10px; top: 58px; width: 160px; height: 150px">
+    <svg width="160" height="150" viewBox="0 0 132 124">
+      <ellipse cx="66" cy="117" rx="46" ry="5" fill="#E3E1EC"></ellipse>
+      <path d="M118 22l1.6 4.4 4.4 1.6-4.4 1.6-1.6 4.4-1.6-4.4-4.4-1.6 4.4-1.6Z" fill="#6A4BD4"></path>
+      <path d="M12 40l1 2.8 2.8 1-2.8 1-1 2.8-1-2.8-2.8-1 2.8-1Z" fill="#B9A3F9"></path>
+      <g transform="translate(16 0) scale(1.55)">
+        <path d="M6 44C6 22 18 8 32 8C46 8 58 22 58 44C58 51 52 54 44 54H20C12 54 6 51 6 44Z" fill="#FFF6E6" stroke="#111014" stroke-width="2"></path>
+        <circle cx="24" cy="27" r="2.3" fill="#111014"></circle>
+        <circle cx="40" cy="27" r="2.3" fill="#111014"></circle>
+        <ellipse cx="18.5" cy="32" rx="2.8" ry="1.7" fill="#F6B6CE"></ellipse>
+        <ellipse cx="45.5" cy="32" rx="2.8" ry="1.7" fill="#F6B6CE"></ellipse>
+        <path d="M29.5 31.5Q32 34 34.5 31.5" fill="none" stroke="#111014" stroke-width="1.7" stroke-linecap="round"></path>
+      </g>
+      <path d="M30 68L16 56H58L66 68Z" fill="#E6C27F" stroke="#111014" stroke-width="2.4" stroke-linejoin="round"></path>
+      <path d="M102 68L116 56H74L66 68Z" fill="#E6C27F" stroke="#111014" stroke-width="2.4" stroke-linejoin="round"></path>
+      <rect x="30" y="68" width="72" height="46" rx="4" fill="#F3D9A8" stroke="#111014" stroke-width="2.4" stroke-linejoin="round"></rect>
+      <rect x="51" y="80" width="30" height="22" rx="3" fill="#FFFFFF" stroke="#111014" stroke-width="1.8"></rect>
+      <path d="M56 87h20M56 92h14M56 97h17" stroke="#B5B1C4" stroke-width="2" stroke-linecap="round"></path>
+      <ellipse cx="30" cy="84" rx="6.5" ry="5.5" fill="#FFF6E6" stroke="#111014" stroke-width="2.2"></ellipse>
+      <ellipse cx="102" cy="84" rx="6.5" ry="5.5" fill="#FFF6E6" stroke="#111014" stroke-width="2.2"></ellipse>
+    </svg>
+  </div>
+
+  <h1 style="margin: 76px 0 0; font-size: 30px; font-weight: 700; line-height: 1.4; max-width: 200px">กำลังอ่าน statement</h1>
+  <div style="font-size: 15px; color: #6B6878; margin-bottom: 8px"><span style="font-family: 'DM Sans', sans-serif">statement-sep-2569.pdf · 1.8 MB</span></div>
+
+  <ol aria-label="ขั้นตอนการอ่านไฟล์" style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px">
+    <li style="display: flex; align-items: center; gap: 12px">
+      <span style="width: 28px; height: 28px; border-radius: 50%; background: #6A4BD4; display: flex; align-items: center; justify-content: center; flex: none"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+      <div style="flex: 1; background: #FFFFFF; border-radius: 14px; padding: 12px 16px; font-size: 16px; color: #6B6878; display: flex; justify-content: space-between; align-items: center"><span>อัปโหลด<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)"> เสร็จแล้ว</span></span><span style="font-size: 13px">ครบ <span style="font-family: 'DM Sans', sans-serif">1.8 MB</span></span></div>
+    </li>
+    <li style="display: flex; align-items: center; gap: 12px">
+      <span style="width: 28px; height: 28px; border-radius: 50%; background: #6A4BD4; display: flex; align-items: center; justify-content: center; flex: none"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+      <div style="flex: 1; background: #FFFFFF; border-radius: 14px; padding: 12px 16px; font-size: 16px; color: #6B6878; display: flex; justify-content: space-between; align-items: center"><span>อ่านไฟล์<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)"> เสร็จแล้ว</span></span><span style="font-size: 13px">พบ <span style="font-family: 'DM Sans', sans-serif">342</span> แถว · ก.ย. 2569</span></div>
+    </li>
+    <li aria-current="step" style="display: flex; align-items: flex-start; gap: 12px">
+      <span style="width: 28px; height: 28px; border-radius: 50%; background: #111014; color: #FFFFFF; display: flex; align-items: center; justify-content: center; flex: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700; margin-top: 14px">3</span>
+      <div style="flex: 1; background: #FFFFFF; border-radius: 14px; padding: 14px 16px 16px; box-shadow: 0 8px 20px rgba(17, 16, 20, 0.06)">
+        <div style="font-size: 17px; font-weight: 700; line-height: 1.4">แยกรายการ</div>
+        <div style="font-size: 15px; line-height: 1.6; color: #6B6878; margin-top: 2px">แยกวันที่ ยอดเงิน และรายละเอียดทีละแถว</div>
+        <div role="progressbar" aria-label="แยกรายการ" aria-valuemin="0" aria-valuemax="342" aria-valuenow="214" aria-valuetext="214 จาก 342 แถว" style="height: 8px; border-radius: 4px; background: #EEEDF4; margin-top: 12px; overflow: hidden"><div style="width: 62.6%; height: 8px; border-radius: 4px; background: #6A4BD4"></div></div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px">
+          <span style="font-size: 13px; color: #6B6878">กำลังแยก…</span>
+          <span style="font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700">214 <span style="color: #6B6878; font-weight: 500">/ 342</span></span>
+        </div>
+      </div>
+    </li>
+    <li style="display: flex; align-items: center; gap: 12px">
+      <span style="width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid #6A4BD4; color: #6A4BD4; display: flex; align-items: center; justify-content: center; flex: none; box-sizing: border-box; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700">4</span>
+      <div style="flex: 1; background: #FFFFFF; border-radius: 14px; padding: 12px 16px; font-size: 16px; color: #6B6878; display: flex; justify-content: space-between; align-items: center"><span>ตรวจรายการซ้ำ</span><span style="font-size: 13px">รอคิว</span></div>
+    </li>
+  </ol>
+
+  <div role="status" style="display: flex; align-items: center; gap: 12px; background: #FFFFFF; border-radius: 16px; padding: 12px 14px; margin-top: 8px">
+    <span aria-hidden="true" style="width: 36px; height: 36px; border-radius: 12px; background: #ECE7FC; display: flex; align-items: center; justify-content: center; flex: none"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15Z M10 20.5a2 2 0 0 0 4 0" fill="none" stroke="#5B3DC8" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"></path></svg></span>
+    <span style="flex: 1">
+      <span style="display: block; font-size: 15px; font-weight: 700; line-height: 1.45">ปิดหน้านี้ได้ เราจะแจ้งเมื่อเสร็จ</span>
+      <span style="display: block; font-size: 13px; color: #6B6878; line-height: 1.45">ยังไม่มีอะไรถูกบันทึก</span>
+    </span>
+  </div>
+
+  <button type="button" style="margin-top: auto; height: 56px; border-radius: 16px; border: none; background: #111014; color: #FFFFFF; font-family: inherit; font-size: 17px; font-weight: 700; flex: none">กลับหน้าหลัก</button>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

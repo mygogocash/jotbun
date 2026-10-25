@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Spending calendar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;700&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F3F9; color: #111014; font-family: 'Anuphan', 'DM Sans', sans-serif; line-height: 1.5; position: relative; overflow: hidden">
+  <div style="padding: 52px 18px 0; display: flex; flex-direction: column; gap: 12px">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <button type="button" aria-label="กลับ" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid #E6E4EE; background: rgba(255, 255, 255, 0.85); display: flex; align-items: center; justify-content: center; padding: 0; flex: none"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="#111014" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+      <span style="font-size: 17px; font-weight: 700">ปฏิทิน</span>
+      <button type="button" aria-label="ไปที่วันนี้" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid #E6E4EE; background: rgba(255, 255, 255, 0.85); display: flex; align-items: center; justify-content: center; padding: 0; flex: none"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5" fill="none" stroke="#111014" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></rect><path d="M3.5 10h17 M8 3v4M16 3v4" fill="none" stroke="#111014" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+    </div>
+
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <div>
+        <h1 style="margin: 0; font-size: 26px; font-weight: 700; line-height: 1.4">ตุลาคม 2569</h1>
+        <div style="font-size: 14px; color: #6B6878; line-height: 1.4">ใช้ไป <span style="font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700; color: #111014">฿12,480</span> · จด 22 จาก 24 วัน</div>
+      </div>
+      <div style="display: flex; gap: 8px">
+        <button type="button" aria-label="เดือนก่อน" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid #E6E4EE; background: rgba(255, 255, 255, 0.85); display: flex; align-items: center; justify-content: center; padding: 0; flex: none"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="#111014" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+        <button type="button" aria-label="เดือนถัดไป" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid #E6E4EE; background: rgba(255, 255, 255, 0.85); display: flex; align-items: center; justify-content: center; padding: 0; flex: none"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="#111014" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+      </div>
+    </div>
+
+    <div>
+      <div aria-hidden="true" style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; font-size: 12px; color: #6B6878; line-height: 1.4; margin-bottom: 6px"><abbr title="อาทิตย์" style="text-decoration: none; text-align: center">อา</abbr><abbr title="จันทร์" style="text-decoration: none; text-align: center">จ</abbr><abbr title="อังคาร" style="text-decoration: none; text-align: center">อ</abbr><abbr title="พุธ" style="text-decoration: none; text-align: center">พ</abbr><abbr title="พฤหัสบดี" style="text-decoration: none; text-align: center">พฤ</abbr><abbr title="ศุกร์" style="text-decoration: none; text-align: center">ศ</abbr><abbr title="เสาร์" style="text-decoration: none; text-align: center">ส</abbr></div>
+      <div role="group" aria-label="รายจ่ายรายวัน ตุลาคม 2569" style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <button type="button" aria-label="1 ตุลาคม ใช้ไป 3,240 บาท" style="height: 50px; border-radius: 12px; border: none; background: #3B2790; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-family: 'DM Sans', sans-serif; color: #FFFFFF;"><span style="font-size: 14px; font-weight: 700; line-height: 1.2">1</span><span style="font-size: 10px; font-weight: 500; line-height: 1.2">3,240</span></button>
+        <button type="button" aria-label="2 ตุลาคม ใช้ไป 412 บาท" style="height: 50px; border-radius: 12px; border: none; background: #D5C9F7; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-family: 'DM Sans', sans-serif; color: #111014;"><span style="font-size: 14px; font-weight: 700; line-height: 1.2">2</span><span style="font-size: 10px; font-weight: 500; line-height: 1.2">412</span></button>
+        <button type="button" aria-label="3 ตุลาคม ใช้ไป 1,190 บาท" style="height: 50px; border-radius: 12px; border: none; background: #6A4BD4; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-family: 'DM Sans', sans-serif; color: #FFFFFF;"><span style="font-size: 14px; font-weight: 700; line-height: 1.2">3</span><span style="font-size: 10px; font-weight: 500; line-height: 1.2">1,190</span></button>
+        <button type="button" aria-label="4 ตุลาคม ใช้ไป 265 บาท" style="height: 50px; border-radius: 12px; border: none; background: #D5C9F7; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-family: 'DM Sans', sans-serif; color: #111014;"><span style="font-size: 14px; font-weight: 700; line-height: 1.2">4</span><span style="font-size: 10px; font-weight: 500; line-height: 1.2">265</span></button>
+        <button type="button" aria-label="5 ตุลาคม ใช้ไป 188 บาท" style="height: 50px; border-radius: 12px; border: none; background: #EEE9FC; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-family: 'DM Sans', sans-serif; color: #111014;"><span style="font-size: 14px; font-weight: 700; line-height: 1.2">5</span><span style="font-size: 10px; font-weight: 500; line-height: 1.2">188</span></button>
+        <button type="button" aria-label="6 ตุลาคม ใช้ไป 230 บาท" style="height: 50px; border-radius: 12px; border: none; background: #D5C9F7; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-family: 'DM Sans', sans-serif; color: #111014;"><span style="font-size: 14px; font-weight: 700; line-height: 1.2">6</span><span style="font-size: 10px; font-weight: 500; line-height: 1.2">230</span></button>
+        <button type="button" aria-label="7 ตุลาคม ใช้ไป 156 บาท" style="height: 50px; border-radius: 12px; border: none; background: #EEE9FC; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-family: 'DM Sans', sans-serif; color: #111014;"><span style="font-size: 14px; font-weight: 700; line-height: 1.2">7</span><span style="font-size: 10px; font-weight: 500; line-height: 1.2">156</span></button>
+        <button type="button" aria-label="8 ตุลาคม ไม่มีรายการ" style="height: 50px; border-radius: 12px; border: 1px solid #E6E4EE; background: #FFFFFF; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'DM Sans', sans-serif; color: #111014"><span style="font-size: 14px; font-weight: 700; line-height: 1.2">8</span></button>
+        <button type="button" aria-label="9 ตุลาคม ใช้ไป 545 บาท" style="height: 50px; border-radius: 12px; border: none; background: #AE97EE; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-family: 'DM Sans', sans-serif; color: #111014;"><span style="font-size: 14px; font-weight: 700; line-height: 1.2">9</span><span style="font-size: 10px; font-weight: 500; line-height: 1.2">545</span></button>
+        <button type="button" aria-label="10 ตุลาคม ใช้ไป 1,480 บาท" style="height: 50px; border-radius: 12px; border: none; background: #6A4BD4; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-family: 'DM Sans', sans-serif; color: #FFFFFF;"><span style="font-size: 14px; font-weight: 700; line-height: 1.2">10</span><span style="font-size: 10px; font-weight: 500; line-height: 1.2">1,480</span></button>
+        <button type="button" aria-label="11 ตุลาคม ใช้ไป 380 บาท" style="height: 50px; border-radius: 12px; border: none; background: #D5C9F7; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-family: 'DM Sans', sans-serif; color: #111014;"><span style="font-size: 14px; font-weight: 700; line-height: 1.2">11</span><span style="font-size: 10px; font-weight: 500; line-height: 1.2">380</span></button>
+        <button type="button" aria-label="12 ตุลาคม ใช้ไป 210 บาท" style="height: 50px; border-radius: 12px; border: none; background: #D5C9F7; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-family: 'DM Sans', sans-serif; color: #111014;"><span style="font-size: 14px; font-weight: 700; line-height: 1.2">12</span><span style="font-size: 10px; font-weight: 500; line-height: 1.2">210</span></button>
+        <button type="button" aria-label="13 ตุลาคม ใช้ไป 174 บาท" style="height: 50px; border-radius: 12px; border: none; background: #EEE9FC; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-family: 'DM Sans', sans-serif; color: #111014;"><span style="font-size: 14px; font-weight: 700; line-height: 1.2">13</span><span style="font-size: 10px; font-weight: 500; line-height: 1.2">174</span></button>
+        <button type="button" aria-label="14 ตุลาคม ใช้ไป 470 บาท" style="height: 50px; border-radius: 12px; border: none; background: #D5C9F7; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-family: 'DM Sans', sans-serif; color: #111014;"><span style="font-size: 14px; font-weight: 700; line-height: 1.2">14</span><span style="font-size: 10px; font-weight: 500; line-height: 1.2">470</span></button>
+        <button type="button" aria-label="15 ตุลาคม ใช้ไป 198 บาท" style="height: 50px; border-radius: 12px; border: none; background: #EEE9FC; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-family: 'DM Sans', sans-serif; color: #111014;"><span style="font-size: 14px; font-weight: 700; line-height: 1.2">15</span><span style="font-size: 10px; font-weight: 500; line-height: 1.2">198</span></button>
+        <button type="button" aria-label="16 ตุลาคม ใช้ไป 850 บาท" style="height: 50px; border-radius: 12px; border: none; background: #AE97EE; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-family: 'DM Sans', sans-serif; color: #111014;"><span style="font-size: 14px; font-weight: 700; line-height: 1.2">16</span><span style="font-size: 10px; font-weight: 500; line-height: 1.2">850</span></button>
+        <button type="button" aria-label="17 ตุลาคม ใช้ไป 450 บาท" style="height: 50px; border-radius: 12px; border: none; background: #D5C9F7; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-family: 'DM Sans', sans-serif; color: #111014;"><span style="font-size: 14px; font-weight: 700; line-height: 1.2">17</span><span style="font-size: 10px; font-weight: 500; line-height: 1.2">450</span></button>
+        <button type="button" aria-label="18 ตุลาคม ใช้ไป 290 บาท" style="height: 50px; border-radius: 12px; border: none; background: #D5C9F7; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-family: 'DM Sans', sans-serif; color: #111014;"><span style="font-size: 14px; font-weight: 700; line-height: 1.2">18</span><span style="font-size: 10px; font-weight: 500; line-height: 1.2">290</span></button>
+        <button type="button" aria-label="19 ตุลาคม ใช้ไป 164 บาท" style="height: 50px; border-radius: 12px; border: none; background: #EEE9FC; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-family: 'DM Sans', sans-serif; color: #111014;"><span style="font-size: 14px; font-weight: 700; line-height: 1.2">19</span><span style="font-size: 10px; font-weight: 500; line-height: 1.2">164</span></button>
+        <button type="button" aria-label="20 ตุลาคม ไม่มีรายการ" style="height: 50px; border-radius: 12px; border: 1px solid #E6E4EE; background: #FFFFFF; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'DM Sans', sans-serif; color: #111014"><span style="font-size: 14px; font-weight: 700; line-height: 1.2">20</span></button>
+        <button type="button" aria-label="21 ตุลาคม ใช้ไป 236 บาท" style="height: 50px; border-radius: 12px; border: none; background: #D5C9F7; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-family: 'DM Sans', sans-serif; color: #111014;"><span style="font-size: 14px; font-weight: 700; line-height: 1.2">21</span><span style="font-size: 10px; font-weight: 500; line-height: 1.2">236</span></button>
+        <button type="button" aria-label="22 ตุลาคม ใช้ไป 310 บาท" style="height: 50px; border-radius: 12px; border: none; background: #D5C9F7; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-family: 'DM Sans', sans-serif; color: #111014;"><span style="font-size: 14px; font-weight: 700; line-height: 1.2">22</span><span style="font-size: 10px; font-weight: 500; line-height: 1.2">310</span></button>
+        <button type="button" aria-label="23 ตุลาคม ใช้ไป 910 บาท" style="height: 50px; border-radius: 12px; border: none; background: #AE97EE; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-family: 'DM Sans', sans-serif; color: #111014;"><span style="font-size: 14px; font-weight: 700; line-height: 1.2">23</span><span style="font-size: 10px; font-weight: 500; line-height: 1.2">910</span></button>
+        <button type="button" aria-label="24 ตุลาคม ใช้ไป 132 บาท วันนี้" aria-current="date" aria-pressed="true" style="height: 50px; border-radius: 12px; border: none; background: #EEE9FC; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-family: 'DM Sans', sans-serif; color: #111014; box-shadow: 0 0 0 2px #F4F3F9, 0 0 0 4px #111014;"><span style="font-size: 14px; font-weight: 700; line-height: 1.2">24</span><span style="font-size: 10px; font-weight: 500; line-height: 1.2">132</span></button>
+        <span style="height: 50px; border-radius: 12px; border: 1px dashed #DCD9E6; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; color: #6B6878">25</span>
+        <span style="height: 50px; border-radius: 12px; border: 1px dashed #DCD9E6; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; color: #6B6878">26</span>
+        <span style="height: 50px; border-radius: 12px; border: 1px dashed #DCD9E6; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; color: #6B6878">27</span>
+        <span style="height: 50px; border-radius: 12px; border: 1px dashed #DCD9E6; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; color: #6B6878">28</span>
+        <span style="height: 50px; border-radius: 12px; border: 1px dashed #DCD9E6; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; color: #6B6878">29</span>
+        <span style="height: 50px; border-radius: 12px; border: 1px dashed #DCD9E6; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; color: #6B6878">30</span>
+        <span style="height: 50px; border-radius: 12px; border: 1px dashed #DCD9E6; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; color: #6B6878">31</span>
+      </div>
+    </div>
+
+    <div role="img" aria-label="สีเข้มขึ้นเมื่อใช้มากขึ้น ตั้งแต่ 0 ถึงมากกว่า 2,000 บาทต่อวัน กรอบดำคือวันนี้" style="display: flex; align-items: flex-start; gap: 6px">
+      <span style="font-size: 12px; color: #6B6878; line-height: 1.4; flex: none; padding-right: 2px">บาท<br>ต่อวัน</span>
+      <span style="display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1"><span style="width: 100%; height: 12px; border-radius: 4px; background: #FFFFFF; box-sizing: border-box; border: 1px solid #E6E4EE;"></span><span style="font-family: 'DM Sans', sans-serif; font-size: 11px; color: #6B6878; line-height: 1.3">0</span></span><span style="display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1"><span style="width: 100%; height: 12px; border-radius: 4px; background: #EEE9FC;"></span><span style="font-family: 'DM Sans', sans-serif; font-size: 11px; color: #6B6878; line-height: 1.3">≤200</span></span><span style="display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1"><span style="width: 100%; height: 12px; border-radius: 4px; background: #D5C9F7;"></span><span style="font-family: 'DM Sans', sans-serif; font-size: 11px; color: #6B6878; line-height: 1.3">≤500</span></span><span style="display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1"><span style="width: 100%; height: 12px; border-radius: 4px; background: #AE97EE;"></span><span style="font-family: 'DM Sans', sans-serif; font-size: 11px; color: #6B6878; line-height: 1.3">≤1,000</span></span><span style="display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1"><span style="width: 100%; height: 12px; border-radius: 4px; background: #6A4BD4;"></span><span style="font-family: 'DM Sans', sans-serif; font-size: 11px; color: #6B6878; line-height: 1.3">≤2,000</span></span><span style="display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1"><span style="width: 100%; height: 12px; border-radius: 4px; background: #3B2790;"></span><span style="font-family: 'DM Sans', sans-serif; font-size: 11px; color: #6B6878; line-height: 1.3">2,000+</span></span>
+    </div>
+
+    <section aria-label="รายการวันเสาร์ที่ 24 ตุลาคม" style="background: #FFFFFF; border-radius: 22px; padding: 12px 16px 6px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 4px">
+        <h2 style="margin: 0; font-size: 16px; font-weight: 700; line-height: 1.4">เสาร์ 24 ต.ค. · วันนี้</h2>
+        <span style="font-size: 13px; color: #6B6878">3 รายการ <span style="font-family: 'DM Sans', sans-serif; font-size: 18px; font-weight: 700; color: #111014; margin-left: 4px">฿132</span></span>
+      </div>
+      
+        <a href="#" style="display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 7px 0; border-bottom: 1px solid #E6E4EE; box-sizing: border-box; text-decoration: none; color: #111014">
+          <span style="width: 38px; height: 38px; border-radius: 12px; background: #FFE3CC; display: flex; align-items: center; justify-content: center; flex: none"><svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5Z M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16 M9 3.5c0 1-1 1.5-1 2.5M12.5 3.5c0 1-1 1.5-1 2.5" fill="none" stroke="#111014" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+          <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.4">
+            <span style="font-size: 15px; font-weight: 700">กาแฟเย็น</span>
+            <span style="font-size: 13px; color: #6B6878">อาหาร · เงินสด · 08:40</span>
+          </span>
+          <span style="font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 700; color: #111014">฿65</span>
+        </a>
+      
+        <a href="#" style="display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 7px 0; border-bottom: 1px solid #E6E4EE; box-sizing: border-box; text-decoration: none; color: #111014">
+          <span style="width: 38px; height: 38px; border-radius: 12px; background: #DCE8FF; display: flex; align-items: center; justify-content: center; flex: none"><svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10a3 3 0 0 1 3 3V15a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V6.5a3 3 0 0 1 3-3Z M4 10.5h16 M8.5 18l-2 3M15.5 18l2 3" fill="none" stroke="#111014" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="8" cy="14.5" r="1.2" fill="#111014"></circle><circle cx="16" cy="14.5" r="1.2" fill="#111014"></circle></svg></span>
+          <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.4">
+            <span style="font-size: 15px; font-weight: 700">BTS</span>
+            <span style="font-size: 13px; color: #6B6878">เดินทาง · บัญชีหลัก · 09:05</span>
+          </span>
+          <span style="font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 700; color: #111014">฿47</span>
+        </a>
+      
+        <a href="#" style="display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 7px 0; box-sizing: border-box; text-decoration: none; color: #111014">
+          <span style="width: 38px; height: 38px; border-radius: 12px; background: #DCE8FF; display: flex; align-items: center; justify-content: center; flex: none"><svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="16.5" r="2.8" fill="none" stroke="#111014" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></circle><circle cx="18.5" cy="16.5" r="2.8" fill="none" stroke="#111014" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></circle><path d="M5.5 16.5l3.5-5.5h5.5l4 5.5 M14.5 11l-1.6-4h2.8 M9 11H6.5" fill="none" stroke="#111014" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+          <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.4">
+            <span style="font-size: 15px; font-weight: 700">วิน</span>
+            <span style="font-size: 13px; color: #6B6878">เดินทาง · เงินสด · 18:20</span>
+          </span>
+          <span style="font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 700; color: #111014">฿20</span>
+        </a>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

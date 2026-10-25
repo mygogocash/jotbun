@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Bun Wallet language and dates</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;700&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F3F9; color: #111014; font-family: 'Anuphan', 'DM Sans', sans-serif; line-height: 1.5; position: relative; overflow: hidden; padding: 54px 20px 32px; display: flex; flex-direction: column; gap: 12px">
+  <button type="button" aria-label="กลับ" style="width: 44px; height: 44px; border-radius: 14px; border: none; background: #E9E7F1; display: flex; align-items: center; justify-content: center; padding: 0; flex: none"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="#111014" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+  <h1 style="margin: 0; font-size: 28px; font-weight: 700; line-height: 1.4">ภาษาและวันที่</h1>
+
+  <fieldset style="margin: 8px 0 0; padding: 0; border: none; min-width: 0">
+    <legend style="padding: 0 4px; margin-bottom: 8px; font-size: 14px; font-weight: 500; line-height: 1.4; color: #6B6878">ภาษา</legend>
+    <div style="background: #FFFFFF; border-radius: 22px; overflow: hidden">
+      <label for="st-lang-th" style="display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 8px 16px; box-sizing: border-box; border-bottom: 1px solid #E6E4EE; cursor: pointer">
+        <span style="flex: 1; display: flex; flex-direction: column">
+          <span style="font-size: 17px; font-weight: 700; line-height: 1.4">ไทย</span>
+          <span style="font-size: 13px; line-height: 1.4; color: #6B6878">ภาษาไทย</span>
+        </span>
+        <input id="st-lang-th" type="radio" name="st-lang" value="th" checked="checked" style="-webkit-appearance: none; appearance: none; margin: 0; width: 24px; height: 24px; border-radius: 50%; box-sizing: border-box; border: 7px solid #6A4BD4; background: #FFFFFF; flex: none">
+      </label>
+      <label for="st-lang-en" style="display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 8px 16px; box-sizing: border-box; border-bottom: 1px solid #E6E4EE; cursor: pointer">
+        <span style="flex: 1; display: flex; flex-direction: column">
+          <span lang="en" style="font-family: 'DM Sans', sans-serif; font-size: 17px; font-weight: 700; line-height: 1.4">English</span>
+          <span style="font-size: 13px; line-height: 1.4; color: #6B6878">ภาษาอังกฤษ</span>
+        </span>
+        <input id="st-lang-en" type="radio" name="st-lang" value="en" style="-webkit-appearance: none; appearance: none; margin: 0; width: 24px; height: 24px; border-radius: 50%; box-sizing: border-box; border: 2px solid #8A879A; background: #FFFFFF; flex: none">
+      </label>
+      <label for="st-lang-vi" style="display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 8px 16px; box-sizing: border-box; cursor: pointer">
+        <span style="flex: 1; display: flex; flex-direction: column">
+          <span lang="vi" style="font-family: 'DM Sans', sans-serif; font-size: 17px; font-weight: 700; line-height: 1.4">Tiếng Việt</span>
+          <span style="font-size: 13px; line-height: 1.4; color: #6B6878">ภาษาเวียดนาม</span>
+        </span>
+        <input id="st-lang-vi" type="radio" name="st-lang" value="vi" style="-webkit-appearance: none; appearance: none; margin: 0; width: 24px; height: 24px; border-radius: 50%; box-sizing: border-box; border: 2px solid #8A879A; background: #FFFFFF; flex: none">
+      </label>
+    </div>
+  </fieldset>
+
+  <section aria-labelledby="st-lang-dates" style="margin-top: 10px">
+    <h2 id="st-lang-dates" style="margin: 0 0 8px; padding: 0 4px; font-size: 14px; font-weight: 500; line-height: 1.4; color: #6B6878">วันที่</h2>
+    <div style="background: #FFFFFF; border-radius: 22px; overflow: hidden">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 8px 10px 16px; border-bottom: 1px solid #E6E4EE">
+        <span style="display: flex; flex-direction: column">
+          <span id="st-lang-be-label" style="font-size: 16px; font-weight: 700; line-height: 1.4">แสดงปีเป็น พ.ศ.</span>
+          <span id="st-lang-be-desc" style="font-size: 13px; line-height: 1.45; color: #6B6878">ปิดไว้จะแสดงปีเป็น ค.ศ.</span>
+        </span>
+        <button type="button" role="switch" aria-checked="true" aria-labelledby="st-lang-be-label" aria-describedby="st-lang-be-desc" style="width: 60px; height: 44px; border: none; background: transparent; padding: 0; display: flex; align-items: center; justify-content: center; flex: none">
+          <span aria-hidden="true" style="position: relative; display: block; width: 52px; height: 32px; border-radius: 999px; background: #6A4BD4"><span style="position: absolute; top: 3px; left: 23px; width: 26px; height: 26px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 2px 4px rgba(17, 16, 20, 0.22)"></span></span>
+        </button>
+      </div>
+
+      <div aria-live="polite" style="padding: 14px 16px 16px">
+        <div style="font-size: 13px; line-height: 1.4; color: #6B6878">ตัวอย่าง</div>
+        <div style="font-size: 22px; font-weight: 700; line-height: 1.45; margin-top: 2px">วันเสาร์ 24 ต.ค. 2569</div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px">
+          <div style="border: 2px solid #111014; border-radius: 14px; padding: 8px 12px; background: #FFFFFF">
+            <div style="font-size: 12px; line-height: 1.4; color: #6B6878">พ.ศ. · ตอนนี้</div>
+            <div style="font-size: 15px; font-weight: 700; line-height: 1.45">24 ต.ค. 2569</div>
+          </div>
+          <div style="border: 2px solid #F4F3F9; border-radius: 14px; padding: 8px 12px; background: #F4F3F9">
+            <div style="font-size: 12px; line-height: 1.4; color: #6B6878">ค.ศ.</div>
+            <div style="font-size: 15px; font-weight: 700; line-height: 1.45">24 ต.ค. 2026</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p style="margin: 10px 0 0; padding: 0 4px; font-size: 14px; line-height: 1.55; color: #6B6878">ภาษาอังกฤษและเวียดนามแสดงปีเป็น ค.ศ. เสมอ เช่น <span lang="en" style="font-family: 'DM Sans', sans-serif; color: #111014; white-space: nowrap">24 Oct 2026</span></p>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

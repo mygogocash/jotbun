@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Add foreign expense</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;700&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F3F9; color: #111014; font-family: 'Anuphan', 'DM Sans', sans-serif; line-height: 1.4; position: relative; overflow: hidden">
+  <div aria-hidden="true" style="padding: 52px 18px 0">
+    <div style="height: 42px"></div>
+    <div style="height: 150px; border-radius: 20px; background: #FFFFFF; margin-top: 12px"></div>
+    <div style="height: 62px; border-radius: 20px; background: #FFFFFF; margin-top: 12px"></div>
+    <div style="height: 200px; border-radius: 22px; background: linear-gradient(135deg, #FFE2CF, #FFAE85); margin-top: 48px"></div>
+  </div>
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(17, 16, 20, 0.38)"></div>
+
+  <section aria-label="จดรายจ่าย" style="position: absolute; left: 8px; right: 8px; bottom: 8px; height: 624px; background: #FFFFFF; border-radius: 34px; padding: 18px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 -10px 40px rgba(17, 16, 20, 0.18)">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <h2 style="margin: 0; font-size: 18px; font-weight: 700; line-height: 1.4">จดรายจ่าย</h2>
+      <button type="button" aria-label="ปิด" style="width: 44px; height: 44px; border-radius: 50%; border: none; background: #F4F3F9; display: flex; align-items: center; justify-content: center; padding: 0"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="#111014" stroke-width="3" stroke-linecap="round"></path></svg></button>
+    </div>
+
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 2px">
+      <div style="display: flex; align-items: center; justify-content: center; gap: 10px">
+        <button type="button" aria-haspopup="dialog" aria-label="สกุลเงิน เยนญี่ปุ่น JPY แตะเพื่อเปลี่ยน" style="height: 44px; padding: 0 10px 0 6px; border-radius: 999px; border: none; background: #F4F3F9; display: inline-flex; align-items: center; gap: 6px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; color: #111014; flex: none"><span aria-hidden="true" style="width: 32px; height: 32px; border-radius: 50%; background: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 16px">¥</span>JPY<svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="#111014" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+        <div style="font-family: 'DM Sans', sans-serif; font-size: 54px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums">¥4,620</div>
+      </div>
+      <div aria-live="polite" style="font-family: 'DM Sans', sans-serif; font-size: 20px; font-weight: 700; color: #4A4756; font-variant-numeric: tabular-nums">≈ ฿1,068.14</div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 14px; border-radius: 16px; background: #F4F3F9">
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+        <span style="font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; line-height: 1.4">1 ¥ = ฿0.2312</span>
+        <span style="font-size: 13px; line-height: 1.4; color: #6B6878">เรทอ้างอิงวันที่ 3 พ.ย. 2569</span>
+      </span>
+      <button type="button" aria-haspopup="dialog" style="height: 44px; padding: 0 14px; border-radius: 12px; border: none; background: #FFFFFF; font-family: inherit; font-size: 14px; font-weight: 700; color: #6A4BD4; flex: none">แก้เรท</button>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 8px; height: 50px; padding: 0 3px 0 14px; border-radius: 16px; background: #F4F3F9">
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="flex: none"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8Z" fill="#6A4BD4"></path></svg>
+      <label for="tc-add-tell" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">บอกบันว่าจ่ายอะไร</label>
+      <input id="tc-add-tell" type="text" value="ร้านยา" style="flex: 1; min-width: 0; border: none; background: transparent; font-family: inherit; font-size: 16px; color: #111014; outline: none">
+      <button type="button" style="height: 44px; min-width: 44px; padding: 0 12px; border-radius: 12px; border: none; background: #FFFFFF; display: flex; align-items: center; gap: 6px; font-family: inherit; font-size: 13px; color: #111014"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-2h6l2 2h3v11H4Z" fill="none" stroke="#111014" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="12" cy="13" r="3.2" fill="none" stroke="#111014" stroke-width="1.8"></circle></svg>แนบรูป</button>
+    </div>
+
+    <div style="display: flex; gap: 8px">
+      <button type="button" aria-pressed="true" aria-label="ติดป้ายทริปญี่ปุ่น" style="height: 44px; padding: 0 14px 0 10px; border-radius: 999px; border: none; background: #ECE7FC; display: inline-flex; align-items: center; gap: 6px; font-family: inherit; font-size: 14px; font-weight: 700; color: #5A3EC0"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="7.5" width="16" height="12" rx="2.5" fill="none" stroke="#5A3EC0" stroke-width="1.9"></rect><path d="M9 7.5V5.8A1.8 1.8 0 0 1 10.8 4h2.4A1.8 1.8 0 0 1 15 5.8v1.7M4 12.5h16" fill="none" stroke="#5A3EC0" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>ทริปญี่ปุ่น</button>
+      <button type="button" aria-haspopup="dialog" aria-label="จากกระเป๋า เงินสดเยน แตะเพื่อเปลี่ยน" style="height: 44px; padding: 0 12px 0 8px; border-radius: 999px; border: 1px solid #E6E4EE; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-family: inherit; font-size: 14px; color: #111014; box-sizing: border-box"><span aria-hidden="true" style="width: 30px; height: 20px; border-radius: 5px; background: linear-gradient(135deg, #FFE2CF, #FFAE85)"></span>จากเงินสดเยน<svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="#111014" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 8px; font-family: 'DM Sans', sans-serif">
+      <button type="button" style="height: 46px; border: none; border-radius: 14px; background: transparent; font-family: inherit; font-size: 24px; font-weight: 500; color: #111014">1</button>
+      <button type="button" style="height: 46px; border: none; border-radius: 14px; background: transparent; font-family: inherit; font-size: 24px; font-weight: 500; color: #111014">2</button>
+      <button type="button" style="height: 46px; border: none; border-radius: 14px; background: transparent; font-family: inherit; font-size: 24px; font-weight: 500; color: #111014">3</button>
+      <button type="button" style="height: 46px; border: none; border-radius: 14px; background: transparent; font-family: inherit; font-size: 24px; font-weight: 500; color: #111014">4</button>
+      <button type="button" style="height: 46px; border: none; border-radius: 14px; background: transparent; font-family: inherit; font-size: 24px; font-weight: 500; color: #111014">5</button>
+      <button type="button" style="height: 46px; border: none; border-radius: 14px; background: transparent; font-family: inherit; font-size: 24px; font-weight: 500; color: #111014">6</button>
+      <button type="button" style="height: 46px; border: none; border-radius: 14px; background: transparent; font-family: inherit; font-size: 24px; font-weight: 500; color: #111014">7</button>
+      <button type="button" style="height: 46px; border: none; border-radius: 14px; background: transparent; font-family: inherit; font-size: 24px; font-weight: 500; color: #111014">8</button>
+      <button type="button" style="height: 46px; border: none; border-radius: 14px; background: transparent; font-family: inherit; font-size: 24px; font-weight: 500; color: #111014">9</button>
+      <button type="button" style="height: 46px; border: none; border-radius: 14px; background: transparent; font-family: inherit; font-size: 20px; font-weight: 500; color: #111014">000</button>
+      <button type="button" style="height: 46px; border: none; border-radius: 14px; background: transparent; font-family: inherit; font-size: 24px; font-weight: 500; color: #111014">0</button>
+      <button type="button" aria-label="ลบตัวเลข" style="height: 46px; border: none; border-radius: 14px; background: transparent; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11v12H9l-6-6Z M13 10l4 4M17 10l-4 4" fill="none" stroke="#111014" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"></path></svg></button>
+    </div>
+
+    <button type="button" style="margin-top: auto; height: 56px; border-radius: 18px; border: none; background: #111014; color: #FFFFFF; font-family: inherit; font-size: 17px; font-weight: 700">ต่อไป</button>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

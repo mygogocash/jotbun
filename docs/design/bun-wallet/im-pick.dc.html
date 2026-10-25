@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Bun Wallet import pick file</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;700&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F3F9; color: #111014; font-family: 'Anuphan', 'DM Sans', sans-serif; line-height: 1.5; position: relative; overflow: hidden">
+  <div aria-hidden="true" style="padding: 52px 18px 0">
+    <div style="font-size: 28px; font-weight: 700; line-height: 1.4; margin-top: 52px">สวัสดี กานต์</div>
+    <div style="height: 92px; border-radius: 20px; background: #FFFFFF; margin-top: 12px"></div>
+    <div style="height: 200px; border-radius: 22px; background: linear-gradient(135deg, #D9CCFF, #A891F7 55%, #EFE9FF); margin-top: 52px"></div>
+  </div>
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(17, 16, 20, 0.38)"></div>
+
+  <section aria-label="เลือกไฟล์" style="position: absolute; left: 8px; right: 8px; bottom: 8px; height: 604px; background: #FFFFFF; border-radius: 34px; padding: 14px 18px 18px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 -10px 40px rgba(17, 16, 20, 0.18)">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 -4px">
+      <button type="button" aria-label="กลับ" style="width: 44px; height: 44px; border: none; background: transparent; padding: 0; display: flex; align-items: center; justify-content: center"><span style="width: 36px; height: 36px; border-radius: 50%; background: #F4F3F9; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="#111014" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+      <h2 style="margin: 0; font-size: 17px; font-weight: 700; line-height: 1.4">เลือกไฟล์</h2>
+      <button type="button" aria-label="ปิด" style="width: 44px; height: 44px; border: none; background: transparent; padding: 0; display: flex; align-items: center; justify-content: center"><span style="width: 36px; height: 36px; border-radius: 50%; background: #F4F3F9; display: flex; align-items: center; justify-content: center"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="#111014" stroke-width="3" stroke-linecap="round"></path></svg></span></button>
+    </div>
+
+    <button type="button" style="height: 84px; border-radius: 22px; border: none; background: #111014; color: #FFFFFF; font-family: inherit; display: flex; align-items: center; gap: 14px; padding: 0 18px; text-align: left; flex: none">
+      <svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true" style="flex: none"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linejoin="round"></path></svg>
+      <span style="flex: 1"><span style="display: block; font-size: 17px; font-weight: 700; line-height: 1.4">เลือกไฟล์จากเครื่อง</span><span style="display: block; font-size: 13px; color: #C9C6D4; line-height: 1.45">PDF, Excel หรือ CSV ในแอปไฟล์</span></span>
+      <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="flex: none"><path d="M9 5l7 7-7 7" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+    </button>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+      <button type="button" style="height: 112px; border-radius: 22px; border: none; background: #F4F3F9; color: #111014; font-family: inherit; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; padding: 14px 16px; text-align: left">
+        <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-2h6l2 2h3v11H4Z" fill="none" stroke="#111014" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="12" cy="13" r="3.4" fill="none" stroke="#111014" stroke-width="1.8"></circle></svg>
+        <span><span style="display: block; font-size: 15px; font-weight: 700; line-height: 1.4">ถ่ายรูปหน้า statement</span><span style="display: block; font-size: 12px; color: #6B6878; line-height: 1.45">ถ่ายได้ทีละหน้า</span></span>
+      </button>
+      <button type="button" style="height: 112px; border-radius: 22px; border: none; background: #F4F3F9; color: #111014; font-family: inherit; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; padding: 14px 16px; text-align: left">
+        <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3" fill="none" stroke="#111014" stroke-width="1.8"></rect><circle cx="9" cy="10" r="1.8" fill="#111014"></circle><path d="M4 17l5-5 4 4 3-3 4 4" fill="none" stroke="#111014" stroke-width="1.8" stroke-linejoin="round"></path></svg>
+        <span><span style="display: block; font-size: 15px; font-weight: 700; line-height: 1.4">เลือกรูปจากอัลบั้ม</span><span style="display: block; font-size: 12px; color: #6B6878; line-height: 1.45">รูป statement ที่มีอยู่แล้ว</span></span>
+      </button>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px; font-size: 13px; line-height: 1.5; color: #6B6878">
+      <span aria-hidden="true" style="width: 32px; height: 32px; border-radius: 10px; background: #F4F3F9; display: flex; align-items: center; justify-content: center; flex: none"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M3 10l9-5 9 5M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18" fill="none" stroke="#111014" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+      <span style="flex: 1">ยังไม่มีไฟล์? ขอ statement ในแอปธนาคาร แล้วกลับมาเลือกที่นี่</span>
+      <a href="#" style="font-size: 14px; font-weight: 500; color: #6A4BD4; text-decoration: none; min-height: 44px; display: flex; align-items: center; flex: none">วิธีขอ</a>
+    </div>
+
+    <div style="height: 1px; background: #E6E4EE; flex: none"></div>
+
+    <div>
+      <div style="font-size: 15px; font-weight: 700; line-height: 1.4; margin-bottom: 8px">กำลังอัปโหลด</div>
+      <div style="background: #F4F3F9; border-radius: 18px; padding: 12px 8px 14px 14px">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <span aria-hidden="true" style="width: 42px; height: 50px; border-radius: 10px; background: linear-gradient(135deg, #FFE2CF, #FFAE85); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: none">
+            <svg width="16" height="16" viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7Z M14 3v5h5" fill="none" stroke="#111014" stroke-width="1.8" stroke-linejoin="round"></path></svg>
+            <span style="font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 700; line-height: 1.2">PDF</span>
+          </span>
+          <span style="flex: 1; min-width: 0">
+            <span style="display: block; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">statement-sep-2569.pdf</span>
+            <span style="display: block; font-size: 13px; color: #6B6878; line-height: 1.45"><span style="font-family: 'DM Sans', sans-serif">1.8 MB</span> · ไม่เกิน 12 MB</span>
+          </span>
+          <button type="button" aria-label="ยกเลิกการอัปโหลด statement-sep-2569.pdf" style="width: 44px; height: 44px; border: none; background: transparent; padding: 0; display: flex; align-items: center; justify-content: center; flex: none"><span style="width: 32px; height: 32px; border-radius: 50%; background: #E6E4EE; display: flex; align-items: center; justify-content: center"><svg width="10" height="10" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="#111014" stroke-width="3.2" stroke-linecap="round"></path></svg></span></button>
+        </div>
+        <div role="progressbar" aria-label="อัปโหลด statement-sep-2569.pdf" aria-valuemin="0" aria-valuemax="100" aria-valuenow="72" aria-valuetext="1.3 จาก 1.8 MB" style="height: 6px; border-radius: 3px; background: #E6E4EE; margin: 12px 6px 0 0; overflow: hidden"><div style="width: 72%; height: 6px; border-radius: 3px; background: #111014"></div></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; color: #6B6878; margin: 6px 6px 0 0; line-height: 1.45">
+          <span>กำลังอัปโหลด… <span style="font-family: 'DM Sans', sans-serif">1.3 / 1.8 MB</span></span>
+          <span style="font-family: 'DM Sans', sans-serif; font-weight: 700; color: #111014">72%</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 8px; align-items: flex-start; font-size: 12px; line-height: 1.55; color: #6B6878; margin-top: auto">
+      <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 2px"><rect x="5" y="10" width="14" height="10" rx="2" fill="none" stroke="#6B6878" stroke-width="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="#6B6878" stroke-width="2"></path></svg>
+      <span>อัปโหลดเสร็จแล้วบันจะอ่านไฟล์ต่อให้ ยังไม่มีอะไรถูกบันทึก · ขอสิทธิ์กล้องหรืออัลบั้มเมื่อคุณกดครั้งแรกเท่านั้น</span>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Bun Wallet slip settings</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;700&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F3F9; color: #111014; font-family: 'Anuphan', 'DM Sans', sans-serif; line-height: 1.45; position: relative; overflow: hidden; padding: 52px 16px 22px; display: flex; flex-direction: column; gap: 12px">
+  <button type="button" aria-label="กลับ" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid #E6E4EE; background: rgba(255, 255, 255, 0.85); display: flex; align-items: center; justify-content: center; padding: 0; flex: none"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="#111014" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+
+  <div style="padding: 0 4px">
+    <h1 style="margin: 0; font-size: 28px; font-weight: 700; line-height: 1.4">สลิปอัตโนมัติ</h1>
+    <div style="font-size: 14px; color: #6B6878">เชื่อมแล้ว · อ่านล่าสุด วันนี้ <span style="font-family: 'DM Sans', sans-serif">09:00</span></div>
+  </div>
+
+  <div style="background: #FFFFFF; border-radius: 20px; padding: 12px 16px; display: flex; align-items: center; gap: 12px">
+    <label for="sl-set-on" style="flex: 1; min-width: 0">
+      <span style="display: block; font-size: 16px; font-weight: 500">เปิดสลิปอัตโนมัติ</span>
+      <span style="display: block; font-size: 13px; color: #6B6878">บันหาสลิปใหม่ในอัลบั้มที่เลือก วันละครั้ง</span>
+    </label>
+    <span style="position: relative; width: 51px; height: 31px; flex: none">
+      <span aria-hidden="true" style="position: absolute; inset: 0; border-radius: 999px; background: #6A4BD4"></span>
+      <span aria-hidden="true" style="position: absolute; top: 2px; left: 22px; width: 27px; height: 27px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 2px 4px rgba(17, 16, 20, 0.2)"></span>
+      <input id="sl-set-on" type="checkbox" role="switch" checked="" style="position: absolute; left: -4px; top: -7px; width: 59px; height: 45px; margin: 0; opacity: 0">
+    </span>
+  </div>
+
+  <div style="background: #FFFFFF; border-radius: 20px; padding: 0 16px">
+    <a href="#" style="display: flex; align-items: center; justify-content: space-between; min-height: 48px; border-bottom: 1px solid #EEEDF4; text-decoration: none; color: #111014; font-size: 16px"><span>อัลบั้มที่อ่าน</span><span style="display: flex; align-items: center; gap: 8px; color: #6B6878; font-size: 15px">3 อัลบั้ม<svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="#8A879A" stroke-width="2.6" stroke-linecap="round"></path></svg></span></a>
+    <a href="#" style="display: flex; align-items: center; justify-content: space-between; min-height: 48px; border-bottom: 1px solid #EEEDF4; text-decoration: none; color: #111014; font-size: 16px"><span>อ่านตั้งแต่</span><span style="display: flex; align-items: center; gap: 8px; color: #6B6878; font-size: 15px">1 ส.ค. 2569<svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="#8A879A" stroke-width="2.6" stroke-linecap="round"></path></svg></span></a>
+    <a href="#" style="display: flex; align-items: center; justify-content: space-between; min-height: 48px; text-decoration: none; color: #111014; font-size: 16px"><span>บัญชีและกระเป๋า</span><span style="display: flex; align-items: center; gap: 8px; color: #6B6878; font-size: 15px">3 บัญชี<svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="#8A879A" stroke-width="2.6" stroke-linecap="round"></path></svg></span></a>
+  </div>
+
+  <fieldset style="margin: 0; padding: 0; border: none; min-width: 0">
+    <legend style="padding: 0 4px; margin-bottom: 6px; font-size: 13px; font-weight: 700; color: #6B6878">เมื่อพบสลิปใหม่</legend>
+    <div style="background: #FFFFFF; border-radius: 20px; padding: 0 16px">
+      <label style="position: relative; display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid #EEEDF4">
+        <span aria-hidden="true" style="width: 22px; height: 22px; border-radius: 50%; background: #6A4BD4; display: flex; align-items: center; justify-content: center; flex: none; margin-top: 1px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #FFFFFF"></span></span>
+        <input type="radio" name="sl-mode" value="review" checked="" style="position: absolute; left: -8px; top: 2px; width: 44px; height: 44px; margin: 0; opacity: 0">
+        <span style="flex: 1; min-width: 0">
+          <span style="display: block; font-size: 16px; font-weight: 500">ให้ฉันตรวจก่อน (แนะนำ)</span>
+          <span style="display: block; font-size: 13px; color: #6B6878; line-height: 1.5">บันเตรียมเป็นร่าง คุณกดบันทึกทั้งหมดทีเดียว</span>
+        </span>
+      </label>
+      <label style="position: relative; display: flex; align-items: flex-start; gap: 12px; padding: 12px 0">
+        <span aria-hidden="true" style="width: 22px; height: 22px; border-radius: 50%; background: #FFFFFF; box-shadow: inset 0 0 0 2px #8A879A; flex: none; margin-top: 1px"></span>
+        <input type="radio" name="sl-mode" value="auto-save" style="position: absolute; left: -8px; top: 2px; width: 44px; height: 44px; margin: 0; opacity: 0">
+        <span style="flex: 1; min-width: 0">
+          <span style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap"><span style="font-size: 16px; font-weight: 500">บันทึกให้อัตโนมัติ แล้วแจ้งให้ตรวจ</span><span style="font-size: 12px; font-weight: 500; color: #111014; background: #ECEAF2; padding: 1px 8px; border-radius: 999px">ตัวเลือกเสริม · ปิดอยู่</span></span>
+          <span style="display: block; font-size: 13px; color: #6B6878; line-height: 1.5; margin-top: 2px">บันทึกทันทีที่เจอ แก้หรือเลิกทำได้ภายใน 7 วัน · สลิปที่อาจซ้ำหรืออ่านไม่ได้ ยังรอคุณตรวจเสมอ</span>
+        </span>
+      </label>
+    </div>
+  </fieldset>
+
+  <div style="background: #FFFFFF; border-radius: 20px; padding: 12px 16px; display: flex; align-items: center; gap: 12px">
+    <label for="sl-set-notify" style="flex: 1; min-width: 0">
+      <span style="display: block; font-size: 16px; font-weight: 500">แจ้งเตือนทุกวัน</span>
+      <span style="display: block; font-size: 13px; color: #6B6878"><span style="font-family: 'DM Sans', sans-serif">20:00</span> เมื่อมีสลิปใหม่รอตรวจ</span>
+    </label>
+    <span style="position: relative; width: 51px; height: 31px; flex: none">
+      <span aria-hidden="true" style="position: absolute; inset: 0; border-radius: 999px; background: #6A4BD4"></span>
+      <span aria-hidden="true" style="position: absolute; top: 2px; left: 22px; width: 27px; height: 27px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 2px 4px rgba(17, 16, 20, 0.2)"></span>
+      <input id="sl-set-notify" type="checkbox" role="switch" checked="" style="position: absolute; left: -4px; top: -7px; width: 59px; height: 45px; margin: 0; opacity: 0">
+    </span>
+  </div>
+
+  <div style="margin-top: auto; text-align: center">
+    <button type="button" style="height: 44px; padding: 0 16px; border: none; background: transparent; color: #111014; font-family: inherit; font-size: 15px; font-weight: 500; text-decoration: underline; text-underline-offset: 4px">ยกเลิกการเชื่อมอัลบั้ม</button>
+    <div style="font-size: 12px; line-height: 1.5; color: #6B6878; padding: 0 16px">รายการที่บันทึกแล้วยังอยู่ครบ ไม่ถูกลบ · บันจะหยุดอ่านอัลบั้มทันที ปิดสิทธิ์รูปได้ที่การตั้งค่าของเครื่อง</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
