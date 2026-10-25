@@ -19,11 +19,11 @@ import { createServer } from 'node:http';
 import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-import { IMPORT_UPLOAD_MAX_BYTES } from '@gogospend/contracts';
+import { IMPORT_PARSE_DEADLINE_SECONDS, IMPORT_UPLOAD_MAX_BYTES } from '@gogospend/contracts';
 
 import { ConfigurationError } from '../common/configuration-error';
 import { failureName } from '../common/operational-metrics';
-import { applyHttpTimeouts, handleShutdownSignals, runMain, shutdownTimeoutMsFromEnv } from '../common/process-lifecycle';
+import { applyHttpTimeouts, handleShutdownSignals, runMain, shutdownTimeoutMsFromEnv, trackHttpDrain } from '../common/process-lifecycle';
 import { importParsingStartup } from './import-parsing';
 import type { ImportParsingStartup } from './import-parsing';
 import { previewFromOutcome } from './parse-outcome';
@@ -48,7 +48,8 @@ export type ParseServerOptions = {
   startup?: () => Promise<ImportParsingStartup>;
 };
 
-export type ParseServer = { port: number; close(): Promise<void> };
+/** `close` drains keep-alive. `closeAllConnections` is what the shutdown timer calls if that drain is still going. */
+export type ParseServer = { port: number; close(): Promise<void>; closeAllConnections(): void };
 
 type State = {
   /** Null while the startup check found no sandbox: no parse runs then. */
@@ -79,10 +80,12 @@ export async function startParseServer(options: ParseServerOptions): Promise<Par
     });
   });
   applyHttpTimeouts(server);
+  // Before listen: a socket busy when close() starts would otherwise stay open for the keep-alive timeout (65s) after its reply.
+  const drain = trackHttpDrain(server);
   await listen(server, options.port, options.host ?? '0.0.0.0');
   server.on('error', (error: Error) => console.error(`parse server: ${failureName(error)}`));
   const { port } = server.address() as AddressInfo;
-  return { port, close: () => closeServer(server) };
+  return { port, close: () => drain.close(), closeAllConnections: () => server.closeAllConnections() };
 }
 
 async function handle(req: IncomingMessage, res: ServerResponse, state: State): Promise<void> {
@@ -205,12 +208,6 @@ function listen(server: Server, port: number, host: string): Promise<void> {
   });
 }
 
-function closeServer(server: Server): Promise<void> {
-  return new Promise((resolve, reject) => {
-    server.close((error) => (error ? reject(error) : resolve()));
-  });
-}
-
 /** `PARSE_SERVER_PORT` (1-65535, default 8080). */
 function portFromEnv(value: string | undefined): number {
   if (value === undefined || value === '') return 8080;
@@ -219,9 +216,21 @@ function portFromEnv(value: string | undefined): number {
   return port;
 }
 
+/**
+ * `SHUTDOWN_TIMEOUT_SECONDS` when it is set, read by shutdownTimeoutMsFromEnv
+ * (5-120). Unset, that default is 25s, shorter than a parse
+ * (IMPORT_PARSE_DEADLINE_SECONDS, 30s): the budget is then at least the parse
+ * deadline plus 5s, so a parse still running can finish before a forced exit.
+ */
+function parseShutdownTimeoutMs(value: string | undefined): number {
+  const fromEnv = shutdownTimeoutMsFromEnv(value);
+  if (value !== undefined && value !== '') return fromEnv;
+  return Math.max(fromEnv, (IMPORT_PARSE_DEADLINE_SECONDS + 5) * 1000);
+}
+
 async function main(): Promise<void> {
   const port = portFromEnv(process.env.PARSE_SERVER_PORT);
-  const shutdownMs = shutdownTimeoutMsFromEnv(process.env.SHUTDOWN_TIMEOUT_SECONDS);
+  const shutdownMs = parseShutdownTimeoutMs(process.env.SHUTDOWN_TIMEOUT_SECONDS);
   const server = await startParseServer({
     port,
     // The alert names only why the sandbox does not hold, never more.
@@ -232,7 +241,13 @@ async function main(): Promise<void> {
     },
   });
   console.log('parse server: listening');
-  handleShutdownSignals({ name: 'parse server', timeoutMs: shutdownMs, exitWhenStopped: true, stop: () => server.close() });
+  handleShutdownSignals({
+    name: 'parse server',
+    timeoutMs: shutdownMs,
+    exitWhenStopped: true,
+    stop: () => server.close(),
+    onTimeout: () => server.closeAllConnections(),
+  });
 }
 
 if (require.main === module) void runMain('parse server', main);

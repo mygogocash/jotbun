@@ -1,4 +1,4 @@
-import { request } from 'node:http';
+import { Agent, request } from 'node:http';
 
 import { IMPORT_UPLOAD_MAX_BYTES } from '@gogospend/contracts';
 
@@ -53,10 +53,10 @@ afterEach(async () => {
 
 type Reply = { status: number; body: unknown };
 
-/** One request on its own connection, read to its end. */
-function send(port: number, method: 'GET' | 'POST', path: string, headers: Record<string, string>, body?: Buffer): Promise<Reply> {
+/** One request, read to its end. `agent: false` closes its connection; a keep-alive agent holds the socket after the reply. */
+function send(port: number, method: 'GET' | 'POST', path: string, headers: Record<string, string>, body?: Buffer, agent: Agent | false = false): Promise<Reply> {
   return new Promise((resolve, reject) => {
-    const req = request({ host: HOST, port, method, path, headers, agent: false }, (res) => {
+    const req = request({ host: HOST, port, method, path, headers, agent }, (res) => {
       const chunks: Buffer[] = [];
       res.on('data', (chunk: Buffer) => chunks.push(chunk));
       res.on('end', () => {
@@ -216,4 +216,47 @@ describe('the parse server', () => {
     expect(sanitizedImageHeader(sanitized, 'jpeg')).toEqual({ width: 64, height: 48 });
     for (const marker of IMAGE_MARKERS) expect(sanitized.includes(marker)).toBe(false);
   }, 60_000);
+
+  it('closes within 2s after a keep-alive request that was open when close started has finished', async () => {
+    let entered: () => void = () => undefined;
+    const reached = new Promise<void>((resolve) => {
+      entered = () => resolve();
+    });
+    let leave: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      leave = () => resolve();
+    });
+    const runner = runnerOf(async () => {
+      entered();
+      await held;
+      return OK();
+    });
+    const server = await start({ runner, startup: sandboxed(runner) });
+    // Still in the request when close() starts. After the reply, a bare server.close() waits out the 65s keep-alive timeout.
+    const agent = new Agent({ keepAlive: true, maxSockets: 1 });
+    try {
+      const pending = send(
+        server.port,
+        'POST',
+        '/parse',
+        { 'content-type': 'application/octet-stream', [PARSE_FORMAT_HEADER]: 'csv', [PARSE_TODAY_HEADER]: TODAY },
+        BYTES,
+        agent,
+      );
+      await Promise.race([reached, pending]);
+      expect(runner.run).toHaveBeenCalledTimes(1);
+      const open = Object.values(agent.sockets).reduce((count, list) => count + (list?.length ?? 0), 0);
+      expect(open).toBe(1);
+      const closing = server.close();
+      leave();
+      const reply = await pending;
+      const finishedAt = Date.now();
+      await closing;
+      expect(Date.now() - finishedAt).toBeLessThan(2_000);
+      expect(reply).toMatchObject({ status: 200, body: { kind: 'parsed' } });
+    } finally {
+      leave();
+      agent.destroy();
+    }
+  });
 });
