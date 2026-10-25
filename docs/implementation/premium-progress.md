@@ -375,6 +375,55 @@ Phase 1B moves files and background work onto each person's vault (spec `docs/su
   - `retry` with `parser_unavailable` or `parser_sandbox_unsupported` means a child could not run; the consumer spends an attempt.
   - A `parsed` reply carries the record, plus the image as base64 when one was sanitized.
 
+## 1D: live pokes, the pending choice and PostHog
+
+Phase 1D adds live pokes, the pending choice, PostHog and the two-phone proof (plan 1D, in the controller's brief). Task 2 puts PostHog's proxy on the HTTP Worker.
+
+### 1D Task 2: The PostHog proxy on the Worker
+
+- **Status:** built and verified locally on `worktree-agent-aecc9854530b3e914`, reset to `68ec183` first. Committed locally, not pushed. The independent review is the controller's, after this receipt. The independent review is the controller's, after this receipt.
+- **Files:**
+  - `apps/edge/src/analytics/posthog-proxy.ts`: the constants, `isPostHogProxyPath` and `proxyPostHog`. It forwards GET, HEAD and POST under `/ingest/` to `eu.i.posthog.com`, and `/static/` and `/array/` to `eu-assets.i.posthog.com`, keeping the query. It sends no cookie, authorization, host, content-length, connection, forwarded, x-real-ip, true-client-ip, x-forwarded-*, cf-* or x-gogospend-* header, and no other client-address header (see deviations). It uses `redirect: 'manual'` and removes `set-cookie` from PostHog's answer. A body over 5 MiB (`POSTHOG_PROXY_BODY_LIMIT_BYTES`) is 413: refused by its declared length before any byte is read, or by a byte counter that cancels the stream past the limit. Other methods are 405 with `allow`. A body that cannot be read is 400. A failed fetch logs `posthog_proxy_failed` through `logFailure` (`src/v1/log.ts`, the class name only) and answers 502 with no body.
+  - `apps/edge/src/server.ts`: the default export's `fetch` answers `/ingest/*` with `proxyPostHog` before TanStack Start. Every other request goes to `handler.fetch` with its arguments, as before.
+  - Test: `apps/edge/test/posthog-proxy.test.ts`, 9 Node tests: the six in the brief, a body that cannot be read, the other client-address headers, and the HTTP Worker dispatch (it imports the real `src/server.ts` and spies on TanStack's `fetch`).
+- **RED to GREEN:**
+  - Typed stub first: `proxyPostHog` answers 404, `isPostHogProxyPath` returns false, and the constants are final.
+  - RED, against the stub: `npm run test:edge -- test/posthog-proxy.test.ts`: 7 failed, 0 passed. All seven failures are assertions (`expected 404 to be 413`, `... 405`, `... 400`, `... 502`, `expected [] to have a length of 1`, `expected [] to deeply equal ...`). None is a missing module.
+  - GREEN: the module, then the dispatch. The same command: 7 passed. After that the dispatch and other-headers tests were added and the body test was made finite (see deviations): 9 passed, 0 failed. `npm run typecheck:edge` passes.
+- **Mutation check (brief Step 6):** `shasum` of `posthog-proxy.ts`, `server.ts` and `posthog-proxy.test.ts` recorded; originals backed up in the scratchpad, outside the repo. Each mutant was applied in place, the focused file run, the file restored from its backup, and its checksum compared (OK after each).
+  - M1, stop stripping `x-forwarded-*` (x-forwarded-for forwarded): 2 failed, the batch test as the brief expects, and the other-headers test.
+  - M2, take the target host from the request's `host` header: 1 failed, the host test.
+  - M3, drop the body limit (both the declared-length and the counting check): 1 failed, the 413 test.
+  - M4, `server.ts` back to `fetch: handler.fetch`: 1 failed, the dispatch test (`/ingest/*` reached TanStack Start). This is the RED for the dispatch test, which was added after GREEN.
+  - M5, forward `x-client-ip`: 1 failed, the other-headers test. This is the RED for that test, which was added after GREEN.
+  - M6, keep `set-cookie` in the answer: 1 failed, the batch test.
+  - M7, `redirect: 'follow'`: 1 failed, the batch test.
+  - No survivors.
+- **Gate** (worktree root: `npm run typecheck:edge && npm run test:edge && npm run test:edge:workers && npm run build:edge && npm run test:edge:db`): passes, exit 0.
+  - `typecheck:edge`: passes.
+  - `test:edge`: 130 passed (10 files). It was 121 (9 files) before this task, and the 9 new tests are the difference.
+  - `test:edge:workers`: 128 passed (5 files). This task adds no workers test.
+  - `build:edge`: passes. The HTTP Worker (`dist/server/index.js`, with the `/ingest` dispatch) and the four background Workers build.
+  - `test:edge:db`: 62 passed (8 files). The script starts `db:v1:up` itself.
+  - `node --test scripts/ci/lockfile-bindings.test.mjs`: 2 passed. No lockfile changed.
+- **Deviations:**
+  - The stripped headers go beyond the brief's list. The brief's list is kept, and `x-client-ip`, `x-cluster-client-ip`, `x-originating-ip`, `x-remote-ip`, `x-remote-addr` and `fastly-client-ip` are stripped too, so that "every client IP header" (spec §7) holds. They are tested.
+  - Tests beyond the brief: the unreadable body (400), the other client-address headers, and the dispatch. The brief's six tests keep their names and assertions.
+  - The streamed-body test was made finite after GREEN. An endless stream would grow memory without bound under mutant M3. It is now 64 MiB in 1 MiB chunks, and it asserts that the proxy cancels it within two chunks past the limit, the same claim as before.
+  - A path that is not proxied (for example `/ingest` alone) answers 404 when `proxyPostHog` is called directly. The brief does not say.
+  - The default `fetch` is a wrapper, `(input, init) => fetch(input, init)`, because the Workers runtime refuses an unbound call to the global `fetch` (the note in `src/server/http/fetch.ts`).
+  - The body is typed `Uint8Array<ArrayBuffer>`. TypeScript 6 types a plain `Uint8Array` as `ArrayBufferLike`, which `BodyInit` rejects.
+  - The heading is the controller's, `## 1D: live pokes, the pending choice and PostHog`. The global constraints add "and the proof" to it.
+  - The dispatch forwards the handler's own argument tuple (`Parameters<typeof handler.fetch>`), not the bare `fetch` property. Non-ingest requests get the same arguments as before.
+- **SKIPPED (hosted):**
+  - No request reaches PostHog EU. No project or keys exist (Q5), so `POSTHOG_PROJECT_TOKEN`, `ANALYTICS_ID_KEY` and `EXPO_PUBLIC_POSTHOG_KEY` are unset. The upstream was exercised against a fake `fetch` only.
+  - `/ingest/*` on a deployed or `wrangler dev` Worker: not run. No hosted resource was touched.
+- **Notes for Task 3 and later:**
+  - This proxy only forwards. The server events (1D-T3) use `posthog-node` and do not go through it.
+  - The route lives on the HTTP Worker (`src/server.ts`). The vault Worker does not serve `/ingest/*`.
+  - The `/v1/sync/live` upgrade bypass (1D-T12) belongs in the same dispatch in `src/server.ts`.
+  - The body and its `content-encoding` pass through unchanged, as PostHog's guide does. Only the fake `fetch` has answered so far, so a compressed upstream answer has not been run.
+
 ## Not done, or follow-ups
 
 - **Rotating reminder wording (owner decision):** a repeating daily notification cannot change its text, so rotation needs "every day" to become seven weekly reminders, one wording per weekday. The reminders milestone (S4) chose one daily reminder on purpose, and its tests pin it. Cancelling all eight known ids first would still leave one reminder a day, so the change is safe to make if wanted.
