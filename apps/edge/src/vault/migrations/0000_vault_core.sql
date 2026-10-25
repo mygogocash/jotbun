@@ -1,10 +1,14 @@
 -- The vault's core schema: one person's ledger, in one Durable Object's SQLite.
 -- Ported from apps/api/drizzle 0005 (commands), 0006 (wallets, categories),
--- 0007 (transactions), 0008 (budgets) and 0010 (sync), without account_id: a
--- vault holds one account. PostgreSQL-only rules become CHECKs and BEFORE or
--- AFTER triggers. Control-character checks are dropped, because the contracts
--- validate them. Dates are ISO 8601 TEXT, booleans are 0 or 1, and timestamps
--- have no default: a command binds them from the call's clock.
+-- 0007 (transactions), 0008 (budgets), 0010 (sync) and the receipt-digest change
+-- in 0015, without account_id: a vault holds one account. PostgreSQL-only rules
+-- become CHECKs and BEFORE or AFTER triggers. Control-character checks are
+-- dropped, because the contracts validate them. Dates are ISO 8601 TEXT,
+-- booleans are 0 or 1, and timestamps have no default: a command binds them
+-- from the call's clock.
+--
+-- Every table is STRICT: SQLite checks each value against its column's type,
+-- and it refuses a NULL primary key (table_info reports that column as NOT NULL).
 --
 -- Sync and history: command_receipts, entity_changes, entity_heads and
 -- audit_events are the command protocol's rows (committed under one revision,
@@ -18,7 +22,7 @@ CREATE TABLE sync_state (
   pruned_through INTEGER NOT NULL DEFAULT 0 CHECK (pruned_through >= 0),
   -- Change groups at or below pruned_through may be incomplete; a delta cursor below it resyncs.
   CHECK (pruned_through <= revision)
-);
+) STRICT;
 --> statement-breakpoint
 CREATE TABLE account_state (
   id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -27,13 +31,13 @@ CREATE TABLE account_state (
   -- Epoch seconds, checked against each token's not-before at every command.
   not_before INTEGER NOT NULL DEFAULT 0 CHECK (not_before >= 0),
   created_at TEXT NOT NULL
-);
+) STRICT;
 --> statement-breakpoint
 CREATE TABLE revoked_sessions (
   session_id TEXT PRIMARY KEY,
   revoked_at TEXT NOT NULL,
   expires_at TEXT NOT NULL
-);
+) STRICT;
 --> statement-breakpoint
 CREATE TABLE consents (
   kind TEXT NOT NULL CHECK (kind IN ('terms', 'privacy', 'analytics')),
@@ -42,12 +46,12 @@ CREATE TABLE consents (
   updated_at TEXT NOT NULL,
   PRIMARY KEY (kind, version),
   CHECK ((kind = 'analytics' AND version = 0) OR (kind <> 'analytics' AND version >= 1 AND granted = 1))
-);
+) STRICT;
 --> statement-breakpoint
 CREATE TABLE schedule (
   job TEXT PRIMARY KEY,
   due_at INTEGER NOT NULL CHECK (due_at >= 0)
-);
+) STRICT;
 --> statement-breakpoint
 CREATE TABLE categories (
   id TEXT PRIMARY KEY,
@@ -61,7 +65,23 @@ CREATE TABLE categories (
   updated_at TEXT NOT NULL,
   CHECK (label IS NOT NULL OR builtin_key IS NOT NULL),
   CHECK (builtin_key IS NULL OR type = CASE WHEN builtin_key IN ('salary', 'bonus', 'side_job', 'gift') THEN 'income' ELSE 'expense' END)
-);
+) STRICT;
+--> statement-breakpoint
+-- A category's type and built-in key are fixed once it exists. The API froze
+-- them through a composite foreign key and column grants. The triggers on
+-- transactions and budget_category_limits check the referencing side; these
+-- check the category itself, so a category in use cannot change type.
+CREATE TRIGGER categories_type_immutable BEFORE UPDATE OF type ON categories
+  WHEN NEW.type IS NOT OLD.type
+BEGIN
+  SELECT RAISE(ABORT, 'category type is immutable');
+END;
+--> statement-breakpoint
+CREATE TRIGGER categories_builtin_key_immutable BEFORE UPDATE OF builtin_key ON categories
+  WHEN NEW.builtin_key IS NOT OLD.builtin_key
+BEGIN
+  SELECT RAISE(ABORT, 'category builtin_key is immutable');
+END;
 --> statement-breakpoint
 CREATE TABLE wallets (
   id TEXT PRIMARY KEY,
@@ -73,7 +93,7 @@ CREATE TABLE wallets (
   version INTEGER NOT NULL DEFAULT 1 CHECK (version >= 1),
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
-);
+) STRICT;
 --> statement-breakpoint
 -- One row per expense, income or transfer. A transfer is one row between two
 -- wallets, so it can never be half-written. The category's type must match the
@@ -100,7 +120,7 @@ CREATE TABLE transactions (
       AND source_wallet_id IS NOT NULL AND destination_wallet_id IS NOT NULL
       AND source_wallet_id <> destination_wallet_id)
   )
-);
+) STRICT;
 --> statement-breakpoint
 CREATE INDEX transactions_wallet_idx ON transactions (wallet_id) WHERE deleted_at IS NULL AND wallet_id IS NOT NULL;
 --> statement-breakpoint
@@ -131,7 +151,7 @@ CREATE TABLE monthly_budgets (
   version INTEGER NOT NULL DEFAULT 1 CHECK (version >= 1),
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
-);
+) STRICT;
 --> statement-breakpoint
 -- Expense categories only, and their sublimits never add up to more than the
 -- month's overall limit. The sum is checked after each change that can break
@@ -141,7 +161,7 @@ CREATE TABLE budget_category_limits (
   category_id TEXT NOT NULL REFERENCES categories (id),
   limit_minor INTEGER NOT NULL CHECK (limit_minor BETWEEN 1 AND 99999999999),
   PRIMARY KEY (month, category_id)
-);
+) STRICT;
 --> statement-breakpoint
 CREATE TRIGGER budget_category_limits_expense_insert BEFORE INSERT ON budget_category_limits
   WHEN EXISTS (SELECT 1 FROM categories c WHERE c.id = NEW.category_id AND c.type <> 'expense')
@@ -182,16 +202,22 @@ CREATE TABLE command_receipts (
   command_id TEXT PRIMARY KEY,
   kind TEXT NOT NULL CHECK (length(kind) BETWEEN 1 AND 64 AND kind GLOB '[a-z]*' AND kind NOT GLOB '*[^a-z0-9_.]*'),
   schema_version INTEGER NOT NULL CHECK (schema_version BETWEEN 1 AND 10000),
-  request_digest BLOB NOT NULL CHECK (length(request_digest) = 32),
-  digest_key_id TEXT NOT NULL CHECK (length(digest_key_id) BETWEEN 1 AND 16 AND digest_key_id NOT GLOB '*[^a-z0-9]*'),
+  -- The request digest and its key id drop together after the outbox lifetime:
+  -- a receipt without them never matches a replay (409 IDEMPOTENCY_MISMATCH),
+  -- and its status still answers.
+  request_digest BLOB CHECK (request_digest IS NULL OR length(request_digest) = 32),
+  digest_key_id TEXT CHECK (digest_key_id IS NULL OR (length(digest_key_id) BETWEEN 1 AND 16 AND digest_key_id NOT GLOB '*[^a-z0-9]*')),
   entity TEXT NOT NULL CHECK (length(entity) BETWEEN 1 AND 64 AND entity GLOB '[a-z]*' AND entity NOT GLOB '*[^a-z0-9_]*'),
   entity_id TEXT NOT NULL,
   entity_version INTEGER NOT NULL CHECK (entity_version >= 1),
   outcome TEXT NOT NULL CHECK (outcome IN ('created', 'updated', 'deleted', 'restored', 'archived', 'unarchived', 'accepted')),
   entity_state TEXT NOT NULL CHECK (entity_state IN ('active', 'deleted', 'purged')),
   revision INTEGER NOT NULL UNIQUE CHECK (revision >= 1),
-  committed_at TEXT NOT NULL
-);
+  committed_at TEXT NOT NULL,
+  CONSTRAINT command_receipts_digest_pair_check CHECK ((request_digest IS NULL) = (digest_key_id IS NULL))
+) STRICT;
+--> statement-breakpoint
+CREATE INDEX command_receipts_digest_age_idx ON command_receipts (committed_at) WHERE request_digest IS NOT NULL;
 --> statement-breakpoint
 CREATE TABLE entity_changes (
   revision INTEGER NOT NULL CHECK (revision >= 1),
@@ -207,7 +233,7 @@ CREATE TABLE entity_changes (
   group_bytes INTEGER CHECK (group_bytes IS NULL OR (ordinal = 0 AND group_bytes > 0)),
   PRIMARY KEY (revision, ordinal),
   CHECK ((state = 'purged') = (snapshot IS NULL))
-);
+) STRICT;
 --> statement-breakpoint
 CREATE INDEX entity_changes_groups_idx ON entity_changes (revision) WHERE ordinal = 0;
 --> statement-breakpoint
@@ -218,7 +244,7 @@ CREATE TABLE entity_heads (
   state TEXT NOT NULL CHECK (state IN ('active', 'deleted', 'purged')),
   revision INTEGER NOT NULL CHECK (revision >= 1),
   PRIMARY KEY (entity, entity_id)
-);
+) STRICT;
 --> statement-breakpoint
 CREATE TABLE audit_events (
   revision INTEGER PRIMARY KEY CHECK (revision >= 1),
@@ -228,7 +254,7 @@ CREATE TABLE audit_events (
   client_id TEXT NOT NULL CHECK (length(client_id) BETWEEN 1 AND 255),
   metadata TEXT NOT NULL DEFAULT '{}' CHECK (json_valid(metadata) AND json_type(metadata) = 'object'),
   created_at TEXT NOT NULL
-);
+) STRICT;
 --> statement-breakpoint
 CREATE TRIGGER command_receipts_current_revision BEFORE INSERT ON command_receipts
   WHEN NEW.revision IS NOT (SELECT revision FROM sync_state WHERE id = 1)

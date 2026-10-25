@@ -1,8 +1,10 @@
 // The vault's Drizzle schema: one table object per core table, matching the
 // migrated SQL column for column (migrations/0000_vault_core.sql). The
 // constraints live in the SQL; this file names the columns for queries. A test
-// keeps the two in step. Every primary key column is declared notNull, because
-// the test reads table_info as not-null for a primary key.
+// keeps the two in step. Every primary key column is declared notNull: each
+// table is STRICT, so SQLite refuses a NULL key and reports the column as NOT
+// NULL. Only INTEGER PRIMARY KEY (a rowid alias) reports notnull 0, which the
+// test accounts for.
 import { getTableName } from 'drizzle-orm'
 import { blob, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
@@ -98,8 +100,8 @@ export const commandReceipts = sqliteTable('command_receipts', {
   commandId: text('command_id').primaryKey().notNull(),
   kind: text('kind').notNull(),
   schemaVersion: integer('schema_version').notNull(),
-  requestDigest: blob('request_digest', { mode: 'buffer' }).notNull(),
-  digestKeyId: text('digest_key_id').notNull(),
+  requestDigest: blob('request_digest', { mode: 'buffer' }),
+  digestKeyId: text('digest_key_id'),
   entity: text('entity').notNull(),
   entityId: text('entity_id').notNull(),
   entityVersion: integer('entity_version').notNull(),
