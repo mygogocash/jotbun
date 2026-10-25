@@ -247,8 +247,11 @@ describe('the change group', () => {
     const commands = fixtureCommands(user)
     const coffee = purchase()
     await commands.create(coffee)
-    const stale = () => ({ entityId: coffee.id, version: 1, changes: [{ entity: FIXTURE_ENTITY, id: coffee.id, version: 1, state: 'active' as const, snapshot: { ...coffee } }] })
-    await expect(commands.create(purchase(), { result: stale })).rejects.toThrow()
+    // The payload names the existing entity. The mutation writes nothing (a second
+    // fixture insert would hit the table's primary key first), so the head guard in
+    // appendChanges is what refuses the group.
+    const stale = { entityId: coffee.id, version: 1, changes: [{ entity: FIXTURE_ENTITY, id: coffee.id, version: 1, state: 'active' as const, snapshot: { ...coffee } }] }
+    await expect(inVault(user, (c) => runCommand(c, { commandId: randomUUID(), kind: 'fixture.purchase.create', schemaVersion: 1, payload: coffee }, () => stale))).rejects.toThrow(/did not move forward/)
     expect(await revisionOf(user)).toBe('1')
     expect(await countRows(user, 'fixture_purchases')).toBe(1)
   })
@@ -497,6 +500,22 @@ describe('POST /v1/commands/status', () => {
     const res = await client.as(user).post('/v1/commands/status', { command_ids: Array.from({ length: 100 }, () => randomUUID()) })
     expect(res.status).toBe(200)
     expect((await res.json()).statuses).toHaveLength(100)
+  })
+
+  it('a status lookup of exactly 100 command ids returns 100 statuses', async () => {
+    const user = await member(client)
+    const first = await (await client.as(user).post('/v1/wallets', wallet())).json()
+    const second = await (await client.as(user).post('/v1/wallets', wallet())).json()
+    const ids = [first.command_id, second.command_id, ...Array.from({ length: 98 }, () => randomUUID())]
+    const res = await client.as(user).post('/v1/commands/status', { command_ids: ids })
+    expect(res.status).toBe(200)
+    const { statuses } = await res.json()
+    expect(statuses).toHaveLength(100)
+    expect(statuses.slice(0, 2)).toEqual([
+      { command_id: first.command_id, state: 'known', ack: first },
+      { command_id: second.command_id, state: 'known', ack: second },
+    ])
+    expect(statuses.slice(2).every((status: { state: string }) => status.state === 'unknown')).toBe(true)
   })
 
   it('needs a bound session but not current policy acceptance', async () => {

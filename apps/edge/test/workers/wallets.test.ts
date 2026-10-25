@@ -5,11 +5,12 @@
 // each person's wallets live only in that person's own vault.
 import { randomUUID } from 'node:crypto'
 
+import { runInDurableObject } from 'cloudflare:test'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { bangkokDate, isWalletSnapshot } from '@gogospend/contracts'
 
-import { BASE, member, newUser, signedHeaders, startV1 } from './support/v1-client'
+import { BASE, member, newUser, signedHeaders, startV1, vaultOf } from './support/v1-client'
 import type { TestUser, V1Client } from './support/v1-client'
 import { sqlExec, sqlRows } from './support/command-fixtures'
 
@@ -32,7 +33,7 @@ async function created(user: TestUser, overrides: Record<string, unknown> = {}) 
 }
 
 describe('creating wallets', () => {
-  it('creates a THB wallet whose balance starts at its opening balance', async () => {
+  it('creates a wallet whose balance starts at its opening balance', async () => {
     const user = await member(client)
     const body = wallet({ name: '  Cash  ' })
     const res = await client.as(user).post('/v1/wallets', body)
@@ -222,12 +223,35 @@ describe('archiving wallets', () => {
   })
 })
 
+describe('listing wallets', () => {
+  it('the wallet list still answers for an account with 101 wallets', async () => {
+    const user = await member(client)
+    // Seeded with SQL, not POST, so the write budget is not what this test measures.
+    await runInDurableObject(vaultOf(user), (_vault, state) => {
+      for (let i = 0; i < 101; i += 1) {
+        state.storage.sql
+          .exec(
+            "INSERT INTO wallets (id, name, currency, opening_minor, tracking_start, archived, version, created_at, updated_at) VALUES (?, ?, 'THB', 0, '2026-10-01', 0, 1, '2026-10-25T00:00:00.000Z', '2026-10-25T00:00:00.000Z')",
+            randomUUID(),
+            `Wallet ${i}`,
+          )
+          .toArray()
+      }
+    })
+    const res = await client.as(user).get('/v1/wallets')
+    expect(res.status).toBe(200)
+    const list = await res.json()
+    expect(list).toHaveLength(101)
+    expect(list.every((item: { balance_minor: string }) => item.balance_minor === '0')).toBe(true)
+  })
+})
+
 describe('balances from records', () => {
   it('a balance is the opening balance plus live income and transfers, minus expenses; a correction needs a reason once a record exists', async () => {
     const user = await member(client)
     const cash = await created(user, { opening_minor: '10000', tracking_start: '1990-01-01' })
     const bank = await created(user, { opening_minor: '0', tracking_start: '1990-01-01' })
-    // Transaction commands arrive in Task 6; until then the records are written directly.
+    // Transaction commands arrive in Task 5; until then the records are written directly.
     const category = randomUUID()
     await sqlExec(user, "INSERT INTO categories (id, type, builtin_key, label, color, archived, version, created_at, updated_at) VALUES (?, 'expense', 'food', NULL, NULL, 0, 1, '2026-10-25T00:00:00.000Z', '2026-10-25T00:00:00.000Z')", category)
     await sqlExec(user, "INSERT INTO transactions (id, type, amount_minor, occurred_on, wallet_id, category_id, version, created_at, updated_at) VALUES (?, 'expense', 1500, '1990-01-10', ?, ?, 1, 'x', 'x')", randomUUID(), cash.id, category)

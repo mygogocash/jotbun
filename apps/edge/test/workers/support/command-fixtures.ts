@@ -104,8 +104,6 @@ export async function inVault<T>(user: TestUser, run: (c: VaultContext) => T, sc
 export type CreateOptions = {
   commandId?: string
   schemaVersion?: number
-  /** Runs inside the mutation, before the write. */
-  during?: (c: VaultContext) => void
   /** Overrides the returned mutation result (to test the change writer's checks). */
   result?: (purchase: FixturePurchase) => VaultMutation
 }
@@ -122,7 +120,6 @@ export function fixtureCommands(user: TestUser, scope: FixtureScope = {}) {
       (c) =>
         runCommand(c, { commandId: options.commandId ?? randomUUID(), kind: 'fixture.purchase.create', schemaVersion: options.schemaVersion ?? 1, payload: p }, () => {
           counter.executions += 1
-          options.during?.(c)
           c.sql.exec('INSERT INTO fixture_purchases (id, amount_minor, note, version) VALUES (?, ?, ?, 1)', p.id, p.amount_minor, p.note).toArray()
           if (options.result) return options.result(p)
           return { entityId: p.id, version: 1, changes: [{ entity: FIXTURE_ENTITY, id: p.id, version: 1, state: 'active', snapshot: p }] }

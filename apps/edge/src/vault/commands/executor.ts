@@ -14,7 +14,7 @@ import { findReceipt, insertReceipt } from './receipts'
 
 export type AuditMetadata = Readonly<Record<string, string>>
 export type VaultMutation = { entityId: string; version: number; changes: readonly EntityChange[]; audit?: AuditMetadata }
-export type IfMatchRule = 'required' | 'forbidden' | 'optional'
+export type IfMatchRule = Parameters<typeof commandHeaders>[1]
 
 const AUDIT_KEY = /^[a-z][a-z0-9_]{0,31}$/
 const AUDIT_VALUE = /^[a-z0-9][a-z0-9_.-]{0,63}$/
@@ -37,7 +37,7 @@ function primaryChange(command: CommandDefinition, result: VaultMutation): Entit
 
 /**
  * The one protocol for every business write, run inside the call's transaction
- * (UserVault#call opens it; a nested block is refused). The steps are
+ * (UserVault#call opens it; runCommand never opens a nested block, R21). The steps are
  * CommandExecutor.run's (apps/api): the target and digest first, then
  *   1. the account and session again, and for a current-policy kind the policy;
  *   2. a committed command id replays its acknowledgement, and the same id with

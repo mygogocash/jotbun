@@ -70,7 +70,8 @@ export function lookupStatuses(c: VaultContext, ids: readonly string[]): Command
     ids.length === 0
       ? []
       : c.sql
-          .exec<AckRow>(`SELECT ${ACK_COLUMNS} FROM command_receipts r ${HEAD_JOIN} WHERE r.command_id IN (${ids.map(() => '?').join(', ')})`, ...ids)
+          // The id list binds as one JSON parameter (R57), so a list of any length is one bound value.
+          .exec<AckRow>(`SELECT ${ACK_COLUMNS} FROM command_receipts r ${HEAD_JOIN} WHERE r.command_id IN (SELECT value FROM json_each(?))`, JSON.stringify(ids))
           .toArray()
   const known = new Map(rows.map((row) => [row.command_id, toAck(row)]))
   return ids.map((id): CommandStatus => {

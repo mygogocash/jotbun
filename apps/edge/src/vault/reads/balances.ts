@@ -13,7 +13,8 @@ const DAY_MS = 86_400_000
  */
 export function walletBalances(c: VaultContext, ids?: readonly string[]): Map<string, string> {
   if (ids !== undefined && ids.length === 0) return new Map()
-  const where = ids === undefined ? '' : `WHERE w.id IN (${ids.map(() => '?').join(', ')})`
+  // The id list binds as one JSON parameter (R57): SQLite refuses more than 100 bound parameters.
+  const where = ids === undefined ? '' : 'WHERE w.id IN (SELECT value FROM json_each(?))'
   const rows = c.sql
     .exec<{ id: string; balance: string }>(
       `SELECT w.id, CAST(w.opening_minor + coalesce((
@@ -26,7 +27,7 @@ export function walletBalances(c: VaultContext, ids?: readonly string[]): Map<st
             SELECT t.amount_minor FROM transactions t WHERE t.destination_wallet_id = w.id AND t.deleted_at IS NULL
           ) x), 0) AS TEXT) AS balance
          FROM wallets w ${where}`,
-      ...(ids ?? []),
+      ...(ids === undefined ? [] : [JSON.stringify(ids)]),
     )
     .toArray()
   return new Map(rows.map((row) => [row.id, row.balance]))
