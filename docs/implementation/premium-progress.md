@@ -355,3 +355,37 @@ What the owner asked for, and where each part stands. Commits on `claude/premium
 | Premium haptic feedback | One vocabulary of moments (`motion.haptic`), an On/Subtle/Off setting, 22 screens and components calling `playHaptic`. | Done in code; not yet felt on a real device. |
 | AI that people love and use daily | Tell Bun (sentences and slips), Ask Bun (grounded figures, follow-ups), Bun's daily note, "often logged" chips; `claude-opus-5-5` with fallbacks; consent, daily limits and grounding on the server. | Done in code with a scripted model; live calls wait for an Anthropic key. |
 | Trust, and a bridge to GoGoCash | The cashback card: a count, never a guessed amount; asked once; "Why am I seeing this?" and "How cashback works"; matching on the phone, nothing sent; Open GoGoCash with no diary data. | Done. A hosted GoGoCash catalogue URL is still to come. |
+
+## P2: Bun Wallet core
+
+Phase P2 builds the Bun Wallet area on the app. Task 7 replaces the Thai everyday list with C3's nine and keeps the routed Categories screen on today's seven until that screen is allowed to switch.
+
+### P2 Task 7: Thai everyday pack
+
+- **Status:** built and verified locally on `p2/t7-thai-pack`, on top of `60e2026`. Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - `apps/app/src/spend/v1/redesign/planning/thaiPack.ts`: C3's nine (`THAI_EVERYDAY_PACK`), today's seven (`PACK_BEFORE_C3`), matching over the Thai name, the English name and every alias, `packCommands`'s `only` filter, `packKeyOf` and `analyticsCategoryKey`.
+  - `apps/app/src/spend/v1/redesign/planning/thaiPack.test.ts`: the brief's cases. The hue and uniqueness test stays. The existing skip assertion now expects C3's missing keys.
+  - `apps/app/src/screens/redesign/planning/CategoriesScreen.tsx`: both calls pass `PACK_BEFORE_C3`, so the routed screen still offers today's seven.
+- **RED to GREEN:**
+  - RED, `npm run test:unit -w gogospend-app -- src/spend/v1/redesign/planning/thaiPack.test.ts`: 1 failed, 0 passed. The file failed to load: `The requested module './thaiPack.ts' does not provide an export named 'PACK_BEFORE_C3'`.
+  - GREEN, the same command: 9 passed, 0 failed.
+- **Mutation check:** `thaiPack.ts` was copied to `/tmp/p2-t7-thaiPack.ts` before either mutant. sha256 `9769b5501eeb286b7a9306dc352e28d3722ee2991931a1b16ed2c5ea0622ad22`. Each mutant was applied in place, the focused file was run, and the file was restored with `cp`. The checksum matched after both restores.
+  - Aliases dropped from `foldedNames` (Thai and English only): 1 failed, 8 passed. `a person who added the earlier pack gets no second delivery or top-up category` failed, as the brief expects.
+  - `packKeyOf` ignores the category type: 1 failed, 8 passed. The second assertion failed: expected `null`, actual `'pets'`.
+- **Gate** (worktree root, after the file was restored). The edge database suite was not run.
+  - `npm run test:unit -w gogospend-app -- src/spend/v1/redesign/planning/thaiPack.test.ts`: 9 passed, 0 failed.
+  - `npm run test:render -w gogospend-app -- src/screens/redesign/planning/CategoriesScreen.render.test.tsx src/dev/catalogue/CatalogueScreen.render.test.tsx`: 2 files passed, 318 tests passed. The routed screen still adds today's six missing categories when Pets is already there (`สั่งอาหารเดลิเวอรี่`, `ค่าโทรศัพท์และเน็ต`, and the other four).
+  - `npm run typecheck -w gogospend-app`: passes. The brief does not name it. The render runner does not typecheck, so it was run once on the restored code.
+- **English names, drafts for E2-C.** C3's English, not yet shown by the routed screen: Family support, Merit making, Delivery, Motorbike taxi and rail, Mobile top-up, Convenience store, Lottery, Pets, From family. The screen still shows today's seven, including Food delivery and Phone and internet.
+- **Ported in full:** not a port. The items stay ordinary custom categories (D18), named in the person's language.
+- **Not applicable:** PostgreSQL roles, grants, row-level security, connection pools, isolation levels and lock waits. This task does not query the vault.
+- **Deviations:**
+  1. The existing skip test expected `family_out`, `delivery`, `phone`, `lottery`, `family_in`. It now expects `family_out`, `delivery`, `motorbike_rail`, `topup`, `seven`, `lottery`, `family_in`, because `missingPackItems` defaults to C3. The inputs are unchanged: folded `ทำบุญ`, folded `PETS`, `From family` typed as an expense, and a null label.
+- **SKIPPED (hosted):** nothing deployed. No cloud resource was created.
+- **Notes for later tasks:**
+  - P2-T38 switches the two `CategoriesScreen` calls from `PACK_BEFORE_C3` to `THAI_EVERYDAY_PACK`.
+  - R23: analytics names and the consent gate stay with 1D. This task exports `analyticsCategoryKey` and the pack keys. `apps/app/src/analytics` was not edited. The key is the built-in key, else the pack key, else `custom` (R61). No category (a transfer) is `null`.
+  - The spec's C3 line says a pack category is tagged with a `pack_key`. This task recognises one by its folded name. Nothing is stored. 1D can take its allow-list from `THAI_EVERYDAY_PACK.map((item) => item.key)`.
+  - R81: wallet types were not touched. No `ewallet`.
+  - `packKeyOf` and `missingPackItems` share `foldedNames`, so an alias matches both. The named `packKeyOf` test uses the primary Thai name, with spaces. Dropping aliases fails the earlier-pack test.
