@@ -24,6 +24,8 @@ export type DiaryView = {
   /** Synced, open wallets and categories on this device: what an offline draft may use. */
   wallets: WalletSnapshot[];
   categories: CategoryDto[];
+  /** The open diary's account; null with no open diary (web, opening, locked, signed out). */
+  accountId: string | null;
 };
 
 /** The signed-in account (its internal id) and the session epoch, or nobody. */
@@ -80,7 +82,7 @@ export interface SpendDiary {
   close(): Promise<void>;
 }
 
-const EMPTY: DiaryView = { phase: 'unavailable', lockReason: null, outcome: null, progress: null, pending: [], outbox: [], wallets: [], categories: [] };
+const EMPTY: DiaryView = { phase: 'unavailable', lockReason: null, outcome: null, progress: null, pending: [], outbox: [], wallets: [], categories: [], accountId: null };
 
 const BUILTIN_ORDER = new Map<string, number>(BUILTIN_CATEGORIES.map((category, index) => [category.key, index]));
 
@@ -158,7 +160,7 @@ export function createSpendDiary(deps: SpendDiaryDeps): SpendDiary {
   function onOutcome(target: DiaryStore, outcome: SyncOutcome): void {
     if (target !== store) return;
     if (outcome.status === 'signed_out') {
-      emit({ ...view, phase: 'locked', lockReason: 'signed_out', outcome, progress: null });
+      emit({ ...view, phase: 'locked', lockReason: 'signed_out', outcome, progress: null, accountId: null });
       void closeCurrent();
       return;
     }
@@ -196,7 +198,7 @@ export function createSpendDiary(deps: SpendDiaryDeps): SpendDiary {
     }
     store = opened;
     sync = deps.makeSync(opened, { accountId, epoch: next.epoch }, { outcome: (outcome) => onOutcome(opened, outcome), progress: (progress) => onProgress(opened, progress) });
-    emit({ ...EMPTY, phase: 'ready' });
+    emit({ ...EMPTY, phase: 'ready', accountId });
     await refresh(opened);
     await sync.scheduler.launch();
     await refresh(opened);

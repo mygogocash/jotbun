@@ -414,6 +414,69 @@ test('no import draft store while no diary is open: opening, locked, signed out,
   assert.equal(web.importDraftStore(), null);
 });
 
+test("the view names the open diary's account, and nobody without one", async () => {
+  const { diary, session, keys } = await setup();
+  assert.equal(diary.getView().accountId, ACCOUNT_A);
+
+  Object.assign(session, { accountId: ACCOUNT_B, epoch: 2 });
+  await diary.sessionChanged();
+  assert.equal(diary.getView().phase, 'ready');
+  assert.equal(diary.getView().accountId, ACCOUNT_B);
+
+  Object.assign(session, { accountId: null, epoch: 3 });
+  await diary.sessionChanged();
+  assert.equal(diary.getView().phase, 'unavailable');
+  assert.equal(diary.getView().accountId, null);
+
+  Object.assign(session, { accountId: ACCOUNT_A, epoch: 4 });
+  await keys.delete(ACCOUNT_A);
+  await diary.sessionChanged();
+  assert.equal(diary.getView().phase, 'locked');
+  assert.equal(diary.getView().accountId, null);
+
+  const firstFiles = files;
+  const refused = await setup();
+  firstFiles?.dispose();
+  refused.server.scriptOthers(PROBLEMS.signedOut());
+  refused.server.scriptSends(PROBLEMS.signedOut(), PROBLEMS.signedOut());
+  await refused.diary.saveDraft(draft());
+  await refused.diary.retry();
+  assert.equal(refused.diary.getView().phase, 'locked');
+  assert.equal(refused.diary.getView().lockReason, 'signed_out');
+  assert.equal(refused.diary.getView().accountId, null);
+
+  let release: () => void = () => undefined;
+  const opening = createSpendDiary({
+    open: async (accountId) => {
+      await new Promise<void>((resolve) => (release = resolve));
+      return { accountId, lock: async () => undefined, readState: async () => ({ cursor: null, appliedRevision: '0', confirmed: [], pending: [], walletTotals: {} }), readOutbox: async () => [] } as unknown as DiaryStore;
+    },
+    discard: async () => undefined,
+    session: () => ({ accountId: ACCOUNT_A, epoch: 1 }),
+    now: () => Date.now(), newId: () => randomUUID(), schemaVersion: 1,
+    makeSync: () => ({ engine: { flush: async () => ({}) } as never, scheduler: { launch: async () => undefined, stop: () => undefined } as never }),
+  });
+  const pendingOpen = opening.sessionChanged();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(opening.getView().phase, 'opening');
+  assert.equal(opening.getView().accountId, null);
+  release();
+  await pendingOpen;
+  assert.equal(opening.getView().phase, 'ready');
+  assert.equal(opening.getView().accountId, ACCOUNT_A);
+
+  const web = createSpendDiary({
+    open: (accountId, epoch) => new AccountDatabase({ files: webDiaryFiles(), keys: createMemoryKeyStore(), epoch: () => 1 }).open(accountId, epoch),
+    discard: async () => undefined,
+    session: () => ({ accountId: ACCOUNT_A, epoch: 1 }),
+    now: () => Date.now(), newId: () => randomUUID(), schemaVersion: 1,
+    makeSync: () => { throw new Error('never synced'); },
+  });
+  await web.sessionChanged();
+  assert.equal(web.getView().phase, 'unavailable');
+  assert.equal(web.getView().accountId, null);
+});
+
 test("the explicit sign-out erase takes the diary's import draft with it", async () => {
   const { diary, session, record } = await setup();
   await diary.importDraftStore()?.save(reviewing());
