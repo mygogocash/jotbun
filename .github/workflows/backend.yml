@@ -77,13 +77,15 @@ jobs:
       - run: npm run test:ops
         env:
           GOGOSPEND_OPS_REQUIRE_DB: '1'
-      # The edge Worker (apps/edge, its own lockfile): types, unit tests and
-      # build, then its PostgreSQL suites, including the differential run
-      # against the built NestJS v1 server and the built Worker in workerd.
+      # The edge Worker (apps/edge, its own lockfile): types, unit tests, the
+      # UserVault suites in workerd and build, then its PostgreSQL suites,
+      # including the differential run against the built NestJS v1 server and
+      # the built Worker in workerd.
       - run: npm run build -w gogospend-api
       - run: npm run install:edge
       - run: npm run typecheck:edge
       - run: npm run test:edge
+      - run: npm run test:edge:workers
       - run: npm run build:edge
       - run: npm run test:edge:db
 
