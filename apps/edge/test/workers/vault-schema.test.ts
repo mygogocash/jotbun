@@ -59,6 +59,41 @@ it("a category's type and built-in key never change", async () => {
   await expect(sql(stub, "UPDATE categories SET builtin_key = 'food' WHERE id = ?", id)).rejects.toThrow(/immutable/)
 })
 
+const CATEGORY_COLUMNS = 'id, type, builtin_key, label, color, archived, version, created_at, updated_at'
+const CATEGORY_TIME = "'2026-10-25T00:00:00.000Z', '2026-10-25T00:00:00.000Z'"
+/** Inserts a custom expense category (or the given type) with the given SQL verb and suffix. */
+const insertCategory = (stub: DurableObjectStub, id: string, type = 'expense', verb = 'INSERT', suffix = '') =>
+  sql(stub, `${verb} INTO categories (${CATEGORY_COLUMNS}) VALUES (?, ?, NULL, 'Snacks', NULL, 0, 1, ${CATEGORY_TIME})${suffix}`, id, type)
+
+it('a category id never changes', async () => {
+  const stub = vault()
+  const id = crypto.randomUUID()
+  await insertCategory(stub, id)
+  await expect(sql(stub, 'UPDATE categories SET id = ? WHERE id = ?', crypto.randomUUID(), id)).rejects.toThrow(/id is immutable/)
+  expect(await sql(stub, 'SELECT count(*) AS n FROM categories WHERE id = ?', id)).toEqual([{ n: 1 }])
+})
+
+it('INSERT OR REPLACE cannot flip a category in use, but an identical ON CONFLICT DO NOTHING insert is allowed', async () => {
+  const stub = vault()
+  const id = crypto.randomUUID()
+  await insertCategory(stub, id, 'expense')
+  await expect(insertCategory(stub, id, 'income', 'INSERT OR REPLACE')).rejects.toThrow(/cannot be replaced/)
+  await insertCategory(stub, id, 'expense', 'INSERT', ' ON CONFLICT DO NOTHING')
+  expect(await sql(stub, 'SELECT type FROM categories WHERE id = ?', id)).toEqual([{ type: 'expense' }])
+})
+
+it('a category is never deleted', async () => {
+  const stub = vault()
+  const id = crypto.randomUUID()
+  await insertCategory(stub, id)
+  await expect(sql(stub, 'DELETE FROM categories WHERE id = ?', id)).rejects.toThrow(/never deleted/)
+  expect(await sql(stub, 'SELECT count(*) AS n FROM categories WHERE id = ?', id)).toEqual([{ n: 1 }])
+})
+
+it('a category has a label or a built-in key', async () => {
+  await expect(sql(vault(), "INSERT INTO categories (id, type, builtin_key, label, color, archived, version, created_at, updated_at) VALUES (?, 'expense', NULL, NULL, NULL, 0, 1, '2026-10-25T00:00:00.000Z', '2026-10-25T00:00:00.000Z')", crypto.randomUUID())).rejects.toThrow(/CHECK/)
+})
+
 it('a receipt can drop its digest pair, but never just one half', async () => {
   const receipt = (stub: DurableObjectStub, digest: string, keyId: string) =>
     sql(stub, `INSERT INTO command_receipts (command_id, kind, schema_version, request_digest, digest_key_id, entity, entity_id, entity_version, outcome, entity_state, revision, committed_at) VALUES (?, 'wallet.create', 1, ${digest}, ${keyId}, 'wallet', ?, 1, 'created', 'active', 1, '2026-10-25T00:00:00.000Z')`, crypto.randomUUID(), crypto.randomUUID())
