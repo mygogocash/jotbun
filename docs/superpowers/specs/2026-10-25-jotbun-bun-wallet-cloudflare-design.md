@@ -159,7 +159,8 @@ D1 to D22 still stand, except where a decision below supersedes one. Numbers con
   - `jose`;
   - `@cloudflare/vitest-pool-workers`, which Cloudflare has renamed `@cloudflare/vitest-plugin`. The owner approved the new name on 25 October 2026;
   - `posthog-react-native`, `@posthog/react-native-plugin`, `posthog-node` and `@posthog/ai`;
-  - Reanimated, Gesture Handler and Skia;
+  - Reanimated (with `react-native-worklets`, which Reanimated 4 requires), Gesture Handler and Skia;
+  - `expo-local-authentication`, for the Face ID lock (owner, 25 October 2026);
   - native Apple and Google sign-in.
 
   Any other new package, and any lockfile regeneration with Linux bindings, still needs the owner's yes.
@@ -241,7 +242,7 @@ The dark values for paper, sky and peach are on the `dk-*` boards.
 | Cashback | 14 รายการอาจได้คืน | คุณจะได้เงินคืน ฿320 |
 | Failure | ส่งไม่สำเร็จ บันทึกยังอยู่ในเครื่อง | เกิดข้อผิดพลาด 500 |
 
-Streaks count days logged. A skipped day restarts the count without a warning.
+Streaks count days logged. A skipped day pauses the count: it never restarts it and never warns, as board `bw-wallet` says ("ข้ามวันได้ ไม่เสียสถิติ"; the owner chose the board over the earlier restart rule on 25 October 2026).
 
 **New app libraries:** Reanimated and Gesture Handler (the card stack and trays), a bottom sheet or native sheets, and Skia (charts). The haptic vocabulary (D17) already exists. The builder confirms versions against Expo SDK 58.
 
@@ -815,7 +816,7 @@ Order, not dates. Each phase ends with a proof on a real phone. The owner approv
 5. **Travel:** the rate feed (after D31), the currency fields in the contract, wallet currencies, trips, own rates, exchange, and changing the home currency.
 
    **Proof:** a trip adds up to the satang.
-6. **Outside the app, then beta:** widgets, the share extension, quick actions, Siri, emails, surveys and experiments, and the break-glass tool. Then staging and production with the owner, and a closed beta.
+6. **Outside the app, then beta:** widgets, the share extension, quick actions, Siri, emails, surveys and experiments, and the break-glass tool. Also the cashback tab (`cb-*`; until then the app shows only the count pill, D42), the Bun Wallet look for Settings and Privacy (`st-*`; phase 2 keeps today's look for them), and whether the recap is shared as an image (it is shared as text until then). The owner placed these here on 25 October 2026. Then staging and production with the owner, and a closed beta.
 
 ## 9. Left to the builder
 
