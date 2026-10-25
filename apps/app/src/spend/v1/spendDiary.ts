@@ -3,7 +3,7 @@ import type { CategoryDto, WalletSnapshot } from '@gogospend/contracts';
 
 import type { DiaryStore } from '../../storage/diaryRepository.ts';
 import { DiaryLocked, DiarySchemaTooNew, DraftReferenceUnavailable, StaleEpochError } from '../../storage/types.ts';
-import type { DiaryLockReason, OutboxCommand, PendingEntry } from '../../storage/types.ts';
+import type { DiaryLockReason, OutboxCommand, PendingChoice, PendingEntry } from '../../storage/types.ts';
 import type { DiaryState } from '../../storage/diaryRepository.ts';
 import type { SyncScheduler } from '../../sync/scheduler.ts';
 import type { SyncEngine } from '../../sync/syncEngine.ts';
@@ -21,6 +21,8 @@ export type DiaryView = {
   progress: { sent: number; total: number } | null;
   pending: PendingEntry[];
   outbox: OutboxCommand[];
+  /** Refused online edits kept on this device until the person picks a version (C16), oldest refusal first. */
+  pendingChoices: PendingChoice[];
   /** Synced, open wallets and categories on this device: what an offline draft may use. */
   wallets: WalletSnapshot[];
   categories: CategoryDto[];
@@ -64,6 +66,10 @@ export interface SpendDiary {
   removeDraft(commandId: string): Promise<void>;
   /** Discards a draft that needs review (the server never committed it). */
   discardDraft(commandId: string): Promise<void>;
+  /** Keeps a refused online edit as a pending choice on the device (C16). Never sent by itself; rejects when no diary is open. */
+  keepChoice(choice: PendingChoice): Promise<void>;
+  /** Drops a record's pending choice; a missing one is not an error. */
+  dropChoice(recordId: string): Promise<void>;
   /** A locked diary's explicit discard: deletes this account's diary on the device and starts over from the synced one. */
   discardDiary(): Promise<void>;
   /** Explicit sign-out: deletes this account's diary on the device (call after the user confirmed). */
@@ -80,7 +86,7 @@ export interface SpendDiary {
   close(): Promise<void>;
 }
 
-const EMPTY: DiaryView = { phase: 'unavailable', lockReason: null, outcome: null, progress: null, pending: [], outbox: [], wallets: [], categories: [] };
+const EMPTY: DiaryView = { phase: 'unavailable', lockReason: null, outcome: null, progress: null, pending: [], outbox: [], pendingChoices: [], wallets: [], categories: [] };
 
 const BUILTIN_ORDER = new Map<string, number>(BUILTIN_CATEGORIES.map((category, index) => [category.key, index]));
 
@@ -139,8 +145,8 @@ export function createSpendDiary(deps: SpendDiaryDeps): SpendDiary {
   async function refresh(target: DiaryStore | null): Promise<void> {
     if (!target || target !== store) return;
     try {
-      const [state, outbox] = await Promise.all([target.readState(), target.readOutbox()]);
-      if (target === store) emit({ ...view, pending: state.pending, outbox, ...references(state) });
+      const [state, outbox, pendingChoices] = await Promise.all([target.readState(), target.readOutbox(), target.readChoices()]);
+      if (target === store) emit({ ...view, pending: state.pending, outbox, pendingChoices, ...references(state) });
     } catch {
       // Locked or from an earlier session: nothing to show from it.
     }
@@ -274,6 +280,16 @@ export function createSpendDiary(deps: SpendDiaryDeps): SpendDiary {
     async discardDraft(commandId) {
       const target = current();
       await target.discardReviewed(commandId);
+      await refresh(target);
+    },
+    async keepChoice(choice) {
+      const target = current();
+      await target.keepChoice(choice);
+      await refresh(target);
+    },
+    async dropChoice(recordId) {
+      const target = current();
+      await target.dropChoice(recordId);
       await refresh(target);
     },
     async discardDiary() {

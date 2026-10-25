@@ -57,6 +57,21 @@ export const DIARY_MIGRATIONS: readonly DiaryMigration[] = [
       `CREATE TABLE import_drafts (key TEXT PRIMARY KEY, value TEXT NOT NULL) STRICT`,
     ],
   },
+  {
+    version: 3,
+    statements: [
+      // A refused online edit kept until the person picks a version (C16): one row per
+      // record, each value as JSON as the store writes it. Never sent by itself.
+      `CREATE TABLE pending_choices (
+         record_id TEXT PRIMARY KEY,
+         original TEXT NOT NULL,
+         changes TEXT NOT NULL,
+         server TEXT NOT NULL,
+         edited_at TEXT NOT NULL,
+         refused_at TEXT NOT NULL
+       ) STRICT`,
+    ],
+  },
 ];
 
 /** Applies pending migrations; refuses a diary written by a newer app version. Returns the version. */
