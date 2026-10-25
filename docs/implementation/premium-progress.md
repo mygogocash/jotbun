@@ -229,6 +229,70 @@ Phase 1A moves each person's ledger into one SQLite Durable Object, the UserVaul
   - `commandInput` needs its If-Match rule as the fourth argument. Call it before the body is parsed, with an `undefined` payload, and set the payload afterwards: `runCommand(c, { ...command, payload }, ...)`, as `wallets.ts` does (R41). A payload-first call reads the body before the headers.
   - The Task 2 access cases in `front-door.test.ts` still name `/v1/me`. They could name `/v1/wallets` now. I left them, since they test the pipeline.
 
+## 1D: live pokes, the pending choice and PostHog
+
+Phase 1D adds live pokes, the pending conflict choice and PostHog to the vault core. The design is `docs/superpowers/specs/2026-10-25-jotbun-bun-wallet-cloudflare-design.md` (PostHog is its §7). Task 3 builds the server analytics as a stand-alone module; the Worker wiring is 1D-T11 and T13.
+
+### 1D Task 3: Server analytics as a module
+
+- **Status:** built and verified on worktree `worktree-agent-aee5036b9ab6bfc29` (branch `worktree-agent-aee5036b9ab6bfc29`), from base `68ec183`. Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - Module: `apps/edge/src/analytics/server-analytics.ts`. `analyticsIdFor` is the lowercase hex HMAC-SHA256 of the user id under `ANALYTICS_ID_KEY` (WebCrypto, both read as UTF-8). `createServerAnalytics` returns `null` without `POSTHOG_PROJECT_TOKEN`, and otherwise sends through PostHog EU with the brief's client options. It also holds the allow-listed server events, the anonymous `$exception` and `account_deleted` counts, and `deletePostHogPerson` (persons `bulk_delete` on `eu.posthog.com`).
+  - Test: `apps/edge/test/server-analytics.test.ts` (Node), 14 tests.
+  - Dependency: `apps/edge/package.json` (`"posthog-node": "5.56.2"`, exact, one line) and `apps/edge/package-lock.json`.
+- **Version and lockfile:**
+  - `posthog-node` 5.56.2, published 16 October 2026. The brief's rule is the newest stable release published at least 7 days before the install day (25 October), so 18 October at the latest. The brief's parenthetical names 5.57.1 (23 October), which that rule excludes.
+  - Installed with `npm install --prefix apps/edge --save-exact --before=2026-10-18T00:00:00.000Z posthog-node@5.56.2`. The cutoff holds the transitive packages to the same rule. Without it, npm resolves `@posthog/core` to 1.60.1, published 23 October.
+  - Lockfile: three packages added (`posthog-node@5.56.2`, `@posthog/core@1.59.1` published 14 October, `@posthog/types@1.416.0` published 13 October), none changed or removed. 40 lines added, none removed. Size 151,486 to 152,878 bytes (+1,392 bytes). `npm ls --prefix apps/edge wrangler` shows one wrangler, 4.152.0.
+  - Dependency gate:
+    - Licences: MIT for all three.
+    - Install scripts: none in any of the three.
+    - Peers: `rxjs` and `@opentelemetry/api` are optional and not installed. Engines are `^20.20.0 || >=22.22.0`; the edge requires `>=24`.
+    - Provenance: `posthog-node` 5.56.2 has an SLSA provenance attestation. `npm audit signatures` in `apps/edge` verifies 201 packages' registry signatures and 109 attestations.
+    - Advisories: `npm audit --omit=dev --json` reports 0 before and after this change. The full `npm audit --json` reports 6 findings (3 moderate, 3 high) in `wrangler`, `miniflare`, `undici`, `zod`, `@cloudflare/vite-plugin` and `@cloudflare/vitest-plugin`. All are dev-only and not introduced here: none names a new package, and no existing version changed. Not remediated, since the wrangler pin (4.152.0) is the brief's.
+- **RED:** `npm run test:edge -- test/server-analytics.test.ts` against typed stubs, where each routine returned a wrong typed value: 14 failed, 0 passed. All 14 are assertion failures (for example `expected '' to be '6445f…'`, `promise resolved "'queued'" instead of rejecting`, `expected [] to have a length of 1`). No module failed to load.
+- **GREEN:** the same command, 14 passed, 0 failed.
+- **Mutation check:** the checksums of `server-analytics.ts` (`939b6a4e…d5039`) and the test file (`1e10f58f…2872`) were recorded, and a copy of the module was kept outside the repo. Each mutant was applied in place, the focused file was run, and the module was restored from the copy and its checksum compared.
+  - M1, the record's properties passed through unfiltered: 2 failed (the allow-list test and the value test).
+  - M2, one distinct id reused for every failure: 1 failed (the failure test).
+  - M3, a 202 with `deletion_errors` accepted: 1 failed (the refusal test).
+  - M4, "nothing to delete" decided on the project token instead of the analytics key: 5 failed (the deletion tests).
+  - M5 (added for the identity rule), the analytics-id guard weakened to an empty-string check: 1 failed (the identity test).
+  - M6 (added for the category rule), a category outside the built-in keys sent raw: 1 failed (the value test).
+  - Every restored module matches the recorded checksum. The test file was not edited after the RED run.
+- **Gate** (repo root):
+  - `typecheck:edge`: passes.
+  - `test:edge`: 135 passed (10 files), 14 of them new.
+  - `test:edge:workers`: 128 passed (5 files).
+  - `build:edge`: passes. No entry imports the module yet, so the Worker bundles do not contain PostHog code.
+  - `test:edge:db`: 62 passed (8 files), with the local PostgreSQL container up.
+  - `node --test scripts/ci/lockfile-bindings.test.mjs`: 2 passed.
+  - `npm run build -w gogospend-api`: passes.
+  - Workerd check of the module: `build:edge` does not bundle it, so esbuild 0.28.2 (from `apps/edge/node_modules`) bundled `src/analytics/server-analytics.ts` with the `workerd`, `worker` and `browser` conditions. It resolves `posthog-node`'s edge entry, and the output contains both the EU host and the app host. Nothing was written into the repo.
+- **Deviations:**
+  - Version: the brief's parenthetical names 5.57.1 as the newest release on 25 October, but its own 7-day rule excludes it. The rule gives 5.56.2, which is pinned.
+  - Install command: the `--before` flag is not in the brief's command. It is there to hold the transitive packages to the same cutoff.
+  - The brief's Step 5 says `build:edge` proves that `posthog-node` bundles. It cannot do that until T11 or T13 imports the module, so the workerd check above stands in for it.
+  - The real-client test stubs `globalThis.fetch`. The installed source confirms first that the SDK's `fetch` method calls the global `fetch` at call time (`posthog-node/dist/client.mjs`), so no fallback was needed.
+  - The brief leaves these open. Each is tested:
+    - `capture` drops an analytics id that is not 64 lowercase hex, so a raw user id or an email cannot become a distinct id.
+    - `category_key` outside `BUILTIN_CATEGORIES` is sent as `custom`, as §7 and the global constraints require. An unknown `kind`, or a `reason_code` that fails its pattern, is dropped, and the event is still sent.
+    - `captureAnonymous` sends only `account_deleted`.
+    - A 202 with no `deletion_errors` array counts as a failure. The project id is URI-encoded.
+    - Deletion is decided by the analytics key alone; the project token is not needed (M4 guards this).
+  - `defaultPort` is the PostHog client itself, as the brief says. Its `captureImmediate` cannot reject: `_sendPreparedEvent` in the SDK catches every error, so `waitUntil(client.captureImmediate(message))` cannot reject either.
+  - The "never rotates" rule is in the module's comments. `apps/edge/README.md` is not among this task's files, so the README note belongs beside the secret when T11 or T13 documents it.
+  - Heading: the controller's instruction names `## 1D: live pokes, the pending choice and PostHog`; the global constraints name `... PostHog and the proof`. This section uses the controller's heading. The two should be aligned at merge.
+  - Docker: Docker Desktop had quit between two gate runs. It was started with `open -a Docker`, and the database commands ran with `DOCKER_CONTEXT=desktop-linux`, because the active context had changed to `colima`, which is not running. No global Docker setting was changed.
+- **SKIPPED (hosted; no PostHog project or keys yet, D33):**
+  - A capture that reaches `eu.i.posthog.com`: SKIPPED. The test answers the request with a stub.
+  - `POST eu.posthog.com/api/projects/{id}/persons/bulk_delete` against PostHog: SKIPPED. The 202 contract is the brief's, exercised through a stub.
+  - A real `ANALYTICS_ID_KEY`: unset in every environment, so nothing is sent and deletion answers `nothing_to_delete` (Q5).
+- **Notes for the integrator:**
+  - `posthog-node` logs its own send failures with `console.error(err)`, so an SDK error message can reach the Worker's logs. The logging rule (`failureName` only) cannot be enforced inside the SDK. T11 or T13 may want to wrap the port.
+  - Analytics ids that are not 64 lowercase hex are dropped by design. Tests that pass fake ids to `capture` must use 64 lowercase hex characters.
+  - `@posthog/core` and `@posthog/types` are transitive. A later update of `posthog-node` would resolve them without this cutoff, so the gate applies again then.
+
 ## Not done, or follow-ups
 
 - **Rotating reminder wording (owner decision):** a repeating daily notification cannot change its text, so rotation needs "every day" to become seven weekly reminders, one wording per weekday. The reminders milestone (S4) chose one daily reminder on purpose, and its tests pin it. Cancelling all eight known ids first would still leave one reminder a day, so the change is safe to make if wanted.
