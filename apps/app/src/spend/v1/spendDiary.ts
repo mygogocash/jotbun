@@ -24,6 +24,8 @@ export type DiaryView = {
   /** Synced, open wallets and categories on this device: what an offline draft may use. */
   wallets: WalletSnapshot[];
   categories: CategoryDto[];
+  /** The revision of the last change group applied on this device; '0' when no diary is open. A screen refreshes when it grows. */
+  appliedRevision: string;
 };
 
 /** The signed-in account (its internal id) and the session epoch, or nobody. */
@@ -80,7 +82,7 @@ export interface SpendDiary {
   close(): Promise<void>;
 }
 
-const EMPTY: DiaryView = { phase: 'unavailable', lockReason: null, outcome: null, progress: null, pending: [], outbox: [], wallets: [], categories: [] };
+const EMPTY: DiaryView = { phase: 'unavailable', lockReason: null, outcome: null, progress: null, pending: [], outbox: [], wallets: [], categories: [], appliedRevision: '0' };
 
 const BUILTIN_ORDER = new Map<string, number>(BUILTIN_CATEGORIES.map((category, index) => [category.key, index]));
 
@@ -140,7 +142,7 @@ export function createSpendDiary(deps: SpendDiaryDeps): SpendDiary {
     if (!target || target !== store) return;
     try {
       const [state, outbox] = await Promise.all([target.readState(), target.readOutbox()]);
-      if (target === store) emit({ ...view, pending: state.pending, outbox, ...references(state) });
+      if (target === store) emit({ ...view, pending: state.pending, outbox, appliedRevision: state.appliedRevision, ...references(state) });
     } catch {
       // Locked or from an earlier session: nothing to show from it.
     }

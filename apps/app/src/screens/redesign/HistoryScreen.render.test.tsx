@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, expect, test, vi } from 'vitest';
 
 const nav = vi.hoisted(() => ({
@@ -343,6 +343,24 @@ test('a draft that resolves refreshes the list in place', async () => {
   diary.set({ outbox: [{ ...draft, state: 'acknowledged' }] });
   expect(await screen.findByRole('button', { name: 'Food, Expense ฿65.00, Cash' })).toBeTruthy();
   expect(fake.callsOf('history')).toHaveLength(2);
+});
+
+test('a change pulled from another phone refreshes the list in place', async () => {
+  const fake = createFakeResources(goldenSeed());
+  const diary = createFakeDiary({ ...DIARY_REFERENCES, appliedRevision: '5' });
+  mountScreen(<HistoryScreen now={NOW} />, { resources: fake.resources, diary: diary.diary });
+  await screen.findByRole('button', { name: ROWS.rent });
+  const reads = fake.callsOf('history').length;
+  act(() => {
+    diary.set({ appliedRevision: '7' });
+  });
+  await waitFor(() => expect(fake.callsOf('history')).toHaveLength(reads + 1));
+  expect(await screen.findByRole('button', { name: ROWS.rent })).toBeTruthy();
+  // Another view update at the same revision reads nothing.
+  act(() => {
+    diary.set({ appliedRevision: '7', progress: { sent: 0, total: 1 } });
+  });
+  expect(fake.callsOf('history')).toHaveLength(reads + 1);
 });
 
 test('offline, the month still shows what this device holds, under an offline banner', async () => {

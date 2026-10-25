@@ -343,3 +343,23 @@ test('import draft rows follow the store: refused once it is locked or from an e
   files.failWhen(null);
   assert.equal(await (await database.open(ACCOUNT_A)).readImportDraft('draft.a'), 'kept');
 });
+
+test('the applied revision is read without loading the diary', async () => {
+  const store = await open();
+  assert.equal(await store.appliedRevision(), '0');
+  await store.applyChangeGroups([references()], 'c1', null);
+  assert.equal(await store.appliedRevision(), '1');
+  await store.applyChangeGroups([group(2, change('wallet', wallet({ version: 2, archived: true })))], 'c2', 'c1');
+  assert.equal(await store.appliedRevision(), '2');
+  // The read is one diary_meta row: no entity, outbox or draft table is touched.
+  const statements: string[] = [];
+  files.failWhen((sql) => {
+    statements.push(sql);
+  });
+  await store.appliedRevision();
+  files.failWhen(null);
+  assert.ok(statements.length > 0);
+  for (const sql of statements) {
+    assert.ok(/diary_meta/.test(sql) || /^\s*(BEGIN|COMMIT|ROLLBACK)\b/i.test(sql), `unexpected statement: ${sql}`);
+  }
+});

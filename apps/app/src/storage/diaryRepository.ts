@@ -26,6 +26,8 @@ export interface DiaryStore {
   replaceConfirmed(snapshot: ConfirmedSnapshot, highWater: Revision): Promise<void>;
   readOutbox(): Promise<OutboxCommand[]>;
   readState(): Promise<DiaryState>;
+  /** The revision of the last applied change group: one diary_meta read, '0' before any change. */
+  appliedRevision(): Promise<string>;
   /**
    * Marks a command as being transmitted (unsent, uncertain or paused ->
    * sending) before it is sent, freezing it: the first transmission time is
@@ -323,6 +325,8 @@ export function createDiaryStore(options: DiaryStoreOptions): DiaryStore {
     },
 
     readOutbox: () => read(async (sql) => (await sql.all<OutboxRow>(`SELECT ${OUTBOX_COLUMNS} FROM outbox ORDER BY created_at, rowid`)).map(toCommand)),
+
+    appliedRevision: () => read(async (sql) => (await sql.all<{ value: string }>(`SELECT value FROM diary_meta WHERE key = 'applied_revision'`))[0]?.value ?? '0'),
 
     readState: () =>
       read(async (sql) => {
