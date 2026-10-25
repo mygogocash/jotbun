@@ -177,6 +177,56 @@ Phase 1A moves each person's ledger into one SQLite Durable Object, the UserVaul
   - `handleVaultV1` reads `config:v1` on every request, with no cache.
   - The test client copies the harness's `UserClient` and `CommandOptions`, and sends the command headers the same way the harness does.
 
+### Task 3: The command protocol, proven with wallets
+
+- **Status:** built and verified locally on `worktree-agent-a0780a971e76f8022`, on top of Task 2 (`c25ea2c`). Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - Protocol, `apps/edge/src/vault/commands/`: `registry.ts` (`buildVaultRegistry`), `executor.ts` (`runCommand`, `commandInput`, `VaultMutation`), `change-log.ts` (`appendChanges`), `receipts.ts` (`findReceipt`, `insertReceipt`, `lookupStatuses`) and `entity-state.ts` (`entityHead`, `requireLiveEntity`, `expectVersion`).
+  - Wallets and reads: `apps/edge/src/vault/domain/wallets.ts` (list, get, create, update, archive and unarchive, ported from `WalletsService` and `WalletsRepository`) and `apps/edge/src/vault/reads/balances.ts` (`walletBalances` and `firstRecordOn`, the earliest record that still counts for the correction rule).
+  - Changed: `src/vault/routes.ts` (six wallet handlers and `commands.status`); `src/v1/routes.ts` (seven routes move from pending into `VAULT_V1_ROUTES`, leaving 12 ported, 17 pending, 28 deferred and 6 retired, which is all 63 declared routes); `src/vault/user-vault.ts` (the registry is built once per instance by `buildVaultRegistry()`); `test/vault-route-coverage.test.ts` (the Task 3 pin); `test/workers/support/v1-client.ts` (adds `signedHeaders`); `test/workers/front-door.test.ts` (a stale comment only).
+  - Tests: `test/workers/commands.test.ts` (58), `test/workers/wallets.test.ts` (33), and `test/workers/support/command-fixtures.ts`, a fixture domain in the vault's own SQLite, shaped like the API's `command-fixtures.ts` without row-level security.
+  - Reused, not forked: `changeGroupBytes`, `commandHeaders`, `CommandRegistry`, `CommandDigester`, `ProblemException`, `routeId` and `stateProblem` (from `@api/commands/versioned-entity`), `MAX_CHANGE_GROUP_BYTES`, and the contracts' wallet parsers and DTO types.
+- **RED to GREEN:**
+  - RED, workers (`npm run test:edge:workers -- test/workers/commands.test.ts test/workers/wallets.test.ts`, with the new modules stubbed to throw): `Test Files 2 failed (2)`, `Tests 90 failed (90)`. Per file: `commands.test.ts` 58 of 58, `wallets.test.ts` 32 of 32. The wallet cases failed with `expected 404 to be 201` and similar, because the routes were not yet in the table. The command cases failed with `runCommand is not implemented yet`, or with 404 from the same route gap.
+  - RED, Node (`npm test --prefix apps/edge -- test/vault-route-coverage.test.ts`): `Tests 1 failed | 4 passed (5)`. The failing case pins the twelve Task 3 routes.
+  - Before GREEN, several refusal assertions were tightened from `not.toBe('ok')` to the exact refusal message, so a stub could not pass them.
+  - GREEN, workers: `Tests 90 passed (90)` once the protocol and the wallet domain were written.
+  - During GREEN, two expectations were corrected, neither weakened. The empty change group now asserts the API's refusal `acknowledged an entity version its change group does not contain`, because the API checks the acknowledgement before the group size. The nested-transaction case was removed (see Deviations).
+  - After GREEN, one case was added: `a balance is the opening balance plus live income and transfers ...` in `wallets.test.ts`. No Task 3 path writes a transaction, so `walletBalances`' transfer and deleted-row branches and `firstRecordOn` would otherwise run untested. It passed on its first run, and it stays test-only until Task 6 writes transactions. Final: `wallets.test.ts` 33 of 33.
+  - GREEN, Node: `vault-route-coverage` 5 of 5.
+- **Mutation check (brief Step 6):** `shasum -a 256` of `src/vault/commands/executor.ts` and `src/vault/commands/change-log.ts` was recorded, the originals were backed up outside the repo, each mutant was applied in place, the focused files were run, and each file was restored and its checksum compared (OK after every restore).
+  - Digest comparison on replay dropped (`executor.ts`): 5 failed, 86 passed (of 91). The IDEMPOTENCY_MISMATCH cases, including the named HTTP case "a resent command replays its acknowledgement; the same key with other content is 409". Caught.
+  - Schema-version check moved after `mutate()` (`executor.ts`): 2 failed, 89 passed. Both are fixture cases that count mutation executions ("schema version 0 / 3 ... reserves nothing"). The named HTTP case "an unsupported command schema is 422 before anything is written" still passes, because the call's transaction rolls back the write the mutant made. Only the execution count sees it.
+  - In-block policy re-check removed (`executor.ts`): 1 failed, 90 passed. The fixture case "writes need the current required policies, checked under the lock" fails. The named HTTP case "writes wait for the current terms" still passes, because `UserVault#call` already runs `assertPolicyAccepted` for `current_policy` routes (Task 2). The brief's expectation holds only at the `runCommand` level.
+  - `appendChanges` does not advance `sync_state.revision` (`change-log.ts`): 47 failed, 44 passed. Includes the named "twenty writes at once commit in one order with contiguous revisions".
+- **Gate** (repo root, `npm run typecheck:edge && npm run test:edge && npm run test:edge:workers && npm run build:edge && npm run test:edge:db`, exit 0):
+  - `typecheck:edge`: passes.
+  - `test:edge`: 121 passed (9 files), the Task 2 baseline.
+  - `test:edge:workers`: 120 passed (5 files): `vault-schema` 8, `front-door` 17, `config` 4, `commands` 58, `wallets` 33. The Task 2 receipt's "vault-schema 5" predates Task 1's fix round, which added three cases.
+  - `build:edge`: passes. The vault bundle's JavaScript imports no PostgreSQL driver. Its source map names two API modules with `import type { Pool } from 'pg'`, which is erased; both were already in Task 2's bundle.
+  - `test:edge:db`: 62 passed (8 files), the baseline.
+- **Not applicable** (PostgreSQL roles and grants, row-level security, connection pools, isolation levels or lock waits):
+  - `command-executor.integration.spec.ts`: "commit order is revision order" (two commands queued on the PostgreSQL account lock). `twenty writes at once ...` covers the property. "a mutation that passed the guard loses to a deletion committed first" is ported in sequential form: "an account marked for deletion refuses a command at the re-check and writes nothing".
+  - `command-hardening.integration.spec.ts`: "the app can neither read audit rows nor rewrite receipts and changes" (grants to `gogospend_app`); "a status lookup waits for an in-flight command and then reports it" (a FOR SHARE lock wait); "replay holds even when the login defaults to REPEATABLE READ" (isolation level); "a nested owner transaction inside a mutation is refused" (a PostgreSQL connection guard; workerd nests `transactionSync` as a savepoint, and `runCommand` never nests, per R21). "a command waiting behind a global logout writes nothing" is ported in sequential form: "a command after a global logout writes nothing".
+  - `wallets.integration.spec.ts`: "the database refuses a wallet row forged for another account, and any delete" (row-level security and grants).
+  - `command-status.integration.spec.ts`: none.
+  - Counts: the brief's counts for three specs are off. The executor spec has 18 `it` blocks (brief 17), the status spec 10 (brief 9) and the wallets spec 19 (brief 15). Across the four specs, 58 blocks are ported (two of them in sequential form) and 6 are not applicable, out of 64.
+  - The ten named dispatch cases are all ported, and so are the five extra cases the brief adds: no config in KV, the vault sleeping, twenty writes at once, the same command sent twice, and the Thai name at 80 and 81.
+- **Deviations:**
+  1. `commandInput` takes a fourth argument, the If-Match rule (`'required' | 'forbidden' | 'optional'`). The API's `commandHeaders` needs it, and the brief's three-argument form cannot say whether If-Match is required, forbidden or optional.
+  2. The wallet commands read the body before the command headers. The API's controller reads the headers first. Both refusals are 422 `VALIDATION_FAILED`, but the code and the field can differ when one request has two faults: an unknown field with no If-Match gives `UNKNOWN_FIELD` here, and `VALIDATION_FAILED` on `if_match` in the API. Left for the controller to rule.
+  3. `runCommand` computes the target check and the digest before `assertSession`. Both are pure, so no state is read before the re-check.
+  4. `entityHead`, `requireLiveEntity` and `expectVersion` are synchronous, because a vault call has no owner transaction to await. The API's are async.
+  5. The status lookup takes no lock. Each Durable Object call runs to completion before the next one starts.
+  6. `fixture_purchase` is a test-only table, created by the test support in the vault's SQLite. No production module knows it.
+- **SKIPPED (hosted):** nothing deployed, and no cloud resource was created.
+- **Notes for Task 4 and later:**
+  - Register categories, transactions and budgets in `buildVaultRegistry()` in the API's construction order. The wallet block is the pattern.
+  - `walletBalances` already reads `transactions`. Task 6 fills that table.
+  - `runCommand` runs inside the call-level transaction. Do not nest a transaction inside it.
+  - `commandInput` needs its If-Match rule as the fourth argument.
+  - The Task 2 access cases in `front-door.test.ts` still name `/v1/me`. They could name `/v1/wallets` now. I left them, since they test the pipeline.
+
 ## Not done, or follow-ups
 
 - **Rotating reminder wording (owner decision):** a repeating daily notification cannot change its text, so rotation needs "every day" to become seven weekly reminders, one wording per weekday. The reminders milestone (S4) chose one daily reminder on purpose, and its tests pin it. Cancelling all eight known ids first would still leave one reminder a day, so the change is safe to make if wanted.

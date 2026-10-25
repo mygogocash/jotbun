@@ -25,7 +25,10 @@ export function vaultStatus(r: VaultRoute): number {
   return r.status ?? (r.method === 'POST' ? 201 : 200)
 }
 
-/** The routes ported in Task 2: the front door for account, policy and privacy. */
+/** Writes to wallets are commands, and every mutating route carries the writes gate (C12). */
+const WRITES: readonly GateScope[] = ['writes']
+
+/** The routes ported in Tasks 2 and 3: the front door, wallets and command status. */
 export const VAULT_V1_ROUTES: readonly VaultRoute[] = [
   // policies/policy.controller.ts: the published text, answered from config:v1 by the Worker.
   { method: 'GET', path: '/v1/policies', access: 'public' },
@@ -34,6 +37,15 @@ export const VAULT_V1_ROUTES: readonly VaultRoute[] = [
   // privacy/account routes: the account summary and sign-out.
   { method: 'GET', path: '/v1/me', access: 'bound_session', vault: 'me.get' },
   { method: 'POST', path: '/v1/me/logout', access: 'bound_session', vault: 'me.logout', status: 204 },
+  // wallets/wallets.controller.ts
+  { method: 'GET', path: '/v1/wallets', access: 'bound_session', vault: 'wallets.list' },
+  { method: 'GET', path: '/v1/wallets/:id', access: 'bound_session', vault: 'wallets.get' },
+  { method: 'POST', path: '/v1/wallets', access: 'current_policy', vault: 'wallets.create', gates: WRITES },
+  { method: 'PATCH', path: '/v1/wallets/:id', access: 'current_policy', vault: 'wallets.update', gates: WRITES, status: 200 },
+  { method: 'POST', path: '/v1/wallets/:id/archive', access: 'current_policy', vault: 'wallets.archive', gates: WRITES, status: 200 },
+  { method: 'POST', path: '/v1/wallets/:id/unarchive', access: 'current_policy', vault: 'wallets.unarchive', gates: WRITES, status: 200 },
+  // commands/command-status.controller.ts
+  { method: 'POST', path: '/v1/commands/status', access: 'bound_session', vault: 'commands.status', status: 200 },
 ]
 
 const ROUTE_BY_ID = new Map<VaultRouteId, VaultRoute>(VAULT_V1_ROUTES.flatMap((route) => (route.vault ? [[route.vault, route] as const] : [])))
@@ -50,14 +62,8 @@ export function vaultStatusOf(id: VaultRouteId): number {
   return vaultStatus(route)
 }
 
-/** Routes for Tasks 3 to 8 of Phase 1A: wallets, categories, transactions, budgets, history, summary, sync and command status. */
+/** Routes for Tasks 4 to 8 of Phase 1A: categories, transactions, budgets, history, summary and sync. */
 export const VAULT_PENDING_ROUTES: readonly string[] = [
-  'GET /v1/wallets',
-  'GET /v1/wallets/:id',
-  'POST /v1/wallets',
-  'PATCH /v1/wallets/:id',
-  'POST /v1/wallets/:id/archive',
-  'POST /v1/wallets/:id/unarchive',
   'GET /v1/categories',
   'POST /v1/categories/builtins',
   'POST /v1/categories',
@@ -75,7 +81,6 @@ export const VAULT_PENDING_ROUTES: readonly string[] = [
   'GET /v1/history/deleted',
   'GET /v1/summary',
   'GET /v1/sync/changes',
-  'POST /v1/commands/status',
 ]
 
 /** Routes for Phase 1B: snapshots, exports, imports, attachments, deletion, the AI companion and the bridge catalogue. */

@@ -50,6 +50,11 @@ const keys = (async () => {
 
 export const newUser = (): TestUser => ({ sub: crypto.randomUUID(), sid: crypto.randomUUID() })
 
+/** The client and bearer headers of a signed-in request, for a request the client helpers do not build. */
+export async function signedHeaders(user: TestUser, opts: TokenOptions = {}): Promise<Record<string, string>> {
+  return { 'x-gogospend-client': opts.client ?? 'ios/1.0.0', authorization: `Bearer ${await tokenFor(user, opts)}` }
+}
+
 async function tokenFor(user: TestUser, opts: TokenOptions): Promise<string> {
   const { signer } = await keys
   const now = Math.floor(Date.now() / 1000)
