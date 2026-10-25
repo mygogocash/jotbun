@@ -15,6 +15,7 @@ import type { CommandAck } from '@gogospend/contracts'
 
 import { requireLiveEntity } from '../../../src/vault/commands/entity-state'
 import { runCommand } from '../../../src/vault/commands/executor'
+import { buildVaultRegistry } from '../../../src/vault/commands/registry'
 import type { VaultMutation } from '../../../src/vault/commands/executor'
 import type { VaultContext } from '../../../src/vault/context'
 import { ensureAccount } from '../../../src/vault/session'
@@ -50,14 +51,22 @@ function isFixtureSnapshot(value: unknown): boolean {
   )
 }
 
-/** The fixture entity and its commands, with the given create schema versions. */
-export function fixtureRegistry(createSchemas: readonly number[] = [1, 2]): CommandRegistry {
-  const registry = new CommandRegistry()
+/** The fixture entity and its commands, defined on `registry` (a new one by default), with the given create schema versions. */
+export function fixtureRegistry(createSchemas: readonly number[] = [1, 2], registry: CommandRegistry = new CommandRegistry()): CommandRegistry {
   registry.defineEntity({ entity: FIXTURE_ENTITY, validate: isFixtureSnapshot })
   registry.defineCommand({ kind: 'fixture.purchase.create', entity: FIXTURE_ENTITY, outcome: 'created', schemaVersions: createSchemas, policy: 'current' })
   registry.defineCommand({ kind: 'fixture.purchase.delete', entity: FIXTURE_ENTITY, outcome: 'deleted', schemaVersions: [1], policy: 'current' })
   registry.defineCommand({ kind: 'fixture.export', entity: FIXTURE_ENTITY, outcome: 'accepted', schemaVersions: [1], policy: 'exempt' })
   return registry
+}
+
+/**
+ * The vault's own wallet commands and the fixture domain on one registry: a
+ * group that mixes both, or that a fixture command writes, is served only
+ * through a call that names this registry (UserVault#call builds the wallet one).
+ */
+export function syncRegistry(): CommandRegistry {
+  return fixtureRegistry([1, 2], buildVaultRegistry())
 }
 
 export type FixtureScope = { registry?: CommandRegistry; digester?: CommandDigester }

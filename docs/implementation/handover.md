@@ -68,12 +68,13 @@ npm run export:web -w gogospend-app -- --max-workers 2
 npm run install:edge
 npm run typecheck:edge
 npm run test:edge
+npm run test:edge:workers
 npm run build:edge
 npm run test:edge:db
 git diff --check
 ```
 
-The edge lines (premium and AI plan, 24 October 2026) check `apps/edge`, the TanStack Start Worker: its own install, types, unit tests and build, then its PostgreSQL suites: dispatch, AI, the differential run against the built NestJS v1 server (`npm run build -w gogospend-api` comes first), and the built Worker in workerd.
+The edge lines (premium and AI plan, 24 October 2026) check `apps/edge`, the TanStack Start Worker: its own install, types, unit tests and build, then its PostgreSQL suites: dispatch, AI, the differential run against the built NestJS v1 server (`npm run build -w gogospend-api` comes first), and the built Worker in workerd. `test:edge:workers` (Bun Wallet phase 1A, 25 October 2026) runs the UserVault suites in workerd through `@cloudflare/vitest-plugin`.
 
 **Release image check**, after changes to workers, parsers or packages:
 ```bash
