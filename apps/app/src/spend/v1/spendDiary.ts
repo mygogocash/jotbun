@@ -78,6 +78,11 @@ export interface SpendDiary {
   foreground(): Promise<void>;
   background(): void;
   close(): Promise<void>;
+  /**
+   * Distinct dates with a live confirmed record or a draft, oldest first.
+   * Null while no diary is open (web, opening, locked, signed out).
+   */
+  loggedDays(): Promise<readonly string[] | null>;
 }
 
 const EMPTY: DiaryView = { phase: 'unavailable', lockReason: null, outcome: null, progress: null, pending: [], outbox: [], wallets: [], categories: [] };
@@ -313,6 +318,10 @@ export function createSpendDiary(deps: SpendDiaryDeps): SpendDiary {
       active = null;
       await closeCurrent();
       emit(EMPTY);
+    },
+    async loggedDays() {
+      if (!store || view.phase !== 'ready') return null;
+      return store.loggedDays();
     },
   };
 }

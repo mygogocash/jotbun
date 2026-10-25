@@ -7,7 +7,7 @@ import { deviceDiaryFiles as webDiaryFiles } from '../../storage/database.web.ts
 import { createMemoryKeyStore } from '../../storage/testing/memoryKeys.ts';
 import { createTestDiaryFiles } from '../../storage/testing/nodeSqlite.ts';
 import type { TestDiaryFiles } from '../../storage/testing/nodeSqlite.ts';
-import { ACCOUNT_A, ACCOUNT_B, SAVINGS, category, change, draft, wallet } from '../../storage/testing/diaryFixtures.ts';
+import { ACCOUNT_A, ACCOUNT_B, SAVINGS, category, change, draft, expense, wallet } from '../../storage/testing/diaryFixtures.ts';
 import { createSyncScheduler } from '../../sync/scheduler.ts';
 import { createSyncEngine } from '../../sync/syncEngine.ts';
 import { PROBLEMS, createFakeServer } from '../../sync/testing/fakeServer.ts';
@@ -425,4 +425,22 @@ test("the explicit sign-out erase takes the diary's import draft with it", async
   await diary.sessionChanged();
   assert.equal(diary.getView().phase, 'ready');
   assert.equal(await diary.importDraftStore()?.load(), null);
+});
+
+test('logged days come from the open diary, and null without one', async () => {
+  const { diary, server, session } = await setup();
+  server.commitElsewhere([
+    change('transaction', expense({ occurred_on: '2026-10-20' })),
+    change('transaction', expense({ occurred_on: '2026-10-20' })),
+    change('transaction', expense({ occurred_on: '2026-10-21', deleted_at: '2026-10-22T00:00:00.000Z' }), 'deleted'),
+  ]);
+  await diary.retry();
+  server.setOffline(true);
+  await diary.saveDraft(draft({ occurred_on: '2026-10-23' }));
+  assert.deepEqual(await diary.loggedDays(), ['2026-10-20', '2026-10-23']);
+
+  Object.assign(session, { accountId: null, epoch: session.epoch + 1 });
+  await diary.sessionChanged();
+  assert.equal(diary.getView().phase, 'unavailable');
+  assert.equal(await diary.loggedDays(), null);
 });

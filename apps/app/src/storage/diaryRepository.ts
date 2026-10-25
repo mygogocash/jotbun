@@ -26,6 +26,8 @@ export interface DiaryStore {
   replaceConfirmed(snapshot: ConfirmedSnapshot, highWater: Revision): Promise<void>;
   readOutbox(): Promise<OutboxCommand[]>;
   readState(): Promise<DiaryState>;
+  /** Distinct YYYY-MM-DD of live confirmed transactions and of drafts, ascending. */
+  loggedDays(): Promise<string[]>;
   /**
    * Marks a command as being transmitted (unsent, uncertain or paused ->
    * sending) before it is sent, freezing it: the first transmission time is
@@ -343,6 +345,17 @@ export function createDiaryStore(options: DiaryStoreOptions): DiaryStore {
           pending,
           walletTotals: Object.fromEntries(totals.map((row) => [row.wallet_id, row.balance_minor])),
         };
+      }),
+
+    loggedDays: () =>
+      read(async (sql) => {
+        const rows = await sql.all<{ day: string | null }>(
+          `SELECT json_extract(snapshot, '$.occurred_on') AS day FROM confirmed_entities WHERE entity = 'transaction' AND state = 'active'
+           UNION
+           SELECT json_extract(entry, '$.occurred_on') AS day FROM pending_entries
+           ORDER BY day`,
+        );
+        return rows.flatMap((row) => (typeof row.day === 'string' ? [row.day] : []));
       }),
 
     async beginTransmission(commandId, at) {
