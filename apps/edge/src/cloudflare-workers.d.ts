@@ -11,9 +11,14 @@ type SqlStorageValue = ArrayBuffer | string | number | null
 interface SqlStorageCursor<T> {
   toArray(): T[]
   one(): T
+  next(): IteratorResult<T>
+  raw(): IterableIterator<SqlStorageValue[]>
+  [Symbol.iterator](): IterableIterator<T>
 }
 
 interface SqlStorage {
+  // The database's size in bytes (the vault's SQLite file).
+  readonly databaseSize: number
   // Rows are loosely typed: the schema, not the driver, says what a column holds.
   exec<T = Record<string, any>>(query: string, ...bindings: unknown[]): SqlStorageCursor<T>
 }
@@ -24,6 +29,8 @@ interface DurableObjectStorage {
   getAlarm(): Promise<number | null>
   setAlarm(scheduledTime: number | Date): Promise<void>
   deleteAlarm(): Promise<void>
+  // Deletes every stored key, the SQLite database included.
+  deleteAll(): Promise<void>
 }
 
 // Durable Object bindings. T names the class a stub reaches.
@@ -46,7 +53,9 @@ type DurableObjectStub<T = undefined> = {
 
 interface DurableObjectNamespace<T = undefined> {
   idFromName(name: string): DurableObjectId
+  idFromString(id: string): DurableObjectId
   get(id: DurableObjectId, options?: { locationHint?: DurableObjectLocationHint }): DurableObjectStub<T>
+  getByName(name: string, options?: { locationHint?: DurableObjectLocationHint }): DurableObjectStub<T>
 }
 
 interface KVNamespace {
@@ -62,6 +71,7 @@ declare namespace Cloudflare {
   interface Env extends Record<string, unknown> {
     VAULT: DurableObjectNamespace<import('./vault/user-vault').UserVault>
     CONFIG: KVNamespace
+    OBJECTS: import('./vault/files/keys').VaultBucket
   }
 }
 
@@ -79,6 +89,7 @@ declare module 'cloudflare:workers' {
   }
 
   export interface DurableObjectStateLike {
+    readonly id: DurableObjectId
     readonly container?: ContainerLike
     readonly storage: DurableObjectStorage
     blockConcurrencyWhile<T>(callback: () => Promise<T>): Promise<T>
