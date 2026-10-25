@@ -33,10 +33,16 @@ interface DurableObjectId {
 
 type DurableObjectLocationHint = 'wnam' | 'enam' | 'sam' | 'weur' | 'eeur' | 'apac' | 'oc' | 'afr' | 'me'
 
-interface DurableObjectStub<T = undefined> {
+// The public methods of the class T, as a stub calls them over RPC: each one resolves with its result.
+// A stub with no class (T = undefined) adds nothing; the object guard keeps the mapped type from turning undefined into never.
+type DurableObjectRpc<T> = T extends object
+  ? { [K in keyof T as T[K] extends (...args: never[]) => unknown ? K : never]: T[K] extends (...args: infer A) => infer R ? (...args: A) => Promise<Awaited<R>> : never }
+  : unknown
+
+type DurableObjectStub<T = undefined> = {
   readonly id: DurableObjectId
   fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>
-}
+} & DurableObjectRpc<T>
 
 interface DurableObjectNamespace<T = undefined> {
   idFromName(name: string): DurableObjectId
@@ -47,6 +53,7 @@ interface KVNamespace {
   get(key: string, type: 'text'): Promise<string | null>
   get(key: string, type: 'json'): Promise<unknown>
   put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>
+  delete(key: string): Promise<void>
 }
 
 // The bindings `env` is typed with. The vault Worker's configuration is

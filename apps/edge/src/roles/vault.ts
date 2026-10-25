@@ -1,14 +1,25 @@
 // The vault Worker (the API's per-person ledger, moved to one Durable Object
-// per person: src/vault). It runs as its own Worker until Phase 1B. Until the
-// HTTP front door lands it answers only GET /live.
+// per person: src/vault). It runs as its own Worker until Phase 1B. Its /v1
+// front door (src/v1) verifies the token and forwards each call to the caller's
+// UserVault; anything else answers 404, and GET /live is the health check.
 //
 // The UserVault class is exported from this entry because the Durable Object
 // binding (wrangler.vault.jsonc) names it.
+import { setLogSink } from '@api/common/safe-request-logger'
+
+import { handleVaultV1 } from '../v1/handler'
+import type { V1Env } from '../v1/env'
+
 export { UserVault } from '../vault/user-vault'
 
+// The API's logger writes JSON lines to a sink; the Worker's sink is console.
+setLogSink((line) => console.log(line))
+
 export default {
-  fetch(request: Request): Response {
-    if (request.method === 'GET' && new URL(request.url).pathname === '/live') return Response.json({ status: 'live' })
+  fetch(request: Request, env: V1Env): Promise<Response> | Response {
+    const url = new URL(request.url)
+    if (request.method === 'GET' && url.pathname === '/live') return Response.json({ status: 'live' })
+    if (url.pathname.toLowerCase().startsWith('/v1/')) return handleVaultV1(request, env)
     return new Response(null, { status: 404 })
   },
 }

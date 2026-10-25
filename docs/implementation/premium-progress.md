@@ -131,6 +131,50 @@ Phase 1A moves each person's ledger into one SQLite Durable Object, the UserVaul
   - The migrator applies a journal entry only when its `when` is later than the stored one, so a later migration needs a later `when`.
   - Amounts and revisions are read back as `CAST(... AS TEXT)`, per §4, because the SQL API returns INTEGER as a JavaScript number.
 
+### Task 2: The vault-backed front door
+
+- **Status:** built and verified locally on `claude/p1a-vault-core`, on top of Task 1 (bb46fa8). Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - Worker, `apps/edge/src/v1/`: `protocol.ts` (the call and reply types, plain data only), `routes.ts` (the vault route table: 5 ported, 24 pending, 28 deferred and 6 retired, which is all 63 declared routes), `match.ts` (`matchRoute`, moved from the PostgreSQL route table), `env.ts`, `tokens.ts` (the verifier), `config.ts` (`config:v1`, its fail-closed rules and the client minimums), `handler.ts` (`handleVaultV1`, the pipeline) and `log.ts` (one failure line with the class name only; not in the brief).
+  - Vault, `apps/edge/src/vault/`: `context.ts` (`VaultContext`), `session.ts` (`ensureAccount`, `assertSession`, `revokeSession`), `policies.ts`, `rate-limits.ts` (`RateBuckets`), `replies.ts` (`okReply`, `toProblemReply`) and `routes.ts` (`VAULT_HANDLERS` for the five ported routes).
+  - Task 1 files, changed as the brief allows: `src/vault/user-vault.ts` (adds `call`), `src/roles/vault.ts` (routes `/v1/*` to `handleVaultV1`, with the env) and `src/cloudflare-workers.d.ts` (R12: typed `DurableObjectStub` RPC methods and `KVNamespace.delete`).
+  - PostgreSQL edge: `src/server/app/routes.ts` imports `matchRoute` from `src/v1/match` and re-exports it. The function body is unchanged; this is the brief's one change in that file.
+  - Tests: `test/workers/front-door.test.ts` (17), `test/workers/config.test.ts` (4), `test/workers/support/v1-client.ts` (the test client), `test/rate-limits.test.ts` (1) and `test/vault-route-coverage.test.ts` (5).
+- **RED to GREEN:**
+  - RED, workers (`npm run test:edge:workers -- test/workers/front-door.test.ts test/workers/config.test.ts`): 2 files failed, 19 failed, 0 passed. Each failure is `Error: not implemented`, thrown by the RED stubs (`handleVaultV1`, `readEdgeConfig`, `createTokenVerifier`), so no case passed by accident. The stubs throw rather than answer 404, because a 404 stub would have let "a client-sent request id is ignored" pass vacuously.
+  - RED, Node (`npm run test:edge -- test/rate-limits.test.ts test/vault-route-coverage.test.ts`): 2 files failed, 4 failed and 2 passed of 6. The two passing cases loop over the still-empty `VAULT_V1_ROUTES`, so they pass vacuously until the table is filled. The case that pins the five ported routes was added before this run, so an empty table cannot pass unnoticed.
+  - GREEN, workers: 19 passed, 0 failed. GREEN, Node: 6 passed, 0 failed.
+  - The 16 front-door cases in the first RED run were the eight ported cases, the six the brief names, and two UUID cases (a non-UUID subject is 401 UNAUTHENTICATED, a non-UUID session id is 401 SESSION_REQUIRED), which §6.4 requires.
+  - Added after GREEN, each run once it was written: `an invented session id still spends the person's budget` (the mutation check, below) and `client minimums missing from both config and env answer 503 with a retry, never 426` (R13). Both pass on the final code.
+- **Mutation check (brief Step 6):** the SHA-256 of each target was recorded before its mutant (`shasum -a 256`), the backup was kept outside the repo, the mutant was applied in place, the focused file was run, and the file was restored from the backup and its checksum compared. All three restored checksums match.
+  - `src/vault/session.ts` (79889013): the owner comparison in `ensureAccount` skipped. 1 failed (`a call naming another person is refused by the vault, which writes nothing`), 16 passed. Caught.
+  - `src/v1/config.ts` (f0f95602): an unreadable `config:v1` opens the gates. 1 failed (`an unreadable or malformed config pauses every gate scope, with a retry`), 2 passed. Caught.
+  - `src/vault/user-vault.ts` (8d1b3bd1): the principal charge moved after `assertSession`. 1 failed (`an invented session id still spends the person's budget`: the valid call got 200 instead of 429), 16 passed. Caught by the new test only, as the brief predicts for the ported tests.
+- **Gate** (repo root, after `npm run db:v1:up` and `npm run build -w gogospend-api`):
+  - `typecheck:edge`: passes, 0 errors.
+  - `test:edge`: 121 passed (9 files). The baseline was 115 in 7 files, plus the 6 Node cases in the 2 new files.
+  - `test:edge:workers`: 26 passed (3 files): `vault-schema` 5, `front-door` 17, `config` 4.
+  - `build:edge`: passes. `dist/jotbun_vault/` holds the `VAULT` class binding and the `CONFIG` namespace, and its bundle imports no PostgreSQL driver (no `pg`, no `drizzle-orm/node-postgres`). It does include the API's pure modules through the seams, as the brief intends.
+  - `test:edge:db`: 62 passed (8 files), the baseline.
+- **Deviations:**
+  1. `EdgeConfig.clientVersions` is typed `Pick<ClientVersionGuard, 'check'>`, not `ClientVersionGuard`. The fail-closed guard (R13: 503 for every non-public call when minimums are missing) is not a `ClientVersionGuard`, and the API class needs minimums to construct.
+  2. The invented-session test uses signed-out session ids, not random ones. The brief's premise does not hold under its own rules. A session id the vault has never seen is accepted (`signing out ends this session only` expects 200 for a fresh random sid), so random sids never fail `assertSession` and the principal ordering would be unobservable. The signed-out ids are inserted into `revoked_sessions`, so the vault refuses each call after charging the principal. The test keeps the brief's name.
+  3. The ported access cases name `/v1/me`, not `/v1/wallets`, which is pending until Task 3. Their assertions are unchanged.
+  4. The brief says "the five AI routes". The route table declares six: `ai-preferences` GET and PUT, `ai/parse`, `ai/slip`, `ai/note` and `ai/ask`. All six are in the deferred list, so the coverage test holds.
+  5. Failure logging goes through `logFailure` (`src/v1/log.ts`), which calls `console.error` with the failure's class name. The API's `writeLog` writes to `process.stdout`, which the Worker lacks. `roles/vault.ts` sets the API's log sink to `console.log`, so the shared `errorResponse` logging works too.
+  6. The key-source classifier mirrors `Auth0KeySource.isUnavailable` but has no 5-second back-off, because jose's remote key set has its own cooldown. A key-source outage still answers 503 with a 5-second retry, as the API does.
+  7. A misconfigured token verifier (a missing `AUTH_ISSUER`, `AUTH_AUDIENCE` or `AUTH_JWKS_URL`, or a non-https JWKS URL outside a local or test environment) answers 503 with a 30-second retry, never 500.
+  8. `GET /v1/policies` is answered in the Worker from the latest version of each kind, sorted by kind, as the brief says. The vault receives the full version list, because the required-version rule also needs earlier required versions.
+  9. `src/v1/log.ts` is a file the brief does not list.
+- **SKIPPED (hosted):** nothing deployed. No cloud resource was created, and `jotbun-vault` has no deployment. The KV id is the local placeholder from Task 1.
+- **Notes for Task 3 and later:**
+  - A handler runs after the vault's checks and returns `okReply(call.route, body)`. The status comes from `VAULT_V1_ROUTES`, so no handler repeats it. A route moves from `VAULT_PENDING_ROUTES` into `VAULT_V1_ROUTES` with its `vault` id and a handler in `VAULT_HANDLERS`, and the coverage test then checks it.
+  - `VaultContext.registry` is an empty `CommandRegistry` (R4). Task 3 swaps in its registry where `UserVault.built()` creates it. The digester is built there too, so a missing `COMMAND_DIGEST_KEY` fails every vault call.
+  - `RateBuckets` charges the principal by account and the session budgets by session id. Read or write follows the route's method, so GET is a read.
+  - Rate windows read `UserVault#clock`, so a test that makes many calls in a row must freeze it, as the invented-session test does.
+  - `handleVaultV1` reads `config:v1` on every request, with no cache.
+  - The test client copies the harness's `UserClient` and `CommandOptions`, and sends the command headers the same way the harness does.
+
 ## Not done, or follow-ups
 
 - **Rotating reminder wording (owner decision):** a repeating daily notification cannot change its text, so rotation needs "every day" to become seven weekly reminders, one wording per weekday. The reminders milestone (S4) chose one daily reminder on purpose, and its tests pin it. Cancelling all eight known ids first would still leave one reminder a day, so the change is safe to make if wanted.
