@@ -3,6 +3,7 @@ import { MAX_COMMAND_STATUS_IDS, ContractValidationError, assertKnownFields, isU
 import type { VaultCall, VaultReply, VaultRouteId } from '../v1/protocol'
 import { lookupStatuses } from './commands/receipts'
 import type { VaultContext } from './context'
+import { getBudget, putBudget } from './domain/budgets'
 import { archiveCategory, createCategory, listCategories, seedBuiltins, unarchiveCategory, updateCategory } from './domain/categories'
 import { createWallet, archiveWallet, getWallet, listWallets, unarchiveWallet, updateWallet } from './domain/wallets'
 import { syncChanges } from './reads/sync'
@@ -50,6 +51,8 @@ export const VAULT_HANDLERS: Partial<Record<VaultRouteId, VaultHandler>> = {
   'categories.update': (c, call) => okReply(call.route, updateCategory(c, call)),
   'categories.archive': (c, call) => okReply(call.route, archiveCategory(c, call)),
   'categories.unarchive': (c, call) => okReply(call.route, unarchiveCategory(c, call)),
+  'budgets.get': (c, call) => okReply(call.route, getBudget(c, call.params.month)),
+  'budgets.put': (c, call) => okReply(call.route, putBudget(c, call)),
   'commands.status': (c, call) => okReply(call.route, { statuses: lookupStatuses(c, commandIdsOf(call.body)) }),
   'sync.changes': (c, call) => okReply(call.route, syncChanges(c, call.query)),
 }
