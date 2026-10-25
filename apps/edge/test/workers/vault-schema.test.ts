@@ -13,8 +13,8 @@ const USER_TABLES = "SELECT name FROM sqlite_master WHERE type = 'table' AND nam
 it('a new vault has every core table, migrated once', async () => {
   const stub = vault()
   expect((await sql(stub, USER_TABLES)).map((r) => r.name)).toEqual([...VAULT_CORE_TABLES])
-  expect(VAULT_CORE_TABLES).toEqual(['account_state', 'audit_events', 'budget_category_limits', 'categories', 'command_receipts', 'consents', 'entity_changes', 'entity_heads', 'monthly_budgets', 'revoked_sessions', 'schedule', 'sync_state', 'transactions', 'wallets'])
-  expect((await sql(stub, 'SELECT count(*) AS n FROM __drizzle_migrations'))[0].n).toBe(1)
+  expect(VAULT_CORE_TABLES).toEqual(['account_state', 'ai_preferences', 'ai_usage', 'attachments', 'audit_events', 'budget_category_limits', 'categories', 'command_receipts', 'consents', 'entity_changes', 'entity_heads', 'exports', 'import_candidates', 'import_parts', 'import_previews', 'import_row_progress', 'import_selection_rows', 'import_selections', 'import_uploads', 'monthly_budgets', 'revoked_sessions', 'schedule', 'snapshot_chunks', 'snapshots', 'sync_state', 'transaction_attachments', 'transactions', 'vault_objects', 'wallets'])
+  expect((await sql(stub, 'SELECT count(*) AS n FROM __drizzle_migrations'))[0].n).toBe(2)
 })
 
 it('a vault keeps its rows and does not migrate again after it sleeps', async () => {
@@ -22,7 +22,7 @@ it('a vault keeps its rows and does not migrate again after it sleeps', async ()
   await sql(vault(name), "INSERT INTO consents (kind, version, granted, updated_at) VALUES ('analytics', 0, 1, '2026-10-25T00:00:00.000Z')")
   await evictAllDurableObjects()
   expect(await sql(vault(name), 'SELECT kind, granted FROM consents')).toEqual([{ kind: 'analytics', granted: 1 }])
-  expect((await sql(vault(name), 'SELECT count(*) AS n FROM __drizzle_migrations'))[0].n).toBe(1)
+  expect((await sql(vault(name), 'SELECT count(*) AS n FROM __drizzle_migrations'))[0].n).toBe(2)
 })
 
 it('the Drizzle schema matches the migrated tables column for column', async () => {
@@ -70,4 +70,29 @@ it('a receipt can drop its digest pair, but never just one half', async () => {
   await sql(half, 'INSERT INTO sync_state (id, revision, pruned_through) VALUES (1, 1, 0)')
   await expect(receipt(half, 'zeroblob(32)', 'NULL')).rejects.toThrow(/digest_pair/)
   await expect(receipt(half, 'NULL', "'k1'")).rejects.toThrow(/digest_pair/)
+})
+
+it('a record can hold only a retained receipt, and letting go of the last holder releases it and makes its object due', async () => {
+  const stub = vault()
+  const at = '2026-10-25T00:00:00.000Z'
+  const wallet = crypto.randomUUID()
+  const category = crypto.randomUUID()
+  const tx = crypto.randomUUID()
+  const retainedId = crypto.randomUUID()
+  const releasedId = crypto.randomUUID()
+  const retainedKey = `receipt/${'f'.repeat(64)}/${retainedId}/${crypto.randomUUID()}/image.jpg`
+  const releasedKey = `receipt/${'f'.repeat(64)}/${releasedId}/${crypto.randomUUID()}/image.jpg`
+  const digest = 'a'.repeat(64)
+  await sql(stub, "INSERT INTO wallets (id, name, currency, opening_minor, tracking_start, archived, version, created_at, updated_at) VALUES (?, 'Cash', 'THB', 0, '2026-10-01', 0, 1, ?, ?)", wallet, at, at)
+  await sql(stub, "INSERT INTO categories (id, type, builtin_key, label, color, archived, version, created_at, updated_at) VALUES (?, 'expense', NULL, 'Snacks', NULL, 0, 1, ?, ?)", category, at, at)
+  await sql(stub, "INSERT INTO transactions (id, type, amount_minor, occurred_on, wallet_id, category_id, version, created_at, updated_at) VALUES (?, 'expense', 100, '2026-10-20', ?, ?, 1, ?, ?)", tx, wallet, category, at, at)
+  await sql(stub, "INSERT INTO vault_objects (key, purpose, status, delete_after, bytes, sha256, created_at) VALUES (?, 'receipt', 'published', NULL, 10, ?, 0)", retainedKey, digest)
+  await sql(stub, "INSERT INTO vault_objects (key, purpose, status, delete_after, bytes, sha256, created_at) VALUES (?, 'receipt', 'published', NULL, 10, ?, 0)", releasedKey, digest)
+  await sql(stub, "INSERT INTO attachments (id, source_job_id, status, object_key, content_type, bytes, sha256, width, height, retained_at, released_at) VALUES (?, ?, 'retained', ?, 'image/jpeg', 10, ?, 1, 1, ?, NULL)", retainedId, crypto.randomUUID(), retainedKey, digest, at)
+  await sql(stub, "INSERT INTO attachments (id, source_job_id, status, object_key, content_type, bytes, sha256, width, height, retained_at, released_at) VALUES (?, ?, 'released', ?, 'image/jpeg', 10, ?, 1, 1, ?, ?)", releasedId, crypto.randomUUID(), releasedKey, digest, at, at)
+  await expect(sql(stub, "INSERT INTO transaction_attachments (transaction_id, attachment_id, attached_at) VALUES (?, ?, 'x')", tx, releasedId)).rejects.toThrow(/retained receipt/)
+  await sql(stub, "INSERT INTO transaction_attachments (transaction_id, attachment_id, attached_at) VALUES (?, ?, 'x')", tx, retainedId)
+  await sql(stub, 'DELETE FROM transactions WHERE id = ?', tx)
+  expect(await sql(stub, 'SELECT status, released_at FROM attachments WHERE id = ?', retainedId)).toEqual([{ status: 'released', released_at: null }])
+  expect(await sql(stub, 'SELECT delete_after FROM vault_objects WHERE key = ?', retainedKey)).toEqual([{ delete_after: 0 }])
 })

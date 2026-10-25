@@ -229,6 +229,47 @@ Phase 1A moves each person's ledger into one SQLite Durable Object, the UserVaul
   - `commandInput` needs its If-Match rule as the fourth argument. Call it before the body is parsed, with an `undefined` payload, and set the payload afterwards: `runCommand(c, { ...command, payload }, ...)`, as `wallets.ts` does (R41). A payload-first call reads the body before the headers.
   - The Task 2 access cases in `front-door.test.ts` still name `/v1/me`. They could name `/v1/wallets` now. I left them, since they test the pipeline.
 
+## 1B: files and background work on the vault
+
+Phase 1B moves the files, imports, exports, snapshots, receipts and the AI companion's state into each person's UserVault, as the spec's §6.2 and §6.3 describe (`docs/superpowers/specs/2026-10-25-jotbun-bun-wallet-cloudflare-design.md`). Task 2 adds the file tables, the object keys, the prefix purge and the durable erase that deletion relies on.
+
+### 1B Task 2: The files schema, object keys, the prefix purge and a durable erase
+
+- **Status:** built and verified locally on `worktree-agent-a78d807d216fc00fa`, from `68ec183`. Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - Schema: `apps/edge/src/vault/migrations/0001_vault_files.sql` (every table STRICT; 15 new tables; the release trigger; the import progress guard; the purge index on `entity_changes`). `migrations/index.ts` gains journal entry `idx` 1 (`when` 1761436800000, `m0001`). `schema.ts` gains 15 Drizzle tables, and `VAULT_CORE_TABLES` now lists 29. `0000_vault_core.sql` is unchanged.
+  - Keys and purge: `apps/edge/src/vault/files/keys.ts` (`VAULT_OBJECT_PURPOSES`, `vaultObjectKey`, `vaultPrefix`, `VaultBucket`) and `files/purge.ts` (`purgeVaultObjects`).
+  - Erase: `src/vault/user-vault.ts` (`erased`, `erase()`, the `erased` guard at the top of `call()`); `src/vault/session.ts` (`ensureAccount` refuses a `deleted` marker with 403 `ACCOUNT_UNAVAILABLE` before the owner comparison, and writes nothing).
+  - Worker and types: `apps/edge/wrangler.vault.jsonc` (`r2_buckets`: `OBJECTS` on `jotbun-private-objects`, the bucket `wrangler.jsonc` already binds); `src/cloudflare-workers.d.ts` (the shim additions the brief lists).
+  - Tests: `test/workers/vault-schema.test.ts` (the 29-table list, migration counts of 2, and the receipt trigger case); `test/workers/files-erase.test.ts` (new, 6 cases).
+- **RED to GREEN:**
+  - RED, `npm run test:edge:workers -- test/workers/vault-schema.test.ts test/workers/files-erase.test.ts`, before any table, key or erase code: `Test Files 2 failed (2)`, `Tests 8 failed | 6 passed (14)`. Seven of the eight failures are assertions: the erase case still found a consent row, the sleep case got `200` where `403` was expected, the purge cases got `0` where `5` and `1001` were expected, the key case got `''`, and the table list and the migration count (`1` where `2`) failed. The receipt trigger case failed with a thrown `no such table: vault_objects` while seeding, because the table did not yet exist. That is a thrown error, not an assertion. The six passing cases are the existing drift, foreign-key, command-log, null-key, category and digest tests.
+  - GREEN, same command: `Tests 14 passed (14)`, after the migration, the schema, the keys and purge, `erase()` and the guard were written.
+  - Added after GREEN: `an erased instance refuses every call, even when its marker is missing`. It passed on its first run, because the guard was already in place. It kills M5 below. It covers the one case the marker cannot: an erase that fails after `deleteAll()` and before the marker is written, in the same instance.
+  - Full suites in the gate: `test:edge` 121 passed (9 files); `test:edge:workers` 135 passed (6 files).
+- **Mutation check** (brief Step 6, plus three extras): `shasum -a 256` recorded for the five files mutated; originals backed up outside the repo; each mutant applied in place; the two focused files run; each file restored and compared. `shasum -c` reports all five OK after restore.
+  - M1, purge deletes only the first page: `purgeVaultObjects pages through more than one listing` failed; 14 of 15 passed.
+  - M2, purge lists `${purpose}/` without the vault id: `deletes every object ... nothing of another vault` failed; 14 of 15 passed.
+  - M3, the release trigger on `transaction_attachments` never fires (`WHEN 0`): the receipt trigger case failed (`retained` where `released` was expected); 14 of 15 passed.
+  - M4, `erase()` writes no marker: `erase empties the vault ...` and `an erased vault stays erased after it sleeps` failed (an empty `account_state`, and `200` where `403`); 13 of 15 passed.
+  - M5 (extra), the `erased` guard removed from `call()`: `an erased instance refuses every call ...` failed (`200` where `403`); 14 of 15 passed.
+  - M6 (extra), `ensureAccount` no longer refuses a `deleted` marker: the sleep case failed (`500` where `403`); 14 of 15 passed.
+  - M7 (extra), `vaultObjectKey` accepts any vault id: `vault object keys pass the store's key rule ...` failed (no throw); 14 of 15 passed.
+- **Gate:** `npm run typecheck:edge && npm run test:edge && npm run test:edge:workers && npm run build:edge && npm run test:edge:db`, from the worktree root, exit 0. Typecheck passes; `test:edge` 121 passed (9 files); `test:edge:workers` 135 passed (6 files); `build:edge` passes; `test:edge:db` 62 passed (8 files), with Docker up through the script's own `db-up` step.
+- **Deviations and calls** (for the reviewer):
+  - `source_row_id` in `import_candidates`, `import_selection_rows` and `import_row_progress` uses the API's pattern `^(row:[1-9][0-9]{0,7}|image:1)$`, written as `GLOB`, a length check and a digit-only check. The brief's bare `GLOB 'row:[1-9]*'` would accept `row:1x`.
+  - Key-shape CHECKs on the columns that hold keys, ported from the API's `starts_with` checks: `vault_objects` (the purpose is the key's first segment), `snapshot_chunks` (`sync_snapshot/`), `import_parts` (`import_quarantine/`), `import_previews.image_key` (`import_image/`), `attachments` (`receipt/…/image.<ext>`, matching the content type), and `exports` (the `export/` prefix, with the export id in the vault id's place, by position: the vault id is 64 characters).
+  - Indexes beyond the brief's two (`vault_objects_due_idx`, `entity_changes_purged_idx`): the API's maintenance indexes on the same tables (`exports_requested_idx`, `import_uploads_receiving_idx`, `import_uploads_accepted_expiry_idx`, `import_previews_due_idx`, `import_selections_job_idx`, `import_selections_expiry_idx`, `attachments_released_idx`, `transaction_attachments_attachment_idx`).
+  - Dropped, as the brief says: the timestamp-window CHECKs (`receive_deadline`, the `expires_at` windows, `expires_at > ready_at`). Control-character checks are dropped too, as in `0000`.
+  - The `sha256` columns hold 64 lowercase hex characters (checked with `GLOB`), where the API used `bytea` with `octet_length(...) = 32`.
+  - `vaultPrefix` validates the purpose and the vault id as well (the brief named only `vaultObjectKey`). `purgeVaultObjects` deletes only the listed keys that start with the prefix.
+  - The Drizzle table for `exports` is exported as `exportsTable`. The SQL table is `exports`.
+  - The shim additions are all in `cloudflare-workers.d.ts`. `idFromString`, `getByName`, `state.id`, the cursor members and `databaseSize` are typed for later tasks and unused here.
+- **SKIPPED:** deployed R2 (lifecycle rules, the binding on Cloudflare). Miniflare simulates `OBJECTS` locally; no cloud resource was touched.
+- **Concerns for the integrator:**
+  - `erase()` is not one atomic step. It runs `deleteAll()`, then the migrations, then the marker insert. If the marker insert fails after `deleteAll()`, nothing in storage records the erase, and a later call could create the account again. The in-memory `erased` flag covers only the instance that failed. 1C's deletion should block sign-in in D1 first (§6.12, step 1) and retry `erase()` until the marker reads back. The alternative is one `transactionSync` that deletes the rows and writes the marker, which needs no re-migration. That choice is the controller's.
+  - The purge loops until a listing comes back empty, with no iteration cap. A bucket that kept listing the same keys would never end. 1C's Workflow step should bound its own time.
+
 ## Not done, or follow-ups
 
 - **Rotating reminder wording (owner decision):** a repeating daily notification cannot change its text, so rotation needs "every day" to become seven weekly reminders, one wording per weekday. The reminders milestone (S4) chose one daily reminder on purpose, and its tests pin it. Cancelling all eight known ids first would still leave one reminder a day, so the change is safe to make if wanted.
