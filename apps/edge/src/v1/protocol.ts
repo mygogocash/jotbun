@@ -15,7 +15,15 @@ export type VaultClaims = {
   /** The token's iat, in epoch seconds. */
   issuedAt: number
   clientId: string
+  /** The token's auth_time, in epoch seconds, when the token carries one. */
+  authTime?: number
 }
+
+/** How a vault call is authorised. `recent_proof` is policy-exempt, like `bound_session`. */
+export type VaultAccess = 'bound_session' | 'current_policy' | 'recent_proof'
+
+/** A route the Worker answers itself. Later tasks add their ids. */
+export type WorkerRouteId = 'bridge.catalogue'
 
 /** The published policy versions from config:v1, or null when none are published. */
 export type PublishedPolicies = PolicyVersionDto[] | null
@@ -29,7 +37,12 @@ export type VaultRouteId =
 
 export type VaultCall = {
   route: VaultRouteId
-  access: 'bound_session' | 'current_policy'
+  access: VaultAccess
+  /**
+   * 'read' or 'write' charges the principal budget and that one.
+   * 'step' is a later step of the same request, and it is not charged.
+   */
+  charge: 'read' | 'write' | 'step'
   claims: VaultClaims
   policies: PublishedPolicies
   params: Record<string, string>
