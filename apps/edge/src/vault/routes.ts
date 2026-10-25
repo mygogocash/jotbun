@@ -4,6 +4,7 @@ import type { VaultCall, VaultReply, VaultRouteId } from '../v1/protocol'
 import { lookupStatuses } from './commands/receipts'
 import type { VaultContext } from './context'
 import { createWallet, archiveWallet, getWallet, listWallets, unarchiveWallet, updateWallet } from './domain/wallets'
+import { syncChanges } from './reads/sync'
 import { acceptPolicy, describeMe, setPrivacy } from './policies'
 import { okReply } from './replies'
 import { revokeSession } from './session'
@@ -43,4 +44,5 @@ export const VAULT_HANDLERS: Partial<Record<VaultRouteId, VaultHandler>> = {
   'wallets.archive': (c, call) => okReply(call.route, archiveWallet(c, call)),
   'wallets.unarchive': (c, call) => okReply(call.route, unarchiveWallet(c, call)),
   'commands.status': (c, call) => okReply(call.route, { statuses: lookupStatuses(c, commandIdsOf(call.body)) }),
+  'sync.changes': (c, call) => okReply(call.route, syncChanges(c, call.query)),
 }

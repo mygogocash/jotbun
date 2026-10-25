@@ -229,6 +229,52 @@ Phase 1A moves each person's ledger into one SQLite Durable Object, the UserVaul
   - `commandInput` needs its If-Match rule as the fourth argument. Call it before the body is parsed, with an `undefined` payload, and set the payload afterwards: `runCommand(c, { ...command, payload }, ...)`, as `wallets.ts` does (R41). A payload-first call reads the body before the headers.
   - The Task 2 access cases in `front-door.test.ts` still name `/v1/me`. They could name `/v1/wallets` now. I left them, since they test the pipeline.
 
+### Task 8a: Sync changes
+
+- **Status:** built and verified locally on `worktree-agent-a8fd1a21889e4557d`, on top of Task 3 (`f6d1f95`). Not pushed. Task 8 is split (ruling R7): this is 8a, the delta feed. Retention, the vault alarm and the money journey are 8b and are not in this commit. The independent review is the controller's, after this receipt.
+- **Files:**
+  - Reader: `apps/edge/src/vault/reads/sync.ts`, `syncChanges`, a port of `SyncQuery`. It serves whole groups only, reads each candidate group's stored size before it reads any change, applies the 1 MiB group limit (`MAX_CHANGE_GROUP_BYTES`) and the 2 MiB page budget (`SYNC_PAGE_BYTES`), and returns `next_cursor` and `has_more`. A position below `sync_state.pruned_through` is `410 RESYNC_REQUIRED`. Every change is re-checked against its entity's DTO before it is served.
+  - Route: `apps/edge/src/v1/routes.ts` moves `GET /v1/sync/changes` from `VAULT_PENDING_ROUTES` into `VAULT_V1_ROUTES`, with the old route's access (`bound_session`), gates (none) and status (200). `apps/edge/src/vault/routes.ts` adds its handler. The table now holds 13 ported, 16 pending, 28 deferred and 6 retired routes, which is all 63.
+  - Tests: `apps/edge/test/workers/sync.test.ts` (12 cases, one for each name ported in full or in part, listed below), `apps/edge/test/vault-route-coverage.test.ts` (the pin lists the 13 ported routes), and `apps/edge/test/workers/support/command-fixtures.ts`, which adds `syncRegistry()` and an optional registry argument to `fixtureRegistry` (the one-argument form is unchanged).
+  - Reused, not forked: `parseSyncRequest` (`@api/sync/sync-query`), `decodeSyncPosition` and `encodeSyncCursor` (`@api/sync/sync-cursor`), `MAX_CHANGE_GROUP_BYTES`, `SYNC_PAGE_BYTES` and `ProblemException`.
+- **RED to GREEN:**
+  - RED, with `syncChanges` as a typed stub that returns an empty page: `npm run test:edge:workers -- test/workers/sync.test.ts` gave `Tests 10 failed | 2 passed (12)`. All ten failures are assertions on the stub's empty page (for example `expected [] to have a length of 200`). The two that pass test code the stub does not reach: the cursor binding (pure code) and the CHECK that the retention line never passes the revision (schema).
+  - GREEN, first run: `Tests 1 failed | 11 passed (12)`. The failing case was the 201-group paging, whose second page began at `'100'` instead of `'201'`. The cause was the unqualified `ORDER BY revision` in the candidate query, which sorted by the TEXT alias, so revisions sorted as strings. Fixed by qualifying each revision column (`c.revision`), as the API's SQL does. A temporary test that failed on the paging values located it and was deleted.
+  - GREEN, after the fix: the same command gave `Tests 12 passed (12)`.
+- **Mutation check:** the SHA-256 of `src/vault/reads/sync.ts` (GREEN) was recorded and a copy kept outside the repo. Each mutant was applied in place, the file was run, and the file was restored from the copy. Its checksum matched after every restore, and the final file is `d7de9ffe817074dad960b59e4baa105bf732ae11ccaff40a03dfb28bd47f240c`.
+  - M1, no `pruned_through` check: `Tests 4 failed | 8 passed`. The four failures are the 410 cases: the malformed, foreign and future cursor case, the 30-day case, the route's `serves whole...` case and the client-behind-retention case. Caught.
+  - M2, the page's change rows cut at 100, so the 500-change group is served short: `Tests 2 failed | 10 passed` (`pagination_never_splits_a_command_group` and the 200-group case). Caught by the whole-groups case, as the brief expects.
+  - M3, the ORDER BY on the TEXT alias (the first GREEN bug, reintroduced): `Tests 1 failed | 11 passed` (the 200-group case). Caught.
+  - M4, no planned page budget (every candidate group's rows read): `Tests 1 failed | 11 passed` (`a page reads about its byte budget`). Caught.
+- **Gate** (repo root, `npm run typecheck:edge && npm run test:edge && npm run test:edge:workers && npm run build:edge && npm run test:edge:db`, after `npm run db:v1:up` and `npm run build -w gogospend-api`):
+  - `typecheck:edge`: passes.
+  - `test:edge`: 121 passed (9 files), the Task 3 baseline.
+  - `test:edge:workers`: 140 passed (6 files), up from 128 in the merged Task 3 gate. `sync.test.ts` is 12 of them.
+  - `build:edge`: passes. `dist/jotbun_vault/index.js` imports no PostgreSQL module (no `pg`, `DatabaseService` or `OwnerTx`) and bundles `src/vault/reads/sync.ts`.
+  - `test:edge:db`: 62 passed (8 files), the baseline.
+- **Ported in full** (9): sync-query: `pagination_never_splits_a_command_group`, `pages whole groups in revision order within the 2 MiB budget, with no gaps`, `defaults to 200 groups a page and refuses more than 1,000`, `rejects malformed, foreign and future cursors, and needs a resync below retention`, `refuses to serve a stored change that no longer matches its entity DTO`, `a cursor is bound to its account and names a revision, nothing else`, `a page reads about its byte budget, not every group the limit allows`, `the retention line can never pass the account revision`. Sync-api: `serves whole, valid change groups and refuses bad parameters`.
+- **Ported in part** (3):
+  - sync-query, `30-day retention drops superseded changes, keeps every head, and expires older cursors`: the 410 for a cursor below the line, and the groups above it, are ported. The prune run, the removal of superseded changes and the check that every head stays are 8b's (`retention.ts`).
+  - sync-query, `a cursor from an earlier lifecycle generation needs a resync`: the vault has no lifecycle generation until 1B, so the cursor's generation is checked against the constant 0.
+  - sync-api, `a client behind retention recovers: 410, then a snapshot, then deltas from its cursor`: the 410 and the deltas from the cursor are ported. The snapshot step is 1B's.
+- **Not applicable** (3; PostgreSQL roles, row-level security, pools and lock waits, and a vault holds one account, with no account lock):
+  - sync-query, `a read during staggered commits never skips a group committed later at a lower revision`: the test holds the account lock mid-command and reads between two commits. A vault call runs to completion inside one synchronous `transactionSync`, so no read can land between two commits.
+  - sync-query, `retention skips an account whose lock is held instead of waiting for it`: a lock wait on `account_sync_state`. The vault has no such lock. Its prune run is 8b's.
+  - sync-query, `retention covers every due account in one run, beyond its batch size`: a batch across accounts. A vault holds one account. Its own prune run is 8b's.
+- **Deferred to 8b** (1): sync-api, `snapshots validate exactly the entities the API registers`. The check compares the vault's registry with `SYNC_ENTITY_VALIDATORS`. It needs the category, transaction and budget entities, which are not merged (Tasks 4 to 6, the brief's 8b label), and the export and import entities, which are 1B's.
+- **Deferred to 1B** (2): sync-api, `requests, builds, and downloads a snapshot through short-lived grants, then continues with deltas` and `asking again while a snapshot is ready answers 200 with it`. The snapshot routes are in `VAULT_DEFERRED_ROUTES`.
+- **Deviations:**
+  1. Four cases use the fixture domain (`pagination_never_splits_a_command_group`, `pages whole groups in revision order within the 2 MiB budget, with no gaps`, `defaults to 200 groups a page and refuses more than 1,000`, and `a page reads about its byte budget`). They call `syncChanges` inside the call's transaction through `inVault`, not through the route. The route's registry holds only the wallet entity, so a fixture group would fail the route's DTO check. Those four therefore skip `UserVault#call`'s account, principal, session and read-budget checks. The route cases cover those checks.
+  2. The lifecycle generation is the constant 0, because the vault has no lifecycle column until 1B. A cursor from another generation gets 410.
+  3. The 410 case raises `sync_state.pruned_through` directly, through `sqlExec` (`runInDurableObject`), as the brief asks.
+  4. `PAGE_OVERHEAD_BYTES` (1024) and the change re-check in `changeOf` are copies of `SyncQuery`'s private members. They need an `OwnerTx` to be reused, so they must stay equal to `apps/api/src/sync/sync-query.ts`.
+  5. The Node pin in `vault-route-coverage.test.ts` changed in the same edit as the route move, so it has no RED run of its own.
+- **SKIPPED (hosted):** nothing deployed, and no cloud resource was created.
+- **Notes for 8b and later:**
+  - `pruned_through` moves only when 8b's `retention.ts` prunes. Until then the 410 path runs only when a test sets the line directly.
+  - Tasks 4 to 6 register categories, transactions and budgets in `buildVaultRegistry()`. The registry-parity case can then be completed once the 1B entities are also registered.
+  - 1B adds the lifecycle generation. Replace the constant `GENERATION` in `reads/sync.ts`, and complete the lifecycle case.
+
 ## Not done, or follow-ups
 
 - **Rotating reminder wording (owner decision):** a repeating daily notification cannot change its text, so rotation needs "every day" to become seven weekly reminders, one wording per weekday. The reminders milestone (S4) chose one daily reminder on purpose, and its tests pin it. Cancelling all eight known ids first would still leave one reminder a day, so the change is safe to make if wanted.

@@ -28,7 +28,7 @@ export function vaultStatus(r: VaultRoute): number {
 /** Writes to wallets are commands, and every mutating route carries the writes gate (C12). */
 const WRITES: readonly GateScope[] = ['writes']
 
-/** The routes ported in Tasks 2 and 3: the front door, wallets and command status. */
+/** The routes ported in Tasks 2, 3 and 8a: the front door, wallets, command status and the sync delta feed. */
 export const VAULT_V1_ROUTES: readonly VaultRoute[] = [
   // policies/policy.controller.ts: the published text, answered from config:v1 by the Worker.
   { method: 'GET', path: '/v1/policies', access: 'public' },
@@ -46,6 +46,8 @@ export const VAULT_V1_ROUTES: readonly VaultRoute[] = [
   { method: 'POST', path: '/v1/wallets/:id/unarchive', access: 'current_policy', vault: 'wallets.unarchive', gates: WRITES, status: 200 },
   // commands/command-status.controller.ts
   { method: 'POST', path: '/v1/commands/status', access: 'bound_session', vault: 'commands.status', status: 200 },
+  // sync/sync.controller.ts: the delta feed (the snapshot routes are 1B).
+  { method: 'GET', path: '/v1/sync/changes', access: 'bound_session', vault: 'sync.changes' },
 ]
 
 const ROUTE_BY_ID = new Map<VaultRouteId, VaultRoute>(VAULT_V1_ROUTES.flatMap((route) => (route.vault ? [[route.vault, route] as const] : [])))
@@ -62,7 +64,7 @@ export function vaultStatusOf(id: VaultRouteId): number {
   return vaultStatus(route)
 }
 
-/** Routes for Tasks 4 to 8 of Phase 1A: categories, transactions, budgets, history, summary and sync. */
+/** Routes for Tasks 4 to 7 of Phase 1A: categories, transactions, budgets, history and summary. */
 export const VAULT_PENDING_ROUTES: readonly string[] = [
   'GET /v1/categories',
   'POST /v1/categories/builtins',
@@ -80,7 +82,6 @@ export const VAULT_PENDING_ROUTES: readonly string[] = [
   'GET /v1/history',
   'GET /v1/history/deleted',
   'GET /v1/summary',
-  'GET /v1/sync/changes',
 ]
 
 /** Routes for Phase 1B: snapshots, exports, imports, attachments, deletion, the AI companion and the bridge catalogue. */
