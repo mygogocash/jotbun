@@ -1,6 +1,9 @@
 // Owned THB wallets, ported from apps/api/src/wallets (WalletsService and
 // WalletsRepository). Each write is a command on a client-chosen UUID; edits,
 // archive and unarchive need the current version (If-Match). Balances are derived.
+// A command reads its headers first (commandInput, which runs commandHeaders), then
+// the route id, then the body, as the API's controllers and services do (R41). Its
+// payload is set once the body is parsed: `{ ...command, payload }`.
 import {
   ContractValidationError,
   MINOR_AMOUNT_MAX,
@@ -122,6 +125,7 @@ export function getWallet(c: VaultContext, id: string): WalletDto {
 
 /** POST /v1/wallets: a client-chosen id, a name, an opening balance and a tracking start. */
 export function createWallet(c: VaultContext, call: VaultCall): CommandAck {
+  const command = commandInput(call, 'wallet.create', undefined, 'forbidden')
   const body = assertKnownFields(call.body, ['id', 'name', 'opening_minor', 'tracking_start'])
   if (!isUuid(body.id)) throw new ContractValidationError('VALIDATION_FAILED', 'id must be a lower-case UUID.', 'id')
   const payload = {
@@ -130,7 +134,7 @@ export function createWallet(c: VaultContext, call: VaultCall): CommandAck {
     opening_minor: parseMinor(body.opening_minor, OPENING, 'opening_minor').toString(),
     tracking_start: validateTrackingStart(body.tracking_start, bangkokDate(c.now)),
   }
-  return runCommand(c, commandInput(call, 'wallet.create', payload, 'forbidden'), () => {
+  return runCommand(c, { ...command, payload }, () => {
     const wallet = insertWalletRow(c, payload)
     if (!wallet) throw new ProblemException(409, 'VERSION_CONFLICT', { current: currentDto(c, payload.id) })
     return changed(wallet)
@@ -139,6 +143,7 @@ export function createWallet(c: VaultContext, call: VaultCall): CommandAck {
 
 /** PATCH /v1/wallets/:id: a rename, or an opening balance or tracking start correction with its reason. */
 export function updateWallet(c: VaultContext, call: VaultCall): CommandAck {
+  const command = commandInput(call, 'wallet.update', undefined, 'required')
   const walletId = routeId(call.params.id)
   const body = assertKnownFields(call.body, ['name', 'opening_minor', 'tracking_start', 'correction_reason'])
   const change: WalletChange = {}
@@ -157,8 +162,7 @@ export function updateWallet(c: VaultContext, call: VaultCall): CommandAck {
     reason = body.correction_reason as WalletCorrectionReason
   }
   const payload = { id: walletId, ...change, ...(reason ? { correction_reason: reason } : {}) }
-  const command = commandInput(call, 'wallet.update', payload, 'required')
-  return runCommand(c, command, () => {
+  return runCommand(c, { ...command, payload }, () => {
     const wallet = lockedWallet(c, walletId, command.expectedVersion)
     if (wallet.archived) throw stateProblem('errors.wallet_archived', 'archived')
     const corrected = change.opening_minor !== undefined || change.tracking_start !== undefined
@@ -177,10 +181,10 @@ export function updateWallet(c: VaultContext, call: VaultCall): CommandAck {
 
 /** POST /v1/wallets/:id/archive: only a wallet whose derived balance is zero. */
 export function archiveWallet(c: VaultContext, call: VaultCall): CommandAck {
+  const command = commandInput(call, 'wallet.archive', undefined, 'required')
   const walletId = routeId(call.params.id)
   assertKnownFields(call.body ?? {}, [])
-  const command = commandInput(call, 'wallet.archive', { id: walletId }, 'required')
-  return runCommand(c, command, () => {
+  return runCommand(c, { ...command, payload: { id: walletId } }, () => {
     const wallet = lockedWallet(c, walletId, command.expectedVersion)
     if (wallet.archived) throw stateProblem('errors.already_archived', 'archived')
     if (walletBalances(c, [walletId]).get(walletId) !== '0') throw stateProblem('errors.wallet_balance_not_zero', 'balance_minor')
@@ -190,10 +194,10 @@ export function archiveWallet(c: VaultContext, call: VaultCall): CommandAck {
 
 /** POST /v1/wallets/:id/unarchive: an archived wallet becomes editable and countable again. */
 export function unarchiveWallet(c: VaultContext, call: VaultCall): CommandAck {
+  const command = commandInput(call, 'wallet.unarchive', undefined, 'required')
   const walletId = routeId(call.params.id)
   assertKnownFields(call.body ?? {}, [])
-  const command = commandInput(call, 'wallet.unarchive', { id: walletId }, 'required')
-  return runCommand(c, command, () => {
+  return runCommand(c, { ...command, payload: { id: walletId } }, () => {
     const wallet = lockedWallet(c, walletId, command.expectedVersion)
     if (!wallet.archived) throw stateProblem('errors.not_archived', 'archived')
     return changed(updateWalletRow(c, walletId, { archived: false }))

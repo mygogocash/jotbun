@@ -128,6 +128,14 @@ describe('creating wallets', () => {
     expect((await (await client.as(user).post('/v1/wallets', wallet(), { schema: 99 })).json()).code).toBe('COMMAND_SCHEMA_UNSUPPORTED')
   })
 
+  it('a POST with an unknown field and no Idempotency-Key refuses on idempotency_key, as the API does', async () => {
+    const user = await member(client)
+    const headers = { ...(await signedHeaders(user)), 'content-type': 'application/json', 'x-gogospend-command-schema': '1' }
+    const res = await client.raw(new Request(`${BASE}/v1/wallets`, { method: 'POST', headers, body: JSON.stringify({ ...wallet(), currency: 'USD' }) }))
+    expect(res.status).toBe(422)
+    expect(await res.json()).toMatchObject({ code: 'VALIDATION_FAILED', fields: { idempotency_key: expect.any(String) } })
+  })
+
   it('a retried create replays its acknowledgement; a new key for the same id is a conflict', async () => {
     const user = await member(client)
     const body = wallet()
@@ -171,6 +179,14 @@ describe('editing wallets', () => {
     expect((await client.as(user).patch(`/v1/wallets/${body.id}`, {}, { ifMatch: 1 })).status).toBe(422)
     expect((await (await client.as(user).patch(`/v1/wallets/${body.id}`, { currency: 'USD' }, { ifMatch: 1 })).json()).code).toBe('UNKNOWN_FIELD')
     expect((await (await client.as(user).patch(`/v1/wallets/${body.id}`, { id: randomUUID(), name: 'X' }, { ifMatch: 1 })).json()).code).toBe('UNKNOWN_FIELD')
+  })
+
+  it('a PATCH with an unknown field and no If-Match refuses on if_match, as the API does', async () => {
+    const user = await member(client)
+    const body = await created(user)
+    const res = await client.as(user).patch(`/v1/wallets/${body.id}`, { currency: 'USD' })
+    expect(res.status).toBe(422)
+    expect(await res.json()).toMatchObject({ code: 'VALIDATION_FAILED', fields: { if_match: expect.any(String) } })
   })
 
   it('an opening correction records its reason as an audit code, never as income', async () => {
