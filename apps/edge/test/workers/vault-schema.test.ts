@@ -73,6 +73,15 @@ it('a category id never changes', async () => {
   expect(await sql(stub, 'SELECT count(*) AS n FROM categories WHERE id = ?', id)).toEqual([{ n: 1 }])
 })
 
+it("a replace that reuses another category's built-in key is refused, and the other category survives", async () => {
+  const stub = vault()
+  const food = crypto.randomUUID()
+  const replacement = crypto.randomUUID()
+  await sql(stub, `INSERT INTO categories (${CATEGORY_COLUMNS}) VALUES (?, 'expense', 'food', NULL, NULL, 0, 1, ${CATEGORY_TIME})`, food)
+  await expect(sql(stub, `INSERT OR REPLACE INTO categories (${CATEGORY_COLUMNS}) VALUES (?, 'expense', 'food', NULL, NULL, 0, 1, ${CATEGORY_TIME})`, replacement)).rejects.toThrow(/cannot be replaced/)
+  expect(await sql(stub, 'SELECT id FROM categories')).toEqual([{ id: food }])
+})
+
 it('INSERT OR REPLACE cannot flip a category in use, but an identical ON CONFLICT DO NOTHING insert is allowed', async () => {
   const stub = vault()
   const id = crypto.randomUUID()

@@ -234,10 +234,10 @@ Phase 1A moves each person's ledger into one SQLite Durable Object, the UserVaul
 - **Status:** built and verified locally on `worktree-agent-a1bb3b037cc6147fe`, on top of Task 3 (`f6d1f95`). Not pushed. The independent review is the controller's, after this receipt.
 - **Files:**
   - Categories: `apps/edge/src/vault/domain/categories.ts`. It ports `CategoriesService`: `listCategories`, `seedBuiltins`, `createCategory`, `updateCategory`, `archiveCategory` and `unarchiveCategory`. It also exports `categoryById`, which Tasks 5 and 6 use to check references.
-  - Schema: `apps/edge/src/vault/migrations/0000_vault_core.sql` gains three triggers on `categories` (R22), beside the Task 1 immutability triggers: `categories_id_immutable` (`BEFORE UPDATE OF id`), `categories_replace_guard` (`BEFORE INSERT`) and `categories_never_deleted` (`BEFORE DELETE`). No column changed, so the Drizzle schema did not change, and the drift test passes.
+  - Schema: `apps/edge/src/vault/migrations/0000_vault_core.sql` gains three triggers on `categories` (R22), beside the Task 1 immutability triggers: `categories_id_immutable` (`BEFORE UPDATE OF id`), `categories_replace_guard` (`BEFORE INSERT`, which also refuses a built-in key another category holds, from the pre-review fix) and `categories_never_deleted` (`BEFORE DELETE`). No column changed, so the Drizzle schema did not change, and the drift test passes.
   - Protocol: `apps/edge/src/vault/commands/registry.ts` registers the `category` entity and five commands after the wallet block, with the API's kinds, outcomes, schema version 1 and policy `current`.
   - Routes: `apps/edge/src/vault/routes.ts` (six handlers) and `apps/edge/src/v1/routes.ts` (six routes move from `VAULT_PENDING_ROUTES` into `VAULT_V1_ROUTES`, with the access, gates and status of the PostgreSQL table). The table now has 18 ported, 11 pending, 28 deferred and 6 retired routes, which is all 63 declared routes.
-  - Tests: `apps/edge/test/workers/categories.test.ts` (17 cases: the API spec's 10 `it` blocks, its `it.each` of 5 rows, the brief's derivation test, and a 409 for an id already in use). `apps/edge/test/workers/vault-schema.test.ts` gains three trigger tests and one `CHECK` test (12 in all). `apps/edge/test/vault-route-coverage.test.ts` now pins the six category routes.
+  - Tests: `apps/edge/test/workers/categories.test.ts` (17 cases: the API spec's 10 `it` blocks, its `it.each` of 5 rows, the brief's derivation test, and a 409 for an id already in use). `apps/edge/test/workers/vault-schema.test.ts` gains three trigger tests, one `CHECK` test and, from the pre-review fix, one replace case (13 in all). `apps/edge/test/vault-route-coverage.test.ts` now pins the six category routes.
 - **RED to GREEN:**
   - Typed stubs first: `domain/categories.ts` exported every function, each throwing `categories: not implemented yet`, and the tests were written against them.
   - RED: `npm run test:edge:workers -- test/workers/categories.test.ts test/workers/vault-schema.test.ts` gave `Test Files 2 failed (2)` and `Tests 20 failed | 8 passed (28)`. The 17 category cases failed on the missing routes (404 `NOT_FOUND`). Three of the 11 schema cases failed, the three new trigger tests, each "promise resolved instead of rejecting". The eight existing schema tests passed.
@@ -256,7 +256,7 @@ Phase 1A moves each person's ledger into one SQLite Durable Object, the UserVaul
 - **Gate** (repo root, `npm run typecheck:edge && npm run test:edge && npm run test:edge:workers && npm run build:edge && npm run test:edge:db`, after `npm run db:v1:up` and `npm run build -w gogospend-api`, exit 0):
   - `typecheck:edge`: passes.
   - `test:edge`: 121 passed (9 files), the baseline.
-  - `test:edge:workers`: 149 passed (6 files).
+  - `test:edge:workers`: 150 passed (6 files), after the pre-review fix (149 before it).
   - `build:edge`: passes. The `jotbun_vault` bundle has no PostgreSQL import.
   - `test:edge:db`: 62 passed (8 files), the baseline.
 - **Not applicable** (PostgreSQL roles and grants, row-level security, connection pools, isolation levels or lock waits):
@@ -272,14 +272,15 @@ Phase 1A moves each person's ledger into one SQLite Durable Object, the UserVaul
   4. The API spec has 10 `it` blocks and one `it.each` of 5 rows. All 15 cases are ported, and two are added (the brief's derivation test and the 409 case), for 17.
   5. `requireLiveEntity` is not called, although the brief lists it. The API's `locked` reads the row and checks its version only, and nothing deletes a category, so no head can be `deleted` or `purged`.
 - **SKIPPED (hosted):** none. No cloud resource was touched.
-- **Open, for the controller.** The guard is written as R22 states it, so these are not fixed:
-  - Probed in this Durable Object (`recursive_triggers` is 0, `foreign_keys` is 1): `INSERT OR REPLACE` with a built-in key that another id holds succeeds and silently deletes the other category, if nothing references it. SQLite fires a delete trigger for a REPLACE's implicit delete only when `recursive_triggers` is on, and it is off here, so `categories_never_deleted` does not catch it. A one-clause addition to the guard (`OR EXISTS (SELECT 1 FROM categories c WHERE c.builtin_key = NEW.builtin_key AND c.id <> NEW.id)`) would close this, with a test.
+- **Open, for the controller.** The guard is R22's plus the R76 clause (see the pre-review fix below). Still open:
   - Not probed, but it follows from the guard's condition: a REPLACE that keeps the type and built-in key passes, so it can change `label`, `color`, `archived` or `version` with no change record. Closing it means comparing the other columns too.
   - No code path in the vault issues either insert.
 - **Notes for Task 5 and later:**
   - `categoryById(c, id)` returns the stored row, with `archived` as 0 or 1. Map it with `asCategory` for a DTO, or compare `archived === 1`.
   - Register transactions and budgets after categories in `buildVaultRegistry()`, in the API's construction order.
   - Task 8a: the registry now names the entity `category`. The API's `CommandRegistry.entityNames()` comment says the sync DTO map must cover exactly the registered entities, so Task 8a must cover `category`.
+
+**Pre-review fix (R76).** The controller ruled that `categories_replace_guard` also refuses an insert whose built-in key another category already holds. Without that clause, `INSERT OR REPLACE` with such a key deleted the other category silently, because `recursive_triggers` is off and `categories_never_deleted` therefore did not fire. The clause is `OR EXISTS (SELECT 1 FROM categories c WHERE c.builtin_key = NEW.builtin_key AND c.id <> NEW.id)`. Test first: `a replace that reuses another category's built-in key is refused, and the other category survives` (`vault-schema.test.ts`), placed before the same-id replace case. Before the clause, `npm run test:edge:workers -- test/workers/categories.test.ts test/workers/vault-schema.test.ts` gave `Test Files 1 failed | 1 passed (2)` and `Tests 1 failed | 29 passed (30)`. The failure was the new case, `promise resolved "[]" instead of rejecting`, because the replace had removed the other category. After the clause, the same command gave `Test Files 2 passed (2)` and `Tests 30 passed (30)`. The full edge gate then passed (see the gate bullets above). Custom categories (a NULL built-in key), the identical seeding rows and the same-id replace are unaffected, as the existing cases show. Checksums (sha256, first 8 hex): `0000_vault_core.sql` d0329a4d, `vault-schema.test.ts` ff0b345b. One behaviour change: a plain `INSERT ... ON CONFLICT DO NOTHING` whose built-in key another category holds now aborts, where it was skipped before. The seed path checks the present keys first, so it cannot reach that case. The other open item (a REPLACE that keeps type and built-in key but changes other columns) is not part of this ruling and stays open.
 
 ## Not done, or follow-ups
 
