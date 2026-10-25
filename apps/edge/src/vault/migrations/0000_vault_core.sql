@@ -83,6 +83,30 @@ BEGIN
   SELECT RAISE(ABORT, 'category builtin_key is immutable');
 END;
 --> statement-breakpoint
+-- A category's id never changes, and a category is never deleted: the API archives.
+CREATE TRIGGER categories_id_immutable BEFORE UPDATE OF id ON categories
+  WHEN NEW.id IS NOT OLD.id
+BEGIN
+  SELECT RAISE(ABORT, 'category id is immutable');
+END;
+--> statement-breakpoint
+-- INSERT OR REPLACE deletes the row it replaces without firing an UPDATE trigger,
+-- so an insert over a category whose type or built-in key differs is refused here.
+-- An identical row passes, so ON CONFLICT DO NOTHING seeding still works.
+-- It also refuses a built-in key that another category holds: REPLACE would delete
+-- that category, and its delete trigger does not fire while recursive_triggers is off.
+CREATE TRIGGER categories_replace_guard BEFORE INSERT ON categories
+  WHEN EXISTS (SELECT 1 FROM categories c WHERE c.id = NEW.id AND (c.type IS NOT NEW.type OR c.builtin_key IS NOT NEW.builtin_key))
+    OR EXISTS (SELECT 1 FROM categories c WHERE c.builtin_key = NEW.builtin_key AND c.id <> NEW.id)
+BEGIN
+  SELECT RAISE(ABORT, 'a category in use cannot be replaced with another type or built-in key');
+END;
+--> statement-breakpoint
+CREATE TRIGGER categories_never_deleted BEFORE DELETE ON categories
+BEGIN
+  SELECT RAISE(ABORT, 'categories are archived, never deleted');
+END;
+--> statement-breakpoint
 CREATE TABLE wallets (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL CHECK (length(name) BETWEEN 1 AND 80 AND name = trim(name)),
