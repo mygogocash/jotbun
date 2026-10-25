@@ -28,8 +28,21 @@ describe('the vault route table covers each v1 route exactly once', () => {
     expect(new Set(listed).size).toBe(listed.length)
   })
 
-  it('Task 2 ports exactly the five routes the front door answers', () => {
-    expect(VAULT_V1_ROUTES.map((route) => keyOf(route.method, route.path)).sort()).toEqual(['GET /v1/me', 'GET /v1/policies', 'POST /v1/me/logout', 'POST /v1/me/policy-acceptances', 'PUT /v1/me/privacy-preferences'])
+  it('Task 3 ports the five Task 2 routes, the six wallet routes and command status, and nothing else', () => {
+    expect(VAULT_V1_ROUTES.map((route) => keyOf(route.method, route.path)).sort()).toEqual([
+      'GET /v1/me',
+      'GET /v1/policies',
+      'GET /v1/wallets',
+      'GET /v1/wallets/:id',
+      'PATCH /v1/wallets/:id',
+      'POST /v1/commands/status',
+      'POST /v1/me/logout',
+      'POST /v1/me/policy-acceptances',
+      'POST /v1/wallets',
+      'POST /v1/wallets/:id/archive',
+      'POST /v1/wallets/:id/unarchive',
+      'PUT /v1/me/privacy-preferences',
+    ])
   })
 
   it('a ported route keeps its access, gates and status, and token_only never appears', () => {

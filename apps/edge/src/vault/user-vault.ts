@@ -4,12 +4,13 @@ import { drizzle } from 'drizzle-orm/durable-sqlite'
 import type { DrizzleSqliteDODatabase } from 'drizzle-orm/durable-sqlite'
 import { migrate } from 'drizzle-orm/durable-sqlite/migrator'
 
-import { CommandRegistry } from '@api/commands/command-registry'
+import type { CommandRegistry } from '@api/commands/command-registry'
 import { commandDigesterFromEnv } from '@api/commands/command-digest'
 import type { CommandDigester } from '@api/commands/command-digest'
 
 import type { VaultCall, VaultReply } from '../v1/protocol'
 import { vaultRouteOf } from '../v1/routes'
+import { buildVaultRegistry } from './commands/registry'
 import type { VaultContext } from './context'
 import { VAULT_MIGRATIONS } from './migrations'
 import { assertPolicyAccepted } from './policies'
@@ -80,7 +81,7 @@ export class UserVault extends DurableObject<VaultEnv> {
   /** The registry and digester, built on the first call and kept for this instance. */
   private built(): { registry: CommandRegistry; digester: CommandDigester } {
     this.services ??= {
-      registry: new CommandRegistry(),
+      registry: buildVaultRegistry(),
       digester: commandDigesterFromEnv({ COMMAND_DIGEST_KEY: this.env.COMMAND_DIGEST_KEY, COMMAND_DIGEST_PREVIOUS_KEYS: this.env.COMMAND_DIGEST_PREVIOUS_KEYS }),
     }
     return this.services

@@ -5,8 +5,9 @@ import type { UserVault } from '../../src/vault/user-vault'
 import { BASE, TEST_POLICIES, member, newUser, startV1, tokenSignedByUnpublishedKey, vaultOf } from './support/v1-client'
 import type { V1Client } from './support/v1-client'
 
-// Ported from test/dispatch.db.test.ts. Wallet routes are pending until Task 3,
-// so the access cases that named /v1/wallets now name /v1/me, a bound route.
+// Ported from test/dispatch.db.test.ts. Task 2 wrote the access cases against
+// /v1/me, a bound route, because the wallet routes were not yet ported (Task 3).
+// These cases test the pipeline, not wallets, so they keep naming /v1/me.
 let client: V1Client
 
 beforeEach(async () => {
