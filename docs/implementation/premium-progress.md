@@ -355,3 +355,46 @@ What the owner asked for, and where each part stands. Commits on `claude/premium
 | Premium haptic feedback | One vocabulary of moments (`motion.haptic`), an On/Subtle/Off setting, 22 screens and components calling `playHaptic`. | Done in code; not yet felt on a real device. |
 | AI that people love and use daily | Tell Bun (sentences and slips), Ask Bun (grounded figures, follow-ups), Bun's daily note, "often logged" chips; `claude-opus-5-5` with fallbacks; consent, daily limits and grounding on the server. | Done in code with a scripted model; live calls wait for an Anthropic key. |
 | Trust, and a bridge to GoGoCash | The cashback card: a count, never a guessed amount; asked once; "Why am I seeing this?" and "How cashback works"; matching on the phone, nothing sent; Open GoGoCash with no diary data. | Done. A hosted GoGoCash catalogue URL is still to come. |
+
+## 1D: pokes and PostHog
+
+### Task 1: analytics core
+
+- **Status:** built and verified locally. Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - `apps/app/src/analytics/catalog.ts` (the 40 §7 events, property rules, `cleanEvent`, `cleanCommon`, `screenPattern`)
+  - `apps/app/src/analytics/events.ts` (the typed emitters every plan calls)
+  - `apps/app/src/analytics/controller.ts` (consent, identity, the held queue, `track` and `screen`)
+  - `apps/app/src/analytics/gate.ts` (`gateOutgoing`, PostHog's `before_send`)
+  - `apps/app/src/analytics/bus.ts` (`trackClientEvent` cleans, then the test seam and `getAnalytics()?.track`)
+  - `apps/app/src/analytics/testing/recordAnalytics.ts`
+  - Tests: `catalog.test.ts`, `events.test.ts`, `controller.test.ts`, `gate.test.ts`, `neverSent.test.ts`
+- **RED to GREEN:**
+  - RED (`npm run test:unit -w gogospend-app -- src/analytics/catalog.test.ts src/analytics/events.test.ts src/analytics/controller.test.ts src/analytics/gate.test.ts src/analytics/neverSent.test.ts`), stubs in place: 30 failed, 1 passed, 31 tests. Per file: catalog 6 failed, events 1, controller 18 failed and 1 passed, gate 4, neverSent 1. The pass was `without a client, nothing is sent…`: the stub's status was already `yes` and a null client never captured. Every other test failed on an assertion (empty allow-list, emitters that sent nothing, a controller that captured at once, a gate that returned its input).
+  - GREEN, same command: 31 passed, 0 failed.
+  - Whole `npm run test:unit -w gogospend-app`: 719 passed, 0 failed. That run was before a one-line test change (`assert.deepEqual(sent, [])` narrowed the array to `never[]` under `tsc`); the replacement is `assert.equal(sent.length, 0)`. `controller.test.ts` was re-run after it: 19 passed.
+- **Mutation check:** originals backed up outside the repo. SHA-256 before: `catalog.ts` `108a523b…8dfaf`, `controller.ts` `d6c3bb12…1badf`, `gate.ts` `188bd05c…e8138`. Each mutant was applied in place, the focused tests were run, the file was restored from the backup, and the checksum matched.
+  - Unknown properties kept by `cleanEvent` when they are a string, number or boolean: `cleanEvent drops…` and `neverSent` failed (2 failed, 5 passed of those two files).
+  - The server's yes applied over a pending no (the pending branch removed): `a pending no is kept…` failed (1 failed, 18 passed).
+  - `reset()` skipped inside `applyNo`: `a no read at launch…`, `a no given on another phone…` and `saying no…` failed (3 failed, 16 passed). The brief names the last two; the launch test also counts resets, so it failed too.
+  - `reset()` on a no only when the in-memory status was yes: `a no read at launch after an earlier yes…` failed (1 failed, 18 passed). The other two stayed green, because those start from yes.
+  - A frame kept `context_line`: `before yes…`, `after yes…` (that case also asserts the line is gone) and `neverSent` failed (3 failed, 2 passed).
+  - `$feature_flag_called` allowed after yes: `after yes, allow-listed…` failed (1 failed, 3 passed).
+- **Gate** (repo root, this task's scope: the brief's test command and `npm run typecheck:app`. The edge PostgreSQL suite was not run):
+  - Focused unit command, after the mutation files were restored and the `never[]` assertion was corrected: 31 passed, 0 failed.
+  - `typecheck:app`: passes, 0 errors. The first run failed on the three `sent[0]` lines above; the corrected assertion typechecks.
+- **Ported:** not a port from `apps/api`. The PostgreSQL role, grant, RLS, pool, isolation and lock cases are not applicable: this task is the app's in-memory allow-list, consent controller and `before_send` gate.
+- **Deviations:**
+  - R81: `wallet_type` is `cash`, `bank`, `credit_card`, `transit`. The brief's table still lists `ewallet`. The wallet test also asserts that `ewallet` is dropped.
+  - `PACK_KEYS` is the brief's nine names. P2-T5 has not merged, and `analyticsCategoryKey` does not exist on this base, so the test does not import either. The premium pack's keys (`phone`, and no `motorbike_rail` / `topup` / `seven`) are not the same list.
+  - `screen` sends the cleaned common properties and `origin: 'app'`. The common-properties row says the controller adds `origin` to every event.
+  - A new controller's status is `loading`, and the signed-in account starts unset rather than `null`, so the first `setAccount(null)` is a real change and resets a distinct id the SDK may still be holding. `setAccount` with the current id, including a second `null`, does nothing.
+  - Opening the unanswered question also calls `stopSessionRecording`, so replay cannot keep running if a yes later becomes "never asked".
+  - Tests beyond the brief's bullets: the other emitters, seconds rounded and clamped, `recordAnalytics`, a null client, and a stored yes that enters without an identity while the server cannot be read. The null-client test is the one that passed on the stub.
+- **SKIPPED (hosted):** no PostHog project, no key, nothing sent off the phone. The modules are pure and the client in these tests is a fake.
+- **Notes for later tasks:**
+  - Every plan, including phase 2, calls `events.ts` and these names (R23). `trackClientEvent` now drops a name that is not in the allow-list, so `spend_tx_added` and `system_permission_outcome` no longer reach the test seam.
+  - A category is a built-in key, one of `PACK_KEYS`, or `custom`. `phone` from the premium Thai pack is not in `PACK_KEYS`. P2 must send keys through this list; there is no `analyticsCategoryKey` here to wrap.
+  - `ewallet` will be dropped until phase 2's wallet kind matches R81.
+  - `account_deleted` is in the allow-list with `method`, as the brief's table requires. The anonymous count that must never recreate the person is the server event (1D-T13), not a special case in this controller. There is no client emitter for it yet.
+  - 1D-T6 installs this controller with `setAnalytics`, passes `gateOutgoing` as `before_send`, and keeps the real client null when no project key is set. `recordAnalytics()` is the test helper: it signs in `00000000-0000-4000-8000-0000000000aa`, then empties `sent`.
