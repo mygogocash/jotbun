@@ -85,7 +85,7 @@ D1 to D22 still stand, except where a decision below supersedes one. Numbers con
 | D31 | **Exchange rates: one daily reference feed,** stored per day. The provider is chosen with the owner before phase 5. | Deck 5 | |
 | D32 | **PostHog EU Cloud.** The PDPA notice names it. | Deck 6 | |
 | D33 | **Accounts and keys, created by the owner:** a Jotbun Cloudflare account on Workers Paid (not the GoGoCash account wrangler is signed in to today), a domain, an Anthropic API key, Apple and Google sign-in, and a PostHog EU project. Nothing is created until the owner says so. | Deck 7 | |
-| D34 | **Analytics consent:** one clear yes or no at setup, not pre-ticked ("ช่วยพัฒนา Jotbun"). It covers analytics, replay and surveys, and can be changed in Privacy at any time. | Deck 8 | |
+| D34 | **Analytics consent:** one clear yes or no at setup, not pre-ticked ("ช่วยพัฒนา Jotbun"). It covers analytics, replay and surveys, and can be changed in Privacy at any time. The answer is the account's, so a person who said no is not asked again on a new phone (owner, 25 October 2026). | Deck 8 | |
 | D35 | **No slip auto-save in v1.** Slip drafts are always reviewed. | Deck 9 | |
 | D36 | **Daily slip reading starts off.** The person turns it on. | Deck 10 | |
 | D37 | **A phone signed out from elsewhere keeps its unsent records,** and sends them once the same account signs in again. | Deck 11 | The "Session ended" erase prompt, for this case |
@@ -114,7 +114,7 @@ D1 to D22 still stand, except where a decision below supersedes one. Numbers con
 | C13 | Android gets the share target, app shortcuts and a home-screen widget. Lock-screen widgets and Siri are iOS only. | The canvas is drawn for iOS; these are the Android features that carry over naturally. |
 | C14 | **No implicit account linking.** Better Auth's implicit linking is switched off. A sign-in method joins an account only when the person links it from Account while signed in. A social sign-in whose email belongs to another account is refused with a screen naming the method to use, so it never creates a second account silently. An email code signs into the account that owns that address, because the code proves control of the mailbox. | Carries forward the backend design's rule, "never auto-link identities merely because emails match". A vault can never be merged, so a wrong join cannot be undone. |
 | C15 | **Sign-in comes right after the welcome, before the budget question and the setup checklist.** "เริ่มต้นใช้งาน" leads to sign-up, and "มีบัญชีแล้ว" leads to sign-in. "ข้ามไปก่อน" on `bw-setup` skips setup steps, not sign-in. | Today's app has no guest accounts, and the backend design allows none. Budgets and wallets are created online. |
-| C16 | **The offline boundary is unchanged:** only new records are queued offline. An online edit refused with `VERSION_CONFLICT` is kept on the phone as a pending choice, never sent by itself, until the person picks a version or chooses "ตัดสินใจทีหลัง" (decide later) on `rh-conflict`. | `rh-conflict` needs the refused edit kept, not offline editing. This adds no new outbox kinds. |
+| C16 | **The offline boundary is unchanged:** only new records are queued offline. An online edit of a record (not of a wallet, category or budget; owner, 25 October 2026) refused with `VERSION_CONFLICT` is kept on the phone as a pending choice, never sent by itself, until the person picks a version or chooses "ตัดสินใจทีหลัง" (decide later) on `rh-conflict`. | `rh-conflict` needs the refused edit kept, not offline editing. This adds no new outbox kinds. |
 | C17 | **The erasure registry holds keyed hashes of deleted user ids only,** kept 60 days. It stops a backup restore, a stale token or a queued command from bringing a deleted account back. It does not stop the same Apple ID, Google account or email from signing up again: that creates a new user id with an empty vault, and an old phone's outbox never replays into it. | A fresh start stays possible. 60 days covers the 30-day restore windows of Durable Objects and D1 with margin. |
 | C18 | **Weekday reminder wording stays.** The owner approved one wording per weekday on 24 October (uncommitted in `apps/app/src/notifications/reminderWording.ts`). The D38 one-shot reminders each use that day's wording. | It was approved in another session, and one-shot reminders can carry a different text each day. |
 
@@ -144,7 +144,7 @@ D1 to D22 still stand, except where a decision below supersedes one. Numbers con
   - formula-leading CSV cells neutralised.
 - **Guardrails:** the AI guardrails (D15), the GoGoCash bridge (D16), haptics (D17), and the Thai pack (D18, with C3).
 - **Logging:** errors are logged by `failureName` only. Never `error.message`, and never a request body.
-- **Gates:** every mutating route is gated (`writes`, `imports`, `ocr`, `uploads`, `jobs`, plus `ai`). A closed gate answers 503.
+- **Gates:** every mutating route is gated (`writes`, `imports`, `ocr`, `uploads`, `jobs`, plus `ai`). A closed gate answers 503. The `ai` gate arrives with AI Gateway in phase 3 (owner, 25 October 2026).
 - **Process:** every task follows handover §4: behavioural RED, GREEN, a mutation check, the full gate, receipts, a local commit, and an independent read-only review.
 - **Copy:** every new string goes into both `en.json` and `th.json`. Thai comes first, there are no emojis, and the voice rules are in 5.1.
 - **Accessibility:**
@@ -158,10 +158,10 @@ D1 to D22 still stand, except where a decision below supersedes one. Numbers con
   - `drizzle-orm`;
   - `jose`;
   - `@cloudflare/vitest-pool-workers`, which Cloudflare has renamed `@cloudflare/vitest-plugin`. The owner approved the new name on 25 October 2026;
-  - `posthog-react-native`, `@posthog/react-native-plugin`, `posthog-node` and `@posthog/ai`;
+  - `posthog-react-native`, `@posthog/react-native-plugin`, `posthog-node` and `@posthog/ai`, plus the `posthog-cli` build tool for uploading crash symbols (owner, 25 October 2026);
   - Reanimated (with `react-native-worklets`, which Reanimated 4 requires), Gesture Handler and Skia;
   - `expo-local-authentication`, for the Face ID lock (owner, 25 October 2026);
-  - native Apple and Google sign-in.
+  - native Apple and Google sign-in: `expo-apple-authentication`, and `@react-native-google-signin/google-signin` 16.1.5 once a development build proves it works on Expo SDK 58 (the Google button stays hidden until then; owner, 25 October 2026).
 
   Any other new package, and any lockfile regeneration with Linux bindings, still needs the owner's yes.
 
@@ -323,7 +323,7 @@ Outside Cloudflare:
 - Expo Push (to APNs and FCM);
 - Apple and Google sign-in.
 
-**`apps/api` (NestJS) and the Postgres tooling** stay in the repo, read-only, as the behaviour reference until phase 1's port passes. Removing them is a later owner decision.
+**`apps/api` (NestJS) and the Postgres tooling** stay in the repo, read-only, as the behaviour reference until phase 1's port passes. Removing them is a later owner decision. One exception: plan 1B may add the stateless parse server to `apps/api` and move its parse outcome out of the parse handler, without changing behaviour (owner, 25 October 2026).
 
 ### 6.2 UserVault
 
@@ -389,8 +389,9 @@ Prove this at ten times the expected 5 MB-a-year ledger, inside the isolate's me
 **D1 auth:**
 - Better Auth's tables (users, sessions, accounts, verification, passkeys, JWKS).
 - `account_status` (active, deleting, deleted).
-- An `erasure_registry` of keyed hashes of deleted user ids (C17).
 - Schema changes ship as D1 migrations.
+
+**D1 erasure (`ERASURE_DB`):** the `erasure_registry` of keyed hashes of deleted user ids (C17) lives in its own database, so that restoring `AUTH_DB` from a backup cannot bring a deleted account back. Both D1 databases are created with the `apac` location hint.
 
 **D1 catalog:** read-mostly, written by Cron or by migrations.
 - `fx_rates`: day, currency, rate against one base;
@@ -418,12 +419,12 @@ Key prefixes use the vault's id, never an email. Slip images never land here.
 **Server:**
 - Better Auth runs inside the Worker, with `database: env.AUTH_DB` and the `nodejs_compat` flag.
 - Plugins:
-  - email OTP: 6 digits, 10 minutes, and the first code signs the person up. It sends through `env.EMAIL`, falling back to the second provider (D30).
-  - `@better-auth/passkey`;
+  - email OTP: 6 digits, 10 minutes, and the first code signs the person up. It sends through `env.EMAIL`, falling back to the second provider (D30), which is Resend, behind a switch that stays off until its keys exist.
+  - `@better-auth/passkey` on the server. The app's passkey offer comes after phase 1, because it needs a native passkey package and an associated domain;
   - JWT, with keys published at `/api/auth/jwks`;
   - the Expo server plugin.
-- Social providers: Apple and Google, signed in with native ID tokens.
-- Account linking: implicit linking off; explicit linking only (C14).
+- Social providers: Apple and Google, signed in with native ID tokens. Apple sign-in is offered on iOS only; Android uses Google and email.
+- Account linking: implicit linking off; explicit linking only (C14). Linking needs a sign-in from the last 5 minutes. A person can unlink a method after a fresh sign-in, but never their last one. The refusal screen names the account's existing method.
 - **Local development:** email codes are written to the local log instead of being sent. This path exists only in local builds and is compiled out of staging and production.
 
 **Tokens:**
@@ -634,7 +635,7 @@ The `ai` gate pauses all of it with a 503.
 | Data export | `ExportWorkflow`: a CSV in R2 behind a 5-minute link | On request |
 | Account deletion | `DeletionWorkflow` | On request |
 | Push notifications | Queue, then Expo Push | On events |
-| Orphan sweep | Cron | Daily |
+| Orphan clean-up | Each vault's alarm: a key that was released or forgotten stays as a tombstone and is deleted once more a day later, so a late write never leaves an orphan | Daily, per vault (replaces a cross-vault Cron, 25 October 2026) |
 
 Daily reminders stay on the phone as local notifications.
 
@@ -648,10 +649,10 @@ Daily reminders stay on the phone as local notifications.
 2. Set the vault to `deleting`, which refuses writes and cancels alarms.
 3. Delete the R2 objects under its prefix.
 4. Delete the vault's storage.
-5. Delete Better Auth's rows and add the erasure registry entry.
-6. Delete the PostHog person.
+5. Delete Better Auth's rows and add the erasure registry entry. Before the beta, also revoke the person's Apple sign-in tokens, as Apple expects.
+6. Delete the PostHog person. A lasting PostHog failure does not hold up steps 7 and 8; the deletion is retried later, by analytics id only.
 7. Send the deletion email (Thai or English), stating that backups age out within 30 days.
-8. Run a final orphan sweep after every publisher's deadline.
+8. Run a final sweep of the vault's object prefixes after every publisher's deadline.
 
 Phone behaviour stays as in the backend design, plus D37.
 
@@ -715,8 +716,8 @@ The deck's estimates, with D28 applied and assuming 1 in 10 Ask Bun questions es
 
 **Wiring:**
 - **App:** `posthog-react-native` sends screen views, our named events, flags and surveys. `@posthog/react-native-plugin` adds masked replay and native crash capture; it needs a development build. Wire it behind the app's existing `analytics/` bus.
-- **Proxy:** a route on our Worker forwards to PostHog EU and strips cookies and auth headers.
-- **Server:** `posthog-node` from the Worker, flushed with `waitUntil`, for events only the server knows: a record confirmed by the vault, sync failed, slip import finished, deletion finished. Server events are marked so app and server counts can be checked against each other.
+- **Proxy:** a route on our Worker forwards to PostHog EU and strips cookies, auth headers and every client IP header, so PostHog keeps no IP address and no country.
+- **Server:** `posthog-node` from the Worker, flushed with `waitUntil`, for events only the server knows: a record confirmed by the vault (records typed or captured one at a time; imported statement rows do not count), sync failed, slip import finished, deletion finished. Server events are marked so app and server counts can be checked against each other.
 - **Identity:** anonymous until sign-in, then an analytics id equal to the HMAC-SHA256 of the user id under a secret key. Never an email or phone. Reset on sign-out.
 - **Our own copy:** a scheduled batch export to R2.
 - **Errors:**
@@ -736,7 +737,7 @@ The deck's estimates, with D28 applied and assuming 1 in 10 Ask Bun questions es
 
 | Group | Events | Properties |
 | --- | --- | --- |
-| Account | `signed_up`, `signed_in`, `signed_out`, `passkey_created`, `account_deleted` | method |
+| Account | `signed_up`, `signed_in`, `signed_out`, `passkey_created`, `account_deleted` (an anonymous count, never linked to the person) | method |
 | First open | `onboarding_step_viewed`, `budget_set`, `wallet_added`, `setup_completed` | step, wallet type, material, Bun face, budget set or skipped |
 | Recording | `record_started`, `record_saved`, `record_edited`, `record_deleted`, `record_restored`, `undo_used` | kind, source, category key, has photo, offline, seconds to save |
 | Bun AI | `ai_consent_changed`, `tell_bun_sent`, `ai_draft_reviewed`, `ask_bun_asked`, `ask_bun_rated` | outcome (kept, edited, dropped), fields edited, model, escalated |
