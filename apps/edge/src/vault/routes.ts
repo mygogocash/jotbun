@@ -3,6 +3,7 @@ import { MAX_COMMAND_STATUS_IDS, ContractValidationError, assertKnownFields, isU
 import type { VaultCall, VaultReply, VaultRouteId } from '../v1/protocol'
 import { lookupStatuses } from './commands/receipts'
 import type { VaultContext } from './context'
+import { archiveCategory, createCategory, listCategories, seedBuiltins, unarchiveCategory, updateCategory } from './domain/categories'
 import { createWallet, archiveWallet, getWallet, listWallets, unarchiveWallet, updateWallet } from './domain/wallets'
 import { syncChanges } from './reads/sync'
 import { acceptPolicy, describeMe, setPrivacy } from './policies'
@@ -43,6 +44,12 @@ export const VAULT_HANDLERS: Partial<Record<VaultRouteId, VaultHandler>> = {
   'wallets.update': (c, call) => okReply(call.route, updateWallet(c, call)),
   'wallets.archive': (c, call) => okReply(call.route, archiveWallet(c, call)),
   'wallets.unarchive': (c, call) => okReply(call.route, unarchiveWallet(c, call)),
+  'categories.list': (c, call) => okReply(call.route, listCategories(c)),
+  'categories.builtins': (c, call) => okReply(call.route, seedBuiltins(c)),
+  'categories.create': (c, call) => okReply(call.route, createCategory(c, call)),
+  'categories.update': (c, call) => okReply(call.route, updateCategory(c, call)),
+  'categories.archive': (c, call) => okReply(call.route, archiveCategory(c, call)),
+  'categories.unarchive': (c, call) => okReply(call.route, unarchiveCategory(c, call)),
   'commands.status': (c, call) => okReply(call.route, { statuses: lookupStatuses(c, commandIdsOf(call.body)) }),
   'sync.changes': (c, call) => okReply(call.route, syncChanges(c, call.query)),
 }
