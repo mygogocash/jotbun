@@ -22,6 +22,7 @@ import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { V1Error } from '@mobile/api/client';
+import { playHaptic } from '@mobile/lib/hapticMoment';
 import { useCopy } from '@mobile/i18n/useCopy';
 import { formatMinor } from '@mobile/spend/v1/money';
 import { recentlyDeletedModel } from '@mobile/spend/v1/redesign/historyModel';
@@ -248,7 +249,9 @@ export function RecordScreen({ id, mode = 'view', now }: RecordScreenProps) {
       setPending(null);
       setDeleted({ id: record.id, version: ack.version });
       setNotice(null);
+      playHaptic('deleteDone');
     } catch (problem) {
+      playHaptic('saveFailed');
       const outcome = problem instanceof V1Error ? problem.outcome : undefined;
       const result = saveProblem(problem, tc);
       if (!result.unconfirmed) keys.settle(slot);
@@ -278,6 +281,7 @@ export function RecordScreen({ id, mode = 'view', now }: RecordScreenProps) {
       setPending(null);
       setNotice(null);
     } catch (problem) {
+      playHaptic('saveFailed');
       const result = saveProblem(problem, tc);
       if (!result.unconfirmed) {
         keys.settle(slot);

@@ -5,6 +5,9 @@ import { afterEach, beforeAll, expect, test, vi } from 'vitest';
 
 import { LANGUAGE_PREFERENCE_STORAGE_KEY } from '@mobile/i18n/languagePreferenceStorage';
 import { QUICK_ADD_CHEER_KEY, eraseCheerDay } from '@mobile/screens/redesign/quickAddCheer';
+import { CELEBRATION_WEEK_KEY } from '@mobile/screens/redesign/insights/celebrationWeek';
+import { CASHBACK_DECLINED_KEY } from '@mobile/screens/redesign/insights/cashbackDecline';
+import { HAPTIC_PREFERENCE_STORAGE_KEY } from '@mobile/lib/hapticPreferenceStorage';
 import { THEME_PREFERENCE_STORAGE_KEY } from '@mobile/theme/themePreferenceStorage';
 import { BUN_INTENSITY_STORAGE_KEY, eraseStoredBunIntensity } from './bunIntensityStorage';
 import { installBrowserStorage } from './mascotTestHarness';
@@ -55,12 +58,16 @@ test('the sign-out erase hook forgets the bun settings after the import draft, a
   erased.order = [];
   window.localStorage.setItem(BUN_INTENSITY_STORAGE_KEY, 'quiet');
   window.localStorage.setItem(QUICK_ADD_CHEER_KEY, '2026-09-29');
+  window.localStorage.setItem(CELEBRATION_WEEK_KEY, '2026-W43');
+  window.localStorage.setItem(CASHBACK_DECLINED_KEY, '1');
   window.localStorage.setItem(THEME_PREFERENCE_STORAGE_KEY, 'dark');
   window.localStorage.setItem(LANGUAGE_PREFERENCE_STORAGE_KEY, 'th');
   await eraseWithDiary('a0000000-0000-4000-8000-000000000001');
   expect(erased.order).toEqual(['import draft a0000000-0000-4000-8000-000000000001']);
   expect(window.localStorage.getItem(BUN_INTENSITY_STORAGE_KEY)).toBeNull();
   expect(window.localStorage.getItem(QUICK_ADD_CHEER_KEY)).toBeNull();
+  expect(window.localStorage.getItem(CELEBRATION_WEEK_KEY)).toBeNull();
+  expect(window.localStorage.getItem(CASHBACK_DECLINED_KEY)).toBeNull();
   // The phone's own settings stay: the language choice is kept, as the theme preference is.
   expect(window.localStorage.getItem(THEME_PREFERENCE_STORAGE_KEY)).toBe('dark');
   expect(window.localStorage.getItem(LANGUAGE_PREFERENCE_STORAGE_KEY)).toBe('th');
@@ -68,7 +75,7 @@ test('the sign-out erase hook forgets the bun settings after the import draft, a
   Object.defineProperty(Platform, 'OS', { value: 'ios', configurable: true, writable: true });
   store.deleteItemAsync.mockRejectedValue(new Error('keychain locked'));
   await expect(eraseWithDiary('a0000000-0000-4000-8000-000000000001')).resolves.toBeUndefined();
-  expect(store.deleteItemAsync.mock.calls.map((call) => (call as unknown[])[0])).toEqual([BUN_INTENSITY_STORAGE_KEY, QUICK_ADD_CHEER_KEY]);
+  expect(store.deleteItemAsync.mock.calls.map((call) => (call as unknown[])[0])).toEqual([BUN_INTENSITY_STORAGE_KEY, HAPTIC_PREFERENCE_STORAGE_KEY, QUICK_ADD_CHEER_KEY, CELEBRATION_WEEK_KEY, CASHBACK_DECLINED_KEY]);
   store.deleteItemAsync.mockReset();
   store.deleteItemAsync.mockImplementation(async () => undefined);
 });

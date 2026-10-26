@@ -9,6 +9,7 @@ import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useBunColors } from '@mobile/theme/ThemeProvider';
+import { playHaptic } from '@mobile/lib/hapticMoment';
 import { DECORATIVE } from './a11y';
 import { BunText } from './BunText';
 import { LARGEST_STANDARD_SCALE } from './largeTextScale';
@@ -46,7 +47,10 @@ function Tab({ item, selected, onSelect }: { item: TabBarItem; selected: boolean
       accessibilityShowsLargeContentViewer
       accessibilityLargeContentTitle={item.label}
       aria-selected={selected}
-      onPress={() => onSelect(item.key)}
+      onPress={() => {
+        if (!selected) playHaptic('tabChange');
+        onSelect(item.key);
+      }}
       style={{
         flex: 1,
         minHeight: BUN_TOUCH,
@@ -112,7 +116,10 @@ export function TabBar({ items, active, onSelect, onAdd, addLabel }: TabBarProps
             accessibilityLabel={addLabel}
             accessibilityShowsLargeContentViewer
             accessibilityLargeContentTitle={addLabel}
-            onPress={onAdd}
+            onPress={() => {
+              playHaptic('sheetOpen');
+              onAdd();
+            }}
             style={{
               minHeight: ADD_SIZE,
               minWidth: ADD_SIZE,

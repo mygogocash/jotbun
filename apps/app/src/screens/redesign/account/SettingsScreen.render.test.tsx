@@ -186,11 +186,22 @@ test.each([['full', 'Full'], ['quiet', 'Quiet'], ['off', 'Off']] as const)('bun 
 test('choosing Quiet saves the bun intensity for the whole app', () => {
   mountSettings();
   expect(checkedIn('Bun')).toEqual(['Full']);
-  fireEvent.click(screen.getByRole('radio', { name: 'Quiet' }));
+  fireEvent.click(within(group('Bun')).getByRole('radio', { name: 'Quiet' }));
   expect(window.localStorage.getItem(BUN_INTENSITY_STORAGE_KEY)).toBe('quiet');
   expect(checkedIn('Bun')).toEqual(['Quiet']);
-  fireEvent.click(screen.getByRole('radio', { name: 'Off' }));
+  // Haptics also offers Off, so the choice is made in the Bun group.
+  fireEvent.click(within(group('Bun')).getByRole('radio', { name: 'Off' }));
   expect(window.localStorage.getItem(BUN_INTENSITY_STORAGE_KEY)).toBe('off');
+});
+
+test('Haptics offers On, Subtle and Off, each saying what it plays', () => {
+  mountSettings();
+  expect(radioNames('Haptics')).toEqual(['On', 'Subtle', 'Off']);
+  expect(checkedIn('Haptics')).toEqual(['On']);
+  const haptics = group('Haptics');
+  expect(within(haptics).getByText('A light tap when you type, choose and save.')).toBeTruthy();
+  expect(within(haptics).getByText('Only when something is saved, needs a look or goes wrong.')).toBeTruthy();
+  expect(within(haptics).getByText('No vibration from Jotbun.')).toBeTruthy();
 });
 
 // ---------------------------------------------------------------------------

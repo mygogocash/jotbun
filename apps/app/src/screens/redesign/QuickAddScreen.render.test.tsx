@@ -1033,3 +1033,31 @@ test('the form opens on the type switch with Close beside it; the title is a hea
   expect(within(top).getByRole('radiogroup', { name: 'Record type' })).toBeTruthy();
   expect(within(top).getByRole('button', { name: 'Close' })).toBeTruthy();
 });
+
+// ---------------------------------------------------------------------------
+// Tell Bun (premium plan A3): a sentence fills the sheet; Save stays the person's.
+
+test('Tell Bun fills Quick add from a Thai sentence, and nothing is sent until Save', async () => {
+  const fake = await open();
+  fireEvent.click(screen.getByTestId('quick-add-tell-bun'));
+  fireEvent.change(await screen.findByLabelText('What did you spend or receive?'), { target: { value: 'ข้าวมันไก่ 50' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Read it' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Use this' }));
+  await waitFor(() => expect(screen.getByTestId('quick-add-amount').textContent).toContain('50'));
+  expect(createCalls(fake)).toHaveLength(0);
+  save();
+  expect(await screen.findByText('Saved')).toBeTruthy();
+  const [[input]] = createCalls(fake);
+  expect(input).toEqual({ id: expect.stringMatching(UUID), type: 'expense', amount_minor: '5000', occurred_on: TODAY, wallet_id: cash.id, category_id: food.id, note: null, merchant: 'ข้าวมันไก่' });
+});
+
+test('Tell Bun is not offered for a move between wallets, or with the companion area off', async () => {
+  await open();
+  expect(screen.getByTestId('quick-add-tell-bun')).toBeTruthy();
+  fireEvent.click(screen.getByRole('radio', { name: 'Move' }));
+  expect(screen.queryByTestId('quick-add-tell-bun')).toBeNull();
+  cleanup();
+  vi.stubEnv('EXPO_PUBLIC_REDESIGN', '-companion');
+  await open();
+  expect(screen.queryByTestId('quick-add-tell-bun')).toBeNull();
+});

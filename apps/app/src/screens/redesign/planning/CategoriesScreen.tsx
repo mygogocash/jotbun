@@ -32,7 +32,9 @@ import { ScrollView, View } from 'react-native';
 
 import { V1Error } from '@mobile/api/client';
 import type { V1Outcome } from '@mobile/api/client';
-import { useCopy } from '@mobile/i18n/useCopy';
+import { isRedesignEnabled } from '@mobile/config/featureFlags';
+import { missingPackItems, packCommands } from '@mobile/spend/v1/redesign/planning/thaiPack';
+import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
 import { Bun } from '@mobile/mascot/Bun';
 import { formatMinor } from '@mobile/spend/v1/money';
 import { classifyLoadProblem } from '@mobile/spend/v1/redesign/homeModel';
@@ -47,6 +49,8 @@ import { useSpendV1 } from '@mobile/spend/v1/SpendV1Context';
 import { monthOf, todayInBangkok } from '@mobile/spend/v1/viewModels';
 import { EmptyState } from '@mobile/ui/EmptyState';
 import { BUN_SPACE } from '@mobile/ui/layout';
+import { Card } from '@mobile/ui/Card';
+import { BunText } from '@mobile/ui/BunText';
 import { PillButton } from '@mobile/ui/PillButton';
 import { ConfirmSheet } from '@mobile/ui/Sheet';
 import { StageHeader } from '@mobile/ui/StageHeader';
@@ -100,6 +104,8 @@ export function CategoriesScreen({ now }: CategoriesScreenProps = {}) {
   const resources = useSpendV1();
   const tc = useCopy();
   const locale = useMoneyLocale();
+  const activeLocale = useActiveLocale();
+  const companion = isRedesignEnabled('companion');
   const router = useRouter();
   const goBack = useGoBack('/spend/budget');
   const keys = useCommandKeys();
@@ -375,6 +381,8 @@ export function CategoriesScreen({ now }: CategoriesScreenProps = {}) {
       setUnarchiving(item.category.id);
       void send([archiveCommand(item.category, 'unarchive')], { success: tc('{name} is back in Quick add.', { name: item.name }), draft: null, seen: data.budget });
     };
+    // Thai everyday categories (premium plan A2): offered while any is missing.
+    const pack = companion ? missingPackItems(data.categories) : [];
     body = (
       <View style={{ gap: BUN_SPACE.md }}>
         <TypeToggle value={type} onChange={setType} disabled={locked} />
@@ -387,6 +395,20 @@ export function CategoriesScreen({ now }: CategoriesScreenProps = {}) {
         {groups.hasCustom ? null : (
           <EmptyState art={<Bun pose="thinking" size="m" />} title={tc('No categories of your own yet')} body={tc("Add one for anything the built-in categories don't cover.")} />
         )}
+        {pack.length > 0 ? (
+          <Card padding="sm" testID="thai-everyday-pack">
+            <View style={{ gap: BUN_SPACE.xs }}>
+              <BunText variant="heading">{tc('Thai everyday')}</BunText>
+              <BunText tone="muted">{pack.map((item) => (activeLocale === 'th' ? item.th : item.en)).join(' · ')}</BunText>
+              <PillButton
+                kind="secondary"
+                label={pack.length === 1 ? tc('Add 1 category') : tc('Add {count} categories', { count: pack.length })}
+                disabled={locked || blocked}
+                onPress={() => void send(packCommands(data.categories, activeLocale, newId), { success: tc('Added. They are in Quick add now.'), draft: null, seen: data.budget })}
+              />
+            </View>
+          </Card>
+        ) : null}
         {groups.archived.length > 0 ? (
           <ArchivedSection
             items={groups.archived}

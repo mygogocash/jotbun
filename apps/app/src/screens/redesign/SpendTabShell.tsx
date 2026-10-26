@@ -23,7 +23,7 @@ export type SpendTab = { visible: boolean; active: SpendTabKey | '' };
 
 const ROUTES: Readonly<Record<SpendTabKey, '/spend' | '/spend/all' | '/spend/insights'>> = { home: '/spend', history: '/spend/all', insights: '/spend/insights' };
 /** Screens that take the whole height: Add, a record (with its edit screens), Recently deleted, Budget, Wallets, Categories, a recap and reminders. */
-const BAR_HIDDEN = new Set(['add', 'record', 'deleted', 'budget', 'wallets', 'categories', 'recap', 'reminders']);
+const BAR_HIDDEN = new Set(['add', 'record', 'deleted', 'budget', 'wallets', 'categories', 'recap', 'reminders', 'ask']);
 
 /** Whether the bar shows on `pathname`, and which tab it selects ('' for none). */
 export function spendTab(pathname: string): SpendTab {

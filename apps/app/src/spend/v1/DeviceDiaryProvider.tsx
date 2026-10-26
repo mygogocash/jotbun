@@ -15,6 +15,9 @@ import { getV1SessionSnapshot, subscribeSession } from '@mobile/auth/session';
 import { eraseStoredBunIntensity } from '@mobile/mascot/bunIntensityStorage';
 import { forgetKeptHistory } from '@mobile/screens/redesign/historyKeep';
 import { eraseCheerDay } from '@mobile/screens/redesign/quickAddCheer';
+import { eraseCelebratedWeek } from '@mobile/screens/redesign/insights/celebrationWeek';
+import { eraseCashbackDeclined } from '@mobile/screens/redesign/insights/cashbackDecline';
+import { eraseStoredHapticPreference } from '@mobile/lib/hapticPreferenceStorage';
 import type { AccountDatabase } from '@mobile/storage/accountDatabase';
 import { createDeviceAccountDatabase } from '@mobile/storage/deviceDiary';
 import { createDeviceSync } from '@mobile/sync/deviceSync';
@@ -53,7 +56,7 @@ const knownAccount = createKnownAccount(
 export async function eraseWithDiary(accountId: string): Promise<void> {
   forgetKeptHistory();
   await eraseLegacyImportDraft(accountId);
-  await Promise.all([eraseStoredBunIntensity().catch(() => undefined), eraseCheerDay()]);
+  await Promise.all([eraseStoredBunIntensity().catch(() => undefined), eraseStoredHapticPreference().catch(() => undefined), eraseCheerDay(), eraseCelebratedWeek(), eraseCashbackDeclined()]);
 }
 
 function createDeviceDiary(): { diary: SpendDiary; refresh: () => Promise<void>; dispose: () => Promise<void> } {

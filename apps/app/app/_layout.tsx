@@ -11,6 +11,7 @@ import { useActiveLocale } from '@mobile/i18n/useCopy';
 import { syncUiFontFamily } from '@mobile/theme/uiFontFamily';
 import { useReminderUpkeep } from '@mobile/notifications/useReminderUpkeep';
 import { BunIntensityProvider } from '@mobile/mascot/BunIntensityProvider';
+import { HapticsProvider } from '@mobile/lib/HapticsProvider';
 import { useReducedMotion } from '@mobile/hooks/useReducedMotion';
 
 // The app's language: the person's choice in Settings, else the device's
@@ -29,7 +30,7 @@ function RootStack() {
   const reducedMotion = useReducedMotion();
   useEffect(() => { if (fontError) console.warn('Bundled fonts could not load; using the system fallback.'); }, [fontError]);
   if ((!fontsLoaded && !fontError) || !ready) return <View style={{ flex: 1, justifyContent: 'center' }}><ActivityIndicator accessibilityLabel="Loading Jotbun" /></View>;
-  return <BunIntensityProvider><SafeAreaProvider><ThemeProvider><LocaleUpkeep /><ThemedStatusBar /><Stack screenOptions={{ headerShown: false, animation: reducedMotion ? 'fade' : 'default' }} /></ThemeProvider></SafeAreaProvider></BunIntensityProvider>;
+  return <HapticsProvider><BunIntensityProvider><SafeAreaProvider><ThemeProvider><LocaleUpkeep /><ThemedStatusBar /><Stack screenOptions={{ headerShown: false, animation: reducedMotion ? 'fade' : 'default' }} /></ThemeProvider></SafeAreaProvider></BunIntensityProvider></HapticsProvider>;
 }
 
 /** What follows the language beyond the words: the UI font for its script, and the local reminders written in it. */

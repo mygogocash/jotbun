@@ -5,8 +5,8 @@
 //
 // 1. The image loads @gogospend/contracts' runtime exports (TypeScript source
 //    through Node's type stripping, the master contracts rule).
-// 2. Each API and worker process - the v1 API, the job, security and
-//    deletion workers - requests @gogospend/contracts while its module graph
+// 2. Each API and worker process - the v1 API, the job, security,
+//    deletion and parse workers - requests @gogospend/contracts while its module graph
 //    loads, and receives the runtime exports. (The migration CLI does not use
 //    the contracts; it is started below like the others.)
 // 3. Each process command starts with production settings made of synthetic
@@ -37,6 +37,7 @@ const ENTRIES = {
   'job worker': { file: 'dist/worker.js', args: [], contracts: true },
   'security worker': { file: 'dist/jobs/security-worker.js', args: [], contracts: true },
   'deletion worker': { file: 'dist/privacy/deletion-worker.js', args: ['--registry-fd', '3'], contracts: true },
+  'parse worker': { file: 'dist/imports/parse-worker.js', args: [], contracts: true },
   'migration': { file: 'dist/database/migrate-cli.js', args: [], contracts: false },
 };
 const LEGACY_PATHS = ['dist/main.js', 'dist/app.module.js', 'dist/spend', 'dist/user', 'dist/offer', 'dist/legal-documents', 'dist/product-access', 'dist/analytics', 'dist/auth/firebase-auth.guard.js', 'dist/testing', 'src'];

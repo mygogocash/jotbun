@@ -37,7 +37,13 @@ import { ActivityIndicator, Animated, Pressable, ScrollView, View } from 'react-
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { V1Error } from '@mobile/api/client';
-import { useCopy } from '@mobile/i18n/useCopy';
+import type { AiDraft } from '@gogospend/contracts';
+import { isRedesignEnabled } from '@mobile/config/featureFlags';
+import { oftenLogged } from '@mobile/spend/v1/ai/oftenLogged';
+import { applyDraft } from '@mobile/spend/v1/ai/tellBun';
+import { TellBunSheet } from './ai/TellBunSheet';
+import { playHaptic } from '@mobile/lib/hapticMoment';
+import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
 import { Bun } from '@mobile/mascot/Bun';
 import { useBunIntensity } from '@mobile/mascot/BunIntensityProvider';
 import { classifyLoadProblem } from '@mobile/spend/v1/redesign/homeModel';
@@ -330,11 +336,15 @@ function keypadFor(source: CopySource | null): KeypadState {
 function EntryForm({ wallets, categories, balances, today, records, drafts, source, title, onDone, onAnother }: EntryFormProps) {
   const resources = useSpendV1();
   const tc = useCopy();
+  const activeLocale = useActiveLocale();
+  const companion = isRedesignEnabled('companion');
   const keys = useCommandKeys();
   const diary = useSpendDiary();
   const diaryView = useDiaryView();
   const { intensity } = useBunIntensity();
   const liveRanking = useMemo(() => rank(categories, records, drafts, today), [categories, records, drafts, today]);
+  // Tell Bun's "Often logged" chips, from the same recent records (worked out here; nothing is sent).
+  const often = useMemo(() => oftenLogged({ records, today, wallets, categories }), [records, today, wallets, categories]);
   const [frozenRanking, setFrozenRanking] = useState<Ranking | null>(null);
   const ranking = frozenRanking ?? liveRanking;
   // One record id and one device command id per draft, fixed when it opens.
@@ -346,7 +356,7 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
   const [message, setMessage] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>('editing');
   const [details, setDetails] = useState(() => Boolean(source?.note || source?.merchant));
-  const [sheet, setSheet] = useState<'categories' | 'wallet' | null>(null);
+  const [sheet, setSheet] = useState<'categories' | 'wallet' | 'tellBun' | null>(null);
   const [saved, setSaved] = useState<SavedMomentData | null>(null);
   const [savedCount, setSavedCount] = useState(0);
   const pop = useSpringPop(savedCount);
@@ -393,6 +403,10 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
       void writeCheerDay(today);
     }
     unconfirmed.current = null;
+    // Kept on this phone is a light tap: it is safe in the diary but has not
+    // reached the server, and "saving" must never feel saved. Confirmed
+    // online is success, and the day's first save gets the celebration.
+    playHaptic(via === 'online' ? (cheer ? 'celebration' : 'saveLanded') : 'saveQueued');
     setSaved({ draft: fields, via, cheer });
     setStatus('saved');
     setSavedCount((count) => count + 1);
@@ -422,6 +436,7 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
         const held = (error as V1Error).current as { amount_minor?: unknown } | undefined;
         const amount = typeof held?.amount_minor === 'string' ? words(held.amount_minor).shown : '';
         setMessage(tc('This entry is already saved in Jotbun as {amount}. Check it in History.', { amount }));
+        playHaptic('saveFailed');
         setStatus('conflict');
         return;
       }
@@ -437,6 +452,7 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
       setServerErrors(problem.fields);
       setMessage(problem.message);
       if (problem.fields.note || problem.fields.merchant) setDetails(true);
+      playHaptic('saveFailed');
       setStatus(stillUnknown ? 'unconfirmed' : problem.blocked ? 'blocked' : 'editing');
     }
   }
@@ -465,6 +481,7 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
     setMessage(null);
     if (!settled.outcome.ok || !built.ok || Object.keys(next).length > 0) {
       if (next.note || next.merchant) setDetails(true);
+      playHaptic('saveFailed');
       return;
     }
     if (diary && diaryView.phase === 'ready' && status !== 'unconfirmed') {
@@ -474,6 +491,7 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
         finish(fields, 'device');
       } catch (error) {
         setMessage(localSaveProblem(error, tc));
+        playHaptic('saveFailed');
         setStatus('editing');
       }
       return;
@@ -520,6 +538,12 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
     if (type === 'transfer') return;
     edit((previous) => ({ ...previous, categoryByType: { ...previous.categoryByType, [type]: id } }));
   };
+  // Tell Bun (premium plan A3): a draft fills the sheet as if typed; Save stays the person's.
+  const useBunDraft = (bunDraft: AiDraft) => {
+    if (locked) return;
+    edit((previous) => ({ ...previous, ...applyDraft(previous, bunDraft).fields }));
+    if (bunDraft.amount_minor) setKeypad(keypadFromMinor(bunDraft.amount_minor));
+  };
 
   const footer = (
     <ActionFooter testID="quick-add-footer">
@@ -542,6 +566,16 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
           <CloseButton onPress={onDone} />
         </View>
         <AmountLine keypad={keypad} type={type} error={amountError} />
+        {companion && type !== 'transfer' ? (
+          <PillButton
+            kind="secondary"
+            label={tc('Tell Bun')}
+            accessibilityHint={tc('Type it like a chat message, or scan a bank slip. Bun fills in the entry for you to check.')}
+            disabled={locked}
+            onPress={() => setSheet('tellBun')}
+            testID="quick-add-tell-bun"
+          />
+        ) : null}
         {type === 'transfer' ? (
           <WalletPicker
             mode="move"
@@ -605,6 +639,16 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
           </View>
         ) : null}
         <Keypad onKey={onKey} disabled={locked} />
+        {companion ? (
+          <TellBunSheet
+            visible={sheet === 'tellBun'}
+            onClose={() => setSheet(null)}
+            context={{ today, wallets, categories }}
+            locale={activeLocale}
+            onUse={useBunDraft}
+            often={often}
+          />
+        ) : null}
         <Sheet visible={sheet === 'categories'} onClose={() => setSheet(null)} title={tc('Choose a category')}>
           {type !== 'transfer' ? (
             <CategoryGrid

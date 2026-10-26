@@ -9,6 +9,7 @@ import { AccessibilityInfo, Animated, Pressable } from 'react-native';
 
 import { useReducedMotion } from '@mobile/hooks/useReducedMotion';
 import { useCopy } from '@mobile/i18n/useCopy';
+import { playHaptic } from '@mobile/lib/hapticMoment';
 import { runFadeSlideTiming } from '@mobile/theme/animatedMotion';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { POLITE_LIVE_REGION, useAnnouncement } from './a11y';
@@ -90,7 +91,10 @@ export function UndoBar({ message, onUndo, undoLabel, autoDismissMs, onDismiss }
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={label}
-        onPress={onUndo}
+        onPress={() => {
+          playHaptic('undoDone');
+          onUndo();
+        }}
         style={({ pressed }) => ({
           minHeight: BUN_TOUCH,
           minWidth: BUN_TOUCH,

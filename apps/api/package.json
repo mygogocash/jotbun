@@ -15,6 +15,7 @@
     "worker:security": "node dist/jobs/security-worker",
     "worker:jobs": "node dist/worker",
     "worker:deletion": "node dist/privacy/deletion-worker",
+    "worker:parse": "node dist/imports/parse-worker",
     "db:migrate": "node dist/database/migrate-cli",
     "typecheck": "tsc --noEmit",
     "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --maxWorkers=2 --workerIdleMemoryLimit=1GB",

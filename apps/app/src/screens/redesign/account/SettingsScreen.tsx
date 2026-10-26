@@ -8,6 +8,8 @@
 //   waits for its translation, so it is not offered; a phone in Vietnamese
 //   keeps it under System.
 // - The bun (Full, Quiet, Off, decision D9) through the bun intensity.
+// - Haptics (On, Subtle, Off; premium plan A1): Subtle keeps only saves,
+//   warnings and errors; the phone's own vibration switch still applies.
 // - The diary's links: Wallets, Categories and Budget under the planning
 //   area, Reminders under insights, Import only with its flag. Each area
 //   waits for its own approval.
@@ -39,7 +41,10 @@ import { useLanguage } from '@mobile/i18n/LanguageProvider';
 import { useCopy } from '@mobile/i18n/useCopy';
 import type { BunIntensity } from '@mobile/mascot/bunIntensity';
 import { useBunIntensity } from '@mobile/mascot/BunIntensityProvider';
-import { APPEARANCES, BUN_CHOICES, LANGUAGES, LANGUAGE_NAMES, SETTINGS_HREFS, deviceOffline, diaryLinks, unsyncedEntries } from '@mobile/spend/v1/redesign/account/settingsModel';
+import type { HapticPreference } from '@mobile/lib/hapticPreference';
+import { useHaptics } from '@mobile/lib/HapticsProvider';
+import { playHaptic } from '@mobile/lib/hapticMoment';
+import { APPEARANCES, BUN_CHOICES, HAPTIC_CHOICES, LANGUAGES, LANGUAGE_NAMES, SETTINGS_HREFS, deviceOffline, diaryLinks, unsyncedEntries } from '@mobile/spend/v1/redesign/account/settingsModel';
 import type { DiaryLinkKey, SettingsAreas, SignInMethod } from '@mobile/spend/v1/redesign/account/settingsModel';
 import { useDiaryView, useSpendDiary } from '@mobile/spend/v1/SpendDiaryContext';
 import { useBunColors, useTheme } from '@mobile/theme/ThemeProvider';
@@ -51,6 +56,8 @@ import { ConfirmSheet } from '@mobile/ui/Sheet';
 import { StageHeader } from '@mobile/ui/StageHeader';
 import { SyncBanner } from '@mobile/ui/SyncBanner';
 import { Notice } from '../HistoryParts';
+import { isRedesignEnabled } from '@mobile/config/featureFlags';
+import { CompanionSettings } from './CompanionSettings';
 import { ChoiceGroup, LinkRow, PAGE_STYLE, Section, appSettingsAreas, useBackTo } from './SettingsParts';
 import type { AccountServices } from './SettingsParts';
 
@@ -106,6 +113,27 @@ function BunChoice() {
   return (
     <Section title={label}>
       <ChoiceGroup label={label} value={intensity} onChange={setIntensity} choices={BUN_CHOICES.map((value) => ({ value, ...choices[value] }))} />
+    </Section>
+  );
+}
+
+function HapticsChoice() {
+  const tc = useCopy();
+  const { preference, setPreference } = useHaptics();
+  const choices: Record<HapticPreference, { label: string; description: string }> = {
+    on: { label: tc('On'), description: tc('A light tap when you type, choose and save.') },
+    subtle: { label: tc('Subtle'), description: tc('Only when something is saved, needs a look or goes wrong.') },
+    off: { label: tc('Off'), description: tc('No vibration from Jotbun.') },
+  };
+  // The new setting answers for itself, so the person feels what they chose.
+  const choose = (next: HapticPreference) => {
+    setPreference(next);
+    playHaptic('saveLanded');
+  };
+  const label = tc('Haptics');
+  return (
+    <Section title={label}>
+      <ChoiceGroup label={label} value={preference} onChange={choose} choices={HAPTIC_CHOICES.map((value) => ({ value, ...choices[value] }))} />
     </Section>
   );
 }
@@ -233,6 +261,8 @@ export function SettingsScreen({ services, areas: givenAreas }: SettingsScreenPr
           <Appearance />
           <Language />
           <BunChoice />
+          <HapticsChoice />
+          {isRedesignEnabled('companion') ? <CompanionSettings /> : null}
           <DiaryLinks links={diaryLinks(areas)} />
           <Section title={tc('Account')} testID="settings-account">
             <BunText>{methodLine(services.signInMethod, tc)}</BunText>

@@ -127,6 +127,13 @@
       "when": 1792195218000,
       "tag": "0018_import_confirmation",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792195219000,
+      "tag": "0019_ai_companion",
+      "breakpoints": true
     }
   ]
 }

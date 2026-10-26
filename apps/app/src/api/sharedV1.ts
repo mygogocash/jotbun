@@ -5,6 +5,8 @@ import { v1SessionCredentials } from '@mobile/auth/session';
 import { getMobileEnv } from '@mobile/config/env';
 import { createSpendV1Resources, createSyncResources } from '@mobile/spend/v1/resources';
 import type { SpendV1Resources } from '@mobile/spend/v1/resources';
+import { createAiResources } from '@mobile/spend/v1/ai/aiResources';
+import type { AiResources } from '@mobile/spend/v1/ai/aiResources';
 import { isUuid } from '@gogospend/contracts';
 import * as Crypto from 'expo-crypto';
 
@@ -25,6 +27,7 @@ export function v1ClientVersion(): V1ClientVersion | null {
 let transport: V1Transport | null = null;
 let shared: SpendV1Resources | null = null;
 let sync: SyncRemote | null = null;
+let ai: AiResources | null = null;
 
 function sharedTransport(): V1Transport {
   transport ??= createV1Transport({
@@ -57,4 +60,10 @@ export async function fetchAccountId(): Promise<string> {
       typeof value === 'object' && value !== null && typeof (value as { account_id?: unknown }).account_id === 'string' && isUuid((value as { account_id: string }).account_id),
   });
   return me.account_id;
+}
+
+/** Bun's AI help and the GoGoCash catalogue (the edge API), over the same session seam. */
+export function getSharedAiResources(): AiResources {
+  ai ??= createAiResources(sharedTransport());
+  return ai;
 }

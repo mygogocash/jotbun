@@ -8,6 +8,7 @@
 import { Pressable, ScrollView, View } from 'react-native';
 
 import { useBunColors } from '@mobile/theme/ThemeProvider';
+import { playHaptic } from '@mobile/lib/hapticMoment';
 
 import { BunText } from './BunText';
 import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE, BUN_TOUCH } from './layout';
@@ -75,7 +76,9 @@ export function FilterChips<T extends string>({ label, options, value, onChange,
               label={option.label}
               checked={checked}
               onPress={() => {
-                if (!checked) onChange(option.value);
+                if (checked) return;
+                playHaptic('chipPick');
+                onChange(option.value);
               }}
             />
           );

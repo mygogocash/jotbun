@@ -11,7 +11,7 @@ export function isLegacySpendEnabled(): boolean {
 }
 
 /** Areas of the "Bun diary" redesign, each switched on once its screenshots are approved (E2). */
-export type RedesignArea = 'core' | 'catalogue' | 'planning' | 'insights' | 'account' | 'import';
+export type RedesignArea = 'core' | 'catalogue' | 'planning' | 'insights' | 'account' | 'import' | 'companion';
 
 /**
  * Approved areas, on by default. The core loop (Home, Quick add, History,
@@ -23,8 +23,13 @@ export type RedesignArea = 'core' | 'catalogue' | 'planning' | 'insights' | 'acc
  * server's uploads switch (IMPORT_UPLOADS_ENABLED) is separate, and Settings
  * links to import only in the legacy build, until every import gate passes
  * (handover §8).
+ *
+ * The companion area (premium and AI plan, 24 October 2026: Bun's AI help,
+ * Tell Bun, Ask Bun, the daily note, the GoGoCash bridge and the Thai
+ * everyday categories) is on at the owner's request; its E2 screenshots are
+ * still to be approved, and `-companion` switches all of it off.
  */
-const APPROVED: readonly RedesignArea[] = ['core', 'planning', 'insights', 'account', 'import'];
+const APPROVED: readonly RedesignArea[] = ['core', 'planning', 'insights', 'account', 'import', 'companion'];
 
 /**
  * Whether a redesign area is on. `EXPO_PUBLIC_REDESIGN` is a comma list:

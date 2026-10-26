@@ -27,6 +27,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
 import { V1Error } from '@mobile/api/client';
+import { isRedesignEnabled } from '@mobile/config/featureFlags';
+import { CashbackCard } from './CashbackCard';
+import { playHaptic } from '@mobile/lib/hapticMoment';
+import { celebrateGoodWeek, isoWeek } from '@mobile/spend/v1/redesign/milestones';
+import { readCelebratedWeek, writeCelebratedWeek } from './celebrationWeek';
 import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
 import { Bun } from '@mobile/mascot/Bun';
 import { useBunIntensity } from '@mobile/mascot/BunIntensityProvider';
@@ -112,6 +117,20 @@ export function InsightsScreen({ now }: InsightsScreenProps) {
   const words = useMemo<InsightsWords>(() => ({ tc, locale, fullDate: (date) => fullDateLabel(date, dateLocale) }), [tc, locale, dateLocale]);
   const calendar = useMemo(() => (data ? calendarModel({ month, today, records: data.monthRead.records, drafts, words }) : null), [data, month, today, drafts, words]);
   const rhythm = useMemo(() => (data ? rhythmModel({ today, records: (data.weekRead ?? data.monthRead).records, drafts, tc }) : null), [data, today, drafts, tc]);
+  // A good week (5 of the last 7 days logged) is celebrated once per ISO week:
+  // the three-beat haptic, with the cheering bun the card already shows.
+  const goodWeek = rhythm?.goodWeek === true;
+  useEffect(() => {
+    if (!goodWeek) return;
+    let active = true;
+    void (async () => {
+      const last = await readCelebratedWeek().catch(() => isoWeek(today));
+      if (!active || !celebrateGoodWeek(true, today, last)) return;
+      playHaptic('celebration');
+      await writeCelebratedWeek(isoWeek(today));
+    })();
+    return () => { active = false; };
+  }, [goodWeek, today]);
 
   const monthName = monthLabel(month, dateLocale);
   const problem = loaded.state === 'error' ? classifyLoadProblem(loaded.error, tc) : null;
@@ -121,6 +140,7 @@ export function InsightsScreen({ now }: InsightsScreenProps) {
   const changedMeanwhile = data !== null && (data.monthRead.refreshSuggested || (data.weekRead?.refreshSuggested ?? false));
   const moneyOut = data ? `${tc('Money out')} ${formatMinor(data.monthRead.summary.expense_minor, locale)}` : null;
   const daysLine = calendar ? daysLoggedLine(calendar.daysLogged, { month, thisMonth, monthName, tc }) : null;
+  const companion = isRedesignEnabled('companion');
 
   return (
     <View testID="insights-screen" style={{ flex: 1, backgroundColor: colors.background }}>
@@ -163,6 +183,8 @@ export function InsightsScreen({ now }: InsightsScreenProps) {
           ) : null}
           <View style={{ paddingHorizontal: BUN_SPACE.md, gap: BUN_SPACE.md }}>
             {rhythm ? <RhythmCard rhythm={rhythm} daysLine={daysLine} cheer={intensity === 'full' && rhythm.goodWeek} locale={dateLocale} /> : null}
+            {companion && data && calendar ? <CashbackCard records={data.monthRead.records} daysLogged={calendar.daysLogged} /> : null}
+            {companion ? <LinkRow label={tc('Ask Bun about your spending')} onPress={() => router.push('/spend/ask')} /> : null}
             <LinkRow label={month === thisMonth ? tc("This month's recap") : tc('Recap for {month}', { month: monthName })} onPress={() => router.push(recapOf(month))} />
             <LinkRow label={tc('Daily reminder')} onPress={() => router.push('/spend/reminders')} />
           </View>

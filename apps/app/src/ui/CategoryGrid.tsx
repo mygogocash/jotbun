@@ -6,6 +6,7 @@ import type { CategoryDto } from '@gogospend/contracts';
 import { Pressable, View } from 'react-native';
 
 import { useCopy } from '@mobile/i18n/useCopy';
+import { playHaptic } from '@mobile/lib/hapticMoment';
 import { categoryName } from '@mobile/spend/v1/viewModels';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 
@@ -37,7 +38,10 @@ export function CategoryGrid({ categories, selectedId, onSelect }: CategoryGridP
             accessibilityRole="radio"
             accessibilityLabel={name}
             aria-checked={checked}
-            onPress={() => onSelect(category.id)}
+            onPress={() => {
+              playHaptic('chipPick');
+              onSelect(category.id);
+            }}
             style={({ pressed }) => ({
               width: large ? '50%' : '25%',
               minHeight: BUN_TOUCH,
