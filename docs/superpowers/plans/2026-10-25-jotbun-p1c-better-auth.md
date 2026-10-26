@@ -177,7 +177,7 @@ Deleted: apps/app/src/auth/auth0Client.ts, auth0Client.web.ts, auth0Port.ts, aut
   reauthentication.ts (Task 6)
 ```
 
-**Lanes** (for the controller): Tasks 1 and 5 now (1A-T1 is merged; Task 5 needs only `base`). Tasks 2, 3 and 4 after Task 1, merged in that order. Task 6 after Task 5; Task 8 after Tasks 5 and 6; Task 7 after Task 5. Task 9 after the owner approves Task 8's screenshots. Task 10a after Task 4, 1A-T2 and 1B-T3; Task 10b after Task 10a and 1B-T13. Task 11 after Tasks 2 and 10a and 1B-T2, 1B-T4, 1B-T6 and 1B-T13. Task 12 after Tasks 3, 6, 9, 10b and 11. Task 13 after Tasks 7 and 11.
+**Lanes** (for the controller): Tasks 1 and 5 now. Tasks 2, 3 and 4 after Task 1, merged in that order. Task 6 after Task 5; Task 8 after Tasks 5 and 6; Task 7 after Task 5. Task 9 after the owner approves Task 8's screenshots. Task 10a after Task 4, 1A-T2 and 1B-T3; Task 10b after Task 10a and 1B-T13. Task 11 after Tasks 2 and 10a and 1B-T2, 1B-T4, 1B-T6 and 1B-T13. Task 12 after Tasks 3, 6, 9, 10b and 11. Task 13 after Tasks 7 and 11.
 
 ---
 
@@ -1440,7 +1440,7 @@ it('after a session ended, the same account sends the unsent records once; anoth
 
 ## Self-review notes (for the executor)
 
-- **Rulings applied** (review of 25 October, `review-1c.md`):
+- **Rulings applied:**
   - R42 (live session before deletion): Task 11's batch `EXISTS`, the signed-out-device test and its mutant.
   - R43 (fresh linking, unlinking on): K22; Task 3 (the link hook, the unlink and last-account tests); Task 5 (`linkMethod`, `unlinkMethod`, `REAUTH_REQUIRED`); Task 8 (each preceded by the fresh sign-in).
   - R44 (revocation): Task 4 (`signOutEverywhere` gets every session id); Task 10a (`REVOCATION_KEEP_SECONDS`, `revokeSessionIds`, both RPCs, 1A's `revokeSession` fixed, the clock-tolerance and 930-second tests); Global Constraints.
@@ -1460,9 +1460,9 @@ it('after a session ended, the same account sends the unsent records once; anoth
   - R57 (JSON id lists): Global Constraints; Task 4 (the device delete); Task 10a (`revokeSessionIds` and its 150-id test).
   - Minor findings: M3, M6, M15 and M17 in Task 1; M4 in Task 1 and Task 12; M5 in Task 2; M7 in Global Constraints and Tasks 4, 11 and 13; M8 and M20 in Tasks 5 and 6; M9 in Task 9; M10, M11, M12 and M21 in Task 11; M13 in K19 and Tasks 3 and 7; M14 in K9; M16 in Global Constraints; M18 in Task 7; M19 in Shared files.
   - The controller's cross-plan request for 1D-T14: K23; Task 1 (`createdDuring` in `handleAuthRequest`); Task 3 (the social cases); Task 5 (`ServerSession.created`, `SignInResult.created`).
-- **Names other plans use:** 1D-T12 imports `verifierFor` from `src/v1/auth-verifier.ts`, and calls the RPCs as Task 10a defines them: `revokeSessions(accountId, sessionIds)` and `signOutEverywhere(accountId, sessionIds, notBefore)` (the vault computes `expires_at` itself, R44), plus Task 11's `markDeleting(accountId)`. 1D-T13 replaces `DeletionHooks` with `analyticsIdOf(env, requestId)` and `deleteAnalyticsPerson(env, analyticsId)`, adds `analytics-id` to `DELETION_STEPS`, and reuses `STEP_CONFIG`, `DeletionEnv`, `runDeletion` and `test/workers/support/deletion.ts`. 1D-T14 reads `ServerSession.created` (or `SignInResult.created`). P2-T18's wallet branch gets Task 9's `TermsGate` between `DeviceDiaryProvider` and `CompanionBoundary` from whichever of the two lands second. P6B-T7's `WalletTermsScreen` takes `TermsScreen`'s props and `TermsGate` renders it while `extras` is on; P6B-T7 and P6B-T17 use `PolicyClient`, `TermsGate` and `getSharedPolicyClient()` (A11).
+- **Names other plans use:** 1D-T12 imports `verifierFor` from `src/v1/auth-verifier.ts`, and calls the RPCs as Task 10a defines them: `revokeSessions(accountId, sessionIds)` and `signOutEverywhere(accountId, sessionIds, notBefore)` (the vault computes `expires_at` itself, R44), plus Task 11's `markDeleting(accountId)`. 1D-T13 replaces `DeletionHooks` with `analyticsIdOf(env, requestId)` and `deleteAnalyticsPerson(env, analyticsId)`, adds `analytics-id` to `DELETION_STEPS`, and reuses `STEP_CONFIG`, `DeletionEnv`, `runDeletion` and `test/workers/support/deletion.ts`. 1D-T14 reads `ServerSession.created` (or `SignInResult.created`). P2-T18's wallet branch gets Task 9's `TermsGate` between `DeviceDiaryProvider` and `CompanionBoundary` from whichever of the two lands second. P6B-T7's `WalletTermsScreen` takes `TermsScreen`'s props and `TermsGate` renders it while `extras` is on. P6B-T7 also uses `PendingPolicy`, `PolicyClient`, `acceptPending` and `getSharedPolicyClient()`, and P6B-T17 and P2-T18's wallet branch pass `getSharedPolicyClient()` and `onPolicyRequired` to `TermsGate` (A11).
 - **Not in 1C:** the app's passkey offer (Q3); Apple sign-in on Android (Q7); real email delivery and every phone check (Q4, Q6); the PostHog person deletion (1D-T13); live sockets (1D); the break-glass support tool (§6.11, before the beta).
 - **Risks:**
-  - `created` compares Better Auth's `createdAt` with the request's arrival. Two sign-ups racing for one new Apple or Google account could both say `created`; it feeds analytics only.
+  - Two sign-ups racing for one new Apple or Google account could both say `created` (K23); it feeds analytics only.
   - The `ACCOUNT_EXISTS` rewrite depends on Better Auth's 401 `OAUTH_LINK_ERROR` answer; Task 3's tests pin it, so an upgrade that changes it fails there first.
   - Before 1B-T13 the HTTP Worker has no `VAULT` binding, so its device sign-out answers 503 (`unwiredVaultControl`); nothing is deployed before Task 10b.

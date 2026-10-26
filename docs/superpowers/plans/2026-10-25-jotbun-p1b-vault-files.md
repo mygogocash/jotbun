@@ -631,7 +631,7 @@ for (const authTime of [now - 301, now + 31, undefined]) {
 
 **Files:**
 - Create: `apps/edge/src/vault/files/exports.ts`, `src/background/export-workflow.ts`
-- Modify: `src/v1/protocol.ts`, `src/v1/routes.ts`, `src/v1/worker-routes.ts`, `src/v1/files/downloads.ts` (`serveExportFile`), `src/vault/routes.ts`, `src/vault/commands/registry.ts`, `src/vault/user-vault.ts` (`VaultEnv` gains `EXPORT_WORKFLOW`), `src/vault/files/work.ts` (the export starter), `src/roles/vault.ts` (export `ExportWorkflow`), `wrangler.vault.jsonc` (the Workflow and `limits.cpu_ms`), `src/cloudflare-workers.d.ts` (`WorkflowEntrypoint`, `WorkflowEvent`, `WorkflowStep` in `cloudflare:workers`)
+- Modify: `src/v1/protocol.ts`, `src/v1/routes.ts`, `src/v1/worker-routes.ts`, `src/v1/files/downloads.ts` (`serveExportFile`), `src/vault/routes.ts`, `src/vault/commands/registry.ts`, `src/vault/retention.ts` (if 1A-T8b did not, export the port of `gogospend_purge_entities` taking a `FileContext`: plain SQL, no registry), `src/vault/user-vault.ts` (`VaultEnv` gains `EXPORT_WORKFLOW`), `src/vault/files/work.ts` (the export starter), `src/roles/vault.ts` (export `ExportWorkflow`), `wrangler.vault.jsonc` (the Workflow and `limits.cpu_ms`), `src/cloudflare-workers.d.ts` (`WorkflowEntrypoint`, `WorkflowEvent`, `WorkflowStep` in `cloudflare:workers`)
 - Test: `test/workers/exports.test.ts`
 
 **Interfaces:**
@@ -655,7 +655,7 @@ for (const authTime of [now - 301, now + 31, undefined]) {
   `EXPORT_STEP` gives three attempts and 900 seconds each, the API's `EXPORT_MAX_ATTEMPTS` and `EXPORT_MAX_RUNTIME_SECONDS`.
   - `wrangler.vault.jsonc`:
     - `"workflows": [{ "name": "jotbun-export", "binding": "EXPORT_WORKFLOW", "class_name": "ExportWorkflow", "default_retention": { "success_retention": "1 day", "error_retention": "7 days" } }]` (the installed wrangler schema has `default_retention`).
-    - `"limits": { "cpu_ms": 120000 }` (ruling R30). The largest invocations are the ten-times export and snapshot build of 1B-T8, expected to take a few seconds of CPU; 1B-T8 measures them and the receipt records the numbers. 120 seconds leaves wide room and still bounds runaway work, below the 300,000 the old jobs Worker set. The limit is enforced only when deployed (SKIPPED locally). 1B-T13 carries it into `wrangler.jsonc`.
+    - `"limits": { "cpu_ms": 120000 }` (ruling R30). The largest invocations are the ten-times export and snapshot build of 1B-T8, expected to take a few seconds of CPU; 1B-T8 measures them and the receipt records the numbers. 120 seconds leaves wide room and still bounds runaway work, below the 300,000 the old jobs Worker set. 1B-T13 carries it into `wrangler.jsonc`.
   - `downloads.ts` gains `serveExportFile(w: WorkerContext): Promise<Response | VaultReply>`.
   - The export starter: unstarted = `pending` rows without `started_at`; `start` is `createOnce(env.EXPORT_WORKFLOW, id, { vault: vaultId, export: id })` (`unbound` without the binding); `markStarted` sets `started_at`; `dueAt` is the oldest unstarted row's `created_at` plus `START_RETRY_MS`.
 
@@ -909,7 +909,7 @@ for (const authTime of [now - 301, now + 31, undefined]) {
 
 **Files:**
 - Create: `apps/edge/src/vault/files/previews.ts`, `src/vault/files/confirmation.ts`
-- Modify: `src/v1/protocol.ts`, `src/v1/routes.ts`, `src/v1/worker-routes.ts`, `src/v1/files/receipts.ts` (`confirmRoute`), `src/vault/routes.ts`, `src/vault/commands/registry.ts`, `src/vault/retention.ts` (export the port of `gogospend_purge_entities` if 1A-T8b did not), `test/workers/support/files.ts` (`seedPreview`)
+- Modify: `src/v1/protocol.ts`, `src/v1/routes.ts`, `src/v1/worker-routes.ts`, `src/v1/files/receipts.ts` (`confirmRoute`), `src/vault/routes.ts`, `src/vault/commands/registry.ts`, `src/vault/retention.ts` (1B-T6's purge export, if 1B-T6 is not merged), `test/workers/support/files.ts` (`seedPreview`)
 - Test: `test/workers/imports-review.test.ts`
 
 **Interfaces:**
@@ -1099,7 +1099,7 @@ it('the retired proof routes answer 404 on the vault Worker', async () => {
   - `src/server.ts`: re-export the four classes; `export default { fetch: handler.fetch, queue: vaultWorker.queue }`, as TanStack Start's server-entry guide allows for Durable Objects and queues.
   - `src/routes/v1/$.ts` (every method calls `handleVaultV1(request, env as unknown as V1Env)`), `src/routes/live.ts` (imports `live` from `src/v1/ready.ts`), `src/routes/ready.ts` (answers `readyResponseOf(env)`, B15).
   - `wrangler.jsonc`; `vite.config.ts` (no `auxiliaryWorkers`); `vitest.workers.config.ts` (`cloudflareTest({ main: './src/vault-worker.ts', wrangler: { configPath: './wrangler.jsonc' }, … })`).
-  - `apps/edge/package.json`: only the `deploy` script (`npm run build && wrangler deploy`) and the description (no Hyperdrive), as the Shared files note says; no dependency or lockfile change.
+  - `apps/edge/package.json`: only the `deploy` script (`npm run build && wrangler deploy`) and the description (no Hyperdrive); no dependency or lockfile change.
   - `scripts/dev.mjs`: drop steps 1 and 2 (the PostgreSQL container and its logins), the Hyperdrive connection strings, `LEGACY_V1_ORIGIN` and `ERASURE_REGISTRY_LOOKUP_KEY`; it still writes `.dev.vars` and runs `vite dev`.
   - `src/server/env.ts` (drop `HYPERDRIVE`, `DATABASE_URL`, `LEGACY_V1_ORIGIN` and the three wake queues), `src/cloudflare-workers.d.ts`.
   - `test/request.test.ts`: imports `matchRoute` from `src/v1/match` and runs its route cases on `VAULT_V1_ROUTES`; its request-helper cases are unchanged.
@@ -1150,11 +1150,13 @@ it('the retired proof routes answer 404 on the vault Worker', async () => {
 
 - [ ] **Step 1: Stub, then write the failing tests.** First add `VAULT_EDGE_ONLY_ROUTES` to `src/v1/routes.ts` as an empty array (a typed stub), so the coverage test fails on its assertions, never on a missing export.
   - `test/c1-worker.db.test.ts` (the RED, on `dist/server/wrangler.json`):
-    - `beforeAll` seeds `config:v1` (the test policies) into a temp folder with `npx wrangler kv key put config:v1 '<json>' --namespace-id <id> --local --persist-to <tmp>`, `<id>` being `CONFIG`'s placeholder id, which `wrangler.jsonc` keeps (the old build has no `kv_namespaces`, so `--binding` fails). It starts that build on the same folder with `startDevWorker` and the settings `/ready` needs (`AUTH_ISSUER`, `AUTH_AUDIENCE`, `AUTH_JWKS_URL`, `COMMAND_DIGEST_KEY`, the client minimums). A second Worker starts without `AUTH_ISSUER` and `COMMAND_DIGEST_KEY`. Both pass an unreachable `HYPERDRIVE` local connection string, so the old build still starts and the RED fails on behaviour; Step 4 removes it with the binding.
+    - `beforeAll` seeds `config:v1` (the test policies) into a temp folder with `npx wrangler kv key put config:v1 '<json>' --namespace-id 00000000000000000000000000000000 --local --persist-to <tmp>`, 1A-T1's `CONFIG` id, which the new `wrangler.jsonc` keeps (the old build has no `kv_namespaces`, so `--binding` fails). It starts that build on the same folder with `startDevWorker` and the settings `/ready` needs (`AUTH_ISSUER`, `AUTH_AUDIENCE`, `AUTH_JWKS_URL`, `COMMAND_DIGEST_KEY`, the client minimums). A second Worker starts without `AUTH_ISSUER` and `COMMAND_DIGEST_KEY`. Both pass an unreachable `HYPERDRIVE` local connection string, so the old build still starts and the RED fails on behaviour; Step 4 removes it with the binding.
     - `answers /live with no-store`: 200 `{ status: 'live' }`, `cache-control: no-store`.
-    - `/ready is 200 with its settings and KV, and 503 without its settings`: the first Worker answers 200 `{ status: 'ready' }`; the second answers 503 with `{ code: 'SERVICE_UNAVAILABLE', message_key: 'errors.not_ready', retry_after_seconds: 30 }`.
+    - `/ready is 200 with its settings and KV`: the first Worker answers 200 `{ status: 'ready' }`.
+    - `/ready is 503 without its settings`: the second Worker answers 503 with `{ code: 'SERVICE_UNAVAILABLE', message_key: 'errors.not_ready', retry_after_seconds: 30 }`.
     - `serves the trust page with TanStack Start`: `/` is 200, and its HTML contains `คำสัญญาของเรา` and `No diary data is ever sent to GoGoCash`.
-    - `serves /v1 from the vault: the policy list comes from KV, and an unknown route is 404`: `GET /v1/policies` is 200 and equals the seeded live list; `GET /v1/reports/<uuid>` with a client header is 404 `NOT_FOUND`.
+    - `serves /v1 from the vault: the policy list comes from KV`: `GET /v1/policies` is 200 and equals the seeded live list.
+    - `an unknown /v1 route is 404`: `GET /v1/reports/<uuid>` with a client header is 404 `NOT_FOUND`.
   - `test/c1-shape.test.ts` (Node; read `wrangler.jsonc` with whole-line `//` comments removed, and keep its comments on their own lines):
 
 ```ts
@@ -1175,14 +1177,14 @@ it('one Worker hosts the vault, its Workflows, its queue consumer and its contai
 })
 ```
   - `test/route-coverage.test.ts`: keep `nestRoutes()`. Every NestJS route is in exactly one of `VAULT_V1_ROUTES` (same access, gates and `vaultStatus`), `VAULT_DEFERRED_ROUTES` or `VAULT_RETIRED_ROUTES`; `VAULT_DEFERRED_ROUTES` equals `['POST /v1/auth/deletion-receipt', 'POST /v1/me/deletion']` (B16); the retired set is 1A's six; `VAULT_EDGE_ONLY_ROUTES` are served and never shadow a NestJS route; every served route has its vault or Worker handler; every step id has a vault handler and no route.
-- [ ] **Step 2: Run them and see them fail.** Run: `npm run build:edge && npm run test:edge:db -- test/c1-worker.db.test.ts`, then `npm run test:edge -- test/c1-shape.test.ts test/route-coverage.test.ts`. Expected: in `c1-worker`, the `/ready` 200 case and the `/v1` case fail (the old build checks PostgreSQL and serves `/v1` from it), while `/live`, the trust page, the 503 case and the 404 pass already and guard the move; the shape and coverage tests fail on assertions. Record the counts.
+- [ ] **Step 2: Run them and see them fail.** Run: `npm run build:edge && npm run test:edge:db -- test/c1-worker.db.test.ts`, then `npm run test:edge -- test/c1-shape.test.ts test/route-coverage.test.ts`. Expected: in `c1-worker`, the `/ready` 200 case and the policy-list case fail (the old build checks PostgreSQL and serves `/v1` from it), while `/live`, the 503 case, the trust page and the 404 case pass already and guard the move (4 passed, 2 failed); the shape and coverage tests fail on assertions. Record the counts.
 - [ ] **Step 3: Move and retire.** Run each mapping-table target first and see it pass, then make the changes, renames, merges and deletions listed above.
 - [ ] **Step 4: Run them and see them pass.** Remove the unreachable `HYPERDRIVE` string from `c1-worker.db.test.ts`, rebuild and run it again. Then run the vault parity tests on the HTTP Worker: `npm run build:edge && npm run test:edge:db -- test/vault-parity.db.test.ts test/vault-parity-files.db.test.ts`. Expected: 49 and 42 steps, no differences.
 - [ ] **Step 5: Mutation check.**
   - Leave the `hyperdrive` block in `wrangler.jsonc`: the shape test fails.
-  - Drop the `queue` export from `src/server.ts`: the shape test fails (the Workers-runtime queue case imports `src/vault-worker.ts` and would not notice).
+  - Drop the `queue` export from `src/server.ts`: the shape test fails.
   - Make `/ready` skip the `COMMAND_DIGEST_KEY` check: the 503 case in `c1-worker` fails.
-- [ ] **Step 6: Docs.** `apps/edge/README.md`: "The Workers" becomes one Worker (`jotbun-edge`: TanStack Start pages, `/v1` on the UserVault, the two Workflows, the parse queue and the parser container; secrets `COMMAND_DIGEST_KEY` and, for AI, `ANTHROPIC_API_KEY`). Add the R2 lifecycle rules the owner configures on `jotbun-private-objects` (SKIPPED here, a cloud resource): `sync_snapshot/`, `export/`, `import_quarantine/` and `import_image/` expire after 1 day; `receipt/` has no rule, and the vault's tombstones (B19) catch late writes there. Update the Tests table.
+- [ ] **Step 6: Docs.** `apps/edge/README.md`: "The Workers" becomes one Worker (`jotbun-edge`: TanStack Start pages, `/v1` on the UserVault, the two Workflows, the parse queue and the parser container; secrets `COMMAND_DIGEST_KEY` and, for AI, `ANTHROPIC_API_KEY`). Add the R2 lifecycle rules the owner configures on `jotbun-private-objects`: `sync_snapshot/`, `export/`, `import_quarantine/` and `import_image/` expire after 1 day; `receipt/` has no rule, and the vault's tombstones (B19) catch late writes there. Update the Tests table.
 - [ ] **Step 7: Gate, receipt, commit, review.** Run the edge gate. Write the closing 1B receipt in `premium-progress.md`: the routes now served by the vault; what 1C still owes (the two deferred routes, Better Auth's `auth_time`, the deletion Workflow on `UserVault#erase` and `purgeVaultObjects`, the final sweep of an erased vault's prefixes); the mapping table's outcome; the not-applicable list collected from 1B-T5 to 1B-T11; the mutants; the owner answers used; and the SKIPPED items (Docker container runs, R2 lifecycle rules, the deployed memory limit and CPU limit, hosted CI). Commit: `git commit -m "Fold the vault into the HTTP Worker and retire the PostgreSQL edge Workers"`. Then run the independent read-only review of the whole 1B range (handover §4 step 8) and fix its findings test-first.
 
 ---
