@@ -4,6 +4,7 @@ import type { VaultCall, VaultReply, VaultRouteId } from '../v1/protocol'
 import { lookupStatuses } from './commands/receipts'
 import type { VaultContext } from './context'
 import { archiveCategory, createCategory, listCategories, seedBuiltins, unarchiveCategory, updateCategory } from './domain/categories'
+import { createTransaction, deleteTransaction, getTransaction, restoreTransaction, updateTransaction } from './domain/transactions'
 import { createWallet, archiveWallet, getWallet, listWallets, unarchiveWallet, updateWallet } from './domain/wallets'
 import { syncChanges } from './reads/sync'
 import { acceptPolicy, describeMe, setPrivacy } from './policies'
@@ -50,6 +51,11 @@ export const VAULT_HANDLERS: Partial<Record<VaultRouteId, VaultHandler>> = {
   'categories.update': (c, call) => okReply(call.route, updateCategory(c, call)),
   'categories.archive': (c, call) => okReply(call.route, archiveCategory(c, call)),
   'categories.unarchive': (c, call) => okReply(call.route, unarchiveCategory(c, call)),
+  'transactions.get': (c, call) => okReply(call.route, getTransaction(c, call.params.id)),
+  'transactions.create': (c, call) => okReply(call.route, createTransaction(c, call)),
+  'transactions.update': (c, call) => okReply(call.route, updateTransaction(c, call)),
+  'transactions.delete': (c, call) => okReply(call.route, deleteTransaction(c, call)),
+  'transactions.restore': (c, call) => okReply(call.route, restoreTransaction(c, call)),
   'commands.status': (c, call) => okReply(call.route, { statuses: lookupStatuses(c, commandIdsOf(call.body)) }),
   'sync.changes': (c, call) => okReply(call.route, syncChanges(c, call.query)),
 }
