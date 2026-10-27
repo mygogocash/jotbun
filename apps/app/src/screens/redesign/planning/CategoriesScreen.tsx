@@ -33,7 +33,7 @@ import { ScrollView, View } from 'react-native';
 import { V1Error } from '@mobile/api/client';
 import type { V1Outcome } from '@mobile/api/client';
 import { isRedesignEnabled } from '@mobile/config/featureFlags';
-import { missingPackItems, packCommands } from '@mobile/spend/v1/redesign/planning/thaiPack';
+import { PACK_BEFORE_C3, missingPackItems, packCommands } from '@mobile/spend/v1/redesign/planning/thaiPack';
 import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
 import { Bun } from '@mobile/mascot/Bun';
 import { formatMinor } from '@mobile/spend/v1/money';
@@ -381,8 +381,8 @@ export function CategoriesScreen({ now }: CategoriesScreenProps = {}) {
       setUnarchiving(item.category.id);
       void send([archiveCommand(item.category, 'unarchive')], { success: tc('{name} is back in Quick add.', { name: item.name }), draft: null, seen: data.budget });
     };
-    // Thai everyday categories (premium plan A2): offered while any is missing.
-    const pack = companion ? missingPackItems(data.categories) : [];
+    // Thai everyday categories (premium plan A2): today's seven until the screen switches to C3.
+    const pack = companion ? missingPackItems(data.categories, PACK_BEFORE_C3) : [];
     body = (
       <View style={{ gap: BUN_SPACE.md }}>
         <TypeToggle value={type} onChange={setType} disabled={locked} />
@@ -404,7 +404,7 @@ export function CategoriesScreen({ now }: CategoriesScreenProps = {}) {
                 kind="secondary"
                 label={pack.length === 1 ? tc('Add 1 category') : tc('Add {count} categories', { count: pack.length })}
                 disabled={locked || blocked}
-                onPress={() => void send(packCommands(data.categories, activeLocale, newId), { success: tc('Added. They are in Quick add now.'), draft: null, seen: data.budget })}
+                onPress={() => void send(packCommands(data.categories, activeLocale, newId, { pack: PACK_BEFORE_C3 }), { success: tc('Added. They are in Quick add now.'), draft: null, seen: data.budget })}
               />
             </View>
           </Card>
