@@ -1,10 +1,10 @@
-// The vault's Drizzle schema: one table object per core table, matching the
-// migrated SQL column for column (migrations/0000_vault_core.sql). The
-// constraints live in the SQL; this file names the columns for queries. A test
-// keeps the two in step. Every primary key column is declared notNull: each
-// table is STRICT, so SQLite refuses a NULL key and reports the column as NOT
-// NULL. Only INTEGER PRIMARY KEY (a rowid alias) reports notnull 0, which the
-// test accounts for.
+// The vault's Drizzle schema: one table object per table the migrations create,
+// matching the migrated SQL column for column (migrations/0000_vault_core.sql and
+// 0001_vault_files.sql). The constraints live in the SQL; this file names the
+// columns for queries. A test keeps the two in step. Every primary key column is
+// declared notNull: each table is STRICT, so SQLite refuses a NULL key and
+// reports the column as NOT NULL. Only INTEGER PRIMARY KEY (a rowid alias)
+// reports notnull 0, which the test accounts for.
 import { getTableName } from 'drizzle-orm'
 import { blob, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
@@ -142,8 +142,191 @@ export const auditEvents = sqliteTable('audit_events', {
   createdAt: text('created_at').notNull(),
 })
 
+// The file tables (migrations/0001_vault_files.sql).
+
+export const vaultObjects = sqliteTable('vault_objects', {
+  key: text('key').primaryKey().notNull(),
+  purpose: text('purpose').notNull(),
+  status: text('status').notNull(),
+  deleteAfter: integer('delete_after'),
+  bytes: integer('bytes'),
+  sha256: text('sha256'),
+  createdAt: integer('created_at').notNull(),
+})
+
+export const snapshots = sqliteTable('snapshots', {
+  id: text('id').primaryKey().notNull(),
+  status: text('status').notNull(),
+  highWater: integer('high_water'),
+  chunkCount: integer('chunk_count'),
+  createdAt: text('created_at').notNull(),
+  startedAt: text('started_at'),
+  readyAt: text('ready_at'),
+  expiresAt: text('expires_at'),
+})
+
+export const snapshotChunks = sqliteTable('snapshot_chunks', {
+  snapshotId: text('snapshot_id').primaryKey().notNull(),
+  chunkIndex: integer('chunk_index').primaryKey().notNull(),
+  objectKey: text('object_key').notNull(),
+  bytes: integer('bytes').notNull(),
+  sha256: text('sha256').notNull(),
+})
+
+export const exportsTable = sqliteTable('exports', {
+  id: text('id').primaryKey().notNull(),
+  fromDate: text('from_date').notNull(),
+  throughDate: text('through_date').notNull(),
+  requestedAt: text('requested_at').notNull(),
+  status: text('status').notNull(),
+  failure: text('failure'),
+  startedAt: text('started_at'),
+  objectKey: text('object_key'),
+  bytes: integer('bytes'),
+  sha256: text('sha256'),
+  rowCount: integer('row_count'),
+  highWater: integer('high_water'),
+  readyAt: text('ready_at'),
+  expiresAt: text('expires_at'),
+})
+
+export const importUploads = sqliteTable('import_uploads', {
+  jobId: text('job_id').primaryKey().notNull(),
+  intakeToken: text('intake_token').notNull(),
+  status: text('status').notNull(),
+  outcomeCode: text('outcome_code'),
+  fileName: text('file_name'),
+  declaredType: text('declared_type').notNull(),
+  declaredBytes: integer('declared_bytes'),
+  format: text('format'),
+  bytes: integer('bytes'),
+  sha256: text('sha256'),
+  partCount: integer('part_count'),
+  parseState: text('parse_state'),
+  parseAttempts: integer('parse_attempts').notNull(),
+  parseFailure: text('parse_failure'),
+  enqueuedAt: text('enqueued_at'),
+  enqueuedAttempts: integer('enqueued_attempts'),
+  createdAt: text('created_at').notNull(),
+  receiveDeadline: text('receive_deadline').notNull(),
+  acceptedAt: text('accepted_at'),
+  expiresAt: text('expires_at'),
+  finishedAt: text('finished_at'),
+})
+
+export const importParts = sqliteTable('import_parts', {
+  jobId: text('job_id').primaryKey().notNull(),
+  partIndex: integer('part_index').primaryKey().notNull(),
+  objectKey: text('object_key').notNull(),
+  bytes: integer('bytes'),
+  sha256: text('sha256'),
+})
+
+export const importPreviews = sqliteTable('import_previews', {
+  jobId: text('job_id').primaryKey().notNull(),
+  status: text('status').notNull(),
+  layout: text('layout'),
+  issues: text('issues').notNull(),
+  candidateCount: integer('candidate_count').notNull(),
+  reviewRequiredCount: integer('review_required_count').notNull(),
+  expenseTotalMinor: integer('expense_total_minor').notNull(),
+  incomeTotalMinor: integer('income_total_minor').notNull(),
+  transferTotalMinor: integer('transfer_total_minor').notNull(),
+  imageKey: text('image_key'),
+  imageWidth: integer('image_width'),
+  imageHeight: integer('image_height'),
+  imageAttachmentId: text('image_attachment_id'),
+  reviewRevision: integer('review_revision').notNull(),
+  createdAt: text('created_at').notNull(),
+  expiresAt: text('expires_at').notNull(),
+  expiredAt: text('expired_at'),
+})
+
+export const importCandidates = sqliteTable('import_candidates', {
+  jobId: text('job_id').primaryKey().notNull(),
+  sourceRowId: text('source_row_id').primaryKey().notNull(),
+  ordinal: integer('ordinal').notNull(),
+  occurredOn: text('occurred_on'),
+  type: text('type'),
+  amountMinor: integer('amount_minor'),
+  walletLabel: text('wallet_label'),
+  categoryLabel: text('category_label'),
+  merchant: text('merchant'),
+  note: text('note'),
+  issues: text('issues').notNull(),
+  reviewRequired: integer('review_required').notNull(),
+})
+
+export const importSelections = sqliteTable('import_selections', {
+  selectionId: text('selection_id').primaryKey().notNull(),
+  jobId: text('job_id').notNull(),
+  frozenRevision: integer('frozen_revision').notNull(),
+  rowCount: integer('row_count').notNull(),
+  createdAt: text('created_at').notNull(),
+  expiresAt: text('expires_at').notNull(),
+})
+
+export const importSelectionRows = sqliteTable('import_selection_rows', {
+  selectionId: text('selection_id').primaryKey().notNull(),
+  sourceRowId: text('source_row_id').primaryKey().notNull(),
+  ordinal: integer('ordinal').notNull(),
+  type: text('type').notNull(),
+  amountMinor: integer('amount_minor').notNull(),
+  occurredOn: text('occurred_on').notNull(),
+  walletId: text('wallet_id').notNull(),
+  categoryId: text('category_id').notNull(),
+  note: text('note'),
+  merchant: text('merchant'),
+})
+
+export const importRowProgress = sqliteTable('import_row_progress', {
+  jobId: text('job_id').primaryKey().notNull(),
+  sourceRowId: text('source_row_id').primaryKey().notNull(),
+  selectionId: text('selection_id').notNull(),
+  transactionId: text('transaction_id'),
+  commandId: text('command_id').notNull(),
+  committedAt: text('committed_at').notNull(),
+})
+
+export const attachments = sqliteTable('attachments', {
+  id: text('id').primaryKey().notNull(),
+  sourceJobId: text('source_job_id').notNull(),
+  status: text('status').notNull(),
+  objectKey: text('object_key').notNull(),
+  contentType: text('content_type').notNull(),
+  bytes: integer('bytes').notNull(),
+  sha256: text('sha256').notNull(),
+  width: integer('width').notNull(),
+  height: integer('height').notNull(),
+  retainedAt: text('retained_at').notNull(),
+  releasedAt: text('released_at'),
+})
+
+export const transactionAttachments = sqliteTable('transaction_attachments', {
+  transactionId: text('transaction_id').primaryKey().notNull(),
+  attachmentId: text('attachment_id').notNull(),
+  attachedAt: text('attached_at').notNull(),
+})
+
+export const aiPreferences = sqliteTable('ai_preferences', {
+  id: integer('id').primaryKey().notNull(),
+  companion: integer('companion').notNull(),
+  cashbackTips: integer('cashback_tips').notNull(),
+  noticeVersion: integer('notice_version'),
+  updatedAt: text('updated_at').notNull(),
+})
+
+export const aiUsage = sqliteTable('ai_usage', {
+  day: text('day').primaryKey().notNull(),
+  feature: text('feature').primaryKey().notNull(),
+  uses: integer('uses').notNull(),
+})
+
 export const vaultSchema = {
   accountState,
+  aiPreferences,
+  aiUsage,
+  attachments,
   auditEvents,
   budgetCategoryLimits,
   categories,
@@ -151,11 +334,23 @@ export const vaultSchema = {
   consents,
   entityChanges,
   entityHeads,
+  exportsTable,
+  importCandidates,
+  importParts,
+  importPreviews,
+  importRowProgress,
+  importSelectionRows,
+  importSelections,
+  importUploads,
   monthlyBudgets,
   revokedSessions,
   schedule,
+  snapshotChunks,
+  snapshots,
   syncState,
+  transactionAttachments,
   transactions,
+  vaultObjects,
   wallets,
 }
 

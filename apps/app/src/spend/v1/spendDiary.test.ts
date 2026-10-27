@@ -12,7 +12,8 @@ import { createSyncScheduler } from '../../sync/scheduler.ts';
 import { createSyncEngine } from '../../sync/syncEngine.ts';
 import { PROBLEMS, createFakeServer } from '../../sync/testing/fakeServer.ts';
 import type { DiaryStore } from '../../storage/diaryRepository.ts';
-import { DiarySchemaTooNew } from '../../storage/types.ts';
+import { DiaryLocked, DiarySchemaTooNew } from '../../storage/types.ts';
+import type { PendingChoice } from '../../storage/types.ts';
 import type { SyncSession } from '../../sync/types.ts';
 import { newJourney } from './importReview.ts';
 import type { ImportJourney } from './importReview.ts';
@@ -443,4 +444,21 @@ test('logged days come from the open diary, and null without one', async () => {
   await diary.sessionChanged();
   assert.equal(diary.getView().phase, 'unavailable');
   assert.equal(await diary.loggedDays(), null);
+});
+
+test('a kept choice appears in the view and leaves when dropped', async () => {
+  const { diary } = await setup();
+  const record = expense({ amount_minor: '6500' });
+  const kept: PendingChoice = {
+    recordId: record.id, original: record, changes: { amount_minor: '7000' }, server: { ...record, version: 2, amount_minor: '8000' },
+    editedAt: '2026-03-02T05:00:30.000Z', refusedAt: '2026-03-02T05:01:00.000Z',
+  };
+  assert.deepEqual(diary.getView().pendingChoices, []);
+  await diary.keepChoice(kept);
+  assert.deepEqual(diary.getView().pendingChoices, [kept]);
+  await diary.dropChoice(record.id);
+  assert.deepEqual(diary.getView().pendingChoices, []);
+  // With no diary open, a choice is refused.
+  await diary.close();
+  await assert.rejects(diary.keepChoice(kept), DiaryLocked);
 });

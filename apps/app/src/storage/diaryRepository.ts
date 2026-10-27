@@ -1,8 +1,8 @@
-import { SYNC_ENTITY_VALIDATORS, isCommittedChangeGroup, isEntityChange, isKnownSyncEntity, isUuid, normalizeCommand, normalizeMerchant, normalizeNote, validateOccurredOn } from '@gogospend/contracts';
-import type { CategoryDto, CommittedChangeGroup, EntityChange, Minor, Revision, WalletSnapshot } from '@gogospend/contracts';
+import { SYNC_ENTITY_VALIDATORS, isCommittedChangeGroup, isEntityChange, isKnownSyncEntity, isTransactionSnapshot, isUuid, normalizeCommand, normalizeMerchant, normalizeNote, validateOccurredOn } from '@gogospend/contracts';
+import type { CategoryDto, CommittedChangeGroup, EntityChange, Minor, Revision, TransactionDto, UpdateTransactionRequest, WalletSnapshot } from '@gogospend/contracts';
 
 import { CursorMoved, DiaryLocked, DraftReferenceUnavailable, StaleEpochError } from './types.ts';
-import type { ConfirmedSnapshot, OutboxCommand, OutboxState, PendingEntry, SqlDatabase, SqlExecutor } from './types.ts';
+import type { ConfirmedSnapshot, OutboxCommand, OutboxState, PendingChoice, PendingEntry, SqlDatabase, SqlExecutor } from './types.ts';
 
 export type DiaryState = {
   cursor: string | null;
@@ -28,6 +28,8 @@ export interface DiaryStore {
   readState(): Promise<DiaryState>;
   /** Distinct YYYY-MM-DD of live confirmed transactions and of drafts, ascending. */
   loggedDays(): Promise<string[]>;
+  /** The revision of the last applied change group: one diary_meta read, '0' before any change. */
+  appliedRevision(): Promise<string>;
   /**
    * Marks a command as being transmitted (unsent, uncertain or paused ->
    * sending) before it is sent, freezing it: the first transmission time is
@@ -53,6 +55,12 @@ export interface DiaryStore {
   removeImportDraft(key: string): Promise<void>;
   /** Every draft row's key. */
   importDraftKeys(): Promise<string[]>;
+  /** Keeps a refused online edit as the record's pending choice (C16): one per record; a second replaces the first. */
+  keepChoice(choice: PendingChoice): Promise<void>;
+  /** The pending choices, oldest refusal first; a row that fails validation is left out. */
+  readChoices(): Promise<PendingChoice[]>;
+  /** Drops a record's pending choice; a missing one is not an error. */
+  dropChoice(recordId: string): Promise<void>;
   /** Closes the diary (sign-out, transient auth failure); data stays for the next unlock. */
   lock(): Promise<void>;
   /** Deletes this account's diary and key. Call only after the user confirmed. */
@@ -80,6 +88,7 @@ const SKIP_UNKNOWN = { unknownEntities: 'skip' } as const;
 
 const REVISION = /^(0|[1-9][0-9]{0,18})$/;
 const AMOUNT = /^[1-9][0-9]{0,10}$/;
+const DAY = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
 const MAX_CURSOR = 512;
 const TRANSMITTABLE: readonly OutboxState[] = ['unsent', 'uncertain', 'paused_upgrade'];
 const OUTBOX_COLUMNS = 'command_id, account_id, kind, schema_version, payload, state, first_transmission_at, created_at, acked_revision';
@@ -156,6 +165,57 @@ async function assertDraft(tx: SqlExecutor, entry: PendingEntry): Promise<void> 
     validateOccurredOn(record.occurred_on, trackingStart, LATEST_DATE);
   } catch {
     fail('date');
+  }
+}
+
+type ChoiceRow = { record_id: string; original: string; changes: string; server: string; edited_at: string; refused_at: string };
+
+const isInstant = (value: unknown): value is string => typeof value === 'string' && !Number.isNaN(Date.parse(value));
+const isTextOrNull = (value: unknown) => value === null || typeof value === 'string';
+/** What each field of an update may hold: the values the edit command sends for it. */
+const CHANGE_RULES: Record<keyof UpdateTransactionRequest, (value: unknown) => boolean> = {
+  amount_minor: (value) => typeof value === 'string' && AMOUNT.test(value),
+  occurred_on: (value) => typeof value === 'string' && DAY.test(value),
+  note: isTextOrNull,
+  merchant: isTextOrNull,
+  wallet_id: isUuid,
+  category_id: isUuid,
+  source_wallet_id: isUuid,
+  destination_wallet_id: isUuid,
+};
+const CHANGE_FIELDS = new Set<string>(Object.keys(CHANGE_RULES));
+
+/** Only fields of an update, each holding a value of its field, and at least one field. */
+function validChanges(changes: unknown): changes is UpdateTransactionRequest {
+  if (typeof changes !== 'object' || changes === null || Array.isArray(changes)) return false;
+  const entries = Object.entries(changes);
+  return entries.length > 0 && entries.every(([field, value]) => CHANGE_FIELDS.has(field) && CHANGE_RULES[field as keyof UpdateTransactionRequest](value));
+}
+
+/** Why a pending choice is not valid, or null: it names one record, and both copies are that record's snapshots. */
+function choiceProblem(choice: PendingChoice): string | null {
+  if (!isUuid(choice.recordId)) return 'record id';
+  if (!isTransactionSnapshot(choice.original) || choice.original.id !== choice.recordId) return 'original';
+  if (!isTransactionSnapshot(choice.server) || choice.server.id !== choice.recordId) return 'server';
+  if (!validChanges(choice.changes)) return 'changes';
+  if (!isInstant(choice.editedAt) || !isInstant(choice.refusedAt)) return 'times';
+  return null;
+}
+
+/** A stored choice, or null when its row no longer holds a valid one (it is left out, never repaired). */
+function choiceFromRow(row: ChoiceRow): PendingChoice | null {
+  try {
+    const choice: PendingChoice = {
+      recordId: row.record_id,
+      original: JSON.parse(row.original) as TransactionDto,
+      changes: JSON.parse(row.changes) as UpdateTransactionRequest,
+      server: JSON.parse(row.server) as TransactionDto,
+      editedAt: row.edited_at,
+      refusedAt: row.refused_at,
+    };
+    return choiceProblem(choice) === null ? choice : null;
+  } catch {
+    return null;
   }
 }
 
@@ -326,6 +386,8 @@ export function createDiaryStore(options: DiaryStoreOptions): DiaryStore {
 
     readOutbox: () => read(async (sql) => (await sql.all<OutboxRow>(`SELECT ${OUTBOX_COLUMNS} FROM outbox ORDER BY created_at, rowid`)).map(toCommand)),
 
+    appliedRevision: () => read(async (sql) => (await sql.all<{ value: string }>(`SELECT value FROM diary_meta WHERE key = 'applied_revision'`))[0]?.value ?? '0'),
+
     readState: () =>
       read(async (sql) => {
         const meta = new Map((await sql.all<{ key: string; value: string }>('SELECT key, value FROM diary_meta')).map((row) => [row.key, row.value]));
@@ -441,6 +503,33 @@ export function createDiaryStore(options: DiaryStoreOptions): DiaryStore {
     },
 
     importDraftKeys: () => read(async (sql) => (await sql.all<{ key: string }>('SELECT key FROM import_drafts ORDER BY key')).map((row) => row.key)),
+
+    async keepChoice(choice) {
+      guard();
+      const problem = choiceProblem(choice);
+      if (problem !== null) throw new TypeError(`A pending choice is not valid: ${problem}.`);
+      await write((tx) =>
+        tx.run(
+          `INSERT INTO pending_choices (record_id, original, changes, server, edited_at, refused_at) VALUES (?, ?, ?, ?, ?, ?)
+           ON CONFLICT (record_id) DO UPDATE SET original = excluded.original, changes = excluded.changes, server = excluded.server,
+             edited_at = excluded.edited_at, refused_at = excluded.refused_at`,
+          [choice.recordId, JSON.stringify(choice.original), JSON.stringify(choice.changes), JSON.stringify(choice.server), choice.editedAt, choice.refusedAt],
+        ),
+      );
+    },
+
+    readChoices: () =>
+      read(async (sql) => {
+        const rows = await sql.all<ChoiceRow>('SELECT record_id, original, changes, server, edited_at, refused_at FROM pending_choices ORDER BY rowid');
+        return rows
+          .map(choiceFromRow)
+          .filter((choice): choice is PendingChoice => choice !== null)
+          .sort((a, b) => Date.parse(a.refusedAt) - Date.parse(b.refusedAt));
+      }),
+
+    async dropChoice(recordId) {
+      await write((tx) => tx.run('DELETE FROM pending_choices WHERE record_id = ?', [recordId]));
+    },
 
     lock: close,
 

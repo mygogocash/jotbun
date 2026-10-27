@@ -2,7 +2,7 @@
 // (database.ts / database.web.ts, and a node:sqlite test adapter)
 // implement these ports; accountDatabase.ts and diaryRepository.ts hold all
 // the logic, so it is tested against a real SQLite engine.
-import type { CreateTransactionRequest, EntityChange } from '@gogospend/contracts';
+import type { CreateTransactionRequest, EntityChange, TransactionDto, UpdateTransactionRequest } from '@gogospend/contracts';
 
 export type SqlValue = string | number | null;
 
@@ -74,6 +74,25 @@ export type OutboxCommand = {
 
 /** A draft saved on the device: shown as pending, never mixed into confirmed totals. */
 export type PendingEntry = CreateTransactionRequest;
+
+/**
+ * An online edit of a record that the server refused with VERSION_CONFLICT
+ * (C16): kept on the device until the person picks a version. One per record;
+ * never sent by itself, and never an outbox command.
+ */
+export type PendingChoice = {
+  recordId: string;
+  /** The record as the person opened it to edit (the edit's base). */
+  original: TransactionDto;
+  /** Only the fields the person changed, as buildEditChanges made them. */
+  changes: UpdateTransactionRequest;
+  /** The record the VERSION_CONFLICT answer carried, or a fresher read. */
+  server: TransactionDto;
+  /** ISO 8601, when the person pressed Save. */
+  editedAt: string;
+  /** ISO 8601, when the server refused it. */
+  refusedAt: string;
+};
 
 /** A full replacement of the confirmed state: every entity at `high_water`, and the delta cursor there. */
 export type ConfirmedSnapshot = { entities: readonly EntityChange[]; cursor: string };
