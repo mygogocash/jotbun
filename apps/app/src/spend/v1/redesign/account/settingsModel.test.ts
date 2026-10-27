@@ -12,7 +12,7 @@ const NONE = { planning: false, insights: false, imports: false };
 function view(states: readonly OutboxState[], status: SyncStatus | null = null, phase: DiaryView['phase'] = 'ready'): DiaryView {
   const outbox = states.map((state) => command(pending({ amount_minor: '6500' }), state));
   return {
-    phase, lockReason: null, progress: null, pending: [], outbox, wallets: [], categories: [], accountId: null,
+    phase, lockReason: null, progress: null, pending: [], outbox, pendingChoices: [], wallets: [], categories: [], appliedRevision: '0', accountId: null,
     outcome: status === null ? null : { status, progress: { sent: 0, total: 0 }, nextAttemptAt: null, uncertain: 0, needsReview: 0 },
   };
 }
