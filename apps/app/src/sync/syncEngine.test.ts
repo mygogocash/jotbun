@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
 
-import { ACCOUNT_A, ACCOUNT_B, FOOD, WALLET, category, change, wallet } from '../storage/testing/diaryFixtures.ts';
+import { ACCOUNT_A, ACCOUNT_B, FOOD, WALLET, category, change, expense, wallet } from '../storage/testing/diaryFixtures.ts';
 import { INITIAL_RETRY, afterFailure, afterPacing, afterSuccess, gate } from './retryPolicy.ts';
 import { createSyncScheduler } from './scheduler.ts';
 import { PROBLEMS } from './testing/fakeServer.ts';
 import { START, bench } from './testing/harness.ts';
 import type { Bench } from './testing/harness.ts';
+import type { PendingChoice } from '../storage/types.ts';
 import type { FlushTrigger, SyncOutcome, SyncRemote } from './types.ts';
 
 let b: Bench | undefined;
@@ -462,4 +463,21 @@ test('the scheduler starts the live channel with the foreground, stops it in the
   assert.deepEqual(channelCalls, ['start', 'start', 'stop', 'stop']);
   await scheduler.live();
   assert.deepEqual(flushed, ['launch', 'foreground', 'live'], 'a stopped scheduler runs nothing');
+});
+
+test('a pending choice is never sent by the sync engine', async () => {
+  b = await bench();
+  const record = expense({ amount_minor: '6500' });
+  const kept: PendingChoice = {
+    recordId: record.id, original: record, changes: { amount_minor: '7000' }, server: { ...record, version: 2, amount_minor: '8000' },
+    editedAt: '2026-03-02T05:00:30.000Z', refusedAt: '2026-03-02T05:01:00.000Z',
+  };
+  await b.store.keepChoice(kept);
+  const saved = await b.save({ amount_minor: '100' });
+  const outcome = await b.flush();
+  assert.equal(outcome.status, 'synced');
+  // Exactly one create went out: the draft. The choice's record never did.
+  assert.deepEqual(b.server.sent.map((sent) => sent.commandId), [saved.commandId]);
+  assert.ok(b.server.sent.every((sent) => !sent.body.includes(record.id)));
+  assert.deepEqual(await b.store.readChoices(), [kept]);
 });

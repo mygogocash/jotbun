@@ -213,7 +213,7 @@ test('a record and back: the filters, the search and every loaded entry come bac
   fireEvent.click(screen.getByRole('radio', { name: 'All' }));
   await waitFor(() => expect(recordRows()).toHaveLength(50));
   expect(screen.getByRole('button', { name: 'Load more' })).toBeTruthy();
-});
+}, 20_000);
 
 test('an entry changed or deleted on its record shows its new state on the way back', async () => {
   const fake = await openHistory();

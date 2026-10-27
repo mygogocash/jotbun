@@ -15,14 +15,17 @@ export class VaultOwnerMismatch extends Error {
 /**
  * Makes the account and sync rows on the vault's first call. A vault that
  * already holds another account refuses the call, logs it and writes nothing (§6.2).
+ * An erased vault keeps only its `deleted` marker (B22): it refuses with 403
+ * and never makes an account again, even after it sleeps and wakes.
  */
 export function ensureAccount(c: VaultContext): void {
-  const [account] = c.sql.exec<{ account_id: string }>('SELECT account_id FROM account_state WHERE id = 1').toArray()
+  const [account] = c.sql.exec<{ account_id: string; status: string }>('SELECT account_id, status FROM account_state WHERE id = 1').toArray()
   if (!account) {
     c.sql.exec("INSERT INTO account_state (id, account_id, status, not_before, created_at) VALUES (1, ?, 'active', 0, ?)", c.claims.accountId, c.now.toISOString())
     c.sql.exec('INSERT INTO sync_state (id, revision, pruned_through) VALUES (1, 0, 0)')
     return
   }
+  if (account.status === 'deleted') throw new ProblemException(403, 'ACCOUNT_UNAVAILABLE')
   if (account.account_id !== c.claims.accountId) {
     const error = new VaultOwnerMismatch()
     logFailure('vault_owner_mismatch', error)

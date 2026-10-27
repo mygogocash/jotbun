@@ -5,7 +5,7 @@ import { memoryDraftStore } from '../importReview';
 import type { DiaryView, SpendDiary } from '../spendDiary';
 
 export function createFakeDiary(view: Partial<DiaryView> = {}) {
-  let current: DiaryView = { phase: 'ready', lockReason: null, outcome: null, progress: null, pending: [], outbox: [], wallets: [], categories: [], appliedRevision: '0', ...view };
+  let current: DiaryView = { phase: 'ready', lockReason: null, outcome: null, progress: null, pending: [], outbox: [], pendingChoices: [], wallets: [], categories: [], appliedRevision: '0', ...view };
   const drafts = memoryDraftStore();
   const listeners = new Set<() => void>();
   const saves: PendingEntry[] = [];
@@ -39,6 +39,14 @@ export function createFakeDiary(view: Partial<DiaryView> = {}) {
     async discardDraft(commandId) {
       calls.discarded.push(commandId);
       current = { ...current, outbox: current.outbox.filter((command) => command.commandId !== commandId) };
+      notify();
+    },
+    async keepChoice(choice) {
+      current = { ...current, pendingChoices: [...current.pendingChoices.filter((kept) => kept.recordId !== choice.recordId), choice] };
+      notify();
+    },
+    async dropChoice(recordId) {
+      current = { ...current, pendingChoices: current.pendingChoices.filter((kept) => kept.recordId !== recordId) };
       notify();
     },
     discardDiary: async () => void (calls.discardDiary += 1),
