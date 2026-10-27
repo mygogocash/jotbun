@@ -328,9 +328,143 @@ Phase 1A moves each person's ledger into one SQLite Durable Object, the UserVaul
 
 **Pre-review fix (R76).** The controller ruled that `categories_replace_guard` also refuses an insert whose built-in key another category already holds. Without that clause, `INSERT OR REPLACE` with such a key deleted the other category silently, because `recursive_triggers` is off and `categories_never_deleted` therefore did not fire. The clause is `OR EXISTS (SELECT 1 FROM categories c WHERE c.builtin_key = NEW.builtin_key AND c.id <> NEW.id)`. Test first: `a replace that reuses another category's built-in key is refused, and the other category survives` (`vault-schema.test.ts`), placed before the same-id replace case. Before the clause, `npm run test:edge:workers -- test/workers/categories.test.ts test/workers/vault-schema.test.ts` gave `Test Files 1 failed | 1 passed (2)` and `Tests 1 failed | 29 passed (30)`. The failure was the new case, `promise resolved "[]" instead of rejecting`, because the replace had removed the other category. After the clause, the same command gave `Test Files 2 passed (2)` and `Tests 30 passed (30)`. The full edge gate then passed (see the gate bullets above). Custom categories (a NULL built-in key), the identical seeding rows and the same-id replace are unaffected, as the existing cases show. Checksums (sha256, first 8 hex): `0000_vault_core.sql` d0329a4d, `vault-schema.test.ts` ff0b345b. One behaviour change: a plain `INSERT ... ON CONFLICT DO NOTHING` whose built-in key another category holds now aborts, where it was skipped before. The seed path checks the present keys first, so it cannot reach that case. The other open item (a REPLACE that keeps type and built-in key but changes other columns) is not part of this ruling and stays open.
 
+### Task 5: transactions, balances and the golden diary
+
+- **Status:** built and verified locally on `agent-ad129ba8cab52fe16`, on top of `60e2026`. Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - Transactions: `apps/edge/src/vault/domain/transactions.ts`. It ports `TransactionsService` and `TransactionsRepository`: `getTransaction`, `createTransaction`, `updateTransaction`, `deleteTransaction` and `restoreTransaction`. It also exports `transactionRow` (Task 8's purge) and `toDto`. One row per expense, income or transfer. Edit needs `If-Match`. Soft delete sets `deleted_at`, the head state `deleted` and the outcome `deleted`. Restore is inside 30 days. A purged id (no row, head state `purged`) cannot be reused (`410 ENTITY_PURGED`). Amounts are parsed with `parseMinor` and stored and read as text (`CAST(? AS INTEGER)` in, `CAST(amount_minor AS TEXT)` out). They never pass through a JavaScript number.
+  - Balances: `apps/edge/src/vault/reads/balances.ts` was not rewritten. Task 3 already reads `CAST(opening + sum AS TEXT)`, counts a transfer on both sides, excludes `deleted_at`, and binds an id list as one JSON parameter (`WHERE w.id IN (SELECT value FROM json_each(?))`, R57). Its sha256 is `f61388eae9c1362e56c5fd072198daa9b41c71884d626bb6b517979de5848e49`.
+  - Protocol: `apps/edge/src/vault/commands/registry.ts` registers the `transaction` entity (`isTransactionSnapshot`, schema version 1, policy `current`) and four commands (`create`/`created`, `update`/`updated`, `delete`/`deleted`, `restore`/`restored`) after categories.
+  - Routes: `apps/edge/src/vault/routes.ts` (five handlers) and `apps/edge/src/v1/routes.ts` (five routes move from `VAULT_PENDING_ROUTES` into `VAULT_V1_ROUTES`, with the access, gates and status of the PostgreSQL table). GET is `bound_session` and 200. POST create is `current_policy` with write gates and the default 201. PATCH, DELETE and restore are `current_policy` writes and 200. The table now has 24 ported, 5 pending (budgets, history, summary), 28 deferred and 6 retired routes, which is all 63 declared routes.
+  - Tests: `apps/edge/test/workers/transactions.test.ts` (the API spec's 17 `it` blocks, its three `it.each` blocks, and one delta-feed case). `apps/edge/test/workers/money-hardening.test.ts` (15). `apps/edge/test/workers/golden-diary.test.ts` (5), with fixtures in `apps/edge/test/workers/support/money-fixtures.ts`. `apps/edge/test/vault-route-coverage.test.ts` now pins the five transaction routes. `apps/edge/test/workers/sync.test.ts` gives the 201-group paging case a 20s timeout (deviation 7).
+- **RED to GREEN:**
+  - RED, before the domain existed: `npm run test:edge:workers -- test/workers/transactions.test.ts test/workers/money-hardening.test.ts test/workers/golden-diary.test.ts` gave `Test Files 3 failed` and `Tests 47 failed | 4 passed (51)`. The failures are 404 `NOT_FOUND` (expected 201): the routes were not ported. The four that passed are the golden exactness case (`walletBalances` already returns an exact string, including the 90,100-row insert) and money-hardening's three already-built builtin cases (seed again after deleting receipts, add only missing builtins, a correction reason when nothing was corrected).
+  - RED, Node: `npm test --prefix apps/edge -- test/vault-route-coverage.test.ts` gave `Tests 1 failed | 4 passed (5)`. The pin expected the 24 routes; the table still had 19.
+  - GREEN, after the domain, routes and registry: the same workers command gave `Tests 51 passed (51)`. `npx tsc --noEmit` in `apps/edge` reported no errors. One type fix after the first green run was behaviour-preserving: `updateTransaction` builds a `Set` of the row's own reference fields, because `Array.includes` rejects the wider field union.
+- **Mutation check:** the SHA-256 of `src/vault/reads/balances.ts` (GREEN, unchanged from Task 3) was `f61388eae9c1362e56c5fd072198daa9b41c71884d626bb6b517979de5848e49`, and a copy was kept outside the repo. Each mutant was applied in place, the named file was run, and the file was restored from the copy. Its checksum matched after every restore, and the final file is the same hash.
+  - M1, the outer `CAST(... AS TEXT)` removed, so the balance comes back as a JavaScript number: `golden-diary.test.ts` gave `Tests 5 failed | 0 passed`. The exactness case expected `'9010099999909899'` and received the number `9010099999909900`. The other four failed because the balances were numbers, not strings.
+  - M2, the destination side of a transfer removed: `golden-diary.test.ts` gave `Tests 4 failed | 1 passed`. Exactness passed (incomes only). The golden case had Daily account at `'1720000'` instead of `'1870000'` (the 150000 transfer credit was missing).
+  - M3, all three `AND t.deleted_at IS NULL` filters removed: `transactions.test.ts` gave `Tests 1 failed | 30 passed`. The delete case expected balance `'100000'` and received `'93500'` (the deleted 6500 still counted).
+- **Gate** (repo root, `npm run typecheck:edge && npm run test:edge && npm run test:edge:workers && npm run build:edge && npm run test:edge:db`, exit 0, after the sync timeout in deviation 7):
+  - `typecheck:edge`: passes.
+  - `test:edge`: 121 passed (9 files), the baseline.
+  - `test:edge:workers`: 213 passed (10 files). The three new files are 51 of them.
+  - `build:edge`: passes.
+  - `test:edge:db`: 62 passed (8 files), the baseline. The container `gogospend-postgres-v1-local` was already healthy; it was not restarted.
+  - An earlier run of the same gate, before the timeout, stopped at `test:edge:workers` (`Tests 1 failed | 212 passed (213)`). `sync.test.ts` "defaults to 200 groups a page and refuses more than 1,000" exceeded 5000ms (5129ms, then 5072ms on a rerun of the workers suite). Alone, that file passed 12 of 12 in 5.39s. `build:edge` and `test:edge:db` did not run on that attempt.
+- **Ported in full:** the 17 `it` blocks and three `it.each` blocks of `transactions.integration.spec.ts` (the workers file is 31 vitest cases once the extra delta-feed `it` is counted), all 15 of `money-hardening.integration.spec.ts`, and all 5 of `reconciliation.integration.spec.ts`. The golden case ends with `expect(Object.fromEntries(wallets.map(...))).toEqual({ Cash: GOLDEN_BALANCES.cash, 'Daily account': GOLDEN_BALANCES.daily })`.
+- **Ported in changed form:**
+  - `transactions.integration.spec.ts`, the database-guards case. The vault has no roles, so the cross-account foreign key (23503) and the hard `DELETE` / column-grant `UPDATE` (42501) are not applicable. The category-type half is the vault trigger, and the case asserts that a raw insert or update whose category has the other type is rejected (`/category of its own type/`) and that the row count stays 1. Another account's record is `NOT_FOUND` by addressing: it lives in another vault.
+  - `money-hardening.integration.spec.ts`, the DateStyle case. There is no connection DateStyle. Dates are `TEXT` `YYYY-MM-DD`, and the case reads `tracking_start`, `min(occurred_on)` and the HTTP `occurred_on` and asserts that shape.
+  - The injected `fail_on_4242` failure. The API uses a PL/pgSQL function. The vault uses a SQLite `AFTER UPDATE` trigger that `RAISE`s `ABORT` when `NEW.amount_minor = 4242`, inside the call's `transactionSync`, which rolls back the row, the receipt and the revision (`500 INTERNAL_ERROR`). The test drops the trigger in `finally`.
+- **Not applicable** (PostgreSQL roles and grants, row-level security, connection pools, isolation levels or lock waits, and a vault holds one account):
+  - The 42501 hard-delete and column-grant halves, and the cross-account foreign key, as above. The vault has no roles or grants and no `account_id`.
+  - `FOR UPDATE` and lock waits. The vault's transaction is the lock. Each call runs to completion in one `transactionSync`. The concurrent `Promise.all` cases are ported, and the Durable Object serializes them.
+  - Connection pools: none. A vault call makes no database connection.
+- **Deviations:**
+  1. `commandInput` takes the If-Match rule as a fourth argument (`'required' | 'forbidden' | 'optional'`, R40). Vault commands check those headers before the body (R41): `commandInput`, then the route id, then the body. Same order as wallets.
+  2. `walletBalances` was left as Task 3 wrote it. The three mutants above were applied to that file and each was caught, so the brief's Step 5 holds without a rewrite. The exactness case therefore passed on RED.
+  3. An id list of unbounded size is one JSON parameter, `JSON.stringify(ids)` into `json_each(?)` (R57). Durable Object SQLite allows at most 100 parameters per query.
+  4. The golden case also asserts `GOLDEN_RECORDS.length`, the wallet names against `GOLDEN_WALLETS`, `tracking_start` against `GOLDEN_START`, and income and expense against `GOLDEN_TOTALS`, so those imports are live. The required ending assertion is present verbatim.
+  5. `transactions.test.ts` adds one delta-feed case the API spec does not have. It reads the sync page, keeps `entity === 'transaction'`, and expects entity versions `[1, 'active']` and `[2, 'active']` with `isTransactionSnapshot` on the snapshots. It does not pin an account revision.
+  6. The Node pin in `vault-route-coverage.test.ts` changed in the same edit as the route move. Its RED run is the one recorded above. No assertion was relaxed.
+  7. `sync.test.ts`, "defaults to 200 groups a page and refuses more than 1,000", now has a 20s timeout. The case creates 201 vaults sequentially and fits under 5s alone. Beside the 90,100-row exactness insert it crossed 5s by about 100ms. The row count and the assertions are unchanged. The workers config's default timeout is unchanged.
+- **SKIPPED (hosted):** nothing deployed, and no cloud resource was created.
+- **Notes for Task 6 and later:**
+  - `transactionRow(c, id)` returns the stored row, or `undefined`. `getTransaction` on a missing row, including a purged id, is 404. `410 ENTITY_PURGED` is only on create reuse and on `locked()` mutations.
+  - `categoryById` still returns `archived` as 0 or 1. A newly referenced archived category, a missing one, and a type mismatch are `stateProblem` (`422 VALIDATION_FAILED`). `DATE_BEFORE_TRACKING_START` is a `ContractValidationError`. Blame the wallet field only when the date is unchanged and that wallet is newly referenced; otherwise blame `occurred_on`.
+  - Register budgets after transactions in `buildVaultRegistry()`.
+  - There is no `attachment_id` column in 1A. `toDto` omits it, and omits null refs of the other type.
+  - Sums must stay `CAST(... AS TEXT)`. SQLite's sum of integers is exact until the Durable Object SQL API returns it; without the cast it becomes a JavaScript number and loses precision above 2^53.
+
+### Task 6: budgets
+
+- **Status:** built and verified locally on `agent-aac244f4d094b532a`, on top of `60e2026`. Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - Budgets: `apps/edge/src/vault/domain/budgets.ts`. It ports `BudgetService`: `getBudget`, `putBudget`, and `readBudget` (the read `SummaryQuery` uses; a missing month is `undefined`, and `getBudget` turns that into 404). A put reads command headers before the body (R41, If-Match `optional`). Inside the command it deletes the month's limits, writes the overall, then inserts the limits, so the Task 1 triggers can check each step. Amounts are bound with `CAST(? AS INTEGER)` and read with `CAST(... AS TEXT)`.
+  - Protocol: `apps/edge/src/vault/commands/registry.ts` registers the `budget` entity (`isBudgetSnapshot`) and `budget.create` / `budget.replace` after categories, with the API's outcomes, schema version 1 and policy `current`.
+  - Routes: `apps/edge/src/vault/routes.ts` (two handlers) and `apps/edge/src/v1/routes.ts` (the two budget routes move from `VAULT_PENDING_ROUTES` into `VAULT_V1_ROUTES`, with the access, gates and status of the PostgreSQL table). The table is now 21 ported, 8 pending, 28 deferred and 6 retired, which is all 63 declared routes.
+  - Tests: `apps/edge/test/workers/budgets.test.ts` (20 cases, already on disk for the RED). `apps/edge/test/vault-route-coverage.test.ts` pins the two budget routes. No schema change.
+- **RED to GREEN:**
+  - RED, recorded before this implementation and not re-run, because the tests were not edited: `npm run test:edge:workers -- test/workers/budgets.test.ts` gave 19 failed and 1 passed (20). The pass was "another account's budget is NOT_FOUND", which is 404 for any unknown route until the route exists. The coverage pin failed as intended.
+  - GREEN: the same command gave `Test Files 1 passed (1)` and `Tests 20 passed (20)`.
+- **Mutation check:** `shasum -a 256` was recorded, and a copy of each file was kept outside the repo, before either mutant. Each mutant was applied in place, the focused file was run, and the file was restored. Both restores matched the original checksum.
+  - M1, `budget_limits_within_overall_insert` dropped from `0000_vault_core.sql`: `Tests 2 failed | 18 passed (20)`. Both database-backstop cases resolved instead of rejecting. The direct insert of a sublimit above the overall no longer threw, and the one-call parent-then-child insert no longer threw.
+  - M2, the service no longer refuses an income category (`category.type !== 'expense'` removed, trigger left in place): `Tests 1 failed | 19 passed (20)`. "sublimits need owned, active expense categories" failed: the put became a 500 (`vault_call_failed`) and `fields` was missing, where the case expects `category_limits`.
+  - Restored checksums (sha256, first 8 hex): `budgets.ts` fa8e0f30, `0000_vault_core.sql` d0329a4d (unchanged by the task), `registry.ts` 0e1308bc, `vault/routes.ts` 8b563247, `v1/routes.ts` e14a8960, `budgets.test.ts` 9ffc7bc0, `vault-route-coverage.test.ts` 706a339c.
+- **Gate** (repo root). The command is `npm run typecheck:edge && npm run test:edge && npm run test:edge:workers && npm run build:edge && npm run test:edge:db`.
+  - An earlier full run, while sibling worktrees were busy, timed out `sync.test.ts` "defaults to 200 groups a page and refuses more than 1,000" at 5000ms (5099ms, then 5023ms). Alone, that case passed in 1.91s with this registry and in 3.36s against the previous registry, so the timeout was load, not the budget port.
+  - The recorded run then passed typecheck, `test:edge` 121 (9 files), `test:edge:workers` 182 (8 files) and `build:edge`. `dist/jotbun_vault/index.js` has no `pg` or `drizzle-orm/node-postgres` import. `test:edge:db` in that same command gave `Tests 2 failed | 60 passed (62)`: the two parity sessions timed out at 30000ms. Postgres on 127.0.0.1:55432 was up and `gogospend-postgres-v1-local` was healthy, so it was not restarted.
+  - Rerun of `npm run test:edge:db` once, as the contention rule allows: `Tests 62 passed (62)` (8 files).
+- **Ported in full:** the HTTP cases from `budgets.integration.spec.ts` and `m4-hardening.integration.spec.ts`: create and replace, version conflict, two creates at once, minor range, duplicate and over-sum sublimits, owned active expense categories, a limit kept across rename and archive, month shape, unknown field, a missing month on replace, `category_limits` not a list, and another account's 404.
+- **Ported in part:**
+  - "refuses, at commit, sublimits that add up to more than the overall limit, from either side" and the income insert. PostgreSQL reports `23514` / `23503` at commit. The vault asserts the Task 1 trigger messages (`exceed the overall budget`, `expense category`) on a direct `sqlExec`.
+  - "a parent lowering and a child insert committing together". Two transactions and a barrier cannot be ported: one vault call is one `transactionSync`. The case runs both orders in one call and checks the rollback leaves overall `1000` and limits `600`.
+  - "a replacement lowers the overall limit under the old sublimits when the new ones fit, and reads them back in category order" and "its change is served by the sync feed as the persisted budget" are in the workers file. The first is the immediate-trigger order. The second is the registered `budget` snapshot on `GET /v1/sync/changes`.
+- **Not applicable** (PostgreSQL roles and grants, row-level security, connection pools, isolation levels or lock waits):
+  - "deleting an account removes its budgets and sublimits" and "a deletion routine run by a worker role that cannot read budgets still succeeds". Account deletion is 1B. The vault has no roles or grants.
+  - "history and summary read from one REPEATABLE READ, READ ONLY snapshot". The vault has no isolation level. A call is one transaction.
+  - "another account's budget is NOT_FOUND" holds by addressing: the other account is another vault. There is no row-level security to port.
+  - The history cursor, the history dates, and "budget usage keeps a sublimit whose category was archived later" wait for Task 7, which owns those routes. The workers file says so.
+- **Deviations:**
+  1. The API updates the overall and then deletes limits, because its check is a deferred constraint. SQLite runs the Task 1 triggers immediately, so that order refuses a legal replacement whose new overall is under the old sublimits. The put deletes limits, writes the overall, then inserts limits.
+  2. Category checks call `categoryById` once per limit (at most `MAX_BUDGET_CATEGORY_LIMITS`, 100). The API uses `= ANY($1::uuid[])`. No query binds one `?` per id (R57). `archived` is compared as `=== 1`.
+  3. `readBudget` is exported. The brief names `getBudget` and `putBudget`. The API exports `readBudget` for the summary, and Task 7 needs a read that does not 404.
+  4. `buildVaultRegistry` places `budget` directly after `category`. `buildContainer` constructs transactions between them. Task 5 is not in this worktree, so its block is not here yet.
+- **SKIPPED (hosted):** none. No cloud resource was touched.
+- **Notes for Task 5 and Task 7:**
+  - Task 5: insert the transaction block in `buildVaultRegistry()` before the budget block, so the order stays wallets, categories, transactions, budgets.
+  - `readBudget(c, month)` takes `YYYY-MM` and returns `undefined` when the month is unset. The row's month is `YYYY-MM-01`. Do not use `getBudget` for the summary; that 404s.
+  - `categoryById` still returns `archived` as 0 or 1. A limit already on the budget may name an archived expense category; a new reference may not.
+  - The registry now names the entity `budget`. Sync serves it. Task 8b's registry parity check has to cover `budget` as well as `category` and `transaction`.
+- **Integration (27 Oct):** merged with Task 5 (PR #81). The registry is wallet, category, transaction, budget, in `buildContainer`'s order. The route table is now 26 ported, 3 pending (Task 7's history and summary), 28 deferred and 6 retired. On the merged tree: `typecheck:edge` passes, `test:edge` 130 passed (10 files), `test:edge:workers` 233 passed (11 files; Task 5's 213 plus these 20).
+
 ## 1B: files and background work on the vault
 
-Phase 1B moves the files, imports, exports, snapshots, receipts and the AI companion's state into each person's UserVault, as the spec's §6.2 and §6.3 describe (`docs/superpowers/specs/2026-10-25-jotbun-bun-wallet-cloudflare-design.md`). Task 2 adds the file tables, the object keys, the prefix purge and the durable erase that deletion relies on.
+Phase 1B moves files and background work onto each person's vault (spec `docs/superpowers/specs/2026-10-25-jotbun-bun-wallet-cloudflare-design.md`, §8 phase 1, second part). The owner approved the `apps/api` edit that this task needs (Q1, 25 October 2026; spec §6.1, which keeps `apps/api` read-only apart from that exception). Task 1 makes the statement parser a stateless HTTP process in the API image: bytes in, a parse outcome out. Task 2 adds the file tables, the object keys, the prefix purge and the durable erase that deletion relies on.
+
+### 1B Task 1: The stateless parse server
+
+- **Status:** built and verified locally on `worktree-agent-a55db11c49db5b66f`, reset to `68ec183` before the work. Not pushed. The independent review is the controller's, after this receipt. The parser runs with no database and no secrets: only its input bytes reach it (C1).
+- **Files:**
+  - `apps/api/src/imports/parse-outcome.ts` (new): the pure parts moved out of `parse-handler.ts`, unchanged: `toPreviewRecord`, `sanitizedImageHeader` with its PNG, JPEG and WebP readers, and `magicFormat`, which is now exported. It also holds the types `CandidateRecord`, `PreviewRecord`, `SanitizedImage` and `PreviewOutcome`, and `previewFromOutcome`, which maps a parser run's outcome to a preview, a retry or an abort, with the codes the worker used. It imports nothing from `node:child_process`, `node:fs` or `node:net`; `ParserRunOutcome` is a type-only import.
+  - `apps/api/src/imports/parse-handler.ts` (changed): imports the moved parts, re-exports `CandidateRecord`, `PreviewRecord`, `toPreviewRecord` and `sanitizedImageHeader` so existing imports keep working, and `run` calls `previewFromOutcome(source.format, outcome, this.memoryBudgetKb, bangkokDate(new Date()))`. `recordFor` is gone. A diff against `68ec183` shows only the moved and changed lines.
+  - `apps/api/src/imports/parse-server.ts` (new): `startParseServer`, the routes `GET /health` and `POST /parse`, and the process entry (`node dist/imports/parse-server.js`, `PARSE_SERVER_PORT`, default 8080; `SHUTDOWN_TIMEOUT_SECONDS`; SIGTERM closes the server).
+  - `apps/api/src/imports/parse-server.spec.ts` (new): 9 cases, Jest, Node.
+  - `apps/api/release-graph.json` (changed): `imports/parse-server` added to `entries`.
+- **RED to GREEN:**
+  - RED (`npm run test:api -- parse-server`, with `parse-server.ts` answering 501 to every request): `Tests: 9 failed, 9 total`. Each case failed on an assertion (for example `Expected: 200, Received: 501`, or `toHaveBeenCalledTimes(1)`, `Received 0`), none on a missing module.
+  - Behaviour of the moved code, checked before the server was written: `npm run test:api -- parser-runner parse-worker v1-isolation` gave `Tests: 239 passed, 239 total`, the same count as the untouched base.
+  - GREEN (`npm run test:api -- parse-server`): `Tests: 9 passed, 9 total`.
+- **Mutation check (brief Step 5):** `shasum -a 256` recorded for `parse-server.ts` (`d63edf95…`) and `parse-outcome.ts` (`b25d6c79…`). The originals were backed up outside the repository, each mutant was applied in place, the focused file was run, and the file was restored from its backup. The checksum matched after every restore.
+  1. Size cap removed (`readBody(req, Number.POSITIVE_INFINITY)`): 1 failed, 8 passed. `refuses a body over 12 MiB with 413 before parsing`.
+  2. One-at-a-time guard removed (`busy` no longer checked): 1 failed, 8 passed. `runs one parse at a time`. It fails by the 5 s test timeout rather than by an assertion: the second request waits behind the held first parse instead of being refused, and the cleanup hook then times out too.
+  3. Startup verdict ignored (`options.runner ?? parsing.parse?.runner ?? null`): 1 failed, 8 passed. `answers health once the sandbox holds, and 503 when it does not`, at the down server's 503 expectation (it received 200).
+  4. `spawn_failed` mapped to a rejected preview: 1 failed, 8 passed. `a child that cannot start asks to be retried`.
+  5. Today header ignored (the server's UTC date used): 1 failed, 8 passed. `uses the request's today`, at the second request the spec adds. On this machine's clock of 25 October, the brief's single request (header `2026-10-25`, row `2026-10-26`) still passes under this mutant, so the added request with header `2026-10-27` is what catches it.
+  - The mutant runs invoked Jest directly from `apps/api` with the package script's flags plus `--forceExit`, because mutant 2 leaves connections open and Jest would wait on them. The flag changes no pass or fail result.
+- **Gate** (repo root):
+  - `npm run build -w gogospend-api`: passes, 293 files compiled.
+  - `node apps/api/scripts/release-graph.mjs check`: no problems; 149 files, 9 direct packages, 123 packages in the closure.
+  - `npm run typecheck`: exit 0.
+  - `npm run test:api` (the full API unit suite), run 1: `Test Suites: 1 failed, 43 passed, 44 total`; `Tests: 1 failed, 953 passed, 954 total`. The failure is `parser-runner.spec.ts`, `the parser child: XLSX › rejects an entry whose header understates its size`, which exceeded Jest's default 5000 ms timeout in a real child parse. The file passed in the three-suite run above (239 tests). Jest also reported that a worker failed to exit gracefully. The new spec passed in this run.
+  - `npm run test:api` (the full API unit suite), run 2: `Test Suites: 44 passed, 44 total`; `Tests: 954 passed, 954 total`, exit 0. The XLSX case passed in this run, so run 1's timeout was intermittent under load. The brief forbids weakening a test, and `parser-runner.spec.ts` is outside this task's files, so its timeout is unchanged. The controller may want to look at it.
+  - `npm run test:db -w gogospend-api -- import-preview`: run 1 gave `Tests: 1 failed, 42 passed, 43 total`. The failure is one wall-clock budget, `expect(elapsed).toBeLessThan(2_000)`, in the duplicate-advice case for 5,000 identical rows, which received 2055 ms. The timed request is a database read, and nothing on its path changed. Run 2, in the foreground, gave `Tests: 43 passed, 43 total`, exit 0. Run 1 started straight after the local database came up.
+  - Edge gate, the brief's five commands in order, each exit recorded: `typecheck:edge` exit 0; `test:edge` 9 files, 121 passed; `test:edge:workers` 5 files, 128 passed; `build:edge` exit 0; `test:edge:db` 8 files, 62 passed. `npm run db:v1:up` ran before the database suite, and `npm run build -w gogospend-api` ran before the gate.
+  - Built `dist` entry, no Docker (`PARSE_SERVER_PORT=18080 node apps/api/dist/imports/parse-server.js`): `GET /health` 200 `{"status":"ok"}`; an unknown route 404; a bad format 400; a CSV POST parsed to one candidate (`amount_minor` "100"); SIGTERM logged "parse server: stopping (SIGTERM)" and the process exited 0 (checked in the foreground with `wait`).
+  - Docker proof (brief Step 6, local Docker): `docker build -f apps/api/Dockerfile -t jotbun-parser-local .` exit 0. `docker run -d --rm -p 8080:8080 jotbun-parser-local node dist/imports/parse-server.js` (the brief's command, detached) logged `parse server: listening`; `GET /health` answered `{"status":"ok"}`; a CSV POST to `/parse` parsed to one candidate (`amount_minor` "100"); `docker stop` exited 0 and the container was removed.
+- **Deviations from the brief:**
+  1. `parse-server.ts` also answers a `500` with `{"error":"internal"}` when a request fails unexpectedly, and logs `parse server: request failed (<class>)`. The brief names no reply for that case.
+  2. Logging is one count line per child run (`parse server: ran <n>`), plus the startup check's fixed alert line, which the process entry prints. Nothing else is logged.
+  3. Past the cap the server stops buffering, answers 413 at once, and keeps none of the rest of the body.
+  4. The spec adds a second request to the date case (see mutant 5).
+  5. The real-child JPEG case is never skipped. `parser-runner.spec.ts` has no skip guard around its real-child image cases either, so "skipped exactly when" holds trivially.
+  6. The server starts listening even when the sandbox check fails, so `/health` answers 503, as the brief requires. The startup check runs before the port opens.
+- **SKIPPED (hosted):** Nothing deployed, and no cloud resource was created. The Docker proof ran on local Docker only.
+- **Notes for 1B-T5 (the Queue consumer):**
+  - `not_started` means no child ran: the consumer spends no attempt on it.
+  - `retry` with `parser_unavailable` or `parser_sandbox_unsupported` means a child could not run; the consumer spends an attempt.
+  - A `parsed` reply carries the record, plus the image as base64 when one was sanitized.
 
 ### 1B Task 2: The files schema, object keys, the prefix purge and a durable erase
 
@@ -368,6 +502,56 @@ Phase 1B moves the files, imports, exports, snapshots, receipts and the AI compa
 - **Concerns for the integrator:**
   - `erase()` is not one atomic step. It runs `deleteAll()`, then the migrations, then the marker insert. If the marker insert fails after `deleteAll()`, nothing in storage records the erase, and a later call could create the account again. The in-memory `erased` flag covers only the instance that failed. 1C's deletion should block sign-in in D1 first (§6.12, step 1) and retry `erase()` until the marker reads back. The alternative is one `transactionSync` that deletes the rows and writes the marker, which needs no re-migration. That choice is the controller's.
   - The purge loops until a listing comes back empty, with no iteration cap. A bucket that kept listing the same keys would never end. 1C's Workflow step should bound its own time.
+- **Integration (27 Oct):** merged after Tasks 5 and 6 of 1A (PRs #81, #80); only the receipts conflicted. On the merged tree: `typecheck:edge` passes, `test:edge` 130 passed (10 files), `test:edge:workers` 240 passed (12 files).
+
+## 1D: live pokes, the pending choice and PostHog
+
+Phase 1D adds live pokes, the pending choice, PostHog and the two-phone proof (plan 1D, in the controller's brief). Task 2 puts PostHog's proxy on the HTTP Worker.
+
+### 1D Task 2: The PostHog proxy on the Worker
+
+- **Status:** built and verified locally on `worktree-agent-aecc9854530b3e914`, reset to `68ec183` first. Committed locally, not pushed. The independent review is the controller's, after this receipt. The independent review is the controller's, after this receipt.
+- **Files:**
+  - `apps/edge/src/analytics/posthog-proxy.ts`: the constants, `isPostHogProxyPath` and `proxyPostHog`. It forwards GET, HEAD and POST under `/ingest/` to `eu.i.posthog.com`, and `/static/` and `/array/` to `eu-assets.i.posthog.com`, keeping the query. It sends no cookie, authorization, host, content-length, connection, forwarded, x-real-ip, true-client-ip, x-forwarded-*, cf-* or x-gogospend-* header, and no other client-address header (see deviations). It uses `redirect: 'manual'` and removes `set-cookie` from PostHog's answer. A body over 5 MiB (`POSTHOG_PROXY_BODY_LIMIT_BYTES`) is 413: refused by its declared length before any byte is read, or by a byte counter that cancels the stream past the limit. Other methods are 405 with `allow`. A body that cannot be read is 400. A failed fetch logs `posthog_proxy_failed` through `logFailure` (`src/v1/log.ts`, the class name only) and answers 502 with no body.
+  - `apps/edge/src/server.ts`: the default export's `fetch` answers `/ingest/*` with `proxyPostHog` before TanStack Start. Every other request goes to `handler.fetch` with its arguments, as before.
+  - Test: `apps/edge/test/posthog-proxy.test.ts`, 9 Node tests: the six in the brief, a body that cannot be read, the other client-address headers, and the HTTP Worker dispatch (it imports the real `src/server.ts` and spies on TanStack's `fetch`).
+- **RED to GREEN:**
+  - Typed stub first: `proxyPostHog` answers 404, `isPostHogProxyPath` returns false, and the constants are final.
+  - RED, against the stub: `npm run test:edge -- test/posthog-proxy.test.ts`: 7 failed, 0 passed. All seven failures are assertions (`expected 404 to be 413`, `... 405`, `... 400`, `... 502`, `expected [] to have a length of 1`, `expected [] to deeply equal ...`). None is a missing module.
+  - GREEN: the module, then the dispatch. The same command: 7 passed. After that the dispatch and other-headers tests were added and the body test was made finite (see deviations): 9 passed, 0 failed. `npm run typecheck:edge` passes.
+- **Mutation check (brief Step 6):** `shasum` of `posthog-proxy.ts`, `server.ts` and `posthog-proxy.test.ts` recorded; originals backed up in the scratchpad, outside the repo. Each mutant was applied in place, the focused file run, the file restored from its backup, and its checksum compared (OK after each).
+  - M1, stop stripping `x-forwarded-*` (x-forwarded-for forwarded): 2 failed, the batch test as the brief expects, and the other-headers test.
+  - M2, take the target host from the request's `host` header: 1 failed, the host test.
+  - M3, drop the body limit (both the declared-length and the counting check): 1 failed, the 413 test.
+  - M4, `server.ts` back to `fetch: handler.fetch`: 1 failed, the dispatch test (`/ingest/*` reached TanStack Start). This is the RED for the dispatch test, which was added after GREEN.
+  - M5, forward `x-client-ip`: 1 failed, the other-headers test. This is the RED for that test, which was added after GREEN.
+  - M6, keep `set-cookie` in the answer: 1 failed, the batch test.
+  - M7, `redirect: 'follow'`: 1 failed, the batch test.
+  - No survivors.
+- **Gate** (worktree root: `npm run typecheck:edge && npm run test:edge && npm run test:edge:workers && npm run build:edge && npm run test:edge:db`): passes, exit 0.
+  - `typecheck:edge`: passes.
+  - `test:edge`: 130 passed (10 files). It was 121 (9 files) before this task, and the 9 new tests are the difference.
+  - `test:edge:workers`: 128 passed (5 files). This task adds no workers test.
+  - `build:edge`: passes. The HTTP Worker (`dist/server/index.js`, with the `/ingest` dispatch) and the four background Workers build.
+  - `test:edge:db`: 62 passed (8 files). The script starts `db:v1:up` itself.
+  - `node --test scripts/ci/lockfile-bindings.test.mjs`: 2 passed. No lockfile changed.
+- **Deviations:**
+  - The stripped headers go beyond the brief's list. The brief's list is kept, and `x-client-ip`, `x-cluster-client-ip`, `x-originating-ip`, `x-remote-ip`, `x-remote-addr` and `fastly-client-ip` are stripped too, so that "every client IP header" (spec §7) holds. They are tested.
+  - Tests beyond the brief: the unreadable body (400), the other client-address headers, and the dispatch. The brief's six tests keep their names and assertions.
+  - The streamed-body test was made finite after GREEN. An endless stream would grow memory without bound under mutant M3. It is now 64 MiB in 1 MiB chunks, and it asserts that the proxy cancels it within two chunks past the limit, the same claim as before.
+  - A path that is not proxied (for example `/ingest` alone) answers 404 when `proxyPostHog` is called directly. The brief does not say.
+  - The default `fetch` is a wrapper, `(input, init) => fetch(input, init)`, because the Workers runtime refuses an unbound call to the global `fetch` (the note in `src/server/http/fetch.ts`).
+  - The body is typed `Uint8Array<ArrayBuffer>`. TypeScript 6 types a plain `Uint8Array` as `ArrayBufferLike`, which `BodyInit` rejects.
+  - The heading is the controller's, `## 1D: live pokes, the pending choice and PostHog`. The global constraints add "and the proof" to it.
+  - The dispatch forwards the handler's own argument tuple (`Parameters<typeof handler.fetch>`), not the bare `fetch` property. Non-ingest requests get the same arguments as before.
+- **SKIPPED (hosted):**
+  - No request reaches PostHog EU. No project or keys exist (Q5), so `POSTHOG_PROJECT_TOKEN`, `ANALYTICS_ID_KEY` and `EXPO_PUBLIC_POSTHOG_KEY` are unset. The upstream was exercised against a fake `fetch` only.
+  - `/ingest/*` on a deployed or `wrangler dev` Worker: not run. No hosted resource was touched.
+- **Notes for Task 3 and later:**
+  - This proxy only forwards. The server events (1D-T3) use `posthog-node` and do not go through it.
+  - The route lives on the HTTP Worker (`src/server.ts`). The vault Worker does not serve `/ingest/*`.
+  - The `/v1/sync/live` upgrade bypass (1D-T12) belongs in the same dispatch in `src/server.ts`.
+  - The body and its `content-encoding` pass through unchanged, as PostHog's guide does. Only the fake `fetch` has answered so far, so a compressed upstream answer has not been run.
 
 ## Not done, or follow-ups
 
