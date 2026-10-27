@@ -33,10 +33,13 @@ export function afterSuccess(state: RetryState): RetryState {
   return { ...state, failures: 0, paused: false, notBefore: 0 };
 }
 
-/** Whether a flush may run now. Foreground and manual flushes lift a pause and the backoff, never the server's pacing. */
+/**
+ * Whether a flush may run now. Foreground, manual and live flushes lift a pause and the backoff
+ * (a live poke or a reconnect proves the vault is reachable), never the server's pacing.
+ */
 export function gate(state: RetryState, now: number, trigger: FlushTrigger): { go: boolean; state: RetryState; wait: 'paused' | 'waiting' | 'rate_limited' | null; until: number | null } {
   if (now < state.paceUntil) return { go: false, state, wait: 'rate_limited', until: state.paceUntil };
-  if (trigger === 'manual' || trigger === 'foreground') return { go: true, state: { ...state, failures: 0, paused: false, notBefore: 0 }, wait: null, until: null };
+  if (trigger === 'manual' || trigger === 'foreground' || trigger === 'live') return { go: true, state: { ...state, failures: 0, paused: false, notBefore: 0 }, wait: null, until: null };
   if (state.paused) return { go: false, state, wait: 'paused', until: null };
   if (now < state.notBefore) return { go: false, state, wait: 'waiting', until: state.notBefore };
   return { go: true, state, wait: null, until: null };

@@ -1,4 +1,4 @@
-import { isCategorySnapshot, isWalletSnapshot } from '@gogospend/contracts'
+import { isBudgetSnapshot, isCategorySnapshot, isTransactionSnapshot, isWalletSnapshot } from '@gogospend/contracts'
 import type { CommandOutcome } from '@gogospend/contracts'
 
 import { CommandRegistry } from '@api/commands/command-registry'
@@ -18,6 +18,18 @@ const CATEGORY_COMMANDS: [string, CommandOutcome][] = [
   ['category.unarchive', 'unarchived'],
 ]
 
+const TRANSACTION_COMMANDS: [string, CommandOutcome][] = [
+  ['transaction.create', 'created'],
+  ['transaction.update', 'updated'],
+  ['transaction.delete', 'deleted'],
+  ['transaction.restore', 'restored'],
+]
+
+const BUDGET_COMMANDS: [string, CommandOutcome][] = [
+  ['budget.create', 'created'],
+  ['budget.replace', 'updated'],
+]
+
 /**
  * The entities and command kinds this vault serves, with the same kind, entity,
  * outcome, schema versions and policy as the API's services define them, in the
@@ -30,5 +42,9 @@ export function buildVaultRegistry(): CommandRegistry {
   for (const [kind, outcome] of WALLET_COMMANDS) registry.defineCommand({ kind, entity: 'wallet', outcome, schemaVersions: [1], policy: 'current' })
   registry.defineEntity({ entity: 'category', validate: isCategorySnapshot })
   for (const [kind, outcome] of CATEGORY_COMMANDS) registry.defineCommand({ kind, entity: 'category', outcome, schemaVersions: [1], policy: 'current' })
+  registry.defineEntity({ entity: 'transaction', validate: isTransactionSnapshot })
+  for (const [kind, outcome] of TRANSACTION_COMMANDS) registry.defineCommand({ kind, entity: 'transaction', outcome, schemaVersions: [1], policy: 'current' })
+  registry.defineEntity({ entity: 'budget', validate: isBudgetSnapshot })
+  for (const [kind, outcome] of BUDGET_COMMANDS) registry.defineCommand({ kind, entity: 'budget', outcome, schemaVersions: [1], policy: 'current' })
   return registry
 }
