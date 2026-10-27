@@ -202,6 +202,23 @@ test("the stage says the month's confirmed money in and out", async () => {
 });
 
 // Review m6: several sync banners are one polite live region, said once, not one announcement each.
+test('a change pulled from another phone refreshes Home in place', async () => {
+  const fake = createFakeResources(goldenSeed());
+  const diary = deviceDiary({ appliedRevision: '5' });
+  mountHome(fake.resources, { diary: diary.diary });
+  expect(await screen.findByRole('heading', { name: 'September 2026' })).toBeTruthy();
+  const loads = fake.callsOf('summary').length;
+  act(() => {
+    diary.set({ appliedRevision: '7' });
+  });
+  await waitFor(() => expect(fake.callsOf('summary')).toHaveLength(loads + 1));
+  // Another view update at the same revision reads nothing.
+  act(() => {
+    diary.set({ appliedRevision: '7', progress: { sent: 0, total: 1 } });
+  });
+  expect(fake.callsOf('summary')).toHaveLength(loads + 1);
+});
+
 test('the sync banners share one live region', async () => {
   const { diary } = draftsDiary();
   mountHome(createFakeResources(goldenSeed()).resources, { diary: diary.diary });

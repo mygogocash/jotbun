@@ -332,6 +332,149 @@ Phase 1A moves each person's ledger into one SQLite Durable Object, the UserVaul
 ## 1B: files and background work on the vault
 
 Phase 1B moves the files, imports, exports, snapshots, receipts and the AI companion's state into each person's UserVault, as the spec's §6.2 and §6.3 describe (`docs/superpowers/specs/2026-10-25-jotbun-bun-wallet-cloudflare-design.md`). Task 2 adds the file tables, the object keys, the prefix purge and the durable erase that deletion relies on.
+## 1D: live pokes, the pending choice and PostHog
+
+Phase 1D adds live pokes, the pending conflict choice and PostHog to the vault core. The design is `docs/superpowers/specs/2026-10-25-jotbun-bun-wallet-cloudflare-design.md` (PostHog is its §7). Task 3 builds the server analytics as a stand-alone module; the Worker wiring is 1D-T11 and T13.
+
+### 1D Task 3: Server analytics as a module
+
+- **Status:** built and verified on worktree `worktree-agent-aee5036b9ab6bfc29` (branch `worktree-agent-aee5036b9ab6bfc29`), from base `68ec183`. Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - Module: `apps/edge/src/analytics/server-analytics.ts`. `analyticsIdFor` is the lowercase hex HMAC-SHA256 of the user id under `ANALYTICS_ID_KEY` (WebCrypto, both read as UTF-8). `createServerAnalytics` returns `null` without `POSTHOG_PROJECT_TOKEN`, and otherwise sends through PostHog EU with the brief's client options. It also holds the allow-listed server events, the anonymous `$exception` and `account_deleted` counts, and `deletePostHogPerson` (persons `bulk_delete` on `eu.posthog.com`).
+  - Test: `apps/edge/test/server-analytics.test.ts` (Node), 14 tests.
+  - Dependency: `apps/edge/package.json` (`"posthog-node": "5.56.2"`, exact, one line) and `apps/edge/package-lock.json`.
+- **Version and lockfile:**
+  - `posthog-node` 5.56.2, published 16 October 2026. The brief's rule is the newest stable release published at least 7 days before the install day (25 October), so 18 October at the latest. The brief's parenthetical names 5.57.1 (23 October), which that rule excludes.
+  - Installed with `npm install --prefix apps/edge --save-exact --before=2026-10-18T00:00:00.000Z posthog-node@5.56.2`. The cutoff holds the transitive packages to the same rule. Without it, npm resolves `@posthog/core` to 1.60.1, published 23 October.
+  - Lockfile: three packages added (`posthog-node@5.56.2`, `@posthog/core@1.59.1` published 14 October, `@posthog/types@1.416.0` published 13 October), none changed or removed. 40 lines added, none removed. Size 151,486 to 152,878 bytes (+1,392 bytes). `npm ls --prefix apps/edge wrangler` shows one wrangler, 4.152.0.
+  - Dependency gate:
+    - Licences: MIT for all three.
+    - Install scripts: none in any of the three.
+    - Peers: `rxjs` and `@opentelemetry/api` are optional and not installed. Engines are `^20.20.0 || >=22.22.0`; the edge requires `>=24`.
+    - Provenance: `posthog-node` 5.56.2 has an SLSA provenance attestation. `npm audit signatures` in `apps/edge` verifies 201 packages' registry signatures and 109 attestations.
+    - Advisories: `npm audit --omit=dev --json` reports 0 before and after this change. The full `npm audit --json` reports 6 findings (3 moderate, 3 high) in `wrangler`, `miniflare`, `undici`, `zod`, `@cloudflare/vite-plugin` and `@cloudflare/vitest-plugin`. All are dev-only and not introduced here: none names a new package, and no existing version changed. Not remediated, since the wrangler pin (4.152.0) is the brief's.
+- **RED:** `npm run test:edge -- test/server-analytics.test.ts` against typed stubs, where each routine returned a wrong typed value: 14 failed, 0 passed. All 14 are assertion failures (for example `expected '' to be '6445f…'`, `promise resolved "'queued'" instead of rejecting`, `expected [] to have a length of 1`). No module failed to load.
+- **GREEN:** the same command, 14 passed, 0 failed.
+- **Mutation check:** the checksums of `server-analytics.ts` (`939b6a4e…d5039`) and the test file (`1e10f58f…2872`) were recorded, and a copy of the module was kept outside the repo. Each mutant was applied in place, the focused file was run, and the module was restored from the copy and its checksum compared.
+  - M1, the record's properties passed through unfiltered: 2 failed (the allow-list test and the value test).
+  - M2, one distinct id reused for every failure: 1 failed (the failure test).
+  - M3, a 202 with `deletion_errors` accepted: 1 failed (the refusal test).
+  - M4, "nothing to delete" decided on the project token instead of the analytics key: 5 failed (the deletion tests).
+  - M5 (added for the identity rule), the analytics-id guard weakened to an empty-string check: 1 failed (the identity test).
+  - M6 (added for the category rule), a category outside the built-in keys sent raw: 1 failed (the value test).
+  - Every restored module matches the recorded checksum. The test file was not edited after the RED run.
+- **Gate** (repo root):
+  - `typecheck:edge`: passes.
+  - `test:edge`: 135 passed (10 files), 14 of them new.
+  - `test:edge:workers`: 128 passed (5 files).
+  - `build:edge`: passes. No entry imports the module yet, so the Worker bundles do not contain PostHog code.
+  - `test:edge:db`: 62 passed (8 files), with the local PostgreSQL container up.
+  - `node --test scripts/ci/lockfile-bindings.test.mjs`: 2 passed.
+  - `npm run build -w gogospend-api`: passes.
+  - Workerd check of the module: `build:edge` does not bundle it, so esbuild 0.28.2 (from `apps/edge/node_modules`) bundled `src/analytics/server-analytics.ts` with the `workerd`, `worker` and `browser` conditions. It resolves `posthog-node`'s edge entry, and the output contains both the EU host and the app host. Nothing was written into the repo.
+- **Deviations:**
+  - Version: the brief's parenthetical names 5.57.1 as the newest release on 25 October, but its own 7-day rule excludes it. The rule gives 5.56.2, which is pinned.
+  - Install command: the `--before` flag is not in the brief's command. It is there to hold the transitive packages to the same cutoff.
+  - The brief's Step 5 says `build:edge` proves that `posthog-node` bundles. It cannot do that until T11 or T13 imports the module, so the workerd check above stands in for it.
+  - The real-client test stubs `globalThis.fetch`. The installed source confirms first that the SDK's `fetch` method calls the global `fetch` at call time (`posthog-node/dist/client.mjs`), so no fallback was needed.
+  - The brief leaves these open. Each is tested:
+    - `capture` drops an analytics id that is not 64 lowercase hex, so a raw user id or an email cannot become a distinct id.
+    - `category_key` outside `BUILTIN_CATEGORIES` is sent as `custom`, as §7 and the global constraints require. An unknown `kind`, or a `reason_code` that fails its pattern, is dropped, and the event is still sent.
+    - `captureAnonymous` sends only `account_deleted`.
+    - A 202 with no `deletion_errors` array counts as a failure. The project id is URI-encoded.
+    - Deletion is decided by the analytics key alone; the project token is not needed (M4 guards this).
+  - `defaultPort` is the PostHog client itself, as the brief says. Its `captureImmediate` cannot reject: `_sendPreparedEvent` in the SDK catches every error, so `waitUntil(client.captureImmediate(message))` cannot reject either.
+  - The "never rotates" rule is in the module's comments. `apps/edge/README.md` is not among this task's files, so the README note belongs beside the secret when T11 or T13 documents it.
+  - Heading: the controller's instruction names `## 1D: live pokes, the pending choice and PostHog`; the global constraints name `... PostHog and the proof`. This section uses the controller's heading. The two should be aligned at merge.
+  - Docker: Docker Desktop had quit between two gate runs. It was started with `open -a Docker`, and the database commands ran with `DOCKER_CONTEXT=desktop-linux`, because the active context had changed to `colima`, which is not running. No global Docker setting was changed.
+- **SKIPPED (hosted; no PostHog project or keys yet, D33):**
+  - A capture that reaches `eu.i.posthog.com`: SKIPPED. The test answers the request with a stub.
+  - `POST eu.posthog.com/api/projects/{id}/persons/bulk_delete` against PostHog: SKIPPED. The 202 contract is the brief's, exercised through a stub.
+  - A real `ANALYTICS_ID_KEY`: unset in every environment, so nothing is sent and deletion answers `nothing_to_delete` (Q5).
+- **Notes for the integrator:**
+  - `posthog-node` logs its own send failures with `console.error(err)`, so an SDK error message can reach the Worker's logs. The logging rule (`failureName` only) cannot be enforced inside the SDK. T11 or T13 may want to wrap the port.
+  - Analytics ids that are not 64 lowercase hex are dropped by design. Tests that pass fake ids to `capture` must use 64 lowercase hex characters.
+  - `@posthog/core` and `@posthog/types` are transitive. A later update of `posthog-node` would resolve them without this cutoff, so the gate applies again then.
+Phase 1D lets a change saved on one phone reach the person's other phones at once, with the sync fallbacks kept (`docs/superpowers/plans/2026-10-25-jotbun-p1d-pokes-posthog.md`, spec §6.5). Task 5 is the phone side: a socket that listens for `{ revision }` pokes, the live flush, screens that refresh when the revision moves, and development builds on the LAN. The vault side, `GET /v1/sync/live`, is 1D-T10, so the channel is tested against a fake socket.
+
+### 1D Task 5: The app's live channel
+
+- **Status:** built and verified locally on `worktree-agent-ad762b72c686aec52`, on top of `68ec183`. Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - `apps/app/src/sync/liveChannel.ts` (new): the pure channel with `liveUrl`, `parsePoke`, `revisionGrew`, `createLiveChannel`, `LIVE_CLOSE` and the timing constants. Test: `apps/app/src/sync/liveChannel.test.ts` (16 tests, on a fake socket and manual timers).
+  - `apps/app/src/sync/types.ts`: `FlushTrigger` gains `'live'`. `retryPolicy.ts`: `gate` lifts a failure pause for `'live'`, never the server's pacing. `syncEngine.ts`: a queued follow-up runs with the strongest trigger asked for (manual, foreground and live over write, over timer and launch). `scheduler.ts`: `live()`, and `channel?` started on launch and foreground and stopped on background and stop. `deviceSync.ts`: builds the channel with React Native's `WebSocket(url, undefined, { headers })`, `store.appliedRevision()`, `scheduler.live()`, the platform timers and `Math.random`.
+  - `apps/app/src/storage/diaryRepository.ts`: `appliedRevision()`, one `diary_meta` read, `'0'` before any change.
+  - `apps/app/src/spend/v1/spendDiary.ts`: `DiaryView.appliedRevision` (`'0'` when no diary is open), read with the pending list. `SpendDiaryContext.tsx` and `testing/fakeDiary.ts` take the default. Three existing fixtures (`settingsModel.test.ts`, `homeModel.test.ts`, `SyncStatus.render.test.tsx`) gain the field.
+  - `apps/app/src/api/client.ts`: `allowLanHttp`, which accepts `http://` to a private IPv4 literal (10/8, 172.16/12, 192.168/16) only when set. `apps/app/src/api/sharedV1.ts`: `allowLanHttp: __DEV__`, and `getSharedLiveTarget()`, whose token read uses `v1SessionCredentials`.
+  - `apps/app/src/screens/redesign/useRefreshOnRevision.ts` (new): refreshes when the revision grows and never on the first value. `HomeScreen.tsx` uses it with `loaded.refresh`, and `HistoryScreen.tsx` with `loadRef.current(true)`.
+  - Test helper: `apps/app/src/sync/testing/harness.ts` takes an optional remote in `newEngine`, so a test can hold one run open.
+  - Tests: `syncEngine.test.ts` (the brief's three, plus the strongest-trigger test and the scheduler wiring test), `diaryRepository.test.ts` (one), `client.test.ts` (one), `HomeScreen.render.test.tsx` and `HistoryScreen.render.test.tsx` (one each).
+- **RED to GREEN:**
+  - RED, unit (`npm run test:unit -w gogospend-app -- src/sync/liveChannel.test.ts src/sync/syncEngine.test.ts src/storage/diaryRepository.test.ts`, with typed stubs in place): `tests 56, pass 35, fail 21`. All 21 are assertion failures: 16 channel tests, three engine tests (live pause, joined poke, strongest trigger), the scheduler wiring test and the repository test. The characterization `twenty pokes during a flush run one follow-up` passes before the change, as the brief says.
+  - RED, app (`npm run test:app`): `tests 29, pass 28, fail 1` (the LAN test).
+  - RED, render (`npm run test:render -w gogospend-app -- src/screens/redesign/HistoryScreen.render.test.tsx src/screens/redesign/HomeScreen.render.test.tsx`): `tests 77, fail 4`. The two new refresh tests fail on assertions (`expected ... to have a length of 2 but got 1`). Two existing paging tests (Home's `today's total is exact even when today's records take more than one page` and History's `pages through every entry with Load more`) timed out at 5 s on this machine, on code paths this change does not touch. Both pass at GREEN.
+  - GREEN: unit focused `56 of 56`, app `29 of 29`, render focused `77 of 77`.
+- **Mutation check:** the five production files were backed up outside the repository and their `shasum -a 256` recorded. Each mutant was applied in place, the focused tests were run, and the file was restored from its backup and its checksum compared.
+  - M1, the gate ignores `'live'` (`retryPolicy.ts`): 3 failed (the live pause test, the joined-poke test, the strongest-trigger test).
+  - M2, a follow-up keeps the first caller's trigger (`syncEngine.ts`): 2 failed (the joined-poke and strongest-trigger tests).
+  - M3, reconnect after 4401 (`liveChannel.ts`): 1 failed (the ended-session test).
+  - M4, the token cached across reconnects (`liveChannel.ts`): 1 failed (`each reconnect reads the token again`).
+  - M5, `172.32.0.1` accepted (`client.ts`): 1 failed (the LAN test).
+  - M6, History reloads on every view update (`HistoryScreen.tsx`): 7 failed, including `a change pulled from another phone refreshes the list in place`.
+  - M7, extra, for the current-socket rule: the close handler without its current-socket check (`liveChannel.ts`): 3 failed (`a late close from a replaced socket changes nothing`, `stop closes the socket...`, `start replaces an open socket...`).
+  - Every restored file matched its recorded checksum. Two edits came after the check, and the gate ran again after them: the `flushNow` default of `'timer'` (restored after review; behaviour-neutral, because the gate treats an absent trigger as a timer) and the import position in `HistoryScreen.tsx`.
+- **Gate (final, after the last edit):**
+  - `npm run typecheck:app`: 0 errors.
+  - `npm run test:unit`: `tests 711, pass 711`.
+  - `npm run test:app`: `tests 29, pass 29`.
+  - `npm run test:render -w gogospend-app`: 83 files, `tests 1589, pass 1589`. An earlier full run failed one test, `an unconfirmed first wallet stays frozen with its key when the retry is refused before processing` (Home, a one-second `findByLabelText` under load). The re-run passed. That path renders no diary, so the view's revision stays `'0'` and the new hook does nothing there.
+  - `npm run export:web -w gogospend-app -- --max-workers 2`: exported `dist` (git-ignored).
+  - `git diff --check`: pass. `node --test scripts/ci/lockfile-bindings.test.mjs`: `2 of 2`. No package or lockfile change.
+  - SKIPPED: none in this task. The device, hosted and two-phone checks belong to 1D-T10 and the proof.
+- **Deviations from the brief:**
+  - `start()` replaces an open socket and closes it with 1000, so each foreground call reconnects. The replaced socket's late 4409 is ignored, as the brief requires.
+  - A token read that rejects (the credentials cannot be read) reconnects after the backoff. The brief does not say what happens there.
+  - The scheduler's `live()` does not check foreground. The channel only runs from launch or foreground until background, so it never runs in the background.
+  - Tests beyond the brief: the scheduler wiring, the strongest-trigger order, the current-socket checks for `onmessage`, `onerror` and a late open, the 64-character poke boundary, a stop during a token read, the pong keep-alive, `start()` replacing a socket, and the token-failure backoff.
+  - `deviceSync.ts` reads the global `WebSocket` when it connects, not when the module loads.
+- **Risks, for the controller:**
+  1. **The session binding is not sent on the socket.** Every other private v1 request sends `X-GoGoSpend-Session` (the transport adds it from the session's binding, and the 2026-10-17 backend plan's native request rule names it). The brief's socket headers are `Authorization` and `X-GoGoSpend-Client` only, and `LiveTarget` has no binding. If 1D-T10's vault requires the binding on `/v1/sync/live`, the socket is refused on a real device. The fix is a `binding` on `LiveTarget`, which changes the brief's interface, so it was not made here. This needs a decision before 1D-T10.
+  2. The channel is proven against a fake socket only. The real round trip waits for 1D-T10 and the two-phone proof.
+  3. When a diary opens after a screen has mounted, the applied revision moves from `'0'` to its value, so Home and History reload once more.
+  4. Timing: two paging tests timed out at 5 s in the RED run, and one first-wallet test failed once in a full run under load. All passed on re-run. This change does not alter those paths.
+### 1D Task 4: Pending choices kept in the diary
+
+- **Status:** built and verified locally on `worktree-agent-a667751bc0a738fc0`, from `68ec183`. Not pushed. The independent review is the controller's, after this receipt.
+- **What it does:** an online edit of a record refused with `VERSION_CONFLICT` (C16, record edits only) is kept in the encrypted diary as a pending choice, one row per record. It is never sent by itself, and no outbox kind is added. This task is storage and model only: no screen is routed, and `ChoicePanel` (1D-T9) reads the view.
+- **Files:**
+  - Storage: `apps/app/src/storage/migrations.ts` (migration 3, `pending_choices`, appended), `types.ts` (`PendingChoice`), `diaryRepository.ts` (`keepChoice`, `readChoices`, `dropChoice`).
+  - Model: `apps/app/src/spend/v1/redesign/pendingChoice.ts` (`draftFromChoice`, `choiceAgainst`, `choiceSettled`, `resendForChoice`).
+  - Diary view: `apps/app/src/spend/v1/spendDiary.ts` (`DiaryView.pendingChoices`, `keepChoice`, `dropChoice`; `refresh` reads the choices beside the outbox).
+  - `DiaryView` values and the fake diary, given `pendingChoices: []` and the two new methods: `spend/v1/SpendDiaryContext.tsx`, `spend/v1/testing/fakeDiary.ts`, `spend/v1/redesign/homeModel.test.ts`, `spend/v1/redesign/account/settingsModel.test.ts`, `sync/SyncStatus.render.test.tsx`.
+  - Tests: `storage/diaryRepository.test.ts` (6 new), `spend/v1/redesign/pendingChoice.test.ts` (new, 4), `spend/v1/spendDiary.test.ts` (1), `sync/syncEngine.test.ts` (1).
+- **RED:** stubs first (no-op store methods, wrong but typed model results, a view that never reads choices). `npm run test:unit -w gogospend-app -- src/storage/diaryRepository.test.ts src/spend/v1/redesign/pendingChoice.test.ts src/spend/v1/spendDiary.test.ts src/sync/syncEngine.test.ts`: 68 tests, 57 passed, 11 failed. All 11 failed on assertions (`ERR_ASSERTION`), none on a missing module.
+- **GREEN:** the same command: 68 passed, 0 failed. A mutation survivor (below) then added one test: 69 passed.
+- **Mutation check:** checksums of the five implementation files recorded first. Each mutant was applied in place, the four focused files were run, the file was restored from a backup outside the repo, and the checksums were compared again (all five match).
+  - Insert without `ON CONFLICT` (brief): 1 failed (`a pending choice is kept, replaced per record and dropped`).
+  - Skip the server id check (brief): 1 failed (`a choice for a mismatched record, or one that is not a valid choice, is refused`).
+  - `resendForChoice` keeps `original.version` (brief): 1 failed (`use yours resends the same changes on the server's current version`).
+  - Read side skips validation (extra): survived the first run. Added `a stored choice that no longer validates is left out of the list and not deleted`; the mutant now fails 1 test.
+  - No oldest-first sort (extra): 1 failed (`a pending choice is kept, replaced per record and dropped`).
+- **Gate:**
+  - `npm run typecheck:app`: passes.
+  - `npm run test:unit`: 700 passed, 0 failed.
+  - `npm run test:app`: 28 passed, 0 failed.
+  - `npm run test:render -w gogospend-app` (beyond the controller's list): 83 files and 1587 tests passed on the final run (383 s). Earlier runs were timing-sensitive under machine load: one full run had 3 tests time out at the 5 s limit (two History and one catalogue render test), and one History file failed alone once, then passed 6 of 6 on re-run and on the base commit.
+  - `git diff --check`: clean.
+  - `npm run export:web`: not run; the controller's gate for this task does not include it.
+- **Deviations:**
+  - The five view files listed above changed, though the brief did not name them: the typecheck requires `pendingChoices` on every `DiaryView` value, and `SpendDiary` gained two methods.
+  - `keepChoice` also checks the value types of `changes` (amount, date, record ids, text), and `readChoices` applies the same check to stored rows. The brief named only the key checks.
+  - `choiceAgainst` throws a TypeError for a fresh record that is another record, as `rebaseEdit` does.
+- **SKIPPED:** none. No hosted, native or device check applies to this task.
+- **Notes for 1D-T9 and later:**
+  - `readChoices()` leaves an invalid row in place, never deleted, so a later `keepChoice` for that record replaces it.
+  - Migration 3 is fixed by the brief. Any other diary migration merged on this branch must take number 4, because `migrateDiary` requires contiguous numbers.
 ### Task 5: transactions, balances and the golden diary
 
 - **Status:** built and verified locally on `agent-ad129ba8cab52fe16`, on top of `60e2026`. Not pushed. The independent review is the controller's, after this receipt.

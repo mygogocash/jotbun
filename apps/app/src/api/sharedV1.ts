@@ -10,6 +10,7 @@ import type { AiResources } from '@mobile/spend/v1/ai/aiResources';
 import { isUuid } from '@gogospend/contracts';
 import * as Crypto from 'expo-crypto';
 
+import type { LiveTarget } from '@mobile/sync/liveChannel';
 import type { SyncRemote } from '@mobile/sync/types';
 import { createV1Transport } from './client';
 import type { V1ClientVersion, V1Transport } from './client';
@@ -35,8 +36,19 @@ function sharedTransport(): V1Transport {
     client: v1ClientVersion(),
     // The session seam: token, binding, epoch, refresh, and server-ended sessions reported back.
     credentials: v1SessionCredentials,
+    // A development build may reach `wrangler dev` on the LAN; a release build never does (plan 1D, L8).
+    allowLanHttp: __DEV__,
   });
   return transport;
+}
+
+/** The live socket's target (plan 1D, L1): the base URL, client version and credentials the shared transport uses. */
+export function getSharedLiveTarget(): LiveTarget {
+  return {
+    baseUrl: getMobileEnv().v1ApiUrl,
+    client: v1ClientVersion(),
+    token: () => v1SessionCredentials.getAccessToken(),
+  };
 }
 
 /** The app's v1 resources over the shared session seam. */
