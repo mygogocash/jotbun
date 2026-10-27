@@ -329,6 +329,40 @@ Phase 1A moves each person's ledger into one SQLite Durable Object, the UserVaul
 
 **Pre-review fix (R76).** The controller ruled that `categories_replace_guard` also refuses an insert whose built-in key another category already holds. Without that clause, `INSERT OR REPLACE` with such a key deleted the other category silently, because `recursive_triggers` is off and `categories_never_deleted` therefore did not fire. The clause is `OR EXISTS (SELECT 1 FROM categories c WHERE c.builtin_key = NEW.builtin_key AND c.id <> NEW.id)`. Test first: `a replace that reuses another category's built-in key is refused, and the other category survives` (`vault-schema.test.ts`), placed before the same-id replace case. Before the clause, `npm run test:edge:workers -- test/workers/categories.test.ts test/workers/vault-schema.test.ts` gave `Test Files 1 failed | 1 passed (2)` and `Tests 1 failed | 29 passed (30)`. The failure was the new case, `promise resolved "[]" instead of rejecting`, because the replace had removed the other category. After the clause, the same command gave `Test Files 2 passed (2)` and `Tests 30 passed (30)`. The full edge gate then passed (see the gate bullets above). Custom categories (a NULL built-in key), the identical seeding rows and the same-id replace are unaffected, as the existing cases show. Checksums (sha256, first 8 hex): `0000_vault_core.sql` d0329a4d, `vault-schema.test.ts` ff0b345b. One behaviour change: a plain `INSERT ... ON CONFLICT DO NOTHING` whose built-in key another category holds now aborts, where it was skipped before. The seed path checks the present keys first, so it cannot reach that case. The other open item (a REPLACE that keeps type and built-in key but changes other columns) is not part of this ruling and stays open.
 
+## P2: Bun Wallet core
+
+Phase 2 is the Bun Wallet on the device. Task 4 reads the days already logged in the open diary. The streak counts every distinct logged day up to today; a skipped day pauses it and never lowers it (R59, W11).
+
+### P2 Task 4: logged days
+
+- **Status:** built and verified locally on `p2/t4-logged-days`, on top of `60e2026`. Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - `apps/app/src/storage/diaryRepository.ts`: `DiaryStore.loggedDays()`, one read through the store's `read` helper. The query binds nothing. `UNION` makes the dates distinct and `ORDER BY day` sorts them ascending. One side is live confirmed transactions (`entity = 'transaction' AND state = 'active'`); the other is every draft (`pending_entries`).
+  - `apps/app/src/spend/v1/spendDiary.ts`: `SpendDiary.loggedDays()`. The open store's dates, or null while no diary is open.
+  - `apps/app/src/spend/v1/testing/fakeDiary.ts`: `createFakeDiary(view, { loggedDays })`. While the view's phase is `ready`, `loggedDays()` answers the seeded dates merged with the view's pending dates, ascending. Otherwise null.
+  - `apps/app/src/spend/v1/redesign/loggedDays.ts`: `streakCount` and `loggedOn`. Pure.
+  - Tests: `diaryRepository.test.ts`, `spendDiary.test.ts`, `loggedDays.test.ts`.
+- **RED to GREEN:**
+  - RED (`npm run test:unit -w gogospend-app -- src/storage/diaryRepository.test.ts src/spend/v1/spendDiary.test.ts src/spend/v1/redesign/loggedDays.test.ts`): `tests 42`, `pass 39`, `fail 3`. `loggedDays.test.ts` failed to load (`Cannot find module .../loggedDays.ts`), so its three cases did not run. `store.loggedDays is not a function`. `diary.loggedDays is not a function`.
+  - GREEN, the same command: `tests 44`, `pass 44`, `fail 0`.
+- **Mutation check:** `shasum -a 256` recorded first, originals kept in `/tmp/p2-t4-mutation` (outside the repo). Each mutant was applied in place, the focused file was run, the file was restored, and the checksum was compared. Both restored checksums match.
+  - `loggedDays.ts` (`2cf83fc4…025a7`): count only the consecutive run that ends today (a restart on a skip). `loggedDays.test.ts`: `tests 3`, `fail 1`, `pass 2`. The streak test failed at `2 !== 4` (20, 21, skip 22, 23, 24, asked on the 24th). The future-day case still passed, because the run that ends on the 24th is one day. Caught (R59).
+  - `diaryRepository.ts` (`33c50f30…bde5f`): the drafts side of the `UNION` removed. `diaryRepository.test.ts`: `tests 17`, `fail 1`, `pass 16`. The logged-days test expected `['2026-10-20', '2026-10-23']` and got `['2026-10-20', '2026-10-20']`. The draft date is gone, and the two live rows on one day are no longer collapsed, because `UNION` was what made them distinct. Caught.
+- **Gate** (repo root, once, after both files were restored): `npm run test:unit -w gogospend-app`. Exit 0. `tests 693`, `pass 693`, `fail 0`, `suites 7`. The edge database suite was not run.
+- **Ported in full:** not a port. There is no PostgreSQL source for this read. The query, the diary method and the streak model are the brief's, written here.
+- **Ported in part:** none.
+- **Not applicable:** PostgreSQL roles and grants, row-level security, connection pools, isolation levels and lock waits. The diary read is one statement on the device database, through the store's `read` helper, with no bound parameters (R57: this query has no id list).
+- **Deviations:**
+  1. A `json_extract` that returns NULL is dropped, so the result is `string[]`. The brief's SQL can yield NULL. No row in the tests does.
+  2. `streakCount` skips a string that is not a real `YYYY-MM-DD` (`dayNumber` in `shared.ts`). The interface says distinct valid dates. The named tests use only real dates.
+  3. The fake diary returns the merged dates sorted ascending, the same order the store returns.
+  4. The spend-diary test, whose name is the brief's, also syncs two live records on `2026-10-20` and a deleted one on `2026-10-21`, then saves a draft on `2026-10-23`. A method that listed only drafts, or every snapshot, would fail it. Signed out, the result is null.
+- **SKIPPED (hosted):** none. No cloud resource was touched. `accountId` was not added; that belongs to the other task on these files.
+- **Notes for later tasks:**
+  - P2-T22 calls `diary.loggedDays()` and `streakCount(days, today)`. Null (no open diary, including the web) means the streak tile is left out. The count is the person's, across every wallet.
+  - P2-T36's `isLoggedToday` is true when `loggedDays()` holds today, confirmed or draft.
+  - Render tests pass a seed as `createFakeDiary(view, { loggedDays })`. Pending dates on the current view are merged in while `phase` is `ready`.
+  - The query binds nothing. Do not add one `?` per id here.
 ## 1D: live pokes, the pending choice and PostHog
 
 Phase 1D adds live pokes, the pending conflict choice and PostHog to the vault core. The design is `docs/superpowers/specs/2026-10-25-jotbun-bun-wallet-cloudflare-design.md` (PostHog is its §7). Task 3 builds the server analytics as a stand-alone module; the Worker wiring is 1D-T11 and T13.
