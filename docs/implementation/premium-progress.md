@@ -9,7 +9,7 @@ Receipts for the [premium, AI and edge plan](../superpowers/plans/2026-10-24-jot
   - the shared contracts;
   - the app's premium layer: haptics, Tell Bun, Ask Bun, the daily note, the cashback card and the Thai everyday categories;
   - eight catalogue sections for the companion area, checked in the browser in Thai, light and dark.
-  - the companion area on iOS (28 October): a development build on the iPhone 17 simulator (iOS 27.0, Xcode 27.1) drew all eight sections in Thai, and Home in dark; turned Bun's help on through the consent sheet; read “ข้าวมันไก่ 50” into a ฿50 food draft on the phone; and opened the system photo picker from Scan a slip, which needs no photo permission. It also found the keyboard problem under “Not done”.
+  - the companion area on iOS (28 October): a development build on the iPhone 17 simulator (iOS 27.0, Xcode 27.1) drew all eight sections in Thai, and Home in dark; turned Bun's help on through the consent sheet; read “ข้าวมันไก่ 50” into a ฿50 food draft on the phone; and opened the system photo picker from Scan a slip, which needs no photo permission. It also found sheets hidden under the keyboard, fixed in “Fix: sheets rise above the iOS keyboard” below.
   - the Mobbin research (plan §7, through the Mobbin connector) and its changes: Ask Bun's "can get things wrong" line, follow-up questions and settings link; the consent sheet's check-before-saving line; the slip beside Tell Bun's draft; "How cashback works". Mobbin holds no Thai apps, so Thai specifics rest on the plan's §2 findings.
 - **SKIPPED:**
   - hosted Cloudflare resources: wrangler is signed in to a GoGoCash account, but deploying waits for the owner to ask (handover rule), and no hosted PostgreSQL exists yet;
@@ -554,9 +554,19 @@ Phase 1D adds live pokes, the pending choice, PostHog and the two-phone proof (p
   - The `/v1/sync/live` upgrade bypass (1D-T12) belongs in the same dispatch in `src/server.ts`.
   - The body and its `content-encoding` pass through unchanged, as PostHog's guide does. Only the fake `fetch` has answered so far, so a compressed upstream answer has not been run.
 
+## Fix: sheets rise above the iOS keyboard (28 October)
+
+Found by the native iOS check above. iOS does not resize the window for the keyboard, and `ui/Sheet.tsx` did not move for it. Tell Bun's field takes focus as its sheet opens, so the keyboard covered whatever sat low in the sheet: the draft after Read it, and, when the sheet was short (Bun's help on, nothing read yet), the whole sheet, leaving a dimmed screen and a keyboard. The browser catalogue and the render tests have no on-screen keyboard, so neither showed it.
+
+- **Change:** `Sheet` puts its backdrop and panel in a `KeyboardAvoidingView` with `padding` on iOS; Android's Modal window resizes on its own, and the web has no on-screen keyboard. `TellBunSheet` closes the keyboard for each new draft (a sentence, a slip, an often-logged chip, or a re-read while a draft shows); a sentence Bun cannot read keeps it up to retype.
+- **RED to GREEN:** 5 failing on assertions, then passing: iOS pads, Android and the web do not, and a sentence, a re-read and a chip each close the keyboard. The guards (the backdrop still closes the sheet; `฿` alone keeps the keyboard up) passed before and after. `ui/Sheet.keyboard.render.test.tsx` stands in for iOS: it sets `Platform.OS`, shows the wrapper's `behavior`, and stubs the theme's saved-preference read, which would otherwise reach the native half of secure storage that the web build lacks.
+- **Mutants:** 4 killed, 0 survivors: padding on Android too; `height` for `padding`; closing on any non-idle state; never closing.
+- **Gate:** `typecheck:app` passed; `test:app` 28 passed; `test:unit` 694 passed; `test:render` 84 files, 1594 tests, no unhandled errors; `export:web` passed; `git diff --check` clean.
+- **iOS simulator** (iPhone 17, iOS 27.0, Xcode 27.1, a development build of this branch): the short sheet sits above the keyboard with its title, field and buttons; tapping the field raises the whole sheet with the keyboard; Read it closes the keyboard and shows the whole draft; a second Read it closes it again. The first version keyed the effect on `phase.kind`, and the simulator showed a re-read leaving the keyboard up; the re-read test came from that.
+- **Not covered:** Android (unchanged; not run on a device here) and a real iPhone.
+
 ## Not done, or follow-ups
 
-- **Sheets and the iOS keyboard (found on the simulator, 28 October):** `ui/Sheet.tsx` does not move for the keyboard. Tell Bun's field takes focus as its sheet opens, so the keyboard covers whatever sits low in the sheet: the draft after Read it, and, when the sheet is short (Bun's help on, nothing read yet), the whole sheet, leaving a dimmed screen and a keyboard. The browser catalogue and the render tests have no on-screen keyboard, so neither shows it. Proposed fix: lift the sheet by the keyboard's height in `Sheet` (a `KeyboardAvoidingView` with `padding` on iOS), and close the keyboard when Tell Bun shows a draft.
 - **Rotating reminder wording (owner decision):** a repeating daily notification cannot change its text, so rotation needs "every day" to become seven weekly reminders, one wording per weekday. The reminders milestone (S4) chose one daily reminder on purpose, and its tests pin it. Cancelling all eight known ids first would still leave one reminder a day, so the change is safe to make if wanted.
 - **E2 screenshots** of the companion area. Its eight catalogue sections are in (`src/dev/catalogue/companion`): Ask Bun off and answering, Tell Bun reading a Thai sentence, Bun's note on Home, the cashback card asking and on, the Settings controls and the Thai pack. The area is on by default at the owner's request; `EXPO_PUBLIC_REDESIGN=-companion` switches it off.
 - **Hosted proofs, when the owner asks for a deployment:**

@@ -5,7 +5,8 @@
 // gesture. When it opens, screen-reader focus moves to the sheet. It slides up
 // on a gentle spring; under reduced motion it simply appears. It is one named
 // modal dialog on every platform (see the note in `Sheet`), and pads the
-// bottom safe area.
+// bottom safe area. On iOS it rises above the keyboard, which there covers the
+// window instead of resizing it; Android's Modal window resizes on its own.
 //
 // ConfirmSheet states the consequence of an action before it happens. When the
 // action is destructive, the safe choice (cancel) keeps the ink fill and the
@@ -13,7 +14,7 @@
 // not colour, steers people away from the irreversible button.
 import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { Animated, Modal, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Animated, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, View } from 'react-native';
 import type { HostInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -96,7 +97,7 @@ export function Sheet({ visible, onClose, title, children, closeLabel }: SheetPr
 
   return (
     <Modal visible={visible} transparent animationType="none" statusBarTranslucent onRequestClose={onClose} onShow={focusSheet} {...webDialog}>
-      <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, justifyContent: 'flex-end' }}>
         <Pressable
           {...DECORATIVE}
           testID="sheet-backdrop"
@@ -145,7 +146,7 @@ export function Sheet({ visible, onClose, title, children, closeLabel }: SheetPr
             {children}
           </ScrollView>
         </Animated.View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
