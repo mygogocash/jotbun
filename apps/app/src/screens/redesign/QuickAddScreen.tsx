@@ -28,38 +28,23 @@
 // out (no title row; the title stays a heading for screen readers), and Save,
 // with any save problem above it, is pinned under the scrolling form
 // (ActionFooter.tsx), so on a 402 × 874 pt phone the keypad and Save both show.
-import { HISTORY_MAX_LIMIT, isUuid } from '@gogospend/contracts';
-import type { CategoryDto, Minor, TransactionDto, WalletDto, WalletSnapshot } from '@gogospend/contracts';
+import type { AiDraft, CategoryDto, Minor, TransactionDto, WalletSnapshot } from '@gogospend/contracts';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { V1Error } from '@mobile/api/client';
-import type { AiDraft } from '@gogospend/contracts';
 import { isRedesignEnabled } from '@mobile/config/featureFlags';
-import { oftenLogged } from '@mobile/spend/v1/ai/oftenLogged';
-import { applyDraft } from '@mobile/spend/v1/ai/tellBun';
-import { TellBunSheet } from './ai/TellBunSheet';
-import { playHaptic } from '@mobile/lib/hapticMoment';
 import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
 import { Bun } from '@mobile/mascot/Bun';
-import { useBunIntensity } from '@mobile/mascot/BunIntensityProvider';
-import { classifyLoadProblem } from '@mobile/spend/v1/redesign/homeModel';
-import { anotherDraft, buildQuickAdd, newQuickAddDraft } from '@mobile/spend/v1/redesign/quickAddModel';
+import { oftenLogged } from '@mobile/spend/v1/ai/oftenLogged';
+import { applyDraft } from '@mobile/spend/v1/ai/tellBun';
+import { anotherDraft } from '@mobile/spend/v1/redesign/quickAddModel';
 import type { EntryType, QuickAddDraft } from '@mobile/spend/v1/redesign/quickAddModel';
-import { RECENT_WINDOW_DAYS, rankRecentCategories } from '@mobile/spend/v1/redesign/recentCategories';
-import type { RecentCategories } from '@mobile/spend/v1/redesign/recentCategories';
-import { duplicateDraft } from '@mobile/spend/v1/redesign/recordModel';
-import { WAITING_STATES, addDays, openDrafts } from '@mobile/spend/v1/redesign/shared';
 import type { Translate } from '@mobile/spend/v1/redesign/shared';
-import type { CreateEntryInput, CreateTransferInput } from '@mobile/spend/v1/resources';
-import { useDiaryView, useSpendDiary } from '@mobile/spend/v1/SpendDiaryContext';
-import { useSpendV1 } from '@mobile/spend/v1/SpendV1Context';
-import { categoryName, todayInBangkok } from '@mobile/spend/v1/viewModels';
-import { DiaryLocked, DraftReferenceUnavailable } from '@mobile/storage/types';
-import type { OutboxCommand, PendingEntry } from '@mobile/storage/types';
+import { categoryName } from '@mobile/spend/v1/viewModels';
+import type { PendingEntry } from '@mobile/storage/types';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { useSpringPop } from '@mobile/theme/useSpringPop';
 import { DECORATIVE, POLITE_LIVE_REGION, useAnnouncement } from '@mobile/ui/a11y';
@@ -72,107 +57,51 @@ import { DateChip } from '@mobile/ui/DateChip';
 import { EmptyState } from '@mobile/ui/EmptyState';
 import { FieldError } from '@mobile/ui/FieldError';
 import { Keypad } from '@mobile/ui/Keypad';
-import { EMPTY_KEYPAD, applyKey, evaluateKeypad, keypadDisplay, keypadFromMinor, keypadHasOperator, settleForSave } from '@mobile/ui/keypadExpression';
-import type { KeypadKey, KeypadProblem, KeypadState } from '@mobile/ui/keypadExpression';
+import { EMPTY_KEYPAD, applyKey, evaluateKeypad, keypadDisplay, keypadFromMinor, keypadHasOperator } from '@mobile/ui/keypadExpression';
+import type { KeypadKey, KeypadState } from '@mobile/ui/keypadExpression';
 import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE, BUN_TOUCH } from '@mobile/ui/layout';
 import { NoteField } from '@mobile/ui/NoteField';
 import { PillButton } from '@mobile/ui/PillButton';
 import { Sheet } from '@mobile/ui/Sheet';
 import { TypeSwitch } from '@mobile/ui/TypeSwitch';
 import { WalletPicker } from '@mobile/ui/WalletPicker';
-import type { WalletChoice } from '@mobile/ui/WalletPicker';
-import { isOwnCreate, newId, ownCreateMatches, refusedBeforeProcessing, saveProblem, useCommandKeys, useLoad } from '../v1/parts';
+import { newId } from '../v1/parts';
 import { ActionFooter, EntryPage } from './ActionFooter';
+import { TellBunSheet } from './ai/TellBunSheet';
+import { earliestFor, firstDraft, keypadFor, KEYPAD_PROBLEM_TEXT, ordered, rank, walletChoices, withDefaults } from './entry/entryHelpers';
+import type { CopySource, Ranking } from './entry/entryHelpers';
+import { useEntryReferences } from './entry/entryReferences';
+import { useEntrySave } from './entry/entrySave';
+import type { SavedEntry } from './entry/entrySave';
 import { Notice } from './HistoryParts';
-import { readCheerDay, writeCheerDay } from './quickAddCheer';
 
 export type QuickAddScreenProps = {
   /** The clock, for tests; today is its Bangkok date. */
   now?: Date;
 };
 
-/**
- * `unconfirmed`: an attempt may have committed; the entry is frozen with its
- * key and only Try again resends the same command. `conflict`: Jotbun
- * already holds this draft's record with other details, so it is never shown
- * as saved, and nothing more is sent.
- */
-type Status = 'editing' | 'saving' | 'unconfirmed' | 'blocked' | 'saved' | 'conflict';
-type Errors = Record<string, string>;
-type Loaded = { wallets: WalletDto[]; categories: CategoryDto[] };
-type References = { wallets: WalletSnapshot[]; categories: CategoryDto[] };
-type CopySource = TransactionDto | PendingEntry;
-type Ranking = Readonly<Record<'expense' | 'income', RecentCategories>>;
-type CreateInput = CreateEntryInput | CreateTransferInput;
-type SavedMomentData = { draft: QuickAddDraft; via: 'device' | 'online'; cheer: boolean };
-
-const NO_RECORDS: readonly TransactionDto[] = [];
-
-/** What the amount line says when the keypad refuses a key or a save. */
-const KEYPAD_PROBLEM_TEXT: Readonly<Record<KeypadProblem, string>> = {
-  empty: 'Enter an amount',
-  zero: 'Enter an amount above zero',
-  too_precise: 'Use at most two decimal places',
-  too_large: 'Amounts go up to ฿999,999,999.99',
-  negative: "The sum can't go below zero.",
-  divide_by_zero: "You can't divide by zero.",
-};
-
-/** The current form's device-save messages, word for word. */
-function localSaveProblem(error: unknown, tc: Translate): string {
-  if (error instanceof DiaryLocked) return tc("This device's diary is locked. Nothing was saved.");
-  if (error instanceof DraftReferenceUnavailable) return tc("This wallet or category isn't on this device yet. Connect and try again. Nothing was saved.");
-  return tc("Couldn't save this entry on the device. Nothing was saved.");
-}
-
-/** A record that cannot be loaded for Copy: gone, or the same problems as any load. */
-function copyProblem(error: unknown, tc: Translate): { message: string; retry: boolean } {
-  const outcome = error instanceof V1Error ? error.outcome : undefined;
-  if (outcome === 'not_found' || outcome === 'deleted' || outcome === 'purged') return { message: tc("This entry isn't available to copy."), retry: false };
-  const problem = classifyLoadProblem(error, tc);
-  return { message: problem.message, retry: problem.retry };
-}
-
 export function QuickAddScreen({ now }: QuickAddScreenProps) {
-  const resources = useSpendV1();
   const tc = useCopy();
   const router = useRouter();
-  const diaryView = useDiaryView();
   const params = useLocalSearchParams();
   const copyOf = typeof params.copyOf === 'string' && params.copyOf !== '' ? params.copyOf : null;
-  const today = todayInBangkok(now ?? new Date());
-  const loaded = useLoad(async (): Promise<Loaded> => {
-    const [wallets, categories] = await Promise.all([resources.wallets(), resources.ensureBuiltinCategories()]);
-    return { wallets: wallets.filter((wallet) => !wallet.archived), categories: categories.filter((category) => !category.archived) };
-  }, [resources]);
-  // Recent use for the category order: one page of the last 60 days. Best effort; it never blocks the form.
-  const recent = useLoad(
-    () => resources.history({ from: addDays(today, 1 - RECENT_WINDOW_DAYS), through: today, sort: 'date_desc' }, undefined, HISTORY_MAX_LIMIT),
-    [resources, today],
-  );
-  const copied = useLoad(async () => (copyOf !== null && isUuid(copyOf) ? resources.transaction(copyOf) : null), [resources, copyOf]);
-  const [blankInstead, setBlankInstead] = useState(false);
-  // Synced to the device: usable offline, and exactly what a device save accepts.
-  const onDevice = diaryView.phase === 'ready' && diaryView.wallets.length > 0 && diaryView.categories.length > 0 ? { wallets: diaryView.wallets, categories: diaryView.categories } : null;
-  // The form keeps the lists it first showed for its whole life.
-  const [shown, setShown] = useState<References | null>(null);
-  const references = shown ?? onDevice ?? (loaded.state === 'ready' ? loaded.data : null);
-  useEffect(() => {
-    if (!shown && references) setShown(references);
-  }, [shown, references]);
+  const references = useEntryReferences({ copyOf, now });
   const leave = () => router.replace('/spend');
   const title = tc('Add an entry');
 
-  if (!references && loaded.state === 'loading') return <Page title={title} onClose={leave}><Waiting label={tc('Loading your wallets')} /></Page>;
-  if (!references && loaded.state === 'error') {
-    const problem = classifyLoadProblem(loaded.error, tc);
+  if (references.state === 'loading') return <Page title={title} onClose={leave}><Waiting label={references.label} /></Page>;
+  if (references.state === 'problem') {
+    const blank = references.startBlank ? { label: tc('Start a new entry'), onPress: references.startBlank } : null;
+    const retry = references.retry ? { label: tc('Try again'), onPress: references.retry } : null;
+    const action = retry ?? blank ?? { label: tc('Home'), onPress: leave };
+    const secondary = retry && blank ? blank : undefined;
     return (
       <Page title={title} onClose={leave}>
-        <Problem message={problem.message} action={problem.retry ? { label: tc('Try again'), onPress: loaded.reload } : { label: tc('Home'), onPress: leave }} />
+        <Problem message={references.message} action={action} secondary={secondary} />
       </Page>
     );
   }
-  if (!references || references.wallets.length === 0) {
+  if (references.state === 'no_wallet') {
     return (
       <Page title={title} onClose={leave}>
         <EmptyState art={<Bun pose="hello" size="l" />} title={tc('No wallets yet')} body={tc('Add a wallet on the home screen first.')} action={{ label: tc('Home'), onPress: leave }} />
@@ -180,37 +109,19 @@ export function QuickAddScreen({ now }: QuickAddScreenProps) {
     );
   }
 
-  let source: CopySource | null = null;
-  if (copyOf !== null && !blankInstead) {
-    // A draft still on the device is copied from the device; anything else from the server.
-    // A deleted record is not offered for copying, even through the URL.
-    source = diaryView.pending.find((entry) => entry.id === copyOf) ?? (copied.state === 'ready' && !copied.data?.deleted_at ? copied.data : null);
-    if (!source) {
-      if (copied.state === 'loading') return <Page title={title} onClose={leave}><Waiting label={tc('Loading the entry to copy')} /></Page>;
-      const problem = copied.state === 'error' ? copyProblem(copied.error, tc) : { message: tc("This entry isn't available to copy."), retry: false };
-      const blank = { label: tc('Start a new entry'), onPress: () => setBlankInstead(true) };
-      return (
-        <Page title={title} onClose={leave}>
-          <Problem message={problem.message} action={problem.retry ? { label: tc('Try again'), onPress: copied.reload } : blank} secondary={problem.retry ? blank : undefined} />
-        </Page>
-      );
-    }
-  }
-
-  const balances = loaded.state === 'ready' ? availableBalances(loaded.data.wallets, diaryView.outbox) : null;
   return (
     <EntryForm
-      key={source ? `copy:${source.id}` : 'new'}
+      key={references.source ? `copy:${references.source.id}` : 'new'}
       wallets={references.wallets}
       categories={references.categories}
-      balances={balances}
-      today={today}
-      records={recent.state === 'ready' ? recent.data.items : NO_RECORDS}
-      drafts={diaryView.pending}
-      source={source}
+      balances={references.balances}
+      today={references.today}
+      records={references.records}
+      drafts={references.drafts}
+      source={references.source}
       title={title}
       onDone={leave}
-      onAnother={loaded.refresh}
+      onAnother={references.refreshBalances}
     />
   );
 }
@@ -234,114 +145,10 @@ type EntryFormProps = {
   onAnother?: () => void;
 };
 
-function rank(categories: readonly CategoryDto[], records: readonly TransactionDto[], drafts: readonly PendingEntry[], today: string): Ranking {
-  return {
-    expense: rankRecentCategories({ type: 'expense', categories, records, drafts, today }),
-    income: rankRecentCategories({ type: 'income', categories, records, drafts, today }),
-  };
-}
-
-const ordered = (ranked: RecentCategories): CategoryDto[] => [...ranked.top, ...ranked.rest];
-
-/** The draft the form opens with: a new one, or a copy whose other modes get the usual defaults. */
-function firstDraft(source: CopySource | null, context: { today: string; wallets: readonly WalletSnapshot[]; categories: readonly CategoryDto[]; ranking: Ranking }): QuickAddDraft {
-  const { today, wallets, categories, ranking } = context;
-  const byRank = [...ordered(ranking.expense), ...ordered(ranking.income)];
-  if (!source) return newQuickAddDraft({ ids: { recordId: newId(), commandId: newId() }, today, wallets, categories: byRank });
-  const copy = duplicateDraft(source, { newId, today, wallets, categories });
-  const blank = newQuickAddDraft({ ids: { recordId: copy.recordId, commandId: copy.commandId }, today, wallets, categories: byRank });
-  // The copied fields stay exactly as copied (a closed wallet or category stays unchosen);
-  // only the other modes, which the record never had, take the defaults.
-  return {
-    ...copy,
-    walletId: copy.type === 'transfer' ? blank.walletId : copy.walletId,
-    fromWalletId: copy.type === 'transfer' ? copy.fromWalletId : blank.fromWalletId,
-    toWalletId: copy.type === 'transfer' ? copy.toWalletId : blank.toWalletId,
-    categoryByType: {
-      expense: copy.type === 'expense' ? copy.categoryByType.expense : blank.categoryByType.expense,
-      income: copy.type === 'income' ? copy.categoryByType.income : blank.categoryByType.income,
-    },
-  };
-}
-
-/** Before the first touch a new draft's default categories follow the ranking; a copy keeps its own. */
-function withDefaults(draft: QuickAddDraft, ranking: Ranking, source: CopySource | null): QuickAddDraft {
-  const top = (type: 'expense' | 'income') => ranking[type].top[0]?.id ?? null;
-  return {
-    ...draft,
-    categoryByType: {
-      expense: source?.type === 'expense' ? draft.categoryByType.expense : top('expense'),
-      income: source?.type === 'income' ? draft.categoryByType.income : top('income'),
-    },
-  };
-}
-
-/** The latest tracking start of the draft's wallet(s): no date before it can be saved. */
-function earliestFor(draft: QuickAddDraft, wallets: readonly WalletSnapshot[]): string | null {
-  const ids = draft.type === 'transfer' ? [draft.fromWalletId, draft.toWalletId] : [draft.walletId];
-  let latest: string | null = null;
-  for (const id of ids) {
-    const start = wallets.find((wallet) => wallet.id === id)?.tracking_start;
-    if (start && (latest === null || start > latest)) latest = start;
-  }
-  return latest;
-}
-
-/**
- * What each wallet holds as far as this device knows: the server's balance,
- * less what drafts waiting on this device take out of it and plus what they
- * bring in. Drafts being checked may already be in the server's balance, so
- * they are left out, as the budget pace leaves them out. "Move all" offers
- * this, so it never offers money a waiting draft already spent.
- */
-function availableBalances(wallets: readonly { id: string; balance_minor: Minor }[], outbox: readonly OutboxCommand[]): Map<string, Minor> {
-  const held = new Map(wallets.map((wallet) => [wallet.id, BigInt(wallet.balance_minor)]));
-  const move = (id: string, delta: bigint) => {
-    const balance = held.get(id);
-    if (balance !== undefined) held.set(id, balance + delta);
-  };
-  for (const command of openDrafts(outbox)) {
-    if (!WAITING_STATES.includes(command.state)) continue;
-    const entry = command.payload;
-    const amount = BigInt(entry.amount_minor);
-    if (entry.type === 'transfer') {
-      move(entry.source_wallet_id, -amount);
-      move(entry.destination_wallet_id, amount);
-    } else {
-      move(entry.wallet_id, entry.type === 'expense' ? -amount : amount);
-    }
-  }
-  return new Map([...held].map(([id, balance]) => [id, balance.toString()]));
-}
-
-/**
- * Wallets for WalletPicker, each with its balance when the server's list gave
- * one. Offline (the device's synced wallets) there is none, and WalletPicker
- * then shows the name only and offers no "move all": a guessed balance would
- * be a wrong number on screen.
- */
-function walletChoices(wallets: readonly WalletSnapshot[], balances: ReadonlyMap<string, Minor> | null): WalletChoice[] {
-  return wallets.map((wallet) => ({ id: wallet.id, name: wallet.name, archived: wallet.archived, balance_minor: balances?.get(wallet.id) ?? null }));
-}
-
-function keypadFor(source: CopySource | null): KeypadState {
-  if (!source) return EMPTY_KEYPAD;
-  try {
-    return keypadFromMinor(source.amount_minor);
-  } catch {
-    return EMPTY_KEYPAD;
-  }
-}
-
 function EntryForm({ wallets, categories, balances, today, records, drafts, source, title, onDone, onAnother }: EntryFormProps) {
-  const resources = useSpendV1();
   const tc = useCopy();
   const activeLocale = useActiveLocale();
   const companion = isRedesignEnabled('companion');
-  const keys = useCommandKeys();
-  const diary = useSpendDiary();
-  const diaryView = useDiaryView();
-  const { intensity } = useBunIntensity();
   const liveRanking = useMemo(() => rank(categories, records, drafts, today), [categories, records, drafts, today]);
   // Tell Bun's "Often logged" chips, from the same recent records (worked out here; nothing is sent).
   const often = useMemo(() => oftenLogged({ records, today, wallets, categories }), [records, today, wallets, categories]);
@@ -351,32 +158,11 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
   const [draft, setDraft] = useState<QuickAddDraft>(() => firstDraft(source, { today, wallets, categories, ranking: liveRanking }));
   const current = frozenRanking ? draft : withDefaults(draft, liveRanking, source);
   const [keypad, setKeypad] = useState<KeypadState>(() => keypadFor(source));
-  const [errors, setErrors] = useState<Errors>({});
-  const [serverErrors, setServerErrors] = useState<Errors>({});
-  const [message, setMessage] = useState<string | null>(null);
-  const [status, setStatus] = useState<Status>('editing');
   const [details, setDetails] = useState(() => Boolean(source?.note || source?.merchant));
   const [sheet, setSheet] = useState<'categories' | 'wallet' | 'tellBun' | null>(null);
-  const [saved, setSaved] = useState<SavedMomentData | null>(null);
-  const [savedCount, setSavedCount] = useState(0);
-  const pop = useSpringPop(savedCount);
-  // The command whose outcome is unknown: "Try again" resends exactly this.
-  const unconfirmed = useRef<{ input: CreateInput; fields: QuickAddDraft } | null>(null);
-  // undefined until read; a failed read counts as already cheered today.
-  const [cheerDay, setCheerDay] = useState<string | null | undefined>(undefined);
-  useEffect(() => {
-    let active = true;
-    readCheerDay().then(
-      (day) => { if (active) setCheerDay(day); },
-      () => { if (active) setCheerDay(today); },
-    );
-    return () => { active = false; };
-  }, [today]);
-
-  // A refusal while unconfirmed that forbids resending for now (a changed session, an update): frozen, and Try again waits.
-  const [resendBlocked, setResendBlocked] = useState(false);
-  const words = useAmountWords();
-  const locked = status === 'saving' || status === 'unconfirmed' || status === 'conflict';
+  const entrySave = useEntrySave({ today });
+  const { status, message, errors, serverErrors, resendBlocked, saved, locked } = entrySave;
+  const pop = useSpringPop(saved);
   const type: EntryType = current.type;
 
   /** The first touch fixes the category order and the draft's defaults. */
@@ -396,120 +182,22 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
     setKeypad((previous) => applyKey(previous, key));
   };
 
-  function finish(fields: QuickAddDraft, via: 'device' | 'online') {
-    const cheer = intensity === 'full' && cheerDay !== undefined && cheerDay !== today;
-    if (cheer) {
-      setCheerDay(today);
-      void writeCheerDay(today);
-    }
-    unconfirmed.current = null;
-    // Kept on this phone is a light tap: it is safe in the diary but has not
-    // reached the server, and "saving" must never feel saved. Confirmed
-    // online is success, and the day's first save gets the celebration.
-    playHaptic(via === 'online' ? (cheer ? 'celebration' : 'saveLanded') : 'saveQueued');
-    setSaved({ draft: fields, via, cheer });
-    setStatus('saved');
-    setSavedCount((count) => count + 1);
-  }
-
-  async function sendOnline(input: CreateInput, fields: QuickAddDraft) {
-    const key = keys.keyFor('create', input);
-    setStatus('saving');
-    setMessage(null);
-    try {
-      if ('source_wallet_id' in input) await resources.createTransfer(input, key);
-      else await resources.createTransaction(input, key);
-      keys.settle('create');
-      finish(fields, 'online');
-    } catch (error) {
-      // The record id is fixed for this draft: if it already exists, an
-      // earlier attempt committed. Jotbun's copy is what is shown: the same
-      // details are saved; other details are a conflict, never "Saved".
-      if (isOwnCreate(error, input.id)) {
-        keys.settle('create');
-        unconfirmed.current = null;
-        setResendBlocked(false);
-        if (ownCreateMatches(error, input)) {
-          finish(fields, 'online');
-          return;
-        }
-        const held = (error as V1Error).current as { amount_minor?: unknown } | undefined;
-        const amount = typeof held?.amount_minor === 'string' ? words(held.amount_minor).shown : '';
-        setMessage(tc('This entry is already saved in Jotbun as {amount}. Check it in History.', { amount }));
-        playHaptic('saveFailed');
-        setStatus('conflict');
-        return;
-      }
-      const problem = saveProblem(error, tc);
-      // Once an attempt is unconfirmed, it stays frozen with its key until that
-      // command's outcome is known: a refusal before processing (signed out,
-      // terms, an update, a changed session) says nothing about it. Only an
-      // answer the server processed settles it.
-      const stillUnknown = problem.unconfirmed || (unconfirmed.current !== null && refusedBeforeProcessing(error));
-      if (!stillUnknown) keys.settle('create');
-      unconfirmed.current = stillUnknown ? { input, fields } : null;
-      setResendBlocked(stillUnknown && problem.blocked);
-      setServerErrors(problem.fields);
-      setMessage(problem.message);
-      if (problem.fields.note || problem.fields.merchant) setDetails(true);
-      playHaptic('saveFailed');
-      setStatus(stillUnknown ? 'unconfirmed' : problem.blocked ? 'blocked' : 'editing');
-    }
-  }
-
   async function save() {
     if (status === 'saving' || status === 'saved' || status === 'blocked' || status === 'conflict' || resendBlocked) return;
-    // An online save whose outcome is unknown is resent online as itself, never re-queued on the device.
-    const resend = status === 'unconfirmed' ? unconfirmed.current : null;
-    if (resend) {
-      await sendOnline(resend.input, resend.fields);
-      return;
-    }
-    touch();
-    // Save presses = for the user; a sum is shown worked out, a plain amount stays as typed.
-    const settled = settleForSave(keypad);
-    if (!settled.outcome.ok || keypadHasOperator(keypad)) setKeypad(settled.state);
-    const fields: QuickAddDraft = { ...current, amountMinor: settled.outcome.ok ? settled.outcome.minor : '' };
-    const built = buildQuickAdd(fields, { today, tc });
-    const next: Errors = built.ok ? {} : { ...built.errors };
-    // The keypad itself says what is wrong with the amount.
-    if (!settled.outcome.ok) delete next.amount_minor;
-    const earliest = earliestFor(fields, wallets);
-    if (!next.occurred_on && earliest !== null && fields.occurredOn < earliest) next.occurred_on = tc('This date is before the wallet started tracking.');
-    setErrors(next);
-    setServerErrors({});
-    setMessage(null);
-    if (!settled.outcome.ok || !built.ok || Object.keys(next).length > 0) {
-      if (next.note || next.merchant) setDetails(true);
-      playHaptic('saveFailed');
-      return;
-    }
-    if (diary && diaryView.phase === 'ready' && status !== 'unconfirmed') {
-      setStatus('saving');
-      try {
-        await diary.saveDraft(built.entry, fields.commandId);
-        finish(fields, 'device');
-      } catch (error) {
-        setMessage(localSaveProblem(error, tc));
-        playHaptic('saveFailed');
-        setStatus('editing');
-      }
-      return;
-    }
-    await sendOnline(built.input, fields);
+    // An online save whose outcome is unknown is resent as itself; the first touch already happened.
+    if (status !== 'unconfirmed') touch();
+    const attempt = await entrySave.save({ draft: current, keypad, wallets });
+    if (attempt.settledKeypad) setKeypad(attempt.settledKeypad);
+    if (attempt.openDetails) setDetails(true);
   }
 
   function addAnother() {
     if (!saved) return;
     setDraft(anotherDraft(saved.draft, { recordId: newId(), commandId: newId() }));
     setKeypad(EMPTY_KEYPAD);
-    setErrors({});
-    setServerErrors({});
-    setMessage(null);
     setDetails(false);
     setSheet(null);
-    setSaved(null);
-    setStatus('editing');
+    entrySave.another();
     onAnother?.();
   }
 
@@ -811,7 +499,7 @@ function savedDetail(draft: QuickAddDraft, wallets: readonly WalletSnapshot[], c
 
 /** "Saved": a spring pop on the lavender stage, the exact amount, and Add another or Done. Only ink sits on the stage. */
 function SavedMoment({ saved, wallets, categories, pop, onAnother, onDone }: {
-  saved: SavedMomentData; wallets: readonly WalletSnapshot[]; categories: readonly CategoryDto[]; pop: ReturnType<typeof useSpringPop>; onAnother: () => void; onDone: () => void;
+  saved: SavedEntry; wallets: readonly WalletSnapshot[]; categories: readonly CategoryDto[]; pop: ReturnType<typeof useSpringPop>; onAnother: () => void; onDone: () => void;
 }) {
   const tc = useCopy();
   const colors = useBunColors();
