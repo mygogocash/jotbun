@@ -11,12 +11,12 @@
 **Spec:** [docs/superpowers/specs/2026-10-25-jotbun-bun-wallet-cloudflare-design.md](../specs/2026-10-25-jotbun-bun-wallet-cloudflare-design.md). This plan implements §8 phase 1, first part, using §3 (C1, C2, C12), §4, §6.1 to §6.3, §6.5, §6.6, §6.11 and §6.14.
 
 **Phase 1 plans.** Phase 1 is four plans; each ends green on its own and starts from the previous one:
-- **1A (this plan):** the vault core. Account, policies, wallets, categories, transactions, budgets, history, summary, sync changes and retention alarms; the parity money session in workerd; Workers-runtime tests in CI.
+- **1A (this plan):** the vault core.
 - **1B:** files and background work on the vault. Receipts in R2, resync snapshots in R2, statement imports through the stateless parser, the export and deletion Workflows, the AI routes on vault reads; the parity files session. The PostgreSQL Workers retire, and the vault Worker folds into the HTTP Worker (C1).
 - **1C:** Better Auth on D1 (C14, C17, D37, sessions as devices) and the app's sign-in port. Better Auth's JWKS feeds the token verifier built here.
 - **1D:** live pokes, the C16 pending choice, PostHog wiring and consent, and the phase 1 proof on two phones.
 
-**Calls made in this plan** (the builder's, not the owner's; listed so a reviewer can check them):
+**Calls made in this plan** (the builder's, not the owner's):
 - **P1. The vault runs as its own Worker until 1B.** `jotbun-vault` is built like the existing background Workers (`wrangler.vault.jsonc`, an auxiliary Worker in `vite.config.ts`). The HTTP Worker keeps its PostgreSQL routes, so `test/workerd.db.test.ts` and `test/workerd-roles.db.test.ts` keep passing until 1B replaces what they test. 1B moves the class and the `/v1` handler into the HTTP Worker, which is C1's end state.
 - **P2. Published policies, gates and client minimums live in one KV key, `config:v1`.** Policies are small, read on every request and change rarely, so they belong with remote config (§6.3 KV) and not in a D1 table. The Worker passes the policies into each vault call, as §6.2 requires for anything that needs I/O.
 - **P3. Until 1C, any issuer the Worker is configured with can sign tokens.** The verifier takes `AUTH_ISSUER`, `AUTH_AUDIENCE` and `AUTH_JWKS_URL`. Tests and the parity session use the API's synthetic JWKS fixture. 1C points the same settings at Better Auth's `/api/auth/jwks` and sets `advanced.database.generateId: "uuid"`, so that `sub` and `sid` are UUIDs (confirmed in the Better Auth 1.6 docs).
@@ -72,7 +72,7 @@
 
 ## Review Focus
 
-The five failure modes most likely to bite a real person, which the ported API suites do not exercise. Each has its test in the task that owns the code.
+The five failure modes most likely to bite a real person, which the ported API suites do not exercise.
 
 1. **The vault sleeps between two writes.** A command resent after eviction must replay its original acknowledgement, and the next command must take the next revision (Task 3, `after the vault sleeps, a resent command replays…`).
 2. **Two phones write at the same moment.** Concurrent writes must commit in one order with contiguous revisions, and one command id sent twice at once must commit once (Task 3, `twenty writes at once…` and `the same command sent twice at once…`).
@@ -712,6 +712,8 @@ expect(Object.fromEntries(wallets.map((w: { name: string; balance_minor: string 
 ---
 
 ### Task 8: Sync changes and retention alarms
+
+**Halves (R7):** 1A-T8a (merged, 3864bc0) is sync changes: `reads/sync.ts`, `sync.test.ts` and its route. 1A-T8b is the rest: `retention.ts`, `retention.test.ts`, `createLunch`, the alarm, and turning on Task 7's money journey once Task 7 has merged.
 
 **Files:**
 - Create: `src/vault/reads/sync.ts`, `src/vault/retention.ts`

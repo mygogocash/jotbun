@@ -72,6 +72,7 @@ import { SearchField } from '@mobile/ui/SearchField';
 import { saveProblem, useCommandKeys, useMoneyLocale } from '../v1/parts';
 import { useHistoryKeep } from './HistoryKeepProvider';
 import type { KeptHistoryView } from './historyKeep';
+import { useRefreshOnRevision } from './useRefreshOnRevision';
 import { LoadingBlock, Notice, RECENTLY_DELETED_ROUTE, copyHref, lookOf, recordHref, recordRowState, useDateLocale } from './HistoryParts';
 
 export type HistoryScreenProps = {
@@ -296,6 +297,9 @@ export function HistoryScreen({ now, initialMonth, onMonthChange }: HistoryScree
     openIds.current = open;
     if (resolved) void loadRef.current(true);
   }, [diaryView.outbox]);
+
+  // A change another phone made was pulled into the diary: the list reloads in place, keeping what it shows.
+  useRefreshOnRevision(diaryView.appliedRevision, () => void loadRef.current(true));
 
   async function loadMore() {
     if (!lists?.page.next_cursor || loadingMore) return;
