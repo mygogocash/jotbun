@@ -4,25 +4,40 @@ import type { ResolvedTheme } from './resolveTheme.ts';
 
 export type WalletColors = {
   readonly isDark: boolean;
+  /** The page. */
   readonly ground: string;
+  /** Cards. */
   readonly card: string;
+  /** Trays. */
   readonly sheet: string;
+  /** Chips, keys and segments on a card or a tray. */
   readonly raised: string;
+  /** Text. */
   readonly ink: string;
+  /** Quiet text on a card, a tray or a raised part. */
   readonly quiet: string;
+  /** Quiet text on the ground. */
   readonly quietOnGround: string;
+  /** Separators (decorative). */
   readonly hairline: string;
+  /** Links, income and selection. */
   readonly violet: string;
+  /** Budget state only: under and over budget, nothing else (§2). The saved check stays neutral (§5.3). */
   readonly under: string;
   readonly over: string;
+  /** The main button and the floating + (`onPrimary` is its label). */
   readonly primary: string;
   readonly onPrimary: string;
+  /** Toasts: the fill, its text and its link. */
   readonly toast: string;
   readonly onToast: string;
   readonly toastLink: string;
+  /** Bar tracks. */
   readonly track: string;
+  /** Insight bars (W24): past months and this month, on a card. */
   readonly barPast: string;
   readonly barNow: string;
+  /** The dashed budget line (W24), on a card. Never text. */
   readonly guideLine: string;
 };
 
