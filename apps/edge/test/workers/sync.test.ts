@@ -142,7 +142,8 @@ describe('ordered deltas, ported from sync-query.integration.spec.ts', () => {
     for (const bad of [{ limit: '1001' }, { limit: '0' }, { limit: 'ten' }, { other: '1' }, { cursor: ['a', 'b'] }]) {
       expect(() => parseSyncRequest(bad)).toThrow()
     }
-  })
+    // 201 vault calls. The default 5s is enough alone, and not when the exactness case (90,100 rows) runs beside it.
+  }, 20_000)
 
   it('rejects malformed, foreign and future cursors, and needs a resync below retention', async () => {
     const user = await member(client)

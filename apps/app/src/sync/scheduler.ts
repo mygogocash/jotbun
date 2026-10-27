@@ -7,6 +7,8 @@ export type SchedulerDeps = {
   clearTimer: (handle: unknown) => void;
   /** Every run's outcome, including the one reported for a flush that failed outright. */
   onOutcome?: (outcome: SyncOutcome) => void;
+  /** The live channel: started on launch and foreground, stopped on background and stop. */
+  channel?: { start(): void; stop(): void };
 };
 
 export interface SyncScheduler {
@@ -15,6 +17,8 @@ export interface SyncScheduler {
   background(): void;
   written(): Promise<void>;
   manual(): Promise<void>;
+  /** A poke from the live channel (or its reconnect): a `live` flush. */
+  live(): Promise<void>;
   /** Sign-out or account switch: stops for good. */
   stop(): void;
 }
@@ -25,9 +29,11 @@ const NO_TIMER = new Set<SyncOutcome['status']>(['paused', 'upgrade_required', '
 
 /**
  * When to sync: at launch, on coming to the foreground, after a local save,
- * on a manual retry, and on at most one timer while in the foreground - every
- * 60 seconds, or at the backoff/Retry-After time when that is set. Going to
- * the background or stopping (sign-out, account switch) clears the timer; no
+ * on a manual retry, on a live poke from the vault (the live channel runs
+ * from launch or foreground until background or stop), and on at most one
+ * timer while in the foreground - every 60 seconds, or at the backoff or
+ * Retry-After time when that is set. Going to the background or stopping
+ * (sign-out, account switch) clears the timer and stops the channel; no
  * background delivery is promised. Results arriving after a stop are ignored.
  */
 export function createSyncScheduler(deps: SchedulerDeps): SyncScheduler {
@@ -69,23 +75,28 @@ export function createSyncScheduler(deps: SchedulerDeps): SyncScheduler {
       if (stopped) return;
       // The app launches into the foreground.
       foreground = true;
+      deps.channel?.start();
       await run('launch');
     },
     async foreground() {
       if (stopped) return;
       foreground = true;
+      deps.channel?.start();
       await run('foreground');
     },
     background() {
       foreground = false;
       clear();
+      deps.channel?.stop();
     },
     written: () => run('write'),
     manual: () => run('manual'),
+    live: () => run('live'),
     stop() {
       stopped = true;
       foreground = false;
       clear();
+      deps.channel?.stop();
     },
   };
 }
