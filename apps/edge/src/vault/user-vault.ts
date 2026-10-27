@@ -19,9 +19,10 @@ import { toProblemReply } from './replies'
 import { VAULT_HANDLERS } from './routes'
 import { assertSession, ensureAccount } from './session'
 import { vaultSchema } from './schema'
+import type { VaultBucket } from './files/keys'
 
-/** The bindings the vault reads: the command digest keys and the environment name. */
-export type VaultEnv = { COMMAND_DIGEST_KEY?: string; COMMAND_DIGEST_PREVIOUS_KEYS?: string; JOTBUN_ENV?: string }
+/** The bindings the vault reads: the command digest keys, the environment name and the private object bucket. */
+export type VaultEnv = { COMMAND_DIGEST_KEY?: string; COMMAND_DIGEST_PREVIOUS_KEYS?: string; JOTBUN_ENV?: string; OBJECTS?: VaultBucket }
 
 export type VaultDb = DrizzleSqliteDODatabase<typeof vaultSchema>
 
@@ -34,6 +35,8 @@ export class UserVault extends DurableObject<VaultEnv> {
   readonly db: VaultDb
   /** The vault's clock, read once per call. Tests replace it. */
   clock: () => Date = () => new Date()
+  /** Set by erase(). An erased instance refuses every call. */
+  erased = false
   private readonly rates = new RateBuckets(() => this.clock().getTime())
   private services: { registry: CommandRegistry; digester: CommandDigester } | undefined
 
@@ -44,12 +47,33 @@ export class UserVault extends DurableObject<VaultEnv> {
   }
 
   /**
+   * Erases this vault durably (B22, §6.12): cancels its alarm, deletes its
+   * storage, then re-runs the migrations and writes one marker row, an account
+   * with status `deleted` and no account id. The instance refuses every call from
+   * now on, and once it sleeps `ensureAccount` still refuses it, so an erased
+   * vault never makes an account again. Erasing it again leaves the same marker.
+   */
+  async erase(): Promise<void> {
+    this.erased = true
+    await this.ctx.storage.deleteAlarm()
+    await this.ctx.storage.deleteAll()
+    await this.ctx.blockConcurrencyWhile(async () => {
+      await migrate(this.db, VAULT_MIGRATIONS)
+      const at = this.clock().toISOString()
+      this.ctx.storage.transactionSync(() => {
+        this.ctx.storage.sql.exec("INSERT INTO account_state (id, account_id, status, not_before, created_at) VALUES (1, '', 'deleted', 0, ?)", at)
+      })
+    })
+  }
+
+  /**
    * One call from the Worker, under the vault's checks in this order: the
    * account (an owner mismatch is refused), the principal's budget, the session,
    * the session's read or write budget, the current policy when the route needs
    * it, then the route's handler. Every error becomes a reply.
    */
   call(call: VaultCall): VaultReply {
+    if (this.erased) return { ok: false, status: 403, code: 'ACCOUNT_UNAVAILABLE', problem: {} }
     try {
       const route = vaultRouteOf(call.route)
       const handler = VAULT_HANDLERS[call.route]
