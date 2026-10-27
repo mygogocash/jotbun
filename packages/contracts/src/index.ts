@@ -143,6 +143,7 @@ export {
   DELETION_RECEIPT_STATUSES,
   isDeletionAccepted,
   isDeletionReceipt,
+  deletionShortCode,
 } from "./v1/privacy.ts";
 export type { ExportFailureReason, ExportStatus, ExportFilter, ExportRequest, ExportRequestSnapshot, ExportDto, ExportGrant, ExportCsvColumn, DeletionReceiptStatus, DeletionRequest, DeletionAccepted, DeletionReceiptRequest, DeletionReceipt } from "./v1/privacy.ts";
 export {

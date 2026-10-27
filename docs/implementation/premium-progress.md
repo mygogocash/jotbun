@@ -616,3 +616,47 @@ Phase P2 builds the Bun Wallet area on the app. Task 7 replaces the Thai everyda
   - The spec's C3 line says a pack category is tagged with a `pack_key`. This task recognises one by its folded name. Nothing is stored. 1D can take its allow-list from `THAI_EVERYDAY_PACK.map((item) => item.key)`.
   - R81: wallet types were not touched. No `ewallet`.
   - `packKeyOf` and `missingPackItems` share `foldedNames`, so an alias matches both. The named `packKeyOf` test uses the primary Thai name, with spaces. Dropping aliases fails the earlier-pack test.
+
+## P6B: The beta's in-app extras
+
+Phase P6B gives the closed beta its in-app extras ([plan](../superpowers/plans/2026-10-25-jotbun-p6b-beta-extras.md)). Task 0 adds the deletion short code to the contracts.
+
+### P6B Task 0: The deletion short code
+
+- **Status:** built and verified locally on `p6b/t0-deletion-code`, on top of `e546bee`. Not pushed. The independent review is the controller's, after this receipt.
+- **Delivers:** `P6B:deletion-code` (A12).
+- **Files:**
+  - `packages/contracts/src/v1/privacy.ts`: `deletionShortCode(requestId)` and its private `CROCKFORD_BASE32` alphabet.
+  - `packages/contracts/src/index.ts`: exports `deletionShortCode`.
+  - `apps/app/src/wallet/settings/deletionCode.test.ts`: the plan's test (Node), importing from `@gogospend/contracts`.
+- **The code (X8, default pending owner Q5):** `DEL-` and the request id's first 10 hex digits (dashes removed, any case) read as one 40-bit number, written as 8 digits of `0123456789ABCDEFGHJKMNPQRSTVWXYZ`, most significant first, as `XXXX-XXXX`. `0b3f2c1e-6a4d-4f6e-9a51-2f3c4d5e6f70` gives `DEL-1CZJ-R7KA`. The same ASCII text in Thai and English. No copy changed here: P6B-T6 shows it under หมายเลขคำขอ, and P6C-T4's email prints it.
+- **RED to GREEN:**
+  - Typed stub first: `deletionShortCode` returned `''`, already exported.
+  - RED, `npm run test:unit -w gogospend-app -- src/wallet/settings/deletionCode.test.ts`: 1 failed, 0 passed. The failing assertion was the first one, at `deletionCode.test.ts:9`: `AssertionError`, actual `''`, expected `'DEL-1CZJ-R7KA'`. An assertion failure, not a load error.
+  - GREEN, the same command: 1 passed, 0 failed.
+- **Mutation check:** `privacy.ts` backed up in the scratchpad (`privacy.ts.green`), sha256 `e27223d3d255a713c2752f63dfbdaba6de98c3a3a252c8216a98e3ddb3956981`. Each mutant was applied in place, the focused file was run, and the file was restored with `cp`; the checksum matched after every restore.
+  - M1, the RFC 4648 alphabet: 1 failed, 0 passed, actual `'DEL-BM7S-YHTK'`.
+  - M2, dashes kept (`slice(0, 10)` with no dash removal): 1 failed, 0 passed, actual `'DEL-005K-YB0Y'`.
+  - M3, least significant digit first: 1 failed, 0 passed, actual `'DEL-AK7R-JZC1'`.
+  - M4, 32 bits instead of 40 (`slice(0, 8)`): 1 failed, 0 passed, actual `'DEL-005K-YB0Y'`.
+  - Survivors: none, so no test was added. M2 and M4 print the same value, because on a UUID `parseInt` stops at the first dash, so M2 reads only 32 bits too. The plan's test kills both.
+- **Gate** (worktree root, after the restores; run in the brief's order, each exit 0):
+  - `npm run typecheck`: passed (contracts `tsc` with `erasableSyntaxOnly`, then the API `tsc --noEmit`).
+  - `npm run typecheck:app`: passed.
+  - `npm run typecheck:routes -w gogospend-app`: passed.
+  - `npm run test:app`: passed, 28 passed, 0 failed.
+  - `npm run test:unit`: passed, 695 passed, 0 failed, 7 suites (the new file's test is one of them).
+  - `npm run test:render -w gogospend-app`: passed, 83 files, 1587 passed, 0 failed (328.5 s).
+  - `npm run export:web -w gogospend-app -- --max-workers 2`: passed, ends with `Exported: dist`.
+  - `npm run test:api`: passed, 44 suites, 955 passed, 0 failed.
+  - `npm run build -w gogospend-api`: passed, 293 files compiled with swc.
+  - `node apps/api/scripts/release-graph.mjs check`: passed, `"problems": []`.
+  - `/usr/bin/git diff --check`: no output. The range check after the commit is in the commit step.
+- **Deviations:** none.
+- **SKIPPED:** the edge gate, `test:db`, `test:ops` and `test:dev`: no file under `apps/edge`, `apps/api` or `scripts` changed and nothing there calls the helper yet (P6C-T4 will); the plan adds the edge gate from P6B-T10; CI runs them. Nothing deployed.
+- **Notes for the integrator:**
+  - The helper does not check its input: every caller passes an id `isUuid` accepted (`isDeletionAccepted`, `isDeletionReceipt`, the server's `derivedUuid`). Out of contract it still returns and never throws, but the output is not a code. When no hex digit leads the first 10 characters, `parseInt` gives `NaN` and the alphabet lookup yields the text `undefined`. Checked by running the module: `zzzzzzzz-zzzz-4zzz-8zzz-zzzzzzzzzzzz` gives `DEL-unde-finedundefined...`, which is not the 13-character form. No caller reaches that path, and the plan names no validation, so the code is unchanged.
+  - The server's ids are `derivedUuid(account, 'deletion-request', commandId)` (version 8). The version and variant bits come after the first 40 bits, so all 40 bits of the code are hash bits.
+  - Today's `PrivacyScreen.tsx` still prints the whole request id; P6B-T6's `DeletionDoneScreen` switches to this code. Not touched here.
+  - `index.ts` and `privacy.ts` are shared: the change is one export line and one function after `isDeletionReceipt`. A conflict keeps both sides.
+  - Warnings, not failures, and not caused by this change: the Node runner prints `MODULE_TYPELESS_PACKAGE_JSON` for the new file, for `packages/contracts/src/index.ts` and for other pure tests (their packages have no `"type"` field); vitest warns that `vitest.render.config.ts` is loaded as CommonJS.
