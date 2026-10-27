@@ -346,6 +346,20 @@ test('import draft rows follow the store: refused once it is locked or from an e
   assert.equal(await (await database.open(ACCOUNT_A)).readImportDraft('draft.a'), 'kept');
 });
 
+test('logged days are the distinct dates of live records and drafts', async () => {
+  const store = await open();
+  const first = expense({ occurred_on: '2026-10-20' });
+  const second = expense({ occurred_on: '2026-10-20' });
+  const removed = expense({ occurred_on: '2026-10-21', deleted_at: '2026-10-22T00:00:00.000Z' });
+  await store.applyChangeGroups([
+    references(),
+    group(2, change('transaction', first), change('transaction', second), change('transaction', removed, 'deleted')),
+  ], 'c2', null);
+  const entry = draft({ occurred_on: '2026-10-23' });
+  await store.savePending(entry, outbox(entry));
+  assert.deepEqual(await store.loggedDays(), ['2026-10-20', '2026-10-23']);
+});
+
 test('the applied revision is read without loading the diary', async () => {
   const store = await open();
   assert.equal(await store.appliedRevision(), '0');

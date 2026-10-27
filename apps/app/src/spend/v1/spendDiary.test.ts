@@ -428,6 +428,24 @@ test("the explicit sign-out erase takes the diary's import draft with it", async
   assert.equal(await diary.importDraftStore()?.load(), null);
 });
 
+test('logged days come from the open diary, and null without one', async () => {
+  const { diary, server, session } = await setup();
+  server.commitElsewhere([
+    change('transaction', expense({ occurred_on: '2026-10-20' })),
+    change('transaction', expense({ occurred_on: '2026-10-20' })),
+    change('transaction', expense({ occurred_on: '2026-10-21', deleted_at: '2026-10-22T00:00:00.000Z' }), 'deleted'),
+  ]);
+  await diary.retry();
+  server.setOffline(true);
+  await diary.saveDraft(draft({ occurred_on: '2026-10-23' }));
+  assert.deepEqual(await diary.loggedDays(), ['2026-10-20', '2026-10-23']);
+
+  Object.assign(session, { accountId: null, epoch: session.epoch + 1 });
+  await diary.sessionChanged();
+  assert.equal(diary.getView().phase, 'unavailable');
+  assert.equal(await diary.loggedDays(), null);
+});
+
 test('a kept choice appears in the view and leaves when dropped', async () => {
   const { diary } = await setup();
   const record = expense({ amount_minor: '6500' });
