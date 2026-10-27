@@ -3,15 +3,17 @@ import { randomUUID } from 'node:crypto';
 import { afterEach, test } from 'node:test';
 
 import { SYNC_ENTITY_VALIDATORS } from '@gogospend/contracts';
-import type { EntityChange } from '@gogospend/contracts';
+import type { EntityChange, TransactionDto } from '@gogospend/contracts';
 
 import { AccountDatabase } from './accountDatabase.ts';
 import type { DiaryStore } from './diaryRepository.ts';
+import { DIARY_MIGRATIONS } from './migrations.ts';
 import { createMemoryKeyStore } from './testing/memoryKeys.ts';
 import { createTestDiaryFiles } from './testing/nodeSqlite.ts';
 import type { TestDiaryFiles } from './testing/nodeSqlite.ts';
 import { ACCOUNT_A, ACCOUNT_B, FOOD, SAVINGS, WALLET, category, change, draft, expense, group, outbox, references, wallet } from './testing/diaryFixtures.ts';
 import { CursorMoved, DiaryLocked, StaleEpochError } from './types.ts';
+import type { PendingChoice } from './types.ts';
 
 let files: TestDiaryFiles;
 afterEach(() => files?.dispose());
@@ -342,4 +344,134 @@ test('import draft rows follow the store: refused once it is locked or from an e
   await assert.rejects(fresh.writeImportDraft('draft.a', 'racing'), (error) => error instanceof StaleEpochError);
   files.failWhen(null);
   assert.equal(await (await database.open(ACCOUNT_A)).readImportDraft('draft.a'), 'kept');
+});
+
+// C16: a refused online edit is kept on the device until the person picks a
+// version. It lives in migration 3's table, one row per record.
+
+/** A refused edit of `record`: the person changed its amount and note, and the server now holds version 2. */
+function choice(record: TransactionDto = expense({ amount_minor: '6500' }), overrides: Partial<PendingChoice> = {}): PendingChoice {
+  return {
+    recordId: record.id,
+    original: record,
+    changes: { amount_minor: '7000', note: 'lunch' },
+    server: { ...record, version: 2, merchant: 'Market' },
+    editedAt: '2026-03-02T05:00:30.000Z',
+    refusedAt: '2026-03-02T05:01:00.000Z',
+    ...overrides,
+  };
+}
+
+test('a pending choice is kept, replaced per record and dropped', async () => {
+  const store = await open();
+  const first = choice();
+  await store.keepChoice(first);
+  assert.deepEqual(await store.readChoices(), [first]);
+  // A second choice for the same record replaces the first: one row, the newer one.
+  const second = { ...first, server: { ...first.server, version: 3, merchant: 'Newer shop' }, refusedAt: '2026-03-02T05:02:00.000Z' };
+  await store.keepChoice(second);
+  assert.deepEqual(await store.readChoices(), [second]);
+  // Choices come back oldest refusal first.
+  const earlier = choice(undefined, { refusedAt: '2026-03-02T05:00:10.000Z' });
+  await store.keepChoice(earlier);
+  assert.deepEqual(await store.readChoices(), [earlier, second]);
+  await store.dropChoice(second.recordId);
+  assert.deepEqual(await store.readChoices(), [earlier]);
+  await store.dropChoice(earlier.recordId);
+  assert.deepEqual(await store.readChoices(), []);
+  // Dropping a choice that is not there is not an error.
+  await store.dropChoice(earlier.recordId);
+  assert.deepEqual(await store.readChoices(), []);
+});
+
+test('a choice for a mismatched record, or one that is not a valid choice, is refused', async () => {
+  const store = await open();
+  const valid = choice();
+  await assert.rejects(store.keepChoice({ ...valid, server: { ...valid.server, id: randomUUID() } }), TypeError);
+  await assert.rejects(store.keepChoice({ ...valid, original: { ...valid.original, id: randomUUID() } }), TypeError);
+  await assert.rejects(store.keepChoice({ ...valid, recordId: 'not-a-uuid' }), TypeError);
+  await assert.rejects(store.keepChoice({ ...valid, changes: {} }), TypeError);
+  await assert.rejects(store.keepChoice({ ...valid, changes: { version: 9 } as never }), TypeError);
+  await assert.rejects(store.keepChoice({ ...valid, changes: { amount_minor: 7000 } as never }), TypeError);
+  await assert.rejects(store.keepChoice({ ...valid, original: { ...valid.original, extra: true } as never }), TypeError);
+  await assert.rejects(store.keepChoice({ ...valid, refusedAt: 'yesterday' }), TypeError);
+  assert.deepEqual(await store.readChoices(), []);
+});
+
+test('a choice written after the session moved is refused, and a write racing the move rolls back', async () => {
+  files?.dispose();
+  files = createTestDiaryFiles();
+  const session = { epoch: 1 };
+  const database = new AccountDatabase({ files, keys: createMemoryKeyStore(), epoch: () => session.epoch });
+  const store = await database.open(ACCOUNT_A);
+  const kept = choice();
+  session.epoch = 2;
+  await assert.rejects(store.keepChoice(kept), StaleEpochError);
+  await assert.rejects(store.dropChoice(kept.recordId), StaleEpochError);
+  const fresh = await database.open(ACCOUNT_A);
+  files.failWhen((sql) => {
+    if (/INSERT INTO pending_choices/i.test(sql)) session.epoch += 1;
+  });
+  await assert.rejects(fresh.keepChoice(kept), StaleEpochError);
+  files.failWhen(null);
+  assert.deepEqual(await (await database.open(ACCOUNT_A)).readChoices(), []);
+});
+
+test('choices survive a lock and reopen, and go with the erase', async () => {
+  files?.dispose();
+  files = createTestDiaryFiles();
+  const database = new AccountDatabase({ files, keys: createMemoryKeyStore(), epoch: () => 1 });
+  const store = await database.open(ACCOUNT_A);
+  const kept = choice();
+  await store.keepChoice(kept);
+  await store.lock();
+  await assert.rejects(store.keepChoice(choice()), (error) => error instanceof DiaryLocked);
+  const reopened = await database.open(ACCOUNT_A);
+  assert.deepEqual(await reopened.readChoices(), [kept]);
+  await reopened.eraseAfterConfirmation();
+  assert.deepEqual(await (await database.open(ACCOUNT_A)).readChoices(), []);
+});
+
+test('a stored choice that no longer validates is left out of the list and not deleted', async () => {
+  files?.dispose();
+  files = createTestDiaryFiles();
+  const database = new AccountDatabase({ files, keys: createMemoryKeyStore(), epoch: () => 1 });
+  const store = await database.open(ACCOUNT_A);
+  const kept = choice();
+  const unknownField = choice();
+  const garbled = choice();
+  await store.keepChoice(kept);
+  await store.keepChoice(unknownField);
+  await store.keepChoice(garbled);
+  // Damage two rows the way a bad write would: a change naming no field of an update, and a server copy that is not JSON.
+  const raw = files.raw(`diary-${ACCOUNT_A}.db`);
+  raw.prepare('UPDATE pending_choices SET changes = ? WHERE record_id = ?').run(JSON.stringify({ version: 9 }), unknownField.recordId);
+  raw.prepare('UPDATE pending_choices SET server = ? WHERE record_id = ?').run('not json', garbled.recordId);
+  const rows = (raw.prepare('SELECT COUNT(*) AS count FROM pending_choices').get() as { count: number }).count;
+  raw.close();
+  assert.equal(rows, 3);
+  assert.deepEqual(await store.readChoices(), [kept]);
+});
+
+test("migration 3 adds the table and keeps a version 2 diary's drafts", async () => {
+  files?.dispose();
+  files = createTestDiaryFiles();
+  const keys = createMemoryKeyStore();
+  const older = new AccountDatabase({ files, keys, epoch: () => 1, migrations: DIARY_MIGRATIONS.slice(0, 2) });
+  const before = await older.open(ACCOUNT_A);
+  await before.applyChangeGroups([references()], 'c1', null);
+  const entry = draft();
+  const queued = outbox(entry);
+  await before.savePending(entry, queued);
+  await before.lock();
+  const upgraded = await new AccountDatabase({ files, keys, epoch: () => 1 }).open(ACCOUNT_A);
+  const raw = files.raw(`diary-${ACCOUNT_A}.db`);
+  const version = (raw.prepare('PRAGMA user_version').get() as { user_version: number }).user_version;
+  const tables = raw.prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'pending_choices'`).all();
+  raw.close();
+  assert.equal(version, 3);
+  assert.equal(tables.length, 1);
+  assert.deepEqual(await upgraded.readOutbox(), [queued]);
+  assert.deepEqual((await upgraded.readState()).pending, [entry]);
+  assert.deepEqual(await upgraded.readChoices(), []);
 });

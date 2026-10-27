@@ -329,6 +329,41 @@ Phase 1A moves each person's ledger into one SQLite Durable Object, the UserVaul
 
 **Pre-review fix (R76).** The controller ruled that `categories_replace_guard` also refuses an insert whose built-in key another category already holds. Without that clause, `INSERT OR REPLACE` with such a key deleted the other category silently, because `recursive_triggers` is off and `categories_never_deleted` therefore did not fire. The clause is `OR EXISTS (SELECT 1 FROM categories c WHERE c.builtin_key = NEW.builtin_key AND c.id <> NEW.id)`. Test first: `a replace that reuses another category's built-in key is refused, and the other category survives` (`vault-schema.test.ts`), placed before the same-id replace case. Before the clause, `npm run test:edge:workers -- test/workers/categories.test.ts test/workers/vault-schema.test.ts` gave `Test Files 1 failed | 1 passed (2)` and `Tests 1 failed | 29 passed (30)`. The failure was the new case, `promise resolved "[]" instead of rejecting`, because the replace had removed the other category. After the clause, the same command gave `Test Files 2 passed (2)` and `Tests 30 passed (30)`. The full edge gate then passed (see the gate bullets above). Custom categories (a NULL built-in key), the identical seeding rows and the same-id replace are unaffected, as the existing cases show. Checksums (sha256, first 8 hex): `0000_vault_core.sql` d0329a4d, `vault-schema.test.ts` ff0b345b. One behaviour change: a plain `INSERT ... ON CONFLICT DO NOTHING` whose built-in key another category holds now aborts, where it was skipped before. The seed path checks the present keys first, so it cannot reach that case. The other open item (a REPLACE that keeps type and built-in key but changes other columns) is not part of this ruling and stays open.
 
+## 1D: live pokes, the pending choice and PostHog
+
+### 1D Task 4: Pending choices kept in the diary
+
+- **Status:** built and verified locally on `worktree-agent-a667751bc0a738fc0`, from `68ec183`. Not pushed. The independent review is the controller's, after this receipt.
+- **What it does:** an online edit of a record refused with `VERSION_CONFLICT` (C16, record edits only) is kept in the encrypted diary as a pending choice, one row per record. It is never sent by itself, and no outbox kind is added. This task is storage and model only: no screen is routed, and `ChoicePanel` (1D-T9) reads the view.
+- **Files:**
+  - Storage: `apps/app/src/storage/migrations.ts` (migration 3, `pending_choices`, appended), `types.ts` (`PendingChoice`), `diaryRepository.ts` (`keepChoice`, `readChoices`, `dropChoice`).
+  - Model: `apps/app/src/spend/v1/redesign/pendingChoice.ts` (`draftFromChoice`, `choiceAgainst`, `choiceSettled`, `resendForChoice`).
+  - Diary view: `apps/app/src/spend/v1/spendDiary.ts` (`DiaryView.pendingChoices`, `keepChoice`, `dropChoice`; `refresh` reads the choices beside the outbox).
+  - `DiaryView` values and the fake diary, given `pendingChoices: []` and the two new methods: `spend/v1/SpendDiaryContext.tsx`, `spend/v1/testing/fakeDiary.ts`, `spend/v1/redesign/homeModel.test.ts`, `spend/v1/redesign/account/settingsModel.test.ts`, `sync/SyncStatus.render.test.tsx`.
+  - Tests: `storage/diaryRepository.test.ts` (6 new), `spend/v1/redesign/pendingChoice.test.ts` (new, 4), `spend/v1/spendDiary.test.ts` (1), `sync/syncEngine.test.ts` (1).
+- **RED:** stubs first (no-op store methods, wrong but typed model results, a view that never reads choices). `npm run test:unit -w gogospend-app -- src/storage/diaryRepository.test.ts src/spend/v1/redesign/pendingChoice.test.ts src/spend/v1/spendDiary.test.ts src/sync/syncEngine.test.ts`: 68 tests, 57 passed, 11 failed. All 11 failed on assertions (`ERR_ASSERTION`), none on a missing module.
+- **GREEN:** the same command: 68 passed, 0 failed. A mutation survivor (below) then added one test: 69 passed.
+- **Mutation check:** checksums of the five implementation files recorded first. Each mutant was applied in place, the four focused files were run, the file was restored from a backup outside the repo, and the checksums were compared again (all five match).
+  - Insert without `ON CONFLICT` (brief): 1 failed (`a pending choice is kept, replaced per record and dropped`).
+  - Skip the server id check (brief): 1 failed (`a choice for a mismatched record, or one that is not a valid choice, is refused`).
+  - `resendForChoice` keeps `original.version` (brief): 1 failed (`use yours resends the same changes on the server's current version`).
+  - Read side skips validation (extra): survived the first run. Added `a stored choice that no longer validates is left out of the list and not deleted`; the mutant now fails 1 test.
+  - No oldest-first sort (extra): 1 failed (`a pending choice is kept, replaced per record and dropped`).
+- **Gate:**
+  - `npm run typecheck:app`: passes.
+  - `npm run test:unit`: 700 passed, 0 failed.
+  - `npm run test:app`: 28 passed, 0 failed.
+  - `npm run test:render -w gogospend-app` (beyond the controller's list): 83 files and 1587 tests passed on the final run (383 s). Earlier runs were timing-sensitive under machine load: one full run had 3 tests time out at the 5 s limit (two History and one catalogue render test), and one History file failed alone once, then passed 6 of 6 on re-run and on the base commit.
+  - `git diff --check`: clean.
+  - `npm run export:web`: not run; the controller's gate for this task does not include it.
+- **Deviations:**
+  - The five view files listed above changed, though the brief did not name them: the typecheck requires `pendingChoices` on every `DiaryView` value, and `SpendDiary` gained two methods.
+  - `keepChoice` also checks the value types of `changes` (amount, date, record ids, text), and `readChoices` applies the same check to stored rows. The brief named only the key checks.
+  - `choiceAgainst` throws a TypeError for a fresh record that is another record, as `rebaseEdit` does.
+- **SKIPPED:** none. No hosted, native or device check applies to this task.
+- **Notes for 1D-T9 and later:**
+  - `readChoices()` leaves an invalid row in place, never deleted, so a later `keepChoice` for that record replaces it.
+  - Migration 3 is fixed by the brief. Any other diary migration merged on this branch must take number 4, because `migrateDiary` requires contiguous numbers.
 ### Task 5: transactions, balances and the golden diary
 
 - **Status:** built and verified locally on `agent-ad129ba8cab52fe16`, on top of `60e2026`. Not pushed. The independent review is the controller's, after this receipt.
