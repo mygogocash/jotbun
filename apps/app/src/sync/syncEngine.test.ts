@@ -8,7 +8,7 @@ import { PROBLEMS } from './testing/fakeServer.ts';
 import { START, bench } from './testing/harness.ts';
 import type { Bench } from './testing/harness.ts';
 import type { PendingChoice } from '../storage/types.ts';
-import type { FlushTrigger, SyncOutcome } from './types.ts';
+import type { FlushTrigger, SyncOutcome, SyncRemote } from './types.ts';
 
 let b: Bench | undefined;
 afterEach(() => b?.dispose());
@@ -322,6 +322,147 @@ test('the scheduler keeps at most one 60-second foreground timer and tears it do
   await scheduler.foreground();
   assert.equal(timers.size, 0, 'a stopped scheduler stays stopped');
   assert.deepEqual(flushed, ['launch', 'foreground', 'foreground', 'write', 'manual', 'foreground', 'foreground']);
+});
+
+/**
+ * The server with its change reads held after `hold()` until `release()`, and a count of the reads it served:
+ * one run stays open while others queue behind it. Reads before `hold()` pass straight through.
+ */
+function holding(bench: Bench) {
+  let open: () => void = () => undefined;
+  let gate: Promise<void> = Promise.resolve();
+  const calls = { changes: 0 };
+  const remote: SyncRemote = {
+    ...bench.server.remote,
+    async changes(from, limit) {
+      calls.changes += 1;
+      await gate;
+      return bench.server.remote.changes(from, limit);
+    },
+  };
+  return {
+    remote,
+    calls,
+    hold: () => {
+      gate = new Promise<void>((resolve) => {
+        open = resolve;
+      });
+    },
+    release: () => open(),
+  };
+}
+
+const session = (b: Bench) => ({ accountId: ACCOUNT_A, epoch: b.session.epoch });
+
+test("a live flush lifts the failure pause but waits out the server's pacing", async () => {
+  b = await bench();
+  await b.save();
+  b.server.setOffline(true);
+  let outcome: SyncOutcome | undefined;
+  for (let i = 0; i < 5; i += 1) {
+    outcome = await b.flush('timer');
+    b.clock.now = Math.max(b.clock.now, outcome.nextAttemptAt ?? b.clock.now) + 1;
+  }
+  assert.equal(outcome?.status, 'paused');
+  b.server.setOffline(false);
+  b.server.scriptSends(PROBLEMS.rateLimited(30));
+  const paced = await b.flush('live');
+  assert.equal(paced.status, 'rate_limited', 'the live flush runs past the pause and meets the 429');
+  assert.equal(b.server.sent.length, 1);
+  assert.equal(paced.nextAttemptAt, b.clock.now + 30_000);
+  assert.equal((await b.flush('live')).status, 'rate_limited');
+  assert.equal(b.server.sent.length, 1, 'inside Retry-After a live flush sends nothing');
+  b.clock.now = paced.nextAttemptAt as number;
+  assert.equal((await b.flush('live')).status, 'synced');
+  assert.equal(b.server.records().length, 1);
+});
+
+/** Four offline failed runs on `engine`, so its next failure is the fifth and pauses it. */
+async function failFourTimes(bench: Bench, engine: ReturnType<Bench['newEngine']>): Promise<void> {
+  bench.server.setOffline(true);
+  for (let i = 0; i < 4; i += 1) {
+    const outcome = await engine.flush(session(bench), 'timer');
+    bench.clock.now = Math.max(bench.clock.now, outcome.nextAttemptAt ?? bench.clock.now) + 1;
+  }
+  bench.server.setOffline(false);
+}
+
+test('a poke that joins a queued follow-up still lifts the pause', async () => {
+  b = await bench();
+  await b.save();
+  const hold = holding(b);
+  const engine = b.newEngine(b.store, hold.remote);
+  await failFourTimes(b, engine);
+  // The held run's first read fails: its fifth failure, so the engine pauses when it ends.
+  b.server.scriptOthers({ kind: 'network_before' });
+  hold.hold();
+  const run = engine.flush(session(b), 'timer');
+  const queued = engine.flush(session(b), 'timer');
+  const joined = engine.flush(session(b), 'live');
+  hold.release();
+  assert.equal((await run).status, 'paused');
+  assert.equal(await queued, await joined, 'the two calls share one follow-up');
+  assert.equal((await joined).status, 'synced', 'the follow-up ran with the poke\'s trigger');
+  assert.equal(b.server.records().length, 1);
+});
+
+test('a follow-up keeps the strongest trigger asked for, whatever order the calls came in', async () => {
+  b = await bench();
+  await b.save();
+  const hold = holding(b);
+  const engine = b.newEngine(b.store, hold.remote);
+  await failFourTimes(b, engine);
+  b.server.scriptOthers({ kind: 'network_before' });
+  hold.hold();
+  const run = engine.flush(session(b), 'timer');
+  const first = engine.flush(session(b), 'timer');
+  const poke = engine.flush(session(b), 'live');
+  const last = engine.flush(session(b), 'timer');
+  hold.release();
+  assert.equal((await run).status, 'paused');
+  assert.equal((await first).status, 'synced');
+  assert.equal((await poke).status, 'synced');
+  assert.equal((await last).status, 'synced', 'a later timer call does not weaken the poke');
+  assert.equal(b.server.records().length, 1);
+});
+
+test('twenty pokes during a flush run one follow-up', async () => {
+  b = await bench();
+  const hold = holding(b);
+  const engine = b.newEngine(b.store, hold.remote);
+  hold.hold();
+  const calls = [engine.flush(session(b), 'live')];
+  for (let i = 0; i < 19; i += 1) calls.push(engine.flush(session(b), 'live'));
+  hold.release();
+  await Promise.all(calls);
+  assert.equal(hold.calls.changes, 2, 'the open run and one follow-up: two runs');
+});
+
+test('the scheduler starts the live channel with the foreground, stops it in the background, and runs a live flush for a poke', async () => {
+  const flushed: FlushTrigger[] = [];
+  const channelCalls: string[] = [];
+  const scheduler = createSyncScheduler({
+    flush: async (trigger) => {
+      flushed.push(trigger);
+      return { status: 'synced', progress: { sent: 0, total: 0 }, nextAttemptAt: null, uncertain: 0, needsReview: 0 };
+    },
+    now: () => 1_000,
+    setTimer: () => null,
+    clearTimer: () => undefined,
+    channel: { start: () => channelCalls.push('start'), stop: () => channelCalls.push('stop') },
+  });
+  await scheduler.launch();
+  assert.deepEqual(channelCalls, ['start']);
+  await scheduler.foreground();
+  assert.deepEqual(channelCalls, ['start', 'start']);
+  await scheduler.live();
+  assert.deepEqual(flushed, ['launch', 'foreground', 'live']);
+  scheduler.background();
+  assert.deepEqual(channelCalls, ['start', 'start', 'stop']);
+  scheduler.stop();
+  assert.deepEqual(channelCalls, ['start', 'start', 'stop', 'stop']);
+  await scheduler.live();
+  assert.deepEqual(flushed, ['launch', 'foreground', 'live'], 'a stopped scheduler runs nothing');
 });
 
 test('a pending choice is never sent by the sync engine', async () => {

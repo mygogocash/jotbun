@@ -24,7 +24,7 @@ const command = (state: OutboxCommand['state']): OutboxCommand => ({
   state, firstTransmissionAt: state === 'unsent' ? null : '2026-09-29T03:00:00.000Z', createdAt: '2026-09-29T03:00:00.000Z', ackedRevision: null,
 });
 const outcome = (status: SyncOutcome['status'], extra: Partial<SyncOutcome> = {}): SyncOutcome => ({ status, progress: { sent: 0, total: 0 }, nextAttemptAt: null, uncertain: 0, needsReview: 0, ...extra });
-const view = (next: Partial<DiaryView>): DiaryView => ({ phase: 'ready', lockReason: null, outcome: null, progress: null, pending: [], outbox: [], pendingChoices: [], wallets: [], categories: [], ...next });
+const view = (next: Partial<DiaryView>): DiaryView => ({ phase: 'ready', lockReason: null, outcome: null, progress: null, pending: [], outbox: [], pendingChoices: [], wallets: [], categories: [], appliedRevision: '0', ...next });
 
 function show(next: Partial<DiaryView>, locale = 'en') {
   const onRetry = vi.fn();

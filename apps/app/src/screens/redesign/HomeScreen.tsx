@@ -28,6 +28,7 @@ import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { V1Error } from '@mobile/api/client';
 import { isRedesignEnabled } from '@mobile/config/featureFlags';
 import { BunNote } from './ai/BunNote';
+import { useRefreshOnRevision } from './useRefreshOnRevision';
 import { playHaptic } from '@mobile/lib/hapticMoment';
 import { budgetLevel, crossedLevel } from '@mobile/spend/v1/redesign/milestones';
 import type { LevelSeen } from '@mobile/spend/v1/redesign/milestones';
@@ -632,6 +633,8 @@ export function HomeScreen({ now }: { now?: Date }) {
     };
   }, [resources, month, today]);
   useRefreshOnResolve(diaryView.outbox, loaded.refresh);
+  // A change another phone made was pulled into the diary: reload the money in place.
+  useRefreshOnRevision(diaryView.appliedRevision, loaded.refresh);
 
   const view = diary ? diaryView : null;
   const model = homeModel({ today, tc, locale, load: loaded, diary: view, earlierDays: EARLIER_DAYS });

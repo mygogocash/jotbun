@@ -16,7 +16,7 @@ const OCT = '2026-10';
 function diary(outbox: OutboxCommand[], overrides: Partial<DiaryView> = {}): DiaryView {
   return {
     phase: 'ready', lockReason: null, outcome: null, progress: null, pending: outbox.map((item) => item.payload), outbox, pendingChoices: [],
-    wallets: WALLETS.map(({ balance_minor: _balance, ...wallet }) => wallet), categories: [...BUILTINS, PETS], ...overrides,
+    wallets: WALLETS.map(({ balance_minor: _balance, ...wallet }) => wallet), categories: [...BUILTINS, PETS], appliedRevision: '0', ...overrides,
   };
 }
 
