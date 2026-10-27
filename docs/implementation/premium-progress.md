@@ -378,6 +378,48 @@ Phase 1A moves each person's ledger into one SQLite Durable Object, the UserVaul
   - There is no `attachment_id` column in 1A. `toDto` omits it, and omits null refs of the other type.
   - Sums must stay `CAST(... AS TEXT)`. SQLite's sum of integers is exact until the Durable Object SQL API returns it; without the cast it becomes a JavaScript number and loses precision above 2^53.
 
+### Task 6: budgets
+
+- **Status:** built and verified locally on `agent-aac244f4d094b532a`, on top of `60e2026`. Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - Budgets: `apps/edge/src/vault/domain/budgets.ts`. It ports `BudgetService`: `getBudget`, `putBudget`, and `readBudget` (the read `SummaryQuery` uses; a missing month is `undefined`, and `getBudget` turns that into 404). A put reads command headers before the body (R41, If-Match `optional`). Inside the command it deletes the month's limits, writes the overall, then inserts the limits, so the Task 1 triggers can check each step. Amounts are bound with `CAST(? AS INTEGER)` and read with `CAST(... AS TEXT)`.
+  - Protocol: `apps/edge/src/vault/commands/registry.ts` registers the `budget` entity (`isBudgetSnapshot`) and `budget.create` / `budget.replace` after categories, with the API's outcomes, schema version 1 and policy `current`.
+  - Routes: `apps/edge/src/vault/routes.ts` (two handlers) and `apps/edge/src/v1/routes.ts` (the two budget routes move from `VAULT_PENDING_ROUTES` into `VAULT_V1_ROUTES`, with the access, gates and status of the PostgreSQL table). The table is now 21 ported, 8 pending, 28 deferred and 6 retired, which is all 63 declared routes.
+  - Tests: `apps/edge/test/workers/budgets.test.ts` (20 cases, already on disk for the RED). `apps/edge/test/vault-route-coverage.test.ts` pins the two budget routes. No schema change.
+- **RED to GREEN:**
+  - RED, recorded before this implementation and not re-run, because the tests were not edited: `npm run test:edge:workers -- test/workers/budgets.test.ts` gave 19 failed and 1 passed (20). The pass was "another account's budget is NOT_FOUND", which is 404 for any unknown route until the route exists. The coverage pin failed as intended.
+  - GREEN: the same command gave `Test Files 1 passed (1)` and `Tests 20 passed (20)`.
+- **Mutation check:** `shasum -a 256` was recorded, and a copy of each file was kept outside the repo, before either mutant. Each mutant was applied in place, the focused file was run, and the file was restored. Both restores matched the original checksum.
+  - M1, `budget_limits_within_overall_insert` dropped from `0000_vault_core.sql`: `Tests 2 failed | 18 passed (20)`. Both database-backstop cases resolved instead of rejecting. The direct insert of a sublimit above the overall no longer threw, and the one-call parent-then-child insert no longer threw.
+  - M2, the service no longer refuses an income category (`category.type !== 'expense'` removed, trigger left in place): `Tests 1 failed | 19 passed (20)`. "sublimits need owned, active expense categories" failed: the put became a 500 (`vault_call_failed`) and `fields` was missing, where the case expects `category_limits`.
+  - Restored checksums (sha256, first 8 hex): `budgets.ts` fa8e0f30, `0000_vault_core.sql` d0329a4d (unchanged by the task), `registry.ts` 0e1308bc, `vault/routes.ts` 8b563247, `v1/routes.ts` e14a8960, `budgets.test.ts` 9ffc7bc0, `vault-route-coverage.test.ts` 706a339c.
+- **Gate** (repo root). The command is `npm run typecheck:edge && npm run test:edge && npm run test:edge:workers && npm run build:edge && npm run test:edge:db`.
+  - An earlier full run, while sibling worktrees were busy, timed out `sync.test.ts` "defaults to 200 groups a page and refuses more than 1,000" at 5000ms (5099ms, then 5023ms). Alone, that case passed in 1.91s with this registry and in 3.36s against the previous registry, so the timeout was load, not the budget port.
+  - The recorded run then passed typecheck, `test:edge` 121 (9 files), `test:edge:workers` 182 (8 files) and `build:edge`. `dist/jotbun_vault/index.js` has no `pg` or `drizzle-orm/node-postgres` import. `test:edge:db` in that same command gave `Tests 2 failed | 60 passed (62)`: the two parity sessions timed out at 30000ms. Postgres on 127.0.0.1:55432 was up and `gogospend-postgres-v1-local` was healthy, so it was not restarted.
+  - Rerun of `npm run test:edge:db` once, as the contention rule allows: `Tests 62 passed (62)` (8 files).
+- **Ported in full:** the HTTP cases from `budgets.integration.spec.ts` and `m4-hardening.integration.spec.ts`: create and replace, version conflict, two creates at once, minor range, duplicate and over-sum sublimits, owned active expense categories, a limit kept across rename and archive, month shape, unknown field, a missing month on replace, `category_limits` not a list, and another account's 404.
+- **Ported in part:**
+  - "refuses, at commit, sublimits that add up to more than the overall limit, from either side" and the income insert. PostgreSQL reports `23514` / `23503` at commit. The vault asserts the Task 1 trigger messages (`exceed the overall budget`, `expense category`) on a direct `sqlExec`.
+  - "a parent lowering and a child insert committing together". Two transactions and a barrier cannot be ported: one vault call is one `transactionSync`. The case runs both orders in one call and checks the rollback leaves overall `1000` and limits `600`.
+  - "a replacement lowers the overall limit under the old sublimits when the new ones fit, and reads them back in category order" and "its change is served by the sync feed as the persisted budget" are in the workers file. The first is the immediate-trigger order. The second is the registered `budget` snapshot on `GET /v1/sync/changes`.
+- **Not applicable** (PostgreSQL roles and grants, row-level security, connection pools, isolation levels or lock waits):
+  - "deleting an account removes its budgets and sublimits" and "a deletion routine run by a worker role that cannot read budgets still succeeds". Account deletion is 1B. The vault has no roles or grants.
+  - "history and summary read from one REPEATABLE READ, READ ONLY snapshot". The vault has no isolation level. A call is one transaction.
+  - "another account's budget is NOT_FOUND" holds by addressing: the other account is another vault. There is no row-level security to port.
+  - The history cursor, the history dates, and "budget usage keeps a sublimit whose category was archived later" wait for Task 7, which owns those routes. The workers file says so.
+- **Deviations:**
+  1. The API updates the overall and then deletes limits, because its check is a deferred constraint. SQLite runs the Task 1 triggers immediately, so that order refuses a legal replacement whose new overall is under the old sublimits. The put deletes limits, writes the overall, then inserts limits.
+  2. Category checks call `categoryById` once per limit (at most `MAX_BUDGET_CATEGORY_LIMITS`, 100). The API uses `= ANY($1::uuid[])`. No query binds one `?` per id (R57). `archived` is compared as `=== 1`.
+  3. `readBudget` is exported. The brief names `getBudget` and `putBudget`. The API exports `readBudget` for the summary, and Task 7 needs a read that does not 404.
+  4. `buildVaultRegistry` places `budget` directly after `category`. `buildContainer` constructs transactions between them. Task 5 is not in this worktree, so its block is not here yet.
+- **SKIPPED (hosted):** none. No cloud resource was touched.
+- **Notes for Task 5 and Task 7:**
+  - Task 5: insert the transaction block in `buildVaultRegistry()` before the budget block, so the order stays wallets, categories, transactions, budgets.
+  - `readBudget(c, month)` takes `YYYY-MM` and returns `undefined` when the month is unset. The row's month is `YYYY-MM-01`. Do not use `getBudget` for the summary; that 404s.
+  - `categoryById` still returns `archived` as 0 or 1. A limit already on the budget may name an archived expense category; a new reference may not.
+  - The registry now names the entity `budget`. Sync serves it. Task 8b's registry parity check has to cover `budget` as well as `category` and `transaction`.
+- **Integration (27 Oct):** merged with Task 5 (PR #81). The registry is wallet, category, transaction, budget, in `buildContainer`'s order. The route table is now 26 ported, 3 pending (Task 7's history and summary), 28 deferred and 6 retired. On the merged tree: `typecheck:edge` passes, `test:edge` 130 passed (10 files), `test:edge:workers` 233 passed (11 files; Task 5's 213 plus these 20).
+
 ## 1B: files and background work on the vault
 
 Phase 1B moves files and background work onto each person's vault (spec `docs/superpowers/specs/2026-10-25-jotbun-bun-wallet-cloudflare-design.md`, §8 phase 1, second part). The owner approved the `apps/api` edit that this task needs (Q1, 25 October 2026; spec §6.1, which keeps `apps/api` read-only apart from that exception). Task 1 makes the statement parser a stateless HTTP process in the API image: bytes in, a parse outcome out.
