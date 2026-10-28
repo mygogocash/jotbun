@@ -1,14 +1,22 @@
 // useEntrySave, probed without the Quick add screen: a fixed expense draft,
 // the diary or the online command, and what the caller is told afterwards.
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+// Then Quick add itself, for what the move must keep: a sum worked out the
+// moment Save is pressed, and Tell Bun's often-logged chips.
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { ReactElement } from 'react';
 import { IntlProvider } from 'react-intl';
 import { Pressable, Text } from 'react-native';
 import { afterEach, beforeAll, expect, test, vi } from 'vitest';
 
 vi.mock('expo-crypto', () => ({ randomUUID: () => globalThis.crypto.randomUUID() }));
+vi.mock('expo-router', () => ({ useRouter: () => ({ push: () => undefined, replace: () => undefined, back: () => undefined }), useLocalSearchParams: () => ({}) }));
+vi.mock('expo-status-bar', () => ({ StatusBar: () => null }));
+vi.mock('react-native-safe-area-context', () => import('../../../dev/catalogue/safeAreaTestStub'));
 
-import type { WalletSnapshot } from '@gogospend/contracts';
+import type { TransactionDto, WalletSnapshot } from '@gogospend/contracts';
 import { haptics } from '@mobile/lib/haptics';
 import { installBrowserStorage } from '@mobile/mascot/mascotTestHarness';
 import type { QuickAddDraft } from '@mobile/spend/v1/redesign/quickAddModel';
@@ -17,12 +25,14 @@ import { SpendDiaryProvider } from '@mobile/spend/v1/SpendDiaryContext';
 import type { SpendDiary } from '@mobile/spend/v1/spendDiary';
 import { SpendV1Provider } from '@mobile/spend/v1/SpendV1Context';
 import { createFakeDiary } from '@mobile/spend/v1/testing/fakeDiary';
-import { createFakeResources } from '@mobile/spend/v1/testing/fakeResources';
+import { BUILTINS, createFakeResources, goldenSeed } from '@mobile/spend/v1/testing/fakeResources';
 import type { SpendV1Resources } from '@mobile/spend/v1/resources';
-import { keypadFromMinor } from '@mobile/ui/keypadExpression';
-import type { KeypadState } from '@mobile/ui/keypadExpression';
+import { EMPTY_KEYPAD, applyKey, keypadDisplay, keypadFromMinor } from '@mobile/ui/keypadExpression';
+import type { KeypadKey, KeypadState } from '@mobile/ui/keypadExpression';
+import { mountScreen, NOW } from '../HistoryTestHarness';
+import { QuickAddScreen } from '../QuickAddScreen';
 
-import type { EntryTrack, SavedEntry } from './entrySave';
+import type { EntryTrack, SaveAttempt, SavedEntry } from './entrySave';
 import { useEntrySave } from './entrySave';
 
 const TODAY = '2026-10-18';
@@ -47,6 +57,9 @@ function expenseDraft(): QuickAddDraft {
 }
 
 const KEYPAD: KeypadState = keypadFromMinor('6500');
+/** 12.50 + 7.25, typed and not yet worked out. */
+const SUM_KEYS: readonly KeypadKey[] = ['1', '2', '.', '5', '0', 'add', '7', '.', '2', '5'];
+const SUM: KeypadState = SUM_KEYS.reduce((state, key) => applyKey(state, key), EMPTY_KEYPAD);
 
 beforeAll(() => {
   installBrowserStorage();
@@ -65,6 +78,7 @@ function Probe({
   track,
   onSaved,
   savedHaptic,
+  onAttempt,
 }: {
   draft: QuickAddDraft;
   wallets: readonly WalletSnapshot[];
@@ -72,6 +86,7 @@ function Probe({
   track?: EntryTrack;
   onSaved?: (saved: SavedEntry) => void;
   savedHaptic?: 'quickAdd' | 'success';
+  onAttempt?: (attempt: SaveAttempt) => void;
 }) {
   const entrySave = useEntrySave({ today: TODAY, onSaved, savedHaptic });
   return (
@@ -82,7 +97,7 @@ function Probe({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Save entry"
-        onPress={() => { void entrySave.save({ draft, keypad, wallets, track }); }}
+        onPress={() => { void entrySave.save({ draft, keypad, wallets, track }).then(onAttempt); }}
       >
         <Text>Save entry</Text>
       </Pressable>
@@ -113,7 +128,8 @@ test('a device save calls onSaved once, after the diary kept it', async () => {
   });
   mount(<Probe draft={expenseDraft()} wallets={WALLETS} keypad={KEYPAD} onSaved={onSaved} />, resources(), diary.diary);
   fireEvent.click(saveButton());
-  await act(async () => { await Promise.resolve(); });
+  // The diary holds the save: nothing is reported until it keeps the entry.
+  await waitFor(() => expect(release).toBeTypeOf('function'));
   expect(onSaved).not.toHaveBeenCalled();
   await act(async () => { release(); });
   await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
@@ -209,4 +225,63 @@ test('savedHaptic success plays success for a phone-kept save; Quick add\'s defa
   await waitFor(() => expect(screen.getByTestId('status').textContent).toBe('saved'));
   expect(light).toHaveBeenCalled();
   expect(success).not.toHaveBeenCalled();
+});
+
+test('the attempt hands back the keypad as Save leaves it: a sum worked out, a plain amount as typed', async () => {
+  const attempts: SaveAttempt[] = [];
+  mount(<Probe draft={expenseDraft()} wallets={WALLETS} keypad={SUM} onAttempt={(attempt) => attempts.push(attempt)} />, resources(), null);
+  fireEvent.click(saveButton());
+  await waitFor(() => expect(attempts).toHaveLength(1));
+  expect(screen.getByTestId('status').textContent).toBe('saved');
+  expect(attempts[0].settledKeypad ? keypadDisplay(attempts[0].settledKeypad) : null).toBe('19.75');
+
+  cleanup();
+  attempts.length = 0;
+  mount(<Probe draft={expenseDraft()} wallets={WALLETS} keypad={KEYPAD} onAttempt={(attempt) => attempts.push(attempt)} />, resources(), null);
+  fireEvent.click(saveButton());
+  await waitFor(() => expect(attempts).toHaveLength(1));
+  expect(attempts[0].settledKeypad).toBeNull();
+});
+
+test('Quick add shows a sum worked out the moment Save is pressed, while the save is still on its way', async () => {
+  const fake = createFakeResources(goldenSeed());
+  mountScreen(<QuickAddScreen now={NOW} />, { resources: fake.resources });
+  await screen.findByRole('group', { name: 'Keypad' });
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+  for (const name of ['1', '2', 'Decimal point', '5', '0', 'Plus sign', '7', 'Decimal point', '2', '5']) {
+    fireEvent.click(within(screen.getByRole('group', { name: 'Keypad' })).getByRole('button', { name }));
+  }
+  const amount = () => screen.getByTestId('quick-add-amount').textContent ?? '';
+  expect(amount()).toContain('12.50 + 7.25');
+  const release = fake.hold('createTransaction');
+  fireEvent.click(screen.getByRole('button', { name: 'Save entry' }));
+  expect(await screen.findByRole('button', { name: 'Saving…' })).toBeTruthy();
+  expect(amount()).not.toContain('12.50 + 7.25');
+  expect(amount()).toContain('19.75');
+  await act(async () => { release(); });
+  expect(await screen.findByText('Saved')).toBeTruthy();
+  expect(fake.callsOf('createTransaction')[0].args[0]).toMatchObject({ amount_minor: '1975' });
+});
+
+test('the moved rules keep money out of floating point', () => {
+  const here = dirname(fileURLToPath(import.meta.url));
+  for (const file of ['entryHelpers.ts', 'entryReferences.ts', 'entrySave.ts']) {
+    const source = readFileSync(join(here, file), 'utf8');
+    expect(source, file).not.toMatch(/parseFloat|parseInt|toFixed|Number\(|Math\./);
+  }
+});
+
+test("Quick add still offers Tell Bun's often-logged chips from the records it loaded", async () => {
+  const seed = goldenSeed();
+  const lunch = (n: number, occurredOn: string) => ({
+    id: `0000000b-0000-4000-8000-0000000000e${n}`, type: 'expense', amount_minor: '5000', occurred_on: occurredOn, wallet_id: seed.wallets[0].id,
+    category_id: BUILTINS[0].id, note: null, merchant: 'ข้าวมันไก่', deleted_at: null, version: 1,
+  }) as TransactionDto;
+  const fake = createFakeResources({ wallets: seed.wallets, records: [...seed.records, lunch(1, '2026-09-27'), lunch(2, '2026-09-28')] });
+  mountScreen(<QuickAddScreen now={NOW} />, { resources: fake.resources });
+  await screen.findByRole('group', { name: 'Keypad' });
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+  fireEvent.click(screen.getByTestId('quick-add-tell-bun'));
+  expect(await screen.findByText('Often logged:')).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'ข้าวมันไก่ 50' })).toBeTruthy();
 });

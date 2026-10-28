@@ -71,7 +71,7 @@ import { TellBunSheet } from './ai/TellBunSheet';
 import { earliestFor, firstDraft, keypadFor, KEYPAD_PROBLEM_TEXT, ordered, rank, walletChoices, withDefaults } from './entry/entryHelpers';
 import type { CopySource, Ranking } from './entry/entryHelpers';
 import { useEntryReferences } from './entry/entryReferences';
-import { useEntrySave } from './entry/entrySave';
+import { keypadShownOnSave, useEntrySave } from './entry/entrySave';
 import type { SavedEntry } from './entry/entrySave';
 import { Notice } from './HistoryParts';
 
@@ -160,9 +160,10 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
   const [keypad, setKeypad] = useState<KeypadState>(() => keypadFor(source));
   const [details, setDetails] = useState(() => Boolean(source?.note || source?.merchant));
   const [sheet, setSheet] = useState<'categories' | 'wallet' | 'tellBun' | null>(null);
-  const entrySave = useEntrySave({ today });
+  const [savedCount, setSavedCount] = useState(0);
+  const entrySave = useEntrySave({ today, onSaved: () => setSavedCount((count) => count + 1) });
   const { status, message, errors, serverErrors, resendBlocked, saved, locked } = entrySave;
-  const pop = useSpringPop(saved);
+  const pop = useSpringPop(savedCount);
   const type: EntryType = current.type;
 
   /** The first touch fixes the category order and the draft's defaults. */
@@ -184,10 +185,14 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
 
   async function save() {
     if (status === 'saving' || status === 'saved' || status === 'blocked' || status === 'conflict' || resendBlocked) return;
-    // An online save whose outcome is unknown is resent as itself; the first touch already happened.
-    if (status !== 'unconfirmed') touch();
+    // An online save whose outcome is unknown is resent as itself: no first touch, and the amount stays as shown.
+    if (status !== 'unconfirmed') {
+      touch();
+      // Save presses = for the user at once, before the save is on its way.
+      const shown = keypadShownOnSave(keypad);
+      if (shown) setKeypad(shown);
+    }
     const attempt = await entrySave.save({ draft: current, keypad, wallets });
-    if (attempt.settledKeypad) setKeypad(attempt.settledKeypad);
     if (attempt.openDetails) setDetails(true);
   }
 

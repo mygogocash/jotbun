@@ -41,6 +41,16 @@ type PendingSend = { input: CreateInput; fields: QuickAddDraft; track: EntryTrac
 
 const NOTHING: SaveAttempt = { settledKeypad: null, openDetails: false };
 
+/**
+ * What Save leaves on the keypad: a sum worked out, or a refused amount with
+ * its problem; a plain amount stays as typed (null). Quick add shows it the
+ * moment Save is pressed, before the save is on its way, as it always has.
+ */
+export function keypadShownOnSave(keypad: KeypadState): KeypadState | null {
+  const settled = settleForSave(keypad);
+  return !settled.outcome.ok || keypadHasOperator(keypad) ? settled.state : null;
+}
+
 export function useEntrySave(options: { today: string; onSaved?: (saved: SavedEntry) => void; savedHaptic?: 'quickAdd' | 'success' }): EntrySave {
   const { today, onSaved, savedHaptic = 'quickAdd' } = options;
   const resources = useSpendV1();
@@ -148,7 +158,7 @@ export function useEntrySave(options: { today: string; onSaved?: (saved: SavedEn
     }
     // Save presses = for the user; a sum is shown worked out, a plain amount stays as typed.
     const settled = settleForSave(input.keypad);
-    const settledKeypad = !settled.outcome.ok || keypadHasOperator(input.keypad) ? settled.state : null;
+    const settledKeypad = keypadShownOnSave(input.keypad);
     const fields: QuickAddDraft = { ...input.draft, amountMinor: settled.outcome.ok ? settled.outcome.minor : '' };
     const built = buildQuickAdd(fields, { today, tc });
     const next: Errors = built.ok ? {} : { ...built.errors };

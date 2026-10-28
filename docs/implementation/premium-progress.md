@@ -793,3 +793,57 @@ Phase P2 builds the Bun Wallet area on the app. Task 7 replaces the Thai everyda
   - The spec's C3 line says a pack category is tagged with a `pack_key`. This task recognises one by its folded name. Nothing is stored. 1D can take its allow-list from `THAI_EVERYDAY_PACK.map((item) => item.key)`.
   - R81: wallet types were not touched. No `ewallet`.
   - `packKeyOf` and `missingPackItems` share `foldedNames`, so an alias matches both. The named `packKeyOf` test uses the primary Thai name, with spaces. Dropping aliases fails the earlier-pack test.
+
+### P2 Task 5: Quick add's loading and save rules in hooks
+
+- **Status:** built and verified locally on `p2/t5-quick-add`, merged with `origin/claude/p1a-vault-core` at `bdf6b12`. The integration head has since moved to `75b3625`, which the orchestrator merges when opening the PR. Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - `apps/app/src/screens/redesign/entry/entryHelpers.ts`: the old helpers, moved unchanged apart from `export`, plus `ordered`.
+  - `apps/app/src/screens/redesign/entry/entryReferences.ts`: `useEntryReferences`, with the three loads, the device lists, the frozen lists, the copy source and `availableBalances`.
+  - `apps/app/src/screens/redesign/entry/entrySave.ts`: `useEntrySave` (finish, the online send, save and the cheer-day read, with `track` and `savedHaptic`) and `keypadShownOnSave`.
+  - `apps/app/src/screens/redesign/entry/entrySave.render.test.tsx`: nine tests, the plan's five and four more.
+  - `apps/app/src/screens/redesign/QuickAddScreen.tsx`: renders from the hooks. The Tell Bun lines and the often-logged chips are unchanged.
+- **How it was built:** an earlier session made the move and committed it as WIP `1247b43` before the merge (merge `0efd5fa`). This commit adds the RED record, the Save-time sum fix, the saved-pop counter, four tests and the checks.
+- **RED to GREEN:**
+  - The plan's five, against a placeholder `save` (one inserted line, restored by checksum): RED 5 failed, 0 passed; GREEN 5 passed.
+  - The new tests on the WIP screen: RED 1 failed, 8 passed (the Save-time sum test); GREEN 9 passed.
+- **Quick add's count:** 81 passed before the move (on a scratch copy of `bdf6b12`) and 81 after. The catalogue: 262 passed. Both suites are unchanged.
+- **Mutation check:** the brief's M1 to M10 (with M3b, and the Quick add form of M10), plus M11 and M12 for the new guards. The checksum matched after every restore.
+  - M1 (`onSaved` before the diary keeps the save): 1 failed, 8 passed.
+  - M2 (`settle('create')` even while the outcome is unknown): 1 failed, 8 passed.
+  - M3 (a phone-kept save always `saveQueued`): 1 failed, 8 passed. M3b (the default haptic is `success`): 1 failed, 8 passed.
+  - M4 (a resend passes the new call's track, not the first attempt's): 1 failed, 8 passed.
+  - M5 (`isOwnCreate` in place of `ownCreateMatches`): 1 failed, 8 passed.
+  - M6 (Quick add drops `setKeypad(shown)`): 1 failed, 8 passed.
+  - M7 (the attempt hands back `null`): 1 failed, 8 passed.
+  - M8 (`keypadShownOnSave` ignores operators): 2 failed, 7 passed.
+  - M9 (`often={[]}`): 1 failed, 8 passed.
+  - M10 (`records: NO_RECORDS` in `entryReferences.ts`): the save suite 1 failed, 8 passed; the Quick add suite 4 failed, 77 passed.
+  - M11 (extra: `keypadShownOnSave` drops `!settled.outcome.ok`): the save suite 9 passed, so it survives there. The Quick add suite 3 failed, 78 passed (`refuses nothing typed`, `refuses zero` and `refuses zero from 000` fail). Killed at Quick add, and no test was added. The save suite does not pin the refused-amount rule on its own.
+  - M12 (extra: Quick add's `status !== 'unconfirmed'` guard forced true): the Quick add suite 81 passed, so it survives. Equivalent: `locked` includes `unconfirmed`, so the keypad keeps the amount the first attempt settled, for which `keypadShownOnSave` returns `null`, and `touch()` returns early once `frozenRanking` is set. The guard itself is the original code.
+- **Gate** (worktree root):
+  - `npm run typecheck:app`: passed (`tsc --noEmit`, exit 0).
+  - `npm run typecheck:routes -w gogospend-app`: passed (exit 0).
+  - `npm run test:app`: passed (exit 0). 29 tests, 29 passed, 0 failed.
+  - `npm run test:unit`: passed (exit 0). 734 tests, 734 passed, 0 failed, including `src/i18n/catalogs.test.ts`, which scans `entry/` for `tc()` literals.
+  - `npm run test:render -w gogospend-app`, the full suite once: passed (exit 0). 84 files, 1,598 tests passed, 0 failed. The three files were restored byte for byte after the M11 and M12 runs, so this run covers the committed content.
+  - `npm run export:web -w gogospend-app -- --max-workers 2`: passed (exit 0). `dist/` is gitignored and not committed.
+  - `git diff --check`: clean.
+  - Focused, before the full suite: `entrySave.render.test.tsx` 9 passed; `QuickAddScreen.render.test.tsx` 81 passed; `TellBunSheet.render.test.tsx` 7 passed; `CatalogueScreen.render.test.tsx` 262 passed.
+- **Behaviour kept:** the device and online save rules; the frozen resend with the same command key; `isOwnCreate`; the cheer at most once a day; the haptics (Quick add keeps `saveQueued` for a phone-kept save); the load and copy problems with the same buttons; the frozen lists; move all's balances; Tell Bun and its often-logged chips.
+- **Not applicable:** no database, no vault query, and no analytics event (R61).
+- **SKIPPED:** device and simulator checks, because the move changes no pixel of the screen. Nothing deployed or hosted.
+- **Deviations:**
+  1. `keypadShownOnSave` is a new export from `entrySave.ts`, not in the plan's interface. Quick add shows a sum worked out the moment Save is pressed, as before the move, and `SaveAttempt.settledKeypad` comes from the same function. When the WIP applied `settledKeypad` after the await, "12.50 + 7.25" stayed on screen until the answer came back.
+  2. Quick add keeps its saved-pop counter, now advanced from `onSaved`. The WIP had switched the token to `saved`.
+  3. Test 1 waits until the diary holds the save before checking that nothing was reported, so a placeholder fails it on an assertion.
+  4. Four tests beyond the plan's five: the attempt's settled keypad; the Save-time sum on Quick add; floating point in the three moved files (Quick add's own source check reads only `QuickAddScreen.tsx`); Tell Bun's often-logged chips on Quick add.
+  5. `ordered` is exported from `entryHelpers.ts` as well as the plan's list.
+  6. The planner checked `e546bee`. This branch merged `bdf6b12`, which contains `e546bee`. Quick add's paths did not change between `60e2026` and `bdf6b12`.
+- **Notes for the integrator:**
+  - The integration head is `75b3625`. Quick add's paths did not change from `bdf6b12` to `75b3625`, and `package-lock.json` did not change from `60e2026` to `75b3625`, so no `npm ci` is needed for the lockfile.
+  - The three-dot diff against `origin/claude/p1a-vault-core` lists exactly the five task files. A two-dot diff also lists the upstream changes.
+- **Notes for later tasks:**
+  - 1D-T7 adds `trackRecordSaved` inside `finish` in `entry/entrySave.ts`, reading `track`. Quick add passes no `track` yet, so 1D-T7 also passes one from Quick add's save (`source: 'typed'` or `'tell_bun'`).
+  - 1D-T5 puts Quick add's `useRefreshOnRevision` into `useEntryReferences`.
+  - P2-T14 and P2-T16 call `useEntrySave` with `savedHaptic: 'success'` and `onSaved`. A tray shows `keypadShownOnSave(keypad)` at the press, or `attempt.settledKeypad` afterwards.
