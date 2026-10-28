@@ -920,3 +920,39 @@ Phase P2 builds the Bun Wallet area on the app. Task 7 replaces the Thai everyda
   - `src/ui/dynamicType.test.ts` scans `src/screens/redesign`, `src/ui` and `src/mascot`, not `src/wallet`. `WalletText`'s cap is held by its own render test; a raw `Text` or `TextInput` in `src/wallet` needs its own `maxFontSizeMultiplier` until a sweep covers the folder (P2-T37).
   - `amountMaxScale` is for `WalletAmount` (P2-T10); `materialPaint` for `MaterialFill` (P2-T11); `calendarPaint`, `CALENDAR_STEP_LIMITS_BAHT`, `barPast`, `barNow` and `guideLine` for P2-T31.
   - Merging: P2-T3 (PR #79) and P2-T4 (PR #78) were cut from `60e2026` and add their own `## P2: Bun Wallet core` heading earlier in this file; this receipt sits under the existing heading at the end. Keep both sides.
+
+## P4: Slips and statements
+
+Phase P4 reads Thai bank slips into slip drafts, imports bank statements and sends pushes. Task 10 teaches the statement parser real Thai bank exports and gives every table a header fingerprint.
+
+### P4 Task 10: The parser learns Thai bank exports
+
+- **Status:** built and verified locally on `p4/t10-thai-bank-exports`, on top of `d193a68`. Not pushed. The independent review is the controller's.
+- **Files:** `apps/api/src/imports/parsers/bank.ts` and `bank-statements.spec.ts` (new, 15 tests); `parsers/table.ts` (header search, bank roles, era, fingerprint), `parsers/date.ts` (`era`, `twoDigitYear`), `parsers/protocol.ts` and `parsers/receipt.ts` (the key), `parser-runner.ts` (the validator), `parse-outcome.ts` (the preview), `fixtures/synthetic-parse.ts` (`bankCsvTh`, `bankXlsxEn`), `parse-server.spec.ts` and `parser-runner.spec.ts` (the key; seven validator cases). The key only (ruling R84): `fixtures/probes/ballast-probe.ts`, `import-preview.integration.spec.ts`, `apps/api/src/attachments/attachments.integration.spec.ts`.
+- **RED to GREEN:** RED against typed stubs (0, null, `''` and false; the preview passing null; the validator checking only that the key is there): `npm run test:api -- bank-statements parse-server`: 16 failed, 9 passed; `npm run test -w gogospend-api -- parser-runner -t "re-validates"`: 6 failed, 25 passed, 209 skipped. Every failure an assertion. GREEN: `npm run test:api -- bank-statements parse-server`: 25 passed; `npm run test -w gogospend-api -- parser-runner -t "re-validates"`: 31 passed, 209 skipped; `npm run test:api -- parser-runner parse-server parse-worker`: 253 passed.
+- **Mutation check:** 25 mutants (`mutate.py`), 25 killed. The plan's three: one money column makes a bank export (`every other file parses exactly as before`); every two-digit year Buddhist (`two-digit years take the era that puts the whole file within ten years before today`); the fingerprint from the first data row (`the header fingerprint is the same for two files of one layout and differs for another`). Survivors: none. Every file restored byte for byte; `final.sha256` matched.
+- **Gate:** (worktree root)
+  - `npm run typecheck`: passed (contracts and API).
+  - `npm run test:api`: `Test Suites: 45 passed, 45 total`; `Tests: 977 passed, 977 total` (at `d193a68`, before the task: 44 and 955). Passed on the first run; no rerun.
+  - `npm run build -w gogospend-api`: `Successfully compiled: 295 files with swc`.
+  - `node apps/api/scripts/release-graph.mjs check`: `"files": 150`, the nine direct packages, `"closure_packages": 123`, `"problems": []`.
+  - `node apps/api/scripts/parser-sandbox-check.cjs`: `{"node":"26.12.1","sandbox":{"supported":true},"ok":true}`.
+  - A parse through the built, sandboxed child (it stands in for the Docker proof): sandbox supported; the CSV and the XLSX each give rows `row:8` to `row:12` with the issues `missing_amount`, none, none, none and `type_conflict`; their fingerprints are in the notes below.
+  - Edge: `npm run install:edge`: added 202 packages; `npm run typecheck:edge`: passed; `npm run test:edge`: `Test Files 11 passed (11)`, `Tests 145 passed (145)`; `npm run build:edge`: passed; `npm run test:edge:workers` (under the heavy lock): `Test Files 13 passed (13)`, `Tests 248 passed (248)`.
+  - `git diff --check`: no output before the commit; `git diff --check origin/claude/p1a-vault-core...HEAD`: no output after it.
+- **Deviations:**
+  1. Three test-only files beyond the plan's two named specs gain only `header_fingerprint: null` (ruling R84): the two integration specs build whole parse results (the typecheck), and the ballast probe's fake child output must pass the strict validator.
+  2. The header search runs for every table, as `findHeaderRow` is defined. A file that parsed before parses the same way; a non-bank file whose header sits under title rows now parses instead of `unrecognized_columns`.
+  3. A bank export does not read an `amount` or `type` column; it is reported as `unmapped_columns`.
+  4. Of several descriptor or details columns, the one named first in the plan's list is read (`รายละเอียด` before `ช่องทาง`), the others ignored.
+  5. An empty, `-` or zero money cell holds no amount (`0.00` in the unused column).
+  6. A bank export keeps its own wallet column and its currency column (other than THB: `unsupported_currency`, the type kept); the amount convention is read over both money columns.
+  7. The era window is counted in years: today's year and the ten before it.
+  8. The validator refuses a success without the key and a receipt with a fingerprint.
+  9. Tests beyond the plan's list: the wallet, currency and extra-column case, the separator case, five helper tests and seven validator cases.
+- **SKIPPED:** `npm run test:db -w gogospend-api -- import-preview`, `npm run test:edge:db` and the optional Docker proof: Docker is not running on this machine; CI runs the database suites. The built, sandboxed child parsed both fixtures instead (gate item 6). Nothing deployed; no cloud resource.
+- **Notes for later tasks:**
+  - P4-T11: the parse server's reply carries `record.preview.header_fingerprint` (64 lowercase hex for a CSV or XLSX, null for an image or a rejected file). The PostgreSQL path (`parse-handler.ts`) does not store it.
+  - The fingerprints of the two fixtures: `bankCsvTh` `6dee12c3f79691c69f3f71d860d7dcd70ae44becd539d60182f76bede49e439c`, `bankXlsxEn` `effc645c4941a020545019c20fe60ba3ee3acc697410d15241ca5fc4240cd67a` (each a hash of its normalized header only).
+  - Any fake child output must now carry `header_fingerprint` (null for a receipt), or the worker refuses it as `output_invalid`.
+  - The owner's own export (Q10) is still the phase proof; a real layout may need more role names in `BANK_NAMES`.

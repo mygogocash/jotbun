@@ -247,6 +247,50 @@ export const UNKNOWN_FIELDS_CSV = csv([
 ]);
 
 // ---------------------------------------------------------------------------
+// Thai bank exports (P4-T10): made-up statements in a bank's own layout
+// ---------------------------------------------------------------------------
+
+/**
+ * A Thai bank's CSV statement: six preamble rows (the masked account on the
+ * third; a lone date row and a lone amount row the header search must pass
+ * over), the header on record 7, then five rows in two-digit Buddhist years
+ * (69 is 2569, 2026): a balance brought forward (no amount), a card payment
+ * written negative, a transfer in, a cash withdrawal with 0.00 in the deposit
+ * column, and a row with both columns filled.
+ */
+export const bankCsvTh = csv([
+  'รายการเดินบัญชีเงินฝาก,ธนาคารสังเคราะห์',
+  'ชื่อบัญชี,บัญชีทดสอบสังเคราะห์',
+  'บัญชีออมทรัพย์,xxx-x-x1234-x',
+  'วันที่,24/10/2569',
+  'ยอดเงิน,"8,250.00"',
+  'ช่วงวันที่,01/10/2569 - 24/10/2569',
+  'วันที่,เวลา,รายการ,ถอนเงิน,ฝากเงิน,ยอดคงเหลือ,ช่องทาง,รายละเอียด',
+  '01/10/69,08:15,ยอดยกมา,,,"10,000.00",,',
+  '03/10/69,09:30,POS PURCHASE,"-1,500.00",,"8,500.00",EDC,ร้านเครื่องเขียน',
+  '15/10/69,12:00,รับโอนเงิน,,"25,000.00","33,500.00",K PLUS,บริษัท สังเคราะห์ จำกัด',
+  '20/10/69,18:45,ถอนเงินสด,500.00,0.00,"33,000.00",ATM,',
+  '24/10/69,10:05,ปรับปรุงรายการ,100.00,100.00,"33,000.00",,',
+]);
+
+/** The same statement as an English XLSX export: English preamble and header, Excel date serials (46296 is 2026-10-01), numbers as numbers, an upper-case mask. */
+export const BANK_XLSX_EN_ROWS: CellSpec[][] = [
+  ['Statement of Account', 'Synthetic Bank'],
+  ['Account Name', 'Synthetic Test Account'],
+  ['Savings Account', 'XXX-X-X1234-X'],
+  ['Date', '24/10/2026'],
+  ['Amount', '8,250.00'],
+  ['Period', '01/10/2026 - 24/10/2026'],
+  ['Date', 'Time', 'Transaction', 'Withdrawal', 'Deposit', 'Balance', 'Channel', 'Details'],
+  [{ date: '46296' }, '08:15', 'ยอดยกมา', null, null, 10000, null, null],
+  [{ date: '46298' }, '09:30', 'POS PURCHASE', -1500, null, 8500, 'EDC', 'ร้านเครื่องเขียน'],
+  [{ date: '46310' }, '12:00', 'รับโอนเงิน', null, 25000, 33500, 'K PLUS', 'บริษัท สังเคราะห์ จำกัด'],
+  [{ date: '46315' }, '18:45', 'ถอนเงินสด', 500, 0, 33000, 'ATM', null],
+  [{ date: '46319' }, '10:05', 'ปรับปรุงรายการ', 100, 100, 33000, null, null],
+];
+export const bankXlsxEn = buildXlsx({ sheets: [{ rows: BANK_XLSX_EN_ROWS }] });
+
+// ---------------------------------------------------------------------------
 // Images
 // ---------------------------------------------------------------------------
 
