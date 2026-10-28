@@ -14,7 +14,8 @@
 //   first", a confirm, a fresh sign-in for `deletion`, then the receipt of the
 //   request, with what became of this phone's copy (`settleDeviceCopy`: erased
 //   only after a confirmed acceptance, locked after a refusal, otherwise
-//   kept). Done signs this device out.
+//   kept). A confirmed erase also forgets this account's kept wallet looks.
+//   Done signs this device out.
 //
 // Today's build has no fresh sign-in (the Auth0 SDK arrives with E1/E2), so
 // both actions say plainly that they can't be done yet; nothing pretends.
@@ -35,6 +36,7 @@ import type { DeletionPhase, DeviceCopyOutcome, ExportPhase, ExportScope, IdleNo
 import { unsyncedEntries } from '@mobile/spend/v1/redesign/account/settingsModel';
 import { useDiaryView, useSpendDiary } from '@mobile/spend/v1/SpendDiaryContext';
 import { todayInBangkok } from '@mobile/spend/v1/viewModels';
+import { eraseAccountKept } from '@mobile/wallet/store/deviceWalletStore';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { BunText } from '@mobile/ui/BunText';
 import { OutlinedCard } from '@mobile/ui/Card';
@@ -307,6 +309,7 @@ function DeleteCard({ services }: { services: PrivacyServices }) {
 
   /** deletion.ts's outcome, and this phone's copy settled by its one rule. */
   async function settle(result: DeletionState) {
+    const accountId = view.accountId;
     let device: DeviceCopyOutcome = 'none';
     if (diary) {
       try {
@@ -315,6 +318,7 @@ function DeleteCard({ services }: { services: PrivacyServices }) {
         device = 'erase_failed';
       }
     }
+    if (device === 'erased' && accountId !== null) await eraseAccountKept(accountId).catch(() => undefined);
     if (live()) setPhase(deletionPhase(result, device));
   }
 
