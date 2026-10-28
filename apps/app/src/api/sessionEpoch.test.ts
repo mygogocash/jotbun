@@ -239,7 +239,7 @@ test('a server-ended session is reported with the epoch the request started unde
 // ---- the real provider behind the shared session seam ----
 
 const EMAIL = 'kan@example.test';
-const tick = () => new Promise<void>((resolve) => setImmediate(resolve));
+const tick = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));
 const seamTransport = () => createV1Transport({ baseUrl, credentials: session.v1SessionCredentials, client: CLIENT, timeoutMs: 2_000 });
 const openGate = () => {
   let release!: () => void;
@@ -360,7 +360,7 @@ test('sign-out from a locked session still revokes its binding over the transpor
       await seamTransport().request('POST', '/v1/me/logout', {
         body: {},
         credentials: { accessToken: credentials.accessToken, binding: credentials.sessionId },
-        validate: (value): value is { ok: boolean } => typeof value === 'object' && value !== null,
+        validate: (value): value is null => value === null,
       });
     },
   });
@@ -371,7 +371,7 @@ test('sign-out from a locked session still revokes its binding over the transpor
     assert.equal(await provider.refreshAfterUnauthorized(), false);
     assert.equal(provider.getSessionSnapshot().state, 'locked');
     assert.equal(await port.accessToken(), token, 'a refused refresh keeps the last token so sign-out can still reach the vault');
-    replies.push({ status: 200, body: { ok: true } });
+    replies.push({ status: 200, body: null });
     await provider.signOut();
     const revoke = seen.find((r) => r.url === '/v1/me/logout');
     assert.ok(revoke, 'POST /v1/me/logout was sent');
@@ -410,7 +410,7 @@ test('offline token reads neither lock the session nor close the diary (S4 resol
       assert.equal(open.accountId, accountId);
       server.state.offline = true;
       assert.equal((await failure(() => t.request('GET', '/v1/wallets', { validate: ok })))?.outcome, 'network');
-      await tick();
+      await tick(5);
       await resolver.refresh();
       assert.equal(provider.getSessionSnapshot().state, 'active', 'offline never locks');
       assert.deepEqual(resolver.current(), open, 'the diary stays on its account');

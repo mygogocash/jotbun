@@ -246,18 +246,28 @@ export function createCredentialProvider(deps: CredentialDeps): CredentialProvid
         return 'cancelled';
       }
       await deps.port.signOutDevice(oldSessionId).catch(noop);
+      if (superseded(mine)) {
+        await forgetLateSession();
+        return 'cancelled';
+      }
       const next: StoredSession = { accountId: session.accountId, sessionId: session.sessionId, email: session.email, method: session.method };
+      const write = deps.sessions.save(next).then(() => { record = next; });
+      committing = write;
       try {
-        await deps.sessions.save(next);
+        await write;
       } catch {
         await forgetLateSession();
         record = null;
         await deps.sessions.clear().catch(noop);
         dispatch({ type: 'signed_out' });
         return 'failed';
+      } finally {
+        if (committing === write) committing = null;
       }
-      record = next;
-      if (superseded(mine)) return 'cancelled';
+      if (superseded(mine)) {
+        await forgetLateSession();
+        return 'cancelled';
+      }
       dispatch({ type: 'bootstrapped', accountId: next.accountId, binding: next.sessionId });
       await reservation;
       return 'fresh';
@@ -314,8 +324,8 @@ export function createCredentialProvider(deps: CredentialDeps): CredentialProvid
       const epoch = snapshot.epoch;
       if (tokenRead && tokenRead.epoch === epoch && tokenRead.generation === tokenGeneration) return tokenRead.promise;
       const promise = deps.port.accessToken().then((token) => {
-        if (snapshot.epoch !== epoch) return null;
-        if (token === null && snapshot.state === 'active') dispatch({ type: 'auth_denied' });
+        // null: the session is gone or denied - lock, keep everything. A rejection (offline) changes nothing.
+        if (token === null && snapshot.epoch === epoch) dispatch({ type: 'auth_denied' });
         return token;
       });
       const entry = { promise, epoch, generation: tokenGeneration };
@@ -398,8 +408,10 @@ export function createCredentialProvider(deps: CredentialDeps): CredentialProvid
 
     async requestCredentials() {
       if (snapshot.state !== 'active') return null;
+      const epoch = snapshot.epoch;
       const token = await provider.getAccessToken();
-      if (!token || snapshot.state !== 'active' || !snapshot.binding) return null;
+      // One session's token and id: never a token read across a session change.
+      if (!token || snapshot.state !== 'active' || snapshot.epoch !== epoch || !snapshot.binding) return null;
       return { accessToken: token, sessionId: snapshot.binding };
     },
 

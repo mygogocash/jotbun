@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { AuthCancelled, AuthRefused, AuthUnavailable, createdOf, createBetterAuthPort, unsupportedBetterAuthPort } from './betterAuthPort.ts';
+import { idTokenSubject } from './nativeSignIn.ts';
 import { createFakeAuthServer } from './testing/fakeAuthServer.ts';
 
 const EMAIL = 'kan@example.test';
@@ -175,6 +176,19 @@ test('the JWT is reused until a minute before it expires, then renewed', async (
   } finally {
     t.mock.timers.reset();
   }
+});
+
+test("a sign-in drops the cached JWT: the next token is the new account's", async () => {
+  const { server, port } = portFor({ google: { sub: 'google-sub', email: 'g@example.test' } });
+  await port.sendEmailCode(EMAIL);
+  const byEmail = await port.signIn({ method: 'email', email: EMAIL, code: server.codeFor(EMAIL) });
+  assert.equal(idTokenSubject((await port.accessToken()) ?? ''), byEmail.accountId);
+  const byGoogle = await port.signIn({ method: 'google', signUp: true });
+  assert.notEqual(byGoogle.accountId, byEmail.accountId);
+  assert.equal(idTokenSubject((await port.accessToken()) ?? ''), byGoogle.accountId);
+  await port.sendEmailCode(EMAIL);
+  await port.signIn({ method: 'email', email: EMAIL, code: server.codeFor(EMAIL) });
+  assert.equal(idTokenSubject((await port.accessToken()) ?? ''), byEmail.accountId);
 });
 
 test('refresh always renews', async () => {

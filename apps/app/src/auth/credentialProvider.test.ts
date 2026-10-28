@@ -5,7 +5,7 @@ import type { SecureStorePort } from '../storage/keyStore.ts';
 import { AuthUnavailable, createBetterAuthPort, unsupportedBetterAuthPort } from './betterAuthPort.ts';
 import type { SignInMethod } from './betterAuthPort.ts';
 import { createCredentialProvider } from './credentialProvider.ts';
-import type { EpochStore } from './credentialProvider.ts';
+import type { EpochStore, RequestCredentials } from './credentialProvider.ts';
 import * as session from './session.ts';
 import { createSecureSessionStore } from './sessionStore.ts';
 import type { SessionRecordStore, StoredSession } from './sessionStore.ts';
@@ -39,14 +39,18 @@ function setup(identities: { apple?: { sub: string; email: string }; google?: { 
   const sessions = memorySessions();
   const epochs = memoryEpochs();
   const order: string[] = [];
+  const vaultLogouts: RequestCredentials[] = [];
   const port = createBetterAuthPort({ client: server.client, native: server.native(identities) });
   const provider = createCredentialProvider({
     port,
     sessions,
     epochs,
-    logoutVault: async () => { order.push('logoutVault'); },
+    logoutVault: async (credentials) => {
+      order.push('logoutVault');
+      vaultLogouts.push(credentials);
+    },
   });
-  return { server, sessions, epochs, order, port, provider };
+  return { server, sessions, epochs, order, vaultLogouts, port, provider };
 }
 
 async function signedIn(identities: { apple?: { sub: string; email: string }; google?: { sub: string; email: string } } = {}) {
@@ -225,6 +229,7 @@ test('offline is not a denial: the session stays active; a deleted session locks
 test('sign-out tells the vault first with the session\'s own token, then Better Auth, then clears the record and moves the epoch', async () => {
   const ready = await signedIn();
   const token = await ready.provider.getAccessToken();
+  const record = ready.sessions.current();
   const epoch = ready.provider.getSessionSnapshot().epoch;
   const innerOut = ready.server.client.signOut.bind(ready.server.client);
   ready.server.client.signOut = async () => {
@@ -239,6 +244,7 @@ test('sign-out tells the vault first with the session\'s own token, then Better 
   await ready.provider.signOut();
   assert.deepEqual(ready.order, ['logoutVault', 'signOut', 'clear']);
   assert.equal(typeof token, 'string');
+  assert.deepEqual(ready.vaultLogouts, [{ accessToken: token, sessionId: record?.sessionId }]);
   assert.equal(ready.provider.getSessionSnapshot().state, 'signed_out');
   assert.ok(ready.provider.getSessionSnapshot().epoch > epoch);
   assert.equal(ready.sessions.current(), null);
@@ -249,6 +255,7 @@ test('sign-out tells the vault first with the session\'s own token, then Better 
   await ready.provider.signOut();
   assert.equal(ready.provider.getSessionSnapshot().state, 'signed_out');
   assert.equal(ready.sessions.current(), null);
+  assert.equal(ready.vaultLogouts.length, 1, 'no token, so the vault is not called');
 });
 
 test('sign-out during a sign-in wins: the late session is signed out at the server and never stored', async () => {
@@ -275,6 +282,29 @@ test('sign-out during a sign-in wins: the late session is signed out at the serv
   assert.equal(ready.sessions.current(), null);
   assert.equal(ready.provider.getSessionSnapshot().state, 'signed_out');
   assert.ok(ready.server.calls.includes('signOut'));
+});
+
+test('sign-out during a fresh sign-in wins: the new session is signed out at the server and never stored', async () => {
+  const ready = await signedIn();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  let mark!: () => void;
+  const reached = new Promise<void>((resolve) => { mark = resolve; });
+  const inner = ready.server.client.signOutDevice.bind(ready.server.client);
+  ready.server.client.signOutDevice = async (id) => {
+    mark();
+    await gate;
+    return inner(id);
+  };
+  await ready.port.sendEmailCode(EMAIL);
+  const fresh = ready.provider.freshSignIn({ method: 'email', email: EMAIL, code: ready.server.codeFor(EMAIL) });
+  await reached;
+  await ready.provider.signOut();
+  release();
+  assert.equal(await fresh, 'cancelled');
+  assert.equal(ready.sessions.current(), null);
+  assert.equal(ready.provider.getSessionSnapshot().state, 'signed_out');
+  assert.equal(await ready.port.hasSession(), false);
 });
 
 test('the server ending the session keeps the account and says why', async () => {
@@ -320,6 +350,30 @@ test('requestCredentials reads one token and the session id together, and is nul
   assert.equal(await ready.provider.requestCredentials(), null);
   const signedOut = setup();
   assert.equal(await signedOut.provider.requestCredentials(), null);
+});
+
+test('requestCredentials never pairs a token with the id of a session that replaced it', async () => {
+  const ready = await signedIn();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  let mark!: () => void;
+  const reached = new Promise<void>((resolve) => { mark = resolve; });
+  const inner = ready.server.client.token.bind(ready.server.client);
+  let gated = true;
+  ready.server.client.token = async () => {
+    if (gated) {
+      gated = false;
+      mark();
+      await gate;
+    }
+    return inner();
+  };
+  const pending = ready.provider.requestCredentials();
+  await reached;
+  await ready.port.sendEmailCode(EMAIL);
+  assert.equal(await ready.provider.freshSignIn({ method: 'email', email: EMAIL, code: ready.server.codeFor(EMAIL) }), 'fresh');
+  release();
+  assert.equal(await pending, null);
 });
 
 test('a fresh sign-in into the same account swaps the session, signs the old one out and moves the epoch', async () => {
@@ -434,6 +488,146 @@ test('the secure session store keeps the record on this device only, refuses mal
   assert.equal(await store.load(), null);
   items.set('jotbun.v1.session', { value: 'not-json', accessible: 7 });
   assert.equal(await store.load(), null);
+});
+
+test('the secure session store removes the old Auth0 binding item on its first load only', async () => {
+  const deleted: string[] = [];
+  const secure: SecureStorePort = {
+    async getItemAsync() { return null; },
+    async setItemAsync() {},
+    async deleteItemAsync(key) { deleted.push(key); },
+  };
+  const store = createSecureSessionStore(secure, 7);
+  await store.load();
+  await store.load();
+  assert.deepEqual(deleted, ['gogospend.v1.session-binding']);
+});
+
+test('sign-in during hydrate waits for it: the session record and the session agree', async () => {
+  const ready = await signedIn();
+  const before = ready.sessions.current();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  const load = ready.sessions.load.bind(ready.sessions);
+  ready.sessions.load = async () => {
+    await gate;
+    return load();
+  };
+  const launched = createCredentialProvider({ port: ready.port, sessions: ready.sessions, epochs: ready.epochs });
+  const hydrating = launched.hydrate();
+  await ready.port.sendEmailCode('b@example.test');
+  const signing = launched.signIn({ method: 'email', email: 'b@example.test', code: ready.server.codeFor('b@example.test') });
+  await new Promise((resolve) => setImmediate(resolve));
+  release();
+  await hydrating;
+  assert.equal((await signing).outcome, 'active');
+  const stored = ready.sessions.current();
+  const snapshot = launched.getSessionSnapshot();
+  assert.notEqual(stored?.accountId, before?.accountId);
+  assert.deepEqual([snapshot.state, snapshot.accountId, snapshot.binding], ['active', stored?.accountId, stored?.sessionId]);
+});
+
+test('a second sign-in while one runs joins it (one server sign-in)', async () => {
+  const ready = setup();
+  await ready.port.sendEmailCode(EMAIL);
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  const inner = ready.server.client.signInWithCode.bind(ready.server.client);
+  ready.server.client.signInWithCode = async (email, code) => {
+    await gate;
+    return inner(email, code);
+  };
+  const code = ready.server.codeFor(EMAIL);
+  const one = ready.provider.signIn({ method: 'email', email: EMAIL, code });
+  const two = ready.provider.signIn({ method: 'email', email: EMAIL, code });
+  await new Promise((resolve) => setImmediate(resolve));
+  release();
+  const [first, second] = await Promise.all([one, two]);
+  assert.equal(first.outcome, 'active');
+  assert.equal(second, first);
+  assert.equal(ready.server.calls.filter((call) => call.startsWith('signInWithCode:')).length, 1);
+});
+
+test('refused transitions change nothing and do nothing', async () => {
+  const ready = await signedIn();
+  const active = ready.provider.getSessionSnapshot();
+  let loads = 0;
+  const load = ready.sessions.load.bind(ready.sessions);
+  ready.sessions.load = async () => {
+    loads += 1;
+    return load();
+  };
+  let notified = 0;
+  ready.provider.subscribe(() => void (notified += 1));
+  await ready.provider.hydrate();
+  assert.equal(ready.provider.getSessionSnapshot(), active, 'hydrate while active is refused');
+  assert.equal(loads, 0, 'and reads nothing');
+  assert.equal(notified, 0);
+  ready.provider.sessionEnded({ code: 'SESSION_REQUIRED', epoch: active.epoch });
+  const ended = ready.provider.getSessionSnapshot();
+  assert.deepEqual(ended, { ...active, state: 'reauth_required' });
+  await ready.provider.hydrate();
+  assert.equal(ready.provider.getSessionSnapshot(), ended, 'hydrate cannot undo a server-ended session');
+  assert.equal(loads, 0);
+});
+
+test('a token read while a forced refresh runs waits for it', async () => {
+  const ready = await signedIn();
+  const before = await ready.provider.getAccessToken();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  const inner = ready.server.client.token.bind(ready.server.client);
+  ready.server.client.token = async () => {
+    await gate;
+    return inner();
+  };
+  const refreshing = ready.provider.refreshAfterUnauthorized();
+  const during = ready.provider.getAccessToken();
+  await new Promise((resolve) => setImmediate(resolve));
+  release();
+  assert.equal(await refreshing, true);
+  const token = await during;
+  assert.notEqual(token, before);
+  assert.equal(token, await ready.port.accessToken());
+});
+
+test('sign-out waits for an in-flight forced refresh, and tells the vault before Better Auth', async () => {
+  const ready = await signedIn();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  const innerToken = ready.server.client.token.bind(ready.server.client);
+  let gated = true;
+  ready.server.client.token = async () => {
+    if (gated) {
+      gated = false;
+      ready.order.push('refresh:start');
+      await gate;
+      ready.order.push('refresh:end');
+    }
+    return innerToken();
+  };
+  const innerOut = ready.server.client.signOut.bind(ready.server.client);
+  ready.server.client.signOut = async () => {
+    ready.order.push('signOut');
+    return innerOut();
+  };
+  const refreshing = ready.provider.refreshAfterUnauthorized();
+  const out = ready.provider.signOut();
+  await new Promise((resolve) => setImmediate(resolve));
+  release();
+  await out;
+  await refreshing;
+  assert.deepEqual(ready.order, ['refresh:start', 'refresh:end', 'logoutVault', 'signOut']);
+});
+
+test('sign-out ends the session even when the record cannot be cleared, then reports it', async () => {
+  const ready = await signedIn();
+  ready.sessions.clear = async () => {
+    throw new Error('keychain unavailable');
+  };
+  await assert.rejects(ready.provider.signOut(), /keychain unavailable/);
+  assert.equal(ready.provider.getSessionSnapshot().state, 'signed_out');
+  assert.equal(await ready.port.hasSession(), false);
 });
 
 test('an installed provider drives the shared session seam: the token, the session id as the binding, and the epoch', async () => {

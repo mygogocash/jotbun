@@ -143,7 +143,11 @@ function mapSensitive<T>(result: ClientResult<T>): T {
   return result.data
 }
 
-/** The app's Better Auth port. The web build uses {@link unsupportedBetterAuthPort} instead. */
+/**
+ * The app's Better Auth port. A sign-in the server accepted drops the cached
+ * JWT, which named the session before it. The web build uses
+ * {@link unsupportedBetterAuthPort} instead.
+ */
 export function createBetterAuthPort(deps: { client: BetterAuthClientLike; native: NativeSignIn; now?: () => number }): BetterAuthPort {
   const now = () => deps.now?.() ?? Date.now()
   let cached: { token: string; exp: number } | null = null
@@ -162,12 +166,14 @@ export function createBetterAuthPort(deps: { client: BetterAuthClientLike; nativ
   async function emailSignIn(email: string, code: string): Promise<ServerSession> {
     const result = await call(() => deps.client.signInWithCode(email.trim().toLowerCase(), code))
     if (result.error) mapCode(result.error)
+    cached = null
     return finish(result.data ?? { created: false }, 'email')
   }
 
   async function socialSignIn(method: 'apple' | 'google', requestSignUp: boolean, token: NativeIdToken): Promise<ServerSession> {
     const result = await call(() => deps.client.signInWithIdToken(method, token, requestSignUp))
     if (result.error) mapIdToken(result.error)
+    cached = null
     return finish(result.data ?? { created: false }, method)
   }
 
@@ -274,7 +280,8 @@ export function createBetterAuthPort(deps: { client: BetterAuthClientLike; nativ
     async linkMethod(method) {
       const fn = deps.native[method]
       if (!fn) throw new AuthRefused('REFUSED')
-      mapSensitive(await call(() => deps.client.link(method, await fn())))
+      const token = await fn()
+      mapSensitive(await call(() => deps.client.link(method, token)))
     },
     async unlinkMethod(method) {
       mapSensitive(await call(() => deps.client.unlink(method)))

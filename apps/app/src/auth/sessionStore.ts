@@ -2,6 +2,8 @@
 // installation epoch's high-water mark. Both are readable only on this device
 // while unlocked. The old Auth0 binding item is removed the first time the
 // record is loaded.
+import { isUuid } from '@gogospend/contracts';
+
 import type { SecureStorePort } from '../storage/keyStore.ts';
 import type { SignInMethod } from './betterAuthPort.ts';
 import type { EpochStore } from './credentialProvider.ts';
@@ -17,7 +19,6 @@ export interface SessionRecordStore {
 const SESSION_ITEM = 'jotbun.v1.session';
 const OLD_BINDING_ITEM = 'gogospend.v1.session-binding';
 const EPOCH_ITEM = 'gogospend.v1.session-epoch';
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 function isMethod(value: unknown): value is SignInMethod {
   return value === 'apple' || value === 'google' || value === 'email';
@@ -36,8 +37,8 @@ function storedSession(value: unknown): StoredSession | null {
   const sessionId = field(value, 'sessionId');
   const email = field(value, 'email');
   const method = field(value, 'method');
-  if (typeof accountId !== 'string' || !UUID.test(accountId)) return null;
-  if (typeof sessionId !== 'string' || !UUID.test(sessionId)) return null;
+  if (!isUuid(accountId)) return null;
+  if (!isUuid(sessionId)) return null;
   if (typeof email !== 'string' || email.length === 0 || email.length > 320) return null;
   if (!isMethod(method)) return null;
   return { accountId, sessionId, email, method };
@@ -45,9 +46,13 @@ function storedSession(value: unknown): StoredSession | null {
 
 export function createSecureSessionStore(secure: SecureStorePort, thisDeviceOnly: number): SessionRecordStore {
   const options = { keychainAccessible: thisDeviceOnly };
+  let oldItemRemoved = false;
   return {
     async load() {
-      await secure.deleteItemAsync(OLD_BINDING_ITEM, options).catch(() => undefined);
+      if (!oldItemRemoved) {
+        oldItemRemoved = true;
+        await secure.deleteItemAsync(OLD_BINDING_ITEM, options).catch(() => undefined);
+      }
       const text = await secure.getItemAsync(SESSION_ITEM, options);
       if (text === null) return null;
       try {

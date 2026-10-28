@@ -4,12 +4,11 @@ import { emailOTPClient, jwtClient } from 'better-auth/client/plugins';
 import * as SecureStore from 'expo-secure-store';
 
 import { getMobileEnv } from '../config/env.ts';
-import { createdOf } from './betterAuthPort.ts';
+import { createBetterAuthPort, createdOf } from './betterAuthPort.ts';
 import type { BetterAuthPort, ClientResult, DeviceDto, SignInMethod } from './betterAuthPort.ts';
 import { jotbunAccountClient } from './jotbunAccountClient.ts';
 import { NO_NATIVE_SIGN_IN } from './nativeSignIn.ts';
 import type { NativeIdToken } from './nativeSignIn.ts';
-import { createBetterAuthPort } from './betterAuthPort.ts';
 
 const storage = {
   getItem(key: string): string | null {
