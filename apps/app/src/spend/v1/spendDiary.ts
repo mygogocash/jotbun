@@ -26,6 +26,8 @@ export type DiaryView = {
   /** Synced, open wallets and categories on this device: what an offline draft may use. */
   wallets: WalletSnapshot[];
   categories: CategoryDto[];
+  /** The open diary's account; null with no open diary (web, opening, locked, signed out). */
+  accountId: string | null;
   /** The revision of the last change group applied on this device; '0' when no diary is open. A screen refreshes when it grows. */
   appliedRevision: string;
 };
@@ -93,7 +95,7 @@ export interface SpendDiary {
   loggedDays(): Promise<readonly string[] | null>;
 }
 
-const EMPTY: DiaryView = { phase: 'unavailable', lockReason: null, outcome: null, progress: null, pending: [], outbox: [], pendingChoices: [], wallets: [], categories: [], appliedRevision: '0' };
+const EMPTY: DiaryView = { phase: 'unavailable', lockReason: null, outcome: null, progress: null, pending: [], outbox: [], pendingChoices: [], wallets: [], categories: [], appliedRevision: '0', accountId: null };
 
 const BUILTIN_ORDER = new Map<string, number>(BUILTIN_CATEGORIES.map((category, index) => [category.key, index]));
 
@@ -171,7 +173,7 @@ export function createSpendDiary(deps: SpendDiaryDeps): SpendDiary {
   function onOutcome(target: DiaryStore, outcome: SyncOutcome): void {
     if (target !== store) return;
     if (outcome.status === 'signed_out') {
-      emit({ ...view, phase: 'locked', lockReason: 'signed_out', outcome, progress: null });
+      emit({ ...view, phase: 'locked', lockReason: 'signed_out', outcome, progress: null, accountId: null });
       void closeCurrent();
       return;
     }
@@ -209,7 +211,7 @@ export function createSpendDiary(deps: SpendDiaryDeps): SpendDiary {
     }
     store = opened;
     sync = deps.makeSync(opened, { accountId, epoch: next.epoch }, { outcome: (outcome) => onOutcome(opened, outcome), progress: (progress) => onProgress(opened, progress) });
-    emit({ ...EMPTY, phase: 'ready' });
+    emit({ ...EMPTY, phase: 'ready', accountId });
     await refresh(opened);
     await sync.scheduler.launch();
     await refresh(opened);

@@ -125,7 +125,7 @@ describe('the access pipeline, in the API’s order', () => {
     const owner = newUser()
     await client.as(owner).get('/v1/me')
     const reply = await runInDurableObject(vaultOf(owner), (v: UserVault) =>
-      v.call({ route: 'me.privacy', access: 'bound_session', claims: { accountId: crypto.randomUUID(), sessionId: crypto.randomUUID(), issuedAt: Math.floor(Date.now() / 1000), clientId: 'ios/1.0.0' }, policies: TEST_POLICIES, params: {}, query: {}, headers: {}, body: { analytics: true } }))
+      v.call({ route: 'me.privacy', access: 'bound_session', charge: 'write', claims: { accountId: crypto.randomUUID(), sessionId: crypto.randomUUID(), issuedAt: Math.floor(Date.now() / 1000), clientId: 'ios/1.0.0' }, policies: TEST_POLICIES, params: {}, query: {}, headers: {}, body: { analytics: true } }))
     expect(reply).toMatchObject({ ok: false, status: 500, code: 'INTERNAL_ERROR' })
     expect(await runInDurableObject(vaultOf(owner), (_v, s) => s.storage.sql.exec('SELECT count(*) AS n FROM consents').one().n)).toBe(0)
   })
