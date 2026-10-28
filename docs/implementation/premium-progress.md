@@ -878,6 +878,49 @@ Phase P2 builds the Bun Wallet area on the app. Task 7 replaces the Thai everyda
   - R81: wallet types were not touched. No `ewallet`.
   - `packKeyOf` and `missingPackItems` share `foldedNames`, so an alias matches both. The named `packKeyOf` test uses the primary Thai name, with spaces. Dropping aliases fails the earlier-pack test.
 
+### P2 Task 1: Bun Wallet palette, materials, type roles and WalletText
+
+- **Status:** built and verified locally on `p2/t1-palette`, merged with `origin/claude/p1a-vault-core` at `bdf6b12`. Not pushed. The independent review is the controller's, after this receipt.
+- **History:** an earlier session wrote the code and the plan's tests and left them uncommitted, with no RED and no receipt. They were committed unchanged as `b702b12`, then merged (`5486508`). This session added the tests below, took the RED against placeholders, ran the mutation check and the gate. The code is unchanged apart from comments on `WalletColors`.
+- **Files:**
+  - `apps/app/src/theme/walletPalette.ts`: `WalletColors` (the plan's table, each token with its use as a comment), `walletLight`, `walletDark`, `getWalletColors`; the five materials (`WalletMaterial`, `WALLET_MATERIALS`, `MaterialPaint`, `materialPaint`); the calendar ramp (`CalendarStep`, `CALENDAR_STEP_LIMITS_BAHT`, `calendarPaint`); `tileTint`; `WALLET_TEXT_PAIRS` (19) and `WALLET_GRAPHIC_PAIRS` (7).
+  - `apps/app/src/theme/walletType.ts`: `WalletTextRole`, `WALLET_TYPE`, `amountMaxScale`, `walletLineHeight`.
+  - `apps/app/src/wallet/WalletText.tsx`: `WalletText` and `WalletTone`.
+  - `apps/app/src/theme/ThemeProvider.tsx` (shared): the context value and `ThemePreferenceOverride` gain `wallet: WalletColors`; `useWalletColors()`.
+  - Tests: `walletPalette.test.ts` (5), `walletType.test.ts` (3), `WalletText.render.test.tsx` (4).
+- **Contrast, measured** (`contrast.ts`, WCAG 2.x): W24's light bar `#8B76DA` on white 3.68:1 (the board's `#DCD3F7` is 1.43:1); dark bar `#6E5FB8` on `#1A1920` 3.32:1; the dashed line `#8A879A` on white 3.49:1 (the board's `#B9B5C8` is 2.00:1) and `#6E6B7A` on `#1A1920` 3.36:1; W23's dark peach text 6.56:1. The lowest text pair is light `under` on `ground`, 4.55:1; the lowest material stop is dark silk's `#6A5AC2`, 4.91:1; the lowest calendar day number is dark step 3, 4.74:1.
+- **RED to GREEN:**
+  - RED, against placeholders with the real types and wrong values (every `#RRGGBB` in `walletPalette.ts` set to `#000000`; `walletType.ts` with size 10, scale 1, `amountMaxScale` 99 and `walletLineHeight` 0; `WalletText` in DM Sans with no colour, size or scale), swapped in with `cp`; `tsc` passed with them in place.
+    - Node (`npm run test:unit -w gogospend-app -- src/theme/walletPalette.test.ts src/theme/walletType.test.ts`): `tests 8, pass 0, fail 8`, every failure an `AssertionError`.
+    - Render (`npm run test:render -w gogospend-app -- src/wallet/WalletText.render.test.tsx`): `Tests 4 failed (4)`.
+    - Restored with `cp`; sha256 before and after match.
+  - GREEN, the same commands: Node `tests 8, pass 8, fail 0`; render `Tests 4 passed (4)`.
+- **Mutation check:** 18 mutants, each applied from a backup with `sed`, the focused Node and render files run, the file restored with `cp`; the four files' sha256 match before and after. All killed:
+  - From the plan: `barPast` back to `#DCD3F7` (the pairs test); dark `quietText` `#E9E6F2` (the material test: silk's `#6A5AC2` falls to 4.43:1); body `maxScale` 3.571 (the AX5 test); DM Sans for English (the WalletText test).
+  - Added: the edge on every dark material; the border on step 1; the dark day-number guard at step 4; Latin leading 1.5; Thai leading in every locale; the override keeping the parent's `wallet`; the provider's own `wallet` always light; `Math.min` to `Math.max`; `getWalletColors` always light; the dark tint at 28%; the dark tint over white; light titanium in ink; no `maxFontSizeMultiplier`; the tone ignored.
+- **Tests beyond the plan's.** Eight of the mutants above passed the plan's tests alone (the edge, the border, Latin leading, Thai leading everywhere, the dark tint at 28%, the provider always light, no `maxFontSizeMultiplier`, the tone ignored). Added for them: no edge except dark titanium; the calendar borders; the leading table, and font size and leading per locale in the render test; the dark tile tint `#41332D`; and three render tests (role and tone; `maxFontSizeMultiplier` per role, through a recording mock of `@mobile/theme/AppText`, since react-native-web drops the prop; the provider's own palette from a stored dark theme). Also pinned, as the plan states them: the dark calendar ramp and `CALENDAR_STEP_LIMITS_BAHT` (W22), `amountMaxScale` reaching its limit (W30), `isDark`, `getWalletColors`, and the pair counts (19 and 7).
+- **Gate** (worktree root):
+  - `npm run typecheck:app`: exit 0, no errors.
+  - `npm run typecheck:routes -w gogospend-app`: exit 0, no errors.
+  - `npm run test:app`: `tests 29`, `pass 29`, `fail 0`.
+  - `npm run test:unit`: `tests 742`, `pass 742`, `fail 0`.
+  - `npm run test:render -w gogospend-app`: `Test Files 84 passed (84)`, `Tests 1593 passed (1593)`.
+  - `npm run export:web -w gogospend-app -- --max-workers 2`: exit 0 (`Exported: dist`).
+  - `git diff --check` before the commit, and `git diff --check origin/claude/p1a-vault-core...HEAD` after it: no output.
+- **§5.3's fixes:** the readable insight bars are these tokens, held by the pairs test (P2-T31 draws them). The saved check is P2-T17's: this palette has no success green, and `under` and `over` say budget state only. 44 pt targets are each control's task and P2-T37's sweep; `WalletText` is not a control.
+- **Deviations:**
+  1. `WalletText` takes `Omit<TextProps, 'role'> & { role?: WalletTextRole; tone?: WalletTone }`, not `TextProps & {...}`. React Native 0.88's `TextProps.role` is the ARIA `Role` union, which shares no member with `WalletTextRole`, so `role="h1"` would not compile. Wallet text that needs an ARIA role uses `accessibilityRole` (a heading: `accessibilityRole="header"`).
+  2. The plan's dark silk `quietText` mutant changes every dark material's quiet text, because one branch paints all five; silk still fails it.
+  3. The RED came after the code (written by the earlier session), against placeholders.
+- **SKIPPED:** none. The task adds no screen, catalogue section or native module, so there is no device, simulator or E2 check.
+- **Notes for later tasks:**
+  - `tileTint` carries the mode's `ink` only: light `quiet` falls to 4.04:1 on the `#4E93D9` tint (P2-T11's `WalletCategoryIcon`).
+  - Dark `barPast` is 2.98:1 on `sheet` (`#24222B`): insight bars sit on `card`, never in a tray (P2-T31).
+  - Calendar fills 1 to 3 differ from the card by less than 3:1 (light 1.19, 1.55, 2.48; dark 1.25, 1.90, 3.32). The plan tests the day numbers only, which carry 4.74:1 or more (W22, E2-C).
+  - `src/ui/dynamicType.test.ts` scans `src/screens/redesign`, `src/ui` and `src/mascot`, not `src/wallet`. `WalletText`'s cap is held by its own render test; a raw `Text` or `TextInput` in `src/wallet` needs its own `maxFontSizeMultiplier` until a sweep covers the folder (P2-T37).
+  - `amountMaxScale` is for `WalletAmount` (P2-T10); `materialPaint` for `MaterialFill` (P2-T11); `calendarPaint`, `CALENDAR_STEP_LIMITS_BAHT`, `barPast`, `barNow` and `guideLine` for P2-T31.
+  - Merging: P2-T3 (PR #79) and P2-T4 (PR #78) were cut from `60e2026` and add their own `## P2: Bun Wallet core` heading earlier in this file; this receipt sits under the existing heading at the end. Keep both sides.
+
 ## P5: Travel and currencies
 
 Phase P5 lets a person keep records in any currency against a home currency they pick ([plan](../superpowers/plans/2026-10-25-jotbun-p5-travel.md)). Task 1 adds the ISO 4217 table and exact BigInt rate arithmetic to the contracts.
