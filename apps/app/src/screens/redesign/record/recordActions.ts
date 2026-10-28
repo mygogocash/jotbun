@@ -303,14 +303,15 @@ export function useRecordActions(input: { id: string; mode: 'view' | 'edit'; now
     setEditing(startEdit(loaded.record));
   };
 
-  /** Cancel drops the edit. Reload also clears a notice, and Cancel never has one. */
+  /** Leaves the edit. Reload on a conflict also clears the notice, as the screen did; Cancel on the form leaves it. */
   const cancelEditing = () => {
+    if (editingRef.current?.conflict) setNotice(null);
     setEditing(null);
-    setNotice(null);
   };
 
+  /** A field change. Nothing changes while an unconfirmed save waits for Try again, as with the keypad. */
   const changeEditing = (change: (current: RecordEditing) => RecordEditing) => {
-    setEditing((current) => (current ? change(current) : current));
+    setEditing((current) => (current && !current.unconfirmed ? change(current) : current));
   };
 
   return {

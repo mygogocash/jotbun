@@ -40,7 +40,7 @@ function Probe({ id }: { id: string }) {
         `loaded ${actions.loaded.state}`,
         `deleted ${actions.deleted ? String(actions.deleted.version) : 'none'}`,
         editing
-          ? `editing base ${editing.draft.baseVersion} amount ${editing.draft.amountMinor} keypad ${editing.keypad.operands.join(',')} conflict ${conflict ? `${conflict.version} ${conflict.amount_minor}` : 'none'} unconfirmed ${editing.unconfirmed}`
+          ? `editing base ${editing.draft.baseVersion} amount ${editing.draft.amountMinor} keypad ${editing.keypad.operands.join(',')} conflict ${conflict ? `${conflict.version} ${conflict.amount_minor}` : 'none'} unconfirmed ${editing.unconfirmed} note ${editing.draft.note}`
           : 'editing none',
         `message ${editing?.message ?? 'none'}`,
       ].join('\n')}</Text>
@@ -50,6 +50,7 @@ function Probe({ id }: { id: string }) {
       <Pressable accessibilityRole="button" accessibilityLabel="Save" onPress={() => void actions.submitEdit()}><Text>Save</Text></Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="Try again" onPress={() => void actions.submitEdit()}><Text>Try again</Text></Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="Digit" onPress={() => actions.pressKey('5')}><Text>Digit</Text></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel="Note" onPress={() => actions.changeEditing((current) => ({ ...current, draft: { ...current.draft, note: 'Changed here' } }))}><Text>Note</Text></Pressable>
     </>
   );
 }
@@ -98,6 +99,8 @@ test('an edit whose answer never came is frozen, and Try again resends the same 
   expect(state()).toContain('Not confirmed yet. Your entry is kept; try again.');
   const frozen = state();
   fireEvent.click(screen.getByRole('button', { name: 'Digit' }));
+  expect(state()).toBe(frozen);
+  fireEvent.click(screen.getByRole('button', { name: 'Note' }));
   expect(state()).toBe(frozen);
   fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
   await waitFor(() => expect(fake.callsOf('updateTransaction')).toHaveLength(2));

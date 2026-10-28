@@ -151,7 +151,7 @@ export function RecordScreen({ id, mode = 'view', now }: RecordScreenProps) {
       const keypadProblem = editing.keypad.problem ? tc(KEYPAD_PROBLEM_TEXT[editing.keypad.problem]) : null;
       const amountProblem = keypadProblem ?? editing.errors.amount_minor ?? null;
       const locked = editing.unconfirmed;
-      const setDraft = (patch: Partial<EditDraft>) => changeEditing((current) => (current.unconfirmed ? current : { ...current, draft: { ...current.draft, ...patch }, errors: {} }));
+      const setDraft = (patch: Partial<EditDraft>) => changeEditing((current) => ({ ...current, draft: { ...current.draft, ...patch }, errors: {} }));
       body = (
         <View style={{ gap: BUN_SPACE.md }}>
           <AmountLine keypad={editing.keypad} />
