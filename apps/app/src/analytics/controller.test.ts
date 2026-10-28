@@ -520,3 +520,172 @@ test('a foreground refresh waiting behind a yes cannot undo a later no', async (
   h.analytics.track('trip_started');
   assert.equal(h.captures().length, 0);
 });
+
+/**
+ * Two accounts on one phone. Each server call acts for whoever holds the session
+ * when the call is made, as the shared v1 transport does (1D-T6).
+ */
+function sessions(initial: Record<string, ServerConsent>) {
+  const consent: Record<string, ServerConsent> = { ...initial };
+  const offline = new Set<string>();
+  let session: string | null = null;
+  let stored: StoredConsent | null = null;
+  const sent: string[] = [];
+  const serverLog: string[] = [];
+  let readsHeld = false;
+  let setsHeld = false;
+  const heldReads: Array<() => void> = [];
+  const heldSets: Array<() => void> = [];
+  const label = (id: string) => (id === ACCOUNT_A ? 'A' : 'B');
+  const client: PostHogLike = {
+    capture(event) { sent.push(`capture:${event}`); },
+    screen(name) { sent.push(`screen:${name}`); },
+    identify(distinctId) { sent.push(`identify:${distinctId === ANALYTICS_ID ? 'A' : 'B'}`); },
+    reset() { sent.push('reset'); },
+    startSessionRecording() { sent.push('start'); },
+    stopSessionRecording() { sent.push('stop'); },
+  };
+  const analytics = createAnalytics({
+    client,
+    replay: true,
+    store: {
+      read: async () => (stored === null ? null : { ...stored }),
+      write: async (value) => { stored = { ...value }; },
+      erase: async () => { stored = null; },
+    },
+    server: {
+      read: async () => {
+        const who = session;
+        if (readsHeld) await new Promise<void>((resolve) => { heldReads.push(resolve); });
+        if (who === null || offline.has(who)) throw new Error('offline');
+        if (session !== who) throw new Error('session changed');
+        return { consent: consent[who] ?? 'unasked', analyticsId: who === ACCOUNT_A ? ANALYTICS_ID : 'b'.repeat(64), weeksSinceSignup: 1 };
+      },
+      setConsent: async (on) => {
+        const who = session;
+        if (who === null) throw new Error('signed out');
+        if (setsHeld) await new Promise<void>((resolve) => { heldSets.push(resolve); });
+        consent[who] = on ? 'yes' : 'no';
+        serverLog.push(`${label(who)}:${on ? 'yes' : 'no'}`);
+      },
+    },
+  });
+  /** Lets every held call finish, oldest first. */
+  async function release(held: Array<() => void>) {
+    for (;;) {
+      await settle();
+      const next = held.shift();
+      if (next === undefined) return;
+      next();
+    }
+  }
+  return {
+    analytics,
+    sent,
+    serverLog,
+    consent: (id: string) => consent[id] ?? 'unasked',
+    stored: () => stored,
+    signIn(id: string | null) { session = id; },
+    setOffline(id: string) { offline.add(id); },
+    holdReads() { readsHeld = true; },
+    holdSetConsent() { setsHeld = true; },
+    async releaseReads() { readsHeld = false; await release(heldReads); },
+    async releaseSetConsent() { setsHeld = false; await release(heldSets); },
+    /** What the client was asked to do since `mark`, without the resets and stops of an account change. */
+    since: (mark: number) => sent.slice(mark).filter((item) => item !== 'reset' && item !== 'stop'),
+  };
+}
+
+test('a yes waiting behind another call is refused once another account has signed in', async () => {
+  const s = sessions({ [ACCOUNT_A]: 'unasked', [ACCOUNT_B]: 'unasked' });
+  s.signIn(ACCOUNT_A);
+  await s.analytics.setAccount(ACCOUNT_A);
+  assert.equal(s.analytics.status(), 'unanswered');
+  s.holdReads();
+  const refreshing = s.analytics.refresh().catch(() => undefined);
+  await settle();
+  const saidYes = s.analytics.answer('yes').then(() => 'resolved', () => 'rejected');
+  s.signIn(null);
+  await s.analytics.setAccount(null);
+  s.signIn(ACCOUNT_B);
+  const mark = s.sent.length;
+  const signedInB = s.analytics.setAccount(ACCOUNT_B);
+  await s.releaseReads();
+  await refreshing;
+  await signedInB;
+  assert.deepEqual(s.serverLog, []);
+  assert.equal(await saidYes, 'rejected');
+  assert.equal(s.consent(ACCOUNT_B), 'unasked');
+  assert.equal(s.analytics.status(), 'unanswered');
+  assert.equal(s.stored(), null);
+  s.analytics.track('trip_started');
+  assert.deepEqual(s.since(mark), []);
+});
+
+test('a yes on its way when another account signs in is never stored or applied for the next one', async () => {
+  const s = sessions({ [ACCOUNT_A]: 'unasked', [ACCOUNT_B]: 'unasked' });
+  s.setOffline(ACCOUNT_B);
+  s.signIn(ACCOUNT_A);
+  await s.analytics.setAccount(ACCOUNT_A);
+  assert.equal(s.analytics.status(), 'unanswered');
+  s.holdSetConsent();
+  const saidYes = s.analytics.answer('yes').then(() => 'resolved', () => 'rejected');
+  await settle();
+  s.signIn(null);
+  await s.analytics.setAccount(null);
+  s.signIn(ACCOUNT_B);
+  const mark = s.sent.length;
+  const signedInB = s.analytics.setAccount(ACCOUNT_B);
+  await s.releaseSetConsent();
+  await saidYes;
+  await signedInB;
+  assert.deepEqual(s.serverLog, ['A:yes']);
+  assert.equal(s.stored(), null);
+  assert.equal(s.analytics.status(), 'loading');
+  s.analytics.track('trip_started');
+  assert.deepEqual(s.since(mark), []);
+});
+
+test('a yes still waiting when the person says no is never sent', async () => {
+  const s = sessions({ [ACCOUNT_A]: 'unasked' });
+  s.signIn(ACCOUNT_A);
+  await s.analytics.setAccount(ACCOUNT_A);
+  assert.equal(s.analytics.status(), 'unanswered');
+  s.holdReads();
+  const refreshing = s.analytics.refresh();
+  await settle();
+  const mark = s.sent.length;
+  const saidYes = s.analytics.answer('yes');
+  const saidNo = s.analytics.answer('no');
+  assert.equal(s.analytics.status(), 'no');
+  await s.releaseReads();
+  await refreshing;
+  await saidYes;
+  await saidNo;
+  assert.deepEqual(s.serverLog, ['A:no']);
+  assert.equal(s.analytics.status(), 'no');
+  assert.deepEqual(s.stored(), { accountId: ACCOUNT_A, answer: 'no', pendingServer: false });
+  s.analytics.track('trip_started');
+  assert.deepEqual(s.since(mark), []);
+});
+
+test('a refresh after a yes does not keep the yes from the server', async () => {
+  const s = sessions({ [ACCOUNT_A]: 'unasked' });
+  s.signIn(ACCOUNT_A);
+  await s.analytics.setAccount(ACCOUNT_A);
+  assert.equal(s.analytics.status(), 'unanswered');
+  s.holdReads();
+  const first = s.analytics.refresh();
+  await settle();
+  const mark = s.sent.length;
+  const saidYes = s.analytics.answer('yes');
+  const second = s.analytics.refresh();
+  await s.releaseReads();
+  await first;
+  await saidYes;
+  await second;
+  assert.deepEqual(s.serverLog, ['A:yes']);
+  assert.equal(s.analytics.status(), 'yes');
+  assert.deepEqual(s.stored(), { accountId: ACCOUNT_A, answer: 'yes', pendingServer: false });
+  assert.deepEqual(s.since(mark), ['identify:A', 'start']);
+});

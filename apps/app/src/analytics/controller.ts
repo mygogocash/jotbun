@@ -50,6 +50,8 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
   const held: Held[] = [];
   const listeners = new Set<() => void>();
   let generation = 0;
+  // The generation of the newest answer() call: a yes still queued behind it is not sent.
+  let latestAnswer = 0;
   // Server and store work runs one call at a time, in call order, so a yes still
   // on its way cannot land after a later no, at the server or in the store.
   let queue: Promise<void> = Promise.resolve();
@@ -188,6 +190,7 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
       if (typeof account !== 'string') throw new Error('No signed-in account');
       generation += 1;
       const token = generation;
+      latestAnswer = token;
       if (choice === 'no') {
         // In force at once; the store and the server hear it after any call still on its way.
         applyNo();
@@ -205,6 +208,11 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
         return;
       }
       await serialize(async () => {
+        // Checked when the queue reaches this yes, before anything is sent: the server call
+        // acts for whoever is signed in by then. A yes for an account that is no longer
+        // signed in is refused, and a later answer replaces it; a refresh alone does not.
+        if (accountId !== account) throw new Error('The account changed before the yes was sent');
+        if (latestAnswer !== token) return;
         await deps.server.setConsent(true);
         if (stale(token, account)) return;
         await deps.store.write({ accountId: account, answer: 'yes', pendingServer: false });
