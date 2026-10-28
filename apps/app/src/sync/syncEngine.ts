@@ -30,6 +30,12 @@ export interface SyncEngine {
 const MAX_IN_FLIGHT = 2;
 const STATUS_BATCH = 100;
 
+/** How hard a trigger pushes a queued follow-up: manual, foreground and live lift a pause; a write outranks a timer or a launch. */
+function strength(trigger: FlushTrigger): number {
+  if (trigger === 'manual' || trigger === 'foreground' || trigger === 'live') return 2;
+  return trigger === 'write' ? 1 : 0;
+}
+
 class Stop extends Error {
   readonly status: SyncStatus;
   constructor(status: SyncStatus) {
@@ -60,6 +66,8 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
   let upgradeRequired = false;
   let running: Promise<SyncOutcome> | null = null;
   let followUp: Promise<SyncOutcome> | null = null;
+  // The strongest trigger asked for while the follow-up waits.
+  let followUpTrigger: FlushTrigger = 'timer';
 
   const iso = () => new Date(deps.now()).toISOString();
 
@@ -260,26 +268,28 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
     return summarize(status, progress);
   }
 
-  return {
-    flush(session, trigger = 'timer') {
-      if (!running) {
-        running = runOnce(session, trigger).finally(() => {
-          running = null;
-        });
-        return running;
-      }
-      // A call during a run (a new save) gets exactly one follow-up run.
-      followUp ??= running.then(
-        () => {
-          followUp = null;
-          return this.flush(session, trigger);
-        },
-        () => {
-          followUp = null;
-          return this.flush(session, trigger);
-        },
-      );
+  function flushNow(session: SyncSession, trigger: FlushTrigger = 'timer'): Promise<SyncOutcome> {
+    if (!running) {
+      running = runOnce(session, trigger).finally(() => {
+        running = null;
+      });
+      return running;
+    }
+    // A call during a run (a new save, a poke) gets exactly one follow-up run,
+    // which runs with the strongest trigger asked for while it waited.
+    if (followUp) {
+      if (strength(trigger) > strength(followUpTrigger)) followUpTrigger = trigger;
       return followUp;
-    },
-  };
+    }
+    followUpTrigger = trigger;
+    const later = () => {
+      const next = followUpTrigger;
+      followUp = null;
+      return flushNow(session, next);
+    };
+    followUp = running.then(later, later);
+    return followUp;
+  }
+
+  return { flush: flushNow };
 }
