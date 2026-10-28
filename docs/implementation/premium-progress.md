@@ -329,6 +329,222 @@ Phase 1A moves each person's ledger into one SQLite Durable Object, the UserVaul
 
 **Pre-review fix (R76).** The controller ruled that `categories_replace_guard` also refuses an insert whose built-in key another category already holds. Without that clause, `INSERT OR REPLACE` with such a key deleted the other category silently, because `recursive_triggers` is off and `categories_never_deleted` therefore did not fire. The clause is `OR EXISTS (SELECT 1 FROM categories c WHERE c.builtin_key = NEW.builtin_key AND c.id <> NEW.id)`. Test first: `a replace that reuses another category's built-in key is refused, and the other category survives` (`vault-schema.test.ts`), placed before the same-id replace case. Before the clause, `npm run test:edge:workers -- test/workers/categories.test.ts test/workers/vault-schema.test.ts` gave `Test Files 1 failed | 1 passed (2)` and `Tests 1 failed | 29 passed (30)`. The failure was the new case, `promise resolved "[]" instead of rejecting`, because the replace had removed the other category. After the clause, the same command gave `Test Files 2 passed (2)` and `Tests 30 passed (30)`. The full edge gate then passed (see the gate bullets above). Custom categories (a NULL built-in key), the identical seeding rows and the same-id replace are unaffected, as the existing cases show. Checksums (sha256, first 8 hex): `0000_vault_core.sql` d0329a4d, `vault-schema.test.ts` ff0b345b. One behaviour change: a plain `INSERT ... ON CONFLICT DO NOTHING` whose built-in key another category holds now aborts, where it was skipped before. The seed path checks the present keys first, so it cannot reach that case. The other open item (a REPLACE that keeps type and built-in key but changes other columns) is not part of this ruling and stays open.
 
+## 1B: files and background work on the vault
+
+Phase 1B moves the files, imports, exports, snapshots, receipts and the AI companion's state into each person's UserVault, as the spec's §6.2 and §6.3 describe (`docs/superpowers/specs/2026-10-25-jotbun-bun-wallet-cloudflare-design.md`). Task 2 adds the file tables, the object keys, the prefix purge and the durable erase that deletion relies on.
+## P2: Bun Wallet core
+
+Phase 2 is the phone's Bun Wallet. Task 3 is the draft-copy rule and the two stores: device settings, forgotten at sign-out, and account-kept looks, erased only with the account (R64).
+
+### P2 Task 3: draft copy and wallet stores
+
+- **Status:** built and verified locally on this worktree, on `60e2026`. Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - Copy: `apps/app/src/wallet/copy/draftText.ts` (`draftText`, `tableT`), `useDraftCopy.ts` (locale from `useActiveLocale`), `common/copy.ts` (`COMMON_COPY`, data only). Twelve lines: close, back, next, save, undo, later, done, tryAgain, amountHidden, baht, satang, minus.
+  - Stores: `apps/app/src/wallet/store/walletStore.ts` (`deviceStore`, `accountStore`) and `deviceWalletStore.ts` (AsyncStorage 2.2.0, `installStoreBackend`, `eraseDeviceSettings`, `eraseAccountKept`).
+  - Diary: `spendDiary.ts` adds `DiaryView.accountId` (the open diary's account; null while opening, locked, signed out, or on the web). `fakeDiary.ts` defaults it to `00000000-0000-4000-8000-0000000000aa`. `DeviceDiaryProvider.tsx` awaits `eraseDeviceSettings().catch(() => undefined)` inside `eraseWithDiary`. `PrivacyScreen.tsx` reads `view.accountId` before `settleDeviceCopy` and, when the answer is `'erased'` and the id is not null, awaits `eraseAccountKept(accountId).catch(() => undefined)`.
+  - The required field also lands on the no-diary view in `SpendDiaryContext.tsx` and on the full `DiaryView` literals in `homeModel.test.ts`, `settingsModel.test.ts` and `SyncStatus.render.test.tsx` (`accountId: null`).
+  - Tests: `draftText.test.ts` (4), `walletStore.test.ts` (3), the new case in `spendDiary.test.ts`, the new case in `DeviceDiaryProvider.render.test.tsx` (its AsyncStorage mock already had `getAllKeys`; it gained `multiRemove`), and the new case in `PrivacyScreen.render.test.tsx`.
+- **RED to GREEN:**
+  - RED, Node (`npm run test:unit -w gogospend-app -- src/wallet/copy/draftText.test.ts src/wallet/store/walletStore.test.ts src/spend/v1/spendDiary.test.ts`): `tests 26, pass 23, fail 3`. `the view names the open diary's account, and nobody without one` failed (`accountId` was `undefined`, expected `0a000000-0000-4000-8000-00000000000a`). `draftText.test.ts` failed to load (`Cannot find module .../wallet/common/copy.ts`). `walletStore.test.ts` failed to load (`Cannot find module .../wallet/store/walletStore.ts`). The 23 passes are the existing diary tests.
+  - RED, render (`npm run test:render -w gogospend-app -- src/spend/v1/DeviceDiaryProvider.render.test.tsx src/screens/redesign/account/PrivacyScreen.render.test.tsx`): `Test Files 2 failed`, `Tests 1 failed | 3 passed (4)`. The sign-out case failed because `jotbun.wallet.private-mode` was still present. `PrivacyScreen.render.test.tsx` failed to load (`Failed to resolve import "@mobile/wallet/store/deviceWalletStore"`), so its existing cases did not run.
+  - GREEN, Node: `tests 31, pass 31, fail 0` (diary 24, draft copy 4, stores 3).
+  - GREEN, render: `Test Files 2 passed`, `Tests 26 passed` (DeviceDiaryProvider 4, PrivacyScreen 22).
+- **Mutation check:** originals copied to `/tmp/p2-t3-mutants`, sha256 recorded, each mutant applied in place, the focused test run, the file restored with `cp`, and the checksum compared. Both restored checksums match.
+  - `walletStore.ts` (`493b69b921f326ed6cb09d98834f0ac29a3abf3ce7429c86d626e283624f5934`): the device erase dropped its prefix filter and removed every key. `npm run test:unit -w gogospend-app -- src/wallet/store/walletStore.test.ts` gave `1 failed, 2 passed`. The failing case was `the device erase removes every jotbun.wallet. key and nothing else` (`null !== 'warm'` on `jotbun.account.a1.looks`). The account-erase case still passed.
+  - `DeviceDiaryProvider.tsx` (`cc612c31a1ab472c00aae226b243fceec704b4e06feb6ee3002853d3de352fb3`): `eraseWithDiary` also awaited `eraseAccountKept(accountId)`. `npm run test:render -w gogospend-app -- src/spend/v1/DeviceDiaryProvider.render.test.tsx` gave `1 failed | 3 passed (4)`. The failing case was `the sign-out erase forgets the wallet's device settings and keeps the account's looks` (expected `'warm'`, received `undefined`).
+- **Gate** (worktree root, the tests the brief names; not the edge database suite):
+  - Node, the same three files: `tests 31, pass 31, fail 0`.
+  - Render, both files whole: `Test Files 2 passed`, `Tests 26 passed (26)`.
+  - `npm run typecheck -w gogospend-app` (`tsc --noEmit`) passed. That run is not part of the brief's gate. It is how the new `DiaryView` field was checked against the rest of the app.
+- **Not applicable:** nothing here is ported from `apps/api`. No PostgreSQL role, grant, row-level security, pool, isolation level or lock wait is in this task.
+- **Deviations:**
+  1. `DiaryView.accountId` is required, so four literals the brief does not name now include it: the no-diary view, and three test fixtures, each `null`.
+  2. `draftText` repeats the one-pass replace instead of importing `formatCopyValues`. That module loads the `@mobile` catalogs, which `node --test` does not resolve. The replace is the same expression: one pass, unknown tokens left in place.
+  3. The store test also keeps `jotbun.account.a10.looks` when `a1` is erased, and the copy test checks that a value of `{amount}` is not filled again. The sign-out test removes `jotbun.wallet.lock` as well as `private-mode`. The deletion test leaves `jotbun.wallet.private-mode`. Each pins a rule the brief states.
+- **SKIPPED (hosted):** none. No cloud resource was touched.
+- **Notes for later tasks:**
+  - An area adds `src/wallet/<area>/copy.ts` with `export const COPY = { '<area>.<name>': { th, en } } as const satisfies DraftTable` and `import type { DraftTable }`. Keys stay unique. A screen that needs several areas calls `useDraftCopy({ ...COMMON_COPY, ...HOME_COPY })`. `draftText.test.ts` already exempts `card.kindTransit` in `LATIN_LINES`.
+  - `useDraftCopy` depends on the table object. Build a merged table outside the render, or memoize it.
+  - Device settings (private mode and its tip, the lock, setup answers, over-budget marks, confetti marks) use `walletDeviceStore()` and leave at sign-out. Looks, category icons and wallet order use `walletAccountStore(accountId)` with `useDiaryView().accountId`. When that id is null, store nothing and show the derived looks. Do not call `walletAccountStore` with an empty string: the prefix would be `jotbun.account.` and an erase would match every account.
+  - The fake diary's default id stays even if a test sets `phase: 'locked'`. Pass `accountId: null` when the fixture means nobody.
+  - A confirmed deletion while the diary is locked, opening, or absent does not erase account-kept looks, because the view's id is null. `Done` on `erase_failed` retries the diary erase only. The brief said not to change the rest of the deletion flow.
+  - No analytics emitter was added (R25).
+Phase 2 is the Bun Wallet on the device. Task 4 reads the days already logged in the open diary. The streak counts every distinct logged day up to today; a skipped day pauses it and never lowers it (R59, W11).
+
+### P2 Task 4: logged days
+
+- **Status:** built and verified locally on `p2/t4-logged-days`, on top of `60e2026`. Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - `apps/app/src/storage/diaryRepository.ts`: `DiaryStore.loggedDays()`, one read through the store's `read` helper. The query binds nothing. `UNION` makes the dates distinct and `ORDER BY day` sorts them ascending. One side is live confirmed transactions (`entity = 'transaction' AND state = 'active'`); the other is every draft (`pending_entries`).
+  - `apps/app/src/spend/v1/spendDiary.ts`: `SpendDiary.loggedDays()`. The open store's dates, or null while no diary is open.
+  - `apps/app/src/spend/v1/testing/fakeDiary.ts`: `createFakeDiary(view, { loggedDays })`. While the view's phase is `ready`, `loggedDays()` answers the seeded dates merged with the view's pending dates, ascending. Otherwise null.
+  - `apps/app/src/spend/v1/redesign/loggedDays.ts`: `streakCount` and `loggedOn`. Pure.
+  - Tests: `diaryRepository.test.ts`, `spendDiary.test.ts`, `loggedDays.test.ts`.
+- **RED to GREEN:**
+  - RED (`npm run test:unit -w gogospend-app -- src/storage/diaryRepository.test.ts src/spend/v1/spendDiary.test.ts src/spend/v1/redesign/loggedDays.test.ts`): `tests 42`, `pass 39`, `fail 3`. `loggedDays.test.ts` failed to load (`Cannot find module .../loggedDays.ts`), so its three cases did not run. `store.loggedDays is not a function`. `diary.loggedDays is not a function`.
+  - GREEN, the same command: `tests 44`, `pass 44`, `fail 0`.
+- **Mutation check:** `shasum -a 256` recorded first, originals kept in `/tmp/p2-t4-mutation` (outside the repo). Each mutant was applied in place, the focused file was run, the file was restored, and the checksum was compared. Both restored checksums match.
+  - `loggedDays.ts` (`2cf83fc4…025a7`): count only the consecutive run that ends today (a restart on a skip). `loggedDays.test.ts`: `tests 3`, `fail 1`, `pass 2`. The streak test failed at `2 !== 4` (20, 21, skip 22, 23, 24, asked on the 24th). The future-day case still passed, because the run that ends on the 24th is one day. Caught (R59).
+  - `diaryRepository.ts` (`33c50f30…bde5f`): the drafts side of the `UNION` removed. `diaryRepository.test.ts`: `tests 17`, `fail 1`, `pass 16`. The logged-days test expected `['2026-10-20', '2026-10-23']` and got `['2026-10-20', '2026-10-20']`. The draft date is gone, and the two live rows on one day are no longer collapsed, because `UNION` was what made them distinct. Caught.
+- **Gate** (repo root, once, after both files were restored): `npm run test:unit -w gogospend-app`. Exit 0. `tests 693`, `pass 693`, `fail 0`, `suites 7`. The edge database suite was not run.
+- **Ported in full:** not a port. There is no PostgreSQL source for this read. The query, the diary method and the streak model are the brief's, written here.
+- **Ported in part:** none.
+- **Not applicable:** PostgreSQL roles and grants, row-level security, connection pools, isolation levels and lock waits. The diary read is one statement on the device database, through the store's `read` helper, with no bound parameters (R57: this query has no id list).
+- **Deviations:**
+  1. A `json_extract` that returns NULL is dropped, so the result is `string[]`. The brief's SQL can yield NULL. No row in the tests does.
+  2. `streakCount` skips a string that is not a real `YYYY-MM-DD` (`dayNumber` in `shared.ts`). The interface says distinct valid dates. The named tests use only real dates.
+  3. The fake diary returns the merged dates sorted ascending, the same order the store returns.
+  4. The spend-diary test, whose name is the brief's, also syncs two live records on `2026-10-20` and a deleted one on `2026-10-21`, then saves a draft on `2026-10-23`. A method that listed only drafts, or every snapshot, would fail it. Signed out, the result is null.
+- **SKIPPED (hosted):** none. No cloud resource was touched. `accountId` was not added; that belongs to the other task on these files.
+- **Notes for later tasks:**
+  - P2-T22 calls `diary.loggedDays()` and `streakCount(days, today)`. Null (no open diary, including the web) means the streak tile is left out. The count is the person's, across every wallet.
+  - P2-T36's `isLoggedToday` is true when `loggedDays()` holds today, confirmed or draft.
+  - Render tests pass a seed as `createFakeDiary(view, { loggedDays })`. Pending dates on the current view are merged in while `phase` is `ready`.
+  - The query binds nothing. Do not add one `?` per id here.
+## 1D: live pokes, the pending choice and PostHog
+
+Phase 1D adds live pokes, the pending conflict choice and PostHog to the vault core. The design is `docs/superpowers/specs/2026-10-25-jotbun-bun-wallet-cloudflare-design.md` (PostHog is its §7). Task 3 builds the server analytics as a stand-alone module; the Worker wiring is 1D-T11 and T13.
+
+### 1D Task 3: Server analytics as a module
+
+- **Status:** built and verified on worktree `worktree-agent-aee5036b9ab6bfc29` (branch `worktree-agent-aee5036b9ab6bfc29`), from base `68ec183`. Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - Module: `apps/edge/src/analytics/server-analytics.ts`. `analyticsIdFor` is the lowercase hex HMAC-SHA256 of the user id under `ANALYTICS_ID_KEY` (WebCrypto, both read as UTF-8). `createServerAnalytics` returns `null` without `POSTHOG_PROJECT_TOKEN`, and otherwise sends through PostHog EU with the brief's client options. It also holds the allow-listed server events, the anonymous `$exception` and `account_deleted` counts, and `deletePostHogPerson` (persons `bulk_delete` on `eu.posthog.com`).
+  - Test: `apps/edge/test/server-analytics.test.ts` (Node), 14 tests.
+  - Dependency: `apps/edge/package.json` (`"posthog-node": "5.56.2"`, exact, one line) and `apps/edge/package-lock.json`.
+- **Version and lockfile:**
+  - `posthog-node` 5.56.2, published 16 October 2026. The brief's rule is the newest stable release published at least 7 days before the install day (25 October), so 18 October at the latest. The brief's parenthetical names 5.57.1 (23 October), which that rule excludes.
+  - Installed with `npm install --prefix apps/edge --save-exact --before=2026-10-18T00:00:00.000Z posthog-node@5.56.2`. The cutoff holds the transitive packages to the same rule. Without it, npm resolves `@posthog/core` to 1.60.1, published 23 October.
+  - Lockfile: three packages added (`posthog-node@5.56.2`, `@posthog/core@1.59.1` published 14 October, `@posthog/types@1.416.0` published 13 October), none changed or removed. 40 lines added, none removed. Size 151,486 to 152,878 bytes (+1,392 bytes). `npm ls --prefix apps/edge wrangler` shows one wrangler, 4.152.0.
+  - Dependency gate:
+    - Licences: MIT for all three.
+    - Install scripts: none in any of the three.
+    - Peers: `rxjs` and `@opentelemetry/api` are optional and not installed. Engines are `^20.20.0 || >=22.22.0`; the edge requires `>=24`.
+    - Provenance: `posthog-node` 5.56.2 has an SLSA provenance attestation. `npm audit signatures` in `apps/edge` verifies 201 packages' registry signatures and 109 attestations.
+    - Advisories: `npm audit --omit=dev --json` reports 0 before and after this change. The full `npm audit --json` reports 6 findings (3 moderate, 3 high) in `wrangler`, `miniflare`, `undici`, `zod`, `@cloudflare/vite-plugin` and `@cloudflare/vitest-plugin`. All are dev-only and not introduced here: none names a new package, and no existing version changed. Not remediated, since the wrangler pin (4.152.0) is the brief's.
+- **RED:** `npm run test:edge -- test/server-analytics.test.ts` against typed stubs, where each routine returned a wrong typed value: 14 failed, 0 passed. All 14 are assertion failures (for example `expected '' to be '6445f…'`, `promise resolved "'queued'" instead of rejecting`, `expected [] to have a length of 1`). No module failed to load.
+- **GREEN:** the same command, 14 passed, 0 failed.
+- **Mutation check:** the checksums of `server-analytics.ts` (`939b6a4e…d5039`) and the test file (`1e10f58f…2872`) were recorded, and a copy of the module was kept outside the repo. Each mutant was applied in place, the focused file was run, and the module was restored from the copy and its checksum compared.
+  - M1, the record's properties passed through unfiltered: 2 failed (the allow-list test and the value test).
+  - M2, one distinct id reused for every failure: 1 failed (the failure test).
+  - M3, a 202 with `deletion_errors` accepted: 1 failed (the refusal test).
+  - M4, "nothing to delete" decided on the project token instead of the analytics key: 5 failed (the deletion tests).
+  - M5 (added for the identity rule), the analytics-id guard weakened to an empty-string check: 1 failed (the identity test).
+  - M6 (added for the category rule), a category outside the built-in keys sent raw: 1 failed (the value test).
+  - Every restored module matches the recorded checksum. The test file was not edited after the RED run.
+- **Gate** (repo root):
+  - `typecheck:edge`: passes.
+  - `test:edge`: 135 passed (10 files), 14 of them new.
+  - `test:edge:workers`: 128 passed (5 files).
+  - `build:edge`: passes. No entry imports the module yet, so the Worker bundles do not contain PostHog code.
+  - `test:edge:db`: 62 passed (8 files), with the local PostgreSQL container up.
+  - `node --test scripts/ci/lockfile-bindings.test.mjs`: 2 passed.
+  - `npm run build -w gogospend-api`: passes.
+  - Workerd check of the module: `build:edge` does not bundle it, so esbuild 0.28.2 (from `apps/edge/node_modules`) bundled `src/analytics/server-analytics.ts` with the `workerd`, `worker` and `browser` conditions. It resolves `posthog-node`'s edge entry, and the output contains both the EU host and the app host. Nothing was written into the repo.
+- **Deviations:**
+  - Version: the brief's parenthetical names 5.57.1 as the newest release on 25 October, but its own 7-day rule excludes it. The rule gives 5.56.2, which is pinned.
+  - Install command: the `--before` flag is not in the brief's command. It is there to hold the transitive packages to the same cutoff.
+  - The brief's Step 5 says `build:edge` proves that `posthog-node` bundles. It cannot do that until T11 or T13 imports the module, so the workerd check above stands in for it.
+  - The real-client test stubs `globalThis.fetch`. The installed source confirms first that the SDK's `fetch` method calls the global `fetch` at call time (`posthog-node/dist/client.mjs`), so no fallback was needed.
+  - The brief leaves these open. Each is tested:
+    - `capture` drops an analytics id that is not 64 lowercase hex, so a raw user id or an email cannot become a distinct id.
+    - `category_key` outside `BUILTIN_CATEGORIES` is sent as `custom`, as §7 and the global constraints require. An unknown `kind`, or a `reason_code` that fails its pattern, is dropped, and the event is still sent.
+    - `captureAnonymous` sends only `account_deleted`.
+    - A 202 with no `deletion_errors` array counts as a failure. The project id is URI-encoded.
+    - Deletion is decided by the analytics key alone; the project token is not needed (M4 guards this).
+  - `defaultPort` is the PostHog client itself, as the brief says. Its `captureImmediate` cannot reject: `_sendPreparedEvent` in the SDK catches every error, so `waitUntil(client.captureImmediate(message))` cannot reject either.
+  - The "never rotates" rule is in the module's comments. `apps/edge/README.md` is not among this task's files, so the README note belongs beside the secret when T11 or T13 documents it.
+  - Heading: the controller's instruction names `## 1D: live pokes, the pending choice and PostHog`; the global constraints name `... PostHog and the proof`. This section uses the controller's heading. The two should be aligned at merge.
+  - Docker: Docker Desktop had quit between two gate runs. It was started with `open -a Docker`, and the database commands ran with `DOCKER_CONTEXT=desktop-linux`, because the active context had changed to `colima`, which is not running. No global Docker setting was changed.
+- **SKIPPED (hosted; no PostHog project or keys yet, D33):**
+  - A capture that reaches `eu.i.posthog.com`: SKIPPED. The test answers the request with a stub.
+  - `POST eu.posthog.com/api/projects/{id}/persons/bulk_delete` against PostHog: SKIPPED. The 202 contract is the brief's, exercised through a stub.
+  - A real `ANALYTICS_ID_KEY`: unset in every environment, so nothing is sent and deletion answers `nothing_to_delete` (Q5).
+- **Notes for the integrator:**
+  - `posthog-node` logs its own send failures with `console.error(err)`, so an SDK error message can reach the Worker's logs. The logging rule (`failureName` only) cannot be enforced inside the SDK. T11 or T13 may want to wrap the port.
+  - Analytics ids that are not 64 lowercase hex are dropped by design. Tests that pass fake ids to `capture` must use 64 lowercase hex characters.
+  - `@posthog/core` and `@posthog/types` are transitive. A later update of `posthog-node` would resolve them without this cutoff, so the gate applies again then.
+Phase 1D lets a change saved on one phone reach the person's other phones at once, with the sync fallbacks kept (`docs/superpowers/plans/2026-10-25-jotbun-p1d-pokes-posthog.md`, spec §6.5). Task 5 is the phone side: a socket that listens for `{ revision }` pokes, the live flush, screens that refresh when the revision moves, and development builds on the LAN. The vault side, `GET /v1/sync/live`, is 1D-T10, so the channel is tested against a fake socket.
+
+### 1D Task 5: The app's live channel
+
+- **Status:** built and verified locally on `worktree-agent-ad762b72c686aec52`, on top of `68ec183`. Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - `apps/app/src/sync/liveChannel.ts` (new): the pure channel with `liveUrl`, `parsePoke`, `revisionGrew`, `createLiveChannel`, `LIVE_CLOSE` and the timing constants. Test: `apps/app/src/sync/liveChannel.test.ts` (16 tests, on a fake socket and manual timers).
+  - `apps/app/src/sync/types.ts`: `FlushTrigger` gains `'live'`. `retryPolicy.ts`: `gate` lifts a failure pause for `'live'`, never the server's pacing. `syncEngine.ts`: a queued follow-up runs with the strongest trigger asked for (manual, foreground and live over write, over timer and launch). `scheduler.ts`: `live()`, and `channel?` started on launch and foreground and stopped on background and stop. `deviceSync.ts`: builds the channel with React Native's `WebSocket(url, undefined, { headers })`, `store.appliedRevision()`, `scheduler.live()`, the platform timers and `Math.random`.
+  - `apps/app/src/storage/diaryRepository.ts`: `appliedRevision()`, one `diary_meta` read, `'0'` before any change.
+  - `apps/app/src/spend/v1/spendDiary.ts`: `DiaryView.appliedRevision` (`'0'` when no diary is open), read with the pending list. `SpendDiaryContext.tsx` and `testing/fakeDiary.ts` take the default. Three existing fixtures (`settingsModel.test.ts`, `homeModel.test.ts`, `SyncStatus.render.test.tsx`) gain the field.
+  - `apps/app/src/api/client.ts`: `allowLanHttp`, which accepts `http://` to a private IPv4 literal (10/8, 172.16/12, 192.168/16) only when set. `apps/app/src/api/sharedV1.ts`: `allowLanHttp: __DEV__`, and `getSharedLiveTarget()`, whose token read uses `v1SessionCredentials`.
+  - `apps/app/src/screens/redesign/useRefreshOnRevision.ts` (new): refreshes when the revision grows and never on the first value. `HomeScreen.tsx` uses it with `loaded.refresh`, and `HistoryScreen.tsx` with `loadRef.current(true)`.
+  - Test helper: `apps/app/src/sync/testing/harness.ts` takes an optional remote in `newEngine`, so a test can hold one run open.
+  - Tests: `syncEngine.test.ts` (the brief's three, plus the strongest-trigger test and the scheduler wiring test), `diaryRepository.test.ts` (one), `client.test.ts` (one), `HomeScreen.render.test.tsx` and `HistoryScreen.render.test.tsx` (one each).
+- **RED to GREEN:**
+  - RED, unit (`npm run test:unit -w gogospend-app -- src/sync/liveChannel.test.ts src/sync/syncEngine.test.ts src/storage/diaryRepository.test.ts`, with typed stubs in place): `tests 56, pass 35, fail 21`. All 21 are assertion failures: 16 channel tests, three engine tests (live pause, joined poke, strongest trigger), the scheduler wiring test and the repository test. The characterization `twenty pokes during a flush run one follow-up` passes before the change, as the brief says.
+  - RED, app (`npm run test:app`): `tests 29, pass 28, fail 1` (the LAN test).
+  - RED, render (`npm run test:render -w gogospend-app -- src/screens/redesign/HistoryScreen.render.test.tsx src/screens/redesign/HomeScreen.render.test.tsx`): `tests 77, fail 4`. The two new refresh tests fail on assertions (`expected ... to have a length of 2 but got 1`). Two existing paging tests (Home's `today's total is exact even when today's records take more than one page` and History's `pages through every entry with Load more`) timed out at 5 s on this machine, on code paths this change does not touch. Both pass at GREEN.
+  - GREEN: unit focused `56 of 56`, app `29 of 29`, render focused `77 of 77`.
+- **Mutation check:** the five production files were backed up outside the repository and their `shasum -a 256` recorded. Each mutant was applied in place, the focused tests were run, and the file was restored from its backup and its checksum compared.
+  - M1, the gate ignores `'live'` (`retryPolicy.ts`): 3 failed (the live pause test, the joined-poke test, the strongest-trigger test).
+  - M2, a follow-up keeps the first caller's trigger (`syncEngine.ts`): 2 failed (the joined-poke and strongest-trigger tests).
+  - M3, reconnect after 4401 (`liveChannel.ts`): 1 failed (the ended-session test).
+  - M4, the token cached across reconnects (`liveChannel.ts`): 1 failed (`each reconnect reads the token again`).
+  - M5, `172.32.0.1` accepted (`client.ts`): 1 failed (the LAN test).
+  - M6, History reloads on every view update (`HistoryScreen.tsx`): 7 failed, including `a change pulled from another phone refreshes the list in place`.
+  - M7, extra, for the current-socket rule: the close handler without its current-socket check (`liveChannel.ts`): 3 failed (`a late close from a replaced socket changes nothing`, `stop closes the socket...`, `start replaces an open socket...`).
+  - Every restored file matched its recorded checksum. Two edits came after the check, and the gate ran again after them: the `flushNow` default of `'timer'` (restored after review; behaviour-neutral, because the gate treats an absent trigger as a timer) and the import position in `HistoryScreen.tsx`.
+- **Gate (final, after the last edit):**
+  - `npm run typecheck:app`: 0 errors.
+  - `npm run test:unit`: `tests 711, pass 711`.
+  - `npm run test:app`: `tests 29, pass 29`.
+  - `npm run test:render -w gogospend-app`: 83 files, `tests 1589, pass 1589`. An earlier full run failed one test, `an unconfirmed first wallet stays frozen with its key when the retry is refused before processing` (Home, a one-second `findByLabelText` under load). The re-run passed. That path renders no diary, so the view's revision stays `'0'` and the new hook does nothing there.
+  - `npm run export:web -w gogospend-app -- --max-workers 2`: exported `dist` (git-ignored).
+  - `git diff --check`: pass. `node --test scripts/ci/lockfile-bindings.test.mjs`: `2 of 2`. No package or lockfile change.
+  - SKIPPED: none in this task. The device, hosted and two-phone checks belong to 1D-T10 and the proof.
+- **Deviations from the brief:**
+  - `start()` replaces an open socket and closes it with 1000, so each foreground call reconnects. The replaced socket's late 4409 is ignored, as the brief requires.
+  - A token read that rejects (the credentials cannot be read) reconnects after the backoff. The brief does not say what happens there.
+  - The scheduler's `live()` does not check foreground. The channel only runs from launch or foreground until background, so it never runs in the background.
+  - Tests beyond the brief: the scheduler wiring, the strongest-trigger order, the current-socket checks for `onmessage`, `onerror` and a late open, the 64-character poke boundary, a stop during a token read, the pong keep-alive, `start()` replacing a socket, and the token-failure backoff.
+  - `deviceSync.ts` reads the global `WebSocket` when it connects, not when the module loads.
+- **Risks, for the controller:**
+  1. **The session binding is not sent on the socket.** Every other private v1 request sends `X-GoGoSpend-Session` (the transport adds it from the session's binding, and the 2026-10-17 backend plan's native request rule names it). The brief's socket headers are `Authorization` and `X-GoGoSpend-Client` only, and `LiveTarget` has no binding. If 1D-T10's vault requires the binding on `/v1/sync/live`, the socket is refused on a real device. The fix is a `binding` on `LiveTarget`, which changes the brief's interface, so it was not made here. This needs a decision before 1D-T10.
+  2. The channel is proven against a fake socket only. The real round trip waits for 1D-T10 and the two-phone proof.
+  3. When a diary opens after a screen has mounted, the applied revision moves from `'0'` to its value, so Home and History reload once more.
+  4. Timing: two paging tests timed out at 5 s in the RED run, and one first-wallet test failed once in a full run under load. All passed on re-run. This change does not alter those paths.
+### 1D Task 4: Pending choices kept in the diary
+
+- **Status:** built and verified locally on `worktree-agent-a667751bc0a738fc0`, from `68ec183`. Not pushed. The independent review is the controller's, after this receipt.
+- **What it does:** an online edit of a record refused with `VERSION_CONFLICT` (C16, record edits only) is kept in the encrypted diary as a pending choice, one row per record. It is never sent by itself, and no outbox kind is added. This task is storage and model only: no screen is routed, and `ChoicePanel` (1D-T9) reads the view.
+- **Files:**
+  - Storage: `apps/app/src/storage/migrations.ts` (migration 3, `pending_choices`, appended), `types.ts` (`PendingChoice`), `diaryRepository.ts` (`keepChoice`, `readChoices`, `dropChoice`).
+  - Model: `apps/app/src/spend/v1/redesign/pendingChoice.ts` (`draftFromChoice`, `choiceAgainst`, `choiceSettled`, `resendForChoice`).
+  - Diary view: `apps/app/src/spend/v1/spendDiary.ts` (`DiaryView.pendingChoices`, `keepChoice`, `dropChoice`; `refresh` reads the choices beside the outbox).
+  - `DiaryView` values and the fake diary, given `pendingChoices: []` and the two new methods: `spend/v1/SpendDiaryContext.tsx`, `spend/v1/testing/fakeDiary.ts`, `spend/v1/redesign/homeModel.test.ts`, `spend/v1/redesign/account/settingsModel.test.ts`, `sync/SyncStatus.render.test.tsx`.
+  - Tests: `storage/diaryRepository.test.ts` (6 new), `spend/v1/redesign/pendingChoice.test.ts` (new, 4), `spend/v1/spendDiary.test.ts` (1), `sync/syncEngine.test.ts` (1).
+- **RED:** stubs first (no-op store methods, wrong but typed model results, a view that never reads choices). `npm run test:unit -w gogospend-app -- src/storage/diaryRepository.test.ts src/spend/v1/redesign/pendingChoice.test.ts src/spend/v1/spendDiary.test.ts src/sync/syncEngine.test.ts`: 68 tests, 57 passed, 11 failed. All 11 failed on assertions (`ERR_ASSERTION`), none on a missing module.
+- **GREEN:** the same command: 68 passed, 0 failed. A mutation survivor (below) then added one test: 69 passed.
+- **Mutation check:** checksums of the five implementation files recorded first. Each mutant was applied in place, the four focused files were run, the file was restored from a backup outside the repo, and the checksums were compared again (all five match).
+  - Insert without `ON CONFLICT` (brief): 1 failed (`a pending choice is kept, replaced per record and dropped`).
+  - Skip the server id check (brief): 1 failed (`a choice for a mismatched record, or one that is not a valid choice, is refused`).
+  - `resendForChoice` keeps `original.version` (brief): 1 failed (`use yours resends the same changes on the server's current version`).
+  - Read side skips validation (extra): survived the first run. Added `a stored choice that no longer validates is left out of the list and not deleted`; the mutant now fails 1 test.
+  - No oldest-first sort (extra): 1 failed (`a pending choice is kept, replaced per record and dropped`).
+- **Gate:**
+  - `npm run typecheck:app`: passes.
+  - `npm run test:unit`: 700 passed, 0 failed.
+  - `npm run test:app`: 28 passed, 0 failed.
+  - `npm run test:render -w gogospend-app` (beyond the controller's list): 83 files and 1587 tests passed on the final run (383 s). Earlier runs were timing-sensitive under machine load: one full run had 3 tests time out at the 5 s limit (two History and one catalogue render test), and one History file failed alone once, then passed 6 of 6 on re-run and on the base commit.
+  - `git diff --check`: clean.
+  - `npm run export:web`: not run; the controller's gate for this task does not include it.
+- **Deviations:**
+  - The five view files listed above changed, though the brief did not name them: the typecheck requires `pendingChoices` on every `DiaryView` value, and `SpendDiary` gained two methods.
+  - `keepChoice` also checks the value types of `changes` (amount, date, record ids, text), and `readChoices` applies the same check to stored rows. The brief named only the key checks.
+  - `choiceAgainst` throws a TypeError for a fresh record that is another record, as `rebaseEdit` does.
+- **SKIPPED:** none. No hosted, native or device check applies to this task.
+- **Notes for 1D-T9 and later:**
+  - `readChoices()` leaves an invalid row in place, never deleted, so a later `keepChoice` for that record replaces it.
+  - Migration 3 is fixed by the brief. Any other diary migration merged on this branch must take number 4, because `migrateDiary` requires contiguous numbers.
 ### Task 5: transactions, balances and the golden diary
 
 - **Status:** built and verified locally on `agent-ad129ba8cab52fe16`, on top of `60e2026`. Not pushed. The independent review is the controller's, after this receipt.
@@ -503,6 +719,51 @@ Phase 1B moves files and background work onto each person's vault (spec `docs/su
 - **Concerns for the integrator:**
   - `erase()` is not one atomic step. It runs `deleteAll()`, then the migrations, then the marker insert. If the marker insert fails after `deleteAll()`, nothing in storage records the erase, and a later call could create the account again. The in-memory `erased` flag covers only the instance that failed. 1C's deletion should block sign-in in D1 first (§6.12, step 1) and retry `erase()` until the marker reads back. The alternative is one `transactionSync` that deletes the rows and writes the marker, which needs no re-migration. That choice is the controller's.
   - The purge loops until a listing comes back empty, with no iteration cap. A bucket that kept listing the same keys would never end. 1C's Workflow step should bound its own time.
+
+### 1B Task 3: the files front door
+
+- **Status:** built and verified locally on this worktree, from `9924cca` (the files schema on the integration head). Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - New, `apps/edge/src/v1/`: `fresh-sign-in.ts` (`FRESH_SIGN_IN_SECONDS`, `assertFreshSignIn`), `worker-routes.ts` (`VaultSession`, `WorkerContext`, `vaultSession`, `workerSessionFor`, `WORKER_HANDLERS`) and `bridge.ts` (the `bridge.catalogue` handler and its per-isolate catalogue cache).
+  - Protocol: `protocol.ts` (`authTime` on `VaultClaims`, `VaultAccess`, required `VaultCall.charge`, `WorkerRouteId`). `routes.ts` adds `VAULT_STEP_ROUTES` and `stepRouteOf`, extends `VaultRoute` with `recent_proof`, `worker` and `body`, and moves `GET /v1/bridge/gogocash/catalogue` out of `VAULT_DEFERRED_ROUTES` into `VAULT_V1_ROUTES` as a public Worker route. `vaultStatusOf` uses the step's status, or 200, when the id is not an HTTP route.
+  - Front door: `handler.ts` runs a Worker route after the gates (a public one with no token, any other after the client version and the token), sets `charge` from the method on a vault route, and accepts `waitUntil` and `fetchCatalogue` on its deps. `tokens.ts` checks `auth_time`. `config.ts` keeps `uploads` unexposed unless `IMPORT_UPLOADS_ENABLED` is `1` or `true`, on the open path and the fail-closed path. `env.ts` gains `OBJECTS`, `IMPORT_UPLOADS_ENABLED`, `GOGOCASH_BRIDGE_ENABLED` and `GOGOCASH_CATALOGUE_URL`. `wrangler.vault.jsonc` sets the two flags to `"false"`.
+  - Vault: `user-vault.ts` `call()` resolves `vaultRouteOf(id) ?? stepRouteOf(id)` and skips both budgets when `charge` is `'step'`. `recent_proof` is policy-exempt, like `bound_session`.
+  - Tests: `test/workers/files-front-door.test.ts` (7), `test/workers/config.test.ts` (the uploads case; 6 in the file), `test/vault-route-coverage.test.ts` (the worker-or-vault check; the pin lists the bridge), `test/workers/support/v1-client.ts` (`authTime`, `startV1` options) and `test/workers/front-door.test.ts` (`charge: 'write'` on the hand-built call).
+- **RED to GREEN:**
+  - RED, workers (`npm run test:edge:workers -- test/workers/files-front-door.test.ts test/workers/config.test.ts`), with the stubs in place (empty step table, `stepRouteOf` returning undefined, `assertFreshSignIn` never throwing, `workerSessionFor` passing `config.policies` unfiltered, bridge handler answering 501): `Test Files 2 failed (2)`, `Tests 8 failed | 5 passed (13)`. All 7 new front-door cases failed on assertions: 501 where 404 and 200 were expected, no throw from `assertFreshSignIn`, 200 where a future `auth_time` must be 401, 500 where the step id must be 200, 429 on call 121 of one session, and terms v2 still present in the session's policies. The new config case failed (`isExposed('uploads')` was true). The 5 passes are the existing config cases.
+  - RED, Node (`npm run test:edge -- test/vault-route-coverage.test.ts`): `Tests 6 passed (6)`. The new structural checks passed on the stub, because the stub had already moved the bridge route and registered a handler. They do not exercise the 501 body.
+  - GREEN, same workers command: `Tests 13 passed (13)`. GREEN, Node: `Tests 6 passed (6)`.
+- **Mutation check:** `shasum -a 256` recorded before any mutant, originals kept in `/tmp/1b-t3-mutation` (outside the repo). Each mutant was applied in place, `files-front-door.test.ts` was run, and the file was restored. `shasum -c` reported OK after every restore. Final checksums match the recorded ones: `worker-routes.ts` `92e8ca0c…24df`, `tokens.ts` `1ad212b7…f77b`, `user-vault.ts` `6033f280…217d`.
+  - Charge every call (`vaultSession` sends the route's charge on every call, never `'step'`): `Tests 1 failed | 6 passed (7)`. "only the first vault call of a request is charged" got 429 on A's 121st call. Caught.
+  - Pass `config.policies` unfiltered: `Tests 1 failed | 6 passed (7)`. The live-policies case still saw terms v2. Caught.
+  - Accept a future `auth_time` (no upper bound): `Tests 1 failed | 6 passed (7)`. The future token got 200 where 401 was expected. Caught.
+  - Drop the step fallback in `call()`: `Tests 1 failed | 6 passed (7)`. The step-only case got 500 `INTERNAL_ERROR`. Caught.
+- **Gate** (`npm run typecheck:edge && npm run test:edge && npm run test:edge:workers && npm run build:edge && npm run test:edge:db`, from the worktree root, after `npm run build -w gogospend-api`; the database script runs its own `db-up`):
+  - `typecheck:edge`: passes.
+  - `test:edge`: 122 passed (9 files). The baseline at this head was 121; the new coverage case is the extra one. The node catalogue tests logged `cashback_catalogue_rejected` and `cashback_catalogue_unavailable` and passed.
+  - `test:edge:workers`: the chained run hit `Tests 1 failed | 176 passed (177)`. `sync.test.ts` "defaults to 200 groups a page and refuses more than 1,000" timed out at 5000ms. That file alone then passed, `Tests 12 passed (12)` in 2.20s of tests. A full workers rerun passed, `Tests 177 passed (177)` in 9 files. The timeout was parallel load, not an assertion. The 177 include the 7 new front-door cases and the new config case.
+  - `build:edge`: passes. `dist/jotbun_vault/` was produced with the rest of the edge build.
+  - `test:edge:db`: 62 passed (8 files). `gogospend-postgres-v1-local` was already healthy and port 55432 was reachable, so it was not restarted.
+- **Ported in full:** the public catalogue through the front door (404 `NOT_FOUND` with `cache-control: no-store` while the bridge is off; the built-in brands, every link on `https://gogocash.co`, when the live fetch rejects; the v1 headers and a HEAD with no body). `CashbackCatalogueSource` is reused, not copied. `auth_time` is optional and, when present, an integer from 0 through now plus 30 seconds. `assertFreshSignIn` is the 300-second window with that same tolerance. A request's first vault call carries the route's charge and every later call is `'step'`. Uploads stay unexposed unless the release flag is `1` or `true`.
+- **Ported in part:** none. No route calls `assertFreshSignIn` yet. The export task applies it after its receipt lookup.
+- **Not applicable:** this task ports no PostgreSQL suite. There is no role, grant, row-level security, pool, isolation or lock-wait case to move. The edge's existing catalogue tests stay on the node runner.
+- **Deviations:**
+  1. `startV1`'s `env` override is a `Proxy` over the Workers `env`. A copied object would drop the `VAULT` and `CONFIG` bindings.
+  2. The future-`auth_time` test reads the epoch second early in that second, so `now + 31` cannot fall back inside the 30-second tolerance if the second rolls over while the request runs.
+  3. `fetchCatalogue` reaches the cache through `bindCatalogueFetch`, called immediately before the handler. `WorkerContext` stays as specified. The handler reads the source before its first await, so two requests cannot swap fetches.
+  4. A `body: 'stream'` route still calls `readJsonBody`, as the dispatcher does. A non-JSON body stays unread and is the stream. A JSON body is parsed, and there is no stream.
+  5. The coverage pin now lists `GET /v1/bridge/gogocash/catalogue`, and the test name says so. The table would otherwise fail its own "nothing else" check.
+- **SKIPPED (hosted):** nothing deployed, and no cloud resource was created. The two new vars are local wrangler settings.
+- **Notes for later tasks:**
+  - A Worker route is one `VAULT_V1_ROUTES` entry with `worker` and a `WORKER_HANDLERS` function, and no `vault` id. `GET /v1/policies` still has neither.
+  - A step-only id goes in `VAULT_STEP_ROUTES` and `VAULT_HANDLERS`, and not in `VAULT_V1_ROUTES`. `call()` resolves it. `vaultStatusOf` returns the step's status, or 200.
+  - `vaultSession` charges on the first call only. `workerSessionFor` uses `livePolicies` and a charge from the method (`GET` is `'read'`).
+  - `assertFreshSignIn(claims, nowSeconds)` throws 401 `REAUTH_REQUIRED` outside `[now - 300, now + 30]`. Nothing calls it until the export command.
+  - `claims.authTime` is set only when the token's `auth_time` is an integer in range. The test client sets it through `TokenOptions.authTime`.
+  - `IMPORT_UPLOADS_ENABLED` must be `1` or `true` before an uploads route is exposed. `wrangler.vault.jsonc` leaves it `"false"`.
+  - `deps.fetchCatalogue` and `deps.waitUntil` are on `handleVaultV1`. The catalogue cache is one source per combination of the flag, the URL and the fetch function.
+  - `recent_proof` is a vault access and skips the policy check. No route uses it yet.
+  - `OBJECTS` is on `V1Env`. The binding was already in `wrangler.vault.jsonc`.
 - **Integration (27 Oct):** merged after Tasks 5 and 6 of 1A (PRs #81, #80); only the receipts conflicted. On the merged tree: `typecheck:edge` passes, `test:edge` 130 passed (10 files), `test:edge:workers` 240 passed (12 files).
 
 ## 1D: live pokes, the pending choice and PostHog

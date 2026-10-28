@@ -13,6 +13,7 @@ export const SALARY = '2c000000-0000-4000-8000-000000000002';
 import type { OutboxCommand, PendingEntry } from '../../storage/types.ts';
 import { createSyncEngine } from '../syncEngine.ts';
 import type { SyncEngine } from '../syncEngine.ts';
+import type { SyncRemote } from '../types.ts';
 import { createFakeServer } from './fakeServer.ts';
 import type { FakeServer } from './fakeServer.ts';
 
@@ -27,7 +28,8 @@ export type Bench = {
   session: { epoch: number };
   refreshes: { count: number; result: boolean };
   engine: SyncEngine;
-  newEngine(store?: DiaryStore): SyncEngine;
+  /** An engine over `store` and `remote` (the fake server's by default). */
+  newEngine(store?: DiaryStore, remote?: SyncRemote): SyncEngine;
   save(overrides?: Partial<PendingEntry>, command?: Partial<OutboxCommand>): Promise<OutboxCommand>;
   flush(trigger?: Parameters<SyncEngine['flush']>[1]): ReturnType<SyncEngine['flush']>;
   dispose(): void;
@@ -48,10 +50,10 @@ export async function bench(options: { writesPerMinute?: number } = {}): Promise
   ]);
   await store.applyChangeGroups(server.groups.slice(0, 1), 'cursor-1', null);
   const refreshes = { count: 0, result: true };
-  const newEngine = (target: DiaryStore = store) =>
+  const newEngine = (target: DiaryStore = store, remote: SyncRemote = server.remote) =>
     createSyncEngine({
       store: target,
-      remote: server.remote,
+      remote,
       now: () => clock.now,
       random: () => 0.5,
       refreshSession: async () => {
