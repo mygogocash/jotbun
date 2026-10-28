@@ -772,7 +772,7 @@ Phase 1D adds live pokes, the pending choice, PostHog and the two-phone proof (p
 
 ### 1D Task 1: The app's analytics core: the allow-list, the typed emitters, consent, the held events and the outgoing gate
 
-- **Status:** built and verified locally on `worktree-agent-abe4ba17803d852d1`: the first round in `b3b1c11`, the integration head `bdf6b12` merged in `402fe86`, the first review's fixes in `617e278`, and the confirming review's fixes in the commit with this receipt. Not pushed. The orchestrator merges the integration head `75b3625` when it opens the pull request. The independent review is the controller's, after this receipt.
+- **Status:** built and verified locally on `worktree-agent-abe4ba17803d852d1`: the first round in `b3b1c11`, the integration head `bdf6b12` merged in `402fe86`, the first review's fixes in `617e278`, and the confirming review's fixes in the commit with this receipt. The orchestrator merged the integration head `800680d` into the branch without a conflict when it opened the pull request. The independent review is the controller's, after this receipt.
 - **Files:**
   - `apps/app/src/analytics/catalog.ts`: the 40 §7 events and their property rules, `PACK_KEYS`, `cleanEvent`, `cleanCommon`, `isScreenPattern` and `screenPattern`.
   - `apps/app/src/analytics/events.ts`: the typed emitters every plan calls (R23).
@@ -842,7 +842,7 @@ Phase 1D adds live pokes, the pending choice, PostHog and the two-phone proof (p
   - 1D-T6 installs this controller with `setAnalytics`, passes `gateOutgoing` as `before_send`, and keeps the client null when no project key is set. Its `consentStorage.ts` should not throw from `read()`, because a failing read stops a refresh before it reads the server's answer. The store holds one answer: when another account signs in on the same phone, its load overwrites or erases a no the first account has not delivered. A caller that runs `refresh()` at every foreground should catch its rejection. The server and store calls this controller makes must always settle, because one that never does holds every later consent call behind it; the v1 transport's 20-second timeout bounds that today.
   - Left for later (minor, from the first review of `b3b1c11`): a no whose first store write fails is never sent to the server; `weeks_since_signup` stays in the common properties across an account change; an offline refresh with no stored answer moves an open question back to `loading`.
   - `recordAnalytics()` signs in `00000000-0000-4000-8000-0000000000aa`, then empties `sent`.
-  - **Integration head:** `bdf6b12` (and the later integration head `75b3625`) carries the phase headings `## 1D: live pokes, the pending choice and PostHog` and `## P2: Bun Wallet core` twice each. Both 1D headings take the plan's text here, and this receipt sits under the second one, directly above `### 1D Task 2`. The duplicates are left for the orchestrator's ledger consolidation.
+  - **Integration head:** the integration branch (checked at `bdf6b12`, `75b3625`, `d193a68` and `800680d`) carries the phase headings `## 1D: live pokes, the pending choice and PostHog` and `## P2: Bun Wallet core` twice each. Both 1D headings take the plan's text here, and this receipt sits under the second one, directly above `### 1D Task 2`. The duplicates are left for the orchestrator's ledger consolidation.
 
 ### 1D Task 2: The PostHog proxy on the Worker
 
