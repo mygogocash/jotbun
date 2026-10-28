@@ -92,8 +92,29 @@ export {
   bangkokDate,
   assertKnownFields,
   isUuid,
+  addDays,
 } from "./v1/validation.ts";
 export type { MinorOptions, CanonicalCommand } from "./v1/validation.ts";
+export {
+  ISO_4217_MINOR_UNITS,
+  DEFAULT_HOME_CURRENCY,
+  PICKER_CURRENCIES,
+  CURRENCY_SYMBOLS,
+  RATE_SOURCES,
+  isCurrencyCode,
+  minorUnitsOf,
+  parseRate,
+  canonicalQuote,
+  convertMinor,
+  convertMinorDown,
+  crossRate,
+  rateFromAmounts,
+  minorToDecimal,
+  decimalToMinor,
+  moneyText,
+  rateText,
+} from "./v1/currency.ts";
+export type { MinorUnits, CurrencyCode, RateSource } from "./v1/currency.ts";
 export { WALLET_CURRENCY, WALLET_CORRECTION_REASONS, isWalletSnapshot } from "./v1/wallets.ts";
 export type { WalletCorrectionReason, WalletSnapshot, WalletDto, CreateWalletRequest, UpdateWalletRequest } from "./v1/wallets.ts";
 export { CATEGORY_TYPES, CATEGORY_COLORS, BUILTIN_CATEGORIES, isCategorySnapshot } from "./v1/categories.ts";
