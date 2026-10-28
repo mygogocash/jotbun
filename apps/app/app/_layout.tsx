@@ -1,4 +1,7 @@
+import { installAppAuth } from '@mobile/auth/appAuth';
 import { Stack } from 'expo-router';
+
+installAppAuth();
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, ThemedStatusBar } from '@mobile/theme/ThemeProvider';
 import { useFonts } from 'expo-font';

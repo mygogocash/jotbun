@@ -1,15 +1,8 @@
-import { V1Error } from '../api/client.ts';
-import { AuthCancelled } from './auth0Port.ts';
-import type { Auth0Port, PendingCredentials } from './auth0Port.ts';
+import { AuthCancelled, AuthRefused, AuthUnavailable } from './betterAuthPort.ts';
+import type { BetterAuthPort, SignInMethod, SignInRequest } from './betterAuthPort.ts';
 import { INITIAL_SESSION, accepts, reduceSession } from './sessionMachine.ts';
 import type { SessionEvent, SessionSnapshot } from './sessionMachine.ts';
-
-/** The application binding and its account, in SecureStore (never in the diary). */
-export interface BindingStore {
-  load(): Promise<{ accountId: string; binding: string } | null>;
-  save(value: { accountId: string; binding: string }): Promise<void>;
-  clear(): Promise<void>;
-}
+import type { SessionRecordStore, StoredSession } from './sessionStore.ts';
 
 /** The installation epoch's durable high-water mark, so it never goes backwards across launches. */
 export interface EpochStore {
@@ -17,25 +10,17 @@ export interface EpochStore {
   save(epoch: number): Promise<void>;
 }
 
-/** Credentials for one request instead of the session's: a pending sign-in's token, or a binding being revoked. */
-export type RequestAuth = { accessToken: string };
-
-/** The token-only and bound auth endpoints (F4). */
-export interface AuthApi {
-  challenge(input: { request_id: string; purpose: string; command_id: string }, auth?: RequestAuth): Promise<{ challenge_id: string; nonce: string; expires_at: string }>;
-  bootstrap(input: { challenge_id: string; id_token: string }, auth?: RequestAuth): Promise<{ account_id: string; binding: string; session_generation: number }>;
-  prove(input: { challenge_id: string; id_token: string }): Promise<{ proof_id: string; expires_at: string }>;
-  /** Revokes a binding (best effort): the session's, or `target` with its own access token. */
-  logout(target?: { binding: string; accessToken: string }): Promise<void>;
-}
-
 /** The server ended the session: the transport reports the code and the epoch the request started under. */
 export type SessionEnded = { code: 'SESSION_REQUIRED' | 'REAUTH_REQUIRED' | 'ACCOUNT_UNAVAILABLE'; epoch: number };
 
-export type SignInOutcome = 'active' | 'cancelled' | 'failed' | 'reauth_required';
+export type SignInOutcome = 'active' | 'cancelled' | 'failed' | 'unavailable' | 'not_configured' | 'account_exists' | 'account_unavailable' | 'wrong_code' | 'rate_limited';
+export type SignInResult = { outcome: SignInOutcome; methods: readonly SignInMethod[]; created: boolean };
+export type FreshOutcome = 'fresh' | 'cancelled' | 'failed' | 'unavailable' | 'not_configured' | 'other_account' | 'wrong_code' | 'rate_limited';
+export type CodeOutcome = 'sent' | 'rate_limited' | 'unavailable' | 'failed' | 'not_configured';
+export type RequestCredentials = { accessToken: string; sessionId: string };
 
 export interface CredentialProvider {
-  /** null: no usable session (or the credentials were denied, which locks). Rejects when Auth0 can't be reached right now. */
+  /** null: no usable session (or the credentials were denied, which locks). Rejects when the sign-in service can't be reached right now. */
   getAccessToken(): Promise<string | null>;
   /** One serialized forced refresh after a 401; concurrent callers share it. Also lifts a lock once the credentials work again. */
   refreshAfterUnauthorized(): Promise<boolean>;
@@ -43,68 +28,92 @@ export interface CredentialProvider {
   sessionEnded(event: SessionEnded): void;
   getSessionSnapshot(): SessionSnapshot;
   subscribe(listener: () => void): () => void;
-  /** At launch: the stored binding, active or locked. From locked: tries to lift the lock. Otherwise refused (no effect). */
+  /** At launch: the stored session, active when its cookie is still here, otherwise locked. */
   hydrate(): Promise<void>;
+  sendEmailCode(email: string): Promise<CodeOutcome>;
   /** A sign-in while one runs joins it. */
-  signIn(): Promise<SignInOutcome>;
-  /** Wins over a running sign-in or hydration; rejects only if the stored binding could not be cleared (the session is signed out anyway). */
+  signIn(request: SignInRequest): Promise<SignInResult>;
+  freshSignIn(request: SignInRequest): Promise<FreshOutcome>;
+  account(): StoredSession | null;
+  methods(): readonly SignInMethod[];
+  port(): BetterAuthPort;
+  /** One token and the session id, read together; null unless the session is active. */
+  requestCredentials(): Promise<RequestCredentials | null>;
+  /** Why the session ended, while it is locked or needs signing in again. */
+  endedReason(): 'signed_out_elsewhere' | 'account_unavailable' | null;
+  /** Wins over a running sign-in; the session is signed out even if the record could not be cleared. */
   signOut(): Promise<void>;
 }
 
-export type CredentialDeps = { auth0: Auth0Port; bindings: BindingStore; api: AuthApi; newId: () => string; epochs?: EpochStore };
+export type CredentialDeps = { port: BetterAuthPort; sessions: SessionRecordStore; epochs?: EpochStore; logoutVault?: (credentials: RequestCredentials) => Promise<void> };
 
 /** Epochs are reserved on disk this many at a time, so a launch never reuses a number an earlier launch handed out. */
 const EPOCH_BLOCK = 64;
 const noop = () => undefined;
 const settle = (promise: Promise<unknown> | null) => (promise ? promise.then(noop, noop) : Promise.resolve());
+const CANCELLED: SignInResult = { outcome: 'cancelled', methods: [], created: false };
+const FAILED: SignInResult = { outcome: 'failed', methods: [], created: false };
+const NOT_CONFIGURED: SignInResult = { outcome: 'not_configured', methods: [], created: false };
 
 function memoryEpochs(): EpochStore {
   let value = 0;
   return { load: async () => value, save: async (epoch) => void (value = epoch) };
 }
 
+function offered(port: BetterAuthPort, method: SignInRequest['method']): boolean {
+  return port.supported && port.methods.includes(method);
+}
+
+function signInResult(error: unknown): SignInResult {
+  if (error instanceof AuthCancelled) return CANCELLED;
+  if (error instanceof AuthUnavailable) return { outcome: 'unavailable', methods: [], created: false };
+  if (error instanceof AuthRefused) {
+    if (error.code === 'ACCOUNT_EXISTS') return { outcome: 'account_exists', methods: error.methods, created: false };
+    if (error.code === 'ACCOUNT_UNAVAILABLE') return { outcome: 'account_unavailable', methods: [], created: false };
+    if (error.code === 'WRONG_CODE') return { outcome: 'wrong_code', methods: [], created: false };
+    if (error.code === 'RATE_LIMITED' || error.code === 'CODE_LIMIT') return { outcome: 'rate_limited', methods: [], created: false };
+  }
+  return FAILED;
+}
+
+function freshResult(error: unknown): FreshOutcome {
+  if (error instanceof AuthCancelled) return 'cancelled';
+  if (error instanceof AuthUnavailable) return 'unavailable';
+  if (error instanceof AuthRefused) {
+    if (error.code === 'OTHER_ACCOUNT') return 'other_account';
+    if (error.code === 'WRONG_CODE') return 'wrong_code';
+    if (error.code === 'RATE_LIMITED' || error.code === 'CODE_LIMIT') return 'rate_limited';
+  }
+  return 'failed';
+}
+
 /**
- * The app's credential provider (F5): the Auth0 SDK's credentials, the
- * SecureStore binding and the session state machine.
+ * The app's credential provider: Better Auth's session, the SecureStore
+ * record and the session state machine.
  *
- * - Token reads and forced refreshes are serialized (concurrent callers share
- *   one SDK call), and a read never hands out a token from before a refresh.
- * - A denied refresh locks the session and keeps everything stored (drafts
- *   survive); Auth0 being unreachable is not a denial and changes nothing. A
- *   lock lifts through hydrate or a refresh once the credentials work again.
- * - Hydrate, sign-in and sign-out run one at a time. A sign-in while one runs
- *   joins it; a sign-out wins over a running sign-in or hydration, which then
- *   stores nothing (a binding the server issued too late is revoked).
- * - Sign-in bootstraps through a server challenge whose nonce a fresh
- *   (max_age=0) ID token must carry (F4, provisional until the native spike
- *   runs). Its login stays pending - the challenge and bootstrap carry its own
- *   token - and is stored only after the server accepted it. From an existing
- *   session (an account switch, or after a lock or a server-ended session) it
- *   runs beside it, so a cancelled or failed attempt leaves that session, its
- *   epoch and its credentials as they were.
- * - A server-ended session (SESSION_REQUIRED, REAUTH_REQUIRED) needs a new
- *   sign-in and keeps the account and its drafts; ACCOUNT_UNAVAILABLE signs
- *   out. Reports from an earlier epoch are ignored.
- * - The epoch is persisted so it never goes backwards across launches.
+ * Token reads and forced refreshes are serialized, and a read never hands out
+ * a token from before a refresh. A denied refresh locks the session and keeps
+ * the record; the service being unreachable is not a denial. Hydrate, sign-in
+ * and sign-out run one at a time. A second sign-in joins the one in flight. A
+ * sign-out wins, and a session the server accepted too late is signed out and
+ * never stored. Every new session moves the epoch.
  */
 export function createCredentialProvider(deps: CredentialDeps): CredentialProvider {
   const epochs = deps.epochs ?? memoryEpochs();
   let snapshot: SessionSnapshot = INITIAL_SESSION;
+  let record: StoredSession | null = null;
+  let reason: 'signed_out_elsewhere' | 'account_unavailable' | null = null;
   const listeners = new Set<() => void>();
 
-  // Token reads are shared only within one identity and between refreshes.
   let tokenRead: { promise: Promise<string | null>; epoch: number; generation: number } | null = null;
   let tokenGeneration = 0;
   let refreshing: Promise<boolean> | null = null;
 
-  // One flow at a time. A sign-out moves `generation`, which supersedes the
-  // running (and any queued) hydrate or sign-in: each checks it after every await.
   let generation = 0;
   let queue: Promise<unknown> = Promise.resolve();
   let hydrating: Promise<void> | null = null;
-  let signing: Promise<SignInOutcome> | null = null;
+  let signing: Promise<SignInResult> | null = null;
   let ending: Promise<void> | null = null;
-  // A sign-in's store writes; a sign-out lets them finish before it clears.
   let committing: Promise<void> | null = null;
 
   let epochsLoaded: Promise<void> | null = null;
@@ -137,6 +146,8 @@ export function createCredentialProvider(deps: CredentialDeps): CredentialProvid
     if (next === snapshot) return false;
     const moved = next.epoch !== snapshot.epoch;
     snapshot = next;
+    if (event.type === 'bootstrapped' || event.type === 'signed_out') reason = null;
+    if (event.type === 'auth_denied') reason = 'signed_out_elsewhere';
     if (moved && epochsReady && snapshot.epoch + EPOCH_BLOCK / 2 > reservedThrough) void reserveEpochs();
     notify();
     return true;
@@ -150,114 +161,129 @@ export function createCredentialProvider(deps: CredentialDeps): CredentialProvid
     return result;
   }
 
+  async function forgetLateSession(): Promise<void> {
+    await deps.port.signOut().catch(noop);
+  }
+
   async function hydrateFlow(mine: number): Promise<void> {
     await loadEpochs();
     if (superseded(mine)) return;
     if (snapshot.state === 'locked') {
-      // Lifted only by a refresh that works (offline or still denied: stays locked).
       await provider.refreshAfterUnauthorized().catch(() => false);
       return;
     }
     if (!accepts(snapshot, 'hydrate_start')) return;
     dispatch({ type: 'hydrate_start' });
-    // An unreadable store (e.g. a locked device) starts signed out; nothing is erased.
-    const stored = await deps.bindings.load().catch(() => null);
+    const stored = await deps.sessions.load().catch(() => null);
     if (superseded(mine)) return;
     if (!stored) {
+      record = null;
       dispatch({ type: 'hydrate_empty' });
     } else {
-      const usable = await deps.auth0.hasCredentials().catch(() => false);
+      const cookie = await deps.port.hasSession().catch(() => false);
       if (superseded(mine)) return;
-      dispatch(usable ? { type: 'hydrated', accountId: stored.accountId, binding: stored.binding } : { type: 'locked', accountId: stored.accountId, binding: stored.binding });
+      record = stored;
+      dispatch(cookie
+        ? { type: 'hydrated', accountId: stored.accountId, binding: stored.sessionId }
+        : { type: 'locked', accountId: stored.accountId, binding: stored.sessionId });
     }
     await reservation;
   }
 
-  const revokeLate = (accepted: { binding: string }, pending: PendingCredentials) =>
-    deps.api.logout({ binding: accepted.binding, accessToken: pending.accessToken }).catch(noop);
-
-  /** The binding first, then the SDK credentials; if those fail, the previous binding goes back, so the store never names one account while the SDK holds another's credentials. */
-  async function commit(next: { accountId: string; binding: string }, pending: PendingCredentials, previous: { accountId: string; binding: string } | null): Promise<void> {
-    await deps.bindings.save(next);
-    try {
-      await deps.auth0.saveCredentials(pending);
-    } catch (error) {
-      await (previous ? deps.bindings.save(previous) : deps.bindings.clear()).catch(() => deps.bindings.clear().catch(noop));
-      throw error;
-    }
-  }
-
-  async function signInFlow(mine: number): Promise<SignInOutcome> {
+  async function signInFlow(mine: number, request: SignInRequest): Promise<SignInResult> {
     await loadEpochs();
-    if (superseded(mine)) return 'cancelled';
+    if (superseded(mine)) return CANCELLED;
+    if (!offered(deps.port, request.method)) return NOT_CONFIGURED;
     const first = accepts(snapshot, 'sign_in_start');
-    if (!first && !accepts(snapshot, 'bootstrapped')) return 'failed';
-    const previous = snapshot.accountId && snapshot.binding ? { accountId: snapshot.accountId, binding: snapshot.binding } : null;
+    if (!first && !accepts(snapshot, 'bootstrapped')) return FAILED;
     if (first) dispatch({ type: 'sign_in_start' });
-    let pending: PendingCredentials | null = null;
-    let accepted: { account_id: string; binding: string } | null = null;
     try {
-      pending = await deps.auth0.authorize();
-      if (superseded(mine)) return 'cancelled';
-      if (first) dispatch({ type: 'authenticated' });
-      const auth = { accessToken: pending.accessToken };
-      const challenge = await deps.api.challenge({ request_id: deps.newId(), purpose: 'bootstrap', command_id: deps.newId() }, auth);
-      if (superseded(mine)) return 'cancelled';
-      const idToken = await deps.auth0.authorizeWithNonce(challenge.nonce, { maxAgeSeconds: 0 });
-      if (superseded(mine)) return 'cancelled';
-      accepted = await deps.api.bootstrap({ challenge_id: challenge.challenge_id, id_token: idToken }, auth);
+      const session = await deps.port.signIn(request);
       if (superseded(mine)) {
-        await revokeLate(accepted, pending);
-        return 'cancelled';
+        await forgetLateSession();
+        return CANCELLED;
       }
-      const next = { accountId: accepted.account_id, binding: accepted.binding };
-      const write = commit(next, pending, previous);
+      if (first) dispatch({ type: 'authenticated' });
+      const next: StoredSession = { accountId: session.accountId, sessionId: session.sessionId, email: session.email, method: session.method };
+      const write = deps.sessions.save(next).then(() => { record = next; });
       committing = write;
       try {
         await write;
+      } catch {
+        await forgetLateSession();
+        record = null;
+        await deps.sessions.clear().catch(noop);
+        dispatch({ type: 'signed_out' });
+        return FAILED;
       } finally {
         if (committing === write) committing = null;
       }
       if (superseded(mine)) {
-        // The sign-out that won clears what was just written.
-        await revokeLate(accepted, pending);
-        return 'cancelled';
+        await forgetLateSession();
+        return CANCELLED;
       }
-      dispatch({ type: 'bootstrapped', ...next });
+      dispatch({ type: 'bootstrapped', accountId: next.accountId, binding: next.sessionId });
       await reservation;
-      return 'active';
+      return { outcome: 'active', methods: [], created: session.created };
     } catch (error) {
-      // Issued by the server but never stored: revoked.
-      if (accepted && pending) await revokeLate(accepted, pending);
-      if (superseded(mine)) return 'cancelled';
+      if (superseded(mine)) return CANCELLED;
       if (first) dispatch({ type: 'cancelled' });
-      if (error instanceof AuthCancelled) return 'cancelled';
-      if (error instanceof V1Error && error.code === 'REAUTH_REQUIRED') return 'reauth_required';
-      return 'failed';
+      return signInResult(error);
     }
   }
 
-  async function signOutFlow(revoke: boolean): Promise<void> {
-    const sessionBinding = snapshot.binding;
-    // The session ends now: anything started under it (a bootstrap, a sync) is dropped from here on.
+  async function freshFlow(mine: number, request: SignInRequest): Promise<FreshOutcome> {
+    await loadEpochs();
+    if (superseded(mine)) return 'cancelled';
+    if (!offered(deps.port, request.method)) return 'not_configured';
+    if (snapshot.state !== 'active' || !record) return 'failed';
+    const current = { accountId: record.accountId, email: record.email };
+    const oldSessionId = record.sessionId;
+    try {
+      const session = await deps.port.freshSignIn(request, current);
+      if (superseded(mine)) {
+        await forgetLateSession();
+        return 'cancelled';
+      }
+      await deps.port.signOutDevice(oldSessionId).catch(noop);
+      const next: StoredSession = { accountId: session.accountId, sessionId: session.sessionId, email: session.email, method: session.method };
+      try {
+        await deps.sessions.save(next);
+      } catch {
+        await forgetLateSession();
+        record = null;
+        await deps.sessions.clear().catch(noop);
+        dispatch({ type: 'signed_out' });
+        return 'failed';
+      }
+      record = next;
+      if (superseded(mine)) return 'cancelled';
+      dispatch({ type: 'bootstrapped', accountId: next.accountId, binding: next.sessionId });
+      await reservation;
+      return 'fresh';
+    } catch (error) {
+      if (superseded(mine)) return 'cancelled';
+      return freshResult(error);
+    }
+  }
+
+  async function signOutFlow(): Promise<void> {
+    const sessionId = record?.sessionId ?? snapshot.binding;
     dispatch({ type: 'signed_out' });
-    // A sign-in's store writes and a forced refresh finish first, so nothing lands after the clear.
     await settle(committing);
     await settle(refreshing);
-    const stored = await deps.bindings.load().catch(() => null);
-    if (revoke) {
-      const targets = [...new Set([sessionBinding, stored?.binding].filter((binding): binding is string => typeof binding === 'string'))];
-      if (targets.length > 0) {
-        // With the SDK's own token, before the SDK forgets it - also from a
-        // locked session, whose binding the shared seam no longer exposes.
-        const accessToken = await deps.auth0.accessToken().catch(() => null);
-        if (accessToken) for (const binding of targets) await deps.api.logout({ binding, accessToken }).catch(noop);
-      }
+    let token: string | null = null;
+    try {
+      token = await deps.port.accessToken();
+    } catch {
+      token = null;
     }
-    await deps.auth0.clearSession().catch(noop);
+    if (token && sessionId) await deps.logoutVault?.({ accessToken: token, sessionId }).catch(noop);
+    await deps.port.signOut().catch(noop);
+    record = null;
     let failure: { error: unknown } | null = null;
     try {
-      await deps.bindings.clear();
+      await deps.sessions.clear();
     } catch (error) {
       failure = { error };
     }
@@ -265,12 +291,12 @@ export function createCredentialProvider(deps: CredentialDeps): CredentialProvid
     if (failure) throw failure.error;
   }
 
-  function endSession(revoke: boolean): Promise<void> {
+  function endSession(): Promise<void> {
     if (ending) return ending;
     generation += 1;
     hydrating = null;
     signing = null;
-    const run: Promise<void> = signOutFlow(revoke).finally(() => {
+    const run: Promise<void> = signOutFlow().finally(() => {
       if (ending === run) ending = null;
     });
     ending = run;
@@ -287,16 +313,14 @@ export function createCredentialProvider(deps: CredentialDeps): CredentialProvid
       }
       const epoch = snapshot.epoch;
       if (tokenRead && tokenRead.epoch === epoch && tokenRead.generation === tokenGeneration) return tokenRead.promise;
-      const promise = deps.auth0.accessToken().then((token) => {
-        // null: the credentials are gone or denied - lock, keep everything. A rejection (offline) changes nothing.
-        if (token === null && snapshot.epoch === epoch) dispatch({ type: 'auth_denied' });
+      const promise = deps.port.accessToken().then((token) => {
+        if (snapshot.epoch !== epoch) return null;
+        if (token === null && snapshot.state === 'active') dispatch({ type: 'auth_denied' });
         return token;
       });
       const entry = { promise, epoch, generation: tokenGeneration };
       tokenRead = entry;
-      const clear = () => {
-        if (tokenRead === entry) tokenRead = null;
-      };
+      const clear = () => { if (tokenRead === entry) tokenRead = null; };
       promise.then(clear, clear);
       return promise;
     },
@@ -305,9 +329,8 @@ export function createCredentialProvider(deps: CredentialDeps): CredentialProvid
       if (snapshot.state !== 'active' && snapshot.state !== 'locked') return Promise.resolve(false);
       if (refreshing) return refreshing;
       const epoch = snapshot.epoch;
-      // No read that started before this refresh is handed out after it.
       tokenGeneration += 1;
-      const shared: Promise<boolean> = deps.auth0
+      const shared: Promise<boolean> = deps.port
         .refresh()
         .then((ok) => {
           if (snapshot.epoch === epoch) dispatch(ok ? { type: 'token_refreshed' } : { type: 'auth_denied' });
@@ -322,9 +345,8 @@ export function createCredentialProvider(deps: CredentialDeps): CredentialProvid
 
     sessionEnded({ code, epoch }) {
       if (epoch !== snapshot.epoch || (snapshot.state !== 'active' && snapshot.state !== 'locked')) return;
-      // The account is gone or disabled: sign out locally (its binding is already refused, so nothing to revoke).
-      if (code === 'ACCOUNT_UNAVAILABLE') void endSession(false).catch(noop);
-      else dispatch({ type: 'reauth_required' });
+      if (!dispatch({ type: 'reauth_required' })) return;
+      reason = code === 'ACCOUNT_UNAVAILABLE' ? 'account_unavailable' : 'signed_out_elsewhere';
     },
 
     getSessionSnapshot: () => snapshot,
@@ -343,16 +365,50 @@ export function createCredentialProvider(deps: CredentialDeps): CredentialProvid
       return run;
     },
 
-    signIn() {
+    async sendEmailCode(email) {
+      if (!offered(deps.port, 'email')) return 'not_configured';
+      try {
+        await deps.port.sendEmailCode(email);
+        return 'sent';
+      } catch (error) {
+        if (error instanceof AuthUnavailable) return 'unavailable';
+        if (error instanceof AuthRefused && (error.code === 'RATE_LIMITED' || error.code === 'CODE_LIMIT')) return 'rate_limited';
+        return 'failed';
+      }
+    },
+
+    signIn(request) {
       if (signing) return signing;
-      const run: Promise<SignInOutcome> = enqueue<SignInOutcome>(signInFlow, 'cancelled').finally(() => {
+      const run: Promise<SignInResult> = enqueue((mine) => signInFlow(mine, request), CANCELLED).finally(() => {
         if (signing === run) signing = null;
       });
       signing = run;
       return run;
     },
 
-    signOut: () => endSession(true),
+    freshSignIn: (request) => enqueue((mine) => freshFlow(mine, request), 'cancelled'),
+
+    account() {
+      if (snapshot.state !== 'active' && snapshot.state !== 'locked' && snapshot.state !== 'reauth_required') return null;
+      return record;
+    },
+
+    methods: () => deps.port.methods,
+    port: () => deps.port,
+
+    async requestCredentials() {
+      if (snapshot.state !== 'active') return null;
+      const token = await provider.getAccessToken();
+      if (!token || snapshot.state !== 'active' || !snapshot.binding) return null;
+      return { accessToken: token, sessionId: snapshot.binding };
+    },
+
+    endedReason() {
+      if (snapshot.state !== 'locked' && snapshot.state !== 'reauth_required') return null;
+      return reason;
+    },
+
+    signOut: () => endSession(),
   };
   return provider;
 }

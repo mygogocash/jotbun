@@ -44,10 +44,12 @@ import { NotConfigured, TermsCheckbox } from './SignInParts';
  * The provider's sign-in does not take a method yet: real Apple, Google and
  * email sign-in need it to pass the chosen connection through (F5).
  */
-export async function signInThroughSession(_method: SignInMethod): Promise<SignInAttempt> {
+export async function signInThroughSession(method: SignInMethod): Promise<SignInAttempt> {
   const provider = getCredentialProvider();
   if (!provider) return 'not_configured';
-  return provider.signIn();
+  // Email stays on this screen until the code screen (Task 9). Apple and Google ask to sign up.
+  if (method === 'email') return 'not_configured';
+  return (await provider.signIn({ method, signUp: true })).outcome;
 }
 
 export type SignInScreenProps = {

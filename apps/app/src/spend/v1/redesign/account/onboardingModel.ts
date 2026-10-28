@@ -11,6 +11,8 @@
 // - Sign-in: a provider can be chosen only with the terms ticked. Only a
 //   session the seam reports `active` leaves the screen; "not configured" and
 //   every other answer stay on it, so nothing pretends to sign in.
+import type { SignInOutcome } from '@mobile/auth/credentialProvider';
+
 import { SPEND_INTRO_YEARLY_BAHT, formatIntroBaht } from '../../../spendIntro.ts';
 import type { PermissionOutcome, ReminderPreferenceInput } from '../../../../notifications/reminders.ts';
 
@@ -98,8 +100,8 @@ export type SignInMethod = 'apple' | 'google' | 'email';
 /** Equals, in this order: no provider is drawn as the favourite. */
 export const SIGN_IN_METHODS: readonly SignInMethod[] = ['apple', 'google', 'email'];
 
-/** What one attempt came to: the session seam's outcome, or "not configured" when there is no seam to sign in through. */
-export type SignInAttempt = 'not_configured' | 'active' | 'cancelled' | 'failed' | 'reauth_required';
+/** What one attempt came to. A new outcome stays on screen as today's calm failure until the code screen (Task 9). */
+export type SignInAttempt = SignInOutcome | 'reauth_required';
 
 export type SignInState =
   | { readonly phase: 'idle' }

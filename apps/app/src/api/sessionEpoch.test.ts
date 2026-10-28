@@ -5,12 +5,12 @@ import type { IncomingHttpHeaders } from 'node:http';
 import { after, before, beforeEach, test } from 'node:test';
 import { isDeepStrictEqual } from 'node:util';
 
-import { AuthUnavailable } from '../auth/auth0Port.ts';
-import { createAuthApi } from '../auth/authApi.ts';
+import { AuthUnavailable, createBetterAuthPort } from '../auth/betterAuthPort.ts';
 import { createCredentialProvider } from '../auth/credentialProvider.ts';
 import type { CredentialProvider } from '../auth/credentialProvider.ts';
 import * as session from '../auth/session.ts';
-import { ACCOUNT_A as A, BIND_A, fakeDevice, tick } from '../auth/testing/fakeDevice.ts';
+import type { SessionRecordStore, StoredSession } from '../auth/sessionStore.ts';
+import { createFakeAuthServer } from '../auth/testing/fakeAuthServer.ts';
 import { createDiarySessionResolver } from '../spend/v1/diarySession.ts';
 import { createKnownAccount } from '../spend/v1/knownAccount.ts';
 import { V1Error, createV1Transport } from './client.ts';
@@ -211,7 +211,7 @@ test('a request with its own credentials uses them, is never refreshed and never
   assert.equal(seen[0].headers['x-gogospend-session'], undefined);
   assert.equal((await failure(() => transport().request('POST', '/v1/me/logout', { body: {}, credentials: { accessToken: 'at-z', binding: 'z'.repeat(43) }, validate: ok })))?.outcome, 'signed_out');
   assert.equal(seen[1].headers.authorization, 'Bearer at-z');
-  assert.equal(seen[1].headers['x-gogospend-session'], 'z'.repeat(43));
+  assert.equal(seen[1].headers['x-gogospend-session'], undefined);
   assert.equal(refreshes, 0);
   assert.deepEqual(ended, []);
 });
@@ -238,12 +238,24 @@ test('a server-ended session is reported with the epoch the request started unde
 
 // ---- the real provider behind the shared session seam ----
 
+const EMAIL = 'kan@example.test';
+const tick = () => new Promise<void>((resolve) => setImmediate(resolve));
 const seamTransport = () => createV1Transport({ baseUrl, credentials: session.v1SessionCredentials, client: CLIENT, timeoutMs: 2_000 });
 const openGate = () => {
   let release!: () => void;
   const promise = new Promise<void>((resolve) => (release = resolve));
   return { promise, release };
 };
+
+function recordStore(): SessionRecordStore & { current(): StoredSession | null } {
+  let value: StoredSession | null = null;
+  return {
+    current: () => value,
+    async load() { return value; },
+    async save(next) { value = next; },
+    async clear() { value = null; },
+  };
+}
 
 async function withProvider(provider: CredentialProvider, body: () => Promise<void>): Promise<void> {
   session.installCredentialProvider(provider);
@@ -254,11 +266,20 @@ async function withProvider(provider: CredentialProvider, body: () => Promise<vo
   }
 }
 
+async function emailSignIn(provider: CredentialProvider, server: ReturnType<typeof createFakeAuthServer>, port: ReturnType<typeof createBetterAuthPort>) {
+  await port.sendEmailCode(EMAIL);
+  const result = await provider.signIn({ method: 'email', email: EMAIL, code: server.codeFor(EMAIL) });
+  assert.equal(result.outcome, 'active');
+  return result;
+}
+
 test('return_to_a_does_not_accept_old_a_response', async () => {
-  const d = fakeDevice({ stored: { accountId: A, binding: BIND_A }, sdkUser: 'A' });
-  const provider = createCredentialProvider(d.deps);
+  const server = createFakeAuthServer();
+  const sessions = recordStore();
+  const port = createBetterAuthPort({ client: server.client, native: server.native({ google: { sub: 'google-sub', email: 'g@example.test' } }) });
+  const provider = createCredentialProvider({ port, sessions });
   await withProvider(provider, async () => {
-    await provider.hydrate();
+    await emailSignIn(provider, server, port);
     const firstA = provider.getSessionSnapshot();
     const firstAResponse = { ok: true, wallets: ['A-first'] };
     const gate = openGate();
@@ -268,15 +289,17 @@ test('return_to_a_does_not_accept_old_a_response', async () => {
       .request('GET', '/v1/wallets', { validate: ok })
       .then((value) => void appliedResponses.push(value), (error: unknown) => error);
     while (seen.length === 0) await tick();
-    assert.equal(seen[0].headers['x-gogospend-session'], BIND_A);
-    d.state.nextUser = 'B';
-    assert.equal(await provider.signIn(), 'active');
-    d.state.nextUser = 'A';
-    assert.equal(await provider.signIn(), 'active');
+    // The vault reads the session from the JWT. The session id is not a header.
+    assert.equal(seen[0].headers['x-gogospend-session'], undefined);
+    assert.equal((await provider.signIn({ method: 'google', signUp: true })).outcome, 'active');
+    await emailSignIn(provider, server, port);
     const view = () => ({ session: provider.getSessionSnapshot(), seam: session.getV1SessionSnapshot(), applied: [...appliedResponses] });
     const stateBeforeLateResponse = view();
     const back = stateBeforeLateResponse.session;
-    assert.deepEqual([back.state, back.accountId, back.binding], ['active', A, BIND_A], 'back on A with the very same binding');
+    // Each sign-in mints a new session id, so the binding cannot be the one the late request started under.
+    assert.equal(back.state, 'active');
+    assert.equal(back.accountId, firstA.accountId);
+    assert.notEqual(back.binding, firstA.binding);
     assert.ok(back.epoch > firstA.epoch);
     gate.release();
     const outcome = await late;
@@ -288,24 +311,27 @@ test('return_to_a_does_not_accept_old_a_response', async () => {
 });
 
 test('a server-ended session leaves active through the seam; a stale report from an earlier session changes nothing', async () => {
-  const d = fakeDevice({ stored: { accountId: A, binding: BIND_A }, sdkUser: 'A' });
-  const provider = createCredentialProvider(d.deps);
+  const server = createFakeAuthServer();
+  const sessions = recordStore();
+  const port = createBetterAuthPort({ client: server.client, native: server.native({ google: { sub: 'google-sub', email: 'g@example.test' } }) });
+  const provider = createCredentialProvider({ port, sessions });
   await withProvider(provider, async () => {
-    await provider.hydrate();
+    await emailSignIn(provider, server, port);
     const active = provider.getSessionSnapshot();
     replies.push({ status: 401, body: { code: 'SESSION_REQUIRED' } });
     assert.equal((await failure(() => seamTransport().request('GET', '/v1/me', { validate: ok })))?.code, 'SESSION_REQUIRED');
     assert.deepEqual(provider.getSessionSnapshot(), { ...active, state: 'reauth_required' });
+    assert.equal(provider.endedReason(), 'signed_out_elsewhere');
     assert.equal(session.getV1SessionSnapshot().binding, null);
-    assert.equal(await provider.signIn(), 'active');
+    assert.deepEqual(sessions.current()?.accountId, active.accountId);
+    await emailSignIn(provider, server, port);
     const a = provider.getSessionSnapshot();
     // A request sent as A whose SESSION_REQUIRED arrives after a switch to B.
     const gate = openGate();
     replies.push({ status: 401, body: { code: 'SESSION_REQUIRED' }, gate: gate.promise });
     const stale = failure(() => seamTransport().request('GET', '/v1/me', { validate: ok }));
     while (seen.length < 2) await tick();
-    d.state.nextUser = 'B';
-    assert.equal(await provider.signIn(), 'active');
+    assert.equal((await provider.signIn({ method: 'google', signUp: true })).outcome, 'active');
     const b = provider.getSessionSnapshot();
     gate.release();
     assert.equal((await stale)?.outcome, 'session_changed');
@@ -313,36 +339,57 @@ test('a server-ended session leaves active through the seam; a stale report from
     assert.deepEqual(provider.getSessionSnapshot(), b, 'B stays active');
     replies.push({ status: 403, body: { code: 'ACCOUNT_UNAVAILABLE' } });
     await failure(() => seamTransport().request('GET', '/v1/me', { validate: ok }));
-    assert.equal(provider.getSessionSnapshot().state, 'signed_out');
+    // ACCOUNT_UNAVAILABLE keeps the account (D37). It used to sign out.
+    assert.equal(provider.getSessionSnapshot().state, 'reauth_required');
+    assert.equal(provider.endedReason(), 'account_unavailable');
+    assert.equal(sessions.current()?.accountId, b.accountId);
     await provider.hydrate();
-    assert.equal(d.stored(), null);
-    assert.equal(provider.getSessionSnapshot().state, 'signed_out');
+    assert.equal(sessions.current()?.accountId, b.accountId);
+    assert.equal(provider.getSessionSnapshot().state, 'reauth_required');
   });
 });
 
 test('sign-out from a locked session still revokes its binding over the transport', async () => {
-  const d = fakeDevice({ stored: { accountId: A, binding: BIND_A }, sdkUser: 'A' });
-  const provider = createCredentialProvider({ ...d.deps, api: { ...d.deps.api, logout: createAuthApi(seamTransport()).logout } });
+  const server = createFakeAuthServer();
+  const sessions = recordStore();
+  const port = createBetterAuthPort({ client: server.client, native: server.native({}) });
+  const provider = createCredentialProvider({
+    port,
+    sessions,
+    logoutVault: async (credentials) => {
+      await seamTransport().request('POST', '/v1/me/logout', {
+        body: {},
+        credentials: { accessToken: credentials.accessToken, binding: credentials.sessionId },
+        validate: (value): value is { ok: boolean } => typeof value === 'object' && value !== null,
+      });
+    },
+  });
   await withProvider(provider, async () => {
-    await provider.hydrate();
-    d.state.revoked = true;
+    await emailSignIn(provider, server, port);
+    const token = await provider.getAccessToken();
+    server.deleteSession(provider.getSessionSnapshot().binding ?? '');
     assert.equal(await provider.refreshAfterUnauthorized(), false);
     assert.equal(provider.getSessionSnapshot().state, 'locked');
-    replies.push({ status: 200, body: null });
+    assert.equal(await port.accessToken(), token, 'a refused refresh keeps the last token so sign-out can still reach the vault');
+    replies.push({ status: 200, body: { ok: true } });
     await provider.signOut();
     const revoke = seen.find((r) => r.url === '/v1/me/logout');
     assert.ok(revoke, 'POST /v1/me/logout was sent');
-    assert.equal(revoke.headers['x-gogospend-session'], BIND_A);
-    assert.equal(revoke.headers.authorization, 'Bearer at-A');
+    assert.equal(revoke.headers['x-gogospend-session'], undefined);
+    assert.equal(revoke.headers.authorization, `Bearer ${token}`);
     assert.equal(provider.getSessionSnapshot().state, 'signed_out');
   });
 });
 
 test('offline token reads neither lock the session nor close the diary (S4 resolver)', async () => {
-  const d = fakeDevice({ stored: { accountId: A, binding: BIND_A }, sdkUser: 'A' });
-  const provider = createCredentialProvider(d.deps);
+  const server = createFakeAuthServer();
+  server.state.tokenTtlSeconds = 30;
+  const sessions = recordStore();
+  const port = createBetterAuthPort({ client: server.client, native: server.native({}) });
+  const provider = createCredentialProvider({ port, sessions });
   await withProvider(provider, async () => {
-    await provider.hydrate();
+    await emailSignIn(provider, server, port);
+    const accountId = provider.getSessionSnapshot().accountId;
     let slot: string | null = null;
     const known = createKnownAccount(
       { get: async () => slot, set: async (value) => void (slot = value), remove: async () => void (slot = null) },
@@ -357,13 +404,13 @@ test('offline token reads neither lock the session nor close the diary (S4 resol
     });
     const unsubscribe = session.subscribeSession(() => void resolver.refresh());
     try {
-      replies.push({ status: 200, body: { account_id: A } });
+      replies.push({ status: 200, body: { account_id: accountId } });
       await resolver.refresh();
       const open = resolver.current();
-      assert.equal(open.accountId, A);
-      d.state.offline = true;
+      assert.equal(open.accountId, accountId);
+      server.state.offline = true;
       assert.equal((await failure(() => t.request('GET', '/v1/wallets', { validate: ok })))?.outcome, 'network');
-      await tick(5);
+      await tick();
       await resolver.refresh();
       assert.equal(provider.getSessionSnapshot().state, 'active', 'offline never locks');
       assert.deepEqual(resolver.current(), open, 'the diary stays on its account');
