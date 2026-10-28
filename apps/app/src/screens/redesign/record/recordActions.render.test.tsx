@@ -25,32 +25,42 @@ afterEach(() => { cleanup(); });
 
 const state = () => screen.getByTestId('state').textContent ?? '';
 
-function Probe({ id }: { id: string }) {
-  const actions = useRecordActions({ id, mode: 'view', now: NOW });
+function Probe({ id, mode = 'view' }: { id: string; mode?: 'view' | 'edit' }) {
+  const actions = useRecordActions({ id, mode, now: NOW });
   const record = actions.loaded.state === 'ready' ? actions.loaded.record : null;
   const editing = actions.editing;
   const conflict = editing?.conflict;
+  // Keys only. Retype also starts an edit, and startEditing clears the notice.
+  const typeAmount = () => {
+    for (const key of ['clear', '1', '2', '0', '0', '0'] as const) actions.pressKey(key);
+  };
   const retype = () => {
     actions.startEditing();
-    for (const key of ['clear', '1', '2', '0', '0', '0'] as const) actions.pressKey(key);
+    typeAmount();
   };
   return (
     <>
       <Text testID="state">{[
-        `loaded ${actions.loaded.state}`,
+        `loaded ${actions.loaded.state}${record ? ` v${record.version} ${record.deleted_at ? 'deleted' : 'live'}` : ''}`,
         `deleted ${actions.deleted ? String(actions.deleted.version) : 'none'}`,
         editing
           ? `editing base ${editing.draft.baseVersion} amount ${editing.draft.amountMinor} keypad ${editing.keypad.operands.join(',')} conflict ${conflict ? `${conflict.version} ${conflict.amount_minor}` : 'none'} unconfirmed ${editing.unconfirmed} note ${editing.draft.note}`
           : 'editing none',
         `message ${editing?.message ?? 'none'}`,
+        `notice ${actions.notice ?? 'none'}`,
       ].join('\n')}</Text>
       <Pressable accessibilityRole="button" accessibilityLabel="Delete" onPress={() => { if (record) void actions.remove(record); }}><Text>Delete</Text></Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="Undo" onPress={() => { if (actions.deleted) void actions.restore(actions.deleted); }}><Text>Undo</Text></Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="Retype" onPress={retype}><Text>Retype</Text></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel="Type" onPress={typeAmount}><Text>Type</Text></Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="Save" onPress={() => void actions.submitEdit()}><Text>Save</Text></Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="Try again" onPress={() => void actions.submitEdit()}><Text>Try again</Text></Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="Digit" onPress={() => actions.pressKey('5')}><Text>Digit</Text></Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="Note" onPress={() => actions.changeEditing((current) => ({ ...current, draft: { ...current.draft, note: 'Changed here' } }))}><Text>Note</Text></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel="Restore" onPress={() => { if (record) void actions.restore({ id: record.id, version: record.version }); }}><Text>Restore</Text></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel="Edit" onPress={() => actions.startEditing()}><Text>Edit</Text></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel="Cancel" onPress={() => actions.cancelEditing()}><Text>Cancel</Text></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel="Reload" onPress={() => { actions.cancelEditing(); void actions.load(); }}><Text>Reload</Text></Pressable>
     </>
   );
 }
@@ -106,4 +116,52 @@ test('an edit whose answer never came is frozen, and Try again resends the same 
   await waitFor(() => expect(fake.callsOf('updateTransaction')).toHaveLength(2));
   const [first, second] = fake.callsOf('updateTransaction');
   expect(second.args).toEqual(first.args);
+});
+
+/**
+ * Edit mode on an entry that reads as deleted. Another device restores it before
+ * Restore is pressed, so ours is refused, and the reload opens the edit with the notice.
+ */
+async function openEditWithANotice() {
+  const fake = createFakeResources(goldenSeed());
+  const rent = fake.records.get(RENT) as TransactionDto;
+  fake.records.set(RENT, { ...rent, deleted_at: '2026-09-29T00:00:00.000Z', version: 2 });
+  mountScreen(<Probe id={RENT} mode="edit" />, { resources: fake.resources });
+  await waitFor(() => expect(state()).toContain('loaded ready v2 deleted'));
+  fake.records.set(RENT, { ...rent, deleted_at: null, version: 3 });
+  fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
+  await waitFor(() => expect(state()).toContain('editing base 3'));
+  expect(fake.callsOf('restoreTransaction')).toHaveLength(1);
+  expect(state()).toContain('conflict none');
+  expect(state()).toContain('notice This entry could not be saved.');
+  return fake;
+}
+
+test('cancelling an edit after a refused restore brings the notice back', async () => {
+  await openEditWithANotice();
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+  expect(state()).toContain('editing none');
+  expect(state()).toContain('notice This entry could not be saved.');
+});
+
+test('reloading a conflict clears the old notice', async () => {
+  const fake = await openEditWithANotice();
+  fireEvent.click(screen.getByRole('button', { name: 'Type' }));
+  const rent = fake.records.get(RENT) as TransactionDto;
+  fake.records.set(RENT, { ...rent, amount_minor: '1300000', version: 4 });
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  await waitFor(() => expect(state()).toContain('conflict 4 1300000'));
+  fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
+  await waitFor(() => expect(state()).toContain('loaded ready v4 live'));
+  expect(state()).toContain('editing none');
+  expect(state()).toContain('notice none');
+});
+
+test('starting an edit clears the notice', async () => {
+  await openEditWithANotice();
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+  expect(state()).toContain('notice This entry could not be saved.');
+  fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+  expect(state()).toContain('editing base 3');
+  expect(state()).toContain('notice none');
 });
