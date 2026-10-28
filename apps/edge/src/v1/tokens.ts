@@ -16,6 +16,16 @@ export type TokenVerifier = {
 
 const BEARER = /^Bearer ([A-Za-z0-9._~+/=-]+)$/
 
+/** `auth_time` is optional. Present, it must be a whole number of seconds, not further ahead than the clock tolerance. */
+function authTimeOf(value: unknown): number | undefined {
+  if (value === undefined) return undefined
+  const now = Math.floor(Date.now() / 1000)
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > now + CLOCK_TOLERANCE_SECONDS) {
+    throw new ProblemException(401, 'UNAUTHENTICATED')
+  }
+  return value
+}
+
 /**
  * Verifies `Authorization: Bearer <access token>` (§6.4). The signature is
  * checked against the JWKS, with EdDSA or RS256 only, and the issuer, audience
@@ -24,6 +34,8 @@ const BEARER = /^Bearer ([A-Za-z0-9._~+/=-]+)$/
  * may be at most its lifetime plus that tolerance old (`maxTokenAge` is what
  * checks `iat`). Then `exp` must come after `iat`, the lifetime is at most 900
  * seconds, `sub` is the account (a UUID) and `sid` is the session (a UUID).
+ * `auth_time`, when the token carries it, must be an integer from 0 up to
+ * now plus the same 30-second tolerance, and it becomes `claims.authTime`.
  *
  * A failing key source answers 503 with a retry. Any other bad token, including
  * a claim jose rejects, is 401, the same split the API's Auth0AccessTokenGuard makes.
@@ -53,7 +65,8 @@ export function createTokenVerifier(o: { issuer: string; audience: string; keys:
         throw new ProblemException(401, 'UNAUTHENTICATED')
       }
       if (typeof sid !== 'string' || !isUuid(sid)) throw new ProblemException(401, 'SESSION_REQUIRED')
-      return { accountId: sub, sessionId: sid, issuedAt: iat, clientId }
+      const authTime = authTimeOf(verified.payload.auth_time)
+      return authTime === undefined ? { accountId: sub, sessionId: sid, issuedAt: iat, clientId } : { accountId: sub, sessionId: sid, issuedAt: iat, clientId, authTime }
     },
   }
 }

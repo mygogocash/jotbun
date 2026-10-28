@@ -329,6 +329,9 @@ Phase 1A moves each person's ledger into one SQLite Durable Object, the UserVaul
 
 **Pre-review fix (R76).** The controller ruled that `categories_replace_guard` also refuses an insert whose built-in key another category already holds. Without that clause, `INSERT OR REPLACE` with such a key deleted the other category silently, because `recursive_triggers` is off and `categories_never_deleted` therefore did not fire. The clause is `OR EXISTS (SELECT 1 FROM categories c WHERE c.builtin_key = NEW.builtin_key AND c.id <> NEW.id)`. Test first: `a replace that reuses another category's built-in key is refused, and the other category survives` (`vault-schema.test.ts`), placed before the same-id replace case. Before the clause, `npm run test:edge:workers -- test/workers/categories.test.ts test/workers/vault-schema.test.ts` gave `Test Files 1 failed | 1 passed (2)` and `Tests 1 failed | 29 passed (30)`. The failure was the new case, `promise resolved "[]" instead of rejecting`, because the replace had removed the other category. After the clause, the same command gave `Test Files 2 passed (2)` and `Tests 30 passed (30)`. The full edge gate then passed (see the gate bullets above). Custom categories (a NULL built-in key), the identical seeding rows and the same-id replace are unaffected, as the existing cases show. Checksums (sha256, first 8 hex): `0000_vault_core.sql` d0329a4d, `vault-schema.test.ts` ff0b345b. One behaviour change: a plain `INSERT ... ON CONFLICT DO NOTHING` whose built-in key another category holds now aborts, where it was skipped before. The seed path checks the present keys first, so it cannot reach that case. The other open item (a REPLACE that keeps type and built-in key but changes other columns) is not part of this ruling and stays open.
 
+## 1B: files and background work on the vault
+
+Phase 1B moves the files, imports, exports, snapshots, receipts and the AI companion's state into each person's UserVault, as the spec's §6.2 and §6.3 describe (`docs/superpowers/specs/2026-10-25-jotbun-bun-wallet-cloudflare-design.md`). Task 2 adds the file tables, the object keys, the prefix purge and the durable erase that deletion relies on.
 ## P2: Bun Wallet core
 
 Phase 2 is the phone's Bun Wallet. Task 3 is the draft-copy rule and the two stores: device settings, forgotten at sign-out, and account-kept looks, erased only with the account (R64).
@@ -716,6 +719,51 @@ Phase 1B moves files and background work onto each person's vault (spec `docs/su
 - **Concerns for the integrator:**
   - `erase()` is not one atomic step. It runs `deleteAll()`, then the migrations, then the marker insert. If the marker insert fails after `deleteAll()`, nothing in storage records the erase, and a later call could create the account again. The in-memory `erased` flag covers only the instance that failed. 1C's deletion should block sign-in in D1 first (§6.12, step 1) and retry `erase()` until the marker reads back. The alternative is one `transactionSync` that deletes the rows and writes the marker, which needs no re-migration. That choice is the controller's.
   - The purge loops until a listing comes back empty, with no iteration cap. A bucket that kept listing the same keys would never end. 1C's Workflow step should bound its own time.
+
+### 1B Task 3: the files front door
+
+- **Status:** built and verified locally on this worktree, from `9924cca` (the files schema on the integration head). Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - New, `apps/edge/src/v1/`: `fresh-sign-in.ts` (`FRESH_SIGN_IN_SECONDS`, `assertFreshSignIn`), `worker-routes.ts` (`VaultSession`, `WorkerContext`, `vaultSession`, `workerSessionFor`, `WORKER_HANDLERS`) and `bridge.ts` (the `bridge.catalogue` handler and its per-isolate catalogue cache).
+  - Protocol: `protocol.ts` (`authTime` on `VaultClaims`, `VaultAccess`, required `VaultCall.charge`, `WorkerRouteId`). `routes.ts` adds `VAULT_STEP_ROUTES` and `stepRouteOf`, extends `VaultRoute` with `recent_proof`, `worker` and `body`, and moves `GET /v1/bridge/gogocash/catalogue` out of `VAULT_DEFERRED_ROUTES` into `VAULT_V1_ROUTES` as a public Worker route. `vaultStatusOf` uses the step's status, or 200, when the id is not an HTTP route.
+  - Front door: `handler.ts` runs a Worker route after the gates (a public one with no token, any other after the client version and the token), sets `charge` from the method on a vault route, and accepts `waitUntil` and `fetchCatalogue` on its deps. `tokens.ts` checks `auth_time`. `config.ts` keeps `uploads` unexposed unless `IMPORT_UPLOADS_ENABLED` is `1` or `true`, on the open path and the fail-closed path. `env.ts` gains `OBJECTS`, `IMPORT_UPLOADS_ENABLED`, `GOGOCASH_BRIDGE_ENABLED` and `GOGOCASH_CATALOGUE_URL`. `wrangler.vault.jsonc` sets the two flags to `"false"`.
+  - Vault: `user-vault.ts` `call()` resolves `vaultRouteOf(id) ?? stepRouteOf(id)` and skips both budgets when `charge` is `'step'`. `recent_proof` is policy-exempt, like `bound_session`.
+  - Tests: `test/workers/files-front-door.test.ts` (7), `test/workers/config.test.ts` (the uploads case; 6 in the file), `test/vault-route-coverage.test.ts` (the worker-or-vault check; the pin lists the bridge), `test/workers/support/v1-client.ts` (`authTime`, `startV1` options) and `test/workers/front-door.test.ts` (`charge: 'write'` on the hand-built call).
+- **RED to GREEN:**
+  - RED, workers (`npm run test:edge:workers -- test/workers/files-front-door.test.ts test/workers/config.test.ts`), with the stubs in place (empty step table, `stepRouteOf` returning undefined, `assertFreshSignIn` never throwing, `workerSessionFor` passing `config.policies` unfiltered, bridge handler answering 501): `Test Files 2 failed (2)`, `Tests 8 failed | 5 passed (13)`. All 7 new front-door cases failed on assertions: 501 where 404 and 200 were expected, no throw from `assertFreshSignIn`, 200 where a future `auth_time` must be 401, 500 where the step id must be 200, 429 on call 121 of one session, and terms v2 still present in the session's policies. The new config case failed (`isExposed('uploads')` was true). The 5 passes are the existing config cases.
+  - RED, Node (`npm run test:edge -- test/vault-route-coverage.test.ts`): `Tests 6 passed (6)`. The new structural checks passed on the stub, because the stub had already moved the bridge route and registered a handler. They do not exercise the 501 body.
+  - GREEN, same workers command: `Tests 13 passed (13)`. GREEN, Node: `Tests 6 passed (6)`.
+- **Mutation check:** `shasum -a 256` recorded before any mutant, originals kept in `/tmp/1b-t3-mutation` (outside the repo). Each mutant was applied in place, `files-front-door.test.ts` was run, and the file was restored. `shasum -c` reported OK after every restore. Final checksums match the recorded ones: `worker-routes.ts` `92e8ca0c…24df`, `tokens.ts` `1ad212b7…f77b`, `user-vault.ts` `6033f280…217d`.
+  - Charge every call (`vaultSession` sends the route's charge on every call, never `'step'`): `Tests 1 failed | 6 passed (7)`. "only the first vault call of a request is charged" got 429 on A's 121st call. Caught.
+  - Pass `config.policies` unfiltered: `Tests 1 failed | 6 passed (7)`. The live-policies case still saw terms v2. Caught.
+  - Accept a future `auth_time` (no upper bound): `Tests 1 failed | 6 passed (7)`. The future token got 200 where 401 was expected. Caught.
+  - Drop the step fallback in `call()`: `Tests 1 failed | 6 passed (7)`. The step-only case got 500 `INTERNAL_ERROR`. Caught.
+- **Gate** (`npm run typecheck:edge && npm run test:edge && npm run test:edge:workers && npm run build:edge && npm run test:edge:db`, from the worktree root, after `npm run build -w gogospend-api`; the database script runs its own `db-up`):
+  - `typecheck:edge`: passes.
+  - `test:edge`: 122 passed (9 files). The baseline at this head was 121; the new coverage case is the extra one. The node catalogue tests logged `cashback_catalogue_rejected` and `cashback_catalogue_unavailable` and passed.
+  - `test:edge:workers`: the chained run hit `Tests 1 failed | 176 passed (177)`. `sync.test.ts` "defaults to 200 groups a page and refuses more than 1,000" timed out at 5000ms. That file alone then passed, `Tests 12 passed (12)` in 2.20s of tests. A full workers rerun passed, `Tests 177 passed (177)` in 9 files. The timeout was parallel load, not an assertion. The 177 include the 7 new front-door cases and the new config case.
+  - `build:edge`: passes. `dist/jotbun_vault/` was produced with the rest of the edge build.
+  - `test:edge:db`: 62 passed (8 files). `gogospend-postgres-v1-local` was already healthy and port 55432 was reachable, so it was not restarted.
+- **Ported in full:** the public catalogue through the front door (404 `NOT_FOUND` with `cache-control: no-store` while the bridge is off; the built-in brands, every link on `https://gogocash.co`, when the live fetch rejects; the v1 headers and a HEAD with no body). `CashbackCatalogueSource` is reused, not copied. `auth_time` is optional and, when present, an integer from 0 through now plus 30 seconds. `assertFreshSignIn` is the 300-second window with that same tolerance. A request's first vault call carries the route's charge and every later call is `'step'`. Uploads stay unexposed unless the release flag is `1` or `true`.
+- **Ported in part:** none. No route calls `assertFreshSignIn` yet. The export task applies it after its receipt lookup.
+- **Not applicable:** this task ports no PostgreSQL suite. There is no role, grant, row-level security, pool, isolation or lock-wait case to move. The edge's existing catalogue tests stay on the node runner.
+- **Deviations:**
+  1. `startV1`'s `env` override is a `Proxy` over the Workers `env`. A copied object would drop the `VAULT` and `CONFIG` bindings.
+  2. The future-`auth_time` test reads the epoch second early in that second, so `now + 31` cannot fall back inside the 30-second tolerance if the second rolls over while the request runs.
+  3. `fetchCatalogue` reaches the cache through `bindCatalogueFetch`, called immediately before the handler. `WorkerContext` stays as specified. The handler reads the source before its first await, so two requests cannot swap fetches.
+  4. A `body: 'stream'` route still calls `readJsonBody`, as the dispatcher does. A non-JSON body stays unread and is the stream. A JSON body is parsed, and there is no stream.
+  5. The coverage pin now lists `GET /v1/bridge/gogocash/catalogue`, and the test name says so. The table would otherwise fail its own "nothing else" check.
+- **SKIPPED (hosted):** nothing deployed, and no cloud resource was created. The two new vars are local wrangler settings.
+- **Notes for later tasks:**
+  - A Worker route is one `VAULT_V1_ROUTES` entry with `worker` and a `WORKER_HANDLERS` function, and no `vault` id. `GET /v1/policies` still has neither.
+  - A step-only id goes in `VAULT_STEP_ROUTES` and `VAULT_HANDLERS`, and not in `VAULT_V1_ROUTES`. `call()` resolves it. `vaultStatusOf` returns the step's status, or 200.
+  - `vaultSession` charges on the first call only. `workerSessionFor` uses `livePolicies` and a charge from the method (`GET` is `'read'`).
+  - `assertFreshSignIn(claims, nowSeconds)` throws 401 `REAUTH_REQUIRED` outside `[now - 300, now + 30]`. Nothing calls it until the export command.
+  - `claims.authTime` is set only when the token's `auth_time` is an integer in range. The test client sets it through `TokenOptions.authTime`.
+  - `IMPORT_UPLOADS_ENABLED` must be `1` or `true` before an uploads route is exposed. `wrangler.vault.jsonc` leaves it `"false"`.
+  - `deps.fetchCatalogue` and `deps.waitUntil` are on `handleVaultV1`. The catalogue cache is one source per combination of the flag, the URL and the fetch function.
+  - `recent_proof` is a vault access and skips the policy check. No route uses it yet.
+  - `OBJECTS` is on `V1Env`. The binding was already in `wrangler.vault.jsonc`.
 - **Integration (27 Oct):** merged after Tasks 5 and 6 of 1A (PRs #81, #80); only the receipts conflicted. On the merged tree: `typecheck:edge` passes, `test:edge` 130 passed (10 files), `test:edge:workers` 240 passed (12 files).
 
 ## 1D: live pokes, the pending choice and PostHog
