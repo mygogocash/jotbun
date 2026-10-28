@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import { EDGE_ONLY_ROUTES, V1_ROUTES, defaultStatus } from '../src/server/app/routes'
 import type { Route } from '../src/server/app/routes'
-import { VAULT_DEFERRED_ROUTES, VAULT_PENDING_ROUTES, VAULT_RETIRED_ROUTES, VAULT_V1_ROUTES, vaultStatus } from '../src/v1/routes'
+import type { VaultRouteId } from '../src/v1/protocol'
+import { VAULT_DEFERRED_ROUTES, VAULT_PENDING_ROUTES, VAULT_RETIRED_ROUTES, VAULT_STEP_ROUTES, VAULT_V1_ROUTES, vaultStatus } from '../src/v1/routes'
+import { WORKER_HANDLERS } from '../src/v1/worker-routes'
 import { VAULT_HANDLERS } from '../src/vault/routes'
 
 // Every route the PostgreSQL edge declares must be placed once in the vault's
@@ -28,9 +30,10 @@ describe('the vault route table covers each v1 route exactly once', () => {
     expect(new Set(listed).size).toBe(listed.length)
   })
 
-  it('Tasks 2 to 6 and 8a port the front door, wallets, categories, transactions, budgets, command status and the sync delta feed, and nothing else', () => {
+  it('Tasks 2 to 6 and 8a, and the bridge, port the front door, wallets, categories, transactions, budgets, command status, the sync delta feed and the cashback catalogue, and nothing else', () => {
     expect(VAULT_V1_ROUTES.map((route) => keyOf(route.method, route.path)).sort()).toEqual([
       'DELETE /v1/transactions/:id',
+      'GET /v1/bridge/gogocash/catalogue',
       'GET /v1/budgets/:month',
       'GET /v1/categories',
       'GET /v1/me',
@@ -76,6 +79,27 @@ describe('the vault route table covers each v1 route exactly once', () => {
     for (const route of VAULT_V1_ROUTES) {
       if (route.vault) expect(VAULT_HANDLERS[route.vault], route.vault).toBeTypeOf('function')
     }
+  })
+
+  it('a ported route is one vault call or one Worker route, and a step id is only a vault call', () => {
+    for (const route of VAULT_V1_ROUTES) {
+      const key = keyOf(route.method, route.path)
+      if (key === 'GET /v1/policies') {
+        expect(route.vault, key).toBeUndefined()
+        expect(route.worker, key).toBeUndefined()
+        continue
+      }
+      expect(Number(route.vault !== undefined) + Number(route.worker !== undefined), key).toBe(1)
+      if (route.vault) expect(VAULT_HANDLERS[route.vault], route.vault).toBeTypeOf('function')
+      if (route.worker) expect(WORKER_HANDLERS[route.worker], route.worker).toBeTypeOf('function')
+      const old = legacy.get(key)
+      if (old?.access === 'recent_proof') expect(route.access, key).toBe('recent_proof')
+    }
+    for (const id of Object.keys(VAULT_STEP_ROUTES) as VaultRouteId[]) {
+      expect(VAULT_HANDLERS[id], id).toBeTypeOf('function')
+      expect(VAULT_V1_ROUTES.some((route) => route.vault === id), id).toBe(false)
+    }
+    expect(VAULT_DEFERRED_ROUTES).not.toContain('GET /v1/bridge/gogocash/catalogue')
   })
 
   it('the retired set is exactly the six routes §6.4 retires', () => {
