@@ -363,7 +363,7 @@ Phase 2 is the Bun Wallet on the device. Task 4 reads the days already logged in
   - P2-T36's `isLoggedToday` is true when `loggedDays()` holds today, confirmed or draft.
   - Render tests pass a seed as `createFakeDiary(view, { loggedDays })`. Pending dates on the current view are merged in while `phase` is `ready`.
   - The query binds nothing. Do not add one `?` per id here.
-## 1D: live pokes, the pending choice and PostHog
+## 1D: live pokes, the pending choice, PostHog and the proof
 
 Phase 1D adds live pokes, the pending conflict choice and PostHog to the vault core. The design is `docs/superpowers/specs/2026-10-25-jotbun-bun-wallet-cloudflare-design.md` (PostHog is its §7). Task 3 builds the server analytics as a stand-alone module; the Worker wiring is 1D-T11 and T13.
 
@@ -682,9 +682,67 @@ Phase 1B moves files and background work onto each person's vault (spec `docs/su
   - The purge loops until a listing comes back empty, with no iteration cap. A bucket that kept listing the same keys would never end. 1C's Workflow step should bound its own time.
 - **Integration (27 Oct):** merged after Tasks 5 and 6 of 1A (PRs #81, #80); only the receipts conflicted. On the merged tree: `typecheck:edge` passes, `test:edge` 130 passed (10 files), `test:edge:workers` 240 passed (12 files).
 
-## 1D: live pokes, the pending choice and PostHog
+## 1D: live pokes, the pending choice, PostHog and the proof
 
 Phase 1D adds live pokes, the pending choice, PostHog and the two-phone proof (plan 1D, in the controller's brief). Task 2 puts PostHog's proxy on the HTTP Worker.
+
+### 1D Task 1: The app's analytics core: the allow-list, the typed emitters, consent, the held events and the outgoing gate
+
+- **Status:** built and verified locally on `worktree-agent-abe4ba17803d852d1`: the first round in `b3b1c11`, the integration head `bdf6b12` merged in `402fe86`, and the review's fixes in the commit with this receipt. Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - `apps/app/src/analytics/catalog.ts`: the 40 §7 events and their property rules, `PACK_KEYS`, `cleanEvent`, `cleanCommon`, `isScreenPattern` and `screenPattern`.
+  - `apps/app/src/analytics/events.ts`: the typed emitters every plan calls (R23).
+  - `apps/app/src/analytics/controller.ts`: consent, identity, the held events, `track` and `screen`. Server and store work runs one call at a time (`serialize`).
+  - `apps/app/src/analytics/gate.ts`: `gateOutgoing`, PostHog's `before_send`.
+  - `apps/app/src/analytics/bus.ts`: `setAnalytics` and `getAnalytics`; `trackClientEvent` cleans, then feeds the tests-only seam and `getAnalytics()?.track`.
+  - `apps/app/src/analytics/testing/recordAnalytics.ts`: the test helper.
+  - Tests: `catalog.test.ts`, `events.test.ts`, `controller.test.ts`, `gate.test.ts`, `neverSent.test.ts`.
+- **RED to GREEN, first round (`b3b1c11`):** typed stubs first. The five files (`npm run test:unit -w gogospend-app -- src/analytics/catalog.test.ts src/analytics/events.test.ts src/analytics/controller.test.ts src/analytics/gate.test.ts src/analytics/neverSent.test.ts`): 30 failed, 1 passed of 31 (catalog 6, events 1, controller 18 failed and 1 passed, gate 4, neverSent 1). The pass was `without a client, nothing is sent…`, which the stub already met. GREEN: 31 passed. Before the fix round, the whole `npm run test:unit -w gogospend-app` was 719 passed; one first-round assertion, `assert.deepEqual(sent, [])`, narrowed to `never[]` under `tsc` and became `assert.equal(sent.length, 0)`.
+- **Review fix round** (the controller's review of `b3b1c11`: Needs fixes):
+  1. Capture stops before a consent write. When the server answers no, or holds no answer (`unasked`), the controller applies the no, or reopens the question with `reset()` and `stopSessionRecording()`, before it writes or erases this phone's stored answer. Before, the write came first, so a store that failed left the phone in yes, capturing.
+  2. `setAccount`, `answer` and `refresh` run their server and store work one call at a time, in call order. What must happen at once still happens at the call: an account change resets the identity, and a no stops capture and replay. Before, a yes still on its way could land at the server after a later no, or be written to the store after it, and the next refresh put the phone back in yes.
+  3. This receipt sits under the plan's phase heading (Global Constraints): `## 1D: live pokes, the pending choice and PostHog` now reads `## 1D: live pokes, the pending choice, PostHog and the proof`. Task 2's section is unchanged.
+  4. P2-T7 has merged, so `a category is a built-in key, a pack key or custom` also asserts that `PACK_KEYS` equals `THAI_EVERYDAY_PACK.map((item) => item.key)`, as the plan asks. The comment in `catalog.ts` names P2-T7's pack.
+  - New tests: `a no from the server stops capture before this phone stores it`, `an answer gone from the server stops capture before this phone erases its own`, `a yes still on its way cannot outlast a later no at the server`, `a yes being stored when the person says no cannot replace the no`, `a foreground refresh waiting behind a yes cannot undo a later no`. The harness gained a store whose writes can fail or hold a yes, an erase that can fail, and a server whose consent calls can be held and landed newest first.
+  - RED, the new tests against `b3b1c11`'s controller (`npm run test:unit -w gogospend-app -- src/analytics/controller.test.ts src/analytics/catalog.test.ts`): 5 failed, 25 passed. Each failure is an assertion: the first two left the status at `yes`; the third and fifth left the server at `yes`; the fourth left `yes` in the store.
+  - GREEN: `controller.test.ts` 24 passed, 0 failed; the five files 36 passed, 0 failed.
+  - The pack-key assertion passed at once: it pins two lists that already match. M6 below shows it bites.
+- **Mutation check:**
+  - First round (`b3b1c11`), each killed: unknown properties kept by `cleanEvent` (`cleanEvent drops…`, `neverSent`); the server's yes applied over a pending no (`a pending no is kept…`); `reset()` skipped in `applyNo` (`a no read at launch…`, `a no given on another phone…`, `saying no…`); a no that resets only from yes (`a no read at launch…`); a frame that keeps `context_line` (`before yes…`, `after yes…`, `neverSent`); `$feature_flag_called` allowed after yes (`after yes, allow-listed…`).
+  - Fix round: each mutant applied in place, the focused file run, the file restored from a copy in the scratch folder and its SHA-256 compared (it matched each time).
+    - M1, the server's no applied after the store write: 1 failed, 23 passed (`a no from the server stops capture…`).
+    - M2, the question reopened after the erase: 1 failed, 23 passed (`an answer gone from the server…`).
+    - M3, `serialize` runs its work at once: 3 failed, 21 passed (`a yes still on its way…`, `a yes being stored…`, `a foreground refresh waiting…`).
+    - M4, `refresh` reads the generation when its queued work starts, not at the call: 1 failed, 23 passed (`a foreground refresh waiting…`).
+    - M5, `answer('no')` applies the no inside its queued work: 3 failed, 21 passed (the same three as M3).
+    - M6, `PACK_KEYS` with `seven_eleven` for `seven`: 1 failed, 5 passed in `catalog.test.ts` (`a category is a built-in key…`).
+    - No survivors.
+- **Gate** (worktree root, the merged tree with the fixes; the head is `bdf6b12`, so the counts differ from the planning probe at `e546bee`, which gave test:app 28, test:unit 730 and test:render 1587):
+  - `npm run typecheck:app`: passes.
+  - `npm run test:app`: 29 passed, 0 failed.
+  - `npm run test:unit`: 770 passed, 0 failed.
+  - `npm run test:render -w gogospend-app`: 83 files and 1589 tests passed.
+  - `npm run export:web -w gogospend-app -- --max-workers 2`: passes.
+  - `git diff --check origin/claude/p1a-vault-core...HEAD`: clean.
+  - The first round ran only the five files and `typecheck:app`.
+- **Ported:** not a port from `apps/api`. The PostgreSQL role, grant, RLS, pool, isolation and lock cases do not apply: this task is the app's in-memory allow-list, consent controller and `before_send` gate.
+- **Deviations:**
+  - `screen` sends the cleaned common properties and `origin: 'app'`, as the common row's "added to every event" says.
+  - A new controller's account starts unset, not `null`, so the first `setAccount(null)` is a real change and resets a distinct id the SDK may still hold from an earlier run. `setAccount` with the current id, a second `null` included, does nothing.
+  - Opening the question also calls `stopSessionRecording()`, so replay cannot keep running when a yes becomes "never asked".
+  - Held events take the common properties when they are sent, not when they were tracked, so they carry `weeks_since_signup` from the yes.
+  - A refresh or an answer that a later call overtakes resolves without changing anything, and the later call decides. `answer('yes')` still sends its yes first, so a refresh that overtakes it reads the yes from the server.
+  - Tests beyond the plan's bullets: the other emitters, seconds rounded and clamped, `recordAnalytics`, a null client, a stored yes entering without an identity, and the fix round's five.
+- **SKIPPED (hosted):** no PostHog project, no key, nothing sent off the phone. The modules are pure, and every client in these tests is a fake.
+- **Notes for later tasks:**
+  - Every plan, phase 2 included, calls `events.ts` and these names (R23). `trackClientEvent` drops a name outside the allow-list, so `spend_tx_added`, `spend_import_started` and `system_permission_outcome` no longer reach the test seam; 1D-T7 moves their callers onto the emitters.
+  - A category is sent as a built-in key, one of `PACK_KEYS`, or `custom`. P2-T7's `analyticsCategoryKey` (`apps/app/src/spend/v1/redesign/planning/thaiPack.ts`) returns exactly that, matching C3's names and aliases; 1D-T7 calls it.
+  - `wallet_type` takes the four kinds (R81). `ewallet` is dropped.
+  - `account_deleted` is in the allow-list with `method`, as the table says. The anonymous count that never recreates the person is the server's (1D-T13); no client emitter sends it.
+  - 1D-T6 installs this controller with `setAnalytics`, passes `gateOutgoing` as `before_send`, and keeps the client null when no project key is set. Its `consentStorage.ts` should not throw from `read()`, because a failing read stops a refresh before it reads the server's answer. The store holds one answer: when another account signs in on the same phone, its load overwrites or erases a no the first account has not delivered. A caller that runs `refresh()` at every foreground should catch its rejection.
+  - Left for later (minor, from the fix round's review): a no whose first store write fails is never sent to the server; `weeks_since_signup` stays in the common properties across an account change; an offline refresh with no stored answer moves an open question back to `loading`.
+  - `recordAnalytics()` signs in `00000000-0000-4000-8000-0000000000aa`, then empties `sent`.
+  - **Integration head:** `bdf6b12` (and its tip `75b3625`) carries the phase headings `## 1D: live pokes, the pending choice and PostHog` and `## P2: Bun Wallet core` twice each. Both 1D headings take the plan's text here, and this receipt sits under the second one, directly above `### 1D Task 2`. The duplicates are left for the orchestrator's ledger consolidation.
 
 ### 1D Task 2: The PostHog proxy on the Worker
 
@@ -760,48 +818,6 @@ What the owner asked for, and where each part stands. Commits on `claude/premium
 | AI that people love and use daily | Tell Bun (sentences and slips), Ask Bun (grounded figures, follow-ups), Bun's daily note, "often logged" chips; `claude-opus-5-5` with fallbacks; consent, daily limits and grounding on the server. | Done in code with a scripted model; live calls wait for an Anthropic key. |
 | Trust, and a bridge to GoGoCash | The cashback card: a count, never a guessed amount; asked once; "Why am I seeing this?" and "How cashback works"; matching on the phone, nothing sent; Open GoGoCash with no diary data. | Done. A hosted GoGoCash catalogue URL is still to come. |
 
-## 1D: pokes and PostHog
-
-### Task 1: analytics core
-
-- **Status:** built and verified locally. Not pushed. The independent review is the controller's, after this receipt.
-- **Files:**
-  - `apps/app/src/analytics/catalog.ts` (the 40 §7 events, property rules, `cleanEvent`, `cleanCommon`, `screenPattern`)
-  - `apps/app/src/analytics/events.ts` (the typed emitters every plan calls)
-  - `apps/app/src/analytics/controller.ts` (consent, identity, the held queue, `track` and `screen`)
-  - `apps/app/src/analytics/gate.ts` (`gateOutgoing`, PostHog's `before_send`)
-  - `apps/app/src/analytics/bus.ts` (`trackClientEvent` cleans, then the test seam and `getAnalytics()?.track`)
-  - `apps/app/src/analytics/testing/recordAnalytics.ts`
-  - Tests: `catalog.test.ts`, `events.test.ts`, `controller.test.ts`, `gate.test.ts`, `neverSent.test.ts`
-- **RED to GREEN:**
-  - RED (`npm run test:unit -w gogospend-app -- src/analytics/catalog.test.ts src/analytics/events.test.ts src/analytics/controller.test.ts src/analytics/gate.test.ts src/analytics/neverSent.test.ts`), stubs in place: 30 failed, 1 passed, 31 tests. Per file: catalog 6 failed, events 1, controller 18 failed and 1 passed, gate 4, neverSent 1. The pass was `without a client, nothing is sent…`: the stub's status was already `yes` and a null client never captured. Every other test failed on an assertion (empty allow-list, emitters that sent nothing, a controller that captured at once, a gate that returned its input).
-  - GREEN, same command: 31 passed, 0 failed.
-  - Whole `npm run test:unit -w gogospend-app`: 719 passed, 0 failed. That run was before a one-line test change (`assert.deepEqual(sent, [])` narrowed the array to `never[]` under `tsc`); the replacement is `assert.equal(sent.length, 0)`. `controller.test.ts` was re-run after it: 19 passed.
-- **Mutation check:** originals backed up outside the repo. SHA-256 before: `catalog.ts` `108a523b…8dfaf`, `controller.ts` `d6c3bb12…1badf`, `gate.ts` `188bd05c…e8138`. Each mutant was applied in place, the focused tests were run, the file was restored from the backup, and the checksum matched.
-  - Unknown properties kept by `cleanEvent` when they are a string, number or boolean: `cleanEvent drops…` and `neverSent` failed (2 failed, 5 passed of those two files).
-  - The server's yes applied over a pending no (the pending branch removed): `a pending no is kept…` failed (1 failed, 18 passed).
-  - `reset()` skipped inside `applyNo`: `a no read at launch…`, `a no given on another phone…` and `saying no…` failed (3 failed, 16 passed). The brief names the last two; the launch test also counts resets, so it failed too.
-  - `reset()` on a no only when the in-memory status was yes: `a no read at launch after an earlier yes…` failed (1 failed, 18 passed). The other two stayed green, because those start from yes.
-  - A frame kept `context_line`: `before yes…`, `after yes…` (that case also asserts the line is gone) and `neverSent` failed (3 failed, 2 passed).
-  - `$feature_flag_called` allowed after yes: `after yes, allow-listed…` failed (1 failed, 3 passed).
-- **Gate** (repo root, this task's scope: the brief's test command and `npm run typecheck:app`. The edge PostgreSQL suite was not run):
-  - Focused unit command, after the mutation files were restored and the `never[]` assertion was corrected: 31 passed, 0 failed.
-  - `typecheck:app`: passes, 0 errors. The first run failed on the three `sent[0]` lines above; the corrected assertion typechecks.
-- **Ported:** not a port from `apps/api`. The PostgreSQL role, grant, RLS, pool, isolation and lock cases are not applicable: this task is the app's in-memory allow-list, consent controller and `before_send` gate.
-- **Deviations:**
-  - R81: `wallet_type` is `cash`, `bank`, `credit_card`, `transit`. The brief's table still lists `ewallet`. The wallet test also asserts that `ewallet` is dropped.
-  - `PACK_KEYS` is the brief's nine names. P2-T5 has not merged, and `analyticsCategoryKey` does not exist on this base, so the test does not import either. The premium pack's keys (`phone`, and no `motorbike_rail` / `topup` / `seven`) are not the same list.
-  - `screen` sends the cleaned common properties and `origin: 'app'`. The common-properties row says the controller adds `origin` to every event.
-  - A new controller's status is `loading`, and the signed-in account starts unset rather than `null`, so the first `setAccount(null)` is a real change and resets a distinct id the SDK may still be holding. `setAccount` with the current id, including a second `null`, does nothing.
-  - Opening the unanswered question also calls `stopSessionRecording`, so replay cannot keep running if a yes later becomes "never asked".
-  - Tests beyond the brief's bullets: the other emitters, seconds rounded and clamped, `recordAnalytics`, a null client, and a stored yes that enters without an identity while the server cannot be read. The null-client test is the one that passed on the stub.
-- **SKIPPED (hosted):** no PostHog project, no key, nothing sent off the phone. The modules are pure and the client in these tests is a fake.
-- **Notes for later tasks:**
-  - Every plan, including phase 2, calls `events.ts` and these names (R23). `trackClientEvent` now drops a name that is not in the allow-list, so `spend_tx_added` and `system_permission_outcome` no longer reach the test seam.
-  - A category is a built-in key, one of `PACK_KEYS`, or `custom`. `phone` from the premium Thai pack is not in `PACK_KEYS`. P2 must send keys through this list; there is no `analyticsCategoryKey` here to wrap.
-  - `ewallet` will be dropped until phase 2's wallet kind matches R81.
-  - `account_deleted` is in the allow-list with `method`, as the brief's table requires. The anonymous count that must never recreate the person is the server event (1D-T13), not a special case in this controller. There is no client emitter for it yet.
-  - 1D-T6 installs this controller with `setAnalytics`, passes `gateOutgoing` as `before_send`, and keeps the real client null when no project key is set. `recordAnalytics()` is the test helper: it signs in `00000000-0000-4000-8000-0000000000aa`, then empties `sent`.
 ## P2: Bun Wallet core
 
 Phase P2 builds the Bun Wallet area on the app. Task 7 replaces the Thai everyday list with C3's nine and keeps the routed Categories screen on today's seven until that screen is allowed to switch.

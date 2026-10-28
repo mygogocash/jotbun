@@ -10,6 +10,9 @@ const ACCOUNT_A = '00000000-0000-4000-8000-0000000000aa';
 const ACCOUNT_B = '00000000-0000-4000-8000-0000000000bb';
 const ANALYTICS_ID = 'a'.repeat(64);
 
+/** Lets every pending promise step run. */
+const settle = () => new Promise<void>((resolve) => { setTimeout(resolve, 0); });
+
 type Sent = { kind: 'capture' | 'screen' | 'identify' | 'reset' | 'start' | 'stop'; name: string; properties: Record<string, unknown>; resume?: boolean };
 
 function harness(options?: {
@@ -24,6 +27,12 @@ function harness(options?: {
   let stored = options?.stored ?? null;
   let failRead = false;
   let failSet = false;
+  let failWrite = false;
+  let failErase = false;
+  let holdSet = false;
+  let holdYes = false;
+  const heldSets: Array<() => void> = [];
+  const heldWrites: Array<() => void> = [];
   let remote: ServerAnalyticsState = {
     consent: options?.consent ?? 'unasked',
     analyticsId: options?.analyticsId === undefined ? ANALYTICS_ID : options.analyticsId,
@@ -43,8 +52,15 @@ function harness(options?: {
     replay: options?.replay ?? true,
     store: {
       read: async () => (stored === null ? null : { ...stored }),
-      write: async (value) => { stored = { ...value }; },
-      erase: async () => { stored = null; },
+      write: async (value) => {
+        if (holdYes && value.answer === 'yes') await new Promise<void>((resolve) => { heldWrites.push(resolve); });
+        if (failWrite) throw new Error('store unavailable');
+        stored = { ...value };
+      },
+      erase: async () => {
+        if (failErase) throw new Error('store unavailable');
+        stored = null;
+      },
     },
     server: {
       read: async () => {
@@ -53,6 +69,7 @@ function harness(options?: {
       },
       setConsent: async (on) => {
         consentCalls.push(on);
+        if (holdSet) await new Promise<void>((resolve) => { heldSets.push(resolve); });
         if (failSet) throw new Error('offline');
         remote = { ...remote, consent: on ? 'yes' : 'no' };
       },
@@ -65,6 +82,29 @@ function harness(options?: {
     consentCalls,
     setFailRead(value: boolean) { failRead = value; },
     setFailSet(value: boolean) { failSet = value; },
+    setFailWrite(value: boolean) { failWrite = value; },
+    setFailErase(value: boolean) { failErase = value; },
+    holdSetConsent(value: boolean) { holdSet = value; },
+    holdYesWrites(value: boolean) { holdYes = value; },
+    /** Lets every held setConsent call land, the newest first, until none is left. */
+    async landSetConsentNewestFirst() {
+      for (;;) {
+        await settle();
+        const land = heldSets.pop();
+        if (land === undefined) return;
+        land();
+      }
+    },
+    /** Lets every held yes write finish, oldest first. */
+    async releaseYesWrites() {
+      for (;;) {
+        const release = heldWrites.shift();
+        if (release === undefined) return;
+        release();
+        await settle();
+      }
+    },
+    remoteConsent: () => remote.consent,
     setRemote(patch: Partial<ServerAnalyticsState>) { remote = { ...remote, ...patch }; },
     stored: () => stored,
     captures: () => of('capture'),
@@ -381,4 +421,102 @@ test('recordAnalytics installs a consented recorder and restores the previous on
     restore();
   }
   assert.equal(getAnalytics(), null);
+});
+
+test('a no from the server stops capture before this phone stores it', async () => {
+  const h = harness({ consent: 'yes', weeks: 1 });
+  await h.analytics.setAccount(ACCOUNT_A);
+  assert.equal(h.analytics.status(), 'yes');
+  const resets = h.resets().length;
+  const stops = h.stops().length;
+  h.setRemote({ consent: 'no' });
+  h.setFailWrite(true);
+  await h.analytics.refresh().catch(() => undefined);
+  assert.equal(h.analytics.status(), 'no');
+  assert.equal(h.resets().length, resets + 1);
+  assert.equal(h.stops().length, stops + 1);
+  h.analytics.track('trip_started');
+  assert.equal(h.captures().length, 0);
+});
+
+test('an answer gone from the server stops capture before this phone erases its own', async () => {
+  const h = harness({ consent: 'yes', weeks: 1 });
+  await h.analytics.setAccount(ACCOUNT_A);
+  assert.equal(h.analytics.status(), 'yes');
+  const resets = h.resets().length;
+  const stops = h.stops().length;
+  h.setRemote({ consent: 'unasked' });
+  h.setFailErase(true);
+  await h.analytics.refresh().catch(() => undefined);
+  assert.equal(h.analytics.status(), 'unanswered');
+  assert.equal(h.resets().length, resets + 1);
+  assert.equal(h.stops().length, stops + 1);
+  h.analytics.track('trip_started');
+  assert.equal(h.captures().length, 0);
+});
+
+test('a yes still on its way cannot outlast a later no at the server', async () => {
+  const h = harness({ consent: 'unasked' });
+  await h.analytics.setAccount(ACCOUNT_A);
+  assert.equal(h.analytics.status(), 'unanswered');
+  h.holdSetConsent(true);
+  const saidYes = h.analytics.answer('yes');
+  await settle();
+  assert.deepEqual(h.consentCalls, [true]);
+  const saidNo = h.analytics.answer('no');
+  assert.equal(h.analytics.status(), 'no');
+  await h.landSetConsentNewestFirst();
+  await saidYes;
+  await saidNo;
+  assert.equal(h.remoteConsent(), 'no');
+  assert.deepEqual(h.stored(), { accountId: ACCOUNT_A, answer: 'no', pendingServer: false });
+  h.holdSetConsent(false);
+  await h.analytics.refresh();
+  assert.equal(h.analytics.status(), 'no');
+  h.analytics.track('trip_started');
+  assert.equal(h.captures().length, 0);
+});
+
+test('a yes being stored when the person says no cannot replace the no', async () => {
+  const h = harness({ consent: 'yes', weeks: 1 });
+  await h.analytics.setAccount(ACCOUNT_A);
+  assert.equal(h.analytics.status(), 'yes');
+  h.holdYesWrites(true);
+  const refreshing = h.analytics.refresh();
+  await settle();
+  h.setFailSet(true);
+  const saidNo = h.analytics.answer('no');
+  assert.equal(h.analytics.status(), 'no');
+  await settle();
+  h.holdYesWrites(false);
+  await h.releaseYesWrites();
+  await refreshing;
+  await saidNo;
+  assert.deepEqual(h.stored(), { accountId: ACCOUNT_A, answer: 'no', pendingServer: true });
+  h.setFailSet(false);
+  await h.analytics.refresh();
+  assert.equal(h.analytics.status(), 'no');
+  assert.equal(h.remoteConsent(), 'no');
+  h.analytics.track('trip_started');
+  assert.equal(h.captures().length, 0);
+});
+
+test('a foreground refresh waiting behind a yes cannot undo a later no', async () => {
+  const h = harness({ consent: 'unasked' });
+  await h.analytics.setAccount(ACCOUNT_A);
+  assert.equal(h.analytics.status(), 'unanswered');
+  h.holdSetConsent(true);
+  const saidYes = h.analytics.answer('yes');
+  await settle();
+  const refreshing = h.analytics.refresh();
+  const saidNo = h.analytics.answer('no');
+  assert.equal(h.analytics.status(), 'no');
+  await h.landSetConsentNewestFirst();
+  await saidYes;
+  await refreshing;
+  await saidNo;
+  assert.equal(h.analytics.status(), 'no');
+  assert.equal(h.remoteConsent(), 'no');
+  h.analytics.track('trip_started');
+  assert.equal(h.captures().length, 0);
 });

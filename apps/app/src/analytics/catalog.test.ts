@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { APP_EVENTS, COMMON_RULES, cleanEvent, screenPattern } from './catalog.ts';
+import { THAI_EVERYDAY_PACK } from '../spend/v1/redesign/planning/thaiPack.ts';
+import { APP_EVENTS, COMMON_RULES, PACK_KEYS, cleanEvent, screenPattern } from './catalog.ts';
 import type { PropRule } from './catalog.ts';
 
 const NAMES = [
@@ -52,7 +53,7 @@ test('cleanEvent drops unknown events, unknown properties and values outside the
 });
 
 test('a category is a built-in key, a pack key or custom', () => {
-  // P2-T5 has not merged on this base, so PACK_KEYS is not compared with THAI_EVERYDAY_PACK.
+  assert.deepEqual([...PACK_KEYS], THAI_EVERYDAY_PACK.map((item) => item.key));
   assert.deepEqual(cleanEvent('record_saved', { category_key: 'food' })?.properties, { category_key: 'food' });
   assert.deepEqual(cleanEvent('record_saved', { category_key: 'merit' })?.properties, { category_key: 'merit' });
   assert.deepEqual(cleanEvent('record_saved', { category_key: 'custom' })?.properties, { category_key: 'custom' });

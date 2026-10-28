@@ -12,8 +12,8 @@ export type PropRule =
   | { kind: 'version' }
   | { kind: 'screen' };
 
-// The brief's pack keys. P2-T5's Thai pack is not this base, so these names
-// are the contract later tasks send, not the premium pack's keys.
+// C3's nine pack keys (decided, Q18). P2-T7's THAI_EVERYDAY_PACK in
+// src/spend/v1/redesign/planning/thaiPack.ts holds the same keys; catalog.test.ts pins them equal.
 export const PACK_KEYS = ['family_out', 'merit', 'delivery', 'motorbike_rail', 'topup', 'seven', 'lottery', 'pets', 'family_in'] as const;
 
 const CATEGORY_KEYS: readonly string[] = [...BUILTIN_CATEGORIES.map((category) => category.key), ...PACK_KEYS, 'custom'];

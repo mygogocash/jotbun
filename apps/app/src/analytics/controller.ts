@@ -50,6 +50,15 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
   const held: Held[] = [];
   const listeners = new Set<() => void>();
   let generation = 0;
+  // Server and store work runs one call at a time, in call order, so a yes still
+  // on its way cannot land after a later no, at the server or in the store.
+  let queue: Promise<void> = Promise.resolve();
+
+  function serialize(work: () => Promise<void>): Promise<void> {
+    const run = queue.then(work);
+    queue = run.catch(() => undefined);
+    return run;
+  }
 
   function stale(token: number, account: string): boolean {
     return token !== generation || accountId !== account;
@@ -145,15 +154,14 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
       enterYes(remote);
       return;
     }
+    // Capture stops before the store is touched, so a failed write cannot leave yes running.
     if (remote.consent === 'no') {
-      await deps.store.write({ accountId: account, answer: 'no', pendingServer: false });
-      if (stale(token, account)) return;
       applyNo();
+      await deps.store.write({ accountId: account, answer: 'no', pendingServer: false });
       return;
     }
-    await deps.store.erase();
-    if (stale(token, account)) return;
     openQuestion();
+    await deps.store.erase();
   }
 
   return {
@@ -172,7 +180,7 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
         return;
       }
       setStatus('loading');
-      await load(token);
+      await serialize(() => load(token));
     },
 
     async answer(choice) {
@@ -181,30 +189,35 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
       generation += 1;
       const token = generation;
       if (choice === 'no') {
+        // In force at once; the store and the server hear it after any call still on its way.
         applyNo();
-        await deps.store.write({ accountId: account, answer: 'no', pendingServer: true });
-        if (stale(token, account)) return;
-        try {
-          await deps.server.setConsent(false);
+        await serialize(async () => {
+          await deps.store.write({ accountId: account, answer: 'no', pendingServer: true });
           if (stale(token, account)) return;
-          await deps.store.write({ accountId: account, answer: 'no', pendingServer: false });
-        } catch {
-          // The no is already in force on this phone. The next refresh tries again.
-        }
+          try {
+            await deps.server.setConsent(false);
+            if (stale(token, account)) return;
+            await deps.store.write({ accountId: account, answer: 'no', pendingServer: false });
+          } catch {
+            // The no is already in force on this phone. The next refresh tries again.
+          }
+        });
         return;
       }
-      await deps.server.setConsent(true);
-      if (stale(token, account)) return;
-      await deps.store.write({ accountId: account, answer: 'yes', pendingServer: false });
-      if (stale(token, account)) return;
-      let remote: ServerAnalyticsState | null = null;
-      try {
-        remote = await deps.server.read();
-      } catch {
-        remote = null;
-      }
-      if (stale(token, account)) return;
-      enterYes(remote);
+      await serialize(async () => {
+        await deps.server.setConsent(true);
+        if (stale(token, account)) return;
+        await deps.store.write({ accountId: account, answer: 'yes', pendingServer: false });
+        if (stale(token, account)) return;
+        let remote: ServerAnalyticsState | null = null;
+        try {
+          remote = await deps.server.read();
+        } catch {
+          remote = null;
+        }
+        if (stale(token, account)) return;
+        enterYes(remote);
+      });
     },
 
     status: () => current,
@@ -239,7 +252,8 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
     async refresh() {
       if (typeof accountId !== 'string') return;
       generation += 1;
-      await load(generation);
+      const token = generation;
+      await serialize(() => load(token));
     },
   };
 }
