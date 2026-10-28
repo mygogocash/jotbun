@@ -223,6 +223,16 @@ const sessionEnd = (status: number, code: string): V1SessionEnd['code'] | null =
 };
 const NETWORK_RETRIES = 2;
 
+/** A private IPv4 literal (10/8, 172.16/12, 192.168/16), read from the hostname the URL parser normalised. */
+function privateIpv4(hostname: string): boolean {
+  const match = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(hostname);
+  if (!match) return false;
+  const octets = match.slice(1).map(Number);
+  if (octets.some((octet) => octet > 255)) return false;
+  const [first, second] = octets;
+  return first === 10 || (first === 172 && second >= 16 && second <= 31) || (first === 192 && second === 168);
+}
+
 /**
  * The v1 transport: every private request carries the access token, the
  * opaque session binding and `X-GoGoSpend-Client`; every command carries its
@@ -246,6 +256,11 @@ export function createV1Transport(options: {
   client: V1ClientVersion | null;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
+  /**
+   * true: `http://` to a private IPv4 literal (10/8, 172.16/12, 192.168/16) is accepted, as loopback is.
+   * For a development build reaching `wrangler dev` on the LAN; release builds never set it (plan 1D, L8).
+   */
+  allowLanHttp?: boolean;
 }): V1Transport {
   let base: URL;
   try {
@@ -254,7 +269,8 @@ export function createV1Transport(options: {
     throw new V1Error('invalid', 0, 'CONFIG_REQUIRED');
   }
   const loopback = ['localhost', '127.0.0.1', '[::1]'].includes(base.hostname);
-  if (base.username || base.password || !(base.protocol === 'https:' || (base.protocol === 'http:' && loopback))) {
+  const lan = options.allowLanHttp === true && privateIpv4(base.hostname);
+  if (base.username || base.password || !(base.protocol === 'https:' || (base.protocol === 'http:' && (loopback || lan)))) {
     throw new V1Error('invalid', 0, 'CONFIG_REQUIRED');
   }
   const baseUrl = options.baseUrl.replace(/\/+$/, '');

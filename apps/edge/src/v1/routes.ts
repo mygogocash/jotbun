@@ -4,7 +4,7 @@
 // checks that. Each task moves its routes from pending into VAULT_V1_ROUTES.
 import type { GateScope } from '@api/common/feature-gates'
 
-import type { VaultRouteId } from './protocol'
+import type { VaultRouteId, WorkerRouteId } from './protocol'
 
 /**
  * A route the vault Worker serves. A route with `vault` is answered by that
@@ -13,11 +13,16 @@ import type { VaultRouteId } from './protocol'
 export type VaultRoute = {
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   path: string
-  access: 'public' | 'bound_session' | 'current_policy'
+  access: 'public' | 'bound_session' | 'current_policy' | 'recent_proof'
+  /** A vault call. A route has this or `worker`, except the public policy list, which has neither. */
   vault?: VaultRouteId
+  /** A Worker-run route. It calls the vault in steps, through `VAULT_STEP_ROUTES`. */
+  worker?: WorkerRouteId
   gates?: readonly GateScope[]
   /** The status a success answers with, when it is not the method's default. */
   status?: number
+  /** How the body is read. The default is `json`. `stream` leaves the body unread. */
+  body?: 'json' | 'stream'
 }
 
 /** The default: 201 for POST, 200 otherwise (defaultStatus in the PostgreSQL route table). */
@@ -28,10 +33,12 @@ export function vaultStatus(r: VaultRoute): number {
 /** Writes to wallets are commands, and every mutating route carries the writes gate (C12). */
 const WRITES: readonly GateScope[] = ['writes']
 
-/** The routes ported in Tasks 2 to 4 and 8a: the front door, wallets, categories, command status and the sync delta feed. */
+/** The routes ported so far (Tasks 2 to 6 and 8a, and the bridge): the front door, wallets, categories, transactions, budgets, command status, the sync delta feed and the cashback catalogue. */
 export const VAULT_V1_ROUTES: readonly VaultRoute[] = [
   // policies/policy.controller.ts: the published text, answered from config:v1 by the Worker.
   { method: 'GET', path: '/v1/policies', access: 'public' },
+  // The GoGoCash bridge (D16): a public catalogue, no account data, answered by the Worker.
+  { method: 'GET', path: '/v1/bridge/gogocash/catalogue', access: 'public', worker: 'bridge.catalogue' },
   { method: 'POST', path: '/v1/me/policy-acceptances', access: 'bound_session', vault: 'policies.accept', status: 204 },
   { method: 'PUT', path: '/v1/me/privacy-preferences', access: 'bound_session', vault: 'me.privacy' },
   // privacy/account routes: the account summary and sign-out.
@@ -51,6 +58,15 @@ export const VAULT_V1_ROUTES: readonly VaultRoute[] = [
   { method: 'PATCH', path: '/v1/categories/:id', access: 'current_policy', vault: 'categories.update', gates: WRITES, status: 200 },
   { method: 'POST', path: '/v1/categories/:id/archive', access: 'current_policy', vault: 'categories.archive', gates: WRITES, status: 200 },
   { method: 'POST', path: '/v1/categories/:id/unarchive', access: 'current_policy', vault: 'categories.unarchive', gates: WRITES, status: 200 },
+  // transactions/transactions.controller.ts
+  { method: 'GET', path: '/v1/transactions/:id', access: 'bound_session', vault: 'transactions.get' },
+  { method: 'POST', path: '/v1/transactions', access: 'current_policy', vault: 'transactions.create', gates: WRITES },
+  { method: 'PATCH', path: '/v1/transactions/:id', access: 'current_policy', vault: 'transactions.update', gates: WRITES, status: 200 },
+  { method: 'DELETE', path: '/v1/transactions/:id', access: 'current_policy', vault: 'transactions.delete', gates: WRITES, status: 200 },
+  { method: 'POST', path: '/v1/transactions/:id/restore', access: 'current_policy', vault: 'transactions.restore', gates: WRITES, status: 200 },
+  // budgets/budgets.controller.ts
+  { method: 'GET', path: '/v1/budgets/:month', access: 'bound_session', vault: 'budgets.get' },
+  { method: 'PUT', path: '/v1/budgets/:month', access: 'current_policy', vault: 'budgets.put', gates: WRITES },
   // commands/command-status.controller.ts
   { method: 'POST', path: '/v1/commands/status', access: 'bound_session', vault: 'commands.status', status: 200 },
   // sync/sync.controller.ts: the delta feed (the snapshot routes are 1B).
@@ -64,28 +80,34 @@ export function vaultRouteOf(id: VaultRouteId): VaultRoute | undefined {
   return ROUTE_BY_ID.get(id)
 }
 
-/** The success status of a ported route, from this table alone (handlers never repeat it). */
-export function vaultStatusOf(id: VaultRouteId): number {
-  const route = ROUTE_BY_ID.get(id)
-  if (!route) throw new Error(`no ported vault route ${id}`)
-  return vaultStatus(route)
+/**
+ * Step-only vault ids. They have no HTTP route of their own: a Worker route
+ * calls them as later steps of one request. Empty until a task adds one.
+ */
+export const VAULT_STEP_ROUTES: Partial<Record<VaultRouteId, { status?: number }>> = {}
+
+/** The step-only entry a vault call names, or undefined when the id is not a step. */
+export function stepRouteOf(id: VaultRouteId): { status?: number } | undefined {
+  return VAULT_STEP_ROUTES[id]
 }
 
-/** Routes for Tasks 5 to 7 of Phase 1A: transactions, budgets, history and summary. */
+/** The success status of a ported route, else the step's status (200 when none is given). */
+export function vaultStatusOf(id: VaultRouteId): number {
+  const route = ROUTE_BY_ID.get(id)
+  if (route) return vaultStatus(route)
+  const step = stepRouteOf(id)
+  if (step) return step.status ?? 200
+  throw new Error(`no ported vault route ${id}`)
+}
+
+/** Routes for Task 7 of Phase 1A: history and summary. */
 export const VAULT_PENDING_ROUTES: readonly string[] = [
-  'GET /v1/transactions/:id',
-  'POST /v1/transactions',
-  'PATCH /v1/transactions/:id',
-  'DELETE /v1/transactions/:id',
-  'POST /v1/transactions/:id/restore',
-  'GET /v1/budgets/:month',
-  'PUT /v1/budgets/:month',
   'GET /v1/history',
   'GET /v1/history/deleted',
   'GET /v1/summary',
 ]
 
-/** Routes for Phase 1B: snapshots, exports, imports, attachments, deletion, the AI companion and the bridge catalogue. */
+/** Routes for later Phase 1B tasks: snapshots, exports, imports, attachments, deletion and the AI companion. */
 export const VAULT_DEFERRED_ROUTES: readonly string[] = [
   'POST /v1/me/deletion',
   'POST /v1/auth/deletion-receipt',
@@ -114,7 +136,6 @@ export const VAULT_DEFERRED_ROUTES: readonly string[] = [
   'POST /v1/ai/slip',
   'GET /v1/ai/note',
   'POST /v1/ai/ask',
-  'GET /v1/bridge/gogocash/catalogue',
 ]
 
 /** §6.4 retires these: the sign-in steps move to Better Auth in 1C. */

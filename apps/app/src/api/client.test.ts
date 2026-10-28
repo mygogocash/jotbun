@@ -2,6 +2,7 @@ import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { ApiError, V1Error, createMobileApiClient, createV1Transport } from './client.ts';
+import type { V1Credentials } from './client.ts';
 
 let baseUrl = '';
 let requests = 0;
@@ -61,6 +62,24 @@ test('absolute URLs cannot receive session credentials', async () => {
   const client = createMobileApiClient({ baseUrl, getToken: async () => 'synthetic-test-session' });
   await assert.rejects(client.get('https://example.com/steal'), /relative API path/i);
   assert.equal(requests, before);
+});
+
+test('a development build may reach wrangler dev on the LAN; a release build may not', () => {
+  const credentials: V1Credentials = { getAccessToken: async () => null, getSessionSnapshot: () => ({ binding: null, epoch: 1 }) };
+  const refused = (error: unknown) => error instanceof V1Error && error.code === 'CONFIG_REQUIRED';
+  const transport = (baseUrl: string, allowLanHttp?: boolean) => () => createV1Transport({ baseUrl, credentials, client: null, allowLanHttp });
+  for (const url of ['http://192.168.1.20:8787', 'http://10.0.0.5:8787', 'http://172.16.4.2:8787']) {
+    assert.doesNotThrow(transport(url, true), url);
+  }
+  for (const url of ['http://172.32.0.1:8787', 'http://8.8.8.8', 'http://jotbun.local:8787']) {
+    assert.throws(transport(url, true), refused, url);
+  }
+  for (const url of ['http://192.168.1.20:8787', 'http://10.0.0.5:8787', 'http://172.16.4.2:8787', 'http://8.8.8.8']) {
+    assert.throws(transport(url, false), refused, `${url} with allowLanHttp false`);
+    assert.throws(transport(url), refused, `${url} with allowLanHttp absent`);
+  }
+  assert.doesNotThrow(transport('http://localhost:8787'));
+  assert.doesNotThrow(transport('https://api.example.com'));
 });
 
 test('a v1 request with no session id is refused before anything is sent', async () => {

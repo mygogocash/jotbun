@@ -40,6 +40,30 @@ it('a config whose published_at is not a date is malformed', async () => {
   expect(config.policies).toBeNull()
 })
 
+it('uploads stay unexposed unless IMPORT_UPLOADS_ENABLED is 1 or true, on the fail-closed path too', async () => {
+  const absent = { get: async () => null } as unknown as KVNamespace
+  for (const [value, exposed] of [
+    [undefined, false],
+    ['false', false],
+    ['yes', false],
+    ['1', true],
+    ['true', true],
+  ] as const) {
+    const config = await readEdgeConfig(absent, { IMPORT_UPLOADS_ENABLED: value })
+    expect(config.gates.isExposed('uploads'), String(value)).toBe(exposed)
+  }
+  const down = { get: async () => { throw new Error('kv down') } } as unknown as KVNamespace
+  expect((await readEdgeConfig(down, {})).gates.isExposed('uploads')).toBe(false)
+  const opened = await readEdgeConfig(down, { IMPORT_UPLOADS_ENABLED: 'true' })
+  expect(opened.gates.isExposed('uploads')).toBe(true)
+  try {
+    opened.gates.assertOpen('uploads')
+    expect.unreachable()
+  } catch (e) {
+    expect((e as ProblemException).getStatus()).toBe(503)
+  }
+})
+
 it('GET /v1/policies answers the published policies from KV', async () => {
   const res = await (await startV1()).raw(new Request('http://vault.test/v1/policies'))
   expect(res.status).toBe(200)
