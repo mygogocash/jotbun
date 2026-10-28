@@ -8,6 +8,7 @@ import type { PolicyVersionDto } from '@gogospend/contracts'
 
 import { EDGE_CONFIG_KEY } from '../../../src/v1/config'
 import type { EdgeConfigJson } from '../../../src/v1/config'
+import type { V1Env } from '../../../src/v1/env'
 import { handleVaultV1 } from '../../../src/v1/handler'
 import { createTokenVerifier } from '../../../src/v1/tokens'
 import type { UserVault } from '../../../src/vault/user-vault'
@@ -18,7 +19,7 @@ export const AUDIENCE = 'https://api.jotbun.test'
 const KID = 'synthetic-v1-key'
 
 export type TestUser = { sub: string; sid: string }
-export type TokenOptions = { iat?: number; exp?: number; client?: string; omitSid?: boolean }
+export type TokenOptions = { iat?: number; exp?: number; client?: string; omitSid?: boolean; authTime?: number }
 export type CommandOptions = { key?: string; schema?: number | null; ifMatch?: number | null }
 
 export type UserClient = {
@@ -58,7 +59,9 @@ export async function signedHeaders(user: TestUser, opts: TokenOptions = {}): Pr
 async function tokenFor(user: TestUser, opts: TokenOptions): Promise<string> {
   const { signer } = await keys
   const now = Math.floor(Date.now() / 1000)
-  return new SignJWT(opts.omitSid ? {} : { sid: user.sid })
+  const payload: Record<string, unknown> = opts.omitSid ? {} : { sid: user.sid }
+  if (opts.authTime !== undefined) payload.auth_time = opts.authTime
+  return new SignJWT(payload)
     .setProtectedHeader({ alg: 'EdDSA', kid: KID })
     .setIssuer(ISSUER)
     .setAudience(AUDIENCE)
@@ -105,16 +108,28 @@ function clientFor(raw: (request: Request) => Promise<Response>, user: TestUser,
 
 /**
  * The Worker answers with the config written to KV (or none, or a malformed
- * one), and verifies tokens against the local key. Each call rewrites the KV
- * entry, so every test starts from the config it names.
+ * one), and verifies tokens against the local key. `options.env` overrides
+ * settings for this client only; the Durable Object and KV bindings stay.
+ * Each call rewrites the KV entry, so every test starts from the config it names.
  */
-export async function startV1(config: EdgeConfigJson | 'absent' | 'malformed' = DEFAULT_CONFIG): Promise<V1Client> {
+export async function startV1(config: EdgeConfigJson | 'absent' | 'malformed' = DEFAULT_CONFIG, options?: { env?: Partial<V1Env>; fetchCatalogue?: typeof fetch }): Promise<V1Client> {
   if (config === 'absent') await env.CONFIG.delete(EDGE_CONFIG_KEY)
   else if (config === 'malformed') await env.CONFIG.put(EDGE_CONFIG_KEY, JSON.stringify({ gates: 'nope' }))
   else await env.CONFIG.put(EDGE_CONFIG_KEY, JSON.stringify(config))
   const verifier = createTokenVerifier({ issuer: ISSUER, audience: AUDIENCE, keys: (await keys).jwks })
-  const raw = (request: Request) => handleVaultV1(request, env, { verifier })
+  const workerEnv = options?.env ? envWith(options.env) : env
+  const raw = (request: Request) => handleVaultV1(request, workerEnv, { verifier, fetchCatalogue: options?.fetchCatalogue })
   return { as: (user, opts = {}) => clientFor(raw, user, opts), raw }
+}
+
+/** Settings from `extra` win; bindings on `env` stay, including ones a copy would drop. */
+function envWith(extra: Partial<V1Env>): V1Env {
+  return new Proxy(env, {
+    get(target, prop, receiver) {
+      if (typeof prop === 'string' && Object.prototype.hasOwnProperty.call(extra, prop)) return extra[prop as keyof V1Env]
+      return Reflect.get(target, prop, receiver)
+    },
+  }) as V1Env
 }
 
 /** Accepts the required terms for the user, so later calls are not refused for policy. */

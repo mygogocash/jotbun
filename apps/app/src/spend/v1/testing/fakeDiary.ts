@@ -7,7 +7,7 @@ import { memoryDraftStore } from '../importReview';
 import type { DiaryView, SpendDiary } from '../spendDiary';
 
 export function createFakeDiary(view: Partial<DiaryView> = {}, options: { loggedDays?: readonly string[] } = {}) {
-  let current: DiaryView = { phase: 'ready', lockReason: null, outcome: null, progress: null, pending: [], outbox: [], pendingChoices: [], wallets: [], categories: [], appliedRevision: '0', ...view };
+  let current: DiaryView = { phase: 'ready', lockReason: null, outcome: null, progress: null, pending: [], outbox: [], pendingChoices: [], wallets: [], categories: [], appliedRevision: '0', accountId: '00000000-0000-4000-8000-0000000000aa', ...view };
   const drafts = memoryDraftStore();
   const listeners = new Set<() => void>();
   const saves: PendingEntry[] = [];

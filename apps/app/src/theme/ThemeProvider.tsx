@@ -16,6 +16,7 @@ import {
   type ThemeColors,
 } from "@mobile/theme/colorPalettes";
 import { getBunColors, type BunColors } from "@mobile/theme/bunPalette";
+import { getWalletColors, type WalletColors } from "@mobile/theme/walletPalette";
 import { resolveTheme, type ResolvedTheme } from "@mobile/theme/resolveTheme";
 import {
   colorSchemeMetaContent,
@@ -34,6 +35,8 @@ type ThemeContextValue = {
   readonly colors: ThemeColors;
   /** The redesign's "Bun diary" palette for the same resolved theme. */
   readonly bun: BunColors;
+  /** The Bun Wallet palette for the same resolved theme. */
+  readonly wallet: WalletColors;
   readonly ready: boolean;
   readonly setPreference: (next: ThemePreference) => void;
 };
@@ -96,6 +99,7 @@ export function ThemeProvider({ children }: PropsWithChildren) {
   );
   const colors = useMemo(() => getColorsForTheme(resolved), [resolved]);
   const bun = useMemo(() => getBunColors(resolved), [resolved]);
+  const wallet = useMemo(() => getWalletColors(resolved), [resolved]);
 
   useEffect(() => {
     applyWebColorScheme(resolved, preference);
@@ -113,10 +117,11 @@ export function ThemeProvider({ children }: PropsWithChildren) {
       resolved,
       colors,
       bun,
+      wallet,
       ready: true,
       setPreference,
     }),
-    [preference, resolved, colors, bun, setPreference],
+    [preference, resolved, colors, bun, wallet, setPreference],
   );
 
   return (
@@ -140,6 +145,10 @@ export function useBunColors(): BunColors {
   return useTheme().bun;
 }
 
+export function useWalletColors(): WalletColors {
+  return useTheme().wallet;
+}
+
 type ThemePreferenceOverrideProps = PropsWithChildren<{
   preference: ThemePreference;
 }>;
@@ -157,6 +166,7 @@ export function ThemePreferenceOverride({
   );
   const overrideColors = useMemo(() => getColorsForTheme(resolved), [resolved]);
   const overrideBun = useMemo(() => getBunColors(resolved), [resolved]);
+  const overrideWallet = useMemo(() => getWalletColors(resolved), [resolved]);
   const value = useMemo<ThemeContextValue>(
     () => ({
       ...parent,
@@ -164,8 +174,9 @@ export function ThemePreferenceOverride({
       resolved,
       colors: overrideColors,
       bun: overrideBun,
+      wallet: overrideWallet,
     }),
-    [parent, preference, resolved, overrideColors, overrideBun],
+    [parent, preference, resolved, overrideColors, overrideBun, overrideWallet],
   );
 
   return (
