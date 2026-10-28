@@ -16,6 +16,8 @@ vi.mock('@mobile/api/sharedV1', () => ({
 }));
 
 import { FAKE_EXPORT_ID, FAKE_REQUEST_ID, fakePrivacy } from '@mobile/dev/catalogue/account/settingsSections';
+import { installStoreBackend } from '@mobile/wallet/store/deviceWalletStore';
+import type { StoreBackend } from '@mobile/wallet/store/walletStore';
 import type { FakePrivacyOptions } from '@mobile/dev/catalogue/account/settingsSections';
 import { router } from '@mobile/dev/catalogue/routerTestStub';
 import type { Locale } from '@mobile/i18n/locales';
@@ -258,6 +260,52 @@ test('delete, the answer was lost: nothing on this phone is erased, and Try agai
   expect(fake.calls.deletions).toHaveLength(2);
   expect(fake.calls.deletions[1]).toEqual(fake.calls.deletions[0]);
   expect(diary.calls.eraseForSignOut).toBe(1);
+});
+
+function memoryBackend(): { rows: Map<string, string>; backend: StoreBackend } {
+  const rows = new Map<string, string>();
+  const backend: StoreBackend = {
+    getItem: async (key) => rows.get(key) ?? null,
+    setItem: async (key, value) => void rows.set(key, value),
+    removeItem: async (key) => void rows.delete(key),
+    getAllKeys: async () => [...rows.keys()],
+    multiRemove: async (keys) => {
+      for (const key of keys) rows.delete(key);
+    },
+  };
+  return { rows, backend };
+}
+
+test("a confirmed deletion erases this account's kept looks; a refused one keeps them", async () => {
+  const { rows, backend } = memoryBackend();
+  installStoreBackend(backend);
+  try {
+    const accepted = createFakeDiary();
+    const accountId = accepted.diary.getView().accountId;
+    expect(accountId).toBe('00000000-0000-4000-8000-0000000000aa');
+    const looks = `jotbun.account.${accountId}.looks`;
+    rows.set(looks, 'warm');
+    rows.set('jotbun.wallet.private-mode', 'on');
+    mountPrivacy({ diary: accepted });
+    press('Delete my account', deleteCard());
+    press('Delete my account', dialog('Delete your account?'));
+    expect(await within(deleteCard()).findByText('Your account is being deleted')).toBeTruthy();
+    expect(rows.has(looks)).toBe(false);
+    expect(rows.get('jotbun.wallet.private-mode')).toBe('on');
+
+    cleanup();
+    rows.set(looks, 'warm');
+    const refused = createFakeDiary();
+    refused.diary.close = async () => undefined;
+    mountPrivacy({ diary: refused, deletions: ['refused'], receipt: 'none' });
+    press('Delete my account', deleteCard());
+    press('Delete my account', dialog('Delete your account?'));
+    expect(await within(deleteCard()).findByText("Jotbun didn't accept the request, so nothing was deleted.")).toBeTruthy();
+    expect(rows.get(looks)).toBe('warm');
+    expect(rows.get('jotbun.wallet.private-mode')).toBe('on');
+  } finally {
+    installStoreBackend(null);
+  }
 });
 
 test('delete, completed by the time the receipt is read: the account has been deleted', async () => {
