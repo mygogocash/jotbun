@@ -921,6 +921,71 @@ Phase P2 builds the Bun Wallet area on the app. Task 7 replaces the Thai everyda
   - `amountMaxScale` is for `WalletAmount` (P2-T10); `materialPaint` for `MaterialFill` (P2-T11); `calendarPaint`, `CALENDAR_STEP_LIMITS_BAHT`, `barPast`, `barNow` and `guideLine` for P2-T31.
   - Merging: P2-T3 (PR #79) and P2-T4 (PR #78) were cut from `60e2026` and add their own `## P2: Bun Wallet core` heading earlier in this file; this receipt sits under the existing heading at the end. Keep both sides.
 
+## P4: Slips and statements
+
+Phase P4 reads Thai bank slips into slip drafts, imports bank statements and sends pushes. Task 1 adds the shared wire contract: the slip, draft, slip account, bank album, push and device shapes, and the salted slip reference both the phone and the Worker use.
+
+### P4 Task 1: Slip and push contracts, and the shared slip reference
+
+- **Status:** built and verified locally on `p4/t1-slip-contracts`, on top of `bdf6b12`, the integration commit the branch was cut from. The integration head is now `75b3625`. It changed no file under `packages/contracts` or `apps/api` since `bdf6b12`, so it was not merged here; the orchestrator merges it when it opens the PR. Not pushed. The independent review is the controller's.
+- **Files:**
+  - `packages/contracts/src/v1/slips.ts` and `push.ts` (new): the slip, draft, slip account, bank album, push and device shapes, `normalizeSlipRef`, `slipRefHash`, `accountLast4`, and the parsers.
+  - `packages/contracts/src/v1/sync.ts`: the import and the `slip_inbox` entry in `SYNC_ENTITY_VALIDATORS` (three lines).
+  - `packages/contracts/src/index.ts`: four export statements after the AI type block (47 lines added, nothing changed).
+  - `apps/edge/test/slip-contracts.test.ts` (new, Node): 11 tests.
+  - `apps/api/src/sync/sync-api.integration.spec.ts`: the parity assertion leaves out `slip_inbox` (ruling R83); the test keeps its name.
+  - `docs/implementation/premium-progress.md`: this section.
+- **RED to GREEN:**
+  - RED, `npm run test:edge -- test/slip-contracts.test.ts`: 11 failed, 0 passed, against typed stubs. Seven failed on an assertion against a stub (a validator answered `false`, a helper answered `null` or `''`); four failed on the stub parsers' `VALIDATION_FAILED` ("Not built yet."). `npm run typecheck:edge` passed against the stubs.
+  - GREEN, the same command: 11 passed, 0 failed.
+- **Mutation check:** ten mutants, one at a time. Each was an exact single-match replacement in the worktree file, run against the focused file, then restored from a copy taken before the first mutant; the restored file's sha256 matched after every restore. Each was killed:
+  1. Zero byte dropped from `slipRefHash`: 1 failed (the salted-hash case).
+  2. Repeated hash let through: 1 failed (the batch case).
+  3. `album` slip allowed in a live batch: 1 failed (the batch case).
+  4. Extra key accepted by `hasExactly`: 2 failed (the inbox-snapshot case and the every-DTO-validator case).
+  5. Salt length unchecked: 1 failed (the salted-hash case).
+  6. Reference upper-cased before the ASCII check: 1 failed (the reference case, `ß`).
+  7. Image size limit off by one: 1 failed (the batch case).
+  8. Any string accepted as a push month: 1 failed (the push-data case).
+  9. `slip_inbox` dropped from `SYNC_ENTITY_VALIDATORS`: 1 failed (the inbox case).
+  10. Three digits accepted as the last four: 1 failed (the last-four case).
+
+  Survivors: none. Mutants 1 to 4 are the plan's Step 5; 5 to 10 are the brief's additions.
+- **Gate** (worktree root; each command's exit status and counts):
+  - `npm run test:edge -- test/slip-contracts.test.ts`: 11 passed.
+  - `npm run typecheck` (contracts, then API): passed.
+  - `npm run typecheck:edge`: passed.
+  - `npm run typecheck:app`: passed.
+  - `npm run test:edge`: 155 passed in 12 files. The 144 in the other 11 files are the baseline, measured by running those 11 files as an explicit list with the contract edits in place. The baseline was not recorded before the first edit, and no clean checkout at `bdf6b12` was built.
+  - `npm run test:api`: run 1 had one failure out of 955 tests, in `src/imports/upload-intake.spec.ts`: "a body that keeps trickling is ended at the absolute receive deadline" (it reported `upload_stalled` where the test expects `upload_timeout`, a race between two timers while the machine's load average was about 11). Run 2: 44 of 44 suites and 955 of 955 tests passed. The spec alone passed 96 of 96 in three runs, and it does not reference `SYNC_ENTITY_VALIDATORS` or the slip contracts.
+  - `npm run build -w gogospend-api`: passed (293 files compiled).
+  - `node apps/api/scripts/release-graph.mjs check`: passed, no problems.
+  - Contracts load under Node type stripping (`node --no-warnings --input-type=module -e`, importing `./packages/contracts/src/index.ts`): printed `contracts load`.
+  - `npm run test:unit -w gogospend-app -- src/storage/diaryRepository.test.ts`: 24 passed.
+  - App suites: `npm run test:unit -w gogospend-app`: 734 passed; `npm run test:app -w gogospend-app`: 29 passed; `npm run test:render -w gogospend-app`: 83 files and 1589 tests passed. They ran after the last change to the contract files, which has not changed since (sha256 checked).
+  - `npm run test:edge:workers`, under the shared heavy lock (released after the run): 12 files, 240 tests passed.
+  - `npm run build:edge`: passed.
+  - `npm run export:web -w gogospend-app`: not run; no route, config or app entry changed.
+  - `git diff --check` on the staged content, before the commit: passed. The three-dot check against `origin/claude/p1a-vault-core` runs after the commit and is in the final report.
+- **SKIPPED:** `npm run test:db -w gogospend-api -- sync-api.integration` (the parity assertion, with the database) and `npm run test:edge:db`. Docker is not running on this machine (no colima socket), and both scripts start their database containers themselves, which were not started. CI's database job runs both, so the parity assertion is first exercised there. Nothing deployed; no cloud resource.
+- **Deviations:**
+  1. Three tests beyond the plan's list: account mappings and slip refs, push data, and each DTO field's shape.
+  2. `isPushData` checks `ref` per kind: null for `slips_ready`, a UUID for `statement_parsed` and `export_ready`, `YYYY-MM` for `month_recap_ready`.
+  3. `normalizeSlipRef` checks printable ASCII before upper-casing, so `ß` cannot become `SS`.
+  4. `isSlipDraftsPage` takes `next_cursor` as null or base64url (1 to 512 characters), the app's keyset cursor rule.
+  5. The API parity assertion leaves out `slip_inbox` (ruling R83). It is the only change under `apps/api`.
+  6. The integration head was not merged into this branch, per the controller's instruction (see Status).
+- **Risks and notes for the integrator:**
+  - A simulated merge (`git merge-tree`) of `75b3625` into this branch's parent `bdf6b12` is clean. If the head has edited `docs/implementation/premium-progress.md`, the receipt section may conflict there; keep both sides, as the protocol says.
+  - The parity assertion has not run locally. Its first real run is CI's database job.
+  - The upload-intake trickle test failed once under load and passed on re-run. If it fails in CI, it is that timing test, not this change.
+- **Notes for later tasks:**
+  - The hash vector: salt bytes 1 to 32 and `004:016297184012BPP06418` give `029e46f70cbfa751f030c1d33b671859ad9519c17eecd52e6a0539775443df5a` (P4-T3's Workers case, P4-T12's phone case).
+  - P4-T3 registers the `slip_inbox` entity in the vault registry; until then the vault never writes one.
+  - P5-T3 adds `trip` and `settings` to the API parity assertion's left-out list.
+  - The vault-side port of `snapshots validate exactly the entities the API registers` (deferred to 1A-T8b) must leave out entities the vault does not register yet.
+  - P4-T6's `retry_after_seconds` is a whole number of seconds; P4-T7's draft cursors are base64url.
+
 ## P5: Travel and currencies
 
 Phase P5 lets a person keep records in any currency against a home currency they pick ([plan](../superpowers/plans/2026-10-25-jotbun-p5-travel.md)). Task 1 adds the ISO 4217 table and exact BigInt rate arithmetic to the contracts.
