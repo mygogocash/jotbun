@@ -1,4 +1,5 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { useState } from 'react';
 import { Keyboard } from 'react-native';
 import { afterEach, expect, test, vi } from 'vitest';
 
@@ -171,6 +172,37 @@ test('a sentence Bun cannot read keeps the keyboard up for another try', async (
     type('฿');
     fireEvent.click(screen.getByRole('button', { name: 'Read it' }));
     expect(await screen.findByText(/couldn.t find an entry/i)).toBeTruthy();
+    expect(dismiss).not.toHaveBeenCalled();
+  } finally {
+    dismiss.mockRestore();
+  }
+});
+
+// A read still running when the sheet closes can land after it. The keyboard is
+// then up for another field, and that field must keep it.
+test('a draft that lands after the sheet closed leaves the keyboard alone', async () => {
+  const draft: AiDraft = { type: 'expense', amount_minor: '12000', occurred_on: '2026-10-24', category_id: null, wallet_id: cash.id, merchant: 'Grab', note: null, confidence: 'medium', flags: [] };
+  let release!: () => void;
+  const parse = vi.fn(() => new Promise<{ drafts: AiDraft[]; source: 'ai' }>((resolve) => { release = () => resolve({ drafts: [draft], source: 'ai' }); }));
+  const ai = fakeAiResources({ parse }, { companion: true, notice_version: 1 });
+  function Host() {
+    const [open, setOpen] = useState(true);
+    return <TellBunSheet visible={open} onClose={() => setOpen(false)} context={context} locale="en" onUse={vi.fn()} pickSlip={vi.fn()} often={[]} />;
+  }
+  const dismiss = vi.spyOn(Keyboard, 'dismiss');
+  try {
+    mountScreen(<AiCompanionProvider resources={ai.resources}><Host /></AiCompanionProvider>, { resources: createFakeResources().resources });
+    await waitFor(() => expect(ai.resources.preferences).toHaveBeenCalled());
+    type('grab 120');
+    await waitFor(() => expect(screen.queryByText("Reading slips needs Bun's AI help. Typing works on your phone.")).toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: 'Read it' }));
+    await screen.findByText('Bun is reading…');
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(screen.queryByText('Bun is reading…')).toBeNull());
+    await act(async () => {
+      release();
+      await new Promise((done) => setTimeout(done, 0));
+    });
     expect(dismiss).not.toHaveBeenCalled();
   } finally {
     dismiss.mockRestore();

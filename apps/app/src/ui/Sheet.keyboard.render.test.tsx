@@ -1,8 +1,9 @@
 // On iOS the window does not resize for the keyboard, so a sheet whose field
 // takes focus sat under the keyboard: Tell Bun's whole sheet when it is short
 // (found on the iOS simulator, 28 October 2026). The sheet rises by the
-// keyboard's height there. Android's Modal window resizes on its own, and the
-// web has no on-screen keyboard. Render tests run on the web, so this file
+// keyboard's height there. Android is left as it was (whether its window
+// resizes under edge-to-edge is not checked yet), and the web has no
+// on-screen keyboard. Render tests run on the web, so this file
 // stands in for iOS: `Platform.OS` is set per test, and the keyboard wrapper
 // shows its `behavior` as `data-keyboard-behavior`.
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';

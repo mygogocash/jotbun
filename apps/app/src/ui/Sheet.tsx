@@ -6,7 +6,8 @@
 // on a gentle spring; under reduced motion it simply appears. It is one named
 // modal dialog on every platform (see the note in `Sheet`), and pads the
 // bottom safe area. On iOS it rises above the keyboard, which there covers the
-// window instead of resizing it; Android's Modal window resizes on its own.
+// window instead of resizing it; Android is left as it was (whether its window
+// resizes under edge-to-edge is not checked yet).
 //
 // ConfirmSheet states the consequence of an action before it happens. When the
 // action is destructive, the safe choice (cancel) keeps the ink fill and the
