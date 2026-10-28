@@ -793,3 +793,68 @@ Phase P2 builds the Bun Wallet area on the app. Task 7 replaces the Thai everyda
   - The spec's C3 line says a pack category is tagged with a `pack_key`. This task recognises one by its folded name. Nothing is stored. 1D can take its allow-list from `THAI_EVERYDAY_PACK.map((item) => item.key)`.
   - R81: wallet types were not touched. No `ewallet`.
   - `packKeyOf` and `missingPackItems` share `foldedNames`, so an alias matches both. The named `packKeyOf` test uses the primary Thai name, with spaces. Dropping aliases fails the earlier-pack test.
+
+## P6A: Outside the app
+
+Phase 6A puts Jotbun outside the app (plan `docs/superpowers/plans/2026-10-25-jotbun-p6a-outside-the-app.md`): widgets, quick actions and app shortcuts, the share target and Siri, behind the `outside` area. Task 1 adds the ids, the app group store and the account file that the later tasks share.
+
+### P6A Task 1: Outside ids, the app group store and the account file
+
+- **Status:** built and verified locally on `p6a/t1-outside-ids`, on top of `bdf6b12` (the integration head is `75b3625` now; it is not merged here, and the integrator merges it when opening the PR). One render test failed in the full render suite; it is in a file this task does not touch and passes alone (see Gate). Committed locally, not pushed. The independent review is the controller's, after this receipt.
+- **Files** (all new, in `apps/app/src/wallet/outside/`):
+  - `outsideIds.ts`: `OutsideIds`, `TEMPORARY_IDS` (default pending owner Q6: `co.gogocash.jotbun.localcheck`, `co.gogocash.spend`, `group.co.gogocash.jotbun.localcheck`, no keychain group, `gogospend`), `IOS_BUNDLE_ID_PATTERN` and `ANDROID_PACKAGE_PATTERN` (A36), `outsideIdsFrom`, `OutsideAction`, `outsideLink`.
+  - `appGroup.ts`: `AppGroupPort`, `OUTSIDE_FILES`, `isSafeName`, `noAppGroup`, `memoryAppGroup`.
+  - `deviceAppGroup.ts`: `FileSystemLike` and `deviceAppGroup` over expo-file-system 58.0.9's `File`, `Directory` and `Paths`, injected (a type-only import).
+  - `accountFile.ts`: `Digest`, `accountMarker`, `AccountFile`, `parseAccountFile`, `writeAccountFile`, `readAccountFile`.
+  - `appOutside.ts`: `appOutsideIds`, `getAppGroup`, `setAppGroup`, `appDigest`.
+  - Node tests: `outsideIds.test.ts` (5), `appGroup.test.ts` (3), `deviceAppGroup.test.ts` (8, over a fake file system that records each call by uri), `accountFile.test.ts` (3).
+- **RED to GREEN:**
+  - Typed stubs first: the constants final, every function answering wrong.
+  - RED, `npm run test:unit -w gogospend-app -- <the four files>`: 19 failed, 0 passed. Every failure is an assertion (`AssertionError [ERR_ASSERTION]`: outsideIds 5, appGroup 3, deviceAppGroup 8, accountFile 3). `npm run typecheck:app` passed with the stubs. The unit suite before the new files was 734 passed.
+  - GREEN, the same command: 19 passed, 0 failed. The prepared code was copied in unchanged (`cmp` against `briefs/P6A-T1-files/code/`).
+- **Mutation check:** sha256 of the module files recorded before and after (equal). Each mutant was applied in place, its test file run, the file restored and the restore checked (`briefs/P6A-T1-files/mutants.mjs`).
+  - M1 (plan), the device store's `writeText` skips the name check: killed, `an unsafe name is refused before any file call`.
+  - M2 (plan), the whole digest as the marker: killed, the three account-file tests.
+  - M3 (plan), iOS rooted at `Paths.document`: killed, `on iOS the app group container is the root` and three more.
+  - M4 (plan), the package checked with the iOS pattern: killed, `the Android package allows _ and refuses -`.
+  - M5 `parseAccountFile` accepts any keys: killed, `the file has exactly v, marker, locale and hidden and never the account id`.
+  - M6 `writeAccountFile` spreads its input: killed, `the file has exactly v, marker, locale and hidden and never the account id`.
+  - M7 the app group without the `group.` prefix check: killed, `each valid field overrides its default and a malformed one keeps it`.
+  - M8 a team id of 9 or 10 characters: killed, `a keychain group needs a ten-character team id`.
+  - M9 the device `list` keeps folders: killed, `on iOS the app group container is the root`.
+  - M10 the device read lets a failure through: killed, `a native failure answers null or false, and a failed write or remove still resolves`.
+  - M11 folders made without `intermediates`: killed, `a missing folder is created before a write`.
+  - M12 `copyIn` without `overwrite`: killed, `on iOS the app group container is the root`.
+  - M13 safe names allow dots inside segments: killed, `unsafe names are refused` and `noAppGroup reads nothing and accepts writes`.
+  - M14 the memory `list` keeps nested files: killed, `the memory store reads what it wrote, lists a folder and removes`.
+  - M15 the device `uriOf` ignores existence: killed, `on iOS the app group container is the root`.
+  - M16 the scheme unchecked: killed, `each valid field overrides its default and a malformed one keeps it`.
+  - M17 the device write lets a failure through: killed, `a native failure answers null or false, and a failed write or remove still resolves`.
+  - Extended run (scratch only, not committed; each mutant in place, restore checked): 62 further mutants, E01 to E62. 54 killed. 8 survived, and each is equivalent rather than a gap: E28 `rootOf` answers `undefined` for an absent container, and its caller tests for a falsy value; E34 `remove` calls `delete` on a missing file, which either throws (swallowed) or does nothing; E36 `list` calls the folder's `list()` on a missing folder, which either throws (swallowed to `[]`) or returns `[]`; E44 `makeFolderOf` drops `idempotent`, which only matters for a folder that exists, and the guard never creates one; E49 `parseAccountFile` without the null check, since `JSON.parse(null)` gives `null`, which is refused; E51 arrays accepted, since an array never has the four key names; E53 no count check, since a key set short of the four still lacks `v`, which is refused; E60 returns the parsed object, which has exactly the four validated keys. E33 (`writeText` without its `await`) is killed, but only as a whole-file failure (an unhandled rejection), not by a named test.
+  - Refusal call sites (scratch copy): each of the 18 `refuseUnsafe` calls removed in turn (memory store 6, `noAppGroup` 6, device store 6), with its test file run: 18 killed.
+  - Survivors that need a test: none. `appOutside.ts` has no test, so its branches were not mutated.
+- **Gate** (worktree root):
+  - `npm run typecheck:app`: passed (`tsc --noEmit`, exit 0).
+  - `npm run typecheck:routes -w gogospend-app`: passed (exit 0).
+  - `npm run test:app`: 29 passed, 0 failed (the API tests; unchanged by this task).
+  - `npm run test:unit`: 753 passed, 0 failed (734 before this task; the 19 new tests are the difference).
+  - `npm run test:render -w gogospend-app` (run once): FAILED, 1 test. 82 of 83 files passed, 1588 of 1589 tests passed. The failure is `RemindersScreen.render.test.tsx` > `saving: Save is busy and every control waits; then the outcome, or a failure kept in words` (it looked for a `button` named "Saving…" and found "Save" with `aria-busy="false"`). Run alone, that file passes (19 of 19). The render config includes only `src/**/*.render.test.tsx`, and nothing outside `src/wallet/outside/` imports the new modules, so this task does not reach that file. Not fixed, per the brief; not re-run as a full suite.
+  - `npm run export:web -w gogospend-app -- --max-workers 2`: passed (`expo export --platform web`, exit 0; the output folder `dist` is ignored by git).
+  - `git diff --check origin/claude/p1a-vault-core...HEAD`: clean.
+  - Not run: `npm run check:native` (P6A-T7 adds it); the contracts, API and edge gates and the database suites (nothing there changed).
+- **Deviations:**
+  1. Tests beyond the plan: the device test `a native failure answers null or false, and a failed write or remove still resolves` (the plan's "adapters swallow native failures"), and assertions beyond the plan's inside its named tests (the two pattern sources and flags, more malformed ids, `uriOf`, `copyIn` replacing a copy, folders and nested files left out of `list`, more refused account files). The plan's test names are kept.
+  2. `noAppGroup` and the memory store also refuse unsafe names with a `TypeError` (the plan says it of the device store); `uriOf` throws it synchronously.
+  3. The plan gives `uriOf` only its type: it answers `null` for a missing file, and the memory store answers `memory:///<name>`.
+  4. `copyIn` copies with `overwrite: true`, so a repeated hand-off under the same name replaces the copy.
+  5. `getAppGroup()` answers `noAppGroup` on the web (and on any platform but iOS and Android) without loading expo-file-system, which is what `deviceAppGroup` answers for `web`. expo-file-system loads through a typed lazy `require` (as `app/dev/catalogue.tsx` loads the catalogue), because `getAppGroup()` is synchronous.
+  6. `appOutside.ts` has no test: the plan names none, and a Node test cannot load react-native. P6A-T3a's render tests are the first to run it.
+  7. Sync: not merged. The fetch and the merge in Step 0 ran with the integration head at `bdf6b12` (the merge was a no-op, "Already up to date"). The head is now `75b3625`, which the orchestrator asked us not to merge here. Against `bdf6b12`, `75b3625` adds 84 lines to this file and nothing under `apps/app/src/wallet/outside/`, so the append at the end may need a keep-both merge.
+  8. Assertions added in the mutation check, inside the named tests (no test added; the count stays 19). The test files differ from `briefs/P6A-T1-files/tests/` only by these lines: `outsideIds.test.ts`, a `group.` prefix with no dotted bundle id keeps the default; `appGroup.test.ts`, `noAppGroup` refuses `readText`, `remove`, `list` and `copyIn` with a `TypeError` and `uriOf` throws one; `deviceAppGroup.test.ts`, a missing shares file is answered `null` without a read, a copy creates its folder, a store whose native roots throw is unavailable on iOS and on Android, and `uriOf` answers `null` when the file constructor throws; `accountFile.test.ts`, an array marker is refused.
+- **SKIPPED:** device and native checks. Nothing native is built or signed until D33 (Q6). The iOS app group container appears only with P6A-T7's entitlement, so until then the iOS store is unavailable and writes nothing. No hosted resource was touched.
+- **Notes for later tasks:**
+  - Render tests whose imports reach `appOutside.ts` (P6A-T3a, P6A-T3b): it imports expo-constants and expo-crypto at the top, and expo-modules-core needs `__DEV__`, which the render harness lacks. Such a test needs `vi.mock('expo-constants', () => ({ default: { expoConfig: null } }))` beside the usual expo-crypto mock, then `setAppGroup(memoryAppGroup())`. The planning step checked this in a scratch copy: without the mock the file fails to load (`ReferenceError: __DEV__ is not defined`); with both mocks it loads, `getAppGroup()` is `noAppGroup` on the web, and `appDigest` gives the expected marker through a mocked `digestStringAsync`.
+  - P6A-T6a: a queue entry's `file` must pass `isSafeName` before `uriOf` or `remove`, because an unsafe name throws.
+  - A failed native write or remove resolves without telling the caller, as the plan's global constraint asks; a later read shows what stayed.
+  - P6A-T7: `outsideConfig.js` must repeat `IOS_BUNDLE_ID_PATTERN` and `ANDROID_PACKAGE_PATTERN` exactly (`outsideIds.test.ts` pins both sources), and `extra.outside` uses this task's field names: `iosBundleId`, `androidPackage`, `appGroup`, `keychainGroup`, `scheme`.
+  - `appOutsideIds()` and the device store are made once per process; `appleSharedContainers` is read when the store is made.
