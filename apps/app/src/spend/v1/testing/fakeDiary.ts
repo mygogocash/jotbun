@@ -1,11 +1,13 @@
 // A SpendDiary for render tests: a settable view, recorded saves, an optional
-// save failure, and an in-memory import draft while it is ready. Test use only.
+// save failure, an in-memory import draft while it is ready, and logged days
+// (a seed merged with the view's pending dates, or null while it is not ready).
+// Test use only.
 import type { PendingEntry } from '../../../storage/types';
 import { memoryDraftStore } from '../importReview';
 import type { DiaryView, SpendDiary } from '../spendDiary';
 
-export function createFakeDiary(view: Partial<DiaryView> = {}) {
-  let current: DiaryView = { phase: 'ready', lockReason: null, outcome: null, progress: null, pending: [], outbox: [], wallets: [], categories: [], ...view };
+export function createFakeDiary(view: Partial<DiaryView> = {}, options: { loggedDays?: readonly string[] } = {}) {
+  let current: DiaryView = { phase: 'ready', lockReason: null, outcome: null, progress: null, pending: [], outbox: [], pendingChoices: [], wallets: [], categories: [], appliedRevision: '0', accountId: '00000000-0000-4000-8000-0000000000aa', ...view };
   const drafts = memoryDraftStore();
   const listeners = new Set<() => void>();
   const saves: PendingEntry[] = [];
@@ -41,6 +43,14 @@ export function createFakeDiary(view: Partial<DiaryView> = {}) {
       current = { ...current, outbox: current.outbox.filter((command) => command.commandId !== commandId) };
       notify();
     },
+    async keepChoice(choice) {
+      current = { ...current, pendingChoices: [...current.pendingChoices.filter((kept) => kept.recordId !== choice.recordId), choice] };
+      notify();
+    },
+    async dropChoice(recordId) {
+      current = { ...current, pendingChoices: current.pendingChoices.filter((kept) => kept.recordId !== recordId) };
+      notify();
+    },
     discardDiary: async () => void (calls.discardDiary += 1),
     eraseForSignOut: async () => void (calls.eraseForSignOut += 1),
     importDraftStore: () => (current.phase === 'ready' ? drafts : null),
@@ -48,6 +58,12 @@ export function createFakeDiary(view: Partial<DiaryView> = {}) {
     foreground: async () => undefined,
     background: () => undefined,
     close: async () => undefined,
+    async loggedDays() {
+      if (current.phase !== 'ready') return null;
+      const days = new Set<string>(options.loggedDays ?? []);
+      for (const entry of current.pending) days.add(entry.occurred_on);
+      return [...days].sort();
+    },
   };
   return {
     diary,

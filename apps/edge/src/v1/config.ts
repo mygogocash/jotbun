@@ -6,9 +6,13 @@ import type { GateScope } from '@api/common/feature-gates'
 import { POLICY_KINDS } from '@gogospend/contracts'
 import type { PolicyVersionDto } from '@gogospend/contracts'
 
+import { flag } from '../server/env'
 import type { V1Env } from './env'
 import { logFailure } from './log'
 import type { PublishedPolicies } from './protocol'
+
+/** The settings readEdgeConfig reads. Uploads stay hidden unless the release flag is on. */
+type ConfigEnv = Partial<Pick<V1Env, 'MIN_CLIENT_VERSION_IOS' | 'MIN_CLIENT_VERSION_ANDROID' | 'IMPORT_UPLOADS_ENABLED'>>
 
 export const EDGE_CONFIG_KEY = 'config:v1'
 
@@ -56,24 +60,26 @@ type ParsedConfig = {
  * Reads config:v1 and the env minimums. It never throws: an unreadable or
  * malformed config pauses every gate scope with a retry and publishes no
  * policies, while an absent config leaves gates open and policies unpublished.
+ * Uploads stay unexposed unless IMPORT_UPLOADS_ENABLED is `1` or `true`, on
+ * both paths, so a pause never reveals an unreleased route.
  */
-export async function readEdgeConfig(kv: KVNamespace, env: V1Env): Promise<EdgeConfig> {
+export async function readEdgeConfig(kv: KVNamespace, env: ConfigEnv): Promise<EdgeConfig> {
   const fromEnv = minimumsFromEnv(env)
   let stored: unknown
   try {
     stored = await kv.get(EDGE_CONFIG_KEY, 'json')
   } catch (error) {
     logFailure('config_unreadable', error)
-    return failClosed(fromEnv)
+    return failClosed(fromEnv, env)
   }
-  if (stored === null) return { gates: new FeatureGates(), policies: null, clientVersions: guardFor(fromEnv) }
+  if (stored === null) return { gates: gatesFor(env), policies: null, clientVersions: guardFor(fromEnv) }
   const parsed = parseConfig(stored)
   if (!parsed) {
     logFailure('config_malformed', new Error('config:v1 does not match its shape'))
-    return failClosed(fromEnv)
+    return failClosed(fromEnv, env)
   }
   return {
-    gates: new FeatureGates({ paused: parsed.gates.paused, retryAfterSeconds: parsed.gates.retryAfterSeconds }),
+    gates: gatesFor(env, { paused: parsed.gates.paused, retryAfterSeconds: parsed.gates.retryAfterSeconds }),
     policies: parsed.policies,
     clientVersions: guardFor(parsed.clientVersions ?? fromEnv),
   }
@@ -89,8 +95,17 @@ export function livePolicies(policies: PublishedPolicies, now: Date): PublishedP
   return policies === null ? null : policies.filter((policy) => Date.parse(policy.published_at) <= now.getTime())
 }
 
-function failClosed(fromEnv: MinimumClientVersions | null): EdgeConfig {
-  return { gates: new FeatureGates({ paused: [...GATE_SCOPES], retryAfterSeconds: FAIL_CLOSED_RETRY_SECONDS }), policies: null, clientVersions: guardFor(fromEnv) }
+/** Uploads are unexposed unless IMPORT_UPLOADS_ENABLED is `1` or `true`, on the open path and the fail-closed path. */
+function gatesFor(env: ConfigEnv, options: { paused?: readonly GateScope[]; retryAfterSeconds?: number } = {}): FeatureGates {
+  return new FeatureGates({
+    paused: options.paused,
+    retryAfterSeconds: options.retryAfterSeconds,
+    unexposed: flag(env.IMPORT_UPLOADS_ENABLED) ? undefined : ['uploads'],
+  })
+}
+
+function failClosed(fromEnv: MinimumClientVersions | null, env: ConfigEnv): EdgeConfig {
+  return { gates: gatesFor(env, { paused: [...GATE_SCOPES], retryAfterSeconds: FAIL_CLOSED_RETRY_SECONDS }), policies: null, clientVersions: guardFor(fromEnv) }
 }
 
 function guardFor(minimums: MinimumClientVersions | null): Pick<ClientVersionGuard, 'check'> {
@@ -98,7 +113,7 @@ function guardFor(minimums: MinimumClientVersions | null): Pick<ClientVersionGua
 }
 
 /** MIN_CLIENT_VERSION_IOS and _ANDROID from the env, or null when either is missing or malformed. */
-function minimumsFromEnv(env: V1Env): MinimumClientVersions | null {
+function minimumsFromEnv(env: ConfigEnv): MinimumClientVersions | null {
   try {
     return minimumClientVersionsFromEnv({ MIN_CLIENT_VERSION_IOS: env.MIN_CLIENT_VERSION_IOS, MIN_CLIENT_VERSION_ANDROID: env.MIN_CLIENT_VERSION_ANDROID })
   } catch {

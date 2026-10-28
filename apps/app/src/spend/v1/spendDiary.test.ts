@@ -7,12 +7,13 @@ import { deviceDiaryFiles as webDiaryFiles } from '../../storage/database.web.ts
 import { createMemoryKeyStore } from '../../storage/testing/memoryKeys.ts';
 import { createTestDiaryFiles } from '../../storage/testing/nodeSqlite.ts';
 import type { TestDiaryFiles } from '../../storage/testing/nodeSqlite.ts';
-import { ACCOUNT_A, ACCOUNT_B, SAVINGS, category, change, draft, wallet } from '../../storage/testing/diaryFixtures.ts';
+import { ACCOUNT_A, ACCOUNT_B, SAVINGS, category, change, draft, expense, wallet } from '../../storage/testing/diaryFixtures.ts';
 import { createSyncScheduler } from '../../sync/scheduler.ts';
 import { createSyncEngine } from '../../sync/syncEngine.ts';
 import { PROBLEMS, createFakeServer } from '../../sync/testing/fakeServer.ts';
 import type { DiaryStore } from '../../storage/diaryRepository.ts';
-import { DiarySchemaTooNew } from '../../storage/types.ts';
+import { DiaryLocked, DiarySchemaTooNew } from '../../storage/types.ts';
+import type { PendingChoice } from '../../storage/types.ts';
 import type { SyncSession } from '../../sync/types.ts';
 import { newJourney } from './importReview.ts';
 import type { ImportJourney } from './importReview.ts';
@@ -414,6 +415,69 @@ test('no import draft store while no diary is open: opening, locked, signed out,
   assert.equal(web.importDraftStore(), null);
 });
 
+test("the view names the open diary's account, and nobody without one", async () => {
+  const { diary, session, keys } = await setup();
+  assert.equal(diary.getView().accountId, ACCOUNT_A);
+
+  Object.assign(session, { accountId: ACCOUNT_B, epoch: 2 });
+  await diary.sessionChanged();
+  assert.equal(diary.getView().phase, 'ready');
+  assert.equal(diary.getView().accountId, ACCOUNT_B);
+
+  Object.assign(session, { accountId: null, epoch: 3 });
+  await diary.sessionChanged();
+  assert.equal(diary.getView().phase, 'unavailable');
+  assert.equal(diary.getView().accountId, null);
+
+  Object.assign(session, { accountId: ACCOUNT_A, epoch: 4 });
+  await keys.delete(ACCOUNT_A);
+  await diary.sessionChanged();
+  assert.equal(diary.getView().phase, 'locked');
+  assert.equal(diary.getView().accountId, null);
+
+  const firstFiles = files;
+  const refused = await setup();
+  firstFiles?.dispose();
+  refused.server.scriptOthers(PROBLEMS.signedOut());
+  refused.server.scriptSends(PROBLEMS.signedOut(), PROBLEMS.signedOut());
+  await refused.diary.saveDraft(draft());
+  await refused.diary.retry();
+  assert.equal(refused.diary.getView().phase, 'locked');
+  assert.equal(refused.diary.getView().lockReason, 'signed_out');
+  assert.equal(refused.diary.getView().accountId, null);
+
+  let release: () => void = () => undefined;
+  const opening = createSpendDiary({
+    open: async (accountId) => {
+      await new Promise<void>((resolve) => (release = resolve));
+      return { accountId, lock: async () => undefined, readState: async () => ({ cursor: null, appliedRevision: '0', confirmed: [], pending: [], walletTotals: {} }), readOutbox: async () => [] } as unknown as DiaryStore;
+    },
+    discard: async () => undefined,
+    session: () => ({ accountId: ACCOUNT_A, epoch: 1 }),
+    now: () => Date.now(), newId: () => randomUUID(), schemaVersion: 1,
+    makeSync: () => ({ engine: { flush: async () => ({}) } as never, scheduler: { launch: async () => undefined, stop: () => undefined } as never }),
+  });
+  const pendingOpen = opening.sessionChanged();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(opening.getView().phase, 'opening');
+  assert.equal(opening.getView().accountId, null);
+  release();
+  await pendingOpen;
+  assert.equal(opening.getView().phase, 'ready');
+  assert.equal(opening.getView().accountId, ACCOUNT_A);
+
+  const web = createSpendDiary({
+    open: (accountId, epoch) => new AccountDatabase({ files: webDiaryFiles(), keys: createMemoryKeyStore(), epoch: () => 1 }).open(accountId, epoch),
+    discard: async () => undefined,
+    session: () => ({ accountId: ACCOUNT_A, epoch: 1 }),
+    now: () => Date.now(), newId: () => randomUUID(), schemaVersion: 1,
+    makeSync: () => { throw new Error('never synced'); },
+  });
+  await web.sessionChanged();
+  assert.equal(web.getView().phase, 'unavailable');
+  assert.equal(web.getView().accountId, null);
+});
+
 test("the explicit sign-out erase takes the diary's import draft with it", async () => {
   const { diary, session, record } = await setup();
   await diary.importDraftStore()?.save(reviewing());
@@ -425,4 +489,39 @@ test("the explicit sign-out erase takes the diary's import draft with it", async
   await diary.sessionChanged();
   assert.equal(diary.getView().phase, 'ready');
   assert.equal(await diary.importDraftStore()?.load(), null);
+});
+
+test('logged days come from the open diary, and null without one', async () => {
+  const { diary, server, session } = await setup();
+  server.commitElsewhere([
+    change('transaction', expense({ occurred_on: '2026-10-20' })),
+    change('transaction', expense({ occurred_on: '2026-10-20' })),
+    change('transaction', expense({ occurred_on: '2026-10-21', deleted_at: '2026-10-22T00:00:00.000Z' }), 'deleted'),
+  ]);
+  await diary.retry();
+  server.setOffline(true);
+  await diary.saveDraft(draft({ occurred_on: '2026-10-23' }));
+  assert.deepEqual(await diary.loggedDays(), ['2026-10-20', '2026-10-23']);
+
+  Object.assign(session, { accountId: null, epoch: session.epoch + 1 });
+  await diary.sessionChanged();
+  assert.equal(diary.getView().phase, 'unavailable');
+  assert.equal(await diary.loggedDays(), null);
+});
+
+test('a kept choice appears in the view and leaves when dropped', async () => {
+  const { diary } = await setup();
+  const record = expense({ amount_minor: '6500' });
+  const kept: PendingChoice = {
+    recordId: record.id, original: record, changes: { amount_minor: '7000' }, server: { ...record, version: 2, amount_minor: '8000' },
+    editedAt: '2026-03-02T05:00:30.000Z', refusedAt: '2026-03-02T05:01:00.000Z',
+  };
+  assert.deepEqual(diary.getView().pendingChoices, []);
+  await diary.keepChoice(kept);
+  assert.deepEqual(diary.getView().pendingChoices, [kept]);
+  await diary.dropChoice(record.id);
+  assert.deepEqual(diary.getView().pendingChoices, []);
+  // With no diary open, a choice is refused.
+  await diary.close();
+  await assert.rejects(diary.keepChoice(kept), DiaryLocked);
 });

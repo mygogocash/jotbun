@@ -12,6 +12,7 @@ vi.mock('@react-native-async-storage/async-storage', () => ({
     setItem: async (key: string, value: string) => void plain.set(key, value),
     removeItem: async (key: string) => void plain.delete(key),
     getAllKeys: async () => [...plain.keys()],
+    multiRemove: async (keys: readonly string[]) => keys.forEach((key) => plain.delete(key)),
   },
 }));
 // The diary itself is a fake: this test reads only what the provider hands it.
@@ -128,4 +129,17 @@ test('spend and Settings share one device diary: leaving Settings never closes t
   expect(sessions.unsubscribed).toBe(1);
   render(<DeviceDiaryProvider><Probe /></DeviceDiaryProvider>);
   expect(captured.created).toHaveLength(2);
+});
+
+test("the sign-out erase forgets the wallet's device settings and keeps the account's looks", async () => {
+  Object.defineProperty(Platform, 'OS', { value: 'ios', configurable: true, writable: true });
+  plain.set('jotbun.wallet.private-mode', 'on');
+  plain.set('jotbun.wallet.lock', 'on');
+  plain.set(`jotbun.account.${B}.looks`, 'warm');
+  render(<DeviceDiaryProvider><Text>screens</Text></DeviceDiaryProvider>);
+  const deps = captured.deps as { eraseWithDiary?: (accountId: string) => Promise<void> };
+  await deps.eraseWithDiary?.(B);
+  expect(plain.has('jotbun.wallet.private-mode')).toBe(false);
+  expect(plain.has('jotbun.wallet.lock')).toBe(false);
+  expect(plain.get(`jotbun.account.${B}.looks`)).toBe('warm');
 });
