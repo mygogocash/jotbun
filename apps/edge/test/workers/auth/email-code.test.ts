@@ -1,8 +1,8 @@
-import { env } from 'cloudflare:test'
+import { env } from 'cloudflare:workers'
 import { expect, it, vi } from 'vitest'
 
 import { DISABLED_EMAIL_OTP_PATHS } from '../../../src/auth/config'
-import { createdDuring } from '../../../src/auth/handler'
+import { createdDuring, handleAuthRequest } from '../../../src/auth/handler'
 import { testAuth } from './support/auth-harness'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
@@ -142,4 +142,17 @@ it('a body over 64 KiB is refused before Better Auth reads it', async () => {
   const answer = await t.request('/api/auth/sign-in/email-otp', { method: 'POST', rawBody })
   expect(answer.status).toBe(413)
   expect(await answer.json()).toEqual({ code: 'PAYLOAD_TOO_LARGE' })
+})
+
+it('a body that is not JSON is 415 before Better Auth reads it', async () => {
+  const t = testAuth()
+  const answer = await handleAuthRequest(t.auth, new Request('http://auth.test/api/auth/sign-in/email-otp', { method: 'POST', headers: { 'content-type': 'text/plain' }, body: 'email=someone@example.test' }))
+  expect(answer.status).toBe(415)
+  expect(await answer.json()).toEqual({ code: 'UNSUPPORTED_MEDIA_TYPE' })
+})
+
+it('a body that is not valid JSON is 400 VALIDATION_FAILED before Better Auth reads it', async () => {
+  const answer = await testAuth().request('/api/auth/sign-in/email-otp', { method: 'POST', rawBody: '{"email":' })
+  expect(answer.status).toBe(400)
+  expect(await answer.json()).toEqual({ code: 'VALIDATION_FAILED' })
 })

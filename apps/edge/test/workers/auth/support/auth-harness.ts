@@ -1,4 +1,4 @@
-import { env } from 'cloudflare:test'
+import { env } from 'cloudflare:workers'
 
 import type { AuthEnv } from '../../../../src/auth/env'
 import type { AuthDeps, JotbunAuth } from '../../../../src/auth/create-auth'

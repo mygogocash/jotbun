@@ -1,4 +1,5 @@
-import { applyD1Migrations, env } from 'cloudflare:test'
+import { applyD1Migrations } from 'cloudflare:test'
+import { env } from 'cloudflare:workers'
 
 // D1 rejects a comment-only file ("SQL code did not contain a statement").
 // A migration with no statements is recorded and changes nothing.

@@ -1,4 +1,4 @@
-import { env } from 'cloudflare:test'
+import { env } from 'cloudflare:workers'
 import { getMigrations } from 'better-auth/db/migration'
 import { expect, it } from 'vitest'
 

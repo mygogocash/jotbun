@@ -1,9 +1,10 @@
-import { env } from 'cloudflare:test'
+import { env } from 'cloudflare:workers'
 import { createLocalJWKSet, jwtVerify, type JSONWebKeySet } from 'jose'
 import { expect, it, vi } from 'vitest'
 
 import { AuthConfigError } from '../../../src/auth/config'
 import { createAuth } from '../../../src/auth/create-auth'
+import { handleAuth, isAuthPath } from '../../../src/server/auth'
 import { TEST_AUTH, testAuth } from './support/auth-harness'
 
 async function readToken(token: string, jwks: JSONWebKeySet) {
@@ -62,4 +63,19 @@ it('passkeys are mounted on D1', async () => {
 it('Better Auth refuses to start without its secret', () => {
   const t = testAuth()
   expect(() => createAuth({ ...env, BETTER_AUTH_SECRET: undefined }, { mailer: t.mailer })).toThrow(AuthConfigError)
+})
+
+it('Better Auth refuses a secret under 32 characters, and a missing base URL, issuer or audience', () => {
+  const t = testAuth()
+  const secret = String(env.BETTER_AUTH_SECRET)
+  for (const unset of [{ BETTER_AUTH_SECRET: secret.slice(0, 31) }, { AUTH_BASE_URL: undefined }, { AUTH_ISSUER: undefined }, { AUTH_AUDIENCE: undefined }]) {
+    expect(() => createAuth({ ...env, ...unset }, { mailer: t.mailer })).toThrow(AuthConfigError)
+  }
+  expect(() => createAuth({ ...env, BETTER_AUTH_SECRET: secret.slice(0, 32) }, { mailer: t.mailer })).not.toThrow()
+})
+
+it('the HTTP Worker sends /api/auth and its subpaths to Better Auth, and nothing else', async () => {
+  expect(['/api/auth', '/api/auth/jwks', '/api/authx', '/api', '/v1/sync'].map(isAuthPath)).toEqual([true, true, false, false, false])
+  const answer = await handleAuth(new Request('http://auth.test/api/auth/nothing-here', { headers: { 'cf-connecting-ip': '192.0.2.10' } }))
+  expect(answer.status).toBe(404)
 })
