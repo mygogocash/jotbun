@@ -1626,3 +1626,46 @@ Phase P5 lets a person keep records in any currency against a home currency they
   - Any test that pins the migration count must read `VAULT_MIGRATIONS.journal.entries.length`, and any table list must add `settings` and `trips`.
   - Records the previous release writes after this migration have a null `home_amount_minor`; phase 5 reads must use `coalesce(home_amount_minor, amount_minor)` and `CAST(... AS TEXT)`. Nothing reads the new columns yet.
   - An upgrade that fails leaves the vault in its older shape; the object resets and the next wake retries. A vault whose upgrade keeps failing refuses calls until a fixed release ships. The planner's upgrade of 90,100 records took 576 ms in local workerd, inside `blockConcurrencyWhile`.
+
+## Fix: flaky render and API tests (8 November)
+
+Correct tests failed on CI only under load. This is a fix to test setup and to three tests; no screen and no API source changed.
+
+- **Status:** built and verified locally on `fix/flaky-tests`, from `f33cdf0`. Not pushed.
+- **Files:** `apps/app/src/testing/renderSetup.ts` (every render wait), `apps/api/src/auth/request-context.spec.ts` (the log check, R85) and `apps/api/src/privacy/retention.integration.spec.ts` (the expiry times, R85).
+- **Cause, render:**
+  - Six failures in four files: RemindersScreen "a change after saving", "off" and "saving"; RecentlyDeleted "an unconfirmed restore is frozen"; QuickAdd "a refused entry shows the field problem"; and two History deletes that failed at once with no "toolbar".
+  - Each test pressed a control right after a `findBy…`. react-native-web wires presses in passive effects: a `Pressable` takes its new `onPress` and `disabled` there, and a new row joins the responder system that long-press needs. React can run those effects in a later Scheduler task than the commit the wait saw. On a busy machine Testing Library's `setTimeout(0)` came first.
+  - So the press met a Save still disabled from loading, or a Try again still busy, and the wait for its outcome ran out at 4 s (`asyncUtilTimeout`). Or the long-press began nothing, and History's synchronous toolbar check failed at once.
+  - Not a slow screen, not the test timeout, no timers or animations: a bigger budget or a worker cap would not fix it.
+  - Every `findBy…` and `waitFor` now returns only after react-dom's Scheduler has run the tasks it had queued (one normal-priority task, inside Testing Library's own `asyncWrapper`). Not an app defect: a person always presses after those effects.
+- **Cause, the log test (R85):** it searched every log line for the amount `6500`, request ids included, and a random UUID can contain those digits (CI 40616621319 logged `3b86d41e-c46d-4812-b9e2-80cd68765006`). Now `SECRET_` and `Bearer` are still looked for in the raw log, each `request_id` must be a v4 UUID, and the amount is looked for in every other key and value. Every value the test sends is still checked.
+- **Cause, the retention test (R85):** CI 40620215604 (job 122592374391), "drops finished upload rows 30 days after they ended…", failed on `import_uploads_check3`. Its `accepted` and `expires` came from two `Date.now()` reads, so a 1 ms tick put `expires_at` 24 h + 1 ms after `accepted_at`, past the 24-hour limit. The test now reads the time once, so the accepted row expires exactly 24 hours after it was accepted. Test only.
+- **RED to GREEN:**
+  - API, with `randomUUID` forced to the id CI logged (scratch copy): RED `Tests: 1 failed, 9 skipped, 10 total` (`Expected pattern: not /SECRET_|Bearer|6500/`); GREEN `Tests: 9 skipped, 1 passed, 10 total`.
+  - Render, React's Scheduler delayed 20 ms (scratch config), the four files: RED `20 failed | 130 passed (150)` and `19 failed | 131 passed (150)` in two runs; GREEN `150 passed (150)` three times.
+  - Under load (12 copies at once, 3 rounds, 6 busy loops, the four files): before `31/36` runs passed (5 failed: QuickAdd "a device save that fails says why" twice, History "deleting an entry another device already deleted" and "an unconfirmed delete is frozen", Reminders "off" once); after `36/36` passed.
+- **Mutation check (scratch copy):**
+  - ten logging mutants (raw URL, authorization, session, cookie, path params, body, amount, amount in the route, amount as the request id, error message): 10 killed, 0 survivors. The amount as the request id is killed by the shape check.
+  - removing the Scheduler wait from `renderSetup.ts` brings back the 20 slowed failures (`20 failed | 130 passed`): killed. Restored: `150 passed`.
+- **Gate:**
+  - `npm run typecheck` passed (contracts and API; the API `tsc` covers the spec files).
+  - `npm run typecheck:app` passed.
+  - `npm run test:render -w gogospend-app --` on the four files: `4 files, 150 tests passed`. `npm run test -w gogospend-api -- src/auth/request-context.spec.ts`: `10 passed`.
+  - `npm run test:api`: `44 suites, 955 tests passed`.
+  - `npm run test:render -w gogospend-app`: `85 files, 1603 tests passed` in 308.86 s, no act warnings, no unhandled errors.
+  - `npm run build -w gogospend-api`: passed. `node apps/api/scripts/release-graph.mjs check`: passed (123 packages in the closure, no problems).
+  - `git diff --check`: clean before the commit and against `origin/claude/p1a-vault-core` after it.
+  - Not run (untouched): `test:app` and `test:unit` (only `vitest.render.config.ts` loads `renderSetup.ts`); `export:web` (no route, config or app entry changed); the edge suites.
+- **Deviations:**
+  - The heading uses today's date; the brief's template said 28 October. The title covers three test files, not two.
+  - The retention patch was applied under R85: `git apply --check`, then `git apply`. `git apply --numstat` shows one file, 4 lines added and 1 removed.
+  - The build and the release-graph check were run, although the brief listed them as not run: the protocol's API gate lists them, and `apps/api` changed.
+  - The first render RED run had 19 failures, not 20; the slowed run is not deterministic.
+- **Second commit, the receive deadline (R88):** when less than `idleMs` is left, the wait is the receive deadline itself, but a timeout was recorded as a stall whenever the clock still read a millisecond short, which Node's timer can allow (CI run 42468711069, PR #342). `upload-intake.ts` now records `upload_timeout` for any timeout of that wait. The new test "a timer that fires a millisecond before the receive deadline is still a timeout: 408" fails on the old code (`upload_stalled`) and passes on the new. Mutants: dropping the deadline check fails only the new test; inverting the boundary fails it and the idle-timeout test. The spec passed 5 of 5 runs (97 tests each); `test:api` is now 44 suites, 956 tests.
+- **SKIPPED:** `npm run test:db`. Docker was stopped and was not started. That suite is the only one that runs `retention.integration.spec.ts` (`jest.integration.cjs` runs `*.integration.spec.ts`; `test:api` excludes them), so CI is the first run of the retention change.
+- **Not fixed here:**
+  - ImportReview "parsing says nothing is saved": a latent race between the 1 ms poll and React's render, not seen on CI. A follow-up could hold the second preview until the test has seen the parsing text.
+- **Notes for the integrator:**
+  - The setup loads react-dom's own `scheduler` (0.28.0, with react-dom 19.3.0), resolved from react-dom's folder; it is not an app dependency of its own.
+  - Five render files use fake timers; they pass in the full suite.

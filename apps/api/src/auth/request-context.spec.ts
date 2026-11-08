@@ -56,8 +56,16 @@ describe('safe request logging', () => {
     await request(server).get('/v1/probe/boom');
     await request(server).get('/v1/no-such-route?SECRET_UNMATCHED=1');
 
-    expect(logs.join('\n')).not.toMatch(/SECRET_|Bearer|6500/);
+    // SECRET_ and Bearer cannot be part of a request id (lowercase hex) or a number: looked for everywhere.
+    expect(logs.join('\n')).not.toMatch(/SECRET_|Bearer/);
     const entries = logs.map((line) => JSON.parse(line) as Record<string, unknown>);
+    // The amount is digits, which a random request id can contain (CI run 40616621319 logged
+    // 3b86d41e-c46d-4812-b9e2-80cd68765006). So each request id is checked for its shape, and the
+    // amount is looked for in every other key and value.
+    for (const { request_id, ...rest } of entries) {
+      expect(request_id).toMatch(UUID);
+      expect(JSON.stringify(rest)).not.toContain('6500');
+    }
     const item = entries.find((entry) => entry.route === '/v1/probe/items/:id');
     expect(item).toMatchObject({ method: 'GET', status: 200 });
     expect(item?.request_id).toMatch(UUID);

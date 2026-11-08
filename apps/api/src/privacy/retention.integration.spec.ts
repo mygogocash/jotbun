@@ -400,7 +400,10 @@ describe('other retention', () => {
       ));
       return id;
     };
-    const day = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString();
+    // One instant for every row: two reads a millisecond apart put expires_at 24 h + 1 ms after accepted_at,
+    // over import_uploads_check3's 24-hour limit (PR #330's SQL job).
+    const now = Date.now();
+    const day = (n: number) => new Date(now - n * 86_400_000).toISOString();
     const oldFailed = await row('failed', day(31), { outcome: 'stream_failed', created: day(31) });
     const freshFailed = await row('failed', day(2), { outcome: 'stream_failed', created: day(2) });
     const oldExpired = await row('expired', day(32), { created: day(34), accepted: day(34), expires: day(33) });
