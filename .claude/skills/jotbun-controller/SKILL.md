@@ -45,7 +45,8 @@ The skill and `C/` are committed in the repo; the scratch proof trees are not, a
 5. **Implementer BLOCKED:** read the exact blocker. For a known flake (`references/lessons.md`), rule it and SendMessage the same agent to continue. For a real question the plan cannot answer, ask the owner. If a task fails review three fix rounds running, tell the owner and suggest escalating it.
 6. **Review "Needs fixes":** write the fix brief (model: `C/briefs/1A-T9-fix.md`), give it a ruling number when it changes behaviour, dispatch Haiku, push, update the PR body, then run a confirming Opus review.
 7. **Merge** when CI is green on the reviewed head and the review approves: `scripts/merge_task_pr.sh <pr> <reviewed-sha> [task-id]`. Record the review's minors in `followups.md`. If the receipt has stale lines, fix them in a housekeeping commit on the integration branch.
-8. **CI watching:**
+8. **Keep GitHub current.** After each merge or dispatch, update `handover.md`. Then run `scripts/sync_state.sh "Sync the controller state" <kits of ready, unbuilt briefs>`. It pushes the live state to the integration branch, so a move to another machine or a dead session loses nothing.
+9. **CI watching:**
    - Keep a Monitor running on `C/watch_prs.sh`; it re-arms every 30 minutes.
    - After a `gh run rerun <run> --failed`, wait with `C/wait_ci.sh <pr>` in background Bash instead.
    - On red CI, run `scripts/ci_failures.sh <pr>` to get the failing step and test lines.
@@ -67,6 +68,7 @@ The skill and `C/` are committed in the repo; the scratch proof trees are not, a
   - `new_task_worktree.sh`
   - `open_task_pr.sh`
   - `merge_task_pr.sh`
+  - `sync_state.sh`
   - `ci_failures.sh`
   - `inflight_agents.py`
   - `tail_transcript.py`
