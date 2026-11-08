@@ -7,14 +7,18 @@
 //   - day/month order is never assumed: a numeric date whose first two parts
 //     are both 12 or less needs the file's order (detectDateOrder), or it is
 //     ambiguous_date;
-//   - two-digit years are ambiguous_date; an instant with a zone is placed on
-//     its Asia/Bangkok calendar day; a time of day without a zone is dropped,
-//     but it must be one (hours 0-23, minutes and seconds 0-59) in every form;
+//   - a two-digit year is read only in the era the caller gives (a bank
+//     export's, P4-T10: bank.ts's twoDigitYearEra), else it is ambiguous_date;
+//   - an instant with a zone is placed on its Asia/Bangkok calendar day; a
+//     time of day without a zone is dropped, but it must be one (hours 0-23,
+//     minutes and seconds 0-59) in every form;
 //   - dates before 1970-01-01 or after today (Bangkok) are date_out_of_range.
 // Ported concepts: the legacy importers' Thai export formats and the slip
 // reader's Thai month names.
 
 export type DateOrder = 'dmy' | 'mdy' | null;
+/** The era of a file's two-digit years (bank.ts's twoDigitYearEra); null: unknown, so they are ambiguous_date. */
+export type DateEra = 'be' | 'ce' | null;
 export type DateResult = { ok: true; date: string } | { ok: false; code: string };
 
 const BANGKOK_OFFSET_MS = 7 * 3_600_000;
@@ -51,8 +55,9 @@ function daysInMonth(year: number, month: number): number {
 
 const pad = (value: number, width = 2) => String(value).padStart(width, '0');
 
-/** A Gregorian year from a written one: Buddhist era from 2400 on; null for two-digit years. */
-function gregorianYear(written: string): number | null {
+/** A Gregorian year from a written one: Buddhist era from 2400 on; a two-digit year in the file's era, else null. */
+function gregorianYear(written: string, era: DateEra = null): number | null {
+  if (written.length === 2) return era === 'be' ? 2500 + Number(written) - 543 : era === 'ce' ? 2000 + Number(written) : null;
   if (written.length !== 4) return null;
   const year = Number(written);
   return year >= 2400 ? year - 543 : year;
@@ -116,7 +121,17 @@ export function detectDateOrder(raws: readonly string[], fallback: DateOrder): D
   return fallback;
 }
 
-export function parseDateText(raw: string, options: { order: DateOrder | 'conflict'; today: string }): DateResult {
+/** The two-digit year a numeric or month-named date is written with (`24/10/69` and `24 ต.ค. 69` give 69), else null. */
+export function twoDigitYear(raw: string): number | null {
+  const text = normalize(raw);
+  const numeric = NUMERIC.exec(text);
+  const dayNamed = numeric ? null : DAY_NAMED.exec(text);
+  const namedDay = numeric || dayNamed ? null : NAMED_DAY.exec(text);
+  const written = numeric?.[3] ?? dayNamed?.[3] ?? namedDay?.[3];
+  return written !== undefined && written.length === 2 ? Number(written) : null;
+}
+
+export function parseDateText(raw: string, options: { order: DateOrder | 'conflict'; today: string; era?: DateEra }): DateResult {
   const text = normalize(raw);
   if (text === '' || text === '-') return { ok: false, code: 'missing_date' };
 
@@ -138,7 +153,7 @@ export function parseDateText(raw: string, options: { order: DateOrder | 'confli
   if (numeric) {
     const first = Number(numeric[1]);
     const second = Number(numeric[2]);
-    const year = gregorianYear(numeric[3]);
+    const year = gregorianYear(numeric[3], options.era ?? null);
     if (!validTime(numeric[4], numeric[5], numeric[6])) return { ok: false, code: 'invalid_date' };
     if (year === null) return { ok: false, code: 'ambiguous_date' };
     let day: number;
@@ -168,7 +183,7 @@ export function parseDateText(raw: string, options: { order: DateOrder | 'confli
   if (dayNamed || namedDay) {
     const [dayText, monthText, yearText] = dayNamed ? [dayNamed[1], dayNamed[2], dayNamed[3]] : [namedDay![2], namedDay![1], namedDay![3]];
     const month = MONTHS[monthText] ?? MONTHS[monthText.toLowerCase()];
-    const year = gregorianYear(yearText);
+    const year = gregorianYear(yearText, options.era ?? null);
     if (year === null) return { ok: false, code: 'ambiguous_date' };
     const date = month ? calendarDate(year, month, Number(dayText)) : null;
     return date ? inRange(date, options.today) : { ok: false, code: 'invalid_date' };

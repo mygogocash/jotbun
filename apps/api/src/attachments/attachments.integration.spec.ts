@@ -100,7 +100,7 @@ async function attachableImage(user: SignedUp, format: 'jpeg' | 'png' = 'jpeg', 
   const outcome: ParserRunOutcome = {
     kind: 'result',
     result: {
-      ok: true, layout: 'receipt', file_issues: ['receipt_fields_unread'], usage: { max_rss_kb: 1024, cpu_ms: 5 },
+      ok: true, layout: 'receipt', file_issues: ['receipt_fields_unread'], header_fingerprint: null, usage: { max_rss_kb: 1024, cpu_ms: 5 },
       image: { format, width, height, base64: sanitized.toString('base64') },
       rows: [{ source_row_id: 'image:1', occurred_on: null, type: null, amount_minor: null, wallet_label: null, category_label: null, merchant: null, note: null, issues: [] }],
     },

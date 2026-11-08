@@ -3,6 +3,7 @@ import { evictAllDurableObjects, runInDurableObject } from 'cloudflare:test'
 import { getTableConfig } from 'drizzle-orm/sqlite-core'
 import { expect, it } from 'vitest'
 
+import { VAULT_MIGRATIONS } from '../../src/vault/migrations'
 import { VAULT_CORE_TABLES, vaultSchema } from '../../src/vault/schema'
 
 const vault = (name = crypto.randomUUID()) => env.VAULT.get(env.VAULT.idFromName(name))
@@ -13,8 +14,13 @@ const USER_TABLES = "SELECT name FROM sqlite_master WHERE type = 'table' AND nam
 it('a new vault has every core table, migrated once', async () => {
   const stub = vault()
   expect((await sql(stub, USER_TABLES)).map((r) => r.name)).toEqual([...VAULT_CORE_TABLES])
-  expect(VAULT_CORE_TABLES).toEqual(['account_state', 'ai_preferences', 'ai_usage', 'attachments', 'audit_events', 'budget_category_limits', 'categories', 'command_receipts', 'consents', 'entity_changes', 'entity_heads', 'exports', 'import_candidates', 'import_parts', 'import_previews', 'import_row_progress', 'import_selection_rows', 'import_selections', 'import_uploads', 'monthly_budgets', 'revoked_sessions', 'schedule', 'snapshot_chunks', 'snapshots', 'sync_state', 'transaction_attachments', 'transactions', 'vault_objects', 'wallets'])
-  expect((await sql(stub, 'SELECT count(*) AS n FROM __drizzle_migrations'))[0].n).toBe(2)
+  expect(VAULT_CORE_TABLES).toEqual(['account_state', 'ai_preferences', 'ai_usage', 'attachments', 'audit_events', 'budget_category_limits', 'categories', 'command_receipts', 'consents', 'entity_changes', 'entity_heads', 'exports', 'import_candidates', 'import_parts', 'import_previews', 'import_row_progress', 'import_selection_rows', 'import_selections', 'import_uploads', 'monthly_budgets', 'revoked_sessions', 'schedule', 'settings', 'snapshot_chunks', 'snapshots', 'sync_state', 'transaction_attachments', 'transactions', 'trips', 'vault_objects', 'wallets'])
+  // The journal runs in order: idx 0 to n - 1, one key each, and each `when` later than the last, so an upgrade applies every new entry.
+  const entries = VAULT_MIGRATIONS.journal.entries
+  expect(entries.map((entry) => entry.idx)).toEqual(entries.map((_entry, i) => i))
+  expect(Object.keys(VAULT_MIGRATIONS.migrations).sort()).toEqual(entries.map((entry) => `m${String(entry.idx).padStart(4, '0')}`))
+  expect(entries.every((entry, i) => i === 0 || entry.when > entries[i - 1].when)).toBe(true)
+  expect((await sql(stub, 'SELECT created_at FROM __drizzle_migrations ORDER BY created_at')).map((r) => r.created_at)).toEqual(entries.map((entry) => entry.when))
 })
 
 it('a vault keeps its rows and does not migrate again after it sleeps', async () => {
@@ -22,7 +28,7 @@ it('a vault keeps its rows and does not migrate again after it sleeps', async ()
   await sql(vault(name), "INSERT INTO consents (kind, version, granted, updated_at) VALUES ('analytics', 0, 1, '2026-10-25T00:00:00.000Z')")
   await evictAllDurableObjects()
   expect(await sql(vault(name), 'SELECT kind, granted FROM consents')).toEqual([{ kind: 'analytics', granted: 1 }])
-  expect((await sql(vault(name), 'SELECT count(*) AS n FROM __drizzle_migrations'))[0].n).toBe(2)
+  expect((await sql(vault(name), 'SELECT count(*) AS n FROM __drizzle_migrations'))[0].n).toBe(VAULT_MIGRATIONS.journal.entries.length)
 })
 
 it('the Drizzle schema matches the migrated tables column for column', async () => {
