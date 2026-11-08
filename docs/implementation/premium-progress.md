@@ -1115,6 +1115,57 @@ Phase P6B gives the closed beta its in-app extras ([plan](../superpowers/plans/2
   - `index.ts` and `privacy.ts` are shared: the change is one export line and one function after `isDeletionReceipt`. A conflict keeps both sides.
   - Warnings, not failures, and not caused by this change: the Node runner prints `MODULE_TYPELESS_PACKAGE_JSON` for the new file, for `packages/contracts/src/index.ts` and for other pure tests (their packages have no `"type"` field); vitest warns that `vitest.render.config.ts` is loaded as CommonJS.
 
+### P2 Task 6: The record screen's rules move into a hook
+
+- **Status:** built and verified locally on `p2/t6-record-hook`, merged with `origin/claude/p1a-vault-core` at `bdf6b12` (merge `f5c836c`). Not pushed. The independent review is the controller's, after this receipt.
+- **Fix round** (review of `f789568`, findings M-1 and m-1): the M5 survivors were not equivalent, and the clear in `startEditing` had no test. Three tests now pin the notice rules through the probe, all in `recordActions.render.test.tsx`: `cancelling an edit after a refused restore brings the notice back` (kills M5b, where `cancelEditing` always clears), `reloading a conflict clears the old notice` (kills M5a, where it never clears) and `starting an edit clears the notice` (kills R1, where `startEditing` drops its clear). All three pass on `f789568`, since they pin behaviour that is already right; each is shown needed by the mutant it kills. Each mutant was applied to `recordActions.ts` in turn and the file was restored with `cp`, and the checksum `bd8c7e6f...` matched after every restore: M5a, 1 failed (`reloading a conflict clears the old notice`); M5b, 2 failed (`cancelling an edit after a refused restore brings the notice back`, and `starting an edit clears the notice` at its precondition); R1, 1 failed (`starting an edit clears the notice`). No mutant survived.
+- **Files:**
+  - `apps/app/src/screens/redesign/record/recordActions.ts` (new): `useRecordActions({ id, mode, now })` returns `RecordActionsState` with exactly the plan's fields: `today`, `draftCommand`, `loaded`, `editing`, `deleted`, `pending`, `gone`, `notice`, `busy`, `load()`, `startEditing()`, `cancelEditing()`, `changeEditing(change)`, `pressKey(key)`, `submitEdit()`, `remove(record)`, `restore(target)`, `settleDraft(commandId, how)`. It also exports `RecordLoaded` and `RecordEditing`, and `lookupsOf`, `earliestDate`, `startEdit` and `KEYPAD_PROBLEM_TEXT`, moved unchanged.
+  - `apps/app/src/screens/redesign/RecordScreen.tsx`: renders from the hook. The receipt, the amount line and today's conflict panel are unchanged.
+  - `apps/app/src/screens/redesign/record/recordActions.render.test.tsx` (new): the plan's three tests, through a probe that shows the hook's state as text.
+- **How it was built:** an earlier session moved the code and wrote the hook test on 25 October without recording a RED. That work was committed as found (`1e7789b`), merged with the integration head, and finished here.
+- **RED to GREEN** (`npm run test:render -w gogospend-app -- src/screens/redesign/record/recordActions.render.test.tsx`):
+  - RED 1, the plan's placeholder: the hook with `submitEdit`, `remove` and `restore` returned as no-ops. 3 failed, 0 passed, each on its `waitFor` (`deleted 2`, `conflict 2 1300000`, `unconfirmed true`). The hook was restored with `cp`; the checksum matched.
+  - RED 2, the moved hook before `changeEditing` held the freeze: 1 failed, 2 passed. `an edit whose answer never came is frozen, and Try again resends the same command key` failed: a field change went through while the edit was frozen.
+  - GREEN: 3 passed, 0 failed.
+- **Record's suite, unchanged:** `RecordScreen.render.test.tsx`, 32 passed on today's screen (a scratch copy of `bdf6b12`) and 32 passed on the hook. This branch does not change the file.
+- **Mutation check:** `recordActions.ts` was copied to the agents scratch folder (sha256 `bd8c7e6f1d0ec93d7e7c7f4c1997853b02a2dbf3bf54d69ef722fad66d3d97a5`) before the mutants. Each was applied in place, run with the hook test and Record's suite, then the file was restored with `cp`. The checksum matched after every restore.
+  - Undo restores with the record's version instead of the delete's (plan): 3 failed, 32 passed. The hook's undo test, and Record's `Delete shows the undo bar; Undo restores with the new version and its own key` and `an unconfirmed undo keeps the bar and resends the same restore`.
+  - The edit key is settled on a lost answer (plan): 2 failed, 33 passed. The hook's frozen test, and Record's `an unconfirmed edit is frozen and retried as the same command`.
+  - Apply my change sends on the version you saw (no rebase): 1 failed, 34 passed. Record's `a conflict shows yours and the server side by side, and Apply my change resends on the server version with a new key`.
+  - `setEditing` does not update the open edit at once: 2 failed, 33 passed. The hook's conflict and frozen tests, which type a whole amount in one event.
+  - `changeEditing` lets a change through while frozen: 1 failed, 34 passed. The hook's frozen test.
+  - `cancelEditing` never clears the notice (M5a), or always clears it (M5b): 35 passed each before the fix round. They were not equivalent: the race below tells them apart. Both are killed now, M5a by `reloading a conflict clears the old notice` and M5b by `cancelling an edit after a refused restore brings the notice back`. R1 is killed by `starting an edit clears the notice`. `remove`, `restore` and `settleDraft` also set a notice and leave the edit open: the screen draws no Delete on the edit form, and the hook does not guard any of the three against an open edit. The one rule that sets a notice and closes the edit is `submitEdit`'s no-usable-record branch. On the screen, a notice meets an open edit only in a race: an entry opened in edit mode from History reads as deleted, its Restore is refused just as another device restores it, and the reload opens the edit with the refusal still shown. There Cancel keeps the notice and Reload clears it, as today's screen did.
+  - Removing `!seen` from `submitEdit`, or the ready check from `startEditing`: `npm run typecheck:app` fails (TS18047 `'seen' is possibly 'null'`; TS2339 `Property 'record' does not exist on type 'RecordLoaded'`).
+- **Gate** (worktree root, after the restores):
+  - `npm run typecheck:app`: passes.
+  - `npm run typecheck:routes -w gogospend-app`: passes.
+  - `npm run test:app`: 29 passed, 0 failed (deviation 8).
+  - `npm run test:unit`: 734 passed, 0 failed (deviation 8).
+  - `npm run test:render -w gogospend-app --` the six files that draw the record screen (`record/recordActions`, `RecordScreen`, `RecordReceiptReload`, `import/RecordReceipt`, `HistoryReturn`, `dev/catalogue/largeText`): 6 files, 99 passed (96 before the fix round).
+  - `npm run test:render -w gogospend-app -- src/screens/redesign/record/recordActions.render.test.tsx`: 6 passed, 0 failed (3 before the fix round).
+  - `npm run test:render -w gogospend-app -- src/dev/catalogue/CatalogueScreen.render.test.tsx src/dev/catalogue/screenReader.render.test.tsx -t "record-"`: 18 passed, 486 skipped.
+  - `npm run test:render -w gogospend-app`: 84 files passed, 1595 tests passed (the catalogue's 262 among them; 1592 before the fix round).
+  - `npm run export:web -w gogospend-app -- --max-workers 2`: passes.
+  - `git diff --check origin/claude/p1a-vault-core...HEAD`: clean.
+- **Deviations:**
+  1. The RED was recorded after the move (see How it was built): RED 1 against the moved hook with its three actions stubbed, RED 2 against the moved hook before the freeze.
+  2. `submitEdit()` takes no argument, as the plan's signature says. It reads the open edit. While today's conflict panel is up, it rebases the edit on the server's version itself (Apply my change), which the screen did before calling it.
+  3. The open edit is kept in a ref beside the state, and `setEditing` writes both, so several keys or changes in one event all land and `submitEdit()` reads the latest edit. The screen sends one key per press and sees no change.
+  4. `changeEditing` holds the freeze for field changes, as `pressKey` does; the screen's field handler only describes the change.
+  5. `cancelEditing` serves both Cancel and Reload. It clears the notice only when leaving a conflict, as Reload did; Cancel never did.
+  6. `RecordScreen` no longer calls `useBunColors()` and `useDateLocale()` at its top. Neither value was used there; the receipt and the conflict panel read their own.
+  7. The hook's frozen test also checks that a field change does nothing while frozen. The plan does not name this assertion.
+  8. The counts differ from the brief's pre-filled numbers (test:app 28, test:unit 694, full render 1590). The brief's probe was at e546bee. When this task merged, the integration head had moved past it (#73, #76, #77 and #78), and the orchestrator's update for this task said BLOCKED only for a file conflict. The counts above are the measured ones. test:app (29) and test:unit (734) were measured on a scratch copy of `bdf6b12` without this change, and this change adds no test to either suite. The render suite's two extra cases are `a change pulled from another phone refreshes the list in place` (HistoryScreen.render.test.tsx) and `a change pulled from another phone refreshes Home in place` (HomeScreen.render.test.tsx), both from the merged head. The catalogue's 262 is CatalogueScreen.render.test.tsx alone; the catalogue folder holds 513 test cases (`vitest list`).
+- **The carry rule:** at `bdf6b12` no 1D addition is in `RecordScreen.tsx` (1D-T7 and 1D-T9 have not merged). Nothing was carried: the hook has no `choicePanel` and sends no event.
+- **Not applicable:** the database suites, the edge and the API. This task changes no query, route or contract.
+- **SKIPPED:** none. The task names no device or simulator check, and the record screen looks the same.
+- **Notes for later tasks:**
+  - P2-T26 and P2-T27 read `useRecordActions` from `apps/app/src/screens/redesign/record/recordActions.ts`. During today's conflict, `submitEdit()` is Apply my change. `changeEditing` does nothing while `editing.unconfirmed`. `cancelEditing()` closes the edit. `startEditing()` clears the notice, and `cancelEditing()` clears it only when leaving a conflict (`editing.conflict` set). 1D-T9 must keep `editing.conflict` as that signal.
+  - 1D-T7 puts `record_edited`, `record_deleted` with `undo_used`, and `record_restored` into this hook's `submitEdit`, `remove` and `restore`, after the acknowledgement.
+  - 1D-T9 puts the C16 flow into this hook's `submitEdit` and load, and adds `choicePanel` to `RecordActionsState`.
+  - `HistoryReturn.render.test.tsx` came with the merge, with #326's 20 s budget for its record-and-back test. It passed unchanged.
+
 ## P3: Photos and Bun AI
 
 Phase 3 adds photos and Bun AI (plan `docs/superpowers/plans/2026-10-25-jotbun-p3-photos-bun-ai.md`). Task 1 is the phone's slip QR module: a parser for the Thai bank slip verification QR and a decoder port with no native decoder yet.
