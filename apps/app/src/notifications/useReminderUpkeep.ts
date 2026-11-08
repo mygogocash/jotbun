@@ -8,11 +8,12 @@ import { AppState } from 'react-native';
 import { translateCopy } from '@mobile/i18n/messages';
 import type { Locale } from '@mobile/i18n/locales';
 import { createDeviceReminderService } from './localReminders';
-import type { LocalReminderService, ReminderContent } from './reminders';
+import type { LocalReminderService, ReminderContent, Weekday } from './reminders';
+import { reminderWording } from './reminderWording';
 
-/** The reminder's own words in `locale`: what the notification says, and what the Reminders screen previews. */
-export function reminderContent(locale: Locale): ReminderContent {
-  return { title: translateCopy("Log today's spending", locale), body: translateCopy('Add what you spent today in Jotbun.', locale) };
+/** `day`'s reminder in `locale`: what that day's notification says, and what the Reminders screen previews. */
+export function reminderContent(locale: Locale, day: Weekday): ReminderContent {
+  return reminderWording(day, (english) => translateCopy(english, locale));
 }
 
 /**
@@ -23,7 +24,7 @@ export function reminderContent(locale: Locale): ReminderContent {
  */
 export function createAppReminderService(locale: Locale): LocalReminderService {
   return createDeviceReminderService(
-    () => reminderContent(locale),
+    (day) => reminderContent(locale, day),
     () => `${Intl.DateTimeFormat().resolvedOptions().timeZone}|${locale}`,
     () => translateCopy('Daily reminder', locale),
   );

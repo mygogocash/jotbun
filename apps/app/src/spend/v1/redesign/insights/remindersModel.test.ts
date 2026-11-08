@@ -3,7 +3,7 @@ import { test } from 'node:test';
 
 import type { Weekday } from '../../../../notifications/reminders.ts';
 import {
-  MINUTE_STEP, REMINDER_HOURS, REMINDER_MINUTES, WEEK, daysSummary, formatTime, splitTime, toggleDay, weekdayNames, weekdayTag, withHour, withMinute,
+  MINUTE_STEP, REMINDER_HOURS, REMINDER_MINUTES, WEEK, daysSummary, formatTime, isoWeekday, previewDay, splitTime, toggleDay, weekdayNames, weekdayTag, withHour, withMinute,
 } from './remindersModel.ts';
 
 test('the time is HH:MM, chosen as an hour 00-23 and a minute in 5-minute steps', () => {
@@ -57,4 +57,21 @@ test('the days in words: every day, weekdays, weekends, or the short names in or
   assert.deepEqual(daysSummary([5, 1, 3] as Weekday[], weekdayNames('en')), { kind: 'some', text: 'Mon, Wed, Fri' });
   assert.deepEqual(daysSummary([7], weekdayNames('th')), { kind: 'some', text: 'อาทิตย์' });
   assert.deepEqual(daysSummary([1, 2, 3, 4, 6], weekdayNames('en')), { kind: 'some', text: 'Mon, Tue, Wed, Thu, Sat' });
+});
+
+test("a date's ISO weekday is read on the phone's own calendar, Monday = 1 to Sunday = 7", () => {
+  // Local dates, as the phone's clock gives them: 26 October 2026 is a Monday.
+  assert.deepEqual([26, 27, 28, 29, 30, 31].map((date) => isoWeekday(new Date(2026, 9, date, 21, 0))), [1, 2, 3, 4, 5, 6]);
+  assert.equal(isoWeekday(new Date(2026, 10, 1, 0, 5)), 7);
+});
+
+test("the preview shows the next reminder the person gets: today's when chosen, else the next chosen day", () => {
+  assert.equal(previewDay(WEEK, 2), 2);
+  assert.equal(previewDay([1, 3, 5], 2), 3);
+  assert.equal(previewDay([1, 3, 5], 5), 5);
+  assert.equal(previewDay([1, 3, 5], 6), 1);
+  assert.equal(previewDay([3], 2), 3);
+  assert.equal(previewDay([6, 7], 1), 6);
+  assert.equal(previewDay([1], 7), 1);
+  for (const today of WEEK) for (const days of [[1], [2, 4], [6, 7], [1, 2, 3, 4, 5], WEEK] as Weekday[][]) assert.ok(days.includes(previewDay(days, today)));
 });

@@ -6,14 +6,12 @@ import type { ReminderPort, Weekday } from './reminders.ts';
 type PermissionResponse = { granted: boolean; status: string; canAskAgain: boolean; ios?: { status?: number } | null };
 
 /**
- * The two repeating triggers the reminders use, shaped as expo-notifications
- * SDK 58 takes them (`DailyTriggerInput`, `WeeklyTriggerInput`). Both repeat
- * by themselves; neither has a `repeats` field. A weekly `weekday` counts
- * from Sunday = 1 to Saturday = 7, as iOS and Android calendars do.
+ * The repeating trigger the reminders use, shaped as expo-notifications SDK
+ * 58 takes it (`WeeklyTriggerInput`). It repeats by itself; it has no
+ * `repeats` field. Its `weekday` counts from Sunday = 1 to Saturday = 7, as
+ * iOS and Android calendars do.
  */
-export type ReminderTrigger =
-  | { type: 'daily'; hour: number; minute: number; channelId?: string }
-  | { type: 'weekly'; weekday: number; hour: number; minute: number; channelId?: string };
+export type ReminderTrigger = { type: 'weekly'; weekday: number; hour: number; minute: number; channelId?: string };
 
 /** The slice of expo-notifications the reminder uses. */
 export type NotificationsApi = {
@@ -56,14 +54,6 @@ export function createNotificationsPort(api: NotificationsApi, platform: string,
       return reading(response) === 'granted' ? 'granted' : 'denied';
     },
     cancel: (id) => api.cancelScheduledNotificationAsync(id),
-    async scheduleDaily(id, hour, minute, message) {
-      if (android) await api.setNotificationChannelAsync(REMINDER_CHANNEL_ID, { name: channelName() });
-      await api.scheduleNotificationAsync({
-        identifier: id,
-        content: { title: message.title, body: message.body },
-        trigger: { type: 'daily', hour, minute, ...(android ? { channelId: REMINDER_CHANNEL_ID } : {}) },
-      });
-    },
     async scheduleWeekly(id, weekday, hour, minute, message) {
       if (android) await api.setNotificationChannelAsync(REMINDER_CHANNEL_ID, { name: channelName() });
       await api.scheduleNotificationAsync({

@@ -81,6 +81,27 @@ export function weekdayNames(locale: string): readonly WeekdayName[] {
   return WEEK.map((day) => ({ day, long: long.format(dayOfWeek(day)), short: short.format(dayOfWeek(day)), narrow: narrow.format(dayOfWeek(day)) }));
 }
 
+/** `date`'s ISO weekday on the phone's own calendar (the reminders fire in local time). */
+export function isoWeekday(date: Date): Weekday {
+  return (((date.getDay() + 6) % 7) + 1) as Weekday;
+}
+
+/**
+ * Whose words the Reminders screen previews. Each chosen day's reminder has
+ * its own wording (notifications/reminderWording.ts), so the preview shows one
+ * of them: `days` are the chosen days (Monday first, never empty) and `today`
+ * is today's ISO weekday. The answer must be one of `days`.
+ */
+export function previewDay(days: readonly Weekday[], today: Weekday): Weekday {
+  // The next reminder this person will get: today's when today is chosen,
+  // otherwise the next chosen day, wrapping past Sunday to Monday.
+  for (let step = 0; step < 7; step += 1) {
+    const day = (((today - 1 + step) % 7) + 1) as Weekday;
+    if (days.includes(day)) return day;
+  }
+  return days[0];
+}
+
 /** The chosen days as the screen words them: the three named sets, or the short names in order. */
 export type DaysSummary = { readonly kind: 'every_day' | 'weekdays' | 'weekends' } | { readonly kind: 'some'; readonly text: string };
 
