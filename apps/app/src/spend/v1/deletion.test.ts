@@ -71,7 +71,7 @@ test('a confirmed acceptance: the proof is the body, its command the key, and on
   assert.equal(sent.method, 'POST');
   assert.equal(sent.url, '/v1/me/deletion');
   assert.equal(sent.headers['idempotency-key'], p.commandId);
-  assert.equal(sent.headers['x-gogospend-session'], BINDING);
+  assert.equal(sent.headers['x-gogospend-session'], undefined);
   assert.deepEqual(JSON.parse(sent.body), { proof_id: p.proofId });
   assert.equal(mayEraseDeviceData(state), true);
   const copy = deviceCopy();
@@ -90,7 +90,7 @@ test('a lost acceptance: the identical resend is refused, and the receipt confir
   assert.equal(posts[0].headers['idempotency-key'], posts[1].headers['idempotency-key']);
   const asked = seen.find((request) => request.url === '/v1/auth/deletion-receipt');
   assert.ok(asked);
-  assert.equal(asked.headers['x-gogospend-session'], BINDING);
+  assert.equal(asked.headers['x-gogospend-session'], undefined);
   assert.deepEqual(JSON.parse(asked.body), { command_id: p.commandId });
 });
 

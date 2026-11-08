@@ -37,17 +37,17 @@ import { NotConfigured, TermsCheckbox } from './SignInParts';
 
 /**
  * One sign-in through the session seam. With no credential provider
- * installed (today: F5's provider is installed only once E1/E2 settle the
- * tenant and SDK) there is nothing to sign in through, so it says "not
- * configured" and calls nothing. With one, it is the provider's own sign-in.
- *
- * The provider's sign-in does not take a method yet: real Apple, Google and
- * email sign-in need it to pass the chosen connection through (F5).
+ * installed there is nothing to sign in through, so it says "not configured"
+ * and calls nothing. With one, Apple and Google go to the provider's own
+ * sign-in and ask to sign up (`signUp: true`); a method this build cannot
+ * offer comes back "not configured" from the provider. Email stays "not
+ * configured" here until 1C Task 9 routes the code screen.
  */
-export async function signInThroughSession(_method: SignInMethod): Promise<SignInAttempt> {
+export async function signInThroughSession(method: SignInMethod): Promise<SignInAttempt> {
   const provider = getCredentialProvider();
   if (!provider) return 'not_configured';
-  return provider.signIn();
+  if (method === 'email') return 'not_configured';
+  return (await provider.signIn({ method, signUp: true })).outcome;
 }
 
 export type SignInScreenProps = {

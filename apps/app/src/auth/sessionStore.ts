@@ -1,49 +1,73 @@
-// The session's SecureStore items (F5): the application binding with its
-// account, and the installation epoch's high-water mark. Both are readable
-// only on this device while unlocked (`thisDeviceOnly`, e.g.
-// WHEN_UNLOCKED_THIS_DEVICE_ONLY): never backed up or restored elsewhere, and
-// never in the diary.
+// The session's SecureStore items: the Better Auth session record, and the
+// installation epoch's high-water mark. Both are readable only on this device
+// while unlocked. The old Auth0 binding item is removed the first time the
+// record is loaded.
 import { isUuid } from '@gogospend/contracts';
 
 import type { SecureStorePort } from '../storage/keyStore.ts';
-import { SESSION_BINDING } from './authApi.ts';
-import type { BindingStore, EpochStore } from './credentialProvider.ts';
+import type { SignInMethod } from './betterAuthPort.ts';
+import type { EpochStore } from './credentialProvider.ts';
 
-const BINDING_ITEM = 'gogospend.v1.session-binding';
+export type StoredSession = { accountId: string; sessionId: string; email: string; method: SignInMethod };
+
+export interface SessionRecordStore {
+  load(): Promise<StoredSession | null>;
+  save(value: StoredSession): Promise<void>;
+  clear(): Promise<void>;
+}
+
+const SESSION_ITEM = 'jotbun.v1.session';
+const OLD_BINDING_ITEM = 'gogospend.v1.session-binding';
 const EPOCH_ITEM = 'gogospend.v1.session-epoch';
 
-type StoredBinding = { accountId: string; binding: string };
+function isMethod(value: unknown): value is SignInMethod {
+  return value === 'apple' || value === 'google' || value === 'email';
+}
 
-const valid = (value: unknown): value is StoredBinding =>
-  typeof value === 'object' &&
-  value !== null &&
-  !Array.isArray(value) &&
-  Object.keys(value).sort().join(',') === 'accountId,binding' &&
-  isUuid((value as StoredBinding).accountId) &&
-  typeof (value as StoredBinding).binding === 'string' &&
-  SESSION_BINDING.test((value as StoredBinding).binding);
+function field(value: object, key: string): unknown {
+  for (const [name, item] of Object.entries(value)) if (name === key) return item;
+  return undefined;
+}
 
-/** A malformed stored value reads as nothing stored (signed out); a malformed value is never saved. */
-export function createSecureBindingStore(secure: SecureStorePort, thisDeviceOnly: number): BindingStore {
+/** A record with exactly the four session fields, or null when it is not one. */
+function storedSession(value: unknown): StoredSession | null {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
+  if (Object.keys(value).sort().join(',') !== 'accountId,email,method,sessionId') return null;
+  const accountId = field(value, 'accountId');
+  const sessionId = field(value, 'sessionId');
+  const email = field(value, 'email');
+  const method = field(value, 'method');
+  if (!isUuid(accountId)) return null;
+  if (!isUuid(sessionId)) return null;
+  if (typeof email !== 'string' || email.length === 0 || email.length > 320) return null;
+  if (!isMethod(method)) return null;
+  return { accountId, sessionId, email, method };
+}
+
+export function createSecureSessionStore(secure: SecureStorePort, thisDeviceOnly: number): SessionRecordStore {
   const options = { keychainAccessible: thisDeviceOnly };
+  let oldItemRemoved = false;
   return {
     async load() {
-      const text = await secure.getItemAsync(BINDING_ITEM, options);
+      if (!oldItemRemoved) {
+        oldItemRemoved = true;
+        await secure.deleteItemAsync(OLD_BINDING_ITEM, options).catch(() => undefined);
+      }
+      const text = await secure.getItemAsync(SESSION_ITEM, options);
       if (text === null) return null;
       try {
-        const value: unknown = JSON.parse(text);
-        return valid(value) ? { accountId: value.accountId, binding: value.binding } : null;
+        return storedSession(JSON.parse(text));
       } catch {
         return null;
       }
     },
     async save(value) {
-      const stored = { accountId: value.accountId, binding: value.binding };
-      if (!valid(stored)) throw new RangeError('Not an account binding.');
-      await secure.setItemAsync(BINDING_ITEM, JSON.stringify(stored), options);
+      const stored = storedSession(value);
+      if (!stored) throw new RangeError('Not a session record.');
+      await secure.setItemAsync(SESSION_ITEM, JSON.stringify(stored), options);
     },
     async clear() {
-      await secure.deleteItemAsync(BINDING_ITEM, options);
+      await secure.deleteItemAsync(SESSION_ITEM, options);
     },
   };
 }

@@ -16,6 +16,7 @@ import type { SignedUp } from '../testing/auth-fixtures';
 import { acceptPolicies, publishPolicies, startV1App } from '../testing/command-fixtures';
 import { startJwksFixture } from '../testing/jwks-server';
 import type { JwksFixture } from '../testing/jwks-server';
+import { legacySessionFetch } from '../testing/legacy-session-fetch';
 import { createTestDatabase } from '../testing/postgres-harness';
 import type { TestDatabase } from '../testing/postgres-harness';
 
@@ -34,6 +35,8 @@ function appFor(user: SignedUp): SpendV1Resources {
       getAccessToken: () => issuer.accessToken({ sub: user.who.subject }),
       getSessionSnapshot: () => ({ binding: user.binding, epoch: 1 }),
     },
+    // R90: this API still needs the session header the app no longer sends (K13).
+    fetchImpl: legacySessionFetch(user.binding),
   }));
 }
 
@@ -103,6 +106,7 @@ test('an app build below the minimum version is told to upgrade, not signed out'
     baseUrl,
     client: { platform: 'android', version: '0.9.0' },
     credentials: { getAccessToken: () => issuer.accessToken({ sub: user.who.subject }), getSessionSnapshot: () => ({ binding: user.binding, epoch: 1 }) },
+    fetchImpl: legacySessionFetch(user.binding),
   }));
   await expect(old.wallets()).rejects.toMatchObject({ outcome: 'upgrade_required', status: 426 });
 });

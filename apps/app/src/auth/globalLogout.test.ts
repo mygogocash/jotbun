@@ -71,7 +71,7 @@ test('accepted: one fresh sign-in, then the proof as the body and its command as
   assert.equal(sent.method, 'POST');
   assert.equal(sent.url, '/v1/me/global-logout');
   assert.equal(sent.headers['idempotency-key'], p.commandId);
-  assert.equal(sent.headers['x-gogospend-session'], BINDING);
+  assert.equal(sent.headers['x-gogospend-session'], undefined);
   assert.equal(sent.headers['x-gogospend-command-schema'], '1');
   assert.deepEqual(JSON.parse(sent.body), { proof_id: p.proofId });
 });
