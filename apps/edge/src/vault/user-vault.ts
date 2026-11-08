@@ -12,6 +12,7 @@ import type { VaultCall, VaultReply } from '../v1/protocol'
 import { stepRouteOf, vaultRouteOf } from '../v1/routes'
 import { buildVaultRegistry } from './commands/registry'
 import type { VaultContext } from './context'
+import { LIVE_CLOSE, acceptLive, afterVaultWork, closeSocket, currentRevision, isLiveRequest, liveClaimsOf, liveRefusal } from './live'
 import { VAULT_MIGRATIONS } from './migrations'
 import { assertPolicyAccepted } from './policies'
 import { RateBuckets } from './rate-limits'
@@ -57,6 +58,8 @@ export class UserVault extends DurableObject<VaultEnv> {
     super(ctx, env)
     this.db = drizzle(ctx.storage, { schema: vaultSchema })
     void ctx.blockConcurrencyWhile(() => migrate(this.db, VAULT_MIGRATIONS))
+    // Keepalive (1D-T10): the runtime answers `ping` with `pong` and never wakes the vault for it.
+    ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping', 'pong'))
   }
 
   /**
@@ -87,8 +90,14 @@ export class UserVault extends DurableObject<VaultEnv> {
    */
   async alarm(): Promise<void> {
     if (this.erased) return
+    // A purge pokes every phone (1D-T10): no session is the caller.
+    const before = currentRevision(this.ctx.storage.sql)
     const c = { sql: this.ctx.storage.sql, storage: this.ctx.storage, now: this.clock() }
-    armAlarm(c, runDue(c))
+    try {
+      armAlarm(c, runDue(c))
+    } finally {
+      this.afterCall(before, null)
+    }
   }
 
   /**
@@ -102,6 +111,8 @@ export class UserVault extends DurableObject<VaultEnv> {
    */
   call(call: VaultCall): VaultReply {
     if (this.erased) return { ok: false, status: 403, code: 'ACCOUNT_UNAVAILABLE', problem: {} }
+    // Live pokes (1D-T10): the revision before the block, compared after it whatever the outcome.
+    const before = currentRevision(this.ctx.storage.sql)
     try {
       const route = vaultRouteOf(call.route) ?? stepRouteOf(call.route)
       const handler = VAULT_HANDLERS[call.route]
@@ -133,6 +144,8 @@ export class UserVault extends DurableObject<VaultEnv> {
       return reply
     } catch (error) {
       return toProblemReply(error)
+    } finally {
+      this.afterCall(before, call.claims.sessionId)
     }
   }
 
@@ -143,6 +156,67 @@ export class UserVault extends DurableObject<VaultEnv> {
       digester: commandDigesterFromEnv({ COMMAND_DIGEST_KEY: this.env.COMMAND_DIGEST_KEY, COMMAND_DIGEST_PREVIOUS_KEYS: this.env.COMMAND_DIGEST_PREVIOUS_KEYS }),
     }
     return this.services
+  }
+
+  // The live socket (1D-T10, §6.5): the Worker's live route hands the upgrade to fetch.
+
+  /**
+   * Only GET https://vault.internal/live with `upgrade: websocket` and the
+   * claims the Worker verified; anything else is 404. An erased vault refuses
+   * before it reads a table (403). Then, in one block, call()'s checks in
+   * call()'s order: the account, the principal's budget, the session and the
+   * read budget. Only then is the socket accepted. A refusal is a v1 problem
+   * and never upgrades.
+   */
+  async fetch(request: Request): Promise<Response> {
+    if (!isLiveRequest(request)) return new Response(null, { status: 404 })
+    try {
+      const claims = liveClaimsOf(request, this.erased)
+      const now = this.clock()
+      const services = this.built()
+      this.ctx.storage.transactionSync(() => {
+        const c: VaultContext = {
+          db: this.db,
+          sql: this.ctx.storage.sql,
+          storage: this.ctx.storage,
+          registry: services.registry,
+          digester: services.digester,
+          claims,
+          policies: null,
+          now,
+          vaultId: this.vaultId,
+        }
+        ensureAccount(c)
+        this.rates.charge('principal', claims.accountId)
+        assertSession(c)
+        this.rates.charge('read', claims.sessionId)
+      })
+      return acceptLive(this.ctx, claims, now.getTime())
+    } catch (error) {
+      return liveRefusal(error)
+    }
+  }
+
+  /** The phone sends only `ping`, which the auto-response answers. Anything that reaches the vault closes the socket with 1008. */
+  webSocketMessage(ws: WebSocket, _message: string | ArrayBuffer): void {
+    closeSocket(ws, LIVE_CLOSE.unexpected, 'unexpected message')
+  }
+
+  /**
+   * Completes a close the phone started. Cloudflare's docs say a runtime from
+   * compatibility date 2026-04-07 answers a Close frame itself and that calling
+   * close() stays safe; the workerd the tests run (1.20261019.1) does not answer
+   * it, so the vault does. A code that cannot be sent back is answered with 1000.
+   */
+  webSocketClose(ws: WebSocket, code: number, reason: string, _wasClean: boolean): void {
+    if (!closeSocket(ws, code, reason)) closeSocket(ws, 1000, 'closed')
+  }
+
+  webSocketError(_ws: WebSocket, _error: unknown): void {}
+
+  /** After every call and alarm: pokes the other sessions when the revision grew, then closes ended sessions. Never throws. */
+  private afterCall(before: string, sessionId: string | null): void {
+    afterVaultWork(this.ctx, before, sessionId)
   }
 
   // Files and background work (1B-T4). Later 1B tasks add their background methods after these.
