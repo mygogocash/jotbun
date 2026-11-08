@@ -36,11 +36,14 @@ describe('month summary', () => {
       expense_minor: GOLDEN_TOTALS.expense_minor,
       balance_minor: '1555000',
       by_wallet: { [g.wallets.cash]: '-168200', [g.wallets.daily]: '1723200' },
-      categories: expect.arrayContaining([
+      // The API's order: type ('expense' before 'income'), then category id. Ids are lowercase UUIDs, so string order is byte order.
+      categories: [
+        ...[
+          { category_id: builtinId(g.user, 'food'), type: 'expense', total_minor: '18200' },
+          { category_id: builtinId(g.user, 'bills'), type: 'expense', total_minor: '1226800' },
+        ].sort((a, b) => (a.category_id < b.category_id ? -1 : 1)),
         { category_id: builtinId(g.user, 'salary'), type: 'income', total_minor: '2800000' },
-        { category_id: builtinId(g.user, 'food'), type: 'expense', total_minor: '18200' },
-        { category_id: builtinId(g.user, 'bills'), type: 'expense', total_minor: '1226800' },
-      ]),
+      ],
       budget: null,
       as_of_revision: await revisionOf(g.user),
     })
