@@ -68,7 +68,7 @@ export function createMobileApiClient(options: {
 }
 
 // ---------------------------------------------------------------------------
-// v1 transport (PostgreSQL/Auth0 API). Separate from the legacy /spend client
+// v1 transport (the PostgreSQL API). Separate from the legacy /spend client
 // above, which stays only for unconverted development screens.
 
 /** What the session layer (F5) exposes to the transport. */
@@ -340,7 +340,7 @@ export function createV1Transport(options: {
         Authorization: `Bearer ${token}`,
         'X-GoGoSpend-Client': `${options.client.platform}/${options.client.version}`,
       };
-      if (binding) headers['X-GoGoSpend-Session'] = binding;
+      // The vault reads the session from the JWT (the `sid` claim). The session id stays on the snapshot so a missing one still refuses the request before anything is sent.
       if (request.body !== undefined && request.raw) throw new V1Error('invalid', 0, 'INVALID_BODY');
       if (request.body !== undefined) headers['Content-Type'] = 'application/json';
       if (request.raw) {

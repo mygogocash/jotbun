@@ -119,7 +119,7 @@ function assertCommand(request: Seen, method: string, key: string, ifMatch: numb
   assert.equal(request.headers['x-gogospend-command-schema'], String(V1_COMMAND_SCHEMA));
   assert.equal(request.headers['if-match'], `"${ifMatch}"`);
   assert.equal(request.headers.authorization, 'Bearer access-token');
-  assert.equal(request.headers['x-gogospend-session'], 'b'.repeat(43));
+  assert.equal(request.headers['x-gogospend-session'], undefined);
   assert.equal(request.headers['x-gogospend-client'], 'ios/1.2.3');
 }
 
@@ -247,7 +247,7 @@ test('the file comes through the grant with the session\'s headers, byte for byt
   assert.equal(request.method, 'GET');
   assert.equal(request.url, GRANT.url);
   assert.equal(request.headers.authorization, 'Bearer access-token');
-  assert.equal(request.headers['x-gogospend-session'], 'b'.repeat(43));
+  assert.equal(request.headers['x-gogospend-session'], undefined);
   assert.equal(request.headers['x-gogospend-client'], 'ios/1.2.3');
   assert.equal(request.headers.accept, 'image/jpeg, image/png, image/webp, application/json');
   assert.equal(request.headers['idempotency-key'], undefined);
@@ -267,7 +267,7 @@ test('a download whose access token expired is refreshed once and sent again, as
   assert.equal(seen.length, 2);
   assert.equal(seen[1].url, GRANT.url);
   assert.equal(seen[1].headers.authorization, 'Bearer renewed-token');
-  assert.equal(seen[1].headers['x-gogospend-session'], 'b'.repeat(43));
+  assert.equal(seen[1].headers['x-gogospend-session'], undefined);
   assert.deepEqual(ended, []);
 
   // One refresh per download: a second 401 is a sign-out.

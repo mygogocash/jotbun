@@ -30,6 +30,11 @@ let shared: SpendV1Resources | null = null;
 let sync: SyncRemote | null = null;
 let ai: AiResources | null = null;
 
+/** The one v1 transport. Sign-out uses it so a second client is not opened. */
+export function getSharedV1Transport(): V1Transport {
+  return sharedTransport();
+}
+
 function sharedTransport(): V1Transport {
   transport ??= createV1Transport({
     baseUrl: getMobileEnv().v1ApiUrl,
