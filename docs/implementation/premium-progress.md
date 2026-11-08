@@ -636,6 +636,78 @@ Phase 1D lets a change saved on one phone reach the person's other phones at onc
   - The registry now names the entity `budget`. Sync serves it. Task 8b's registry parity check has to cover `budget` as well as `category` and `transaction`.
 - **Integration (27 Oct):** merged with Task 5 (PR #81). The registry is wallet, category, transaction, budget, in `buildContainer`'s order. The route table is now 26 ported, 3 pending (Task 7's history and summary), 28 deferred and 6 retired. On the merged tree: `typecheck:edge` passes, `test:edge` 130 passed (10 files), `test:edge:workers` 233 passed (11 files; Task 5's 213 plus these 20).
 
+### Task 7: history, deleted history and the summary
+
+- **Status:** built and verified locally on `p1/1a-t7-history` (`.claude/worktrees/p1a-t7`), on top of `800680d`. Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - Reads: `apps/edge/src/vault/reads/history.ts` (`history`, and `scopedTotals` and `accountRevision`, the ports of `history/totals.ts` that the summary shares), `reads/deleted-history.ts` (`deletedHistory`) and `reads/summary.ts` (`summary`). They port `HistoryQuery`, `DeletedHistoryQuery` and `SummaryQuery`. Each runs inside the call's one `transactionSync`, so a page, its totals and its revision are one read, as the API's snapshot transaction is.
+  - Reused, not forked: `parseHistoryRequest` (`@api/history/history-query`), `parseDeletedHistoryRequest` (`@api/history/deleted-history-query`), `encodeCursor`, `decodeCursor`, `encodeDeletedCursor` and `decodeDeletedCursor` (`@api/history/cursor`), and `parseMonth`, `assertKnownFields` and `RESTORE_WINDOW_DAYS` from the contracts. `SummaryQuery` is not imported: it imports the API's budget service, which reaches `DatabaseService` and `pg`. `summary.ts` keeps its SQL and its order, checks the query as `summary.controller.ts` does, and reads the budget through the vault's `readBudget` (Task 6).
+  - Routes: `apps/edge/src/v1/routes.ts` moves `GET /v1/history`, `GET /v1/history/deleted` and `GET /v1/summary` from `VAULT_PENDING_ROUTES` into `VAULT_V1_ROUTES`, with the PostgreSQL table's access (`bound_session`), gates (none) and status (200). `VAULT_PENDING_ROUTES` is now empty. `apps/edge/src/vault/routes.ts` adds the three handlers. The table is now 30 ported, 0 pending, 27 deferred and 6 retired (63 in all).
+  - `apps/edge/src/vault/domain/transactions.ts` exports its `COLUMNS` (one word, and one comment line), so history reads a row exactly as `getTransaction` does, the way the API's history imports `RECORD_COLUMNS` and `toDto` from the transactions repository.
+  - Tests: `apps/edge/test/workers/history.test.ts` (35 cases, and the money journey as `it.todo`), `apps/edge/test/workers/summary.test.ts` (7), `apps/edge/test/workers/support/money-fixtures.ts` (`bulkRecords`, the API fixture's direct insert, as one statement over one JSON parameter), and `apps/edge/test/vault-route-coverage.test.ts` (the pin lists the 30 ported routes).
+  - No registry, schema or protocol change. These are reads, so `buildVaultRegistry()` keeps wallet, category, transaction, budget; `VaultRouteId` already named the three ids; `user-vault.ts` is unchanged.
+- **RED to GREEN:**
+  - Node RED, the pin changed first: `npm run test:edge -- test/vault-route-coverage.test.ts` gave `Tests 1 failed | 5 passed (6)` (`expected [ Array(27) ] to deeply equal [ Array(30) ]`).
+  - Workers RED, with the three reads as typed stubs wired to their routes (empty pages, zero totals, revision `'0'`): `npm run test:edge:workers -- test/workers/history.test.ts test/workers/summary.test.ts` gave `Tests 42 failed | 1 todo (43)`, 35 in `history.test.ts` and 7 in `summary.test.ts`. 39 fail on assertions (24 distinct messages). 3 fail with a `TypeError` where the test reads what the stub left empty (a null cursor, a null budget, missing `fields`): `refuses malformed cursors and cursors from another filter`, `a cursor carrying an impossible date is a 422, never a 500` and `budget usage keeps a sublimit whose category was archived later`. None fails on a missing module. The RED and base logs were written under `/private/tmp`, which macOS cleared on 8 November, so these counts are the ones printed when the runs happened; they were not re-run.
+  - GREEN: the same command gave `Tests 42 passed | 1 todo (43)`, and the pin `Tests 6 passed (6)`. GREEN was run again after the interruption with the same result (`Test Files 2 passed (2)`, `Tests 42 passed | 1 todo (43)`).
+- **Mutation check:** the three reads were backed up to `.claude/controller/scratch/1a-t7/backup`, outside the worktree, and matched the GREEN hashes before the first mutant. Each mutant was applied with the Edit tool, the two files were run under the heavy lock, and the mutant was reversed with the Edit tool. After each reversal the file was compared with the backup (`cmp`) and its sha256 with the GREEN value, and all 13 matched. The logs are `.claude/controller/scratch/1a-t7/mutant-M1.log` to `mutant-M13.log`.
+  - M1 (plan), history's look-ahead row dropped (`limit + 0`): `5 failed`: `all_451_records_are_pageable`, the ascending case, the refresh case, `a cursor carrying an impossible date ...` and `refuses history's own cursor`.
+  - M2 (plan), deleted rows counted in the summary: `1 failed`, `excludes deleted records and keeps renamed or archived categories` (`expected '1245000' to be '18200'`).
+  - M3, Recently deleted's look-ahead row dropped: `3 failed`: `newest deletion first, ties by id ...`, `suggests a refresh ...` and `another account’s cursor grants nothing ...`.
+  - M4, the expense total read without `CAST(... AS TEXT)`: `7 failed`: the filters case, the five month-summary cases and the exactness case.
+  - M5, the window as `deleted_at > cutoff`: `1 failed`, `exactly 30 days after its deletion ...`.
+  - M6, the keyset on the stored millisecond text instead of the six-digit key: `2 failed`, `a cursor with microseconds ...` and `newest deletion first, ties by id ...`.
+  - M7, the next cursor built from the stored millisecond text: `3 failed`, the same three as M3.
+  - M8, the wallet filter without a transfer's destination: `1 failed`, `filters by wallet ...`.
+  - M9, the search text without the API's escaping: `1 failed`, `filters by wallet ...`.
+  - M10, a transfer's destination left out of `by_wallet`: `2 failed`, `filters by wallet ...` and `reports the golden month ...`.
+  - M11, a month's last day one short: `1 failed`, `uses Bangkok calendar months ...`.
+  - M12, `refresh_suggested` always false: `1 failed`, `signals a refresh when the account changed between pages ...` (keyset history).
+  - M13, the keyset always `<`: `1 failed`, `ascending order and the maximum limit ...`.
+  - No survivor. Every mutant failed exactly the tests the brief lists.
+- **Gate** (worktree root, in the brief's order):
+  - `typecheck:edge`: exit 0.
+  - `test:edge`: `Test Files 12 passed (12)`, `Tests 156 passed (156)`. The base `800680d` includes `test/slip-contracts.test.ts` (P4-T1, 11 tests), so the count is the plan's 145 in 11 files plus that file. The pin changed in place, so this task adds no Node test.
+  - `test:edge:workers`: `Test Files 15 passed (15)`, `Tests 290 passed | 1 todo (291)`: the base's 248 in 13 files, plus 42 in the two new files.
+  - `build:edge`: passes. `dist/jotbun_vault/index.js` holds no `node-postgres`, `make_interval` or `ILIKE` (count 0) and holds the new SQL (`substr(t.deleted_at, 1, 23)`, count 1).
+  - `test:edge:db`: SKIPPED, Docker is not running (`docker info` exits 1; Docker was not started).
+  - `test:db` (API): not run, because the task changes no API, contracts or PostgreSQL edge code.
+  - `/usr/bin/git diff --check origin/claude/p1a-vault-core...HEAD`: run after the commit, as Step 6.7 says; its result is in the final message.
+- **Ported in full:**
+  - `history.integration.spec.ts`: all 6 `it` blocks and both `it.each` blocks (12 rows), 18 vitest cases.
+  - `deleted-history.integration.spec.ts`: 6 of its 7 `it` blocks and its `it.each` (6 rows). The seventh is ported in changed form, below.
+  - `summary.integration.spec.ts`: all 5.
+  - `m4-hardening.integration.spec.ts`, the three cases Task 6 left to this task: `a cursor carrying an impossible date is a 422, never a 500` and `a history date before 1970 is INVALID_DATE, and the summary refuses unknown parameters` (in `history.test.ts`), and `budget usage keeps a sublimit whose category was archived later` (in `summary.test.ts`).
+- **Ported in changed form:**
+  - `a purged record is never listed, and the retention purge leaves the window alone`. The purge is 1A-T8b's `retention.ts`, which is not merged. The case writes what that purge leaves for a record past the window (no row, and a `purged` head at the current revision, the same SQL as `money-hardening.test.ts`), then checks that only the record inside the window is listed and that restoring the purged one is 410. The purge's own rule that nothing goes early is 8b's to test.
+  - The paging seed: the API deletes three records a microsecond apart. The vault keeps milliseconds, so they are a millisecond apart.
+  - `bulkRecords` and `deletedAgo` write through `runInDurableObject` where the API writes through SQL. Each instant is taken from the test's clock, which is the vault's.
+  - `another account’s cursor grants nothing: rows are still read under the owner’s RLS` and the "other accounts" halves keep their names. They hold by addressing: another person's rows are in another vault.
+- **Not applicable:** `history and summary read from one REPEATABLE READ, READ ONLY snapshot` (m4-hardening), as Task 6 recorded: a vault call is one `transactionSync`.
+- **Added vault cases** (3):
+  - `exactly 30 days after its deletion a record is still listed and restorable, as the restore command decides; a millisecond more is neither`, with the vault's clock held still.
+  - `a cursor with microseconds pages as PostgreSQL compares instants: a deletion in its millisecond comes after it, whatever its id`.
+  - `totals above Number.MAX_SAFE_INTEGER stay exact decimal strings in the summary, its budget usage and the history totals`: 90,100 expenses of 99,999,999,999 written straight into the table, so every total is `9009999999909900`.
+- **Deviations:**
+  1. Text search is SQLite `LIKE ... ESCAPE '\'`, with the API's escaping of `\`, `%` and `_`. PostgreSQL's `ILIKE` folds case by the database's locale (the postgres image initialises its cluster as `en_US.utf8`). Durable Object SQLite has no ICU: a probe in workerd gave `'Rent' LIKE '%RENT%'` 1, `'Café' LIKE '%CAFÉ%'` 0 and `lower('É')` `'É'`. ASCII letters therefore match in any case, as in the API, but other cased letters (É and é, for example) match only in the same case. Thai has no case, so Thai search is the same. No ported case or parity step searches cased non-ASCII text. This deviation is accepted by the controller (28 October).
+  2. The month is `occurred_on BETWEEN 'YYYY-MM-01' AND` its last day, computed in JS (plan Step 3). Every stored `occurred_on` is a real date (its CHECK), so this is the API's `>= first AND < first + interval '1 month'`.
+  3. `scopeOf` adds a clause only for a filter that is present, where the API binds every filter and tests it for NULL. The rows are the same, and the parameters fewer.
+  4. Recently deleted keys its cursor as `substr(deleted_at, 1, 23) || '000Z'`, the API's six-digit form, because `decodeDeletedCursor` accepts only that form and the vault stores milliseconds.
+  5. Two files outside the plan's list: `domain/transactions.ts` (`export` on `COLUMNS`) and `test/workers/support/money-fixtures.ts` (`bulkRecords`, which the API's `moneyFixtures` also has).
+  6. The three m4-hardening cases and the three added vault cases above.
+  7. The money journey is `it.todo`, as the plan and R5 say. In the planner's scratch copy it was switched to `it` and passed (`history.test.ts` 36 passed), then switched back. It is not in the gate's counts.
+  8. The base is `800680d`, not `75b3625`. The Node suite at this base is 12 files and 156 tests: the plan's 145 in 11 files, plus the 11 of `test/slip-contracts.test.ts` (P4-T1). The workers baseline is 13 files and 248 tests, as the brief says.
+  9. The integration head is now `8f04a3b` (1D-T1, the app analytics core, and the iOS keyboard fix). It was fetched and not merged, on the controller's instruction. Nothing under `apps/edge` changed. It does change `packages/contracts` (`src/index.ts`, `src/v1/privacy.ts`), which the edge reads.
+  10. The mutants were reversed with the Edit tool rather than `cp`, and the backup sits in the controller's scratch folder, both on the controller's instruction after the interruption.
+- **SKIPPED:** `test:edge:db`: Docker is not running (`docker info` exits 1; Docker was not started). CI runs it. Hosted: nothing deployed, and no cloud resource was created.
+- **Notes for 1A-T8b, Task 9 and the integrator:**
+  - 8b turns the money journey on by changing one line in `test/workers/history.test.ts`: `  it.todo('seeds built-ins, records spending, and reads it back through history, summary, budgets, status and sync', async () => {` becomes `  it('seeds built-ins, ...`. 8b must merge after this task.
+  - `VAULT_PENDING_ROUTES` is empty, so Task 9's `expect(VAULT_PENDING_ROUTES).toEqual([])` holds. The money session's history, summary and Recently deleted steps now reach the vault.
+  - `scopedTotals(c, scope, params)` and `accountRevision(c)` are exported from `reads/history.ts` for later reads (the spec's §6.2: "Ask Bun's tools call the same methods").
+  - If 1B adds `attachment_id` to the transaction DTO, it goes into `COLUMNS` and `toDto` in `domain/transactions.ts`, and history picks it up from there.
+  - The Task 6 integration bullet above counts 26 ported routes. The table held 27 before this task (the pin's RED shows `Array(27)`) and holds 30 after it. The integrator should reconcile that count.
+  - Integration head `8f04a3b` is not merged and this merge is not tested here. Its change to `premium-progress.md` is in other sections (the 1D headings, 1D Task 1, the iOS keyboard fix, P6B); the Task 6 integration bullet this receipt follows is unchanged there. It also changes `packages/contracts`, which `apps/edge` reads, so re-run the edge gate after that merge.
+
 ## 1B: files and background work on the vault
 
 Phase 1B moves files and background work onto each person's vault (spec `docs/superpowers/specs/2026-10-25-jotbun-bun-wallet-cloudflare-design.md`, §8 phase 1, second part). The owner approved the `apps/api` edit that this task needs (Q1, 25 October 2026; spec §6.1, which keeps `apps/api` read-only apart from that exception). Task 1 makes the statement parser a stateless HTTP process in the API image: bytes in, a parse outcome out. Task 2 adds the file tables, the object keys, the prefix purge and the durable erase that deletion relies on.

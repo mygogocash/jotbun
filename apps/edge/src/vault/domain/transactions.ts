@@ -60,7 +60,8 @@ export type TransactionRow = {
 type Draft = Omit<TransactionRow, 'deleted_at' | 'version'>
 
 // Money as text: the SQL API would otherwise return INTEGER as a JavaScript number.
-const COLUMNS = `id, type, CAST(amount_minor AS TEXT) AS amount_minor, occurred_on, wallet_id, category_id,
+// History and Recently deleted read rows with these columns too (reads/history.ts).
+export const COLUMNS = `id, type, CAST(amount_minor AS TEXT) AS amount_minor, occurred_on, wallet_id, category_id,
   source_wallet_id, destination_wallet_id, note, merchant, deleted_at, version`
 
 const refsOf = (type: TransactionType): readonly RefField[] => (type === 'transfer' ? TRANSFER_REFS : ENTRY_REFS)
