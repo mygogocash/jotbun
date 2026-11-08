@@ -205,6 +205,28 @@ export function isDeletionReceipt(value: unknown): value is DeletionReceipt {
   );
 }
 
+/** Crockford's base32 digits: no I, L, O or U. */
+const CROCKFORD_BASE32 = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+
+/**
+ * The request number st-delete-done shows and the deletion email prints (A12;
+ * X8, default pending owner Q5): `DEL-` and the request id's first 40 bits -
+ * its first 10 hex digits, dashes removed, any case - as 8 Crockford base32
+ * digits, most significant first, grouped `XXXX-XXXX` (`DEL-1CZJ-R7KA`). The
+ * same ASCII text in Thai and English. The id is not checked: every caller
+ * passes one that `isUuid` accepted.
+ */
+export function deletionShortCode(requestId: string): string {
+  let value = Number.parseInt(requestId.replace(/-/g, "").slice(0, 10), 16);
+  let digits = "";
+  // 40 bits are past JavaScript's 32-bit bitwise operators: divide, never shift.
+  for (let count = 0; count < 8; count += 1) {
+    digits = CROCKFORD_BASE32[value % 32] + digits;
+    value = Math.floor(value / 32);
+  }
+  return `DEL-${digits.slice(0, 4)}-${digits.slice(4)}`;
+}
+
 export function isExportGrant(value: unknown): value is ExportGrant {
   return (
     isObject(value) && hasExactly(value, ["url", "expires_at"]) &&
