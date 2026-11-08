@@ -9,7 +9,7 @@ import { commandDigesterFromEnv } from '@api/commands/command-digest'
 import type { CommandDigester } from '@api/commands/command-digest'
 
 import type { VaultCall, VaultReply } from '../v1/protocol'
-import { vaultRouteOf } from '../v1/routes'
+import { stepRouteOf, vaultRouteOf } from '../v1/routes'
 import { buildVaultRegistry } from './commands/registry'
 import type { VaultContext } from './context'
 import { VAULT_MIGRATIONS } from './migrations'
@@ -70,12 +70,15 @@ export class UserVault extends DurableObject<VaultEnv> {
    * One call from the Worker, under the vault's checks in this order: the
    * account (an owner mismatch is refused), the principal's budget, the session,
    * the session's read or write budget, the current policy when the route needs
-   * it, then the route's handler. Every error becomes a reply.
+   * it, then the route's handler. A step of a request already in progress
+   * (`charge: 'step'`) skips both budgets. `recent_proof` is policy-exempt,
+   * like `bound_session`. A step-only id has no HTTP route; it resolves through
+   * the step table. Every error becomes a reply.
    */
   call(call: VaultCall): VaultReply {
     if (this.erased) return { ok: false, status: 403, code: 'ACCOUNT_UNAVAILABLE', problem: {} }
     try {
-      const route = vaultRouteOf(call.route)
+      const route = vaultRouteOf(call.route) ?? stepRouteOf(call.route)
       const handler = VAULT_HANDLERS[call.route]
       if (!route || !handler) throw new Error('a vault call names no ported route')
       const services = this.built()
@@ -91,9 +94,9 @@ export class UserVault extends DurableObject<VaultEnv> {
           now: this.clock(),
         }
         ensureAccount(c)
-        this.rates.charge('principal', call.claims.accountId)
+        if (call.charge !== 'step') this.rates.charge('principal', call.claims.accountId)
         assertSession(c)
-        this.rates.charge(route.method === 'GET' ? 'read' : 'write', call.claims.sessionId)
+        if (call.charge !== 'step') this.rates.charge(call.charge, call.claims.sessionId)
         if (call.access === 'current_policy') assertPolicyAccepted(c)
         return handler(c, call)
       })

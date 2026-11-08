@@ -9,7 +9,7 @@ Receipts for the [premium, AI and edge plan](../superpowers/plans/2026-10-24-jot
   - the shared contracts;
   - the app's premium layer: haptics, Tell Bun, Ask Bun, the daily note, the cashback card and the Thai everyday categories;
   - eight catalogue sections for the companion area, checked in the browser in Thai, light and dark.
-  - the companion area on iOS (28 October): a development build on the iPhone 17 simulator (iOS 27.0, Xcode 27.1) drew all eight sections in Thai, and Home in dark; turned Bun's help on through the consent sheet; read “ข้าวมันไก่ 50” into a ฿50 food draft on the phone; and opened the system photo picker from Scan a slip, which needs no photo permission. It also found the keyboard problem under “Not done”.
+  - the companion area on iOS (28 October): a development build on the iPhone 17 simulator (iOS 27.0, Xcode 27.1) drew all eight sections in Thai, and Home in dark; turned Bun's help on through the consent sheet; read “ข้าวมันไก่ 50” into a ฿50 food draft on the phone; and opened the system photo picker from Scan a slip, which needs no photo permission. It also found sheets hidden under the keyboard, fixed in “Fix: sheets rise above the iOS keyboard” below.
   - the Mobbin research (plan §7, through the Mobbin connector) and its changes: Ask Bun's "can get things wrong" line, follow-up questions and settings link; the consent sheet's check-before-saving line; the slip beside Tell Bun's draft; "How cashback works". Mobbin holds no Thai apps, so Thai specifics rest on the plan's §2 findings.
 - **SKIPPED:**
   - hosted Cloudflare resources: wrangler is signed in to a GoGoCash account, but deploying waits for the owner to ask (handover rule), and no hosted PostgreSQL exists yet;
@@ -329,8 +329,47 @@ Phase 1A moves each person's ledger into one SQLite Durable Object, the UserVaul
 
 **Pre-review fix (R76).** The controller ruled that `categories_replace_guard` also refuses an insert whose built-in key another category already holds. Without that clause, `INSERT OR REPLACE` with such a key deleted the other category silently, because `recursive_triggers` is off and `categories_never_deleted` therefore did not fire. The clause is `OR EXISTS (SELECT 1 FROM categories c WHERE c.builtin_key = NEW.builtin_key AND c.id <> NEW.id)`. Test first: `a replace that reuses another category's built-in key is refused, and the other category survives` (`vault-schema.test.ts`), placed before the same-id replace case. Before the clause, `npm run test:edge:workers -- test/workers/categories.test.ts test/workers/vault-schema.test.ts` gave `Test Files 1 failed | 1 passed (2)` and `Tests 1 failed | 29 passed (30)`. The failure was the new case, `promise resolved "[]" instead of rejecting`, because the replace had removed the other category. After the clause, the same command gave `Test Files 2 passed (2)` and `Tests 30 passed (30)`. The full edge gate then passed (see the gate bullets above). Custom categories (a NULL built-in key), the identical seeding rows and the same-id replace are unaffected, as the existing cases show. Checksums (sha256, first 8 hex): `0000_vault_core.sql` d0329a4d, `vault-schema.test.ts` ff0b345b. One behaviour change: a plain `INSERT ... ON CONFLICT DO NOTHING` whose built-in key another category holds now aborts, where it was skipped before. The seed path checks the present keys first, so it cannot reach that case. The other open item (a REPLACE that keeps type and built-in key but changes other columns) is not part of this ruling and stays open.
 
+## 1B: files and background work on the vault
+
+Phase 1B moves the files, imports, exports, snapshots, receipts and the AI companion's state into each person's UserVault, as the spec's §6.2 and §6.3 describe (`docs/superpowers/specs/2026-10-25-jotbun-bun-wallet-cloudflare-design.md`). Task 2 adds the file tables, the object keys, the prefix purge and the durable erase that deletion relies on.
 ## P2: Bun Wallet core
 
+Phase 2 is the phone's Bun Wallet. Task 3 is the draft-copy rule and the two stores: device settings, forgotten at sign-out, and account-kept looks, erased only with the account (R64).
+
+### P2 Task 3: draft copy and wallet stores
+
+- **Status:** built and verified locally on this worktree, on `60e2026`. Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - Copy: `apps/app/src/wallet/copy/draftText.ts` (`draftText`, `tableT`), `useDraftCopy.ts` (locale from `useActiveLocale`), `common/copy.ts` (`COMMON_COPY`, data only). Twelve lines: close, back, next, save, undo, later, done, tryAgain, amountHidden, baht, satang, minus.
+  - Stores: `apps/app/src/wallet/store/walletStore.ts` (`deviceStore`, `accountStore`) and `deviceWalletStore.ts` (AsyncStorage 2.2.0, `installStoreBackend`, `eraseDeviceSettings`, `eraseAccountKept`).
+  - Diary: `spendDiary.ts` adds `DiaryView.accountId` (the open diary's account; null while opening, locked, signed out, or on the web). `fakeDiary.ts` defaults it to `00000000-0000-4000-8000-0000000000aa`. `DeviceDiaryProvider.tsx` awaits `eraseDeviceSettings().catch(() => undefined)` inside `eraseWithDiary`. `PrivacyScreen.tsx` reads `view.accountId` before `settleDeviceCopy` and, when the answer is `'erased'` and the id is not null, awaits `eraseAccountKept(accountId).catch(() => undefined)`.
+  - The required field also lands on the no-diary view in `SpendDiaryContext.tsx` and on the full `DiaryView` literals in `homeModel.test.ts`, `settingsModel.test.ts` and `SyncStatus.render.test.tsx` (`accountId: null`).
+  - Tests: `draftText.test.ts` (4), `walletStore.test.ts` (3), the new case in `spendDiary.test.ts`, the new case in `DeviceDiaryProvider.render.test.tsx` (its AsyncStorage mock already had `getAllKeys`; it gained `multiRemove`), and the new case in `PrivacyScreen.render.test.tsx`.
+- **RED to GREEN:**
+  - RED, Node (`npm run test:unit -w gogospend-app -- src/wallet/copy/draftText.test.ts src/wallet/store/walletStore.test.ts src/spend/v1/spendDiary.test.ts`): `tests 26, pass 23, fail 3`. `the view names the open diary's account, and nobody without one` failed (`accountId` was `undefined`, expected `0a000000-0000-4000-8000-00000000000a`). `draftText.test.ts` failed to load (`Cannot find module .../wallet/common/copy.ts`). `walletStore.test.ts` failed to load (`Cannot find module .../wallet/store/walletStore.ts`). The 23 passes are the existing diary tests.
+  - RED, render (`npm run test:render -w gogospend-app -- src/spend/v1/DeviceDiaryProvider.render.test.tsx src/screens/redesign/account/PrivacyScreen.render.test.tsx`): `Test Files 2 failed`, `Tests 1 failed | 3 passed (4)`. The sign-out case failed because `jotbun.wallet.private-mode` was still present. `PrivacyScreen.render.test.tsx` failed to load (`Failed to resolve import "@mobile/wallet/store/deviceWalletStore"`), so its existing cases did not run.
+  - GREEN, Node: `tests 31, pass 31, fail 0` (diary 24, draft copy 4, stores 3).
+  - GREEN, render: `Test Files 2 passed`, `Tests 26 passed` (DeviceDiaryProvider 4, PrivacyScreen 22).
+- **Mutation check:** originals copied to `/tmp/p2-t3-mutants`, sha256 recorded, each mutant applied in place, the focused test run, the file restored with `cp`, and the checksum compared. Both restored checksums match.
+  - `walletStore.ts` (`493b69b921f326ed6cb09d98834f0ac29a3abf3ce7429c86d626e283624f5934`): the device erase dropped its prefix filter and removed every key. `npm run test:unit -w gogospend-app -- src/wallet/store/walletStore.test.ts` gave `1 failed, 2 passed`. The failing case was `the device erase removes every jotbun.wallet. key and nothing else` (`null !== 'warm'` on `jotbun.account.a1.looks`). The account-erase case still passed.
+  - `DeviceDiaryProvider.tsx` (`cc612c31a1ab472c00aae226b243fceec704b4e06feb6ee3002853d3de352fb3`): `eraseWithDiary` also awaited `eraseAccountKept(accountId)`. `npm run test:render -w gogospend-app -- src/spend/v1/DeviceDiaryProvider.render.test.tsx` gave `1 failed | 3 passed (4)`. The failing case was `the sign-out erase forgets the wallet's device settings and keeps the account's looks` (expected `'warm'`, received `undefined`).
+- **Gate** (worktree root, the tests the brief names; not the edge database suite):
+  - Node, the same three files: `tests 31, pass 31, fail 0`.
+  - Render, both files whole: `Test Files 2 passed`, `Tests 26 passed (26)`.
+  - `npm run typecheck -w gogospend-app` (`tsc --noEmit`) passed. That run is not part of the brief's gate. It is how the new `DiaryView` field was checked against the rest of the app.
+- **Not applicable:** nothing here is ported from `apps/api`. No PostgreSQL role, grant, row-level security, pool, isolation level or lock wait is in this task.
+- **Deviations:**
+  1. `DiaryView.accountId` is required, so four literals the brief does not name now include it: the no-diary view, and three test fixtures, each `null`.
+  2. `draftText` repeats the one-pass replace instead of importing `formatCopyValues`. That module loads the `@mobile` catalogs, which `node --test` does not resolve. The replace is the same expression: one pass, unknown tokens left in place.
+  3. The store test also keeps `jotbun.account.a10.looks` when `a1` is erased, and the copy test checks that a value of `{amount}` is not filled again. The sign-out test removes `jotbun.wallet.lock` as well as `private-mode`. The deletion test leaves `jotbun.wallet.private-mode`. Each pins a rule the brief states.
+- **SKIPPED (hosted):** none. No cloud resource was touched.
+- **Notes for later tasks:**
+  - An area adds `src/wallet/<area>/copy.ts` with `export const COPY = { '<area>.<name>': { th, en } } as const satisfies DraftTable` and `import type { DraftTable }`. Keys stay unique. A screen that needs several areas calls `useDraftCopy({ ...COMMON_COPY, ...HOME_COPY })`. `draftText.test.ts` already exempts `card.kindTransit` in `LATIN_LINES`.
+  - `useDraftCopy` depends on the table object. Build a merged table outside the render, or memoize it.
+  - Device settings (private mode and its tip, the lock, setup answers, over-budget marks, confetti marks) use `walletDeviceStore()` and leave at sign-out. Looks, category icons and wallet order use `walletAccountStore(accountId)` with `useDiaryView().accountId`. When that id is null, store nothing and show the derived looks. Do not call `walletAccountStore` with an empty string: the prefix would be `jotbun.account.` and an erase would match every account.
+  - The fake diary's default id stays even if a test sets `phase: 'locked'`. Pass `accountId: null` when the fixture means nobody.
+  - A confirmed deletion while the diary is locked, opening, or absent does not erase account-kept looks, because the view's id is null. `Done` on `erase_failed` retries the diary erase only. The brief said not to change the rest of the deletion flow.
+  - No analytics emitter was added (R25).
 Phase 2 is the Bun Wallet on the device. Task 4 reads the days already logged in the open diary. The streak counts every distinct logged day up to today; a skipped day pauses it and never lowers it (R59, W11).
 
 ### P2 Task 4: logged days
@@ -363,7 +402,7 @@ Phase 2 is the Bun Wallet on the device. Task 4 reads the days already logged in
   - P2-T36's `isLoggedToday` is true when `loggedDays()` holds today, confirmed or draft.
   - Render tests pass a seed as `createFakeDiary(view, { loggedDays })`. Pending dates on the current view are merged in while `phase` is `ready`.
   - The query binds nothing. Do not add one `?` per id here.
-## 1D: live pokes, the pending choice and PostHog
+## 1D: live pokes, the pending choice, PostHog and the proof
 
 Phase 1D adds live pokes, the pending conflict choice and PostHog to the vault core. The design is `docs/superpowers/specs/2026-10-25-jotbun-bun-wallet-cloudflare-design.md` (PostHog is its §7). Task 3 builds the server analytics as a stand-alone module; the Worker wiring is 1D-T11 and T13.
 
@@ -680,11 +719,130 @@ Phase 1B moves files and background work onto each person's vault (spec `docs/su
 - **Concerns for the integrator:**
   - `erase()` is not one atomic step. It runs `deleteAll()`, then the migrations, then the marker insert. If the marker insert fails after `deleteAll()`, nothing in storage records the erase, and a later call could create the account again. The in-memory `erased` flag covers only the instance that failed. 1C's deletion should block sign-in in D1 first (§6.12, step 1) and retry `erase()` until the marker reads back. The alternative is one `transactionSync` that deletes the rows and writes the marker, which needs no re-migration. That choice is the controller's.
   - The purge loops until a listing comes back empty, with no iteration cap. A bucket that kept listing the same keys would never end. 1C's Workflow step should bound its own time.
+
+### 1B Task 3: the files front door
+
+- **Status:** built and verified locally on this worktree, from `9924cca` (the files schema on the integration head). Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - New, `apps/edge/src/v1/`: `fresh-sign-in.ts` (`FRESH_SIGN_IN_SECONDS`, `assertFreshSignIn`), `worker-routes.ts` (`VaultSession`, `WorkerContext`, `vaultSession`, `workerSessionFor`, `WORKER_HANDLERS`) and `bridge.ts` (the `bridge.catalogue` handler and its per-isolate catalogue cache).
+  - Protocol: `protocol.ts` (`authTime` on `VaultClaims`, `VaultAccess`, required `VaultCall.charge`, `WorkerRouteId`). `routes.ts` adds `VAULT_STEP_ROUTES` and `stepRouteOf`, extends `VaultRoute` with `recent_proof`, `worker` and `body`, and moves `GET /v1/bridge/gogocash/catalogue` out of `VAULT_DEFERRED_ROUTES` into `VAULT_V1_ROUTES` as a public Worker route. `vaultStatusOf` uses the step's status, or 200, when the id is not an HTTP route.
+  - Front door: `handler.ts` runs a Worker route after the gates (a public one with no token, any other after the client version and the token), sets `charge` from the method on a vault route, and accepts `waitUntil` and `fetchCatalogue` on its deps. `tokens.ts` checks `auth_time`. `config.ts` keeps `uploads` unexposed unless `IMPORT_UPLOADS_ENABLED` is `1` or `true`, on the open path and the fail-closed path. `env.ts` gains `OBJECTS`, `IMPORT_UPLOADS_ENABLED`, `GOGOCASH_BRIDGE_ENABLED` and `GOGOCASH_CATALOGUE_URL`. `wrangler.vault.jsonc` sets the two flags to `"false"`.
+  - Vault: `user-vault.ts` `call()` resolves `vaultRouteOf(id) ?? stepRouteOf(id)` and skips both budgets when `charge` is `'step'`. `recent_proof` is policy-exempt, like `bound_session`.
+  - Tests: `test/workers/files-front-door.test.ts` (7), `test/workers/config.test.ts` (the uploads case; 6 in the file), `test/vault-route-coverage.test.ts` (the worker-or-vault check; the pin lists the bridge), `test/workers/support/v1-client.ts` (`authTime`, `startV1` options) and `test/workers/front-door.test.ts` (`charge: 'write'` on the hand-built call).
+- **RED to GREEN:**
+  - RED, workers (`npm run test:edge:workers -- test/workers/files-front-door.test.ts test/workers/config.test.ts`), with the stubs in place (empty step table, `stepRouteOf` returning undefined, `assertFreshSignIn` never throwing, `workerSessionFor` passing `config.policies` unfiltered, bridge handler answering 501): `Test Files 2 failed (2)`, `Tests 8 failed | 5 passed (13)`. All 7 new front-door cases failed on assertions: 501 where 404 and 200 were expected, no throw from `assertFreshSignIn`, 200 where a future `auth_time` must be 401, 500 where the step id must be 200, 429 on call 121 of one session, and terms v2 still present in the session's policies. The new config case failed (`isExposed('uploads')` was true). The 5 passes are the existing config cases.
+  - RED, Node (`npm run test:edge -- test/vault-route-coverage.test.ts`): `Tests 6 passed (6)`. The new structural checks passed on the stub, because the stub had already moved the bridge route and registered a handler. They do not exercise the 501 body.
+  - GREEN, same workers command: `Tests 13 passed (13)`. GREEN, Node: `Tests 6 passed (6)`.
+- **Mutation check:** `shasum -a 256` recorded before any mutant, originals kept in `/tmp/1b-t3-mutation` (outside the repo). Each mutant was applied in place, `files-front-door.test.ts` was run, and the file was restored. `shasum -c` reported OK after every restore. Final checksums match the recorded ones: `worker-routes.ts` `92e8ca0c…24df`, `tokens.ts` `1ad212b7…f77b`, `user-vault.ts` `6033f280…217d`.
+  - Charge every call (`vaultSession` sends the route's charge on every call, never `'step'`): `Tests 1 failed | 6 passed (7)`. "only the first vault call of a request is charged" got 429 on A's 121st call. Caught.
+  - Pass `config.policies` unfiltered: `Tests 1 failed | 6 passed (7)`. The live-policies case still saw terms v2. Caught.
+  - Accept a future `auth_time` (no upper bound): `Tests 1 failed | 6 passed (7)`. The future token got 200 where 401 was expected. Caught.
+  - Drop the step fallback in `call()`: `Tests 1 failed | 6 passed (7)`. The step-only case got 500 `INTERNAL_ERROR`. Caught.
+- **Gate** (`npm run typecheck:edge && npm run test:edge && npm run test:edge:workers && npm run build:edge && npm run test:edge:db`, from the worktree root, after `npm run build -w gogospend-api`; the database script runs its own `db-up`):
+  - `typecheck:edge`: passes.
+  - `test:edge`: 122 passed (9 files). The baseline at this head was 121; the new coverage case is the extra one. The node catalogue tests logged `cashback_catalogue_rejected` and `cashback_catalogue_unavailable` and passed.
+  - `test:edge:workers`: the chained run hit `Tests 1 failed | 176 passed (177)`. `sync.test.ts` "defaults to 200 groups a page and refuses more than 1,000" timed out at 5000ms. That file alone then passed, `Tests 12 passed (12)` in 2.20s of tests. A full workers rerun passed, `Tests 177 passed (177)` in 9 files. The timeout was parallel load, not an assertion. The 177 include the 7 new front-door cases and the new config case.
+  - `build:edge`: passes. `dist/jotbun_vault/` was produced with the rest of the edge build.
+  - `test:edge:db`: 62 passed (8 files). `gogospend-postgres-v1-local` was already healthy and port 55432 was reachable, so it was not restarted.
+- **Ported in full:** the public catalogue through the front door (404 `NOT_FOUND` with `cache-control: no-store` while the bridge is off; the built-in brands, every link on `https://gogocash.co`, when the live fetch rejects; the v1 headers and a HEAD with no body). `CashbackCatalogueSource` is reused, not copied. `auth_time` is optional and, when present, an integer from 0 through now plus 30 seconds. `assertFreshSignIn` is the 300-second window with that same tolerance. A request's first vault call carries the route's charge and every later call is `'step'`. Uploads stay unexposed unless the release flag is `1` or `true`.
+- **Ported in part:** none. No route calls `assertFreshSignIn` yet. The export task applies it after its receipt lookup.
+- **Not applicable:** this task ports no PostgreSQL suite. There is no role, grant, row-level security, pool, isolation or lock-wait case to move. The edge's existing catalogue tests stay on the node runner.
+- **Deviations:**
+  1. `startV1`'s `env` override is a `Proxy` over the Workers `env`. A copied object would drop the `VAULT` and `CONFIG` bindings.
+  2. The future-`auth_time` test reads the epoch second early in that second, so `now + 31` cannot fall back inside the 30-second tolerance if the second rolls over while the request runs.
+  3. `fetchCatalogue` reaches the cache through `bindCatalogueFetch`, called immediately before the handler. `WorkerContext` stays as specified. The handler reads the source before its first await, so two requests cannot swap fetches.
+  4. A `body: 'stream'` route still calls `readJsonBody`, as the dispatcher does. A non-JSON body stays unread and is the stream. A JSON body is parsed, and there is no stream.
+  5. The coverage pin now lists `GET /v1/bridge/gogocash/catalogue`, and the test name says so. The table would otherwise fail its own "nothing else" check.
+- **SKIPPED (hosted):** nothing deployed, and no cloud resource was created. The two new vars are local wrangler settings.
+- **Notes for later tasks:**
+  - A Worker route is one `VAULT_V1_ROUTES` entry with `worker` and a `WORKER_HANDLERS` function, and no `vault` id. `GET /v1/policies` still has neither.
+  - A step-only id goes in `VAULT_STEP_ROUTES` and `VAULT_HANDLERS`, and not in `VAULT_V1_ROUTES`. `call()` resolves it. `vaultStatusOf` returns the step's status, or 200.
+  - `vaultSession` charges on the first call only. `workerSessionFor` uses `livePolicies` and a charge from the method (`GET` is `'read'`).
+  - `assertFreshSignIn(claims, nowSeconds)` throws 401 `REAUTH_REQUIRED` outside `[now - 300, now + 30]`. Nothing calls it until the export command.
+  - `claims.authTime` is set only when the token's `auth_time` is an integer in range. The test client sets it through `TokenOptions.authTime`.
+  - `IMPORT_UPLOADS_ENABLED` must be `1` or `true` before an uploads route is exposed. `wrangler.vault.jsonc` leaves it `"false"`.
+  - `deps.fetchCatalogue` and `deps.waitUntil` are on `handleVaultV1`. The catalogue cache is one source per combination of the flag, the URL and the fetch function.
+  - `recent_proof` is a vault access and skips the policy check. No route uses it yet.
+  - `OBJECTS` is on `V1Env`. The binding was already in `wrangler.vault.jsonc`.
 - **Integration (27 Oct):** merged after Tasks 5 and 6 of 1A (PRs #81, #80); only the receipts conflicted. On the merged tree: `typecheck:edge` passes, `test:edge` 130 passed (10 files), `test:edge:workers` 240 passed (12 files).
 
-## 1D: live pokes, the pending choice and PostHog
+## 1D: live pokes, the pending choice, PostHog and the proof
 
 Phase 1D adds live pokes, the pending choice, PostHog and the two-phone proof (plan 1D, in the controller's brief). Task 2 puts PostHog's proxy on the HTTP Worker.
+
+### 1D Task 1: The app's analytics core: the allow-list, the typed emitters, consent, the held events and the outgoing gate
+
+- **Status:** built and verified locally on `worktree-agent-abe4ba17803d852d1`: the first round in `b3b1c11`, the integration head `bdf6b12` merged in `402fe86`, the first review's fixes in `617e278`, and the confirming review's fixes in the commit with this receipt. The orchestrator merged the integration head `800680d` into the branch without a conflict when it opened the pull request. The independent review is the controller's, after this receipt.
+- **Files:**
+  - `apps/app/src/analytics/catalog.ts`: the 40 §7 events and their property rules, `PACK_KEYS`, `cleanEvent`, `cleanCommon`, `isScreenPattern` and `screenPattern`.
+  - `apps/app/src/analytics/events.ts`: the typed emitters every plan calls (R23).
+  - `apps/app/src/analytics/controller.ts`: consent, identity, the held events, `track` and `screen`. Server and store work runs one call at a time (`serialize`).
+  - `apps/app/src/analytics/gate.ts`: `gateOutgoing`, PostHog's `before_send`.
+  - `apps/app/src/analytics/bus.ts`: `setAnalytics` and `getAnalytics`; `trackClientEvent` cleans, then feeds the tests-only seam and `getAnalytics()?.track`.
+  - `apps/app/src/analytics/testing/recordAnalytics.ts`: the test helper.
+  - Tests: `catalog.test.ts`, `events.test.ts`, `controller.test.ts`, `gate.test.ts`, `neverSent.test.ts`.
+- **RED to GREEN, first round (`b3b1c11`):** typed stubs first. The five files (`npm run test:unit -w gogospend-app -- src/analytics/catalog.test.ts src/analytics/events.test.ts src/analytics/controller.test.ts src/analytics/gate.test.ts src/analytics/neverSent.test.ts`): 30 failed, 1 passed of 31 (catalog 6, events 1, controller 18 failed and 1 passed, gate 4, neverSent 1). The pass was `without a client, nothing is sent…`, which the stub already met. GREEN: 31 passed. Before the fix round, the whole `npm run test:unit -w gogospend-app` was 719 passed; one first-round assertion, `assert.deepEqual(sent, [])`, narrowed to `never[]` under `tsc` and became `assert.equal(sent.length, 0)`.
+- **Review fix round** (the controller's review of `b3b1c11`: Needs fixes):
+  1. Capture stops before a consent write. When the server answers no, or holds no answer (`unasked`), the controller applies the no, or reopens the question with `reset()` and `stopSessionRecording()`, before it writes or erases this phone's stored answer. Before, the write came first, so a store that failed left the phone in yes, capturing.
+  2. `setAccount`, `answer` and `refresh` run their server and store work one call at a time, in call order. What must happen at once still happens at the call: an account change resets the identity, and a no stops capture and replay. Before, a yes still on its way could land at the server after a later no, or be written to the store after it, and the next refresh put the phone back in yes.
+  3. This receipt sits under the plan's phase heading (Global Constraints): `## 1D: live pokes, the pending choice and PostHog` now reads `## 1D: live pokes, the pending choice, PostHog and the proof`. Task 2's section is unchanged.
+  4. P2-T7 has merged, so `a category is a built-in key, a pack key or custom` also asserts that `PACK_KEYS` equals `THAI_EVERYDAY_PACK.map((item) => item.key)`, as the plan asks. The comment in `catalog.ts` names P2-T7's pack.
+  - New tests: `a no from the server stops capture before this phone stores it`, `an answer gone from the server stops capture before this phone erases its own`, `a yes still on its way cannot outlast a later no at the server`, `a yes being stored when the person says no cannot replace the no`, `a foreground refresh waiting behind a yes cannot undo a later no`. The harness gained a store whose writes can fail or hold a yes, an erase that can fail, and a server whose consent calls can be held and landed newest first.
+  - RED, the new tests against `b3b1c11`'s controller (`npm run test:unit -w gogospend-app -- src/analytics/controller.test.ts src/analytics/catalog.test.ts`): 5 failed, 25 passed. Each failure is an assertion: the first two left the status at `yes`; the third and fifth left the server at `yes`; the fourth left `yes` in the store.
+  - GREEN: `controller.test.ts` 24 passed, 0 failed; the five files 36 passed, 0 failed.
+  - The pack-key assertion passed at once: it pins two lists that already match. M6 below shows it bites.
+- **Review fix round 2** (the controller's confirming review of `617e278`: Needs fixes):
+  5. A queued yes is checked when the queue reaches it, before anything is sent, because the server call acts for whoever is signed in at that moment. If the signed-in account is no longer the one that answered, `answer('yes')` rejects and sends nothing. If a later `answer()` replaced it, the yes resolves without being sent. A refresh alone does not stop it. Before, a yes queued behind a slow call was sent under the next account's session once that account had signed in, and that account then entered yes without ever answering. And a yes that a later no had replaced still reached the server, just before the no.
+  - New tests: `a yes waiting behind another call is refused once another account has signed in`, `a yes on its way when another account signs in is never stored or applied for the next one`, `a yes still waiting when the person says no is never sent`, `a refresh after a yes does not keep the yes from the server`. The harness gained `sessions()`: two accounts on one phone, where each server call acts for whoever holds the session when it is made, as the shared v1 transport does.
+  - RED on `617e278` (`npm run test:unit -w gogospend-app -- src/analytics/controller.test.ts`): 2 failed, 26 passed. `a yes waiting behind another call…` left `[ 'B:yes' ]` at the server; `a yes still waiting when the person says no…` left `[ 'A:yes', 'A:no' ]`. The other two passed on `617e278`: they pin what the fix must keep (a yes on its way is never stored or applied for the next account; a refresh after a yes still lets it through), and R5 and R3 below show they bite.
+  - GREEN: `controller.test.ts` 28 passed, 0 failed; the five files 40 passed, 0 failed.
+- **Mutation check:**
+  - First round (`b3b1c11`), each killed: unknown properties kept by `cleanEvent` (`cleanEvent drops…`, `neverSent`); the server's yes applied over a pending no (`a pending no is kept…`); `reset()` skipped in `applyNo` (`a no read at launch…`, `a no given on another phone…`, `saying no…`); a no that resets only from yes (`a no read at launch…`); a frame that keeps `context_line` (`before yes…`, `after yes…`, `neverSent`); `$feature_flag_called` allowed after yes (`after yes, allow-listed…`).
+  - Fix round: each mutant applied in place, the focused file run, the file restored from a copy in the scratch folder and its SHA-256 compared (it matched each time).
+    - M1, the server's no applied after the store write: 1 failed, 23 passed (`a no from the server stops capture…`).
+    - M2, the question reopened after the erase: 1 failed, 23 passed (`an answer gone from the server…`).
+    - M3, `serialize` runs its work at once: 3 failed, 21 passed (`a yes still on its way…`, `a yes being stored…`, `a foreground refresh waiting…`).
+    - M4, `refresh` reads the generation when its queued work starts, not at the call: 1 failed, 23 passed (`a foreground refresh waiting…`).
+    - M5, `answer('no')` applies the no inside its queued work: 3 failed, 21 passed (the same three as M3).
+    - M6, `PACK_KEYS` with `seven_eleven` for `seven`: 1 failed, 5 passed in `catalog.test.ts` (`a category is a built-in key…`).
+    - No survivors.
+  - Fix round 2, the same way:
+    - R1, the account check removed: 1 failed, 27 passed (`a yes waiting behind another call…`).
+    - R2, the later-answer check removed: 1 failed, 27 passed (`a yes still waiting when the person says no…`).
+    - R3, the later-answer check made any newer call (`stale(token, account)`), so a refresh also stops the yes: 1 failed, 27 passed (`a refresh after a yes…`).
+    - R4, a no that does not mark itself the latest answer: 1 failed, 27 passed (`a yes still waiting when the person says no…`).
+    - R5, the check after the yes lands removed: 1 failed, 27 passed (`a yes on its way when another account signs in…`).
+    - No survivors.
+- **Gate** (worktree root, the merged tree with the fixes; the head is `bdf6b12`, so the counts differ from the planning probe at `e546bee`, which gave test:app 28, test:unit 730 and test:render 1587):
+  - `npm run typecheck:app`: passes.
+  - `npm run test:app`: 29 passed, 0 failed.
+  - `npm run test:unit`: 770 passed, 0 failed.
+  - `npm run test:render -w gogospend-app`: 83 files and 1589 tests passed.
+  - `npm run export:web -w gogospend-app -- --max-workers 2`: passes.
+  - `git diff --check origin/claude/p1a-vault-core...HEAD`: clean.
+  - The first round ran only the five files and `typecheck:app`.
+  - Fix round 2 (`617e278` and this commit, not merged again): `npm run typecheck:app` passes; `npm run test:app` 29 passed, 0 failed; `npm run test:unit` 774 passed, 0 failed; the five analytics files 40 passed, 0 failed. No render test uses the controller (`bus.ts` imports only its type) and its exported API is unchanged, so the render suite and `export:web` were not run again. `git diff --check` is clean.
+- **Ported:** not a port from `apps/api`. The PostgreSQL role, grant, RLS, pool, isolation and lock cases do not apply: this task is the app's in-memory allow-list, consent controller and `before_send` gate.
+- **Deviations:**
+  - `screen` sends the cleaned common properties and `origin: 'app'`, as the common row's "added to every event" says.
+  - A new controller's account starts unset, not `null`, so the first `setAccount(null)` is a real change and resets a distinct id the SDK may still hold from an earlier run. `setAccount` with the current id, a second `null` included, does nothing.
+  - Opening the question also calls `stopSessionRecording()`, so replay cannot keep running when a yes becomes "never asked".
+  - Held events take the common properties when they are sent, not when they were tracked, so they carry `weeks_since_signup` from the yes.
+  - Server and store work runs in call order, so no call overtakes an earlier one. A refresh or an answer that a later call has made out of date resolves without changing anything, and the later call decides. A queued yes is still sent when only a refresh came after it, and that refresh reads it from the server. It is not sent when the account changed (it rejects) or when a later answer replaced it (it resolves).
+  - Tests beyond the plan's bullets: the other emitters, seconds rounded and clamped, `recordAnalytics`, a null client, a stored yes entering without an identity, the fix round's five, and fix round 2's four.
+- **SKIPPED (hosted):** no PostHog project, no key, nothing sent off the phone. The modules are pure, and every client in these tests is a fake.
+- **Risks and follow-ups:**
+  - A no given while another consent call is still on its way is in force at once, but it is stored and sent only after that call ends. On a slow network that call can be a foreground refresh's read, which the transport allows up to 20 seconds. If the app is killed in that gap, the no is lost, and at the next launch the stored yes and the server's yes put the phone back in yes. An account change in the gap also drops it: the queued work writes the pending no, and the next account's load overwrites it. Not fixed in this task. To be settled with 1D-T6, which builds the real store (`consentStorage.ts`) and the transport.
+  - A design for it: write the pending no at the call, and have the queued work await that same write before it writes the no again and sends `setConsent(false)`. A second write that the queue does not await is not enough: it can land after the queue's last write and leave `pendingServer: true` behind. Keeping a no across an account change needs one stored answer per account, which is `consentStorage.ts`'s choice.
+- **Notes for later tasks:**
+  - Every plan, phase 2 included, calls `events.ts` and these names (R23). `trackClientEvent` drops a name outside the allow-list, so `spend_tx_added`, `spend_import_started` and `system_permission_outcome` no longer reach the test seam; 1D-T7 moves their callers onto the emitters.
+  - A category is sent as a built-in key, one of `PACK_KEYS`, or `custom`. P2-T7's `analyticsCategoryKey` (`apps/app/src/spend/v1/redesign/planning/thaiPack.ts`) returns exactly that, matching C3's names and aliases; 1D-T7 calls it.
+  - `wallet_type` takes the four kinds (R81). `ewallet` is dropped.
+  - `account_deleted` is in the allow-list with `method`, as the table says. The anonymous count that never recreates the person is the server's (1D-T13); no client emitter sends it.
+  - 1D-T6 installs this controller with `setAnalytics`, passes `gateOutgoing` as `before_send`, and keeps the client null when no project key is set. Its `consentStorage.ts` should not throw from `read()`, because a failing read stops a refresh before it reads the server's answer. The store holds one answer: when another account signs in on the same phone, its load overwrites or erases a no the first account has not delivered. A caller that runs `refresh()` at every foreground should catch its rejection. The server and store calls this controller makes must always settle, because one that never does holds every later consent call behind it; the v1 transport's 20-second timeout bounds that today.
+  - Left for later (minor, from the first review of `b3b1c11`): a no whose first store write fails is never sent to the server; `weeks_since_signup` stays in the common properties across an account change; an offline refresh with no stored answer moves an open question back to `loading`.
+  - `recordAnalytics()` signs in `00000000-0000-4000-8000-0000000000aa`, then empties `sent`.
+  - **Integration head:** the integration branch (checked at `bdf6b12`, `75b3625`, `d193a68` and `800680d`) carries the phase headings `## 1D: live pokes, the pending choice and PostHog` and `## P2: Bun Wallet core` twice each. Both 1D headings take the plan's text here, and this receipt sits under the second one, directly above `### 1D Task 2`. The duplicates are left for the orchestrator's ledger consolidation.
 
 ### 1D Task 2: The PostHog proxy on the Worker
 
@@ -731,9 +889,20 @@ Phase 1D adds live pokes, the pending choice, PostHog and the two-phone proof (p
   - The `/v1/sync/live` upgrade bypass (1D-T12) belongs in the same dispatch in `src/server.ts`.
   - The body and its `content-encoding` pass through unchanged, as PostHog's guide does. Only the fake `fetch` has answered so far, so a compressed upstream answer has not been run.
 
+## Fix: sheets rise above the iOS keyboard (28 October)
+
+Found by the native iOS check above. iOS does not resize the window for the keyboard, and `ui/Sheet.tsx` did not move for it. Tell Bun's field takes focus as its sheet opens, so the keyboard covered whatever sat low in the sheet: the draft after Read it, and, when the sheet was short (Bun's help on, nothing read yet), the whole sheet, leaving a dimmed screen and a keyboard. The browser catalogue and the render tests have no on-screen keyboard, so neither showed it.
+
+- **Change:** `Sheet` puts its backdrop and panel in a `KeyboardAvoidingView` with `padding` on iOS; Android is left as it was, and the web has no on-screen keyboard. `TellBunSheet` closes the keyboard for each new draft (a sentence, a slip, an often-logged chip, or a re-read while a draft shows); a sentence Bun cannot read keeps it up to retype.
+- **RED to GREEN:** 5 failing on assertions, then passing: iOS pads, Android and the web do not, and a sentence, a re-read and a chip each close the keyboard. The guards (the backdrop still closes the sheet; `฿` alone keeps the keyboard up) passed before and after. `ui/Sheet.keyboard.render.test.tsx` stands in for iOS: it sets `Platform.OS`, shows the wrapper's `behavior`, and stubs the theme's saved-preference read, which would otherwise reach the native half of secure storage that the web build lacks. A fix-round test (a draft that lands after the sheet closed) failed on its assertion before the fix and passes after; see Fix round.
+- **Mutants:** 4 killed, 0 survivors: padding on Android too; `height` for `padding`; closing on any non-idle state; never closing.
+- **Gate:** `typecheck:app` passed; `test:app` 28 passed; `test:unit` 694 passed; `test:render` 84 files, 1592 tests, no unhandled errors; `export:web` passed; `git diff --check` clean.
+- **iOS simulator** (iPhone 17, iOS 27.0, Xcode 27.1, a development build of this branch): the short sheet sits above the keyboard with its title, field and buttons; tapping the field raises the whole sheet with the keyboard; Read it closes the keyboard and shows the whole draft; a second Read it closes it again. The first version keyed the effect on `phase.kind`, and the simulator showed a re-read leaving the keyboard up; the re-read test came from that.
+- **Fix round:** a draft that lands after Tell Bun has closed no longer closes the keyboard. `TellBunSheet` dismisses the keyboard only while its sheet is shown (a ref kept in step with `visible`), so the late draft waits for the next open and leaves another field's keyboard alone. RED: 1 failing on its assertion (`a draft that lands after the sheet closed leaves the keyboard alone`), 11 passing; GREEN: 12 passing. Mutants: 3. Two were killed by that test (the sheet check dropped; the ref never updated). One survived (the two effects swapped), because the close and the late draft land in separate renders, so their order makes no difference to these tests. Gate: `typecheck:app` passed; the three focused render files passed, 28 tests. Not changed: a draft that lands while the sheet is still open, after the person has tapped back into the field, still closes the keyboard.
+- **Not covered:** Android (unchanged; not run on a device here) and a real iPhone; Android 16 edge-to-edge may stop the window resizing; with Reduce Motion and Prefer Cross-Fade Transitions on, React Native's keyboard wrapper gives no padding, so the sheet may not rise; a sheet that opens while the keyboard is already up does not rise on its own, because the wrapper reacts only to keyboardWillShow.
+
 ## Not done, or follow-ups
 
-- **Sheets and the iOS keyboard (found on the simulator, 28 October):** `ui/Sheet.tsx` does not move for the keyboard. Tell Bun's field takes focus as its sheet opens, so the keyboard covers whatever sits low in the sheet: the draft after Read it, and, when the sheet is short (Bun's help on, nothing read yet), the whole sheet, leaving a dimmed screen and a keyboard. The browser catalogue and the render tests have no on-screen keyboard, so neither shows it. Proposed fix: lift the sheet by the keyboard's height in `Sheet` (a `KeyboardAvoidingView` with `padding` on iOS), and close the keyboard when Tell Bun shows a draft.
 - **Rotating reminder wording (owner decision):** a repeating daily notification cannot change its text, so rotation needs "every day" to become seven weekly reminders, one wording per weekday. The reminders milestone (S4) chose one daily reminder on purpose, and its tests pin it. Cancelling all eight known ids first would still leave one reminder a day, so the change is safe to make if wanted.
 - **E2 screenshots** of the companion area. Its eight catalogue sections are in (`src/dev/catalogue/companion`): Ask Bun off and answering, Tell Bun reading a Thai sentence, Bun's note on Home, the cashback card asking and on, the Settings controls and the Thai pack. The area is on by default at the owner's request; `EXPO_PUBLIC_REDESIGN=-companion` switches it off.
 - **Hosted proofs, when the owner asks for a deployment:**
@@ -793,6 +962,209 @@ Phase P2 builds the Bun Wallet area on the app. Task 7 replaces the Thai everyda
   - The spec's C3 line says a pack category is tagged with a `pack_key`. This task recognises one by its folded name. Nothing is stored. 1D can take its allow-list from `THAI_EVERYDAY_PACK.map((item) => item.key)`.
   - R81: wallet types were not touched. No `ewallet`.
   - `packKeyOf` and `missingPackItems` share `foldedNames`, so an alias matches both. The named `packKeyOf` test uses the primary Thai name, with spaces. Dropping aliases fails the earlier-pack test.
+
+### P2 Task 1: Bun Wallet palette, materials, type roles and WalletText
+
+- **Status:** built and verified locally on `p2/t1-palette`, merged with `origin/claude/p1a-vault-core` at `bdf6b12`. Not pushed. The independent review is the controller's, after this receipt.
+- **History:** an earlier session wrote the code and the plan's tests and left them uncommitted, with no RED and no receipt. They were committed unchanged as `b702b12`, then merged (`5486508`). This session added the tests below, took the RED against placeholders, ran the mutation check and the gate. The code is unchanged apart from comments on `WalletColors`.
+- **Files:**
+  - `apps/app/src/theme/walletPalette.ts`: `WalletColors` (the plan's table, each token with its use as a comment), `walletLight`, `walletDark`, `getWalletColors`; the five materials (`WalletMaterial`, `WALLET_MATERIALS`, `MaterialPaint`, `materialPaint`); the calendar ramp (`CalendarStep`, `CALENDAR_STEP_LIMITS_BAHT`, `calendarPaint`); `tileTint`; `WALLET_TEXT_PAIRS` (19) and `WALLET_GRAPHIC_PAIRS` (7).
+  - `apps/app/src/theme/walletType.ts`: `WalletTextRole`, `WALLET_TYPE`, `amountMaxScale`, `walletLineHeight`.
+  - `apps/app/src/wallet/WalletText.tsx`: `WalletText` and `WalletTone`.
+  - `apps/app/src/theme/ThemeProvider.tsx` (shared): the context value and `ThemePreferenceOverride` gain `wallet: WalletColors`; `useWalletColors()`.
+  - Tests: `walletPalette.test.ts` (5), `walletType.test.ts` (3), `WalletText.render.test.tsx` (4).
+- **Contrast, measured** (`contrast.ts`, WCAG 2.x): W24's light bar `#8B76DA` on white 3.68:1 (the board's `#DCD3F7` is 1.43:1); dark bar `#6E5FB8` on `#1A1920` 3.32:1; the dashed line `#8A879A` on white 3.49:1 (the board's `#B9B5C8` is 2.00:1) and `#6E6B7A` on `#1A1920` 3.36:1; W23's dark peach text 6.56:1. The lowest text pair is light `under` on `ground`, 4.55:1; the lowest material stop is dark silk's `#6A5AC2`, 4.91:1; the lowest calendar day number is dark step 3, 4.74:1.
+- **RED to GREEN:**
+  - RED, against placeholders with the real types and wrong values (every `#RRGGBB` in `walletPalette.ts` set to `#000000`; `walletType.ts` with size 10, scale 1, `amountMaxScale` 99 and `walletLineHeight` 0; `WalletText` in DM Sans with no colour, size or scale), swapped in with `cp`; `tsc` passed with them in place.
+    - Node (`npm run test:unit -w gogospend-app -- src/theme/walletPalette.test.ts src/theme/walletType.test.ts`): `tests 8, pass 0, fail 8`, every failure an `AssertionError`.
+    - Render (`npm run test:render -w gogospend-app -- src/wallet/WalletText.render.test.tsx`): `Tests 4 failed (4)`.
+    - Restored with `cp`; sha256 before and after match.
+  - GREEN, the same commands: Node `tests 8, pass 8, fail 0`; render `Tests 4 passed (4)`.
+- **Mutation check:** 18 mutants, each applied from a backup with `sed`, the focused Node and render files run, the file restored with `cp`; the four files' sha256 match before and after. All killed:
+  - From the plan: `barPast` back to `#DCD3F7` (the pairs test); dark `quietText` `#E9E6F2` (the material test: silk's `#6A5AC2` falls to 4.43:1); body `maxScale` 3.571 (the AX5 test); DM Sans for English (the WalletText test).
+  - Added: the edge on every dark material; the border on step 1; the dark day-number guard at step 4; Latin leading 1.5; Thai leading in every locale; the override keeping the parent's `wallet`; the provider's own `wallet` always light; `Math.min` to `Math.max`; `getWalletColors` always light; the dark tint at 28%; the dark tint over white; light titanium in ink; no `maxFontSizeMultiplier`; the tone ignored.
+- **Tests beyond the plan's.** Eight of the mutants above passed the plan's tests alone (the edge, the border, Latin leading, Thai leading everywhere, the dark tint at 28%, the provider always light, no `maxFontSizeMultiplier`, the tone ignored). Added for them: no edge except dark titanium; the calendar borders; the leading table, and font size and leading per locale in the render test; the dark tile tint `#41332D`; and three render tests (role and tone; `maxFontSizeMultiplier` per role, through a recording mock of `@mobile/theme/AppText`, since react-native-web drops the prop; the provider's own palette from a stored dark theme). Also pinned, as the plan states them: the dark calendar ramp and `CALENDAR_STEP_LIMITS_BAHT` (W22), `amountMaxScale` reaching its limit (W30), `isDark`, `getWalletColors`, and the pair counts (19 and 7).
+- **Gate** (worktree root):
+  - `npm run typecheck:app`: exit 0, no errors.
+  - `npm run typecheck:routes -w gogospend-app`: exit 0, no errors.
+  - `npm run test:app`: `tests 29`, `pass 29`, `fail 0`.
+  - `npm run test:unit`: `tests 742`, `pass 742`, `fail 0`.
+  - `npm run test:render -w gogospend-app`: `Test Files 84 passed (84)`, `Tests 1593 passed (1593)`.
+  - `npm run export:web -w gogospend-app -- --max-workers 2`: exit 0 (`Exported: dist`).
+  - `git diff --check` before the commit, and `git diff --check origin/claude/p1a-vault-core...HEAD` after it: no output.
+- **§5.3's fixes:** the readable insight bars are these tokens, held by the pairs test (P2-T31 draws them). The saved check is P2-T17's: this palette has no success green, and `under` and `over` say budget state only. 44 pt targets are each control's task and P2-T37's sweep; `WalletText` is not a control.
+- **Deviations:**
+  1. `WalletText` takes `Omit<TextProps, 'role'> & { role?: WalletTextRole; tone?: WalletTone }`, not `TextProps & {...}`. React Native 0.88's `TextProps.role` is the ARIA `Role` union, which shares no member with `WalletTextRole`, so `role="h1"` would not compile. Wallet text that needs an ARIA role uses `accessibilityRole` (a heading: `accessibilityRole="header"`).
+  2. The plan's dark silk `quietText` mutant changes every dark material's quiet text, because one branch paints all five; silk still fails it.
+  3. The RED came after the code (written by the earlier session), against placeholders.
+- **SKIPPED:** none. The task adds no screen, catalogue section or native module, so there is no device, simulator or E2 check.
+- **Notes for later tasks:**
+  - `tileTint` carries the mode's `ink` only: light `quiet` falls to 4.04:1 on the `#4E93D9` tint (P2-T11's `WalletCategoryIcon`).
+  - Dark `barPast` is 2.98:1 on `sheet` (`#24222B`): insight bars sit on `card`, never in a tray (P2-T31).
+  - Calendar fills 1 to 3 differ from the card by less than 3:1 (light 1.19, 1.55, 2.48; dark 1.25, 1.90, 3.32). The plan tests the day numbers only, which carry 4.74:1 or more (W22, E2-C).
+  - `src/ui/dynamicType.test.ts` scans `src/screens/redesign`, `src/ui` and `src/mascot`, not `src/wallet`. `WalletText`'s cap is held by its own render test; a raw `Text` or `TextInput` in `src/wallet` needs its own `maxFontSizeMultiplier` until a sweep covers the folder (P2-T37).
+  - `amountMaxScale` is for `WalletAmount` (P2-T10); `materialPaint` for `MaterialFill` (P2-T11); `calendarPaint`, `CALENDAR_STEP_LIMITS_BAHT`, `barPast`, `barNow` and `guideLine` for P2-T31.
+  - Merging: P2-T3 (PR #79) and P2-T4 (PR #78) were cut from `60e2026` and add their own `## P2: Bun Wallet core` heading earlier in this file; this receipt sits under the existing heading at the end. Keep both sides.
+
+## P4: Slips and statements
+
+Phase P4 reads Thai bank slips into slip drafts, imports bank statements and sends pushes. Task 1 adds the shared wire contract: the slip, draft, slip account, bank album, push and device shapes, and the salted slip reference both the phone and the Worker use.
+
+### P4 Task 1: Slip and push contracts, and the shared slip reference
+
+- **Status:** built and verified locally on `p4/t1-slip-contracts`, on top of `bdf6b12`, the integration commit the branch was cut from. The integration head is now `75b3625`. It changed no file under `packages/contracts` or `apps/api` since `bdf6b12`, so it was not merged here; the orchestrator merges it when it opens the PR. Not pushed. The independent review is the controller's.
+- **Files:**
+  - `packages/contracts/src/v1/slips.ts` and `push.ts` (new): the slip, draft, slip account, bank album, push and device shapes, `normalizeSlipRef`, `slipRefHash`, `accountLast4`, and the parsers.
+  - `packages/contracts/src/v1/sync.ts`: the import and the `slip_inbox` entry in `SYNC_ENTITY_VALIDATORS` (three lines).
+  - `packages/contracts/src/index.ts`: four export statements after the AI type block (47 lines added, nothing changed).
+  - `apps/edge/test/slip-contracts.test.ts` (new, Node): 11 tests.
+  - `apps/api/src/sync/sync-api.integration.spec.ts`: the parity assertion leaves out `slip_inbox` (ruling R83); the test keeps its name.
+  - `docs/implementation/premium-progress.md`: this section.
+- **RED to GREEN:**
+  - RED, `npm run test:edge -- test/slip-contracts.test.ts`: 11 failed, 0 passed, against typed stubs. Seven failed on an assertion against a stub (a validator answered `false`, a helper answered `null` or `''`); four failed on the stub parsers' `VALIDATION_FAILED` ("Not built yet."). `npm run typecheck:edge` passed against the stubs.
+  - GREEN, the same command: 11 passed, 0 failed.
+- **Mutation check:** ten mutants, one at a time. Each was an exact single-match replacement in the worktree file, run against the focused file, then restored from a copy taken before the first mutant; the restored file's sha256 matched after every restore. Each was killed:
+  1. Zero byte dropped from `slipRefHash`: 1 failed (the salted-hash case).
+  2. Repeated hash let through: 1 failed (the batch case).
+  3. `album` slip allowed in a live batch: 1 failed (the batch case).
+  4. Extra key accepted by `hasExactly`: 2 failed (the inbox-snapshot case and the every-DTO-validator case).
+  5. Salt length unchecked: 1 failed (the salted-hash case).
+  6. Reference upper-cased before the ASCII check: 1 failed (the reference case, `ß`).
+  7. Image size limit off by one: 1 failed (the batch case).
+  8. Any string accepted as a push month: 1 failed (the push-data case).
+  9. `slip_inbox` dropped from `SYNC_ENTITY_VALIDATORS`: 1 failed (the inbox case).
+  10. Three digits accepted as the last four: 1 failed (the last-four case).
+
+  Survivors: none. Mutants 1 to 4 are the plan's Step 5; 5 to 10 are the brief's additions.
+- **Gate** (worktree root; each command's exit status and counts):
+  - `npm run test:edge -- test/slip-contracts.test.ts`: 11 passed.
+  - `npm run typecheck` (contracts, then API): passed.
+  - `npm run typecheck:edge`: passed.
+  - `npm run typecheck:app`: passed.
+  - `npm run test:edge`: 155 passed in 12 files. The 144 in the other 11 files are the baseline, measured by running those 11 files as an explicit list with the contract edits in place. The baseline was not recorded before the first edit, and no clean checkout at `bdf6b12` was built.
+  - `npm run test:api`: run 1 had one failure out of 955 tests, in `src/imports/upload-intake.spec.ts`: "a body that keeps trickling is ended at the absolute receive deadline" (it reported `upload_stalled` where the test expects `upload_timeout`, a race between two timers while the machine's load average was about 11). Run 2: 44 of 44 suites and 955 of 955 tests passed. The spec alone passed 96 of 96 in three runs, and it does not reference `SYNC_ENTITY_VALIDATORS` or the slip contracts.
+  - `npm run build -w gogospend-api`: passed (293 files compiled).
+  - `node apps/api/scripts/release-graph.mjs check`: passed, no problems.
+  - Contracts load under Node type stripping (`node --no-warnings --input-type=module -e`, importing `./packages/contracts/src/index.ts`): printed `contracts load`.
+  - `npm run test:unit -w gogospend-app -- src/storage/diaryRepository.test.ts`: 24 passed.
+  - App suites: `npm run test:unit -w gogospend-app`: 734 passed; `npm run test:app -w gogospend-app`: 29 passed; `npm run test:render -w gogospend-app`: 83 files and 1589 tests passed. They ran after the last change to the contract files, which has not changed since (sha256 checked).
+  - `npm run test:edge:workers`, under the shared heavy lock (released after the run): 12 files, 240 tests passed.
+  - `npm run build:edge`: passed.
+  - `npm run export:web -w gogospend-app`: not run; no route, config or app entry changed.
+  - `git diff --check` on the staged content, before the commit: passed. The three-dot check against `origin/claude/p1a-vault-core` runs after the commit and is in the final report.
+- **SKIPPED:** `npm run test:db -w gogospend-api -- sync-api.integration` (the parity assertion, with the database) and `npm run test:edge:db`. Docker is not running on this machine (no colima socket), and both scripts start their database containers themselves, which were not started. CI's database job runs both, so the parity assertion is first exercised there. Nothing deployed; no cloud resource.
+- **Deviations:**
+  1. Three tests beyond the plan's list: account mappings and slip refs, push data, and each DTO field's shape.
+  2. `isPushData` checks `ref` per kind: null for `slips_ready`, a UUID for `statement_parsed` and `export_ready`, `YYYY-MM` for `month_recap_ready`.
+  3. `normalizeSlipRef` checks printable ASCII before upper-casing, so `ß` cannot become `SS`.
+  4. `isSlipDraftsPage` takes `next_cursor` as null or base64url (1 to 512 characters), the app's keyset cursor rule.
+  5. The API parity assertion leaves out `slip_inbox` (ruling R83). It is the only change under `apps/api`.
+  6. The integration head was not merged into this branch, per the controller's instruction (see Status).
+- **Risks and notes for the integrator:**
+  - A simulated merge (`git merge-tree`) of `75b3625` into this branch's parent `bdf6b12` is clean. If the head has edited `docs/implementation/premium-progress.md`, the receipt section may conflict there; keep both sides, as the protocol says.
+  - The parity assertion has not run locally. Its first real run is CI's database job.
+  - The upload-intake trickle test failed once under load and passed on re-run. If it fails in CI, it is that timing test, not this change.
+- **Notes for later tasks:**
+  - The hash vector: salt bytes 1 to 32 and `004:016297184012BPP06418` give `029e46f70cbfa751f030c1d33b671859ad9519c17eecd52e6a0539775443df5a` (P4-T3's Workers case, P4-T12's phone case).
+  - P4-T3 registers the `slip_inbox` entity in the vault registry; until then the vault never writes one.
+  - P5-T3 adds `trip` and `settings` to the API parity assertion's left-out list.
+  - The vault-side port of `snapshots validate exactly the entities the API registers` (deferred to 1A-T8b) must leave out entities the vault does not register yet.
+  - P4-T6's `retry_after_seconds` is a whole number of seconds; P4-T7's draft cursors are base64url.
+
+## P6B: The beta's in-app extras
+
+Phase P6B gives the closed beta its in-app extras ([plan](../superpowers/plans/2026-10-25-jotbun-p6b-beta-extras.md)). Task 0 adds the deletion short code to the contracts.
+
+### P6B Task 0: The deletion short code
+
+- **Status:** built and verified locally on `p6b/t0-deletion-code`, on top of `e546bee`. Not pushed. The independent review is the controller's, after this receipt.
+- **Delivers:** `P6B:deletion-code` (A12).
+- **Files:**
+  - `packages/contracts/src/v1/privacy.ts`: `deletionShortCode(requestId)` and its private `CROCKFORD_BASE32` alphabet.
+  - `packages/contracts/src/index.ts`: exports `deletionShortCode`.
+  - `apps/app/src/wallet/settings/deletionCode.test.ts`: the plan's test (Node), importing from `@gogospend/contracts`.
+- **The code (X8, default pending owner Q5):** `DEL-` and the request id's first 10 hex digits (dashes removed, any case) read as one 40-bit number, written as 8 digits of `0123456789ABCDEFGHJKMNPQRSTVWXYZ`, most significant first, as `XXXX-XXXX`. `0b3f2c1e-6a4d-4f6e-9a51-2f3c4d5e6f70` gives `DEL-1CZJ-R7KA`. The same ASCII text in Thai and English. No copy changed here: P6B-T6 shows it under หมายเลขคำขอ, and P6C-T4's email prints it.
+- **RED to GREEN:**
+  - Typed stub first: `deletionShortCode` returned `''`, already exported.
+  - RED, `npm run test:unit -w gogospend-app -- src/wallet/settings/deletionCode.test.ts`: 1 failed, 0 passed. The failing assertion was the first one, at `deletionCode.test.ts:9`: `AssertionError`, actual `''`, expected `'DEL-1CZJ-R7KA'`. An assertion failure, not a load error.
+  - GREEN, the same command: 1 passed, 0 failed.
+- **Mutation check:** `privacy.ts` backed up in the scratchpad (`privacy.ts.green`), sha256 `e27223d3d255a713c2752f63dfbdaba6de98c3a3a252c8216a98e3ddb3956981`. Each mutant was applied in place, the focused file was run, and the file was restored with `cp`; the checksum matched after every restore.
+  - M1, the RFC 4648 alphabet: 1 failed, 0 passed, actual `'DEL-BM7S-YHTK'`.
+  - M2, dashes kept (`slice(0, 10)` with no dash removal): 1 failed, 0 passed, actual `'DEL-005K-YB0Y'`.
+  - M3, least significant digit first: 1 failed, 0 passed, actual `'DEL-AK7R-JZC1'`.
+  - M4, 32 bits instead of 40 (`slice(0, 8)`): 1 failed, 0 passed, actual `'DEL-005K-YB0Y'`.
+  - Survivors: none, so no test was added. M2 and M4 print the same value, because on a UUID `parseInt` stops at the first dash, so M2 reads only 32 bits too. The plan's test kills both.
+- **Gate** (worktree root, after the restores; run in the brief's order, each exit 0):
+  - `npm run typecheck`: passed (contracts `tsc` with `erasableSyntaxOnly`, then the API `tsc --noEmit`).
+  - `npm run typecheck:app`: passed.
+  - `npm run typecheck:routes -w gogospend-app`: passed.
+  - `npm run test:app`: passed, 28 passed, 0 failed.
+  - `npm run test:unit`: passed, 695 passed, 0 failed, 7 suites (the new file's test is one of them).
+  - `npm run test:render -w gogospend-app`: passed, 83 files, 1587 passed, 0 failed (328.5 s).
+  - `npm run export:web -w gogospend-app -- --max-workers 2`: passed, ends with `Exported: dist`.
+  - `npm run test:api`: passed, 44 suites, 955 passed, 0 failed.
+  - `npm run build -w gogospend-api`: passed, 293 files compiled with swc.
+  - `node apps/api/scripts/release-graph.mjs check`: passed, `"problems": []`.
+  - `/usr/bin/git diff --check`: no output. The range check after the commit is in the commit step.
+- **Deviations:** none.
+- **SKIPPED:** the edge gate, `test:db`, `test:ops` and `test:dev`: no file under `apps/edge`, `apps/api` or `scripts` changed and nothing there calls the helper yet (P6C-T4 will); the plan adds the edge gate from P6B-T10; CI runs them. Nothing deployed.
+- **Notes for the integrator:**
+  - The helper does not check its input: every caller passes an id `isUuid` accepted (`isDeletionAccepted`, `isDeletionReceipt`, the server's `derivedUuid`). Out of contract it still returns and never throws, but the output is not a code. When no hex digit leads the first 10 characters, `parseInt` gives `NaN` and the alphabet lookup yields the text `undefined`. Checked by running the module: `zzzzzzzz-zzzz-4zzz-8zzz-zzzzzzzzzzzz` gives `DEL-unde-finedundefined...`, which is not the 13-character form. No caller reaches that path, and the plan names no validation, so the code is unchanged.
+  - The server's ids are `derivedUuid(account, 'deletion-request', commandId)` (version 8). The version and variant bits come after the first 40 bits, so all 40 bits of the code are hash bits.
+  - Today's `PrivacyScreen.tsx` still prints the whole request id; P6B-T6's `DeletionDoneScreen` switches to this code. Not touched here.
+  - `index.ts` and `privacy.ts` are shared: the change is one export line and one function after `isDeletionReceipt`. A conflict keeps both sides.
+  - Warnings, not failures, and not caused by this change: the Node runner prints `MODULE_TYPELESS_PACKAGE_JSON` for the new file, for `packages/contracts/src/index.ts` and for other pure tests (their packages have no `"type"` field); vitest warns that `vitest.render.config.ts` is loaded as CommonJS.
+
+### P2 Task 6: The record screen's rules move into a hook
+
+- **Status:** built and verified locally on `p2/t6-record-hook`, merged with `origin/claude/p1a-vault-core` at `bdf6b12` (merge `f5c836c`). Not pushed. The independent review is the controller's, after this receipt.
+- **Fix round** (review of `f789568`, findings M-1 and m-1): the M5 survivors were not equivalent, and the clear in `startEditing` had no test. Three tests now pin the notice rules through the probe, all in `recordActions.render.test.tsx`: `cancelling an edit after a refused restore brings the notice back` (kills M5b, where `cancelEditing` always clears), `reloading a conflict clears the old notice` (kills M5a, where it never clears) and `starting an edit clears the notice` (kills R1, where `startEditing` drops its clear). All three pass on `f789568`, since they pin behaviour that is already right; each is shown needed by the mutant it kills. Each mutant was applied to `recordActions.ts` in turn and the file was restored with `cp`, and the checksum `bd8c7e6f...` matched after every restore: M5a, 1 failed (`reloading a conflict clears the old notice`); M5b, 2 failed (`cancelling an edit after a refused restore brings the notice back`, and `starting an edit clears the notice` at its precondition); R1, 1 failed (`starting an edit clears the notice`). No mutant survived.
+- **Files:**
+  - `apps/app/src/screens/redesign/record/recordActions.ts` (new): `useRecordActions({ id, mode, now })` returns `RecordActionsState` with exactly the plan's fields: `today`, `draftCommand`, `loaded`, `editing`, `deleted`, `pending`, `gone`, `notice`, `busy`, `load()`, `startEditing()`, `cancelEditing()`, `changeEditing(change)`, `pressKey(key)`, `submitEdit()`, `remove(record)`, `restore(target)`, `settleDraft(commandId, how)`. It also exports `RecordLoaded` and `RecordEditing`, and `lookupsOf`, `earliestDate`, `startEdit` and `KEYPAD_PROBLEM_TEXT`, moved unchanged.
+  - `apps/app/src/screens/redesign/RecordScreen.tsx`: renders from the hook. The receipt, the amount line and today's conflict panel are unchanged.
+  - `apps/app/src/screens/redesign/record/recordActions.render.test.tsx` (new): the plan's three tests, through a probe that shows the hook's state as text.
+- **How it was built:** an earlier session moved the code and wrote the hook test on 25 October without recording a RED. That work was committed as found (`1e7789b`), merged with the integration head, and finished here.
+- **RED to GREEN** (`npm run test:render -w gogospend-app -- src/screens/redesign/record/recordActions.render.test.tsx`):
+  - RED 1, the plan's placeholder: the hook with `submitEdit`, `remove` and `restore` returned as no-ops. 3 failed, 0 passed, each on its `waitFor` (`deleted 2`, `conflict 2 1300000`, `unconfirmed true`). The hook was restored with `cp`; the checksum matched.
+  - RED 2, the moved hook before `changeEditing` held the freeze: 1 failed, 2 passed. `an edit whose answer never came is frozen, and Try again resends the same command key` failed: a field change went through while the edit was frozen.
+  - GREEN: 3 passed, 0 failed.
+- **Record's suite, unchanged:** `RecordScreen.render.test.tsx`, 32 passed on today's screen (a scratch copy of `bdf6b12`) and 32 passed on the hook. This branch does not change the file.
+- **Mutation check:** `recordActions.ts` was copied to the agents scratch folder (sha256 `bd8c7e6f1d0ec93d7e7c7f4c1997853b02a2dbf3bf54d69ef722fad66d3d97a5`) before the mutants. Each was applied in place, run with the hook test and Record's suite, then the file was restored with `cp`. The checksum matched after every restore.
+  - Undo restores with the record's version instead of the delete's (plan): 3 failed, 32 passed. The hook's undo test, and Record's `Delete shows the undo bar; Undo restores with the new version and its own key` and `an unconfirmed undo keeps the bar and resends the same restore`.
+  - The edit key is settled on a lost answer (plan): 2 failed, 33 passed. The hook's frozen test, and Record's `an unconfirmed edit is frozen and retried as the same command`.
+  - Apply my change sends on the version you saw (no rebase): 1 failed, 34 passed. Record's `a conflict shows yours and the server side by side, and Apply my change resends on the server version with a new key`.
+  - `setEditing` does not update the open edit at once: 2 failed, 33 passed. The hook's conflict and frozen tests, which type a whole amount in one event.
+  - `changeEditing` lets a change through while frozen: 1 failed, 34 passed. The hook's frozen test.
+  - `cancelEditing` never clears the notice (M5a), or always clears it (M5b): 35 passed each before the fix round. They were not equivalent: the race below tells them apart. Both are killed now, M5a by `reloading a conflict clears the old notice` and M5b by `cancelling an edit after a refused restore brings the notice back`. R1 is killed by `starting an edit clears the notice`. `remove`, `restore` and `settleDraft` also set a notice and leave the edit open: the screen draws no Delete on the edit form, and the hook does not guard any of the three against an open edit. The one rule that sets a notice and closes the edit is `submitEdit`'s no-usable-record branch. On the screen, a notice meets an open edit only in a race: an entry opened in edit mode from History reads as deleted, its Restore is refused just as another device restores it, and the reload opens the edit with the refusal still shown. There Cancel keeps the notice and Reload clears it, as today's screen did.
+  - Removing `!seen` from `submitEdit`, or the ready check from `startEditing`: `npm run typecheck:app` fails (TS18047 `'seen' is possibly 'null'`; TS2339 `Property 'record' does not exist on type 'RecordLoaded'`).
+- **Gate** (worktree root, after the restores):
+  - `npm run typecheck:app`: passes.
+  - `npm run typecheck:routes -w gogospend-app`: passes.
+  - `npm run test:app`: 29 passed, 0 failed (deviation 8).
+  - `npm run test:unit`: 734 passed, 0 failed (deviation 8).
+  - `npm run test:render -w gogospend-app --` the six files that draw the record screen (`record/recordActions`, `RecordScreen`, `RecordReceiptReload`, `import/RecordReceipt`, `HistoryReturn`, `dev/catalogue/largeText`): 6 files, 99 passed (96 before the fix round).
+  - `npm run test:render -w gogospend-app -- src/screens/redesign/record/recordActions.render.test.tsx`: 6 passed, 0 failed (3 before the fix round).
+  - `npm run test:render -w gogospend-app -- src/dev/catalogue/CatalogueScreen.render.test.tsx src/dev/catalogue/screenReader.render.test.tsx -t "record-"`: 18 passed, 486 skipped.
+  - `npm run test:render -w gogospend-app`: 84 files passed, 1595 tests passed (the catalogue's 262 among them; 1592 before the fix round).
+  - `npm run export:web -w gogospend-app -- --max-workers 2`: passes.
+  - `git diff --check origin/claude/p1a-vault-core...HEAD`: clean.
+- **Deviations:**
+  1. The RED was recorded after the move (see How it was built): RED 1 against the moved hook with its three actions stubbed, RED 2 against the moved hook before the freeze.
+  2. `submitEdit()` takes no argument, as the plan's signature says. It reads the open edit. While today's conflict panel is up, it rebases the edit on the server's version itself (Apply my change), which the screen did before calling it.
+  3. The open edit is kept in a ref beside the state, and `setEditing` writes both, so several keys or changes in one event all land and `submitEdit()` reads the latest edit. The screen sends one key per press and sees no change.
+  4. `changeEditing` holds the freeze for field changes, as `pressKey` does; the screen's field handler only describes the change.
+  5. `cancelEditing` serves both Cancel and Reload. It clears the notice only when leaving a conflict, as Reload did; Cancel never did.
+  6. `RecordScreen` no longer calls `useBunColors()` and `useDateLocale()` at its top. Neither value was used there; the receipt and the conflict panel read their own.
+  7. The hook's frozen test also checks that a field change does nothing while frozen. The plan does not name this assertion.
+  8. The counts differ from the brief's pre-filled numbers (test:app 28, test:unit 694, full render 1590). The brief's probe was at e546bee. When this task merged, the integration head had moved past it (#73, #76, #77 and #78), and the orchestrator's update for this task said BLOCKED only for a file conflict. The counts above are the measured ones. test:app (29) and test:unit (734) were measured on a scratch copy of `bdf6b12` without this change, and this change adds no test to either suite. The render suite's two extra cases are `a change pulled from another phone refreshes the list in place` (HistoryScreen.render.test.tsx) and `a change pulled from another phone refreshes Home in place` (HomeScreen.render.test.tsx), both from the merged head. The catalogue's 262 is CatalogueScreen.render.test.tsx alone; the catalogue folder holds 513 test cases (`vitest list`).
+- **The carry rule:** at `bdf6b12` no 1D addition is in `RecordScreen.tsx` (1D-T7 and 1D-T9 have not merged). Nothing was carried: the hook has no `choicePanel` and sends no event.
+- **Not applicable:** the database suites, the edge and the API. This task changes no query, route or contract.
+- **SKIPPED:** none. The task names no device or simulator check, and the record screen looks the same.
+- **Notes for later tasks:**
+  - P2-T26 and P2-T27 read `useRecordActions` from `apps/app/src/screens/redesign/record/recordActions.ts`. During today's conflict, `submitEdit()` is Apply my change. `changeEditing` does nothing while `editing.unconfirmed`. `cancelEditing()` closes the edit. `startEditing()` clears the notice, and `cancelEditing()` clears it only when leaving a conflict (`editing.conflict` set). 1D-T9 must keep `editing.conflict` as that signal.
+  - 1D-T7 puts `record_edited`, `record_deleted` with `undo_used`, and `record_restored` into this hook's `submitEdit`, `remove` and `restore`, after the acknowledgement.
+  - 1D-T9 puts the C16 flow into this hook's `submitEdit` and load, and adds `choicePanel` to `RecordActionsState`.
+  - `HistoryReturn.render.test.tsx` came with the merge, with #326's 20 s budget for its record-and-back test. It passed unchanged.
 
 ## P6A: Outside the app
 
