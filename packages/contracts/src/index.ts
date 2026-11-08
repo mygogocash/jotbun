@@ -145,6 +145,12 @@ export {
   isSnapshotDto,
 } from "./v1/sync.ts";
 export type { SyncChangesPage, SyncEntityValidators, SyncReadOptions, SnapshotStatus, SnapshotChunkGrant, SnapshotDto, SnapshotChunk } from "./v1/sync.ts";
+export { TRIP_MAX_DAYS, isTripSnapshot, isTripSummaryDto } from "./v1/trips.ts";
+export type { TripDto, CreateTripRequest, UpdateTripRequest, TripMoney, TripRateUsed, TripSummaryDto } from "./v1/trips.ts";
+export { isSettingsSnapshot, isHomeCurrencyPreview } from "./v1/settings.ts";
+export type { SettingsSnapshot, HomeCurrencyRequest, HomeCurrencyPreview } from "./v1/settings.ts";
+export { isRatesTodayDto } from "./v1/rates.ts";
+export type { FxQuoteDto, RatesTodayDto } from "./v1/rates.ts";
 export {
   EXPORT_TTL_HOURS,
   EXPORT_GRANT_MINUTES,
