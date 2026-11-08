@@ -20,6 +20,7 @@ import { tokenVerifierFromEnv } from './tokens'
 import type { TokenVerifier } from './tokens'
 import { WORKER_HANDLERS, workerSessionFor } from './worker-routes'
 import type { VaultSession, WorkerContext } from './worker-routes'
+import type { UserVault } from '../vault/user-vault'
 
 export type V1Deps = {
   verifier?: TokenVerifier
@@ -28,6 +29,22 @@ export type V1Deps = {
   waitUntil?: (promise: Promise<unknown>) => void
   /** The catalogue fetch. Tests point it at a fake; the source uses `fetch` when it is absent. */
   fetchCatalogue?: typeof fetch
+  /** Starts the vault's pending work after a `starts` route answers 2xx (B5). The default is `stub.startPendingWork()`. */
+  startWork?: (stub: DurableObjectStub<UserVault>) => Promise<unknown>
+}
+
+/** A route marked `starts` hands its vault to startWork only after a 2xx answer. */
+export function startsWork(route: VaultRoute, status: number): boolean {
+  return route.starts === true && status >= 200 && status < 300
+}
+
+/**
+ * Starts the vault's pending work after the reply, through waitUntil. A start
+ * that fails is logged and left to the vault's alarm, which starts it again (1B-T11).
+ */
+function handOffWork(deps: V1Deps, stub: DurableObjectStub<UserVault>): void {
+  const start = deps.startWork ?? ((vault: DurableObjectStub<UserVault>) => vault.startPendingWork())
+  ;(deps.waitUntil ?? waitUntil)(start(stub).catch((error: unknown) => logFailure('pending_work_unstarted', error)))
 }
 
 /** The request headers a vault call receives: the command headers, lowercase, and nothing else. */
@@ -111,6 +128,7 @@ export async function handleVaultV1(request: Request, env: V1Env, deps: V1Deps =
       headers: headersOf(request),
       body,
     })
+    if (startsWork(route, reply.status)) handOffWork(deps, stub)
     return headOf(replyResponse(reply, requestId), method)
   } catch (error) {
     return errorResponse(error, requestId, `${route.method} ${route.path}`)
@@ -144,6 +162,7 @@ async function runWorker(route: VaultRoute, method: string, requestId: string, d
   if (!handler) throw new Error('a worker route names no handler')
   const result = await handler(context)
   const response = result instanceof Response ? withV1Headers(result, requestId) : replyResponse(result, requestId)
+  if (context.vault && startsWork(route, response.status)) handOffWork(deps, context.vault.stub)
   return headOf(response, method)
 }
 

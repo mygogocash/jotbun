@@ -95,6 +95,15 @@ export function livePolicies(policies: PublishedPolicies, now: Date): PublishedP
   return policies === null ? null : policies.filter((policy) => Date.parse(policy.published_at) <= now.getTime())
 }
 
+/**
+ * Only the gates of config:v1, for background work (1B-T4): readEdgeConfig's
+ * gates, failing closed the same way, so an unreadable or malformed config
+ * pauses `jobs` and holds every start.
+ */
+export async function readGates(kv: KVNamespace): Promise<FeatureGates> {
+  return (await readEdgeConfig(kv, {})).gates
+}
+
 /** Uploads are unexposed unless IMPORT_UPLOADS_ENABLED is `1` or `true`, on the open path and the fail-closed path. */
 function gatesFor(env: ConfigEnv, options: { paused?: readonly GateScope[]; retryAfterSeconds?: number } = {}): FeatureGates {
   return new FeatureGates({

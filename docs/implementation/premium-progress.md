@@ -892,6 +892,81 @@ Phase 1B moves files and background work onto each person's vault (spec `docs/su
 
 ## 1D: live pokes, the pending choice, PostHog and the proof
 
+### 1B Task 4: The vault's object registry with tombstones, grants and pending-work starts
+
+- **Status:** built and verified locally on `p1/1b-t4-object-registry`, from `800680d` (the integration head at Step 0). Not pushed. The independent review is the controller's, after this receipt. The integration head has since moved to `8f04a3b` (1D-T1 and the iOS keyboard fix). This branch does not merge it, and `git diff --stat 800680d 8f04a3b -- apps/edge` is empty.
+- **Files:**
+  - New, `apps/edge/src/vault/files/`: `context.ts` (`FileContext`, `touch`); `objects.ts` (the registry: `reserveObject`, `publishObject`, `releaseObject`, `tombstoneObjects`, `dueObjectKeys`, `objectsDueAt`, `deleteDueObjects`, `putConcatenated`; `RESERVATION_GRACE_MS` 15 minutes, `TOMBSTONE_MS` one day, `DELETE_RETRY_MS` one minute); `grants.ts` (`vaultGrants`, `receiptGrantScope`); `work.ts` (`BuildOutcome`, `StartResult`, `WorkStarter`, `START_RETRY_MS`, the empty `WORK_STARTERS`, `createOnce`, `startDueAt`, `PendingWorkHost`, `startPendingWork`).
+  - New elsewhere: `src/background/vault-stub.ts` (`vaultById`), `src/v1/files/downloads.ts` (`EXPORT_SLOTS`, 4 an isolate; `RECEIPT_SLOTS`, 8 an isolate and 2 an account), `test/workers/support/files.ts` (`TINY_JPEG`).
+  - Vault: `src/vault/context.ts` (`VaultContext` gains `vaultId` and `touched`); `src/vault/user-vault.ts` (`VaultEnv` gains `CONFIG`; `lastStartAttemptMs`; `call()` sets `vaultId`; `vaultId`, `bucket`, `fileContext()`, `isActive()` and `startPendingWork()`).
+  - Worker: `src/v1/routes.ts` (`starts?: true` on `VaultRoute`); `src/v1/handler.ts` (`startWork` in its deps, `startsWork`, the hand-off after a 2xx on a vault route and on a Worker route); `src/v1/config.ts` (`readGates`); `src/cloudflare-workers.d.ts` (`Workflow`, `WorkflowInstance`, `WorkflowInstanceCreateOptions`, `InstanceStatus`, `Queue`).
+  - Tests: `test/workers/files-objects.test.ts` (new, 20 cases); `test/workers/support/v1-client.ts` (`startWork: 'auto' | 'manual'`, `settle()`); `test/workers/support/command-fixtures.ts` (`vaultId` in `inVault`'s context).
+- **RED to GREEN:**
+  - RED (`npm run test:edge:workers -- test/workers/files-objects.test.ts`, with the typed stubs of plan Step 1): `Test Files  1 failed (1)`, `Tests  20 failed (20)`. All 20 failures are `AssertionError`s, for example `expected [] to deeply equal [ { status: 'tombstone', …(1) } ]` (late PUT), `expected [Function] to throw an error` (publishing an unreserved key), `expected { n: +0 } to deeply equal { n: 1001 }` (1,001 keys) and `expected null to deeply equal Any<Number>` (the hand-off). None is a missing module or a thrown error.
+  - GREEN, same command: `Tests  20 passed (20)`. The brief's Step 3.3 expectation is corrected in deviation 14.
+- **Mutation check:** the 25 mutants of the brief's Step 4 (M1 to M24, with M3b) were applied one at a time with the Edit tool, each to the one file the brief names, using the planner's old and new text. Each focused run (`npx vitest run --config vitest.workers.config.ts --reporter=verbose test/workers/files-objects.test.ts` in `apps/edge`) held the heavy lock. After each restore, the SHA-256 of the 16 GREEN files matched its recorded value and `git diff --stat` was unchanged. [25] mutants, [25] killed, no survivor. Each mutant and the cases that failed:
+  - M1, drop tombstones: deleteDueObjects forgets due rows at once: "a key written after it was forgotten is still deleted"; "registry functions take more key lists than SQLite has parameters"; "after deleteDueObjects at objectsDueAt, the next objectsDueAt is later or null".
+  - M2, leave a failed delete due: "a failed R2 delete keeps the rows and retries them a minute later".
+  - M3, bind one ? per key in tombstoneObjects: "registry functions take more key lists than SQLite has parameters".
+  - M3b, bind one ? per key in the batch tombstone update: "registry functions take more key lists than SQLite has parameters".
+  - M4, ignore the jobs gate: "startPendingWork starts nothing while jobs is paused".
+  - M5, empty parts only after put: "putConcatenated stores one create-only object with its SHA-256 and refuses an existing key".
+  - M6, mark an unbound item as started: "startPendingWork starts each item once and marks it, counts an existing instance as started, and leaves an unbound kind for later".
+  - M7, startsWork ignores the status: "a route marked starts hands its vault to startWork only after a 2xx"; "the front door starts pending work after a starts route answers 2xx, and not after an error or in manual mode".
+  - M8, no hand-off on Worker routes: "a Worker route marked starts hands its session's vault to startWork after a 2xx".
+  - M9, publish any registered key, not only a reserved one: "publishing a key that was never reserved throws and writes nothing".
+  - M10, startDueAt ignores the last attempt: "startDueAt is the later of the starters' earliest and the last attempt plus a minute".
+  - M11, startPendingWork ignores an inactive vault: "startPendingWork does nothing in an erased vault or one that is not active".
+  - M12, receipt grant scope without the session: "grants are per purpose, and a receipt grant is bound to its session".
+  - M13, one key label for every purpose: "grants are per purpose, and a receipt grant is bound to its session".
+  - M14, createOnce swallows a failed create: "createOnce treats an existing instance as created and rethrows otherwise".
+  - M15, forget a due tombstone without deleting it again: "a key written after it was forgotten is still deleted".
+  - M16, isActive is any account: "startPendingWork does nothing in an erased vault or one that is not active".
+  - M17, startPendingWork does not record its attempt: "the front door starts pending work after a starts route answers 2xx, and not after an error or in manual mode"; "a Worker route marked starts hands its session's vault to startWork after a 2xx"; "startPendingWork starts nothing while jobs is paused".
+  - M18, readGates opens the gates when config fails: "startPendingWork starts nothing while jobs is paused"; "readGates reads only the gates of config:v1 and fails closed as readEdgeConfig does".
+  - M19, call() leaves the vault id empty: "a vault call's context carries the vault's own id, and vaultById reaches the vault by that id".
+  - M20, releaseObject makes nothing due: "a reserved key is due at its grace deadline, a published one at its expiry, and a held receipt never until released".
+  - M21, a key is due only after its deadline, not at it: "a reserved key is due at its grace deadline, a published one at its expiry, and a held receipt never until released"; "a key written after it was forgotten is still deleted"; "registry functions take more key lists than SQLite has parameters"; "after deleteDueObjects at objectsDueAt, the next objectsDueAt is later or null".
+  - M22, touch marks nothing: "a reserved key is due at its grace deadline, a published one at its expiry, and a held receipt never until released".
+  - M23, tombstoneObjects keeps the old deadline: "a key written after it was forgotten is still deleted"; "publishing a key that was never reserved throws and writes nothing"; "registry functions take more key lists than SQLite has parameters".
+  - M24, vaultById names the vault by name: "a vault call's context carries the vault's own id, and vaultById reaches the vault by that id".
+  - M3 and M3b fail with "too many SQL variables", a thrown error, which is what the plan's mutant predicts. Every other mutant fails on an assertion.
+- **Gate** (from the worktree root):
+  - `npm run typecheck:edge`: passes (exit 0).
+  - `npm run test:edge`: 156 passed (12 files).
+  - `npm run test:edge:workers`: 268 passed (14 files), the 20 new cases included. No timeout in this run, so the `sync.test.ts` rerun was not needed.
+  - `npm run build:edge`: passes (exit 0), and `dist/jotbun_vault/index.js` is built.
+  - `npm run test:edge:db`: **SKIPPED.** Docker is stopped on this machine, so the local PostgreSQL container cannot run. This task changes no PostgreSQL code; CI's database job runs the suite (R80).
+  - `git diff --check` over the staged files, before the commit: clean.
+- **Deviations and calls:**
+  1. `test/workers/support/command-fixtures.ts` is edited, though the plan does not list it. The plan makes `VaultContext.vaultId` a required `string`, and `inVault` builds a `VaultContext` literal, so without the one line `typecheck:edge` fails (`Property 'vaultId' is missing`).
+  2. A Worker route marked `starts` also hands off its work, through its session's stub, because 1B-T5's upload route is a Worker route with `starts: true` and that task does not edit `handler.ts`. A public Worker route has no session and starts nothing. Tested by `a Worker route marked starts hands its session's vault to startWork after a 2xx`.
+  3. A rejected start is caught and logged (`pending_work_unstarted`) before `waitUntil`, so no rejection goes unhandled; the vault's alarm starts it later (1B-T11).
+  4. After a failed R2 delete, `deleteDueObjects` goes on to the next batch. The failed batch is due a minute later, so it is not read again in the same run, and the run is still bounded by `maxBatches`.
+  5. `publishObject` throws a plain `Error` for a key that is not `reserved` (never reserved, or already a tombstone). It is a programming error, so inside a call it becomes a 500, never a client problem.
+  6. `releaseObject` leaves a tombstone's deadline alone, so its second delete a day later still happens.
+  7. `tombstoneObjects` updates registered rows only. Every writer reserves its keys first (plan B4), so an unregistered key has no row to mark.
+  8. `UserVault#bucket` throws `ObjectStoreError('unavailable')` when `OBJECTS` is unbound, as `UnavailableObjectStore` does on the PostgreSQL edge. `readGates(this.env.CONFIG as KVNamespace)`: a missing binding makes `kv.get` throw inside `readEdgeConfig`'s `try`, so every gate is paused and work is held (fail closed).
+  9. `VaultEnv` is written one field per line, so 1B-T5, T6 and T8 each add one line (`PARSE_QUEUE`, `EXPORT_WORKFLOW`, `SNAPSHOT_WORKFLOW`) instead of editing one long line.
+  10. Five tests beyond the plan's fifteen: the front door's hand-off for a vault route (2xx, an error, manual mode), the same for a Worker route, `readGates` failing closed, the call context's vault id with `vaultById`, and the download slots' limits. They cover the handler wiring, `readGates`, `vaultById`, `call()`'s `vaultId` and the slots, which the plan's cases do not reach.
+  11. `TINY_JPEG` was made with libjpeg (`cjpeg -baseline -optimize -quality 75` from a 1×1 grey PGM). `djpeg` and Pillow both decode it to one pixel of value 128. Its segments are SOI, APP0 (JFIF), DQT, SOF0, DHT, DHT, SOS, one scan byte and EOI. `sanitizedImageHeader` is imported from `@api/imports/parse-handler`, as the plan says; that module loads in workerd.
+  12. `dueObjectKeys` orders by `delete_after`, then `key`, so the oldest deadlines go first and a batch is deterministic.
+  13. The download slots import `DEFAULT_ATTACHMENT_LIMITS` (pure) for the receipt slots, and use the literal 4 for exports, because the API's `EXPORT_DOWNLOADS_PER_PROCESS` lives in a Nest controller.
+  14. **Brief correction (the coordinator's ruling on Step 3.3).** The brief expects the GREEN log to show three stderr event lines (`object_delete_failed` once, `work_start_failed` twice). Under the brief's own command, which uses the default reporter, the run prints no stderr for passing tests, so those lines cannot appear, and `Tests  20 passed (20)` is the result. Under `--reporter=verbose` the same file logs five event lines: `object_delete_failed` once, `work_start_failed` twice, and `config_unreadable` and `config_malformed` from the `readGates` test. Observed on this branch: `--reporter=verbose` gives `Tests  20 passed (20)` and those five lines.
+- **SKIPPED (hosted):** nothing deployed; no Workflow, Queue or R2 resource was created. The tests use Miniflare's local R2.
+- **Notes for later tasks:**
+  - Reserve a key with `reserveObject` before its PUT, inside the block that records the work, and publish it with `publishObject` after the PUT, with its deadline (null only for a held receipt). Only a reserved key can be published.
+  - A writer that deleted its own keys calls `tombstoneObjects` (1B-T5's `discarded`); a released receipt calls `releaseObject`.
+  - `deleteDueObjects(v, maxBatches)` takes `{ context(): FileContext; bucket: VaultBucket }`. `UserVault` has `fileContext()`, not `context()`, so 1B-T11 passes `{ context: () => this.fileContext(), bucket: this.bucket }`.
+  - A starter goes into `WORK_STARTERS` (1B-T5 parse, T6 export, T8 snapshot). `start` runs outside every block; `markStarted` runs in a short block of its own. `createOnce` makes a Workflow start safe to repeat.
+  - A route with `starts: true` starts the vault's pending work after a 2xx, for a vault route and a Worker route alike. A test that must not start work uses `startV1(…, { startWork: 'manual' })`; `client.settle()` awaits the hand-offs.
+  - `lastStartAttemptMs` is memory only and is set by every `startPendingWork` run; `startDueAt(c, lastStartAttemptMs)` waits at least `START_RETRY_MS` after it.
+  - `readGates(kv)` is `readEdgeConfig`'s gates and fails closed; background code reads `jobs`, `imports` and `ocr` from it.
+  - Grants: `vaultGrants(c, 'snapshot' | 'export' | 'attachment')`; a receipt grant uses `receiptGrantScope(c.claims)` as its MAC context.
+  - For the integrator: this branch is based on `800680d`, and the integration head `8f04a3b` is not merged into it. Nothing under `apps/edge` differs between the two heads. `docs/implementation/premium-progress.md` does differ, so a merge may conflict there: keep both sides, as the protocol says.
+
+## 1D: live pokes, the pending choice and PostHog
+
 Phase 1D adds live pokes, the pending choice, PostHog and the two-phone proof (plan 1D, in the controller's brief). Task 2 puts PostHog's proxy on the HTTP Worker.
 
 ### 1D Task 1: The app's analytics core: the allow-list, the typed emitters, consent, the held events and the outgoing gate
@@ -1784,3 +1859,83 @@ Correct tests failed on CI only under load. This is a fix to test setup and to t
   - 1D-T7 adds `trackRecordSaved` inside `finish` in `entry/entrySave.ts`, reading `track`. Quick add passes no `track` yet, so 1D-T7 also passes one from Quick add's save (`source: 'typed'` or `'tell_bun'`).
   - 1D-T5 puts Quick add's `useRefreshOnRevision` into `useEntryReferences`.
   - P2-T14 and P2-T16 call `useEntrySave` with `savedHaptic: 'success'` and `onSaved`. A tray shows `keypadShownOnSave(keypad)` at the press, or `attempt.settledKeypad` afterwards.
+
+## P6A: Outside the app
+
+Phase 6A puts Jotbun outside the app (plan `docs/superpowers/plans/2026-10-25-jotbun-p6a-outside-the-app.md`): widgets, quick actions and app shortcuts, the share target and Siri, behind the `outside` area. Task 1 adds the ids, the app group store and the account file that the later tasks share.
+
+### P6A Task 1: Outside ids, the app group store and the account file
+
+- **Status:** built and verified locally on `p6a/t1-outside-ids`, on top of `bdf6b12` (the integration head is `75b3625` now; it is not merged here, and the integrator merges it when opening the PR). One render test failed in the full render suite; it is in a file this task does not touch and passes alone (see Gate). Committed locally, not pushed. The independent review found four minors and a nit; Round 2 (below) fixes them in a second local commit on the same branch, still on `bdf6b12`.
+- **Files** (all new, in `apps/app/src/wallet/outside/`):
+  - `outsideIds.ts`: `OutsideIds`, `TEMPORARY_IDS` (default pending owner Q6: `co.gogocash.jotbun.localcheck`, `co.gogocash.spend`, `group.co.gogocash.jotbun.localcheck`, no keychain group, `gogospend`), `IOS_BUNDLE_ID_PATTERN` and `ANDROID_PACKAGE_PATTERN` (A36), `outsideIdsFrom`, `OutsideAction`, `outsideLink`.
+  - `appGroup.ts`: `AppGroupPort`, `OUTSIDE_FILES`, `isSafeName`, `noAppGroup`, `memoryAppGroup`.
+  - `deviceAppGroup.ts`: `FileSystemLike` and `deviceAppGroup` over expo-file-system 58.0.9's `File`, `Directory` and `Paths`, injected (a type-only import).
+  - `accountFile.ts`: `Digest`, `accountMarker`, `AccountFile`, `parseAccountFile`, `writeAccountFile`, `readAccountFile`.
+  - `appOutside.ts`: `appOutsideIds`, `getAppGroup`, `setAppGroup`, `appDigest`.
+  - Node tests: `outsideIds.test.ts` (5), `appGroup.test.ts` (3), `deviceAppGroup.test.ts` (8, over a fake file system that records each call by uri), `accountFile.test.ts` (3).
+- **RED to GREEN:**
+  - Typed stubs first: the constants final, every function answering wrong.
+  - RED, `npm run test:unit -w gogospend-app -- <the four files>`: 19 failed, 0 passed. Every failure is an assertion (`AssertionError [ERR_ASSERTION]`: outsideIds 5, appGroup 3, deviceAppGroup 8, accountFile 3). `npm run typecheck:app` passed with the stubs. The unit suite before the new files was 734 passed.
+  - GREEN, the same command: 19 passed, 0 failed. The prepared code was copied in unchanged (`cmp` against `briefs/P6A-T1-files/code/`).
+- **Mutation check:** sha256 of the module files recorded before and after (equal). Each mutant was applied in place, its test file run, the file restored and the restore checked (`briefs/P6A-T1-files/mutants.mjs`).
+  - M1 (plan), the device store's `writeText` skips the name check: killed, `an unsafe name is refused before any file call`.
+  - M2 (plan), the whole digest as the marker: killed, the three account-file tests.
+  - M3 (plan), iOS rooted at `Paths.document`: killed, `on iOS the app group container is the root` and three more.
+  - M4 (plan), the package checked with the iOS pattern: killed, `the Android package allows _ and refuses -`.
+  - M5 `parseAccountFile` accepts any keys: killed, `the file has exactly v, marker, locale and hidden and never the account id`.
+  - M6 `writeAccountFile` spreads its input: killed, `the file has exactly v, marker, locale and hidden and never the account id`.
+  - M7 the app group without the `group.` prefix check: killed, `each valid field overrides its default and a malformed one keeps it`.
+  - M8 a team id of 9 or 10 characters: killed, `a keychain group needs a ten-character team id`.
+  - M9 the device `list` keeps folders: killed, `on iOS the app group container is the root`.
+  - M10 the device read lets a failure through: killed, `a native failure answers null or false, and a failed write or remove still resolves`.
+  - M11 folders made without `intermediates`: killed, `a missing folder is created before a write`.
+  - M12 `copyIn` without `overwrite`: killed, `on iOS the app group container is the root`.
+  - M13 safe names allow dots inside segments: killed, `unsafe names are refused` and `noAppGroup reads nothing and accepts writes`.
+  - M14 the memory `list` keeps nested files: killed, `the memory store reads what it wrote, lists a folder and removes`.
+  - M15 the device `uriOf` ignores existence: killed, `on iOS the app group container is the root`.
+  - M16 the scheme unchecked: killed, `each valid field overrides its default and a malformed one keeps it`.
+  - M17 the device write lets a failure through: killed, `a native failure answers null or false, and a failed write or remove still resolves`.
+  - Extended run (scratch only, not committed; each mutant in place, restore checked): 62 further mutants, E01 to E62. 54 killed. 8 survived. Six are equivalent; E34 was not, and E44 is only within one process (both corrected in Round 2): E28 `rootOf` answers `undefined` for an absent container, and its caller tests for a falsy value; E34 (`remove` without its `exists` check) was wrongly called equivalent: in expo-file-system 58.0.9 a `File` whose path is a folder does not exist, yet its `delete()` removes the folder and everything in it (iOS `FileSystemPath.delete`, Android `deleteRecursively`), so `remove('outside/shares')` would delete every waiting slip, and the first fake did not model that; Round 2's fake does, and a new test kills E34; E36 `list` calls the folder's `list()` on a missing folder, which either throws (swallowed to `[]`) or returns `[]`; E44 `makeFolderOf` drops `idempotent`, equivalent only within one process: another process sharing the app group (P6A-T10's share extension) can create the folder between the `exists` check and `create`, which then throws and loses the write, so `idempotent: true` stays, and no single-process test can tell the two apart; E49 `parseAccountFile` without the null check, since `JSON.parse(null)` gives `null`, which is refused; E51 arrays accepted, since an array never has the four key names; E53 no count check, since a key set short of the four still lacks `v`, which is refused; E60 returns the parsed object, which has exactly the four validated keys. E33 (`writeText` without its `await`) is killed, but only as a whole-file failure (an unhandled rejection), not by a named test.
+  - Refusal call sites (scratch copy): each of the 18 `refuseUnsafe` calls removed in turn (memory store 6, `noAppGroup` 6, device store 6), with its test file run: 18 killed.
+  - Survivors that need a test: E34, added in Round 2. `appOutside.ts` has no Node test, so its branches were not mutated here; Round 2's render probe mutates its lazy load.
+- **Gate** (worktree root):
+  - `npm run typecheck:app`: passed (`tsc --noEmit`, exit 0).
+  - `npm run typecheck:routes -w gogospend-app`: passed (exit 0).
+  - `npm run test:app`: 29 passed, 0 failed (the API tests; unchanged by this task).
+  - `npm run test:unit`: 753 passed, 0 failed (734 before this task; the 19 new tests are the difference).
+  - `npm run test:render -w gogospend-app` (run once): FAILED, 1 test. 82 of 83 files passed, 1588 of 1589 tests passed. The failure is `RemindersScreen.render.test.tsx` > `saving: Save is busy and every control waits; then the outcome, or a failure kept in words` (it looked for a `button` named "Saving…" and found "Save" with `aria-busy="false"`). Run alone, that file passes (19 of 19). The render config includes only `src/**/*.render.test.tsx`, and nothing outside `src/wallet/outside/` imports the new modules, so this task does not reach that file. Not fixed, per the brief; not re-run as a full suite.
+  - `npm run export:web -w gogospend-app -- --max-workers 2`: passed (`expo export --platform web`, exit 0; the output folder `dist` is ignored by git).
+  - `git diff --check origin/claude/p1a-vault-core...HEAD`: clean.
+  - Not run: `npm run check:native` (P6A-T7 adds it); the contracts, API and edge gates and the database suites (nothing there changed).
+- **Round 2 (review fixes, a second local commit):** the independent review's minors 1 to 4 and its first nit, as the orchestrator ruled. Not merged with the integration head (the orchestrator merges it when opening the PR). No package manifest, lockfile, `app.json`, `featureFlags.ts` or message catalog changed.
+  - Folders (minors 1 and 2). `isSafeName` keeps the plan's pattern, whose extension is optional, so a folder's name such as `OUTSIDE_FILES.shareFolder` passes it as a file name. In expo-file-system 58.0.9 a `File` whose path is a folder does not exist (iOS `FileSystemFile.exists`, Android `isFile()`), but its `delete()` removes the folder and everything in it, and iOS's `copy` with `overwrite` removes whatever is at the destination first (`FileSystemPath.copy`; Android's `copy` refuses a folder). That is why the stores guard folders: the device `remove` deletes only what `File.exists` reports, and the device `copyIn` answers `false`, before any copy, when `new fs.Directory(root, name).exists` (`Directory` in `build/Directory.d.ts`, its `exists` in `build/internal/NativeFileSystem.types.d.ts`, true only for a folder), on iOS and Android alike. The memory store's `copyIn` answers `false` over a folder's name too, so tests over it see the device's contract. The test fake now treats a folder as the native code does.
+  - The account file (nit 1). `writeAccountFile` refuses with a `TypeError`, before any write, a file `parseAccountFile` would refuse: an account id as the marker, a short or upper-case marker, `vi`, a `hidden` that is not a boolean. The message never carries the value.
+  - expo-constants (minor 3). `appOutside.ts` no longer imports it at the top: `appOutsideIds()` loads it on first use through a guarded, typed lazy `require` (the house pattern of `app/dev/catalogue.tsx` and of this file's expo-file-system load) and falls back to `TEMPORARY_IDS` when it cannot load.
+  - New tests (4, plan names kept): `deviceAppGroup.test.ts` `removing a folder's name leaves the folder and its files` and `a copy onto a folder's name answers false and leaves the folder` (iOS and Android roots); `appGroup.test.ts` `the memory store, like the device one, never copies onto a folder's name`; `accountFile.test.ts` `writing refuses what reading refuses, so an account id is never written as the marker`.
+  - RED on `489a525` (the new tests over the old code), `npm run test:unit -w gogospend-app -- <the four files>`: 3 failed, 20 passed, each failure an assertion (`AssertionError [ERR_ASSERTION]`): the two copy tests and the account-file test. The remove test passes on `489a525`, whose `remove` was already right; with E34 applied there it fails (1 failed, 0 passed, `--test-name-pattern="removing a folder"`).
+  - GREEN, the same command: 23 passed, 0 failed.
+  - Mutants (`.claude/controller/scratch/p6a-t1-round2/files/mutants-r2.mjs`, each in place, restore checked, sha256 equal before and after): 10, all killed. R1 (E34) `remove` without the `exists` check, R2 the device `copyIn` without the folder guard, R3 the guard asking `File` instead of `Directory`, R4 the memory `copyIn` without its guard, R5 that guard without the `/`, R6 `writeAccountFile` without its guard, R7 the guard checking only the marker, R8 the guard after the write, R9 a plain `Error`, R10 the message carrying the marker. The first round's 17 (`.claude/controller/scratch/p6a-t1-round2/files/mutants-r1.mjs`, a copy of the first round's script) rerun on the Round 2 code: 17 killed.
+  - Render probe (scratch copy only, never the worktree; `.claude/controller/scratch/p6a-t1-round2/files/probe/`): the render harness's own config with its include narrowed to two probe files, no expo-constants mock. With only `randomUUID` mocked, `appOutside` loads, `appOutsideIds()` is `TEMPORARY_IDS`, `getAppGroup()` is `noAppGroup`, and `setAppGroup` installs and restores. With the fuller usual mock (`digestStringAsync`, `CryptoDigestAlgorithm`), `appDigest` gives the marker `c0c03b1684a0dc26` and the account file round-trips through `getAppGroup()`. 2 passed. On `489a525` both files fail to load (`ReferenceError: __DEV__ is not defined`). Probe mutants: L1 the `require` without its guard, L2 the top-level import back: both killed.
+  - Gate (worktree root): `npm run typecheck:app` passed; `npm run typecheck:routes -w gogospend-app` passed; `npm run test:app` 29 passed; `npm run test:unit` 757 passed, 0 failed (753 + the 4 new tests); the four outside files 23 passed; `git diff --check origin/claude/p1a-vault-core...HEAD` clean. The render suite was not run: no render test imports the changed files (only `src/wallet/outside/` does), and the probe ran the wiring under the render harness.
+- **Deviations:**
+  1. Tests beyond the plan: the device test `a native failure answers null or false, and a failed write or remove still resolves` (the plan's "adapters swallow native failures"), and assertions beyond the plan's inside its named tests (the two pattern sources and flags, more malformed ids, `uriOf`, `copyIn` replacing a copy, folders and nested files left out of `list`, more refused account files). The plan's test names are kept.
+  2. `noAppGroup` and the memory store also refuse unsafe names with a `TypeError` (the plan says it of the device store); `uriOf` throws it synchronously.
+  3. The plan gives `uriOf` only its type: it answers `null` for a missing file, and the memory store answers `memory:///<name>`.
+  4. `copyIn` copies with `overwrite: true`, so a repeated hand-off under the same name replaces the copy.
+  5. `getAppGroup()` answers `noAppGroup` on the web (and on any platform but iOS and Android) without loading expo-file-system, which is what `deviceAppGroup` answers for `web`. expo-file-system loads through a typed lazy `require` (as `app/dev/catalogue.tsx` loads the catalogue), because `getAppGroup()` is synchronous.
+  6. `appOutside.ts` has no test: the plan names none, and a Node test cannot load react-native. P6A-T3a's render tests are the first to run it.
+  7. Sync: not merged. The fetch and the merge in Step 0 ran with the integration head at `bdf6b12` (the merge was a no-op, "Already up to date"). The head is now `75b3625`, which the orchestrator asked us not to merge here. Against `bdf6b12`, `75b3625` adds 84 lines to this file and nothing under `apps/app/src/wallet/outside/`, so the append at the end may need a keep-both merge.
+  8. Assertions added in the mutation check, inside the named tests (no test added; the count stays 19). The test files differ from `briefs/P6A-T1-files/tests/` only by these lines: `outsideIds.test.ts`, a `group.` prefix with no dotted bundle id keeps the default; `appGroup.test.ts`, `noAppGroup` refuses `readText`, `remove`, `list` and `copyIn` with a `TypeError` and `uriOf` throws one; `deviceAppGroup.test.ts`, a missing shares file is answered `null` without a read, a copy creates its folder, a store whose native roots throw is unavailable on iOS and on Android, and `uriOf` answers `null` when the file constructor throws; `accountFile.test.ts`, an array marker is refused.
+  9. Round 2: the device and memory `copyIn` answer `false` when a folder holds the name; the plan says only "false when the source cannot be read".
+  10. Round 2: `writeAccountFile` refuses with a `TypeError` any file `parseAccountFile` would refuse; the plan gives it no check.
+  11. Round 2: `appOutside.ts` loads expo-constants lazily inside `appOutsideIds()` and falls back to `TEMPORARY_IDS`; the plan lists expo-constants for this file without saying how it loads. A `vi.mock('expo-constants')` no longer reaches it, since the `require` bypasses Vitest's module mocks; `outsideIdsFrom`'s tests cover the ids.
+- **SKIPPED:** device and native checks. Nothing native is built or signed until D33 (Q6). The iOS app group container appears only with P6A-T7's entitlement, so until then the iOS store is unavailable and writes nothing. No hosted resource was touched.
+- **Notes for later tasks:**
+  - Render tests whose imports reach `appOutside.ts` (P6A-T3a, P6A-T3b): since Round 2 it imports only expo-crypto and react-native at the top. Such a test needs the usual expo-crypto mock (with `digestStringAsync` and `CryptoDigestAlgorithm` if it reaches `appDigest`), then `setAppGroup(memoryAppGroup())`, and no expo-constants mock: expo-constants cannot load under the render harness, so `appOutsideIds()` gives `TEMPORARY_IDS`. Without the expo-crypto mock the file still fails to load (`ReferenceError: __DEV__ is not defined`), as every file that imports expo-crypto does.
+  - P6A-T6a: a queue entry's `file` must pass `isSafeName` before `uriOf` or `remove`, because an unsafe name throws.
+  - A failed native write or remove resolves without telling the caller, as the plan's global constraint asks; a later read shows what stayed. P6A-T3b's erase after a confirmed deletion and P6A-T6a's queue index should read back where the outcome matters.
+  - A folder's name passes `isSafeName`, so name every file with its extension (`outside/shares/<id>.<ext>`). Through a file call the device store never deletes or replaces a folder (Round 2): `remove` of a folder's name does nothing and `copyIn` onto one answers `false`.
+  - `writeAccountFile` rejects with a `TypeError` for a file the reader would refuse (Round 2). P6A-T3a computes the marker with `accountMarker` and writes `vi` as `en`; its bridge should catch a rejection rather than let it surface.
+  - P6A-T7: `outsideConfig.js` must repeat `IOS_BUNDLE_ID_PATTERN` and `ANDROID_PACKAGE_PATTERN` exactly (`outsideIds.test.ts` pins both sources), and `extra.outside` uses this task's field names: `iosBundleId`, `androidPackage`, `appGroup`, `keychainGroup`, `scheme`.
+  - `appOutsideIds()` and the device store are made once per process; `appleSharedContainers` is read when the store is made.

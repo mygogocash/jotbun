@@ -97,6 +97,7 @@ export async function inVault<T>(user: TestUser, run: (c: VaultContext) => T, sc
           claims: { accountId: user.sub, sessionId: user.sid, issuedAt: Math.floor(Date.now() / 1000), clientId: 'ios/1.0.0' },
           policies: TEST_POLICIES,
           now: new Date(),
+          vaultId: state.id.toString(),
         }
         ensureAccount(c)
         return run(c)

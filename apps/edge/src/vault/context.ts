@@ -17,4 +17,8 @@ export type VaultContext = {
   claims: VaultClaims
   policies: PublishedPolicies
   now: Date
+  /** The vault's own id (ctx.id.toString()), the second segment of every object key (B1). Set by call(). */
+  vaultId: string
+  /** Set by touch() when a file function wrote a row in this call (1B-T4; 1B-T11 rearms after it). */
+  touched?: boolean
 }
