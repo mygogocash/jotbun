@@ -17,7 +17,7 @@ import { useBunIntensity } from '@mobile/mascot/BunIntensityProvider';
 import { EVERY_DAY } from '@mobile/notifications/reminders';
 import type { LocalReminderService, PermissionOutcome, ReminderPreference, Weekday } from '@mobile/notifications/reminders';
 import { createAppReminderService, reminderContent } from '@mobile/notifications/useReminderUpkeep';
-import { daysSummary, toggleDay, weekdayNames } from '@mobile/spend/v1/redesign/insights/remindersModel';
+import { daysSummary, isoWeekday, previewDay, toggleDay, weekdayNames } from '@mobile/spend/v1/redesign/insights/remindersModel';
 import type { DaysSummary } from '@mobile/spend/v1/redesign/insights/remindersModel';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { BunText } from '@mobile/ui/BunText';
@@ -32,6 +32,8 @@ import { DayChecks, DayNote, NotificationPreview, PlainNotice, ReminderSwitch, S
 export type RemindersScreenProps = {
   /** The reminder service; the app's own when left out (tests and the catalogue pass a fake). */
   service?: LocalReminderService;
+  /** Today, for the preview's day; the phone's clock when left out (tests and the catalogue pass a fixed day). */
+  now?: Date;
 };
 
 /** What Save came back with: the OS's answer, or a failure to save at all. */
@@ -40,7 +42,7 @@ type SaveOutcome = PermissionOutcome | 'failed';
 /** Before anything is saved: off, at 20:00, every day (the service's own default). */
 const FIRST_DRAFT: ReminderPreference = { enabled: false, localTime: '20:00', weekdays: EVERY_DAY };
 
-export function RemindersScreen({ service: given }: RemindersScreenProps) {
+export function RemindersScreen({ service: given, now }: RemindersScreenProps) {
   const tc = useCopy();
   const colors = useBunColors();
   const locale = useActiveLocale();
@@ -48,7 +50,7 @@ export function RemindersScreen({ service: given }: RemindersScreenProps) {
   const { intensity } = useBunIntensity();
   const service = useMemo(() => given ?? createAppReminderService(locale), [given, locale]);
   const names = useMemo(() => weekdayNames(locale), [locale]);
-  const content = reminderContent(locale);
+  const today = isoWeekday(now ?? new Date());
 
   const [draft, setDraft] = useState<ReminderPreference | null>(null);
   const [saving, setSaving] = useState(false);
@@ -124,7 +126,7 @@ export function RemindersScreen({ service: given }: RemindersScreenProps) {
             {supported && draft.enabled ? (
               <>
                 <Section label={tc('Preview')}>
-                  <NotificationPreview title={content.title} body={content.body} time={draft.localTime} bun={intensity === 'full'} />
+                  <NotificationPreview {...reminderContent(locale, previewDay(draft.weekdays, today))} time={draft.localTime} bun={intensity === 'full'} />
                   <BunText testID="reminders-schedule" variant="caption" tone="muted">{tc('{days} at {time}', { days, time: draft.localTime })}</BunText>
                 </Section>
                 <Section label={tc('Time')}>
