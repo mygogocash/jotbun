@@ -1,0 +1,32 @@
+# 1A-T8b-followup: the money journey and two retention pins
+
+- **Status:** built and verified locally on `fix/1a-t8b-followup` (`.claude/worktrees/fix-1a-t8b-followup`), from `3ab5d42`. Not pushed. This is the orchestrator's follow-up to 1A-T8b (8 November), after 1A-T8b (#344) and 1A-T7 (#339) merged. It covers the money journey (ruling R5) and the review's minor 1 and minor 3 (`.claude/controller/reviews/1A-T8b.md`), and corrects the 1B plan's wording. Minor 2 (the `transactions_deleted_idx` index) is left to 1B-T11, and the review's nits stand. The independent review is the controller's, after this receipt.
+- **Files** (tests and a plan line only; nothing under `apps/edge/src/` changes):
+  - `apps/edge/test/workers/history.test.ts`:
+    - The money journey runs (`it.todo` becomes `it`; its comment is in the past tense).
+    - `deletedAgo` takes an optional base instant. `clockAhead` pins the vault clock a week ahead, and `alarmOf` reads the alarm.
+    - `just inside 30 days ...` and `exactly 30 days after its deletion ...` backdate from that clock. Each ends by checking that the alarm is in the real future and the expired record is still there.
+  - `apps/edge/test/workers/transactions.test.ts`: `restore fails after 30 days, and while a referenced wallet or category is archived` does the same, and gains the imports it needs.
+  - `apps/edge/test/workers/retention.test.ts`:
+    - The S1 case's second alarm runs at exactly its armed time (`t0 + 61 days`), which pins the inclusive prune cutoff (ruling P2).
+    - New: `a purge retried after the prune moved the retention line never moves it back`, which pins `max()` in `purgeEntities`.
+  - `docs/superpowers/plans/2026-10-25-jotbun-p1b-vault-files.md` line 1130: "turned on in 1A-T8b".
+- **RED to GREEN** (`npx vitest run --config vitest.workers.config.ts test/workers/history.test.ts test/workers/retention.test.ts test/workers/transactions.test.ts`):
+  - Baseline at `3ab5d42`: `Tests 79 passed | 1 todo (80)`.
+  - RED: the end-of-case checks and the two pins, without the clock pins. `Tests 3 failed | 77 passed | 1 todo (81)` in each of 3 runs. Exactly the three restore-window cases fail, on `AssertionError`s: the stray alarm had either already purged the expired record (`expected +0 to be 1`, `expected [] to have a length of 1`) or was still due in the past (`expected 0 to be greater than ...`). The two pins pass at RED because they pin code that is already right; their RED is mutants X1 and X3.
+  - GREEN: `Tests 81 passed (81)` in each of 5 runs.
+- **Mutation check:** 6 mutants, with the planner's runner (`scripts/mutants.py`). Each was applied to its file, run against the three files above, and restored byte for byte. Each failed exactly one test, as expected:
+  - MJ: `'budgets.put'` dropped, so the money journey fails;
+  - X1: the prune cut strict, so the S1 case fails;
+  - X3: the purge lowers the line, so the new retention case fails;
+  - U1, U2 and U3: each clock pin undone, so its restore-window case fails.
+- **Gate** (worktree root):
+  - `typecheck:edge`: exit 0.
+  - `test:edge`: `162` passed (`13` files).
+  - `test:edge:workers`: `343` passed and `3` todo (`20` files); before this task, 341 passed and 4 todo (20 files).
+  - `build:edge`: passes; the `jotbun_vault` bundle has the retention code (1 match for `vault_retention_`) and no PostgreSQL import (0 matches).
+  - `test:edge:db`: SKIPPED (Docker is not running).
+  - `git diff --check origin/claude/p1a-vault-core...HEAD`: clean (no output).
+- **Deviations:** None to the plan. The brief expected higher counts than the planner's. The planner measured at `01a5114` (16 files, 304 passed, 4 todo). At `3ab5d42` the workers suite was already 20 files, 341 passed and 4 todo before this task, because 1C-T1 and P5-T4 merged after `01a5114`. This task adds the same +2 passed and -1 todo the brief describes (the new retention case, and the money journey moving from todo to passed), ending at 343 passed and 3 todo. The focused suite and the `test:edge` counts match the brief. Design note: the three restore-window cases set the vault clock so that no past alarm is ever armed, rather than clearing the alarm. Clearing it afterwards cannot stop a stray alarm that fires between the commit and the clear. The end-of-case alarm checks read `getAlarm() ?? 0`, because a stray alarm that is firing reads as null; with the fallback, that is an assertion failure, not a type error.
+- **SKIPPED:** nothing hosted; no Cloudflare resource was touched. `test:edge:db: SKIPPED (Docker is not running; CI runs it)`.
+- **Notes for the integrator:** a test that backdates a deletion, a change or a receipt past 30 days and then commits should pin the vault clock ahead in the same way (`clockAhead` in `history.test.ts`). Otherwise 1A-T8b's alarm is armed in the past and races the test (ruling R6).

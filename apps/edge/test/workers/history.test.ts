@@ -228,10 +228,27 @@ async function remove(user: TestUser, id: string, version = 1): Promise<void> {
   expect((await client.as(user).del(`/v1/transactions/${id}`, { ifMatch: version })).status).toBe(200)
 }
 
-/** Sets a deleted record's deletion instant to `ms` before now (the API's `now() - interval`). */
-async function deletedAgo(user: TestUser, id: string, ms: number): Promise<void> {
-  await sqlExec(user, 'UPDATE transactions SET deleted_at = ? WHERE id = ? AND deleted_at IS NOT NULL', new Date(Date.now() - ms).toISOString(), id)
+/** Sets a deleted record's deletion instant to `ms` before `from` (default now; the API's `now() - interval`). */
+async function deletedAgo(user: TestUser, id: string, ms: number, from = Date.now()): Promise<void> {
+  await sqlExec(user, 'UPDATE transactions SET deleted_at = ? WHERE id = ? AND deleted_at IS NOT NULL', new Date(from - ms).toISOString(), id)
 }
+
+/**
+ * Pins the vault clock a week ahead of real time and returns it (1A-T8b-followup). A deletion
+ * backdated past 30 days from this clock is outside the restore window, yet the purge alarm the
+ * next commit arms is still about a week in the real future, so no past-due alarm fires on its
+ * own during the case (ruling R6).
+ */
+async function clockAhead(user: TestUser): Promise<number> {
+  const at = Date.now() + 7 * DAY_MS
+  await runInDurableObject(vaultOf(user), (vault: UserVault) => {
+    vault.clock = () => new Date(at)
+  })
+  return at
+}
+
+/** The vault's armed alarm (epoch ms), or null (none armed, or one firing right now). */
+const alarmOf = (user: TestUser) => runInDurableObject(vaultOf(user), (_vault, state) => state.storage.getAlarm())
 
 async function diary(): Promise<{ user: TestUser; cash: string; record: (overrides?: Record<string, unknown>) => Promise<string> }> {
   const user = await money.member()
@@ -295,9 +312,10 @@ describe('Recently deleted: the restore window', () => {
     const outside = await record({ amount_minor: '200' })
     await remove(user, inside)
     await remove(user, outside)
-    // A minute either side of the boundary; the request's clock is a moment later, which only moves "inside" closer.
-    await deletedAgo(user, inside, 30 * DAY_MS - 60_000)
-    await deletedAgo(user, outside, 30 * DAY_MS + 60_000)
+    // A minute either side of the boundary, on a vault clock pinned a week ahead.
+    const at = await clockAhead(user)
+    await deletedAgo(user, inside, 30 * DAY_MS - 60_000, at)
+    await deletedAgo(user, outside, 30 * DAY_MS + 60_000, at)
     // Not purged yet: the row is still there, but past the window it is not offered.
     expect(await rowCount(user, outside)).toBe(1)
 
@@ -308,6 +326,9 @@ describe('Recently deleted: the restore window', () => {
     expect([expired.status, problem.code, problem.message_key]).toEqual([409, 'ENTITY_DELETED', 'errors.restore_expired'])
     expect((await client.as(user).post(`/v1/transactions/${inside}/restore`, {}, { ifMatch: 2 })).status).toBe(200)
     expect((await fetchDeleted(user)).items).toEqual([])
+    // The restore armed the alarm in the real future, so no purge ran during the case.
+    expect((await alarmOf(user)) ?? 0).toBeGreaterThan(Date.now())
+    expect(await rowCount(user, outside)).toBe(1)
   })
 
   it('a purged record is never listed, and the retention purge leaves the window alone', async () => {
@@ -338,16 +359,16 @@ describe('Recently deleted: the restore window', () => {
     const past = await record({ amount_minor: '200' })
     await remove(user, edge)
     await remove(user, past)
-    const at = Date.now()
-    await runInDurableObject(vaultOf(user), (vault: UserVault) => {
-      vault.clock = () => new Date(at)
-    })
+    const at = await clockAhead(user)
     await sqlExec(user, 'UPDATE transactions SET deleted_at = ? WHERE id = ?', new Date(at - 30 * DAY_MS).toISOString(), edge)
     await sqlExec(user, 'UPDATE transactions SET deleted_at = ? WHERE id = ?', new Date(at - 30 * DAY_MS - 1).toISOString(), past)
     expect(ids((await fetchDeleted(user)).items)).toEqual([edge])
     const expired = await client.as(user).post(`/v1/transactions/${past}/restore`, {}, { ifMatch: 2 })
     expect(((await expired.json()) as Problem).message_key).toBe('errors.restore_expired')
     expect((await client.as(user).post(`/v1/transactions/${edge}/restore`, {}, { ifMatch: 2 })).status).toBe(200)
+    // The restore armed the alarm in the real future, so no purge ran during the case.
+    expect((await alarmOf(user)) ?? 0).toBeGreaterThan(Date.now())
+    expect(await rowCount(user, past)).toBe(1)
   })
 })
 
@@ -436,9 +457,9 @@ describe('Recently deleted: ordering and paging', () => {
 const json = async (res: Response) => (res.headers.get('content-type')?.includes('json') ? res.json() : null)
 
 describe('the money journey', () => {
-  // Ported from test/dispatch.db.test.ts with its sync assertions. Plan Task 7 adds
-  // it as a todo; 1A-T8b turns it on by changing it.todo to it (ruling R5).
-  it.todo('seeds built-ins, records spending, and reads it back through history, summary, budgets, status and sync', async () => {
+  // Ported from test/dispatch.db.test.ts with its sync assertions. Plan Task 7 added
+  // it as a todo; 1A-T8b turned it on by changing it.todo to it (ruling R5).
+  it('seeds built-ins, records spending, and reads it back through history, summary, budgets, status and sync', async () => {
     const user = await member(client)
     const cash = { id: randomUUID(), name: 'Cash', opening_minor: '403200', tracking_start: '2026-10-01' }
     expect((await client.as(user).post('/v1/wallets', cash)).status).toBe(201)
