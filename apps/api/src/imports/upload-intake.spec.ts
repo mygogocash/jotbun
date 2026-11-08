@@ -582,6 +582,31 @@ describe('review fixes: stalled and slow bodies', () => {
     }
   });
 
+  it('a timer that fires a millisecond before the receive deadline is still a timeout: 408', async () => {
+    // The wait is the time left (under idleMs), so its timer is the deadline itself. Node can fire it a millisecond
+    // before Date.now() reaches the deadline, so the reason must not depend on that reading.
+    const { imports, store, intake } = setup({ idleMs: 5_000, receiveMs: 100 });
+    const release = gate();
+    const start = Date.now();
+    const now = jest.spyOn(Date, 'now').mockReturnValue(start);
+    const silent = {
+      async *[Symbol.asyncIterator]() {
+        // The intake has read the clock for its deadline (start + 100) and for the time left, both as the start time.
+        // Its wait begins with this pull, so the reading taken once the timer fires is 1 ms short of the deadline.
+        now.mockReturnValue(start + 99);
+        await release.opened;
+      },
+    };
+    try {
+      expect(await within(intake.accept(session(), silent, meta('csv')), 3_000)).toMatchObject({ status: 408, code: 'UPLOAD_INCOMPLETE', messageKey: IMPORT_TIMEOUT_MESSAGE_KEY });
+      expect(imports.aborted).toEqual([{ status: 'failed', code: 'upload_timeout' }]);
+      expect(await store.quarantined()).toEqual([]);
+    } finally {
+      release.open();
+      now.mockRestore();
+    }
+  });
+
   it('defaults to the published idle and receive bounds', () => {
     const { intake } = setup();
     const limits = (intake as unknown as { limits: UploadIntakeLimits }).limits;
