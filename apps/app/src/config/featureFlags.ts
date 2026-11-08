@@ -11,7 +11,7 @@ export function isLegacySpendEnabled(): boolean {
 }
 
 /** Areas of the "Bun diary" redesign, each switched on once its screenshots are approved (E2). */
-export type RedesignArea = 'core' | 'catalogue' | 'planning' | 'insights' | 'account' | 'import' | 'companion';
+export type RedesignArea = 'core' | 'catalogue' | 'planning' | 'insights' | 'account' | 'import' | 'companion' | 'wallet';
 
 /**
  * Approved areas, on by default. The core loop (Home, Quick add, History,
@@ -28,6 +28,10 @@ export type RedesignArea = 'core' | 'catalogue' | 'planning' | 'insights' | 'acc
  * Tell Bun, Ask Bun, the daily note, the GoGoCash bridge and the Thai
  * everyday categories) is on at the owner's request; its E2 screenshots are
  * still to be approved, and `-companion` switches all of it off.
+ *
+ * The Bun Wallet area (phase 2, W1) is not approved: it is on only when
+ * named (`wallet` or `all`) until the owner approves its E2 screenshots
+ * (P2-T38). While it is off, every wallet route shows today's screen.
  */
 const APPROVED: readonly RedesignArea[] = ['core', 'planning', 'insights', 'account', 'import', 'companion'];
 
