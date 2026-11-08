@@ -260,7 +260,8 @@ describe('other retention, ported from retention.integration.spec.ts', () => {
     expect((await client.as(d.user).patch(`/v1/transactions/${record.body.id}`, { note: 'edited' }, { ifMatch: 1 })).status).toBe(200)
     // The create is now superseded below the line. It can go 30 days after the edit, and the alarm waits for that, not for a time already past.
     expect(await alarmOf(d.user)).toBe(t0 + 61 * DAY)
-    await setClock(d.user, t0 + 62 * DAY)
+    // At exactly that time: the prune's 30 days are inclusive (ruling P2).
+    await setClock(d.user, t0 + 61 * DAY)
     expect(await runDurableObjectAlarm(vaultOf(d.user))).toBe(true)
     expect((await changesOf(d.user, record.body.id)).map((change) => change.version)).toEqual([2])
     expect(await leaked(d.user)).toBe(0)
@@ -287,6 +288,32 @@ describe('other retention, ported from retention.integration.spec.ts', () => {
     expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
     expect(await headState(user, lunch)).toBe('purged')
     expect(await alarmOf(user)).toBeNull()
+  })
+
+  it('a purge retried after the prune moved the retention line never moves it back', async () => {
+    // The purge fails while the prune still runs and moves the line past the lunch's deletion and the rename. The
+    // retried purge's earlier changes sit below that line, so the line stays where it is: lowered, it would let a
+    // cursor between the two lines read a delta missing the pruned changes, with no 410.
+    const t0 = Date.now()
+    const user = await member(client)
+    await setClock(user, t0)
+    const lunch = await createLunch(client, user)
+    await client.as(user).del(`/v1/transactions/${lunch}`, { ifMatch: 1 })
+    const [{ id: wallet }] = await sqlRows<{ id: string }>(user, 'SELECT id FROM wallets')
+    expect((await client.as(user).patch(`/v1/wallets/${wallet}`, { name: 'Cash 2' }, { ifMatch: 1 })).status).toBe(200)
+    await sqlExec(user, "CREATE TRIGGER fail_purge BEFORE DELETE ON transactions BEGIN SELECT RAISE(ABORT, 'synthetic purge failure'); END")
+    try {
+      await setClock(user, t0 + 31 * DAY)
+      expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
+      expect(await headState(user, lunch)).toBe('deleted')
+    } finally {
+      await sqlExec(user, 'DROP TRIGGER fail_purge')
+    }
+    const line = (await syncState(user)).pruned_through
+    expect(BigInt(line)).toBeGreaterThan(BigInt((await headOf(user, lunch)).revision))
+    expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
+    expect(await headState(user, lunch)).toBe('purged')
+    expect((await syncState(user)).pruned_through).toBe(line)
   })
 })
 

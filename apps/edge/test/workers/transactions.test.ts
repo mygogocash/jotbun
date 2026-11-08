@@ -8,13 +8,15 @@
 // only in that person's own vault.
 import { randomUUID } from 'node:crypto'
 
+import { runInDurableObject } from 'cloudflare:test'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { bangkokDate, isTransactionSnapshot } from '@gogospend/contracts'
 
+import type { UserVault } from '../../src/vault/user-vault'
 import { builtinId, moneyFixtures } from './support/money-fixtures'
-import { revisionOf, countRows, sqlExec } from './support/command-fixtures'
-import { startV1 } from './support/v1-client'
+import { revisionOf, countRows, sqlExec, sqlRows } from './support/command-fixtures'
+import { startV1, vaultOf } from './support/v1-client'
 import type { TestUser, V1Client } from './support/v1-client'
 
 let client: V1Client
@@ -203,7 +205,13 @@ describe('edit, delete and restore', () => {
     const old = s.expense()
     await money.record(s.user, old)
     await client.as(s.user).del(`/v1/transactions/${old.id}`, { ifMatch: 1 })
-    await sqlExec(s.user, 'UPDATE transactions SET deleted_at = ? WHERE id = ?', new Date(Date.now() - 31 * DAY_MS).toISOString(), old.id)
+    // The vault clock is pinned a week ahead and the deletion backdated 31 days from it: past the restore window, yet
+    // the purge alarm the next commit arms is still in the real future, so no purge runs during the case (ruling R6).
+    const at = Date.now() + 7 * DAY_MS
+    await runInDurableObject(vaultOf(s.user), (vault: UserVault) => {
+      vault.clock = () => new Date(at)
+    })
+    await sqlExec(s.user, 'UPDATE transactions SET deleted_at = ? WHERE id = ?', new Date(at - 31 * DAY_MS).toISOString(), old.id)
     const expired = await client.as(s.user).post(`/v1/transactions/${old.id}/restore`, {}, { ifMatch: 2 })
     expect(expired.status).toBe(409)
     expect(await problemOf(expired)).toMatchObject({ code: 'ENTITY_DELETED', message_key: 'errors.restore_expired' })
@@ -215,6 +223,9 @@ describe('edit, delete and restore', () => {
     await client.as(s.user).del(`/v1/transactions/${food.id}`, { ifMatch: 1 })
     expect((await client.as(s.user).post(`/v1/categories/${pets}/archive`, {}, { ifMatch: 1 })).status).toBe(200)
     expect((await problemOf(await client.as(s.user).post(`/v1/transactions/${food.id}/restore`, {}, { ifMatch: 2 }))).fields).toHaveProperty('category_id')
+    // Every commit above armed the alarm in the real future, so the expired record was never purged during the case.
+    expect((await runInDurableObject(vaultOf(s.user), (_vault, state) => state.storage.getAlarm())) ?? 0).toBeGreaterThan(Date.now())
+    expect(await sqlRows(s.user, 'SELECT 1 FROM transactions WHERE id = ?', old.id)).toHaveLength(1)
   })
 
   it('renaming_category_preserves_historical_reference', async () => {
