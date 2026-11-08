@@ -1,40 +1,22 @@
 // The redesigned record detail (R3, /spend/record/[id]): one entry as a
-// receipt slip, with Edit, Copy and Delete (with undo).
-//
-// The record comes from the API, or from this device's diary when the id is a
-// draft that has not reached the server yet; a draft can be copied, removed
-// while never sent, or discarded once it needs a look, never edited.
-//
-// Edit keeps the rules of the current list: the amount comes from the exact
-// keypad, only the fields you changed are sent, and the edit carries the
-// version you saw (`EditDraft.baseVersion`) under its own command key. A
-// conflict shows yours and the server's side by side and offers Reload or an
-// explicit "Apply my change", which resends the same changes on the server's
-// version (a new command). An unconfirmed edit or delete is frozen and "Try
-// again" resends the same command. An entry deleted on another device says
-// so, and can be restored while it is inside the 30-day window.
-import { isTransactionSnapshot } from '@gogospend/contracts';
-import type { CategoryDto, Minor, TransactionDto, WalletDto } from '@gogospend/contracts';
+// receipt slip, with Edit, Copy and Delete (with undo). The rules live in
+// useRecordActions; this screen only renders them.
+import type { Minor, TransactionDto } from '@gogospend/contracts';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { V1Error } from '@mobile/api/client';
-import { playHaptic } from '@mobile/lib/hapticMoment';
 import { useCopy } from '@mobile/i18n/useCopy';
 import { formatMinor } from '@mobile/spend/v1/money';
 import { recentlyDeletedModel } from '@mobile/spend/v1/redesign/historyModel';
 import { classifyLoadProblem } from '@mobile/spend/v1/redesign/homeModel';
-import type { FieldErrors } from '@mobile/spend/v1/redesign/quickAddModel';
-import { buildEditChanges, conflictModel, editDraftFrom, rebaseEdit, recordDetail } from '@mobile/spend/v1/redesign/recordModel';
+import { conflictModel, recordDetail } from '@mobile/spend/v1/redesign/recordModel';
 import type { DetailContext, EditDraft, RecordDetail } from '@mobile/spend/v1/redesign/recordModel';
-import { dateTagFor, openDrafts } from '@mobile/spend/v1/redesign/shared';
+import { dateTagFor } from '@mobile/spend/v1/redesign/shared';
 import type { Lookups, RowState } from '@mobile/spend/v1/redesign/shared';
-import { useDiaryView, useSpendDiary } from '@mobile/spend/v1/SpendDiaryContext';
-import { useSpendV1 } from '@mobile/spend/v1/SpendV1Context';
-import { todayInBangkok } from '@mobile/spend/v1/viewModels';
+import { useDiaryView } from '@mobile/spend/v1/SpendDiaryContext';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { POLITE_LIVE_REGION, useAnnouncement } from '@mobile/ui/a11y';
 import type { AmountState } from '@mobile/ui/Amount';
@@ -42,19 +24,21 @@ import { BunText } from '@mobile/ui/BunText';
 import { DateChip } from '@mobile/ui/DateChip';
 import { fullDateLabel } from '@mobile/ui/dateStep';
 import { Keypad } from '@mobile/ui/Keypad';
-import { applyKey, evaluateKeypad, keypadDisplay, keypadFromMinor, keypadHasOperator, settleForSave } from '@mobile/ui/keypadExpression';
-import type { KeypadKey, KeypadProblem, KeypadState } from '@mobile/ui/keypadExpression';
+import { evaluateKeypad, keypadDisplay, keypadHasOperator } from '@mobile/ui/keypadExpression';
+import type { KeypadState } from '@mobile/ui/keypadExpression';
 import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE } from '@mobile/ui/layout';
 import { NoteField } from '@mobile/ui/NoteField';
 import { PillButton } from '@mobile/ui/PillButton';
 import { ReceiptRow, ReceiptSlip, ReceiptTotal } from '@mobile/ui/ReceiptSlip';
 import { UndoBar } from '@mobile/ui/UndoBar';
-import { saveProblem, useCommandKeys, useMoneyLocale } from '../v1/parts';
+import { useMoneyLocale } from '../v1/parts';
 import { StageHeader } from '@mobile/ui/StageHeader';
 import { useLargeText } from '@mobile/ui/largeText';
 import { ActionFooter, ActionRow, EntryPage } from './ActionFooter';
 import { RecordReceipt } from './import/RecordReceipt';
 import { LoadingBlock, Notice, copyHref, useDateLocale, useGoBack } from './HistoryParts';
+import { KEYPAD_PROBLEM_TEXT, earliestDate, lookupsOf, useRecordActions } from './record/recordActions';
+import type { RecordEditing } from './record/recordActions';
 
 export type RecordScreenProps = {
   id: string;
@@ -63,51 +47,10 @@ export type RecordScreenProps = {
   now?: Date;
 };
 
-type Loaded =
-  | { state: 'loading' }
-  | { state: 'ready'; record: TransactionDto; wallets: WalletDto[]; categories: CategoryDto[] }
-  | { state: 'error'; error: unknown };
-
-type Editing = {
-  draft: EditDraft;
-  keypad: KeypadState;
-  errors: FieldErrors;
-  message: string | null;
-  /** The server's current record after a conflict (validated). */
-  conflict: TransactionDto | null;
-  /** The save may have committed: everything is frozen and only "Try again" resends it. */
-  unconfirmed: boolean;
-};
-
-const KEYPAD_PROBLEM_TEXT: Readonly<Record<KeypadProblem, string>> = {
-  empty: 'Enter an amount',
-  zero: 'Enter an amount above zero',
-  too_precise: 'Use at most two decimal places',
-  too_large: 'Amounts go up to ฿999,999,999.99',
-  negative: "The sum can't go below zero.",
-  divide_by_zero: "You can't divide by zero.",
-};
-
 /** The amount's state word matches the Status row: a draft being checked says "checking", not "saving". */
 const AMOUNT_STATE: Readonly<Record<RowState, AmountState>> = {
   confirmed: 'confirmed', saving: 'saving', checking: 'checking', update_to_send: 'saving', needs_look: 'conflict',
 };
-
-const lookupsOf = (wallets: readonly { id: string; name: string }[], categories: readonly CategoryDto[]): Lookups => ({
-  wallets: new Map(wallets.map((wallet) => [wallet.id, wallet])),
-  categories: new Map(categories.map((category) => [category.id, category])),
-});
-
-const startEdit = (record: TransactionDto): Editing => ({
-  draft: editDraftFrom(record), keypad: keypadFromMinor(record.amount_minor), errors: {}, message: null, conflict: null, unconfirmed: false,
-});
-
-/** The latest tracking start of the wallets an entry touches: its date cannot go before it. */
-function earliestDate(record: TransactionDto, wallets: readonly WalletDto[]): string | undefined {
-  const ids = record.type === 'transfer' ? [record.source_wallet_id, record.destination_wallet_id] : [record.wallet_id];
-  const starts = ids.map((id) => wallets.find((wallet) => wallet.id === id)?.tracking_start).filter((start): start is string => Boolean(start));
-  return starts.sort().at(-1);
-}
 
 /** A problem said in words, in ink and bold: red is kept for over budget. */
 function FieldProblem({ message }: { message: string }) {
@@ -129,192 +72,16 @@ function Receipt({ detail, minor, date }: { detail: RecordDetail; minor: Minor; 
 }
 
 export function RecordScreen({ id, mode = 'view', now }: RecordScreenProps) {
-  const resources = useSpendV1();
   const router = useRouter();
   const tc = useCopy();
   const locale = useMoneyLocale();
-  const dateLocale = useDateLocale();
-  const colors = useBunColors();
   const insets = useSafeAreaInsets();
-  const keys = useCommandKeys();
-  const diary = useSpendDiary();
   const diaryView = useDiaryView();
   const goBack = useGoBack();
-  const today = todayInBangkok(now ?? new Date());
-
-  const draftCommand = diaryView.phase === 'ready' ? openDrafts(diaryView.outbox).find((command) => command.payload.id === id) : undefined;
-  const fromDevice = draftCommand !== undefined;
-
-  const [loaded, setLoaded] = useState<Loaded>({ state: 'loading' });
-  const [editing, setEditing] = useState<Editing | null>(null);
-  /** Deleted here: the undo bar restores this version. */
-  const [deleted, setDeleted] = useState<{ id: string; version: number } | null>(null);
-  /** An action whose outcome is unknown: frozen until "Try again" resends it. */
-  const [pending, setPending] = useState<'delete' | 'restore' | null>(null);
-  /** An edit learned the entry was deleted on another device. */
-  const [gone, setGone] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const generation = useRef(0);
-  const acting = useRef(false);
-  const leaving = useRef(false);
-  const autoEdit = useRef(mode === 'edit');
-
-  /** Reads the entry; what is on screen stays while it reloads. */
-  const load = useCallback(async () => {
-    const turn = ++generation.current;
-    setLoaded((previous) => (previous.state === 'ready' ? previous : { state: 'loading' }));
-    try {
-      const [record, wallets, categories] = await Promise.all([resources.transaction(id), resources.wallets(), resources.ensureBuiltinCategories()]);
-      if (turn !== generation.current) return;
-      setLoaded({ state: 'ready', record, wallets, categories });
-      if (autoEdit.current && !record.deleted_at) {
-        autoEdit.current = false;
-        setEditing(startEdit(record));
-      }
-    } catch (error) {
-      if (turn === generation.current) setLoaded({ state: 'error', error });
-    }
-  }, [resources, id]);
-
-  useEffect(() => {
-    if (!fromDevice && !leaving.current) void load();
-  }, [load, fromDevice]);
-
-  async function submitEdit(current: Editing) {
-    if (loaded.state !== 'ready' || acting.current) return;
-    const settled = settleForSave(current.keypad);
-    if (!settled.outcome.ok) {
-      setEditing({ ...current, keypad: settled.state });
-      return;
-    }
-    const draft: EditDraft = { ...current.draft, amountMinor: settled.outcome.minor };
-    const keypad = settled.state;
-    const result = buildEditChanges(draft, { today, tc });
-    if (!result.ok) {
-      setEditing({ ...current, draft, keypad, errors: result.errors });
-      return;
-    }
-    if (result.unchanged) {
-      setEditing(null);
-      return;
-    }
-    const slot = `edit:${result.id}`;
-    const key = keys.keyFor(slot, { version: result.version, changes: result.changes });
-    acting.current = true;
-    setBusy(true);
-    try {
-      await resources.updateTransaction(result.id, result.version, result.changes, key);
-      keys.settle(slot);
-      setEditing(null);
-      setNotice(null);
-    } catch (problem) {
-      const outcome = problem instanceof V1Error ? problem.outcome : undefined;
-      const saved = saveProblem(problem, tc);
-      if (!saved.unconfirmed) keys.settle(slot);
-      const server = problem instanceof V1Error ? problem.current : undefined;
-      const snapshot = isTransactionSnapshot(server) && server.id === result.id ? server : null;
-      if (outcome === 'deleted' || outcome === 'not_found' || (outcome === 'conflict' && snapshot?.deleted_at)) {
-        setEditing(null);
-        setGone(true);
-        void load();
-      } else if (outcome === 'conflict' && snapshot) {
-        setEditing({ ...current, draft, keypad, errors: {}, message: null, conflict: snapshot, unconfirmed: false });
-      } else if (outcome === 'conflict') {
-        // No usable current record: reload rather than loop on a stale version.
-        setEditing(null);
-        setNotice(tc('This entry changed on another device.'));
-        void load();
-      } else {
-        setEditing({ ...current, draft, keypad, unconfirmed: saved.unconfirmed, message: saved.message, errors: saved.fields as FieldErrors });
-      }
-      return;
-    } finally {
-      acting.current = false;
-      setBusy(false);
-    }
-    // Reading the result is a separate load: its failure is a load problem, never an unconfirmed save.
-    void load();
-  }
-
-  async function remove(record: TransactionDto) {
-    if (acting.current) return;
-    acting.current = true;
-    const slot = `delete:${record.id}`;
-    const key = keys.keyFor(slot, { version: record.version });
-    setBusy(true);
-    try {
-      const ack = await resources.deleteTransaction(record.id, record.version, key);
-      keys.settle(slot);
-      setPending(null);
-      setDeleted({ id: record.id, version: ack.version });
-      setNotice(null);
-      playHaptic('deleteDone');
-    } catch (problem) {
-      playHaptic('saveFailed');
-      const outcome = problem instanceof V1Error ? problem.outcome : undefined;
-      const result = saveProblem(problem, tc);
-      if (!result.unconfirmed) keys.settle(slot);
-      setPending(result.unconfirmed ? 'delete' : null);
-      if (outcome === 'deleted' || outcome === 'not_found') setNotice(tc('This entry was already deleted.'));
-      else if (outcome === 'conflict') setNotice(tc('This entry changed on another device.'));
-      else setNotice(result.message);
-      if (!result.unconfirmed) void load();
-    } finally {
-      acting.current = false;
-      setBusy(false);
-    }
-  }
-
-  /** Undo (the version the delete returned) or Restore (a deleted entry's current version), each under its own key. */
-  async function restore(target: { id: string; version: number }) {
-    if (acting.current) return;
-    acting.current = true;
-    const slot = `restore:${target.id}`;
-    const key = keys.keyFor(slot, target);
-    setBusy(true);
-    try {
-      await resources.restoreTransaction(target.id, target.version, key);
-      keys.settle(slot);
-      setDeleted(null);
-      setGone(false);
-      setPending(null);
-      setNotice(null);
-    } catch (problem) {
-      playHaptic('saveFailed');
-      const result = saveProblem(problem, tc);
-      if (!result.unconfirmed) {
-        keys.settle(slot);
-        setDeleted(null);
-      }
-      setPending(result.unconfirmed ? 'restore' : null);
-      setNotice(result.message);
-      // A definite refusal: read the entry again, so a deleted one never looks live.
-      if (!result.unconfirmed) void load();
-      return;
-    } finally {
-      acting.current = false;
-      setBusy(false);
-    }
-    void load();
-  }
-
-  async function settleDraft(commandId: string, how: 'remove' | 'discard') {
-    if (!diary) return;
-    leaving.current = true;
-    try {
-      if (how === 'remove') await diary.removeDraft(commandId);
-      else await diary.discardDraft(commandId);
-      goBack();
-    } catch {
-      leaving.current = false;
-      setNotice(tc("Couldn't change this device's copy. Try again."));
-    }
-  }
-
-  const pressKey = (key: KeypadKey) => {
-    setEditing((current) => (current && !current.unconfirmed ? { ...current, keypad: applyKey(current.keypad, key), errors: { ...current.errors, amount_minor: undefined } } : current));
-  };
+  const {
+    today, draftCommand, loaded, editing, deleted, pending, gone, notice, busy,
+    load, startEditing, cancelEditing, changeEditing, pressKey, submitEdit, remove, restore, settleDraft,
+  } = useRecordActions({ id, mode, now });
 
   const context = (lookups: Lookups): DetailContext => ({ lookups, tc, locale, dateTag: dateTagFor(locale) });
   const editHeading = editing && !editing.conflict;
@@ -375,17 +142,16 @@ export function RecordScreen({ id, mode = 'view', now }: RecordScreenProps) {
       );
     } else if (editing?.conflict) {
       body = <ConflictPanel editing={editing} server={editing.conflict} context={context(lookups)} busy={busy}
-        onApply={() => void submitEdit({ ...editing, draft: rebaseEdit(editing.draft, editing.conflict as TransactionDto), conflict: null })}
+        onApply={() => void submitEdit()}
         onReload={() => {
-          setEditing(null);
-          setNotice(null);
+          cancelEditing();
           void load();
         }} />;
     } else if (editing) {
       const keypadProblem = editing.keypad.problem ? tc(KEYPAD_PROBLEM_TEXT[editing.keypad.problem]) : null;
       const amountProblem = keypadProblem ?? editing.errors.amount_minor ?? null;
       const locked = editing.unconfirmed;
-      const setDraft = (patch: Partial<EditDraft>) => setEditing((current) => (current && !current.unconfirmed ? { ...current, draft: { ...current.draft, ...patch }, errors: {} } : current));
+      const setDraft = (patch: Partial<EditDraft>) => changeEditing((current) => ({ ...current, draft: { ...current.draft, ...patch }, errors: {} }));
       body = (
         <View style={{ gap: BUN_SPACE.md }}>
           <AmountLine keypad={editing.keypad} />
@@ -404,11 +170,11 @@ export function RecordScreen({ id, mode = 'view', now }: RecordScreenProps) {
         <ActionFooter testID="record-edit-footer">
           {editing.message ? <Notice tone="alert" message={editing.message} /> : null}
           {locked ? (
-            <PillButton label={tc('Try again')} busy={busy} onPress={() => void submitEdit(editing)} />
+            <PillButton label={tc('Try again')} busy={busy} onPress={() => void submitEdit()} />
           ) : (
             <ActionRow
-              secondary={<PillButton kind="secondary" label={tc('Cancel')} disabled={busy} onPress={() => setEditing(null)} />}
-              primary={<PillButton label={tc('Save changes')} busy={busy} onPress={() => void submitEdit(editing)} />}
+              secondary={<PillButton kind="secondary" label={tc('Cancel')} disabled={busy} onPress={() => cancelEditing()} />}
+              primary={<PillButton label={tc('Save changes')} busy={busy} onPress={() => void submitEdit()} />}
             />
           )}
         </ActionFooter>
@@ -423,10 +189,7 @@ export function RecordScreen({ id, mode = 'view', now }: RecordScreenProps) {
           ) : null}
           {frozen ? null : (
             <View style={{ gap: BUN_SPACE.sm }}>
-              <PillButton label={tc('Edit')} disabled={busy} onPress={() => {
-                setNotice(null);
-                setEditing(startEdit(record));
-              }} />
+              <PillButton label={tc('Edit')} disabled={busy} onPress={() => startEditing()} />
               <PillButton kind="secondary" label={tc('Copy')} onPress={() => router.push(copyHref(record.id))} />
               <PillButton kind="secondary" label={tc('Delete')} busy={busy} onPress={() => void remove(record)} />
             </View>
@@ -478,7 +241,7 @@ function AmountLine({ keypad }: { keypad: KeypadState }) {
 
 /** "Yours" against "On the server", field by field, with Reload or an explicit "Apply my change". */
 function ConflictPanel({ editing, server, context, busy, onApply, onReload }: {
-  editing: Editing; server: TransactionDto; context: DetailContext; busy: boolean; onApply: () => void; onReload: () => void;
+  editing: RecordEditing; server: TransactionDto; context: DetailContext; busy: boolean; onApply: () => void; onReload: () => void;
 }) {
   const tc = useCopy();
   const colors = useBunColors();
