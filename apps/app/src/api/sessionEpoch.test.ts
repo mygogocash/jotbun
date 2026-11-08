@@ -273,6 +273,18 @@ async function emailSignIn(provider: CredentialProvider, server: ReturnType<type
   return result;
 }
 
+/** An unverified JWT claim, read as the provider reads `sid` (R86). */
+function claimOf(token: string, name: 'sub' | 'sid'): unknown {
+  const part = token.split('.')[1] ?? '';
+  try {
+    const json: unknown = JSON.parse(Buffer.from(part, 'base64url').toString('utf8'));
+    if (typeof json !== 'object' || json === null) return undefined;
+    return Object.entries(json).find(([key]) => key === name)?.[1];
+  } catch {
+    return undefined;
+  }
+}
+
 test('return_to_a_does_not_accept_old_a_response', async () => {
   const server = createFakeAuthServer();
   const sessions = recordStore();
@@ -378,6 +390,39 @@ test('sign-out from a locked session still revokes its binding over the transpor
     assert.equal(revoke.headers['x-gogospend-session'], undefined);
     assert.equal(revoke.headers.authorization, `Bearer ${token}`);
     assert.equal(provider.getSessionSnapshot().state, 'signed_out');
+  });
+});
+
+test("a request begun during an account switch sends nothing: never the next session's token under the first session (R86)", async () => {
+  const server = createFakeAuthServer();
+  const sessions = recordStore();
+  const port = createBetterAuthPort({ client: server.client, native: server.native({}) });
+  const provider = createCredentialProvider({ port, sessions });
+  await withProvider(provider, async () => {
+    await emailSignIn(provider, server, port);
+    const a = provider.getSessionSnapshot();
+    const gate = openGate();
+    let reached!: () => void;
+    const saving = new Promise<void>((resolve) => (reached = resolve));
+    const save = sessions.save.bind(sessions);
+    sessions.save = async (next) => {
+      reached();
+      await gate.promise;
+      return save(next);
+    };
+    await port.sendEmailCode('b@example.test');
+    const switching = provider.signIn({ method: 'email', email: 'b@example.test', code: server.codeFor('b@example.test') });
+    await saving;
+    const during = await failure(() => seamTransport().request('POST', '/v1/transactions', { body: { id: 'x' }, command, validate: ok }));
+    assert.deepEqual([during?.outcome, during?.status, during?.code], ['signed_out', 0, 'SESSION_REQUIRED'], 'refused before sending, as while signing in');
+    assert.equal(seen.length, 0, 'nothing reached the vault');
+    assert.deepEqual(provider.getSessionSnapshot(), a, 'the first session, unlocked');
+    gate.release();
+    assert.equal((await switching).outcome, 'active');
+    const b = provider.getSessionSnapshot();
+    assert.deepEqual(await seamTransport().request('GET', '/v1/wallets', { validate: ok }), { ok: true });
+    const bearer = (seen[0]?.headers.authorization ?? '').replace(/^Bearer /, '');
+    assert.deepEqual([claimOf(bearer, 'sub'), claimOf(bearer, 'sid')], [b.accountId, b.binding]);
   });
 });
 

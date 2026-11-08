@@ -267,6 +267,25 @@ test('signing out a device or everywhere answers 204 with no body, which is succ
   assert.ok(server.calls.includes('signOutEverywhere'));
 });
 
+test('a sign-in whose session read fails after the server accepted it drops that session (email and Google, R86)', async () => {
+  for (const method of ['email', 'google'] as const) {
+    const { server, port } = portFor({ google: { sub: 'google-sub', email: 'g@example.test' } });
+    const inner = server.client.session.bind(server.client);
+    let failOnce = true;
+    server.client.session = async () => {
+      if (!failOnce) return inner();
+      failOnce = false;
+      return { data: null, error: { status: 503 } };
+    };
+    if (method === 'email') await port.sendEmailCode(EMAIL);
+    const request = method === 'email' ? { method, email: EMAIL, code: server.codeFor(EMAIL) } : { method, signUp: true };
+    await assert.rejects(() => port.signIn(request), AuthUnavailable, method);
+    assert.equal(await port.hasSession(), false, `${method}: the accepted session's cookie is dropped`);
+    assert.equal(server.calls.at(-1), 'signOut', method);
+    assert.equal(await port.accessToken(), null, method);
+  }
+});
+
 test('refresh always renews', async () => {
   const { server, port } = await emailSession().then(({ server, port }) => ({ server, port }));
   await port.accessToken();

@@ -62,6 +62,69 @@ async function signedIn(identities: { apple?: { sub: string; email: string }; go
   return ready;
 }
 
+const OTHER = 'b@example.test';
+
+/** An unverified JWT claim, read as the provider reads `sid` (R86). */
+function claimOf(token: string | null | undefined, name: 'sub' | 'sid'): unknown {
+  const part = (token ?? '').split('.')[1] ?? '';
+  try {
+    const json: unknown = JSON.parse(Buffer.from(part, 'base64url').toString('utf8'));
+    if (typeof json !== 'object' || json === null) return undefined;
+    return Object.entries(json).find(([key]) => key === name)?.[1];
+  } catch {
+    return undefined;
+  }
+}
+
+/** The next record save waits until `release()`: the server has accepted a sign-in, and the provider has not taken it on yet. */
+function holdNextSave(sessions: SessionRecordStore) {
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  let mark!: () => void;
+  const reached = new Promise<void>((resolve) => { mark = resolve; });
+  const save = sessions.save.bind(sessions);
+  let held = true;
+  sessions.save = async (next) => {
+    if (held) {
+      held = false;
+      mark();
+      await gate;
+    }
+    return save(next);
+  };
+  return { release, reached };
+}
+
+/** The next session read (a sign-in's `get-session`, after the server accepted it) waits until `release()`. */
+function holdNextSessionRead(server: ReturnType<typeof createFakeAuthServer>) {
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  let mark!: () => void;
+  const reached = new Promise<void>((resolve) => { mark = resolve; });
+  const inner = server.client.session.bind(server.client);
+  let held = true;
+  server.client.session = async () => {
+    if (held) {
+      held = false;
+      mark();
+      await gate;
+    }
+    return inner();
+  };
+  return { release, reached };
+}
+
+/** The next session read answers 503 once, after the server accepted the sign-in. */
+function failNextSessionRead(server: ReturnType<typeof createFakeAuthServer>) {
+  const inner = server.client.session.bind(server.client);
+  let pending = true;
+  server.client.session = async () => {
+    if (!pending) return inner();
+    pending = false;
+    return { data: null, error: { status: 503 } };
+  };
+}
+
 test('sign-in by email code stores the session only after the server signed in, then moves the epoch', async () => {
   const ready = setup();
   await ready.port.sendEmailCode(EMAIL);
@@ -430,6 +493,143 @@ test('after an account switch, a token read that began before it never reaches t
   assert.equal(idTokenSubject((await ready.provider.getAccessToken()) ?? ''), after?.accountId);
   const credentials = await ready.provider.requestCredentials();
   assert.deepEqual([idTokenSubject(credentials?.accessToken ?? ''), credentials?.sessionId], [after?.accountId, after?.sessionId]);
+});
+
+test("requestCredentials never pairs the old session's token, read before a fresh sign-in, with the new session's id", async () => {
+  const ready = await signedIn();
+  const before = ready.sessions.current();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  let mark!: () => void;
+  const minted = new Promise<void>((resolve) => { mark = resolve; });
+  const inner = ready.server.client.token.bind(ready.server.client);
+  let gated = true;
+  ready.server.client.token = async () => {
+    if (!gated) return inner();
+    gated = false;
+    const answer = await inner();
+    mark();
+    await gate;
+    return answer;
+  };
+  const pending = ready.provider.requestCredentials();
+  await minted;
+  await ready.port.sendEmailCode(EMAIL);
+  assert.equal(await ready.provider.freshSignIn({ method: 'email', email: EMAIL, code: ready.server.codeFor(EMAIL) }), 'fresh');
+  release();
+  assert.equal(await pending, null);
+  assert.notEqual(ready.sessions.current()?.sessionId, before?.sessionId);
+});
+
+test("during an account switch, requestCredentials is not ready: never the new session's token with the old session id (R86)", async () => {
+  const ready = await signedIn();
+  const a = ready.sessions.current();
+  const held = holdNextSave(ready.sessions);
+  await ready.port.sendEmailCode(OTHER);
+  const switching = ready.provider.signIn({ method: 'email', email: OTHER, code: ready.server.codeFor(OTHER) });
+  await held.reached;
+  assert.equal(await ready.provider.requestCredentials(), null);
+  assert.deepEqual([ready.provider.getSessionSnapshot().state, ready.provider.getSessionSnapshot().binding], ['active', a?.sessionId], 'nothing locks');
+  held.release();
+  assert.equal((await switching).outcome, 'active');
+  const b = ready.sessions.current();
+  const credentials = await ready.provider.requestCredentials();
+  assert.deepEqual([claimOf(credentials?.accessToken, 'sub'), claimOf(credentials?.accessToken, 'sid'), credentials?.sessionId], [b?.accountId, b?.sessionId, b?.sessionId]);
+});
+
+test("during a fresh sign-in, the new session's token never goes out with the old session id (R86)", async () => {
+  const ready = await signedIn();
+  const before = ready.sessions.current();
+  const held = holdNextSave(ready.sessions);
+  await ready.port.sendEmailCode(EMAIL);
+  const fresh = ready.provider.freshSignIn({ method: 'email', email: EMAIL, code: ready.server.codeFor(EMAIL) });
+  await held.reached;
+  assert.equal(await ready.provider.requestCredentials(), null);
+  assert.equal(await ready.provider.getAccessToken(), null);
+  assert.equal(ready.provider.getSessionSnapshot().state, 'active');
+  held.release();
+  assert.equal(await fresh, 'fresh');
+  const after = ready.sessions.current();
+  assert.notEqual(after?.sessionId, before?.sessionId);
+  const credentials = await ready.provider.requestCredentials();
+  assert.deepEqual([claimOf(credentials?.accessToken, 'sid'), credentials?.sessionId], [after?.sessionId, after?.sessionId]);
+});
+
+test("during an account switch, a token read under the old session never gets the new session's token, and nothing locks (R86)", async () => {
+  const ready = await signedIn();
+  const a = ready.provider.getSessionSnapshot();
+  const held = holdNextSessionRead(ready.server);
+  await ready.port.sendEmailCode(OTHER);
+  const switching = ready.provider.signIn({ method: 'email', email: OTHER, code: ready.server.codeFor(OTHER) });
+  await held.reached;
+  assert.equal(await ready.provider.getAccessToken(), null);
+  assert.deepEqual(ready.provider.getSessionSnapshot(), a, 'still the first session: same state, binding and epoch');
+  held.release();
+  assert.equal((await switching).outcome, 'active');
+  const b = ready.provider.getSessionSnapshot();
+  const token = await ready.provider.getAccessToken();
+  assert.deepEqual([claimOf(token, 'sub'), claimOf(token, 'sid')], [b.accountId, b.binding]);
+});
+
+test('an account switch whose session read fails drops the new cookie: the first account locks, also after a relaunch (R86)', async () => {
+  const ready = await signedIn();
+  const a = ready.sessions.current();
+  failNextSessionRead(ready.server);
+  await ready.port.sendEmailCode(OTHER);
+  assert.equal((await ready.provider.signIn({ method: 'email', email: OTHER, code: ready.server.codeFor(OTHER) })).outcome, 'unavailable');
+  assert.equal(await ready.port.hasSession(), false, "the new session's cookie is gone");
+  assert.equal(await ready.provider.requestCredentials(), null);
+  assert.equal(ready.provider.getSessionSnapshot().state, 'locked');
+  assert.deepEqual(ready.sessions.current(), a, 'the account and its record stay (D37)');
+  const port = createBetterAuthPort({ client: ready.server.client, native: ready.server.native({}) });
+  const relaunched = createCredentialProvider({ port, sessions: ready.sessions, epochs: ready.epochs });
+  await relaunched.hydrate();
+  assert.deepEqual([relaunched.getSessionSnapshot().state, relaunched.getSessionSnapshot().accountId], ['locked', a?.accountId]);
+  assert.equal(await relaunched.getAccessToken(), null);
+});
+
+test("a sign-in from a locked session whose session read fails leaves it locked, never unlocked on the other account's cookie (R86)", async () => {
+  const ready = await signedIn();
+  const a = ready.sessions.current();
+  ready.server.deleteSession(a?.sessionId ?? '');
+  assert.equal(await ready.provider.refreshAfterUnauthorized(), false);
+  assert.equal(ready.provider.getSessionSnapshot().state, 'locked');
+  failNextSessionRead(ready.server);
+  await ready.port.sendEmailCode(OTHER);
+  assert.equal((await ready.provider.signIn({ method: 'email', email: OTHER, code: ready.server.codeFor(OTHER) })).outcome, 'unavailable');
+  await ready.provider.hydrate();
+  assert.deepEqual([ready.provider.getSessionSnapshot().state, ready.provider.getSessionSnapshot().accountId], ['locked', a?.accountId]);
+  assert.equal(await ready.port.hasSession(), false);
+  assert.equal(await ready.provider.getAccessToken(), null);
+  assert.deepEqual(ready.sessions.current(), a);
+});
+
+test('a token whose session cannot be read is never handed out, and nothing locks (R86)', async () => {
+  const ready = await signedIn();
+  const inner = ready.server.client.token.bind(ready.server.client);
+  for (const unreadable of ['e30.e30.sig', 'not-a-jwt', `e30.${Buffer.from('{"sid":7}').toString('base64url')}.x`]) {
+    ready.server.client.token = async () => ({ data: { token: unreadable }, error: null });
+    assert.equal(await ready.provider.getAccessToken(), null, unreadable);
+    assert.equal(await ready.provider.requestCredentials(), null, unreadable);
+    assert.equal(ready.provider.getSessionSnapshot().state, 'active', unreadable);
+  }
+  ready.server.client.token = inner;
+  assert.equal(claimOf(await ready.provider.getAccessToken(), 'sid'), ready.sessions.current()?.sessionId);
+});
+
+test("a sign-out during an account switch never gives the vault one session's token with another session's id (R86)", async () => {
+  const ready = await signedIn();
+  const held = holdNextSessionRead(ready.server);
+  await ready.port.sendEmailCode(OTHER);
+  const switching = ready.provider.signIn({ method: 'email', email: OTHER, code: ready.server.codeFor(OTHER) });
+  await held.reached;
+  await ready.provider.signOut();
+  held.release();
+  assert.equal((await switching).outcome, 'cancelled');
+  assert.deepEqual(ready.vaultLogouts.filter((sent) => claimOf(sent.accessToken, 'sid') !== sent.sessionId), []);
+  assert.equal(ready.provider.getSessionSnapshot().state, 'signed_out');
+  assert.equal(ready.sessions.current(), null);
+  assert.equal(await ready.port.hasSession(), false);
 });
 
 test('a fresh sign-in into the same account swaps the session, signs the old one out and moves the epoch', async () => {

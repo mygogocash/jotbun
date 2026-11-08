@@ -157,8 +157,9 @@ function mapNoContent(result: ClientResult<unknown>): void {
 /**
  * The app's Better Auth port. A sign-in the server accepted, or a sign-out,
  * drops the cached JWT, which named the session before it, and a token call
- * that was in flight across one is never cached. The web build uses
- * {@link unsupportedBetterAuthPort} instead.
+ * that was in flight across one is never cached. A sign-in whose session
+ * cannot be read after the server accepted it is signed out again (R86). The
+ * web build uses {@link unsupportedBetterAuthPort} instead.
  */
 export function createBetterAuthPort(deps: { client: BetterAuthClientLike; native: NativeSignIn; now?: () => number }): BetterAuthPort {
   const now = () => deps.now?.() ?? Date.now()
@@ -185,18 +186,31 @@ export function createBetterAuthPort(deps: { client: BetterAuthClientLike; nativ
     return { accountId: data.user.id, sessionId: data.session.id, email: data.user.email, method, created: createdOf(answer) }
   }
 
+  // The server accepted the sign-in, so the phone already holds the new
+  // session's cookie. If that session cannot be read, the provider never takes
+  // it on: sign it out again before reporting the failure, so no token names a
+  // session the provider does not hold (R86).
+  async function accepted(answer: SignInAnswer, method: SignInMethod): Promise<ServerSession> {
+    try {
+      return await finish(answer, method)
+    } catch (error) {
+      await signOut()
+      throw error
+    }
+  }
+
   async function emailSignIn(email: string, code: string): Promise<ServerSession> {
     const result = await call(() => deps.client.signInWithCode(email.trim().toLowerCase(), code))
     if (result.error) mapCode(result.error)
     forgetToken()
-    return finish(result.data ?? { created: false }, 'email')
+    return accepted(result.data ?? { created: false }, 'email')
   }
 
   async function socialSignIn(method: 'apple' | 'google', requestSignUp: boolean, token: NativeIdToken): Promise<ServerSession> {
     const result = await call(() => deps.client.signInWithIdToken(method, token, requestSignUp))
     if (result.error) mapIdToken(result.error)
     forgetToken()
-    return finish(result.data ?? { created: false }, method)
+    return accepted(result.data ?? { created: false }, method)
   }
 
   async function linked(): Promise<{ providerId: string; accountId: string }[]> {

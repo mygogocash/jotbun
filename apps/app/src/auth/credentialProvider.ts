@@ -20,7 +20,7 @@ export type CodeOutcome = 'sent' | 'rate_limited' | 'unavailable' | 'failed' | '
 export type RequestCredentials = { accessToken: string; sessionId: string };
 
 export interface CredentialProvider {
-  /** null: no usable session (or the credentials were denied, which locks). Rejects when the sign-in service can't be reached right now. */
+  /** null: no usable session (or the credentials were denied, which locks), or not ready (the token names another session, R86; nothing locks). Rejects when the sign-in service can't be reached right now. */
   getAccessToken(): Promise<string | null>;
   /** One serialized forced refresh after a 401; concurrent callers share it. Also lifts a lock once the credentials work again. */
   refreshAfterUnauthorized(): Promise<boolean>;
@@ -37,7 +37,7 @@ export interface CredentialProvider {
   account(): StoredSession | null;
   methods(): readonly SignInMethod[];
   port(): BetterAuthPort;
-  /** One token and the session id, read together; null unless the session is active. */
+  /** One token and the session id, read together, the token naming that session (R86); null unless the session is active. */
   requestCredentials(): Promise<RequestCredentials | null>;
   /** Why the session ended, while it is locked or needs signing in again. */
   endedReason(): 'signed_out_elsewhere' | 'account_unavailable' | null;
@@ -87,6 +87,20 @@ function freshResult(error: unknown): FreshOutcome {
   return 'failed';
 }
 
+/** The unverified `sid` claim of a JWT: the session it was issued for (R86). null when it cannot be read. */
+function sessionOf(token: string): string | null {
+  const part = token.split('.')[1];
+  if (!part) return null;
+  try {
+    const padded = part.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - (part.length % 4)) % 4);
+    const json: unknown = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(padded), (char) => char.charCodeAt(0))));
+    if (typeof json !== 'object' || json === null || !('sid' in json) || typeof json.sid !== 'string') return null;
+    return json.sid;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * The app's credential provider: Better Auth's session, the SecureStore
  * record and the session state machine.
@@ -96,7 +110,9 @@ function freshResult(error: unknown): FreshOutcome {
  * the record; the service being unreachable is not a denial. Hydrate, sign-in
  * and sign-out run one at a time. A second sign-in joins the one in flight. A
  * sign-out wins, and a session the server accepted too late is signed out and
- * never stored. Every new session moves the epoch.
+ * never stored. Every new session moves the epoch. A token goes out only with
+ * the session it names (its `sid`, R86): while the phone's cookie is ahead of
+ * the provider (mid sign-in), reads are not ready (null) and nothing locks.
  */
 export function createCredentialProvider(deps: CredentialDeps): CredentialProvider {
   const epochs = deps.epochs ?? memoryEpochs();
@@ -288,7 +304,8 @@ export function createCredentialProvider(deps: CredentialDeps): CredentialProvid
     } catch {
       token = null;
     }
-    if (token && sessionId) await deps.logoutVault?.({ accessToken: token, sessionId }).catch(noop);
+    // R86: the vault hears only the session's own token; a token for a session the provider never held (a sign-out mid sign-in) is not sent.
+    if (token && sessionId && sessionOf(token) === sessionId) await deps.logoutVault?.({ accessToken: token, sessionId }).catch(noop);
     await deps.port.signOut().catch(noop);
     record = null;
     let failure: { error: unknown } | null = null;
@@ -322,11 +339,20 @@ export function createCredentialProvider(deps: CredentialDeps): CredentialProvid
         return refreshing.then(again, again);
       }
       const epoch = snapshot.epoch;
+      const binding = snapshot.binding;
       if (tokenRead && tokenRead.epoch === epoch && tokenRead.generation === tokenGeneration) return tokenRead.promise;
       const promise = deps.port.accessToken().then((token) => {
         // null: the session is gone or denied - lock, keep everything. A rejection (offline) changes nothing.
-        if (token === null && snapshot.epoch === epoch) dispatch({ type: 'auth_denied' });
-        return token;
+        if (token === null) {
+          if (snapshot.epoch === epoch) dispatch({ type: 'auth_denied' });
+          return null;
+        }
+        // R86: a token for another session than this read's (the cookie moved
+        // to a session the provider does not hold yet, mid sign-in), or one
+        // whose session cannot be read, is not ready: null, as while signing
+        // in. Never a denial, so nothing locks.
+        const sid = sessionOf(token);
+        return sid !== null && sid === binding ? token : null;
       });
       const entry = { promise, epoch, generation: tokenGeneration };
       tokenRead = entry;

@@ -57,10 +57,11 @@ export function createFakeAuthServer(): FakeAuthServer {
     return null;
   }
 
-  function mint(sub: string, email?: string): string {
+  /** A JWT-shaped token. `sub` names the account and `sid` the session, as 1C-T1's `/token` does (K4); a native ID token has no `sid`. */
+  function mint(sub: string, email?: string, sid?: string): string {
     tokenSerial += 1;
     const exp = Math.floor(Date.now() / 1000) + state.tokenTtlSeconds;
-    return `e30.${b64url(JSON.stringify({ sub, exp, email, n: tokenSerial }))}.x`;
+    return `e30.${b64url(JSON.stringify({ sub, sid, exp, email, n: tokenSerial }))}.x`;
   }
 
   function subject(token: NativeIdToken): string {
@@ -161,7 +162,7 @@ export function createFakeAuthServer(): FakeAuthServer {
       const session = sessions.get(cookie);
       if (!session || session.deleted) return fail(401, 'SIGNED_OUT');
       const user = users.get(session.userId);
-      return ok({ token: mint(user?.id ?? session.userId, user?.email) });
+      return ok({ token: mint(user?.id ?? session.userId, user?.email, session.id) });
     },
     async linkedAccounts() {
       calls.push('linkedAccounts');
