@@ -3,6 +3,6 @@
 const ballast = Buffer.alloc(192 * 1024 * 1024, 1);
 setTimeout(() => {
   const usage = process.resourceUsage();
-  const result = { ok: true, layout: 'generic', rows: [], file_issues: [], image: null, usage: { max_rss_kb: usage.maxRSS, cpu_ms: 1 } };
+  const result = { ok: true, layout: 'generic', rows: [], file_issues: [], image: null, header_fingerprint: null, usage: { max_rss_kb: usage.maxRSS, cpu_ms: 1 } };
   process.stdout.write(JSON.stringify(ballast.length > 0 ? result : null));
 }, 3_000);

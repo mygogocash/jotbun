@@ -35,7 +35,7 @@ export function vaultStatus(r: VaultRoute): number {
 /** Writes to wallets are commands, and every mutating route carries the writes gate (C12). */
 const WRITES: readonly GateScope[] = ['writes']
 
-/** The routes ported so far (Tasks 2 to 6 and 8a, and the bridge): the front door, wallets, categories, transactions, budgets, command status, the sync delta feed and the cashback catalogue. */
+/** The routes ported so far (Tasks 2 to 7 and 8a, and the bridge): the front door, wallets, categories, transactions, budgets, history, the summary, command status, the sync delta feed and the cashback catalogue. */
 export const VAULT_V1_ROUTES: readonly VaultRoute[] = [
   // policies/policy.controller.ts: the published text, answered from config:v1 by the Worker.
   { method: 'GET', path: '/v1/policies', access: 'public' },
@@ -69,6 +69,11 @@ export const VAULT_V1_ROUTES: readonly VaultRoute[] = [
   // budgets/budgets.controller.ts
   { method: 'GET', path: '/v1/budgets/:month', access: 'bound_session', vault: 'budgets.get' },
   { method: 'PUT', path: '/v1/budgets/:month', access: 'current_policy', vault: 'budgets.put', gates: WRITES },
+  // history/history.controller.ts: reads, so no gates.
+  { method: 'GET', path: '/v1/history', access: 'bound_session', vault: 'history.list' },
+  { method: 'GET', path: '/v1/history/deleted', access: 'bound_session', vault: 'history.deleted' },
+  // summary/summary.controller.ts
+  { method: 'GET', path: '/v1/summary', access: 'bound_session', vault: 'summary.get' },
   // commands/command-status.controller.ts
   { method: 'POST', path: '/v1/commands/status', access: 'bound_session', vault: 'commands.status', status: 200 },
   // sync/sync.controller.ts: the delta feed (the snapshot routes are 1B).
@@ -102,12 +107,8 @@ export function vaultStatusOf(id: VaultRouteId): number {
   throw new Error(`no ported vault route ${id}`)
 }
 
-/** Routes for Task 7 of Phase 1A: history and summary. */
-export const VAULT_PENDING_ROUTES: readonly string[] = [
-  'GET /v1/history',
-  'GET /v1/history/deleted',
-  'GET /v1/summary',
-]
+/** Routes for a later task of Phase 1A. None are left: Task 7 ported history and the summary. */
+export const VAULT_PENDING_ROUTES: readonly string[] = []
 
 /** Routes for later Phase 1B tasks: snapshots, exports, imports, attachments, deletion and the AI companion. */
 export const VAULT_DEFERRED_ROUTES: readonly string[] = [

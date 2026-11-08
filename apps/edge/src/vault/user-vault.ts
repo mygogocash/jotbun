@@ -16,6 +16,7 @@ import { VAULT_MIGRATIONS } from './migrations'
 import { assertPolicyAccepted } from './policies'
 import { RateBuckets } from './rate-limits'
 import { toProblemReply } from './replies'
+import { armAlarm, committedRevision, runDue } from './retention'
 import { VAULT_HANDLERS } from './routes'
 import { assertSession, ensureAccount } from './session'
 import { vaultSchema } from './schema'
@@ -79,6 +80,18 @@ export class UserVault extends DurableObject<VaultEnv> {
   }
 
   /**
+   * The vault's alarm (§6.2 "Alarms", 1A-T8b): runs the retention jobs that are
+   * due, then sets the alarm to the earliest job left, or deletes it. A failed job
+   * brings the alarm back a minute later, never in a loop. An erased vault does
+   * nothing: erase() already cancelled the alarm.
+   */
+  async alarm(): Promise<void> {
+    if (this.erased) return
+    const c = { sql: this.ctx.storage.sql, storage: this.ctx.storage, now: this.clock() }
+    armAlarm(c, runDue(c))
+  }
+
+  /**
    * One call from the Worker, under the vault's checks in this order: the
    * account (an owner mismatch is refused), the principal's budget, the session,
    * the session's read or write budget, the current policy when the route needs
@@ -94,7 +107,7 @@ export class UserVault extends DurableObject<VaultEnv> {
       const handler = VAULT_HANDLERS[call.route]
       if (!route || !handler) throw new Error('a vault call names no ported route')
       const services = this.built()
-      return this.ctx.storage.transactionSync(() => {
+      const { reply, committed } = this.ctx.storage.transactionSync(() => {
         const c: VaultContext = {
           db: this.db,
           sql: this.ctx.storage.sql,
@@ -111,8 +124,13 @@ export class UserVault extends DurableObject<VaultEnv> {
         assertSession(c)
         if (call.charge !== 'step') this.rates.charge(call.charge, call.claims.sessionId)
         if (call.access === 'current_policy') assertPolicyAccepted(c)
-        return handler(c, call)
+        const before = committedRevision(c)
+        const result = handler(c, call)
+        return { reply: result, committed: committedRevision(c) === before ? undefined : c }
       })
+      // A call that committed a command moves the alarm, outside the block (1A-T8b).
+      if (committed) armAlarm(committed)
+      return reply
     } catch (error) {
       return toProblemReply(error)
     }
