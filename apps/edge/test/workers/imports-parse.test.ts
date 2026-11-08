@@ -604,3 +604,38 @@ describe('1B-T5: the consumer and the vault', () => {
     expect(await candidatesOf(user, jobId)).toHaveLength(6)
   })
 })
+
+describe('1B-T5 fix round: a rejected receipt photo keeps its own issue, as the API records it', () => {
+  const usage = { max_rss_kb: 1024, cpu_ms: 5 }
+
+  it.each<[string, ParserRunOutcome, string]>([
+    ['a photo over 20 MP', { kind: 'result', result: { ok: false, code: 'image_too_large', usage } }, 'image_too_large'],
+    ['a photo that is not the format it claims', { kind: 'result', result: { ok: false, code: 'image_format_mismatch', usage } }, 'image_format_mismatch'],
+    ['a photo the image child cannot decode', { kind: 'result', result: { ok: false, code: 'image_malformed', usage } }, 'image_malformed'],
+    ['a photo whose child was killed at its deadline', { kind: 'timeout' }, 'parse_timeout'],
+    ['a photo whose child went past its memory budget', { kind: 'memory_limit' }, 'parse_resource_limit'],
+  ])('%s is stored with its own issue, never parse_failed', async (_label, outcome, code) => {
+    const v1 = await client()
+    const user = await member(v1)
+    const jobId = await acceptImage(v1, user)
+    const reply = serverReply('jpeg', outcome)
+    // What the parse server answers (previewFromOutcome in apps/api/src/imports/parse-outcome.ts): the rejected record with its own code, and no image.
+    expect(reply).toMatchObject({ kind: 'parsed', image: null, record: { preview: { status: 'rejected', issues: [code] } } })
+    expect(await deliver(user, jobId, fakeParser(reply).parser)).toMatchObject({ acked: true, retried: false })
+    expect(await previewOf(user, jobId)).toMatchObject({ status: 'rejected', layout: null, issues: JSON.stringify([code]), candidate_count: 0, image_key: null, image_attachment_id: null })
+    expect(await candidatesOf(user, jobId)).toEqual([])
+    expect(await imagesOf(user)).toEqual([])
+    expect(await jobOf(user, jobId)).toEqual({ parse_state: 'parsed', parse_attempts: 1, parse_failure: null })
+  })
+
+  it('a readable photo reply without its image is still the rejected preview parse_failed', async () => {
+    const v1 = await client()
+    const user = await member(v1)
+    const jobId = await acceptImage(v1, user)
+    const receipt = receiptReply(TINY_JPEG) as Extract<ParseServiceReply, { kind: 'parsed' }>
+    expect(receipt.record.preview.status).toBe('ready')
+    expect(await deliver(user, jobId, fakeParser({ ...receipt, image: null }).parser)).toMatchObject({ acked: true })
+    expect(await previewOf(user, jobId)).toMatchObject({ status: 'rejected', layout: null, issues: '["parse_failed"]', candidate_count: 0, image_key: null })
+    expect(await imagesOf(user)).toEqual([])
+  })
+})
