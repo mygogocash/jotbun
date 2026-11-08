@@ -276,6 +276,57 @@ Phase 1A moves each person's ledger into one SQLite Durable Object, the UserVaul
   - Tasks 4 to 6 register categories, transactions and budgets in `buildVaultRegistry()`. The registry-parity case can then be completed once the 1B entities are also registered.
   - 1B adds the lifecycle generation. Replace the constant `GENERATION` in `reads/sync.ts`, and complete the lifecycle case.
 
+### Task 8b: Retention on the vault's alarm
+
+- **Status:** built and verified locally on `p1/1a-t8b-retention` (`.claude/worktrees/p1a-t8b`), from `8f04a3b`. Not pushed. Task 8 is split (ruling R7): 8a served sync changes; this is the rest, except Task 7's money journey (below). The independent review is the controller's, after this receipt.
+- **Files:**
+  - `apps/edge/src/vault/retention.ts` (new): `nextDue`, `reschedule`, `runDue` and `armAlarm` (the schedule and the alarm), and the three jobs. `purgeExpiredRecords` and `purgeEntities` port `gogospend_retention_purge_account` (its transactions half) and `gogospend_purge_entities`. `pruneChanges` ports the latest `gogospend_prune_account`. `dropReceiptDigests` ports `gogospend_drop_receipt_digests`. `committedRevision` lets a call see that it committed. Revisions are read as `CAST(... AS TEXT)` and bound as `CAST(? AS INTEGER)`. Id lists bind as one JSON parameter (R57). Each job is its own `transactionSync` block.
+  - `apps/edge/src/vault/user-vault.ts` (shared): one import; `alarm()`, placed right after `erase()`; and in `call()`, the revision is read before and after the handler, and a call that committed arms the alarm after its block.
+  - `apps/edge/test/workers/support/v1-client.ts` (shared): `createLunch(client, user): Promise<string>`, appended at the end of the file.
+  - Tests: `apps/edge/test/workers/retention.test.ts` (new, 13 cases). `apps/edge/test/workers/sync.test.ts`: the prune half of the 30-day case, the API's name for the lifecycle case, the registry case in part, and three `it.todo` lines for 1B.
+- **RED to GREEN:**
+  - Typed stubs first: `retention.ts` exported every name with its final signature and did nothing, and `user-vault.ts` already called them.
+  - RED, `npx vitest run --config vitest.workers.config.ts test/workers/retention.test.ts test/workers/sync.test.ts`: `Tests 12 failed | 14 passed | 3 todo (29)`. All 12 are assertions: 10 `expected false to be true` (no alarm was set, or the prune did nothing) and 2 `expected null to be <time>`. Two retention cases pass on inert stubs by design (the cleared alarm, the erased vault). The registry case passes at once: the registry was already right.
+  - GREEN: `Tests 26 passed | 3 todo (29)`.
+- **Mutation check:** 16 mutants, each applied to its file, run against the two focused files and restored byte for byte (the planner's runner, `mutants.py`). Every one failed exactly the expected tests:
+  - the plan's three: M1, purge at 29 days (3 cases, `nothing is purged early` among them); M2, the purge leaves `pruned_through` unchanged (`tombstones reach delta readers, older cursors resync`); M3, the alarm always at the purge time (5 cases, the earliest-job case among them; the plan's first alarm case cannot catch it, because all three jobs fall due together there);
+  - M4, the literal prune rule; M5, no active-account check; M6, no per-job `try`/`catch`; M7, no one-minute floor after a failure; M8, a strict `<` in the purge; M9, no arming after a commit (11 cases); M10, a 29-day purge cutoff with the due time unchanged; M11, the prune deletes heads; M12, the digest drop ignores its cutoff; M13, the prune cut ignores the retention line; M14, one purge group per alarm; M15, one `?` per id; M16, the prune due with nothing superseded.
+  - Equivalent, all 26 pass: E1, no `erased` guard in `alarm()` (an erased vault holds only its marker, so retention is inert either way); E2, arming after every call (only a commit changes a due time); E3, never calling `deleteAlarm` (a null schedule only happens inside `alarm()`, after the runtime removed the alarm that fired).
+- **Gate** (worktree root):
+  - `typecheck:edge`: exit 0.
+  - `test:edge`: 156 passed (12 files).
+  - `test:edge:workers`: 262 passed and 3 todo (14 files); 248 before this task.
+  - `build:edge`: passes; the `jotbun_vault` bundle has the retention code and no PostgreSQL import.
+  - `test:edge:db`: SKIPPED (Docker is not running; CI runs it).
+  - `git diff --check`: clean on the staged change before the commit; the committed range is checked after the commit.
+- **Ported** from `apps/api/src/privacy/retention.integration.spec.ts` (14 cases):
+  - In full (the plan's list): `purged_transactions_are_not_resurrected_by_receipts`; `a deleted record stops counting at once and can be undone within 30 days; nothing is purged early`; `drops receipt digests after the outbox lifetime: a replay is refused and never re-run; status still answers`; `removes a superseded change that sat below the retention line (S1 change log)`.
+  - In part: `tombstones reach delta readers, older cursors resync` (its snapshot half is 1B-T8's).
+  - In changed form: `leaves an account being erased to its erasure: no purge group is written for it` (the status is set to `deleting` directly; the alarm is also cleared, §6.12 step 2); `a failing step is reported and does not stop the others` (a trigger makes the purge fail; the alarm also comes back a minute later); `every prune works in bounded batches` (as `purges more records than SQLite has parameters, at most 1,000 to a change group`: 1,001 records, two groups of 1,000 and 1).
+  - 1B's: `export requests are purged 30 days after the request; the receipt stays compact` and `drops finished upload rows 30 days after they ended ...` (1B-T11), and `a snapshot read before a purge is never recorded afterwards ...` (1B-T8).
+  - Not applicable: `skips an account while a user write holds its lock ...` (a vault call runs to completion; there is no lock to wait on); `ages out provider-event receipts, reconcile checks, expired challenges, finished jobs, lapsed holds and completed deletion requests` (none of those tables is in a vault; D1's are 1C's); `the erasure purge and the account foreign key use indexes ...` (PostgreSQL's planner).
+  - The plan's three alarm cases, with their names and assertions, each with `t0 = Date.now()` (R6). New: `the alarm follows the earliest job, and each record waits its own 30 days`, `an erased vault runs no retention and keeps no alarm, awake or after it sleeps`.
+  - `sync.test.ts`: `30-day retention drops superseded changes, keeps every head, and expires older cursors` is now ported in full, and the lifecycle case has the API's name. `snapshots validate exactly the entities the API registers` is ported in part (the vault's four entities each use exactly their `SYNC_ENTITY_VALIDATORS` function); the full set waits for 1B and phase 4 (`slip_inbox`).
+- **Deviations:**
+  1. The prune is due, while some change is superseded, 30 days after the oldest change group above the retention line (the API's `gogospend_retention_candidates` rule). The plan says "the earliest superseded change + 30 days". Taken literally, that time is already past for a change superseded after the line passed it, and the alarm would loop (mutant M4). The exact earliest time needs a scan of the whole change log on every commit (13.6 ms at 20,000 changes); this rule costs 1.0 to 2.6 ms there, and the next due time is always later than the prune. Accepted by the controller (8 November).
+  2. "30 days old" is inclusive (`<=`) in all three jobs, where the API is strict, so a job runs at its own due time. A record deleted at D is purged at D + 30 days exactly. Accepted by the controller (8 November).
+  3. The prune deletes every non-head change at or below the cut. The API's prune visits only entities changed since its last pass, an index shortcut. This also covers a change superseded below a line that a purge moved.
+  4. `runDue` returns the jobs that failed (the plan says `void`). `alarm()` uses that to arm no sooner than a minute later. A failed job is logged as `vault_retention_<job>_failed`, and the other jobs still run. Accepted by the controller (8 November), as part of the failed-job ruling.
+  5. The purge's command id is `derivedUuid(accountId, 'retention-purge', revision)`, the deterministic stand-in for the API's md5 id. The purge writes no receipt and no audit row, as the API does.
+  6. `purgeEntities` takes a `RetentionContext` (`Pick<VaultContext, 'sql' | 'storage' | 'now'>`), so 1B's `FileContext` can call it (1B-T6, T9, T10).
+  7. `call()` knows it committed by comparing the revision before and after the handler. 1B-T11 replaces that with its `touched` flag.
+  8. `purged_transactions_are_not_resurrected_by_receipts` ages only the record by SQL, as the API's `age()` does: with the vault clock moved instead, its receipt digest would drop at the same moment and the replay would be 409.
+  9. Time in the tests: each case takes `t0 = Date.now()` (R6), where the plan's sample takes `Date.parse('2026-10-25T00:00:00.000Z')`, so every alarm a test sets is about 30 days in the real future and never fires on its own.
+  10. Registry check: `snapshots validate exactly the entities the API registers` is ported in part, as the planner ruled (P8): the vault's four entities, each with exactly its `SYNC_ENTITY_VALIDATORS` function. The full equality waits for 1B (export, import_review, import_selection) and phase 4 (`slip_inbox`).
+- **SKIPPED:** nothing hosted; no Cloudflare resource was touched. `test:edge:db`: SKIPPED (Docker is not running; CI runs it).
+- **Not in this commit:** Task 7's money journey (plan Task 8 Step 1, ruling R5). 1A-T7 adds it to `test/workers/history.test.ts` as `it.todo`, and that file is not on the integration head yet. It is a separate follow-up once 1A-T7 merges.
+  - Plan wording fix for the orchestrator: the 1B plan (line 1130) says the money journey was "turned on in 1A-T8a", while the 1A plan gives it to 8b (the halves note, line 716). The 1A plan's Task 8 step 1 (line 734) also lists turning it on, next to the sync port; the halves note governs, and this task follows it.
+- **Notes for 1B and later:**
+  - The alarm runs `runDue(c)`, then `armAlarm(c, failed)`. 1B-T11 adds its file jobs between the two and replaces `armAlarm` with `rearm` and `alarmAt`. `reschedule` keeps rows of other jobs in `schedule` and returns the earliest of the whole table.
+  - `purgeEntities(c, entity, ids)` takes at most 1,000 ids and must run inside the caller's block. It moves `pruned_through` over the purged entities' earlier changes.
+  - `hasSupersededChange` relies on each head keeping exactly one change row of its own. Anything that writes a head must write its change row too, as `appendChanges` and `purgeEntities` do.
+  - Retention skips a vault whose `account_state.status` is not `active`, and clears its alarm.
+
 ### Task 4: Categories
 
 - **Status:** built and verified locally on `worktree-agent-a1bb3b037cc6147fe`, on top of Task 3 (`f6d1f95`). Not pushed. The independent review is the controller's, after this receipt.
@@ -973,6 +1024,112 @@ Found by the native iOS check above. iOS does not resize the window for the keyb
 - **Fix round:** a draft that lands after Tell Bun has closed no longer closes the keyboard. `TellBunSheet` dismisses the keyboard only while its sheet is shown (a ref kept in step with `visible`), so the late draft waits for the next open and leaves another field's keyboard alone. RED: 1 failing on its assertion (`a draft that lands after the sheet closed leaves the keyboard alone`), 11 passing; GREEN: 12 passing. Mutants: 3. Two were killed by that test (the sheet check dropped; the ref never updated). One survived (the two effects swapped), because the close and the late draft land in separate renders, so their order makes no difference to these tests. Gate: `typecheck:app` passed; the three focused render files passed, 28 tests. Not changed: a draft that lands while the sheet is still open, after the person has tapped back into the field, still closes the keyboard.
 - **Not covered:** Android (unchanged; not run on a device here) and a real iPhone; Android 16 edge-to-edge may stop the window resizing; with Reduce Motion and Prefer Cross-Fade Transitions on, React Native's keyboard wrapper gives no padding, so the sheet may not rise; a sheet that opens while the keyboard is already up does not rise on its own, because the wrapper reacts only to keyboardWillShow.
 
+## 1C: Better Auth and the sign-in port
+
+Phase 1C replaces Auth0 with Better Auth on D1 (plan `docs/superpowers/plans/2026-10-25-jotbun-p1c-better-auth.md`; spec §8 phase 1, "Better Auth on D1, and the app's sign-in port"). Task 1 runs Better Auth inside the HTTP Worker at `/api/auth/*`: its D1 tables, sign-in by emailed code, and ten-minute EdDSA JWTs.
+
+### 1C Task 1: Better Auth on D1: its tables, email-code sign-in and the JWT
+
+- **Status:** built and verified locally on `p1/1c-t1-better-auth` (`.claude/worktrees/p1-1c-t1`). Committed, not pushed. The independent review is the controller's, after this receipt. An earlier session wrote most of the task on `60e2026` and left it uncommitted. It is kept as `57dc60e`. The integration head `bdf6b12` is merged in `60d818b`, and the branch's last commit, the one that adds this section, adds the rest.
+- **Files:**
+  - Packages: `apps/edge/package.json` (`better-auth`, `@better-auth/passkey` and `@better-auth/expo`, all exactly 1.6.33) and `apps/edge/package-lock.json`.
+  - Migrations: `apps/edge/migrations/auth/0001_better_auth.sql` holds Better Auth's seven tables (`user`, `session`, `account`, `verification`, `jwks`, `passkey`, `rateLimit`) and their five indexes, as its 1.6.33 migrator writes them on D1. `0002_jotbun_auth.sql` holds `account_status` and `email_code_sends`. `migrations/erasure/0001_erasure_registry.sql` holds the erasure registry.
+  - Auth: `apps/edge/src/auth/env.ts`, `config.ts`, `claims.ts`, `rate-limits.ts`, `mailer.ts` (it refuses every send until Task 2), `create-auth.ts`, `instance.ts` and `handler.ts`; the HTTP Worker's glue, `src/server/auth.ts`.
+  - Shared files:
+    - `src/server.ts`: `/api/auth/*` after PostHog's `/ingest/*`, before TanStack Start.
+    - `wrangler.jsonc`: `AUTH_DB`, `ERASURE_DB`, `send_email` `EMAIL` and the four auth vars.
+    - `vitest.workers.config.ts`: the three test D1 databases, their migrations, the test vars and the migration setup file.
+    - `src/cloudflare-workers.d.ts`: the D1 and Email types, plus the test bindings and auth settings on `Cloudflare.Env`.
+  - Tests: `test/workers/auth/schema.test.ts` (4), `email-code.test.ts` (14) and `jwt.test.ts` (9), with `support/auth-harness.ts` and `support/apply-auth-migrations.ts`.
+- **Packages (plan Step 1, done by the earlier session):**
+  - The edge lockfile gains 45 entries and loses none.
+  - 55 existing entries change only their `dev`, `devOptional` or `optional` flag, which is npm 11.20.0 recounting once Better Auth is a production dependency. The root entry gains the three new dependencies. No version, `resolved` or `integrity` changed.
+  - No added package has an install script. The lockfile's only `hasInstallScript` entries are the existing `esbuild`, `fsevents` and `workerd`.
+  - `npm ls` shows one jose 6.2.12 and one wrangler 4.152.0.
+  - 1D-T3's `posthog-node` 5.56.2 merged beside Better Auth without a conflict, and `npm run install:edge` installed the merged lockfile (`added 248 packages`).
+  - `npm view` was not re-run, because the protocol allows no network beyond `npm ci`.
+- **RED to GREEN:**
+  - The earlier session wrote the implementation before any RED was recorded, so the RED was reconstructed. The plan's typed stubs (Step 2, R52) were swapped in and the suite was run. Then the real files were restored, and `git diff` is empty for them. The stubs:
+    - `createAuth` returns `betterAuth({ database, secret, baseURL })`, with no plugins and no settings check.
+    - `jwtPayload` returns `{ sid: '', auth_time: 0 }`.
+    - `handleAuthRequest` answers 501, and `createdDuring` returns true.
+    - The three migrations have no statements.
+  - RED, `npm run test:edge:workers -- test/workers/auth/`: `Tests 27 failed (27)`.
+    - 19 fail on assertions, for example `expected 501 to be 404`, `expected [] to deeply equal [ 'account', 'account_status', ... ]` and `expected function to throw an error, but it didn't`.
+    - 8 fail inside the harness's `signInByEmail`, which throws `code request failed: 501` because the stubbed handler answers 501.
+    - None fails on a missing module.
+  - The merge regression is the RED for the glue change. After the merge, `npm run test:edge -- test/posthog-proxy.test.ts` could not load (`Cannot find package 'cloudflare:workers' imported from src/server/auth.ts`): 1D-T2's test imports `src/server.ts` in Node, and that file now imports the glue.
+  - GREEN: the same workers command gives `Tests 27 passed (27)`. The PostHog file gives 9 passed.
+  - Better Auth's answers, pinned as M16 asks:
+    - an expired code: 400 `OTP_EXPIRED`;
+    - a wrong code: 400 `INVALID_OTP`;
+    - the right code after three wrong ones: 403 `TOO_MANY_ATTEMPTS`;
+    - `/token` without a session: 401;
+    - a disabled code route, and an unknown auth path: 404;
+    - the eleventh code request from one address in a minute: 429.
+  - A fake `Date` reaches Better Auth in workerd, so the expiry case needs no edit to the `verification` row.
+- **Mutation check:**
+  - Method: the five mutated files were backed up outside the repository. Each mutant was applied in place and `test/workers/auth/` was run. The file was then restored and compared with `cmp`, which reported no difference after every mutant. All thirteen ran under one hold of the heavy lock.
+  - The plan's six mutants (each gives 1 failed | 26 passed):
+    - M1, `definePayload` removed: the EdDSA JWT test fails (the user's fields appear).
+    - M2, the email normalisation skipped: the capitals-and-spaces test fails (Better Auth refuses the untrimmed address with 400, so the harness throws).
+    - M3, the hook's type refusal off: `only sign-in codes are sent ...` fails (200 for the unknown address).
+    - M4, the session index removed: the index comparison fails.
+    - M5, `AUTH_BODY_MAX_BYTES` raised to 1 MiB: the 413 test fails.
+    - M6, `createdDuring` flipped: the created test fails.
+  - Added mutants, for guards the plan's list leaves unmutated. Each is killed by one of the four tests added for it, and that kill is the added test's RED:
+    - M7, the 415 guard off: `a body that is not JSON is 415 ...` fails (Better Auth answers 415 itself, with its own body).
+    - M8, malformed JSON answered 413: `a body that is not valid JSON is 400 VALIDATION_FAILED ...` fails.
+    - M9 (the secret's length check down to 1) and M10 (the audience check removed): `Better Auth refuses a secret under 32 characters, ...` fails.
+    - M11, `isAuthPath` without the slash: `the HTTP Worker sends /api/auth and its subpaths ...` fails.
+    - M12, the `no-store` default off: `auth answers are no-store` fails.
+  - Survivor:
+    - M13, the type refusal inside `sendVerificationOTP` turned off: all 27 pass. It is equivalent here. The before-hook refuses every type except `sign-in` on `/email-otp/send-verification-otp` before Better Auth calls `sendVerificationOTP`. Better Auth's other code senders are `/email-otp/request-password-reset`, `/forget-password/email-otp` and `/email-otp/request-email-change`, all in `disabledPaths`, plus a sign-up hook that runs only with `sendVerificationOnSignUp`, which is unset. The plan asks for the second refusal as defence in depth.
+  - Not mutated: `handleAuth`'s 503 on `AuthConfigError`. The test Worker's `env` always holds the settings, so no test can reach that branch.
+- **Gate** (worktree root):
+  - `typecheck:edge`: exit 0.
+  - `test:edge`: 144 passed (11 files).
+  - `test:edge:workers`: 267 passed (15 files), which is 240 before this task plus 27.
+  - `build:edge`: passes, and `grep -c '"AUTH_DB"' apps/edge/dist/server/wrangler.json` prints 1.
+  - `test:edge:db`: SKIPPED: Docker is not running (`docker info` finds no daemon socket). Docker was not started for this task.
+  - `node --test scripts/ci/lockfile-bindings.test.mjs`: 2 passed.
+  - `git diff --check origin/claude/p1a-vault-core...HEAD`: clean.
+- **Deviations:**
+  1. `src/server/auth.ts` reads `env` with `await import('cloudflare:workers')` inside `handleAuth`, not with a top-level import.
+     - Why: after the merge, `src/server.ts` imports the glue, and 1D-T2's Node test imports `src/server.ts`; `cloudflare:workers` does not exist in Node.
+     - It is still the only auth module that imports `cloudflare:workers`.
+     - The built bundle keeps `await import("cloudflare:workers")`, and the planner's scratch run of `wrangler dev` on `dist/server`, after `wrangler d1 migrations apply --local` for both databases, answered as follows: `/api/auth/jwks` 200 `no-store` with one Ed25519 key; `/api/auth/nothing-here` 404; a 70 kB body 413 `PAYLOAD_TOO_LARGE`.
+  2. The glue logs through `logFailure('auth_unavailable', error)`, as the plan's Consumes says. The earlier copy wrote the same line by hand.
+  3. The `src/server.ts` merge with 1D-T2: `/ingest/*` first, then `/api/auth/*`. Other requests go to TanStack Start with the handler's own argument tuple, the equivalent of the plan's `fetch(request, ...rest)`.
+  4. `cloudflare-workers.d.ts` differs from the plan's list in two ways:
+     - `D1Result.meta` also has `last_row_id`, because Better Auth 1.6.33's own `D1Database` type requires it (`@better-auth/core/dist/types/database.d.mts`; the plan says to "add exactly the members it names").
+     - `Cloudflare.Env` also declares the optional string settings the harness reads (`AUTH_BASE_URL`, `AUTH_ISSUER`, `AUTH_AUDIENCE`, `AUTH_TRUSTED_ORIGINS`, `BETTER_AUTH_SECRET`, `ERASURE_KEY`, `JOTBUN_ENV`). Without them `tsc` reports TS2322 seven times in `auth-harness.ts`.
+  5. `create-auth.ts` holds empty `VaultSessionControl` and `ProviderHooks` interfaces, so `AuthDeps` has the plan's shape. Tasks 4 (`vault-control.ts`) and 3 (`social.ts`) replace them.
+  6. Four tests beyond the plan, written to kill M7 to M11:
+     - `a body that is not JSON is 415 before Better Auth reads it`;
+     - `a body that is not valid JSON is 400 VALIDATION_FAILED before Better Auth reads it`;
+     - `Better Auth refuses a secret under 32 characters, and a missing base URL, issuer or audience`;
+     - `the HTTP Worker sends /api/auth and its subpaths to Better Auth, and nothing else`.
+
+     The plan's cases keep their names and assertions.
+  7. The auth tests read `env` from `cloudflare:workers`, as 1A's workers tests do; `cloudflare:test`'s `env` is deprecated in `@cloudflare/vitest-plugin` 1.4.7. `applyD1Migrations` still comes from `cloudflare:test`.
+  8. `apply-auth-migrations.ts` drops comment-only statements before `applyD1Migrations`, because D1 refuses a migration with no statement. Only the stubbed migrations hit this.
+  9. The RED was reconstructed after the fact, as described above.
+  10. The integration head moved to `75b3625` (#327 on top of #79) while this task ran. As instructed, this branch merges `bdf6b12`, the head the brief was proven against. `75b3625` leaves `src/server.ts`, `src/cloudflare-workers.d.ts`, `apps/edge/package.json` and `apps/edge/package-lock.json` unchanged, so the later merge of `75b3625` takes these files as they are here.
+  11. The lockfile count differs from the plan's estimate: 55 existing entries change only their flag (the estimate was 56), and the root entry gains the three new dependencies. Measured between `60e2026` and `57dc60e`: 45 added, none removed, no version, `resolved` or `integrity` change.
+- **SKIPPED:**
+  - Hosted resources: the D1 ids are placeholders (default pending owner Q6), `EMAIL` stays local (`remote` unset), and no email is sent (Task 1's mailer refuses every send). Apple, Google, Resend and the phone checks belong to later tasks.
+  - `/api/auth/*` on `wrangler dev` is Task 12's proof. The planner's scratch run is the only one so far.
+  - `test:edge:db`: SKIPPED: Docker is not running (`docker info` finds no daemon socket). Docker was not started for this task.
+- **Notes for Tasks 2 to 4, 10a, 12 and the integrator:**
+  - `src/server.ts` is shared with 1C-T10b, 1D-T12, P5-T7 and P6C-T2: each adds a branch to this dispatch. Keep `/api/auth/*` after `/ingest/*`. When 1B-T13's version lands, keep its `queue` handler and re-exports (K3).
+  - `src/server/auth.ts` must keep reading `cloudflare:workers` lazily for as long as a Node test imports `src/server.ts`.
+  - `vitest.workers.config.ts` now uses `cloudflareTest(async () => ...)`, plus a setup file that migrates `AUTH_DB` and `ERASURE_DB` before every workers test file. `AUTH_DB_REFERENCE` stays empty for the schema test. If 1B-T13's config also binds `AUTH_DB` and `ERASURE_DB`, keep one declaration.
+  - Until Task 2, the HTTP Worker cannot send a code, because `mailerFromEnv` refuses every send.
+  - Against an unmigrated local D1, every `/api/auth/*` request throws (`no such table: rateLimit`, 500). Task 12's `dev.mjs` applies both migration sets with `wrangler d1 migrations apply ... --local`.
+  - K23's `created` compares at millisecond resolution, and workerd's clock moves only across I/O. A second sign-in says `created: false` only if at least one millisecond passes between the first insert and the next request; several D1 round trips sit between them. No run has failed this way.
+  - 1C-T5 (the app's port, in another worktree) adds `### 1C Task 5` under this same heading. Keep one heading.
+
 ## Not done, or follow-ups
 
 - **Rotating reminder wording (owner decision):** a repeating daily notification cannot change its text, so rotation needs "every day" to become seven weekly reminders, one wording per weekday. The reminders milestone (S4) chose one daily reminder on purpose, and its tests pin it. Cancelling all eight known ids first would still leave one reminder a day, so the change is safe to make if wanted.
@@ -1380,6 +1537,53 @@ Phase P5 lets a person keep records in any currency against a home currency they
   - `index.ts` is shared: this task added one name to the validation block and one block directly after the validation type export line. A conflict keeps both sides.
   - `packages/contracts/src/v1/quickText.ts` has its own private `addDays` (line 178; not exported, not touched). The barrel exports only the `validation.ts` one, so the names do not clash.
   - A later task that needs a signed figure converted must convert its magnitude and restore the sign: `convertMinor` refuses negatives on purpose.
+
+Phase P5 lets a person keep records in any currency against a home currency they pick ([plan](../superpowers/plans/2026-10-25-jotbun-p5-travel.md)).
+
+### P5 Task 4: The vault migration: a rebuilt wallets table, currency columns, trips and settings
+
+- **Status:** built and verified locally on `p5/t4-vault-migration`, on top of `800680d`. Not pushed. The independent review is the controller's, after this receipt. The integration head has since moved to `8f04a3b` (1D-T1 and the iOS keyboard fix); it is not merged here, and no file under `apps/edge` differs between `800680d` and `8f04a3b`.
+- **Path proven:** deferred foreign keys (`PRAGMA defer_foreign_keys = ON` before the swap, `OFF` after the rename), inside the migrator's `transactionSync`, in workerd. The legacy-rename fallback was not needed and is not written. Triggers and views naming `wallets` before the migration: none (in `0000` and `0001`); after it: `wallets_currency_immutable` only. The primary key index is `sqlite_autoindex_wallets_1` before and after (the planner's observation; the suite checks that `PRAGMA index_list(wallets)` is unchanged).
+- **Files:**
+  - `apps/edge/src/vault/migrations/0002_currencies_trips.sql` (new; the plan's `NNNN`): B18's wallets rebuild with any ISO-shaped currency and the three looks; `wallets_currency_immutable` (Q7); `categories.icon` and `pack_key` (never on a built-in); eight `transactions` columns by ADD COLUMN, the home-amount backfill and `transactions_trip_idx`; `trips` with `trips_dates_idx`; `settings`. All new tables STRICT; `0000` and `0001` unchanged.
+  - `apps/edge/src/vault/migrations/index.ts`: journal entry `idx` 2, `when` 1761523200000, tag `0002_currencies_trips`, key `m0002`.
+  - `apps/edge/src/vault/schema.ts`: the new columns on `categories`, `wallets` and `transactions`; tables `trips` and `settings`; `VAULT_CORE_TABLES` now lists 31.
+  - `apps/edge/test/workers/support/migrations.ts` (new): `migrateBefore(state, suffix)`.
+  - `apps/edge/test/workers/currency-migration.test.ts` (new): the plan's six cases and four more (36 rule rows, the trip indexes, the previous release's writes, a failed then retried upgrade).
+  - `apps/edge/test/workers/vault-schema.test.ts`: the 31-table list, the journal order checks, the migration counts from the journal's length.
+- **RED to GREEN:**
+  - Typed seams first: the journal entry and a stub migration (`SELECT 1;`), and the Drizzle columns and tables.
+  - RED, `npm run test:edge:workers -- test/workers/currency-migration.test.ts test/workers/vault-schema.test.ts`: 12 failed, 12 passed, each failure an AssertionError. The first failing assertion of each, shortened: rebuilt wallets `[ { …(10) }, { …(10) } ]` against `[ { …(13) }, { …(13) } ]`; referencing tables `[ 'id', 'name', 'currency', …(6) ]` against `…(9)`; older records `currency: undefined` against `'THB'`; wallet currency got `CHECK constraint failed` where `/wallet currency is immutable/` was expected; new columns got `table transactions has no column name` where `/CHECK/` was expected; triggers and views `undefined` against `{ type, tbl_name }`; phase 5 writes `[ [ …(2) ], …(35) ]` against the same shape; trip indexes `[]` against two index rows; previous release's writes `id: undefined` against `type: 'expense'`; failed upgrade `promise resolved "undefined" instead of rejecting`; core tables `[ 'account_state', …(28) ]` against `…(30)`; Drizzle drift `[ [ 'archived', true ], …(10) ]` against `…(8)`.
+  - GREEN, the first case alone (`Tests 1 passed | 9 skipped (10)`), then the same command: 24 passed, 0 failed. The whole Workers suite: 14 files, 258 passed. Re-confirmed after the mutation loop: the unmutated focused files 24 of 24 before it, and the Workers suite 14 files, 258 passed, after it.
+- **Mutation check** (the brief's Step 5 list, Appendix H, applied one at a time with the Edit tool, since the planner's `mutants.mjs` was lost; see Deviations): 31 of 31 killed; survivors: none.
+  - The plan's three: the copy without `archived` killed (2 of 24: cases 1 and 10); no immutability trigger killed (2 of 24: cases 4 and 6); no backfill killed (1 of 24: case 3).
+  - The rest: M4 and M5 killed (10 of 24 each: all ten currency cases); M6 and M7 by case 4; M8 to M13 by case 5; M14 and M15 by case 8; M16 to M25 and M29 by case 7; M26 and M27 by cases 3 and 9; M28 by case 3; M30 by the Drizzle drift case; M31 by cases 3, 6 and 10. All killed, as the brief lists.
+- **Gate** (worktree root):
+  - `npm run typecheck:edge`: passed (exit 0).
+  - `npm run test:edge`: passed, 12 files, 156 tests.
+  - `npm run test:edge:workers`, under the heavy lock (taken and released): passed, 14 files, 258 tests.
+  - `npm run build:edge`: passed; `grep -c wallets_currency_immutable apps/edge/dist/jotbun_vault/index.js` prints 1.
+  - `git diff --check`: clean before the commit.
+- **Calls made for this task (the plan is silent; for the reviewer):**
+  1. The number `0002` and `when` 1761523200000 (one day after `0001`).
+  2. The trigger and view case compares the rows other than `wallets_currency_immutable`, which this migration adds and whose SQL names `wallets`.
+  3. The two plan cases that would pass without a migration first assert that the rebuild ran.
+  4. "A real date" is `date(x) IS x`, with no 1970 floor.
+  5. `wallets.currency` has no default (the plan's step 2 replaces the column; every writer names it).
+  6. `trips.version` and `settings.version` default to 1 with `>= 1`; `settings.entity_id` is NOT NULL; `trip_id` has no shape check and no foreign key (X4).
+  7. `schema.ts` declares no defaults; the constraints live in the SQL.
+  8. `vault-schema.test.ts` reads the migration count from the journal and checks the journal's order.
+- **Deviations:**
+  1. The planner's scratch folder (`mutants.mjs`, `SHA256SUMS`, the verified copies and the brief file) was cleared by macOS during an interruption. The worktree was verified by content against the brief's code blocks, not by checksum, as the controller directed. The checksum checks made before the interruption had passed.
+  2. The mutation step ran with the Edit tool, not `mutants.mjs`. Each mutant was applied to the brief's text, run on the two focused files with Vitest's JSON reporter under the heavy lock (taken and released around each run), restored with Edit, and confirmed with `git diff` against a baseline taken before the first mutant. The three mutated files were also compared with backups, because the SQL file and the test helper are untracked and `git diff` cannot show them. An earlier script run had logged 31 killed before the interruption was reported; the controller asked for this re-run.
+  3. No other deviation from the brief.
+- **SKIPPED:** `test:edge:db`: Docker is stopped on this machine (`docker info` failed), and the suite starts PostgreSQL through `scripts/dev-v1.mjs db-up`; CI runs it. `typecheck`, `test:api`, `test:db` and the app gates: no contracts, API or app file changed. Nothing deployed; no network beyond `npm ci` and `git fetch`.
+- **Notes for the integrator:**
+  - Renumbering: if another vault migration merges first, rename the file to the next number, give its journal entry the next `idx`, the key `mNNNN` and a `when` later than every earlier entry (never equal: the migrator skips an entry whose `when` is not later than the last applied one, forever, on every upgraded vault), and update the comment in `schema.ts` that names the file. `vault-schema.test.ts` checks the order; `currency-migration.test.ts` finds the migration by its `_currencies_trips` suffix.
+  - If a migration numbered before this one adds a trigger or view whose SQL names `wallets`, this migration must drop it in step 1 and create it again after step 4; "the triggers and views naming wallets are the same after the rebuild" fails until it does. A new table referencing `wallets` (P4's `slip_accounts`) needs nothing: "every table that references wallets keeps its rows" reads the references from `PRAGMA foreign_key_list` and checks it.
+  - Any test that pins the migration count must read `VAULT_MIGRATIONS.journal.entries.length`, and any table list must add `settings` and `trips`.
+  - Records the previous release writes after this migration have a null `home_amount_minor`; phase 5 reads must use `coalesce(home_amount_minor, amount_minor)` and `CAST(... AS TEXT)`. Nothing reads the new columns yet.
+  - An upgrade that fails leaves the vault in its older shape; the object resets and the next wake retries. A vault whose upgrade keeps failing refuses calls until a fixed release ships. The planner's upgrade of 90,100 records took 576 ms in local workerd, inside `blockConcurrencyWhile`.
 
 ## Fix: flaky render and API tests (8 November)
 
