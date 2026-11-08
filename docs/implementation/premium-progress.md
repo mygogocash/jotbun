@@ -891,6 +891,81 @@ Phase 1B moves files and background work onto each person's vault (spec `docs/su
 
 ## 1D: live pokes, the pending choice, PostHog and the proof
 
+### 1B Task 4: The vault's object registry with tombstones, grants and pending-work starts
+
+- **Status:** built and verified locally on `p1/1b-t4-object-registry`, from `800680d` (the integration head at Step 0). Not pushed. The independent review is the controller's, after this receipt. The integration head has since moved to `8f04a3b` (1D-T1 and the iOS keyboard fix). This branch does not merge it, and `git diff --stat 800680d 8f04a3b -- apps/edge` is empty.
+- **Files:**
+  - New, `apps/edge/src/vault/files/`: `context.ts` (`FileContext`, `touch`); `objects.ts` (the registry: `reserveObject`, `publishObject`, `releaseObject`, `tombstoneObjects`, `dueObjectKeys`, `objectsDueAt`, `deleteDueObjects`, `putConcatenated`; `RESERVATION_GRACE_MS` 15 minutes, `TOMBSTONE_MS` one day, `DELETE_RETRY_MS` one minute); `grants.ts` (`vaultGrants`, `receiptGrantScope`); `work.ts` (`BuildOutcome`, `StartResult`, `WorkStarter`, `START_RETRY_MS`, the empty `WORK_STARTERS`, `createOnce`, `startDueAt`, `PendingWorkHost`, `startPendingWork`).
+  - New elsewhere: `src/background/vault-stub.ts` (`vaultById`), `src/v1/files/downloads.ts` (`EXPORT_SLOTS`, 4 an isolate; `RECEIPT_SLOTS`, 8 an isolate and 2 an account), `test/workers/support/files.ts` (`TINY_JPEG`).
+  - Vault: `src/vault/context.ts` (`VaultContext` gains `vaultId` and `touched`); `src/vault/user-vault.ts` (`VaultEnv` gains `CONFIG`; `lastStartAttemptMs`; `call()` sets `vaultId`; `vaultId`, `bucket`, `fileContext()`, `isActive()` and `startPendingWork()`).
+  - Worker: `src/v1/routes.ts` (`starts?: true` on `VaultRoute`); `src/v1/handler.ts` (`startWork` in its deps, `startsWork`, the hand-off after a 2xx on a vault route and on a Worker route); `src/v1/config.ts` (`readGates`); `src/cloudflare-workers.d.ts` (`Workflow`, `WorkflowInstance`, `WorkflowInstanceCreateOptions`, `InstanceStatus`, `Queue`).
+  - Tests: `test/workers/files-objects.test.ts` (new, 20 cases); `test/workers/support/v1-client.ts` (`startWork: 'auto' | 'manual'`, `settle()`); `test/workers/support/command-fixtures.ts` (`vaultId` in `inVault`'s context).
+- **RED to GREEN:**
+  - RED (`npm run test:edge:workers -- test/workers/files-objects.test.ts`, with the typed stubs of plan Step 1): `Test Files  1 failed (1)`, `Tests  20 failed (20)`. All 20 failures are `AssertionError`s, for example `expected [] to deeply equal [ { status: 'tombstone', …(1) } ]` (late PUT), `expected [Function] to throw an error` (publishing an unreserved key), `expected { n: +0 } to deeply equal { n: 1001 }` (1,001 keys) and `expected null to deeply equal Any<Number>` (the hand-off). None is a missing module or a thrown error.
+  - GREEN, same command: `Tests  20 passed (20)`. The brief's Step 3.3 expectation is corrected in deviation 14.
+- **Mutation check:** the 25 mutants of the brief's Step 4 (M1 to M24, with M3b) were applied one at a time with the Edit tool, each to the one file the brief names, using the planner's old and new text. Each focused run (`npx vitest run --config vitest.workers.config.ts --reporter=verbose test/workers/files-objects.test.ts` in `apps/edge`) held the heavy lock. After each restore, the SHA-256 of the 16 GREEN files matched its recorded value and `git diff --stat` was unchanged. [25] mutants, [25] killed, no survivor. Each mutant and the cases that failed:
+  - M1, drop tombstones: deleteDueObjects forgets due rows at once: "a key written after it was forgotten is still deleted"; "registry functions take more key lists than SQLite has parameters"; "after deleteDueObjects at objectsDueAt, the next objectsDueAt is later or null".
+  - M2, leave a failed delete due: "a failed R2 delete keeps the rows and retries them a minute later".
+  - M3, bind one ? per key in tombstoneObjects: "registry functions take more key lists than SQLite has parameters".
+  - M3b, bind one ? per key in the batch tombstone update: "registry functions take more key lists than SQLite has parameters".
+  - M4, ignore the jobs gate: "startPendingWork starts nothing while jobs is paused".
+  - M5, empty parts only after put: "putConcatenated stores one create-only object with its SHA-256 and refuses an existing key".
+  - M6, mark an unbound item as started: "startPendingWork starts each item once and marks it, counts an existing instance as started, and leaves an unbound kind for later".
+  - M7, startsWork ignores the status: "a route marked starts hands its vault to startWork only after a 2xx"; "the front door starts pending work after a starts route answers 2xx, and not after an error or in manual mode".
+  - M8, no hand-off on Worker routes: "a Worker route marked starts hands its session's vault to startWork after a 2xx".
+  - M9, publish any registered key, not only a reserved one: "publishing a key that was never reserved throws and writes nothing".
+  - M10, startDueAt ignores the last attempt: "startDueAt is the later of the starters' earliest and the last attempt plus a minute".
+  - M11, startPendingWork ignores an inactive vault: "startPendingWork does nothing in an erased vault or one that is not active".
+  - M12, receipt grant scope without the session: "grants are per purpose, and a receipt grant is bound to its session".
+  - M13, one key label for every purpose: "grants are per purpose, and a receipt grant is bound to its session".
+  - M14, createOnce swallows a failed create: "createOnce treats an existing instance as created and rethrows otherwise".
+  - M15, forget a due tombstone without deleting it again: "a key written after it was forgotten is still deleted".
+  - M16, isActive is any account: "startPendingWork does nothing in an erased vault or one that is not active".
+  - M17, startPendingWork does not record its attempt: "the front door starts pending work after a starts route answers 2xx, and not after an error or in manual mode"; "a Worker route marked starts hands its session's vault to startWork after a 2xx"; "startPendingWork starts nothing while jobs is paused".
+  - M18, readGates opens the gates when config fails: "startPendingWork starts nothing while jobs is paused"; "readGates reads only the gates of config:v1 and fails closed as readEdgeConfig does".
+  - M19, call() leaves the vault id empty: "a vault call's context carries the vault's own id, and vaultById reaches the vault by that id".
+  - M20, releaseObject makes nothing due: "a reserved key is due at its grace deadline, a published one at its expiry, and a held receipt never until released".
+  - M21, a key is due only after its deadline, not at it: "a reserved key is due at its grace deadline, a published one at its expiry, and a held receipt never until released"; "a key written after it was forgotten is still deleted"; "registry functions take more key lists than SQLite has parameters"; "after deleteDueObjects at objectsDueAt, the next objectsDueAt is later or null".
+  - M22, touch marks nothing: "a reserved key is due at its grace deadline, a published one at its expiry, and a held receipt never until released".
+  - M23, tombstoneObjects keeps the old deadline: "a key written after it was forgotten is still deleted"; "publishing a key that was never reserved throws and writes nothing"; "registry functions take more key lists than SQLite has parameters".
+  - M24, vaultById names the vault by name: "a vault call's context carries the vault's own id, and vaultById reaches the vault by that id".
+  - M3 and M3b fail with "too many SQL variables", a thrown error, which is what the plan's mutant predicts. Every other mutant fails on an assertion.
+- **Gate** (from the worktree root):
+  - `npm run typecheck:edge`: passes (exit 0).
+  - `npm run test:edge`: 156 passed (12 files).
+  - `npm run test:edge:workers`: 268 passed (14 files), the 20 new cases included. No timeout in this run, so the `sync.test.ts` rerun was not needed.
+  - `npm run build:edge`: passes (exit 0), and `dist/jotbun_vault/index.js` is built.
+  - `npm run test:edge:db`: **SKIPPED.** Docker is stopped on this machine, so the local PostgreSQL container cannot run. This task changes no PostgreSQL code; CI's database job runs the suite (R80).
+  - `git diff --check` over the staged files, before the commit: clean.
+- **Deviations and calls:**
+  1. `test/workers/support/command-fixtures.ts` is edited, though the plan does not list it. The plan makes `VaultContext.vaultId` a required `string`, and `inVault` builds a `VaultContext` literal, so without the one line `typecheck:edge` fails (`Property 'vaultId' is missing`).
+  2. A Worker route marked `starts` also hands off its work, through its session's stub, because 1B-T5's upload route is a Worker route with `starts: true` and that task does not edit `handler.ts`. A public Worker route has no session and starts nothing. Tested by `a Worker route marked starts hands its session's vault to startWork after a 2xx`.
+  3. A rejected start is caught and logged (`pending_work_unstarted`) before `waitUntil`, so no rejection goes unhandled; the vault's alarm starts it later (1B-T11).
+  4. After a failed R2 delete, `deleteDueObjects` goes on to the next batch. The failed batch is due a minute later, so it is not read again in the same run, and the run is still bounded by `maxBatches`.
+  5. `publishObject` throws a plain `Error` for a key that is not `reserved` (never reserved, or already a tombstone). It is a programming error, so inside a call it becomes a 500, never a client problem.
+  6. `releaseObject` leaves a tombstone's deadline alone, so its second delete a day later still happens.
+  7. `tombstoneObjects` updates registered rows only. Every writer reserves its keys first (plan B4), so an unregistered key has no row to mark.
+  8. `UserVault#bucket` throws `ObjectStoreError('unavailable')` when `OBJECTS` is unbound, as `UnavailableObjectStore` does on the PostgreSQL edge. `readGates(this.env.CONFIG as KVNamespace)`: a missing binding makes `kv.get` throw inside `readEdgeConfig`'s `try`, so every gate is paused and work is held (fail closed).
+  9. `VaultEnv` is written one field per line, so 1B-T5, T6 and T8 each add one line (`PARSE_QUEUE`, `EXPORT_WORKFLOW`, `SNAPSHOT_WORKFLOW`) instead of editing one long line.
+  10. Five tests beyond the plan's fifteen: the front door's hand-off for a vault route (2xx, an error, manual mode), the same for a Worker route, `readGates` failing closed, the call context's vault id with `vaultById`, and the download slots' limits. They cover the handler wiring, `readGates`, `vaultById`, `call()`'s `vaultId` and the slots, which the plan's cases do not reach.
+  11. `TINY_JPEG` was made with libjpeg (`cjpeg -baseline -optimize -quality 75` from a 1×1 grey PGM). `djpeg` and Pillow both decode it to one pixel of value 128. Its segments are SOI, APP0 (JFIF), DQT, SOF0, DHT, DHT, SOS, one scan byte and EOI. `sanitizedImageHeader` is imported from `@api/imports/parse-handler`, as the plan says; that module loads in workerd.
+  12. `dueObjectKeys` orders by `delete_after`, then `key`, so the oldest deadlines go first and a batch is deterministic.
+  13. The download slots import `DEFAULT_ATTACHMENT_LIMITS` (pure) for the receipt slots, and use the literal 4 for exports, because the API's `EXPORT_DOWNLOADS_PER_PROCESS` lives in a Nest controller.
+  14. **Brief correction (the coordinator's ruling on Step 3.3).** The brief expects the GREEN log to show three stderr event lines (`object_delete_failed` once, `work_start_failed` twice). Under the brief's own command, which uses the default reporter, the run prints no stderr for passing tests, so those lines cannot appear, and `Tests  20 passed (20)` is the result. Under `--reporter=verbose` the same file logs five event lines: `object_delete_failed` once, `work_start_failed` twice, and `config_unreadable` and `config_malformed` from the `readGates` test. Observed on this branch: `--reporter=verbose` gives `Tests  20 passed (20)` and those five lines.
+- **SKIPPED (hosted):** nothing deployed; no Workflow, Queue or R2 resource was created. The tests use Miniflare's local R2.
+- **Notes for later tasks:**
+  - Reserve a key with `reserveObject` before its PUT, inside the block that records the work, and publish it with `publishObject` after the PUT, with its deadline (null only for a held receipt). Only a reserved key can be published.
+  - A writer that deleted its own keys calls `tombstoneObjects` (1B-T5's `discarded`); a released receipt calls `releaseObject`.
+  - `deleteDueObjects(v, maxBatches)` takes `{ context(): FileContext; bucket: VaultBucket }`. `UserVault` has `fileContext()`, not `context()`, so 1B-T11 passes `{ context: () => this.fileContext(), bucket: this.bucket }`.
+  - A starter goes into `WORK_STARTERS` (1B-T5 parse, T6 export, T8 snapshot). `start` runs outside every block; `markStarted` runs in a short block of its own. `createOnce` makes a Workflow start safe to repeat.
+  - A route with `starts: true` starts the vault's pending work after a 2xx, for a vault route and a Worker route alike. A test that must not start work uses `startV1(…, { startWork: 'manual' })`; `client.settle()` awaits the hand-offs.
+  - `lastStartAttemptMs` is memory only and is set by every `startPendingWork` run; `startDueAt(c, lastStartAttemptMs)` waits at least `START_RETRY_MS` after it.
+  - `readGates(kv)` is `readEdgeConfig`'s gates and fails closed; background code reads `jobs`, `imports` and `ocr` from it.
+  - Grants: `vaultGrants(c, 'snapshot' | 'export' | 'attachment')`; a receipt grant uses `receiptGrantScope(c.claims)` as its MAC context.
+  - For the integrator: this branch is based on `800680d`, and the integration head `8f04a3b` is not merged into it. Nothing under `apps/edge` differs between the two heads. `docs/implementation/premium-progress.md` does differ, so a merge may conflict there: keep both sides, as the protocol says.
+
+## 1D: live pokes, the pending choice and PostHog
+
 Phase 1D adds live pokes, the pending choice, PostHog and the two-phone proof (plan 1D, in the controller's brief). Task 2 puts PostHog's proxy on the HTTP Worker.
 
 ### 1D Task 1: The app's analytics core: the allow-list, the typed emitters, consent, the held events and the outgoing gate
@@ -1669,6 +1744,60 @@ Correct tests failed on CI only under load. This is a fix to test setup and to t
 - **Notes for the integrator:**
   - The setup loads react-dom's own `scheduler` (0.28.0, with react-dom 19.3.0), resolved from react-dom's folder; it is not an app dependency of its own.
   - Five render files use fake timers; they pass in the full suite.
+
+### P2 Task 5: Quick add's loading and save rules in hooks
+
+- **Status:** built and verified locally on `p2/t5-quick-add`, merged with `origin/claude/p1a-vault-core` at `bdf6b12`. The integration head has since moved to `75b3625`, which the orchestrator merges when opening the PR. Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - `apps/app/src/screens/redesign/entry/entryHelpers.ts`: the old helpers, moved unchanged apart from `export`, plus `ordered`.
+  - `apps/app/src/screens/redesign/entry/entryReferences.ts`: `useEntryReferences`, with the three loads, the device lists, the frozen lists, the copy source and `availableBalances`.
+  - `apps/app/src/screens/redesign/entry/entrySave.ts`: `useEntrySave` (finish, the online send, save and the cheer-day read, with `track` and `savedHaptic`) and `keypadShownOnSave`.
+  - `apps/app/src/screens/redesign/entry/entrySave.render.test.tsx`: nine tests, the plan's five and four more.
+  - `apps/app/src/screens/redesign/QuickAddScreen.tsx`: renders from the hooks. The Tell Bun lines and the often-logged chips are unchanged.
+- **How it was built:** an earlier session made the move and committed it as WIP `1247b43` before the merge (merge `0efd5fa`). This commit adds the RED record, the Save-time sum fix, the saved-pop counter, four tests and the checks.
+- **RED to GREEN:**
+  - The plan's five, against a placeholder `save` (one inserted line, restored by checksum): RED 5 failed, 0 passed; GREEN 5 passed.
+  - The new tests on the WIP screen: RED 1 failed, 8 passed (the Save-time sum test); GREEN 9 passed.
+- **Quick add's count:** 81 passed before the move (on a scratch copy of `bdf6b12`) and 81 after. The catalogue: 262 passed. Both suites are unchanged.
+- **Mutation check:** the brief's M1 to M10 (with M3b, and the Quick add form of M10), plus M11 and M12 for the new guards. The checksum matched after every restore.
+  - M1 (`onSaved` before the diary keeps the save): 1 failed, 8 passed.
+  - M2 (`settle('create')` even while the outcome is unknown): 1 failed, 8 passed.
+  - M3 (a phone-kept save always `saveQueued`): 1 failed, 8 passed. M3b (the default haptic is `success`): 1 failed, 8 passed.
+  - M4 (a resend passes the new call's track, not the first attempt's): 1 failed, 8 passed.
+  - M5 (`isOwnCreate` in place of `ownCreateMatches`): 1 failed, 8 passed.
+  - M6 (Quick add drops `setKeypad(shown)`): 1 failed, 8 passed.
+  - M7 (the attempt hands back `null`): 1 failed, 8 passed.
+  - M8 (`keypadShownOnSave` ignores operators): 2 failed, 7 passed.
+  - M9 (`often={[]}`): 1 failed, 8 passed.
+  - M10 (`records: NO_RECORDS` in `entryReferences.ts`): the save suite 1 failed, 8 passed; the Quick add suite 4 failed, 77 passed.
+  - M11 (extra: `keypadShownOnSave` drops `!settled.outcome.ok`): the save suite 9 passed, so it survives there. The Quick add suite 3 failed, 78 passed (`refuses nothing typed`, `refuses zero` and `refuses zero from 000` fail). Killed at Quick add, and no test was added. The save suite does not pin the refused-amount rule on its own.
+  - M12 (extra: Quick add's `status !== 'unconfirmed'` guard forced true): the Quick add suite 81 passed, so it survives. Equivalent: `locked` includes `unconfirmed`, so the keypad keeps the amount the first attempt settled, for which `keypadShownOnSave` returns `null`, and `touch()` returns early once `frozenRanking` is set. The guard itself is the original code.
+- **Gate** (worktree root):
+  - `npm run typecheck:app`: passed (`tsc --noEmit`, exit 0).
+  - `npm run typecheck:routes -w gogospend-app`: passed (exit 0).
+  - `npm run test:app`: passed (exit 0). 29 tests, 29 passed, 0 failed.
+  - `npm run test:unit`: passed (exit 0). 734 tests, 734 passed, 0 failed, including `src/i18n/catalogs.test.ts`, which scans `entry/` for `tc()` literals.
+  - `npm run test:render -w gogospend-app`, the full suite once: passed (exit 0). 84 files, 1,598 tests passed, 0 failed. The three files were restored byte for byte after the M11 and M12 runs, so this run covers the committed content.
+  - `npm run export:web -w gogospend-app -- --max-workers 2`: passed (exit 0). `dist/` is gitignored and not committed.
+  - `git diff --check`: clean.
+  - Focused, before the full suite: `entrySave.render.test.tsx` 9 passed; `QuickAddScreen.render.test.tsx` 81 passed; `TellBunSheet.render.test.tsx` 7 passed; `CatalogueScreen.render.test.tsx` 262 passed.
+- **Behaviour kept:** the device and online save rules; the frozen resend with the same command key; `isOwnCreate`; the cheer at most once a day; the haptics (Quick add keeps `saveQueued` for a phone-kept save); the load and copy problems with the same buttons; the frozen lists; move all's balances; Tell Bun and its often-logged chips.
+- **Not applicable:** no database, no vault query, and no analytics event (R61).
+- **SKIPPED:** device and simulator checks, because the move changes no pixel of the screen. Nothing deployed or hosted.
+- **Deviations:**
+  1. `keypadShownOnSave` is a new export from `entrySave.ts`, not in the plan's interface. Quick add shows a sum worked out the moment Save is pressed, as before the move, and `SaveAttempt.settledKeypad` comes from the same function. When the WIP applied `settledKeypad` after the await, "12.50 + 7.25" stayed on screen until the answer came back.
+  2. Quick add keeps its saved-pop counter, now advanced from `onSaved`. The WIP had switched the token to `saved`.
+  3. Test 1 waits until the diary holds the save before checking that nothing was reported, so a placeholder fails it on an assertion.
+  4. Four tests beyond the plan's five: the attempt's settled keypad; the Save-time sum on Quick add; floating point in the three moved files (Quick add's own source check reads only `QuickAddScreen.tsx`); Tell Bun's often-logged chips on Quick add.
+  5. `ordered` is exported from `entryHelpers.ts` as well as the plan's list.
+  6. The planner checked `e546bee`. This branch merged `bdf6b12`, which contains `e546bee`. Quick add's paths did not change between `60e2026` and `bdf6b12`.
+- **Notes for the integrator:**
+  - The integration head is `75b3625`. Quick add's paths did not change from `bdf6b12` to `75b3625`, and `package-lock.json` did not change from `60e2026` to `75b3625`, so no `npm ci` is needed for the lockfile.
+  - The three-dot diff against `origin/claude/p1a-vault-core` lists exactly the five task files. A two-dot diff also lists the upstream changes.
+- **Notes for later tasks:**
+  - 1D-T7 adds `trackRecordSaved` inside `finish` in `entry/entrySave.ts`, reading `track`. Quick add passes no `track` yet, so 1D-T7 also passes one from Quick add's save (`source: 'typed'` or `'tell_bun'`).
+  - 1D-T5 puts Quick add's `useRefreshOnRevision` into `useEntryReferences`.
+  - P2-T14 and P2-T16 call `useEntrySave` with `savedHaptic: 'success'` and `onSaved`. A tray shows `keypadShownOnSave(keypad)` at the press, or `attempt.settledKeypad` afterwards.
 
 ## P6A: Outside the app
 
