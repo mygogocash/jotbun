@@ -143,3 +143,21 @@ export async function member(client: V1Client, user: TestUser = newUser()): Prom
 export function vaultOf(user: TestUser): DurableObjectStub<UserVault> {
   return env.VAULT.get(env.VAULT.idFromName(user.sub), { locationHint: 'apac' })
 }
+
+/**
+ * One recorded lunch, for the retention tests (1A-T8b): a wallet, the built-in
+ * categories, and one `food` expense of 6500 on 2026-10-20. Returns its id.
+ */
+export async function createLunch(client: V1Client, user: TestUser): Promise<string> {
+  const wallet = crypto.randomUUID()
+  const created = await client.as(user).post('/v1/wallets', { id: wallet, name: 'Cash', opening_minor: '0', tracking_start: '2026-10-01' })
+  if (created.status !== 201) throw new Error(`creating the wallet answered ${created.status}`)
+  const seeded = await client.as(user).post('/v1/categories/builtins')
+  if (seeded.status !== 200) throw new Error(`seeding the built-in categories answered ${seeded.status}`)
+  const food = ((await seeded.json()) as { id: string; builtin_key: string | null }[]).find((category) => category.builtin_key === 'food')
+  if (!food) throw new Error('the built-in categories have no food')
+  const lunch = crypto.randomUUID()
+  const recorded = await client.as(user).post('/v1/transactions', { id: lunch, type: 'expense', amount_minor: '6500', occurred_on: '2026-10-20', wallet_id: wallet, category_id: food.id })
+  if (recorded.status !== 201) throw new Error(`recording the lunch answered ${recorded.status}`)
+  return lunch
+}
