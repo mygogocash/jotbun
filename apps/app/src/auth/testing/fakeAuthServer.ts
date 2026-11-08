@@ -46,6 +46,8 @@ export function createFakeAuthServer(): FakeAuthServer {
   let tokenSerial = 0;
 
   const ok = <T>(data: T): ClientResult<T> => ({ data, error: null });
+  // 204 No Content, as Better Auth's client reads it: no data and no error (its JSON parser answers null for an empty body).
+  const noContent = (): ClientResult<unknown> => ({ data: null, error: null });
   const fail = (status: number, code?: string, methods?: SignInMethod[]): ClientResult<never> => ({ data: null, error: { status, code, methods } });
 
   function blocked(): ClientResult<never> | null {
@@ -204,7 +206,7 @@ export function createFakeAuthServer(): FakeAuthServer {
       calls.push(`signOutDevice:${id}`);
       const session = current();
       if (!isSession(session)) return session;
-      return ok({});
+      return noContent();
     },
     async signOutOtherDevices() {
       calls.push('signOutOtherDevices');
@@ -216,7 +218,7 @@ export function createFakeAuthServer(): FakeAuthServer {
       calls.push('signOutEverywhere');
       const session = current();
       if (!isSession(session)) return session;
-      return ok({});
+      return noContent();
     },
     hasStoredSession() {
       return cookie !== null;

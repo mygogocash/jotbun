@@ -12,8 +12,9 @@ export function jotbunAccountClient() {
     getActions: ($fetch) => ({
       devices: () => $fetch<unknown>('/jotbun/devices', { method: 'GET' }),
       signOutDevice: ({ id }: { id: string }) => $fetch<unknown>('/jotbun/devices/sign-out', { method: 'POST', body: { id } }),
-      signOutOtherDevices: () => $fetch<unknown>('/jotbun/devices/sign-out-others', { method: 'POST' }),
-      signOutEverywhere: () => $fetch<unknown>('/jotbun/sign-out-everywhere', { method: 'POST' }),
+      // An empty JSON object, as Better Auth's own /sign-out sends: the Worker refuses a POST body that is not JSON (415).
+      signOutOtherDevices: () => $fetch<unknown>('/jotbun/devices/sign-out-others', { method: 'POST', body: {} }),
+      signOutEverywhere: () => $fetch<unknown>('/jotbun/sign-out-everywhere', { method: 'POST', body: {} }),
     }),
   } satisfies BetterAuthClientPlugin;
 }

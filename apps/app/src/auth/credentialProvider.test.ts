@@ -6,6 +6,7 @@ import { AuthUnavailable, createBetterAuthPort, unsupportedBetterAuthPort } from
 import type { SignInMethod } from './betterAuthPort.ts';
 import { createCredentialProvider } from './credentialProvider.ts';
 import type { EpochStore, RequestCredentials } from './credentialProvider.ts';
+import { idTokenSubject } from './nativeSignIn.ts';
 import * as session from './session.ts';
 import { createSecureSessionStore } from './sessionStore.ts';
 import type { SessionRecordStore, StoredSession } from './sessionStore.ts';
@@ -307,6 +308,31 @@ test('sign-out during a fresh sign-in wins: the new session is signed out at the
   assert.equal(await ready.port.hasSession(), false);
 });
 
+test('a sign-out while a fresh sign-in saves its record waits for the save, then leaves no record', async () => {
+  const ready = await signedIn();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  let mark!: () => void;
+  const reached = new Promise<void>((resolve) => { mark = resolve; });
+  const save = ready.sessions.save.bind(ready.sessions);
+  ready.sessions.save = async (next) => {
+    mark();
+    await gate;
+    return save(next);
+  };
+  await ready.port.sendEmailCode(EMAIL);
+  const fresh = ready.provider.freshSignIn({ method: 'email', email: EMAIL, code: ready.server.codeFor(EMAIL) });
+  await reached;
+  const out = ready.provider.signOut();
+  await new Promise((resolve) => setImmediate(resolve));
+  release();
+  await out;
+  assert.equal(await fresh, 'cancelled');
+  assert.equal(ready.sessions.current(), null);
+  assert.equal(ready.provider.getSessionSnapshot().state, 'signed_out');
+  assert.equal(await ready.port.hasSession(), false);
+});
+
 test('the server ending the session keeps the account and says why', async () => {
   const ready = await signedIn();
   const record = ready.sessions.current();
@@ -374,6 +400,36 @@ test('requestCredentials never pairs a token with the id of a session that repla
   assert.equal(await ready.provider.freshSignIn({ method: 'email', email: EMAIL, code: ready.server.codeFor(EMAIL) }), 'fresh');
   release();
   assert.equal(await pending, null);
+});
+
+test('after an account switch, a token read that began before it never reaches the new account', async () => {
+  const ready = await signedIn();
+  const before = ready.sessions.current();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  let mark!: () => void;
+  const left = new Promise<void>((resolve) => { mark = resolve; });
+  const inner = ready.server.client.token.bind(ready.server.client);
+  let held = true;
+  ready.server.client.token = async () => {
+    if (!held) return inner();
+    held = false;
+    const answer = await inner();
+    mark();
+    await gate;
+    return answer;
+  };
+  const inFlight = ready.provider.getAccessToken();
+  await left;
+  await ready.port.sendEmailCode('b@example.test');
+  assert.equal((await ready.provider.signIn({ method: 'email', email: 'b@example.test', code: ready.server.codeFor('b@example.test') })).outcome, 'active');
+  const after = ready.sessions.current();
+  release();
+  await inFlight;
+  assert.notEqual(after?.accountId, before?.accountId);
+  assert.equal(idTokenSubject((await ready.provider.getAccessToken()) ?? ''), after?.accountId);
+  const credentials = await ready.provider.requestCredentials();
+  assert.deepEqual([idTokenSubject(credentials?.accessToken ?? ''), credentials?.sessionId], [after?.accountId, after?.sessionId]);
 });
 
 test('a fresh sign-in into the same account swaps the session, signs the old one out and moves the epoch', async () => {

@@ -132,25 +132,47 @@ function mapIdToken(error: Failure): never {
   throw new AuthRefused('REFUSED')
 }
 
+function refuseSensitive(error: Failure): never {
+  raise(error)
+  if (error.status === 403 && error.code === 'REAUTH_REQUIRED') throw new AuthRefused('REAUTH_REQUIRED')
+  if (error.status === 401) throw new AuthRefused('SIGNED_OUT')
+  throw new AuthRefused('REFUSED')
+}
+
 function mapSensitive<T>(result: ClientResult<T>): T {
-  if (result.error) {
-    raise(result.error)
-    if (result.error.status === 403 && result.error.code === 'REAUTH_REQUIRED') throw new AuthRefused('REAUTH_REQUIRED')
-    if (result.error.status === 401) throw new AuthRefused('SIGNED_OUT')
-    throw new AuthRefused('REFUSED')
-  }
+  if (result.error) refuseSensitive(result.error)
   if (result.data === null) throw new AuthUnavailable()
   return result.data
 }
 
 /**
- * The app's Better Auth port. A sign-in the server accepted drops the cached
- * JWT, which named the session before it. The web build uses
+ * Signing out a device and signing out everywhere answer 204 with no body
+ * (plan Task 4). Better Auth's client reads an empty body as
+ * `{ data: null, error: null }`, which is success here.
+ */
+function mapNoContent(result: ClientResult<unknown>): void {
+  if (result.error) refuseSensitive(result.error)
+}
+
+/**
+ * The app's Better Auth port. A sign-in the server accepted, or a sign-out,
+ * drops the cached JWT, which named the session before it, and a token call
+ * that was in flight across one is never cached. The web build uses
  * {@link unsupportedBetterAuthPort} instead.
  */
 export function createBetterAuthPort(deps: { client: BetterAuthClientLike; native: NativeSignIn; now?: () => number }): BetterAuthPort {
   const now = () => deps.now?.() ?? Date.now()
   let cached: { token: string; exp: number } | null = null
+  // Moves on every sign-in the server accepted (a first sign-in, an account
+  // switch, a fresh sign-in) and on every sign-out. A token call caches its
+  // answer only if this has not moved since the call began: an answer that
+  // was in flight across the change names the session before it, so it goes
+  // back only to the caller that asked under that session.
+  let generation = 0
+  const forgetToken = () => {
+    generation += 1
+    cached = null
+  }
 
   async function finish(answer: SignInAnswer, method: SignInMethod): Promise<ServerSession> {
     const result = await call(() => deps.client.session())
@@ -166,14 +188,14 @@ export function createBetterAuthPort(deps: { client: BetterAuthClientLike; nativ
   async function emailSignIn(email: string, code: string): Promise<ServerSession> {
     const result = await call(() => deps.client.signInWithCode(email.trim().toLowerCase(), code))
     if (result.error) mapCode(result.error)
-    cached = null
+    forgetToken()
     return finish(result.data ?? { created: false }, 'email')
   }
 
   async function socialSignIn(method: 'apple' | 'google', requestSignUp: boolean, token: NativeIdToken): Promise<ServerSession> {
     const result = await call(() => deps.client.signInWithIdToken(method, token, requestSignUp))
     if (result.error) mapIdToken(result.error)
-    cached = null
+    forgetToken()
     return finish(result.data ?? { created: false }, method)
   }
 
@@ -192,7 +214,7 @@ export function createBetterAuthPort(deps: { client: BetterAuthClientLike; nativ
     } catch {
       // The server's answer does not decide whether this device is signed out.
     }
-    cached = null
+    forgetToken()
   }
 
   return {
@@ -237,6 +259,7 @@ export function createBetterAuthPort(deps: { client: BetterAuthClientLike; nativ
     },
     async accessToken() {
       if (cached && cached.exp * 1000 - now() > 60_000) return cached.token
+      const asked = generation
       const result = await call(() => deps.client.token())
       if (result.error) {
         raise(result.error)
@@ -248,10 +271,11 @@ export function createBetterAuthPort(deps: { client: BetterAuthClientLike; nativ
       }
       const token = result.data?.token
       if (!token) return null
-      cached = { token, exp: expiry(token) }
+      if (asked === generation) cached = { token, exp: expiry(token) }
       return token
     },
     async refresh() {
+      const asked = generation
       const result = await call(() => deps.client.token())
       if (result.error) {
         raise(result.error)
@@ -260,7 +284,7 @@ export function createBetterAuthPort(deps: { client: BetterAuthClientLike; nativ
       }
       const token = result.data?.token
       if (!token) return false
-      cached = { token, exp: expiry(token) }
+      if (asked === generation) cached = { token, exp: expiry(token) }
       return true
     },
     hasSession: async () => deps.client.hasStoredSession(),
@@ -269,13 +293,13 @@ export function createBetterAuthPort(deps: { client: BetterAuthClientLike; nativ
       return mapSensitive(await call(() => deps.client.devices())).devices
     },
     async signOutDevice(id) {
-      mapSensitive(await call(() => deps.client.signOutDevice(id)))
+      mapNoContent(await call(() => deps.client.signOutDevice(id)))
     },
     async signOutOtherDevices() {
       return mapSensitive(await call(() => deps.client.signOutOtherDevices())).signed_out
     },
     async signOutEverywhere() {
-      mapSensitive(await call(() => deps.client.signOutEverywhere()))
+      mapNoContent(await call(() => deps.client.signOutEverywhere()))
     },
     async linkMethod(method) {
       const fn = deps.native[method]

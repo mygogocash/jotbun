@@ -20,6 +20,25 @@ async function emailSession(email = EMAIL) {
   return { ...ready, session };
 }
 
+/** The first token call leaves with the cookie it was sent with; its answer comes back only after `release()`. */
+function holdFirstToken(server: ReturnType<typeof createFakeAuthServer>) {
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  let sent!: () => void;
+  const left = new Promise<void>((resolve) => { sent = resolve; });
+  const inner = server.client.token.bind(server.client);
+  let held = true;
+  server.client.token = async () => {
+    if (!held) return inner();
+    held = false;
+    const answer = await inner();
+    sent();
+    await gate;
+    return answer;
+  };
+  return { release, left };
+}
+
 test('email: a code is asked for sign-in only', async () => {
   const { server, port } = portFor();
   await port.sendEmailCode(EMAIL);
@@ -189,6 +208,63 @@ test("a sign-in drops the cached JWT: the next token is the new account's", asyn
   await port.sendEmailCode(EMAIL);
   await port.signIn({ method: 'email', email: EMAIL, code: server.codeFor(EMAIL) });
   assert.equal(idTokenSubject((await port.accessToken()) ?? ''), byEmail.accountId);
+});
+
+test('a token read in flight across a sign-in is never kept for the new account (email and Google)', async () => {
+  const { server, port } = portFor({ google: { sub: 'google-sub', email: 'g@example.test' } });
+  await port.sendEmailCode(EMAIL);
+  const byEmail = await port.signIn({ method: 'email', email: EMAIL, code: server.codeFor(EMAIL) });
+  const first = holdFirstToken(server);
+  const underEmail = port.accessToken();
+  await first.left;
+  const byGoogle = await port.signIn({ method: 'google', signUp: true });
+  first.release();
+  assert.equal(idTokenSubject((await underEmail) ?? ''), byEmail.accountId, 'the read answers the caller that asked under the email account');
+  assert.equal(idTokenSubject((await port.accessToken()) ?? ''), byGoogle.accountId);
+  const other = portFor({ google: { sub: 'google-sub-2', email: 'g2@example.test' } });
+  const google = await other.port.signIn({ method: 'google', signUp: true });
+  const second = holdFirstToken(other.server);
+  const underGoogle = other.port.accessToken();
+  await second.left;
+  await other.port.sendEmailCode(EMAIL);
+  const email = await other.port.signIn({ method: 'email', email: EMAIL, code: other.server.codeFor(EMAIL) });
+  second.release();
+  assert.equal(idTokenSubject((await underGoogle) ?? ''), google.accountId);
+  assert.equal(idTokenSubject((await other.port.accessToken()) ?? ''), email.accountId);
+});
+
+test('a refresh in flight across a fresh sign-in is never kept for the new session', async () => {
+  const { server, port, session } = await emailSession();
+  const held = holdFirstToken(server);
+  const refreshing = port.refresh();
+  await held.left;
+  await port.sendEmailCode(EMAIL);
+  const fresh = await port.freshSignIn({ method: 'email', email: EMAIL, code: server.codeFor(EMAIL) }, { accountId: session.accountId, email: EMAIL });
+  held.release();
+  assert.equal(await refreshing, true);
+  assert.notEqual(fresh.sessionId, session.sessionId);
+  const before = server.calls.filter((call) => call === 'token').length;
+  assert.equal(idTokenSubject((await port.accessToken()) ?? ''), session.accountId);
+  assert.equal(server.calls.filter((call) => call === 'token').length, before + 1, 'the next read asks the server for the new session');
+});
+
+test('a token read in flight across a sign-out is not kept for after it', async () => {
+  const { server, port } = await emailSession();
+  const held = holdFirstToken(server);
+  const before = port.accessToken();
+  await held.left;
+  await port.signOut();
+  held.release();
+  assert.equal(typeof (await before), 'string');
+  assert.equal(await port.accessToken(), null, 'signed out: no cookie, so no token');
+});
+
+test('signing out a device or everywhere answers 204 with no body, which is success', async () => {
+  const { server, port, session } = await emailSession();
+  await assert.doesNotReject(() => port.signOutDevice(session.sessionId));
+  await assert.doesNotReject(() => port.signOutEverywhere());
+  assert.ok(server.calls.includes(`signOutDevice:${session.sessionId}`));
+  assert.ok(server.calls.includes('signOutEverywhere'));
 });
 
 test('refresh always renews', async () => {
