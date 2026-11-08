@@ -26,6 +26,10 @@ import { ObjectStoreError } from '@api/storage/object-store'
 import { readGates } from '../v1/config'
 import type { FileContext } from './files/context'
 import { startPendingWork as startPending } from './files/work'
+import type { ParseMessage } from '../background/parse-consumer'
+import type { ImageFormat, ParseFormat } from '@api/imports/parsers/protocol'
+import { failParse as failParseIn, parseSource as parseSourceIn, recordPreview as recordPreviewIn, reserveImageKey as reserveImageKeyIn, retryParse as retryParseIn } from './files/parse'
+import type { ParseSource, ParsedPreview } from './files/parse'
 
 /** The bindings the vault reads: the command digest keys, the environment name, the private object bucket and config:v1's KV (for the gates of background work). */
 export type VaultEnv = {
@@ -34,6 +38,7 @@ export type VaultEnv = {
   JOTBUN_ENV?: string
   OBJECTS?: VaultBucket
   CONFIG?: KVNamespace
+  PARSE_QUEUE?: Queue<ParseMessage>
 }
 
 export type VaultDb = DrizzleSqliteDODatabase<typeof vaultSchema>
@@ -117,6 +122,8 @@ export class UserVault extends DurableObject<VaultEnv> {
       const route = vaultRouteOf(call.route) ?? stepRouteOf(call.route)
       const handler = VAULT_HANDLERS[call.route]
       if (!route || !handler) throw new Error('a vault call names no ported route')
+      // A step marked anySession runs after its request's session ended or its policy changed (1B-T5).
+      const anySession = stepRouteOf(call.route)?.anySession === true
       const services = this.built()
       const { reply, committed } = this.ctx.storage.transactionSync(() => {
         const c: VaultContext = {
@@ -132,9 +139,9 @@ export class UserVault extends DurableObject<VaultEnv> {
         }
         ensureAccount(c)
         if (call.charge !== 'step') this.rates.charge('principal', call.claims.accountId)
-        assertSession(c)
+        if (!anySession) assertSession(c)
         if (call.charge !== 'step') this.rates.charge(call.charge, call.claims.sessionId)
-        if (call.access === 'current_policy') assertPolicyAccepted(c)
+        if (call.access === 'current_policy' && !anySession) assertPolicyAccepted(c)
         const before = committedRevision(c)
         const result = handler(c, call)
         return { reply: result, committed: committedRevision(c) === before ? undefined : c }
@@ -258,6 +265,44 @@ export class UserVault extends DurableObject<VaultEnv> {
       active: (c) => this.isActive(c),
       // A missing CONFIG binding fails closed: readEdgeConfig pauses every gate.
       gates: () => readGates(this.env.CONFIG as KVNamespace),
+    })
+  }
+
+  // The parse pipeline (1B-T5): background methods the parse consumer calls by
+  // the vault id (B11). Each answers its skipped value in an erased vault or one
+  // that is not active, and otherwise runs in one short block of its own.
+
+  /** What the consumer should do with a parse message (parse.ts). */
+  parseSource(jobId: string, held: readonly ParseFormat[]): ParseSource {
+    return this.background({ kind: 'skip' }, (c) => parseSourceIn(c, jobId, held))
+  }
+
+  /** A fresh key for the job's sanitized image while it is parsing, else null. */
+  reserveImageKey(jobId: string, format: ImageFormat): string | null {
+    return this.background(null, (c) => reserveImageKeyIn(c, jobId, format))
+  }
+
+  /** Records the parsed preview; the context is read now, after the image PUT, so the deadline checks use the time of the publish. */
+  recordPreview(jobId: string, parsed: ParsedPreview): { recorded: boolean } {
+    return this.background({ recorded: false }, (c) => recordPreviewIn(c, jobId, parsed))
+  }
+
+  /** Puts a parsing job back in the queue (spent: whether the parse ran). */
+  retryParse(jobId: string, spent: boolean): void {
+    this.background(undefined, (c) => retryParseIn(c, jobId, spent))
+  }
+
+  /** Fails a queued or parsing job with its code. */
+  failParse(jobId: string, code: string): void {
+    this.background(undefined, (c) => failParseIn(c, jobId, code))
+  }
+
+  /** Runs `work` in its own short block with a fresh vault clock, or answers `skipped` when the vault is erased or not active. */
+  private background<T>(skipped: T, work: (c: FileContext) => T): T {
+    if (this.erased) return skipped
+    return this.ctx.storage.transactionSync(() => {
+      const c = this.fileContext()
+      return this.isActive(c) ? work(c) : skipped
     })
   }
 }

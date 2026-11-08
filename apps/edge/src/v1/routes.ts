@@ -82,6 +82,9 @@ export const VAULT_V1_ROUTES: readonly VaultRoute[] = [
   { method: 'GET', path: '/v1/sync/live', access: 'bound_session', live: true },
   // sync/sync.controller.ts: the delta feed (the snapshot routes are 1B).
   { method: 'GET', path: '/v1/sync/changes', access: 'bound_session', vault: 'sync.changes' },
+  // imports/imports.controller.ts (1B-T5): the body streams into quarantine in Worker steps; once accepted, the vault's parse starts.
+  { method: 'POST', path: '/v1/imports', access: 'current_policy', worker: 'import.upload', body: 'stream', gates: ['uploads', 'imports'], status: 202, starts: true },
+  { method: 'GET', path: '/v1/imports/:id', access: 'bound_session', vault: 'imports.status' },
 ]
 
 const ROUTE_BY_ID = new Map<VaultRouteId, VaultRoute>(VAULT_V1_ROUTES.flatMap((route) => (route.vault ? [[route.vault, route] as const] : [])))
@@ -92,13 +95,29 @@ export function vaultRouteOf(id: VaultRouteId): VaultRoute | undefined {
 }
 
 /**
- * Step-only vault ids. They have no HTTP route of their own: a Worker route
- * calls them as later steps of one request. Empty until a task adds one.
+ * One step-only entry. `anySession`: the step still runs after its request's
+ * session ended or its policy changed (the vault skips both checks), because
+ * it only continues or cleans up the request's own work, as the API's
+ * routines that take no account lock do (1B-T5).
  */
-export const VAULT_STEP_ROUTES: Partial<Record<VaultRouteId, { status?: number }>> = {}
+export type VaultStepRoute = { status?: number; anySession?: true }
+
+/**
+ * Step-only vault ids. They have no HTTP route of their own: a Worker route
+ * calls them as later steps of one request.
+ */
+export const VAULT_STEP_ROUTES: Partial<Record<VaultRouteId, VaultStepRoute>> = {
+  // 1B-T5: the upload's steps. Begin and finish check the session and policy, as the API's do under the account lock.
+  'imports.begin': {},
+  'imports.reservePart': { anySession: true },
+  'imports.finish': {},
+  'imports.abort': { anySession: true },
+  'imports.discarded': { anySession: true },
+  'imports.bytesRetry': { anySession: true },
+}
 
 /** The step-only entry a vault call names, or undefined when the id is not a step. */
-export function stepRouteOf(id: VaultRouteId): { status?: number } | undefined {
+export function stepRouteOf(id: VaultRouteId): VaultStepRoute | undefined {
   return VAULT_STEP_ROUTES[id]
 }
 
@@ -125,8 +144,6 @@ export const VAULT_DEFERRED_ROUTES: readonly string[] = [
   'GET /v1/exports/:id',
   'GET /v1/exports/:id/grant',
   'GET /v1/export-files/:grant',
-  'POST /v1/imports',
-  'GET /v1/imports/:id',
   'GET /v1/imports/:id/preview',
   'PATCH /v1/imports/:id/rows',
   'POST /v1/imports/:id/selections',

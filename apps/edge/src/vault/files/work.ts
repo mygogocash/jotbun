@@ -1,7 +1,9 @@
 import type { FeatureGates } from '@api/common/feature-gates'
 
 import { logFailure } from '../../v1/log'
+import { PARSE_RESEND_MS } from './parse'
 import type { VaultEnv } from '../user-vault'
+import { touch } from './context'
 import type { FileContext } from './context'
 
 // Pending work (B5): exports, snapshot builds and parses the vault has
@@ -96,3 +98,45 @@ export async function startPendingWork(v: PendingWorkHost, starters: readonly Wo
   }
   return { started, failed, held: false }
 }
+
+// 1B-T5: the parse starter (ruling R32). One condition serves `unstarted` and
+// `dueAt`: an accepted upload queued (or parsing) whose message was never sent,
+// or was last sent or seen by the consumer more than PARSE_RESEND_MS ago, as
+// when the queue discarded it after max_retries. A message sent twice is
+// harmless: the consumer runs one message at a time and parseSource skips a
+// job that is no longer queued or parsing.
+
+const PARSE_WAITING = "status = 'accepted' AND parse_state IN ('queued', 'parsing')"
+
+export const PARSE_STARTER: WorkStarter = {
+  kind: 'parse',
+  unstarted(c) {
+    const stale = new Date(c.now.getTime() - PARSE_RESEND_MS).toISOString()
+    // Bounded by the parse quota: at most 10 accepted uploads a day, each expired within 24 hours.
+    return c.sql
+      .exec<{ job_id: string }>(`SELECT job_id FROM import_uploads WHERE ${PARSE_WAITING} AND (enqueued_at IS NULL OR enqueued_at <= ?) ORDER BY accepted_at, job_id`, stale)
+      .toArray()
+      .map((row) => row.job_id)
+  },
+  dueAt(c) {
+    const { unsent, sent } = c.sql
+      .exec<{ unsent: string | null; sent: string | null }>(
+        `SELECT (SELECT min(accepted_at) FROM import_uploads WHERE ${PARSE_WAITING} AND enqueued_at IS NULL) AS unsent,
+                (SELECT min(enqueued_at) FROM import_uploads WHERE ${PARSE_WAITING} AND enqueued_at IS NOT NULL) AS sent`,
+      )
+      .one()
+    const times = [unsent === null ? null : Date.parse(unsent) + START_RETRY_MS, sent === null ? null : Date.parse(sent) + PARSE_RESEND_MS].filter((time): time is number => time !== null)
+    return times.length === 0 ? null : Math.min(...times)
+  },
+  async start(env, vaultId, id) {
+    if (!env.PARSE_QUEUE) return 'unbound'
+    await env.PARSE_QUEUE.send({ vault: vaultId, job: id })
+    return 'started'
+  },
+  markStarted(c, id) {
+    c.sql.exec(`UPDATE import_uploads SET enqueued_at = ?, enqueued_attempts = parse_attempts WHERE job_id = ? AND ${PARSE_WAITING}`, c.now.toISOString(), id)
+    touch(c)
+  },
+}
+
+WORK_STARTERS.push(PARSE_STARTER)

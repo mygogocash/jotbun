@@ -15,8 +15,36 @@
   "kv_namespaces": [{ "binding": "CONFIG", "id": "00000000000000000000000000000000" }],
   // The one private bucket (§6.3): receipts, exports, statement uploads and resync snapshots, under the vault's keys.
   "r2_buckets": [{ "binding": "OBJECTS", "bucket_name": "jotbun-private-objects" }],
-  "durable_objects": {
-    "bindings": [{ "name": "VAULT", "class_name": "UserVault" }]
+  // Statement parses (1B-T5, B6): the vault sends { vault, job } once an upload is
+  // accepted, and this Worker consumes it one message at a time. The vault counts
+  // real attempts (3); max_retries is the Queues maximum because gate holds retry
+  // without spending one, and the vault re-sends a message the queue discarded (R32).
+  "queues": {
+    "producers": [{ "binding": "PARSE_QUEUE", "queue": "jotbun-statement-parse" }],
+    "consumers": [{ "queue": "jotbun-statement-parse", "max_batch_size": 1, "max_concurrency": 1, "max_retries": 100, "retry_delay": 30 }]
   },
-  "migrations": [{ "tag": "v1-user-vault", "new_sqlite_classes": ["UserVault"] }]
+  // The stateless parser (B3): the API's release image started as its parse
+  // server (apps/api/src/imports/parse-server.ts), with no secrets, no bindings
+  // and no internet. One at a time, as today's single parser runs.
+  "containers": [
+    {
+      "class_name": "StatementParser",
+      "image": "../api/Dockerfile",
+      "image_build_context": "../..",
+      "instance_type": "basic",
+      "max_instances": 1
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      { "name": "VAULT", "class_name": "UserVault" },
+      { "name": "PARSER", "class_name": "StatementParser" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1-user-vault", "new_sqlite_classes": ["UserVault"] },
+    { "tag": "v2-statement-parser", "new_sqlite_classes": ["StatementParser"] }
+  ],
+  // Local runs and the Workers-runtime tests start no container; a parse then asks to be retried.
+  "dev": { "enable_containers": false }
 }

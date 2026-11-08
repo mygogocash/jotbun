@@ -86,6 +86,28 @@ interface Queue<Body = unknown> {
   send(message: Body, options?: { contentType?: 'json' | 'text' | 'bytes' | 'v8'; delaySeconds?: number }): Promise<void>
 }
 
+// A queue consumer's batch (1B-T5), as far as the parse consumer and its tests use it.
+interface Message<Body = unknown> {
+  readonly id: string
+  readonly timestamp: Date
+  readonly body: Body
+  readonly attempts: number
+  retry(options?: { delaySeconds?: number }): void
+  ack(): void
+}
+
+interface MessageBatch<Body = unknown> {
+  readonly queue: string
+  readonly messages: readonly Message<Body>[]
+  retryAll(options?: { delaySeconds?: number }): void
+  ackAll(): void
+}
+
+interface ExecutionContext {
+  waitUntil(promise: Promise<unknown>): void
+  passThroughOnException(): void
+}
+
 interface KVNamespace {
   get(key: string, type: 'text'): Promise<string | null>
   get(key: string, type: 'json'): Promise<unknown>
@@ -157,6 +179,8 @@ declare namespace Cloudflare {
     VAULT: DurableObjectNamespace<import('./vault/user-vault').UserVault>
     CONFIG: KVNamespace
     OBJECTS: import('./vault/files/keys').VaultBucket
+    PARSER: DurableObjectNamespace<import('./background/statement-parser').StatementParser>
+    PARSE_QUEUE: Queue<import('./background/parse-consumer').ParseMessage>
     AUTH_DB: D1Database
     AUTH_DB_REFERENCE: D1Database
     ERASURE_DB: D1Database
@@ -183,6 +207,8 @@ declare module 'cloudflare:workers' {
     start(options?: { env?: Record<string, string>; enableInternet?: boolean; entrypoint?: string[] }): void
     monitor(): Promise<void>
     setInactivityTimeout(ms: number): Promise<void>
+    /** A TCP port of the running container, reached over HTTP (1B-T5). */
+    getTcpPort(port: number): { fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> }
   }
 
   export interface DurableObjectStateLike {

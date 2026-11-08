@@ -23,7 +23,10 @@ export type VaultClaims = {
 export type VaultAccess = 'bound_session' | 'current_policy' | 'recent_proof'
 
 /** A route the Worker answers itself. Later tasks add their ids. */
-export type WorkerRouteId = 'bridge.catalogue'
+export type WorkerRouteId =
+  | 'bridge.catalogue'
+  // 1B-T5
+  | 'import.upload'
 
 /** The published policy versions from config:v1, or null when none are published. */
 export type PublishedPolicies = PolicyVersionDto[] | null
@@ -34,6 +37,8 @@ export type VaultRouteId =
   | 'categories.list' | 'categories.builtins' | 'categories.create' | 'categories.update' | 'categories.archive' | 'categories.unarchive'
   | 'transactions.get' | 'transactions.create' | 'transactions.update' | 'transactions.delete' | 'transactions.restore'
   | 'budgets.get' | 'budgets.put' | 'history.list' | 'history.deleted' | 'summary.get' | 'sync.changes'
+  // 1B-T5: the import status route, then the upload's step-only ids.
+  | 'imports.status' | 'imports.begin' | 'imports.reservePart' | 'imports.finish' | 'imports.abort' | 'imports.discarded' | 'imports.bytesRetry'
 
 export type VaultCall = {
   route: VaultRouteId
