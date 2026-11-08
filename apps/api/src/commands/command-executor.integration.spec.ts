@@ -221,26 +221,31 @@ describe('authorization under the account lock', () => {
     const entered = new Promise<void>((resolve) => {
       firstEntered = resolve;
     });
-    const order: string[] = [];
-    const first = commands.create(user.session, purchase(), { during: async () => { firstEntered(); await firstHolding; } }).then((ack) => {
-      order.push('first');
-      return ack;
-    });
+    // The account revision the second command reads when its mutation runs: a fresh statement
+    // under the lock it waited for (READ COMMITTED), so it shows what the first had committed.
+    const seen: string[] = [];
+    const first = commands.create(user.session, purchase(), { during: async () => { firstEntered(); await firstHolding; } });
     await entered;
-    const second = commands.create(user.session, purchase(), { during: async () => { order.push('second-mutating'); } }).then((ack) => {
-      order.push('second');
-      return ack;
+    const second = commands.create(user.session, purchase(), {
+      during: async (tx) => {
+        const [state] = await tx.query<{ revision: string }>('SELECT revision::text FROM account_sync_state WHERE account_id = $1', [user.accountId]);
+        seen.push(state.revision);
+      },
     });
     let blocked: string[];
     try {
       await new Promise((resolve) => setTimeout(resolve, 150));
-      blocked = [...order];
+      blocked = [...seen];
     } finally {
       releaseFirst();
     }
     const [a, b] = await Promise.all([first, second]);
+    // The second waited while the first held the lock, then mutated on top of the first's commit.
+    // Not asserted: that the first's caller heard back before the second mutated. PostgreSQL wakes
+    // the waiter inside the first's COMMIT, before that reply leaves on the first's connection, so
+    // either can come first (CI job 128703314342 saw the second mutate first).
     expect(blocked).toEqual([]);
-    expect(order).toEqual(['first', 'second-mutating', 'second']);
+    expect(seen).toEqual(['1']);
     expect([a.committed_revision, b.committed_revision]).toEqual(['1', '2']);
     const logged = (await db.admin((client) => client.query('SELECT revision::text, command_id FROM entity_changes WHERE account_id = $1 ORDER BY revision', [user.accountId]))).rows;
     expect(logged.map((row) => row.command_id)).toEqual([a.command_id, b.command_id]);

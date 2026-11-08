@@ -1,0 +1,46 @@
+# fix-api-db-flakes: two API database test races
+
+- **Status:** built and verified locally on `fix/api-db-flakes` (`.claude/worktrees/fix-api-db-flakes`), on top of `020c391`. Not pushed. Maintenance for the frozen NestJS API under the controller's ruling R91: R-A and R-C applied (test files only), R-B proposed and waiting on the owner. No plan task. Under R87 this receipt is its own file; `premium-progress.md` is not edited.
+- **Files:**
+  - `apps/api/src/commands/command-executor.integration.spec.ts` (R-A, test only);
+  - `apps/api/src/exports/export.integration.spec.ts` (R-C, test only);
+  - this receipt.
+  - Not changed: `apps/api/drizzle/0020_receipt_copy_once.sql` and `apps/api/drizzle/meta/_journal.json` (R-B). No production file changes.
+- **Cause 1, "commit order is revision order" (CI job 128703314342):**
+  - The test pushed `'first'` when the first command's promise settled. PostgreSQL releases the account row lock inside the first's COMMIT, before the trailing SELECT and before the reply reaches Node, so the waiting second command wakes at that moment. It then needs about five round trips before its `during` runs. On a loaded runner the first backend can be descheduled after waking the waiter, so its reply can reach Node after the second's mutation. Nothing in the code orders the two replies.
+  - What the code guarantees still held: the second waited while the first held the lock (`blocked` was `[]`), and it could take the lock only after the first committed.
+  - Fix (R-A): the client-side `'first'` marker is dropped. Inside the second command's `during`, the test reads `account_sync_state.revision` through its own transaction. Under READ COMMITTED a fresh statement under the lock sees the first's commit, so it must read `'1'`. The test now asserts that `seen` is `['1']` and that the revisions read while the first held the lock are `[]`, and it keeps the committed revisions `['1', '2']` and the `entity_changes` order.
+  - Not a production bug.
+- **Cause 2, "at most four export downloads run at once in a process" (CI job 128694248812):**
+  - The test started four gated downloads, slept a fixed 300 ms, then awaited a fifth that it expected to be refused, and opened the gate only after that. A download takes its slot after the guards and the export lookup (`exports.controller.ts`: `downloading += 1` at line 82, `getStream` at line 91). CI logged one grant line for this test: a `503` with `latency_ms` 410, so one held download reached its slot check after the fixed wait. The fifth took the last slot, the held download was refused, and the gate held the fifth. The test awaited the fifth before it opened the gate: a deadlock. The `finally` never ran, and `afterAll` hung too, since the gated responses kept their connections open.
+  - Fix (R-C, test only): the test waits until four files are open, which happens only after each takes a slot, instead of 300 ms. Only those four are gated, so a fifth that the limit wrongly lets in comes back at once and fails the test. A held download that ends first (refused, say) fails the test at once. The production cap is unchanged.
+  - Not a production bug, and not slowness: a longer timeout would still hang.
+- **Proposed, waiting on the owner: R-B, the receipt-copy race (CI job 128705722586, a rerun of run 42471566135). Not applied.**
+  - `gogospend_reserve_receipt_copy` (migration 0017) takes the per-account receipt-copy advisory lock, then reads "the receipt exists" (the `attachments` row) and, after the source lookup, "a copy is in flight" (a `reserved` row) in two separate statements. VOLATILE functions "obtain a fresh snapshot at the start of each query they execute" (PostgreSQL 17 docs, section 36.7), so each read takes its own snapshot. `gogospend_retain_attachment`, which turns a reservation into the receipt, publishes the reservation and inserts the `attachments` row in one transaction. It does not take that advisory lock, so it can commit between the two reads. Request B can read "no receipt" before A's command commits and "no copy in flight" after it, and then reserve and copy a second time. B's command finds A's receipt, marks B's copy due, and answers 200. Both retains finished at 44 and 63 ms, so neither waited the 75 ms poll and neither saw `pending`. The effect is one extra server-side copy, due at once and swept: no wrong data, and one receipt is kept, but the service's contract that one image is copied once however many requests ask for it at once does not hold.
+  - The proposed fix, not in this change: a migration `0020_receipt_copy_once.sql` replaces only this function, with both reads in one statement (one snapshot), so B sees A's commit whole (`existing`) or not at all (`pending`). It uses `CREATE OR REPLACE`, so the owner and grants stay, and it leaves 0017 unedited: `verifyAppliedMigrations` (`apps/api/src/database/migrations.ts`) refuses an applied migration whose file has changed. The integration test is right and stays as it is. The proposed file and its journal entry are in `.claude/controller/scratch/fix-api-db-flakes/files/`. The number 0020 is free in this change; if another API migration lands first, R-B takes the next free number.
+- **RED to GREEN** (scratch copies in `.claude/controller/scratch/fix-api-db-flakes-impl/`; the models are the planner's, in `.claude/controller/scratch/fix-api-db-flakes/sim/`):
+  - RED, the R-A and R-C models on HEAD (`020c391`): `Tests: 8 passed, 8 total` (2 suites). These cases pass because they assert the old failure: with the old markers and a late first reply the order is CI's `['second-mutating', 'first', 'second']`, and with the old fixed wait the fifth never returns while the gate is shut, and the slow held download is the one refused (`503`).
+  - No test was observed failing on the old code. The integration specs need PostgreSQL, which is stopped (see SKIPPED), and R-A and R-C change tests only, so the production code is the same in RED and GREEN.
+  - GREEN, the same two models with the change: `Tests: 8 passed, 8 total` (2 suites) in each of 5 runs.
+  - The R-B model was not run: R-B is not in this change.
+- **Mutation check:** 3 mutants, all caught, no survivors. The R-B mutants were not run, since R-B is not applied. The R-A and R-C mutants are built-in cases of the models, which assert the value each mutant produces, so the new assertions would reject it:
+  - R-A, no account lock: the second command mutates during the hold and reads revision `0`, which the new assertions (`seen` `['1']`, revisions read during the hold `[]`) reject.
+  - R-C, a cap that lets a fifth in: the fifth returns `200` at once, so the test fails at once instead of hanging.
+  - R-C, a held download refused early: the test rejects at once with `a held download ended early: 503` instead of hanging.
+  - The two integration specs were not mutated on disk, because they need PostgreSQL. CI's SQL job is their first real run.
+- **Gate** (from the worktree root, with the change):
+  - `npm run typecheck`: passed (`packages/contracts` and `gogospend-api`). `apps/api/tsconfig.json` includes `src`, so both changed specs are typechecked.
+  - `npm run test:api`: passed, 45 suites and 981 tests. Its jest config excludes `*.integration.spec.ts`. The parser-sandbox suites (`parse-server.spec.ts`, `parser-runner.spec.ts`) are among the 45 and pass in this worktree.
+  - `npm run build -w gogospend-api`: passed (295 files compiled).
+  - `node apps/api/scripts/release-graph.mjs check`: passed (no problems).
+  - `git diff --check`: clean before the commit, and `git diff --check origin/claude/p1a-vault-core...HEAD` is clean after it.
+- **SKIPPED:**
+  - `npm run test:db`, `npm run test:ops`, `npm run test:edge:db`: Docker is stopped and must stay stopped (owner instruction). `test:db` starts `db-up` first. CI's "SQL integration and ops" job runs them, and it is the first real run of the two changed integration specs.
+  - `test:edge`, `test:edge:workers`, and the app, render and export suites: nothing they load changed.
+- **Deviations:**
+  - R91 narrows the brief to R-A and R-C. The R-B migration, its journal entry and the reserve-snapshot model are left out, so the model count is 8 (2 suites), not the brief's 10 (3 suites).
+  - The RED for R-A and R-C is a model check (see RED to GREEN), not a failing integration test.
+  - The heading follows R91, not the brief's template.
+- **Notes for the integrator:**
+  - CI's SQL job is the first run of the two changed specs against PostgreSQL. If one fails there, the models reproduce the mechanism but not the spec file itself.
+  - R-B needs the owner's ruling. If it is ruled in, it is a production migration, applied by `db:migrate` wherever the API runs. No code depends on it, so code and migration can ship in either order.
