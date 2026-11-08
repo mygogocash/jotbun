@@ -1,10 +1,11 @@
 import { createHash } from 'node:crypto'
 
-import { ObjectStoreError } from '@api/storage/object-store'
+import { ObjectStoreError, assertObjectKey } from '@api/storage/object-store'
 
 import { logFailure } from '../../v1/log'
 import { touch } from './context'
 import type { FileContext } from './context'
+import { vaultPrefix } from './keys'
 import type { VaultBucket, VaultObjectPurpose } from './keys'
 
 // The vault's object registry (B4, B19). A key is reserved before its PUT,
@@ -29,8 +30,14 @@ const DELETE_BATCH = 1000
 
 export type VaultObjectStatus = 'reserved' | 'published' | 'tombstone'
 
-/** Registers a key before anyone writes it. It is due at now plus `graceMs` unless it is published first. A key already registered throws. */
+/**
+ * Registers a key before anyone writes it. It is due at now plus `graceMs`
+ * unless it is published first. A key already registered throws, and so does
+ * a key outside this vault's prefix for its purpose (`<purpose>/<vaultId>/`,
+ * ObjectStoreError('invalid_key')), so the alarm never deletes another vault's object.
+ */
 export function reserveObject(c: FileContext, key: string, purpose: VaultObjectPurpose, graceMs: number = RESERVATION_GRACE_MS): void {
+  if (!key.startsWith(vaultPrefix(purpose, c.vaultId))) throw new ObjectStoreError('invalid_key')
   const now = c.now.getTime()
   c.sql.exec("INSERT INTO vault_objects (key, purpose, status, delete_after, created_at) VALUES (?, ?, 'reserved', ?, ?)", key, purpose, now + graceMs, now)
   touch(c)
@@ -38,14 +45,23 @@ export function reserveObject(c: FileContext, key: string, purpose: VaultObjectP
 
 /**
  * Records a stored key's size and SHA-256, due at `deleteAfter` (epoch ms), or
- * never for a held receipt (null). Only a reserved key can be published: any
- * other key throws and nothing is written.
+ * never for a held receipt (null). Only a key still reserved, before its
+ * deadline, can be published. At its deadline a reservation is due and given
+ * up (the alarm may be deleting it from R2 at that moment), so publishing it
+ * then, or any key that is not reserved, throws and nothing is written.
  */
 export function publishObject(c: FileContext, key: string, file: { bytes: number; sha256: string }, deleteAfter: number | null): void {
   const published = c.sql
-    .exec("UPDATE vault_objects SET status = 'published', bytes = ?, sha256 = ?, delete_after = ? WHERE key = ? AND status = 'reserved' RETURNING key", file.bytes, file.sha256, deleteAfter, key)
+    .exec(
+      "UPDATE vault_objects SET status = 'published', bytes = ?, sha256 = ?, delete_after = ? WHERE key = ? AND status = 'reserved' AND delete_after > ? RETURNING key",
+      file.bytes,
+      file.sha256,
+      deleteAfter,
+      key,
+      c.now.getTime(),
+    )
     .toArray()
-  if (published.length === 0) throw new Error('only a reserved key can be published')
+  if (published.length === 0) throw new Error('only a key still reserved can be published')
   touch(c)
 }
 
@@ -84,8 +100,11 @@ export function objectsDueAt(c: FileContext): number | null {
  * published key becomes a tombstone due a day later; a due tombstone is
  * deleted once more and its row dropped. A batch whose R2 delete fails keeps
  * its rows' status and is due again a minute later, so the alarm does not
- * fire again at once. Each batch reads the vault clock afresh. Stops when
- * nothing is due, or after `maxBatches`. Returns how many keys R2 deleted.
+ * fire again at once. A row a writer changed while R2 was deleting (a key
+ * forgotten again) keeps that change: only rows still due are tombstoned or
+ * dropped. Each batch reads the vault clock afresh. Stops when nothing is
+ * due, or after `maxBatches`. Returns how many keys it asked R2 to delete
+ * (R2 does not say which of them existed).
  */
 export async function deleteDueObjects(v: { context(): FileContext; bucket: VaultBucket }, maxBatches = 10): Promise<number> {
   let deleted = 0
@@ -108,8 +127,8 @@ export async function deleteDueObjects(v: { context(): FileContext; bucket: Vaul
     const forgotten = due.filter((row) => row.status === 'tombstone').map((row) => row.key)
     const given = due.filter((row) => row.status !== 'tombstone').map((row) => row.key)
     c.storage.transactionSync(() => {
-      c.sql.exec("DELETE FROM vault_objects WHERE key IN (SELECT value FROM json_each(?)) AND status = 'tombstone'", JSON.stringify(forgotten))
-      c.sql.exec("UPDATE vault_objects SET status = 'tombstone', delete_after = ? WHERE key IN (SELECT value FROM json_each(?)) AND status <> 'tombstone'", now + TOMBSTONE_MS, JSON.stringify(given))
+      c.sql.exec("DELETE FROM vault_objects WHERE key IN (SELECT value FROM json_each(?)) AND status = 'tombstone' AND delete_after <= ?", JSON.stringify(forgotten), now)
+      c.sql.exec("UPDATE vault_objects SET status = 'tombstone', delete_after = ? WHERE key IN (SELECT value FROM json_each(?)) AND status <> 'tombstone' AND delete_after <= ?", now + TOMBSTONE_MS, JSON.stringify(given), now)
       touch(c)
     })
     deleted += keys.length
@@ -123,9 +142,14 @@ export async function deleteDueObjects(v: { context(): FileContext; bucket: Vaul
  * parts can be collected, then the SHA-256, then the PUT. R2 checks the
  * digest, and it is kept as the `sha256` custom metadata, as
  * R2ObjectStore.putStream keeps it. A key already in R2 is
- * ObjectStoreError('exists'); any other failure is 'unavailable'.
+ * ObjectStoreError('exists'); any other failure is 'unavailable'. Before
+ * anything is copied or stored, a key that fails the store's key rule is
+ * ObjectStoreError('invalid_key'), and parts that do not add up to
+ * `totalBytes` are a RangeError, so the caller's parts are left as they were.
  */
 export async function putConcatenated(bucket: VaultBucket, key: string, parts: Uint8Array[], totalBytes: number, contentType: string): Promise<{ bytes: number; sha256: string }> {
+  assertObjectKey(key)
+  if (parts.reduce((sum, part) => sum + part.byteLength, 0) !== totalBytes) throw new RangeError('the parts do not add up to totalBytes')
   const data = parts.length === 1 ? parts[0] : Buffer.concat(parts, totalBytes)
   parts.length = 0
   const sha256 = createHash('sha256').update(data).digest('hex')

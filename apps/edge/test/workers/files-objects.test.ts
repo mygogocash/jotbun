@@ -29,7 +29,7 @@ import { receiptGrantScope, vaultGrants } from '../../src/vault/files/grants'
 import { vaultObjectKey } from '../../src/vault/files/keys'
 import type { VaultBucket } from '../../src/vault/files/keys'
 import { DELETE_RETRY_MS, RESERVATION_GRACE_MS, TOMBSTONE_MS, deleteDueObjects, dueObjectKeys, objectsDueAt, publishObject, putConcatenated, releaseObject, reserveObject, tombstoneObjects } from '../../src/vault/files/objects'
-import { START_RETRY_MS, createOnce, startDueAt, startPendingWork } from '../../src/vault/files/work'
+import { START_RETRY_MS, WORK_STARTERS, createOnce, startDueAt, startPendingWork } from '../../src/vault/files/work'
 import type { PendingWorkHost, StartResult, WorkStarter } from '../../src/vault/files/work'
 import { okReply } from '../../src/vault/replies'
 import { VAULT_HANDLERS } from '../../src/vault/routes'
@@ -500,4 +500,207 @@ it('the download slots keep the API limits: four exports an isolate, eight recei
   } finally {
     for (const give of mine) give()
   }
+})
+
+// 1B-T4 follow-up: the publish and delete race, the vault's own prefix, putConcatenated's checks, and the deviations' tests.
+
+it('a reservation is published only before its deadline', async () => {
+  await runInDurableObject(freshVault(), (_v, state) => {
+    const early = keyOf(state)
+    const late = keyOf(state)
+    reserveObject(at(state, t0), early, 'export')
+    reserveObject(at(state, t0), late, 'export')
+    const deadline = t0 + RESERVATION_GRACE_MS
+    publishObject(at(state, deadline - 1), early, { bytes: 3, sha256: SHA }, t0 + DAY)
+    expect(rowOf(state, early)).toEqual([{ status: 'published', delete_after: t0 + DAY }])
+    // At its deadline the reservation is due and given up: publishing it throws and writes nothing.
+    const c = at(state, deadline)
+    expect(() => publishObject(c, late, { bytes: 3, sha256: SHA }, t0 + DAY)).toThrow()
+    expect(rowOf(state, late)).toEqual([{ status: 'reserved', delete_after: deadline }])
+    expect(c.touched).toBeUndefined()
+  })
+})
+
+it('a write or a forget that lands while a delete is in flight is never lost', async () => {
+  await runInDurableObject(freshVault(), async (_v, state) => {
+    const now = t0 + RESERVATION_GRACE_MS
+    const tryPublish = (key: string): 'published' | 'refused' => {
+      try {
+        publishObject(at(state, now + 1), key, { bytes: 3, sha256: SHA }, null)
+        return 'published'
+      } catch {
+        return 'refused'
+      }
+    }
+
+    // The writer's PUT and publish land before the delete reaches R2: the publish is refused, so the writer knows.
+    const putFirst = keyOf(state, 'receipt')
+    reserveObject(at(state, t0), putFirst, 'receipt')
+    let first = ''
+    const putThenDelete = {
+      delete: async (keys: string | string[]) => {
+        await env.OBJECTS.put(putFirst, new Uint8Array([1, 2, 3]))
+        first = tryPublish(putFirst)
+        await env.OBJECTS.delete(keys)
+      },
+    } as unknown as VaultBucket
+    expect(await deleteDueObjects({ context: () => at(state, now), bucket: putThenDelete })).toBe(1)
+    expect(first).toBe('refused')
+    expect(rowOf(state, putFirst)).toEqual([{ status: 'tombstone', delete_after: now + TOMBSTONE_MS }])
+    expect(await env.OBJECTS.head(putFirst)).toBeNull()
+
+    // The delete reaches R2 first, then the PUT and the publish: the publish is refused and the late object is deleted a day later.
+    const deleteFirst = keyOf(state, 'receipt')
+    reserveObject(at(state, t0), deleteFirst, 'receipt')
+    let second = ''
+    const deleteThenPut = {
+      delete: async (keys: string | string[]) => {
+        await env.OBJECTS.delete(keys)
+        await env.OBJECTS.put(deleteFirst, new Uint8Array([1, 2, 3]))
+        second = tryPublish(deleteFirst)
+      },
+    } as unknown as VaultBucket
+    expect(await deleteDueObjects({ context: () => at(state, now), bucket: deleteThenPut })).toBe(1)
+    expect(second).toBe('refused')
+    expect(rowOf(state, deleteFirst)).toEqual([{ status: 'tombstone', delete_after: now + TOMBSTONE_MS }])
+    expect(await env.OBJECTS.head(deleteFirst)).not.toBeNull()
+    await deleteDueObjects({ context: () => at(state, now + TOMBSTONE_MS), bucket: env.OBJECTS })
+    expect(await env.OBJECTS.head(deleteFirst)).toBeNull()
+    expect(rowOf(state, deleteFirst)).toEqual([])
+
+    // A tombstone its writer forgets again while its second delete is in flight keeps the new deadline.
+    const forgotten = keyOf(state)
+    reserveObject(at(state, t0), forgotten, 'export')
+    tombstoneObjects(at(state, t0), [forgotten])
+    const later = t0 + TOMBSTONE_MS
+    const forgetDuring = {
+      delete: async (keys: string | string[]) => {
+        await env.OBJECTS.delete(keys)
+        tombstoneObjects(at(state, later + 1), [forgotten])
+      },
+    } as unknown as VaultBucket
+    expect(await deleteDueObjects({ context: () => at(state, later), bucket: forgetDuring })).toBe(1)
+    expect(rowOf(state, forgotten)).toEqual([{ status: 'tombstone', delete_after: later + 1 + TOMBSTONE_MS }])
+  })
+})
+
+it('a vault reserves only keys under its own prefix', async () => {
+  await runInDurableObject(freshVault(), (_v, state) => {
+    const refusal = (run: () => void): unknown => {
+      try {
+        run()
+        return null
+      } catch (error) {
+        return error
+      }
+    }
+    const c = at(state, t0)
+    const others = vaultObjectKey('export', env.VAULT.idFromName(randomUUID()).toString(), randomUUID(), randomUUID(), 'export.csv')
+    const otherVault = refusal(() => reserveObject(c, others, 'export'))
+    expect(otherVault).toBeInstanceOf(ObjectStoreError)
+    expect(otherVault).toMatchObject({ code: 'invalid_key' })
+    // This vault's own key, named under another purpose, is refused the same way.
+    const otherPurpose = refusal(() => reserveObject(c, keyOf(state, 'receipt'), 'export'))
+    expect(otherPurpose).toBeInstanceOf(ObjectStoreError)
+    expect(otherPurpose).toMatchObject({ code: 'invalid_key' })
+    expect(state.storage.sql.exec('SELECT count(*) AS n FROM vault_objects').one()).toEqual({ n: 0 })
+    expect(c.touched).toBeUndefined()
+    reserveObject(c, keyOf(state), 'export')
+    expect(state.storage.sql.exec('SELECT count(*) AS n FROM vault_objects').one()).toEqual({ n: 1 })
+  })
+})
+
+it('putConcatenated refuses a bad key, or parts that do not add up to totalBytes, before it stores anything', async () => {
+  const key = vaultObjectKey('export', env.VAULT.idFromName(randomUUID()).toString(), randomUUID(), randomUUID(), 'export.csv')
+  let puts = 0
+  const counting = {
+    put: (...args: Parameters<VaultBucket['put']>) => {
+      puts += 1
+      return env.OBJECTS.put(...args)
+    },
+  } as unknown as VaultBucket
+  const bad = 'Not A Vault Key'
+  const parts = [new Uint8Array([1]), new Uint8Array([2])]
+  await expect(putConcatenated(counting, bad, parts, 2, 'text/csv')).rejects.toMatchObject({ code: 'invalid_key' })
+  await expect(putConcatenated(counting, key, parts, 5, 'text/csv')).rejects.toThrow(RangeError)
+  await expect(putConcatenated(counting, key, parts, 1, 'text/csv')).rejects.toThrow(RangeError)
+  await expect(putConcatenated(counting, key, [new Uint8Array([1, 2, 3])], 2, 'text/csv')).rejects.toThrow(RangeError)
+  // A refused call stores nothing and leaves the caller's parts as they were.
+  expect(puts).toBe(0)
+  expect(parts.length).toBe(2)
+  expect(await env.OBJECTS.head(bad)).toBeNull()
+  expect(await env.OBJECTS.head(key)).toBeNull()
+  expect(await putConcatenated(counting, key, parts, 2, 'text/csv')).toMatchObject({ bytes: 2 })
+  expect(puts).toBe(1)
+})
+
+it('a start that rejects is logged and never fails the reply', async () => {
+  const me = VAULT_V1_ROUTES.find((route) => route.vault === 'me.get')!
+  const broken: WorkStarter = {
+    kind: 'export',
+    unstarted: () => {
+      throw new Error('unreadable')
+    },
+    dueAt: () => null,
+    start: async () => 'started',
+    markStarted: () => undefined,
+  }
+  me.starts = true
+  WORK_STARTERS.push(broken)
+  try {
+    const client = await startV1()
+    const user = await member(client)
+    expect((await client.as(user).get('/v1/me')).status).toBe(200)
+    await expect(client.settle()).resolves.toBeUndefined()
+    expect(await lastStart(user)).toEqual(expect.any(Number))
+  } finally {
+    delete me.starts
+    WORK_STARTERS.splice(WORK_STARTERS.indexOf(broken), 1)
+  }
+})
+
+it('a failed batch does not stop the next one', async () => {
+  await runInDurableObject(freshVault(), async (_v, state) => {
+    for (let n = 0; n < 1001; n += 1) reserveObject(at(state, t0), keyOf(state), 'export')
+    const batches: number[] = []
+    const failing = {
+      delete: async (keys: string | string[]) => {
+        batches.push(Array.isArray(keys) ? keys.length : 1)
+        throw new Error('R2 is down')
+      },
+    } as unknown as VaultBucket
+    const now = t0 + RESERVATION_GRACE_MS
+    expect(await deleteDueObjects({ context: () => at(state, now), bucket: failing })).toBe(0)
+    expect(batches).toEqual([1000, 1])
+    expect(state.storage.sql.exec("SELECT count(*) AS n FROM vault_objects WHERE status = 'reserved' AND delete_after = ?", now + DELETE_RETRY_MS).one()).toEqual({ n: 1001 })
+  })
+}, 60_000)
+
+it('releasing a tombstone keeps its second delete a day later', async () => {
+  await runInDurableObject(freshVault(), (_v, state) => {
+    const key = keyOf(state, 'receipt')
+    reserveObject(at(state, t0), key, 'receipt')
+    publishObject(at(state, t0), key, { bytes: 3, sha256: SHA }, null)
+    tombstoneObjects(at(state, t0), [key])
+    releaseObject(at(state, t0 + 1), key)
+    expect(rowOf(state, key)).toEqual([{ status: 'tombstone', delete_after: t0 + TOMBSTONE_MS }])
+    expect(dueObjectKeys(at(state, t0 + 1))).toEqual([])
+  })
+})
+
+it('a failed delete leaves a deadline a writer moved during it', async () => {
+  await runInDurableObject(freshVault(), async (_v, state) => {
+    const key = keyOf(state)
+    reserveObject(at(state, t0), key, 'export')
+    const now = t0 + RESERVATION_GRACE_MS
+    const forgetThenFail = {
+      delete: async () => {
+        // The writer deletes the key itself and forgets it while the alarm's delete is in flight; then R2 fails.
+        tombstoneObjects(at(state, now + 1), [key])
+        throw new Error('R2 is down')
+      },
+    } as unknown as VaultBucket
+    expect(await deleteDueObjects({ context: () => at(state, now), bucket: forgetThenFail })).toBe(0)
+    expect(rowOf(state, key)).toEqual([{ status: 'tombstone', delete_after: now + 1 + TOMBSTONE_MS }])
+  })
 })
