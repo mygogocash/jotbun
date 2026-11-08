@@ -247,8 +247,8 @@ describe('the bank helpers', () => {
     expect(preambleAccountLabel(rows(['ธนาคารสังเคราะห์'], ['บัญชีออมทรัพย์', 'xxx-x-x1234-x'], ['บัญชีอื่น', 'xxx-x-x9999-x']))).toBe('บัญชีออมทรัพย์ xxx-1234');
     expect(preambleAccountLabel(rows(['XXX-X-X5678-X', '', ' Savings ']))).toBe('Savings xxx-5678');
     expect(preambleAccountLabel(rows(['**** **** 1234 5678']))).toBe('xxx-5678');
-    // One mask character, fewer than four digits, or a word ending in x is no masked number.
-    expect(preambleAccountLabel(rows(['x1234'], ['xx-123'], ['Fax 0212345678'], ['Taxx 1234']))).toBeNull();
+    // One mask character, fewer than four digits, a word ending in x, or a mask right after a digit is no masked number.
+    expect(preambleAccountLabel(rows(['x1234'], ['xx-123'], ['Fax 0212345678'], ['Taxx 1234'], ['1234xx5678']))).toBeNull();
     expect(preambleAccountLabel([])).toBeNull();
   });
 

@@ -1,0 +1,58 @@
+# fix-parser-regex: linear amount and sign matching
+
+- **Status:** built and verified locally on `fix/parser-regex` (`.claude/worktrees/fix-parser-regex`), cut from `origin/claude/p1a-vault-core` at `020c391`, after P4-T10 (#345) merged. Not pushed. The independent review is the controller's.
+- **Why:** the P4-T10 confirming review (`.claude/controller/reviews/P4-T10-confirm.md`, MIN-A) found regexes in the parser child whose time grows with the square of a run's length. A few megabytes of CSV, or a workbook of a few kilobytes, held the shared parser child until its 30 s deadline.
+- **Ruling R89** (controller, 8 November 2026) allows this fix in the frozen `apps/api`, limited to:
+  - the parser's regexes: `THB_SUFFIX` in `amount.ts`, `explicitPlus` in `table.ts`, and any other regex in `apps/api/src/imports/parsers/` proven slow;
+  - the review's NIT-A test;
+  - as extended the same day, `readDateStyles` in `xlsx.ts`, which judged a custom number format again for every cell style that used it.
+- **Files:**
+  - `apps/api/src/imports/parsers/amount.ts`: `THB_SUFFIX` is `/(?:฿|thb|บาท)$/i`. The leading `\s*` is gone: `numberText` already trims the spaces before the marker.
+  - `apps/api/src/imports/parsers/table.ts`: `explicitPlus` is `/^\s*(?:\(\s*)?(?:(?:฿|thb)\s*)?\+/i`. It reads the same strings, with no two `\s*` side by side.
+  - `apps/api/src/imports/parsers/xlsx.ts`:
+    - `isDateFormat` strips bracketed sections only up to the last `]`, then keeps the rest as it is. This is the sweep's third find: `/\[[^\]]*\]/g` scanned from every `[` to the end of a format code with no `]`.
+    - `readDateStyles` judges each custom number format once, when it reads the `<numFmt>`. A cell style now only looks the verdict up.
+  - `apps/api/src/imports/parser-linear.spec.ts` (new, 10 tests):
+    - seven CPU-time cases: four in process, under 1,000 ms; three through the real sandboxed child, `cpu_ms` under 5,000;
+    - three equivalence cases: currency markers, the explicit plus, custom number formats.
+  - `apps/api/src/imports/fixtures/synthetic-parse.ts`: `buildXlsx` takes an optional `stylesXml` (custom number formats).
+  - `apps/api/src/imports/bank-statements.spec.ts`: the masked-account case adds `1234xx5678` (a mask right after a digit) to its null cases (review NIT-A).
+- **The sweep** (`files/sweep.mjs` in the planner's folder):
+  - Every regex in `apps/api/src/imports/parsers/` (55, including `date.ts`'s built ones) was pumped with long runs: 20 by 4 surroundings, 54 run units, 1,000 and 10,000 repeats.
+  - Only `THB_SUFFIX`, `explicitPlus` and the bracket strip grew faster than linearly. With the three rewritten forms, none does.
+  - The XML tokenizer, the date patterns (after their whitespace collapse), the ZIP and part-name patterns and the remaining amount patterns are linear.
+  - The repeated check per cell style in `readDateStyles` is no regex shape; the sweep cannot see it. It was found while probing the styles part, and R89 was extended to it.
+- **Same reading as before** (`files/differential.mjs`, old parsers against new): 0 differences. It compared:
+  - the THB strip and `parseAmountText` on 31 hand-picked, 300,000 random and 177,156 exhaustive inputs, and `detectAmountConvention` on 50,000 random sets;
+  - `explicitPlus` on 21 hand-picked, 300,000 random and 299,593 exhaustive inputs, and `buildRows` on 20,000 random generic tables;
+  - `isDateFormat`'s visible text and its answer on 29 hand-picked, 300,000 random and 960,800 exhaustive codes;
+  - `readDateStyles`, every cell style's date decision, on 7 hand-picked and 50,000 random `styles.xml` parts. Of the random parts, 19,834 have a date style and 38,541 a style that is no date.
+- **RED to GREEN:**
+  - RED, the tests on the code at `020c391`: `npm run test:api -- parser-linear bank-statements` gave `Tests: 7 failed, 21 passed, 28 total`. All seven failures are assertions:
+    - the four in-process cases took 4,520, 4,946, 8,450 and 5,671 ms of CPU (amount, explicit plus, number format, shared format) against the 1,000 ms bound;
+    - the three child cases ended in `"kind": "timeout"`.
+  - GREEN: 28 passed. `npm run test:api -- parser-linear bank-statements parse-server parser-runner parse-worker`: 281 passed.
+- **Mutation check** (`files/mutate.py`): 11 mutants, 11 killed, every file restored byte for byte.
+  - F1, F2 and F3 restore each old pattern, and each fails two CPU cases.
+  - F4 (the THB marker anywhere) and F5 (no `บาท`) fail the currency-marker case.
+  - F6 (no marker before the plus) fails the explicit-plus case.
+  - F7 (the last `]` left out) fails the number-format case and both bracket CPU cases.
+  - F8 (the text after the last `]` dropped) fails the number-format case.
+  - F10 restores the check per cell style, and fails both shared-format CPU cases.
+  - F11 (custom formats ignored) fails the number-format case.
+  - N1 (a digit allowed before the mask) fails the masked-account case.
+  - One mutant is equivalent and not run: dropping `(?:\(\s*)?` from `explicitPlus`. A `(` before a `+` never parses as an amount (`numberText` refuses a sign inside parentheses), so the check is never consulted. The differential's regex-level comparison still tells the two apart.
+- **Gate** (worktree root):
+  - `npm run typecheck`: passed.
+  - `npm run test:api`: `Test Suites: 46 passed, 46 total`, `Tests: 991 passed, 991 total` (before, at this base: 45 suites, 981 tests).
+  - `npm run build -w gogospend-api`: `Successfully compiled: 296 files with swc`.
+  - `node apps/api/scripts/release-graph.mjs check`: `"files": 150`, `"closure_packages": 123`, `"problems": []`.
+  - `node apps/api/scripts/parser-sandbox-check.cjs`: `"sandbox":{"supported":true}`, `"ok":true`.
+  - `git diff --check origin/claude/p1a-vault-core...HEAD`: no output.
+- **Deviations:**
+  - The base is `020c391`, not `3ab5d42`. #342 (the flaky-test fix) merged since. Its `upload-intake.spec.ts` adds one test and removes none, so the suite before this change is 45 suites and 981 tests, and after it 46 suites and 991 tests (not 990). The ten new tests are the new spec's; `bank-statements.spec.ts` keeps its 18.
+  - The child CPU range in Notes (140 to 170 ms) is the planner's measurement. This run asserts only the 5,000 ms bound and does not log the value.
+- **SKIPPED:** `npm run test:db -w gogospend-api`. Docker is not running on this machine; CI runs it. This change has no database code. Nothing deployed; no cloud resource.
+- **Notes for later:**
+  - Fixed here, under R89 as extended: `readDateStyles` (`xlsx.ts`) ran `isDateFormat` once per cell style `<xf>`, not once per number format. With a format code of 1,000,000 characters and 25,000 styles that use it, a workbook of 6,790 bytes (the new child case) reached the 30 s deadline. It now parses in 140 to 170 ms of child CPU.
+  - A test named `parser-regex...` would collide with this worktree's own path in a jest path pattern: jest matches the absolute path. That is why the new spec is `parser-linear.spec.ts`.

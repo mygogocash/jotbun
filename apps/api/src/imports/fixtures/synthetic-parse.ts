@@ -119,6 +119,8 @@ export type XlsxOptions = {
   contentTypesExtra?: string;
   /** Raw XML for a shared string item, instead of escaping `rows`' strings (rich text, phonetic runs). */
   sharedStringItems?: string[];
+  /** Raw xl/styles.xml instead of the default one (custom number formats). */
+  stylesXml?: string;
 };
 
 const escapeXml = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -205,7 +207,7 @@ export function buildXlsx(options: XlsxOptions): Buffer {
     options.extraWorkbookRels ?? '',
     '</Relationships>',
   ].join('');
-  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cellXfs count="2"><xf numFmtId="0"/><xf numFmtId="14" applyNumberFormat="1"/></cellXfs></styleSheet>`;
+  const styles = options.stylesXml ?? `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cellXfs count="2"><xf numFmtId="0"/><xf numFmtId="14" applyNumberFormat="1"/></cellXfs></styleSheet>`;
   const sharedStrings = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="${sharedItems.length}" uniqueCount="${sharedItems.length}">${sharedItems.join('')}</sst>`;
   return buildZip([
     { name: '[Content_Types].xml', data: contentTypes },
