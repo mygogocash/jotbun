@@ -30,8 +30,6 @@ export interface ReminderPort {
   permission(): Promise<'granted' | 'denied' | 'undetermined'>;
   requestPermission(): Promise<'granted' | 'denied'>;
   cancel(id: string): Promise<void>;
-  /** Repeats every day at the local time. */
-  scheduleDaily(id: string, hour: number, minute: number, content: ReminderContent): Promise<void>;
   /** Repeats every week on `weekday` (ISO: Monday = 1 … Sunday = 7) at the local time. */
   scheduleWeekly(id: string, weekday: Weekday, hour: number, minute: number, content: ReminderContent): Promise<void>;
 }
@@ -70,10 +68,14 @@ export interface LocalReminderService {
 /** Every day, Monday first. */
 export const EVERY_DAY: readonly Weekday[] = [1, 2, 3, 4, 5, 6, 7];
 
-/** Every day is one daily reminder, under the id S4 already used, so an S4 install keeps exactly one. */
+/**
+ * The one daily reminder S4 and R5 scheduled for every day. Nothing schedules
+ * it now (a daily trigger repeats one text), but every schedule still cancels
+ * it, so an installed phone never keeps it beside the weekly ones.
+ */
 export const DAILY_REMINDER_ID = 'gogospend.daily-reminder';
 
-/** Fewer days are one weekly reminder per chosen day, each under its day's own fixed id. */
+/** One weekly reminder per chosen day (all seven for every day), each under its day's own fixed id. */
 export const WEEKLY_REMINDER_IDS: Readonly<Record<Weekday, string>> = {
   1: 'gogospend.weekly-reminder.mon',
   2: 'gogospend.weekly-reminder.tue',
@@ -86,6 +88,14 @@ export const WEEKLY_REMINDER_IDS: Readonly<Record<Weekday, string>> = {
 
 /** Every id a reminder can have: cancelling all of them leaves no reminder behind. */
 const ALL_REMINDER_IDS: readonly string[] = [DAILY_REMINDER_ID, ...EVERY_DAY.map((day) => WEEKLY_REMINDER_IDS[day])];
+
+/**
+ * Kept with the time zone and language a schedule was made for, and changed
+ * whenever the reminders themselves change shape, so an installed app
+ * re-schedules once at its next launch. This one: seven weekly reminders in
+ * their own day's words, replacing the one daily reminder.
+ */
+const SCHEDULE_SHAPE = 'weekly-wording';
 
 const TIME = /^([01][0-9]|2[0-3]):([0-5][0-9])$/;
 const DEFAULT_TIME = '20:00';
@@ -121,19 +131,19 @@ function storedWeekdays(value: unknown): Weekday[] {
   return days.length > 0 ? days : [...EVERY_DAY];
 }
 
-const isEveryDay = (days: readonly Weekday[]) => days.length === EVERY_DAY.length;
-
 /**
- * Device-local reminders (no push backend): every day is one daily reminder,
- * fewer days one weekly reminder per chosen day. Turning them on asks for
+ * Device-local reminders (no push backend): one weekly reminder per chosen
+ * day, each in that day's own words (`content(day)`). Turning them on asks for
  * permission at most once; a denial is a settled state - the preference goes
- * off and nothing is retried behind the user's back. Every reminder has a
- * fixed id (the daily one, or its weekday's), and each schedule first cancels
- * all of them, so a new time, new days, a time zone or a language replaces
- * the reminders and never adds a second. Delivery is up to the OS and is not
+ * off and nothing is retried behind the user's back. Every reminder has its
+ * weekday's fixed id, and each schedule first cancels all of them and the old
+ * daily one, so a new time, new days, a time zone or a language replaces the
+ * reminders and never adds a second. Delivery is up to the OS and is not
  * promised.
  */
-export function createLocalReminderService(port: ReminderPort, store: PreferenceStore, content: () => ReminderContent, context: () => string = () => ''): LocalReminderService {
+export function createLocalReminderService(port: ReminderPort, store: PreferenceStore, content: (day: Weekday) => ReminderContent, context: () => string = () => ''): LocalReminderService {
+  const scheduleKey = () => `${context()}#${SCHEDULE_SHAPE}`;
+
   async function current(): Promise<ReminderPreference> {
     const stored = await store.load();
     if (!stored) return { enabled: false, localTime: DEFAULT_TIME, weekdays: [...EVERY_DAY] };
@@ -152,14 +162,9 @@ export function createLocalReminderService(port: ReminderPort, store: Preference
 
   async function schedule(preference: ReminderPreference): Promise<PermissionOutcome> {
     const { hour, minute } = parseTime(preference.localTime);
-    const scheduledFor = context();
-    const message = content();
+    const scheduledFor = scheduleKey();
     await cancelAll();
-    if (isEveryDay(preference.weekdays)) {
-      await port.scheduleDaily(DAILY_REMINDER_ID, hour, minute, message);
-    } else {
-      for (const day of preference.weekdays) await port.scheduleWeekly(WEEKLY_REMINDER_IDS[day], day, hour, minute, message);
-    }
+    for (const day of preference.weekdays) await port.scheduleWeekly(WEEKLY_REMINDER_IDS[day], day, hour, minute, content(day));
     await store.saveScheduledFor(scheduledFor);
     return 'scheduled';
   }
@@ -202,7 +207,7 @@ export function createLocalReminderService(port: ReminderPort, store: Preference
       const preference = await current();
       if (!port.supported) return 'unsupported';
       if (!preference.enabled) return 'disabled';
-      if ((await store.loadScheduledFor()) === context()) return 'unchanged';
+      if ((await store.loadScheduledFor()) === scheduleKey()) return 'unchanged';
       return reschedule();
     },
     getPreference: current,

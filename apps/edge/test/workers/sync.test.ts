@@ -22,7 +22,7 @@ import { decodeSyncCursor, encodeSyncCursor } from '@api/sync/sync-cursor'
 import { parseSyncRequest } from '@api/sync/sync-query'
 
 import { buildVaultRegistry } from '../../src/vault/commands/registry'
-import { syncChanges } from '../../src/vault/reads/sync'
+import { jsonbOrder, syncChanges } from '../../src/vault/reads/sync'
 import { pruneChanges } from '../../src/vault/retention'
 import { FIXTURE_ENTITY, fixtureCommands, inVault, purchase, sqlExec, sqlRows, syncRegistry } from './support/command-fixtures'
 import { member, startV1, vaultOf } from './support/v1-client'
@@ -281,6 +281,43 @@ describe('GET /v1/sync/changes, ported from sync-api.integration.spec.ts', () =>
     expect(await problemOf(user, '?cursor=nonsense')).toMatchObject({ status: 422, code: 'VALIDATION_FAILED' })
     await sqlExec(user, 'UPDATE sync_state SET pruned_through = 1 WHERE id = 1')
     expect(await problemOf(user)).toMatchObject({ status: 410, code: 'RESYNC_REQUIRED' })
+  })
+
+  it('orders keys as jsonb does: shorter first, equal lengths bytewise, nested objects too, arrays kept in order', () => {
+    const ordered = jsonbOrder({ bb: 1, list: [{ ccc: 1, d: 2 }, 'x'], a: { zz: 1, y: null }, ab: 2, aa: 3 }) as Record<string, unknown>
+    expect(JSON.stringify(ordered)).toBe('{"a":{"y":null,"zz":1},"aa":3,"ab":2,"bb":1,"list":[{"d":2,"ccc":1},"x"]}')
+    expect(jsonbOrder(null)).toBe(null)
+    expect(jsonbOrder('6500')).toBe('6500')
+  })
+
+  it('serves each snapshot with its keys in the API\'s order: PostgreSQL jsonb, shortest key first, then bytewise', async () => {
+    const user = await member(client)
+    const cash = await createWallet(user, 'Cash')
+    const bank = await createWallet(user, 'Bank')
+    const seeded = await client.as(user).post('/v1/categories/builtins')
+    const food = ((await seeded.json()) as { id: string; builtin_key: string | null }[]).find((category) => category.builtin_key === 'food')?.id
+    const lunch = { id: randomUUID(), type: 'expense', amount_minor: '6500', occurred_on: '2026-10-20', wallet_id: cash, category_id: food, merchant: 'ข้าวมันไก่', note: 'with soup' }
+    expect((await client.as(user).post('/v1/transactions', lunch)).status).toBe(201)
+    const move = { id: randomUUID(), type: 'transfer', amount_minor: '100', occurred_on: '2026-10-21', source_wallet_id: bank, destination_wallet_id: cash }
+    expect((await client.as(user).post('/v1/transactions', move)).status).toBe(201)
+    expect((await client.as(user).put('/v1/budgets/2026-10', { overall_limit_minor: '1800000', category_limits: [{ category_id: food, limit_minor: '600000' }] })).status).toBe(200)
+    // JSON.parse keeps the order the body spells, so Object.keys reads the served order.
+    const page = JSON.parse(await (await feed(user)).text()) as SyncChangesPage
+    const orders: Record<string, string[]> = {}
+    for (const change of page.groups.flatMap((group) => group.changes)) {
+      const snapshot = change.snapshot as Record<string, unknown>
+      const kind = change.entity === 'transaction' ? `transaction:${'wallet_id' in snapshot ? 'expense' : 'transfer'}` : change.entity
+      orders[kind] = Object.keys(snapshot)
+      if (change.entity === 'budget') orders['budget.category_limits'] = Object.keys((snapshot.category_limits as object[])[0])
+    }
+    expect(orders).toEqual({
+      wallet: ['id', 'name', 'version', 'archived', 'currency', 'opening_minor', 'tracking_start'],
+      category: ['id', 'type', 'color', 'label', 'version', 'archived', 'builtin_key'],
+      'transaction:expense': ['id', 'note', 'type', 'version', 'merchant', 'wallet_id', 'deleted_at', 'category_id', 'occurred_on', 'amount_minor'],
+      'transaction:transfer': ['id', 'note', 'type', 'version', 'merchant', 'deleted_at', 'occurred_on', 'amount_minor', 'source_wallet_id', 'destination_wallet_id'],
+      budget: ['id', 'month', 'version', 'category_limits', 'overall_limit_minor'],
+      'budget.category_limits': ['category_id', 'limit_minor'],
+    })
   })
 
   it('a client behind retention recovers: 410, then a snapshot, then deltas from its cursor', async () => {

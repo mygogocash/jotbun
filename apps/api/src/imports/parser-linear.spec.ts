@@ -53,6 +53,18 @@ function workbookWithFormat(code: string, styles = 1): Buffer {
   });
 }
 
+/** The date-styled cell (the serial of 2025-01-01) as read when its number format is the custom `code`. */
+const formatCell = (code: string): string => readXlsx(workbookWithFormat(code)).rows[1].cells[0];
+
+/** The date-styled cell (the serial of 2025-01-01) of a workbook whose cell style uses number format `id`, with the raw `<numFmt>` elements `numFmts`. */
+function cellWithNumFmts(numFmts: string, id: number): string {
+  const workbook = buildXlsx({
+    sheets: [{ rows: [['date', 'amount'], [{ date: '45658' }, 5]] }],
+    stylesXml: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts>${numFmts}</numFmts><cellXfs count="2"><xf numFmtId="0"/><xf numFmtId="${id}" applyNumberFormat="1"/></cellXfs></styleSheet>`,
+  });
+  return readXlsx(workbook).rows[1].cells[0];
+}
+
 describe('the parser reads long runs in linear time', () => {
   it('an amount with a long run of spaces inside', () => {
     const cells = Array<string>(40).fill(SPACED_AMOUNT);
@@ -90,6 +102,18 @@ describe('the parser reads long runs in linear time', () => {
     });
     // No y or d shows, so the cell is no date: its serial stays as written.
     expect(first[0]).toBe('45658');
+    expect(used).toBeLessThan(1_000);
+  });
+
+  it('a custom number format of "]" and then a long run of "["', () => {
+    const workbook = workbookWithFormat(`]${'['.repeat(150_000)}`);
+    let first: string[] = [];
+    const used = cpuMs(() => {
+      first = readXlsx(workbook).rows[1].cells;
+    });
+    expect(first[0]).toBe('45658');
+    // Only the text up to the last "]" is stripped. A strip over the whole code once it holds
+    // a "]" scanned from every "[" after it to the end again: seconds, not milliseconds.
     expect(used).toBeLessThan(1_000);
   });
 
@@ -181,5 +205,31 @@ describe('the rewritten matching reads exactly as before', () => {
     expect(cell('"day "0')).toBe('45658');
     expect(cell('[[d]0')).toBe('45658');
     expect(cell('0.00')).toBe('45658');
+  });
+
+  it('a second bracketed section hides its letters too', () => {
+    // "yellow" and "systime" sit inside the second brackets, so neither code shows a y or a d.
+    expect(formatCell('[Red][Yellow]0.00')).toBe('45658');
+    expect(formatCell('[Color10][$-x-systime]h:mm:ss')).toBe('45658');
+  });
+
+  it('a date letter counts right after the last "]", and in a code with no "]"', () => {
+    expect(formatCell('[Red]d')).toBe('2025-01-01');
+    expect(formatCell('d')).toBe('2025-01-01');
+  });
+
+  it('a custom number format replaces a built-in one with the same id', () => {
+    // 14 is a built-in date format; redefined as "0.00", it is no date.
+    expect(cellWithNumFmts('<numFmt numFmtId="14" formatCode="0.00"/>', 14)).toBe('45658');
+    expect(cellWithNumFmts('', 14)).toBe('2025-01-01');
+  });
+
+  it('of two number formats with one id, the last one counts', () => {
+    expect(cellWithNumFmts('<numFmt numFmtId="164" formatCode="d"/><numFmt numFmtId="164" formatCode="0.00"/>', 164)).toBe('45658');
+    expect(cellWithNumFmts('<numFmt numFmtId="164" formatCode="0.00"/><numFmt numFmtId="164" formatCode="d"/>', 164)).toBe('2025-01-01');
+  });
+
+  it('a number format without a code is no date', () => {
+    expect(cellWithNumFmts('<numFmt numFmtId="164"/>', 164)).toBe('45658');
   });
 });
