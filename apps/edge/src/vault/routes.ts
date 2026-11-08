@@ -7,6 +7,9 @@ import { getBudget, putBudget } from './domain/budgets'
 import { archiveCategory, createCategory, listCategories, seedBuiltins, unarchiveCategory, updateCategory } from './domain/categories'
 import { createTransaction, deleteTransaction, getTransaction, restoreTransaction, updateTransaction } from './domain/transactions'
 import { createWallet, archiveWallet, getWallet, listWallets, unarchiveWallet, updateWallet } from './domain/wallets'
+import { deletedHistory } from './reads/deleted-history'
+import { history } from './reads/history'
+import { summary } from './reads/summary'
 import { syncChanges } from './reads/sync'
 import { acceptPolicy, describeMe, setPrivacy } from './policies'
 import { okReply } from './replies'
@@ -59,6 +62,9 @@ export const VAULT_HANDLERS: Partial<Record<VaultRouteId, VaultHandler>> = {
   'transactions.restore': (c, call) => okReply(call.route, restoreTransaction(c, call)),
   'budgets.get': (c, call) => okReply(call.route, getBudget(c, call.params.month)),
   'budgets.put': (c, call) => okReply(call.route, putBudget(c, call)),
+  'history.list': (c, call) => okReply(call.route, history(c, call.query)),
+  'history.deleted': (c, call) => okReply(call.route, deletedHistory(c, call.query)),
+  'summary.get': (c, call) => okReply(call.route, summary(c, call.query)),
   'commands.status': (c, call) => okReply(call.route, { statuses: lookupStatuses(c, commandIdsOf(call.body)) }),
   'sync.changes': (c, call) => okReply(call.route, syncChanges(c, call.query)),
 }
