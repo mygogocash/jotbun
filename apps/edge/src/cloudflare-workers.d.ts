@@ -58,6 +58,34 @@ interface DurableObjectNamespace<T = undefined> {
   getByName(name: string, options?: { locationHint?: DurableObjectLocationHint }): DurableObjectStub<T>
 }
 
+// Workflows and Queues bindings, as far as the vault's pending-work starters use them (1B-T4).
+interface WorkflowInstanceCreateOptions<PARAMS = unknown> {
+  id?: string
+  params?: PARAMS
+}
+
+interface InstanceStatus {
+  status: 'queued' | 'running' | 'paused' | 'errored' | 'terminated' | 'complete' | 'waiting' | 'waitingForPause' | 'unknown'
+  error?: { name: string; message: string }
+  output?: unknown
+}
+
+interface WorkflowInstance {
+  readonly id: string
+  status(): Promise<InstanceStatus>
+}
+
+interface Workflow<PARAMS = unknown> {
+  // Throws when an instance with this id already exists.
+  create(options?: WorkflowInstanceCreateOptions<PARAMS>): Promise<WorkflowInstance>
+  // Throws when no instance has this id.
+  get(id: string): Promise<WorkflowInstance>
+}
+
+interface Queue<Body = unknown> {
+  send(message: Body, options?: { contentType?: 'json' | 'text' | 'bytes' | 'v8'; delaySeconds?: number }): Promise<void>
+}
+
 interface KVNamespace {
   get(key: string, type: 'text'): Promise<string | null>
   get(key: string, type: 'json'): Promise<unknown>

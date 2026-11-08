@@ -10,6 +10,7 @@ import { EDGE_CONFIG_KEY } from '../../../src/v1/config'
 import type { EdgeConfigJson } from '../../../src/v1/config'
 import type { V1Env } from '../../../src/v1/env'
 import { handleVaultV1 } from '../../../src/v1/handler'
+import type { V1Deps } from '../../../src/v1/handler'
 import { createTokenVerifier } from '../../../src/v1/tokens'
 import type { UserVault } from '../../../src/vault/user-vault'
 
@@ -33,6 +34,8 @@ export type UserClient = {
 export type V1Client = {
   as(user: TestUser, opts?: TokenOptions): UserClient
   raw(request: Request): Promise<Response>
+  /** Awaits every promise the Worker handed to waitUntil so far, including ones handed over while waiting. */
+  settle(): Promise<void>
 }
 
 /** Terms v1 (required) and privacy v1, in the order GET /v1/policies answers them (sorted by kind). */
@@ -111,15 +114,33 @@ function clientFor(raw: (request: Request) => Promise<Response>, user: TestUser,
  * one), and verifies tokens against the local key. `options.env` overrides
  * settings for this client only; the Durable Object and KV bindings stay.
  * Each call rewrites the KV entry, so every test starts from the config it names.
+ * Promises the Worker hands to waitUntil are kept for `settle()`. With
+ * `startWork: 'manual'` a `starts` route starts nothing; the default, 'auto',
+ * calls the vault's startPendingWork as the deployed Worker does.
  */
-export async function startV1(config: EdgeConfigJson | 'absent' | 'malformed' = DEFAULT_CONFIG, options?: { env?: Partial<V1Env>; fetchCatalogue?: typeof fetch }): Promise<V1Client> {
+export async function startV1(
+  config: EdgeConfigJson | 'absent' | 'malformed' = DEFAULT_CONFIG,
+  options?: { env?: Partial<V1Env>; fetchCatalogue?: typeof fetch; startWork?: 'auto' | 'manual' },
+): Promise<V1Client> {
   if (config === 'absent') await env.CONFIG.delete(EDGE_CONFIG_KEY)
   else if (config === 'malformed') await env.CONFIG.put(EDGE_CONFIG_KEY, JSON.stringify({ gates: 'nope' }))
   else await env.CONFIG.put(EDGE_CONFIG_KEY, JSON.stringify(config))
   const verifier = createTokenVerifier({ issuer: ISSUER, audience: AUDIENCE, keys: (await keys).jwks })
   const workerEnv = options?.env ? envWith(options.env) : env
-  const raw = (request: Request) => handleVaultV1(request, workerEnv, { verifier, fetchCatalogue: options?.fetchCatalogue })
-  return { as: (user, opts = {}) => clientFor(raw, user, opts), raw }
+  const pending: Promise<unknown>[] = []
+  const deps: V1Deps = {
+    verifier,
+    fetchCatalogue: options?.fetchCatalogue,
+    waitUntil: (promise) => {
+      pending.push(promise)
+    },
+  }
+  if (options?.startWork === 'manual') deps.startWork = async () => undefined
+  const raw = (request: Request) => handleVaultV1(request, workerEnv, deps)
+  const settle = async (): Promise<void> => {
+    while (pending.length > 0) await Promise.all(pending.splice(0))
+  }
+  return { as: (user, opts = {}) => clientFor(raw, user, opts), raw, settle }
 }
 
 /** Settings from `extra` win; bindings on `env` stay, including ones a copy would drop. */

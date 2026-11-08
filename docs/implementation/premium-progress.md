@@ -766,6 +766,79 @@ Phase 1B moves files and background work onto each person's vault (spec `docs/su
   - `OBJECTS` is on `V1Env`. The binding was already in `wrangler.vault.jsonc`.
 - **Integration (27 Oct):** merged after Tasks 5 and 6 of 1A (PRs #81, #80); only the receipts conflicted. On the merged tree: `typecheck:edge` passes, `test:edge` 130 passed (10 files), `test:edge:workers` 240 passed (12 files).
 
+### 1B Task 4: The vault's object registry with tombstones, grants and pending-work starts
+
+- **Status:** built and verified locally on `p1/1b-t4-object-registry`, from `800680d` (the integration head at Step 0). Not pushed. The independent review is the controller's, after this receipt. The integration head has since moved to `8f04a3b` (1D-T1 and the iOS keyboard fix). This branch does not merge it, and `git diff --stat 800680d 8f04a3b -- apps/edge` is empty.
+- **Files:**
+  - New, `apps/edge/src/vault/files/`: `context.ts` (`FileContext`, `touch`); `objects.ts` (the registry: `reserveObject`, `publishObject`, `releaseObject`, `tombstoneObjects`, `dueObjectKeys`, `objectsDueAt`, `deleteDueObjects`, `putConcatenated`; `RESERVATION_GRACE_MS` 15 minutes, `TOMBSTONE_MS` one day, `DELETE_RETRY_MS` one minute); `grants.ts` (`vaultGrants`, `receiptGrantScope`); `work.ts` (`BuildOutcome`, `StartResult`, `WorkStarter`, `START_RETRY_MS`, the empty `WORK_STARTERS`, `createOnce`, `startDueAt`, `PendingWorkHost`, `startPendingWork`).
+  - New elsewhere: `src/background/vault-stub.ts` (`vaultById`), `src/v1/files/downloads.ts` (`EXPORT_SLOTS`, 4 an isolate; `RECEIPT_SLOTS`, 8 an isolate and 2 an account), `test/workers/support/files.ts` (`TINY_JPEG`).
+  - Vault: `src/vault/context.ts` (`VaultContext` gains `vaultId` and `touched`); `src/vault/user-vault.ts` (`VaultEnv` gains `CONFIG`; `lastStartAttemptMs`; `call()` sets `vaultId`; `vaultId`, `bucket`, `fileContext()`, `isActive()` and `startPendingWork()`).
+  - Worker: `src/v1/routes.ts` (`starts?: true` on `VaultRoute`); `src/v1/handler.ts` (`startWork` in its deps, `startsWork`, the hand-off after a 2xx on a vault route and on a Worker route); `src/v1/config.ts` (`readGates`); `src/cloudflare-workers.d.ts` (`Workflow`, `WorkflowInstance`, `WorkflowInstanceCreateOptions`, `InstanceStatus`, `Queue`).
+  - Tests: `test/workers/files-objects.test.ts` (new, 20 cases); `test/workers/support/v1-client.ts` (`startWork: 'auto' | 'manual'`, `settle()`); `test/workers/support/command-fixtures.ts` (`vaultId` in `inVault`'s context).
+- **RED to GREEN:**
+  - RED (`npm run test:edge:workers -- test/workers/files-objects.test.ts`, with the typed stubs of plan Step 1): `Test Files  1 failed (1)`, `Tests  20 failed (20)`. All 20 failures are `AssertionError`s, for example `expected [] to deeply equal [ { status: 'tombstone', …(1) } ]` (late PUT), `expected [Function] to throw an error` (publishing an unreserved key), `expected { n: +0 } to deeply equal { n: 1001 }` (1,001 keys) and `expected null to deeply equal Any<Number>` (the hand-off). None is a missing module or a thrown error.
+  - GREEN, same command: `Tests  20 passed (20)`. The brief's Step 3.3 expectation is corrected in deviation 14.
+- **Mutation check:** the 25 mutants of the brief's Step 4 (M1 to M24, with M3b) were applied one at a time with the Edit tool, each to the one file the brief names, using the planner's old and new text. Each focused run (`npx vitest run --config vitest.workers.config.ts --reporter=verbose test/workers/files-objects.test.ts` in `apps/edge`) held the heavy lock. After each restore, the SHA-256 of the 16 GREEN files matched its recorded value and `git diff --stat` was unchanged. [25] mutants, [25] killed, no survivor. Each mutant and the cases that failed:
+  - M1, drop tombstones: deleteDueObjects forgets due rows at once: "a key written after it was forgotten is still deleted"; "registry functions take more key lists than SQLite has parameters"; "after deleteDueObjects at objectsDueAt, the next objectsDueAt is later or null".
+  - M2, leave a failed delete due: "a failed R2 delete keeps the rows and retries them a minute later".
+  - M3, bind one ? per key in tombstoneObjects: "registry functions take more key lists than SQLite has parameters".
+  - M3b, bind one ? per key in the batch tombstone update: "registry functions take more key lists than SQLite has parameters".
+  - M4, ignore the jobs gate: "startPendingWork starts nothing while jobs is paused".
+  - M5, empty parts only after put: "putConcatenated stores one create-only object with its SHA-256 and refuses an existing key".
+  - M6, mark an unbound item as started: "startPendingWork starts each item once and marks it, counts an existing instance as started, and leaves an unbound kind for later".
+  - M7, startsWork ignores the status: "a route marked starts hands its vault to startWork only after a 2xx"; "the front door starts pending work after a starts route answers 2xx, and not after an error or in manual mode".
+  - M8, no hand-off on Worker routes: "a Worker route marked starts hands its session's vault to startWork after a 2xx".
+  - M9, publish any registered key, not only a reserved one: "publishing a key that was never reserved throws and writes nothing".
+  - M10, startDueAt ignores the last attempt: "startDueAt is the later of the starters' earliest and the last attempt plus a minute".
+  - M11, startPendingWork ignores an inactive vault: "startPendingWork does nothing in an erased vault or one that is not active".
+  - M12, receipt grant scope without the session: "grants are per purpose, and a receipt grant is bound to its session".
+  - M13, one key label for every purpose: "grants are per purpose, and a receipt grant is bound to its session".
+  - M14, createOnce swallows a failed create: "createOnce treats an existing instance as created and rethrows otherwise".
+  - M15, forget a due tombstone without deleting it again: "a key written after it was forgotten is still deleted".
+  - M16, isActive is any account: "startPendingWork does nothing in an erased vault or one that is not active".
+  - M17, startPendingWork does not record its attempt: "the front door starts pending work after a starts route answers 2xx, and not after an error or in manual mode"; "a Worker route marked starts hands its session's vault to startWork after a 2xx"; "startPendingWork starts nothing while jobs is paused".
+  - M18, readGates opens the gates when config fails: "startPendingWork starts nothing while jobs is paused"; "readGates reads only the gates of config:v1 and fails closed as readEdgeConfig does".
+  - M19, call() leaves the vault id empty: "a vault call's context carries the vault's own id, and vaultById reaches the vault by that id".
+  - M20, releaseObject makes nothing due: "a reserved key is due at its grace deadline, a published one at its expiry, and a held receipt never until released".
+  - M21, a key is due only after its deadline, not at it: "a reserved key is due at its grace deadline, a published one at its expiry, and a held receipt never until released"; "a key written after it was forgotten is still deleted"; "registry functions take more key lists than SQLite has parameters"; "after deleteDueObjects at objectsDueAt, the next objectsDueAt is later or null".
+  - M22, touch marks nothing: "a reserved key is due at its grace deadline, a published one at its expiry, and a held receipt never until released".
+  - M23, tombstoneObjects keeps the old deadline: "a key written after it was forgotten is still deleted"; "publishing a key that was never reserved throws and writes nothing"; "registry functions take more key lists than SQLite has parameters".
+  - M24, vaultById names the vault by name: "a vault call's context carries the vault's own id, and vaultById reaches the vault by that id".
+  - M3 and M3b fail with "too many SQL variables", a thrown error, which is what the plan's mutant predicts. Every other mutant fails on an assertion.
+- **Gate** (from the worktree root):
+  - `npm run typecheck:edge`: passes (exit 0).
+  - `npm run test:edge`: 156 passed (12 files).
+  - `npm run test:edge:workers`: 268 passed (14 files), the 20 new cases included. No timeout in this run, so the `sync.test.ts` rerun was not needed.
+  - `npm run build:edge`: passes (exit 0), and `dist/jotbun_vault/index.js` is built.
+  - `npm run test:edge:db`: **SKIPPED.** Docker is stopped on this machine, so the local PostgreSQL container cannot run. This task changes no PostgreSQL code; CI's database job runs the suite (R80).
+  - `git diff --check` over the staged files, before the commit: clean.
+- **Deviations and calls:**
+  1. `test/workers/support/command-fixtures.ts` is edited, though the plan does not list it. The plan makes `VaultContext.vaultId` a required `string`, and `inVault` builds a `VaultContext` literal, so without the one line `typecheck:edge` fails (`Property 'vaultId' is missing`).
+  2. A Worker route marked `starts` also hands off its work, through its session's stub, because 1B-T5's upload route is a Worker route with `starts: true` and that task does not edit `handler.ts`. A public Worker route has no session and starts nothing. Tested by `a Worker route marked starts hands its session's vault to startWork after a 2xx`.
+  3. A rejected start is caught and logged (`pending_work_unstarted`) before `waitUntil`, so no rejection goes unhandled; the vault's alarm starts it later (1B-T11).
+  4. After a failed R2 delete, `deleteDueObjects` goes on to the next batch. The failed batch is due a minute later, so it is not read again in the same run, and the run is still bounded by `maxBatches`.
+  5. `publishObject` throws a plain `Error` for a key that is not `reserved` (never reserved, or already a tombstone). It is a programming error, so inside a call it becomes a 500, never a client problem.
+  6. `releaseObject` leaves a tombstone's deadline alone, so its second delete a day later still happens.
+  7. `tombstoneObjects` updates registered rows only. Every writer reserves its keys first (plan B4), so an unregistered key has no row to mark.
+  8. `UserVault#bucket` throws `ObjectStoreError('unavailable')` when `OBJECTS` is unbound, as `UnavailableObjectStore` does on the PostgreSQL edge. `readGates(this.env.CONFIG as KVNamespace)`: a missing binding makes `kv.get` throw inside `readEdgeConfig`'s `try`, so every gate is paused and work is held (fail closed).
+  9. `VaultEnv` is written one field per line, so 1B-T5, T6 and T8 each add one line (`PARSE_QUEUE`, `EXPORT_WORKFLOW`, `SNAPSHOT_WORKFLOW`) instead of editing one long line.
+  10. Five tests beyond the plan's fifteen: the front door's hand-off for a vault route (2xx, an error, manual mode), the same for a Worker route, `readGates` failing closed, the call context's vault id with `vaultById`, and the download slots' limits. They cover the handler wiring, `readGates`, `vaultById`, `call()`'s `vaultId` and the slots, which the plan's cases do not reach.
+  11. `TINY_JPEG` was made with libjpeg (`cjpeg -baseline -optimize -quality 75` from a 1×1 grey PGM). `djpeg` and Pillow both decode it to one pixel of value 128. Its segments are SOI, APP0 (JFIF), DQT, SOF0, DHT, DHT, SOS, one scan byte and EOI. `sanitizedImageHeader` is imported from `@api/imports/parse-handler`, as the plan says; that module loads in workerd.
+  12. `dueObjectKeys` orders by `delete_after`, then `key`, so the oldest deadlines go first and a batch is deterministic.
+  13. The download slots import `DEFAULT_ATTACHMENT_LIMITS` (pure) for the receipt slots, and use the literal 4 for exports, because the API's `EXPORT_DOWNLOADS_PER_PROCESS` lives in a Nest controller.
+  14. **Brief correction (the coordinator's ruling on Step 3.3).** The brief expects the GREEN log to show three stderr event lines (`object_delete_failed` once, `work_start_failed` twice). Under the brief's own command, which uses the default reporter, the run prints no stderr for passing tests, so those lines cannot appear, and `Tests  20 passed (20)` is the result. Under `--reporter=verbose` the same file logs five event lines: `object_delete_failed` once, `work_start_failed` twice, and `config_unreadable` and `config_malformed` from the `readGates` test. Observed on this branch: `--reporter=verbose` gives `Tests  20 passed (20)` and those five lines.
+- **SKIPPED (hosted):** nothing deployed; no Workflow, Queue or R2 resource was created. The tests use Miniflare's local R2.
+- **Notes for later tasks:**
+  - Reserve a key with `reserveObject` before its PUT, inside the block that records the work, and publish it with `publishObject` after the PUT, with its deadline (null only for a held receipt). Only a reserved key can be published.
+  - A writer that deleted its own keys calls `tombstoneObjects` (1B-T5's `discarded`); a released receipt calls `releaseObject`.
+  - `deleteDueObjects(v, maxBatches)` takes `{ context(): FileContext; bucket: VaultBucket }`. `UserVault` has `fileContext()`, not `context()`, so 1B-T11 passes `{ context: () => this.fileContext(), bucket: this.bucket }`.
+  - A starter goes into `WORK_STARTERS` (1B-T5 parse, T6 export, T8 snapshot). `start` runs outside every block; `markStarted` runs in a short block of its own. `createOnce` makes a Workflow start safe to repeat.
+  - A route with `starts: true` starts the vault's pending work after a 2xx, for a vault route and a Worker route alike. A test that must not start work uses `startV1(…, { startWork: 'manual' })`; `client.settle()` awaits the hand-offs.
+  - `lastStartAttemptMs` is memory only and is set by every `startPendingWork` run; `startDueAt(c, lastStartAttemptMs)` waits at least `START_RETRY_MS` after it.
+  - `readGates(kv)` is `readEdgeConfig`'s gates and fails closed; background code reads `jobs`, `imports` and `ocr` from it.
+  - Grants: `vaultGrants(c, 'snapshot' | 'export' | 'attachment')`; a receipt grant uses `receiptGrantScope(c.claims)` as its MAC context.
+  - For the integrator: this branch is based on `800680d`, and the integration head `8f04a3b` is not merged into it. Nothing under `apps/edge` differs between the two heads. `docs/implementation/premium-progress.md` does differ, so a merge may conflict there: keep both sides, as the protocol says.
+
 ## 1D: live pokes, the pending choice and PostHog
 
 Phase 1D adds live pokes, the pending choice, PostHog and the two-phone proof (plan 1D, in the controller's brief). Task 2 puts PostHog's proxy on the HTTP Worker.
