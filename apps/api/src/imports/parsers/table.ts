@@ -1,5 +1,8 @@
 // From a read table (CSV or worksheet) to review candidates, in the parser
-// child. The first non-blank row is the header. Columns are recognized by
+// child. The header is the first of the table's first 30 rows that names a
+// date column and an amount column, or a date column and both a withdrawal
+// and a deposit column (bank.ts); without one, the first non-blank row is the
+// header, as before. Columns are recognized by
 // known Thai/English names; every other column is ignored and reported once
 // as unmapped_columns - an unknown column never reaches a candidate, so a
 // file cannot supply ids, owners or any other field.
@@ -11,13 +14,24 @@
 // header, even one sharing their column names, is generic: no assumed
 // day/month order and no direction from a sign.
 //
+// A bank export (P4-T10, S12) is a header naming both a withdrawal and a
+// deposit column. Only then: the rows above the header are its preamble, and
+// without a wallet column the masked account number there labels every row;
+// exactly one of withdrawal (an expense) and deposit (income) holds a row's
+// amount, its sign ignored (both is type_conflict, neither missing_amount),
+// so an amount or type column is not read (it is reported as unmapped); the
+// descriptor column is the category label and the details column the
+// merchant; balances are ignored; two-digit years take the era that puts the
+// whole file within the ten years before today (bank.ts).
+//
 // Every non-blank data row becomes one candidate with a stable id (row:<n>).
 // A value is the file's own text or NULL with a reason - never a guess:
 //   - the type comes from a type column's keyword, or, without one, from the
 //     amount's sign in the signed legacy layouts; a keyword the sign
 //     contradicts (income written negative, expense with an explicit "+") is
 //     type_conflict;
-//   - the wallet is only ever a wallet column (a payment channel is not one);
+//   - the wallet is only ever a wallet column (a payment channel is not one),
+//     or a bank export's account;
 //   - amounts are exact (amount.ts) under the file's separator convention,
 //     dates exact with the file's proven day/month order (date.ts); a
 //     currency other than THB nulls the amount;
@@ -27,19 +41,24 @@
 //     note 500) is left out and flagged text_too_long;
 //   - text read through the legacy Windows-874 fallback (a guess at the code
 //     page) is kept but flagged legacy_encoding_text, so its row is reviewed.
+// Every table also gets its header's fingerprint (bank.ts), so a layout's
+// label mappings can be remembered (P4-T11).
 import { detectAmountConvention, parseAmountText } from './amount.ts';
+import type { AmountConvention } from './amount.ts';
+import { AMOUNT_NAMES, BANK_NAMES, DATE_NAMES, findHeaderRow, headerFingerprint, isBankHeader, normalizeHeader, preambleAccountLabel, twoDigitYearEra } from './bank.ts';
 import { detectDateOrder, parseDateText } from './date.ts';
 import type { DateOrder } from './date.ts';
 import { LIMITS, ParseRejection } from './protocol.ts';
 import type { ChildBody, Direction, Field, Layout, ParsedRow, RowIssue, SourceTable } from './protocol.ts';
 
-type Role = 'date' | 'time' | 'type' | 'amount' | 'category' | 'wallet' | 'merchant' | 'note' | 'currency' | 'exclude' | 'known';
+type Role = 'date' | 'time' | 'type' | 'amount' | 'withdrawal' | 'deposit' | 'category' | 'wallet' | 'merchant' | 'note' | 'currency' | 'exclude' | 'known';
+type NamedRole = Exclude<Role, 'withdrawal' | 'deposit' | 'known'>;
 
-const ROLE_NAMES: Readonly<Record<Exclude<Role, 'known'>, readonly string[]>> = {
-  date: ['date', 'วันที่', 'transaction date', 'วันที่ทำรายการ'],
+const ROLE_NAMES: Readonly<Record<NamedRole, readonly string[]>> = {
+  date: DATE_NAMES,
   time: ['time', 'เวลา'],
   type: ['type', 'ประเภท', 'transaction type'],
-  amount: ['amount', 'จำนวน', 'จำนวนเงิน', 'ยอดเงิน'],
+  amount: AMOUNT_NAMES,
   category: ['category', 'หมวดหมู่', 'หมวด'],
   wallet: ['wallet', 'account', 'จ่ายจาก', 'กระเป๋าเงิน'],
   merchant: ['merchant', 'payee', 'ผู้รับ', 'display name', 'ร้านค้า'],
@@ -57,13 +76,46 @@ const TEXT_LIMITS: Readonly<Record<'wallet_label' | 'category_label' | 'merchant
   note: LIMITS.noteChars,
 };
 
-const normalizeHeader = (value: string) => value.replace(/^﻿/, '').normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase();
-
 function roleOf(header: string): Role | null {
-  for (const [role, names] of Object.entries(ROLE_NAMES) as [Exclude<Role, 'known'>, readonly string[]][]) {
+  for (const [role, names] of Object.entries(ROLE_NAMES) as [NamedRole, readonly string[]][]) {
     if (names.includes(header)) return role;
   }
   return KNOWN_IGNORED.includes(header) ? 'known' : null;
+}
+
+/** The column of a bank role whose name comes first in its list (then leftmost), or -1. */
+function firstNamed(headers: readonly string[], list: readonly string[]): number {
+  for (const name of list) {
+    const index = headers.indexOf(name);
+    if (index !== -1) return index;
+  }
+  return -1;
+}
+
+/**
+ * A bank export's roles: its own columns first (one descriptor and one details
+ * column are read, the rest ignored), then the generic names, except that the
+ * money columns stand for the amount and the type: such a column is not read.
+ */
+function bankRoles(headers: readonly string[]): (index: number) => Role | null {
+  const descriptor = firstNamed(headers, BANK_NAMES.descriptor);
+  const details = firstNamed(headers, BANK_NAMES.details);
+  return (index) => {
+    const name = headers[index];
+    if (BANK_NAMES.withdrawal.includes(name)) return 'withdrawal';
+    if (BANK_NAMES.deposit.includes(name)) return 'deposit';
+    if (BANK_NAMES.descriptor.includes(name)) return index === descriptor ? 'category' : 'known';
+    if (BANK_NAMES.details.includes(name)) return index === details ? 'merchant' : 'known';
+    if (BANK_NAMES.balance.includes(name)) return 'known';
+    const role = roleOf(name);
+    return role === 'amount' || role === 'type' ? null : role;
+  };
+}
+
+/** A bank column holds an amount unless it is empty, "-" or zero (banks write 0.00 in the column a row does not use). */
+function holdsAmount(text: string, convention: AmountConvention): boolean {
+  const parsed = parseAmountText(text, convention);
+  return parsed.ok || (parsed.code !== 'missing_amount' && parsed.code !== 'zero_amount');
 }
 
 /** The legacy exports' exact header sets (normalized). */
@@ -101,16 +153,20 @@ const NON_ASCII = /[^\u0000-\u007f]/;
 const THB = /^(thb|฿|บาท)$/i;
 
 export function buildRows(table: SourceTable, today: string): ChildBody {
-  const [header, ...data] = table.rows;
+  const at = findHeaderRow(table.rows);
+  const header = table.rows[at];
+  const data = table.rows.slice(at + 1);
   if (!header || data.length === 0) throw new ParseRejection('empty_file');
   if (data.length > LIMITS.candidateRows) throw new ParseRejection('too_many_rows');
 
   const headers = header.cells.map(normalizeHeader);
+  const bank = isBankHeader(headers);
+  const bankRole = bank ? bankRoles(headers) : null;
   const columns = new Map<Role, number>();
   let unmapped = false;
   headers.forEach((name, index) => {
     if (name === '') return;
-    const role = roleOf(name);
+    const role = bankRole ? bankRole(index) : roleOf(name);
     if (role === null) {
       unmapped = true;
       return;
@@ -119,7 +175,7 @@ export function buildRows(table: SourceTable, today: string): ChildBody {
     if (columns.has(role)) throw new ParseRejection('ambiguous_columns');
     columns.set(role, index);
   });
-  if (!columns.has('date') || !columns.has('amount')) throw new ParseRejection('unrecognized_columns');
+  if (!columns.has('date') || (!bank && !columns.has('amount'))) throw new ParseRejection('unrecognized_columns');
 
   const layout = layoutOf(headers);
   const cell = (cells: readonly string[], role: Role): string => {
@@ -131,50 +187,74 @@ export function buildRows(table: SourceTable, today: string): ChildBody {
     const value = cell(cells, role);
     return value === '' || value === '-' ? null : value;
   };
-  const order: DateOrder | 'conflict' = detectDateOrder(
-    data.map((row) => cell(row.cells, 'date')),
-    DAY_FIRST.has(layout) ? 'dmy' : null,
+  const dates = data.map((row) => cell(row.cells, 'date'));
+  const order: DateOrder | 'conflict' = detectDateOrder(dates, DAY_FIRST.has(layout) ? 'dmy' : null);
+  // Only a bank export reads two-digit years.
+  const era = bank ? twoDigitYearEra(dates, today) : null;
+  const convention = detectAmountConvention(
+    bank ? data.flatMap((row) => [cell(row.cells, 'withdrawal'), cell(row.cells, 'deposit')]) : data.map((row) => cell(row.cells, 'amount')),
   );
-  const convention = detectAmountConvention(data.map((row) => cell(row.cells, 'amount')));
+  // A bank export without a wallet column: the account its preamble names is every row's wallet.
+  const account = bank && !columns.has('wallet') ? preambleAccountLabel(table.rows.slice(0, at)) : null;
 
   const rows: ParsedRow[] = data.map((row) => {
     const issues: RowIssue[] = [];
     const flag = (field: Field | null, code: string) => issues.push({ field, code });
 
-    const date = parseDateText(cell(row.cells, 'date'), { order, today });
+    const date = parseDateText(cell(row.cells, 'date'), { order, today, era });
     if (!date.ok) flag('occurred_on', date.code);
 
     let amount: string | null = null;
-    let negative: boolean | null = null;
-    let explicitPlus = false;
-    const amountText = cell(row.cells, 'amount');
-    const parsedAmount = parseAmountText(amountText, convention);
-    const currency = cell(row.cells, 'currency');
-    if (currency !== '' && currency !== '-' && !THB.test(currency)) {
-      flag('amount_minor', 'unsupported_currency');
-    } else if (parsedAmount.ok) {
-      amount = parsedAmount.minor;
-      negative = parsedAmount.negative;
-      explicitPlus = /^\s*\(?\s*(?:฿|thb)?\s*\+/i.test(amountText);
-    } else {
-      flag('amount_minor', parsedAmount.code);
-    }
-
     let type: Direction | null = null;
-    const keyword = typeKeyword(cell(row.cells, 'type'));
-    if (keyword === 'unknown') {
-      flag('type', 'unknown_type');
-    } else if (keyword !== null) {
-      if ((keyword === 'income' && negative === true) || (keyword === 'expense' && explicitPlus)) flag('type', 'type_conflict');
-      else type = keyword;
-    } else if (SIGNED.has(layout) && negative !== null) {
-      type = negative ? 'expense' : 'income';
+    const currency = cell(row.cells, 'currency');
+    const foreign = currency !== '' && currency !== '-' && !THB.test(currency);
+    if (bank) {
+      // Exactly one of withdrawal (money out) and deposit (money in) holds the amount; its sign is ignored.
+      const out = cell(row.cells, 'withdrawal');
+      const into = cell(row.cells, 'deposit');
+      const outHolds = holdsAmount(out, convention);
+      const inHolds = holdsAmount(into, convention);
+      if (outHolds && inHolds) {
+        flag('type', 'type_conflict');
+      } else if (!outHolds && !inHolds) {
+        flag('amount_minor', 'missing_amount');
+      } else {
+        type = outHolds ? 'expense' : 'income';
+        const parsedAmount = parseAmountText(outHolds ? out : into, convention);
+        if (foreign) flag('amount_minor', 'unsupported_currency');
+        else if (parsedAmount.ok) amount = parsedAmount.minor;
+        else flag('amount_minor', parsedAmount.code);
+      }
     } else {
-      flag('type', 'missing_type');
+      let negative: boolean | null = null;
+      let explicitPlus = false;
+      const amountText = cell(row.cells, 'amount');
+      const parsedAmount = parseAmountText(amountText, convention);
+      if (foreign) {
+        flag('amount_minor', 'unsupported_currency');
+      } else if (parsedAmount.ok) {
+        amount = parsedAmount.minor;
+        negative = parsedAmount.negative;
+        explicitPlus = /^\s*\(?\s*(?:฿|thb)?\s*\+/i.test(amountText);
+      } else {
+        flag('amount_minor', parsedAmount.code);
+      }
+
+      const keyword = typeKeyword(cell(row.cells, 'type'));
+      if (keyword === 'unknown') {
+        flag('type', 'unknown_type');
+      } else if (keyword !== null) {
+        if ((keyword === 'income' && negative === true) || (keyword === 'expense' && explicitPlus)) flag('type', 'type_conflict');
+        else type = keyword;
+      } else if (SIGNED.has(layout) && negative !== null) {
+        type = negative ? 'expense' : 'income';
+      } else {
+        flag('type', 'missing_type');
+      }
     }
 
     const values: Record<'wallet_label' | 'category_label' | 'merchant' | 'note', string | null> = {
-      wallet_label: text(row.cells, 'wallet'),
+      wallet_label: account ?? text(row.cells, 'wallet'),
       category_label: text(row.cells, 'category'),
       merchant: text(row.cells, 'merchant'),
       note: text(row.cells, 'note'),
@@ -209,5 +289,5 @@ export function buildRows(table: SourceTable, today: string): ChildBody {
   if (table.encoding === 'windows-874') file_issues.push('legacy_encoding');
   if (unmapped) file_issues.push('unmapped_columns');
   if (convention === 'mixed') file_issues.push('mixed_amount_separators');
-  return { layout, rows, file_issues, image: null };
+  return { layout, rows, file_issues, image: null, header_fingerprint: headerFingerprint(headers) };
 }

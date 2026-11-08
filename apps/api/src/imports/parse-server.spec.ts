@@ -31,9 +31,11 @@ const ROW: ParsedRow = {
   note: null,
   issues: [],
 };
+/** A table's header fingerprint as the child reports it (64 lowercase hex). */
+const FINGERPRINT = 'ab'.repeat(32);
 const OK = (rows: ParsedRow[] = [ROW]): ParserRunOutcome => ({
   kind: 'result',
-  result: { ok: true, layout: 'generic', rows, file_issues: [], image: null, usage: { max_rss_kb: 1000, cpu_ms: 5 } },
+  result: { ok: true, layout: 'generic', rows, file_issues: [], image: null, header_fingerprint: FINGERPRINT, usage: { max_rss_kb: 1000, cpu_ms: 5 } },
 });
 
 /** A runner that answers `answer` for every run; `run` is a jest mock, so the cases can count its runs. */
@@ -118,7 +120,7 @@ describe('the parse server', () => {
       body: {
         kind: 'parsed',
         image: null,
-        record: { preview: { status: 'ready', layout: 'generic', issues: [], image: null }, candidates: [{ ...ROW, ordinal: 1, review_required: false }] },
+        record: { preview: { status: 'ready', layout: 'generic', issues: [], image: null, header_fingerprint: FINGERPRINT }, candidates: [{ ...ROW, ordinal: 1, review_required: false }] },
       },
     });
   });
@@ -144,7 +146,7 @@ describe('the parse server', () => {
       const server = await start({ runner, startup: sandboxed(runner) });
       expect(await parse(server.port, 'csv', TODAY, BYTES)).toEqual({
         status: 200,
-        body: { kind: 'parsed', image: null, record: { preview: { status: 'rejected', layout: null, issues: [code], image: null }, candidates: [] } },
+        body: { kind: 'parsed', image: null, record: { preview: { status: 'rejected', layout: null, issues: [code], image: null, header_fingerprint: null }, candidates: [] } },
       });
     }
   });
@@ -208,7 +210,7 @@ describe('the parse server', () => {
     expect(reply.status).toBe(200);
     expect(reply.body).toMatchObject({
       kind: 'parsed',
-      record: { preview: { status: 'ready', layout: 'receipt', issues: ['receipt_fields_unread'], image: { width: 64, height: 48 } } },
+      record: { preview: { status: 'ready', layout: 'receipt', issues: ['receipt_fields_unread'], image: { width: 64, height: 48 }, header_fingerprint: null } },
       image: { format: 'jpeg', width: 64, height: 48 },
     });
     const image = (reply.body as Extract<ParseServiceReply, { kind: 'parsed' }>).image;

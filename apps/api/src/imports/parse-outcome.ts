@@ -23,8 +23,9 @@ export type CandidateRecord = {
   issues: RowIssue[];
   review_required: boolean;
 };
+/** `header_fingerprint`: the parser's fingerprint of a table's header (P4-T10), for P4-T11's label maps; null for an image or a rejected file. */
 export type PreviewRecord = {
-  preview: { status: 'ready' | 'rejected'; layout: Layout | null; issues: string[]; image: { width: number; height: number } | null };
+  preview: { status: 'ready' | 'rejected'; layout: Layout | null; issues: string[]; image: { width: number; height: number } | null; header_fingerprint: string | null };
   candidates: CandidateRecord[];
 };
 
@@ -43,7 +44,7 @@ export type PreviewOutcome =
 
 const FILE_ISSUES: readonly string[] = IMPORT_FILE_ISSUE_CODES;
 
-const rejected = (code: string): PreviewRecord => ({ preview: { status: 'rejected', layout: null, issues: [code], image: null }, candidates: [] });
+const rejected = (code: string): PreviewRecord => ({ preview: { status: 'rejected', layout: null, issues: [code], image: null, header_fingerprint: null }, candidates: [] });
 
 /**
  * Normalizes a validated parse with the transaction text rules (NFC, trimmed,
@@ -88,7 +89,13 @@ export function toPreviewRecord(result: ParseSuccess, today: string = bangkokDat
   });
   const issues = result.file_issues.filter((code, index, all) => FILE_ISSUES.includes(code) && all.indexOf(code) === index);
   return {
-    preview: { status: 'ready', layout: result.layout, issues, image: result.image ? { width: result.image.width, height: result.image.height } : null },
+    preview: {
+      status: 'ready',
+      layout: result.layout,
+      issues,
+      image: result.image ? { width: result.image.width, height: result.image.height } : null,
+      header_fingerprint: result.header_fingerprint,
+    },
     candidates,
   };
 }
