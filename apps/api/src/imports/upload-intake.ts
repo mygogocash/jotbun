@@ -341,10 +341,12 @@ export class UploadIntake {
         const left = deadline - Date.now();
         if (left <= 0) throw new IntakeFailure('upload_timeout');
         const pull = source.next();
-        const pulled = await this.pullWithin(pull, Math.min(this.limits.idleMs, left));
+        // When less than the idle limit is left, this wait is the absolute deadline itself.
+        const untilDeadline = left <= this.limits.idleMs;
+        const pulled = await this.pullWithin(pull, untilDeadline ? left : this.limits.idleMs);
         if (pulled === 'timed_out') {
           stalledPull = pull;
-          throw new IntakeFailure(Date.now() >= deadline ? 'upload_timeout' : 'upload_stalled');
+          throw new IntakeFailure(untilDeadline || Date.now() >= deadline ? 'upload_timeout' : 'upload_stalled');
         }
         if ('error' in pulled) {
           ended = true;
