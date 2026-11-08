@@ -58,3 +58,15 @@ test('companion is on by default, and -companion or off switches it off', () => 
 test('the catalogue is still opt-in', () => {
   assert.equal(isRedesignEnabled('catalogue', 'planning,insights,account,import'), false);
 });
+
+// 1D-T9: C16's choice flow waits for its E2 screenshots (decided, Q9), so it is on only when named.
+test('conflict is off by default, on when named, and on with all', () => {
+  assert.equal(isRedesignEnabled('conflict', undefined), false);
+  assert.equal(isRedesignEnabled('conflict', ''), false);
+  assert.equal(isRedesignEnabled('conflict', 'core,planning,insights,account,import,companion'), false);
+  assert.equal(isRedesignEnabled('conflict', 'conflict'), true);
+  assert.equal(isRedesignEnabled('conflict', ' core , conflict '), true);
+  assert.equal(isRedesignEnabled('conflict', 'all'), true);
+  assert.equal(isRedesignEnabled('conflict', 'all,-conflict'), false);
+  assert.equal(isRedesignEnabled('conflict', 'conflict,off'), false);
+});

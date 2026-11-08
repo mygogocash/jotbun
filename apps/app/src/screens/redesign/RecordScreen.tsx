@@ -1,6 +1,8 @@
 // The redesigned record detail (R3, /spend/record/[id]): one entry as a
 // receipt slip, with Edit, Copy and Delete (with undo). The rules live in
-// useRecordActions; this screen only renders them.
+// useRecordActions; this screen only renders them. In the `conflict` area a
+// refused edit shows 1D's ChoicePanel (C16, board rh-conflict) instead of
+// today's ConflictPanel.
 import type { Minor, TransactionDto } from '@gogospend/contracts';
 import { useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
@@ -35,6 +37,8 @@ import { useMoneyLocale } from '../v1/parts';
 import { StageHeader } from '@mobile/ui/StageHeader';
 import { useLargeText } from '@mobile/ui/largeText';
 import { ActionFooter, ActionRow, EntryPage } from './ActionFooter';
+import { ChoicePanel } from './conflict/ChoicePanel';
+import { useConflictCopy } from './conflict/conflictCopy.draft';
 import { RecordReceipt } from './import/RecordReceipt';
 import { LoadingBlock, Notice, copyHref, useDateLocale, useGoBack } from './HistoryParts';
 import { KEYPAD_PROBLEM_TEXT, earliestDate, lookupsOf, useRecordActions } from './record/recordActions';
@@ -45,6 +49,8 @@ export type RecordScreenProps = {
   /** `edit` opens straight into the edit mode (History's Edit action). */
   mode?: 'view' | 'edit';
   now?: Date;
+  /** C16's choice flow: the `conflict` redesign area by default. The catalogue's choice sections pass true. */
+  conflictArea?: boolean;
 };
 
 /** The amount's state word matches the Status row: a draft being checked says "checking", not "saving". */
@@ -71,21 +77,25 @@ function Receipt({ detail, minor, date }: { detail: RecordDetail; minor: Minor; 
   );
 }
 
-export function RecordScreen({ id, mode = 'view', now }: RecordScreenProps) {
+export function RecordScreen({ id, mode = 'view', now, conflictArea }: RecordScreenProps) {
   const router = useRouter();
   const tc = useCopy();
+  const copy = useConflictCopy();
   const locale = useMoneyLocale();
   const insets = useSafeAreaInsets();
   const diaryView = useDiaryView();
   const goBack = useGoBack();
   const {
     today, draftCommand, loaded, editing, deleted, pending, gone, notice, busy,
-    load, startEditing, cancelEditing, changeEditing, pressKey, submitEdit, remove, restore, settleDraft,
-  } = useRecordActions({ id, mode, now });
+    load, startEditing, cancelEditing, changeEditing, pressKey, submitEdit, remove, restore, settleDraft, choicePanel, discardChoice,
+  } = useRecordActions({ id, mode, now, conflictArea });
 
   const context = (lookups: Lookups): DetailContext => ({ lookups, tc, locale, dateTag: dateTagFor(locale) });
-  const editHeading = editing && !editing.conflict;
-  const showBack = !editing;
+  // The choice panel is the board's "Edit entry", with Back while this phone keeps the choice (leaving keeps it).
+  const editHeading = Boolean(editing && (!editing.conflict || choicePanel));
+  const showBack = !editing || Boolean(choicePanel?.onDecideLater);
+  /** C16: "Discard my change" beside a deleted or missing record's notice, while a choice is open. */
+  const discardMine = discardChoice ? <PillButton kind="secondary" label={copy('discardMine')} disabled={busy} onPress={() => void discardChoice()} /> : null;
 
   let body: ReactNode;
   // While editing: the message and the actions, pinned under the scrolling form (ActionFooter.tsx).
@@ -103,13 +113,30 @@ export function RecordScreen({ id, mode = 'view', now }: RecordScreenProps) {
         </View>
       </>
     );
+  } else if (choicePanel) {
+    // C16: the refused edit, kept until the person chooses (offline too, against the stored record).
+    body = (
+      <>
+        {notice ? <Notice tone="alert" message={notice} /> : null}
+        {editing?.message ? <Notice tone="alert" message={editing.message} /> : null}
+        <ChoicePanel {...choicePanel} />
+      </>
+    );
+  } else if (editing?.conflict && editing.unconfirmed) {
+    // C16: "Use yours" may have reached the server. Only Try again, under the same key, until it says.
+    body = <Notice tone="alert" message={editing.message ?? ''} action={{ label: tc('Try again'), busy, onPress: () => void submitEdit() }} />;
   } else if (loaded.state === 'loading') {
     body = <LoadingBlock label={tc('Loading your diary')} />;
   } else if (loaded.state === 'error') {
     const missing = loaded.error instanceof V1Error && (loaded.error.outcome === 'not_found' || loaded.error.outcome === 'deleted');
     const problem = classifyLoadProblem(loaded.error, tc);
     body = missing
-      ? <Notice tone="alert" message={gone ? tc('This entry was deleted on another device.') : tc("This entry isn't in your diary.")} />
+      ? (
+        <>
+          <Notice tone="alert" message={gone ? tc('This entry was deleted on another device.') : tc("This entry isn't in your diary.")} />
+          {discardMine}
+        </>
+      )
       : <Notice tone="alert" message={problem.message} action={problem.retry ? { label: tc('Try again'), onPress: () => void load() } : undefined} />;
   } else {
     const { record, wallets, categories } = loaded;
@@ -138,6 +165,7 @@ export function RecordScreen({ id, mode = 'view', now }: RecordScreenProps) {
               <PillButton label={pending === 'restore' ? tc('Try again') : tc('Restore')} busy={busy} onPress={() => void restore({ id: record.id, version: restorable.version })} />
             </View>
           ) : null}
+          {discardMine}
         </>
       );
     } else if (editing?.conflict) {

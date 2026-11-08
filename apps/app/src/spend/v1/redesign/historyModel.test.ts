@@ -60,6 +60,18 @@ test('drafts join their days with their state; other months and acknowledged com
   assert.ok(!history.groups.some((group) => group.day === '2026-09-30'));
 });
 
+// C16 (1D-T9): History marks a record whose refused edit waits on this phone; a draft is never marked.
+test('a record waiting for a choice is marked', () => {
+  const draft = command(pending({ id: 'x', amount_minor: '800', occurred_on: '2026-10-12' }), 'unsent');
+  const marks = (overrides: Partial<HistoryInput>) => Object.fromEntries(
+    model({ drafts: [draft], ...overrides }).groups.flatMap((group) => group.rows).map((row) => [row.key.startsWith('draft:') ? `draft ${row.recordId}` : row.key, row.choicePending]),
+  );
+  const none = { a: false, b: false, c: false, d: false, e: false, f: false, g: false, h: false, 'draft x': false };
+  assert.deepEqual(marks({ pendingChoiceIds: new Set(['a', 'e', 'x']) }), { ...none, a: true, e: true });
+  assert.deepEqual(marks({}), none);
+  assert.deepEqual(marks({ pendingChoiceIds: new Set() }), none);
+});
+
 test('filters: type, wallet (either side of a move) and category, for drafts too', () => {
   const drafts = [command(pending({ amount_minor: '4500' }), 'unsent'), command(pending({ type: 'income', category_id: GIFT.id, wallet_id: BANK, amount_minor: '100' } as never), 'unsent')];
   assert.deepEqual(found({ filters: { type: 'transfer' } }), ['e']);
