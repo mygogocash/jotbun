@@ -133,8 +133,8 @@ describe('snapshots over HTTP', () => {
 describe('S1 review: contract parity and recovery', () => {
   it('snapshots validate exactly the entities the API registers', () => {
     // The Jotbun vault (apps/edge) also syncs entities this frozen API never
-    // writes; each is left out here by name (P4-T1: the slip inbox count).
-    const { slip_inbox: _slipInbox, ...apiEntities } = SYNC_ENTITY_VALIDATORS;
+    // writes; each is left out here by name (P4-T1: the slip inbox count; P5-T3: trips and settings).
+    const { slip_inbox: _slipInbox, trip: _trip, settings: _settings, ...apiEntities } = SYNC_ENTITY_VALIDATORS;
     expect(v1.app.get(CommandRegistry).entityNames().sort()).toEqual(Object.keys(apiEntities).sort());
   });
 
