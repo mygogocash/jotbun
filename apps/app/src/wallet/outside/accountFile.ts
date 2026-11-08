@@ -38,9 +38,15 @@ export function parseAccountFile(text: string | null): AccountFile | null {
   return { v: 1, marker, locale, hidden };
 }
 
-/** Writes the four fields by name, so nothing else the object carries reaches the file. */
-export function writeAccountFile(group: AppGroupPort, file: AccountFile): Promise<void> {
-  return group.writeText(OUTSIDE_FILES.account, JSON.stringify({ v: 1, marker: file.marker, locale: file.locale, hidden: file.hidden }));
+/**
+ * Writes the four fields by name, so nothing else the object carries reaches
+ * the file, and only a file parseAccountFile accepts: anything else (an
+ * account id as the marker, `vi`) is refused with a TypeError before a write.
+ */
+export async function writeAccountFile(group: AppGroupPort, file: AccountFile): Promise<void> {
+  const text = JSON.stringify({ v: 1, marker: file.marker, locale: file.locale, hidden: file.hidden });
+  if (parseAccountFile(text) === null) throw new TypeError('Not an account file.');
+  await group.writeText(OUTSIDE_FILES.account, text);
 }
 
 export async function readAccountFile(group: AppGroupPort): Promise<AccountFile | null> {

@@ -1,9 +1,11 @@
 // The app's outside wiring (P6A-T1): the ids from the evaluated config
 // (`extra.outside`, which P6A-T7 writes), the app group store over
-// expo-file-system, and SHA-256 through expo-crypto. expo-file-system loads on
-// the first getAppGroup() on a phone: never on the web, and never in a test
-// that installs a store with setAppGroup first.
-import Constants from 'expo-constants';
+// expo-file-system, and SHA-256 through expo-crypto. expo-constants loads on
+// the first appOutsideIds() and expo-file-system on the first getAppGroup() on
+// a phone, never at import: a render test that reaches this file needs only
+// the usual expo-crypto mock (expo-constants cannot load there, so the
+// temporary ids apply), and expo-file-system never loads on the web or in a
+// test that installs a store with setAppGroup first.
 import * as Crypto from 'expo-crypto';
 import { Platform } from 'react-native';
 
@@ -18,9 +20,20 @@ let ids: OutsideIds | null = null;
 let device: AppGroupPort | null = null;
 let installed: AppGroupPort | null = null;
 
+/** The evaluated config's `extra`, or undefined when expo-constants cannot load (a render test), so the temporary ids apply. */
+function configExtra(): unknown {
+  try {
+    // A lazy require, as for expo-file-system below: expo-constants loads here, on first use.
+    const constants: typeof import('expo-constants') = require('expo-constants');
+    return constants.default.expoConfig?.extra;
+  } catch {
+    return undefined;
+  }
+}
+
 /** outsideIdsFrom(Constants.expoConfig?.extra), read once. */
 export function appOutsideIds(): OutsideIds {
-  ids ??= outsideIdsFrom(Constants.expoConfig?.extra);
+  ids ??= outsideIdsFrom(configExtra());
   return ids;
 }
 

@@ -5,7 +5,12 @@
 // (Android has no app groups; its share target and widget belong to the app
 // itself). The web: no app group. A native failure is swallowed: a read
 // answers null, a copy false, and a write or a remove resolves, keeping the
-// last good file. Pure: the file system is a type-only import.
+// last good file. A folder is never touched through a file name (isSafeName
+// lets a folder's name through): in 58.0.9 a File whose path is a folder does
+// not exist, but its delete() removes the folder and all in it, and iOS's copy
+// with overwrite removes it first. So remove deletes only what File.exists
+// reports, and copyIn answers false when Directory.exists holds the name.
+// Pure: the file system is a type-only import.
 import type { Directory, File } from 'expo-file-system';
 
 import { isSafeName, noAppGroup } from './appGroup.ts';
@@ -65,6 +70,7 @@ export function deviceAppGroup(ids: OutsideIds, platform: 'ios' | 'android' | 'w
       refuseUnsafe(name);
       try {
         const file = fileAt(name);
+        // exists is false for a folder, whose delete() would remove everything in it.
         if (file.exists) file.delete();
       } catch {
         // Swallowed: the file stays.
@@ -86,6 +92,8 @@ export function deviceAppGroup(ids: OutsideIds, platform: 'ios' | 'android' | 'w
     copyIn: async (fromUri, name) => {
       refuseUnsafe(name);
       try {
+        // A folder at the name is never replaced: iOS's copy with overwrite would delete it first.
+        if (new fs.Directory(root, name).exists) return false;
         makeFolderOf(name);
         await new fs.File(fromUri).copy(fileAt(name), { overwrite: true });
         return true;

@@ -20,7 +20,12 @@ type FakeOptions = { containers?: Record<string, string>; files?: Record<string,
  * A fake of expo-file-system's File, Directory and Paths over in-memory files
  * and folders. It records each operation as "<operation> <uri>[ <uri>]" and
  * fails like the real one: a write needs its folder, a create without
- * intermediates needs its parent, a copy onto a file needs overwrite.
+ * intermediates needs its parent, a copy onto a file needs overwrite. A File
+ * whose path is a folder acts as 58.0.9's native code does: it does not exist
+ * (iOS FileSystemFile.exists, Android isFile), a write to it fails, its
+ * delete() removes the folder and everything in it (iOS FileSystemPath.delete,
+ * Android deleteRecursively), and a copy onto it with overwrite first removes
+ * the folder (iOS FileSystemPath.copy).
  */
 function fakeFs(options: FakeOptions = {}) {
   const calls: string[] = [];
@@ -32,6 +37,10 @@ function fakeFs(options: FakeOptions = {}) {
   const record = (operation: Operation, ...uris: string[]): void => {
     calls.push([operation, ...uris].join(' '));
     if (failing.has(operation)) throw new Error(`${operation} failed`);
+  };
+  const removeFolder = (uri: string): void => {
+    for (const file of [...files.keys()]) if (file.startsWith(`${uri}/`)) files.delete(file);
+    for (const folder of [...folders]) if (folder === uri || folder.startsWith(`${uri}/`)) folders.delete(folder);
   };
   for (const uri of files.keys()) {
     for (let folder = parentOf(uri); folder.startsWith('file:///') && !folders.has(folder); folder = parentOf(folder)) folders.add(folder);
@@ -56,19 +65,24 @@ function fakeFs(options: FakeOptions = {}) {
     }
     async write(text: string): Promise<void> {
       record('write', this.uri);
+      if (folders.has(this.uri)) throw new Error('a folder is there');
       if (!folders.has(parentOf(this.uri))) throw new Error('no such folder');
       files.set(this.uri, text);
     }
     delete(): void {
       record('delete', this.uri);
-      if (!files.delete(this.uri)) throw new Error('no such file');
+      if (files.delete(this.uri)) return;
+      if (!folders.has(this.uri)) throw new Error('no such file');
+      removeFolder(this.uri);
     }
     async copy(to: FakeFile, copyOptions?: { overwrite?: boolean }): Promise<void> {
       record('copy', this.uri, to.uri);
       const text = files.get(this.uri);
       if (text === undefined) throw new Error('no such file');
       if (!folders.has(parentOf(to.uri))) throw new Error('no such folder');
-      if (files.has(to.uri) && !copyOptions?.overwrite) throw new Error('destination exists');
+      const taken = files.has(to.uri) || folders.has(to.uri);
+      if (taken && !copyOptions?.overwrite) throw new Error('destination exists');
+      if (folders.has(to.uri)) removeFolder(to.uri);
       files.set(to.uri, text);
     }
   }
@@ -224,4 +238,33 @@ test('a native failure answers null or false, and a failed write or remove still
   assert.equal(deviceAppGroup(TEMPORARY_IDS, 'android', broken).available, false);
   const unreadable = { ...fake.fs, File: class { constructor() { throw new Error('native'); } } } as unknown as FileSystemLike;
   assert.equal(deviceAppGroup(TEMPORARY_IDS, 'ios', unreadable).uriOf(OUTSIDE_FILES.account), null);
+});
+
+test("removing a folder's name leaves the folder and its files", async () => {
+  const shares = `${CONTAINER}/outside/shares`;
+  const fake = fakeFs({ containers: WITH_GROUP, files: { [`${shares}/a.jpg`]: 'A', [`${shares}/b.png`]: 'B' } });
+  const group = deviceAppGroup(TEMPORARY_IDS, 'ios', fake.fs);
+  await group.remove(OUTSIDE_FILES.shareFolder);
+  assert.deepEqual(await group.list(OUTSIDE_FILES.shareFolder), ['a.jpg', 'b.png']);
+  assert.equal(await group.readText(OUTSIDE_FILES.shareFolder), null);
+  assert.equal(group.uriOf(OUTSIDE_FILES.shareFolder), null);
+  await group.writeText(OUTSIDE_FILES.shareFolder, '{}');
+  assert.deepEqual(await group.list(OUTSIDE_FILES.shareFolder), ['a.jpg', 'b.png']);
+  assert.equal(fake.files.has(shares), false);
+  assert.deepEqual(fake.calls.filter((call) => call.startsWith('delete ')), []);
+});
+
+test("a copy onto a folder's name answers false and leaves the folder", async () => {
+  const platforms = [['ios', CONTAINER], ['android', DOCUMENTS]] as const;
+  for (const [platform, root] of platforms) {
+    const shares = `${root}/outside/shares`;
+    const fake = fakeFs({ containers: WITH_GROUP, files: { [SOURCE]: 'slip-bytes', [`${shares}/a.jpg`]: 'A', [`${shares}/b.png`]: 'B' } });
+    const group = deviceAppGroup(TEMPORARY_IDS, platform, fake.fs);
+    assert.equal(await group.copyIn(SOURCE, OUTSIDE_FILES.shareFolder), false, platform);
+    assert.deepEqual(await group.list(OUTSIDE_FILES.shareFolder), ['a.jpg', 'b.png'], platform);
+    assert.equal(fake.files.has(shares), false, platform);
+    assert.deepEqual(fake.calls.filter((call) => call.startsWith('copy ')), [], platform);
+    assert.equal(await group.copyIn(SOURCE, 'outside/shares/a.jpg'), true, platform);
+    assert.equal(fake.files.get(`${shares}/a.jpg`), 'slip-bytes', platform);
+  }
 });

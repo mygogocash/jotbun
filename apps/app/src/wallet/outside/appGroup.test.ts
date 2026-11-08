@@ -57,3 +57,14 @@ test('noAppGroup reads nothing and accepts writes', async () => {
   await assert.rejects(noAppGroup.copyIn('file:///private/var/mobile/share/slip.jpg', 'outside/shares/../../slip.jpg'), TypeError);
   assert.throws(() => noAppGroup.uriOf('../outside/account-v1.json'), TypeError);
 });
+
+test("the memory store, like the device one, never copies onto a folder's name", async () => {
+  const group = memoryAppGroup();
+  const source = 'file:///private/var/mobile/share/slip.jpg';
+  await group.writeText('outside/shares/a.jpg', 'A');
+  assert.equal(await group.copyIn(source, OUTSIDE_FILES.shareFolder), false);
+  assert.equal(group.files.has(OUTSIDE_FILES.shareFolder), false);
+  assert.deepEqual(await group.list(OUTSIDE_FILES.shareFolder), ['a.jpg']);
+  assert.equal(await group.copyIn(source, 'outside/shares/a.jpg'), true);
+  assert.equal(group.files.get('outside/shares/a.jpg'), source);
+});

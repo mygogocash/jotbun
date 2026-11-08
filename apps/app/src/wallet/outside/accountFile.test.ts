@@ -60,3 +60,21 @@ test('the file has exactly v, marker, locale and hidden and never the account id
   assert.equal(await readAccountFile(memoryAppGroup()), null);
   assert.equal(await readAccountFile(noAppGroup), null);
 });
+
+test('writing refuses what reading refuses, so an account id is never written as the marker', async () => {
+  const group = memoryAppGroup();
+  const marker = await accountMarker(ACCOUNT, sha256Hex);
+  const refused = [
+    { v: 1, marker: ACCOUNT, locale: 'th', hidden: false },
+    { v: 1, marker: marker.slice(0, 15), locale: 'th', hidden: false },
+    { v: 1, marker: marker.toUpperCase(), locale: 'th', hidden: false },
+    { v: 1, marker, locale: 'vi', hidden: false },
+    { v: 1, marker, locale: 'th', hidden: 'no' },
+  ] as unknown as AccountFile[];
+  for (const file of refused) {
+    await assert.rejects(writeAccountFile(group, file), (error: unknown) => error instanceof TypeError && !error.message.includes(ACCOUNT));
+  }
+  assert.equal(group.files.size, 0);
+  await writeAccountFile(group, { v: 1, marker, locale: 'en', hidden: false });
+  assert.deepEqual(await readAccountFile(group), { v: 1, marker, locale: 'en', hidden: false });
+});

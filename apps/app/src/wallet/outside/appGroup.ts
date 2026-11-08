@@ -2,7 +2,9 @@
 // widgets and extensions, all under `outside/`. The port hides the file
 // system: deviceAppGroup.ts is the phone's store, memoryAppGroup() the tests'.
 // Every store refuses an unsafe name with a TypeError before touching
-// anything. Pure: no React, React Native or native module.
+// anything. isSafeName (the plan's pattern) lets a folder's name through as a
+// file name, so no store deletes or replaces a folder through a file call.
+// Pure: no React, React Native or native module.
 
 export type AppGroupPort = {
   readonly available: boolean;
@@ -11,7 +13,7 @@ export type AppGroupPort = {
   remove(name: string): Promise<void>;
   /** The names of the files directly inside `folder`, in order; never folders. */
   list(folder: string): Promise<readonly string[]>;
-  /** False when the source cannot be read. */
+  /** False when the source cannot be read, or when a folder holds the name (never replaced). */
   copyIn(fromUri: string, name: string): Promise<boolean>;
   /** The file's uri, or null when there is no such file or no app group. */
   uriOf(name: string): string | null;
@@ -57,7 +59,7 @@ export const noAppGroup: AppGroupPort = Object.freeze({
   },
 });
 
-/** Tests: the files live in `files`. copyIn keeps the source uri as the file's text; uriOf answers `memory:///<name>`. */
+/** Tests: the files live in `files`. copyIn keeps the source uri as the file's text and, as the device store does, answers false over a folder's name; uriOf answers `memory:///<name>`. */
 export function memoryAppGroup(): AppGroupPort & { files: Map<string, string> } {
   const files = new Map<string, string>();
   return {
@@ -85,6 +87,7 @@ export function memoryAppGroup(): AppGroupPort & { files: Map<string, string> } 
     },
     copyIn: async (fromUri, name) => {
       refuseUnsafe(name);
+      if ([...files.keys()].some((key) => key.startsWith(`${name}/`))) return false;
       files.set(name, fromUri);
       return true;
     },
