@@ -197,6 +197,24 @@ export function bangkokDate(instant: Date): string {
   return date;
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * The Gregorian `YYYY-MM-DD` date `days` days after `date` (before it when
+ * negative), on the calendar alone: no time zone is involved.
+ */
+export function addDays(date: string, days: number): string {
+  if (!isGregorianDate(date)) throw new TypeError("addDays needs a Gregorian YYYY-MM-DD date.");
+  if (!Number.isSafeInteger(days)) throw new TypeError("addDays needs a whole number of days.");
+  const [year, month, day] = date.split("-").map(Number);
+  // setUTCFullYear, not Date.UTC, which reads years 0-99 as 1900-1999.
+  const start = new Date(0);
+  start.setUTCFullYear(year, month - 1, day);
+  const result = new Date(start.getTime() + days * DAY_MS).toISOString().slice(0, 10);
+  if (!isGregorianDate(result)) throw new RangeError("addDays is outside years 0001-9999.");
+  return result;
+}
+
 /** Rejects request bodies that are not plain objects or carry unknown fields. */
 export function assertKnownFields(value: unknown, allowed: readonly string[], field?: string): Record<string, unknown> {
   if (!isPlainObject(value)) {

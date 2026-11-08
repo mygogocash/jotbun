@@ -636,6 +636,78 @@ Phase 1D lets a change saved on one phone reach the person's other phones at onc
   - The registry now names the entity `budget`. Sync serves it. Task 8b's registry parity check has to cover `budget` as well as `category` and `transaction`.
 - **Integration (27 Oct):** merged with Task 5 (PR #81). The registry is wallet, category, transaction, budget, in `buildContainer`'s order. The route table is now 26 ported, 3 pending (Task 7's history and summary), 28 deferred and 6 retired. On the merged tree: `typecheck:edge` passes, `test:edge` 130 passed (10 files), `test:edge:workers` 233 passed (11 files; Task 5's 213 plus these 20).
 
+### Task 7: history, deleted history and the summary
+
+- **Status:** built and verified locally on `p1/1a-t7-history` (`.claude/worktrees/p1a-t7`), on top of `800680d`. Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - Reads: `apps/edge/src/vault/reads/history.ts` (`history`, and `scopedTotals` and `accountRevision`, the ports of `history/totals.ts` that the summary shares), `reads/deleted-history.ts` (`deletedHistory`) and `reads/summary.ts` (`summary`). They port `HistoryQuery`, `DeletedHistoryQuery` and `SummaryQuery`. Each runs inside the call's one `transactionSync`, so a page, its totals and its revision are one read, as the API's snapshot transaction is.
+  - Reused, not forked: `parseHistoryRequest` (`@api/history/history-query`), `parseDeletedHistoryRequest` (`@api/history/deleted-history-query`), `encodeCursor`, `decodeCursor`, `encodeDeletedCursor` and `decodeDeletedCursor` (`@api/history/cursor`), and `parseMonth`, `assertKnownFields` and `RESTORE_WINDOW_DAYS` from the contracts. `SummaryQuery` is not imported: it imports the API's budget service, which reaches `DatabaseService` and `pg`. `summary.ts` keeps its SQL and its order, checks the query as `summary.controller.ts` does, and reads the budget through the vault's `readBudget` (Task 6).
+  - Routes: `apps/edge/src/v1/routes.ts` moves `GET /v1/history`, `GET /v1/history/deleted` and `GET /v1/summary` from `VAULT_PENDING_ROUTES` into `VAULT_V1_ROUTES`, with the PostgreSQL table's access (`bound_session`), gates (none) and status (200). `VAULT_PENDING_ROUTES` is now empty. `apps/edge/src/vault/routes.ts` adds the three handlers. The table is now 30 ported, 0 pending, 27 deferred and 6 retired (63 in all).
+  - `apps/edge/src/vault/domain/transactions.ts` exports its `COLUMNS` (one word, and one comment line), so history reads a row exactly as `getTransaction` does, the way the API's history imports `RECORD_COLUMNS` and `toDto` from the transactions repository.
+  - Tests: `apps/edge/test/workers/history.test.ts` (35 cases, and the money journey as `it.todo`), `apps/edge/test/workers/summary.test.ts` (7), `apps/edge/test/workers/support/money-fixtures.ts` (`bulkRecords`, the API fixture's direct insert, as one statement over one JSON parameter), and `apps/edge/test/vault-route-coverage.test.ts` (the pin lists the 30 ported routes).
+  - No registry, schema or protocol change. These are reads, so `buildVaultRegistry()` keeps wallet, category, transaction, budget; `VaultRouteId` already named the three ids; `user-vault.ts` is unchanged.
+- **RED to GREEN:**
+  - Node RED, the pin changed first: `npm run test:edge -- test/vault-route-coverage.test.ts` gave `Tests 1 failed | 5 passed (6)` (`expected [ Array(27) ] to deeply equal [ Array(30) ]`).
+  - Workers RED, with the three reads as typed stubs wired to their routes (empty pages, zero totals, revision `'0'`): `npm run test:edge:workers -- test/workers/history.test.ts test/workers/summary.test.ts` gave `Tests 42 failed | 1 todo (43)`, 35 in `history.test.ts` and 7 in `summary.test.ts`. 39 fail on assertions (24 distinct messages). 3 fail with a `TypeError` where the test reads what the stub left empty (a null cursor, a null budget, missing `fields`): `refuses malformed cursors and cursors from another filter`, `a cursor carrying an impossible date is a 422, never a 500` and `budget usage keeps a sublimit whose category was archived later`. None fails on a missing module. The RED and base logs were written under `/private/tmp`, which macOS cleared on 8 November, so these counts are the ones printed when the runs happened; they were not re-run.
+  - GREEN: the same command gave `Tests 42 passed | 1 todo (43)`, and the pin `Tests 6 passed (6)`. GREEN was run again after the interruption with the same result (`Test Files 2 passed (2)`, `Tests 42 passed | 1 todo (43)`).
+- **Mutation check:** the three reads were backed up to `.claude/controller/scratch/1a-t7/backup`, outside the worktree, and matched the GREEN hashes before the first mutant. Each mutant was applied with the Edit tool, the two files were run under the heavy lock, and the mutant was reversed with the Edit tool. After each reversal the file was compared with the backup (`cmp`) and its sha256 with the GREEN value, and all 13 matched. The logs are `.claude/controller/scratch/1a-t7/mutant-M1.log` to `mutant-M13.log`.
+  - M1 (plan), history's look-ahead row dropped (`limit + 0`): `5 failed`: `all_451_records_are_pageable`, the ascending case, the refresh case, `a cursor carrying an impossible date ...` and `refuses history's own cursor`.
+  - M2 (plan), deleted rows counted in the summary: `1 failed`, `excludes deleted records and keeps renamed or archived categories` (`expected '1245000' to be '18200'`).
+  - M3, Recently deleted's look-ahead row dropped: `3 failed`: `newest deletion first, ties by id ...`, `suggests a refresh ...` and `another account’s cursor grants nothing ...`.
+  - M4, the expense total read without `CAST(... AS TEXT)`: `7 failed`: the filters case, the five month-summary cases and the exactness case.
+  - M5, the window as `deleted_at > cutoff`: `1 failed`, `exactly 30 days after its deletion ...`.
+  - M6, the keyset on the stored millisecond text instead of the six-digit key: `2 failed`, `a cursor with microseconds ...` and `newest deletion first, ties by id ...`.
+  - M7, the next cursor built from the stored millisecond text: `3 failed`, the same three as M3.
+  - M8, the wallet filter without a transfer's destination: `1 failed`, `filters by wallet ...`.
+  - M9, the search text without the API's escaping: `1 failed`, `filters by wallet ...`.
+  - M10, a transfer's destination left out of `by_wallet`: `2 failed`, `filters by wallet ...` and `reports the golden month ...`.
+  - M11, a month's last day one short: `1 failed`, `uses Bangkok calendar months ...`.
+  - M12, `refresh_suggested` always false: `1 failed`, `signals a refresh when the account changed between pages ...` (keyset history).
+  - M13, the keyset always `<`: `1 failed`, `ascending order and the maximum limit ...`.
+  - No survivor. Every mutant failed exactly the tests the brief lists.
+- **Gate** (worktree root, in the brief's order):
+  - `typecheck:edge`: exit 0.
+  - `test:edge`: `Test Files 12 passed (12)`, `Tests 156 passed (156)`. The base `800680d` includes `test/slip-contracts.test.ts` (P4-T1, 11 tests), so the count is the plan's 145 in 11 files plus that file. The pin changed in place, so this task adds no Node test.
+  - `test:edge:workers`: `Test Files 15 passed (15)`, `Tests 290 passed | 1 todo (291)`: the base's 248 in 13 files, plus 42 in the two new files.
+  - `build:edge`: passes. `dist/jotbun_vault/index.js` holds no `node-postgres`, `make_interval` or `ILIKE` (count 0) and holds the new SQL (`substr(t.deleted_at, 1, 23)`, count 1).
+  - `test:edge:db`: SKIPPED, Docker is not running (`docker info` exits 1; Docker was not started).
+  - `test:db` (API): not run, because the task changes no API, contracts or PostgreSQL edge code.
+  - `/usr/bin/git diff --check origin/claude/p1a-vault-core...HEAD`: run after the commit, as Step 6.7 says; its result is in the final message.
+- **Ported in full:**
+  - `history.integration.spec.ts`: all 6 `it` blocks and both `it.each` blocks (12 rows), 18 vitest cases.
+  - `deleted-history.integration.spec.ts`: 6 of its 7 `it` blocks and its `it.each` (6 rows). The seventh is ported in changed form, below.
+  - `summary.integration.spec.ts`: all 5.
+  - `m4-hardening.integration.spec.ts`, the three cases Task 6 left to this task: `a cursor carrying an impossible date is a 422, never a 500` and `a history date before 1970 is INVALID_DATE, and the summary refuses unknown parameters` (in `history.test.ts`), and `budget usage keeps a sublimit whose category was archived later` (in `summary.test.ts`).
+- **Ported in changed form:**
+  - `a purged record is never listed, and the retention purge leaves the window alone`. The purge is 1A-T8b's `retention.ts`, which is not merged. The case writes what that purge leaves for a record past the window (no row, and a `purged` head at the current revision, the same SQL as `money-hardening.test.ts`), then checks that only the record inside the window is listed and that restoring the purged one is 410. The purge's own rule that nothing goes early is 8b's to test.
+  - The paging seed: the API deletes three records a microsecond apart. The vault keeps milliseconds, so they are a millisecond apart.
+  - `bulkRecords` and `deletedAgo` write through `runInDurableObject` where the API writes through SQL. Each instant is taken from the test's clock, which is the vault's.
+  - `another account’s cursor grants nothing: rows are still read under the owner’s RLS` and the "other accounts" halves keep their names. They hold by addressing: another person's rows are in another vault.
+- **Not applicable:** `history and summary read from one REPEATABLE READ, READ ONLY snapshot` (m4-hardening), as Task 6 recorded: a vault call is one `transactionSync`.
+- **Added vault cases** (3):
+  - `exactly 30 days after its deletion a record is still listed and restorable, as the restore command decides; a millisecond more is neither`, with the vault's clock held still.
+  - `a cursor with microseconds pages as PostgreSQL compares instants: a deletion in its millisecond comes after it, whatever its id`.
+  - `totals above Number.MAX_SAFE_INTEGER stay exact decimal strings in the summary, its budget usage and the history totals`: 90,100 expenses of 99,999,999,999 written straight into the table, so every total is `9009999999909900`.
+- **Deviations:**
+  1. Text search is SQLite `LIKE ... ESCAPE '\'`, with the API's escaping of `\`, `%` and `_`. PostgreSQL's `ILIKE` folds case by the database's locale (the postgres image initialises its cluster as `en_US.utf8`). Durable Object SQLite has no ICU: a probe in workerd gave `'Rent' LIKE '%RENT%'` 1, `'Café' LIKE '%CAFÉ%'` 0 and `lower('É')` `'É'`. ASCII letters therefore match in any case, as in the API, but other cased letters (É and é, for example) match only in the same case. Thai has no case, so Thai search is the same. No ported case or parity step searches cased non-ASCII text. This deviation is accepted by the controller (28 October).
+  2. The month is `occurred_on BETWEEN 'YYYY-MM-01' AND` its last day, computed in JS (plan Step 3). Every stored `occurred_on` is a real date (its CHECK), so this is the API's `>= first AND < first + interval '1 month'`.
+  3. `scopeOf` adds a clause only for a filter that is present, where the API binds every filter and tests it for NULL. The rows are the same, and the parameters fewer.
+  4. Recently deleted keys its cursor as `substr(deleted_at, 1, 23) || '000Z'`, the API's six-digit form, because `decodeDeletedCursor` accepts only that form and the vault stores milliseconds.
+  5. Two files outside the plan's list: `domain/transactions.ts` (`export` on `COLUMNS`) and `test/workers/support/money-fixtures.ts` (`bulkRecords`, which the API's `moneyFixtures` also has).
+  6. The three m4-hardening cases and the three added vault cases above.
+  7. The money journey is `it.todo`, as the plan and R5 say. In the planner's scratch copy it was switched to `it` and passed (`history.test.ts` 36 passed), then switched back. It is not in the gate's counts.
+  8. The base is `800680d`, not `75b3625`. The Node suite at this base is 12 files and 156 tests: the plan's 145 in 11 files, plus the 11 of `test/slip-contracts.test.ts` (P4-T1). The workers baseline is 13 files and 248 tests, as the brief says.
+  9. The integration head is now `8f04a3b` (1D-T1, the app analytics core, and the iOS keyboard fix). It was fetched and not merged, on the controller's instruction. Nothing under `apps/edge` changed. It does change `packages/contracts` (`src/index.ts`, `src/v1/privacy.ts`), which the edge reads.
+  10. The mutants were reversed with the Edit tool rather than `cp`, and the backup sits in the controller's scratch folder, both on the controller's instruction after the interruption.
+- **SKIPPED:** `test:edge:db`: Docker is not running (`docker info` exits 1; Docker was not started). CI runs it. Hosted: nothing deployed, and no cloud resource was created.
+- **Notes for 1A-T8b, Task 9 and the integrator:**
+  - 8b turns the money journey on by changing one line in `test/workers/history.test.ts`: `  it.todo('seeds built-ins, records spending, and reads it back through history, summary, budgets, status and sync', async () => {` becomes `  it('seeds built-ins, ...`. 8b must merge after this task.
+  - `VAULT_PENDING_ROUTES` is empty, so Task 9's `expect(VAULT_PENDING_ROUTES).toEqual([])` holds. The money session's history, summary and Recently deleted steps now reach the vault.
+  - `scopedTotals(c, scope, params)` and `accountRevision(c)` are exported from `reads/history.ts` for later reads (the spec's §6.2: "Ask Bun's tools call the same methods").
+  - If 1B adds `attachment_id` to the transaction DTO, it goes into `COLUMNS` and `toDto` in `domain/transactions.ts`, and history picks it up from there.
+  - The Task 6 integration bullet above counts 26 ported routes. The table held 27 before this task (the pin's RED shows `Array(27)`) and holds 30 after it. The integrator should reconcile that count.
+  - Integration head `8f04a3b` is not merged and this merge is not tested here. Its change to `premium-progress.md` is in other sections (the 1D headings, 1D Task 1, the iOS keyboard fix, P6B); the Task 6 integration bullet this receipt follows is unchanged there. It also changes `packages/contracts`, which `apps/edge` reads, so re-run the edge gate after that merge.
+
 ## 1B: files and background work on the vault
 
 Phase 1B moves files and background work onto each person's vault (spec `docs/superpowers/specs/2026-10-25-jotbun-bun-wallet-cloudflare-design.md`, §8 phase 1, second part). The owner approved the `apps/api` edit that this task needs (Q1, 25 October 2026; spec §6.1, which keeps `apps/api` read-only apart from that exception). Task 1 makes the statement parser a stateless HTTP process in the API image: bytes in, a parse outcome out. Task 2 adds the file tables, the object keys, the prefix purge and the durable erase that deletion relies on.
@@ -1255,6 +1327,59 @@ Phase 3 adds photos and Bun AI (plan `docs/superpowers/plans/2026-10-25-jotbun-p
   - Nothing here logs; a payload must never be logged.
 
 ## P5: Travel and currencies
+
+Phase P5 lets a person keep records in any currency against a home currency they pick ([plan](../superpowers/plans/2026-10-25-jotbun-p5-travel.md)). Task 1 adds the ISO 4217 table and exact BigInt rate arithmetic to the contracts.
+
+### P5 Task 1: The currency table and exact rate arithmetic
+
+- **Status:** built and verified locally on `p5/t1-currency`, on top of `75b3625`. Not pushed. The independent review is the controller's, after this receipt.
+- **Delivers:** nothing on its own; it is the base of `P5:currency`, which P5-T2 delivers.
+- **Files:**
+  - `packages/contracts/src/v1/currency.ts` (new): `ISO_4217_MINOR_UNITS` (165 codes), `MinorUnits`, `CurrencyCode`, `isCurrencyCode`, `minorUnitsOf`, `DEFAULT_HOME_CURRENCY`, `PICKER_CURRENCIES`, `CURRENCY_SYMBOLS`, `RATE_SOURCES`, `RateSource`, `parseRate`, `canonicalQuote`, `convertMinor`, `convertMinorDown`, `crossRate`, `rateFromAmounts`, `minorToDecimal`, `decimalToMinor`, `moneyText`, `rateText`. BigInt only; `Intl` is never read.
+  - `packages/contracts/src/v1/validation.ts`: `addDays(date, days)` after `bangkokDate`, with a private `DAY_MS`.
+  - `packages/contracts/src/index.ts`: `addDays` in the `./v1/validation.ts` block; the `./v1/currency.ts` value and type exports directly after the validation type export line, before the wallets line.
+  - `apps/edge/test/contracts/currency.test.ts` (new, Node): the plan's four cases verbatim, and two more (half-way rounding in zero-, two- and three-decimal currencies, JPY, KRW and BHD among them; every helper's refusals).
+- **Rules (the plan's; X1, default pending owner Q11; symbols default pending owner Q13):** with rate = N / 10^s and k = e_to - e_from, n = amount * N * 10^max(k, 0) and d = 10^s * 10^max(-k, 0); `convertMinor` is (2n + d) / (2d) and `convertMinorDown` is n / d, in BigInt. `crossRate` and `rateFromAmounts` round the exact quotient half-up once to 12 significant digits and drop trailing zeros. HK$, NT$, ₭, £ and A$ are draft symbols. ¥6,180 at 0.2312 converted at once is 142,882 satang; the day's three stored rows add to 142,881.
+- **RED to GREEN:**
+  - Typed stubs first: every export with its final name and type; empty tables; functions returning `false`, `2`, `0n`, `''` or `null`; `addDays` returning `''`.
+  - RED, `npm run test:edge -- test/contracts/currency.test.ts`: 6 failed, 0 passed, each on an assertion, none on a load error. First failing lines: `[2, 2, 2, 2, 2, 2, 2, 2]` against `[2, +0, +0, +0, 2, 2, 3, 4]`; `[0n, 0n, 0n, 0n, 0n]` against `[106814n, 27744n, 8323n, …(2)]`; `['', '', '', '']` against `['0.2317', '0.2308', '0.2312', …(1)]`; `['', '', '']` against `['0.2312', '1', '765.6']`; `[0n, 0n, 0n, 0n, 0n]` against `[913n, 123n, 51n, 19n, 14n]`; `{}` against `{ THB: '฿', JPY: '¥', KRW: '₩', …(11) }`.
+  - GREEN, the same command: 6 passed, 0 failed.
+- **Mutation check** (`mutants.mjs` from the brief: each mutant applied alone, the focused file run with Vitest's JSON reporter, the file restored and its sha256 compared): 27 of 27 killed; survivors: none. Every restore matched, and `currency.ts` still hashes to its reference sha256 afterwards.
+  - The plan's three: half-even killed (2 of 6 failed; `5` at `0.5` reads `2n`); truncation killed (3 of 6 failed; ¥2,580 at 0.2317 reads 59,778); exponents from `Intl.NumberFormat` killed (2 of 6 failed; LAK reads 0 under Intl on this Node, checked).
+  - Guards: M4 to M27 all killed, as the brief's table lists.
+  - Equivalence: with the zero check removed, `rateFromAmounts('0', ...)` still throws a RangeError (BigInt division by zero); the `toMinor` of 0 case kills that mutant.
+- **Gate** (worktree root):
+  - `npm run typecheck`: passed (exit 0; contracts and API `tsc`).
+  - `npm run typecheck:app`: passed (exit 0).
+  - `npm run test:api -- src/v1/contracts.spec.ts`: passed, 1 suite, 95 tests.
+  - `npm run test:api`: passed, 44 suites, 955 tests, 32 s. No timeout, so no second run.
+  - `npm run test:app`: passed, 29 tests, 0 failed (Node test runner; loads the contracts barrel).
+  - `npm run build -w gogospend-api`: passed (swc, 293 files).
+  - `node apps/api/scripts/release-graph.mjs check`: passed, 123 closure packages, no problems.
+  - `npm run typecheck:edge`: passed (exit 0).
+  - `npm run test:edge`: passed, 12 files, 151 tests; 6 are this task's, so the base at `75b3625` holds 11 files and 145.
+  - `npm run test:edge:workers`: passed, 13 files, 248 tests (run under the heavy lock).
+  - `npm run build:edge`: passed (exit 0).
+  - `npm run test:edge:db`: SKIPPED. It exits 1 at `docker info` inside `db-up`, before any container or test starts, because Docker is stopped on this machine. Docker was not started. Run under the heavy lock; CI runs it.
+  - `/usr/bin/git diff --check`: passed (prints nothing).
+- **Calls made for this task (the plan is silent; for the reviewer):**
+  1. Errors: an unknown currency is a TypeError (the plan's); `parseRate` throws `ContractValidationError` `VALIDATION_FAILED` on its field (`API_ERROR_CODES` has no rate-value code; `RATE_LIMITED` is for throttling); any other out-of-domain input is a RangeError, a programming error.
+  2. Significant digits run from the first non-zero digit to the last non-zero one, so every rate `crossRate` and `rateFromAmounts` return passes `parseRate`.
+  3. `convertMinor`, `convertMinorDown` and `rateFromAmounts` refuse a negative amount (the formula is half-up only for n >= 0); `rateFromAmounts` refuses 0 on either side.
+  4. Inside the arithmetic a rate may be any positive canonical decimal (quotes divide exactly); `parseRate` is the 12-digit gate for rates in requests.
+  5. `canonicalQuote` writes a number's shortest round-trip text without an exponent and drops leading and trailing zeros of text; more than 15 significant digits is null.
+  6. `decimalToMinor` refuses a sign, group commas, a leading zero and more decimals than the currency has, zeros included (`12.0` yen). `parseAmountInput` refuses a sign, a leading zero and a third decimal, zeros included, but it accepts group commas.
+  7. `minorToDecimal` uses an ASCII minus and always the currency's decimals; `moneyText` puts U+2212 first, before the symbol or the code.
+  8. `rateText` rounds half-up.
+  9. `addDays` throws a TypeError for a bad date or a non-integer day count and a RangeError outside years 0001 to 9999, and uses `setUTCFullYear` so years below 100 stay themselves.
+- **Deviations:** none to the plan or to the brief's code. Two wording corrections in this receipt. The edge Node suite is 12 files and 151 tests, not the brief's 11 and 136: the base at `75b3625` already carries 11 files and 145 tests, and this task adds one file and six. Call 6's comparison to `parseAmountInput` covers signs, leading zeros and extra decimals only, because `parseAmountInput` accepts group commas.
+- **SKIPPED:** `test:unit`, `test:render`, `typecheck:routes`, `export:web`, `test:db`, `test:ops`, `test:dev`: no app, API or scripts file changed and nothing calls the new names yet; `typecheck:app` and `test:app` compiled and loaded the barrel; CI runs them. `test:edge:db`: Docker is stopped on this machine, so `db-up` fails at `docker info` and no database suite ran; CI runs it. Nothing deployed; no network beyond `npm ci` and `git fetch`.
+- **Notes for the integrator:**
+  - The ISO table was rebuilt offline: the validator package's ISO 4217 list (from Wikipedia), plus ZWG (2024) and XCG (2025), minus ZWL, ANG and BGN. That matches the plan's counts exactly (178 codes; 17, 139, 7 and 2 by exponent) but was not compared with SIX's list one of 2026-09-17. The one uncertain entry is SLL; if SIX has dropped it, swap in the code it added (the tests pin only the counts and the 0, 3 and 4 lists).
+  - Provenance check: `apps/api/node_modules/validator/lib/isISO4217.js` lists 179 codes; the table equals that list less ANG, BGN, ZWL and the 13 codes with no minor unit (XAG, XAU, XBA, XBB, XBC, XBD, XDR, XPD, XPT, XSU, XTS, XUA, XXX), plus XCG and ZWG.
+  - `index.ts` is shared: this task added one name to the validation block and one block directly after the validation type export line. A conflict keeps both sides.
+  - `packages/contracts/src/v1/quickText.ts` has its own private `addDays` (line 178; not exported, not touched). The barrel exports only the `validation.ts` one, so the names do not clash.
+  - A later task that needs a signed figure converted must convert its magnitude and restore the sign: `convertMinor` refuses negatives on purpose.
 
 Phase P5 lets a person keep records in any currency against a home currency they pick ([plan](../superpowers/plans/2026-10-25-jotbun-p5-travel.md)).
 
