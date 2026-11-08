@@ -2,9 +2,9 @@ import type { V1Credentials, V1SessionSnapshot } from '../api/client.ts';
 import type { CredentialProvider } from './credentialProvider.ts';
 
 /**
- * The public session seam, kept until F5's credential provider replaces it.
- * `binding` is the opaque v1 application binding from bootstrap; without it
- * v1 requests stay signed out.
+ * The public session seam. When a credential provider is installed, `binding`
+ * is its Better Auth session id, and only while that session is active.
+ * Without a session id, v1 requests stay signed out.
  */
 export type SpendSession = { access_token: string; userId: string; binding?: string };
 
@@ -12,9 +12,9 @@ export type SpendSession = { access_token: string; userId: string; binding?: str
 // extracted API has no login/refresh issuer, so an unconfigured install stays
 // signed out. Credentials are never inferred from another app's browser storage.
 let session: SpendSession | null = null;
-// Installation-local counter (F5's epoch): it moves on sign-out, account
-// switch or a new binding, never on a token refresh for the same binding, so
-// a response started under one identity is never shown under another.
+// Installation-local counter: it moves on sign-out, account switch or a new
+// session, never on a token refresh for the same session, so a response
+// started under one identity is never shown under another.
 let epoch = 0;
 const listeners = new Set<() => void>();
 export function getSession(): SpendSession | null { return session; }
@@ -36,8 +36,8 @@ export function getV1SessionSnapshot(): V1SessionSnapshot {
   return { binding: session?.binding ?? null, epoch };
 }
 
-// F5: once the native SDK is configured, the credential provider owns the
-// session; the legacy seam above stays only until every caller has moved.
+// Once installAppAuth has run, the credential provider owns the session.
+// The legacy seam above stays only until every caller has moved.
 let provider: CredentialProvider | null = null;
 let unsubscribeProvider: (() => void) | null = null;
 

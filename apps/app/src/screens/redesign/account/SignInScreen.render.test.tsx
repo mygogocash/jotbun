@@ -19,7 +19,7 @@ vi.mock('expo-status-bar', () => ({ StatusBar: () => null }));
 vi.mock('expo-crypto', () => ({ randomUUID: () => globalThis.crypto.randomUUID() }));
 
 import { getSession, installCredentialProvider } from '@mobile/auth/session';
-import type { CredentialProvider, SignInOutcome } from '@mobile/auth/credentialProvider';
+import type { CredentialProvider, SignInResult } from '@mobile/auth/credentialProvider';
 import { INITIAL_SESSION } from '@mobile/auth/sessionMachine';
 import { FIRST_RUN_SECTIONS } from '@mobile/dev/catalogue/account/firstRunSections';
 import { mountInApp } from '@mobile/dev/catalogue/catalogueTestHarness';
@@ -194,11 +194,13 @@ test('a provider pressed while sign-in is not configured: today\'s message, calm
 
 test('a provider goes through the session seam: an installed credential provider is the one that signs in', async () => {
   expect(await signInThroughSession('apple')).toBe('not_configured');
-  const signIn = vi.fn(async (): Promise<SignInOutcome> => 'cancelled');
+  const signIn = vi.fn(async (): Promise<SignInResult> => ({ outcome: 'cancelled', methods: [], created: false }));
   const provider = { getSessionSnapshot: () => INITIAL_SESSION, subscribe: () => () => undefined, signIn } as unknown as CredentialProvider;
   installCredentialProvider(provider);
+  expect(await signInThroughSession('email')).toBe('not_configured');
+  expect(signIn).not.toHaveBeenCalled();
   expect(await signInThroughSession('apple')).toBe('cancelled');
-  expect(signIn).toHaveBeenCalledTimes(1);
+  expect(signIn).toHaveBeenCalledWith({ method: 'apple', signUp: true });
   mount(<SignInScreen />);
   fireEvent.click(checkbox());
   press(COPY.apple);
