@@ -1,12 +1,12 @@
 // Sync changes in the vault, ported by name from
 // apps/api/src/sync/sync-query.integration.spec.ts (13 cases) and
-// sync-api.integration.spec.ts (5 cases). Ported in full: 9. In part: 3, each
-// with its missing half in 8b (the prune run) or 1B (the lifecycle generation,
-// the snapshot step). Not applicable: 3, two lock waits and the batch across
-// accounts (a vault call runs to completion, and one vault holds one account).
-// Deferred: the registry parity check (8b for its category, transaction and
-// budget entities, 1B for the export and import ones), and the two snapshot
-// cases (1B). The receipt gives each case's reason.
+// sync-api.integration.spec.ts (5 cases). Ported in full: 10, the 30-day
+// retention case with 8b's prune run. In part: 3, each with its missing half in
+// 1B (the lifecycle generation, the snapshot step, the export and import
+// entities of the registry check). Not applicable: 3, two lock waits and the
+// batch across accounts (a vault call runs to completion, and one vault holds
+// one account). Deferred to 1B: the two snapshot cases. The receipts give each
+// case's reason.
 // The fixture domain builds the wide and large groups a page budget needs. Those
 // cases read through syncChanges inside the call's transaction, since the
 // vault's registry holds only wallets; the route cases use wallets.
@@ -15,14 +15,16 @@ import { randomUUID } from 'node:crypto'
 import { runInDurableObject } from 'cloudflare:test'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { SYNC_PAGE_BYTES, isCommittedChangeGroup } from '@gogospend/contracts'
+import { SYNC_ENTITY_VALIDATORS, SYNC_PAGE_BYTES, isCommittedChangeGroup } from '@gogospend/contracts'
 import type { CommittedChangeGroup, SyncChangesPage } from '@gogospend/contracts'
 
 import { decodeSyncCursor, encodeSyncCursor } from '@api/sync/sync-cursor'
 import { parseSyncRequest } from '@api/sync/sync-query'
 
+import { buildVaultRegistry } from '../../src/vault/commands/registry'
 import { syncChanges } from '../../src/vault/reads/sync'
-import { FIXTURE_ENTITY, fixtureCommands, inVault, purchase, sqlExec, syncRegistry } from './support/command-fixtures'
+import { pruneChanges } from '../../src/vault/retention'
+import { FIXTURE_ENTITY, fixtureCommands, inVault, purchase, sqlExec, sqlRows, syncRegistry } from './support/command-fixtures'
 import { member, startV1, vaultOf } from './support/v1-client'
 import type { TestUser, V1Client } from './support/v1-client'
 
@@ -33,6 +35,11 @@ beforeEach(async () => {
 })
 
 const wallet = (name: string) => ({ id: randomUUID(), name, opening_minor: '0', tracking_start: '2026-01-01' })
+const DAY = 86_400_000
+
+/** One change-log prune in its own block, at `at` (epoch ms), as the vault's alarm runs it (1A-T8b's retention.ts). */
+const prune = (user: TestUser, at: number) =>
+  runInDurableObject(vaultOf(user), (_vault, state) => state.storage.transactionSync(() => pruneChanges({ sql: state.storage.sql, storage: state.storage, now: new Date(at) })))
 
 /** One wallet, created through the route: one change group under the next revision. Returns its id. */
 async function createWallet(user: TestUser, name = 'Cash'): Promise<string> {
@@ -163,15 +170,23 @@ describe('ordered deltas, ported from sync-query.integration.spec.ts', () => {
   })
 
   it('30-day retention drops superseded changes, keeps every head, and expires older cursors', async () => {
-    // Partly ported: the prune run and the superseded-change removal are 8b's (retention.ts). This checks what the
-    // retention line does to a delta reader: a cursor below it resyncs, and the groups above it still serve.
     const user = await member(client)
     const id = await createWallet(user, 'Cash')
     expect((await client.as(user).patch(`/v1/wallets/${id}`, { name: 'Cash 2' }, { ifMatch: 1 })).status).toBe(200)
     await createWallet(user, 'Bank')
     await createWallet(user, 'Savings')
-    await sqlExec(user, 'UPDATE sync_state SET pruned_through = 3 WHERE id = 1')
+    const now = Date.now()
+    await sqlExec(user, 'UPDATE entity_changes SET committed_at = ? WHERE revision <= 3', new Date(now - 31 * DAY).toISOString())
+    expect(await prune(user, now)).toBe(true)
+    const rows = await sqlRows<{ revision: string }>(user, 'SELECT CAST(revision AS TEXT) AS revision FROM entity_changes ORDER BY revision')
+    // Cash's create (revision 1) was superseded by its rename; every head stays.
+    expect(rows.map((row) => row.revision)).toEqual(['2', '3', '4'])
+    expect((await sqlRows<{ p: string }>(user, 'SELECT CAST(pruned_through AS TEXT) AS p FROM sync_state WHERE id = 1'))[0].p).toBe('3')
     expect(await problemOf(user, `?cursor=${encodeSyncCursor(user.sub, '2')}`)).toMatchObject({ status: 410, code: 'RESYNC_REQUIRED' })
+    expect((await pageFrom(user, `?cursor=${encodeSyncCursor(user.sub, '3')}`)).groups.map((g) => g.revision)).toEqual(['4'])
+    // Changes inside the 30 days stay, whatever the caller's clock says.
+    await sqlExec(user, 'UPDATE entity_changes SET committed_at = ? WHERE revision = 4', new Date(now - 29 * DAY).toISOString())
+    expect(await prune(user, now)).toBe(false)
     expect((await pageFrom(user, `?cursor=${encodeSyncCursor(user.sub, '3')}`)).groups.map((g) => g.revision)).toEqual(['4'])
   })
 
@@ -191,7 +206,7 @@ describe('ordered deltas, ported from sync-query.integration.spec.ts', () => {
     expect(cursor).not.toContain(account)
   })
 
-  it('a cursor from another lifecycle generation needs a resync', async () => {
+  it('a cursor from an earlier lifecycle generation needs a resync', async () => {
     // Partly ported: the vault has no lifecycle generation until 1B's deletion, so it is always 0. The API's case
     // (a generation that moved on) needs that column. Here a cursor from another generation resyncs, and the current one serves.
     const user = await member(client)
@@ -241,6 +256,18 @@ describe('ordered deltas, ported from sync-query.integration.spec.ts', () => {
 })
 
 describe('GET /v1/sync/changes, ported from sync-api.integration.spec.ts', () => {
+  it('snapshots validate exactly the entities the API registers', () => {
+    // Partly ported: 1B registers export, import_review and import_selection, and phase 4 slip_inbox. Until then,
+    // every entity the vault registers is checked by exactly its sync validator.
+    const registry = buildVaultRegistry()
+    expect(registry.entityNames().sort()).toEqual(['budget', 'category', 'transaction', 'wallet'])
+    for (const name of registry.entityNames()) expect(registry.entity(name)?.validate).toBe(SYNC_ENTITY_VALIDATORS[name])
+  })
+
+  it.todo('snapshots validate exactly the entities the API registers: every key of SYNC_ENTITY_VALIDATORS, once 1B and phase 4 register theirs')
+  it.todo('requests, builds, and downloads a snapshot through short-lived grants, then continues with deltas (1B-T8)')
+  it.todo('asking again while a snapshot is ready answers 200 with it (1B-T8)')
+
   it('serves whole, valid change groups and refuses bad parameters', async () => {
     const user = await member(client)
     for (const name of ['Cash', 'Bank', 'Savings']) await createWallet(user, name)

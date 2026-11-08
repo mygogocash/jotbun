@@ -50,6 +50,8 @@ export const categories = sqliteTable('categories', {
   version: integer('version').notNull(),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
+  icon: text('icon'),
+  packKey: text('pack_key'),
 })
 
 export const wallets = sqliteTable('wallets', {
@@ -62,6 +64,9 @@ export const wallets = sqliteTable('wallets', {
   version: integer('version').notNull(),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
+  type: text('type'),
+  material: text('material'),
+  bunFace: text('bun_face'),
 })
 
 export const transactions = sqliteTable('transactions', {
@@ -79,6 +84,16 @@ export const transactions = sqliteTable('transactions', {
   deletedAt: text('deleted_at'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
+  // Phase 5's money fields (0002_currencies_trips.sql). A null home amount is a row an
+  // older release wrote: it reads as amount_minor.
+  currency: text('currency').notNull(),
+  rate: text('rate').notNull(),
+  rateSource: text('rate_source').notNull(),
+  rateDate: text('rate_date'),
+  homeAmountMinor: integer('home_amount_minor'),
+  walletAmountMinor: integer('wallet_amount_minor'),
+  toAmountMinor: integer('to_amount_minor'),
+  tripId: text('trip_id'),
 })
 
 export const monthlyBudgets = sqliteTable('monthly_budgets', {
@@ -322,6 +337,29 @@ export const aiUsage = sqliteTable('ai_usage', {
   uses: integer('uses').notNull(),
 })
 
+// Trips and the vault's settings (migrations/0002_currencies_trips.sql).
+
+export const trips = sqliteTable('trips', {
+  id: text('id').primaryKey().notNull(),
+  name: text('name').notNull(),
+  currency: text('currency').notNull(),
+  startsOn: text('starts_on').notNull(),
+  endsOn: text('ends_on').notNull(),
+  budgetMinor: integer('budget_minor'),
+  version: integer('version').notNull(),
+  deletedAt: text('deleted_at'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+})
+
+export const settings = sqliteTable('settings', {
+  id: integer('id').primaryKey().notNull(),
+  entityId: text('entity_id').notNull(),
+  homeCurrency: text('home_currency').notNull(),
+  version: integer('version').notNull(),
+  updatedAt: text('updated_at').notNull(),
+})
+
 export const vaultSchema = {
   accountState,
   aiPreferences,
@@ -345,11 +383,13 @@ export const vaultSchema = {
   monthlyBudgets,
   revokedSessions,
   schedule,
+  settings,
   snapshotChunks,
   snapshots,
   syncState,
   transactionAttachments,
   transactions,
+  trips,
   vaultObjects,
   wallets,
 }

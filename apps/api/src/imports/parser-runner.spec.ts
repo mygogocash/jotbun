@@ -930,7 +930,8 @@ describe('the parser child runs isolated and bounded', () => {
 });
 
 describe('the worker re-validates everything a child says', () => {
-  const ok = (rows: unknown[], extra: Record<string, unknown> = {}) => ({ ok: true, layout: 'generic', rows, file_issues: [], image: null, usage: { max_rss_kb: 1, cpu_ms: 1 }, ...extra });
+  const fingerprint = 'ab'.repeat(32);
+  const ok = (rows: unknown[], extra: Record<string, unknown> = {}) => ({ ok: true, layout: 'generic', rows, file_issues: [], image: null, header_fingerprint: fingerprint, usage: { max_rss_kb: 1, cpu_ms: 1 }, ...extra });
   const good = { source_row_id: 'row:2', occurred_on: '2026-01-01', type: 'expense', amount_minor: '100', wallet_label: 'Cash', category_label: null, merchant: null, note: null, issues: [] };
   const receiptRow = {
     source_row_id: 'image:1', occurred_on: null, type: null, amount_minor: null, wallet_label: null, category_label: null, merchant: null, note: null,
@@ -938,11 +939,12 @@ describe('the worker re-validates everything a child says', () => {
   };
   const receipt = (overrides: Record<string, unknown>) => ({
     ok: true, layout: 'receipt', rows: [{ ...receiptRow, ...overrides }], file_issues: ['receipt_fields_unread'],
-    image: { format: 'png', width: 1, height: 1, base64: 'AAAA' }, usage: { max_rss_kb: 1, cpu_ms: 1 },
+    image: { format: 'png', width: 1, height: 1, base64: 'AAAA' }, header_fingerprint: null, usage: { max_rss_kb: 1, cpu_ms: 1 },
   });
 
   it('accepts the protocol shape', () => {
     expect(validateParseResult(ok([good]))).toEqual(ok([good]));
+    expect(validateParseResult(ok([good], { header_fingerprint: null }))).toEqual(ok([good], { header_fingerprint: null }));
     expect(validateParseResult(receipt({}))).toEqual(receipt({}));
     expect(validateParseResult({ ok: false, code: 'formulas', usage: { max_rss_kb: 1, cpu_ms: 1 } })).toEqual({ ok: false, code: 'formulas', usage: { max_rss_kb: 1, cpu_ms: 1 } });
   });
@@ -969,6 +971,13 @@ describe('the worker re-validates everything a child says', () => {
     ['a receipt without its review issues', receipt({ issues: [] })],
     ['a receipt with a second row', { ...receipt({}), rows: [receiptRow, { ...receiptRow, source_row_id: 'row:2' }] }],
     ['a receipt without the unread notice', { ...receipt({}), file_issues: [] }],
+    ['a result without the header fingerprint', (({ header_fingerprint: _fingerprint, ...rest }) => rest)(ok([good]))],
+    ['an upper-case header fingerprint', ok([good], { header_fingerprint: 'AB'.repeat(32) })],
+    ['a header fingerprint of 63 characters', ok([good], { header_fingerprint: 'a'.repeat(63) })],
+    ['a header fingerprint that is not hex', ok([good], { header_fingerprint: 'g'.repeat(64) })],
+    ['an empty header fingerprint', ok([good], { header_fingerprint: '' })],
+    ['a header fingerprint that is not a string', ok([good], { header_fingerprint: 1 })],
+    ['a receipt with a header fingerprint', { ...receipt({}), header_fingerprint: fingerprint }],
   ])('refuses %s', (_label, value) => {
     expect(validateParseResult(value)).toBeNull();
   });

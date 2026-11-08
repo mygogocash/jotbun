@@ -12,12 +12,37 @@
   "vars": {
     // Non-secret settings. Secrets (AUTH0 values, ANTHROPIC_API_KEY,
     // AUTH0_EVENTS_SIGNING_SECRETS, AUTH0_PROFILE_LINK_*) are set with
-    // `wrangler secret put`.
+    // `wrangler secret put`. BETTER_AUTH_SECRET and ERASURE_KEY are secrets
+    // too (`wrangler secret put`; locally in `.dev.vars`, Task 12).
     "JOTBUN_ENV": "local",
     "AI_ENABLED": "false",
     "GOGOCASH_BRIDGE_ENABLED": "false",
-    "IMPORT_UPLOADS_ENABLED": "false"
+    "IMPORT_UPLOADS_ENABLED": "false",
+    "AUTH_BASE_URL": "http://localhost:8092",
+    "AUTH_ISSUER": "http://localhost:8092",
+    "AUTH_AUDIENCE": "jotbun-v1",
+    // The app scheme only. Expo dev origins stay in `.dev.vars` (M4).
+    "AUTH_TRUSTED_ORIGINS": "gogospend://"
   },
+  // The owner creates both databases with the `apac` location hint
+  // (default pending owner Q6). The ids are local placeholders, as the
+  // Hyperdrive id is.
+  "d1_databases": [
+    {
+      "binding": "AUTH_DB",
+      "database_name": "jotbun-auth",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations/auth"
+    },
+    {
+      "binding": "ERASURE_DB",
+      "database_name": "jotbun-erasure",
+      "database_id": "00000000-0000-0000-0000-000000000001",
+      "migrations_dir": "migrations/erasure"
+    }
+  ],
+  // `remote` stays unset: setting it would reach the real Email Service from `wrangler dev`.
+  "send_email": [{ "name": "EMAIL" }],
   "hyperdrive": [
     {
       // The v1 PostgreSQL 17 database through a Hyperdrive config created
