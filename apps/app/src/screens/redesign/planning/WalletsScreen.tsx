@@ -17,16 +17,17 @@
 // - Archive: offered only at exactly ฿0.00, through the kit's confirm sheet;
 //   otherwise the screen says why in words and what to do.
 //
-// Every write is one immutable command under `useCommandKeys`, with the
-// version that was read: a definite refusal settles its key; an unconfirmed
-// one freezes the form, and Try again resends the very same command and key
-// (also when the retry is refused before processing). A version conflict
-// shows Jotbun's copy, sends nothing more, and Reload starts again from it.
+// Every write is one immutable command through `useWalletCommand`
+// (walletCommands.ts), with the version that was read: a definite refusal
+// settles its key; an unconfirmed one freezes the form, and Try again resends
+// the very same command and key (also when the retry is refused before
+// processing). A version conflict shows Jotbun's copy, sends nothing more, and
+// Reload starts again from it.
 // The action and its message are pinned under the scrolling form
 // (ActionFooter). Lists and forms stay plain: the bun appears only on the
 // first-run empty state and, quiet, in the archive confirm sheet.
 import { TRACKING_START_MIN } from '@gogospend/contracts';
-import type { CreateWalletRequest, UpdateWalletRequest, WalletCorrectionReason, WalletDto } from '@gogospend/contracts';
+import type { WalletCorrectionReason, WalletDto } from '@gogospend/contracts';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ScrollView, View } from 'react-native';
@@ -44,11 +45,9 @@ import {
   canArchive,
   correctionNeedsReason,
   newWalletForm,
-  walletConflict,
   walletConflictRows,
   walletFormOf,
   walletPreview,
-  walletRefusal,
   walletsOverview,
 } from '@mobile/spend/v1/redesign/planning/walletsModel';
 import type { HasRecords, WalletField, WalletFieldErrors, WalletForm } from '@mobile/spend/v1/redesign/planning/walletsModel';
@@ -69,7 +68,7 @@ import { BUN_OUTLINE, BUN_SPACE } from '@mobile/ui/layout';
 import { PillButton } from '@mobile/ui/PillButton';
 import { ConfirmSheet } from '@mobile/ui/Sheet';
 import { StageHeader } from '@mobile/ui/StageHeader';
-import { isOwnCreate, newId, refusedBeforeProcessing, saveProblem, useCommandKeys, useLoad } from '../../v1/parts';
+import { newId, useLoad } from '../../v1/parts';
 import { ActionFooter, EntryPage } from '../ActionFooter';
 import { LoadingBlock, Notice, useGoBack } from '../HistoryParts';
 import {
@@ -87,6 +86,8 @@ import {
   TotalOnStage,
   WalletCard,
 } from './WalletParts';
+import { useWalletCommand } from './walletCommands';
+import type { WalletCommand } from './walletCommands';
 
 export type WalletsScreenProps = {
   /** The clock, for tests; today is its Bangkok date. */
@@ -223,46 +224,41 @@ function ListPage({ header, active, archived, onAdd, onOpen, onChanged, onReload
   header: ReactNode; active: readonly WalletDto[]; archived: readonly WalletDto[];
   onAdd: () => void; onOpen: (id: string) => void; onChanged: () => void; onReload: () => void;
 }) {
-  const resources = useSpendV1();
   const tc = useCopy();
   const locale = useMoneyLocale();
   const dateLocale = useActiveLocale();
-  const keys = useCommandKeys();
+  const commands = useWalletCommand();
   const [expanded, setExpanded] = useState(false);
   const [action, setAction] = useState<ListAction | null>(null);
   // The unarchive whose outcome is unknown: Try again resends exactly this.
   const pending = useRef<Unarchive | null>(null);
   const sending = useRef(false);
 
+  // The key, the freeze and the conflict rules are the hook's; the list keeps its own state.
   async function send(command: Unarchive) {
     if (sending.current) return;
     sending.current = true;
-    const key = keys.keyFor(command.slot, { version: command.version });
     setAction({ walletId: command.id, phase: 'saving' });
     try {
-      await resources.unarchiveWallet(command.id, command.version, key);
-      keys.settle(command.slot);
-      pending.current = null;
-      setAction(null);
-      onChanged();
-    } catch (error) {
-      const problem = saveProblem(error, tc);
-      // Once unconfirmed, a refusal before processing says nothing about the earlier attempt: stay frozen with the key.
-      const stillUnknown = problem.unconfirmed || (pending.current !== null && refusedBeforeProcessing(error));
-      if (stillUnknown) {
+      const outcome = await commands.send({ kind: 'unarchive', ...command });
+      if (outcome.kind === 'done') {
+        pending.current = null;
+        setAction(null);
+        onChanged();
+        return;
+      }
+      if (outcome.kind === 'unconfirmed') {
         pending.current = command;
-        setAction({ walletId: command.id, phase: 'unconfirmed', message: problem.message, blocked: problem.blocked });
+        setAction({ walletId: command.id, phase: 'unconfirmed', message: outcome.message, blocked: outcome.blocked });
         return;
       }
-      keys.settle(command.slot);
       pending.current = null;
-      const conflict = walletConflict(error, command.id);
-      const gone = error instanceof V1Error && error.outcome === 'not_found';
-      if (conflict || gone || walletRefusal(error, tc).changedElsewhere) {
-        setAction({ walletId: command.id, phase: 'conflict', current: conflict?.current ?? null });
+      if (outcome.kind === 'conflict') {
+        setAction({ walletId: command.id, phase: 'conflict', current: outcome.current });
         return;
       }
-      setAction({ walletId: command.id, phase: 'refused', message: problem.message });
+      // The hook always words a refusal; saveProblem's own default stands in if it ever does not.
+      setAction({ walletId: command.id, phase: 'refused', message: outcome.message ?? tc('This entry could not be saved.') });
     } finally {
       sending.current = false;
     }
@@ -322,11 +318,6 @@ function ListPage({ header, active, archived, onAdd, onOpen, onChanged, onReload
 // ---------------------------------------------------------------------------
 // The form: create (and first run) or edit
 
-type Command =
-  | { kind: 'create'; slot: 'create'; input: CreateWalletRequest }
-  | { kind: 'update'; slot: string; id: string; version: number; changes: UpdateWalletRequest }
-  | { kind: 'archive'; slot: string; id: string; version: number };
-
 /**
  * `unconfirmed`: an attempt may have committed; the form is frozen with its
  * key and only Try again resends the same command. `blocked`: saving waits on
@@ -352,16 +343,13 @@ type FormPageProps = {
   onReload: () => void;
 };
 
-const payloadOf = (command: Command): unknown =>
-  command.kind === 'create' ? command.input : command.kind === 'update' ? { version: command.version, changes: command.changes } : { version: command.version };
-
 function WalletFormPage({ title, wallet, lead, today, onBack, onDone, onRefresh, onReload }: FormPageProps) {
   const resources = useSpendV1();
   const tc = useCopy();
   const colors = useBunColors();
   const locale = useMoneyLocale();
   const dateLocale = useActiveLocale();
-  const keys = useCommandKeys();
+  const commands = useWalletCommand();
   // One wallet id per new wallet, fixed while the form lives: a resend always names the same wallet.
   const [walletId] = useState(newId);
   const [form, setForm] = useState<WalletForm>(() => (wallet ? walletFormOf(wallet) : newWalletForm(today)));
@@ -376,7 +364,7 @@ function WalletFormPage({ title, wallet, lead, today, onBack, onDone, onRefresh,
   const [askReason, setAskReason] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [archiveRefused, setArchiveRefused] = useState(false);
-  const pending = useRef<Command | null>(null);
+  const pending = useRef<WalletCommand | null>(null);
   const sending = useRef(false);
 
   // Whether the wallet has entries, which decides whether a correction needs its reason.
@@ -410,62 +398,46 @@ function WalletFormPage({ title, wallet, lead, today, onBack, onDone, onRefresh,
     clear('opening_minor');
   };
 
-  async function send(command: Command) {
+  // The key, own-create, freeze, refusal and conflict rules are the hook's; the form keeps its own state and follow-ups.
+  async function send(command: WalletCommand) {
     if (sending.current) return;
     sending.current = true;
-    const key = keys.keyFor(command.slot, payloadOf(command));
     setPhase('saving');
     setMessage(null);
     try {
-      if (command.kind === 'create') await resources.createWallet(command.input, key);
-      else if (command.kind === 'update') await resources.updateWallet(command.id, command.version, command.changes, key);
-      else await resources.archiveWallet(command.id, command.version, key);
-      keys.settle(command.slot);
-      pending.current = null;
+      const outcome = await commands.send(command);
       setConfirming(false);
-      onDone();
-    } catch (error) {
-      setConfirming(false);
-      // This wallet's id already exists: an earlier attempt of this create committed.
-      if (command.kind === 'create' && isOwnCreate(error, command.input.id)) {
-        keys.settle(command.slot);
+      // Saved, or this wallet's id already exists (an earlier attempt of this create committed).
+      if (outcome.kind === 'done') {
         pending.current = null;
         onDone();
         return;
       }
-      const problem = saveProblem(error, tc);
-      // Once unconfirmed, it stays frozen with its key until that command's outcome is known: a refusal before
-      // processing (signed out, terms, an update, a changed session) says nothing about it.
-      const stillUnknown = problem.unconfirmed || (pending.current !== null && refusedBeforeProcessing(error));
-      if (stillUnknown) {
+      if (outcome.kind === 'unconfirmed') {
         pending.current = command;
-        setResendBlocked(problem.blocked);
-        setMessage(problem.message);
+        setResendBlocked(outcome.blocked);
+        setMessage(outcome.message);
         setPhase('unconfirmed');
         return;
       }
-      keys.settle(command.slot);
       pending.current = null;
       setResendBlocked(false);
-      const refusal = walletRefusal(error, tc);
-      const found = command.kind === 'create' ? null : walletConflict(error, command.id);
-      const gone = error instanceof V1Error && error.outcome === 'not_found';
-      if (found || gone || refusal.changedElsewhere) {
-        setConflict({ current: found?.current ?? null, yours: command.kind === 'update' ? current : null });
+      if (outcome.kind === 'conflict') {
+        setConflict({ current: outcome.current, yours: command.kind === 'update' ? current : null });
         setPhase('conflict');
         return;
       }
-      if (refusal.archiveRefused) {
+      if (outcome.archiveRefused) {
         // The balance moved since it was read: say so, and read it again.
         setArchiveRefused(true);
         setPhase('editing');
         onRefresh();
         return;
       }
-      if (refusal.needsReason) setAskReason(true);
-      setErrors(refusal.fields);
-      setMessage(Object.keys(refusal.fields).length > 0 ? tc('Check the highlighted fields.') : problem.message);
-      setPhase(problem.blocked ? 'blocked' : 'editing');
+      if (outcome.needsReason) setAskReason(true);
+      setErrors(outcome.fields);
+      setMessage(Object.keys(outcome.fields).length > 0 ? tc('Check the highlighted fields.') : outcome.message);
+      setPhase(outcome.blocked ? 'blocked' : 'editing');
     } finally {
       sending.current = false;
     }
