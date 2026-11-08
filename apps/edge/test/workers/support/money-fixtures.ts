@@ -2,18 +2,22 @@
 // and the built-in categories seeded, named wallets, records and the golden
 // diary. The vault's port of apps/api/src/testing/money-fixtures.ts, over the
 // Worker's client instead of the PostgreSQL harness.
+import { runInDurableObject } from 'cloudflare:test'
 import { randomUUID } from 'node:crypto'
 
 import { derivedUuid } from '@api/commands/derived-id'
 import { GOLDEN_RECORDS, GOLDEN_START, GOLDEN_WALLETS } from '@api/transactions/fixtures/golden-diary'
 
-import { member as acceptTerms } from './v1-client'
+import { member as acceptTerms, vaultOf } from './v1-client'
 import type { TestUser, V1Client } from './v1-client'
 
 /** A built-in category's id for this person, as the vault derives it when it seeds the built-ins. */
 export const builtinId = (user: TestUser, key: string): string => derivedUuid(user.sub, 'builtin-category', key)
 
 export type Golden = { user: TestUser; wallets: { cash: string; daily: string }; records: string[] }
+
+/** A record bulkRecords writes: an expense or an income in one wallet and category. */
+export type BulkRecord = { type: 'expense' | 'income'; amount_minor: string; occurred_on: string; wallet_id: string; category_id: string; note?: string | null }
 
 async function expectStatus(res: Response, status: number): Promise<void> {
   if (res.status !== status) throw new Error(`expected ${status}, got ${res.status}: ${await res.text()}`)
@@ -67,5 +71,31 @@ export function moneyFixtures(client: V1Client) {
     return { user, wallets, records }
   }
 
-  return { member, wallet, record, balances, golden }
+  /**
+   * Inserts records straight into the vault's table (no commands), for read-model
+   * scale tests, as the API's bulkRecords does. One statement reads the rows from
+   * one JSON parameter (R57). Returns the new ids in the order given.
+   */
+  async function bulkRecords(user: TestUser, rows: readonly BulkRecord[]): Promise<string[]> {
+    const ids = rows.map(() => randomUUID())
+    const json = JSON.stringify(rows.map((row, i) => ({ ...row, id: ids[i], note: row.note ?? null })))
+    const at = new Date().toISOString()
+    await runInDurableObject(vaultOf(user), (_vault, state) => {
+      state.storage.sql
+        .exec(
+          `INSERT INTO transactions (id, type, amount_minor, occurred_on, wallet_id, category_id, note, version, created_at, updated_at)
+           SELECT json_extract(r.value, '$.id'), json_extract(r.value, '$.type'), CAST(json_extract(r.value, '$.amount_minor') AS INTEGER),
+                  json_extract(r.value, '$.occurred_on'), json_extract(r.value, '$.wallet_id'), json_extract(r.value, '$.category_id'),
+                  json_extract(r.value, '$.note'), 1, ?, ?
+             FROM json_each(?) AS r`,
+          at,
+          at,
+          json,
+        )
+        .toArray()
+    })
+    return ids
+  }
+
+  return { member, wallet, record, balances, golden, bulkRecords }
 }

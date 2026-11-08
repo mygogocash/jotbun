@@ -92,8 +92,29 @@ export {
   bangkokDate,
   assertKnownFields,
   isUuid,
+  addDays,
 } from "./v1/validation.ts";
 export type { MinorOptions, CanonicalCommand } from "./v1/validation.ts";
+export {
+  ISO_4217_MINOR_UNITS,
+  DEFAULT_HOME_CURRENCY,
+  PICKER_CURRENCIES,
+  CURRENCY_SYMBOLS,
+  RATE_SOURCES,
+  isCurrencyCode,
+  minorUnitsOf,
+  parseRate,
+  canonicalQuote,
+  convertMinor,
+  convertMinorDown,
+  crossRate,
+  rateFromAmounts,
+  minorToDecimal,
+  decimalToMinor,
+  moneyText,
+  rateText,
+} from "./v1/currency.ts";
+export type { MinorUnits, CurrencyCode, RateSource } from "./v1/currency.ts";
 export { WALLET_CURRENCY, WALLET_CORRECTION_REASONS, isWalletSnapshot } from "./v1/wallets.ts";
 export type { WalletCorrectionReason, WalletSnapshot, WalletDto, CreateWalletRequest, UpdateWalletRequest } from "./v1/wallets.ts";
 export { CATEGORY_TYPES, CATEGORY_COLORS, BUILTIN_CATEGORIES, isCategorySnapshot } from "./v1/categories.ts";
@@ -143,6 +164,7 @@ export {
   DELETION_RECEIPT_STATUSES,
   isDeletionAccepted,
   isDeletionReceipt,
+  deletionShortCode,
 } from "./v1/privacy.ts";
 export type { ExportFailureReason, ExportStatus, ExportFilter, ExportRequest, ExportRequestSnapshot, ExportDto, ExportGrant, ExportCsvColumn, DeletionReceiptStatus, DeletionRequest, DeletionAccepted, DeletionReceiptRequest, DeletionReceipt } from "./v1/privacy.ts";
 export {
@@ -285,6 +307,53 @@ export type {
   AiFigure,
   AiAskResult,
 } from "./v1/ai.ts";
+export {
+  THAI_BANK_KEYS,
+  SLIP_PURPOSES,
+  SLIP_OUTCOMES,
+  SLIP_ORIGINS,
+  SLIP_LIMITS,
+  SLIP_INBOX_ID,
+  SLIP_REF_HASH_LABEL,
+  isThaiBankKey,
+  isSlipInboxSnapshot,
+  isSlipBatchResult,
+  isSlipDraftsPage,
+  isSlipAccountDto,
+  isSlipAccountsDto,
+  isSlipSaltDto,
+  isBankAlbumsDto,
+  parseSlipBatchRequest,
+  parseSlipConfirmRequest,
+  parseSlipAccountUpdate,
+  parseSlipRefRequest,
+  normalizeSlipRef,
+  slipRefHash,
+  isSlipRefHash,
+  accountLast4,
+} from "./v1/slips.ts";
+export type {
+  ThaiBankKey,
+  SlipPurpose,
+  SlipOutcome,
+  SlipOrigin,
+  SlipReadModel,
+  SlipInboxSnapshot,
+  SlipBatchItem,
+  SlipBatchRequest,
+  SlipParty,
+  SlipDraftDto,
+  SlipResult,
+  SlipBatchResult,
+  SlipDraftsPage,
+  SlipConfirmRequest,
+  SlipAccountDto,
+  SlipRefRequest,
+  SlipSaltDto,
+  BankAlbumDto,
+} from "./v1/slips.ts";
+export { PUSH_KINDS, EXPO_PUSH_TOKEN, isPushData, parseDeviceRegistration } from "./v1/push.ts";
+export type { PushKind, PushData, DeviceRegistration } from "./v1/push.ts";
 export { parseQuickText, thaiWordsToNumber, draftFromQuickText } from "./v1/quickText.ts";
 export type { QuickTextGuess, QuickTextContext } from "./v1/quickText.ts";
 export { GOGOCASH_HOME, BUILTIN_CASHBACK_BRANDS, isCashbackBrand, isCashbackCatalogue, matchCashbackBrand } from "./v1/bridge.ts";

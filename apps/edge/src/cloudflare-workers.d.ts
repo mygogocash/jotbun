@@ -65,6 +65,33 @@ interface KVNamespace {
   delete(key: string): Promise<void>
 }
 
+// D1, as far as Better Auth's adapter and the auth tests use it.
+interface D1Result<T = Record<string, unknown>> {
+  results: T[]
+  meta: {
+    changes: number
+    last_row_id: number
+  }
+}
+
+interface D1PreparedStatement {
+  bind(...values: unknown[]): D1PreparedStatement
+  first<T = Record<string, unknown>>(column?: string): Promise<T | null>
+  all<T = Record<string, unknown>>(): Promise<D1Result<T>>
+  run(): Promise<D1Result>
+}
+
+interface D1Database {
+  prepare(query: string): D1PreparedStatement
+  batch<T = unknown>(statements: D1PreparedStatement[]): Promise<D1Result<T>[]>
+  exec(query: string): Promise<unknown>
+}
+
+// Email Service Workers API, as far as the mailer calls it (Task 2 sends).
+interface EmailBinding {
+  send(message: { to: string; from: string; subject: string; html: string; text: string }): Promise<{ messageId: string }>
+}
+
 // The bindings `env` is typed with. The vault Worker's configuration is
 // wrangler.vault.jsonc; the test harness reads VAULT through `cloudflare:workers`.
 declare namespace Cloudflare {
@@ -72,6 +99,18 @@ declare namespace Cloudflare {
     VAULT: DurableObjectNamespace<import('./vault/user-vault').UserVault>
     CONFIG: KVNamespace
     OBJECTS: import('./vault/files/keys').VaultBucket
+    AUTH_DB: D1Database
+    AUTH_DB_REFERENCE: D1Database
+    ERASURE_DB: D1Database
+    TEST_AUTH_MIGRATIONS: { name: string; queries: string[] }[]
+    TEST_ERASURE_MIGRATIONS: { name: string; queries: string[] }[]
+    AUTH_BASE_URL?: string
+    AUTH_ISSUER?: string
+    AUTH_AUDIENCE?: string
+    AUTH_TRUSTED_ORIGINS?: string
+    BETTER_AUTH_SECRET?: string
+    ERASURE_KEY?: string
+    JOTBUN_ENV?: string
   }
 }
 

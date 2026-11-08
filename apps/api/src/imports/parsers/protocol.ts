@@ -58,7 +58,8 @@ export type ParsedImage = { format: ImageFormat; width: number; height: number; 
 /** What the child measured about itself (`process.resourceUsage()`). */
 export type Usage = { max_rss_kb: number; cpu_ms: number };
 
-export type ParseSuccess = { ok: true; layout: Layout; rows: ParsedRow[]; file_issues: string[]; image: ParsedImage | null; usage: Usage };
+/** `header_fingerprint`: lowercase hex SHA-256 of a table's normalized header (bank.ts, P4-T10); null for an image. */
+export type ParseSuccess = { ok: true; layout: Layout; rows: ParsedRow[]; file_issues: string[]; image: ParsedImage | null; header_fingerprint: string | null; usage: Usage };
 export type ParseFailure = { ok: false; code: string; usage: Usage };
 export type ParseResult = ParseSuccess | ParseFailure;
 
