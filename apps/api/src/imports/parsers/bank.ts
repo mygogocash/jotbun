@@ -50,8 +50,46 @@ export function findHeaderRow(rows: readonly SourceRow[]): number {
   return 0;
 }
 
-// Two or more of x, X or *, then four or more digits, with dashes or spaces between any of them.
-const MASKED_NUMBER = /(?<![A-Za-z0-9])[xX*](?:[\s-]*[xX*])+((?:[\s-]*[0-9]){4,})/;
+// A masked number: two or more of x, X or *, then four or more digits, with
+// dashes or spaces between any of them, not right after a letter or digit.
+const isMask = (char: string) => char === 'x' || char === 'X' || char === '*';
+const isDigit = (char: string) => char >= '0' && char <= '9';
+const isSeparator = (char: string) => char === '-' || /\s/.test(char);
+const isWordChar = (char: string) => /[A-Za-z0-9]/.test(char);
+
+/**
+ * The digits of the first masked number in a cell, or null. One pass from left
+ * to right: a mask run without four digits after it is skipped whole, since a
+ * start later in the same run has the same digits after it. Each character is
+ * read a bounded number of times, so a cell of 10,000 `*` costs microseconds
+ * (a backtracking regex took a third of a second per cell: P4-T10 review, MAJ-1).
+ */
+function maskedDigits(cell: string): string | null {
+  let start = 0;
+  while (start < cell.length) {
+    if (!isMask(cell[start]) || (start > 0 && isWordChar(cell[start - 1]))) {
+      start += 1;
+      continue;
+    }
+    // The mask run: mask characters with only separators between them.
+    let masks = 1;
+    let end = start + 1;
+    for (let at = end; at < cell.length && (isMask(cell[at]) || isSeparator(cell[at])); at += 1) {
+      if (isMask(cell[at])) {
+        masks += 1;
+        end = at + 1;
+      }
+    }
+    // Then the digits, with only separators between them.
+    let digits = '';
+    for (let at = end; at < cell.length && (isDigit(cell[at]) || isSeparator(cell[at])); at += 1) {
+      if (isDigit(cell[at])) digits += cell[at];
+    }
+    if (masks >= 2 && digits.length >= 4) return digits;
+    start = end;
+  }
+  return null;
+}
 
 /**
  * The account a bank export's preamble names: the first cell holding a masked
@@ -61,9 +99,9 @@ const MASKED_NUMBER = /(?<![A-Za-z0-9])[xX*](?:[\s-]*[xX*])+((?:[\s-]*[0-9]){4,}
 export function preambleAccountLabel(rows: readonly SourceRow[]): string | null {
   for (const row of rows) {
     for (let index = 0; index < row.cells.length; index += 1) {
-      const masked = MASKED_NUMBER.exec(row.cells[index]);
-      if (!masked) continue;
-      const account = `xxx-${masked[1].replace(/[^0-9]/g, '').slice(-4)}`;
+      const digits = maskedDigits(row.cells[index]);
+      if (digits === null) continue;
+      const account = `xxx-${digits.slice(-4)}`;
       const other = row.cells.find((cell, at) => at !== index && cell.trim() !== '');
       return other === undefined ? account : `${other.trim()} ${account}`;
     }

@@ -214,6 +214,19 @@ describe('Thai bank exports', () => {
       log.mockRestore();
     }
   });
+
+  it('a preamble of long mask runs parses well inside the deadline', async () => {
+    // Three preamble rows of 100 cells each: 10,000 `*`, 5,000 `x-` and 5,000 `x ` (the review's probe, 3 MB), then the account.
+    const runs = ['*'.repeat(10_000), 'x-'.repeat(5_000), 'x '.repeat(5_000)].map((cell) => Array(100).fill(cell).join(','));
+    const bytes = csv([...runs, 'บัญชีออมทรัพย์,xxx-x-x1234-x', THAI_HEADER.join(','), '24/10/69,10:05,POS PURCHASE,100.00,,"1,000.00",EDC,ร้านเครื่องเขียน']);
+    const result = await parsed('csv', bytes);
+    expect(result.rows).toEqual([
+      row({ source_row_id: 'row:6', occurred_on: '2026-10-24', type: 'expense', amount_minor: '10000', wallet_label: ACCOUNT, category_label: 'POS PURCHASE', merchant: 'ร้านเครื่องเขียน' }),
+    ]);
+    // The CPU time the child measured itself, so a busy runner does not inflate it: a backtracking scan
+    // runs these cells past the 30 s deadline (the outcome is then a timeout), one pass takes well under a second.
+    expect(result.usage.cpu_ms).toBeLessThan(5_000);
+  }, 60_000);
 });
 
 describe('the bank helpers', () => {
@@ -237,6 +250,20 @@ describe('the bank helpers', () => {
     // One mask character, fewer than four digits, or a word ending in x is no masked number.
     expect(preambleAccountLabel(rows(['x1234'], ['xx-123'], ['Fax 0212345678'], ['Taxx 1234']))).toBeNull();
     expect(preambleAccountLabel([])).toBeNull();
+  });
+
+  it('reads the masked account after long mask runs in one pass', () => {
+    const hostile = ['*'.repeat(10_000), 'x-'.repeat(5_000), 'x '.repeat(5_000)].flatMap((cell) => Array<string>(20).fill(cell));
+    const before = process.cpuUsage();
+    expect(preambleAccountLabel(rows(hostile, ['บัญชีออมทรัพย์', 'xxx-x-x1234-x']))).toBe('บัญชีออมทรัพย์ xxx-1234');
+    const used = process.cpuUsage(before);
+    // CPU time, not wall time, so a busy runner does not inflate it: a backtracking scan spends seconds on these 60 cells, one pass a few milliseconds.
+    expect((used.user + used.system) / 1_000).toBeLessThan(1_000);
+  });
+
+  it('a mask run without four digits does not hide a later masked number in the same cell', () => {
+    expect(preambleAccountLabel(rows(['ref xx-12, account xxx-x-x4321-x']))).toBe('xxx-4321');
+    expect(preambleAccountLabel(rows(['** ** 12 ** 5678']))).toBe('xxx-5678');
   });
 
   it('decides the era of two-digit years from the ten years ending today', () => {
