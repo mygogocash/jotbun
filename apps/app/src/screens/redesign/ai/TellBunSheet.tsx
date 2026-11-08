@@ -9,8 +9,8 @@
 // - What Bun could not tell is listed in hedged words under the draft.
 import type { AiDraft, AiLocale, CategoryDto } from '@gogospend/contracts';
 import { AI_SLIP_MAX_BYTES } from '@gogospend/contracts';
-import { useState } from 'react';
-import { ActivityIndicator, Image, Pressable, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Image, Keyboard, Pressable, View } from 'react-native';
 
 import { V1Error } from '@mobile/api/client';
 import { useCopy } from '@mobile/i18n/useCopy';
@@ -97,6 +97,21 @@ export function TellBunSheet({ visible, onClose, context, locale, onUse, pickSli
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' });
   const [consenting, setConsenting] = useState(false);
   const moneyLocale = locale === 'th' ? 'th' : 'en';
+
+  // The field takes focus as the sheet opens, and a draft shows below it, where
+  // a phone's keyboard would cover it. A draft is checked, not typed, so each
+  // new draft closes the keyboard (a re-read stays a result, hence `phase`, not
+  // `phase.kind`); a sentence Bun could not read keeps it up to retype.
+  // A read still running when the sheet closes can land after it; its draft
+  // waits for the next open, and the keyboard up by then belongs to another
+  // field, so it stays.
+  const shown = useRef(visible);
+  useEffect(() => {
+    shown.current = visible;
+  }, [visible]);
+  useEffect(() => {
+    if (phase.kind === 'result' && shown.current) Keyboard.dismiss();
+  }, [phase]);
 
   /** Why Bun answered from the phone instead of with AI, when that is worth saying. */
   function fallbackNote(error: unknown): string | null {
