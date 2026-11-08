@@ -276,6 +276,57 @@ Phase 1A moves each person's ledger into one SQLite Durable Object, the UserVaul
   - Tasks 4 to 6 register categories, transactions and budgets in `buildVaultRegistry()`. The registry-parity case can then be completed once the 1B entities are also registered.
   - 1B adds the lifecycle generation. Replace the constant `GENERATION` in `reads/sync.ts`, and complete the lifecycle case.
 
+### Task 8b: Retention on the vault's alarm
+
+- **Status:** built and verified locally on `p1/1a-t8b-retention` (`.claude/worktrees/p1a-t8b`), from `8f04a3b`. Not pushed. Task 8 is split (ruling R7): 8a served sync changes; this is the rest, except Task 7's money journey (below). The independent review is the controller's, after this receipt.
+- **Files:**
+  - `apps/edge/src/vault/retention.ts` (new): `nextDue`, `reschedule`, `runDue` and `armAlarm` (the schedule and the alarm), and the three jobs. `purgeExpiredRecords` and `purgeEntities` port `gogospend_retention_purge_account` (its transactions half) and `gogospend_purge_entities`. `pruneChanges` ports the latest `gogospend_prune_account`. `dropReceiptDigests` ports `gogospend_drop_receipt_digests`. `committedRevision` lets a call see that it committed. Revisions are read as `CAST(... AS TEXT)` and bound as `CAST(? AS INTEGER)`. Id lists bind as one JSON parameter (R57). Each job is its own `transactionSync` block.
+  - `apps/edge/src/vault/user-vault.ts` (shared): one import; `alarm()`, placed right after `erase()`; and in `call()`, the revision is read before and after the handler, and a call that committed arms the alarm after its block.
+  - `apps/edge/test/workers/support/v1-client.ts` (shared): `createLunch(client, user): Promise<string>`, appended at the end of the file.
+  - Tests: `apps/edge/test/workers/retention.test.ts` (new, 13 cases). `apps/edge/test/workers/sync.test.ts`: the prune half of the 30-day case, the API's name for the lifecycle case, the registry case in part, and three `it.todo` lines for 1B.
+- **RED to GREEN:**
+  - Typed stubs first: `retention.ts` exported every name with its final signature and did nothing, and `user-vault.ts` already called them.
+  - RED, `npx vitest run --config vitest.workers.config.ts test/workers/retention.test.ts test/workers/sync.test.ts`: `Tests 12 failed | 14 passed | 3 todo (29)`. All 12 are assertions: 10 `expected false to be true` (no alarm was set, or the prune did nothing) and 2 `expected null to be <time>`. Two retention cases pass on inert stubs by design (the cleared alarm, the erased vault). The registry case passes at once: the registry was already right.
+  - GREEN: `Tests 26 passed | 3 todo (29)`.
+- **Mutation check:** 16 mutants, each applied to its file, run against the two focused files and restored byte for byte (the planner's runner, `mutants.py`). Every one failed exactly the expected tests:
+  - the plan's three: M1, purge at 29 days (3 cases, `nothing is purged early` among them); M2, the purge leaves `pruned_through` unchanged (`tombstones reach delta readers, older cursors resync`); M3, the alarm always at the purge time (5 cases, the earliest-job case among them; the plan's first alarm case cannot catch it, because all three jobs fall due together there);
+  - M4, the literal prune rule; M5, no active-account check; M6, no per-job `try`/`catch`; M7, no one-minute floor after a failure; M8, a strict `<` in the purge; M9, no arming after a commit (11 cases); M10, a 29-day purge cutoff with the due time unchanged; M11, the prune deletes heads; M12, the digest drop ignores its cutoff; M13, the prune cut ignores the retention line; M14, one purge group per alarm; M15, one `?` per id; M16, the prune due with nothing superseded.
+  - Equivalent, all 26 pass: E1, no `erased` guard in `alarm()` (an erased vault holds only its marker, so retention is inert either way); E2, arming after every call (only a commit changes a due time); E3, never calling `deleteAlarm` (a null schedule only happens inside `alarm()`, after the runtime removed the alarm that fired).
+- **Gate** (worktree root):
+  - `typecheck:edge`: exit 0.
+  - `test:edge`: 156 passed (12 files).
+  - `test:edge:workers`: 262 passed and 3 todo (14 files); 248 before this task.
+  - `build:edge`: passes; the `jotbun_vault` bundle has the retention code and no PostgreSQL import.
+  - `test:edge:db`: SKIPPED (Docker is not running; CI runs it).
+  - `git diff --check`: clean on the staged change before the commit; the committed range is checked after the commit.
+- **Ported** from `apps/api/src/privacy/retention.integration.spec.ts` (14 cases):
+  - In full (the plan's list): `purged_transactions_are_not_resurrected_by_receipts`; `a deleted record stops counting at once and can be undone within 30 days; nothing is purged early`; `drops receipt digests after the outbox lifetime: a replay is refused and never re-run; status still answers`; `removes a superseded change that sat below the retention line (S1 change log)`.
+  - In part: `tombstones reach delta readers, older cursors resync` (its snapshot half is 1B-T8's).
+  - In changed form: `leaves an account being erased to its erasure: no purge group is written for it` (the status is set to `deleting` directly; the alarm is also cleared, §6.12 step 2); `a failing step is reported and does not stop the others` (a trigger makes the purge fail; the alarm also comes back a minute later); `every prune works in bounded batches` (as `purges more records than SQLite has parameters, at most 1,000 to a change group`: 1,001 records, two groups of 1,000 and 1).
+  - 1B's: `export requests are purged 30 days after the request; the receipt stays compact` and `drops finished upload rows 30 days after they ended ...` (1B-T11), and `a snapshot read before a purge is never recorded afterwards ...` (1B-T8).
+  - Not applicable: `skips an account while a user write holds its lock ...` (a vault call runs to completion; there is no lock to wait on); `ages out provider-event receipts, reconcile checks, expired challenges, finished jobs, lapsed holds and completed deletion requests` (none of those tables is in a vault; D1's are 1C's); `the erasure purge and the account foreign key use indexes ...` (PostgreSQL's planner).
+  - The plan's three alarm cases, with their names and assertions, each with `t0 = Date.now()` (R6). New: `the alarm follows the earliest job, and each record waits its own 30 days`, `an erased vault runs no retention and keeps no alarm, awake or after it sleeps`.
+  - `sync.test.ts`: `30-day retention drops superseded changes, keeps every head, and expires older cursors` is now ported in full, and the lifecycle case has the API's name. `snapshots validate exactly the entities the API registers` is ported in part (the vault's four entities each use exactly their `SYNC_ENTITY_VALIDATORS` function); the full set waits for 1B and phase 4 (`slip_inbox`).
+- **Deviations:**
+  1. The prune is due, while some change is superseded, 30 days after the oldest change group above the retention line (the API's `gogospend_retention_candidates` rule). The plan says "the earliest superseded change + 30 days". Taken literally, that time is already past for a change superseded after the line passed it, and the alarm would loop (mutant M4). The exact earliest time needs a scan of the whole change log on every commit (13.6 ms at 20,000 changes); this rule costs 1.0 to 2.6 ms there, and the next due time is always later than the prune. Accepted by the controller (8 November).
+  2. "30 days old" is inclusive (`<=`) in all three jobs, where the API is strict, so a job runs at its own due time. A record deleted at D is purged at D + 30 days exactly. Accepted by the controller (8 November).
+  3. The prune deletes every non-head change at or below the cut. The API's prune visits only entities changed since its last pass, an index shortcut. This also covers a change superseded below a line that a purge moved.
+  4. `runDue` returns the jobs that failed (the plan says `void`). `alarm()` uses that to arm no sooner than a minute later. A failed job is logged as `vault_retention_<job>_failed`, and the other jobs still run. Accepted by the controller (8 November), as part of the failed-job ruling.
+  5. The purge's command id is `derivedUuid(accountId, 'retention-purge', revision)`, the deterministic stand-in for the API's md5 id. The purge writes no receipt and no audit row, as the API does.
+  6. `purgeEntities` takes a `RetentionContext` (`Pick<VaultContext, 'sql' | 'storage' | 'now'>`), so 1B's `FileContext` can call it (1B-T6, T9, T10).
+  7. `call()` knows it committed by comparing the revision before and after the handler. 1B-T11 replaces that with its `touched` flag.
+  8. `purged_transactions_are_not_resurrected_by_receipts` ages only the record by SQL, as the API's `age()` does: with the vault clock moved instead, its receipt digest would drop at the same moment and the replay would be 409.
+  9. Time in the tests: each case takes `t0 = Date.now()` (R6), where the plan's sample takes `Date.parse('2026-10-25T00:00:00.000Z')`, so every alarm a test sets is about 30 days in the real future and never fires on its own.
+  10. Registry check: `snapshots validate exactly the entities the API registers` is ported in part, as the planner ruled (P8): the vault's four entities, each with exactly its `SYNC_ENTITY_VALIDATORS` function. The full equality waits for 1B (export, import_review, import_selection) and phase 4 (`slip_inbox`).
+- **SKIPPED:** nothing hosted; no Cloudflare resource was touched. `test:edge:db`: SKIPPED (Docker is not running; CI runs it).
+- **Not in this commit:** Task 7's money journey (plan Task 8 Step 1, ruling R5). 1A-T7 adds it to `test/workers/history.test.ts` as `it.todo`, and that file is not on the integration head yet. It is a separate follow-up once 1A-T7 merges.
+  - Plan wording fix for the orchestrator: the 1B plan (line 1130) says the money journey was "turned on in 1A-T8a", while the 1A plan gives it to 8b (the halves note, line 716). The 1A plan's Task 8 step 1 (line 734) also lists turning it on, next to the sync port; the halves note governs, and this task follows it.
+- **Notes for 1B and later:**
+  - The alarm runs `runDue(c)`, then `armAlarm(c, failed)`. 1B-T11 adds its file jobs between the two and replaces `armAlarm` with `rearm` and `alarmAt`. `reschedule` keeps rows of other jobs in `schedule` and returns the earliest of the whole table.
+  - `purgeEntities(c, entity, ids)` takes at most 1,000 ids and must run inside the caller's block. It moves `pruned_through` over the purged entities' earlier changes.
+  - `hasSupersededChange` relies on each head keeping exactly one change row of its own. Anything that writes a head must write its change row too, as `appendChanges` and `purgeEntities` do.
+  - Retention skips a vault whose `account_state.status` is not `active`, and clears its alarm.
+
 ### Task 4: Categories
 
 - **Status:** built and verified locally on `worktree-agent-a1bb3b037cc6147fe`, on top of Task 3 (`f6d1f95`). Not pushed. The independent review is the controller's, after this receipt.
@@ -635,6 +686,78 @@ Phase 1D lets a change saved on one phone reach the person's other phones at onc
   - `categoryById` still returns `archived` as 0 or 1. A limit already on the budget may name an archived expense category; a new reference may not.
   - The registry now names the entity `budget`. Sync serves it. Task 8b's registry parity check has to cover `budget` as well as `category` and `transaction`.
 - **Integration (27 Oct):** merged with Task 5 (PR #81). The registry is wallet, category, transaction, budget, in `buildContainer`'s order. The route table is now 26 ported, 3 pending (Task 7's history and summary), 28 deferred and 6 retired. On the merged tree: `typecheck:edge` passes, `test:edge` 130 passed (10 files), `test:edge:workers` 233 passed (11 files; Task 5's 213 plus these 20).
+
+### Task 7: history, deleted history and the summary
+
+- **Status:** built and verified locally on `p1/1a-t7-history` (`.claude/worktrees/p1a-t7`), on top of `800680d`. Not pushed. The independent review is the controller's, after this receipt.
+- **Files:**
+  - Reads: `apps/edge/src/vault/reads/history.ts` (`history`, and `scopedTotals` and `accountRevision`, the ports of `history/totals.ts` that the summary shares), `reads/deleted-history.ts` (`deletedHistory`) and `reads/summary.ts` (`summary`). They port `HistoryQuery`, `DeletedHistoryQuery` and `SummaryQuery`. Each runs inside the call's one `transactionSync`, so a page, its totals and its revision are one read, as the API's snapshot transaction is.
+  - Reused, not forked: `parseHistoryRequest` (`@api/history/history-query`), `parseDeletedHistoryRequest` (`@api/history/deleted-history-query`), `encodeCursor`, `decodeCursor`, `encodeDeletedCursor` and `decodeDeletedCursor` (`@api/history/cursor`), and `parseMonth`, `assertKnownFields` and `RESTORE_WINDOW_DAYS` from the contracts. `SummaryQuery` is not imported: it imports the API's budget service, which reaches `DatabaseService` and `pg`. `summary.ts` keeps its SQL and its order, checks the query as `summary.controller.ts` does, and reads the budget through the vault's `readBudget` (Task 6).
+  - Routes: `apps/edge/src/v1/routes.ts` moves `GET /v1/history`, `GET /v1/history/deleted` and `GET /v1/summary` from `VAULT_PENDING_ROUTES` into `VAULT_V1_ROUTES`, with the PostgreSQL table's access (`bound_session`), gates (none) and status (200). `VAULT_PENDING_ROUTES` is now empty. `apps/edge/src/vault/routes.ts` adds the three handlers. The table is now 30 ported, 0 pending, 27 deferred and 6 retired (63 in all).
+  - `apps/edge/src/vault/domain/transactions.ts` exports its `COLUMNS` (one word, and one comment line), so history reads a row exactly as `getTransaction` does, the way the API's history imports `RECORD_COLUMNS` and `toDto` from the transactions repository.
+  - Tests: `apps/edge/test/workers/history.test.ts` (35 cases, and the money journey as `it.todo`), `apps/edge/test/workers/summary.test.ts` (7), `apps/edge/test/workers/support/money-fixtures.ts` (`bulkRecords`, the API fixture's direct insert, as one statement over one JSON parameter), and `apps/edge/test/vault-route-coverage.test.ts` (the pin lists the 30 ported routes).
+  - No registry, schema or protocol change. These are reads, so `buildVaultRegistry()` keeps wallet, category, transaction, budget; `VaultRouteId` already named the three ids; `user-vault.ts` is unchanged.
+- **RED to GREEN:**
+  - Node RED, the pin changed first: `npm run test:edge -- test/vault-route-coverage.test.ts` gave `Tests 1 failed | 5 passed (6)` (`expected [ Array(27) ] to deeply equal [ Array(30) ]`).
+  - Workers RED, with the three reads as typed stubs wired to their routes (empty pages, zero totals, revision `'0'`): `npm run test:edge:workers -- test/workers/history.test.ts test/workers/summary.test.ts` gave `Tests 42 failed | 1 todo (43)`, 35 in `history.test.ts` and 7 in `summary.test.ts`. 39 fail on assertions (24 distinct messages). 3 fail with a `TypeError` where the test reads what the stub left empty (a null cursor, a null budget, missing `fields`): `refuses malformed cursors and cursors from another filter`, `a cursor carrying an impossible date is a 422, never a 500` and `budget usage keeps a sublimit whose category was archived later`. None fails on a missing module. The RED and base logs were written under `/private/tmp`, which macOS cleared on 8 November, so these counts are the ones printed when the runs happened; they were not re-run.
+  - GREEN: the same command gave `Tests 42 passed | 1 todo (43)`, and the pin `Tests 6 passed (6)`. GREEN was run again after the interruption with the same result (`Test Files 2 passed (2)`, `Tests 42 passed | 1 todo (43)`).
+- **Mutation check:** the three reads were backed up to `.claude/controller/scratch/1a-t7/backup`, outside the worktree, and matched the GREEN hashes before the first mutant. Each mutant was applied with the Edit tool, the two files were run under the heavy lock, and the mutant was reversed with the Edit tool. After each reversal the file was compared with the backup (`cmp`) and its sha256 with the GREEN value, and all 13 matched. The logs are `.claude/controller/scratch/1a-t7/mutant-M1.log` to `mutant-M13.log`.
+  - M1 (plan), history's look-ahead row dropped (`limit + 0`): `5 failed`: `all_451_records_are_pageable`, the ascending case, the refresh case, `a cursor carrying an impossible date ...` and `refuses history's own cursor`.
+  - M2 (plan), deleted rows counted in the summary: `1 failed`, `excludes deleted records and keeps renamed or archived categories` (`expected '1245000' to be '18200'`).
+  - M3, Recently deleted's look-ahead row dropped: `3 failed`: `newest deletion first, ties by id ...`, `suggests a refresh ...` and `another account’s cursor grants nothing ...`.
+  - M4, the expense total read without `CAST(... AS TEXT)`: `7 failed`: the filters case, the five month-summary cases and the exactness case.
+  - M5, the window as `deleted_at > cutoff`: `1 failed`, `exactly 30 days after its deletion ...`.
+  - M6, the keyset on the stored millisecond text instead of the six-digit key: `2 failed`, `a cursor with microseconds ...` and `newest deletion first, ties by id ...`.
+  - M7, the next cursor built from the stored millisecond text: `3 failed`, the same three as M3.
+  - M8, the wallet filter without a transfer's destination: `1 failed`, `filters by wallet ...`.
+  - M9, the search text without the API's escaping: `1 failed`, `filters by wallet ...`.
+  - M10, a transfer's destination left out of `by_wallet`: `2 failed`, `filters by wallet ...` and `reports the golden month ...`.
+  - M11, a month's last day one short: `1 failed`, `uses Bangkok calendar months ...`.
+  - M12, `refresh_suggested` always false: `1 failed`, `signals a refresh when the account changed between pages ...` (keyset history).
+  - M13, the keyset always `<`: `1 failed`, `ascending order and the maximum limit ...`.
+  - No survivor. Every mutant failed exactly the tests the brief lists.
+- **Gate** (worktree root, in the brief's order):
+  - `typecheck:edge`: exit 0.
+  - `test:edge`: `Test Files 12 passed (12)`, `Tests 156 passed (156)`. The base `800680d` includes `test/slip-contracts.test.ts` (P4-T1, 11 tests), so the count is the plan's 145 in 11 files plus that file. The pin changed in place, so this task adds no Node test.
+  - `test:edge:workers`: `Test Files 15 passed (15)`, `Tests 290 passed | 1 todo (291)`: the base's 248 in 13 files, plus 42 in the two new files.
+  - `build:edge`: passes. `dist/jotbun_vault/index.js` holds no `node-postgres`, `make_interval` or `ILIKE` (count 0) and holds the new SQL (`substr(t.deleted_at, 1, 23)`, count 1).
+  - `test:edge:db`: SKIPPED, Docker is not running (`docker info` exits 1; Docker was not started).
+  - `test:db` (API): not run, because the task changes no API, contracts or PostgreSQL edge code.
+  - `/usr/bin/git diff --check origin/claude/p1a-vault-core...HEAD`: run after the commit, as Step 6.7 says; its result is in the final message.
+- **Ported in full:**
+  - `history.integration.spec.ts`: all 6 `it` blocks and both `it.each` blocks (12 rows), 18 vitest cases.
+  - `deleted-history.integration.spec.ts`: 6 of its 7 `it` blocks and its `it.each` (6 rows). The seventh is ported in changed form, below.
+  - `summary.integration.spec.ts`: all 5.
+  - `m4-hardening.integration.spec.ts`, the three cases Task 6 left to this task: `a cursor carrying an impossible date is a 422, never a 500` and `a history date before 1970 is INVALID_DATE, and the summary refuses unknown parameters` (in `history.test.ts`), and `budget usage keeps a sublimit whose category was archived later` (in `summary.test.ts`).
+- **Ported in changed form:**
+  - `a purged record is never listed, and the retention purge leaves the window alone`. The purge is 1A-T8b's `retention.ts`, which is not merged. The case writes what that purge leaves for a record past the window (no row, and a `purged` head at the current revision, the same SQL as `money-hardening.test.ts`), then checks that only the record inside the window is listed and that restoring the purged one is 410. The purge's own rule that nothing goes early is 8b's to test.
+  - The paging seed: the API deletes three records a microsecond apart. The vault keeps milliseconds, so they are a millisecond apart.
+  - `bulkRecords` and `deletedAgo` write through `runInDurableObject` where the API writes through SQL. Each instant is taken from the test's clock, which is the vault's.
+  - `another account’s cursor grants nothing: rows are still read under the owner’s RLS` and the "other accounts" halves keep their names. They hold by addressing: another person's rows are in another vault.
+- **Not applicable:** `history and summary read from one REPEATABLE READ, READ ONLY snapshot` (m4-hardening), as Task 6 recorded: a vault call is one `transactionSync`.
+- **Added vault cases** (3):
+  - `exactly 30 days after its deletion a record is still listed and restorable, as the restore command decides; a millisecond more is neither`, with the vault's clock held still.
+  - `a cursor with microseconds pages as PostgreSQL compares instants: a deletion in its millisecond comes after it, whatever its id`.
+  - `totals above Number.MAX_SAFE_INTEGER stay exact decimal strings in the summary, its budget usage and the history totals`: 90,100 expenses of 99,999,999,999 written straight into the table, so every total is `9009999999909900`.
+- **Deviations:**
+  1. Text search is SQLite `LIKE ... ESCAPE '\'`, with the API's escaping of `\`, `%` and `_`. PostgreSQL's `ILIKE` folds case by the database's locale (the postgres image initialises its cluster as `en_US.utf8`). Durable Object SQLite has no ICU: a probe in workerd gave `'Rent' LIKE '%RENT%'` 1, `'Café' LIKE '%CAFÉ%'` 0 and `lower('É')` `'É'`. ASCII letters therefore match in any case, as in the API, but other cased letters (É and é, for example) match only in the same case. Thai has no case, so Thai search is the same. No ported case or parity step searches cased non-ASCII text. This deviation is accepted by the controller (28 October).
+  2. The month is `occurred_on BETWEEN 'YYYY-MM-01' AND` its last day, computed in JS (plan Step 3). Every stored `occurred_on` is a real date (its CHECK), so this is the API's `>= first AND < first + interval '1 month'`.
+  3. `scopeOf` adds a clause only for a filter that is present, where the API binds every filter and tests it for NULL. The rows are the same, and the parameters fewer.
+  4. Recently deleted keys its cursor as `substr(deleted_at, 1, 23) || '000Z'`, the API's six-digit form, because `decodeDeletedCursor` accepts only that form and the vault stores milliseconds.
+  5. Two files outside the plan's list: `domain/transactions.ts` (`export` on `COLUMNS`) and `test/workers/support/money-fixtures.ts` (`bulkRecords`, which the API's `moneyFixtures` also has).
+  6. The three m4-hardening cases and the three added vault cases above.
+  7. The money journey is `it.todo`, as the plan and R5 say. In the planner's scratch copy it was switched to `it` and passed (`history.test.ts` 36 passed), then switched back. It is not in the gate's counts.
+  8. The base is `800680d`, not `75b3625`. The Node suite at this base is 12 files and 156 tests: the plan's 145 in 11 files, plus the 11 of `test/slip-contracts.test.ts` (P4-T1). The workers baseline is 13 files and 248 tests, as the brief says.
+  9. The integration head is now `8f04a3b` (1D-T1, the app analytics core, and the iOS keyboard fix). It was fetched and not merged, on the controller's instruction. Nothing under `apps/edge` changed. It does change `packages/contracts` (`src/index.ts`, `src/v1/privacy.ts`), which the edge reads.
+  10. The mutants were reversed with the Edit tool rather than `cp`, and the backup sits in the controller's scratch folder, both on the controller's instruction after the interruption.
+- **SKIPPED:** `test:edge:db`: Docker is not running (`docker info` exits 1; Docker was not started). CI runs it. Hosted: nothing deployed, and no cloud resource was created.
+- **Notes for 1A-T8b, Task 9 and the integrator:**
+  - 8b turns the money journey on by changing one line in `test/workers/history.test.ts`: `  it.todo('seeds built-ins, records spending, and reads it back through history, summary, budgets, status and sync', async () => {` becomes `  it('seeds built-ins, ...`. 8b must merge after this task.
+  - `VAULT_PENDING_ROUTES` is empty, so Task 9's `expect(VAULT_PENDING_ROUTES).toEqual([])` holds. The money session's history, summary and Recently deleted steps now reach the vault.
+  - `scopedTotals(c, scope, params)` and `accountRevision(c)` are exported from `reads/history.ts` for later reads (the spec's §6.2: "Ask Bun's tools call the same methods").
+  - If 1B adds `attachment_id` to the transaction DTO, it goes into `COLUMNS` and `toDto` in `domain/transactions.ts`, and history picks it up from there.
+  - The Task 6 integration bullet above counts 26 ported routes. The table held 27 before this task (the pin's RED shows `Array(27)`) and holds 30 after it. The integrator should reconcile that count.
+  - Integration head `8f04a3b` is not merged and this merge is not tested here. Its change to `premium-progress.md` is in other sections (the 1D headings, 1D Task 1, the iOS keyboard fix, P6B); the Task 6 integration bullet this receipt follows is unchanged there. It also changes `packages/contracts`, which `apps/edge` reads, so re-run the edge gate after that merge.
 
 ## 1B: files and background work on the vault
 
@@ -1156,3 +1279,197 @@ Phase P6B gives the closed beta its in-app extras ([plan](../superpowers/plans/2
   - Today's `PrivacyScreen.tsx` still prints the whole request id; P6B-T6's `DeletionDoneScreen` switches to this code. Not touched here.
   - `index.ts` and `privacy.ts` are shared: the change is one export line and one function after `isDeletionReceipt`. A conflict keeps both sides.
   - Warnings, not failures, and not caused by this change: the Node runner prints `MODULE_TYPELESS_PACKAGE_JSON` for the new file, for `packages/contracts/src/index.ts` and for other pure tests (their packages have no `"type"` field); vitest warns that `vitest.render.config.ts` is loaded as CommonJS.
+
+### P2 Task 6: The record screen's rules move into a hook
+
+- **Status:** built and verified locally on `p2/t6-record-hook`, merged with `origin/claude/p1a-vault-core` at `bdf6b12` (merge `f5c836c`). Not pushed. The independent review is the controller's, after this receipt.
+- **Fix round** (review of `f789568`, findings M-1 and m-1): the M5 survivors were not equivalent, and the clear in `startEditing` had no test. Three tests now pin the notice rules through the probe, all in `recordActions.render.test.tsx`: `cancelling an edit after a refused restore brings the notice back` (kills M5b, where `cancelEditing` always clears), `reloading a conflict clears the old notice` (kills M5a, where it never clears) and `starting an edit clears the notice` (kills R1, where `startEditing` drops its clear). All three pass on `f789568`, since they pin behaviour that is already right; each is shown needed by the mutant it kills. Each mutant was applied to `recordActions.ts` in turn and the file was restored with `cp`, and the checksum `bd8c7e6f...` matched after every restore: M5a, 1 failed (`reloading a conflict clears the old notice`); M5b, 2 failed (`cancelling an edit after a refused restore brings the notice back`, and `starting an edit clears the notice` at its precondition); R1, 1 failed (`starting an edit clears the notice`). No mutant survived.
+- **Files:**
+  - `apps/app/src/screens/redesign/record/recordActions.ts` (new): `useRecordActions({ id, mode, now })` returns `RecordActionsState` with exactly the plan's fields: `today`, `draftCommand`, `loaded`, `editing`, `deleted`, `pending`, `gone`, `notice`, `busy`, `load()`, `startEditing()`, `cancelEditing()`, `changeEditing(change)`, `pressKey(key)`, `submitEdit()`, `remove(record)`, `restore(target)`, `settleDraft(commandId, how)`. It also exports `RecordLoaded` and `RecordEditing`, and `lookupsOf`, `earliestDate`, `startEdit` and `KEYPAD_PROBLEM_TEXT`, moved unchanged.
+  - `apps/app/src/screens/redesign/RecordScreen.tsx`: renders from the hook. The receipt, the amount line and today's conflict panel are unchanged.
+  - `apps/app/src/screens/redesign/record/recordActions.render.test.tsx` (new): the plan's three tests, through a probe that shows the hook's state as text.
+- **How it was built:** an earlier session moved the code and wrote the hook test on 25 October without recording a RED. That work was committed as found (`1e7789b`), merged with the integration head, and finished here.
+- **RED to GREEN** (`npm run test:render -w gogospend-app -- src/screens/redesign/record/recordActions.render.test.tsx`):
+  - RED 1, the plan's placeholder: the hook with `submitEdit`, `remove` and `restore` returned as no-ops. 3 failed, 0 passed, each on its `waitFor` (`deleted 2`, `conflict 2 1300000`, `unconfirmed true`). The hook was restored with `cp`; the checksum matched.
+  - RED 2, the moved hook before `changeEditing` held the freeze: 1 failed, 2 passed. `an edit whose answer never came is frozen, and Try again resends the same command key` failed: a field change went through while the edit was frozen.
+  - GREEN: 3 passed, 0 failed.
+- **Record's suite, unchanged:** `RecordScreen.render.test.tsx`, 32 passed on today's screen (a scratch copy of `bdf6b12`) and 32 passed on the hook. This branch does not change the file.
+- **Mutation check:** `recordActions.ts` was copied to the agents scratch folder (sha256 `bd8c7e6f1d0ec93d7e7c7f4c1997853b02a2dbf3bf54d69ef722fad66d3d97a5`) before the mutants. Each was applied in place, run with the hook test and Record's suite, then the file was restored with `cp`. The checksum matched after every restore.
+  - Undo restores with the record's version instead of the delete's (plan): 3 failed, 32 passed. The hook's undo test, and Record's `Delete shows the undo bar; Undo restores with the new version and its own key` and `an unconfirmed undo keeps the bar and resends the same restore`.
+  - The edit key is settled on a lost answer (plan): 2 failed, 33 passed. The hook's frozen test, and Record's `an unconfirmed edit is frozen and retried as the same command`.
+  - Apply my change sends on the version you saw (no rebase): 1 failed, 34 passed. Record's `a conflict shows yours and the server side by side, and Apply my change resends on the server version with a new key`.
+  - `setEditing` does not update the open edit at once: 2 failed, 33 passed. The hook's conflict and frozen tests, which type a whole amount in one event.
+  - `changeEditing` lets a change through while frozen: 1 failed, 34 passed. The hook's frozen test.
+  - `cancelEditing` never clears the notice (M5a), or always clears it (M5b): 35 passed each before the fix round. They were not equivalent: the race below tells them apart. Both are killed now, M5a by `reloading a conflict clears the old notice` and M5b by `cancelling an edit after a refused restore brings the notice back`. R1 is killed by `starting an edit clears the notice`. `remove`, `restore` and `settleDraft` also set a notice and leave the edit open: the screen draws no Delete on the edit form, and the hook does not guard any of the three against an open edit. The one rule that sets a notice and closes the edit is `submitEdit`'s no-usable-record branch. On the screen, a notice meets an open edit only in a race: an entry opened in edit mode from History reads as deleted, its Restore is refused just as another device restores it, and the reload opens the edit with the refusal still shown. There Cancel keeps the notice and Reload clears it, as today's screen did.
+  - Removing `!seen` from `submitEdit`, or the ready check from `startEditing`: `npm run typecheck:app` fails (TS18047 `'seen' is possibly 'null'`; TS2339 `Property 'record' does not exist on type 'RecordLoaded'`).
+- **Gate** (worktree root, after the restores):
+  - `npm run typecheck:app`: passes.
+  - `npm run typecheck:routes -w gogospend-app`: passes.
+  - `npm run test:app`: 29 passed, 0 failed (deviation 8).
+  - `npm run test:unit`: 734 passed, 0 failed (deviation 8).
+  - `npm run test:render -w gogospend-app --` the six files that draw the record screen (`record/recordActions`, `RecordScreen`, `RecordReceiptReload`, `import/RecordReceipt`, `HistoryReturn`, `dev/catalogue/largeText`): 6 files, 99 passed (96 before the fix round).
+  - `npm run test:render -w gogospend-app -- src/screens/redesign/record/recordActions.render.test.tsx`: 6 passed, 0 failed (3 before the fix round).
+  - `npm run test:render -w gogospend-app -- src/dev/catalogue/CatalogueScreen.render.test.tsx src/dev/catalogue/screenReader.render.test.tsx -t "record-"`: 18 passed, 486 skipped.
+  - `npm run test:render -w gogospend-app`: 84 files passed, 1595 tests passed (the catalogue's 262 among them; 1592 before the fix round).
+  - `npm run export:web -w gogospend-app -- --max-workers 2`: passes.
+  - `git diff --check origin/claude/p1a-vault-core...HEAD`: clean.
+- **Deviations:**
+  1. The RED was recorded after the move (see How it was built): RED 1 against the moved hook with its three actions stubbed, RED 2 against the moved hook before the freeze.
+  2. `submitEdit()` takes no argument, as the plan's signature says. It reads the open edit. While today's conflict panel is up, it rebases the edit on the server's version itself (Apply my change), which the screen did before calling it.
+  3. The open edit is kept in a ref beside the state, and `setEditing` writes both, so several keys or changes in one event all land and `submitEdit()` reads the latest edit. The screen sends one key per press and sees no change.
+  4. `changeEditing` holds the freeze for field changes, as `pressKey` does; the screen's field handler only describes the change.
+  5. `cancelEditing` serves both Cancel and Reload. It clears the notice only when leaving a conflict, as Reload did; Cancel never did.
+  6. `RecordScreen` no longer calls `useBunColors()` and `useDateLocale()` at its top. Neither value was used there; the receipt and the conflict panel read their own.
+  7. The hook's frozen test also checks that a field change does nothing while frozen. The plan does not name this assertion.
+  8. The counts differ from the brief's pre-filled numbers (test:app 28, test:unit 694, full render 1590). The brief's probe was at e546bee. When this task merged, the integration head had moved past it (#73, #76, #77 and #78), and the orchestrator's update for this task said BLOCKED only for a file conflict. The counts above are the measured ones. test:app (29) and test:unit (734) were measured on a scratch copy of `bdf6b12` without this change, and this change adds no test to either suite. The render suite's two extra cases are `a change pulled from another phone refreshes the list in place` (HistoryScreen.render.test.tsx) and `a change pulled from another phone refreshes Home in place` (HomeScreen.render.test.tsx), both from the merged head. The catalogue's 262 is CatalogueScreen.render.test.tsx alone; the catalogue folder holds 513 test cases (`vitest list`).
+- **The carry rule:** at `bdf6b12` no 1D addition is in `RecordScreen.tsx` (1D-T7 and 1D-T9 have not merged). Nothing was carried: the hook has no `choicePanel` and sends no event.
+- **Not applicable:** the database suites, the edge and the API. This task changes no query, route or contract.
+- **SKIPPED:** none. The task names no device or simulator check, and the record screen looks the same.
+- **Notes for later tasks:**
+  - P2-T26 and P2-T27 read `useRecordActions` from `apps/app/src/screens/redesign/record/recordActions.ts`. During today's conflict, `submitEdit()` is Apply my change. `changeEditing` does nothing while `editing.unconfirmed`. `cancelEditing()` closes the edit. `startEditing()` clears the notice, and `cancelEditing()` clears it only when leaving a conflict (`editing.conflict` set). 1D-T9 must keep `editing.conflict` as that signal.
+  - 1D-T7 puts `record_edited`, `record_deleted` with `undo_used`, and `record_restored` into this hook's `submitEdit`, `remove` and `restore`, after the acknowledgement.
+  - 1D-T9 puts the C16 flow into this hook's `submitEdit` and load, and adds `choicePanel` to `RecordActionsState`.
+  - `HistoryReturn.render.test.tsx` came with the merge, with #326's 20 s budget for its record-and-back test. It passed unchanged.
+
+## P3: Photos and Bun AI
+
+Phase 3 adds photos and Bun AI (plan `docs/superpowers/plans/2026-10-25-jotbun-p3-photos-bun-ai.md`). Task 1 is the phone's slip QR module: a parser for the Thai bank slip verification QR and a decoder port with no native decoder yet.
+
+### P3 Task 1: The phone's slip QR module
+
+- **Status:** built and verified locally on `p3/t1-slip-qr`, on top of `75b3625`. Committed locally, not pushed. Capability `P3:slip-qr`. The independent review is the controller's, after this receipt.
+- **Files** (all new, in `apps/app/src/slips/`, pure: relative imports only, no React or native import):
+  - `slipQr.ts`: `SlipQr`, `SLIP_QR_API_ID` (`000001`, B14), `crc16CcittFalse` (CRC-16/CCITT-FALSE over the UTF-8 bytes) and `parseSlipQr`.
+  - `qrDecoder.ts`: `QrDecoder`, `noQrDecoder`, `fakeQrDecoder`, `installQrDecoder`, `getAppQrDecoder` and `slipQrIn` (A13). The app's decoder is `noQrDecoder` until P3-T12 installs its adapter.
+  - Node tests: `slipQr.test.ts` (13), `qrDecoder.test.ts` (5).
+- **RED to GREEN:**
+  - Typed stubs first: the plan's three (`parseSlipQr` null, `crc16CcittFalse` 0, `slipQrIn` null), plus `fakeQrDecoder` answering `noQrDecoder`, `installQrDecoder` doing nothing and `getAppQrDecoder` answering `noQrDecoder`.
+  - RED, `npm run test:unit -w gogospend-app -- src/slips/slipQr.test.ts src/slips/qrDecoder.test.ts`: 17 failed, 1 passed, every failure an `AssertionError`. The pass is `noQrDecoder is unavailable and finds nothing` (`noQrDecoder` is final in the stub). `npm run typecheck:app` passed with the stubs.
+  - GREEN, the same command: 18 passed, 0 failed.
+- **Mutation check:** sha256 of both modules recorded before and after (equal). Each mutant was applied in place, both focused files run, the file restored and the restore checked (`briefs/P3-T1-files/mutants.mjs`). 50 mutants: 48 killed, 2 equivalent.
+  - M1 (plan), skip the CRC comparison: killed, `the CRC covers everything up to 9104 and is read in either case`.
+  - M2 (plan), accept any root id: killed, `a slip-shaped QR whose root is not 000001 is not a bank slip (B14)`.
+  - M3 (plan), drop the padding: killed, `a CRC whose leading zero was dropped is padded back`.
+  - M4 no short CRC at the top level: killed (1 failed, 17 passed): `a CRC whose leading zero was dropped is padded back`.
+  - M5 CRC compared with case: killed (13 failed, 5 passed): `slipQrIn returns the first payload that is a bank slip`; `a decoder that throws finds no slip`; `a Thai bank slip QR gives its sending bank and reference`; `a CRC whose leading zero was dropped is padded back`; `TrueMoney and payment QR codes are not bank slips`; `a slip-shaped QR whose root is not 000001 is not a bank slip (B14)`; `anything malformed is null`; `a slip QR may be 512 characters long, skip other fields and leave out 51`; `a reference may be 64 letters and digits in either case, not 65`; `one root, and one CRC field of length 04 that comes last`; `every field header is four digits and every root field fits the root`; `the bank code is three digits and each root field appears once`; `only printable ASCII counts`.
+  - M6 no text check: killed (2 failed, 16 passed): `anything malformed is null`; `only printable ASCII counts`.
+  - M7 513 characters allowed: killed (1 failed, 17 passed): `anything malformed is null`.
+  - M8 511 characters at most: killed (1 failed, 17 passed): `a slip QR may be 512 characters long, skip other fields and leave out 51`.
+  - M9 any character allowed: killed (1 failed, 17 passed): `only printable ASCII counts`.
+  - M10 no trim: killed (1 failed, 17 passed): `a Thai bank slip QR gives its sending bank and reference`.
+  - M11 no header check: killed (1 failed, 17 passed): `every field header is four digits and every root field fits the root`.
+  - M12 no overrun check: killed (3 failed, 15 passed): `anything malformed is null`; `one root, and one CRC field of length 04 that comes last`; `every field header is four digits and every root field fits the root`.
+  - M13 short CRC inside the root too: killed (1 failed, 17 passed): `every field header is four digits and every root field fits the root`.
+  - M14 nothing after 9104 allowed: killed (1 failed, 17 passed): `one root, and one CRC field of length 04 that comes last`.
+  - M17 last field need not be 91: killed (1 failed, 17 passed): `one root, and one CRC field of length 04 that comes last`.
+  - M18 91 of any length: killed (1 failed, 17 passed): `one root, and one CRC field of length 04 that comes last`.
+  - M19 two roots allowed: killed (1 failed, 17 passed): `one root, and one CRC field of length 04 that comes last`.
+  - M20 51 unchecked: killed (1 failed, 17 passed): `anything malformed is null`.
+  - M21 an earlier 91 allowed: killed (1 failed, 17 passed): `one root, and one CRC field of length 04 that comes last`.
+  - M22 no-root check removed: killed (1 failed, 17 passed): `one root, and one CRC field of length 04 that comes last`.
+  - M23 top-level null check removed (parseSlipQr throws): killed (4 failed, 14 passed): `slipQrIn returns the first payload that is a bank slip`; `anything malformed is null`; `one root, and one CRC field of length 04 that comes last`; `every field header is four digits and every root field fits the root`.
+  - M24 root null check removed (parseSlipQr throws): killed (2 failed, 16 passed): `anything malformed is null`; `every field header is four digits and every root field fits the root`.
+  - M25 bank code unchecked: killed (1 failed, 17 passed): `the bank code is three digits and each root field appears once`.
+  - M26 reference of 65: killed (1 failed, 17 passed): `a reference may be 64 letters and digits in either case, not 65`.
+  - M27 reference of 63 at most: killed (1 failed, 17 passed): `a reference may be 64 letters and digits in either case, not 65`.
+  - M28 reference with a space: killed (1 failed, 17 passed): `anything malformed is null`.
+  - M29 matches without the null check: killed (2 failed, 16 passed): `anything malformed is null`; `the bank code is three digits and each root field appears once`.
+  - M30 a repeated root field takes the first: killed (1 failed, 17 passed): `the bank code is three digits and each root field appears once`.
+  - M31 CRC starts at 0: killed (15 failed, 3 passed): `slipQrIn returns the first payload that is a bank slip`; `a decoder that throws finds no slip`; `a Thai bank slip QR gives its sending bank and reference`; `the CRC covers everything up to 9104 and is read in either case`; `a CRC whose leading zero was dropped is padded back`; `TrueMoney and payment QR codes are not bank slips`; `a slip-shaped QR whose root is not 000001 is not a bank slip (B14)`; `anything malformed is null`; `the CRC is CRC-16/CCITT-FALSE over the UTF-8 bytes`; `a slip QR may be 512 characters long, skip other fields and leave out 51`; `a reference may be 64 letters and digits in either case, not 65`; `one root, and one CRC field of length 04 that comes last`; `every field header is four digits and every root field fits the root`; `the bank code is three digits and each root field appears once`; `only printable ASCII counts`.
+  - M32 CRC over UTF-16 units: killed (1 failed, 17 passed): `the CRC is CRC-16/CCITT-FALSE over the UTF-8 bytes`.
+  - M33 CRC polynomial 0x8005: killed (15 failed, 3 passed): `slipQrIn returns the first payload that is a bank slip`; `a decoder that throws finds no slip`; `a Thai bank slip QR gives its sending bank and reference`; `the CRC covers everything up to 9104 and is read in either case`; `a CRC whose leading zero was dropped is padded back`; `TrueMoney and payment QR codes are not bank slips`; `a slip-shaped QR whose root is not 000001 is not a bank slip (B14)`; `anything malformed is null`; `the CRC is CRC-16/CCITT-FALSE over the UTF-8 bytes`; `a slip QR may be 512 characters long, skip other fields and leave out 51`; `a reference may be 64 letters and digits in either case, not 65`; `one root, and one CRC field of length 04 that comes last`; `every field header is four digits and every root field fits the root`; `the bank code is three digits and each root field appears once`; `only printable ASCII counts`.
+  - M34 printable ASCII without the space: killed (1 failed, 17 passed): `only printable ASCII counts`.
+  - M35 printable ASCII without ~: killed (1 failed, 17 passed): `only printable ASCII counts`.
+  - M36 reference without lower case: killed (1 failed, 17 passed): `a reference may be 64 letters and digits in either case, not 65`.
+  - M37 reference without upper case: killed (1 failed, 17 passed): `a reference may be 64 letters and digits in either case, not 65`.
+  - M38 bank code of two digits allowed: killed (1 failed, 17 passed): `the bank code is three digits and each root field appears once`.
+  - M39 bank code of four digits allowed: killed (1 failed, 17 passed): `the bank code is three digits and each root field appears once`.
+  - M40 51 compared without case: killed (1 failed, 17 passed): `anything malformed is null`.
+  - M41 API id constant changed: killed (14 failed, 4 passed): `slipQrIn returns the first payload that is a bank slip`; `a decoder that throws finds no slip`; `a Thai bank slip QR gives its sending bank and reference`; `the CRC covers everything up to 9104 and is read in either case`; `a CRC whose leading zero was dropped is padded back`; `TrueMoney and payment QR codes are not bank slips`; `a slip-shaped QR whose root is not 000001 is not a bank slip (B14)`; `anything malformed is null`; `a slip QR may be 512 characters long, skip other fields and leave out 51`; `a reference may be 64 letters and digits in either case, not 65`; `one root, and one CRC field of length 04 that comes last`; `every field header is four digits and every root field fits the root`; `the bank code is three digits and each root field appears once`; `only printable ASCII counts`.
+  - Q1 noQrDecoder available: killed (1 failed, 17 passed): `noQrDecoder is unavailable and finds nothing`.
+  - Q2 fake decoder unavailable: killed (1 failed, 17 passed): `fakeQrDecoder is available and answers only the uris it was given`.
+  - Q3 fake decoder reads inherited keys: killed (1 failed, 17 passed): `fakeQrDecoder is available and answers only the uris it was given`.
+  - Q4 null keeps the installed decoder: killed (1 failed, 17 passed): `installQrDecoder replaces the app's decoder and null restores noQrDecoder`.
+  - Q5 install ignored: killed (1 failed, 17 passed): `installQrDecoder replaces the app's decoder and null restores noQrDecoder`.
+  - Q6 get always answers noQrDecoder: killed (1 failed, 17 passed): `installQrDecoder replaces the app's decoder and null restores noQrDecoder`.
+  - Q7 no try and catch in slipQrIn: killed (1 failed, 17 passed): `a decoder that throws finds no slip`.
+  - Q8 the last slip wins: killed (1 failed, 17 passed): `slipQrIn returns the first payload that is a bank slip`.
+  - Q9 only the first payload is read: killed (1 failed, 17 passed): `slipQrIn returns the first payload that is a bank slip`.
+  - Equivalent: M15 (the short-CRC exception without `tag === '91'`) and M16 (without `length === '04'`). A short value can only be the last field, and `parseSlipQr` refuses a last field that is not `91` of length `04`, so no input changes its answer.
+- **Gate** (worktree root):
+  - `npm run typecheck:app`: passes.
+  - `npm run typecheck:routes -w gogospend-app`: passes.
+  - `npm run test:app`: 29 passed.
+  - `npm run test:unit`: 760 passed (742 before this task; the 18 new tests are the difference).
+  - `npm run test:render -w gogospend-app`: 83 files, 1591 tests passed.
+  - `npm run export:web -w gogospend-app -- --max-workers 2`: passes (`Exported: dist`).
+  - `git diff --check` and `git diff --cached --check` before the commit: clean. The range check `git diff --check origin/claude/p1a-vault-core...HEAD` is run after the commit.
+  - Not run: the contracts, API and edge gates (nothing there changed).
+- **Deviations:**
+  1. Tests beyond the plan: seven in `slipQr.test.ts` (the CRC check value and UTF-8, 512 characters with skipped fields and no `51`, a 64- and 65-character reference in both cases, one root and a last `91` of length `04`, four-digit headers and root fields that fit, a three-digit bank and each root field once, printable ASCII) and one in `qrDecoder.test.ts` (`fakeQrDecoder is available and answers only the uris it was given`). The plan's negative tests also start with one control assertion (the valid slip they are made from parses), so they fail on the stubs. The plan's test names and assertions are kept verbatim; `anything malformed is null` also covers the empty and blank payload and `51` = `th`.
+  2. Read under "Anything else is null": the root's sub-fields must be well formed, and `00`, `01` and `02` must each appear exactly once in it; `51` is compared exactly (`th` is null).
+  3. Printable ASCII is `0x20` to `0x7E`, counted after the trim: a space or `~` in a skipped field is accepted, a tab or a Thai letter is not.
+  4. The CRC value is left-padded to four characters before one comparison, which gives the same answers as the plan's "padded with `0` and checked again". A `91` with nothing after `9104` is null.
+  5. `slipQrIn` gives `null` for a decoder that throws at once as well as one that rejects.
+- **SKIPPED:** device and native checks: nothing native here. The native decoder is P3-T12, which waits on owner Q1 (`expo-camera`, not installed). The database suites (`npm run test:db`, `npm run test:edge:db`) are SKIPPED: Docker is stopped on this machine and was not started; nothing there changed. No hosted resource was touched.
+- **Notes for later tasks:**
+  - Consumers import from `qrDecoder.ts` (A13) and call `slipQrIn(getAppQrDecoder(), uri)`. While no decoder is installed, `getAppQrDecoder().available` is `false` and every photo finds no slip, so a `null` answer alone does not mean "not a slip": a consumer that must know (A24's slips area) reads `available`.
+  - P3-T12: `createExpoCameraQrDecoder()` in `expoCameraQrDecoder.ts` returns a `QrDecoder` (its `available` a getter, which `readonly available: boolean` allows) and `app/_layout.tsx` calls `installQrDecoder(createExpoCameraQrDecoder())` once. `slipQrIn` already turns a decoder failure into `null`.
+  - A test that installs a decoder restores it with `installQrDecoder(null)` in a `finally`, as `qrDecoder.test.ts` does: the registry is module state.
+  - `parseSlipQr` answers only the bank code and reference; P4's salted hash (the boundaries' "one normalisation function in `packages/contracts`") is not part of this task.
+  - Nothing here logs; a payload must never be logged.
+
+## P5: Travel and currencies
+
+Phase P5 lets a person keep records in any currency against a home currency they pick ([plan](../superpowers/plans/2026-10-25-jotbun-p5-travel.md)). Task 1 adds the ISO 4217 table and exact BigInt rate arithmetic to the contracts.
+
+### P5 Task 1: The currency table and exact rate arithmetic
+
+- **Status:** built and verified locally on `p5/t1-currency`, on top of `75b3625`. Not pushed. The independent review is the controller's, after this receipt.
+- **Delivers:** nothing on its own; it is the base of `P5:currency`, which P5-T2 delivers.
+- **Files:**
+  - `packages/contracts/src/v1/currency.ts` (new): `ISO_4217_MINOR_UNITS` (165 codes), `MinorUnits`, `CurrencyCode`, `isCurrencyCode`, `minorUnitsOf`, `DEFAULT_HOME_CURRENCY`, `PICKER_CURRENCIES`, `CURRENCY_SYMBOLS`, `RATE_SOURCES`, `RateSource`, `parseRate`, `canonicalQuote`, `convertMinor`, `convertMinorDown`, `crossRate`, `rateFromAmounts`, `minorToDecimal`, `decimalToMinor`, `moneyText`, `rateText`. BigInt only; `Intl` is never read.
+  - `packages/contracts/src/v1/validation.ts`: `addDays(date, days)` after `bangkokDate`, with a private `DAY_MS`.
+  - `packages/contracts/src/index.ts`: `addDays` in the `./v1/validation.ts` block; the `./v1/currency.ts` value and type exports directly after the validation type export line, before the wallets line.
+  - `apps/edge/test/contracts/currency.test.ts` (new, Node): the plan's four cases verbatim, and two more (half-way rounding in zero-, two- and three-decimal currencies, JPY, KRW and BHD among them; every helper's refusals).
+- **Rules (the plan's; X1, default pending owner Q11; symbols default pending owner Q13):** with rate = N / 10^s and k = e_to - e_from, n = amount * N * 10^max(k, 0) and d = 10^s * 10^max(-k, 0); `convertMinor` is (2n + d) / (2d) and `convertMinorDown` is n / d, in BigInt. `crossRate` and `rateFromAmounts` round the exact quotient half-up once to 12 significant digits and drop trailing zeros. HK$, NT$, ₭, £ and A$ are draft symbols. ¥6,180 at 0.2312 converted at once is 142,882 satang; the day's three stored rows add to 142,881.
+- **RED to GREEN:**
+  - Typed stubs first: every export with its final name and type; empty tables; functions returning `false`, `2`, `0n`, `''` or `null`; `addDays` returning `''`.
+  - RED, `npm run test:edge -- test/contracts/currency.test.ts`: 6 failed, 0 passed, each on an assertion, none on a load error. First failing lines: `[2, 2, 2, 2, 2, 2, 2, 2]` against `[2, +0, +0, +0, 2, 2, 3, 4]`; `[0n, 0n, 0n, 0n, 0n]` against `[106814n, 27744n, 8323n, …(2)]`; `['', '', '', '']` against `['0.2317', '0.2308', '0.2312', …(1)]`; `['', '', '']` against `['0.2312', '1', '765.6']`; `[0n, 0n, 0n, 0n, 0n]` against `[913n, 123n, 51n, 19n, 14n]`; `{}` against `{ THB: '฿', JPY: '¥', KRW: '₩', …(11) }`.
+  - GREEN, the same command: 6 passed, 0 failed.
+- **Mutation check** (`mutants.mjs` from the brief: each mutant applied alone, the focused file run with Vitest's JSON reporter, the file restored and its sha256 compared): 27 of 27 killed; survivors: none. Every restore matched, and `currency.ts` still hashes to its reference sha256 afterwards.
+  - The plan's three: half-even killed (2 of 6 failed; `5` at `0.5` reads `2n`); truncation killed (3 of 6 failed; ¥2,580 at 0.2317 reads 59,778); exponents from `Intl.NumberFormat` killed (2 of 6 failed; LAK reads 0 under Intl on this Node, checked).
+  - Guards: M4 to M27 all killed, as the brief's table lists.
+  - Equivalence: with the zero check removed, `rateFromAmounts('0', ...)` still throws a RangeError (BigInt division by zero); the `toMinor` of 0 case kills that mutant.
+- **Gate** (worktree root):
+  - `npm run typecheck`: passed (exit 0; contracts and API `tsc`).
+  - `npm run typecheck:app`: passed (exit 0).
+  - `npm run test:api -- src/v1/contracts.spec.ts`: passed, 1 suite, 95 tests.
+  - `npm run test:api`: passed, 44 suites, 955 tests, 32 s. No timeout, so no second run.
+  - `npm run test:app`: passed, 29 tests, 0 failed (Node test runner; loads the contracts barrel).
+  - `npm run build -w gogospend-api`: passed (swc, 293 files).
+  - `node apps/api/scripts/release-graph.mjs check`: passed, 123 closure packages, no problems.
+  - `npm run typecheck:edge`: passed (exit 0).
+  - `npm run test:edge`: passed, 12 files, 151 tests; 6 are this task's, so the base at `75b3625` holds 11 files and 145.
+  - `npm run test:edge:workers`: passed, 13 files, 248 tests (run under the heavy lock).
+  - `npm run build:edge`: passed (exit 0).
+  - `npm run test:edge:db`: SKIPPED. It exits 1 at `docker info` inside `db-up`, before any container or test starts, because Docker is stopped on this machine. Docker was not started. Run under the heavy lock; CI runs it.
+  - `/usr/bin/git diff --check`: passed (prints nothing).
+- **Calls made for this task (the plan is silent; for the reviewer):**
+  1. Errors: an unknown currency is a TypeError (the plan's); `parseRate` throws `ContractValidationError` `VALIDATION_FAILED` on its field (`API_ERROR_CODES` has no rate-value code; `RATE_LIMITED` is for throttling); any other out-of-domain input is a RangeError, a programming error.
+  2. Significant digits run from the first non-zero digit to the last non-zero one, so every rate `crossRate` and `rateFromAmounts` return passes `parseRate`.
+  3. `convertMinor`, `convertMinorDown` and `rateFromAmounts` refuse a negative amount (the formula is half-up only for n >= 0); `rateFromAmounts` refuses 0 on either side.
+  4. Inside the arithmetic a rate may be any positive canonical decimal (quotes divide exactly); `parseRate` is the 12-digit gate for rates in requests.
+  5. `canonicalQuote` writes a number's shortest round-trip text without an exponent and drops leading and trailing zeros of text; more than 15 significant digits is null.
+  6. `decimalToMinor` refuses a sign, group commas, a leading zero and more decimals than the currency has, zeros included (`12.0` yen). `parseAmountInput` refuses a sign, a leading zero and a third decimal, zeros included, but it accepts group commas.
+  7. `minorToDecimal` uses an ASCII minus and always the currency's decimals; `moneyText` puts U+2212 first, before the symbol or the code.
+  8. `rateText` rounds half-up.
+  9. `addDays` throws a TypeError for a bad date or a non-integer day count and a RangeError outside years 0001 to 9999, and uses `setUTCFullYear` so years below 100 stay themselves.
+- **Deviations:** none to the plan or to the brief's code. Two wording corrections in this receipt. The edge Node suite is 12 files and 151 tests, not the brief's 11 and 136: the base at `75b3625` already carries 11 files and 145 tests, and this task adds one file and six. Call 6's comparison to `parseAmountInput` covers signs, leading zeros and extra decimals only, because `parseAmountInput` accepts group commas.
+- **SKIPPED:** `test:unit`, `test:render`, `typecheck:routes`, `export:web`, `test:db`, `test:ops`, `test:dev`: no app, API or scripts file changed and nothing calls the new names yet; `typecheck:app` and `test:app` compiled and loaded the barrel; CI runs them. `test:edge:db`: Docker is stopped on this machine, so `db-up` fails at `docker info` and no database suite ran; CI runs it. Nothing deployed; no network beyond `npm ci` and `git fetch`.
+- **Notes for the integrator:**
+  - The ISO table was rebuilt offline: the validator package's ISO 4217 list (from Wikipedia), plus ZWG (2024) and XCG (2025), minus ZWL, ANG and BGN. That matches the plan's counts exactly (178 codes; 17, 139, 7 and 2 by exponent) but was not compared with SIX's list one of 2026-09-17. The one uncertain entry is SLL; if SIX has dropped it, swap in the code it added (the tests pin only the counts and the 0, 3 and 4 lists).
+  - Provenance check: `apps/api/node_modules/validator/lib/isISO4217.js` lists 179 codes; the table equals that list less ANG, BGN, ZWL and the 13 codes with no minor unit (XAG, XAU, XBA, XBB, XBC, XBD, XDR, XPD, XPT, XSU, XTS, XUA, XXX), plus XCG and ZWG.
+  - `index.ts` is shared: this task added one name to the validation block and one block directly after the validation type export line. A conflict keeps both sides.
+  - `packages/contracts/src/v1/quickText.ts` has its own private `addDays` (line 178; not exported, not touched). The barrel exports only the `validation.ts` one, so the names do not clash.
+  - A later task that needs a signed figure converted must convert its magnitude and restore the sign: `convertMinor` refuses negatives on purpose.
