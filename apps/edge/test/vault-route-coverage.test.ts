@@ -87,6 +87,10 @@ describe('the vault route table covers each v1 route exactly once', () => {
     }
   })
 
+  it('no route is left pending for a later Phase 1A task (Task 9: the money session needs every one)', () => {
+    expect(VAULT_PENDING_ROUTES).toEqual([])
+  })
+
   it('a ported route is one vault call or one Worker route, and a step id is only a vault call', () => {
     for (const route of VAULT_V1_ROUTES) {
       const key = keyOf(route.method, route.path)
