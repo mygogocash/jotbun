@@ -16,7 +16,7 @@ const server = createServer(async (req, res) => {
   let body = '';
   for await (const chunk of req) body += chunk.toString();
   res.setHeader('Content-Type', 'application/json');
-  res.end(JSON.stringify({ authorization: req.headers.authorization, contentType: req.headers['content-type'], method: req.method, body }));
+  res.end(JSON.stringify({ authorization: req.headers.authorization, contentType: req.headers['content-type'], method: req.method, body, session: req.headers['x-gogospend-session'] ?? null }));
 });
 before(async () => {
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -80,6 +80,32 @@ test('a development build may reach wrangler dev on the LAN; a release build may
   }
   assert.doesNotThrow(transport('http://localhost:8787'));
   assert.doesNotThrow(transport('https://api.example.com'));
+});
+
+test('a v1 request with no session id is refused before anything is sent', async () => {
+  const before = requests;
+  const transport = createV1Transport({
+    baseUrl,
+    client: { platform: 'ios', version: '1.2.3' },
+    credentials: { getAccessToken: async () => 'token-1', getSessionSnapshot: () => ({ binding: null, epoch: 1 }) },
+  });
+  await assert.rejects(
+    () => transport.request('GET', '/v1/wallets', { validate: (value): value is { ok: boolean } => typeof value === 'object' && value !== null }),
+    (error: unknown) => error instanceof V1Error && error.outcome === 'signed_out' && error.status === 0,
+  );
+  assert.equal(requests, before);
+});
+
+test('a bound v1 request sends no X-GoGoSpend-Session header', async () => {
+  const transport = createV1Transport({
+    baseUrl,
+    client: { platform: 'ios', version: '1.2.3' },
+    credentials: { getAccessToken: async () => 'token-1', getSessionSnapshot: () => ({ binding: 'b'.repeat(43), epoch: 1 }) },
+  });
+  const result = await transport.request('GET', '/v1/wallets', {
+    validate: (value): value is { session: string | null } => typeof value === 'object' && value !== null && 'session' in value,
+  });
+  assert.equal(result.session, null);
 });
 
 test('a response from the previous account cannot become the current diary', async () => {

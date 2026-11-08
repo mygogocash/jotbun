@@ -82,7 +82,7 @@ test('an export request sends the proof as its body and the proof command as its
   assert.equal(sent.url, '/v1/exports');
   assert.equal(sent.headers['idempotency-key'], p.commandId);
   assert.equal(sent.headers['x-gogospend-command-schema'], '1');
-  assert.equal(sent.headers['x-gogospend-session'], 'b'.repeat(43));
+  assert.equal(sent.headers['x-gogospend-session'], undefined);
   assert.deepEqual(JSON.parse(sent.body), { proof_id: p.proofId, from: MARCH.from, through: MARCH.through });
   // An acknowledgement for another command, or not "accepted", is refused.
   replies.push({ status: 202, body: ackFor(randomUUID()) });
@@ -115,7 +115,7 @@ test('a download is checked against the ready export size and digest, byte order
   assert.equal(csv, CSV);
   assert.equal(seen[0].method, 'GET');
   assert.equal(seen[0].url, GRANT.url);
-  assert.equal(seen[0].headers['x-gogospend-session'], 'b'.repeat(43));
+  assert.equal(seen[0].headers['x-gogospend-session'], undefined);
   replies.push({ status: 200, raw: CSV.replace('2026-03-01', '2026-03-02'), type: 'text/csv; charset=utf-8' });
   assert.equal((await failure(() => resources().downloadExport(GRANT, { bytes: CSV_BYTES, sha256: CSV_SHA }))).outcome, 'invalid_response');
   replies.push({ status: 200, raw: CSV.slice(0, -2), type: 'text/csv; charset=utf-8' });

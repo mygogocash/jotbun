@@ -13,6 +13,10 @@ import { useReminderUpkeep } from '@mobile/notifications/useReminderUpkeep';
 import { BunIntensityProvider } from '@mobile/mascot/BunIntensityProvider';
 import { HapticsProvider } from '@mobile/lib/HapticsProvider';
 import { useReducedMotion } from '@mobile/hooks/useReducedMotion';
+import { installAppAuth } from '@mobile/auth/appAuth';
+
+// Sign-in: the Better Auth provider, installed once before any screen reads the session.
+installAppAuth();
 
 // The app's language: the person's choice in Settings, else the device's
 // (Thai, English or Vietnamese). A new choice applies at once, through the

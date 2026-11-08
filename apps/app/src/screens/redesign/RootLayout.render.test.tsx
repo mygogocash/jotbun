@@ -10,6 +10,8 @@ import { AccessibilityInfo, Platform } from 'react-native';
 import { afterEach, beforeAll, beforeEach, expect, test, vi } from 'vitest';
 
 import RootLayout from '../../../app/_layout';
+import { installAppAuth } from '@mobile/auth/appAuth';
+import { getCredentialProvider } from '@mobile/auth/session';
 
 vi.mock('expo-router', async () => {
   const { Fragment, createElement } = await import('react');
@@ -37,6 +39,8 @@ const secure = vi.hoisted(() => ({ values: new Map<string, string>() }));
 vi.mock('expo-secure-store', () => ({
   getItemAsync: async (key: string) => secure.values.get(key) ?? null,
   setItemAsync: async (key: string, value: string) => { secure.values.set(key, value); },
+  deleteItemAsync: async (key: string) => { secure.values.delete(key); },
+  WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'when-unlocked-this-device-only',
 }));
 vi.mock('react-native-safe-area-context', async () => {
   const { Fragment, createElement } = await import('react');
@@ -105,4 +109,10 @@ test("on native nothing starts before the saved language is read: no screen and 
   expect(screen.getByLabelText('Loading Jotbun')).toBeTruthy();
   await waitFor(() => expect(screen.getByTestId('screen-locale').textContent).toBe('th'));
   expect(new Set(upkeep.locales)).toEqual(new Set(['th']));
+});
+
+test("the root installs the app's sign-in once, before any screen reads the session", () => {
+  const provider = getCredentialProvider();
+  expect(provider).not.toBeNull();
+  expect(installAppAuth()).toBe(provider);
 });
