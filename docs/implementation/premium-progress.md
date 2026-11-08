@@ -1537,3 +1537,50 @@ Phase P5 lets a person keep records in any currency against a home currency they
   - `index.ts` is shared: this task added one name to the validation block and one block directly after the validation type export line. A conflict keeps both sides.
   - `packages/contracts/src/v1/quickText.ts` has its own private `addDays` (line 178; not exported, not touched). The barrel exports only the `validation.ts` one, so the names do not clash.
   - A later task that needs a signed figure converted must convert its magnitude and restore the sign: `convertMinor` refuses negatives on purpose.
+
+Phase P5 lets a person keep records in any currency against a home currency they pick ([plan](../superpowers/plans/2026-10-25-jotbun-p5-travel.md)).
+
+### P5 Task 4: The vault migration: a rebuilt wallets table, currency columns, trips and settings
+
+- **Status:** built and verified locally on `p5/t4-vault-migration`, on top of `800680d`. Not pushed. The independent review is the controller's, after this receipt. The integration head has since moved to `8f04a3b` (1D-T1 and the iOS keyboard fix); it is not merged here, and no file under `apps/edge` differs between `800680d` and `8f04a3b`.
+- **Path proven:** deferred foreign keys (`PRAGMA defer_foreign_keys = ON` before the swap, `OFF` after the rename), inside the migrator's `transactionSync`, in workerd. The legacy-rename fallback was not needed and is not written. Triggers and views naming `wallets` before the migration: none (in `0000` and `0001`); after it: `wallets_currency_immutable` only. The primary key index is `sqlite_autoindex_wallets_1` before and after (the planner's observation; the suite checks that `PRAGMA index_list(wallets)` is unchanged).
+- **Files:**
+  - `apps/edge/src/vault/migrations/0002_currencies_trips.sql` (new; the plan's `NNNN`): B18's wallets rebuild with any ISO-shaped currency and the three looks; `wallets_currency_immutable` (Q7); `categories.icon` and `pack_key` (never on a built-in); eight `transactions` columns by ADD COLUMN, the home-amount backfill and `transactions_trip_idx`; `trips` with `trips_dates_idx`; `settings`. All new tables STRICT; `0000` and `0001` unchanged.
+  - `apps/edge/src/vault/migrations/index.ts`: journal entry `idx` 2, `when` 1761523200000, tag `0002_currencies_trips`, key `m0002`.
+  - `apps/edge/src/vault/schema.ts`: the new columns on `categories`, `wallets` and `transactions`; tables `trips` and `settings`; `VAULT_CORE_TABLES` now lists 31.
+  - `apps/edge/test/workers/support/migrations.ts` (new): `migrateBefore(state, suffix)`.
+  - `apps/edge/test/workers/currency-migration.test.ts` (new): the plan's six cases and four more (36 rule rows, the trip indexes, the previous release's writes, a failed then retried upgrade).
+  - `apps/edge/test/workers/vault-schema.test.ts`: the 31-table list, the journal order checks, the migration counts from the journal's length.
+- **RED to GREEN:**
+  - Typed seams first: the journal entry and a stub migration (`SELECT 1;`), and the Drizzle columns and tables.
+  - RED, `npm run test:edge:workers -- test/workers/currency-migration.test.ts test/workers/vault-schema.test.ts`: 12 failed, 12 passed, each failure an AssertionError. The first failing assertion of each, shortened: rebuilt wallets `[ { …(10) }, { …(10) } ]` against `[ { …(13) }, { …(13) } ]`; referencing tables `[ 'id', 'name', 'currency', …(6) ]` against `…(9)`; older records `currency: undefined` against `'THB'`; wallet currency got `CHECK constraint failed` where `/wallet currency is immutable/` was expected; new columns got `table transactions has no column name` where `/CHECK/` was expected; triggers and views `undefined` against `{ type, tbl_name }`; phase 5 writes `[ [ …(2) ], …(35) ]` against the same shape; trip indexes `[]` against two index rows; previous release's writes `id: undefined` against `type: 'expense'`; failed upgrade `promise resolved "undefined" instead of rejecting`; core tables `[ 'account_state', …(28) ]` against `…(30)`; Drizzle drift `[ [ 'archived', true ], …(10) ]` against `…(8)`.
+  - GREEN, the first case alone (`Tests 1 passed | 9 skipped (10)`), then the same command: 24 passed, 0 failed. The whole Workers suite: 14 files, 258 passed. Re-confirmed after the mutation loop: the unmutated focused files 24 of 24 before it, and the Workers suite 14 files, 258 passed, after it.
+- **Mutation check** (the brief's Step 5 list, Appendix H, applied one at a time with the Edit tool, since the planner's `mutants.mjs` was lost; see Deviations): 31 of 31 killed; survivors: none.
+  - The plan's three: the copy without `archived` killed (2 of 24: cases 1 and 10); no immutability trigger killed (2 of 24: cases 4 and 6); no backfill killed (1 of 24: case 3).
+  - The rest: M4 and M5 killed (10 of 24 each: all ten currency cases); M6 and M7 by case 4; M8 to M13 by case 5; M14 and M15 by case 8; M16 to M25 and M29 by case 7; M26 and M27 by cases 3 and 9; M28 by case 3; M30 by the Drizzle drift case; M31 by cases 3, 6 and 10. All killed, as the brief lists.
+- **Gate** (worktree root):
+  - `npm run typecheck:edge`: passed (exit 0).
+  - `npm run test:edge`: passed, 12 files, 156 tests.
+  - `npm run test:edge:workers`, under the heavy lock (taken and released): passed, 14 files, 258 tests.
+  - `npm run build:edge`: passed; `grep -c wallets_currency_immutable apps/edge/dist/jotbun_vault/index.js` prints 1.
+  - `git diff --check`: clean before the commit.
+- **Calls made for this task (the plan is silent; for the reviewer):**
+  1. The number `0002` and `when` 1761523200000 (one day after `0001`).
+  2. The trigger and view case compares the rows other than `wallets_currency_immutable`, which this migration adds and whose SQL names `wallets`.
+  3. The two plan cases that would pass without a migration first assert that the rebuild ran.
+  4. "A real date" is `date(x) IS x`, with no 1970 floor.
+  5. `wallets.currency` has no default (the plan's step 2 replaces the column; every writer names it).
+  6. `trips.version` and `settings.version` default to 1 with `>= 1`; `settings.entity_id` is NOT NULL; `trip_id` has no shape check and no foreign key (X4).
+  7. `schema.ts` declares no defaults; the constraints live in the SQL.
+  8. `vault-schema.test.ts` reads the migration count from the journal and checks the journal's order.
+- **Deviations:**
+  1. The planner's scratch folder (`mutants.mjs`, `SHA256SUMS`, the verified copies and the brief file) was cleared by macOS during an interruption. The worktree was verified by content against the brief's code blocks, not by checksum, as the controller directed. The checksum checks made before the interruption had passed.
+  2. The mutation step ran with the Edit tool, not `mutants.mjs`. Each mutant was applied to the brief's text, run on the two focused files with Vitest's JSON reporter under the heavy lock (taken and released around each run), restored with Edit, and confirmed with `git diff` against a baseline taken before the first mutant. The three mutated files were also compared with backups, because the SQL file and the test helper are untracked and `git diff` cannot show them. An earlier script run had logged 31 killed before the interruption was reported; the controller asked for this re-run.
+  3. No other deviation from the brief.
+- **SKIPPED:** `test:edge:db`: Docker is stopped on this machine (`docker info` failed), and the suite starts PostgreSQL through `scripts/dev-v1.mjs db-up`; CI runs it. `typecheck`, `test:api`, `test:db` and the app gates: no contracts, API or app file changed. Nothing deployed; no network beyond `npm ci` and `git fetch`.
+- **Notes for the integrator:**
+  - Renumbering: if another vault migration merges first, rename the file to the next number, give its journal entry the next `idx`, the key `mNNNN` and a `when` later than every earlier entry (never equal: the migrator skips an entry whose `when` is not later than the last applied one, forever, on every upgraded vault), and update the comment in `schema.ts` that names the file. `vault-schema.test.ts` checks the order; `currency-migration.test.ts` finds the migration by its `_currencies_trips` suffix.
+  - If a migration numbered before this one adds a trigger or view whose SQL names `wallets`, this migration must drop it in step 1 and create it again after step 4; "the triggers and views naming wallets are the same after the rebuild" fails until it does. A new table referencing `wallets` (P4's `slip_accounts`) needs nothing: "every table that references wallets keeps its rows" reads the references from `PRAGMA foreign_key_list` and checks it.
+  - Any test that pins the migration count must read `VAULT_MIGRATIONS.journal.entries.length`, and any table list must add `settings` and `trips`.
+  - Records the previous release writes after this migration have a null `home_amount_minor`; phase 5 reads must use `coalesce(home_amount_minor, amount_minor)` and `CAST(... AS TEXT)`. Nothing reads the new columns yet.
+  - An upgrade that fails leaves the vault in its older shape; the object resets and the next wake retries. A vault whose upgrade keeps failing refuses calls until a fixed release ships. The planner's upgrade of 90,100 records took 576 ms in local workerd, inside `blockConcurrencyWhile`.
