@@ -30,14 +30,17 @@ describe('the vault route table covers each v1 route exactly once', () => {
     expect(new Set(listed).size).toBe(listed.length)
   })
 
-  it('Tasks 2 to 6 and 8a, and the bridge, port the front door, wallets, categories, transactions, budgets, command status, the sync delta feed and the cashback catalogue, and nothing else', () => {
+  it('Tasks 2 to 7 and 8a, and the bridge, port the front door, wallets, categories, transactions, budgets, history, the summary, command status, the sync delta feed and the cashback catalogue, and nothing else', () => {
     expect(VAULT_V1_ROUTES.map((route) => keyOf(route.method, route.path)).sort()).toEqual([
       'DELETE /v1/transactions/:id',
       'GET /v1/bridge/gogocash/catalogue',
       'GET /v1/budgets/:month',
       'GET /v1/categories',
+      'GET /v1/history',
+      'GET /v1/history/deleted',
       'GET /v1/me',
       'GET /v1/policies',
+      'GET /v1/summary',
       'GET /v1/sync/changes',
       'GET /v1/transactions/:id',
       'GET /v1/wallets',
