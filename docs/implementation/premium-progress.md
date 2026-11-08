@@ -1253,3 +1253,58 @@ Phase 3 adds photos and Bun AI (plan `docs/superpowers/plans/2026-10-25-jotbun-p
   - A test that installs a decoder restores it with `installQrDecoder(null)` in a `finally`, as `qrDecoder.test.ts` does: the registry is module state.
   - `parseSlipQr` answers only the bank code and reference; P4's salted hash (the boundaries' "one normalisation function in `packages/contracts`") is not part of this task.
   - Nothing here logs; a payload must never be logged.
+
+## P5: Travel and currencies
+
+Phase P5 lets a person keep records in any currency against a home currency they pick ([plan](../superpowers/plans/2026-10-25-jotbun-p5-travel.md)). Task 1 adds the ISO 4217 table and exact BigInt rate arithmetic to the contracts.
+
+### P5 Task 1: The currency table and exact rate arithmetic
+
+- **Status:** built and verified locally on `p5/t1-currency`, on top of `75b3625`. Not pushed. The independent review is the controller's, after this receipt.
+- **Delivers:** nothing on its own; it is the base of `P5:currency`, which P5-T2 delivers.
+- **Files:**
+  - `packages/contracts/src/v1/currency.ts` (new): `ISO_4217_MINOR_UNITS` (165 codes), `MinorUnits`, `CurrencyCode`, `isCurrencyCode`, `minorUnitsOf`, `DEFAULT_HOME_CURRENCY`, `PICKER_CURRENCIES`, `CURRENCY_SYMBOLS`, `RATE_SOURCES`, `RateSource`, `parseRate`, `canonicalQuote`, `convertMinor`, `convertMinorDown`, `crossRate`, `rateFromAmounts`, `minorToDecimal`, `decimalToMinor`, `moneyText`, `rateText`. BigInt only; `Intl` is never read.
+  - `packages/contracts/src/v1/validation.ts`: `addDays(date, days)` after `bangkokDate`, with a private `DAY_MS`.
+  - `packages/contracts/src/index.ts`: `addDays` in the `./v1/validation.ts` block; the `./v1/currency.ts` value and type exports directly after the validation type export line, before the wallets line.
+  - `apps/edge/test/contracts/currency.test.ts` (new, Node): the plan's four cases verbatim, and two more (half-way rounding in zero-, two- and three-decimal currencies, JPY, KRW and BHD among them; every helper's refusals).
+- **Rules (the plan's; X1, default pending owner Q11; symbols default pending owner Q13):** with rate = N / 10^s and k = e_to - e_from, n = amount * N * 10^max(k, 0) and d = 10^s * 10^max(-k, 0); `convertMinor` is (2n + d) / (2d) and `convertMinorDown` is n / d, in BigInt. `crossRate` and `rateFromAmounts` round the exact quotient half-up once to 12 significant digits and drop trailing zeros. HK$, NT$, ₭, £ and A$ are draft symbols. ¥6,180 at 0.2312 converted at once is 142,882 satang; the day's three stored rows add to 142,881.
+- **RED to GREEN:**
+  - Typed stubs first: every export with its final name and type; empty tables; functions returning `false`, `2`, `0n`, `''` or `null`; `addDays` returning `''`.
+  - RED, `npm run test:edge -- test/contracts/currency.test.ts`: 6 failed, 0 passed, each on an assertion, none on a load error. First failing lines: `[2, 2, 2, 2, 2, 2, 2, 2]` against `[2, +0, +0, +0, 2, 2, 3, 4]`; `[0n, 0n, 0n, 0n, 0n]` against `[106814n, 27744n, 8323n, …(2)]`; `['', '', '', '']` against `['0.2317', '0.2308', '0.2312', …(1)]`; `['', '', '']` against `['0.2312', '1', '765.6']`; `[0n, 0n, 0n, 0n, 0n]` against `[913n, 123n, 51n, 19n, 14n]`; `{}` against `{ THB: '฿', JPY: '¥', KRW: '₩', …(11) }`.
+  - GREEN, the same command: 6 passed, 0 failed.
+- **Mutation check** (`mutants.mjs` from the brief: each mutant applied alone, the focused file run with Vitest's JSON reporter, the file restored and its sha256 compared): 27 of 27 killed; survivors: none. Every restore matched, and `currency.ts` still hashes to its reference sha256 afterwards.
+  - The plan's three: half-even killed (2 of 6 failed; `5` at `0.5` reads `2n`); truncation killed (3 of 6 failed; ¥2,580 at 0.2317 reads 59,778); exponents from `Intl.NumberFormat` killed (2 of 6 failed; LAK reads 0 under Intl on this Node, checked).
+  - Guards: M4 to M27 all killed, as the brief's table lists.
+  - Equivalence: with the zero check removed, `rateFromAmounts('0', ...)` still throws a RangeError (BigInt division by zero); the `toMinor` of 0 case kills that mutant.
+- **Gate** (worktree root):
+  - `npm run typecheck`: passed (exit 0; contracts and API `tsc`).
+  - `npm run typecheck:app`: passed (exit 0).
+  - `npm run test:api -- src/v1/contracts.spec.ts`: passed, 1 suite, 95 tests.
+  - `npm run test:api`: passed, 44 suites, 955 tests, 32 s. No timeout, so no second run.
+  - `npm run test:app`: passed, 29 tests, 0 failed (Node test runner; loads the contracts barrel).
+  - `npm run build -w gogospend-api`: passed (swc, 293 files).
+  - `node apps/api/scripts/release-graph.mjs check`: passed, 123 closure packages, no problems.
+  - `npm run typecheck:edge`: passed (exit 0).
+  - `npm run test:edge`: passed, 12 files, 151 tests; 6 are this task's, so the base at `75b3625` holds 11 files and 145.
+  - `npm run test:edge:workers`: passed, 13 files, 248 tests (run under the heavy lock).
+  - `npm run build:edge`: passed (exit 0).
+  - `npm run test:edge:db`: SKIPPED. It exits 1 at `docker info` inside `db-up`, before any container or test starts, because Docker is stopped on this machine. Docker was not started. Run under the heavy lock; CI runs it.
+  - `/usr/bin/git diff --check`: passed (prints nothing).
+- **Calls made for this task (the plan is silent; for the reviewer):**
+  1. Errors: an unknown currency is a TypeError (the plan's); `parseRate` throws `ContractValidationError` `VALIDATION_FAILED` on its field (`API_ERROR_CODES` has no rate-value code; `RATE_LIMITED` is for throttling); any other out-of-domain input is a RangeError, a programming error.
+  2. Significant digits run from the first non-zero digit to the last non-zero one, so every rate `crossRate` and `rateFromAmounts` return passes `parseRate`.
+  3. `convertMinor`, `convertMinorDown` and `rateFromAmounts` refuse a negative amount (the formula is half-up only for n >= 0); `rateFromAmounts` refuses 0 on either side.
+  4. Inside the arithmetic a rate may be any positive canonical decimal (quotes divide exactly); `parseRate` is the 12-digit gate for rates in requests.
+  5. `canonicalQuote` writes a number's shortest round-trip text without an exponent and drops leading and trailing zeros of text; more than 15 significant digits is null.
+  6. `decimalToMinor` refuses a sign, group commas, a leading zero and more decimals than the currency has, zeros included (`12.0` yen). `parseAmountInput` refuses a sign, a leading zero and a third decimal, zeros included, but it accepts group commas.
+  7. `minorToDecimal` uses an ASCII minus and always the currency's decimals; `moneyText` puts U+2212 first, before the symbol or the code.
+  8. `rateText` rounds half-up.
+  9. `addDays` throws a TypeError for a bad date or a non-integer day count and a RangeError outside years 0001 to 9999, and uses `setUTCFullYear` so years below 100 stay themselves.
+- **Deviations:** none to the plan or to the brief's code. Two wording corrections in this receipt. The edge Node suite is 12 files and 151 tests, not the brief's 11 and 136: the base at `75b3625` already carries 11 files and 145 tests, and this task adds one file and six. Call 6's comparison to `parseAmountInput` covers signs, leading zeros and extra decimals only, because `parseAmountInput` accepts group commas.
+- **SKIPPED:** `test:unit`, `test:render`, `typecheck:routes`, `export:web`, `test:db`, `test:ops`, `test:dev`: no app, API or scripts file changed and nothing calls the new names yet; `typecheck:app` and `test:app` compiled and loaded the barrel; CI runs them. `test:edge:db`: Docker is stopped on this machine, so `db-up` fails at `docker info` and no database suite ran; CI runs it. Nothing deployed; no network beyond `npm ci` and `git fetch`.
+- **Notes for the integrator:**
+  - The ISO table was rebuilt offline: the validator package's ISO 4217 list (from Wikipedia), plus ZWG (2024) and XCG (2025), minus ZWL, ANG and BGN. That matches the plan's counts exactly (178 codes; 17, 139, 7 and 2 by exponent) but was not compared with SIX's list one of 2026-09-17. The one uncertain entry is SLL; if SIX has dropped it, swap in the code it added (the tests pin only the counts and the 0, 3 and 4 lists).
+  - Provenance check: `apps/api/node_modules/validator/lib/isISO4217.js` lists 179 codes; the table equals that list less ANG, BGN, ZWL and the 13 codes with no minor unit (XAG, XAU, XBA, XBB, XBC, XBD, XDR, XPD, XPT, XSU, XTS, XUA, XXX), plus XCG and ZWG.
+  - `index.ts` is shared: this task added one name to the validation block and one block directly after the validation type export line. A conflict keeps both sides.
+  - `packages/contracts/src/v1/quickText.ts` has its own private `addDays` (line 178; not exported, not touched). The barrel exports only the `validation.ts` one, so the names do not clash.
+  - A later task that needs a signed figure converted must convert its magnitude and restore the sign: `convertMinor` refuses negatives on purpose.
