@@ -25,6 +25,8 @@ export type VaultRoute = {
   body?: 'json' | 'stream'
   /** After a 2xx answer the Worker starts the vault's pending work through waitUntil (B5, 1B-T4). */
   starts?: true
+  /** The live socket (1D-T10): UserVault#fetch answers it as a WebSocket, so the route has neither `vault` nor `worker`. */
+  live?: true
 }
 
 /** The default: 201 for POST, 200 otherwise (defaultStatus in the PostgreSQL route table). */
@@ -76,6 +78,8 @@ export const VAULT_V1_ROUTES: readonly VaultRoute[] = [
   { method: 'GET', path: '/v1/summary', access: 'bound_session', vault: 'summary.get' },
   // commands/command-status.controller.ts
   { method: 'POST', path: '/v1/commands/status', access: 'bound_session', vault: 'commands.status', status: 200 },
+  // The live socket (1D-T10, §6.5): an added route, answered by UserVault#fetch as a WebSocket.
+  { method: 'GET', path: '/v1/sync/live', access: 'bound_session', live: true },
   // sync/sync.controller.ts: the delta feed (the snapshot routes are 1B).
   { method: 'GET', path: '/v1/sync/changes', access: 'bound_session', vault: 'sync.changes' },
 ]
@@ -150,3 +154,10 @@ export const VAULT_RETIRED_ROUTES: readonly string[] = [
   'POST /v1/me/global-logout',
   'POST /v1/me/identities',
 ]
+
+/**
+ * Routes the PostgreSQL edge never had (plan 1D): served here, absent from its
+ * route table, and never shadowed by one of its routes
+ * (vault-route-coverage.test.ts). 1D-T11 adds 'GET /v1/me/analytics'.
+ */
+export const VAULT_ADDED_ROUTES: readonly string[] = ['GET /v1/sync/live']
