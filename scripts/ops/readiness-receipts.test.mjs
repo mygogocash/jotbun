@@ -47,7 +47,10 @@ test('missing, failed, all-zero or local receipts fail; malformed input is refus
 test('the CLI reads stdin, never prints evidence digests, and exits 1 on a lapsed receipt', () => {
   const script = fileURLToPath(new URL('./readiness-receipts.mjs', import.meta.url));
   const run = (input, args = []) => spawnSync(process.execPath, ['--disable-warning=MODULE_TYPELESS_PACKAGE_JSON', script, ...args], { input, encoding: 'utf8' });
-  const lapsed = run(JSON.stringify({ ...fresh(), storage_contract: receipt({ recorded_at: '2026-01-01T00:00:00.000Z', valid_until: '2026-01-31T00:00:00.000Z' }, 'r2-test') }));
+  // The CLI reads the real clock, so the receipt that must stay valid is dated from today.
+  const day = 86_400_000;
+  const live = receipt({ recorded_at: new Date(Date.now() - day).toISOString(), valid_until: new Date(Date.now() + 29 * day).toISOString() });
+  const lapsed = run(JSON.stringify({ restore_rehearsal: live, storage_contract: receipt({ recorded_at: '2026-01-01T00:00:00.000Z', valid_until: '2026-01-31T00:00:00.000Z' }, 'r2-test') }));
   assert.equal(lapsed.status, 1);
   assert.match(lapsed.stdout, /receipts: storage_contract=expired valid_hours=none/);
   assert.match(lapsed.stderr, /^receipts: alert preflight failing=storage_contract/);

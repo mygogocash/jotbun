@@ -9,7 +9,7 @@ Receipts for the [premium, AI and edge plan](../superpowers/plans/2026-10-24-jot
   - the shared contracts;
   - the app's premium layer: haptics, Tell Bun, Ask Bun, the daily note, the cashback card and the Thai everyday categories;
   - eight catalogue sections for the companion area, checked in the browser in Thai, light and dark.
-  - the companion area on iOS (28 October): a development build on the iPhone 17 simulator (iOS 27.0, Xcode 27.1) drew all eight sections in Thai, and Home in dark; turned Bun's help on through the consent sheet; read “ข้าวมันไก่ 50” into a ฿50 food draft on the phone; and opened the system photo picker from Scan a slip, which needs no photo permission. It also found the keyboard problem under “Not done”.
+  - the companion area on iOS (28 October): a development build on the iPhone 17 simulator (iOS 27.0, Xcode 27.1) drew all eight sections in Thai, and Home in dark; turned Bun's help on through the consent sheet; read “ข้าวมันไก่ 50” into a ฿50 food draft on the phone; and opened the system photo picker from Scan a slip, which needs no photo permission. It also found sheets hidden under the keyboard, fixed in “Fix: sheets rise above the iOS keyboard” below.
   - the Mobbin research (plan §7, through the Mobbin connector) and its changes: Ask Bun's "can get things wrong" line, follow-up questions and settings link; the consent sheet's check-before-saving line; the slip beside Tell Bun's draft; "How cashback works". Mobbin holds no Thai apps, so Thai specifics rest on the plan's §2 findings.
 - **SKIPPED:**
   - hosted Cloudflare resources: wrangler is signed in to a GoGoCash account, but deploying waits for the owner to ask (handover rule), and no hosted PostgreSQL exists yet;
@@ -402,7 +402,7 @@ Phase 2 is the Bun Wallet on the device. Task 4 reads the days already logged in
   - P2-T36's `isLoggedToday` is true when `loggedDays()` holds today, confirmed or draft.
   - Render tests pass a seed as `createFakeDiary(view, { loggedDays })`. Pending dates on the current view are merged in while `phase` is `ready`.
   - The query binds nothing. Do not add one `?` per id here.
-## 1D: live pokes, the pending choice and PostHog
+## 1D: live pokes, the pending choice, PostHog and the proof
 
 Phase 1D adds live pokes, the pending conflict choice and PostHog to the vault core. The design is `docs/superpowers/specs/2026-10-25-jotbun-bun-wallet-cloudflare-design.md` (PostHog is its §7). Task 3 builds the server analytics as a stand-alone module; the Worker wiring is 1D-T11 and T13.
 
@@ -766,9 +766,83 @@ Phase 1B moves files and background work onto each person's vault (spec `docs/su
   - `OBJECTS` is on `V1Env`. The binding was already in `wrangler.vault.jsonc`.
 - **Integration (27 Oct):** merged after Tasks 5 and 6 of 1A (PRs #81, #80); only the receipts conflicted. On the merged tree: `typecheck:edge` passes, `test:edge` 130 passed (10 files), `test:edge:workers` 240 passed (12 files).
 
-## 1D: live pokes, the pending choice and PostHog
+## 1D: live pokes, the pending choice, PostHog and the proof
 
 Phase 1D adds live pokes, the pending choice, PostHog and the two-phone proof (plan 1D, in the controller's brief). Task 2 puts PostHog's proxy on the HTTP Worker.
+
+### 1D Task 1: The app's analytics core: the allow-list, the typed emitters, consent, the held events and the outgoing gate
+
+- **Status:** built and verified locally on `worktree-agent-abe4ba17803d852d1`: the first round in `b3b1c11`, the integration head `bdf6b12` merged in `402fe86`, the first review's fixes in `617e278`, and the confirming review's fixes in the commit with this receipt. The orchestrator merged the integration head `800680d` into the branch without a conflict when it opened the pull request. The independent review is the controller's, after this receipt.
+- **Files:**
+  - `apps/app/src/analytics/catalog.ts`: the 40 §7 events and their property rules, `PACK_KEYS`, `cleanEvent`, `cleanCommon`, `isScreenPattern` and `screenPattern`.
+  - `apps/app/src/analytics/events.ts`: the typed emitters every plan calls (R23).
+  - `apps/app/src/analytics/controller.ts`: consent, identity, the held events, `track` and `screen`. Server and store work runs one call at a time (`serialize`).
+  - `apps/app/src/analytics/gate.ts`: `gateOutgoing`, PostHog's `before_send`.
+  - `apps/app/src/analytics/bus.ts`: `setAnalytics` and `getAnalytics`; `trackClientEvent` cleans, then feeds the tests-only seam and `getAnalytics()?.track`.
+  - `apps/app/src/analytics/testing/recordAnalytics.ts`: the test helper.
+  - Tests: `catalog.test.ts`, `events.test.ts`, `controller.test.ts`, `gate.test.ts`, `neverSent.test.ts`.
+- **RED to GREEN, first round (`b3b1c11`):** typed stubs first. The five files (`npm run test:unit -w gogospend-app -- src/analytics/catalog.test.ts src/analytics/events.test.ts src/analytics/controller.test.ts src/analytics/gate.test.ts src/analytics/neverSent.test.ts`): 30 failed, 1 passed of 31 (catalog 6, events 1, controller 18 failed and 1 passed, gate 4, neverSent 1). The pass was `without a client, nothing is sent…`, which the stub already met. GREEN: 31 passed. Before the fix round, the whole `npm run test:unit -w gogospend-app` was 719 passed; one first-round assertion, `assert.deepEqual(sent, [])`, narrowed to `never[]` under `tsc` and became `assert.equal(sent.length, 0)`.
+- **Review fix round** (the controller's review of `b3b1c11`: Needs fixes):
+  1. Capture stops before a consent write. When the server answers no, or holds no answer (`unasked`), the controller applies the no, or reopens the question with `reset()` and `stopSessionRecording()`, before it writes or erases this phone's stored answer. Before, the write came first, so a store that failed left the phone in yes, capturing.
+  2. `setAccount`, `answer` and `refresh` run their server and store work one call at a time, in call order. What must happen at once still happens at the call: an account change resets the identity, and a no stops capture and replay. Before, a yes still on its way could land at the server after a later no, or be written to the store after it, and the next refresh put the phone back in yes.
+  3. This receipt sits under the plan's phase heading (Global Constraints): `## 1D: live pokes, the pending choice and PostHog` now reads `## 1D: live pokes, the pending choice, PostHog and the proof`. Task 2's section is unchanged.
+  4. P2-T7 has merged, so `a category is a built-in key, a pack key or custom` also asserts that `PACK_KEYS` equals `THAI_EVERYDAY_PACK.map((item) => item.key)`, as the plan asks. The comment in `catalog.ts` names P2-T7's pack.
+  - New tests: `a no from the server stops capture before this phone stores it`, `an answer gone from the server stops capture before this phone erases its own`, `a yes still on its way cannot outlast a later no at the server`, `a yes being stored when the person says no cannot replace the no`, `a foreground refresh waiting behind a yes cannot undo a later no`. The harness gained a store whose writes can fail or hold a yes, an erase that can fail, and a server whose consent calls can be held and landed newest first.
+  - RED, the new tests against `b3b1c11`'s controller (`npm run test:unit -w gogospend-app -- src/analytics/controller.test.ts src/analytics/catalog.test.ts`): 5 failed, 25 passed. Each failure is an assertion: the first two left the status at `yes`; the third and fifth left the server at `yes`; the fourth left `yes` in the store.
+  - GREEN: `controller.test.ts` 24 passed, 0 failed; the five files 36 passed, 0 failed.
+  - The pack-key assertion passed at once: it pins two lists that already match. M6 below shows it bites.
+- **Review fix round 2** (the controller's confirming review of `617e278`: Needs fixes):
+  5. A queued yes is checked when the queue reaches it, before anything is sent, because the server call acts for whoever is signed in at that moment. If the signed-in account is no longer the one that answered, `answer('yes')` rejects and sends nothing. If a later `answer()` replaced it, the yes resolves without being sent. A refresh alone does not stop it. Before, a yes queued behind a slow call was sent under the next account's session once that account had signed in, and that account then entered yes without ever answering. And a yes that a later no had replaced still reached the server, just before the no.
+  - New tests: `a yes waiting behind another call is refused once another account has signed in`, `a yes on its way when another account signs in is never stored or applied for the next one`, `a yes still waiting when the person says no is never sent`, `a refresh after a yes does not keep the yes from the server`. The harness gained `sessions()`: two accounts on one phone, where each server call acts for whoever holds the session when it is made, as the shared v1 transport does.
+  - RED on `617e278` (`npm run test:unit -w gogospend-app -- src/analytics/controller.test.ts`): 2 failed, 26 passed. `a yes waiting behind another call…` left `[ 'B:yes' ]` at the server; `a yes still waiting when the person says no…` left `[ 'A:yes', 'A:no' ]`. The other two passed on `617e278`: they pin what the fix must keep (a yes on its way is never stored or applied for the next account; a refresh after a yes still lets it through), and R5 and R3 below show they bite.
+  - GREEN: `controller.test.ts` 28 passed, 0 failed; the five files 40 passed, 0 failed.
+- **Mutation check:**
+  - First round (`b3b1c11`), each killed: unknown properties kept by `cleanEvent` (`cleanEvent drops…`, `neverSent`); the server's yes applied over a pending no (`a pending no is kept…`); `reset()` skipped in `applyNo` (`a no read at launch…`, `a no given on another phone…`, `saying no…`); a no that resets only from yes (`a no read at launch…`); a frame that keeps `context_line` (`before yes…`, `after yes…`, `neverSent`); `$feature_flag_called` allowed after yes (`after yes, allow-listed…`).
+  - Fix round: each mutant applied in place, the focused file run, the file restored from a copy in the scratch folder and its SHA-256 compared (it matched each time).
+    - M1, the server's no applied after the store write: 1 failed, 23 passed (`a no from the server stops capture…`).
+    - M2, the question reopened after the erase: 1 failed, 23 passed (`an answer gone from the server…`).
+    - M3, `serialize` runs its work at once: 3 failed, 21 passed (`a yes still on its way…`, `a yes being stored…`, `a foreground refresh waiting…`).
+    - M4, `refresh` reads the generation when its queued work starts, not at the call: 1 failed, 23 passed (`a foreground refresh waiting…`).
+    - M5, `answer('no')` applies the no inside its queued work: 3 failed, 21 passed (the same three as M3).
+    - M6, `PACK_KEYS` with `seven_eleven` for `seven`: 1 failed, 5 passed in `catalog.test.ts` (`a category is a built-in key…`).
+    - No survivors.
+  - Fix round 2, the same way:
+    - R1, the account check removed: 1 failed, 27 passed (`a yes waiting behind another call…`).
+    - R2, the later-answer check removed: 1 failed, 27 passed (`a yes still waiting when the person says no…`).
+    - R3, the later-answer check made any newer call (`stale(token, account)`), so a refresh also stops the yes: 1 failed, 27 passed (`a refresh after a yes…`).
+    - R4, a no that does not mark itself the latest answer: 1 failed, 27 passed (`a yes still waiting when the person says no…`).
+    - R5, the check after the yes lands removed: 1 failed, 27 passed (`a yes on its way when another account signs in…`).
+    - No survivors.
+- **Gate** (worktree root, the merged tree with the fixes; the head is `bdf6b12`, so the counts differ from the planning probe at `e546bee`, which gave test:app 28, test:unit 730 and test:render 1587):
+  - `npm run typecheck:app`: passes.
+  - `npm run test:app`: 29 passed, 0 failed.
+  - `npm run test:unit`: 770 passed, 0 failed.
+  - `npm run test:render -w gogospend-app`: 83 files and 1589 tests passed.
+  - `npm run export:web -w gogospend-app -- --max-workers 2`: passes.
+  - `git diff --check origin/claude/p1a-vault-core...HEAD`: clean.
+  - The first round ran only the five files and `typecheck:app`.
+  - Fix round 2 (`617e278` and this commit, not merged again): `npm run typecheck:app` passes; `npm run test:app` 29 passed, 0 failed; `npm run test:unit` 774 passed, 0 failed; the five analytics files 40 passed, 0 failed. No render test uses the controller (`bus.ts` imports only its type) and its exported API is unchanged, so the render suite and `export:web` were not run again. `git diff --check` is clean.
+- **Ported:** not a port from `apps/api`. The PostgreSQL role, grant, RLS, pool, isolation and lock cases do not apply: this task is the app's in-memory allow-list, consent controller and `before_send` gate.
+- **Deviations:**
+  - `screen` sends the cleaned common properties and `origin: 'app'`, as the common row's "added to every event" says.
+  - A new controller's account starts unset, not `null`, so the first `setAccount(null)` is a real change and resets a distinct id the SDK may still hold from an earlier run. `setAccount` with the current id, a second `null` included, does nothing.
+  - Opening the question also calls `stopSessionRecording()`, so replay cannot keep running when a yes becomes "never asked".
+  - Held events take the common properties when they are sent, not when they were tracked, so they carry `weeks_since_signup` from the yes.
+  - Server and store work runs in call order, so no call overtakes an earlier one. A refresh or an answer that a later call has made out of date resolves without changing anything, and the later call decides. A queued yes is still sent when only a refresh came after it, and that refresh reads it from the server. It is not sent when the account changed (it rejects) or when a later answer replaced it (it resolves).
+  - Tests beyond the plan's bullets: the other emitters, seconds rounded and clamped, `recordAnalytics`, a null client, a stored yes entering without an identity, the fix round's five, and fix round 2's four.
+- **SKIPPED (hosted):** no PostHog project, no key, nothing sent off the phone. The modules are pure, and every client in these tests is a fake.
+- **Risks and follow-ups:**
+  - A no given while another consent call is still on its way is in force at once, but it is stored and sent only after that call ends. On a slow network that call can be a foreground refresh's read, which the transport allows up to 20 seconds. If the app is killed in that gap, the no is lost, and at the next launch the stored yes and the server's yes put the phone back in yes. An account change in the gap also drops it: the queued work writes the pending no, and the next account's load overwrites it. Not fixed in this task. To be settled with 1D-T6, which builds the real store (`consentStorage.ts`) and the transport.
+  - A design for it: write the pending no at the call, and have the queued work await that same write before it writes the no again and sends `setConsent(false)`. A second write that the queue does not await is not enough: it can land after the queue's last write and leave `pendingServer: true` behind. Keeping a no across an account change needs one stored answer per account, which is `consentStorage.ts`'s choice.
+- **Notes for later tasks:**
+  - Every plan, phase 2 included, calls `events.ts` and these names (R23). `trackClientEvent` drops a name outside the allow-list, so `spend_tx_added`, `spend_import_started` and `system_permission_outcome` no longer reach the test seam; 1D-T7 moves their callers onto the emitters.
+  - A category is sent as a built-in key, one of `PACK_KEYS`, or `custom`. P2-T7's `analyticsCategoryKey` (`apps/app/src/spend/v1/redesign/planning/thaiPack.ts`) returns exactly that, matching C3's names and aliases; 1D-T7 calls it.
+  - `wallet_type` takes the four kinds (R81). `ewallet` is dropped.
+  - `account_deleted` is in the allow-list with `method`, as the table says. The anonymous count that never recreates the person is the server's (1D-T13); no client emitter sends it.
+  - 1D-T6 installs this controller with `setAnalytics`, passes `gateOutgoing` as `before_send`, and keeps the client null when no project key is set. Its `consentStorage.ts` should not throw from `read()`, because a failing read stops a refresh before it reads the server's answer. The store holds one answer: when another account signs in on the same phone, its load overwrites or erases a no the first account has not delivered. A caller that runs `refresh()` at every foreground should catch its rejection. The server and store calls this controller makes must always settle, because one that never does holds every later consent call behind it; the v1 transport's 20-second timeout bounds that today.
+  - Left for later (minor, from the first review of `b3b1c11`): a no whose first store write fails is never sent to the server; `weeks_since_signup` stays in the common properties across an account change; an offline refresh with no stored answer moves an open question back to `loading`.
+  - `recordAnalytics()` signs in `00000000-0000-4000-8000-0000000000aa`, then empties `sent`.
+  - **Integration head:** the integration branch (checked at `bdf6b12`, `75b3625`, `d193a68` and `800680d`) carries the phase headings `## 1D: live pokes, the pending choice and PostHog` and `## P2: Bun Wallet core` twice each. Both 1D headings take the plan's text here, and this receipt sits under the second one, directly above `### 1D Task 2`. The duplicates are left for the orchestrator's ledger consolidation.
 
 ### 1D Task 2: The PostHog proxy on the Worker
 
@@ -815,9 +889,20 @@ Phase 1D adds live pokes, the pending choice, PostHog and the two-phone proof (p
   - The `/v1/sync/live` upgrade bypass (1D-T12) belongs in the same dispatch in `src/server.ts`.
   - The body and its `content-encoding` pass through unchanged, as PostHog's guide does. Only the fake `fetch` has answered so far, so a compressed upstream answer has not been run.
 
+## Fix: sheets rise above the iOS keyboard (28 October)
+
+Found by the native iOS check above. iOS does not resize the window for the keyboard, and `ui/Sheet.tsx` did not move for it. Tell Bun's field takes focus as its sheet opens, so the keyboard covered whatever sat low in the sheet: the draft after Read it, and, when the sheet was short (Bun's help on, nothing read yet), the whole sheet, leaving a dimmed screen and a keyboard. The browser catalogue and the render tests have no on-screen keyboard, so neither showed it.
+
+- **Change:** `Sheet` puts its backdrop and panel in a `KeyboardAvoidingView` with `padding` on iOS; Android is left as it was, and the web has no on-screen keyboard. `TellBunSheet` closes the keyboard for each new draft (a sentence, a slip, an often-logged chip, or a re-read while a draft shows); a sentence Bun cannot read keeps it up to retype.
+- **RED to GREEN:** 5 failing on assertions, then passing: iOS pads, Android and the web do not, and a sentence, a re-read and a chip each close the keyboard. The guards (the backdrop still closes the sheet; `฿` alone keeps the keyboard up) passed before and after. `ui/Sheet.keyboard.render.test.tsx` stands in for iOS: it sets `Platform.OS`, shows the wrapper's `behavior`, and stubs the theme's saved-preference read, which would otherwise reach the native half of secure storage that the web build lacks. A fix-round test (a draft that lands after the sheet closed) failed on its assertion before the fix and passes after; see Fix round.
+- **Mutants:** 4 killed, 0 survivors: padding on Android too; `height` for `padding`; closing on any non-idle state; never closing.
+- **Gate:** `typecheck:app` passed; `test:app` 28 passed; `test:unit` 694 passed; `test:render` 84 files, 1592 tests, no unhandled errors; `export:web` passed; `git diff --check` clean.
+- **iOS simulator** (iPhone 17, iOS 27.0, Xcode 27.1, a development build of this branch): the short sheet sits above the keyboard with its title, field and buttons; tapping the field raises the whole sheet with the keyboard; Read it closes the keyboard and shows the whole draft; a second Read it closes it again. The first version keyed the effect on `phase.kind`, and the simulator showed a re-read leaving the keyboard up; the re-read test came from that.
+- **Fix round:** a draft that lands after Tell Bun has closed no longer closes the keyboard. `TellBunSheet` dismisses the keyboard only while its sheet is shown (a ref kept in step with `visible`), so the late draft waits for the next open and leaves another field's keyboard alone. RED: 1 failing on its assertion (`a draft that lands after the sheet closed leaves the keyboard alone`), 11 passing; GREEN: 12 passing. Mutants: 3. Two were killed by that test (the sheet check dropped; the ref never updated). One survived (the two effects swapped), because the close and the late draft land in separate renders, so their order makes no difference to these tests. Gate: `typecheck:app` passed; the three focused render files passed, 28 tests. Not changed: a draft that lands while the sheet is still open, after the person has tapped back into the field, still closes the keyboard.
+- **Not covered:** Android (unchanged; not run on a device here) and a real iPhone; Android 16 edge-to-edge may stop the window resizing; with Reduce Motion and Prefer Cross-Fade Transitions on, React Native's keyboard wrapper gives no padding, so the sheet may not rise; a sheet that opens while the keyboard is already up does not rise on its own, because the wrapper reacts only to keyboardWillShow.
+
 ## Not done, or follow-ups
 
-- **Sheets and the iOS keyboard (found on the simulator, 28 October):** `ui/Sheet.tsx` does not move for the keyboard. Tell Bun's field takes focus as its sheet opens, so the keyboard covers whatever sits low in the sheet: the draft after Read it, and, when the sheet is short (Bun's help on, nothing read yet), the whole sheet, leaving a dimmed screen and a keyboard. The browser catalogue and the render tests have no on-screen keyboard, so neither shows it. Proposed fix: lift the sheet by the keyboard's height in `Sheet` (a `KeyboardAvoidingView` with `padding` on iOS), and close the keyboard when Tell Bun shows a draft.
 - **Rotating reminder wording (owner decision):** a repeating daily notification cannot change its text, so rotation needs "every day" to become seven weekly reminders, one wording per weekday. The reminders milestone (S4) chose one daily reminder on purpose, and its tests pin it. Cancelling all eight known ids first would still leave one reminder a day, so the change is safe to make if wanted.
 - **E2 screenshots** of the companion area. Its eight catalogue sections are in (`src/dev/catalogue/companion`): Ask Bun off and answering, Tell Bun reading a Thai sentence, Bun's note on Home, the cashback card asking and on, the Settings controls and the Thai pack. The area is on by default at the owner's request; `EXPO_PUBLIC_REDESIGN=-companion` switches it off.
 - **Hosted proofs, when the owner asks for a deployment:**
@@ -923,7 +1008,68 @@ Phase P2 builds the Bun Wallet area on the app. Task 7 replaces the Thai everyda
 
 ## P4: Slips and statements
 
-Phase P4 reads Thai bank slips into slip drafts, imports bank statements and sends pushes. Task 10 teaches the statement parser real Thai bank exports and gives every table a header fingerprint.
+Phase P4 reads Thai bank slips into slip drafts, imports bank statements and sends pushes. Task 1 adds the shared wire contract: the slip, draft, slip account, bank album, push and device shapes, and the salted slip reference both the phone and the Worker use.
+
+### P4 Task 1: Slip and push contracts, and the shared slip reference
+
+- **Status:** built and verified locally on `p4/t1-slip-contracts`, on top of `bdf6b12`, the integration commit the branch was cut from. The integration head is now `75b3625`. It changed no file under `packages/contracts` or `apps/api` since `bdf6b12`, so it was not merged here; the orchestrator merges it when it opens the PR. Not pushed. The independent review is the controller's.
+- **Files:**
+  - `packages/contracts/src/v1/slips.ts` and `push.ts` (new): the slip, draft, slip account, bank album, push and device shapes, `normalizeSlipRef`, `slipRefHash`, `accountLast4`, and the parsers.
+  - `packages/contracts/src/v1/sync.ts`: the import and the `slip_inbox` entry in `SYNC_ENTITY_VALIDATORS` (three lines).
+  - `packages/contracts/src/index.ts`: four export statements after the AI type block (47 lines added, nothing changed).
+  - `apps/edge/test/slip-contracts.test.ts` (new, Node): 11 tests.
+  - `apps/api/src/sync/sync-api.integration.spec.ts`: the parity assertion leaves out `slip_inbox` (ruling R83); the test keeps its name.
+  - `docs/implementation/premium-progress.md`: this section.
+- **RED to GREEN:**
+  - RED, `npm run test:edge -- test/slip-contracts.test.ts`: 11 failed, 0 passed, against typed stubs. Seven failed on an assertion against a stub (a validator answered `false`, a helper answered `null` or `''`); four failed on the stub parsers' `VALIDATION_FAILED` ("Not built yet."). `npm run typecheck:edge` passed against the stubs.
+  - GREEN, the same command: 11 passed, 0 failed.
+- **Mutation check:** ten mutants, one at a time. Each was an exact single-match replacement in the worktree file, run against the focused file, then restored from a copy taken before the first mutant; the restored file's sha256 matched after every restore. Each was killed:
+  1. Zero byte dropped from `slipRefHash`: 1 failed (the salted-hash case).
+  2. Repeated hash let through: 1 failed (the batch case).
+  3. `album` slip allowed in a live batch: 1 failed (the batch case).
+  4. Extra key accepted by `hasExactly`: 2 failed (the inbox-snapshot case and the every-DTO-validator case).
+  5. Salt length unchecked: 1 failed (the salted-hash case).
+  6. Reference upper-cased before the ASCII check: 1 failed (the reference case, `ß`).
+  7. Image size limit off by one: 1 failed (the batch case).
+  8. Any string accepted as a push month: 1 failed (the push-data case).
+  9. `slip_inbox` dropped from `SYNC_ENTITY_VALIDATORS`: 1 failed (the inbox case).
+  10. Three digits accepted as the last four: 1 failed (the last-four case).
+
+  Survivors: none. Mutants 1 to 4 are the plan's Step 5; 5 to 10 are the brief's additions.
+- **Gate** (worktree root; each command's exit status and counts):
+  - `npm run test:edge -- test/slip-contracts.test.ts`: 11 passed.
+  - `npm run typecheck` (contracts, then API): passed.
+  - `npm run typecheck:edge`: passed.
+  - `npm run typecheck:app`: passed.
+  - `npm run test:edge`: 155 passed in 12 files. The 144 in the other 11 files are the baseline, measured by running those 11 files as an explicit list with the contract edits in place. The baseline was not recorded before the first edit, and no clean checkout at `bdf6b12` was built.
+  - `npm run test:api`: run 1 had one failure out of 955 tests, in `src/imports/upload-intake.spec.ts`: "a body that keeps trickling is ended at the absolute receive deadline" (it reported `upload_stalled` where the test expects `upload_timeout`, a race between two timers while the machine's load average was about 11). Run 2: 44 of 44 suites and 955 of 955 tests passed. The spec alone passed 96 of 96 in three runs, and it does not reference `SYNC_ENTITY_VALIDATORS` or the slip contracts.
+  - `npm run build -w gogospend-api`: passed (293 files compiled).
+  - `node apps/api/scripts/release-graph.mjs check`: passed, no problems.
+  - Contracts load under Node type stripping (`node --no-warnings --input-type=module -e`, importing `./packages/contracts/src/index.ts`): printed `contracts load`.
+  - `npm run test:unit -w gogospend-app -- src/storage/diaryRepository.test.ts`: 24 passed.
+  - App suites: `npm run test:unit -w gogospend-app`: 734 passed; `npm run test:app -w gogospend-app`: 29 passed; `npm run test:render -w gogospend-app`: 83 files and 1589 tests passed. They ran after the last change to the contract files, which has not changed since (sha256 checked).
+  - `npm run test:edge:workers`, under the shared heavy lock (released after the run): 12 files, 240 tests passed.
+  - `npm run build:edge`: passed.
+  - `npm run export:web -w gogospend-app`: not run; no route, config or app entry changed.
+  - `git diff --check` on the staged content, before the commit: passed. The three-dot check against `origin/claude/p1a-vault-core` runs after the commit and is in the final report.
+- **SKIPPED:** `npm run test:db -w gogospend-api -- sync-api.integration` (the parity assertion, with the database) and `npm run test:edge:db`. Docker is not running on this machine (no colima socket), and both scripts start their database containers themselves, which were not started. CI's database job runs both, so the parity assertion is first exercised there. Nothing deployed; no cloud resource.
+- **Deviations:**
+  1. Three tests beyond the plan's list: account mappings and slip refs, push data, and each DTO field's shape.
+  2. `isPushData` checks `ref` per kind: null for `slips_ready`, a UUID for `statement_parsed` and `export_ready`, `YYYY-MM` for `month_recap_ready`.
+  3. `normalizeSlipRef` checks printable ASCII before upper-casing, so `ß` cannot become `SS`.
+  4. `isSlipDraftsPage` takes `next_cursor` as null or base64url (1 to 512 characters), the app's keyset cursor rule.
+  5. The API parity assertion leaves out `slip_inbox` (ruling R83). It is the only change under `apps/api`.
+  6. The integration head was not merged into this branch, per the controller's instruction (see Status).
+- **Risks and notes for the integrator:**
+  - A simulated merge (`git merge-tree`) of `75b3625` into this branch's parent `bdf6b12` is clean. If the head has edited `docs/implementation/premium-progress.md`, the receipt section may conflict there; keep both sides, as the protocol says.
+  - The parity assertion has not run locally. Its first real run is CI's database job.
+  - The upload-intake trickle test failed once under load and passed on re-run. If it fails in CI, it is that timing test, not this change.
+- **Notes for later tasks:**
+  - The hash vector: salt bytes 1 to 32 and `004:016297184012BPP06418` give `029e46f70cbfa751f030c1d33b671859ad9519c17eecd52e6a0539775443df5a` (P4-T3's Workers case, P4-T12's phone case).
+  - P4-T3 registers the `slip_inbox` entity in the vault registry; until then the vault never writes one.
+  - P5-T3 adds `trip` and `settings` to the API parity assertion's left-out list.
+  - The vault-side port of `snapshots validate exactly the entities the API registers` (deferred to 1A-T8b) must leave out entities the vault does not register yet.
+  - P4-T6's `retry_after_seconds` is a whole number of seconds; P4-T7's draft cursors are base64url.
 
 ### P4 Task 10: The parser learns Thai bank exports
 
@@ -956,3 +1102,47 @@ Phase P4 reads Thai bank slips into slip drafts, imports bank statements and sen
   - The fingerprints of the two fixtures: `bankCsvTh` `6dee12c3f79691c69f3f71d860d7dcd70ae44becd539d60182f76bede49e439c`, `bankXlsxEn` `effc645c4941a020545019c20fe60ba3ee3acc697410d15241ca5fc4240cd67a` (each a hash of its normalized header only).
   - Any fake child output must now carry `header_fingerprint` (null for a receipt), or the worker refuses it as `output_invalid`.
   - The owner's own export (Q10) is still the phase proof; a real layout may need more role names in `BANK_NAMES`.
+
+## P6B: The beta's in-app extras
+
+Phase P6B gives the closed beta its in-app extras ([plan](../superpowers/plans/2026-10-25-jotbun-p6b-beta-extras.md)). Task 0 adds the deletion short code to the contracts.
+
+### P6B Task 0: The deletion short code
+
+- **Status:** built and verified locally on `p6b/t0-deletion-code`, on top of `e546bee`. Not pushed. The independent review is the controller's, after this receipt.
+- **Delivers:** `P6B:deletion-code` (A12).
+- **Files:**
+  - `packages/contracts/src/v1/privacy.ts`: `deletionShortCode(requestId)` and its private `CROCKFORD_BASE32` alphabet.
+  - `packages/contracts/src/index.ts`: exports `deletionShortCode`.
+  - `apps/app/src/wallet/settings/deletionCode.test.ts`: the plan's test (Node), importing from `@gogospend/contracts`.
+- **The code (X8, default pending owner Q5):** `DEL-` and the request id's first 10 hex digits (dashes removed, any case) read as one 40-bit number, written as 8 digits of `0123456789ABCDEFGHJKMNPQRSTVWXYZ`, most significant first, as `XXXX-XXXX`. `0b3f2c1e-6a4d-4f6e-9a51-2f3c4d5e6f70` gives `DEL-1CZJ-R7KA`. The same ASCII text in Thai and English. No copy changed here: P6B-T6 shows it under หมายเลขคำขอ, and P6C-T4's email prints it.
+- **RED to GREEN:**
+  - Typed stub first: `deletionShortCode` returned `''`, already exported.
+  - RED, `npm run test:unit -w gogospend-app -- src/wallet/settings/deletionCode.test.ts`: 1 failed, 0 passed. The failing assertion was the first one, at `deletionCode.test.ts:9`: `AssertionError`, actual `''`, expected `'DEL-1CZJ-R7KA'`. An assertion failure, not a load error.
+  - GREEN, the same command: 1 passed, 0 failed.
+- **Mutation check:** `privacy.ts` backed up in the scratchpad (`privacy.ts.green`), sha256 `e27223d3d255a713c2752f63dfbdaba6de98c3a3a252c8216a98e3ddb3956981`. Each mutant was applied in place, the focused file was run, and the file was restored with `cp`; the checksum matched after every restore.
+  - M1, the RFC 4648 alphabet: 1 failed, 0 passed, actual `'DEL-BM7S-YHTK'`.
+  - M2, dashes kept (`slice(0, 10)` with no dash removal): 1 failed, 0 passed, actual `'DEL-005K-YB0Y'`.
+  - M3, least significant digit first: 1 failed, 0 passed, actual `'DEL-AK7R-JZC1'`.
+  - M4, 32 bits instead of 40 (`slice(0, 8)`): 1 failed, 0 passed, actual `'DEL-005K-YB0Y'`.
+  - Survivors: none, so no test was added. M2 and M4 print the same value, because on a UUID `parseInt` stops at the first dash, so M2 reads only 32 bits too. The plan's test kills both.
+- **Gate** (worktree root, after the restores; run in the brief's order, each exit 0):
+  - `npm run typecheck`: passed (contracts `tsc` with `erasableSyntaxOnly`, then the API `tsc --noEmit`).
+  - `npm run typecheck:app`: passed.
+  - `npm run typecheck:routes -w gogospend-app`: passed.
+  - `npm run test:app`: passed, 28 passed, 0 failed.
+  - `npm run test:unit`: passed, 695 passed, 0 failed, 7 suites (the new file's test is one of them).
+  - `npm run test:render -w gogospend-app`: passed, 83 files, 1587 passed, 0 failed (328.5 s).
+  - `npm run export:web -w gogospend-app -- --max-workers 2`: passed, ends with `Exported: dist`.
+  - `npm run test:api`: passed, 44 suites, 955 passed, 0 failed.
+  - `npm run build -w gogospend-api`: passed, 293 files compiled with swc.
+  - `node apps/api/scripts/release-graph.mjs check`: passed, `"problems": []`.
+  - `/usr/bin/git diff --check`: no output. The range check after the commit is in the commit step.
+- **Deviations:** none.
+- **SKIPPED:** the edge gate, `test:db`, `test:ops` and `test:dev`: no file under `apps/edge`, `apps/api` or `scripts` changed and nothing there calls the helper yet (P6C-T4 will); the plan adds the edge gate from P6B-T10; CI runs them. Nothing deployed.
+- **Notes for the integrator:**
+  - The helper does not check its input: every caller passes an id `isUuid` accepted (`isDeletionAccepted`, `isDeletionReceipt`, the server's `derivedUuid`). Out of contract it still returns and never throws, but the output is not a code. When no hex digit leads the first 10 characters, `parseInt` gives `NaN` and the alphabet lookup yields the text `undefined`. Checked by running the module: `zzzzzzzz-zzzz-4zzz-8zzz-zzzzzzzzzzzz` gives `DEL-unde-finedundefined...`, which is not the 13-character form. No caller reaches that path, and the plan names no validation, so the code is unchanged.
+  - The server's ids are `derivedUuid(account, 'deletion-request', commandId)` (version 8). The version and variant bits come after the first 40 bits, so all 40 bits of the code are hash bits.
+  - Today's `PrivacyScreen.tsx` still prints the whole request id; P6B-T6's `DeletionDoneScreen` switches to this code. Not touched here.
+  - `index.ts` and `privacy.ts` are shared: the change is one export line and one function after `isDeletionReceipt`. A conflict keeps both sides.
+  - Warnings, not failures, and not caused by this change: the Node runner prints `MODULE_TYPELESS_PACKAGE_JSON` for the new file, for `packages/contracts/src/index.ts` and for other pure tests (their packages have no `"type"` field); vitest warns that `vitest.render.config.ts` is loaded as CommonJS.
