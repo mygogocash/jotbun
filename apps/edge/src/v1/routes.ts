@@ -23,6 +23,8 @@ export type VaultRoute = {
   status?: number
   /** How the body is read. The default is `json`. `stream` leaves the body unread. */
   body?: 'json' | 'stream'
+  /** After a 2xx answer the Worker starts the vault's pending work through waitUntil (B5, 1B-T4). */
+  starts?: true
 }
 
 /** The default: 201 for POST, 200 otherwise (defaultStatus in the PostgreSQL route table). */
