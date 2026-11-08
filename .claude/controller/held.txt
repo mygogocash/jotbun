@@ -1,0 +1,4 @@
+# Tasks held for an owner decision that their GitHub issue does not label owner-gated.
+# One per line: <task-id> <reason>. ready_tasks.py marks these HELD. Remove a line when the owner answers.
+1C-T2 owner: per-email sign-in lockout (only per-code limits today; needed before real mail)
+P3-T12 owner: Q1, the QR decoder package

@@ -1,0 +1,2 @@
+# Controller briefs quote unified diffs, whose blank context lines are a single space.
+.claude/controller/briefs/*.md -whitespace
