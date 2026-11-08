@@ -1,0 +1,70 @@
+M1 KILLED (no assertFreshSignIn) [workers 2 failed | 31 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: an export needs a sign-in from the last five minutes, and a resent export still replays
+    failed: exports.test.ts: needs a fresh export proof bound to its own command, and queues one owned job
+M2 KILLED (freshness checked before the receipt lookup) [workers 1 failed | 32 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: an export needs a sign-in from the last five minutes, and a resent export still replays
+M3 KILLED (a fixed key without the attempt token) [workers 3 failed | 30 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: a write retried after its file was stored but before it was recorded completes
+    failed: exports.test.ts: a write whose PUT ends past its own reservation deadline publishes nothing, even when a failed delete moved it on
+    failed: exports.test.ts: an export started twice by overlapping runs is written once
+M4 KILLED (the publish does not recheck the vault) [workers 2 failed | 31 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: an account deleted mid-export publishes nothing, and the file it wrote is swept
+    failed: exports.test.ts: an export that finishes after the vault stopped being active publishes nothing
+M5 KILLED (no 30-day purge) [workers 3 failed | 30 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: after pruneExports at exportsDueAt, the next exportsDueAt is later or null
+    failed: exports.test.ts: pruneExports purges an export 30 days after its request and fails one left pending for a day
+    failed: exports.test.ts: pruneExports purges more exports at once than SQLite has parameters
+M6 KILLED (one ? per export id in the purge) [workers 1 failed | 32 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: pruneExports purges more exports at once than SQLite has parameters
+M7 KILLED (the publish context is read before the PUT) [workers 1 failed | 32 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: a write whose PUT ends past its own reservation deadline publishes nothing, even when a failed delete moved it on
+M8 KILLED (the publish ignores the reservation's own deadline) [workers 1 failed | 32 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: a write whose PUT ends past its own reservation deadline publishes nothing, even when a failed delete moved it on
+M9 KILLED (the starter starts a started export again) [workers 1 failed | 32 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: the export starter starts each pending export once on ExportWorkflow, and is due a minute after an unstarted request
+M10 KILLED (the publish does not recheck that the export is pending) [workers 1 failed | 32 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: an export started twice by overlapping runs is written once
+M11 KILLED (the Workflow records no failure (rethrows)) [workers 1 failed | 32 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: an export whose write keeps failing is recorded failed after its retries
+M12 KILLED (exportFile ignores the expiry) [workers 1 failed | 32 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: an expired file is not served even while its grant and object remain
+M13 KILLED (a grant is not capped at the file's expiry) [workers 1 failed | 32 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: grants last five minutes; the file expires after 24 hours and the sweep deletes it
+M14 KILLED (the download skips the size and digest check) [workers 1 failed | 32 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: writes a requested export, streamed back with its length, and never serves a tampered file
+M15 KILLED (no download slot) [workers 1 failed | 32 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: at most four export downloads run at once in a process; more are told to retry
+M16 KILLED (a pending export never fails) [workers 2 failed | 31 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: after pruneExports at exportsDueAt, the next exportsDueAt is later or null
+    failed: exports.test.ts: pruneExports purges an export 30 days after its request and fails one left pending for a day
+M17 KILLED (the purge is strict (<)) [workers 2 failed | 31 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: after pruneExports at exportsDueAt, the next exportsDueAt is later or null
+    failed: exports.test.ts: pruneExports purges an export 30 days after its request and fails one left pending for a day
+M18 KILLED (too_large leaves the export pending) [workers 2 failed | 31 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: a too-large export says why, and is not an operator alert
+    failed: exports.test.ts: an export over its byte limit fails visibly and publishes nothing
+M19 KILLED (exportStatus never reports expired) [workers 1 failed | 32 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: grants last five minutes; the file expires after 24 hours and the sweep deletes it
+M20 KILLED (exportsDueAt ignores the pending rule) [workers 2 failed | 31 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: after pruneExports at exportsDueAt, the next exportsDueAt is later or null
+    failed: exports.test.ts: pruneExports purges an export 30 days after its request and fails one left pending for a day
+M21 KILLED (markStarted stamps nothing) [workers 3 failed | 30 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: an export runs on ExportWorkflow and is ready to download
+    failed: exports.test.ts: an export whose write keeps failing is recorded failed after its retries
+    failed: exports.test.ts: the export starter starts each pending export once on ExportWorkflow, and is due a minute after an unstarted request
+M22 KILLED (the high water is read after the PUT) [workers 1 failed | 32 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: a concurrent edit during the export does not tear its one consistent view
+M23 KILLED (the export reads deleted records) [workers 3 failed | 30 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: a concurrent edit during the export does not tear its one consistent view
+    failed: exports.test.ts: an export started twice by overlapping runs is written once
+    failed: exports.test.ts: holds every income, expense and transfer field of the period exactly, and reconciles with history
+M24 KILLED (a third open export is accepted) [workers 1 failed | 32 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: an account can have at most two exports open; a third waits
+M25 KILLED (the restated period rule skips the history validation) [workers 1 failed | 32 passed (33); node 1 failed | 1 passed (2)] restored=True
+    failed: exports-port.test.ts: reads an export period as ExportService does, refusals included
+    failed: exports.test.ts: validates the period like history, and refuses an unsupported schema before using the proof
+M26 KILLED (the starter without the binding throws instead of waiting) [workers 1 failed | 32 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: the export starter starts each pending export once on ExportWorkflow, and is due a minute after an unstarted request
+M27 KILLED (only the first part is stored) [workers 1 failed | 32 passed (33); node 2 passed (2)] restored=True
+    failed: exports.test.ts: an export is stored with one put of one buffer, and nothing is left behind
+mutants exit 0

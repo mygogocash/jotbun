@@ -1,0 +1,186 @@
+--- /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t5-fix-planner/orig/test/workers/imports-intake.test.ts	2026-11-08 20:03:28
++++ /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t5-fix-planner/real/test/workers/imports-intake.test.ts	2026-11-08 20:09:30
+@@ -11,7 +11,7 @@
+ import { describe, expect, it } from 'vitest'
+ 
+ import { IMPORT_LIMIT_MESSAGE_KEYS, IMPORT_UPLOAD_MAX_BYTES, isImportJobDto } from '@gogospend/contracts'
+-import type { ImportJobDto } from '@gogospend/contracts'
++import type { ImportJobDto, PolicyVersionDto } from '@gogospend/contracts'
+ 
+ import { FeatureGates } from '@api/common/feature-gates'
+ import { SYNTHETIC, meteredStream } from '@api/imports/fixtures/synthetic-uploads'
+@@ -19,6 +19,7 @@
+ import type { ParseMessage } from '../../src/background/parse-consumer'
+ import { R2ObjectStore } from '../../src/server/storage/r2-object-store'
+ import { MAX_UPLOADS_PER_ISOLATE, uploadsInFlight } from '../../src/v1/files/uploads'
++import type { VaultCall, VaultReply, VaultRouteId } from '../../src/v1/protocol'
+ import { VAULT_STEP_ROUTES } from '../../src/v1/routes'
+ import { RAW_UPLOAD_TTL_MS, UPLOAD_ROW_TTL_MS, beginUpload, finishUpload, pruneUploads, reserveUploadPart, uploadsDueAt } from '../../src/vault/files/intake'
+ import { RESERVATION_GRACE_MS, deleteDueObjects } from '../../src/vault/files/objects'
+@@ -31,6 +32,7 @@
+   HOUR,
+   MIN,
+   MiB,
++  TINY_JPEG,
+   ageSeeds,
+   ageUpload,
+   csvText,
+@@ -48,11 +50,12 @@
+   streamOf,
+   upload,
+   uploadRowOf,
++  vaultExec,
+   vaultIdOf,
+   vaultRows,
+ } from './support/files'
+ import type { Reply } from './support/files'
+-import { member, startV1, vaultOf } from './support/v1-client'
++import { TEST_POLICIES, member, startV1, vaultOf } from './support/v1-client'
+ import type { TestUser } from './support/v1-client'
+ 
+ const CAP = IMPORT_UPLOAD_MAX_BYTES
+@@ -753,7 +756,144 @@
+       reserveUploadPart(fileAt(state, now + MIN), jobId, token, 0)
+     })
+     expect(await vaultRows(user, 'SELECT delete_after FROM vault_objects')).toEqual([{ delete_after: now + 10 * MIN + RESERVATION_GRACE_MS }])
++  })
++})
++
++describe('1B-T5 fix round: the upload steps keep the API session and policy checks (P1), and an image needs ocr (P11)', () => {
++  /** One upload step sent straight to the person's vault, as vaultSession sends it: a later step of a current_policy request unless the options say otherwise. */
++  const stepCall = (
++    user: TestUser,
++    route: VaultRouteId,
++    body: unknown,
++    opts: { charge?: VaultCall['charge']; access?: VaultCall['access']; policies?: PolicyVersionDto[]; as?: TestUser; params?: Record<string, string> } = {},
++  ): Promise<VaultReply> => {
++    const who = opts.as ?? user
++    return vaultOf(user).call({
++      route,
++      access: opts.access ?? 'current_policy',
++      charge: opts.charge ?? 'step',
++      claims: { accountId: who.sub, sessionId: who.sid, issuedAt: Math.floor(Date.now() / 1000), clientId: 'ios' },
++      policies: opts.policies ?? TEST_POLICIES,
++      params: opts.params ?? {},
++      query: {},
++      headers: {},
++      body,
++    })
++  }
++  const SHA = 'ab'.repeat(32)
++  const beginBody = (jobId: string, intakeToken: string) => ({ jobId, intakeToken, fileName: 'statement.csv', declaredType: 'text/csv', declaredBytes: null })
++  const finishBody = (jobId: string, intakeToken: string, keys: string[]) => ({ jobId, intakeToken, format: 'csv', bytes: keys.length, sha256: SHA, parts: keys.map((key, index) => ({ index, key, bytes: 1, sha256: SHA })) })
++  const keyOf = (reply: VaultReply): string => String((reply as { body: { key: string | null } }).body.key)
++
++  it('after sign-out the four cleanup steps still run; begin, finish and the status read are refused', async () => {
++    const v1 = await client()
++    const user = await member(v1)
++    const jobId = randomUUID()
++    const token = randomUUID()
++    expect(await stepCall(user, 'imports.begin', beginBody(jobId, token), { charge: 'write' })).toMatchObject({ ok: true, body: { kind: 'started' } })
++    const first = await stepCall(user, 'imports.reservePart', { job_id: jobId, intake_token: token, index: 0 })
++    expect(first).toMatchObject({ ok: true })
++    expect((await v1.as(user).post('/v1/me/logout')).status).toBe(204)
++    // As the API's begin and finish under the account lock: an ended session starts and finishes nothing.
++    expect(await stepCall(user, 'imports.begin', beginBody(randomUUID(), randomUUID()), { charge: 'write' })).toMatchObject({ ok: false, status: 401, code: 'SESSION_REQUIRED' })
++    const second = await stepCall(user, 'imports.reservePart', { job_id: jobId, intake_token: token, index: 1 })
++    expect(second).toMatchObject({ ok: true })
++    const keys = [keyOf(first), keyOf(second)]
++    expect(keys.map((key) => key.slice(-9))).toEqual(['part-0000', 'part-0001'])
++    expect(await stepCall(user, 'imports.finish', finishBody(jobId, token, keys))).toMatchObject({ ok: false, status: 401, code: 'SESSION_REQUIRED' })
++    expect(await stepCall(user, 'imports.status', undefined, { access: 'bound_session', params: { id: jobId } })).toMatchObject({ ok: false, status: 401, code: 'SESSION_REQUIRED' })
++    // The steps that only continue or clean up the request's own work still run (anySession).
++    expect(await stepCall(user, 'imports.bytesRetry', { need: 10 })).toMatchObject({ ok: true })
++    expect(await stepCall(user, 'imports.abort', { job_id: jobId, intake_token: token, status: 'failed', code: 'session_ended' })).toMatchObject({ ok: true, body: { keys: [...keys].sort() } })
++    expect(await stepCall(user, 'imports.discarded', { job_id: jobId, intake_token: token, keys })).toMatchObject({ ok: true })
++    expect(await vaultRows(user, 'SELECT status, outcome_code, file_name, parse_state FROM import_uploads')).toEqual([{ status: 'failed', outcome_code: 'session_ended', file_name: null, parse_state: null }])
++    expect(await vaultRows(user, "SELECT key FROM vault_objects WHERE status <> 'tombstone'")).toEqual([])
++  })
++
++  it('a terms version the account has not accepted refuses begin and finish; reservePart still runs', async () => {
++    const v1 = await client()
++    const user = await member(v1)
++    const jobId = randomUUID()
++    const token = randomUUID()
++    expect(await stepCall(user, 'imports.begin', beginBody(jobId, token), { charge: 'write' })).toMatchObject({ ok: true, body: { kind: 'started' } })
++    const newer: PolicyVersionDto[] = TEST_POLICIES.map((policy) => (policy.kind === 'terms' ? { ...policy, version: 2 } : policy))
++    const part = await stepCall(user, 'imports.reservePart', { job_id: jobId, intake_token: token, index: 0 }, { policies: newer })
++    expect(part).toMatchObject({ ok: true })
++    expect(keyOf(part).slice(-9)).toBe('part-0000')
++    expect(await stepCall(user, 'imports.finish', finishBody(jobId, token, [keyOf(part)]), { policies: newer })).toMatchObject({ ok: false, status: 403, code: 'POLICY_ACCEPTANCE_REQUIRED' })
++    expect(await stepCall(user, 'imports.begin', beginBody(randomUUID(), randomUUID()), { charge: 'write', policies: newer })).toMatchObject({ ok: false, status: 403, code: 'POLICY_ACCEPTANCE_REQUIRED' })
++    expect(await vaultRows(user, 'SELECT status FROM import_uploads')).toEqual([{ status: 'receiving' }])
+   })
++
++  it('in a deleting account reservePart gives no key, begin and finish are refused, and abort still cleans up', async () => {
++    const v1 = await client()
++    const user = await member(v1)
++    const jobId = randomUUID()
++    const token = randomUUID()
++    expect(await stepCall(user, 'imports.begin', beginBody(jobId, token), { charge: 'write' })).toMatchObject({ ok: true, body: { kind: 'started' } })
++    const first = await stepCall(user, 'imports.reservePart', { job_id: jobId, intake_token: token, index: 0 })
++    // §6.12 deletion, step 2: the vault is set to deleting.
++    await vaultExec(user, "UPDATE account_state SET status = 'deleting'")
++    expect(await stepCall(user, 'imports.reservePart', { job_id: jobId, intake_token: token, index: 1 })).toEqual({ ok: true, status: 200, body: { key: null } })
++    expect(await stepCall(user, 'imports.finish', finishBody(jobId, token, [keyOf(first)]))).toMatchObject({ ok: false, status: 403, code: 'ACCOUNT_UNAVAILABLE' })
++    expect(await stepCall(user, 'imports.begin', beginBody(randomUUID(), randomUUID()), { charge: 'write' })).toMatchObject({ ok: false, status: 403, code: 'ACCOUNT_UNAVAILABLE' })
++    expect(await stepCall(user, 'imports.abort', { job_id: jobId, intake_token: token, status: 'failed', code: 'account_changed' })).toMatchObject({ ok: true, body: { keys: [keyOf(first)] } })
++    expect(await vaultRows(user, 'SELECT key FROM vault_objects')).toEqual([{ key: keyOf(first) }])
++    // The parse pipeline skips a vault that is not active.
++    expect(await vaultOf(user).parseSource(jobId, [])).toEqual({ kind: 'skip' })
++  })
++
++  it("another account's session reaches no upload step of this vault", async () => {
++    const v1 = await client()
++    const owner = await member(v1)
++    const other = await member(v1)
++    const jobId = randomUUID()
++    const token = randomUUID()
++    expect(await stepCall(owner, 'imports.begin', beginBody(jobId, token), { charge: 'write' })).toMatchObject({ ok: true, body: { kind: 'started' } })
++    const steps: [VaultRouteId, unknown][] = [
++      ['imports.begin', beginBody(randomUUID(), randomUUID())],
++      ['imports.reservePart', { job_id: jobId, intake_token: token, index: 0 }],
++      ['imports.finish', finishBody(jobId, token, [])],
++      ['imports.abort', { job_id: jobId, intake_token: token, status: 'failed', code: 'intake_error' }],
++      ['imports.discarded', { job_id: jobId, intake_token: token, keys: [] }],
++      ['imports.bytesRetry', { need: 1 }],
++    ]
++    // The vault holds its owner's name; another account's is refused (VaultOwnerMismatch, 500) before any step runs.
++    for (const [route, body] of steps) expect(await stepCall(owner, route, body, { as: other }), route).toMatchObject({ ok: false, status: 500 })
++    expect(await vaultRows(owner, 'SELECT status FROM import_uploads')).toEqual([{ status: 'receiving' }])
++    expect(await vaultRows(owner, 'SELECT key FROM vault_objects')).toEqual([])
++  })
++
++  it('an erased vault refuses every upload step, anySession or not', async () => {
++    const v1 = await client()
++    const user = await member(v1)
++    await runInDurableObject(vaultOf(user), (vault: UserVault) => vault.erase())
++    const body = { ...beginBody(randomUUID(), randomUUID()), job_id: randomUUID(), intake_token: randomUUID(), index: 0, status: 'failed', code: 'intake_error', keys: [], need: 1 }
++    for (const route of ['imports.begin', 'imports.reservePart', 'imports.finish', 'imports.abort', 'imports.discarded', 'imports.bytesRetry'] as const) {
++      expect(await stepCall(user, route, body), route).toMatchObject({ ok: false, status: 403, code: 'ACCOUNT_UNAVAILABLE' })
++    }
++  })
++
++  it('after sign-out an upload is refused at begin and records nothing', async () => {
++    const v1 = await client()
++    const user = await member(v1)
++    expect((await v1.as(user).post('/v1/me/logout')).status).toBe(204)
++    const reply = await upload(v1, user, SYNTHETIC.csv)
++    expect([reply.status, reply.body.code]).toEqual([401, 'SESSION_REQUIRED'])
++    expect(await vaultRows(user, 'SELECT 1 FROM import_uploads')).toEqual([])
++    expect(await quarantined(user)).toEqual([])
++  })
++
++  it('while ocr is paused an image upload is 503 with nothing recorded, and a CSV is still accepted', async () => {
++    const v1 = await startV1({ policies: TEST_POLICIES, client_versions: { ios: '1.0.0', android: '1.0.0' }, gates: { paused: ['ocr'], retry_after_seconds: 120 } }, { env: ON, startWork: 'manual' })
++    const user = await member(v1)
++    const photo = await upload(v1, user, TINY_JPEG, { name: 'receipt.jpg', type: 'image/jpeg' })
++    expect([photo.status, photo.body.code, photo.body.retry_after_seconds]).toEqual([503, 'OCR_PAUSED', 120])
++    expect(await vaultRows(user, 'SELECT 1 FROM import_uploads')).toEqual([])
++    expect(await quarantined(user)).toEqual([])
++    const sheet = await upload(v1, user, SYNTHETIC.csv)
++    expect([sheet.status, sheet.body.format]).toEqual([202, 'csv'])
++  })
+ })
+ 
+ /** `total` bytes starting with `head`, filled with a CSV-safe letter (meteredStream's body, as one array). */

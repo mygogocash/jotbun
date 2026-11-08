@@ -1,0 +1,46 @@
+--- a/src/vault/user-vault.ts
++++ b/src/vault/user-vault.ts
+@@ -30,6 +30,9 @@
+ import type { ImageFormat, ParseFormat } from '@api/imports/parsers/protocol'
+ import { failParse as failParseIn, parseSource as parseSourceIn, recordPreview as recordPreviewIn, reserveImageKey as reserveImageKeyIn, retryParse as retryParseIn } from './files/parse'
+ import type { ParseSource, ParsedPreview } from './files/parse'
++import type { BuildOutcome } from './files/work'
++import type { ExportParams } from '../background/export-workflow'
++import { failExport as failExportIn, writeExport as writeExportIn } from './files/exports'
+ 
+ /** The bindings the vault reads: the command digest keys, the environment name, the private object bucket and config:v1's KV (for the gates of background work). */
+ export type VaultEnv = {
+@@ -39,6 +42,7 @@
+   OBJECTS?: VaultBucket
+   CONFIG?: KVNamespace
+   PARSE_QUEUE?: Queue<ParseMessage>
++  EXPORT_WORKFLOW?: Workflow<ExportParams>
+ }
+ 
+ export type VaultDb = DrizzleSqliteDODatabase<typeof vaultSchema>
+@@ -297,6 +301,25 @@
+     this.background(undefined, (c) => failParseIn(c, jobId, code))
+   }
+ 
++  // Exports (1B-T6): ExportWorkflow's steps call these by the vault id (B11).
++
++  /**
++   * Writes the export's file to R2 and publishes it (exports.ts). The read and
++   * the publish are separate short blocks, each with the vault clock read when
++   * it starts, so the publish is checked at the time after the PUT. An erased
++   * vault answers `skipped`.
++   */
++  async writeExport(id: string): Promise<BuildOutcome> {
++    if (this.erased) return { outcome: 'skipped' }
++    const { outcome } = await writeExportIn({ context: () => this.fileContext(), bucket: this.bucket, active: (c) => this.isActive(c) }, id)
++    return { outcome }
++  }
++
++  /** Records that the export's write failed after its retries. */
++  failExport(id: string): void {
++    this.background(undefined, (c) => failExportIn(c, id))
++  }
++
+   /** Runs `work` in its own short block with a fresh vault clock, or answers `skipped` when the vault is erased or not active. */
+   private background<T>(skipped: T, work: (c: FileContext) => T): T {
+     if (this.erased) return skipped
