@@ -1024,6 +1024,112 @@ Found by the native iOS check above. iOS does not resize the window for the keyb
 - **Fix round:** a draft that lands after Tell Bun has closed no longer closes the keyboard. `TellBunSheet` dismisses the keyboard only while its sheet is shown (a ref kept in step with `visible`), so the late draft waits for the next open and leaves another field's keyboard alone. RED: 1 failing on its assertion (`a draft that lands after the sheet closed leaves the keyboard alone`), 11 passing; GREEN: 12 passing. Mutants: 3. Two were killed by that test (the sheet check dropped; the ref never updated). One survived (the two effects swapped), because the close and the late draft land in separate renders, so their order makes no difference to these tests. Gate: `typecheck:app` passed; the three focused render files passed, 28 tests. Not changed: a draft that lands while the sheet is still open, after the person has tapped back into the field, still closes the keyboard.
 - **Not covered:** Android (unchanged; not run on a device here) and a real iPhone; Android 16 edge-to-edge may stop the window resizing; with Reduce Motion and Prefer Cross-Fade Transitions on, React Native's keyboard wrapper gives no padding, so the sheet may not rise; a sheet that opens while the keyboard is already up does not rise on its own, because the wrapper reacts only to keyboardWillShow.
 
+## 1C: Better Auth and the sign-in port
+
+Phase 1C replaces Auth0 with Better Auth on D1 (plan `docs/superpowers/plans/2026-10-25-jotbun-p1c-better-auth.md`; spec §8 phase 1, "Better Auth on D1, and the app's sign-in port"). Task 1 runs Better Auth inside the HTTP Worker at `/api/auth/*`: its D1 tables, sign-in by emailed code, and ten-minute EdDSA JWTs.
+
+### 1C Task 1: Better Auth on D1: its tables, email-code sign-in and the JWT
+
+- **Status:** built and verified locally on `p1/1c-t1-better-auth` (`.claude/worktrees/p1-1c-t1`). Committed, not pushed. The independent review is the controller's, after this receipt. An earlier session wrote most of the task on `60e2026` and left it uncommitted. It is kept as `57dc60e`. The integration head `bdf6b12` is merged in `60d818b`, and the branch's last commit, the one that adds this section, adds the rest.
+- **Files:**
+  - Packages: `apps/edge/package.json` (`better-auth`, `@better-auth/passkey` and `@better-auth/expo`, all exactly 1.6.33) and `apps/edge/package-lock.json`.
+  - Migrations: `apps/edge/migrations/auth/0001_better_auth.sql` holds Better Auth's seven tables (`user`, `session`, `account`, `verification`, `jwks`, `passkey`, `rateLimit`) and their five indexes, as its 1.6.33 migrator writes them on D1. `0002_jotbun_auth.sql` holds `account_status` and `email_code_sends`. `migrations/erasure/0001_erasure_registry.sql` holds the erasure registry.
+  - Auth: `apps/edge/src/auth/env.ts`, `config.ts`, `claims.ts`, `rate-limits.ts`, `mailer.ts` (it refuses every send until Task 2), `create-auth.ts`, `instance.ts` and `handler.ts`; the HTTP Worker's glue, `src/server/auth.ts`.
+  - Shared files:
+    - `src/server.ts`: `/api/auth/*` after PostHog's `/ingest/*`, before TanStack Start.
+    - `wrangler.jsonc`: `AUTH_DB`, `ERASURE_DB`, `send_email` `EMAIL` and the four auth vars.
+    - `vitest.workers.config.ts`: the three test D1 databases, their migrations, the test vars and the migration setup file.
+    - `src/cloudflare-workers.d.ts`: the D1 and Email types, plus the test bindings and auth settings on `Cloudflare.Env`.
+  - Tests: `test/workers/auth/schema.test.ts` (4), `email-code.test.ts` (14) and `jwt.test.ts` (9), with `support/auth-harness.ts` and `support/apply-auth-migrations.ts`.
+- **Packages (plan Step 1, done by the earlier session):**
+  - The edge lockfile gains 45 entries and loses none.
+  - 55 existing entries change only their `dev`, `devOptional` or `optional` flag, which is npm 11.20.0 recounting once Better Auth is a production dependency. The root entry gains the three new dependencies. No version, `resolved` or `integrity` changed.
+  - No added package has an install script. The lockfile's only `hasInstallScript` entries are the existing `esbuild`, `fsevents` and `workerd`.
+  - `npm ls` shows one jose 6.2.12 and one wrangler 4.152.0.
+  - 1D-T3's `posthog-node` 5.56.2 merged beside Better Auth without a conflict, and `npm run install:edge` installed the merged lockfile (`added 248 packages`).
+  - `npm view` was not re-run, because the protocol allows no network beyond `npm ci`.
+- **RED to GREEN:**
+  - The earlier session wrote the implementation before any RED was recorded, so the RED was reconstructed. The plan's typed stubs (Step 2, R52) were swapped in and the suite was run. Then the real files were restored, and `git diff` is empty for them. The stubs:
+    - `createAuth` returns `betterAuth({ database, secret, baseURL })`, with no plugins and no settings check.
+    - `jwtPayload` returns `{ sid: '', auth_time: 0 }`.
+    - `handleAuthRequest` answers 501, and `createdDuring` returns true.
+    - The three migrations have no statements.
+  - RED, `npm run test:edge:workers -- test/workers/auth/`: `Tests 27 failed (27)`.
+    - 19 fail on assertions, for example `expected 501 to be 404`, `expected [] to deeply equal [ 'account', 'account_status', ... ]` and `expected function to throw an error, but it didn't`.
+    - 8 fail inside the harness's `signInByEmail`, which throws `code request failed: 501` because the stubbed handler answers 501.
+    - None fails on a missing module.
+  - The merge regression is the RED for the glue change. After the merge, `npm run test:edge -- test/posthog-proxy.test.ts` could not load (`Cannot find package 'cloudflare:workers' imported from src/server/auth.ts`): 1D-T2's test imports `src/server.ts` in Node, and that file now imports the glue.
+  - GREEN: the same workers command gives `Tests 27 passed (27)`. The PostHog file gives 9 passed.
+  - Better Auth's answers, pinned as M16 asks:
+    - an expired code: 400 `OTP_EXPIRED`;
+    - a wrong code: 400 `INVALID_OTP`;
+    - the right code after three wrong ones: 403 `TOO_MANY_ATTEMPTS`;
+    - `/token` without a session: 401;
+    - a disabled code route, and an unknown auth path: 404;
+    - the eleventh code request from one address in a minute: 429.
+  - A fake `Date` reaches Better Auth in workerd, so the expiry case needs no edit to the `verification` row.
+- **Mutation check:**
+  - Method: the five mutated files were backed up outside the repository. Each mutant was applied in place and `test/workers/auth/` was run. The file was then restored and compared with `cmp`, which reported no difference after every mutant. All thirteen ran under one hold of the heavy lock.
+  - The plan's six mutants (each gives 1 failed | 26 passed):
+    - M1, `definePayload` removed: the EdDSA JWT test fails (the user's fields appear).
+    - M2, the email normalisation skipped: the capitals-and-spaces test fails (Better Auth refuses the untrimmed address with 400, so the harness throws).
+    - M3, the hook's type refusal off: `only sign-in codes are sent ...` fails (200 for the unknown address).
+    - M4, the session index removed: the index comparison fails.
+    - M5, `AUTH_BODY_MAX_BYTES` raised to 1 MiB: the 413 test fails.
+    - M6, `createdDuring` flipped: the created test fails.
+  - Added mutants, for guards the plan's list leaves unmutated. Each is killed by one of the four tests added for it, and that kill is the added test's RED:
+    - M7, the 415 guard off: `a body that is not JSON is 415 ...` fails (Better Auth answers 415 itself, with its own body).
+    - M8, malformed JSON answered 413: `a body that is not valid JSON is 400 VALIDATION_FAILED ...` fails.
+    - M9 (the secret's length check down to 1) and M10 (the audience check removed): `Better Auth refuses a secret under 32 characters, ...` fails.
+    - M11, `isAuthPath` without the slash: `the HTTP Worker sends /api/auth and its subpaths ...` fails.
+    - M12, the `no-store` default off: `auth answers are no-store` fails.
+  - Survivor:
+    - M13, the type refusal inside `sendVerificationOTP` turned off: all 27 pass. It is equivalent here. The before-hook refuses every type except `sign-in` on `/email-otp/send-verification-otp` before Better Auth calls `sendVerificationOTP`. Better Auth's other code senders are `/email-otp/request-password-reset`, `/forget-password/email-otp` and `/email-otp/request-email-change`, all in `disabledPaths`, plus a sign-up hook that runs only with `sendVerificationOnSignUp`, which is unset. The plan asks for the second refusal as defence in depth.
+  - Not mutated: `handleAuth`'s 503 on `AuthConfigError`. The test Worker's `env` always holds the settings, so no test can reach that branch.
+- **Gate** (worktree root):
+  - `typecheck:edge`: exit 0.
+  - `test:edge`: 144 passed (11 files).
+  - `test:edge:workers`: 267 passed (15 files), which is 240 before this task plus 27.
+  - `build:edge`: passes, and `grep -c '"AUTH_DB"' apps/edge/dist/server/wrangler.json` prints 1.
+  - `test:edge:db`: SKIPPED: Docker is not running (`docker info` finds no daemon socket). Docker was not started for this task.
+  - `node --test scripts/ci/lockfile-bindings.test.mjs`: 2 passed.
+  - `git diff --check origin/claude/p1a-vault-core...HEAD`: clean.
+- **Deviations:**
+  1. `src/server/auth.ts` reads `env` with `await import('cloudflare:workers')` inside `handleAuth`, not with a top-level import.
+     - Why: after the merge, `src/server.ts` imports the glue, and 1D-T2's Node test imports `src/server.ts`; `cloudflare:workers` does not exist in Node.
+     - It is still the only auth module that imports `cloudflare:workers`.
+     - The built bundle keeps `await import("cloudflare:workers")`, and the planner's scratch run of `wrangler dev` on `dist/server`, after `wrangler d1 migrations apply --local` for both databases, answered as follows: `/api/auth/jwks` 200 `no-store` with one Ed25519 key; `/api/auth/nothing-here` 404; a 70 kB body 413 `PAYLOAD_TOO_LARGE`.
+  2. The glue logs through `logFailure('auth_unavailable', error)`, as the plan's Consumes says. The earlier copy wrote the same line by hand.
+  3. The `src/server.ts` merge with 1D-T2: `/ingest/*` first, then `/api/auth/*`. Other requests go to TanStack Start with the handler's own argument tuple, the equivalent of the plan's `fetch(request, ...rest)`.
+  4. `cloudflare-workers.d.ts` differs from the plan's list in two ways:
+     - `D1Result.meta` also has `last_row_id`, because Better Auth 1.6.33's own `D1Database` type requires it (`@better-auth/core/dist/types/database.d.mts`; the plan says to "add exactly the members it names").
+     - `Cloudflare.Env` also declares the optional string settings the harness reads (`AUTH_BASE_URL`, `AUTH_ISSUER`, `AUTH_AUDIENCE`, `AUTH_TRUSTED_ORIGINS`, `BETTER_AUTH_SECRET`, `ERASURE_KEY`, `JOTBUN_ENV`). Without them `tsc` reports TS2322 seven times in `auth-harness.ts`.
+  5. `create-auth.ts` holds empty `VaultSessionControl` and `ProviderHooks` interfaces, so `AuthDeps` has the plan's shape. Tasks 4 (`vault-control.ts`) and 3 (`social.ts`) replace them.
+  6. Four tests beyond the plan, written to kill M7 to M11:
+     - `a body that is not JSON is 415 before Better Auth reads it`;
+     - `a body that is not valid JSON is 400 VALIDATION_FAILED before Better Auth reads it`;
+     - `Better Auth refuses a secret under 32 characters, and a missing base URL, issuer or audience`;
+     - `the HTTP Worker sends /api/auth and its subpaths to Better Auth, and nothing else`.
+
+     The plan's cases keep their names and assertions.
+  7. The auth tests read `env` from `cloudflare:workers`, as 1A's workers tests do; `cloudflare:test`'s `env` is deprecated in `@cloudflare/vitest-plugin` 1.4.7. `applyD1Migrations` still comes from `cloudflare:test`.
+  8. `apply-auth-migrations.ts` drops comment-only statements before `applyD1Migrations`, because D1 refuses a migration with no statement. Only the stubbed migrations hit this.
+  9. The RED was reconstructed after the fact, as described above.
+  10. The integration head moved to `75b3625` (#327 on top of #79) while this task ran. As instructed, this branch merges `bdf6b12`, the head the brief was proven against. `75b3625` leaves `src/server.ts`, `src/cloudflare-workers.d.ts`, `apps/edge/package.json` and `apps/edge/package-lock.json` unchanged, so the later merge of `75b3625` takes these files as they are here.
+  11. The lockfile count differs from the plan's estimate: 55 existing entries change only their flag (the estimate was 56), and the root entry gains the three new dependencies. Measured between `60e2026` and `57dc60e`: 45 added, none removed, no version, `resolved` or `integrity` change.
+- **SKIPPED:**
+  - Hosted resources: the D1 ids are placeholders (default pending owner Q6), `EMAIL` stays local (`remote` unset), and no email is sent (Task 1's mailer refuses every send). Apple, Google, Resend and the phone checks belong to later tasks.
+  - `/api/auth/*` on `wrangler dev` is Task 12's proof. The planner's scratch run is the only one so far.
+  - `test:edge:db`: SKIPPED: Docker is not running (`docker info` finds no daemon socket). Docker was not started for this task.
+- **Notes for Tasks 2 to 4, 10a, 12 and the integrator:**
+  - `src/server.ts` is shared with 1C-T10b, 1D-T12, P5-T7 and P6C-T2: each adds a branch to this dispatch. Keep `/api/auth/*` after `/ingest/*`. When 1B-T13's version lands, keep its `queue` handler and re-exports (K3).
+  - `src/server/auth.ts` must keep reading `cloudflare:workers` lazily for as long as a Node test imports `src/server.ts`.
+  - `vitest.workers.config.ts` now uses `cloudflareTest(async () => ...)`, plus a setup file that migrates `AUTH_DB` and `ERASURE_DB` before every workers test file. `AUTH_DB_REFERENCE` stays empty for the schema test. If 1B-T13's config also binds `AUTH_DB` and `ERASURE_DB`, keep one declaration.
+  - Until Task 2, the HTTP Worker cannot send a code, because `mailerFromEnv` refuses every send.
+  - Against an unmigrated local D1, every `/api/auth/*` request throws (`no such table: rateLimit`, 500). Task 12's `dev.mjs` applies both migration sets with `wrangler d1 migrations apply ... --local`.
+  - K23's `created` compares at millisecond resolution, and workerd's clock moves only across I/O. A second sign-in says `created: false` only if at least one millisecond passes between the first insert and the next request; several D1 round trips sit between them. No run has failed this way.
+  - 1C-T5 (the app's port, in another worktree) adds `### 1C Task 5` under this same heading. Keep one heading.
+
 ## Not done, or follow-ups
 
 - **Rotating reminder wording (owner decision):** a repeating daily notification cannot change its text, so rotation needs "every day" to become seven weekly reminders, one wording per weekday. The reminders milestone (S4) chose one daily reminder on purpose, and its tests pin it. Cancelling all eight known ids first would still leave one reminder a day, so the change is safe to make if wanted.
