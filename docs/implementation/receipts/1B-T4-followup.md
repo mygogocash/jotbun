@@ -1,0 +1,40 @@
+# 1B-T4-followup: the publish and delete race
+
+- **Status:** built and verified locally on `fix/1b-t4-object-races`, cut from `c37ae6d` after PR #341 (1B Task 4) merged. Not pushed. It closes the 1B-T4 review's minors 1 to 3 and its `putConcatenated` nit (`.claude/controller/reviews/1B-T4.md`). Under ruling R87 this receipt is its own file; `premium-progress.md` is not edited.
+- **Files:** `apps/edge/src/vault/files/objects.ts`; `apps/edge/test/workers/files-objects.test.ts` (8 new cases, and `WORK_STARTERS` added to one import); this receipt.
+- **What changed:**
+  - `publishObject` publishes a reservation only before its deadline (`AND delete_after > ?`, the vault clock). At its deadline the key is due and given up, so a writer that publishes then gets a throw, not a published row whose object the alarm is deleting from R2 at that moment.
+  - `deleteDueObjects` tombstones or drops only rows still due (`AND delete_after <= ?` on the success path's `DELETE` and `UPDATE`, as the failure path already had), so a key its writer forgets again during the delete keeps its new deadline. Its doc comment now says it returns how many keys it asked R2 to delete.
+  - `reserveObject` refuses a key outside `vaultPrefix(purpose, c.vaultId)` with `ObjectStoreError('invalid_key')` before it writes anything, so the alarm never deletes another vault's object.
+  - `putConcatenated` calls `assertObjectKey` and refuses parts that do not add up to `totalBytes` (`RangeError`), both before it copies, empties the parts or stores anything.
+- **RED to GREEN** (`npx vitest run --config vitest.workers.config.ts --reporter=verbose test/workers/files-objects.test.ts` in `apps/edge`, under the heavy lock):
+  - RED, the 8 cases on 1B-T4's code: `Tests  4 failed | 24 passed (28)`. The four cases for the new guards fail on assertions: `a reservation is published only before its deadline` (`expected [Function] to throw an error`), `a write or a forget that lands while a delete is in flight is never lost` (`expected 'published' to be 'refused'`), `a vault reserves only keys under its own prefix` (`expected null to be an instance of ObjectStoreError`), `putConcatenated refuses a bad key, or parts that do not add up to totalBytes, before it stores anything` (`promise resolved … instead of rejecting`).
+  - The other four pin behaviour 1B-T4 already has (its deviations 3, 4 and 6, and the failure path's guard), so they pass on 1B-T4's code; each fails under its mutant (G1 to G4 below).
+  - GREEN: `Tests  28 passed (28)`. Verbose stderr shows 9 event lines: `object_delete_failed` 4, `work_start_failed` 2, `pending_work_unstarted` 1, `config_unreadable` 1, `config_malformed` 1.
+- **Mutation check:** 13 mutants, 12 killed, 1 equivalent. Each was applied alone, the focused file was run, and the file was restored and its SHA-256 checked.
+  - F1, `publishObject` ignores the deadline: `a reservation is published only before its deadline`; `a write or a forget that lands while a delete is in flight is never lost`.
+  - F1b, `>=` for `>` in `publishObject`: `a reservation is published only before its deadline`.
+  - F2, the success `DELETE` without its guard: `a write or a forget that lands while a delete is in flight is never lost`.
+  - F3, the success `UPDATE` without its guard: survives, equivalent. Once `publishObject` refuses a due reservation, no registry function can move a due row that is not a tombstone to a later deadline while R2 deletes it (`tombstoneObjects` makes it a tombstone, which the `UPDATE` skips; `releaseObject` only makes it due sooner). The guard stays as defence in depth, matching the failure path.
+  - F4, `reserveObject` without the prefix guard, and F4b, the guard checks only the vault id: `a vault reserves only keys under its own prefix`.
+  - F5, no `assertObjectKey`; F6, no total check; F7, the total checked only for several parts: `putConcatenated refuses a bad key, or parts that do not add up to totalBytes, before it stores anything`.
+  - G1, `handOffWork` without its `.catch`: `a start that rejects is logged and never fails the reply`.
+  - G2, `break` for `continue` after a failed batch: `a failed batch does not stop the next one`.
+  - G3, `releaseObject` also moves a tombstone: `releasing a tombstone keeps its second delete a day later`.
+  - G4, the failure update without its guard: `a failed delete leaves a deadline a writer moved during it`.
+- **Gate** (from the worktree root):
+  - `npm run typecheck:edge`: passes.
+  - `npm run test:edge`: 162 passed (13 files); see Deviations.
+  - `npm run test:edge:workers`: 369 passed, 4 todo (21 files), the 8 new cases included; see Deviations.
+  - `npm run build:edge`: passes.
+  - `npm run test:edge:db`: **SKIPPED.** Docker is stopped on this machine; this change touches no PostgreSQL code, and CI's database job runs the suite.
+  - `git diff --check origin/claude/p1a-vault-core...HEAD`: clean.
+- **Deviations:**
+  - The integration head (`c37ae6d`) adds test files since `d04a4f3`, so two gate counts differ from the brief's. `test:edge` runs 13 files and 162 tests (the brief's 12 and 156); the extra file is `test/contracts/currency.test.ts`. `test:edge:workers` runs 21 files, 369 passed and 4 todo (the brief's 14 and 276); the seven extra files are `test/workers/auth/email-code.test.ts`, `auth/jwt.test.ts`, `auth/schema.test.ts`, `currency-migration.test.ts`, `history.test.ts`, `retention.test.ts` and `summary.test.ts`. The eight new cases are inside the 369.
+  - Step 0: the three base files still had the `d04a4f3` SHA-256 values, so no later commit changed them, and the final hashes match the brief's.
+  - The workers run prints one `uncaught exception; source = Uncaught (in promise); stack = Error: unreadable` line on stderr. It is not one of the 9 event lines, and the reviewer's run prints it too. It comes from case 5's starter, whose `unstarted` throws (its `start` resolves), so the case name describes the hand-off's catch rather than a rejecting `start`. The brief's name is kept.
+- **Notes for later tasks:**
+  - 1B-T5: two `startPendingWork` runs that overlap (a hand-off and the alarm, or two quick `starts` routes) can start the same item twice, because `markStarted` is not an at-most-once guard. A starter must make a second start harmless: `createOnce` does this for Workflows, and the parse message relies on `parseSource` treating a duplicate as harmless (B6).
+  - Writers: publish before the reservation's deadline. A writer that may take longer than `RESERVATION_GRACE_MS` passes its own `graceMs` to `reserveObject`, as 1B-T5's upload parts do (the receive deadline plus the grace).
+  - 1B-T5: `finishUpload` publishes its parts in its own set-based statement, not through `publishObject`. Give that statement the same rule (`status = 'reserved' AND delete_after > ?` with the vault clock), or a part given up at its deadline could be published while the alarm deletes it.
+  - Build every key with `vaultObjectKey(purpose, c.vaultId, ...)`: `reserveObject` refuses any other.
