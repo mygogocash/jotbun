@@ -18,7 +18,8 @@
   - `apps/api/src/imports/fixtures/synthetic-parse.ts`: `buildXlsx` takes an optional `stylesXml` (custom number formats).
   - `apps/api/src/imports/bank-statements.spec.ts`: the masked-account case adds `1234xx5678` (a mask right after a digit) to its null cases (review NIT-A).
 - **The sweep** (`files/sweep.mjs` in the planner's folder):
-  - Every regex in `apps/api/src/imports/parsers/` (55, including `date.ts`'s built ones) was pumped with long runs: 20 by 4 surroundings, 54 run units, 1,000 and 10,000 repeats.
+  - The parsers hold 58 regexes: 54 literals plus `date.ts`'s 4 built ones. The sweep pumped 55 of them with long runs: 18 prefixes by 4 suffixes, 52 run units, 1,000 and 10,000 repeats.
+  - The three it left out are linear: `bank.ts`'s `/\s/` and `/[A-Za-z0-9]/` each test one character, and `date.ts`'s `/\./g` runs on the constant month names. The review's own sweep pumped all 58 (corrected in `fix-parser-regex-followup`).
   - Only `THB_SUFFIX`, `explicitPlus` and the bracket strip grew faster than linearly. With the three rewritten forms, none does.
   - The XML tokenizer, the date patterns (after their whitespace collapse), the ZIP and part-name patterns and the remaining amount patterns are linear.
   - The repeated check per cell style in `readDateStyles` is no regex shape; the sweep cannot see it. It was found while probing the styles part, and R89 was extended to it.
