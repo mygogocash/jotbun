@@ -91,3 +91,13 @@ test('the signin area is off unless named', () => {
     assert.equal(isRedesignEnabled('signin', value), true, value);
   }
 });
+
+// 1D-T8: the consent question and Privacy's switch wait for their E2 screenshots (decided, Q9), so the area is on only when named.
+test('analytics is off by default, on when named, and on with all', () => {
+  for (const value of [undefined, '', 'core', 'account', 'catalogue,companion,conflict,wallet,signin', 'analytic', '-analytics,all', 'analytics,off']) {
+    assert.equal(isRedesignEnabled('analytics', value), false, String(value));
+  }
+  for (const value of ['analytics', ' ANALYTICS ', 'catalogue, analytics', 'all']) {
+    assert.equal(isRedesignEnabled('analytics', value), true, value);
+  }
+});
