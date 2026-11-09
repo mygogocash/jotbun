@@ -65,7 +65,8 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
   - P11: the plan's whole-1A-range review is the controller's to schedule after 1A-T10's own review.
   - Closing epic #83 is the owner's call.
 - **Third usage-limit cutoff, about 19:45.** The owner's credit reset at 19:50. 1C-T8's implementer and the 1B-T10 planner were resumed; the P2-T9 and P2-T10 planners had stayed alive.
-- **1B-T10: brief READY** (L; P1 to P19 accepted). The implementer (Haiku) was dispatched about 21:50 in p1-1b-t10 from 9d48ba3.
+- **1B-T10:** DONE at dcdb773: workers 27 files, 638 passed and 3 todo; test:edge 176; 84 of 84 mutants; R95 markers 0. PR #369 is open (issue #114) and the Opus review is under way.
+- **1B-T10 history:** brief READY (L; P1 to P19 accepted). The implementer (Haiku) was dispatched about 21:50 in p1-1b-t10 from 9d48ba3.
   - Expected: test:edge 15 files and 176 tests; workers 27 files, 638 passed and 3 todo.
   - P2 widens `confirmPrepare`'s answer with `refused`, for the API's 503.
   - P19 extends 1A-T8a's and 1B-T5's pinned lists additively.
