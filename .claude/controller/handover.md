@@ -19,6 +19,7 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
   - **1B-T8 planner** (Opus xhigh, cd2b39ae). It reruns its final proof, because `real/` changed during the killed run (the entity-order check, mutant S40). Its base becomes 0bd5659.
   - **ci-parallel-jobs planner** (ad778c27), **P4-T12 planner** (e438b5ac) and **P4-T13 planner** (50706531): Opus xhigh, continuing their kits. The P4 planners were given 1D-T8's exact files.
   - The old P2-T10 planner (a0363fb1, "waiting on its own background work") is obsolete: P2-T10 merged as #370.
+- **P2-T11 planner** (Opus xhigh, df615dc8), dispatched about 22:25 at 331c2b2 as the sixth agent: the deepest ready task (depth 18). WT p2-t11 on p2/t11-wallet-looks. It carries P2-T8's m-1 (the harness's E2, E3 and X2) and P2-T10's balance-sign note. P2-T13 (depth 18, tray and lock cover, no shared files) follows in the wallet lane.
 
 ## PR #371: the integration branch into main. The owner merged it on 9 Nov, 21:30 Bangkok, as afcf884
 - It was merged with a merge commit, so history is kept. The controller then fast-forwarded claude/p1a-vault-core to afcf884, which adds main's README and CHANGELOG, so the two branches were level.
