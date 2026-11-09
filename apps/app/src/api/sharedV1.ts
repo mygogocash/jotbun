@@ -1,6 +1,9 @@
 import * as Application from 'expo-application';
 import { Platform } from 'react-native';
 
+import { getAnalytics } from '@mobile/analytics/bus';
+import { createAnalyticsServer } from '@mobile/analytics/analyticsServer';
+import type { AnalyticsDeps } from '@mobile/analytics/controller';
 import { v1SessionCredentials } from '@mobile/auth/session';
 import { getMobileEnv } from '@mobile/config/env';
 import { createSpendV1Resources, createSyncResources } from '@mobile/spend/v1/resources';
@@ -29,6 +32,7 @@ let transport: V1Transport | null = null;
 let shared: SpendV1Resources | null = null;
 let sync: SyncRemote | null = null;
 let ai: AiResources | null = null;
+let analyticsServer: AnalyticsDeps['server'] | null = null;
 
 /** The one v1 transport. Sign-out uses it so a second client is not opened. */
 export function getSharedV1Transport(): V1Transport {
@@ -43,6 +47,8 @@ function sharedTransport(): V1Transport {
     credentials: v1SessionCredentials,
     // A development build may reach `wrangler dev` on the LAN; a release build never does (plan 1D, L8).
     allowLanHttp: __DEV__,
+    // Server events stay off unless this phone's answer is yes (plan 1D, L4).
+    analyticsOff: () => getAnalytics()?.allowsAnalytics() !== true,
   });
   return transport;
 }
@@ -83,4 +89,10 @@ export async function fetchAccountId(): Promise<string> {
 export function getSharedAiResources(): AiResources {
   ai ??= createAiResources(sharedTransport());
   return ai;
+}
+
+/** The analytics answer and identity (1D-T11's GET /v1/me/analytics) and the consent call, over the same transport. */
+export function getSharedAnalyticsServer(): AnalyticsDeps['server'] {
+  analyticsServer ??= createAnalyticsServer(sharedTransport());
+  return analyticsServer;
 }

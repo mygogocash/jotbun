@@ -12,6 +12,7 @@ import { afterEach, beforeAll, beforeEach, expect, test, vi } from 'vitest';
 import RootLayout from '../../../app/_layout';
 import { installAppAuth } from '@mobile/auth/appAuth';
 import { getCredentialProvider } from '@mobile/auth/session';
+import { getAnalytics, setAnalytics } from '@mobile/analytics/bus';
 
 vi.mock('expo-router', async () => {
   const { Fragment, createElement } = await import('react');
@@ -26,6 +27,8 @@ vi.mock('expo-router', async () => {
       createElement(Pressable, { accessibilityRole: 'button', accessibilityLabel: 'choose en', onPress: () => setPreference('en') }));
   }
   return {
+    // AnalyticsUpkeep sends the route pattern (1D-T6).
+    useSegments: () => [],
     Stack: ({ screenOptions }: { screenOptions: unknown }) => createElement(Fragment, null, createElement(Text, { testID: 'stack' }, JSON.stringify(screenOptions)), createElement(Screen)),
   };
 });
@@ -129,4 +132,36 @@ test('the wallet root wraps the stack, so every screen shares its gestures and i
   render(<RootLayout />);
   const stack = await screen.findByTestId('stack');
   expect(screen.getByTestId('wallet-root').contains(stack)).toBe(true);
+});
+
+// PostHog is loaded only on iOS and Android with a project key (1D-T6). The shared
+// transport is not loaded here, as in the other render tests; no session is signed in.
+vi.mock('@mobile/api/sharedV1', () => ({
+  fetchAccountId: async () => { throw new Error('no account in this test'); },
+  getSharedAnalyticsServer: () => ({
+    read: async () => { throw new Error('no server in this test'); },
+    setConsent: async () => { throw new Error('no server in this test'); },
+  }),
+  v1ClientVersion: () => null,
+}));
+const posthog = vi.hoisted(() => ({ created: 0 }));
+vi.mock('@mobile/analytics/posthogClient', () => ({
+  createPostHogClient: () => {
+    posthog.created += 1;
+    throw new Error('PostHog must not start on the web');
+  },
+}));
+
+test('the web build installs analytics with no PostHog client, even with a project key', async () => {
+  setAnalytics(null);
+  process.env.EXPO_PUBLIC_POSTHOG_KEY = 'phc_test';
+  try {
+    render(<RootLayout />);
+    await waitFor(() => expect(getAnalytics()).not.toBeNull());
+    expect(posthog.created).toBe(0);
+    expect(getAnalytics()?.allowsAnalytics()).toBe(false);
+  } finally {
+    delete process.env.EXPO_PUBLIC_POSTHOG_KEY;
+    setAnalytics(null);
+  }
 });

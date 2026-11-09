@@ -14,6 +14,7 @@ import { BunIntensityProvider } from '@mobile/mascot/BunIntensityProvider';
 import { HapticsProvider } from '@mobile/lib/HapticsProvider';
 import { useReducedMotion } from '@mobile/hooks/useReducedMotion';
 import { installAppAuth } from '@mobile/auth/appAuth';
+import { AnalyticsUpkeep } from '@mobile/analytics/AnalyticsUpkeep';
 import { WalletRoot } from '@mobile/wallet/WalletRoot';
 
 // Sign-in: the Better Auth provider, installed once before any screen reads the session.
@@ -43,6 +44,7 @@ function RootStack() {
           <ThemeProvider>
             <WalletRoot>
               <LocaleUpkeep />
+              <AnalyticsUpkeep />
               <ThemedStatusBar />
               <Stack screenOptions={{ headerShown: false, animation: reducedMotion ? 'fade' : 'default' }} />
             </WalletRoot>

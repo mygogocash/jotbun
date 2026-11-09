@@ -16,7 +16,7 @@ const server = createServer(async (req, res) => {
   let body = '';
   for await (const chunk of req) body += chunk.toString();
   res.setHeader('Content-Type', 'application/json');
-  res.end(JSON.stringify({ authorization: req.headers.authorization, contentType: req.headers['content-type'], method: req.method, body, session: req.headers['x-gogospend-session'] ?? null }));
+  res.end(JSON.stringify({ authorization: req.headers.authorization, contentType: req.headers['content-type'], method: req.method, body, session: req.headers['x-gogospend-session'] ?? null, analytics: req.headers['x-gogospend-analytics'] ?? null }));
 });
 before(async () => {
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -112,4 +112,36 @@ test('a response from the previous account cannot become the current diary', asy
   let reads = 0;
   const client = createMobileApiClient({ baseUrl, getToken: async () => ++reads === 1 ? 'account-a' : 'account-b' });
   await assert.rejects(client.get('/spend/summary'), (error: unknown) => error instanceof ApiError && error.code === 'SESSION_CHANGED');
+});
+
+test("requests carry X-GoGoSpend-Analytics: off unless this phone's answer is yes", async () => {
+  const send = async (analyticsOff?: () => boolean) => {
+    const transport = createV1Transport({
+      baseUrl,
+      client: { platform: 'ios', version: '1.2.3' },
+      credentials: { getAccessToken: async () => 'token-1', getSessionSnapshot: () => ({ binding: 'b'.repeat(43), epoch: 1 }) },
+      analyticsOff,
+    });
+    const result = await transport.request('GET', '/v1/wallets', {
+      validate: (value): value is { analytics: string | null } => typeof value === 'object' && value !== null && 'analytics' in value,
+    });
+    return result.analytics;
+  };
+  assert.equal(await send(() => true), 'off');
+  assert.equal(await send(() => false), null);
+  assert.equal(await send(), null);
+  // Read at each request: an answer that changes applies to the next one.
+  let off = true;
+  const transport = createV1Transport({
+    baseUrl,
+    client: { platform: 'ios', version: '1.2.3' },
+    credentials: { getAccessToken: async () => 'token-1', getSessionSnapshot: () => ({ binding: 'b'.repeat(43), epoch: 1 }) },
+    analyticsOff: () => off,
+  });
+  const read = () => transport.request('GET', '/v1/wallets', {
+    validate: (value): value is { analytics: string | null } => typeof value === 'object' && value !== null && 'analytics' in value,
+  });
+  assert.equal((await read()).analytics, 'off');
+  off = false;
+  assert.equal((await read()).analytics, null);
 });

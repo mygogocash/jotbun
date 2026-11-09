@@ -261,6 +261,8 @@ export function createV1Transport(options: {
    * For a development build reaching `wrangler dev` on the LAN; release builds never set it (plan 1D, L8).
    */
   allowLanHttp?: boolean;
+  /** true adds `X-GoGoSpend-Analytics: off`, which stops server events for that request (plan 1D, L4). Read at each request. */
+  analyticsOff?: () => boolean;
 }): V1Transport {
   let base: URL;
   try {
@@ -340,6 +342,7 @@ export function createV1Transport(options: {
         Authorization: `Bearer ${token}`,
         'X-GoGoSpend-Client': `${options.client.platform}/${options.client.version}`,
       };
+      if (options.analyticsOff?.() === true) headers['X-GoGoSpend-Analytics'] = 'off';
       // The vault reads the session from the JWT (the `sid` claim). The session id stays on the snapshot so a missing one still refuses the request before anything is sent.
       if (request.body !== undefined && request.raw) throw new V1Error('invalid', 0, 'INVALID_BODY');
       if (request.body !== undefined) headers['Content-Type'] = 'application/json';
