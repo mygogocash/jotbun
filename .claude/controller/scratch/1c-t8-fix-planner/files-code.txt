@@ -1,0 +1,5 @@
+apps/app/src/screens/redesign/signin/SessionEndedScreen.tsx
+apps/app/src/screens/redesign/signin/draftCopy.ts
+apps/app/src/screens/redesign/signin/TermsScreen.tsx
+apps/app/src/screens/redesign/account/OnboardingScreen.tsx
+apps/app/src/dev/catalogue/account/signinSections.tsx

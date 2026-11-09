@@ -1,0 +1,7 @@
+apps/app/src/screens/redesign/signin/SessionEndedScreen.render.test.tsx
+apps/app/src/screens/redesign/signin/useFreshSignIn.render.test.tsx
+apps/app/src/screens/redesign/signin/TermsGate.render.test.tsx
+apps/app/src/screens/redesign/signin/EmailCodeScreen.render.test.tsx
+apps/app/src/screens/redesign/signin/DevicesScreen.render.test.tsx
+apps/app/src/screens/redesign/account/OnboardingScreen.render.test.tsx
+apps/app/src/spend/v1/policies.test.ts

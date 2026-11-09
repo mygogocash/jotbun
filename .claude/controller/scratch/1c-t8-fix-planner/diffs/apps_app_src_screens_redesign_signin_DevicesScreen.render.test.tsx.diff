@@ -1,0 +1,18 @@
+--- a/apps/app/src/screens/redesign/signin/DevicesScreen.render.test.tsx
++++ b/apps/app/src/screens/redesign/signin/DevicesScreen.render.test.tsx
+@@ -153,3 +153,15 @@
+   await open({ linked: ['apple', 'google', 'email'] });
+   expect(screen.getAllByRole('button', { name: /^Remove / }).map((button) => button.getAttribute('aria-label'))).toEqual(['Remove Apple', 'Remove Google']);
+ });
++
++// The 1C-T8 fix round (review m1, RV6): Link is offered only for a method this build runs.
++test('linking is offered only for a method this build runs', async () => {
++  // A build with Google and no Apple (Android, K15), and an account that already has Google: nothing to link.
++  const fake = setup({ linked: ['google', 'email'] });
++  const port = { ...fake.port, methods: ['google', 'email'] as const } satisfies DevicesPort;
++  mountInApp(<DevicesScreen port={port} freshSignIn={fake.freshSignIn} account={{ ...ACCOUNT, email: 'karn@gmail.com', method: 'google' }} />);
++  await settle();
++  await screen.findByTestId('devices-list');
++  expect(screen.getByText('Sign in with Google')).toBeTruthy();
++  expect(screen.queryByRole('button', { name: /^Link / })).toBeNull();
++});
