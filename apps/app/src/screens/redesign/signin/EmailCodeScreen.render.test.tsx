@@ -162,3 +162,19 @@ test('in fresh mode the address is fixed and freshSignIn is called', async () =>
   expect(fake.signIn).not.toHaveBeenCalled();
   expect(onDone).toHaveBeenCalledWith('fresh');
 });
+
+// The 1C-T8 fix round (review m1, RV4): one code per press, however fast it lands.
+test('a double tap on Send the code sends one code', async () => {
+  const fake = provider();
+  fake.sendEmailCode.mockImplementation(() => new Promise<CodeOutcome>(() => undefined));
+  mountInApp(<EmailCodeScreen provider={fake} mode="sign_in" onDone={vi.fn()} onBack={vi.fn()} />);
+  await settle();
+  fireEvent.change(screen.getByRole('textbox', { name: COPY.address }), { target: { value: 'kanya@gmail.com' } });
+  const send = button(COPY.send);
+  act(() => {
+    fireEvent.click(send);
+    fireEvent.click(send);
+  });
+  await flush();
+  expect(fake.sendEmailCode).toHaveBeenCalledTimes(1);
+});

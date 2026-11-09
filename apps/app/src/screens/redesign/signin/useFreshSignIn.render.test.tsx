@@ -125,3 +125,22 @@ test('an Apple fresh sign-in that cannot reach the service is handed back at onc
   fireEvent.click(screen.getByRole('button', { name: 'Use another way' }));
   expect(screen.getByTestId('email-code-address').textContent).toBe('k•••@icloud.com');
 });
+
+// The 1C-T8 fix round (review m1, RV1): an answer is never handed out twice.
+test('a later fresh sign-in never reuses an earlier answer: a new sheet and a new sign-in', async () => {
+  const fake = provider(APPLE, ['fresh', 'fresh']);
+  const { outcomes, sheet } = await open(fake);
+  fireEvent.click(within(sheet).getByRole('button', { name: 'Continue with Apple' }));
+  await flush();
+  expect(outcomes).toEqual(['fresh']);
+  expect(screen.queryByRole('dialog', { name: "Confirm it's you" })).toBeNull();
+  // The next sensitive action asks again: nothing answers until the new sheet's sign-in does.
+  fireEvent.click(screen.getByRole('button', { name: 'Sign out everywhere' }));
+  await flush();
+  expect(outcomes).toEqual(['fresh']);
+  const again = await screen.findByRole('dialog', { name: "Confirm it's you" });
+  fireEvent.click(within(again).getByRole('button', { name: 'Continue with Apple' }));
+  await flush();
+  expect(fake.freshSignIn).toHaveBeenCalledTimes(2);
+  expect(outcomes).toEqual(['fresh', 'fresh']);
+});

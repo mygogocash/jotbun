@@ -9,8 +9,11 @@
 //   sign-in, and everything already sent is in the account.
 // - The main button names the account's own method (ดำเนินการต่อด้วย Apple);
 //   on a build without that method, the email code to the account's address
-//   (C14). ใช้วิธีอื่น lists the other methods this build offers. Email opens
-//   the code step on this screen.
+//   (C14). ใช้วิธีอื่น lists the other methods this build offers, and when the
+//   main button is the email code to the account's own address, an email code
+//   to another address too (R98), so another account is always within reach,
+//   even on a build that offers only the email code. Email opens the code step
+//   on this screen.
 // - After a sign-in (`afterEndedSignIn`): the same account resumes, and its
 //   outbox sends the records; another account never gets them, and when any
 //   wait the keep-or-erase choice shows (OtherAccountRecords), where erasing
@@ -62,6 +65,9 @@ type Phase =
   | { readonly kind: 'email'; readonly fixedEmail: string | undefined }
   | { readonly kind: 'other_account'; readonly previousAccountId: string; readonly unsent: number };
 
+/** One of ใช้วิธีอื่น's ways: a method this build offers, to any account (an email code to any address). */
+type OtherWay = { readonly key: string; readonly method: SignInMethod; readonly label: string };
+
 const FAILED: SignInResult = { outcome: 'failed', methods: [], created: false };
 
 export function SessionEndedScreen({ view, unsentRows, provider, eraseAccount, onResumed }: SessionEndedScreenProps) {
@@ -85,7 +91,13 @@ export function SessionEndedScreen({ view, unsentRows, provider, eraseAccount, o
 
   const offered = provider.methods();
   const main: SignInMethod | null = view.method !== null && offered.includes(view.method) ? view.method : offered.includes('email') ? 'email' : null;
-  const others = offered.filter((method) => method !== main);
+  // R98: when the main button is the email code to the account's own address,
+  // ใช้วิธีอื่น also offers an email code to another address, so a failure
+  // always has another way (spec §5.2) and another account can sign in (D37).
+  const others: readonly OtherWay[] = [
+    ...offered.filter((method) => method !== main).map((method) => ({ key: method, method, label: labels[method] })),
+    ...(main === 'email' ? [{ key: 'email-other', method: 'email' as const, label: sc('Email a code to another address') }] : []),
+  ];
 
   const settle = (result: SignInResult) => {
     if (result.outcome === 'active') {
@@ -209,18 +221,19 @@ export function SessionEndedScreen({ view, unsentRows, provider, eraseAccount, o
             />
           ) : null}
           {phase.otherWays
-            ? others.map((method) => (
+            ? others.map((way) => (
               <PillButton
-                key={method}
+                key={way.key}
+                testID={`session-ended-way-${way.key}`}
                 kind="secondary"
-                label={labels[method]}
-                busy={busy === method}
+                label={way.label}
+                busy={busy === way.method}
                 busyLabel={tc('Signing in…')}
-                disabled={busy !== null && busy !== method}
-                onPress={() => void start(method, false)}
+                disabled={busy !== null && busy !== way.method}
+                onPress={() => void start(way.method, false)}
               />
             ))
-            : others.length > 0 ? <TextButton label={sc('Use another way')} onPress={() => setPhase({ kind: 'ended', otherWays: true })} /> : null}
+            : others.length > 0 ? <TextButton testID="session-ended-other-ways" label={sc('Use another way')} onPress={() => setPhase({ kind: 'ended', otherWays: true })} /> : null}
         </ActionFooter>
       ) : null}
     </View>

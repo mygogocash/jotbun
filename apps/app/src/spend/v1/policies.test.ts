@@ -131,3 +131,16 @@ test('watchPolicyRequired reports each policy_required answer and rethrows it', 
   assert.deepEqual(await client.pending(), []);
   assert.equal(required, 1);
 });
+
+// The 1C-T8 fix round (review m1, RV7): published() checks every field of every version it is given.
+test('a malformed published list is invalid_response', async () => {
+  const invalid = (error: unknown) => error instanceof V1Error && error.outcome === 'invalid_response';
+  const terms = { kind: 'terms', version: 2, required: true, published_at: '2026-10-01T00:00:00.000Z', text: { th: 'ข้อกำหนด', en: 'Terms' } };
+  for (const entry of [{ ...terms, kind: 'cookies' }, { ...terms, version: 0 }, { ...terms, required: 'yes' }, { ...terms, published_at: 1 }, { ...terms, text: null }, { ...terms, text: { th: 'ข้อกำหนด' } }]) {
+    replies = [{ status: 200, body: [entry] }];
+    await assert.rejects(createPolicyClient(transport()).published(), invalid, JSON.stringify(entry));
+  }
+  replies = [{ status: 200, body: [terms] }];
+  assert.deepEqual(await createPolicyClient(transport()).published(), [terms]);
+  assert.deepEqual(seen.map((request) => `${request.method} ${request.url}`).at(-1), 'GET /v1/policies');
+});

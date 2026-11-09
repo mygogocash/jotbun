@@ -15,13 +15,13 @@
 // - With the `signin` area on (1C-T8, K16, C15): the first step also offers
 //   bw-welcome's sign-in link, and the story (Skip, or "Let's start!") ends
 //   at sign-in from onboarding (`afterStory`); the reminder question moves
-//   to right after sign-in (R55, ReminderQuestionScreen), so it never shows
-//   here.
+//   to right after sign-in (R55, ReminderQuestionScreen). With a session
+//   already, today's reminder step still follows the story here: nothing
+//   goes to `/onboarding/reminder` before 1C-T9 adds that route (R99).
 //
 // The bun: a pose on the stage at Full. Quiet and Off leave the stage plain,
 // as Home's stage does: Quiet keeps the bun for empty states only.
 import { useRouter } from 'expo-router';
-import type { Href } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
@@ -106,12 +106,12 @@ export function OnboardingScreen({ reminders, signinArea }: OnboardingScreenProp
 
   const finish = () => router.replace(afterOnboarding(isAuthed));
 
-  // The `signin` area: the story ends at sign-in from onboarding, or with a
-  // session already at the reminder question (1C-T9 routes it; until then
-  // typed routes do not know it, and the area is off).
+  // The `signin` area: the story ends at sign-in from onboarding. With a
+  // session already, today's reminder step follows the story here until 1C-T9
+  // adds `/onboarding/reminder` and ends the story there (R99).
   const endStory = () => {
-    if (!isAuthed) router.replace(afterStory(false));
-    else router.replace(afterStory(true) as unknown as Href);
+    if (isAuthed) setStep('reminder');
+    else router.replace(afterStory(false));
   };
   const skip = () => (signin ? endStory() : setStep(SKIP_TO));
   const next = () => (signin && step === 'first-coffee' ? endStory() : setStep(stepAfter(step)));

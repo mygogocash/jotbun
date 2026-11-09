@@ -247,3 +247,25 @@ test('Settings opens /settings', async () => {
   expect(router.push).toHaveBeenCalledWith('/settings');
   expect(client.accept).not.toHaveBeenCalled();
 });
+
+// The 1C-T8 fix round (review m1, RV2 and RV3): one read at a time, and an answer during a read is not lost.
+test('a policy_required answer during a read waits for it, then one more read shows the terms', async () => {
+  let release: (value: PendingPolicy[]) => void = () => undefined;
+  const first = new Promise<PendingPolicy[]>((resolve) => { release = resolve; });
+  const { client } = policyClient([first, [TERMS]]);
+  const { events } = await open(client);
+  expect(client.pending).toHaveBeenCalledTimes(1);
+  // Two answers while the first read is out: no second read starts yet.
+  await events.fire();
+  await events.fire();
+  expect(client.pending).toHaveBeenCalledTimes(1);
+  // The first read answers none (it began before the policy changed); one more read follows, and it shows the terms.
+  await act(async () => {
+    release([]);
+    await Promise.resolve();
+  });
+  await flush();
+  expect(client.pending).toHaveBeenCalledTimes(2);
+  expect(await screen.findByRole('heading', { name: COPY.title })).toBeTruthy();
+  expect(screens()).toBeNull();
+});
