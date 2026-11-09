@@ -76,9 +76,13 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - **The owner answered on 10 Nov at 06:2x: "keep the nine-job CI, merge".**
       - The controller closed and reopened #377 at 06:24, but that run (42720201154, green, 256 s wall) checked out the stale merge commit `c56e0e4` (into 4850463), so it proved nothing new (lessons.md).
       - An API read then rebuilt the merge ref as 97f299c (base b272f0c, which holds P4-T13, 1B-T8 and P4-T12). The PR was reopened again at 06:32, for run 42721236288.
-      - **Confirm its checkout line says "Merge 46b30a0 into b272f0c" or later** (render 107 files with P4-T12's, plus 162, 196 and 218 of 576) before merging.
-    - When that run is green, with its totals checked: `merge_task_pr.sh 377 46b30a0` (no task id). Then `promote_pr.sh ci-parallel-jobs 377`, and add the measured times to the receipt's "After, measured" line in a housekeeping commit (with review nits n1 and n6).
-    - Then lift protocol.md's iOS-export correction (CI now runs it), and drop 1A-T10's minor 1 from P6C-T7 in followups.md.
+      - Run 42721236288 checked out `97f299c` = `46b30a0` into `b272f0c`, and its nine jobs were green in 288 s wall.
+      - The render job had 107 files and 1291 tests, and the sections jobs 162, 196 and 218 of 576, for the full 1867. The exports built web 4806 and iOS 5772. Workers had 28 files.
+    - **Merged as e469d8b (#377, at 06:39).** No task issue; the worktree and branches are removed.
+      - **Promotion PR #384** (`promote/ci-parallel-jobs`) is on top of stack #379: #373 → #378 → #380 → #381 → #384.
+      - The receipt's "After, measured" line, with nits n1 and n6, is in 9ed39fa.
+      - protocol.md now states the nine-job layout (the iOS export is CI's again), and followups.md drops 1A-T10's minor 1 from P6C-T7 and closes 1D-T8's n5.
+    - **From now on every PR's CI runs the nine jobs** (about 4.75 minutes, about 33 billable minutes). The controller no longer runs the iOS export by hand.
     - **Its merge waits on the owner's Actions-minutes answer** (Owner decisions waiting).
     - After the merge: P6C-T7 no longer carries 1A-T10's minor 1, briefs that say "CI's database job runs `test:edge:db`" now mean the `edge` job, and the protocol's iOS-export correction can be lifted.
   - **P4-T12: brief READY on 606e131's code** (M; 18 new files in `src/slips/` and ten placeholder routes under `app/spend/slips/`).
