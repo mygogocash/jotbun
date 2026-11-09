@@ -132,6 +132,23 @@ test('every local gate command runs in CI with the same settings', () => {
   assert.deepEqual(missing, []);
 });
 
+// Phase 1A Task 10: the edge steps run in one job, the database job, in the
+// local gate's order: the UserVault suites in workerd after the unit tests and
+// before the build, and the PostgreSQL suites last, on the built Workers.
+test('the edge steps run in the database job in order, the workers suite between the unit tests and the build', () => {
+  const edge = workflowRuns(workflow)
+    .filter((entry) => /^npm run [a-z]+:edge(:[a-z]+)?$/.test(entry.run))
+    .map((entry) => `${entry.job}: ${entry.run}`);
+  assert.deepEqual(edge, [
+    'database: npm run install:edge',
+    'database: npm run typecheck:edge',
+    'database: npm run test:edge',
+    'database: npm run test:edge:workers',
+    'database: npm run build:edge',
+    'database: npm run test:edge:db',
+  ]);
+});
+
 test('the ops suite in CI fails, not skips, when its database is unreachable', () => {
   const ops = workflowRuns(workflow).filter((entry) => entry.run === 'npm run test:ops');
   assert.deepEqual(ops.map((entry) => entry.env.GOGOSPEND_OPS_REQUIRE_DB), ['1']);

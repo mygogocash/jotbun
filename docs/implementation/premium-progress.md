@@ -82,6 +82,8 @@ Gate after these changes (24 October 2026): `typecheck:app` and `typecheck:route
 
 Phase 1A moves each person's ledger into one SQLite Durable Object, the UserVault, as the spec's §6.2 describes (`docs/superpowers/specs/2026-10-25-jotbun-bun-wallet-cloudflare-design.md`; the phase plan is `docs/superpowers/plans/2026-10-25-jotbun-p1a-vault-core.md`). Task 1 builds the Workers-runtime test harness, the core schema and the vault's Worker. Later tasks add the HTTP front door and the command protocol.
 
+The phase's closing receipt is its own file under ruling R87: `docs/implementation/receipts/1A-T10.md`, with what the vault serves, what waits for 1B, the cases that do not apply to a vault, the mutation checks, the SKIPPED hosted checks and what the phase leaves open. Task 9's receipt is `docs/implementation/receipts/1A-T9.md`, and Task 8b's follow-up is `docs/implementation/receipts/1A-T8b-followup.md`.
+
 ### Task 1: Workers-runtime harness and a vault that migrates on wake
 
 - **Status:** built and verified locally on `claude/p1a-vault-core`. Not pushed. The independent review is the controller's, after this receipt.

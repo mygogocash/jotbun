@@ -18,8 +18,11 @@ Each Worker has its own least-privilege logins and secrets, as each was its own 
 | `jotbun-security` | `wrangler.security.jsonc` | Provider cleanup after a global logout or credential change, provider links, reconciliation | `gogospend_jobs` + `gogospend_security` | The Auth0 maintenance client |
 | `jotbun-deletion` | `wrangler.deletion.jsonc` | Account deletion | `gogospend_jobs` + `gogospend_security`; `gogospend_erasure_registry` | `ERASURE_REGISTRY_LOOKUP_KEY`, the Auth0 maintenance client |
 | Parser container | `ImportParser` in `jotbun-jobs` | `import_parse` only, then exits when idle | `gogospend_jobs` (a direct URL) | R2 S3 token |
+| `jotbun-vault` | `wrangler.vault.jsonc` | The UserVault, one SQLite Durable Object per person: the v1 account, policy, money, history, summary and sync-changes routes (phase 1A). Phase 1B adds files and background work here until the vault moves into `jotbun-edge` (C1) | None | `COMMAND_DIGEST_KEY` |
 
 Import parsing needs things a Worker isolate cannot give it: a Node child process under Node's permission model (no network, no file writes, no processes) and libvips for receipt images, within the reviewed 512 MiB budget. So it runs in a **Cloudflare Container** built from the API's own release image (`apps/api/Dockerfile`), started as `node dist/imports/parse-worker.js`. The jobs Worker wakes it when a parse is due, and it exits once nothing has been due for a minute.
+
+`jotbun-vault` checks each token itself against a JWKS (EdDSA or RS256). `AUTH_ISSUER`, `AUTH_AUDIENCE` and `AUTH_JWKS_URL` point at the issuer: Better Auth on `jotbun-edge` from phase 1C (its keys at `/api/auth/jwks`), and the API's synthetic JWKS in the tests.
 
 ## How it reuses the API
 
@@ -73,12 +76,14 @@ Point the app at the edge with `EXPO_PUBLIC_V1_API_URL=http://127.0.0.1:8092`.
 | --- | --- |
 | `npm run typecheck:edge` | Types of the Workers and of every API module they import |
 | `npm run test:edge` | Unit tests: route coverage, HTTP parsing, the Workers fetch, the R2 store contract (Miniflare's R2), the sentence parser, AI grounding and drafts, the bridge |
-| `npm run build:edge` | The client and all four Worker bundles |
+| `npm run test:edge:workers` | The UserVault in workerd (`vitest.workers.config.ts`, through `@cloudflare/vitest-plugin`, on `wrangler.vault.jsonc`): its schema and migrations, the front door and `config:v1`, the command protocol (also after the vault sleeps), every phase 1A route and retention on its alarm. Later phases add their suites here (files, live pokes, Better Auth on D1). The bindings are synthetic: no cloud resource |
+| `npm run build:edge` | The client and all five Worker bundles, `jotbun-vault` included |
 | `npm run test:edge:db` | PostgreSQL suites (below). Needs `npm run build -w gogospend-api` and `npm run build:edge` first. |
 
 The PostgreSQL suites:
 - **Dispatch:** the access pipeline, commands, RLS, gates, bodies and the forwarder.
 - **Parity:** three scripted sessions (money; sign-in and privacy; files and background requests) against the built NestJS v1 server and the edge, every response compared.
+- **Vault parity:** the money session's 49 steps against the built NestJS v1 server and the built `jotbun-vault` in `wrangler dev`, with the policies NestJS publishes seeded into its local KV (`config:v1`). Every status, key header and normalized body is compared, and one person cannot read another's wallet.
 - **AI** with a scripted model: consent, quotas, grounding, tools, and no account identifiers sent.
 - **Jobs:** each role's run end to end: a snapshot, an export download (and a tampered file refused), the sweep, a provider revocation, a deletion with its receipt, and an import parsed by the container's entry, then reviewed and confirmed.
 - **workerd:** the built Workers in `wrangler dev`: the HTTP Worker's money session and sign-in, and each background Worker's Cron run sharing R2 with it.
