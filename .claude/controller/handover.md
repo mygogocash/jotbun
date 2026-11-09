@@ -28,7 +28,14 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
   - P1 to P19 are accepted. P5 keeps the two animation systems one per surface. P6 pins P2-T9's m-2 (drop it from followups.md once merged; m-1 stays). In P17, P10 is equivalent (Pressable reports `disabled` itself).
   - The planner proved it also laid over P2-T11's final files, so it works in either merge order. Kit `scratch/p2-t13-planner/`: check_kit at ee12d43 gives 27 OK, and the 3 `orig/` files are identical. 98 of 99 mutants are killed and one is equivalent.
   - The implementer (Haiku max, 094336d2) was dispatched at about 06:20 in a pre-installed p2-t13 from ee12d43. No iOS export is needed.
-  - Then: PR (issue from backlog-map.json) and an Opus review (L). For E2-A, see P19 (button sizes, the title's alignment, the backdrop without a fade).
+  - For E2-A, see P19 (button sizes, the title's alignment, the backdrop without a fade).
+  - **DONE at 2f0e40e; PR #383 opened at 06:35 (issue #159).**
+    - RED: Node 4 of 4, render 16 of 16. GREEN: 4 and 22, neighbours 42. 98 of 99 mutants killed, with P10 equivalent; the output matches the planner's.
+    - A server restart cut off the first mutation run at R31. The implementer restored `Tray.tsx` from `real/` and reran all 99.
+    - The controller checked the 11 files against the kit and the clean merge with the head.
+    - **The review runs as a workflow** (run wf_74d1e17e-476): two Opus lenses (closing, the lock, the exit and motion; names, focus, buttons, the test traps, shared edits and CI), a skeptic for each blocker or major, and a synthesizer writing `reviews/P2-T13.md`.
+    - On approval and green CI: `merge_task_pr.sh 383 2f0e40e P2-T13`, then `promote_pr.sh P2-T13 383`. No iOS export is needed.
+    - #382 (P2-T11) and #383 share no file. Whichever merges second, CI tests the merge ref; read the PR through the API first (lessons.md: a stale merge ref).
   - **1B-T8: brief READY at 0bd5659** (L, 16 files under apps/edge). P1 to P17 are accepted, with P4 recorded as R101.
     - Kit `scratch/1b-t8-planner/`: check_kit at db19056 gives 47 OK, and the 13 `orig/` files are identical.
     - The planner's proof: RED 38 of 53 failing, GREEN 52 plus 1 todo, 62 of 62 mutants. In the ten-times memory case, `peakHeldBytes` was at most 20,644,143 against a bound of 20,644,976.
