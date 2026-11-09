@@ -15,7 +15,10 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
   - The heavy lock, held since 21:53 by 1B-T8's killed final proof, was removed; no test process was alive.
   - `inflight_agents.py` now lists agents that failed on a usage limit; it had missed the P4-T12 and P4-T13 planners.
 - **Resumed at about 22:15**, with resume notes in `scratch/takeover/*.resume.md`. The T3 task ids end with the uuid shown.
-  - **1D-T8 implementer** (Haiku max, 239717c6), in p1-1d-t8 at 0bd5659. It reruns the whole mutation check (the cut run reached 39 of 47), then the gate, receipt and commit. Next: open its PR (issue from backlog-map.json) and dispatch the Opus review.
+  - **1D-T8: DONE at 2ff0b8d (on 6d7fc6a), PR #372 opened about 22:45 (issue #139).** 47 of 47 mutants; the fast gate passed (test:app 34, test:unit 927, export:web 4794). The controller checked the 18 files against the kit's checksums and the clean merge with the head.
+    - The Opus review (538c0bd5, `reviews/1D-T8.md`) is under way.
+    - On approval and green CI: `merge_task_pr.sh 372 2ff0b8d 1D-T8`, close #139, then `promote_pr.sh 1D-T8 372`.
+    - Followups: P2-T18 for the wallet swap, P4 for the import transports.
   - **1B-T8 planner** (Opus xhigh, cd2b39ae). It reruns its final proof, because `real/` changed during the killed run (the entity-order check, mutant S40). Its base becomes 0bd5659.
   - **ci-parallel-jobs planner** (ad778c27), **P4-T12 planner** (e438b5ac) and **P4-T13 planner** (50706531): Opus xhigh, continuing their kits. The P4 planners were given 1D-T8's exact files.
   - The old P2-T10 planner (a0363fb1, "waiting on its own background work") is obsolete: P2-T10 merged as #370.
