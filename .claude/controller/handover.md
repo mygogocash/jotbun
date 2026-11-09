@@ -73,7 +73,9 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
 - **P2-T10: brief READY** (M; P1 to P16 accepted). The implementer (Haiku) was dispatched about 21:40 in p2-t10 from bf7bc20.
   - Expected: app 34, unit 907, render 97 files and 1741 tests, web 4788.
   - E2-A notes (P9): the hidden eye has no filled state; the tip uses toast colours, not the board's #3A57E8; P2-T9's 150 ms fade is not wired yet.
-- **P2-T9:** DONE at b7e32d9: app 34, unit 905, render 97 files and 1735 tests, web 4785, 62 of 65 mutants killed and 3 equivalent. PR #368 is open (issue #155) and the Opus review is under way.
+- **P2-T9: merged 860990f (#368, about 22:00).** The review approved; m-1 and m-2 go to the next wallet/motion task. Issue #155 is closed and the worktree and branches are removed.
+  - **App baseline now** (CI on #368's merge ref): test:app 34, test:unit 905, render 97 files and 1735 tests, web 4785.
+  - #367 (1C-T8) touches none of P2-T9's files.
 - **P2-T9 history:** brief READY (M; P1 to P14 accepted); the implementer (Haiku) was dispatched about 20:15 in p2-t9 from f9d32b4.
   - Expected: app 34, unit 905, render 97 files and 1735 tests, web 4785.
   - E2-D note: fades keep Reanimated's default curve, while the board says ease-out and the plan names durations only.
