@@ -70,7 +70,18 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
       - Three Opus xhigh lenses: the contract, privacy, and integration (which includes a scratch merge with 1D-T8).
       - An Opus skeptic tries to refute each blocker or major.
       - A synthesizer writes `reviews/P4-T12.md` with the verdict.
-    - On approval and green CI: `merge_task_pr.sh 376 8b9e16e P4-T12`, then `promote_pr.sh P4-T12 376`.
+    - **Merged as 712574d (#376, at 23:27).** Issue #220 is closed, and the worktree and branches are removed.
+      - The review workflow approved: no lens raised a blocker or major, with six minors and eleven nits.
+      - CI on the merge ref: `test:unit` 938, render 109 files and 1867 cases, web 4806. The synthesizer's scratch merge with a915f95 (P4-T13) was clean.
+      - The minors go to P4-T14 (followups.md). Two of them are privacy rules for the first hasher: m1, a salt fetch in flight during the sign-out erase writes the salt back; m2, the hasher must belong to the open diary's account.
+    - **Promotion PR #381** (`promote/p4-t12`, based on `promote/1b-t8`). Stack #379 is now #373 → #378 → #380 → #381.
+- **App baseline at 712574d** (CI on #376's merge ref plus P4-T13): `test:unit` 956 (927 + 18 + 11), render 109 files and 1867 cases, web 4806, iOS about 5769 plus P4-T13's 0.
+
+## Usage-limit stop, 9 Nov 23:28 to 10 Nov 03:10
+- The controller's own session and every agent hit the 5-hour limit at about 23:28: the P2-T11 implementer, the P2-T13, 1B-T7 and 1B-T11 planners, and the ci-parallel-jobs review workflow.
+- At 03:10, T3 restarted each delegated thread itself, on the same thread with its context (run 2, task ids starting `limit-resume`). **Do not respawn them.** The controller steered each with the cutoff note: background runs are dead, rerun any check not seen to finish, restore any mutated file from `real/`, the lock is free, and P4-T12 merged as 712574d, sharing no file with them.
+- The ci-parallel-jobs review workflow does not restart itself; it was resumed with `resumeFromRunId` wf_1346c5d6-527 (task wrhzd95p0). All three of its agents run again.
+- Checks at 03:11: the heavy lock was free; no test process was alive; the load came from macOS indexing; and the Orca controller's transcript had not been written since 22:04 on 9 Nov (it did not resume at 01:50).
   - **P4-T13: brief READY at 0bd5659** (S, 7 new files in `src/slips/`, none shared; no package or lockfile change).
     - P1 to P18 are accepted. The Q1 and Q2 adapters wait on the owner (P18).
     - Kit `scratch/p4-t13-planner/`: check_kit at d579f94 gives 31 OK, SHA256SUMS.base 2 OK, and both `base/` files identical.
