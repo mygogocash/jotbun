@@ -305,6 +305,10 @@ To stop a chat session in the app: `sc chat stop <thread_id>` cancels its turn o
 - Held: P2-T2 and 1D-T6 wait for #347 (lockfile, _layout). P3-T12 waits on owner Q1. 1C-T2 waits on the owner's lockout answer, and its brief must first pin 1C-T1's six untested security options (followups.md).
 
 ## Rulings this session
+R103 (10 Nov, P2-T11's gate): when a local whole-file run cannot finish because the machine sleeps (`pmset -g log`: "Dark Wake Thermal Emergency"), and every case has a passing run, the whole-file run goes to CI under R100.
+  - "Every case has a passing run" means the failures are timeouts across recorded sleeps, and a targeted rerun of the failing cases passes.
+  - The receipt records each run, the targeted rerun and the sleep times.
+  - First used for `CatalogueScreen.render.test.tsx` (301 cases): runs of 298 and 300, then 4 of 4 targeted.
 R102 (9 Nov, P4-T12's P2; binds P4-T6): the phone sends a slip batch as the UTF-8 bytes of its JSON, typed `application/octet-stream`, as the import upload sends its file.
   - P4-T6's handler reads at most 8 MiB of `w.stream`, accepts `application/octet-stream`, and parses the text with the contract's `parseSlipBatchRequest`.
   - A body typed `application/json` cannot work: the dispatcher's `readRouteBody` parses it (`readJsonBody`, capped at 2 MiB, 413 `COMMAND_TOO_LARGE` above that), and a stream route is then left with no stream. P4-T13's batches are up to 8 MiB.
