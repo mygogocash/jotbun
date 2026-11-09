@@ -78,6 +78,16 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - Also in it, from the same review:
     - n-1: `handler.ts:129` and `:147` return `headOf(...)` inside a `try` without `await`, so a future rejection would skip the error handler;
     - n-2: the HEAD case's byte counter is shared across its four HEADs, so per-HEAD regressions after the first go unseen.
+  - **And from 1B-T9's review (reviews/1B-T9.md).** Its ready probes are in `scratch/1b-t9-review/tree/apps/edge/test/workers/zz-review-probes.test.ts`: 16 cases, all passing on a3493f4, with the reviewer's mutants in `own-mutants/`.
+    - **m-1 (security, test only):** nothing pins that the prepare step checks session and policy (`src/v1/routes.ts:135`). Without that check, a signed-out, policy-pending or deleting account reserves and copies before it is refused, and a deleting account's copy could outlive the purge. Probes AC-1 to AC-3.
+    - **m-2:** the receipt HEAD test does not count bytes per HEAD (probe HD-1).
+    - **m-3:** neither guard in `attachmentsDueAt` is pinned (`attachments.ts:368-369`); probes DU-1 and DU-2. Without "object gone", the alarm loops on a past due time (against R37); without the safety-net check, an unheld receipt is never scheduled.
+    - **For the abort proof:** retain and replace hold a copy slot across awaits, so include four aborted retains, then a retain that answers 200. Receipt downloads allow two slots per account.
+    - **Nits:**
+      - the poll deadline, unknown body fields and the preview's `ready` status are untested;
+      - "two records at once" gates only the first request, so one mutant's kill depends on a 250 ms sleep;
+      - the receipt misfiles five ported cases as "as written";
+      - the 3 kB bundle gap is file-path length, not code.
 - 1B-T6 (#362, merged de738f9 on 9 Nov, issue #110 closed; review in reviews/1B-T6.md, Needs fixes; fix round R96 confirmed in reviews/1B-T6-confirm.md; MA-1 ruled a follow-up under R97).
   - **Nits, not in the round** (probes in scratch/1b-t6-review/):
     - X4: the Workflow step's retry settings are not pinned;

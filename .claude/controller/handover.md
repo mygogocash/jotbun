@@ -42,7 +42,13 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
   Prompts are in `scratch/dispatch/`. Planners keep `*.log` out of the SHA256SUMS the implementer checks.
 - **Usage-limit cutoff, 9 Nov about 10:15 to 13:30.** Every agent failed with a 429 and was resumed with SendMessage at 15:15, from its saved context.
 - **1B-T6: merged de738f9 (#362, about 17:45) under R97.** The confirming review (`reviews/1B-T6-confirm.md`) found the fix round correct, re-proved under `wrangler dev`, and raised MA-1, now a follow-up task. Issue #110 is closed and the worktree and branches are removed. The receipt was corrected in housekeeping commit 2e65476.
-- **1B-T9:** DONE at a3493f4 (base 2e65476): workers 26 files, 576 passed and 3 todo; test:edge 176; 49 of 49 mutants; R95 markers 0. PR #366 is open (issue #113) and the Opus review is under way (`reviews/1B-T9.md`).
+- **1B-T9: merged 5b7609e (#366, about 19:30).** The review approved; its minors m-1 to m-3 are folded into fix-download-aborts with ready probes. Issue #113 is closed and the worktree and branches are removed. **Edge baseline now:** test:edge 15 files and 176 tests; workers 26 files, 576 passed and 3 todo.
+- **Planners dispatched about 19:35 (Opus, generated prompts):**
+  - **P2-T9** (motion, depth 19): WT p2-t9 on p2/t9-motion.
+  - **P2-T10** (money text and private mode, depth 19): WT p2-t10 on p2/t10-money-text.
+  - **1B-T10** (import review, depth 14): WT p1-1b-t10 on p1/1b-t10-import-review.
+
+  P2-T9 and P2-T10 share no files with each other or with 1C-T8. 1B-T8 and 1B-T7 share 4 route files with 1B-T10, so they follow it in order. fix-download-aborts is still to plan, before 1B-T13.
 - **Second usage-limit cutoff, about 18:00 to 18:40.** The P2-T8 reviewer and the 1C-T8 planner were resumed with SendMessage at 18:45. The lock was free and no processes were left.
 - **#362 history:** review Needs fixes (`reviews/1B-T6.md`, M-1: a HEAD on the download route keeps a download slot for good).
   - R96, as amended: `headOf` reads the dropped body to its end.
