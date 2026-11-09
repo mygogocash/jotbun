@@ -42,9 +42,8 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
   Prompts are in `scratch/dispatch/`. Planners keep `*.log` out of the SHA256SUMS the implementer checks.
 - **Usage-limit cutoff, 9 Nov about 10:15 to 13:30.** Every agent failed with a 429 and was resumed with SendMessage at 15:15, from its saved context.
 - **1B-T6: merged de738f9 (#362, about 17:45) under R97.** The confirming review (`reviews/1B-T6-confirm.md`) found the fix round correct, re-proved under `wrangler dev`, and raised MA-1, now a follow-up task. Issue #110 is closed and the worktree and branches are removed. The receipt was corrected in housekeeping commit 2e65476.
-- **1B-T9 (Haiku), dispatched about 17:50** in p1-1b-t9 from de738f9 (generated prompt; P1 to P17 accepted).
-  - Step 0.4 is amended to `grep -c 'pipeTo('`; MA-1 is out of scope.
-  - Expected: test:edge 15 files and 176 tests (+0); workers 26 files, 576 passed and 3 todo.
+- **1B-T9:** DONE at a3493f4 (base 2e65476): workers 26 files, 576 passed and 3 todo; test:edge 176; 49 of 49 mutants; R95 markers 0. PR #366 is open (issue #113) and the Opus review is under way (`reviews/1B-T9.md`).
+- **Second usage-limit cutoff, about 18:00 to 18:40.** The P2-T8 reviewer and the 1C-T8 planner were resumed with SendMessage at 18:45. The lock was free and no processes were left.
 - **#362 history:** review Needs fixes (`reviews/1B-T6.md`, M-1: a HEAD on the download route keeps a download slot for good).
   - R96, as amended: `headOf` reads the dropped body to its end.
   - The fix round (Haiku) was dispatched about 16:20 in p1-1b-t6 at 34798c8, with a generated prompt.
