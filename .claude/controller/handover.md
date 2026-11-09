@@ -63,8 +63,9 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
   - Fix round DONE: merge 36adb96 (5dbd7be), fix ddc9317, and the controller's receipt correction 03da870. Every count matched: unit 882, render 90 files and 1694 tests, 45 of 45 mutants.
   - Pushed to #354 (MERGEABLE) and the PR body updated.
   - Confirming Opus review under way, writing `reviews/1D-T9-confirm.md`. Merge on its approval and green CI with `merge_task_pr.sh 354 03da870 1D-T9`.
-- **1C-T6:** DONE at caecf12 (base 5dbd7be): app 33, unit 887, render 90 files and 1660 tests, 41 of 41 mutants. It merges cleanly with #361's client.ts edits.
-  - PR #364 is open (issue #123) and the Opus review is under way. The reviewer gates the merged tree: expected app 34, unit 901, render 94 files and 1717 tests.
+- **1C-T6: merged f544c28 (#364, about 17:10).** The review approved: m1 is carried to 1C-T7, and an owner question is below. Issue #123 is closed and the worktree and branches are removed.
+  - **App baseline now:** test:app 34, test:unit 901, render 94 files and 1717 tests (the reviewer and CI on the merged tree); web 4785.
+- **P2-T8:** DONE at 47f4b59 (built at 2e9c3b7, before 1C-T6): app 33, unit 894, render 94 files and 1712 tests, web 4785. PR #365 is open (issue #154) and the Opus review is under way.
 - **1B-T9: brief READY** (size L; kit `scratch/1b-t9-planner/`, with SHA256SUMS and SHA256SUMS.logs). It starts only after #362 merges with R96's fix round; its Step 0 checks that `headOf` cancels the body.
   - Expected: workers = the head's own count plus 1 file and 52 cases; Node +0.
   - R-B does not reach the vault (one transaction).
@@ -138,4 +139,6 @@ Merge each PR when its CI on the current head is green; close its issue by hand 
 0. R-B (apps/api migration 0020_receipt_copy_once.sql, prepared in scratch/fix-api-db-flakes/files/): gogospend_reserve_receipt_copy (migration 0017) checks "receipt exists" and "copy in flight" in two statements, so two requests can each reserve a copy (one wasted copy, deleted at the next sweep). The fix is a new migration replacing the function with one combined check; it needs the API's migration step wherever the API runs. Until then attachments.integration.spec.ts "two records retaining one image ... one copy" stays a rare known flake.
 1. Sign-in lockout: no per-email lockout, only per code (about 1,440 guesses a day against one address at Task 2's 5 codes per 15 min). Needed before 1C-T2 sends real mail.
 2. Q1 (QR decoder package) gates P3-T12.
+4. Deletion retry with an expired token (1C-T6 review, for Tasks 8 and 11): an unconfirmed deletion stays unconfirmed on every Try again once its token is over 10 minutes old (401). The plan requires reusing those credentials, so the person must leave and start over, and if the first request had landed, the new attempt says "Nothing was deleted". Decide whether a retry may use a fresh sign-in's new credentials.
+5. Whether to run the plan's whole-1A-range review (1A-T10's P11). It is an expensive Opus pass; every 1A task had its own review, but the reviews of Tasks 1 to 6 and 8a were lost with /private/tmp.
 3. Before Q5's PostHog key is set (1D-T6 review m1): with crash reports on before consent (Q4's default), the native SDK sends native crash reports unscrubbed (outside `before_send`), and a feature-flags request at every launch carrying the stored analytics id. Native requests also carry no `$geoip_disable` (Q6). Nothing is sent today, because there is no key. Decide, with counsel, whether crash reports before consent stay on, or whether the native SDK must start only after a yes.
