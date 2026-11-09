@@ -1,0 +1,102 @@
+--- a/apps/app/src/wallet/testing/walletHarness.render.test.tsx
++++ b/apps/app/src/wallet/testing/walletHarness.render.test.tsx
+@@ -1,8 +1,9 @@
+ // The wallet test harness (P2-T8). Every Bun Wallet render test mounts
+ // through mountWallet: the app's providers, nested as the app nests them
+ // (R58), around fakes, in Thai or English, light or dark, at any text size,
+-// with the phone's reduced-motion answer given or held, and the wallet's two
+-// stores in memory. The catalogue lists the Bun Wallet's sections last.
++// with the phone's reduced-motion answer given or held, the wallet's two
++// stores in memory, and innermost the looks kept for the diary's account
++// (P2-T11). The catalogue lists the Bun Wallet's sections last.
+ import { act, cleanup, screen } from '@testing-library/react';
+ import { readFileSync } from 'node:fs';
+ import { dirname, join } from 'node:path';
+@@ -15,8 +16,10 @@
+ vi.mock('react-native-safe-area-context', () => import('../../dev/catalogue/safeAreaTestStub'));
+ 
+ import { WALLET_SECTIONS } from '@mobile/dev/catalogue/wallet';
++import { useReducedMotion } from '@mobile/hooks/useReducedMotion';
+ import { useLanguage } from '@mobile/i18n/LanguageProvider';
+ import { useActiveLocale } from '@mobile/i18n/useCopy';
++import { useBunIntensity } from '@mobile/mascot/BunIntensityProvider';
+ import { useAiCompanion } from '@mobile/spend/v1/ai/AiCompanionProvider';
+ import { fakeAiResources } from '@mobile/spend/v1/ai/testing/fakeAiResources';
+ import { useDiaryView, useSpendDiary } from '@mobile/spend/v1/SpendDiaryContext';
+@@ -24,6 +27,9 @@
+ import { createFakeDiary } from '@mobile/spend/v1/testing/fakeDiary';
+ import { createFakeResources } from '@mobile/spend/v1/testing/fakeResources';
+ import { useWalletColors } from '@mobile/theme/ThemeProvider';
++import { derivedLook } from '../looks/walletLooks';
++import type { WalletLook } from '../looks/walletLooks';
++import { useCategoryIcons, useWalletLooks } from '../looks/WalletLooksProvider';
+ import { useReducedMotionKnown, useWalletReducedMotion } from '../motion/reducedMotion';
+ import { eraseDeviceSettings, walletAccountStore, walletDeviceStore } from '../store/deviceWalletStore';
+ import { AX5, mountWallet, TEST_ACCOUNT_ID } from './walletHarness';
+@@ -147,6 +153,66 @@
+   expect(AccessibilityInfo.isReduceMotionEnabled).toHaveBeenCalledTimes(1);
+ });
+ 
++let choose: (() => void) | null = null;
++
++/** The bun's intensity and the language choice, as Settings would change them. */
++function Choices() {
++  const { preference, setPreference } = useLanguage();
++  const { intensity, setIntensity } = useBunIntensity();
++  const locale = useActiveLocale();
++  choose = () => {
++    setIntensity('quiet');
++    setPreference('en');
++  };
++  return <Text testID="choices">{`locale=${locale} preference=${preference} bun=${intensity}`}</Text>;
++}
++
++test('the bun intensity can change inside the harness, and a language chosen there leaves the mount in its own locale', async () => {
++  mountWallet(<Choices />, { locale: 'th' });
++  await settle();
++  await act(async () => { choose?.(); });
++  expect(screen.getByTestId('choices').textContent).toBe('locale=th preference=en bun=quiet');
++});
++
++/** A wallet part beside a kit part (Sheet, UndoBar, BunPeek) that asks the phone itself. */
++function TwoAskers() {
++  return <Text testID="askers">{`wallet=${useWalletReducedMotion()} app-wide=${useReducedMotion()}`}</Text>;
++}
++
++test('a part that asks the phone itself gets the answer the root gets', async () => {
++  mountWallet(<TwoAskers />, { reducedMotion: true });
++  await settle();
++  expect(screen.getByTestId('askers').textContent).toBe('wallet=true app-wide=true');
++});
++
++const KEPT_WALLET = '00000000-0000-4000-8000-000000000001';
++const KEPT_LOOK: WalletLook = { kind: 'credit_card', material: 'peach', face: 'wow' };
++
++/** What the looks provider holds for one wallet and one custom category. */
++function Looks() {
++  const { lookOf, order } = useWalletLooks();
++  const { iconOf } = useCategoryIcons();
++  const icon = iconOf({ id: 'c-art', type: 'expense', label: 'Art', builtin_key: null });
++  return <Text testID="looks">{JSON.stringify({ look: lookOf(KEPT_WALLET), order, icon })}</Text>;
++}
++
++test("the harness mounts the wallet's looks innermost, kept for the diary's account", async () => {
++  const account = {
++    looks: JSON.stringify({ [KEPT_WALLET]: KEPT_LOOK }),
++    'wallet-order': JSON.stringify([KEPT_WALLET]),
++    'category-icons': JSON.stringify({ 'c-art': 'book' }),
++  };
++  mountWallet(<Looks />, { account });
++  await settle();
++  expect(JSON.parse(screen.getByTestId('looks').textContent ?? '{}')).toEqual({ look: KEPT_LOOK, order: [KEPT_WALLET], icon: 'book' });
++  cleanup();
++
++  // With no diary open (the web) nothing is kept for anyone: derived looks only.
++  mountWallet(<Looks />, { account, diary: null });
++  await settle();
++  expect(JSON.parse(screen.getByTestId('looks').textContent ?? '{}')).toEqual({ look: derivedLook(KEPT_WALLET), order: [], icon: null });
++});
++
+ test("the catalogue lists the Bun Wallet's sections last, each with a bw- id and a 'Bun Wallet: ' title (R72)", () => {
+   const registry = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../../dev/catalogue/registry.tsx'), 'utf8');
+   expect(registry).toContain("import { WALLET_SECTIONS as BUN_WALLET_SECTIONS } from './wallet';");
