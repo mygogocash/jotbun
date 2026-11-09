@@ -25,7 +25,12 @@ New controller: session 121af0e6, in the Orca app (Claude Code 2.1.319; transcri
   Whichever of these merges second gets the first one's tests on top.
 
 In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispatch/` and in this session's transcript):
-- **#356 1B-T5:** confirming review of the fix round (Opus), writing `reviews/1B-T5-confirm.md`. CI is green on 020aa84 and the PR is mergeable. Merge on approval with `merge_task_pr.sh 356 020aa84 1B-T5`, then dispatch 1B-T6.
+- **#356 1B-T5:** merged 38361b1 (09:2x). The confirming review approved (`reviews/1B-T5-confirm.md`; two nits are in followups.md). Issue #109 is closed and the worktree and branches are removed.
+- **1B-T6 (Haiku), worktree p1-1b-t6, branch p1/1b-t6-exports, base 38361b1.** Prompt in `scratch/dispatch/1B-T6.prompt.md`. Its amendments:
+  - Check the kit's sums without the 8 missing `proof/*.log` lines: 49 OK.
+  - #352 changed `test/vault-route-coverage.test.ts` and `test/workers/sync.test.ts`. The controller's pre-applied copies (planner diffs plus #352's lines) are in `scratch/1b-t6-rebased/`, with SHA256SUMS.
+  - Gate: test:edge 15 files and 176 tests; workers 25 files, 521 passed and 3 todo.
+  - On DONE: open its PR, then the Opus review. 1B-T9 (receipt attachments, which also creates downloads.ts) is planned after it.
 - **#354 1D-T9 fix round (Haiku), worktree p1-1d-t9:**
   - The merge now conflicts on `featureFlags.ts` and its test (#358). The controller resolved both, keeping both areas, in `scratch/1d-t9-merge/` (SHA256SUMS; `node --test` passes 11 of 11). The fixer copies them in Step 1.3.
   - Expected after the fix: unit 882, render 90 files and 1694 tests.
