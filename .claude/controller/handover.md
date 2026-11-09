@@ -46,7 +46,9 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
   - The fix round (Haiku) was dispatched about 16:20 in p1-1b-t6 at 34798c8, with a generated prompt.
     - Brief: `briefs/1B-T6-fix.md`; kit: `scratch/1b-t6-fix-planner/` (12 OK at 34798c8).
     - Expected: RED 1 failed of 36; GREEN 36 of 36; 4 of 4 mutants; test:edge 15 files and 176 tests; workers 25 files, 524 passed and 3 todo.
-  - On DONE: push to #362, update the PR body, then a confirming Opus review against `reviews/1B-T6.md`. Merge on green, then dispatch 1B-T9.
+  - Fix round DONE at 2cf8315: RED 1 of 36, GREEN 36 of 36, 4 of 4 mutants, workers 524 + 3 todo. Pushed to #362 and the PR body updated.
+  - The confirming Opus review is under way, writing `reviews/1B-T6-confirm.md`. Merge on its approval and green CI with `merge_task_pr.sh 362 2cf8315 1B-T6`, then dispatch 1B-T9 (amend its Step 0.4 to `pipeTo(`).
+  - The fixer's zsh `status=$?` aborted a lock release; make_prompt's lock text now says to use `rc`.
 - **1A-T10: merged 4407025 (#363, about 16:40).** The review approved with 2 minors and 7 nits; issue #104 is closed and the worktree and branches are removed. Phase 1A's tasks are all merged.
   - The receipt's open items were completed in housekeeping commit 9cc31cb.
   - Minor 1 (workflow `if`/`continue-on-error`) is carried to P6C-T7.

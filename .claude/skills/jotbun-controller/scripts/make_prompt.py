@@ -24,7 +24,8 @@ C = f"{R}/.claude/controller"
 W = f"{R}/.claude/worktrees"
 LOCK = ("The heavy lock wraps every workers or database run and every mutant run: before, "
         "`until mkdir /private/tmp/claude-501/jotbun-heavy.lock 2>/dev/null; do sleep 20; done`; after (after a failure too), "
-        "`rmdir /private/tmp/claude-501/jotbun-heavy.lock`. Never remove a lock you did not take; other agents share it.")
+        "`rmdir /private/tmp/claude-501/jotbun-heavy.lock`. Never remove a lock you did not take; other agents share it. "
+        "The shell is zsh, where `status` is read-only: keep exit codes in `rc` (`cmd; rc=$?; rmdir ...`), or the line aborts before the rmdir.")
 RULES = ("Never keep anything under /private/tmp. Docker is stopped and stays stopped, so database suites are SKIPPED (CI runs them). "
          "Each shell call starts fresh, so type full paths. Use /usr/bin/git, one plain command per call. "
          "The machine is shared: a test that times out under load in a file your work does not touch is a load flake; rerun that file alone once and record both runs.")
@@ -103,6 +104,7 @@ def main():
     open(out, "w").write("\n".join(L) + "\n")
     model = "opus" if a.role in ("planner", "reviewer", "confirm") else "haiku"
     print(out)
-    print(f"model={model}  prompt: You are the {a.role} for Jotbun task {a.task} \"{t['title']}\". Your full assignment is in {out}. Read it first and follow it exactly.")
+    noun = {"confirm": "confirming reviewer", "fixer": "fix-round implementer"}.get(a.role, a.role)
+    print(f"model={model}  prompt: You are the {noun} for Jotbun task {a.task} \"{t['title']}\". Your full assignment is in {out}. Read it first and follow it exactly.")
 
 main()
