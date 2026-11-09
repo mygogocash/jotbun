@@ -42,7 +42,7 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
 - **#362 1B-T6: review Needs fixes** (`reviews/1B-T6.md`, M-1: a HEAD on the download route keeps a download slot for good).
   - Ruling R96: fix it at the front door; `headOf` in `src/v1/handler.ts` cancels the dropped body. The round also adds m-1 and m-2 as tests; the nits go to followups.
   - The reviewer is writing `briefs/1B-T6-fix.md`, with its kit in `scratch/1b-t6-fix-planner/`.
-- **1A-T10: brief READY** (P1 to P11 accepted). The implementer was dispatched 15:30 in p1-1a-t10 from cecf3a5, with a generated prompt (`scratch/dispatch/1A-T10-implementer.prompt.md`). Expected `test:ops`: 108 tests, 107 passed, 1 skipped.
+- **1A-T10:** DONE at e977253 (test:ops 108 / 107 passed / 1 skipped; edge unchanged; 6 of 6 mutants). PR #363 is open (issue #104) and the Opus review is under way, from the generated `scratch/dispatch/1A-T10-reviewer.prompt.md`.
   - P11: the plan's whole-1A-range review is the controller's to schedule after 1A-T10's own review.
   - Closing epic #83 is the owner's call.
 - **Held:** 1B-T7 (AI routes) shares four route files with 1B-T6 and 1B-T9, so it is planned after them. 1C-T2 and P3-T12 are still held on owner answers.

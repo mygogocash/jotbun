@@ -71,7 +71,7 @@ def main():
               "If a result differs from an \"Expected\" line (as amended below), stop and report BLOCKED with the output. Never change tests or code to make them pass.", ""]
         if a.accepted:
             L += [f"The controller accepted the brief's planner calls {a.accepted}. Record them in the receipt's Deviations as accepted by the controller.", ""]
-        L += [worktree(a, None if fix else a.head) + f" Logs go in {C}/scratch/{tl}{'-fix' if fix else ''}/ (mkdir -p). Do not push.", ""]
+        L += [worktree(a, None if fix else a.head) + f" Keep every log in the scratch folder your brief names (its S); only if it names none, use {C}/scratch/{tl}{'-fix' if fix else ''}/ (mkdir -p). Do not push.", ""]
         if a.lock: L += [LOCK, ""]
         L += [RULES, "", FINAL_IMPL]
     elif a.role in ("reviewer", "confirm"):
