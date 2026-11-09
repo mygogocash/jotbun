@@ -13,6 +13,11 @@
 
 ## CI and flakes
 
+- **R100: let CI run the whole suites.** Before 9 Nov, each task ran the full render, workers and export suites four times: planner, implementer, reviewer and CI. That repetition burned most of the tokens (three usage-limit cutoffs in one day), caused every load flake, and produced the count-drift stops. CI was green first time on all 15 task PRs that day.
+  - Local work is now the fast gate: typecheck, focused RED and GREEN, mutants, and the fast suites.
+  - Reviewers read CI.
+  - No whole-suite totals in briefs.
+
 - **Counts drift when the base moves.** A merge that adds test files moves suite totals. A merge that adds modules re-exported from a package the app imports moves export module counts. For example, #351's three contract modules made `export:web` 4772 instead of the brief's 4769. Before dispatching on a newer head, tell the implementer which totals will shift and by how much. Check every merge since the brief's base for new test files in the suites the gate runs. A full render suite counts every `*.render.test.tsx`, even a task in another lane's. Never write "every count stands" without checking. When an implementer stops on a count, diff the brief's base against its head for the files that feed that count before re-planning.
 
 - **Metro's printed module count on a warm cache.** A web export that ends in well under a second can print a short count, such as 4604 for 4788, while its bundles are byte-identical. Seen on P2-T10's gate, 9 Nov. Rule it a flake when a re-run prints the expected count and the bundle hashes match. Briefs that need an exact count can pass `--clear`.

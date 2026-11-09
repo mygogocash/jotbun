@@ -1,5 +1,15 @@
 # Jotbun task protocol (every subagent reads this first)
 
+> **R100 (controller, 9 November 2026, the owner's ask to speed development up): CI is the gate for whole suites.**
+>
+> Every PR's CI runs, on a clean machine:
+> - the full `test:render`, `export:web` and the iOS export;
+> - `test:edge:workers`;
+> - the database suites;
+> - `test:ops`.
+>
+> Agents no longer run those whole suites locally, and no longer write or check whole-suite totals as "Expected" lines; totals drift whenever the head moves. The local gate is the "Fast local gate" below. A brief written before this note keeps its own steps, except that its whole-suite steps (full render, full workers, exports) are skipped: record them as "CI" in the receipt.
+
 > **8 November 2026:** macOS cleared `/private/tmp`, which held the old briefs, planner files and checksums. From now on, briefs live in `/Users/kunanonjarat/Developer/jotbun/.claude/controller/briefs/`, reviews in `.../controller/reviews/`, and each agent's scratch files in `.../controller/scratch/<task>/`. Never put anything you need to keep under `/private/tmp`. The heavy lock stays at `/private/tmp/claude-501/jotbun-heavy.lock`.
 
 > **R87 (controller, 8 November 2026): receipts go in their own file.** Every receipt appended to the end of `docs/implementation/premium-progress.md` made every other open pull request conflict there and rerun CI. From now on a task (or a fix round started after this date) writes its receipt to `docs/implementation/receipts/<task-id>.md` (for example `receipts/1B-T5.md`, `receipts/1B-T4-followup.md`), in the same house style, starting with a `# <task-id>: <title>` heading, and does not edit `premium-progress.md`. Wherever this protocol or a brief says "the receipt in `premium-progress.md`", read it as that file. Briefs written before this date keep their own instructions.
@@ -29,7 +39,15 @@ The orchestrator (not you) pushes, opens pull requests, merges and closes issues
 3. **RED:** behavioural tests that fail on assertions against compile-safe seams (a missing module is not a RED). Record the failing counts.
 4. **GREEN:** the smallest code that passes, exactly as the plan says.
 5. **Mutation check:** mutate each new guard or branch, run the focused tests, see them fail, restore the file and confirm `git diff` shows only your intended change. Add a test for every survivor, or explain why it is equivalent.
-6. **Gate** (run what your change touches; typecheck always):
+6. **Fast local gate (R100), for what your change touches:**
+   - **Typecheck:** `typecheck:app` and/or `typecheck:edge`, plus `typecheck:routes` when routes change.
+   - **The task's focused test files:** RED to GREEN. For edge workers files, run them focused, under the lock.
+   - **Fast whole suites:** `test:app` and `test:unit` (app), or `test:edge` (edge).
+   - **Builds:** `build:edge` for edge tasks; `export:web` only when routes, config or the app entry change.
+   - **Always:** `git diff --check`.
+
+   CI runs the rest. The list below is what CI runs. Run any of it locally only when the brief explicitly says so, for a reason it names.
+   **CI gate:**
    - App: `npm run typecheck:app`, `npm run test:app`, `npm run test:unit`, `npm run test:render -w gogospend-app` (run focused files first, the full suite once at the end), and `npm run export:web -w gogospend-app -- --max-workers 2` when routes, config or app entry change.
    - Contracts and API: `npm run typecheck`, `npm run test:api`, `npm run build -w gogospend-api`, `node apps/api/scripts/release-graph.mjs check`.
    - Edge: `npm run typecheck:edge`, `npm run test:edge`, `npm run test:edge:workers`, `npm run build:edge`.
@@ -50,5 +68,6 @@ The orchestrator (not you) pushes, opens pull requests, merges and closes issues
 ## Reviewers (Opus)
 
 - Review the commit range `origin/claude/p1a-vault-core...<sha>` against the plan task, the rulings it cites, and this protocol.
+- **R100:** do not re-run whole suites. Read CI's results on the PR (`gh pr checks <n> --repo mygogocash/jotbun`, and the job logs for counts). Spend the time on the task's focused files, probes for what could be wrong, and your own mutants for untested guards. Rerun at most about 10 of the planner's mutants as a sample.
 - Probe only in a scratch copy: `mkdir -p <scratch> && /usr/bin/git -C <worktree> archive <sha> | tar -x -C <scratch>`; to run tests there, symlink `node_modules` from the worktree. Never edit the worktree.
 - Report findings ranked **blocker, major, minor, nit**, each with evidence (file and line, a failing probe, or the plan clause). End with `VERDICT: Approved` or `VERDICT: Needs fixes` (any blocker or major means Needs fixes).

@@ -115,10 +115,12 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
 - **1B-T8 planner (Opus), dispatched about 23:00.** It is planned on top of 1B-T10's dcdb773 (#369) and starts after #369 merges.
   - Brief `briefs/1B-T8.md`, kit `scratch/1b-t8-planner/`, WT p1-1b-t8 on p1/1b-t8-snapshots.
   - It carries the R96, R92, R95 and R97 notes, and the vault-active checks at read and publish.
+- **P4-T12 (slip core) and P4-T13 (photos) planners (Opus), dispatched about 00:40 under R100.**
+  - WT p4-t12 on p4/t12-slip-core; WT p4-t13 on p4/t13-photos.
+  - P4-T12 carries 1D-T6's m4 (the analytics-off header on slip transports).
 - **Held:**
   - 1B-T7 (AI routes) follows 1B-T8 in the server lane (the same route files).
-  - 1D-T8 follows #367 (registry.tsx, featureFlags.ts).
-  - P4-T12 and P4-T13 are ready and independent, but held to keep agents to about four after three usage-limit cutoffs. 1C-T2 and P3-T12 are still held on owner answers.
+  - fix-download-aborts follows 1B-T8 (downloads.ts). 1C-T2 and P3-T12 are still held on owner answers.
 - **#354 1D-T9: merged 687e764 (about 10:00).** The confirming review approved (`reviews/1D-T9-confirm.md`; nits n1 to n4 are in followups.md for the m5 task). Issue #140 is closed and the worktree and branches are removed. The receipt's n5 was fixed in housekeeping commit 8a1f587.
   - **App baseline at 687e764**, measured by the confirming reviewer on the same tree: test:app 32, test:unit 882, render 90 files and 1694 tests, export:web 4778 modules. iOS was not measured: 5563 at 5dbd7be, plus 1D-T9's modules.
 - **#354 history (fix round, Haiku, worktree p1-1d-t9):**
@@ -189,6 +191,11 @@ To stop a chat session in the app: `sc chat stop <thread_id>` cancels its turn o
 - Held: P2-T2 and 1D-T6 wait for #347 (lockfile, _layout). P3-T12 waits on owner Q1. 1C-T2 waits on the owner's lockout answer, and its brief must first pin 1C-T1's six untested security options (followups.md).
 
 ## Rulings this session
+R100 (9 Nov, the owner's ask to speed up): CI is the gate for whole suites. That covers the full render suite, the full workers suite, export:web (unless routes or the entry change), the iOS export, the database suites and test:ops.
+  - Agents run only the fast local gate in `protocol.md`, and no whole-suite totals appear in briefs, prompts or receipts. Reviewers read CI instead of re-running suites.
+  - The running planners of 1B-T8 and 1D-T8 were told to adopt it.
+  - Fix rounds that apply the first reviewer's verified patch byte for byte merge on green CI without a confirming review.
+  - Up to about 6 agents.
 R98 (9 Nov, 1C-T8 review M1, amends 1C-T8's P6): on the session-ended screen, whenever the main button is the email code to the account's own address, "Use another way" also offers an email code to another address. This keeps "every failure offers another way" on email-only builds, and reaches keep-or-erase for another account.
 R99 (9 Nov, 1C-T8 review, P4): nothing navigates to `/onboarding/reminder` before 1C-T9 adds it. OnboardingScreen keeps today's in-place reminder step until then, so there is no cast and no unmatched route with the signin or all area on. 1C-T9 adds the route, the `from=onboarding` handling and the switch in one change.
 R97 (9 Nov, 1B-T6 confirming review MA-1): in workerd, a GET whose client goes away mid-download keeps its download slot, because the cancel never reaches the stream behind FixedLengthStream. This is a follow-up task, not a blocker for #362, since the vault routes are not live before 1B-T13.

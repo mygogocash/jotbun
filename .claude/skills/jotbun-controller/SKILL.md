@@ -32,6 +32,12 @@ Merging anything into `main` stays the owner's call.
 
 The skill and `C/` are committed in the repo; the scratch proof trees are not, apart from the one a ready brief needs. Scripts and briefs use absolute paths under `/Users/kunanonjarat/Developer/jotbun`. If the clone lives elsewhere, run `grep -rl /Users/kunanonjarat/Developer/jotbun .claude/` and fix the paths. The main checkout must have the integration branch, or this commit's files, for `.claude/controller` to exist. Then read `C/handover.md`, starting with its migration section.
 
+## Speed rules (owner's ask, 9 Nov: "find the way to speed up development")
+
+- **R100: CI is the gate for whole suites.** Agents run only the fast local gate in `protocol.md`. No briefs, prompts or receipts carry whole-suite totals any more, so there is no count drift and no load flake from full runs. Read CI before merging.
+- **Lighter fix rounds.** A fix that applies the first reviewer's own verified patch or probes byte for byte (checked against that kit's SHA256SUMS) is merged on green CI without a confirming review. A fix that writes new logic still gets one.
+- **Concurrency.** R100 cuts each agent's tokens a lot, so run up to about 6 agents at once, across lanes that share no hot file.
+
 ## Fast paths (use these instead of hand-written checks and prompts)
 
 - **Where things stand:** `bash scripts/status.sh [minutes]` shows, in one call:
@@ -42,7 +48,7 @@ The skill and `C/` are committed in the repo; the scratch proof trees are not, a
   - recently written scratch folders (live agents);
   - the load.
 - **Does a brief's base hold:** `bash scripts/check_kit.sh <kit> [--rebase-out <dir>]`. It checks the kit's sums (skipping lost `*.log` lines), its `SHA256SUMS.base`, and its `orig/` or `base/` files at the head. It dry-runs per-file diffs for the files that changed. `--rebase-out` writes patched copies, with SHA256SUMS, for the implementer to copy.
-- **Exact counts after the head moved:** `bash scripts/baseline.sh <worktree> app|edge|all [--exports]`. Expected = the measured head total + the brief's delta. Never hand-adjust.
+- **Whole-suite counts:** rarely needed under R100. When a question needs them, `bash scripts/baseline.sh <worktree> app|edge|all [--exports]` measures them; never hand-adjust.
 - **Dispatch:** `python3 -I scripts/make_prompt.py <implementer|fixer|reviewer|confirm|planner> <TASK> --wt --branch --head [--accepted] [--pr --sha] [--lock] [--installed] [--notes <file>]`.
   - It writes the assignment file from the role templates and prints a one-line Agent prompt and its model.
   - Write only the task's own notes (what moved, totals, rulings, review focus) in `--notes`.
