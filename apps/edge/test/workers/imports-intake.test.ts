@@ -720,6 +720,9 @@ describe('1B-T5: the vault side of uploads', () => {
       ['imports.abort', true],
       ['imports.discarded', true],
       ['imports.bytesRetry', true],
+      // 1B-T10's confirmation steps: prepare reserves a receipt copy and confirm commits records, so both check the session.
+      ['imports.confirmPrepare', false],
+      ['imports.confirm', false],
     ])
   })
 
