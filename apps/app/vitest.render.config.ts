@@ -11,12 +11,17 @@ export default defineConfig({
     '@mobile': fileURLToPath(new URL('./src', import.meta.url)),
   }, extensions: ['.web.js', '.js', '.web.ts', '.ts', '.tsx', '.json'] },
   oxc: { jsx: { runtime: 'automatic' } },
+  // A development build, as Metro's: Gesture Handler reads React Native's
+  // __DEV__ when it loads (P2-T2). Vitest sets it on globalThis.
+  define: { __DEV__: 'true' },
   test: {
     environment: 'happy-dom',
     include: ['src/**/*.render.test.tsx'],
     maxWorkers: 2,
     // Waits sized for a busy machine: see src/testing/renderSetup.ts.
     setupFiles: ['./src/testing/renderSetup.ts'],
-    server: { deps: { inline: ['react-native-svg'] } },
+    // Vite, not Node, loads these. Reanimated, Worklets and Gesture Handler
+    // (P2-T2) ship ES modules whose imports name no file extension.
+    server: { deps: { inline: ['react-native-svg', 'react-native-reanimated', 'react-native-worklets', 'react-native-gesture-handler'] } },
   },
 });

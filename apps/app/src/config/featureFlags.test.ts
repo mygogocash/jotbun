@@ -70,3 +70,14 @@ test('conflict is off by default, on when named, and on with all', () => {
   assert.equal(isRedesignEnabled('conflict', 'all,-conflict'), false);
   assert.equal(isRedesignEnabled('conflict', 'conflict,off'), false);
 });
+
+// The Bun Wallet area (phase 2, W1) is off until the owner approves its E2
+// screenshots (P2-T38): only `wallet` or `all` switches it on.
+test('the wallet area is off unless named', () => {
+  for (const value of [undefined, '', 'core', 'catalogue,companion', 'wallets', 'wallet,-wallet', '-wallet,all', 'off', 'wallet, off']) {
+    assert.equal(isRedesignEnabled('wallet', value), false, String(value));
+  }
+  for (const value of ['wallet', ' WALLET ', 'catalogue, wallet', 'all']) {
+    assert.equal(isRedesignEnabled('wallet', value), true, value);
+  }
+});

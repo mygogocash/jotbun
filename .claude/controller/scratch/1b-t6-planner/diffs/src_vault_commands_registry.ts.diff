@@ -1,0 +1,23 @@
+--- a/src/vault/commands/registry.ts
++++ b/src/vault/commands/registry.ts
+@@ -1,8 +1,10 @@
+-import { isBudgetSnapshot, isCategorySnapshot, isTransactionSnapshot, isWalletSnapshot } from '@gogospend/contracts'
++import { isBudgetSnapshot, isCategorySnapshot, isExportRequestSnapshot, isTransactionSnapshot, isWalletSnapshot } from '@gogospend/contracts'
+ import type { CommandOutcome } from '@gogospend/contracts'
+ 
+ import { CommandRegistry } from '@api/commands/command-registry'
+ 
++import { EXPORT_ENTITY, EXPORT_REQUEST_KIND } from '../files/exports'
++
+ const WALLET_COMMANDS: [string, CommandOutcome][] = [
+   ['wallet.create', 'created'],
+   ['wallet.update', 'updated'],
+@@ -46,5 +48,8 @@
+   for (const [kind, outcome] of TRANSACTION_COMMANDS) registry.defineCommand({ kind, entity: 'transaction', outcome, schemaVersions: [1], policy: 'current' })
+   registry.defineEntity({ entity: 'budget', validate: isBudgetSnapshot })
+   for (const [kind, outcome] of BUDGET_COMMANDS) registry.defineCommand({ kind, entity: 'budget', outcome, schemaVersions: [1], policy: 'current' })
++  // 1B-T6: an export request (ExportService), policy-exempt. buildContainer constructs ExportService after budgets and before attachments (1B-T9).
++  registry.defineEntity({ entity: EXPORT_ENTITY, validate: isExportRequestSnapshot })
++  registry.defineCommand({ kind: EXPORT_REQUEST_KIND, entity: EXPORT_ENTITY, outcome: 'accepted', schemaVersions: [1], policy: 'exempt' })
+   return registry
+ }

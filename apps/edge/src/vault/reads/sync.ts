@@ -92,7 +92,7 @@ export function syncChanges(c: VaultContext, query: unknown): SyncChangesPage {
 
 /** One stored change as the page serves it, re-checked against its entity's persisted DTO (SyncQuery.change). */
 function changeOf(c: VaultContext, row: ChangeRow): EntityChange {
-  const snapshot: unknown = row.snapshot === null ? null : JSON.parse(row.snapshot)
+  const snapshot: unknown = row.snapshot === null ? null : jsonbOrder(JSON.parse(row.snapshot))
   const change: EntityChange = { entity: row.entity, id: row.entity_id, version: row.version, state: row.state, snapshot }
   const definition = c.registry.entity(row.entity)
   const dto = snapshot as { id?: unknown; version?: unknown } | null
@@ -103,4 +103,17 @@ function changeOf(c: VaultContext, row: ChangeRow): EntityChange {
       : dto !== null && typeof dto === 'object' && dto.id === change.id && (dto.version === undefined || dto.version === change.version) && definition.validate(snapshot))
   if (!valid) throw new Error(`A stored ${row.entity} change no longer matches its persisted DTO.`)
   return change
+}
+
+/**
+ * A stored snapshot with its keys in the order the API serves them. The API keeps
+ * snapshots in a PostgreSQL jsonb column, which stores an object's keys shortest
+ * first (in UTF-8 bytes), then bytewise, and node-postgres parses them back in
+ * that order. Nested objects are ordered the same way; arrays keep their order.
+ */
+export function jsonbOrder(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(jsonbOrder)
+  if (value === null || typeof value !== 'object') return value
+  const keys = Object.keys(value).sort((a, b) => Buffer.byteLength(a) - Buffer.byteLength(b) || Buffer.compare(Buffer.from(a), Buffer.from(b)))
+  return Object.fromEntries(keys.map((key) => [key, jsonbOrder((value as Record<string, unknown>)[key])]))
 }

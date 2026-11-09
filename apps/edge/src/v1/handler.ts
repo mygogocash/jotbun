@@ -21,6 +21,7 @@ import type { TokenVerifier } from './tokens'
 import { WORKER_HANDLERS, workerSessionFor } from './worker-routes'
 import type { VaultSession, WorkerContext } from './worker-routes'
 import type { UserVault } from '../vault/user-vault'
+import { liveRequest, wantsWebSocket } from '../vault/live'
 
 export type V1Deps = {
   verifier?: TokenVerifier
@@ -45,6 +46,18 @@ export function startsWork(route: VaultRoute, status: number): boolean {
 function handOffWork(deps: V1Deps, stub: DurableObjectStub<UserVault>): void {
   const start = deps.startWork ?? ((vault: DurableObjectStub<UserVault>) => vault.startPendingWork())
   ;(deps.waitUntil ?? waitUntil)(start(stub).catch((error: unknown) => logFailure('pending_work_unstarted', error)))
+}
+
+/**
+ * GET /v1/sync/live (1D-T10, L1): only a WebSocket upgrade, else 400 (never
+ * 426, which the app reads as "update the app"). The vault gets a fresh
+ * internal request whose only claim carrier is the header the Worker writes;
+ * the token never reaches it. Its answer, a 101 with the socket or a problem,
+ * goes back unchanged.
+ */
+async function openLiveSocket(request: Request, stub: DurableObjectStub<UserVault>, claims: VaultClaims): Promise<Response> {
+  if (!wantsWebSocket(request)) throw new ProblemException(400, 'VALIDATION_FAILED')
+  return stub.fetch(liveRequest(claims))
 }
 
 /** The request headers a vault call receives: the command headers, lowercase, and nothing else. */
@@ -115,8 +128,10 @@ export async function handleVaultV1(request: Request, env: V1Env, deps: V1Deps =
     }
     if (route.access === 'public') return headOf(jsonResponse(200, latestPerKind(policies), requestId), method)
     const claims = await authenticate(request, env, deps, config, route.access)
-    if (!route.vault) throw new Error('a bound route names no vault call')
     const stub = env.VAULT.get(env.VAULT.idFromName(claims.accountId), { locationHint: 'apac' })
+    // The live socket (1D-T10): after every check above, the vault's fetch answers it in place of the vault call.
+    if (route.live) return await openLiveSocket(request, stub, claims)
+    if (!route.vault) throw new Error('a bound route names no vault call')
     const reply = await stub.call({
       route: route.vault,
       access: route.access,

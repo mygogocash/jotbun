@@ -6,7 +6,7 @@ import { Platform } from 'react-native';
 
 import { createNotificationsPort } from './notificationsPort.ts';
 import { createLocalReminderService } from './reminders.ts';
-import type { LocalReminderService, ReminderContent, StoredReminderPreference } from './reminders.ts';
+import type { LocalReminderService, ReminderContent, StoredReminderPreference, Weekday } from './reminders.ts';
 
 const PREFERENCE_KEY = 'gogospend.reminder.v1';
 const SCHEDULED_FOR_KEY = 'gogospend.reminder.scheduled-for.v1';
@@ -15,7 +15,7 @@ const SCHEDULED_FOR_KEY = 'gogospend.reminder.scheduled-for.v1';
  * `context` names the device time zone and language the reminder is written
  * for; `refresh()` re-schedules when it changes.
  */
-export function createDeviceReminderService(content: () => ReminderContent, context: () => string, channelName: () => string): LocalReminderService {
+export function createDeviceReminderService(content: (day: Weekday) => ReminderContent, context: () => string, channelName: () => string): LocalReminderService {
   const port = createNotificationsPort(
     {
       getPermissionsAsync: () => Notifications.getPermissionsAsync(),
@@ -25,10 +25,8 @@ export function createDeviceReminderService(content: () => ReminderContent, cont
         Notifications.scheduleNotificationAsync({
           identifier,
           content: message,
-          // SDK 58's WeeklyTriggerInput and DailyTriggerInput: both repeat by themselves (no `repeats`).
-          trigger: trigger.type === 'weekly'
-            ? { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday: trigger.weekday, hour: trigger.hour, minute: trigger.minute, channelId: trigger.channelId }
-            : { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: trigger.hour, minute: trigger.minute, channelId: trigger.channelId },
+          // SDK 58's WeeklyTriggerInput: it repeats by itself (no `repeats`).
+          trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday: trigger.weekday, hour: trigger.hour, minute: trigger.minute, channelId: trigger.channelId },
         }),
       setNotificationChannelAsync: (id, channel) => Notifications.setNotificationChannelAsync(id, { name: channel.name, importance: Notifications.AndroidImportance.DEFAULT }),
     },

@@ -21,6 +21,7 @@ import { RemindersScreen } from '@mobile/screens/redesign/insights/RemindersScre
 import { createFakeResources } from '@mobile/spend/v1/testing/fakeResources';
 import { ThemePreferenceOverride } from '@mobile/theme/ThemeProvider';
 import type { CatalogueSection } from '../registry';
+import { CATALOGUE_NOW } from '../screenFixtures';
 import { screenSection } from '../screenSection';
 import type { ScreenFixture, ScriptStep, Translate } from '../screenSection';
 
@@ -50,7 +51,6 @@ export function fakeReminderService({ stored = null, permission = 'granted', ans
       return answer;
     },
     cancel: async () => undefined,
-    scheduleDaily: async () => undefined,
     scheduleWeekly: async () => undefined,
   };
   const service = createLocalReminderService(
@@ -63,7 +63,7 @@ export function fakeReminderService({ stored = null, permission = 'granted', ans
 }
 
 const fixture = (options: FakeOptions = {}) => (): ReminderFixture => ({ resources: createFakeResources().resources, diary: null, service: fakeReminderService(options) });
-const reminders = ({ service }: ReminderFixture) => <RemindersScreen service={service} />;
+const reminders = ({ service }: ReminderFixture) => <RemindersScreen service={service} now={CATALOGUE_NOW} />;
 
 const ON: StoredReminderPreference = { enabled: true, localTime: '20:00', weekdays: [1, 2, 3, 4, 5, 6, 7] };
 const WEEKDAYS: StoredReminderPreference = { enabled: true, localTime: '07:30', weekdays: [1, 2, 3, 4, 5] };

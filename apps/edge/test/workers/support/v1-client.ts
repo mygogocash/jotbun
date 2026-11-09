@@ -182,3 +182,89 @@ export async function createLunch(client: V1Client, user: TestUser): Promise<str
   if (recorded.status !== 201) throw new Error(`recording the lunch answered ${recorded.status}`)
   return lunch
 }
+
+/** A live socket as a test holds it (1D-T10). */
+export type LiveTestSocket = {
+  /** Every message received so far, in order. */
+  messages: string[]
+  /** The next message next() has not returned yet. Rejects when none arrives within timeoutMs (2,000 by default) or the socket closes first. */
+  next(timeoutMs?: number): Promise<string>
+  /** Resolves with the close code once the socket has closed. */
+  closed: Promise<{ code: number }>
+  send(data: string): void
+  /** Closes with 1000; does nothing when the socket is already closed. */
+  close(): void
+}
+
+/**
+ * Opens GET /v1/sync/live as the phone does: the token and client headers that
+ * `client.as(user)` sends, and `upgrade: websocket`. On 101 the test accepts the
+ * socket and records its messages (Cloudflare's testing-with-durable-objects
+ * pattern); otherwise it gets the status and the JSON body.
+ */
+export async function openLive(client: V1Client, user: TestUser, opts: { client?: string } = {}): Promise<{ status: number; body?: unknown; socket?: LiveTestSocket }> {
+  const headers = { ...(await signedHeaders(user, { client: opts.client })), upgrade: 'websocket' }
+  const res = await client.raw(new Request(`${BASE}/v1/sync/live`, { headers }))
+  const ws = res.webSocket
+  if (res.status !== 101 || !ws) return { status: res.status, body: await res.json().catch(() => undefined) }
+  ws.accept()
+  return { status: res.status, socket: recordedSocket(ws) }
+}
+
+function recordedSocket(ws: WebSocket): LiveTestSocket {
+  const messages: string[] = []
+  const waiting: { resolve: (message: string) => void; reject: (error: Error) => void }[] = []
+  let taken = 0
+  let ended = false
+  let markClosed: (closed: { code: number }) => void = () => undefined
+  const closed = new Promise<{ code: number }>((resolve) => {
+    markClosed = resolve
+  })
+  ws.addEventListener('message', (event) => {
+    const message = typeof event.data === 'string' ? event.data : '<binary>'
+    messages.push(message)
+    const waiter = waiting.shift()
+    if (waiter) {
+      taken += 1
+      waiter.resolve(message)
+    }
+  })
+  ws.addEventListener('close', (event) => {
+    ended = true
+    markClosed({ code: event.code })
+    for (const waiter of waiting.splice(0)) waiter.reject(new Error(`the socket closed with ${event.code} before another message`))
+  })
+  return {
+    messages,
+    next(timeoutMs = 2_000) {
+      if (taken < messages.length) return Promise.resolve(messages[taken++])
+      if (ended) return Promise.reject(new Error('the socket is closed'))
+      return new Promise<string>((resolve, reject) => {
+        const waiter = {
+          resolve: (message: string) => {
+            clearTimeout(timer)
+            resolve(message)
+          },
+          reject: (error: Error) => {
+            clearTimeout(timer)
+            reject(error)
+          },
+        }
+        const timer = setTimeout(() => {
+          waiting.splice(waiting.indexOf(waiter), 1)
+          reject(new Error(`no message within ${timeoutMs} ms`))
+        }, timeoutMs)
+        waiting.push(waiter)
+      })
+    },
+    closed,
+    send: (data) => ws.send(data),
+    close: () => {
+      try {
+        ws.close(1000)
+      } catch {
+        // Already closed.
+      }
+    },
+  }
+}

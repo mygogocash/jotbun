@@ -1,0 +1,8 @@
+fca979dd58576946ae80d87e14ee1529cadfa180006297e6804fdd45ffd03bf3  base/apps/app/src/screens/redesign/record/recordActions.ts
+22394c6795138b1a551460f54eaafb26626a4268172334c8bc79d9f5576cdaf0  base/apps/app/src/screens/redesign/RecordScreen.render.test.tsx
+67c325bc61dedd4b2199d1ba5cc53d05436ac24dd55996d10b47da93eab96894  base/docs/implementation/receipts/1D-T9.md
+437fdb5acd9bce9c23ca2fa47faa980bf02b913ac48383f0c9763be0dddccfff  real/apps/app/src/screens/redesign/record/recordActions.ts
+96dedcd7f0aadc51a0fe70fa2074a59678b06db8ba4709bade72de73f7d7ab7d  real/apps/app/src/screens/redesign/RecordScreen.render.test.tsx
+6dfaccf30e9fb8b7ba86d6ffc2300108b7e94bb09136c66753690d1d9c6a65d0  real/docs/implementation/receipts/1D-T9.md
+07de3f5a9dece7e9615925bdaf6779e32ec6b75cdd17c9ea9541f7b8061d546b  mutants.py
+22fbe2dcc762ded04d41a2ac0bb4df27521be791ec8b0f62f3291636660a96d9  recordActions.diff

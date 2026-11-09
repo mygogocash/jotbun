@@ -120,6 +120,36 @@ interface EmailBinding {
   send(message: { to: string; from: string; subject: string; html: string; text: string }): Promise<{ messageId: string }>
 }
 
+// WebSockets in workerd, as far as the live socket and its tests use them
+// (1D-T10; developers.cloudflare.com/durable-objects/best-practices/websockets).
+// readyState is the DOM's.
+interface WebSocket {
+  /** Accepts the socket of a 101 response this Worker received, so it can send and receive. */
+  accept(): void
+  /** Kept with a hibernatable socket through hibernation: at most 16,384 bytes, structured-cloned. */
+  serializeAttachment(value: unknown): void
+  deserializeAttachment(): unknown
+}
+
+/** The two ends of a new socket: [client, server]. */
+declare const WebSocketPair: { new (): { 0: WebSocket; 1: WebSocket } }
+
+/** A request message and the response the runtime sends for it without waking the object. */
+declare class WebSocketRequestResponsePair {
+  constructor(request: string, response: string)
+  readonly request: string
+  readonly response: string
+}
+
+interface ResponseInit {
+  /** A 101 response's socket (the client end). */
+  webSocket?: WebSocket | null
+}
+
+interface Response {
+  readonly webSocket: WebSocket | null
+}
+
 // The bindings `env` is typed with. The vault Worker's configuration is
 // wrangler.vault.jsonc; the test harness reads VAULT through `cloudflare:workers`.
 declare namespace Cloudflare {
@@ -161,6 +191,14 @@ declare module 'cloudflare:workers' {
     readonly storage: DurableObjectStorage
     blockConcurrencyWhile<T>(callback: () => Promise<T>): Promise<T>
     waitUntil(promise: Promise<unknown>): void
+    // The WebSocket Hibernation API, as far as the live socket uses it (1D-T10).
+    /** Accepts a socket the object keeps through hibernation, with at most 10 tags of 256 characters each. */
+    acceptWebSocket(ws: WebSocket, tags?: string[]): void
+    /** The accepted sockets, or only those carrying `tag`. */
+    getWebSockets(tag?: string): WebSocket[]
+    getTags(ws: WebSocket): string[]
+    /** A message the runtime answers itself, without waking the object. */
+    setWebSocketAutoResponse(pair?: WebSocketRequestResponsePair): void
   }
 
   export class DurableObject<Env = unknown> {

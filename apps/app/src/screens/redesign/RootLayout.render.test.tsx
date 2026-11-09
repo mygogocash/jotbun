@@ -46,6 +46,13 @@ vi.mock('react-native-safe-area-context', async () => {
   const { Fragment, createElement } = await import('react');
   return { SafeAreaProvider: ({ children }: { children: unknown }) => createElement(Fragment, null, children as never) };
 });
+// The real wallet root, marked so a test can see what it wraps (P2-T2).
+vi.mock('@mobile/wallet/WalletRoot', async (importOriginal) => {
+  const real = await importOriginal<typeof import('@mobile/wallet/WalletRoot')>();
+  const { createElement } = await import('react');
+  const { View } = await import('react-native');
+  return { WalletRoot: ({ children }: { children: unknown }) => createElement(View, { testID: 'wallet-root' }, createElement(real.WalletRoot, null, children as never)) };
+});
 
 import { LANGUAGE_PREFERENCE_STORAGE_KEY } from '@mobile/i18n/languagePreferenceStorage';
 import { installBrowserStorage } from '@mobile/mascot/mascotTestHarness';
@@ -115,4 +122,11 @@ test("the root installs the app's sign-in once, before any screen reads the sess
   const provider = getCredentialProvider();
   expect(provider).not.toBeNull();
   expect(installAppAuth()).toBe(provider);
+});
+
+test('the wallet root wraps the stack, so every screen shares its gestures and its one reduced-motion answer', async () => {
+  vi.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(false);
+  render(<RootLayout />);
+  const stack = await screen.findByTestId('stack');
+  expect(screen.getByTestId('wallet-root').contains(stack)).toBe(true);
 });

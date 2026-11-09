@@ -1,0 +1,7 @@
+apps/app/src/api/client.ts
+apps/app/src/auth/globalLogout.ts
+apps/app/src/auth/sessionEnded.ts
+apps/app/src/auth/useAuthGuardSession.ts
+apps/app/src/screens/redesign/account/SettingsParts.tsx
+apps/app/src/spend/v1/deletion.ts
+apps/app/src/spend/v1/privacy.ts

@@ -1,0 +1,7 @@
+c1055dc134048cd3234704207f78b16684389c54fe8ba5d89aaf7a0cc4c21b72  apps/app/src/api/client.ts
+6ad25aa881092dc4c1cda0c130653aec0ed1088271bc7c4d7d01e1d1a322fcdd  apps/app/src/auth/globalLogout.ts
+a254d3b0cadd533284911a58b24657be465dfec734816f2fadc2c4d78ddad64f  apps/app/src/auth/sessionEnded.ts
+7eb7b3654de336a00b75008367e7f2b56e23ea5fdf5753bf4464388d785e83c0  apps/app/src/auth/useAuthGuardSession.ts
+6a868de0130eb99716d30e2a3df7c959e88b951fedc709925b83fd0130883bcd  apps/app/src/screens/redesign/account/SettingsParts.tsx
+2f053a1774904d670cb322aa3024cf0cdc226d6d7aeeb102d4f97ffc3b61398f  apps/app/src/spend/v1/deletion.ts
+5cd1d77b296d5b41552db4fa4382c1c5933a50c7df1896afd4fe36ee0ba69a47  apps/app/src/spend/v1/privacy.ts

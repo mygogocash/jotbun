@@ -235,7 +235,9 @@ export function buildRows(table: SourceTable, today: string): ChildBody {
       } else if (parsedAmount.ok) {
         amount = parsedAmount.minor;
         negative = parsedAmount.negative;
-        explicitPlus = /^\s*\(?\s*(?:฿|thb)?\s*\+/i.test(amountText);
+        // Each run of spaces is read by one `\s*` only: the old form split a run between
+        // two, quadratic in its length (fix-parser-regex, R89).
+        explicitPlus = /^\s*(?:\(\s*)?(?:(?:฿|thb)\s*)?\+/i.test(amountText);
       } else {
         flag('amount_minor', parsedAmount.code);
       }
