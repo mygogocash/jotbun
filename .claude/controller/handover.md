@@ -64,6 +64,11 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
   - Waiting on the owner: whether to run the plan's whole-1A-range review (P11). Epic #83 stays open until 1D-T15's phase proof.
   - P11: the plan's whole-1A-range review is the controller's to schedule after 1A-T10's own review.
   - Closing epic #83 is the owner's call.
+- **Third usage-limit cutoff, about 21:10; resets 23:40.** To resume, follow the skill's "After a usage-limit cutoff" steps: check `status.sh`, then SendMessage each cut-off agent.
+  - **1C-T8's implementer:** committed 5e8b70e (32 files) and was running its post-commit range and clean-tree checks. Resume it to finish its final message, then open its PR.
+  - **The 1B-T10 planner:** was fixing its test file (the SQL alias `match`, an assertion, the R37 loop length).
+  - **The P2-T9 and P2-T10 planners:** probably cut off too; resume them.
+  - The PR watcher is not armed (no PRs open). Re-arm it when the next PR opens.
 - **1C-T8: brief READY** (L, 31 files; P1 to P16 accepted). The implementer (Haiku) was dispatched about 20:35 in p1-1c-t8 from 1ddc7f7, with a generated prompt.
   - Expected: app 34, unit 911, render 102 files and 1802 tests, web 4788. E2 screenshots are SKIPPED, with 22 catalogue deep links listed.
   - The brief's "For the controller": 1C-T5's leftover-cookie recovery needs a `credentialProvider.ts` change that amends R86; the "Sign in again" flicker comes from the sync outcome. Both are for a later 1C task.
