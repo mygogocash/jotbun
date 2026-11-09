@@ -68,10 +68,10 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - Kit `scratch/p4-t13-planner/`: check_kit at d579f94 gives 31 OK, SHA256SUMS.base 2 OK, and both `base/` files identical.
     - The planner's proof: 84 of 84 mutants. For CI: `test:unit` +18, everything else +0.
     - The implementer (Haiku max, c5f063e0) was dispatched about 22:44 in a pre-installed p4-t13 from d579f94.
-    - **DONE at 9d38cbd; PR #375 opened at 22:55 (issue #221).** RED and GREEN 18 of 18, 84 of 84 mutants (byte-identical to the planner's run), `test:app` 34, `test:unit` 940. The controller checked the 7 files against the kit and the clean merge with the head.
-    - The **Sonnet** review (0093d051, `reviews/P4-T13.md`) is under way.
-    - On approval and green CI: `merge_task_pr.sh 375 9d38cbd P4-T13`, then `promote_pr.sh P4-T13 375`. No iOS export is needed: no route, entry or native change, and nothing imports the modules yet.
-    - Its P4-T14 notes are in followups.md.
+    - **Merged as a915f95 (#375, at 23:16).** Issue #221 is closed, and the worktree and branches are removed.
+    - The Sonnet review approved with two minors (pin the type and base64 guards byte for byte; pin NFC before the album's cut) and four nits, all in followups.md under P4-T14 and P4-T18.
+    - CI on 9d38cbd: `test:unit` 945 on the merge ref, everything else unchanged. No iOS export was needed.
+    - **Promotion PR #378** (`promote/p4-t13`, based on `promote/1d-t8`) is stacked on #373 with `gh stack` (stack #379), so native stacks work. The owner merges the stack bottom-up.
   - The old P2-T10 planner (a0363fb1, "waiting on its own background work") is obsolete: P2-T10 merged as #370.
 - **P2-T11 planner** (Opus xhigh, df615dc8), dispatched about 22:16 at 331c2b2 as the sixth agent: the deepest ready task (depth 18). WT p2-t11 on p2/t11-wallet-looks. It carries P2-T8's m-1 (the harness's E2, E3 and X2) and P2-T10's balance-sign note. P2-T13 (depth 18, tray and lock cover, no shared files) follows in the wallet lane.
 
