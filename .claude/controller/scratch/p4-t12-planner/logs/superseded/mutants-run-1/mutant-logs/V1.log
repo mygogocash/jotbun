@@ -1,0 +1,59 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app
+
+ ❯ src/slips/sharedSlipResources.render.test.tsx (1 test | 1 failed) 5ms
+   × slip calls carry X-GoGoSpend-Analytics: off unless this phone's answer is yes, over the one shared transport 5ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  22:32:46
+   Duration  373ms (transform 76ms, setup 39ms, import 157ms, tests 5ms, environment 76ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/slips/sharedSlipResources.render.test.tsx > slip calls carry X-GoGoSpend-Analytics: off unless this phone's answer is yes, over the one shared transport
+AssertionError: expected [ [ 'POST', '/v1/slips', null ], …(3) ] to deeply equal [ Array(4) ]
+
+- Expected
++ Received
+
+  [
+    [
+      "POST",
+      "/v1/slips",
+-     "off",
++     null,
+    ],
+    [
+      "POST",
+      "/v1/slips",
+      null,
+    ],
+    [
+      "POST",
+      "/v1/slips",
+-     "off",
++     null,
+    ],
+    [
+      "PUT",
+      "/v1/slip-accounts/2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+-     "off",
++     null,
+    ],
+  ]
+
+ ❯ src/slips/sharedSlipResources.render.test.tsx:57:115
+     55|   await slips.read(BATCH);
+     56|   await slips.updateAccount(SLIP_ACCOUNT.id, 1, null);
+     57|   expect(sent.map((request) => [request.method, request.path, request.…
+       |                                                                                                                   ^
+     58|     ['POST', '/v1/slips', 'off'],
+     59|     ['POST', '/v1/slips', null],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

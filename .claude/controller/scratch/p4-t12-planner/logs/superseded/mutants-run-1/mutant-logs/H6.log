@@ -1,0 +1,57 @@
+(node:35836) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipRefs.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:35836) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/packages/contracts/package.json.
+✖ the salt is fetched once per account and kept with WHEN_UNLOCKED_THIS_DEVICE_ONLY, and in the given accessGroup (1.529791ms)
+✔ forgetting deletes only that account's salt, and a kept value that is not a salt is fetched again (0.264583ms)
+✔ the phone's hash of P3's slip QR is the contract's vector (0.109834ms)
+✔ the app's SHA-256 is expo-crypto's digest, and gives the same vector (0.133958ms)
+✔ a reference that cannot be normalized gives no hash, and asks for no salt (0.11825ms)
+✔ a salt that could not be fetched is asked for again, and a locked keychain fetches none (0.30825ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 5
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 124.171042
+
+✖ failing tests:
+
+test at src/slips/slipRefs.test.ts:76:1
+✖ the salt is fetched once per account and kept with WHEN_UNLOCKED_THIS_DEVICE_ONLY, and in the given accessGroup (1.529791ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    [
+      {
+        key: 'jotbun.slip-salt.a0000000-0000-4000-8000-000000000001',
+        op: 'get',
+        options: {
+  ...
+        op: 'set',
+  +     options: undefined,
+  -     options: {
+  -       accessGroup: 'group.app.jotbun',
+  -       keychainAccessible: 6
+  -     },
+        value: '0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20'
+      }
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipRefs.test.ts:88:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { op: 'get', key: 'jotbun.slip-salt.a0000000-0000-4000-8000-000000000001', options: [Object] }, { op: 'set', key: 'jotbun.slip-salt.a0000000-0000-4000-8000-000000000001', value: '0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20', options: undefined } ],
+    expected: [ { op: 'get', key: 'jotbun.slip-salt.a0000000-0000-4000-8000-000000000001', options: [Object] }, { op: 'set', key: 'jotbun.slip-salt.a0000000-0000-4000-8000-000000000001', value: '0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20', options: [Object] } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

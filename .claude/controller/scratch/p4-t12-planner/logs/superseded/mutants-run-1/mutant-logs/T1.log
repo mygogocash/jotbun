@@ -1,0 +1,1 @@
+src/slips/slipRoutes.ts(11,14): error TS2820: Type '"/spend/slips/reviews"' is not assignable to type '"/" | RelativePathString | ExternalPathString | `/?${string}` | `/#${string}` | "/login" | `/login?${string}` | `/login#${string}` | "/_sitemap" | `/_sitemap?${string}` | `/_sitemap#${string}` | ... 76 more ... | { ...; }'. Did you mean '"/spend/slips/review"'?

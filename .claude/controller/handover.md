@@ -25,7 +25,13 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - For CI: workers +1 file, +37 passed and -2 todo; `test:edge` +0.
     - The implementer (Haiku max, a4857037) was dispatched about 22:55 in a pre-installed p1-1b-t8 from db19056. Its workers runs hold the heavy lock.
     - Then: PR (issue #112), Opus review (L). 1B-T7 and fix-download-aborts follow in this lane.
-  - **ci-parallel-jobs planner** (ad778c27) and **P4-T12 planner** (e438b5ac): Opus xhigh, continuing their kits. The P4 planners were given 1D-T8's exact files.
+  - **ci-parallel-jobs planner** (ad778c27): Opus xhigh, continuing its kit.
+  - **P4-T12: brief READY on 606e131's code** (M; 18 new files in `src/slips/` and ten placeholder routes under `app/spend/slips/`).
+    - Shared files: `sharedV1.ts`, `DeviceDiaryProvider.tsx` and its test, and one line in `bunSettingsErase.render.test.tsx`. P1 to P15 are accepted, with P2 recorded as R102.
+    - Kit `scratch/p4-t12-planner/`: check_kit at c1637ec gives 51 OK, SHA256SUMS.base 4 OK, and the 4 `orig/` files identical.
+    - The planner's proof: 64 of 64 mutants. For CI: `test:unit` +11, web +12 modules, render +1 file and +2 cases.
+    - The implementer (Haiku max, 30b6286d) was dispatched about 23:15 in a pre-installed p4-t12 from c1637ec. Its notes allow exactly 1D-T8's shift if #372 merges before its sync.
+    - Then: PR (issue #220) and an Opus review (M).
   - **P4-T13: brief READY at 0bd5659** (S, 7 new files in `src/slips/`, none shared; no package or lockfile change).
     - P1 to P18 are accepted. The Q1 and Q2 adapters wait on the owner (P18).
     - Kit `scratch/p4-t13-planner/`: check_kit at d579f94 gives 31 OK, SHA256SUMS.base 2 OK, and both `base/` files identical.
@@ -233,6 +239,10 @@ To stop a chat session in the app: `sc chat stop <thread_id>` cancels its turn o
 - Held: P2-T2 and 1D-T6 wait for #347 (lockfile, _layout). P3-T12 waits on owner Q1. 1C-T2 waits on the owner's lockout answer, and its brief must first pin 1C-T1's six untested security options (followups.md).
 
 ## Rulings this session
+R102 (9 Nov, P4-T12's P2; binds P4-T6): the phone sends a slip batch as the UTF-8 bytes of its JSON, typed `application/octet-stream`, as the import upload sends its file.
+  - P4-T6's handler reads at most 8 MiB of `w.stream`, accepts `application/octet-stream`, and parses the text with the contract's `parseSlipBatchRequest`.
+  - A body typed `application/json` cannot work: the dispatcher's `readRouteBody` parses it (`readJsonBody`, capped at 2 MiB, 413 `COMMAND_TOO_LARGE` above that), and a stream route is then left with no stream. P4-T13's batches are up to 8 MiB.
+  - P4-T6's planner decides what a JSON-typed body answers.
 R101 (9 Nov, 1B-T8's P4): a snapshot build whose view was read below the purge watermark throws instead of answering the plan's `skipped`. SnapshotWorkflow's step then retries with a fresh read after the purge, as the API retries `snapshot_not_recorded`. A skip would leave the snapshot `pending` with its Workflow complete, so clients poll it until they give up and it stays stuck until `pruneSnapshots` fails it a day later. The other two refusals stay `skipped`: a snapshot no longer pending, and a vault no longer active. 1B-T12's parity session should expect the throw.
 R100 (9 Nov, the owner's ask to speed up): CI is the gate for whole suites. That covers the full render suite, the full workers suite, export:web (unless routes or the entry change), the iOS export, the database suites and test:ops.
   - Agents run only the fast local gate in `protocol.md`, and no whole-suite totals appear in briefs, prompts or receipts. Reviewers read CI instead of re-running suites.

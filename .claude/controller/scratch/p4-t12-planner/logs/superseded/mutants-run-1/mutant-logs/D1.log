@@ -1,0 +1,62 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app
+
+ ❯ src/mascot/bunSettingsErase.render.test.tsx (3 tests | 1 failed) 6ms
+   × the sign-out erase hook forgets the bun settings after the import draft, and a setting that cannot be erased never stops it 3ms
+ ❯ src/spend/v1/DeviceDiaryProvider.render.test.tsx (5 tests | 1 failed) 23ms
+   × the sign-out erase forgets this account's slip salt, and a keychain that refuses never stops the erase 4ms
+
+ Test Files  2 failed (2)
+      Tests  2 failed | 6 passed (8)
+   Start at  22:32:44
+   Duration  463ms (transform 183ms, setup 86ms, import 415ms, tests 28ms, environment 170ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/mascot/bunSettingsErase.render.test.tsx > the sign-out erase hook forgets the bun settings after the import draft, and a setting that cannot be erased never stops it
+AssertionError: expected [ 'gogospend.bun.intensity', …(5) ] to deeply equal [ 'gogospend.bun.intensity', …(6) ]
+
+- Expected
++ Received
+
+@@ -3,7 +3,6 @@
+    "gogospend.haptics",
+    "gogospend.bun.cheerDay",
+    "gogospend.bun.celebratedWeek",
+    "gogospend.cashback.declined",
+    "gogospend.analytics-consent",
+-   "jotbun.slip-salt.a0000000-0000-4000-8000-000000000001",
+  ]
+
+ ❯ src/mascot/bunSettingsErase.render.test.tsx:81:82
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/spend/v1/DeviceDiaryProvider.render.test.tsx > the sign-out erase forgets this account's slip salt, and a keychain that refuses never stops the erase
+AssertionError: expected [ …(2) ] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+  [
+    "jotbun.slip-salt.a0000000-0000-4000-8000-000000000001",
++   "jotbun.slip-salt.b0000000-0000-4000-8000-000000000002",
+  ]
+
+ ❯ src/spend/v1/DeviceDiaryProvider.render.test.tsx:167:36
+    165|   const deps = captured.deps as { eraseWithDiary?: (accountId: string)…
+    166|   await deps.eraseWithDiary?.(B);
+    167|   expect([...secure.items.keys()]).toEqual([`${SALT_KEY_PREFIX}${A}`]);
+       |                                    ^
+    168|   // A salt the locked keychain keeps: the rest of the erase still run…
+    169|   secure.refuse.add(`${SALT_KEY_PREFIX}${A}`);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

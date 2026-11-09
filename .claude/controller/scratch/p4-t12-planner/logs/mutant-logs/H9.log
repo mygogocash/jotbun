@@ -1,0 +1,43 @@
+(node:38227) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipRefs.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:38227) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/packages/contracts/package.json.
+✔ the salt is fetched once per account and kept with WHEN_UNLOCKED_THIS_DEVICE_ONLY, and in the given accessGroup (1.186209ms)
+✔ forgetting deletes only that account's salt, and a kept value that is not a salt is fetched again (0.225417ms)
+✔ the phone's hash of P3's slip QR is the contract's vector (0.112667ms)
+✔ the app's SHA-256 is expo-crypto's digest, and gives the same vector (0.131834ms)
+✖ a reference that cannot be normalized gives no hash, and asks for no salt (0.435209ms)
+✔ a salt that could not be fetched is asked for again, and a locked keychain fetches none (0.258709ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 5
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 122.668042
+
+✖ failing tests:
+
+test at src/slips/slipRefs.test.ts:153:1
+✖ a reference that cannot be normalized gives no hash, and asks for no salt (0.435209ms)
+  AssertionError [ERR_ASSERTION]: {"bankCode":"0041","reference":"A1"}
+  + actual - expected
+  
+  + 'e0e9e3ccd388ff626f881dccf4b30b38fee45d44e379236fed7cb830957af7fc'
+  - null
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipRefs.test.ts:158:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'e0e9e3ccd388ff626f881dccf4b30b38fee45d44e379236fed7cb830957af7fc',
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

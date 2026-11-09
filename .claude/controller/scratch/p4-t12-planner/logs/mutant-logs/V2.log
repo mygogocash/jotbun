@@ -1,0 +1,32 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app
+
+ ❯ src/slips/sharedSlipResources.render.test.tsx (1 test | 1 failed) 4ms
+   × slip calls carry X-GoGoSpend-Analytics: off unless this phone's answer is yes, over the one shared transport 3ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  22:33:36
+   Duration  403ms (transform 79ms, setup 43ms, import 168ms, tests 4ms, environment 82ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/slips/sharedSlipResources.render.test.tsx > slip calls carry X-GoGoSpend-Analytics: off unless this phone's answer is yes, over the one shared transport
+AssertionError: expected { salt: [Function salt], …(9) } to be { salt: [Function salt], …(9) } // Object.is equality
+
+Compared values have no visual difference.
+
+ ❯ src/slips/sharedSlipResources.render.test.tsx:49:36
+     47|   expect(getAnalytics()).toBeNull();
+     48|   const slips = getSharedSlipResources();
+     49|   expect(getSharedSlipResources()).toBe(slips);
+       |                                    ^
+     50|   await slips.read(BATCH);
+     51|   const { analytics } = await recordAnalytics();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

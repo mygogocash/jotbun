@@ -1,0 +1,43 @@
+--- a/apps/app/src/spend/v1/DeviceDiaryProvider.tsx
++++ b/apps/app/src/spend/v1/DeviceDiaryProvider.tsx
+@@ -19,6 +19,7 @@
+ import { eraseCelebratedWeek } from '@mobile/screens/redesign/insights/celebrationWeek';
+ import { eraseCashbackDeclined } from '@mobile/screens/redesign/insights/cashbackDecline';
+ import { eraseStoredHapticPreference } from '@mobile/lib/hapticPreferenceStorage';
++import { secureSaltStore } from '@mobile/slips/slipRefs';
+ import type { AccountDatabase } from '@mobile/storage/accountDatabase';
+ import { createDeviceAccountDatabase } from '@mobile/storage/deviceDiary';
+ import { createDeviceSync } from '@mobile/sync/deviceSync';
+@@ -46,21 +47,27 @@
+   },
+   (text) => Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, text),
+ );
++// Each account's slip salt (P4-T12, S16), in the secure store on iOS and
++// Android until that account's sign-out erase. The web keeps none.
++const slipSalts = secureSaltStore();
++const eraseSlipSalt = async (accountId: string): Promise<void> => {
++  if (Platform.OS !== 'web') await slipSalts.forget(accountId);
++};
+ 
+ /**
+  * The explicit sign-out erase, with the diary (which takes its own import
+  * draft): a plain-text import draft an older build left for this account, the
+  * bun's device settings (its intensity and the day the Quick add cheer last
+- * showed), History's view kept while a record is open (memory only), and the
+- * wallet's device settings, and this phone's analytics answer (1D-T6), so the
+- * next person starts from the defaults. An
+- * account's looks stay. A setting that cannot be erased never stops the
++ * showed), History's view kept while a record is open (memory only), the
++ * wallet's device settings, this phone's analytics answer (1D-T6) and this
++ * account's slip salt (P4-T12), so the next person starts from the defaults.
++ * An account's looks stay. A setting that cannot be erased never stops the
+  * diary's erase. Exported for its test.
+  */
+ export async function eraseWithDiary(accountId: string): Promise<void> {
+   forgetKeptHistory();
+   await eraseLegacyImportDraft(accountId);
+-  await Promise.all([eraseStoredBunIntensity().catch(() => undefined), eraseStoredHapticPreference().catch(() => undefined), eraseCheerDay(), eraseCelebratedWeek(), eraseCashbackDeclined(), eraseStoredConsent().catch(() => undefined)]);
++  await Promise.all([eraseStoredBunIntensity().catch(() => undefined), eraseStoredHapticPreference().catch(() => undefined), eraseCheerDay(), eraseCelebratedWeek(), eraseCashbackDeclined(), eraseStoredConsent().catch(() => undefined), eraseSlipSalt(accountId).catch(() => undefined)]);
+   await eraseDeviceSettings().catch(() => undefined);
+ }
+ 

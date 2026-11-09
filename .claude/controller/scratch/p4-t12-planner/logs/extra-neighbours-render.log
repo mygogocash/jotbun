@@ -1,0 +1,43 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag off: exactly the current layout, with no tab bar 19ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > approved: the redesigned layout is the default 17ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag on: Home and History tabs under the screen, with the add button in the centre 11ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag on: History is selected on /spend/all and Home navigates back 6ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag on: no tab bar on /spend/add 1ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag on: no tab bar on /spend/record/0000000b-0000-4000-8000-000000000003 1ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag on: no tab bar on /spend/record/0000000b-0000-4000-8000-000000000003/edit 1ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the legacy flag still wins: no diary provider and no tab bar 0ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the auth redirect is unchanged (redesign flag undefined) 1ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the auth redirect is unchanged (redesign flag core) 0ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the tab bar speaks en, in light and dark, with 44 pt targets 11ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the tab bar speaks th, in light and dark, with 44 pt targets 9ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the tab bar speaks vi, in light and dark, with 44 pt targets 11ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > which tab a path belongs to 0ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the Home route: the new Home under the flag, the legacy flag first, else the current Home 1ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > planning on: no tab of its own; the bar hides on budget, wallets and categories 8ms
+(node:52272) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > insights on: an Insights tab, selected on /spend/insights; the bar hides on a recap and on reminders 9ms
+(node:52276) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/screens/redesign/account/AccountRoutes.render.test.tsx > the first run and sign-in: redesigned under the account area (on since E2 checkpoint 4), today's screens with it off 24ms
+ ✓ src/screens/redesign/account/AccountRoutes.render.test.tsx > settings and privacy: only under the account area (on by default), and only signed in 3ms
+ ✓ src/screens/redesign/HistoryReturn.render.test.tsx > a record and back: the filters, the search and every loaded entry come back, read again from Jotbun 747ms
+ ✓ src/screens/redesign/HistoryReturn.render.test.tsx > an entry changed or deleted on its record shows its new state on the way back 182ms
+ ✓ src/screens/redesign/HistoryReturn.render.test.tsx > another account, or a sign-out and back in, starts History clean 548ms
+ ✓ src/screens/redesign/HistoryReturn.render.test.tsx > leaving for another screen forgets the view; Quick add from the record is still the way back 130ms
+ ✓ src/screens/redesign/HistoryReturn.render.test.tsx > only a record or Recently deleted keeps the view: Add from the tab bar and back is History as before 85ms
+ ✓ src/screens/redesign/HistoryReturn.render.test.tsx > the month in the URL wins: a view kept for one month never opens on another 94ms
+
+ Test Files  3 passed (3)
+      Tests  25 passed (25)
+   Start at  22:37:43
+   Duration  7.73s (transform 4.93s, setup 183ms, import 6.11s, tests 1.92s, environment 382ms)
+
