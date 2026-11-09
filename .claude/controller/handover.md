@@ -33,7 +33,9 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
   - It BLOCKED at Step 6.4 on the `node-postgres` count (1, from #352's comment). Ruled R95 and resumed with SendMessage. Everything before that passed: 176 / 521 + 3 todo, 27 of 27 mutants.
   - DONE at 34798c8. PR #362 is open (issue #110) and the Opus review is under way (`reviews/1B-T6.md`).
 - **Planners dispatched (Opus, ~09:55):**
-  - **P2-T8**, the wallet test harness (depth 20, the deepest ready task): `briefs/P2-T8.md`, kit `scratch/p2-t8-planner/`, WT p2-t8 on p2/t8-wallet-harness.
+  - **P2-T8**, the wallet test harness (depth 20, the deepest ready task): brief READY, P1 to P12 accepted.
+    - The implementer was dispatched about 15:45 in p2-t8 from cc859ad (generated prompt).
+    - Expected: app 33, unit 894, render 94 files and 1712 tests, web 4785.
   - **1B-T9**, receipt attachments (depth 15): planned on top of 1B-T6's 34798c8, and starts after #362 merges. `briefs/1B-T9.md`, kit `scratch/1b-t9-planner/`, WT p1-1b-t9 on p1/1b-t9-receipt-attachments. It also answers whether the vault has the API's R-B copy race.
   - **1A-T10**, CI, docs and the phase 1A receipt: `briefs/1A-T10.md`, kit `scratch/1a-t10-planner/`, WT p1-1a-t10 on p1/1a-t10-ci-docs.
 
@@ -55,7 +57,12 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
   - Confirming Opus review under way, writing `reviews/1D-T9-confirm.md`. Merge on its approval and green CI with `merge_task_pr.sh 354 03da870 1D-T9`.
 - **1C-T6 (Haiku), worktree p1-1c-t6:** base files are byte-identical at 5dbd7be (20 of 20). Expected: app 33, unit 887, render 90 files and 1660 tests.
 - **1D-T6: merged 9a4a2f1 (#361, about 10:25).** The review approved with minors m1 to m4 (`reviews/1D-T6.md`; all in followups.md, and m1 is an owner question, below). Issue #137 is closed and the worktree and branches are removed.
-  - **App baseline at 9a4a2f1, computed** (687e764's measured counts plus 1D-T6's measured deltas): test:app 33, test:unit 894, render 93 files and 1706 tests, web 4785. Re-measure before relying on it.
+  - **Baseline measured at cecf3a5** (app code as at 9a4a2f1) with `scripts/baseline.sh`; summary in `scratch/baseline-cecf3a5/`:
+    - test:app 33, test:unit 894, render 93 files and 1706 tests;
+    - web 4785 modules, iOS 5751 modules;
+    - test:edge 14 files and 174 tests; workers 24 files, 488 passed and 3 todo.
+
+    These match the earlier computed values exactly.
   - **1C-T6 will conflict with it** in `api/client.ts` and `client.test.ts`, additively; keep both sides.
 - **Shared file:** 1C-T6 and 1D-T6 both edit `api/client.ts` and its test, in different places. Whichever merges second merges the other first.
 - **State push held:** no `sync_state.sh` push until the three implementers have passed their sync steps, because their prompts pin the head at 5dbd7be.
