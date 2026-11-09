@@ -33,8 +33,9 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
   - On DONE: open its PR, then the Opus review. 1B-T9 (receipt attachments, which also creates downloads.ts) is planned after it.
 - **#354 1D-T9 fix round (Haiku), worktree p1-1d-t9:**
   - The merge now conflicts on `featureFlags.ts` and its test (#358). The controller resolved both, keeping both areas, in `scratch/1d-t9-merge/` (SHA256SUMS; `node --test` passes 11 of 11). The fixer copies them in Step 1.3.
-  - Expected after the fix: unit 882, render 90 files and 1694 tests.
-  - On DONE: push, then a confirming Opus review against `reviews/1D-T9.md`, then merge on green.
+  - Fix round DONE: merge 36adb96 (5dbd7be), fix ddc9317, and the controller's receipt correction 03da870. Every count matched: unit 882, render 90 files and 1694 tests, 45 of 45 mutants.
+  - Pushed to #354 (MERGEABLE) and the PR body updated.
+  - Confirming Opus review under way, writing `reviews/1D-T9-confirm.md`. Merge on its approval and green CI with `merge_task_pr.sh 354 03da870 1D-T9`.
 - **1C-T6 (Haiku), worktree p1-1c-t6:** base files are byte-identical at 5dbd7be (20 of 20). Expected: app 33, unit 887, render 90 files and 1660 tests.
 - **1D-T6 (Haiku), worktree p1-1d-t6:** orig files are byte-identical at 5dbd7be (13 of 13). Expected: app 33, unit 892, render 92 files and 1661 tests, web 4782, iOS 5748.
 - **Shared file:** 1C-T6 and 1D-T6 both edit `api/client.ts` and its test, in different places. Whichever merges second merges the other first.
