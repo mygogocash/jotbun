@@ -27,6 +27,8 @@ export type WorkerRouteId =
   | 'bridge.catalogue'
   // 1B-T5
   | 'import.upload'
+  // 1B-T6
+  | 'export.file.download'
 
 /** The published policy versions from config:v1, or null when none are published. */
 export type PublishedPolicies = PolicyVersionDto[] | null
@@ -39,6 +41,8 @@ export type VaultRouteId =
   | 'budgets.get' | 'budgets.put' | 'history.list' | 'history.deleted' | 'summary.get' | 'sync.changes'
   // 1B-T5: the import status route, then the upload's step-only ids.
   | 'imports.status' | 'imports.begin' | 'imports.reservePart' | 'imports.finish' | 'imports.abort' | 'imports.discarded' | 'imports.bytesRetry'
+  // 1B-T6: the three export routes, then the download's step-only id.
+  | 'exports.request' | 'exports.status' | 'exports.grant' | 'exports.file'
 
 export type VaultCall = {
   route: VaultRouteId
