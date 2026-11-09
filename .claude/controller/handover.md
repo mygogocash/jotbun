@@ -41,6 +41,13 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - Shared files: `backend.yml`, `backend-workflow.test.mjs`, `docs/implementation/handover.md` (two Full gate lines), `apps/app/package.json` (the `export:ios` script) and `README.md` (the CI paragraph).
     - P1 to P14 are accepted. Kit `scratch/ci-parallel-jobs-planner/`: 46 OK, and the 5 base files are identical at 857b9f2.
     - The implementer (Haiku max, a5529d6c) was dispatched at 23:08 in a pre-installed ci-parallel from 857b9f2.
+    - **DONE at 46b30a0; PR #377 opened at 23:14 (no task issue).**
+      - The workflow test: RED 4 of 9 passing, GREEN 9 of 9. All 19 mutants failed as expected.
+      - `SPLIT OK`: parts 162, 196 and 218 of 576. `test:unit` 927, and `typecheck:routes` passed.
+      - The controller checked the 5 shared files against the kit and the clean merge with the head.
+    - **The review runs as a workflow** (run wf_1346c5d6-527): two Opus lenses (the split and the test's pins; the workflow and CI evidence), a skeptic for each blocker or major, and a synthesizer writing `reviews/ci-parallel-jobs.md`.
+    - #377's own CI is the first nine-job run, including the iOS export's first Linux build. Its measured times go in the receipt's "After, measured" line.
+    - Merge it with `merge_task_pr.sh 377 46b30a0` (no task id) **only after the owner's Actions-minutes answer**. Then run `promote_pr.sh ci-parallel-jobs 377`.
     - **Its merge waits on the owner's Actions-minutes answer** (Owner decisions waiting).
     - After the merge: P6C-T7 no longer carries 1A-T10's minor 1, briefs that say "CI's database job runs `test:edge:db`" now mean the `edge` job, and the protocol's iOS-export correction can be lifted.
   - **P4-T12: brief READY on 606e131's code** (M; 18 new files in `src/slips/` and ten placeholder routes under `app/spend/slips/`).
