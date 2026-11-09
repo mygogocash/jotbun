@@ -1,5 +1,7 @@
 # Agent prompt templates
 
+`scripts/make_prompt.py` fills these templates into an assignment file and prints the one-line Agent prompt. Prefer it; write only the task's own notes. The templates below are the source of its wording.
+
 Fill every `<...>`. Always pass `model` and `effort` on the Agent call: Opus `xhigh` for planners and reviewers, Haiku `max` for implementers and fixers (owner rule). Paths are absolute; agents start in a fresh directory.
 
 Abbreviations used below:

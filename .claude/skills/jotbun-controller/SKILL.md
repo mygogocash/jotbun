@@ -9,7 +9,7 @@ One session (the controller) runs the build. It dispatches agents, one worktree 
 
 - **Planners and reviewers:** Opus, effort xhigh.
 - **Implementers and fixers:** Haiku, effort max.
-- **Every Agent call** sets `model` and `effort` explicitly.
+- **Every Agent call** sets `model` and `effort` explicitly. Orca's Agent tool has no `effort`, so there pass `model` only; agents then run at the session's effort.
 
 The owner has authorised this to keep moving without pausing between tasks:
 - push task branches;
@@ -32,11 +32,33 @@ Merging anything into `main` stays the owner's call.
 
 The skill and `C/` are committed in the repo; the scratch proof trees are not, apart from the one a ready brief needs. Scripts and briefs use absolute paths under `/Users/kunanonjarat/Developer/jotbun`. If the clone lives elsewhere, run `grep -rl /Users/kunanonjarat/Developer/jotbun .claude/` and fix the paths. The main checkout must have the integration branch, or this commit's files, for `.claude/controller` to exist. Then read `C/handover.md`, starting with its migration section.
 
+## Fast paths (use these instead of hand-written checks and prompts)
+
+- **Where things stand:** `bash scripts/status.sh [minutes]` shows, in one call:
+  - the head;
+  - each open PR's checks, GitHub's mergeable state and a local merge test;
+  - the worktrees and their changes;
+  - the heavy lock;
+  - recently written scratch folders (live agents);
+  - the load.
+- **Does a brief's base hold:** `bash scripts/check_kit.sh <kit> [--rebase-out <dir>]`. It checks the kit's sums (skipping lost `*.log` lines), its `SHA256SUMS.base`, and its `orig/` or `base/` files at the head. It dry-runs per-file diffs for the files that changed. `--rebase-out` writes patched copies, with SHA256SUMS, for the implementer to copy.
+- **Exact counts after the head moved:** `bash scripts/baseline.sh <worktree> app|edge|all [--exports]`. Expected = the measured head total + the brief's delta. Never hand-adjust.
+- **Dispatch:** `python3 -I scripts/make_prompt.py <implementer|fixer|reviewer|confirm|planner> <TASK> --wt --branch --head [--accepted] [--pr --sha] [--lock] [--installed] [--notes <file>]`.
+  - It writes the assignment file from the role templates and prints a one-line Agent prompt and its model.
+  - Write only the task's own notes (what moved, totals, rulings, review focus) in `--notes`.
+
+## After a usage-limit cutoff (agents fail with HTTP 429)
+
+Their work is saved, but their background jobs and Monitors die.
+1. Run `status.sh` to check that the heavy lock is free, and kill any orphaned test processes.
+2. Send each agent `SendMessage` with "resume", what moved on the head since, and "rerun any check you did not see finish". This continues it with its context; a new Agent would start from nothing.
+3. Re-arm the `watch_prs.sh` Monitor.
+
 ## The loop
 
-1. **What's next:** `python3 -I scripts/ready_tasks.py --inflight <ids briefed, building or in review>`. Start critical-path (deepest) tasks first, one per lane per shared hot file. Use `--files` to see overlap.
+1. **What's next:** `python3 -I scripts/ready_tasks.py --inflight <ids briefed, building or in review>` (comma-separated). Start critical-path (deepest) tasks first, one per lane per shared hot file. Use `--files` to see overlap.
 2. **Brief:** Opus planner, with the template in `references/prompts.md`. Include the followups for that task, the in-flight work it shares files with, and, if it shares hot files with an unmerged task, "build on top of <X>'s real/ files and start only after <X> merges".
-3. **Before dispatching an implementer:** check that the brief's base still holds: `git -C <integration worktree> diff --stat <brief base> origin/claude/p1a-vault-core -- <task files>`.
+3. **Before dispatching an implementer:** check that the brief's base still holds with `bash scripts/check_kit.sh <kit>` (or `git -C <integration worktree> diff --stat <brief base> origin/claude/p1a-vault-core -- <task files>`).
    - If any of the task's files changed, send the brief back to its planner to rebase.
    - Then accept or rule on its planner calls (P1, P2, ...).
    - Create the worktree with `scripts/new_task_worktree.sh <wt> <branch>`, using the names from the brief's WT line.
@@ -64,6 +86,7 @@ The skill and `C/` are committed in the repo; the scratch proof trees are not, a
 - `references/prompts.md`: planner, implementer, reviewer, fix-round and resume templates.
 - `references/lessons.md`: what saved or cost time: rebase-before-dispatch, planning on top of unmerged work, lockfile serialisation, the known flakes, jsonb key order (R92), merge and issue rules, session pitfalls.
 - `scripts/`:
+  - `status.sh`, `check_kit.sh`, `baseline.sh` and `make_prompt.py` (the fast paths above)
   - `ready_tasks.py`
   - `new_task_worktree.sh`
   - `open_task_pr.sh`

@@ -38,6 +38,13 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
   - **1A-T10**, CI, docs and the phase 1A receipt: `briefs/1A-T10.md`, kit `scratch/1a-t10-planner/`, WT p1-1a-t10 on p1/1a-t10-ci-docs.
 
   Prompts are in `scratch/dispatch/`. Planners keep `*.log` out of the SHA256SUMS the implementer checks.
+- **Usage-limit cutoff, 9 Nov about 10:15 to 13:30.** Every agent failed with a 429 and was resumed with SendMessage at 15:15, from its saved context.
+- **#362 1B-T6: review Needs fixes** (`reviews/1B-T6.md`, M-1: a HEAD on the download route keeps a download slot for good).
+  - Ruling R96: fix it at the front door; `headOf` in `src/v1/handler.ts` cancels the dropped body. The round also adds m-1 and m-2 as tests; the nits go to followups.
+  - The reviewer is writing `briefs/1B-T6-fix.md`, with its kit in `scratch/1b-t6-fix-planner/`.
+- **1A-T10: brief READY** (P1 to P11 accepted). The implementer was dispatched 15:30 in p1-1a-t10 from cecf3a5, with a generated prompt (`scratch/dispatch/1A-T10-implementer.prompt.md`). Expected `test:ops`: 108 tests, 107 passed, 1 skipped.
+  - P11: the plan's whole-1A-range review is the controller's to schedule after 1A-T10's own review.
+  - Closing epic #83 is the owner's call.
 - **Held:** 1B-T7 (AI routes) shares four route files with 1B-T6 and 1B-T9, so it is planned after them. 1C-T2 and P3-T12 are still held on owner answers.
 - **#354 1D-T9: merged 687e764 (about 10:00).** The confirming review approved (`reviews/1D-T9-confirm.md`; nits n1 to n4 are in followups.md for the m5 task). Issue #140 is closed and the worktree and branches are removed. The receipt's n5 was fixed in housekeeping commit 8a1f587.
   - **App baseline at 687e764**, measured by the confirming reviewer on the same tree: test:app 32, test:unit 882, render 90 files and 1694 tests, export:web 4778 modules. iOS was not measured: 5563 at 5dbd7be, plus 1D-T9's modules.
@@ -96,6 +103,7 @@ To stop a chat session in the app: `sc chat stop <thread_id>` cancels its turn o
 - Held: P2-T2 and 1D-T6 wait for #347 (lockfile, _layout). P3-T12 waits on owner Q1. 1C-T2 waits on the owner's lockout answer, and its brief must first pin 1C-T1's six untested security options (followups.md).
 
 ## Rulings this session
+R96 (9 Nov, 1B-T6 review M-1: `headOf` in src/v1/handler.ts cancels the response body it drops, so a HEAD on any HEAD-able route returns what that body holds; handler.ts joins 1B-T6's fix round, and the fix covers 1B-T8's and 1B-T9's downloads too),
 R95 (9 Nov, 1B-T6: the build check "no PostgreSQL code in the vault bundle" counts driver markers, not the word `node-postgres`, because #352's `jsonbOrder` doc comment names node-postgres in prose; the bundle keeps that one comment line, and every driver marker counts 0),
 R84 (P4-T10 fixtures), R85 (two API test-only fixes), R86 (token sid must match the provider's session; sign out on a failed finish), R87 (receipts in docs/implementation/receipts/<task-id>.md), R88 (upload-intake deadline reason), R89 (+ extension: parser regex and readDateStyles DoS in frozen apps/api), R90 (API tests may add the legacy session header), R91 (two API database test races, test-only: command order and export downloads; R-B migration waits on the owner), R94 (1D-T9: a refused edit keeps a choice only with a usable current record; the broader C16 reading goes to the owner at E2), R93 (1D-T6: posthogOptions sets `rageClickConfig: { enabled: false }`, beyond the plan's options, because the iOS SDK sends $rageclick itself outside before_send and before consent, and repeated keypad taps reveal amounts), R92 (the vault serves sync snapshots in PostgreSQL jsonb key order, shortest key first then bytewise, nested too, via `jsonbOrder` in src/vault/reads/sync.ts; the parity normalizer stays byte-exact; 1B reads of jsonb-backed values use it too).
 
