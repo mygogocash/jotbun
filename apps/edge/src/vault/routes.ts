@@ -18,6 +18,7 @@ import { acceptPolicy, describeMe, setPrivacy } from './policies'
 import { okReply } from './replies'
 import { revokeSession } from './session'
 import { abortUpload, beginUpload, discardUploadParts, finishUpload, reserveUploadPart, uploadBytesRetry, uploadStatus } from './files/intake'
+import { exportFile, exportGrant, exportStatus, requestExport } from './files/exports'
 
 export type VaultHandler = (c: VaultContext, call: VaultCall) => VaultReply
 
@@ -49,6 +50,13 @@ function importStatusOf(c: VaultContext, id: string | undefined) {
   if (!isUuid(id)) throw new ProblemException(404, 'NOT_FOUND')
   const found = uploadStatus(c, id)
   if (!found) throw new ProblemException(404, 'NOT_FOUND')
+  return found
+}
+
+/** An export route's answer for the caller's own export; an unknown id, or one that is not a UUID, is 404 (1B-T6). */
+function exportOr404<T>(c: VaultContext, id: string | undefined, read: (c: VaultContext, id: string) => T | null): T {
+  const found = isUuid(id) ? read(c, id) : null
+  if (found === null) throw new ProblemException(404, 'NOT_FOUND')
   return found
 }
 
@@ -122,4 +130,13 @@ export const VAULT_HANDLERS: Partial<Record<VaultRouteId, VaultHandler>> = {
     return okReply(call.route, {})
   },
   'imports.bytesRetry': (c, call) => okReply(call.route, { seconds: uploadBytesRetry(c, Number(stepBody(call.body).need)) }),
+  // 1B-T6: the export routes and the download's step (src/v1/files/downloads.ts).
+  'exports.request': (c, call) => okReply(call.route, requestExport(c, call)),
+  'exports.status': (c, call) => okReply(call.route, exportOr404(c, call.params.id, exportStatus)),
+  'exports.grant': (c, call) => okReply(call.route, exportOr404(c, call.params.id, exportGrant)),
+  'exports.file': (c, call) => {
+    const file = exportFile(c, String(call.params.grant ?? ''))
+    if (!file) throw new ProblemException(404, 'NOT_FOUND')
+    return okReply(call.route, file)
+  },
 }

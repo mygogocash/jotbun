@@ -257,10 +257,10 @@ describe('ordered deltas, ported from sync-query.integration.spec.ts', () => {
 
 describe('GET /v1/sync/changes, ported from sync-api.integration.spec.ts', () => {
   it('snapshots validate exactly the entities the API registers', () => {
-    // Partly ported: 1B registers export, import_review and import_selection, and phase 4 slip_inbox. Until then,
+    // Partly ported: 1B-T6 registers export; 1B registers import_review and import_selection, and phase 4 slip_inbox. Until then,
     // every entity the vault registers is checked by exactly its sync validator.
     const registry = buildVaultRegistry()
-    expect(registry.entityNames().sort()).toEqual(['budget', 'category', 'transaction', 'wallet'])
+    expect(registry.entityNames().sort()).toEqual(['budget', 'category', 'export', 'transaction', 'wallet'])
     for (const name of registry.entityNames()) expect(registry.entity(name)?.validate).toBe(SYNC_ENTITY_VALIDATORS[name])
   })
 

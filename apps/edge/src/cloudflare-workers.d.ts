@@ -181,6 +181,7 @@ declare namespace Cloudflare {
     OBJECTS: import('./vault/files/keys').VaultBucket
     PARSER: DurableObjectNamespace<import('./background/statement-parser').StatementParser>
     PARSE_QUEUE: Queue<import('./background/parse-consumer').ParseMessage>
+    EXPORT_WORKFLOW: Workflow<import('./background/export-workflow').ExportParams>
     AUTH_DB: D1Database
     AUTH_DB_REFERENCE: D1Database
     ERASURE_DB: D1Database
@@ -231,6 +232,33 @@ declare module 'cloudflare:workers' {
     constructor(ctx: DurableObjectStateLike, env: Env)
     protected readonly ctx: DurableObjectStateLike
     protected readonly env: Env
+  }
+
+  // Workflows (1B-T6), as far as ExportWorkflow uses them (developers.cloudflare.com/workflows/build/workers-api).
+  /** What one run receives: its params, when the instance was created, and its id. */
+  export interface WorkflowEvent<T> {
+    readonly payload: Readonly<T>
+    readonly timestamp: Date
+    readonly instanceId: string
+  }
+
+  /** A step's retries (`limit` after the first attempt) and its timeout per attempt. */
+  export type WorkflowStepConfig = {
+    retries?: { limit: number; delay: string | number; backoff?: 'constant' | 'linear' | 'exponential' }
+    timeout?: string | number
+  }
+
+  export interface WorkflowStep {
+    /** Runs `callback` once and keeps its (serializable) result; a throw is retried, then rethrown. */
+    do<T>(name: string, callback: () => Promise<T>): Promise<T>
+    do<T>(name: string, config: WorkflowStepConfig, callback: () => Promise<T>): Promise<T>
+  }
+
+  export abstract class WorkflowEntrypoint<Env = unknown, T = unknown> {
+    constructor(ctx: unknown, env: Env)
+    protected readonly ctx: unknown
+    protected readonly env: Env
+    abstract run(event: Readonly<WorkflowEvent<T>>, step: WorkflowStep): Promise<unknown>
   }
 }
 

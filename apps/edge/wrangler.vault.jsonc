@@ -9,6 +9,10 @@
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
+  // Ruling R30 (1B-T6): the largest invocations are the ten-times export and
+  // snapshot build (1B-T8 measures them, expected a few seconds of CPU). 120
+  // seconds leaves wide room and still bounds runaway work; enforced only when deployed.
+  "limits": { "cpu_ms": 120000 },
   "vars": { "JOTBUN_ENV": "local", "IMPORT_UPLOADS_ENABLED": "false", "GOGOCASH_BRIDGE_ENABLED": "false" },
   // Published policies, gates and client minimums (config:v1). The id is a
   // local placeholder, as the Hyperdrive ids in wrangler.jsonc are.
@@ -23,6 +27,11 @@
     "producers": [{ "binding": "PARSE_QUEUE", "queue": "jotbun-statement-parse" }],
     "consumers": [{ "queue": "jotbun-statement-parse", "max_batch_size": 1, "max_concurrency": 1, "max_retries": 100, "retry_delay": 30 }]
   },
+  // Exports (1B-T6, B5): the vault records a request and starts one instance per
+  // export, named by its id; each step calls the vault, which writes the file to R2.
+  "workflows": [
+    { "name": "jotbun-export", "binding": "EXPORT_WORKFLOW", "class_name": "ExportWorkflow", "default_retention": { "success_retention": "1 day", "error_retention": "7 days" } }
+  ],
   // The stateless parser (B3): the API's release image started as its parse
   // server (apps/api/src/imports/parse-server.ts), with no secrets, no bindings
   // and no internet. One at a time, as today's single parser runs.

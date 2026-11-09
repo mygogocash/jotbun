@@ -15,6 +15,8 @@ import type { V1Env } from '../v1/env'
 export { UserVault } from '../vault/user-vault'
 // The stateless parser's Durable Object, with its container (1B-T5).
 export { StatementParser } from '../background/statement-parser'
+// The export Workflow (1B-T6); the EXPORT_WORKFLOW binding names this class.
+export { ExportWorkflow } from '../background/export-workflow'
 
 // The API's logger writes JSON lines to a sink; the Worker's sink is console.
 setLogSink((line) => console.log(line))
