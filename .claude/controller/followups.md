@@ -115,11 +115,21 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - **m-2:** the receipt HEAD test does not count bytes per HEAD (probe HD-1).
     - **m-3:** neither guard in `attachmentsDueAt` is pinned (`attachments.ts:368-369`); probes DU-1 and DU-2. Without "object gone", the alarm loops on a past due time (against R37); without the safety-net check, an unheld receipt is never scheduled.
     - **For the abort proof:** retain and replace hold a copy slot across awaits, so include four aborted retains, then a retain that answers 200. Receipt downloads allow two slots per account.
+  - **And from 1B-T10's review (reviews/1B-T10.md).** Ready probes are in `scratch/1b-t10-review/probes/zz-review-1b-t10.test.ts`.
+    - m-1: R57 on corrections is untested. No case corrects more than 100 rows at once, so a mutant binding one `?` per row id in the correction's row check (`confirmation.ts:181`) passes all 638 cases; in production it would answer 500 for a large correction. The probe corrects 500 rows at once.
+    - m-2: the preview's accepted-upload guard (`previews.ts:188`, `u.accepted_at IS NOT NULL`) is untested. Without it, an upload still receiving or refused reads 200 `cancelled` where the API answers 404.
+    - Nits:
+      - two changed-form cases lack their comment (`imports-review.test.ts:903` and `:1291`);
+      - `pruneImports` has no `MAX_PURGE_PASSES` cap, unlike `pruneExports`.
     - **Nits:**
       - the poll deadline, unknown body fields and the preview's `ready` status are untested;
       - "two records at once" gates only the first request, so one mutant's kill depends on a 250 ms sleep;
       - the receipt misfiles five ported cases as "as written";
       - the 3 kB bundle gap is file-path length, not code.
+- 1B-T10 (#369, merged 2ffd195 on 9 Nov, issue #114 closed; review in reviews/1B-T10.md, Approved; its m-1 and m-2 are in fix-download-aborts, above).
+  - **1B-T11:** put `importsDueAt` and `pruneImports` under the same active-vault condition as 1A's `nextDue` and `runDue` (`retention.ts:75`), or the alarm loops for a deleting vault. Consider capping the purge loop.
+  - **1B-T12:** keep the API's key order, and 404 for the preview of a never-accepted upload.
+  - **1B-T13:** once the PostgreSQL edge retires, also count driver markers in the server bundle.
 - 1B-T6 (#362, merged de738f9 on 9 Nov, issue #110 closed; review in reviews/1B-T6.md, Needs fixes; fix round R96 confirmed in reviews/1B-T6-confirm.md; MA-1 ruled a follow-up under R97).
   - **Nits, not in the round** (probes in scratch/1b-t6-review/):
     - X4: the Workflow step's retry settings are not pinned;
