@@ -37,7 +37,7 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
   - Pushed to #354 (MERGEABLE) and the PR body updated.
   - Confirming Opus review under way, writing `reviews/1D-T9-confirm.md`. Merge on its approval and green CI with `merge_task_pr.sh 354 03da870 1D-T9`.
 - **1C-T6 (Haiku), worktree p1-1c-t6:** base files are byte-identical at 5dbd7be (20 of 20). Expected: app 33, unit 887, render 90 files and 1660 tests.
-- **1D-T6 (Haiku), worktree p1-1d-t6:** orig files are byte-identical at 5dbd7be (13 of 13). Expected: app 33, unit 892, render 92 files and 1661 tests, web 4782, iOS 5748.
+- **1D-T6, worktree p1-1d-t6:** DONE at 2c30417 (base 5dbd7be). Every count matched: app 33, unit 892, render 92 files and 1661 tests, web 4782, iOS 5748, 31 of 31 mutants. PR #361 is open (issue #137) and the Opus review is under way (`reviews/1D-T6.md`).
 - **Shared file:** 1C-T6 and 1D-T6 both edit `api/client.ts` and its test, in different places. Whichever merges second merges the other first.
 - **State push held:** no `sync_state.sh` push until the three implementers have passed their sync steps, because their prompts pin the head at 5dbd7be.
 
