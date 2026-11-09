@@ -42,8 +42,11 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
   Prompts are in `scratch/dispatch/`. Planners keep `*.log` out of the SHA256SUMS the implementer checks.
 - **Usage-limit cutoff, 9 Nov about 10:15 to 13:30.** Every agent failed with a 429 and was resumed with SendMessage at 15:15, from its saved context.
 - **#362 1B-T6: review Needs fixes** (`reviews/1B-T6.md`, M-1: a HEAD on the download route keeps a download slot for good).
-  - Ruling R96: fix it at the front door; `headOf` in `src/v1/handler.ts` cancels the dropped body. The round also adds m-1 and m-2 as tests; the nits go to followups.
-  - The reviewer is writing `briefs/1B-T6-fix.md`, with its kit in `scratch/1b-t6-fix-planner/`.
+  - R96, as amended: `headOf` reads the dropped body to its end.
+  - The fix round (Haiku) was dispatched about 16:20 in p1-1b-t6 at 34798c8, with a generated prompt.
+    - Brief: `briefs/1B-T6-fix.md`; kit: `scratch/1b-t6-fix-planner/` (12 OK at 34798c8).
+    - Expected: RED 1 failed of 36; GREEN 36 of 36; 4 of 4 mutants; test:edge 15 files and 176 tests; workers 25 files, 524 passed and 3 todo.
+  - On DONE: push to #362, update the PR body, then a confirming Opus review against `reviews/1B-T6.md`. Merge on green, then dispatch 1B-T9.
 - **1A-T10:** DONE at e977253 (test:ops 108 / 107 passed / 1 skipped; edge unchanged; 6 of 6 mutants). PR #363 is open (issue #104) and the Opus review is under way, from the generated `scratch/dispatch/1A-T10-reviewer.prompt.md`.
   - P11: the plan's whole-1A-range review is the controller's to schedule after 1A-T10's own review.
   - Closing epic #83 is the owner's call.
@@ -116,7 +119,10 @@ To stop a chat session in the app: `sc chat stop <thread_id>` cancels its turn o
 - Held: P2-T2 and 1D-T6 wait for #347 (lockfile, _layout). P3-T12 waits on owner Q1. 1C-T2 waits on the owner's lockout answer, and its brief must first pin 1C-T1's six untested security options (followups.md).
 
 ## Rulings this session
-R96 (9 Nov, 1B-T6 review M-1: `headOf` in src/v1/handler.ts cancels the response body it drops, so a HEAD on any HEAD-able route returns what that body holds; handler.ts joins 1B-T6's fix round, and the fix covers 1B-T8's and 1B-T9's downloads too),
+R96 (9 Nov, 1B-T6 review M-1, amended the same day): `headOf` in src/v1/handler.ts reads the response body it drops to its end, with `pipeTo` into a discarding WritableStream and errors swallowed, before answering the HEAD. A HEAD on any HEAD-able route then releases what that body holds.
+  - The first wording, "cancels the body", fails in workerd. The request ends before the cancel reaches the stream behind FixedLengthStream, so the slot is never returned (proved under `wrangler dev`; the test runtime hides it). The case checks that each HEAD reads the whole file.
+  - handler.ts joins 1B-T6's fix round. The fix covers 1B-T8's and 1B-T9's downloads.
+  - **1B-T9's brief still checks for `cancel(` (Step 0.4 and P13).** At its dispatch, amend Step 0.4 to `grep -c 'pipeTo('` printing 1.
 R95 (9 Nov, 1B-T6: the build check "no PostgreSQL code in the vault bundle" counts driver markers, not the word `node-postgres`, because #352's `jsonbOrder` doc comment names node-postgres in prose; the bundle keeps that one comment line, and every driver marker counts 0),
 R84 (P4-T10 fixtures), R85 (two API test-only fixes), R86 (token sid must match the provider's session; sign out on a failed finish), R87 (receipts in docs/implementation/receipts/<task-id>.md), R88 (upload-intake deadline reason), R89 (+ extension: parser regex and readDateStyles DoS in frozen apps/api), R90 (API tests may add the legacy session header), R91 (two API database test races, test-only: command order and export downloads; R-B migration waits on the owner), R94 (1D-T9: a refused edit keeps a choice only with a usable current record; the broader C16 reading goes to the owner at E2), R93 (1D-T6: posthogOptions sets `rageClickConfig: { enabled: false }`, beyond the plan's options, because the iOS SDK sends $rageclick itself outside before_send and before consent, and repeated keypad taps reveal amounts), R92 (the vault serves sync snapshots in PostgreSQL jsonb key order, shortest key first then bytewise, nested too, via `jsonbOrder` in src/vault/reads/sync.ts; the parity normalizer stays byte-exact; 1B reads of jsonb-backed values use it too).
 
