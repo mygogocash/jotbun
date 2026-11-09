@@ -81,7 +81,10 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
 - **P2-T9 history:** brief READY (M; P1 to P14 accepted); the implementer (Haiku) was dispatched about 20:15 in p2-t9 from f9d32b4.
   - Expected: app 34, unit 905, render 97 files and 1735 tests, web 4785.
   - E2-D note: fades keep Reanimated's default curve, while the board says ease-out and the plan names durations only.
-- **#367 1C-T8: review Needs fixes** (`reviews/1C-T8.md`; CI green on 5e8b70e).
+- **1C-T8: merged 6fbe9a8 (#367, about 23:20)** after the fix round R98 and R99. The confirming review approved; its m1 is carried to 1C-T9. Issue #125 is closed and the worktree and branches are removed.
+  - **App baseline, computed** (4aa6cf1's counts plus P2-T9's): app 34, unit 916, render 104 files and 1824 tests, web 4788.
+- **1D-T8 planner (Opus), dispatched about 23:25.** WT p1-1d-t8 on p1/1d-t8-consent-question. Its edits go after 1C-T8's in registry.tsx and featureFlags.ts.
+- **#367 history:** review Needs fixes (`reviews/1C-T8.md`; CI green on 5e8b70e).
   - M1: the session-ended screen strands an email-only account. R98 offers an email code to another address under "Use another way".
   - R99: no navigation to 1C-T9's unbuilt route; the in-place reminder step stays.
   - The round also covers m1 (seven guard tests), m3 (copy slips) and the receipt's E2 owner questions (m2, m4).

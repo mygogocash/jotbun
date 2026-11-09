@@ -44,7 +44,13 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **E2:**
     - the board says "success" for the first wallet and the recap, but the plan plays success for every new wallet and `celebration` for the recap;
     - fades use Reanimated's default curve (ease-in-out on a phone), not the board's ease-out. The receipt does not carry this, so record it at E2-D.
-- 1C-T8 (#367, review in reviews/1C-T8.md, Needs fixes: M1 fixed under R98, P4 under R99; m1 and m3 are in the fix round). Probes are in scratch/1c-t8-review/probes/.
+- 1C-T8 (#367, merged 6fbe9a8 on 9 Nov, issue #125 closed; first review Needs fixes; fix round R98 and R99 confirmed in reviews/1C-T8-confirm.md, Approved).
+  - **1C-T9 (or 1C-T7, whichever comes first), the confirming review's m1:** the PR's tests pin R98 only on email-only builds. A mutant that offers the other-address way only on email-only builds would bring back the dead end once Apple or Google goes live. The ready test `scratch/1c-t8-confirm/probes/ConfirmR98EveryBuild.render.test.tsx` passes at 4aa6cf1 and kills it.
+  - **Confirming review's nits:**
+    - the code's condition is `main === 'email'`, not R98's "own-address code" (the only difference is an unreachable state);
+    - the catalogue title carries "(R98)", the only ruling id among 270 titles;
+    - the receipt's first-round section still says 22 sections and keeps the stale cast note (the fix-round section corrects both).
+  - First review's probes are in scratch/1c-t8-review/probes/.
   - **Nits, not in the round:**
     - a new terms version keeps the earlier tick;
     - the devices list is stale after a link or remove;
