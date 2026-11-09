@@ -55,7 +55,10 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
   - Waiting on the owner: whether to run the plan's whole-1A-range review (P11). Epic #83 stays open until 1D-T15's phase proof.
   - P11: the plan's whole-1A-range review is the controller's to schedule after 1A-T10's own review.
   - Closing epic #83 is the owner's call.
-- **Held:** 1B-T7 (AI routes) shares four route files with 1B-T6 and 1B-T9, so it is planned after them. 1C-T2 and P3-T12 are still held on owner answers.
+- **1C-T8 planner (Opus), dispatched about 17:20:** the account screens as drafts. It is planned on top of P2-T8's registry.tsx (47f4b59) and starts after #365 merges.
+  - Brief: `briefs/1C-T8.md`; kit: `scratch/1c-t8-planner/`; WT p1-1c-t8 on p1/1c-t8-account-drafts.
+  - 1D-T8 follows it in the same lane (registry.tsx, featureFlags.ts).
+- **Held:** 1B-T7 (AI routes) shares four route files with 1B-T9, and handler.ts with #362's fix. Plan it after #362 merges, on top of 1B-T9. 1C-T2 and P3-T12 are still held on owner answers.
 - **#354 1D-T9: merged 687e764 (about 10:00).** The confirming review approved (`reviews/1D-T9-confirm.md`; nits n1 to n4 are in followups.md for the m5 task). Issue #140 is closed and the worktree and branches are removed. The receipt's n5 was fixed in housekeeping commit 8a1f587.
   - **App baseline at 687e764**, measured by the confirming reviewer on the same tree: test:app 32, test:unit 882, render 90 files and 1694 tests, export:web 4778 modules. iOS was not measured: 5563 at 5dbd7be, plus 1D-T9's modules.
 - **#354 history (fix round, Haiku, worktree p1-1d-t9):**
