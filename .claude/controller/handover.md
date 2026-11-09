@@ -86,7 +86,8 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
   - The round also covers m1 (seven guard tests), m3 (copy slips) and the receipt's E2 owner questions (m2, m4).
   - The fix brief is READY (`briefs/1C-T8-fix.md`, kit `scratch/1c-t8-fix-planner/`, 51 OK at 5e8b70e). The fixer (Haiku) was dispatched about 22:15 in p1-1c-t8.
     - Expected: app 34, unit 912, render 102 files and 1812 tests, web 4788; 15 of 15 mutants.
-    - On DONE: push, update the PR body, then a confirming Opus review against `reviews/1C-T8.md`.
+    - Fix round DONE at 4aa6cf1, with every count matching. Pushed to #367 and the PR body updated.
+    - The confirming Opus review is under way. Merge on its approval and green CI with `merge_task_pr.sh 367 4aa6cf1 1C-T8`. Then 1D-T8 can be planned in this lane.
 - **1C-T8: brief READY** (L, 31 files; P1 to P16 accepted). The implementer (Haiku) was dispatched about 20:35 in p1-1c-t8 from 1ddc7f7, with a generated prompt.
   - Expected: app 34, unit 911, render 102 files and 1802 tests, web 4788. E2 screenshots are SKIPPED, with 22 catalogue deep links listed.
   - The brief's "For the controller": 1C-T5's leftover-cookie recovery needs a `credentialProvider.ts` change that amends R86; the "Sign in again" flicker comes from the sync outcome. Both are for a later 1C task.

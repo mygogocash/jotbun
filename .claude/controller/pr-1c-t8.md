@@ -23,6 +23,11 @@
   - **P5:** the "Confirm it's you" sheet opens for every method, so Apple and Google take one more tap. That is an owner question for E2.
 - The receipt is its own file under R87: `docs/implementation/receipts/1C-T8.md`. It lists the 22 catalogue deep links for the screenshots.
 
+## Fix round (review of 5e8b70e, rulings R98 and R99)
+- R98 (review M1): on the session-ended screen, when the main button is the email code to the account's own address, "Use another way" also offers an email code to another address. An email-only build (Android until Google is on) can no longer strand an account that was deleted or disabled elsewhere, and keep-or-erase for another account is reachable. New catalogue section `signin-session-ended-email` (23 sections now).
+- R99: nothing navigates to 1C-T9's `/onboarding/reminder` yet; the story's end keeps today's in-place reminder step, so the cast is gone.
+- Tests for the seven unpinned guards (m1), including that a fresh sign-in never reuses an earlier answer; two copy-rule slips fixed (m3); the receipt's E2 owner list gains m2 and m4.
+
 ## Test plan
 - [x] RED:
   - unit: 8 of 36 failing;
@@ -37,8 +42,10 @@
   - `export:web`: 4788 modules;
   - `git diff --check`.
 - [ ] SKIPPED: the E2 screenshots of the 22 sections. No simulator or browser runs here; the deep links are in the receipt.
+- [x] Fix round: RED 3 of 69 (the R98 and R99 cases), GREEN 69 of 69; 15 of 15 mutants killed; `test:app` 34, `test:unit` 912, full `test:render` 102 files and 1812 tests, `export:web` 4788 modules.
 - [ ] CI on this pull request is green.
-- [ ] Independent review.
+- [x] Independent review (Needs fixes: M1, fixed in the round above).
+- [ ] Confirming review of the fix round.
 
 Closes #125 once merged (closed by hand, since the base is not the default branch).
 
