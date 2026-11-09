@@ -47,7 +47,10 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
     - Brief: `briefs/1B-T6-fix.md`; kit: `scratch/1b-t6-fix-planner/` (12 OK at 34798c8).
     - Expected: RED 1 failed of 36; GREEN 36 of 36; 4 of 4 mutants; test:edge 15 files and 176 tests; workers 25 files, 524 passed and 3 todo.
   - On DONE: push to #362, update the PR body, then a confirming Opus review against `reviews/1B-T6.md`. Merge on green, then dispatch 1B-T9.
-- **1A-T10:** DONE at e977253 (test:ops 108 / 107 passed / 1 skipped; edge unchanged; 6 of 6 mutants). PR #363 is open (issue #104) and the Opus review is under way, from the generated `scratch/dispatch/1A-T10-reviewer.prompt.md`.
+- **1A-T10: merged 4407025 (#363, about 16:40).** The review approved with 2 minors and 7 nits; issue #104 is closed and the worktree and branches are removed. Phase 1A's tasks are all merged.
+  - The receipt's open items were completed in housekeeping commit 9cc31cb.
+  - Minor 1 (workflow `if`/`continue-on-error`) is carried to P6C-T7.
+  - Waiting on the owner: whether to run the plan's whole-1A-range review (P11). Epic #83 stays open until 1D-T15's phase proof.
   - P11: the plan's whole-1A-range review is the controller's to schedule after 1A-T10's own review.
   - Closing epic #83 is the owner's call.
 - **Held:** 1B-T7 (AI routes) shares four route files with 1B-T6 and 1B-T9, so it is planned after them. 1C-T2 and P3-T12 are still held on owner answers.
