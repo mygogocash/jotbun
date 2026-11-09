@@ -47,7 +47,9 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
   - Pushed to #354 (MERGEABLE) and the PR body updated.
   - Confirming Opus review under way, writing `reviews/1D-T9-confirm.md`. Merge on its approval and green CI with `merge_task_pr.sh 354 03da870 1D-T9`.
 - **1C-T6 (Haiku), worktree p1-1c-t6:** base files are byte-identical at 5dbd7be (20 of 20). Expected: app 33, unit 887, render 90 files and 1660 tests.
-- **1D-T6, worktree p1-1d-t6:** DONE at 2c30417 (base 5dbd7be). Every count matched: app 33, unit 892, render 92 files and 1661 tests, web 4782, iOS 5748, 31 of 31 mutants. PR #361 is open (issue #137) and the Opus review is under way (`reviews/1D-T6.md`).
+- **1D-T6: merged 9a4a2f1 (#361, about 10:25).** The review approved with minors m1 to m4 (`reviews/1D-T6.md`; all in followups.md, and m1 is an owner question, below). Issue #137 is closed and the worktree and branches are removed.
+  - **App baseline at 9a4a2f1, computed** (687e764's measured counts plus 1D-T6's measured deltas): test:app 33, test:unit 894, render 93 files and 1706 tests, web 4785. Re-measure before relying on it.
+  - **1C-T6 will conflict with it** in `api/client.ts` and `client.test.ts`, additively; keep both sides.
 - **Shared file:** 1C-T6 and 1D-T6 both edit `api/client.ts` and its test, in different places. Whichever merges second merges the other first.
 - **State push held:** no `sync_state.sh` push until the three implementers have passed their sync steps, because their prompts pin the head at 5dbd7be.
 
@@ -104,3 +106,4 @@ Merge each PR when its CI on the current head is green; close its issue by hand 
 0. R-B (apps/api migration 0020_receipt_copy_once.sql, prepared in scratch/fix-api-db-flakes/files/): gogospend_reserve_receipt_copy (migration 0017) checks "receipt exists" and "copy in flight" in two statements, so two requests can each reserve a copy (one wasted copy, deleted at the next sweep). The fix is a new migration replacing the function with one combined check; it needs the API's migration step wherever the API runs. Until then attachments.integration.spec.ts "two records retaining one image ... one copy" stays a rare known flake.
 1. Sign-in lockout: no per-email lockout, only per code (about 1,440 guesses a day against one address at Task 2's 5 codes per 15 min). Needed before 1C-T2 sends real mail.
 2. Q1 (QR decoder package) gates P3-T12.
+3. Before Q5's PostHog key is set (1D-T6 review m1): with crash reports on before consent (Q4's default), the native SDK sends native crash reports unscrubbed (outside `before_send`), and a feature-flags request at every launch carrying the stored analytics id. Native requests also carry no `$geoip_disable` (Q6). Nothing is sent today, because there is no key. Decide, with counsel, whether crash reports before consent stay on, or whether the native SDK must start only after a yes.

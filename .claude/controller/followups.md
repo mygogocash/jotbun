@@ -33,6 +33,30 @@ The review reports these came from were under /private/tmp and were lost on 8 No
 - 1A-T9 (#352, review in reviews/1A-T9.md): after the R92 fix round, follow-ups (none blocking): the normalizer numbers ids by first appearance and most idempotency keys are random per run, so a vault minting its own consistent `command_id` would pass (only the replay and lunch keys are checked literally; closing it changes the session, which the spec fixes at 49 steps); the comparison never checks category rename/archive/unarchive, wallet-by-id success, history page 2 or sync resume by cursor; the normalizer accepts any timestamp format; the vitest diff sorts keys, so key-order failures print identically (add a hint in the failure message); CI killed 32 leftover processes (12 workerd) at job end, unattributed. For 1B (R92): NestJS's full-resync snapshot and an import's `issues` also come out of jsonb, so the vault's reads of them go through `jsonbOrder`.
 - 1D-T10 (#353, merged 3ab4d0a, issue #141 closed; review in reviews/1D-T10.md, approved): for 1D-T11's brief: add a test that `afterCall` never throws (probe P6b's shape: a commit while the fan-out fails answers 201 and the revision moves; with the try/catch removed it answers 500 for a saved write, and live.test.ts still passes 21 of 21). Nits: four reviewer mutants survive (the principal charge on open, the 1000 fallback, the `not_before` boundary, keying the read budget per session); the comments on `closeSocket` and `call()` overstate (a close on a closing socket does not throw, so `closeEndedSessions` can over-count; 1D-T12 must not read that count as "newly closed"); the `VaultRoute` comments in routes.ts were not updated for the live route. 1D-T12: close open sockets in `erase()`. The app's live socket waits for the next foreground after a sign-in (restart on session change: 1D-T12/T15).
 - Flake (8 Nov): apps/app/src/screens/redesign/HistoryReturn.render.test.tsx fails under load in full render runs: "another account, or a sign-out and back in, starts History clean" times out at 5000 ms (file took 14.7 s), and "leaving for another screen forgets the view; ..." found no `Expense` radio at 518 ms. Hit by P2-T19 and P2-T2 on trees that do not touch it (load average 41 to 75 with several agents running app suites); passes 6 of 6 alone. Candidate small task: give the file's slow case a longer timeout or a findBy wait, or split the sign-out case; until then rerun once.
+- 1D-T6 (#361, merged 9a4a2f1 on 9 Nov, issue #137 closed). Review in reviews/1D-T6.md, Approved with four minors. Probes are in scratch/1d-t6-review/probes/.
+  - **OWNER, before Q5's PostHog key is set (m1).** With crash reports on before consent (Q4's default), the native SDK sends two things 1D-T1's `before_send` never sees:
+    - native crash reports, unscrubbed (on Android a fatal render error is re-reported natively with the JS error text);
+    - a feature-flags request at every launch, carrying the stored id (the analytics id after an earlier yes).
+
+    Also Q6: native requests carry no `$geoip_disable`, because `disableGeoip` is JS-only. Nothing is sent today (there is no key). Put this to the owner and counsel, then update the receipt's SKIPPED native item with the answer.
+  - **m2 (test gaps; the code is right, and the probes are ready to become tests):** the stale-account-read guard, the native client's link to the consent filter, the error handling on the immediate "no", one account read per session, and the off header while the answer is unknown.
+  - **1D-T7 (m3):**
+    - the screen on display when the answer turns yes is never sent, so the first screen of each launch and sign-in is missing;
+    - on native with a key, events tracked before the controller installs are dropped (onboarding events);
+    - `ai_enabled` is set only on a change after install, and only where the companion area is on.
+  - **1D-T8:** catch every rejection of `answer()`; `AccountChangedError` means "ask again".
+  - **1D-T11:** `/v1/me/analytics` answers exactly `analytics_id`, `weeks_since_signup` (an integer 0 to 1040, never null) and `consent`. An extra key is `invalid_response` on the phone. Never answer 404 `NOT_FOUND` except for a missing route, or the phone falls back to `/v1/me` and asks again (against Q13).
+  - **P4, and any route that gains a server event (m4):** the `X-GoGoSpend-Analytics: off` header is only on the shared transport; four other transports do not send it.
+  - **1D-T15:** in local development, `posthogHost` defaults to `${v1ApiUrl}/ingest` (localhost:8091, the PostgreSQL API, which has no proxy). Set `EXPO_PUBLIC_POSTHOG_HOST` against `wrangler dev`.
+  - **Nits:**
+    - `client.ts:345` reads `analyticsOff` once per request, so resends reuse it (a one-line move);
+    - `controller.ts:28`'s JSDoc says `setAccount` rejects on a server failure, but only the store can make it reject;
+    - `posthogOptions.ts:6-7` overclaims its type checks;
+    - `DeviceDiaryProvider.tsx:55-57` has a JSDoc line break;
+    - `analyticsServer.ts:39`'s `NOT_FOUND` half is unpinned;
+    - the brief named `PL/logs/run/`, which was not in the kit.
+  - **Still open from 1D-T1:** a no whose queued write fails still skips the server call.
+  - **1C-T6:** expect additive conflicts in `client.ts` and `client.test.ts`; keep both sides.
 - 1D-T9 (#354, merged 687e764 on 9 Nov, issue #140 closed; fix round confirmed in reviews/1D-T9-confirm.md, Approved). Confirming review's nits, for the m5 task (or another task before the `conflict` area is approved):
   - **n1:** a refused "Discard my change" then Restore brings the discarded choice back on the same screen. This predates the round. The fix is one line: set `declined` in the discard path too.
   - **n2:** an edit open when the diary first shows a stale choice offers that old change after the save, with "Use yours" as the default (m1's narrow case, accepted).
