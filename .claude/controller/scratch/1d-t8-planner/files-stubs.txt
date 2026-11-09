@@ -1,0 +1,8 @@
+apps/app/app/spend/_layout.tsx
+apps/app/src/analytics/controller.ts
+apps/app/src/analytics/useAnalyticsConsent.ts
+apps/app/src/config/featureFlags.ts
+apps/app/src/screens/redesign/account/AnalyticsConsentScreen.tsx
+apps/app/src/screens/redesign/account/PrivacyScreen.tsx
+apps/app/src/screens/redesign/account/analyticsConsentCopy.draft.ts
+apps/app/src/screens/redesign/account/privacyServices.ts

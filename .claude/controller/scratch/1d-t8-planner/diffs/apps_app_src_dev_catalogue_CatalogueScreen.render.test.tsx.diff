@@ -1,0 +1,68 @@
+--- a/apps/app/src/dev/catalogue/CatalogueScreen.render.test.tsx
++++ b/apps/app/src/dev/catalogue/CatalogueScreen.render.test.tsx
+@@ -23,6 +23,8 @@
+ import { QuickAddScreen } from '@mobile/screens/redesign/QuickAddScreen';
+ import { conflictText } from '@mobile/screens/redesign/conflict/conflictCopy.draft';
+ import type { ConflictCopyKey } from '@mobile/screens/redesign/conflict/conflictCopy.draft';
++import { consentText } from '@mobile/screens/redesign/account/analyticsConsentCopy.draft';
++import type { ConsentCopyKey } from '@mobile/screens/redesign/account/analyticsConsentCopy.draft';
+ import { dayLabel, fullDateLabel } from '@mobile/ui/dateStep';
+ import { LOCALES, mountInApp, paletteFor, rgba, settle, THEMES } from './catalogueTestHarness';
+ import { CatalogueScreen } from './CatalogueScreen';
+@@ -74,7 +76,9 @@
+ const CONFLICT = [
+   'record-choice', 'record-choice-server', 'record-choice-offline', 'record-choice-deleted', 'record-choice-cannot-keep', 'history-choice-waiting',
+ ] as const;
+-const REQUIRED = [...KIT_AND_MASCOT, ...ENTRY, ...SCREENS, ...CONFLICT] as const;
++/** 1D-T8's consent question and Privacy's switch (the `analytics` area, on for these sections only). */
++const ANALYTICS = ['analytics-consent', 'analytics-consent-failed', 'privacy-analytics-on', 'privacy-analytics-off', 'privacy-analytics-pending'] as const;
++const REQUIRED = [...KIT_AND_MASCOT, ...ENTRY, ...SCREENS, ...CONFLICT, ...ANALYTICS] as const;
+ 
+ const LOCALE_NAME: Readonly<Record<Locale, string>> = { en: 'English', th: 'Thai', vi: 'Vietnamese' };
+ const scriptOf = (locale: Locale) => (locale === 'th' ? 'thai' : 'latin');
+@@ -93,6 +97,9 @@
+ const draft = (key: ConflictCopyKey, locale: Locale, values?: Record<string, string>) => conflictText(key, locale, values);
+ /** The choice panel's two radio cards, yours then the server's. */
+ const choiceCards = (body: HTMLElement, locale: Locale) => within(within(body).getByRole('radiogroup', { name: draft('heading', locale) })).getAllByRole('radio');
++/** The consent question's and Privacy switch's draft copy (Thai for Thai, English otherwise) until E2. */
++const consent = (key: ConsentCopyKey, locale: Locale) => consentText(key, locale);
++const analyticsSwitch = (body: HTMLElement, locale: Locale) => within(body).getByRole('switch', { name: consent('switchLabel', locale) });
+ 
+ /** What each section must show, beyond rendering at all. */
+ const SHOWS: Readonly<Record<(typeof REQUIRED)[number], (body: HTMLElement, locale: Locale) => void>> = {
+@@ -526,6 +533,35 @@
+   'history-choice-waiting': (body, locale) => {
+     expect(rowsIn(body)).toHaveLength(4);
+     expect(within(body).getAllByText(draft('waiting', locale))).toHaveLength(1);
++  },
++
++  // The consent question and Privacy's switch (1D-T8), each on its own controller over a scripted server.
++  'analytics-consent': (body, locale) => {
++    expect(within(body).getByRole('heading', { name: consent('title', locale) })).toBeTruthy();
++    const [yes, no] = [within(body).getByRole('button', { name: consent('yes', locale) }), within(body).getByRole('button', { name: consent('no', locale) })];
++    // Neither chosen: two outlines of the same weight.
++    expect(yes.style.backgroundColor).toBe(no.style.backgroundColor);
++    expect(within(body).getByText(consent('never', locale))).toBeTruthy();
++    expect(within(body).queryByText(consent('saveFailed', locale))).toBeNull();
++  },
++  'analytics-consent-failed': (body, locale) => {
++    expect(within(body).getByText(consent('saveFailed', locale))).toBeTruthy();
++    for (const key of ['yes', 'no'] as const) {
++      const answer = within(body).getByRole('button', { name: consent(key, locale) });
++      expect([answer.getAttribute('aria-busy'), answer.getAttribute('aria-disabled')]).not.toContain('true');
++    }
++  },
++  'privacy-analytics-on': (body, locale) => {
++    expect(analyticsSwitch(body, locale).getAttribute('aria-checked')).toBe('true');
++    expect(within(body).queryByText(consent('stoppedHere', locale))).toBeNull();
++  },
++  'privacy-analytics-off': (body, locale) => {
++    expect(analyticsSwitch(body, locale).getAttribute('aria-checked')).toBe('false');
++    expect(within(body).queryByText(consent('stoppedHere', locale))).toBeNull();
++  },
++  'privacy-analytics-pending': (body, locale) => {
++    expect(analyticsSwitch(body, locale).getAttribute('aria-checked')).toBe('false');
++    expect(within(body).getByText(consent('stoppedHere', locale))).toBeTruthy();
+   },
+ };
+ 

@@ -99,7 +99,11 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
   - E2-D note: fades keep Reanimated's default curve, while the board says ease-out and the plan names durations only.
 - **1C-T8: merged 6fbe9a8 (#367, about 23:20)** after the fix round R98 and R99. The confirming review approved; its m1 is carried to 1C-T9. Issue #125 is closed and the worktree and branches are removed.
   - **App baseline, computed** (4aa6cf1's counts plus P2-T9's): app 34, unit 916, render 104 files and 1824 tests, web 4788.
-- **1D-T8 planner (Opus), dispatched about 23:25.** WT p1-1d-t8 on p1/1d-t8-consent-question. Its edits go after 1C-T8's in registry.tsx and featureFlags.ts.
+- **1D-T8: brief READY** (M, 18 files; P1 to P13 accepted). The implementer (Haiku) was dispatched about 01:05 in a pre-installed p1-1d-t8 from ba916cb, with the R100 fast gate.
+  - It adds `pendingNo()` to 1D-T1's controller, because the plan's caption had no source.
+  - **E2 note:** "stopped on this phone" shows briefly while a no is being sent.
+  - Privacy's transport gains the analytics-off header. The receipt and import transports are left for P4.
+  - Deltas for CI: unit +5, render +2 files and +23 cases, web +3.
 - **#367 history:** review Needs fixes (`reviews/1C-T8.md`; CI green on 5e8b70e).
   - M1: the session-ended screen strands an email-only account. R98 offers an email code to another address under "Use another way".
   - R99: no navigation to 1C-T9's unbuilt route; the in-place reminder step stays.

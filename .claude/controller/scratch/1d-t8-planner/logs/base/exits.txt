@@ -1,0 +1,6 @@
+typecheck-app exit=0
+typecheck-routes exit=0
+test-app exit=0
+test-unit exit=0
+test-render exit=0
+export-web exit=0

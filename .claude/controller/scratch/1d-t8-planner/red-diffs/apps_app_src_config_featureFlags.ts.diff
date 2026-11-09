@@ -1,0 +1,11 @@
+--- a/apps/app/src/config/featureFlags.ts
++++ b/apps/app/src/config/featureFlags.ts
+@@ -46,7 +46,7 @@
+  * Privacy's ช่วยพัฒนา Jotbun switch) waits for its E2 screenshots (decided,
+  * Q9), so it is on only when named or with `all`.
+  */
+-const APPROVED: readonly RedesignArea[] = ['core', 'planning', 'insights', 'account', 'import', 'companion'];
++const APPROVED: readonly RedesignArea[] = ['core', 'planning', 'insights', 'account', 'import', 'companion', 'analytics'];
+ 
+ /**
+  * Whether a redesign area is on. `EXPO_PUBLIC_REDESIGN` is a comma list:

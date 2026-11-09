@@ -1,0 +1,27 @@
+--- a/apps/app/src/screens/redesign/account/privacyServices.ts
++++ b/apps/app/src/screens/redesign/account/privacyServices.ts
+@@ -7,6 +7,7 @@
+ import * as Crypto from 'expo-crypto';
+ import { Share } from 'react-native';
+ 
++import { getAnalytics } from '@mobile/analytics/bus';
+ import { createV1Transport } from '@mobile/api/client';
+ import { v1ClientVersion } from '@mobile/api/sharedV1';
+ import { getCredentialProvider, v1SessionCredentials } from '@mobile/auth/session';
+@@ -23,7 +24,15 @@
+ /** The export and deletion clients over the app's v1 session, made once. */
+ function appResources(): { privacy: PrivacyResources; deletion: DeletionResources } {
+   if (!shared) {
+-    const transport = createV1Transport({ baseUrl: getMobileEnv().v1ApiUrl, client: v1ClientVersion(), credentials: v1SessionCredentials });
++    const transport = createV1Transport({
++      baseUrl: getMobileEnv().v1ApiUrl,
++      client: v1ClientVersion(),
++      credentials: v1SessionCredentials,
++      // As the shared transport has them (1D-T8, from 1C-T6's and 1D-T6's reviews): a development build may reach
++      // `wrangler dev` on the LAN (plan 1D, L8), and server events stay off unless this phone's answer is yes (L4).
++      allowLanHttp: __DEV__,
++      analyticsOff: () => getAnalytics()?.allowsAnalytics() !== true,
++    });
+     shared = {
+       privacy: createPrivacyResources(transport, { sha256Hex: (text) => Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, text) }),
+       deletion: createDeletionResources(transport),
