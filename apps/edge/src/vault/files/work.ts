@@ -171,3 +171,34 @@ export const EXPORT_STARTER: WorkStarter = {
 }
 
 WORK_STARTERS.push(EXPORT_STARTER)
+
+// 1B-T8: the snapshot starter (B5). A snapshot the vault recorded but has not
+// started is a pending row with no started_at. Its Workflow instance is named
+// by the snapshot's id, so a second start (two overlapping runs, or the alarm
+// after a hand-off that did start) finds the instance and changes nothing.
+
+export const SNAPSHOT_STARTER: WorkStarter = {
+  kind: 'snapshot',
+  unstarted(c) {
+    // Bounded: a request reuses the open build, so at most one snapshot is pending at once.
+    return c.sql
+      .exec<{ id: string }>("SELECT id FROM snapshots WHERE status = 'pending' AND started_at IS NULL ORDER BY created_at, id")
+      .toArray()
+      .map((row) => row.id)
+  },
+  dueAt(c) {
+    const { oldest } = c.sql.exec<{ oldest: string | null }>("SELECT min(created_at) AS oldest FROM snapshots WHERE status = 'pending' AND started_at IS NULL").one()
+    return oldest === null ? null : Date.parse(oldest) + START_RETRY_MS
+  },
+  async start(env, vaultId, id) {
+    if (!env.SNAPSHOT_WORKFLOW) return 'unbound'
+    await createOnce(env.SNAPSHOT_WORKFLOW, id, { vault: vaultId, snapshot: id })
+    return 'started'
+  },
+  markStarted(c, id) {
+    c.sql.exec("UPDATE snapshots SET started_at = ? WHERE id = ? AND status = 'pending' AND started_at IS NULL", c.now.toISOString(), id)
+    touch(c)
+  },
+}
+
+WORK_STARTERS.push(SNAPSHOT_STARTER)

@@ -23,6 +23,7 @@ import { exportFile, exportGrant, exportStatus, requestExport } from './files/ex
 import { prepareInput, prepareReceipt, receiptFile, receiptGrant, releaseReceiptCopy, removeReceipt, replaceReceipt, retainReceipt } from './files/attachments'
 import { confirmImportBatch, confirmPrepare, freezeImportSelection, patchImportRows, selectionProgress } from './files/confirmation'
 import { previewOf } from './files/previews'
+import { requestSnapshot, snapshotChunk, snapshotStatus } from './files/snapshots'
 
 export type VaultHandler = (c: VaultContext, call: VaultCall) => VaultReply
 
@@ -182,4 +183,17 @@ export const VAULT_HANDLERS: Partial<Record<VaultRouteId, VaultHandler>> = {
   },
   'imports.confirmPrepare': (c, call) => okReply(call.route, confirmPrepare(c, call)),
   'imports.confirm': (c, call) => okReply(call.route, confirmImportBatch(c, call)),
+  // 1B-T8: the snapshot routes and the chunk download's step (src/v1/files/downloads.ts). The request's
+  // reply carries its own status: 200 for a ready snapshot, 202 otherwise.
+  'snapshots.request': (c, call) => requestSnapshot(c, call),
+  'snapshots.status': (c, call) => {
+    const found = isUuid(call.params.id) ? snapshotStatus(c, call.params.id) : null
+    if (!found) throw new ProblemException(404, 'NOT_FOUND')
+    return okReply(call.route, found)
+  },
+  'snapshots.chunk': (c, call) => {
+    const chunk = snapshotChunk(c, String(call.params.grant ?? ''))
+    if (!chunk) throw new ProblemException(404, 'NOT_FOUND')
+    return okReply(call.route, chunk)
+  },
 }
