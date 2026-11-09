@@ -1,10 +1,41 @@
-# Controller handover (8 Nov 2026, evening Bangkok)
+# Controller handover (9 Nov 2026, morning Bangkok)
 
 Durable folder: `/Users/kunanonjarat/Developer/jotbun/.claude/controller/` (protocol.md, briefs/, reviews/, scratch/, followups.md, ledger_union.py, wait_ci.sh, watch_prs.sh, backlog/). Never use /private/tmp for anything kept; macOS cleared it once (late Oct). Only the heavy lock lives there: `/private/tmp/claude-501/jotbun-heavy.lock`.
 
-Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vault-core`), head c2d6d9d (#347, #348, #349 merged 18:06-18:32).
+Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vault-core`), head 5dbd7be (controller state after #358).
 
-## Migration to another machine (8 Nov, about 21:20 Bangkok): READ THIS FIRST
+## Takeover on the owner's machine (9 Nov, from 08:40 Bangkok): READ THIS FIRST
+
+New controller: session 121af0e6, in the Orca app (Claude Code 2.1.319; transcripts under `~/Library/Application Support/orca/claude-profiles/c0f6e42a-811f-4ea2-9daa-9fb9378005cf/home/projects/-Users-kunanonjarat-Developer-jotbun/`). The owner calls the old controller "the session from Super Engineering" (the app behind `~/.superconductor`).
+
+- **The old controller is dead.** Nothing has reached GitHub since 20:19 on 8 Nov: 5dbd7be, and #356 at 020aa84. On this machine, Super Engineering session 66ebaff3 ("continue what you left", 06:36 today) saw only this machine's stale 8 Nov 17:10 state, because gh auth had failed. It restarted three agents (the 1C-T5 round-3 check, the 1A-T8b follow-up brief and the parser-regex brief). All three were stopped at 06:41, and their work had already merged elsewhere, so none of it is used.
+- **Local state was replaced from GitHub.** This machine's old `.claude/controller` (the 17:10 state plus 9.8 GB of scratch) is now `.claude/controller-stale-20261108-1710`. The committed state from 5dbd7be was extracted in its place, with `.claude/skills`. Delete the stale folder when nothing more is wanted from it.
+- **Worktrees.** The worktrees of eight merged tasks are removed with their local branches: fix-flaky-tests, p1-1b-t4, p1-1c-t1, p1-1c-t5, p2-t5, p4-t10, p5-t4 and p6a-t1. `agent-a4e4cbbb8ea6b2a9c` is not a controller task and holds 11 uncommitted edits, so it is left for the owner.
+- **Harness: no effort setting.** Orca's Agent tool takes `model` but has no `effort` parameter, so agents run at the session's effort. Opus still plans and reviews and Haiku still implements. To restore per-agent effort, add `.claude/agents/*.md` definitions with `effort:` in the frontmatter; they load at session start.
+- **sync_state.sh drops `*.log` files** (they are gitignored). The 1B-T6 kit lost its 8 proof logs (`proof/*.log`); every other line of its SHA256SUMS verifies (49 OK). Tell 1B-T6's implementer to check the sums without those lines.
+- **App-suite baseline at 5dbd7be**, measured in p1-1c-t6 before dispatch (`scratch/baseline-5dbd7be/summary.txt`): test:app 32, test:unit 880, render 89 files and 1649 tests, web 4775 modules, iOS 5563 modules. The old controller's adjusted 1D-T6 totals were low by 2 (unit) and by 1 (web, iOS).
+- **Task deltas** (from the briefs, P2-T2's receipt and 1D-T9's corrected receipt):
+
+  | Task | app | unit | render files | render tests | web | iOS |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | 1D-T9 and its fix | 0 | +2 | +1 | +45 | | |
+  | 1C-T6 | +1 | +7 | +1 | +11 | | |
+  | 1D-T6 | +1 | +12 | +3 | +12 | +7 | +185 |
+
+  Whichever of these merges second gets the first one's tests on top.
+
+In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispatch/` and in this session's transcript):
+- **#356 1B-T5:** confirming review of the fix round (Opus), writing `reviews/1B-T5-confirm.md`. CI is green on 020aa84 and the PR is mergeable. Merge on approval with `merge_task_pr.sh 356 020aa84 1B-T5`, then dispatch 1B-T6.
+- **#354 1D-T9 fix round (Haiku), worktree p1-1d-t9:**
+  - The merge now conflicts on `featureFlags.ts` and its test (#358). The controller resolved both, keeping both areas, in `scratch/1d-t9-merge/` (SHA256SUMS; `node --test` passes 11 of 11). The fixer copies them in Step 1.3.
+  - Expected after the fix: unit 882, render 90 files and 1694 tests.
+  - On DONE: push, then a confirming Opus review against `reviews/1D-T9.md`, then merge on green.
+- **1C-T6 (Haiku), worktree p1-1c-t6:** base files are byte-identical at 5dbd7be (20 of 20). Expected: app 33, unit 887, render 90 files and 1660 tests.
+- **1D-T6 (Haiku), worktree p1-1d-t6:** orig files are byte-identical at 5dbd7be (13 of 13). Expected: app 33, unit 892, render 92 files and 1661 tests, web 4782, iOS 5748.
+- **Shared file:** 1C-T6 and 1D-T6 both edit `api/client.ts` and its test, in different places. Whichever merges second merges the other first.
+- **State push held:** no `sync_state.sh` push until the three implementers have passed their sync steps, because their prompts pin the head at 5dbd7be.
+
+## Migration to another machine (8 Nov, about 21:20 Bangkok)
 
 The owner moved to another machine. Every agent below ran on the old machine and dies with it; restart each from its brief or review (skill `.claude/skills/jotbun-controller`, "Taking over"). Nothing of value is only local: every task commit is pushed, and this folder (without the 25 GB scratch trees) is committed in the repo. Scratch kept: only `scratch/1d-t6-planner/` (final, orig, stubs, tools, registry, lockfiles, SHA256SUMS), because 1D-T6's ready brief needs it. Paths in these files are absolute (`/Users/kunanonjarat/Developer/jotbun`); if the repo lives elsewhere, `grep -rl /Users/kunanonjarat/Developer/jotbun .claude/` and fix them.
 
