@@ -1,0 +1,181 @@
+--- a/.github/workflows/backend.yml
++++ b/.github/workflows/backend.yml
+@@ -1,8 +1,15 @@
+ # Backend CI (P6b): the same commands as the local full gate
+-# (docs/superpowers/plans/2026-10-17-gogospend-backend.md, "Verification
+-# commands"), plus the release image build and its smoke. It holds no secret,
+-# writes nothing (contents: read), pushes no image and deploys nothing.
+-# Written and reviewed locally only: it has not run on GitHub yet (E4).
++# (docs/implementation/handover.md, "Full gate"), plus the release image build
++# and its smoke. It holds no secret, writes nothing (contents: read), pushes no
++# image and deploys nothing.
++#
++# The jobs run in parallel, so a pull request waits for the slowest job rather
++# than for all of them (ci-parallel-jobs, 9 November 2026). Every gate command
++# runs once. The render suite is split four ways: one job runs every render
++# file but the two per-section suites, and three jobs run those two suites by
++# test name. scripts/ci/backend-workflow.test.mjs (in test:ops) checks that
++# every gate command runs, which job runs each step, that the render split runs
++# every test exactly once, and that no job or step can be switched off.
+ name: backend
+ 
+ on:
+@@ -23,10 +30,10 @@
+   NODE_VERSION: 26.9.0
+ 
+ jobs:
+-  gate:
+-    name: Typecheck, unit, render, build, export
++  checks:
++    name: Typecheck, unit, API, build
+     runs-on: ubuntu-24.04
+-    timeout-minutes: 45
++    timeout-minutes: 20
+     steps:
+       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+         with:
+@@ -41,24 +48,111 @@
+         run: npm ci --ignore-scripts --no-audit --no-fund
+       - run: npm run typecheck
+       - run: npm run typecheck:app
++      # The app with Expo Router's typed routes, so a broken link fails here.
++      - run: npm run typecheck:routes -w gogospend-app
+       - run: npm run test:api
+       - run: npm run test:app
+       - run: npm run test:unit
+       - run: npm run test:dev
+-      - run: npm run test:render -w gogospend-app
+       - run: npm run build -w gogospend-api
+       - name: Release graph (no legacy code or unreviewed package reachable)
+         run: node apps/api/scripts/release-graph.mjs check
+       - name: Parser sandbox from the built files (both children, Node 26)
+         run: node apps/api/scripts/parser-sandbox-check.cjs
+-      - run: npm run export:web -w gogospend-app -- --max-workers 2
+       - name: Whitespace (the change under test)
+         run: git diff --check ${{ github.event.pull_request.base.sha || 'HEAD^' }} HEAD
+ 
++  # The app's production bundles, as the stores and the web would get them:
++  # the web export, and the iOS export (Hermes bytecode, compiled by the
++  # Linux hermesc that the hermes-compiler package ships).
++  exports:
++    name: Exports (web and iOS bundles)
++    runs-on: ubuntu-24.04
++    timeout-minutes: 20
++    steps:
++      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
++        with:
++          persist-credentials: false
++      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
++        with:
++          node-version: ${{ env.NODE_VERSION }}
++          cache: npm
++      - run: npm ci --ignore-scripts --no-audit --no-fund
++      - run: npm run export:web -w gogospend-app -- --max-workers 2
++      - run: npm run export:ios -w gogospend-app -- --max-workers 2
++
++  # The local gate's `npm run test:render -w gogospend-app`, split four ways.
++  # This job runs every render file but the two per-section suites, which
++  # render every catalogue section and take over half of the suite's time.
++  render:
++    name: Render (every file but the per-section suites)
++    runs-on: ubuntu-24.04
++    timeout-minutes: 20
++    steps:
++      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
++        with:
++          persist-credentials: false
++      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
++        with:
++          node-version: ${{ env.NODE_VERSION }}
++          cache: npm
++      - run: npm ci --ignore-scripts --no-audit --no-fund
++      - run: npm run test:render -w gogospend-app -- --exclude src/dev/catalogue/CatalogueScreen.render.test.tsx --exclude src/dev/catalogue/screenReader.render.test.tsx
++
++  # The two per-section suites, split by the length of the section id that
++  # starts each test name ("section <id> ..."): a multiple of 3, one more than
++  # a multiple of 3, and every other name (two more, and the catalogue's other
++  # cases). The third pattern is the first two negated, so every test runs in
++  # exactly one of these jobs.
++  sections-1:
++    name: Render, per-section suites (ids of length 3n)
++    runs-on: ubuntu-24.04
++    timeout-minutes: 20
++    steps:
++      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
++        with:
++          persist-credentials: false
++      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
++        with:
++          node-version: ${{ env.NODE_VERSION }}
++          cache: npm
++      - run: npm ci --ignore-scripts --no-audit --no-fund
++      - run: npm run test:render -w gogospend-app -- src/dev/catalogue/CatalogueScreen.render.test.tsx src/dev/catalogue/screenReader.render.test.tsx -t '^section (?:[a-z0-9-]{3})+(?![a-z0-9-])'
++
++  sections-2:
++    name: Render, per-section suites (ids of length 3n+1)
++    runs-on: ubuntu-24.04
++    timeout-minutes: 20
++    steps:
++      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
++        with:
++          persist-credentials: false
++      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
++        with:
++          node-version: ${{ env.NODE_VERSION }}
++          cache: npm
++      - run: npm ci --ignore-scripts --no-audit --no-fund
++      - run: npm run test:render -w gogospend-app -- src/dev/catalogue/CatalogueScreen.render.test.tsx src/dev/catalogue/screenReader.render.test.tsx -t '^section (?:[a-z0-9-]{3})*[a-z0-9-](?![a-z0-9-])'
++
++  sections-3:
++    name: Render, per-section suites (every other test)
++    runs-on: ubuntu-24.04
++    timeout-minutes: 20
++    steps:
++      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
++        with:
++          persist-credentials: false
++      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
++        with:
++          node-version: ${{ env.NODE_VERSION }}
++          cache: npm
++      - run: npm ci --ignore-scripts --no-audit --no-fund
++      - run: npm run test:render -w gogospend-app -- src/dev/catalogue/CatalogueScreen.render.test.tsx src/dev/catalogue/screenReader.render.test.tsx -t '^(?!section (?:[a-z0-9-]{3})+(?![a-z0-9-]))(?!section (?:[a-z0-9-]{3})*[a-z0-9-](?![a-z0-9-]))'
++
+   database:
+     name: SQL integration and ops (local PostgreSQL 17 container)
+     runs-on: ubuntu-24.04
+-    timeout-minutes: 45
++    timeout-minutes: 20
+     steps:
+       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+         with:
+@@ -77,10 +171,25 @@
+       - run: npm run test:ops
+         env:
+           GOGOSPEND_OPS_REQUIRE_DB: '1'
+-      # The edge Worker (apps/edge, its own lockfile): types, unit tests, the
+-      # UserVault suites in workerd and build, then its PostgreSQL suites,
+-      # including the differential run against the built NestJS v1 server and
+-      # the built Worker in workerd.
++
++  # The edge Worker (apps/edge, its own lockfile): types, unit tests, the
++  # UserVault suites in workerd and build, then its PostgreSQL suites,
++  # including the differential run against the built NestJS v1 server and
++  # the built Worker in workerd. test:edge:db starts its own container
++  # (apps/edge's test:db runs scripts/dev-v1.mjs db-up first).
++  edge:
++    name: Edge Worker (types, unit, workerd, build, PostgreSQL container)
++    runs-on: ubuntu-24.04
++    timeout-minutes: 20
++    steps:
++      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
++        with:
++          persist-credentials: false
++      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
++        with:
++          node-version: ${{ env.NODE_VERSION }}
++          cache: npm
++      - run: npm ci --ignore-scripts --no-audit --no-fund
+       - run: npm run build -w gogospend-api
+       - run: npm run install:edge
+       - run: npm run typecheck:edge

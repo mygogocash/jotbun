@@ -36,7 +36,13 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - The Opus review (7a873da0, `reviews/1B-T8.md`) is under way.
     - On approval and green CI: `merge_task_pr.sh 374 f416f24 1B-T8`, then `promote_pr.sh 1B-T8 374`. No iOS export is needed (edge only).
     - 1B-T7 and fix-download-aborts follow in this lane.
-  - **ci-parallel-jobs planner** (ad778c27): Opus xhigh, continuing its kit.
+  - **ci-parallel-jobs: brief READY at 857b9f2** (M), with the controller's amendment (the iOS export and `typecheck:routes` in CI).
+    - Nine parallel jobs; the expected median wall time is about 4.4 minutes, against 10.4.
+    - Shared files: `backend.yml`, `backend-workflow.test.mjs`, `docs/implementation/handover.md` (two Full gate lines), `apps/app/package.json` (the `export:ios` script) and `README.md` (the CI paragraph).
+    - P1 to P14 are accepted. Kit `scratch/ci-parallel-jobs-planner/`: 46 OK, and the 5 base files are identical at 857b9f2.
+    - The implementer (Haiku max, a5529d6c) was dispatched at 23:08 in a pre-installed ci-parallel from 857b9f2.
+    - **Its merge waits on the owner's Actions-minutes answer** (Owner decisions waiting).
+    - After the merge: P6C-T7 no longer carries 1A-T10's minor 1, briefs that say "CI's database job runs `test:edge:db`" now mean the `edge` job, and the protocol's iOS-export correction can be lifted.
   - **P4-T12: brief READY on 606e131's code** (M; 18 new files in `src/slips/` and ten placeholder routes under `app/spend/slips/`).
     - Shared files: `sharedV1.ts`, `DeviceDiaryProvider.tsx` and its test, and one line in `bunSettingsErase.render.test.tsx`. P1 to P15 are accepted, with P2 recorded as R102.
     - Kit `scratch/p4-t12-planner/`: check_kit at c1637ec gives 51 OK, SHA256SUMS.base 4 OK, and the 4 `orig/` files identical.
@@ -286,6 +292,10 @@ R84 (P4-T10 fixtures), R85 (two API test-only fixes), R86 (token sid must match 
 Merge each PR when its CI on the current head is green; close its issue by hand (backlog-map.json); remove worktree and branch (local and remote). Open PRs that conflict only in docs/implementation/premium-progress.md: merge the head and run ledger_union.py (keeps both sides), except 1C (hand-merge: one `## 1C:` heading) and P4 (one `## P4` heading). New tasks write receipts under R87, which avoids those conflicts.
 
 ## Owner decisions waiting
+- **NEW (9 Nov, 23:10): Actions minutes before ci-parallel-jobs merges.** The repo is private on the Free plan, which includes 2,000 Actions minutes a month.
+  - Usage: 80 pull-request runs have happened since 1 Nov, about 1,400 billable minutes at today's roughly 18 per run, and each merged task now adds a promotion PR run. The controller cannot read the actual usage: GitHub's timing API reports 0, and the billing endpoint needs `admin:org`.
+  - The parallel layout costs about 31 billable minutes a run (P11). If the minutes run out with no payment method, Actions stop, and every merge stops with them.
+  - Owner: check the org's billing page, and confirm the trade-off before the controller merges ci-parallel-jobs. Cheaper variants are in P11: fold `image` into `exports`, or split the section suites two ways.
 0. R-B (apps/api migration 0020_receipt_copy_once.sql, prepared in scratch/fix-api-db-flakes/files/): gogospend_reserve_receipt_copy (migration 0017) checks "receipt exists" and "copy in flight" in two statements, so two requests can each reserve a copy (one wasted copy, deleted at the next sweep). The fix is a new migration replacing the function with one combined check; it needs the API's migration step wherever the API runs. Until then attachments.integration.spec.ts "two records retaining one image ... one copy" stays a rare known flake.
 1. Sign-in lockout: no per-email lockout, only per code (about 1,440 guesses a day against one address at Task 2's 5 codes per 15 min). Needed before 1C-T2 sends real mail.
 2. Q1 (QR decoder package) gates P3-T12.
