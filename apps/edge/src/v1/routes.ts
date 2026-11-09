@@ -91,6 +91,14 @@ export const VAULT_V1_ROUTES: readonly VaultRoute[] = [
   { method: 'GET', path: '/v1/exports/:id/grant', access: 'bound_session', vault: 'exports.grant' },
   // The CSV streams from R2 in the Worker, after the `exports.file` step names it.
   { method: 'GET', path: '/v1/export-files/:grant', access: 'bound_session', worker: 'export.file.download' },
+  // attachments/attachments.controller.ts (1B-T9): receipts are commands on the record (If-Match, Idempotency-Key).
+  // Retain and replace copy the preview's image in the Worker between their steps; remove is one vault call.
+  { method: 'POST', path: '/v1/transactions/:id/attachment', access: 'current_policy', worker: 'attachment.retain', gates: ['imports', 'writes'], status: 200 },
+  { method: 'PUT', path: '/v1/transactions/:id/attachment', access: 'current_policy', worker: 'attachment.replace', gates: ['imports', 'writes'], status: 200 },
+  { method: 'DELETE', path: '/v1/transactions/:id/attachment', access: 'current_policy', vault: 'attachments.remove', gates: WRITES, status: 200 },
+  { method: 'GET', path: '/v1/attachments/:id/grant', access: 'bound_session', vault: 'attachments.grant' },
+  // The image streams from R2 in the Worker, after the `attachments.file` step names it.
+  { method: 'GET', path: '/v1/attachment-files/:grant', access: 'bound_session', worker: 'attachment.file.download' },
 ]
 
 const ROUTE_BY_ID = new Map<VaultRouteId, VaultRoute>(VAULT_V1_ROUTES.flatMap((route) => (route.vault ? [[route.vault, route] as const] : [])))
@@ -122,6 +130,13 @@ export const VAULT_STEP_ROUTES: Partial<Record<VaultRouteId, VaultStepRoute>> = 
   'imports.bytesRetry': { anySession: true },
   // 1B-T6: the export download's step. It checks the session: a download needs the session that asked.
   'exports.file': {},
+  // 1B-T9: the receipt steps. Prepare, the two commands and the download check the session; release
+  // only gives back the request's own unused copy, so it still runs after the session ended.
+  'attachments.prepare': {},
+  'attachments.release': { anySession: true },
+  'attachments.retain': {},
+  'attachments.replace': {},
+  'attachments.file': {},
 }
 
 /** The step-only entry a vault call names, or undefined when the id is not a step. */
@@ -153,11 +168,6 @@ export const VAULT_DEFERRED_ROUTES: readonly string[] = [
   'POST /v1/imports/:id/selections',
   'POST /v1/imports/:id/confirmations',
   'GET /v1/imports/:id/selections/:selectionId',
-  'POST /v1/transactions/:id/attachment',
-  'PUT /v1/transactions/:id/attachment',
-  'DELETE /v1/transactions/:id/attachment',
-  'GET /v1/attachments/:id/grant',
-  'GET /v1/attachment-files/:grant',
   'GET /v1/me/ai-preferences',
   'PUT /v1/me/ai-preferences',
   'POST /v1/ai/parse',

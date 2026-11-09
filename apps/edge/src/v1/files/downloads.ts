@@ -1,13 +1,15 @@
 import { DEFAULT_ATTACHMENT_LIMITS } from '@api/attachments/attachment-limits'
 import { ProblemException } from '@api/common/api-problem.filter'
 
-import { DownloadSlots, bodyStream, fileResponse, verifiedChunks } from '../../server/http/files'
+import { DownloadSlots, bodyStream, fileResponse, verifiedChunks, within } from '../../server/http/files'
 import { R2ObjectStore, UnavailableObjectStore } from '../../server/storage/r2-object-store'
 import { EXPORT_CONTENT_TYPE } from '../../vault/files/exports'
 import type { StoredExportFile } from '../../vault/files/exports'
+import type { StoredReceiptFile } from '../../vault/files/attachments'
 import type { V1Env } from '../env'
 import type { VaultReply } from '../protocol'
 import type { WorkerContext } from '../worker-routes'
+import { RECEIPT_LIMITS } from './receipts'
 
 // File downloads the Worker streams from R2. Each download takes a slot first,
 // as the API counts downloads per process; here the count is per isolate.
@@ -63,5 +65,40 @@ export async function serveExportFile(w: WorkerContext): Promise<Response | Vaul
   } catch (error) {
     release()
     throw error
+  }
+}
+
+// 1B-T9: receipts.
+
+/**
+ * GET /v1/attachment-files/:grant (the edge's handler, on the vault). The
+ * `attachments.file` step names the image a current grant of this session
+ * names, while a live record of the caller's still holds it; anything else is
+ * the vault's 404. Then a RECEIPT_SLOTS slot for the account (503 with a retry
+ * when none is free), the object only while it matches its record, and its
+ * digest checked as it streams with the last chunk held until it matches. One
+ * chunk is read within downloadIdleMs before any header, so a failure up to
+ * then is 503 with a retry, never the failure's text; after it, a stall past
+ * downloadIdleMs or a body still running at downloadTotalMs cuts the
+ * connection. The slot is returned when the body ends.
+ */
+export async function serveReceiptFile(w: WorkerContext): Promise<Response | VaultReply> {
+  if (!w.vault || !w.claims) throw new Error('a receipt download needs a session')
+  const reply = await w.vault.call('attachments.file', { params: { grant: w.params.grant ?? '' } })
+  if (!reply.ok) return reply
+  const file = reply.body as StoredReceiptFile
+  const release = RECEIPT_SLOTS.take(w.claims.accountId)
+  let chunks: AsyncIterator<Uint8Array> | undefined
+  try {
+    const body = await matchingObject(w.env, file)
+    chunks = verifiedChunks(body, file.bytes, file.sha256, true)[Symbol.asyncIterator]()
+    const limits = { idleMs: RECEIPT_LIMITS.downloadIdleMs, totalMs: RECEIPT_LIMITS.downloadTotalMs }
+    const first = await within(chunks.next(), limits.idleMs, 'receipt download')
+    return fileResponse(bodyStream(chunks, release, limits, first), { contentType: file.contentType, bytes: file.bytes, fileName: file.fileName })
+  } catch (error) {
+    void chunks?.return?.().catch(() => undefined)
+    release()
+    if (error instanceof ProblemException) throw error
+    throw new ProblemException(503, 'SERVICE_UNAVAILABLE', { retryAfterSeconds: 5 })
   }
 }

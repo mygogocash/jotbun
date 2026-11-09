@@ -54,19 +54,25 @@ export type TransactionRow = {
   merchant: string | null
   deleted_at: string | null
   version: number
+  /** The receipt the record holds (1B-T9), or null. */
+  attachment_id?: string | null
 }
 
 /** The record's editable state, before it is written. */
-type Draft = Omit<TransactionRow, 'deleted_at' | 'version'>
+type Draft = Omit<TransactionRow, 'deleted_at' | 'version' | 'attachment_id'>
 
 // Money as text: the SQL API would otherwise return INTEGER as a JavaScript number.
 // History and Recently deleted read rows with these columns too (reads/history.ts).
+// attachment_id is the receipt the record holds (1B-T9, the API's RECORD_COLUMNS):
+// transaction_attachments has no `id`, so the subquery's `id` is the outer row's,
+// whatever the transactions table is aliased as.
 export const COLUMNS = `id, type, CAST(amount_minor AS TEXT) AS amount_minor, occurred_on, wallet_id, category_id,
-  source_wallet_id, destination_wallet_id, note, merchant, deleted_at, version`
+  source_wallet_id, destination_wallet_id, note, merchant, deleted_at, version,
+  (SELECT ta.attachment_id FROM transaction_attachments ta WHERE ta.transaction_id = id) AS attachment_id`
 
 const refsOf = (type: TransactionType): readonly RefField[] => (type === 'transfer' ? TRANSFER_REFS : ENTRY_REFS)
 
-/** The persisted record. `attachment_id` arrives with receipts, so 1A omits it. */
+/** The persisted record, with `attachment_id` only while it holds a receipt (1B-T9), as the API's toDto. */
 export function toDto(row: TransactionRow): TransactionDto {
   const common = {
     id: row.id,
@@ -76,6 +82,7 @@ export function toDto(row: TransactionRow): TransactionDto {
     merchant: row.merchant,
     deleted_at: row.deleted_at,
     version: row.version,
+    ...(row.attachment_id ? { attachment_id: row.attachment_id } : {}),
   }
   return row.type === 'transfer'
     ? { ...common, type: 'transfer', source_wallet_id: row.source_wallet_id as string, destination_wallet_id: row.destination_wallet_id as string }
