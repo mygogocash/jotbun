@@ -1,100 +1,60 @@
-// Signing out everywhere (F6a's POST /v1/me/global-logout), client side: a
-// fresh `global_logout` proof, then the request as that proof's command (its
-// id is the Idempotency-Key). Settings drives it; nothing here shows UI or
-// touches this phone's diary.
+// Signing out everywhere, client side: a fresh sign-in with the account's own
+// method first, then one sign-out-everywhere call on that new session (the
+// port's POST /jotbun/sign-out-everywhere: the server tells the vault first,
+// then ends every session of the account, this phone's too). Settings drives
+// it; nothing here shows UI or touches this phone's diary.
 //
-// Once the server accepts it (202 `{generation, provider_cleanup: "pending"}`)
-// every binding is dead, this phone's too, and new sign-ins wait until Auth0's
-// refresh grants are revoked. A resend after a lost answer - the transport's
-// own, or Try again - meets 401 SESSION_REQUIRED, because the first one
-// landed: that is signed out as well. Only those two let the screen erase
-// this phone's diary and end the session here. Anything Jotbun did not answer
-// keeps the person signed in, with the exact request kept to resend - as does
-// a resend this phone could not send at all (no token or binding any more):
-// the transport's own SESSION_REQUIRED says nothing about the first one.
-import { isUuid } from '@gogospend/contracts';
-import type { GlobalLogoutResult } from '@gogospend/contracts';
-
-import { V1Error } from '../api/client.ts';
-import type { V1Transport } from '../api/client.ts';
-import { V1_COMMAND_SCHEMA } from '../spend/v1/resources.ts';
-import type { Proof } from './reauthentication.ts';
-
-export type GlobalLogoutProof = Pick<Proof, 'proofId' | 'commandId'>;
+// Once the server accepts it, every session is gone. A resend after a lost
+// answer meets SIGNED_OUT, because the first one landed: that is signed out
+// as well. Only those two let the screen erase this phone's diary and end the
+// session here. Anything Jotbun did not answer (unreachable, a 5xx, a rate
+// limit) keeps the person signed in, with the request kept to resend. A stale
+// sign-in (REAUTH_REQUIRED) or any other refusal changes nothing.
+import { AuthRefused, AuthUnavailable } from './betterAuthPort.ts';
+import type { FreshOutcome } from './credentialProvider.ts';
 
 export type GlobalLogoutResources = {
-  /** POST /v1/me/global-logout as the proof's command (its id is the Idempotency-Key), on the current session. */
-  globalLogout(proof: GlobalLogoutProof): Promise<GlobalLogoutResult>;
+  /** The port's signOutEverywhere(), on the session the fresh sign-in just made. */
+  signOutEverywhere(): Promise<void>;
 };
 
-const isGlobalLogoutResult = (value: unknown): value is GlobalLogoutResult =>
-  typeof value === 'object' && value !== null && !Array.isArray(value) &&
-  Object.keys(value).sort().join(',') === 'generation,provider_cleanup' &&
-  Number.isSafeInteger((value as GlobalLogoutResult).generation) && (value as GlobalLogoutResult).provider_cleanup === 'pending';
+/** A request whose answer never came: resend it, with no new sign-in. It carries no proof any more: freshness is the session's own. */
+export type PendingGlobalLogout = { readonly kind: 'sign_out_everywhere' };
 
-const commandId = (id: string) => {
-  if (!isUuid(id)) throw new V1Error('invalid', 0, 'INVALID_ID');
-  return id;
-};
-
-export function createGlobalLogoutResources(transport: V1Transport): GlobalLogoutResources {
-  return {
-    globalLogout: (proof) =>
-      transport.request('POST', '/v1/me/global-logout', {
-        body: { proof_id: proof.proofId },
-        command: { id: commandId(proof.commandId), schemaVersion: V1_COMMAND_SCHEMA },
-        // REAUTH_REQUIRED here refuses the proof, not the session.
-        proof: true,
-        validate: isGlobalLogoutResult,
-      }),
-  };
-}
-
-/** A request whose answer never came: resend exactly this (same proof and key). */
-export type PendingGlobalLogout = GlobalLogoutProof;
+/** The fresh sign-in did not go through (any outcome but `fresh` or `cancelled`): nothing was sent. */
+export const FRESH_SIGN_IN_FAILED = 'FRESH_SIGN_IN_FAILED';
 
 export type GlobalLogoutState =
   /** The person cancelled the fresh sign-in: nothing was sent. */
   | { state: 'cancelled' }
-  /** Every binding is dead, this phone's too (accepted, or a resend of one that was): end the session here. */
+  /** Every session is gone, this phone's too (accepted, or a resend of one that was): end the session here. */
   | { state: 'signed_out' }
-  /** The proof was stale or used: nothing changed. */
+  /** The sign-in was too old for the server: nothing changed. */
   | { state: 'reauth_required' }
-  /** Jotbun did not answer (network, gateway, rate limit, an unreadable success), or nothing could be sent (no token or binding here): still signed in here; resend this request. */
+  /** Jotbun did not answer (unreachable, a 5xx, a rate limit): still signed in here; resend this request. */
   | { state: 'unconfirmed'; request: PendingGlobalLogout }
-  /** Refused for another reason: nothing changed. */
+  /** Refused for another reason, or the fresh sign-in failed (FRESH_SIGN_IN_FAILED): nothing changed. */
   | { state: 'refused'; code: string };
 
-export type GlobalLogoutDeps = {
-  resources: GlobalLogoutResources;
-  /** A fresh `global_logout` proof (F5's reauthenticate('global_logout', ...)); null when the person cancels. */
-  reauthenticate: () => Promise<Proof | null>;
-};
-
-const unknownOutcome = (error: V1Error) =>
-  error.outcome === 'network' || error.outcome === 'unavailable' || error.outcome === 'invalid_response' || error.outcome === 'rate_limited';
-
-/** Reauthenticates for `global_logout` and sends the request. A sign-in that fails throws: nothing was sent. */
-export async function requestGlobalLogout(deps: GlobalLogoutDeps): Promise<GlobalLogoutState> {
-  const proof = await deps.reauthenticate();
-  if (!proof) return { state: 'cancelled' };
-  return submitGlobalLogout({ proofId: proof.proofId, commandId: proof.commandId }, deps);
+/** A fresh sign-in, then the request. A sign-in that does not go through sends nothing. */
+export async function requestGlobalLogout(deps: { resources: GlobalLogoutResources; freshSignIn: () => Promise<FreshOutcome> }): Promise<GlobalLogoutState> {
+  const outcome = await deps.freshSignIn();
+  if (outcome === 'cancelled') return { state: 'cancelled' };
+  if (outcome !== 'fresh') return { state: 'refused', code: FRESH_SIGN_IN_FAILED };
+  return submitGlobalLogout({ kind: 'sign_out_everywhere' }, deps);
 }
 
-/** Sends (or resends) one global sign-out request. */
-export async function submitGlobalLogout(request: PendingGlobalLogout, deps: Pick<GlobalLogoutDeps, 'resources'>): Promise<GlobalLogoutState> {
+/** Sends (or resends) one sign-out-everywhere request on the current session. */
+export async function submitGlobalLogout(request: PendingGlobalLogout, deps: { resources: GlobalLogoutResources }): Promise<GlobalLogoutState> {
   try {
-    await deps.resources.globalLogout(request);
+    await deps.resources.signOutEverywhere();
   } catch (error) {
-    if (!(error instanceof V1Error)) throw error;
-    if (error.code === 'SESSION_REQUIRED') {
-      // Jotbun's own 401: the binding is already dead, so this request (or the one it resends) landed.
-      if (error.status === 401) return { state: 'signed_out' };
-      // Refused here, before sending (no token or binding now): an earlier send may still have landed.
-      return { state: 'unconfirmed', request };
-    }
+    if (error instanceof AuthUnavailable) return { state: 'unconfirmed', request };
+    if (!(error instanceof AuthRefused)) throw error;
+    // The session this request was sent on is gone: an earlier send (or this one) landed.
+    if (error.code === 'SIGNED_OUT') return { state: 'signed_out' };
     if (error.code === 'REAUTH_REQUIRED') return { state: 'reauth_required' };
-    if (unknownOutcome(error)) return { state: 'unconfirmed', request };
+    if (error.code === 'RATE_LIMITED') return { state: 'unconfirmed', request };
     return { state: 'refused', code: error.code };
   }
   return { state: 'signed_out' };

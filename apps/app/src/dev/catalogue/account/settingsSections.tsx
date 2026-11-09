@@ -1,7 +1,7 @@
 // Settings and Privacy and data in each of their states (redesign R6,
 // development only), drawn by the real screens on fakes: a fake account (its
-// sign-outs and global sign-out client recorded), fake export and deletion
-// clients and a fake re-authentication. No network, no sign-in.
+// sign-outs and sign out everywhere recorded), fake export and deletion
+// clients and a fake fresh sign-in. No network, no sign-in.
 //
 // Not registered yet: R6 waits for E2 checkpoint 4, and registry.tsx adds
 // these to SCREEN_SECTIONS then.
@@ -9,16 +9,16 @@ import type { CommandAck, ExportDto, ExportFilter } from '@gogospend/contracts';
 import type { ReactNode } from 'react';
 
 import { V1Error } from '@mobile/api/client';
-import type { GlobalLogoutProof } from '@mobile/auth/globalLogout';
-import type { Proof } from '@mobile/auth/reauthentication';
+import { AuthRefused, AuthUnavailable } from '@mobile/auth/betterAuthPort';
+import type { FreshOutcome, RequestCredentials } from '@mobile/auth/credentialProvider';
 import { LanguagePreferenceOverride } from '@mobile/i18n/LanguageProvider';
 import { useActiveLocale } from '@mobile/i18n/useCopy';
 import { PrivacyScreen } from '@mobile/screens/redesign/account/PrivacyScreen';
-import type { ProofPurpose, PrivacyServices } from '@mobile/screens/redesign/account/PrivacyParts';
+import type { PrivacyServices } from '@mobile/screens/redesign/account/PrivacyParts';
 import type { AccountServices } from '@mobile/screens/redesign/account/SettingsParts';
 import { SettingsScreen } from '@mobile/screens/redesign/account/SettingsScreen';
-import type { DeletionProof, DeletionResources } from '@mobile/spend/v1/deletion';
-import type { PrivacyResources } from '@mobile/spend/v1/privacy';
+import type { DeletionResources, PendingDeletionRequest } from '@mobile/spend/v1/deletion';
+import type { PendingExportRequest, PrivacyResources } from '@mobile/spend/v1/privacy';
 import type { SettingsAreas, SignInMethod } from '@mobile/spend/v1/redesign/account/settingsModel';
 import type { DiaryView } from '@mobile/spend/v1/spendDiary';
 import type { CatalogueSection } from '../registry';
@@ -29,14 +29,22 @@ import type { ScreenFixture, ScriptStep, Translate } from '../screenSection';
 // ---------------------------------------------------------------------------
 // Fakes (the screens' render tests use them too)
 
+/**
+ * The fresh sign-in: its outcome (`fresh`, `cancelled`, or one that did not go
+ * through, such as `wrong_code`); `unreachable`: it throws, so nothing answered;
+ * `none`: this build has no fresh sign-in for the account's method.
+ */
+export type FakeFreshSignIn = FreshOutcome | 'unreachable' | 'none';
+
 export type FakeAccountOptions = {
   readonly signInMethod?: SignInMethod | null;
-  /** The fresh sign-in: a proof; the person cancels; the sign-in service can't be reached; or this build can't re-authenticate. Default `proof`. */
-  readonly reauth?: 'proof' | 'cancel' | 'unreachable' | 'unavailable';
+  /** The fresh sign-in. Default `fresh`. */
+  readonly fresh?: FakeFreshSignIn;
   /**
-   * POST /v1/me/global-logout, one answer per call (the last repeats):
-   * accepted (202); already signed out, as a resend after a lost answer is
-   * (401 SESSION_REQUIRED); the answer lost; a used proof; refused. Default `accepted`.
+   * The port's sign out everywhere, one answer per call (the last repeats):
+   * accepted; already signed out, as a resend after a lost answer is
+   * (SIGNED_OUT); the answer lost (unreachable); a sign-in too old for the
+   * server (REAUTH_REQUIRED); refused. Default `accepted`.
    */
   readonly globalLogouts?: readonly ('accepted' | 'signed_out' | 'lost' | 'reauth' | 'refused')[];
   /** Never answers a global sign-out, so its working state stays on screen. */
@@ -45,34 +53,39 @@ export type FakeAccountOptions = {
   readonly log?: string[];
 };
 
-/** An account whose fresh sign-ins, global sign-outs and sign-outs are recorded. */
+/** A fresh sign-in that answers as `fresh` says, counting and logging each ask; null for `none`. */
+function fakeFreshSignIn(fresh: FakeFreshSignIn, onAsk: () => void): (() => Promise<FreshOutcome>) | null {
+  if (fresh === 'none') return null;
+  return async () => {
+    onAsk();
+    if (fresh === 'unreachable') throw new Error('Could not reach the sign-in service. Try again.');
+    return fresh;
+  };
+}
+
+/** An account whose fresh sign-ins, sign-outs everywhere and sign-outs are recorded. */
 export function fakeAccount(options: FakeAccountOptions = {}) {
   const log = options.log ?? [];
-  const calls = { reauth: [] as 'global_logout'[], globalLogouts: [] as GlobalLogoutProof[] };
-  const reauth = options.reauth ?? 'proof';
+  const calls = { fresh: 0, globalLogouts: 0 };
   const services: AccountServices = {
     signInMethod: options.signInMethod ?? null,
     signOut: async () => { log.push('signOut'); },
     sessions: {
-      async globalLogout(proof) {
-        const answer = pick(options.globalLogouts, 'accepted', calls.globalLogouts.length);
-        calls.globalLogouts.push({ proofId: proof.proofId, commandId: proof.commandId });
-        log.push('globalLogout');
+      async signOutEverywhere() {
+        const answer = pick(options.globalLogouts, 'accepted', calls.globalLogouts);
+        calls.globalLogouts += 1;
+        log.push('signOutEverywhere');
         if (options.holdGlobalLogout) return new Promise(() => undefined);
-        if (answer === 'signed_out') throw new V1Error('signed_out', 401, 'SESSION_REQUIRED');
-        if (answer === 'lost') throw unreachable();
-        if (answer === 'reauth') throw new V1Error('signed_out', 401, 'REAUTH_REQUIRED');
-        if (answer === 'refused') throw new V1Error('invalid', 400, 'VALIDATION_FAILED');
-        return { generation: 2, provider_cleanup: 'pending' };
+        if (answer === 'signed_out') throw new AuthRefused('SIGNED_OUT');
+        if (answer === 'lost') throw new AuthUnavailable();
+        if (answer === 'reauth') throw new AuthRefused('REAUTH_REQUIRED');
+        if (answer === 'refused') throw new AuthRefused('REFUSED');
       },
     },
-    reauthenticate: reauth === 'unavailable' ? null : async (purpose) => {
-      calls.reauth.push(purpose);
-      log.push('reauth');
-      if (reauth === 'cancel') return null;
-      if (reauth === 'unreachable') throw new Error('Could not reach the sign-in service. Try again.');
-      return fakeProof();
-    },
+    freshSignIn: fakeFreshSignIn(options.fresh ?? 'fresh', () => {
+      calls.fresh += 1;
+      log.push('freshSignIn');
+    }),
   };
   return { services, log, calls };
 }
@@ -86,9 +99,9 @@ const EXPIRES_AT = '2026-09-30T03:00:00.000Z';
 const FAKE_CSV = '﻿record_id,date,type,amount,amount_minor,currency\n';
 
 export type FakePrivacyOptions = {
-  /** The fresh sign-in: a proof; the person cancels; the sign-in service can't be reached; or this build can't re-authenticate. Default `proof`. */
-  readonly reauth?: 'proof' | 'cancel' | 'unreachable' | 'unavailable';
-  /** POST /v1/exports, one answer per call (the last repeats): accepted; the answer lost; a used proof; refused. Default `ack`. */
+  /** The fresh sign-in. Default `fresh`. */
+  readonly fresh?: FakeFreshSignIn;
+  /** POST /v1/exports, one answer per call (the last repeats): accepted; the answer lost; a sign-in too old for the server; refused. Default `ack`. */
   readonly exportRequests?: readonly ('ack' | 'lost' | 'reauth' | 'refused')[];
   /** GET /v1/exports/:id, one answer per check (the last repeats). `offline`: Jotbun can't be reached. Default `pending`. */
   readonly statuses?: readonly ('pending' | 'ready' | 'expired' | 'failed' | 'too_large' | 'offline')[];
@@ -96,49 +109,51 @@ export type FakePrivacyOptions = {
   readonly download?: 'ok' | 'offline';
   /** Whether the person sends the file somewhere from the share sheet. Default true. */
   readonly save?: boolean;
-  /** POST /v1/me/deletion, one answer per call (the last repeats). Default `accepted`. */
-  readonly deletions?: readonly ('accepted' | 'lost' | 'refused' | 'reauth')[];
+  /** POST /v1/me/deletion, one answer per call (the last repeats); `broken`: a failure that is not Jotbun's answer. Default `accepted`. */
+  readonly deletions?: readonly ('accepted' | 'lost' | 'refused' | 'reauth' | 'broken')[];
   /** The initiating device's receipt: accepted, completed, none (404) or offline. Default `none`. */
   readonly receipt?: 'accepted' | 'completed' | 'none' | 'offline';
   /** Never answers a deletion, so its working state stays on screen. */
   readonly holdDeletion?: boolean;
 };
 
-let proofs = 0;
-const fakeProof = (): Proof => {
-  proofs += 1;
-  const tail = proofs.toString(16).padStart(12, '0');
-  return { proofId: `0000000a-0000-4000-8000-${tail}`, commandId: `0000000c-0000-4000-8000-${tail}`, expiresAt: '2026-09-29T03:05:00.000Z' };
+/** The fresh session's credentials the fakes hand out: a fake token, never a real one. */
+export const FAKE_CREDENTIALS: RequestCredentials = { accessToken: 'fake-fresh-token', sessionId: '5e55e55e-0000-4000-8000-000000000001' };
+let ids = 0;
+/** A distinct UUID per call, so a request's command id and proof id differ and a new request draws new ones. */
+const fakeId = (): string => {
+  ids += 1;
+  return `0000000c-0000-4000-8000-${ids.toString(16).padStart(12, '0')}`;
 };
 const pick = <T,>(answers: readonly T[] | undefined, fallback: T, index: number): T =>
   answers && answers.length > 0 ? answers[Math.min(index, answers.length - 1)] : fallback;
 const unreachable = () => new V1Error('network', 0, 'NETWORK');
 const notFound = () => new V1Error('not_found', 404, 'NOT_FOUND');
 
-/** Export and deletion clients, a re-authentication and a share sheet, all recorded. Every wait is instant. */
+/** Export and deletion clients, a fresh sign-in and a share sheet, all recorded. Every wait is instant. */
 export function fakePrivacy(options: FakePrivacyOptions = {}) {
   const calls = {
-    reauth: [] as ProofPurpose[],
-    exportRequests: [] as { filter: ExportFilter; proofId: string; commandId: string }[],
+    fresh: 0,
+    exportRequests: [] as PendingExportRequest[],
     statusChecks: [] as string[],
     grants: 0,
     saved: [] as { csv: string; fileName: string }[],
-    deletions: [] as DeletionProof[],
-    receipts: [] as string[],
+    deletions: [] as PendingDeletionRequest[],
+    receipts: [] as { commandId: string; accessToken: string }[],
     signOut: 0,
   };
   let period: ExportFilter = { from: '1970-01-01', through: '2026-09-29' };
   const base = () => ({ export_id: FAKE_EXPORT_ID, from: period.from, through: period.through, requested_at: REQUESTED_AT });
 
   const privacy: PrivacyResources = {
-    async requestExport(filter, proof) {
+    async requestExport(filter, request, credentials) {
       const answer = pick(options.exportRequests, 'ack', calls.exportRequests.length);
-      calls.exportRequests.push({ filter, proofId: proof.proofId, commandId: proof.commandId });
+      calls.exportRequests.push({ filter, commandId: request.commandId, proofId: request.proofId, credentials });
       period = filter;
       if (answer === 'lost') throw unreachable();
       if (answer === 'reauth') throw new V1Error('signed_out', 401, 'REAUTH_REQUIRED');
       if (answer === 'refused') throw new V1Error('rate_limited', 429, 'RATE_LIMITED');
-      const ack: CommandAck = { command_id: proof.commandId, entity_id: FAKE_EXPORT_ID, version: 1, committed_revision: '42', outcome: 'accepted', entity_state: 'active' };
+      const ack: CommandAck = { command_id: request.commandId, entity_id: FAKE_EXPORT_ID, version: 1, committed_revision: '42', outcome: 'accepted', entity_state: 'active' };
       return ack;
     },
     async exportStatus(exportId) {
@@ -167,17 +182,18 @@ export function fakePrivacy(options: FakePrivacyOptions = {}) {
   };
 
   const deletion: DeletionResources = {
-    async requestDeletion(proof) {
+    async requestDeletion(input, credentials) {
       const answer = pick(options.deletions, 'accepted', calls.deletions.length);
-      calls.deletions.push({ proofId: proof.proofId, commandId: proof.commandId });
+      calls.deletions.push({ commandId: input.commandId, proofId: input.proofId, language: input.language, credentials });
       if (options.holdDeletion) return new Promise(() => undefined);
       if (answer === 'lost') throw unreachable();
       if (answer === 'refused') throw new V1Error('signed_out', 401, 'SESSION_REQUIRED');
       if (answer === 'reauth') throw new V1Error('signed_out', 401, 'REAUTH_REQUIRED');
+      if (answer === 'broken') throw new Error('Not an answer from Jotbun.');
       return { request_id: FAKE_REQUEST_ID, status: 'accepted' };
     },
-    async deletionReceipt(commandId) {
-      calls.receipts.push(commandId);
+    async deletionReceipt(commandId, accessToken) {
+      calls.receipts.push({ commandId, accessToken });
       const receipt = options.receipt ?? 'none';
       if (receipt === 'none') throw notFound();
       if (receipt === 'offline') throw unreachable();
@@ -185,16 +201,12 @@ export function fakePrivacy(options: FakePrivacyOptions = {}) {
     },
   };
 
-  const reauth = options.reauth ?? 'proof';
   const services: PrivacyServices = {
     privacy,
     deletion,
-    reauthenticate: reauth === 'unavailable' ? null : async (purpose) => {
-      calls.reauth.push(purpose);
-      if (reauth === 'cancel') return null;
-      if (reauth === 'unreachable') throw new Error('Could not reach the sign-in service. Try again.');
-      return fakeProof();
-    },
+    freshSignIn: fakeFreshSignIn(options.fresh ?? 'fresh', () => { calls.fresh += 1; }),
+    credentials: async () => FAKE_CREDENTIALS,
+    newId: fakeId,
     async saveExport(file) {
       calls.saved.push(file);
       return options.save ?? true;
@@ -331,14 +343,14 @@ const SETTINGS: CatalogueSection[] = [
   screenSection({
     id: 'settings-everywhere-cancelled',
     title: 'Settings: sign out everywhere cancelled',
-    fixture: () => accountFixture({ reauth: 'cancel' }),
+    fixture: () => accountFixture({ fresh: 'cancelled' }),
     script: (tc) => [...everywhereVia(tc), { waitFor: tc('Nothing changed.') }],
     render: settings(),
   }),
   screenSection({
     id: 'settings-everywhere-signin-unreachable',
     title: 'Settings: sign out everywhere, sign-in unreachable',
-    fixture: () => accountFixture({ reauth: 'unreachable' }),
+    fixture: () => accountFixture({ fresh: 'unreachable' }),
     script: (tc) => [...everywhereVia(tc), { waitFor: tc("Couldn't reach the sign-in service. Nothing changed. Try again.") }],
     render: settings(),
   }),
@@ -377,7 +389,7 @@ const SETTINGS: CatalogueSection[] = [
   screenSection({
     id: 'settings-everywhere-unavailable',
     title: 'Settings: sign out everywhere unavailable',
-    fixture: () => accountFixture({ reauth: 'unavailable' }),
+    fixture: () => accountFixture({ fresh: 'none' }),
     script: (tc) => [{ waitFor: tc("Signing out everywhere needs a fresh sign-in, which this build can't do yet.") }],
     render: settings(),
   }),
@@ -388,7 +400,7 @@ const PRIVACY: CatalogueSection[] = [
   screenSection({
     id: 'privacy-no-reauth',
     title: 'Privacy: no fresh sign-in in this build',
-    fixture: () => privacyFixture({ reauth: 'unavailable' }),
+    fixture: () => privacyFixture({ fresh: 'none' }),
     script: (tc) => [{ waitFor: tc("Deleting your account needs a fresh sign-in, which this build can't do yet.") }],
     render: privacy,
   }),

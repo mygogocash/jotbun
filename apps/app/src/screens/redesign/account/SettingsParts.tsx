@@ -10,8 +10,8 @@ import { useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 
+import type { CredentialProvider, FreshOutcome } from '@mobile/auth/credentialProvider';
 import type { GlobalLogoutResources } from '@mobile/auth/globalLogout';
-import type { Proof } from '@mobile/auth/reauthentication';
 import { getCredentialProvider, setSession } from '@mobile/auth/session';
 import { isLegacySpendEnabled, isRedesignEnabled } from '@mobile/config/featureFlags';
 import type { SettingsAreas, SignInMethod } from '@mobile/spend/v1/redesign/account/settingsModel';
@@ -30,22 +30,34 @@ export type AccountServices = {
   readonly signInMethod: SignInMethod | null;
   /** Ends the session on this device. The screen erases this phone's diary first. */
   signOut(): Promise<void>;
-  /** `POST /v1/me/global-logout` (F6a), through globalLogout.ts. */
+  /** Sign out everywhere (the Better Auth port's), through globalLogout.ts. */
   readonly sessions: GlobalLogoutResources;
   /**
-   * A fresh, purpose-bound proof through the person's own sign-in method
-   * (`reauthenticate('global_logout', { auth0, api, newId })`); it answers
-   * null when they cancel. null itself when this build cannot re-authenticate:
-   * the Auth0 SDK arrives with E1/E2, and until then the screen says so
-   * instead of offering Sign out everywhere.
+   * A fresh sign-in with the account's own method (the installed credential
+   * provider's). null while that method has no fresh sign-in on this build
+   * (`freshSignInOf`), and the screen then says so instead of offering Sign
+   * out everywhere.
    */
-  readonly reauthenticate: ((purpose: 'global_logout') => Promise<Proof | null>) | null;
+  readonly freshSignIn: (() => Promise<FreshOutcome>) | null;
 };
 
 /**
- * Signs this device out through today's session seam: F5's credential
- * provider when one is installed (it revokes this binding and forgets the
- * stored sign-in), otherwise the legacy session store.
+ * The installed provider's fresh sign-in for the account's own method, or
+ * null while this build cannot run one for it: email until its code screen is
+ * routed (1C Task 9), Apple and Google until the build has their native
+ * sign-in (1C Task 7). Read once, when a screen's services are made.
+ */
+export function freshSignInOf(provider: CredentialProvider | null): (() => Promise<FreshOutcome>) | null {
+  const method = provider?.account()?.method;
+  if (!provider || !method || method === 'email' || !provider.methods().includes(method)) return null;
+  return () => provider.freshSignIn({ method, signUp: false });
+}
+
+/**
+ * Signs this device out through today's session seam: the credential
+ * provider when one is installed (it tells the vault, signs this session out
+ * of Better Auth and forgets the stored sign-in), otherwise the legacy
+ * session store.
  */
 export async function signOutOfThisDevice(): Promise<void> {
   const provider = getCredentialProvider();

@@ -4,9 +4,11 @@ import { createServer } from 'node:http';
 import type { IncomingHttpHeaders } from 'node:http';
 import { after, before, beforeEach, test } from 'node:test';
 
+import { isUuid } from '@gogospend/contracts';
+
 import { V1Error, createV1Transport } from '../../api/client.ts';
 import type { V1Credentials } from '../../api/client.ts';
-import type { Proof } from '../../auth/reauthentication.ts';
+import type { FreshOutcome, RequestCredentials } from '../../auth/credentialProvider.ts';
 import { createPrivacyResources, downloadExport, pollExport, requestExport, retryExportRequest } from './privacy.ts';
 import type { ExportDeps } from './privacy.ts';
 
@@ -38,17 +40,33 @@ const server = createServer(async (req, res) => {
   res.end(reply.raw ?? JSON.stringify(reply.body ?? null));
 });
 
-const snapshot = { binding: 'b'.repeat(43), epoch: 1 };
-const credentials: V1Credentials = { getAccessToken: async () => 'access-token', getSessionSnapshot: () => snapshot };
+// The shared transport's own session (status checks, grants and downloads use it) and the fresh session's credentials (the request uses them).
+const snapshot = { binding: '0e000000-0000-4000-8000-00000000000e', epoch: 1 };
+const credentials: V1Credentials = { getAccessToken: async () => 'session-token', getSessionSnapshot: () => snapshot };
+const FRESH: RequestCredentials = { accessToken: 'fresh-token', sessionId: '0d000000-0000-4000-8000-00000000000d' };
 const sha256Hex = async (text: string) => createHash('sha256').update(text).digest('hex');
 const resources = () => createPrivacyResources(createV1Transport({ baseUrl, credentials, client: { platform: 'ios', version: '1.2.3' }, timeoutMs: 2_000 }), { sha256Hex });
 
-const proof = (): Proof => ({ proofId: randomUUID(), commandId: randomUUID(), expiresAt: '2026-10-17T03:05:00.000Z' });
 const ackFor = (commandId: string) => ({ command_id: commandId, entity_id: EXPORT_ID, version: 1, committed_revision: '12', outcome: 'accepted', entity_state: 'active' });
 
-function deps(overrides: Partial<ExportDeps> = {}): ExportDeps & { sleeps: number[] } {
+/** The journey's dependencies: a fresh sign-in answering `fresh`, the fresh session's credentials, recorded ids, instant waits. */
+function deps(overrides: Partial<ExportDeps> = {}): ExportDeps & { sleeps: number[]; log: string[]; drawn: string[] } {
   const sleeps: number[] = [];
-  return { resources: resources(), reauthenticate: async () => proof(), sleep: async (ms) => void sleeps.push(ms), pollMs: 2_000, maxPolls: 3, sleeps, ...overrides };
+  const log: string[] = [];
+  const drawn: string[] = [];
+  return {
+    resources: resources(),
+    freshSignIn: async (): Promise<FreshOutcome> => { log.push('freshSignIn'); return 'fresh'; },
+    credentials: async () => { log.push('credentials'); return FRESH; },
+    newId: () => { const id = randomUUID(); drawn.push(id); return id; },
+    sleep: async (ms) => void sleeps.push(ms),
+    pollMs: 2_000,
+    maxPolls: 3,
+    sleeps,
+    log,
+    drawn,
+    ...overrides,
+  };
 }
 
 async function failure(run: () => Promise<unknown>): Promise<V1Error> {
@@ -73,22 +91,38 @@ beforeEach(() => {
   replies = [];
 });
 
-test('an export request sends the proof as its body and the proof command as its key and schema', async () => {
-  const p = proof();
-  replies.push({ status: 202, body: ackFor(p.commandId) });
-  assert.deepEqual(await resources().requestExport(MARCH, p), ackFor(p.commandId));
-  const [sent] = seen;
+test("a fresh sign-in, then today's export body with a random proof id and the new session's own token", async () => {
+  // The ids the app will draw, known up front so the acknowledgement can name the command.
+  const ids = [randomUUID(), randomUUID()];
+  const d = deps({ maxPolls: 1 });
+  d.newId = () => {
+    const id = ids[d.drawn.length] ?? randomUUID();
+    d.drawn.push(id);
+    return id;
+  };
+  replies.push({ status: 202, body: ackFor(ids[0]) }, { status: 200, body: READY });
+  assert.deepEqual(await requestExport(MARCH, d), { state: 'ready', exportId: EXPORT_ID, file: READY });
+  assert.deepEqual(d.log, ['freshSignIn', 'credentials']);
+  const [sent, status] = seen;
   assert.equal(sent.method, 'POST');
   assert.equal(sent.url, '/v1/exports');
-  assert.equal(sent.headers['idempotency-key'], p.commandId);
+  const [command, proof] = d.drawn;
+  assert.deepEqual(JSON.parse(sent.body), { proof_id: proof, from: MARCH.from, through: MARCH.through });
+  assert.ok(isUuid(proof));
+  assert.notEqual(proof, command);
+  assert.equal(sent.headers['idempotency-key'], command);
   assert.equal(sent.headers['x-gogospend-command-schema'], '1');
+  assert.equal(sent.headers.authorization, 'Bearer fresh-token');
   assert.equal(sent.headers['x-gogospend-session'], undefined);
-  assert.deepEqual(JSON.parse(sent.body), { proof_id: p.proofId, from: MARCH.from, through: MARCH.through });
+  // The status check reads on the shared session (which, after the fresh sign-in, is that new session).
+  assert.equal(status.url, `/v1/exports/${EXPORT_ID}`);
+  assert.equal(status.headers.authorization, 'Bearer session-token');
   // An acknowledgement for another command, or not "accepted", is refused.
+  const request = { commandId: randomUUID(), proofId: randomUUID() };
   replies.push({ status: 202, body: ackFor(randomUUID()) });
-  assert.equal((await failure(() => resources().requestExport(MARCH, p))).outcome, 'invalid_response');
-  replies.push({ status: 202, body: { ...ackFor(p.commandId), outcome: 'created' } });
-  assert.equal((await failure(() => resources().requestExport(MARCH, p))).outcome, 'invalid_response');
+  assert.equal((await failure(() => resources().requestExport(MARCH, request, FRESH))).outcome, 'invalid_response');
+  replies.push({ status: 202, body: { ...ackFor(request.commandId), outcome: 'created' } });
+  assert.equal((await failure(() => resources().requestExport(MARCH, request, FRESH))).outcome, 'invalid_response');
 });
 
 test('statuses and grants must be exactly the shared shapes', async () => {
@@ -123,39 +157,56 @@ test('a download is checked against the ready export size and digest, byte order
   assert.equal((await failure(() => resources().downloadExport({ ...GRANT, url: 'https://elsewhere.example/x' }, { bytes: CSV_BYTES, sha256: CSV_SHA }))).code, 'INVALID_GRANT');
 });
 
-test('cancelling the reauthentication requests nothing', async () => {
-  const outcome = await requestExport(MARCH, deps({ reauthenticate: async () => null }));
-  assert.deepEqual(outcome, { state: 'cancelled' });
+test('cancelling the fresh sign-in requests nothing', async () => {
+  const d = deps({ freshSignIn: async () => 'cancelled' });
+  assert.deepEqual(await requestExport(MARCH, d), { state: 'cancelled' });
+  assert.deepEqual(d.log, [], 'the credentials are never read');
   assert.equal(seen.length, 0);
 });
 
 test('ready after polling: the journey returns the ready export and paces its polls', async () => {
-  const p = proof();
-  replies.push({ status: 202, body: ackFor(p.commandId) }, { status: 200, body: { ...BASE, status: 'pending' } }, { status: 200, body: { ...BASE, status: 'pending' } }, { status: 200, body: READY });
-  const d = deps({ reauthenticate: async () => p });
+  const commandId = randomUUID();
+  replies.push({ status: 202, body: ackFor(commandId) }, { status: 200, body: { ...BASE, status: 'pending' } }, { status: 200, body: { ...BASE, status: 'pending' } }, { status: 200, body: READY });
+  const d = deps({ newId: () => commandId });
   assert.deepEqual(await requestExport(MARCH, d), { state: 'ready', exportId: EXPORT_ID, file: READY });
   assert.deepEqual(d.sleeps, [2_000, 2_000]);
   assert.deepEqual(seen.map((s) => `${s.method} ${s.url}`), ['POST /v1/exports', `GET /v1/exports/${EXPORT_ID}`, `GET /v1/exports/${EXPORT_ID}`, `GET /v1/exports/${EXPORT_ID}`]);
 });
 
-test('a stale or used proof asks for reauthentication instead of signing out', async () => {
+test('a stale sign-in is reauth_required', async () => {
+  // The server finds the sign-in too old.
   replies.push({ status: 401, body: { code: 'REAUTH_REQUIRED', request_id: 'r', message_key: 'errors.reauth_required' } });
   assert.deepEqual(await requestExport(MARCH, deps()), { state: 'reauth_required' });
+  assert.equal(seen.length, 1);
+  // A fresh sign-in that does not go through, or a new session that cannot be read: the same, and nothing is sent.
+  seen = [];
+  for (const outcome of ['failed', 'unavailable', 'not_configured', 'other_account', 'wrong_code', 'rate_limited'] as const) {
+    const d = deps({ freshSignIn: async () => outcome });
+    assert.deepEqual(await requestExport(MARCH, d), { state: 'reauth_required' }, outcome);
+    assert.deepEqual(d.log, [], `${outcome}: the credentials are never read`);
+  }
+  assert.deepEqual(await requestExport(MARCH, deps({ credentials: async () => null })), { state: 'reauth_required' });
+  assert.equal(seen.length, 0);
 });
 
-test('an unknown outcome keeps the exact request, and a retry sends the same key, body and proof', async () => {
-  const p = proof();
+test('a lost answer resends the same request with the same token, key and proof id', async () => {
+  const d = deps();
   replies.push({ status: 0, drop: true }, { status: 0, drop: true }, { status: 0, drop: true });
-  const outcome = await requestExport(MARCH, deps({ reauthenticate: async () => p }));
-  assert.deepEqual(outcome, { state: 'unconfirmed', request: { filter: MARCH, proofId: p.proofId, commandId: p.commandId } });
+  const outcome = await requestExport(MARCH, d);
+  const [commandId, proofId] = d.drawn;
+  assert.deepEqual(outcome, { state: 'unconfirmed', request: { filter: MARCH, commandId, proofId, credentials: FRESH } });
   assert.equal(seen.length, 3);
-  assert.ok(seen.every((s) => s.headers['idempotency-key'] === p.commandId && s.body === seen[0].body));
+  assert.ok(seen.every((s) => s.headers['idempotency-key'] === commandId && s.body === seen[0].body && s.headers.authorization === 'Bearer fresh-token'));
   seen = [];
-  replies.push({ status: 202, body: ackFor(p.commandId) }, { status: 200, body: READY });
+  replies.push({ status: 202, body: ackFor(commandId) }, { status: 200, body: READY });
   if (outcome.state !== 'unconfirmed') throw new Error('expected unconfirmed');
+  // Try again: no new sign-in, no new ids.
   assert.deepEqual(await retryExportRequest(outcome.request, deps()), { state: 'ready', exportId: EXPORT_ID, file: READY });
-  assert.equal(seen[0].headers['idempotency-key'], p.commandId);
-  assert.deepEqual(JSON.parse(seen[0].body), { proof_id: p.proofId, ...MARCH });
+  assert.equal(seen[0].headers['idempotency-key'], commandId);
+  assert.equal(seen[0].headers.authorization, 'Bearer fresh-token');
+  assert.deepEqual(JSON.parse(seen[0].body), { proof_id: proofId, ...MARCH });
+  assert.equal(d.drawn.length, 2);
+  assert.deepEqual(d.log, ['freshSignIn', 'credentials']);
 });
 
 test('polling reports queued after its budget, and failed, expired or unknown exports as such', async () => {
