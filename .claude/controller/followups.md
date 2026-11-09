@@ -57,7 +57,13 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - the new case's comment claims "the local gate's order", which nothing checks.
   - **Epic #83:** the phase proof (offline on phone A, seen on phone B, and the conflict screen) needs 1C and 1D, so it belongs to 1D-T15. Do not close the epic before then.
   - **The plan's Step 5**, a review of the whole 1A range, is the controller's to schedule (P11), and is waiting on the owner's choice.
-- 1B-T6 (#362, review in reviews/1B-T6.md, Needs fixes: M-1 is fixed in the R96 fix round, with m-1 and m-2 as tests).
+- **fix-download-aborts (a follow-up task, before 1B-T13; ruling R97).** In workerd, a GET whose client goes away mid-download keeps its download slot; four of them close a download kind for every member in the isolate.
+  - The fix, proven in scratch by 1B-T6's confirming reviewer (`scratch/1b-t6-confirm/`): `serve*File` hands `w.waitUntil` a promise that its `release` settles.
+  - Apply it to `serveExportFile`, 1B-T9's `serveReceiptFile` and 1B-T8's snapshot chunks, with a `wrangler dev` proof (four aborted GETs, then a GET answers 200) and a test that pins the waitUntil wiring.
+  - Also in it, from the same review:
+    - n-1: `handler.ts:129` and `:147` return `headOf(...)` inside a `try` without `await`, so a future rejection would skip the error handler;
+    - n-2: the HEAD case's byte counter is shared across its four HEADs, so per-HEAD regressions after the first go unseen.
+- 1B-T6 (#362, merged de738f9 on 9 Nov, issue #110 closed; review in reviews/1B-T6.md, Needs fixes; fix round R96 confirmed in reviews/1B-T6-confirm.md; MA-1 ruled a follow-up under R97).
   - **Nits, not in the round** (probes in scratch/1b-t6-review/):
     - X4: the Workflow step's retry settings are not pinned;
     - X5: no case sends a non-UUID `proof_id`;
