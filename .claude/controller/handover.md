@@ -93,7 +93,13 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
   - Expected: app 34, unit 911, render 102 files and 1802 tests, web 4788. E2 screenshots are SKIPPED, with 22 catalogue deep links listed.
   - The brief's "For the controller": 1C-T5's leftover-cookie recovery needs a `credentialProvider.ts` change that amends R86; the "Sign in again" flicker comes from the sync outcome. Both are for a later 1C task.
   - 1D-T8 follows it in the same lane (registry.tsx, featureFlags.ts).
-- **Held:** 1B-T7 (AI routes) shares four route files with 1B-T9, and handler.ts with #362's fix. Plan it after #362 merges, on top of 1B-T9. 1C-T2 and P3-T12 are still held on owner answers.
+- **1B-T8 planner (Opus), dispatched about 23:00.** It is planned on top of 1B-T10's dcdb773 (#369) and starts after #369 merges.
+  - Brief `briefs/1B-T8.md`, kit `scratch/1b-t8-planner/`, WT p1-1b-t8 on p1/1b-t8-snapshots.
+  - It carries the R96, R92, R95 and R97 notes, and the vault-active checks at read and publish.
+- **Held:**
+  - 1B-T7 (AI routes) follows 1B-T8 in the server lane (the same route files).
+  - 1D-T8 follows #367 (registry.tsx, featureFlags.ts).
+  - P4-T12 and P4-T13 are ready and independent, but held to keep agents to about four after three usage-limit cutoffs. 1C-T2 and P3-T12 are still held on owner answers.
 - **#354 1D-T9: merged 687e764 (about 10:00).** The confirming review approved (`reviews/1D-T9-confirm.md`; nits n1 to n4 are in followups.md for the m5 task). Issue #140 is closed and the worktree and branches are removed. The receipt's n5 was fixed in housekeeping commit 8a1f587.
   - **App baseline at 687e764**, measured by the confirming reviewer on the same tree: test:app 32, test:unit 882, render 90 files and 1694 tests, export:web 4778 modules. iOS was not measured: 5563 at 5dbd7be, plus 1D-T9's modules.
 - **#354 history (fix round, Haiku, worktree p1-1d-t9):**
