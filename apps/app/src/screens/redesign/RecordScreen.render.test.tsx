@@ -730,3 +730,223 @@ test('with the conflict area off, today\'s comparison stays and nothing is kept'
   expect(screen.queryByTestId('choice-panel')).toBeNull();
   expect(kept(earlier)).toHaveLength(1);
 });
+
+// ---------------------------------------------------------------------------
+// C16 fix round (the 1D-T9 review: M1, m1, m2, m3; ruling R94)
+
+/** A device diary whose dropChoice can be held until released, or refused, and whose keepChoice can be refused. */
+function controlledDiary(view: Parameters<typeof createFakeDiary>[0] = {}) {
+  const fake = createFakeDiary({ ...DIARY_REFERENCES, ...view });
+  const control = { holdDrops: false, refuseDrops: false, refuseKeeps: false, release: () => {} };
+  const diary: SpendDiary = {
+    ...fake.diary,
+    async keepChoice(choice) {
+      if (control.refuseKeeps) throw new Error('The diary could not be written.');
+      await fake.diary.keepChoice(choice);
+    },
+    async dropChoice(recordId) {
+      if (control.refuseDrops) throw new Error('The diary could not be written.');
+      if (control.holdDrops) await new Promise<void>((resolve) => { control.release = resolve; });
+      await fake.diary.dropChoice(recordId);
+    },
+  };
+  return { ...fake, diary, control };
+}
+
+// M1: while the diary drops a choice, today's comparison never shows in the area, and nothing is sent.
+test("choosing the server's version never shows today's comparison while the diary drops the choice", async () => {
+  conflictArea();
+  const diary = controlledDiary();
+  const fake = await refuseAnEdit(diary.diary);
+  diary.control.holdDrops = true;
+  fireEvent.click(serverCard());
+  fireEvent.click(screen.getByRole('button', { name: "Use the server's" }));
+  await waitFor(() => expect(screen.queryByTestId('choice-panel')).toBeNull());
+  expect(screen.queryByTestId('conflict')).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Apply my change' })).toBeNull();
+  act(() => diary.control.release());
+  expect(await screen.findByLabelText('Amount, Expense ฿13,000.00')).toBeTruthy();
+  await waitFor(() => expect(kept(diary)).toHaveLength(0));
+  expect(fake.callsOf('updateTransaction')).toHaveLength(1);
+});
+
+test('an acknowledged "use yours" never shows today\'s comparison while the diary drops the choice', async () => {
+  conflictArea();
+  const diary = controlledDiary();
+  const fake = await refuseAnEdit(diary.diary);
+  diary.control.holdDrops = true;
+  fireEvent.click(screen.getByRole('button', { name: 'Use yours' }));
+  await waitFor(() => expect(screen.queryByTestId('choice-panel')).toBeNull());
+  expect(screen.queryByTestId('conflict')).toBeNull();
+  act(() => diary.control.release());
+  expect(await screen.findByLabelText('Amount, Expense ฿12,000.00')).toBeTruthy();
+  await waitFor(() => expect(kept(diary)).toHaveLength(0));
+  expect(fake.callsOf('updateTransaction')).toHaveLength(2);
+});
+
+// m1: a choice the diary only shows once it opens (after this screen's first read) is offered then.
+test('a choice the diary finds after the record has loaded is offered, against the fresh record', async () => {
+  conflictArea();
+  const diary = createFakeDiary({ ...DIARY_REFERENCES, phase: 'opening' });
+  const fake = mountRecord(RENT, { diary: diary.diary });
+  expect(await screen.findByLabelText('Amount, Expense ฿12,268.00')).toBeTruthy();
+  // As the device diary opens: ready first, then its choices with the next refresh.
+  act(() => diary.set({ phase: 'ready' }));
+  act(() => diary.set({ pendingChoices: [keptChoice()] }));
+  expect(await screen.findByTestId('choice-panel')).toBeTruthy();
+  expect(serverCard().getAttribute('aria-label')).toMatch(/^On the server\. Another phone\. Amount: ฿12,268\.00, Differs\./);
+  expect(yoursCard().getAttribute('aria-label')).toMatch(/Amount: ฿12,000\.00, Differs\./);
+  expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
+  expect(fake.callsOf('transaction')).toHaveLength(2);
+  expect(fake.callsOf('updateTransaction')).toHaveLength(0);
+});
+
+test('a choice the diary finds while an edit is open never replaces the edit in progress', async () => {
+  conflictArea();
+  const diary = createFakeDiary({ ...DIARY_REFERENCES, phase: 'opening' });
+  const fake = await editRent(diary.diary);
+  press('Clear', '9', '9', '0', '0');
+  act(() => diary.set({ phase: 'ready', pendingChoices: [keptChoice()] }));
+  expect(fake.callsOf('transaction')).toHaveLength(1);
+  expect(screen.getByLabelText('Amount, ฿9,900.00')).toBeTruthy();
+  expect(screen.queryByTestId('choice-panel')).toBeNull();
+  expect(screen.getByRole('button', { name: 'Save changes' })).toBeTruthy();
+});
+
+test('with the conflict area off, a diary that opens with a kept choice changes nothing', async () => {
+  vi.stubEnv('EXPO_PUBLIC_REDESIGN', '');
+  const diary = createFakeDiary({ ...DIARY_REFERENCES, phase: 'opening' });
+  const fake = mountRecord(RENT, { diary: diary.diary });
+  expect(await screen.findByLabelText('Amount, Expense ฿12,268.00')).toBeTruthy();
+  act(() => diary.set({ phase: 'ready', pendingChoices: [keptChoice()] }));
+  expect(fake.callsOf('transaction')).toHaveLength(1);
+  expect(screen.queryByTestId('choice-panel')).toBeNull();
+  expect(screen.getByRole('button', { name: 'Edit' })).toBeTruthy();
+});
+
+// m2: a diary that refuses to drop keeps its copy for the next open (P7); this screen does not bring it straight back.
+test("choosing the server's when the diary cannot drop the choice shows the record, and the next open offers the choice again", async () => {
+  conflictArea();
+  const diary = controlledDiary();
+  const fake = await refuseAnEdit(diary.diary);
+  diary.control.refuseDrops = true;
+  fireEvent.click(serverCard());
+  fireEvent.click(screen.getByRole('button', { name: "Use the server's" }));
+  expect(await screen.findByLabelText('Amount, Expense ฿13,000.00')).toBeTruthy();
+  expect(screen.queryByTestId('choice-panel')).toBeNull();
+  expect(screen.getByRole('button', { name: 'Edit' })).toBeTruthy();
+  expect(kept(diary)).toHaveLength(1);
+  cleanup();
+  diary.control.refuseDrops = false;
+  mountRecord(RENT, { fake, diary: diary.diary });
+  expect(await screen.findByTestId('choice-panel')).toBeTruthy();
+  expect(fake.callsOf('updateTransaction')).toHaveLength(1);
+});
+
+test("a reopened choice this phone cannot keep again still leaves the diary when the server's is chosen", async () => {
+  conflictArea();
+  const diary = controlledDiary({ pendingChoices: [keptChoice()] });
+  diary.control.refuseKeeps = true;
+  const fake = mountRecord(RENT, { diary: diary.diary });
+  expect(await screen.findByText("This phone can't keep this choice, so please choose now.")).toBeTruthy();
+  fireEvent.click(serverCard());
+  fireEvent.click(screen.getByRole('button', { name: "Use the server's" }));
+  await waitFor(() => expect(kept(diary)).toHaveLength(0));
+  await waitFor(() => expect(fake.callsOf('transaction')).toHaveLength(2));
+  expect(await screen.findByRole('button', { name: 'Edit' })).toBeTruthy();
+  expect(screen.queryByTestId('choice-panel')).toBeNull();
+  expect(fake.callsOf('updateTransaction')).toHaveLength(0);
+});
+
+// m3: what the plan and the rulings name, pinned.
+test('use yours meeting a record deleted elsewhere offers Restore and Discard my change, and keeps the choice until one is used', async () => {
+  conflictArea();
+  const diary = createFakeDiary({ ...DIARY_REFERENCES });
+  const fake = await refuseAnEdit(diary.diary);
+  changeRent(fake, { deleted_at: '2026-09-29T00:00:00.000Z', version: 3 });
+  fake.fail('updateTransaction', 'conflict', { status: 409, code: 'VERSION_CONFLICT', current: fake.records.get(RENT) });
+  fireEvent.click(screen.getByRole('button', { name: 'Use yours' }));
+  expect(await screen.findByRole('button', { name: 'Restore' })).toBeTruthy();
+  expect(screen.getByText('This entry was deleted on another device.')).toBeTruthy();
+  expect(kept(diary)).toHaveLength(1);
+  fireEvent.click(screen.getByRole('button', { name: 'Discard my change' }));
+  await waitFor(() => expect(kept(diary)).toHaveLength(0));
+  expect(screen.getByRole('button', { name: 'Restore' })).toBeTruthy();
+  expect(fake.callsOf('updateTransaction')).toHaveLength(2);
+});
+
+test('a choice for a record that is no longer there offers Discard my change', async () => {
+  conflictArea();
+  const diary = createFakeDiary({ ...DIARY_REFERENCES, pendingChoices: [keptChoice()] });
+  const fake = createFakeResources(goldenSeed());
+  fake.fail('transaction', 'not_found', { status: 404, code: 'NOT_FOUND' });
+  mountRecord(RENT, { fake, diary: diary.diary });
+  expect(await screen.findByText("This entry isn't in your diary.")).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Discard my change' }));
+  await waitFor(() => expect(kept(diary)).toHaveLength(0));
+  expect(screen.queryByRole('button', { name: 'Discard my change' })).toBeNull();
+  expect(fake.callsOf('updateTransaction')).toHaveLength(0);
+});
+
+test('conflict_shown is sent again when "use yours" meets yet another change', async () => {
+  conflictArea();
+  const recorded = await recordAnalytics();
+  try {
+    const diary = createFakeDiary({ ...DIARY_REFERENCES });
+    const fake = await refuseAnEdit(diary.diary);
+    changeRent(fake, { amount_minor: '1350000', version: 3 });
+    fireEvent.click(screen.getByRole('button', { name: 'Use yours' }));
+    await waitFor(() => expect(serverCard().getAttribute('aria-label')).toMatch(/Amount: ฿13,500\.00, Differs\./));
+    const shown = recorded.sent.filter((event) => event.name === 'conflict_shown');
+    expect(shown).toHaveLength(2);
+    expect(shown[1]).toEqual({ kind: 'capture', name: 'conflict_shown', properties: { reason_code: 'VERSION_CONFLICT', screen: '/spend/record/[id]', origin: 'app' } });
+  } finally {
+    recorded.restore();
+  }
+});
+
+test('a server that is unavailable counts as offline: the choice compares with the kept record and cannot send yours', async () => {
+  conflictArea();
+  const diary = createFakeDiary({ ...DIARY_REFERENCES, pendingChoices: [keptChoice()] });
+  const fake = createFakeResources(goldenSeed());
+  fake.fail('transaction', 'unavailable', { status: 503, code: 'UNAVAILABLE' });
+  mountRecord(RENT, { fake, diary: diary.diary });
+  expect(await screen.findByTestId('choice-panel')).toBeTruthy();
+  expect(serverCard().getAttribute('aria-label')).toMatch(/Amount: ฿13,000\.00, Differs\./);
+  expect(screen.getByRole('button', { name: 'Use yours' }).getAttribute('aria-disabled')).toBe('true');
+  expect(screen.getByText('Connect to the internet to send yours.')).toBeTruthy();
+});
+
+test("History's Edit on a record with a choice opens the choice first, and choosing the server's lands on the record", async () => {
+  conflictArea();
+  const diary = createFakeDiary({ ...DIARY_REFERENCES, pendingChoices: [keptChoice()] });
+  const fake = mountRecord(RENT, { mode: 'edit', diary: diary.diary });
+  expect(await screen.findByTestId('choice-panel')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'Save changes' })).toBeNull();
+  // One read: the choice is read with the record, never twice.
+  expect(fake.callsOf('transaction')).toHaveLength(1);
+  changeRent(fake, { amount_minor: '1350000', version: 3 });
+  fireEvent.click(serverCard());
+  fireEvent.click(screen.getByRole('button', { name: "Use the server's" }));
+  expect(await screen.findByLabelText('Amount, Expense ฿13,500.00')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'Save changes' })).toBeNull();
+  expect(screen.getByRole('button', { name: 'Edit' })).toBeTruthy();
+  await waitFor(() => expect(kept(diary)).toHaveLength(0));
+});
+
+// Ruling R94: a choice is kept only with a usable current record. An edit refused for a record deleted elsewhere keeps
+// nothing and shows today's deleted notice and Restore; whether to keep it is the owner's question at E2.
+test('an edit refused for a record deleted elsewhere keeps no choice (R94)', async () => {
+  conflictArea();
+  const diary = createFakeDiary({ ...DIARY_REFERENCES });
+  const fake = await editRent(diary.diary);
+  changeRent(fake, { deleted_at: '2026-09-29T00:00:00.000Z', version: 2 });
+  fake.fail('updateTransaction', 'conflict', { status: 409, code: 'VERSION_CONFLICT', current: fake.records.get(RENT) });
+  press('Clear', '1', '2', '0', '0', '0');
+  save();
+  expect(await screen.findByRole('button', { name: 'Restore' })).toBeTruthy();
+  expect(screen.getByText('This entry was deleted on another device.')).toBeTruthy();
+  expect(kept(diary)).toHaveLength(0);
+  expect(screen.queryByRole('button', { name: 'Discard my change' })).toBeNull();
+  expect(screen.queryByTestId('choice-panel')).toBeNull();
+});
