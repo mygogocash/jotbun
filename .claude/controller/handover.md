@@ -69,7 +69,11 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
 - **P2-T9 history:** brief READY (M; P1 to P14 accepted); the implementer (Haiku) was dispatched about 20:15 in p2-t9 from f9d32b4.
   - Expected: app 34, unit 905, render 97 files and 1735 tests, web 4785.
   - E2-D note: fades keep Reanimated's default curve, while the board says ease-out and the plan names durations only.
-- **1C-T8:** DONE at 5e8b70e: app 34, unit 911, render 102 files and 1802 tests, web 4788, 67 of 67 mutants. PR #367 is open (issue #125) and the Opus review is under way (`reviews/1C-T8.md`).
+- **#367 1C-T8: review Needs fixes** (`reviews/1C-T8.md`; CI green on 5e8b70e).
+  - M1: the session-ended screen strands an email-only account. R98 offers an email code to another address under "Use another way".
+  - R99: no navigation to 1C-T9's unbuilt route; the in-place reminder step stays.
+  - The round also covers m1 (seven guard tests), m3 (copy slips) and the receipt's E2 owner questions (m2, m4).
+  - The reviewer is writing `briefs/1C-T8-fix.md` (kit `scratch/1c-t8-fix-planner/`).
 - **1C-T8: brief READY** (L, 31 files; P1 to P16 accepted). The implementer (Haiku) was dispatched about 20:35 in p1-1c-t8 from 1ddc7f7, with a generated prompt.
   - Expected: app 34, unit 911, render 102 files and 1802 tests, web 4788. E2 screenshots are SKIPPED, with 22 catalogue deep links listed.
   - The brief's "For the controller": 1C-T5's leftover-cookie recovery needs a `credentialProvider.ts` change that amends R86; the "Sign in again" flicker comes from the sync outcome. Both are for a later 1C task.
@@ -145,6 +149,8 @@ To stop a chat session in the app: `sc chat stop <thread_id>` cancels its turn o
 - Held: P2-T2 and 1D-T6 wait for #347 (lockfile, _layout). P3-T12 waits on owner Q1. 1C-T2 waits on the owner's lockout answer, and its brief must first pin 1C-T1's six untested security options (followups.md).
 
 ## Rulings this session
+R98 (9 Nov, 1C-T8 review M1, amends 1C-T8's P6): on the session-ended screen, whenever the main button is the email code to the account's own address, "Use another way" also offers an email code to another address. This keeps "every failure offers another way" on email-only builds, and reaches keep-or-erase for another account.
+R99 (9 Nov, 1C-T8 review, P4): nothing navigates to `/onboarding/reminder` before 1C-T9 adds it. OnboardingScreen keeps today's in-place reminder step until then, so there is no cast and no unmatched route with the signin or all area on. 1C-T9 adds the route, the `from=onboarding` handling and the switch in one change.
 R97 (9 Nov, 1B-T6 confirming review MA-1): in workerd, a GET whose client goes away mid-download keeps its download slot, because the cancel never reaches the stream behind FixedLengthStream. This is a follow-up task, not a blocker for #362, since the vault routes are not live before 1B-T13.
   - The follow-up, "fix-download-aborts", applies the proven fix to every vault download (exports now, receipts from 1B-T9, snapshots from 1B-T8): each `serve*File` hands `w.waitUntil` a promise that its `release` settles. Prove it under `wrangler dev` (four aborted GETs, then a GET answers 200), before 1B-T13.
   - Same leak, retiring code: the PostgreSQL edge's routes.ts:341-346 and 429-437.

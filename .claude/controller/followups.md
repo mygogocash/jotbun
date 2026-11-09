@@ -33,6 +33,21 @@ The review reports these came from were under /private/tmp and were lost on 8 No
 - 1A-T9 (#352, review in reviews/1A-T9.md): after the R92 fix round, follow-ups (none blocking): the normalizer numbers ids by first appearance and most idempotency keys are random per run, so a vault minting its own consistent `command_id` would pass (only the replay and lunch keys are checked literally; closing it changes the session, which the spec fixes at 49 steps); the comparison never checks category rename/archive/unarchive, wallet-by-id success, history page 2 or sync resume by cursor; the normalizer accepts any timestamp format; the vitest diff sorts keys, so key-order failures print identically (add a hint in the failure message); CI killed 32 leftover processes (12 workerd) at job end, unattributed. For 1B (R92): NestJS's full-resync snapshot and an import's `issues` also come out of jsonb, so the vault's reads of them go through `jsonbOrder`.
 - 1D-T10 (#353, merged 3ab4d0a, issue #141 closed; review in reviews/1D-T10.md, approved): for 1D-T11's brief: add a test that `afterCall` never throws (probe P6b's shape: a commit while the fan-out fails answers 201 and the revision moves; with the try/catch removed it answers 500 for a saved write, and live.test.ts still passes 21 of 21). Nits: four reviewer mutants survive (the principal charge on open, the 1000 fallback, the `not_before` boundary, keying the read budget per session); the comments on `closeSocket` and `call()` overstate (a close on a closing socket does not throw, so `closeEndedSessions` can over-count; 1D-T12 must not read that count as "newly closed"); the `VaultRoute` comments in routes.ts were not updated for the live route. 1D-T12: close open sockets in `erase()`. The app's live socket waits for the next foreground after a sign-in (restart on session change: 1D-T12/T15).
 - Flake (8 Nov): apps/app/src/screens/redesign/HistoryReturn.render.test.tsx fails under load in full render runs: "another account, or a sign-out and back in, starts History clean" times out at 5000 ms (file took 14.7 s), and "leaving for another screen forgets the view; ..." found no `Expense` radio at 518 ms. Hit by P2-T19 and P2-T2 on trees that do not touch it (load average 41 to 75 with several agents running app suites); passes 6 of 6 alone. Candidate small task: give the file's slow case a longer timeout or a findBy wait, or split the sign-out case; until then rerun once.
+- 1C-T8 (#367, review in reviews/1C-T8.md, Needs fixes: M1 fixed under R98, P4 under R99; m1 and m3 are in the fix round). Probes are in scratch/1c-t8-review/probes/.
+  - **Nits, not in the round:**
+    - a new terms version keeps the earlier tick;
+    - the devices list is stale after a link or remove;
+    - `maxLength={6}` cuts a pasted code that contains a space before the digit filter runs;
+    - small copy points.
+  - **1C-T9:**
+    - pass AccountExistsScreen only the methods this build runs;
+    - give TermsGate a stable client and subscribe function, or it re-reads `/v1/me` on every render;
+    - add the route, the `from=onboarding` handling and the in-place step's removal in one change (R99);
+    - the stored session's "method" is the last sign-in's method, not the account's first.
+  - **E2 owner questions (in the receipt after the fix round):**
+    - P5: the extra tap before Apple's and Google's own sheets;
+    - m2: the account-unavailable variant shows lines that are false for a deleted account, and leads with a refused sign-in;
+    - m4: K24, the owner may drop today's sign-in terms box when approving.
 - P2-T8 (#365, merged 1502e65 on 9 Nov, issue #154 closed; review in reviews/P2-T8.md, Approved with two minors). Probes are in scratch/p2-t8-review/.
   - **P2-T11 (next to edit the harness), m-1:** two of the planner's "equivalent" mutants are not equivalent, and X2 survives.
     - E2: without `BunIntensityProvider`, `setIntensity` throws and a stored intensity is ignored.
