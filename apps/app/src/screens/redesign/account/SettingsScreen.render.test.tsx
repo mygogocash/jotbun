@@ -18,6 +18,11 @@ import { render } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { createBetterAuthPort } from '@mobile/auth/betterAuthPort';
+import { createCredentialProvider } from '@mobile/auth/credentialProvider';
+import type { SessionRecordStore, StoredSession } from '@mobile/auth/sessionStore';
+import { createFakeAuthServer } from '@mobile/auth/testing/fakeAuthServer';
+
 import { PHONE, mountInApp } from '@mobile/dev/catalogue/catalogueTestHarness';
 import { SETTINGS_SECTIONS, fakeAccount } from '@mobile/dev/catalogue/account/settingsSections';
 import { router } from '@mobile/dev/catalogue/routerTestStub';
@@ -38,6 +43,7 @@ import { THEME_PREFERENCE_STORAGE_KEY } from '@mobile/theme/themePreferenceStora
 import { leading, mountScreen, outboxCommand, pendingExpense, rgb } from '../HistoryTestHarness';
 import { SettingsScreen } from './SettingsScreen';
 import { appAccountServices } from './accountServices';
+import { freshSignInOf } from './SettingsParts';
 import type { AccountServices } from './SettingsParts';
 import type { SettingsScreenProps } from './SettingsScreen';
 
@@ -311,9 +317,10 @@ test('offline with entries waiting: the banner says so, and Sign out counts what
   expect(within(dialog('Sign out?')).getByText(`${SIGN_OUT_CONSEQUENCE} 2 entries on this phone haven't synced yet.`)).toBeTruthy();
 });
 
-// Sign out everywhere: a confirm, a fresh sign-in for `global_logout`, then
-// POST /v1/me/global-logout with that proof, then this phone's erase and the
-// sign-out here. Re-authentication is the fake's; the app build has none yet.
+// Sign out everywhere: a confirm, a fresh sign-in with the account's own
+// method, then the port's sign out everywhere on that new session, then this
+// phone's erase and the sign-out here. The fresh sign-in is the fake's; the
+// app build has none yet for any method.
 
 /** Opens Sign out everywhere and confirms it. */
 function confirmEverywhere() {
@@ -323,7 +330,7 @@ function confirmEverywhere() {
 
 const STILL_SIGNED_IN = "Couldn't reach Jotbun. You're still signed in on this phone. Try again to send the same request.";
 
-test('Sign out everywhere: a confirm; Stay signed in changes nothing; confirming signs in again, sends the request with that proof, then erases this phone and signs out here', async () => {
+test('Sign out everywhere: a confirm; Stay signed in changes nothing; confirming signs in again, sends the request, then erases this phone and signs out here', async () => {
   const log: string[] = [];
   const diary = loggingDiary(log);
   const account = fakeAccount({ log });
@@ -335,61 +342,69 @@ test('Sign out everywhere: a confirm; Stay signed in changes nothing; confirming
   expect(screen.queryByRole('dialog')).toBeNull();
   expect(log).toEqual([]);
   confirmEverywhere();
-  await waitFor(() => expect(log).toEqual(['reauth', 'globalLogout', 'erase', 'signOut']));
-  expect(account.calls.reauth).toEqual(['global_logout']);
-  // The request carries the fresh proof, and its command is the proof's.
-  expect(account.calls.globalLogouts).toHaveLength(1);
-  expect(account.calls.globalLogouts[0].proofId).toMatch(/^0000000a-/);
-  expect(account.calls.globalLogouts[0].commandId).toMatch(/^0000000c-/);
+  await waitFor(() => expect(log).toEqual(['freshSignIn', 'signOutEverywhere', 'erase', 'signOut']));
+  expect(account.calls.fresh).toBe(1);
+  expect(account.calls.globalLogouts).toBe(1);
   // The sheet stays up, busy, through the whole request, and closes on the render after it.
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
 });
 
 test('cancelling the fresh sign-in: nothing is sent or erased, and the person stays signed in', async () => {
   const log: string[] = [];
-  const account = fakeAccount({ log, reauth: 'cancel' });
+  const account = fakeAccount({ log, fresh: 'cancelled' });
   mountSettings({ diary: loggingDiary(log), services: account.services });
   confirmEverywhere();
   expect(await screen.findByText('Nothing changed.')).toBeTruthy();
-  expect(log).toEqual(['reauth']);
+  expect(log).toEqual(['freshSignIn']);
   // The sheet stays up, busy, through the whole request, and closes on the render after it.
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
 });
 
-test('a sign-in that fails: nothing is sent or erased, still signed in, and saying so', async () => {
+test('a sign-in that cannot be reached: nothing is sent or erased, still signed in, and saying so', async () => {
   const log: string[] = [];
-  mountSettings({ diary: loggingDiary(log), services: fakeAccount({ log, reauth: 'unreachable' }).services });
+  mountSettings({ diary: loggingDiary(log), services: fakeAccount({ log, fresh: 'unreachable' }).services });
   confirmEverywhere();
   expect(await screen.findByText("Couldn't reach the sign-in service. Nothing changed. Try again.")).toBeTruthy();
-  expect(log).toEqual(['reauth']);
+  expect(log).toEqual(['freshSignIn']);
 });
 
-test('Jotbun refuses the fresh sign-in (a used or stale proof): nothing changed, still signed in', async () => {
+test('a fresh sign-in that does not go through (a wrong code, another account, the service down): nothing is sent or erased, still signed in, and saying so', async () => {
+  for (const fresh of ['wrong_code', 'other_account', 'unavailable'] as const) {
+    const log: string[] = [];
+    mountSettings({ diary: loggingDiary(log), services: fakeAccount({ log, fresh }).services });
+    confirmEverywhere();
+    expect(await screen.findByText('Your sign-in check expired. Nothing changed.')).toBeTruthy();
+    expect(log).toEqual(['freshSignIn']);
+    cleanup();
+  }
+});
+
+test('the server finds the sign-in too old: nothing changed, still signed in', async () => {
   const log: string[] = [];
   mountSettings({ diary: loggingDiary(log), services: fakeAccount({ log, globalLogouts: ['reauth'] }).services });
   confirmEverywhere();
   expect(await screen.findByText('Your sign-in check expired. Nothing changed.')).toBeTruthy();
-  expect(log).toEqual(['reauth', 'globalLogout']);
+  expect(log).toEqual(['freshSignIn', 'signOutEverywhere']);
 });
 
-test('a resend after a lost answer meets 401 SESSION_REQUIRED: the first one landed, so this phone is signed out too', async () => {
+test('a resend after a lost answer meets SIGNED_OUT: the first one landed, so this phone is signed out too', async () => {
   const log: string[] = [];
   mountSettings({ diary: loggingDiary(log), services: fakeAccount({ log, globalLogouts: ['signed_out'] }).services });
   confirmEverywhere();
-  await waitFor(() => expect(log).toEqual(['reauth', 'globalLogout', 'erase', 'signOut']));
+  await waitFor(() => expect(log).toEqual(['freshSignIn', 'signOutEverywhere', 'erase', 'signOut']));
 });
 
-test('Jotbun cannot be reached: still signed in, and saying so; Try again resends the same request with no new sign-in, and its 401 SESSION_REQUIRED signs out here', async () => {
+test('Jotbun cannot be reached: still signed in, and saying so; Try again resends the request with no new sign-in, and its SIGNED_OUT signs out here', async () => {
   const log: string[] = [];
   const account = fakeAccount({ log, globalLogouts: ['lost', 'signed_out'] });
   mountSettings({ diary: loggingDiary(log), services: account.services });
   confirmEverywhere();
   expect(await screen.findByText(STILL_SIGNED_IN)).toBeTruthy();
-  expect(log).toEqual(['reauth', 'globalLogout']);
+  expect(log).toEqual(['freshSignIn', 'signOutEverywhere']);
   fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
-  await waitFor(() => expect(log).toEqual(['reauth', 'globalLogout', 'globalLogout', 'erase', 'signOut']));
-  expect(account.calls.reauth).toHaveLength(1);
-  expect(account.calls.globalLogouts[1]).toEqual(account.calls.globalLogouts[0]);
+  await waitFor(() => expect(log).toEqual(['freshSignIn', 'signOutEverywhere', 'signOutEverywhere', 'erase', 'signOut']));
+  expect(account.calls.fresh).toBe(1);
+  expect(account.calls.globalLogouts).toBe(2);
 });
 
 test('Jotbun cannot be reached on Try again either: still signed in, and Try again stays', async () => {
@@ -398,7 +413,7 @@ test('Jotbun cannot be reached on Try again either: still signed in, and Try aga
   mountSettings({ diary: loggingDiary(log), services: account.services });
   confirmEverywhere();
   fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
-  await waitFor(() => expect(log).toEqual(['reauth', 'globalLogout', 'globalLogout']));
+  await waitFor(() => expect(log).toEqual(['freshSignIn', 'signOutEverywhere', 'signOutEverywhere']));
   expect(await screen.findByText(STILL_SIGNED_IN)).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
 });
@@ -408,7 +423,7 @@ test('refused for another reason: nothing changed, try later', async () => {
   mountSettings({ diary: loggingDiary(log), services: fakeAccount({ log, globalLogouts: ['refused'] }).services });
   confirmEverywhere();
   expect(await screen.findByText("Jotbun couldn't take your request right now. Try again later.")).toBeTruthy();
-  expect(log).toEqual(['reauth', 'globalLogout']);
+  expect(log).toEqual(['freshSignIn', 'signOutEverywhere']);
 });
 
 test("signed out everywhere, but this phone's diary can't be erased: it says so, and this phone stays signed in to try again", async () => {
@@ -418,13 +433,13 @@ test("signed out everywhere, but this phone's diary can't be erased: it says so,
   mountSettings({ diary, services: fakeAccount({ log }).services });
   confirmEverywhere();
   expect(await screen.findByText("You're signed out everywhere else, but this phone's diary couldn't be erased. Sign out to try again.")).toBeTruthy();
-  expect(log).toEqual(['reauth', 'globalLogout']);
+  expect(log).toEqual(['freshSignIn', 'signOutEverywhere']);
 });
 
 test("the app's own wiring has no fresh sign-in yet: Sign out everywhere shows, disabled, says why, and can't be started", () => {
   const log: string[] = [];
   const services = appAccountServices();
-  expect(services.reauthenticate).toBeNull();
+  expect(services.freshSignIn).toBeNull();
   mountSettings({ diary: loggingDiary(log), services });
   const button = screen.getByRole('button', { name: 'Sign out everywhere' });
   expect(button.getAttribute('aria-disabled')).toBe('true');
@@ -432,6 +447,47 @@ test("the app's own wiring has no fresh sign-in yet: Sign out everywhere shows, 
   fireEvent.click(button);
   expect(screen.queryByRole('dialog')).toBeNull();
   expect(log).toEqual([]);
+});
+
+function memorySessions(): SessionRecordStore {
+  let value: StoredSession | null = null;
+  return {
+    async load() { return value; },
+    async save(next) { value = next; },
+    async clear() { value = null; },
+  };
+}
+
+test("the app's wiring offers a fresh sign-in only for a method this build can run: Apple or Google with their native sign-in, never email yet", async () => {
+  expect(freshSignInOf(null)).toBeNull();
+  // An email account: its code screen is not routed yet (1C Task 9).
+  const emailServer = createFakeAuthServer();
+  const emailPort = createBetterAuthPort({ client: emailServer.client, native: emailServer.native({}) });
+  const emailProvider = createCredentialProvider({ port: emailPort, sessions: memorySessions() });
+  expect(freshSignInOf(emailProvider)).toBeNull();
+  await emailPort.sendEmailCode('kan@example.test');
+  expect((await emailProvider.signIn({ method: 'email', email: 'kan@example.test', code: emailServer.codeFor('kan@example.test') })).outcome).toBe('active');
+  expect(freshSignInOf(emailProvider)).toBeNull();
+  // A Google account on a build with Google's native sign-in: its fresh sign-in is Google's, never a sign-up.
+  const server = createFakeAuthServer();
+  const identity = { sub: 'g-kan', email: 'kan@example.test' };
+  const port = createBetterAuthPort({ client: server.client, native: server.native({ google: identity }) });
+  const provider = createCredentialProvider({ port, sessions: memorySessions() });
+  expect((await provider.signIn({ method: 'google', signUp: true })).outcome).toBe('active');
+  const fresh = freshSignInOf(provider);
+  expect(fresh).not.toBeNull();
+  server.calls.length = 0;
+  expect(await fresh?.()).toBe('fresh');
+  expect(server.calls).toContain('signInWithIdToken:google:false');
+  // The same Google account on a build without native sign-in (today's: Task 7 adds it): none.
+  const bare = createFakeAuthServer();
+  const stored = memorySessions();
+  const signedIn = createCredentialProvider({ port: createBetterAuthPort({ client: bare.client, native: bare.native({ google: identity }) }), sessions: stored });
+  expect((await signedIn.signIn({ method: 'google', signUp: true })).outcome).toBe('active');
+  const withoutNative = createCredentialProvider({ port: createBetterAuthPort({ client: bare.client, native: bare.native({}) }), sessions: stored });
+  await withoutNative.hydrate();
+  expect(withoutNative.account()?.method).toBe('google');
+  expect(freshSignInOf(withoutNative)).toBeNull();
 });
 
 // ---------------------------------------------------------------------------

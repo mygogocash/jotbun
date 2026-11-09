@@ -108,6 +108,34 @@ test('a bound v1 request sends no X-GoGoSpend-Session header', async () => {
   assert.equal(result.session, null);
 });
 
+test('acceptLanguage sends Accept-Language and nothing else changes', async () => {
+  const sent: Record<string, string>[] = [];
+  const fetchImpl: typeof fetch = async (_url, init) => {
+    sent.push(Object.fromEntries(new Headers(init?.headers).entries()));
+    return new Response('{}', { status: 202, headers: { 'Content-Type': 'application/json' } });
+  };
+  const transport = createV1Transport({
+    baseUrl,
+    client: { platform: 'ios', version: '1.2.3' },
+    credentials: { getAccessToken: async () => 'token-1', getSessionSnapshot: () => ({ binding: 'b'.repeat(43), epoch: 1 }) },
+    fetchImpl,
+  });
+  const send = (acceptLanguage?: 'th' | 'en') =>
+    transport.request('POST', '/v1/me/deletion', {
+      body: { proof_id: '0a000000-0000-4000-8000-00000000000a' },
+      command: { id: '0c000000-0000-4000-8000-00000000000c', schemaVersion: 1 },
+      acceptLanguage,
+      validate: (value): value is object => typeof value === 'object' && value !== null,
+    });
+  await send();
+  await send('th');
+  await send('en');
+  const [without, thai, english] = sent;
+  assert.equal(without['accept-language'], undefined);
+  assert.deepEqual(thai, { ...without, 'accept-language': 'th' });
+  assert.deepEqual(english, { ...without, 'accept-language': 'en' });
+});
+
 test('a response from the previous account cannot become the current diary', async () => {
   let reads = 0;
   const client = createMobileApiClient({ baseUrl, getToken: async () => ++reads === 1 ? 'account-a' : 'account-b' });

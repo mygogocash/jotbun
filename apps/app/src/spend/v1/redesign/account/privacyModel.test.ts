@@ -10,7 +10,8 @@ const READY: Extract<ExportDto, { status: 'ready' }> = {
   export_id: EXPORT_ID, status: 'ready', from: '1970-01-01', through: '2026-09-29', requested_at: '2026-09-29T03:00:00.000Z',
   as_of_revision: '42', row_count: 4, bytes: 512, sha256: 'a'.repeat(64), expires_at: '2026-09-30T03:05:00.000Z',
 };
-const REQUEST = { filter: { from: '1970-01-01', through: '2026-09-29' }, proofId: '11111111-1111-4111-8111-111111111111', commandId: '22222222-2222-4222-8222-222222222222' };
+const CREDENTIALS = { accessToken: 'fresh-token', sessionId: '33333333-3333-4333-8333-333333333333' };
+const REQUEST = { filter: { from: '1970-01-01', through: '2026-09-29' }, proofId: '11111111-1111-4111-8111-111111111111', commandId: '22222222-2222-4222-8222-222222222222', credentials: CREDENTIALS };
 
 test('the export period: everything up to today, or this year when everything is too large for one file', () => {
   assert.deepEqual(exportFilter('2026-09-29', 'everything'), { from: '1970-01-01', through: '2026-09-29' });
@@ -49,6 +50,6 @@ test("deletion: what the screen shows for each of deletion.ts's outcomes, with t
   assert.deepEqual(deletionPhase({ state: 'reauth_required' }, 'kept'), { phase: 'idle', note: 'reauth_required' });
   assert.deepEqual(deletionPhase({ state: 'accepted', requestId: EXPORT_ID, completed: false }, 'erased'), { phase: 'accepted', requestId: EXPORT_ID, completed: false, device: 'erased' });
   assert.deepEqual(deletionPhase({ state: 'denied', code: 'SESSION_REQUIRED' }, 'locked'), { phase: 'refused', device: 'locked' });
-  const request = { proofId: REQUEST.proofId, commandId: REQUEST.commandId };
+  const request = { proofId: REQUEST.proofId, commandId: REQUEST.commandId, language: 'th' as const, credentials: CREDENTIALS };
   assert.deepEqual(deletionPhase({ state: 'unconfirmed', request }, 'kept'), { phase: 'unconfirmed', request, device: 'kept' });
 });

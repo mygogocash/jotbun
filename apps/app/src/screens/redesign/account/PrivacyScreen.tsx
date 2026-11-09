@@ -3,34 +3,35 @@
 //
 // - Promises in plain words: no bank connection, never sold, no ads, and not
 //   even Jotbun reads the diary.
-// - Export (P4, privacy.ts): a fresh sign-in for `export`, the request for
-//   everything up to today, then the file's status (preparing, ready until a
-//   set time, expired, failed) and the download, checked against the ready
-//   export's size and digest and handed to the share sheet. An answer that was
-//   lost keeps the exact request, and Try again resends it: same key, same
-//   body, same proof. A file too large for one export can be asked for this
-//   year only.
+// - Export (P4, privacy.ts): a fresh sign-in with the account's own method,
+//   the request for everything up to today on that new session, then the
+//   file's status (preparing, ready until a set time, expired, failed) and the
+//   download, checked against the ready export's size and digest and handed
+//   to the share sheet. An answer that was lost keeps the exact request, and
+//   Try again resends it: same key, same body, same credentials. A file too
+//   large for one export can be asked for this year only.
 // - Delete account (P5, deletion.ts): a calm warning and "download your data
-//   first", a confirm, a fresh sign-in for `deletion`, then the receipt of the
-//   request, with what became of this phone's copy (`settleDeviceCopy`: erased
-//   only after a confirmed acceptance, locked after a refusal, otherwise
-//   kept). A confirmed erase also forgets this account's kept wallet looks.
-//   Done signs this device out.
+//   first", a confirm, a fresh sign-in, then the request in the app's
+//   language and its receipt, with what became of this phone's copy
+//   (`settleDeviceCopy`: erased only after a confirmed acceptance, locked
+//   after a refusal, otherwise kept). A fresh sign-in that does not go
+//   through sends nothing and leaves the copy as it is. A confirmed erase
+//   also forgets this account's kept wallet looks. Done signs this device out.
 //
-// Today's build has no fresh sign-in (the Auth0 SDK arrives with E1/E2), so
-// both actions say plainly that they can't be done yet; nothing pretends.
+// While the account's method has no fresh sign-in on this build (email until
+// 1C Task 9, Apple and Google until 1C Task 7), both actions say plainly that
+// they can't be done yet; nothing pretends.
 import { DELETION_TARGET_HOURS, EXPORT_TTL_HOURS } from '@gogospend/contracts';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ScrollView, View } from 'react-native';
 
 import { V1Error } from '@mobile/api/client';
-import type { Proof } from '@mobile/auth/reauthentication';
 import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
-import { requestAccountDeletion, settleDeviceCopy, submitDeletionRequest } from '@mobile/spend/v1/deletion';
-import type { DeletionState, PendingDeletionRequest } from '@mobile/spend/v1/deletion';
+import { FRESH_SIGN_IN_FAILED, requestAccountDeletion, settleDeviceCopy, submitDeletionRequest } from '@mobile/spend/v1/deletion';
+import type { DeletionResources, DeletionState, PendingDeletionRequest } from '@mobile/spend/v1/deletion';
 import { downloadExport, pollExport, requestExport, retryExportRequest } from '@mobile/spend/v1/privacy';
-import type { ExportState, PendingExportRequest } from '@mobile/spend/v1/privacy';
+import type { ExportState, PendingExportRequest, PrivacyResources } from '@mobile/spend/v1/privacy';
 import { bangkokClock, deletionPhase, downloadPhase, exportFilter, exportPhase } from '@mobile/spend/v1/redesign/account/privacyModel';
 import type { DeletionPhase, DeviceCopyOutcome, ExportPhase, ExportScope, IdleNote, ReadyExport } from '@mobile/spend/v1/redesign/account/privacyModel';
 import { unsyncedEntries } from '@mobile/spend/v1/redesign/account/settingsModel';
@@ -54,7 +55,7 @@ import { PAGE_STYLE, Section, useBackTo } from './SettingsParts';
 type Tc = ReturnType<typeof useCopy>;
 
 export type PrivacyScreenProps = {
-  /** The export, deletion, re-authentication and sign-out services (the route passes the app's own: privacyServices.ts). */
+  /** The export, deletion, fresh sign-in and sign-out services (the route passes the app's own: privacyServices.ts). */
   services: PrivacyServices;
   /** The clock "today" is read from (tests and the catalogue pin it). */
   now?: Date;
@@ -132,7 +133,7 @@ function ExportCard({ services, now }: { services: PrivacyServices; now?: Date }
   const live = useLive();
   const [phase, setPhase] = useState<ExportPhase>({ phase: 'idle', note: null });
   const scope = useRef<ExportScope>('everything');
-  const reauth = services.reauthenticate;
+  const fresh = services.freshSignIn;
   const today = todayInBangkok(now ?? new Date());
   const resources = services.privacy;
   // Status checks stop once the screen has gone: the wait between two checks ends the polling.
@@ -162,22 +163,30 @@ function ExportCard({ services, now }: { services: PrivacyServices; now?: Date }
     if (keepWatching && next.phase === 'preparing') void watch(next.exportId, true);
   }
 
-  /** A fresh sign-in for `export`, then the request; its first status check comes back at once. */
+  /** A fresh sign-in, then the request on the new session; its first status check comes back at once. */
   async function request(nextScope: ExportScope) {
-    if (!reauth) return;
+    if (!fresh) return;
     scope.current = nextScope;
     const filter = exportFilter(today, nextScope);
     setPhase({ phase: 'requesting' });
-    const seen: { proof: Proof | null } = { proof: null };
+    // The request as it is handed over, so a failure after that keeps exactly it.
+    const seen: { request: PendingExportRequest | null } = { request: null };
+    const recorded: PrivacyResources = {
+      ...resources,
+      requestExport: (period, ids, credentials) => {
+        seen.request = { filter: period, ...ids, credentials };
+        return resources.requestExport(period, ids, credentials);
+      },
+    };
     try {
-      const result = await requestExport(filter, { resources, ...pace, maxPolls: 1, reauthenticate: async () => (seen.proof = await reauth('export')) });
+      const result = await requestExport(filter, { resources: recorded, ...pace, maxPolls: 1, freshSignIn: fresh, credentials: () => services.credentials(), newId: () => services.newId() });
       if (live()) show(result, true);
     } catch (error) {
       if (!live()) return;
-      // No proof: the sign-in itself failed. Unreachable after it: the answer (or the first check) was lost, so the very same request is kept.
-      const sent = seen.proof;
+      // Nothing handed over: the sign-in itself failed. Unreachable after it: the answer (or the first check) was lost, so the very same request is kept.
+      const sent = seen.request;
       if (!sent) setPhase({ phase: 'idle', note: 'signin_unreachable' });
-      else if (unreachable(error)) setPhase({ phase: 'unconfirmed', request: { filter, proofId: sent.proofId, commandId: sent.commandId } });
+      else if (unreachable(error)) setPhase({ phase: 'unconfirmed', request: sent });
       else setPhase({ phase: 'idle', note: 'refused' });
     }
   }
@@ -186,8 +195,8 @@ function ExportCard({ services, now }: { services: PrivacyServices; now?: Date }
   async function retry(pending: PendingExportRequest) {
     setPhase({ phase: 'requesting' });
     try {
-      // A resend carries the proof it was first sent with: it never asks for a new one.
-      const result = await retryExportRequest(pending, { resources, ...pace, maxPolls: 1, reauthenticate: async () => null });
+      // A resend carries the ids and credentials it was first sent with: it never signs in again.
+      const result = await retryExportRequest(pending, { resources, ...pace, maxPolls: 1 });
       if (live()) show(result, true);
     } catch (error) {
       if (live()) setPhase(unreachable(error) ? { phase: 'unconfirmed', request: pending } : { phase: 'idle', note: 'refused' });
@@ -210,7 +219,7 @@ function ExportCard({ services, now }: { services: PrivacyServices; now?: Date }
 
   const unavailable = tc("Exporting needs a fresh sign-in, which this build can't do yet.");
   const requestButton = (label: string, nextScope: ExportScope = scope.current) => (
-    <PillButton label={label} disabled={!reauth} disabledReason={unavailable} onPress={() => void request(nextScope)} />
+    <PillButton label={label} disabled={!fresh} disabledReason={unavailable} onPress={() => void request(nextScope)} />
   );
 
   let body: ReactNode;
@@ -221,7 +230,7 @@ function ExportCard({ services, now }: { services: PrivacyServices; now?: Date }
         <>
           {line ? <Notice message={line} /> : null}
           {requestButton(tc('Request export'), 'everything')}
-          {reauth ? <BunText variant="caption" tone="muted">{tc("You'll sign in again to confirm it's you.")}</BunText> : null}
+          {fresh ? <BunText variant="caption" tone="muted">{tc("You'll sign in again to confirm it's you.")}</BunText> : null}
         </>
       );
       break;
@@ -304,11 +313,17 @@ function DeleteCard({ services }: { services: PrivacyServices }) {
   const view = useDiaryView();
   const [phase, setPhase] = useState<DeletionPhase>({ phase: 'idle', note: null });
   const [confirming, setConfirming] = useState(false);
-  const reauth = services.reauthenticate;
+  const fresh = services.freshSignIn;
+  const locale = useActiveLocale();
   const unsynced = unsyncedEntries(diary ? view : null);
 
   /** deletion.ts's outcome, and this phone's copy settled by its one rule. */
   async function settle(result: DeletionState) {
+    // A fresh sign-in that did not go through sent nothing: this phone's copy stays exactly as it is.
+    if (result.state === 'denied' && result.code === FRESH_SIGN_IN_FAILED) {
+      if (live()) setPhase({ phase: 'idle', note: 'reauth_required' });
+      return;
+    }
     const accountId = view.accountId;
     let device: DeviceCopyOutcome = 'none';
     if (diary) {
@@ -323,17 +338,27 @@ function DeleteCard({ services }: { services: PrivacyServices }) {
   }
 
   async function start() {
-    if (!reauth) return;
+    if (!fresh) return;
     setConfirming(false);
     setPhase({ phase: 'working' });
-    const seen: { proof: Proof | null } = { proof: null };
+    // The request as it is handed over, so a failure after that keeps exactly it.
+    const seen: { request: PendingDeletionRequest | null } = { request: null };
+    const recorded: DeletionResources = {
+      ...services.deletion,
+      requestDeletion: (input, credentials) => {
+        seen.request = { ...input, credentials };
+        return services.deletion.requestDeletion(input, credentials);
+      },
+    };
+    // The deletion email's language (K11): Thai in Thai, English otherwise.
+    const language = locale === 'th' ? 'th' : 'en';
     try {
-      await settle(await requestAccountDeletion({ resources: services.deletion, reauthenticate: async () => (seen.proof = await reauth('deletion')) }));
+      await settle(await requestAccountDeletion({ resources: recorded, freshSignIn: fresh, credentials: () => services.credentials(), newId: () => services.newId(), language }));
     } catch {
       if (!live()) return;
       // Only the sign-in, or something that is not Jotbun's answer, throws: nothing here is erased.
-      const sent = seen.proof;
-      setPhase(sent ? { phase: 'unconfirmed', request: { proofId: sent.proofId, commandId: sent.commandId }, device: 'kept' } : { phase: 'idle', note: 'signin_unreachable' });
+      const sent = seen.request;
+      setPhase(sent ? { phase: 'unconfirmed', request: sent, device: 'kept' } : { phase: 'idle', note: 'signin_unreachable' });
     }
   }
 
@@ -367,7 +392,7 @@ function DeleteCard({ services }: { services: PrivacyServices }) {
             label={tc('Delete my account')}
             busy={phase.phase === 'working'}
             busyLabel={tc('Sending your request…')}
-            disabled={!reauth}
+            disabled={!fresh}
             disabledReason={tc("Deleting your account needs a fresh sign-in, which this build can't do yet.")}
             onPress={() => setConfirming(true)}
           />

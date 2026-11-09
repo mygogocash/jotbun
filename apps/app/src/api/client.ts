@@ -160,6 +160,8 @@ export type V1RequestOptions<T> = {
    * refreshed, and never reported as the session ending.
    */
   credentials?: { accessToken: string; binding?: string };
+  /** Sent as Accept-Language: the language of anything the server sends later about this request (deletion's email, K11). */
+  acceptLanguage?: 'th' | 'en';
   /** The command carries a purpose proof: REAUTH_REQUIRED refuses that proof, not the session. */
   proof?: boolean;
   /**
@@ -352,6 +354,7 @@ export function createV1Transport(options: {
         headers['X-GoGoSpend-Command-Schema'] = String(request.command.schemaVersion);
         if (request.command.ifMatch !== undefined) headers['If-Match'] = `"${request.command.ifMatch}"`;
       }
+      if (request.acceptLanguage) headers['Accept-Language'] = request.acceptLanguage;
       // Serialized once, so every retry sends byte-identical content.
       const body: string | Uint8Array | undefined = request.raw ? request.raw.bytes : request.body === undefined ? undefined : JSON.stringify(request.body);
       const send = async (): Promise<Answer> => {

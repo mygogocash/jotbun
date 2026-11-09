@@ -19,14 +19,15 @@
 //   entries not yet synced are lost. The diary is erased first, then the
 //   session ends; a diary that cannot be erased keeps the person signed in.
 //   Linking logins stays hidden until F6c.
-// - Sign out everywhere (F6a, globalLogout.ts): after the confirm, a fresh
-//   sign-in for `global_logout`, then POST /v1/me/global-logout with that
-//   proof. Accepted, or a resend that meets 401 SESSION_REQUIRED (the first
+// - Sign out everywhere (globalLogout.ts): after the confirm, a fresh sign-in
+//   with the account's own method, then the port's sign out everywhere on
+//   that new session. Accepted, or a resend that meets SIGNED_OUT (the first
 //   one landed), signs this phone out too: erase, then the session ends. A
-//   cancelled or failed sign-in, a refused proof or a refusal changes nothing.
-//   An answer that never came keeps the person signed in, says so, and Try
-//   again resends the very same request with no new sign-in. Today's build
-//   has no fresh sign-in (the Auth0 SDK arrives with E1/E2), so the app's
+//   cancelled or failed sign-in, a sign-in too old for the server or a
+//   refusal changes nothing. An answer that never came keeps the person
+//   signed in, says so, and Try again resends the request with no new
+//   sign-in. While the account's method has no fresh sign-in on this build
+//   (email until 1C Task 9, Apple and Google until 1C Task 7), the app's
 //   wiring shows the action disabled, with the reason, as Privacy does.
 //
 // No bun here: Settings is a calm data screen.
@@ -34,9 +35,8 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
-import { requestGlobalLogout, submitGlobalLogout } from '@mobile/auth/globalLogout';
-import type { GlobalLogoutState, PendingGlobalLogout } from '@mobile/auth/globalLogout';
-import type { Proof } from '@mobile/auth/reauthentication';
+import { FRESH_SIGN_IN_FAILED, requestGlobalLogout, submitGlobalLogout } from '@mobile/auth/globalLogout';
+import type { GlobalLogoutResources, GlobalLogoutState, PendingGlobalLogout } from '@mobile/auth/globalLogout';
 import { useLanguage } from '@mobile/i18n/LanguageProvider';
 import { useCopy } from '@mobile/i18n/useCopy';
 import type { BunIntensity } from '@mobile/mascot/bunIntensity';
@@ -171,7 +171,11 @@ function everywhereNote(state: Exclude<GlobalLogoutState, { state: 'signed_out' 
     case 'cancelled': return { tone: 'status', text: tc('Nothing changed.') };
     case 'reauth_required': return { tone: 'status', text: tc('Your sign-in check expired. Nothing changed.') };
     case 'unconfirmed': return { tone: 'status', text: tc("Couldn't reach Jotbun. You're still signed in on this phone. Try again to send the same request."), resend: state.request };
-    case 'refused': return { tone: 'status', text: tc("Jotbun couldn't take your request right now. Try again later.") };
+    // A fresh sign-in that did not go through sent nothing: the same line as a sign-in check the server found too old.
+    case 'refused':
+      return state.code === FRESH_SIGN_IN_FAILED
+        ? { tone: 'status', text: tc('Your sign-in check expired. Nothing changed.') }
+        : { tone: 'status', text: tc("Jotbun couldn't take your request right now. Try again later.") };
   }
 }
 
@@ -188,7 +192,7 @@ export function SettingsScreen({ services, areas: givenAreas }: SettingsScreenPr
   const [note, setNote] = useState<Note | null>(null);
 
   const lost = unsyncedLine(unsyncedEntries(diary ? view : null), tc);
-  const reauth = services.reauthenticate;
+  const fresh = services.freshSignIn;
 
   /** Erases this phone's diary, then ends the session here. A diary that can't be erased keeps the person signed in. */
   async function eraseThenSignOut(afterEverywhere: boolean): Promise<void> {
@@ -224,24 +228,29 @@ export function SettingsScreen({ services, areas: givenAreas }: SettingsScreenPr
     else setNote(everywhereNote(state, tc));
   }
 
-  /** A fresh sign-in for `global_logout`, then the request with that proof. */
+  /** A fresh sign-in with the account's own method, then the request on that new session. */
   async function signOutEverywhere() {
-    if (!reauth) return;
+    if (!fresh) return;
     setWorking(true);
     setNote(null);
-    const seen: { proof: Proof | null } = { proof: null };
+    const seen = { sent: false };
+    const sessions: GlobalLogoutResources = {
+      signOutEverywhere: () => {
+        seen.sent = true;
+        return services.sessions.signOutEverywhere();
+      },
+    };
     try {
-      await settleEverywhere(await requestGlobalLogout({ resources: services.sessions, reauthenticate: async () => (seen.proof = await reauth('global_logout')) }));
+      await settleEverywhere(await requestGlobalLogout({ resources: sessions, freshSignIn: fresh }));
     } catch {
-      // No proof: the sign-in itself failed, and nothing was sent. After one, it is not Jotbun's answer: keep the request.
-      const sent = seen.proof;
-      setNote(sent ? everywhereNote({ state: 'unconfirmed', request: { proofId: sent.proofId, commandId: sent.commandId } }, tc) : { tone: 'status', text: tc("Couldn't reach the sign-in service. Nothing changed. Try again.") });
+      // Not sent: the sign-in itself failed, and nothing changed. Sent: it is not Jotbun's answer, so the request is kept.
+      setNote(seen.sent ? everywhereNote({ state: 'unconfirmed', request: { kind: 'sign_out_everywhere' } }, tc) : { tone: 'status', text: tc("Couldn't reach the sign-in service. Nothing changed. Try again.") });
     }
     setWorking(false);
     setConfirming(null);
   }
 
-  /** Resends exactly the request whose answer never came: no new sign-in, no new key. */
+  /** Resends the request whose answer never came: no new sign-in. */
   async function resendEverywhere(request: PendingGlobalLogout) {
     setWorking(true);
     try {
@@ -274,7 +283,7 @@ export function SettingsScreen({ services, areas: givenAreas }: SettingsScreenPr
               <PillButton
                 kind="secondary"
                 label={tc('Sign out everywhere')}
-                disabled={!reauth}
+                disabled={!fresh}
                 disabledReason={tc("Signing out everywhere needs a fresh sign-in, which this build can't do yet.")}
                 onPress={() => setConfirming('everywhere')}
               />
