@@ -9,6 +9,7 @@ set -eu
 task=$1; pr=$2
 repo=mygogocash/jotbun
 root=/Users/kunanonjarat/Developer/jotbun
+cd "$root"   # gh stack takes its repository from the current directory
 G() { /usr/bin/git -C "$root" "$@"; }
 merge=$(gh pr view "$pr" --repo $repo --json mergeCommit,state --jq 'select(.state=="MERGED") | .mergeCommit.oid')
 [ -n "$merge" ] || { echo "#$pr is not merged"; exit 1; }
@@ -18,6 +19,11 @@ n=$(G rev-list --count origin/main.."$merge")
 [ "$n" -gt 0 ] || { echo "nothing to promote: #$pr ($merge) is already in main"; exit 0; }
 br="promote/$(echo "$task" | tr 'A-Z' 'a-z')"
 G push -q origin "$merge:refs/heads/$br"
+# Stack it (GitHub stacked PRs, gh-stack): base it on the newest open promotion PR, so its diff shows this task alone.
+open_prs=$(gh pr list --repo $repo --state open --limit 100 --json number,headRefName,createdAt \
+  --jq '[.[] | select(.headRefName | startswith("promote/"))] | sort_by(.createdAt) | .[] | "\(.number) \(.headRefName)"')
+base=main; below=""
+if [ -n "$open_prs" ]; then base=$(echo "$open_prs" | tail -1 | cut -d' ' -f2); below=$(echo "$open_prs" | cut -d' ' -f1 | tr '\n' ' '); fi
 title=$(gh pr view "$pr" --repo $repo --json title --jq .title)
 summary=$(gh pr view "$pr" --repo $repo --json body --jq .body | awk '/^## Summary/{f=1;next} /^## /{f=0} f')
 review=$(ls "$root/.claude/controller/reviews/$task"*.md 2>/dev/null | sed "s|$root/||" | tr '\n' ' ')
@@ -35,8 +41,13 @@ $summary
 - [ ] CI on this pull request is green.
 - [ ] Owner review. $n commits: the task's, plus controller-state commits under \`.claude/\` (collapsed as generated).
 
-Merge promotion pull requests in the order they were opened.
+Part of the promotion stack (GitHub stacked PRs): based on \`$base\`, so this diff holds this task alone. Merge the stack bottom-up, or up to this PR at once with \`gh stack merge <this PR's number>\`.
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 EOF
-gh pr create --repo $repo --base main --head "$br" --title "$task: $title" --body-file "$body"
+url=$(gh pr create --repo $repo --base "$base" --head "$br" --title "$task: $title" --body-file "$body")
+echo "$url (base $base)"
+new=${url##*/}
+# Link the open promotion PRs, bottom to top, into one stack; the chained bases already make a manual stack if this fails.
+if out=$(gh stack link --base main $below $new 2>&1); then echo "$out" | tail -3
+else echo "$out" | tail -3; echo "warning: gh stack link failed; the PR's base still chains it on $base (a manual stack)"; fi

@@ -10,6 +10,9 @@ Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vaul
   - Right after `merge_task_pr.sh`, run `bash scripts/promote_pr.sh <task-id> <pr>`. It pushes `promote/<task>` at the task's merge commit and opens the PR into main, with the task's summary, review and CI.
   - The owner merges them in order. Never merge into main as the controller.
   - `.claude/**` is marked `linguist-generated` (f4cb34b), so controller files collapse in those diffs.
+  - **Stacked (owner's ask, "maximize github stack"):** each promotion PR is based on the newest open one and linked with `gh stack link` (github/gh-stack v0.3.0 is installed), so its diff is one task. The owner merges bottom-up, or with `gh stack merge <pr>`, an atomic merge up to that PR.
+  - If the repo turns out not to support native stacks, the chained bases still form a manual stack and the script warns.
+  - Repo settings were left as they are (`delete_branch_on_merge` is false). The controller deletes merged branches itself.
 - **#70** (claude/jotbun-redesign-plan) is superseded and still open. Closing it is the owner's call.
 - **The main checkout's uncommitted reminder edits** need no commit. They are #359's work, apart from the `previewDay` TODO stub that #359 filled in.
 

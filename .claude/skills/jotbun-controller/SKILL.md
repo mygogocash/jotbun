@@ -70,6 +70,7 @@ Their work is saved, but their background jobs and Monitors die.
    - Record the review's minors in `followups.md`.
    - If the receipt has stale lines, fix them in a housekeeping commit on the integration branch.
    - Then open the task's small PR into main with `bash scripts/promote_pr.sh <task-id> <pr>`. This is the owner's ask of 9 Nov: one reviewable PR per task, merged by the owner in order. Never merge into main yourself.
+   - It stacks the PR (GitHub stacked PRs, `gh stack link`) on the newest open promotion PR, so each diff shows one task. The owner merges bottom-up, or up to any PR at once with `gh stack merge <pr>`.
 8. **Keep GitHub current.** After each merge or dispatch, update `handover.md`. Then run `scripts/sync_state.sh "Sync the controller state" <kits of ready, unbuilt briefs>`. It pushes the live state to the integration branch, so a move to another machine or a dead session loses nothing.
 9. **CI watching:**
    - Keep a Monitor running on `C/watch_prs.sh`; it re-arms every 30 minutes.
