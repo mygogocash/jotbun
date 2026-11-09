@@ -33,9 +33,17 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - The implementer (Haiku max, a4857037) was dispatched about 22:34 in a pre-installed p1-1b-t8 from db19056. Its workers runs hold the heavy lock.
     - **DONE at f416f24; PR #374 opened at 22:53 (issue #112).** RED 38 of 53, GREEN 52 plus 1 todo, 62 of 62 mutants, `test:edge` 15 files and 176 tests, and `build:edge` with no driver markers. In the ten-times case, `peakHeldBytes` was 20,644,119 against a bound of 20,644,976.
     - The controller checked the 16 files against the kit and the clean merge with the head.
-    - The Opus review (7a873da0, `reviews/1B-T8.md`) is under way.
-    - On approval and green CI: `merge_task_pr.sh 374 f416f24 1B-T8`, then `promote_pr.sh 1B-T8 374`. No iOS export is needed (edge only).
-    - 1B-T7 and fix-download-aborts follow in this lane.
+    - **Merged as 1c14dd1 (#374, at 23:18).** Issue #112 is closed, and the worktree and branches are removed.
+      - The Opus review approved with three minors and two nits; all seven focus items hold, including R101's retry ending `failed` on real repeated throws.
+      - m-1 (a resync can stall for a day after a stale snapshot is pruned) goes to 1B-T11, before pruning goes on the alarm.
+      - m-2 (the memory proof's spy can be bypassed with a spread), m-3, n-1 and n-2 go to fix-download-aborts, with the reviewer's ready cases in `scratch/1b-t8-review/`.
+      - Also from the review: 1B-T12 must expect a deleted snapshot's 404 against the API's `expired` (or 1B-T11's fix changes it); the 64 MiB snapshot cap is not proven against 128 MB (a hosted check).
+    - **Edge baseline now (CI):** workers 28 files, 675 passed and 1 todo; `test:edge` 15 files and 176 tests.
+    - **Promotion PR #380** is stacked on #378 (stack #379: #373, #378, #380).
+- **Server lane, dispatched at 23:20 from 1c14dd1 (Opus xhigh, in parallel; no shared file in their listings):**
+  - **1B-T7 planner** (fa58dddd), the AI routes: WT p1-1b-t7 on p1/1b-t7-ai-routes. It keeps its `handler.ts` edits minimal, for fix-download-aborts.
+  - **1B-T11 planner** (6407a432), files on the vault alarm: WT p1-1b-t11 on p1/1b-t11-files-alarm. It carries 1B-T8's m-1 and the alarm notes from 1B-T4, 1B-T5, 1B-T6, 1B-T9 and 1B-T10.
+  - **fix-download-aborts** is planned next, on top of 1B-T7's `real/` `handler.ts`. It must land before 1B-T13; its list in followups.md now includes 1B-T8's review cases.
   - **ci-parallel-jobs: brief READY at 857b9f2** (M), with the controller's amendment (the iOS export and `typecheck:routes` in CI).
     - Nine parallel jobs; the expected median wall time is about 4.4 minutes, against 10.4.
     - Shared files: `backend.yml`, `backend-workflow.test.mjs`, `docs/implementation/handover.md` (two Full gate lines), `apps/app/package.json` (the `export:ios` script) and `README.md` (the CI paragraph).
