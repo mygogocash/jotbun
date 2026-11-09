@@ -15,7 +15,7 @@ cd "$I"
 /usr/bin/git fetch -q origin claude/p1a-vault-core
 /usr/bin/git merge -q --ff-only origin/claude/p1a-vault-core
 rsync -a --exclude scratch --exclude watch_prs.seen --exclude 'backlog/plans' "$C/" "$I/.claude/controller/"
-rsync -a --delete "$ROOT/.claude/skills/" "$I/.claude/skills/"
+rsync -a --delete --exclude __pycache__ "$ROOT/.claude/skills/" "$I/.claude/skills/"
 for kit in "$@"; do
   src=$C/scratch/$kit; dst=$I/.claude/controller/scratch/$kit
   [ -f "$src/SHA256SUMS" ] || { echo "no SHA256SUMS in $src"; exit 1; }
