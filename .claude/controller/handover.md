@@ -79,7 +79,8 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
   - P2 widens `confirmPrepare`'s answer with `refused`, for the API's 503.
   - P19 extends 1A-T8a's and 1B-T5's pinned lists additively.
   - 1B-T8 and 1B-T7 follow in this lane, after its `// 1B-T10` entries.
-- **P2-T10:** DONE at e812638: app 34, unit 907, render 97 files and 1741 tests, web 4788 (after the warm-cache export flake was ruled), 70 of 71 mutants plus 1 equivalent. PR #370 is open (issue #156) and the Opus review is under way.
+- **P2-T10: merged 51be132 (#370, about 00:05).** The review approved. m1 (a failed read shows hidden amounts) and m2 go to the private-mode-hardening follow-up, before the wallet area's E2 approval. Issue #156 is closed and the worktree and branches are removed.
+  - **App baseline, computed** (the reviewer's merged tree before #367 was 922 unit, 106 files and 1842 tests, which includes 1C-T8): app 34, unit 922, render 106 files and 1842 tests, web 4788 plus 3 (re-measure).
 - **P2-T10 history:** brief READY (M; P1 to P16 accepted). The implementer (Haiku) was dispatched about 21:40 in p2-t10 from bf7bc20.
   - Expected: app 34, unit 907, render 97 files and 1741 tests, web 4788.
   - E2-A notes (P9): the hidden eye has no filled state; the tip uses toast colours, not the board's #3A57E8; P2-T9's 150 ms fade is not wired yet.
