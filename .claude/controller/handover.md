@@ -15,31 +15,35 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
   - The heavy lock, held since 21:53 by 1B-T8's killed final proof, was removed; no test process was alive.
   - `inflight_agents.py` now lists agents that failed on a usage limit; it had missed the P4-T12 and P4-T13 planners.
 - **Resumed at about 22:15**, with resume notes in `scratch/takeover/*.resume.md`. The T3 task ids end with the uuid shown.
-  - **1D-T8: DONE at 2ff0b8d (on 6d7fc6a), PR #372 opened about 22:45 (issue #139).** 47 of 47 mutants; the fast gate passed (test:app 34, test:unit 927, export:web 4794). The controller checked the 18 files against the kit's checksums and the clean merge with the head.
-    - The Opus review (538c0bd5, `reviews/1D-T8.md`) is under way.
-    - On approval and green CI: `merge_task_pr.sh 372 2ff0b8d 1D-T8`, close #139, then `promote_pr.sh 1D-T8 372`.
-    - Followups: P2-T18 for the wallet swap, P4 for the import transports.
+  - **1D-T8: merged as 30fb26b (#372, about 22:55).** Issue #139 is closed, and the worktree and branches are removed.
+    - The Opus review (`reviews/1D-T8.md`) approved with one minor and five nits. They are in followups.md under the analytics-consent-hardening task, which must land before `analytics` is approved, plus P2-T18's swap.
+    - CI on 2ff0b8d: render 108 files and 1865 cases, `test:unit` 927, `test:app` 34, `export:web` 4794.
+    - **CI has no iOS export and no `typecheck:routes`** (review n5). The controller ran the iOS export on 2ff0b8d before the merge (exit 0, 5760 modules); receipt corrected in 8979ad6.
+    - protocol.md now says so, and the ci-parallel-jobs planner was told to add both steps. Until that merges, run the iOS export (baseline.sh's command) before merging any task that changes routes, the app entry or native code.
+    - **Promotion PR #373** (`promote/1d-t8`, base main) is the first of the stack; the next promotion stacks on it. The owner merges into main.
+    - The P2-T11 planner was told 1D-T8's files are now on the head.
+  - **App baseline at 30fb26b** (CI): render 108 files and 1865 cases, `test:unit` 927, `test:app` 34, web 4794, iOS 5760.
   - **1B-T8: brief READY at 0bd5659** (L, 16 files under apps/edge). P1 to P17 are accepted, with P4 recorded as R101.
     - Kit `scratch/1b-t8-planner/`: check_kit at db19056 gives 47 OK, and the 13 `orig/` files are identical.
     - The planner's proof: RED 38 of 53 failing, GREEN 52 plus 1 todo, 62 of 62 mutants. In the ten-times memory case, `peakHeldBytes` was at most 20,644,143 against a bound of 20,644,976.
     - For CI: workers +1 file, +37 passed and -2 todo; `test:edge` +0.
-    - The implementer (Haiku max, a4857037) was dispatched about 22:55 in a pre-installed p1-1b-t8 from db19056. Its workers runs hold the heavy lock.
+    - The implementer (Haiku max, a4857037) was dispatched about 22:34 in a pre-installed p1-1b-t8 from db19056. Its workers runs hold the heavy lock.
     - Then: PR (issue #112), Opus review (L). 1B-T7 and fix-download-aborts follow in this lane.
   - **ci-parallel-jobs planner** (ad778c27): Opus xhigh, continuing its kit.
   - **P4-T12: brief READY on 606e131's code** (M; 18 new files in `src/slips/` and ten placeholder routes under `app/spend/slips/`).
     - Shared files: `sharedV1.ts`, `DeviceDiaryProvider.tsx` and its test, and one line in `bunSettingsErase.render.test.tsx`. P1 to P15 are accepted, with P2 recorded as R102.
     - Kit `scratch/p4-t12-planner/`: check_kit at c1637ec gives 51 OK, SHA256SUMS.base 4 OK, and the 4 `orig/` files identical.
     - The planner's proof: 64 of 64 mutants. For CI: `test:unit` +11, web +12 modules, render +1 file and +2 cases.
-    - The implementer (Haiku max, 30b6286d) was dispatched about 23:15 in a pre-installed p4-t12 from c1637ec. Its notes allow exactly 1D-T8's shift if #372 merges before its sync.
+    - The implementer (Haiku max, 30b6286d) was dispatched about 22:46 in a pre-installed p4-t12 from c1637ec. Its notes allow exactly 1D-T8's shift if #372 merges before its sync.
     - Then: PR (issue #220) and an Opus review (M).
   - **P4-T13: brief READY at 0bd5659** (S, 7 new files in `src/slips/`, none shared; no package or lockfile change).
     - P1 to P18 are accepted. The Q1 and Q2 adapters wait on the owner (P18).
     - Kit `scratch/p4-t13-planner/`: check_kit at d579f94 gives 31 OK, SHA256SUMS.base 2 OK, and both `base/` files identical.
     - The planner's proof: 84 of 84 mutants. For CI: `test:unit` +18, everything else +0.
-    - The implementer (Haiku max, c5f063e0) was dispatched about 23:05 in a pre-installed p4-t13 from d579f94.
+    - The implementer (Haiku max, c5f063e0) was dispatched about 22:44 in a pre-installed p4-t13 from d579f94.
     - Then: PR (issue #221) and a **Sonnet** review (S). Its P4-T14 notes are in followups.md.
   - The old P2-T10 planner (a0363fb1, "waiting on its own background work") is obsolete: P2-T10 merged as #370.
-- **P2-T11 planner** (Opus xhigh, df615dc8), dispatched about 22:25 at 331c2b2 as the sixth agent: the deepest ready task (depth 18). WT p2-t11 on p2/t11-wallet-looks. It carries P2-T8's m-1 (the harness's E2, E3 and X2) and P2-T10's balance-sign note. P2-T13 (depth 18, tray and lock cover, no shared files) follows in the wallet lane.
+- **P2-T11 planner** (Opus xhigh, df615dc8), dispatched about 22:16 at 331c2b2 as the sixth agent: the deepest ready task (depth 18). WT p2-t11 on p2/t11-wallet-looks. It carries P2-T8's m-1 (the harness's E2, E3 and X2) and P2-T10's balance-sign note. P2-T13 (depth 18, tray and lock cover, no shared files) follows in the wallet lane.
 
 ## PR #371: the integration branch into main. The owner merged it on 9 Nov, 21:30 Bangkok, as afcf884
 - It was merged with a merge commit, so history is kept. The controller then fast-forwarded claude/p1a-vault-core to afcf884, which adds main's README and CHANGELOG, so the two branches were level.

@@ -8,6 +8,8 @@
 > - the database suites;
 > - `test:ops`.
 >
+> **Correction (controller, 9 November 2026, from the 1D-T8 review's n5):** today's CI has no iOS export and no `typecheck:routes`; the ci-parallel-jobs task adds both. Until it merges, record the iOS export in receipts as "the controller's, not CI's": the controller runs it before merging a task that changes routes, the app entry or native code. Keep running `typecheck:routes` locally whenever routes change, as the fast gate says.
+>
 > Agents no longer run those whole suites locally, and no longer write or check whole-suite totals as "Expected" lines; totals drift whenever the head moves. The local gate is the "Fast local gate" below. A brief written before this note keeps its own steps, except that its whole-suite steps (full render, full workers, exports) are skipped: record them as "CI" in the receipt.
 
 > **8 November 2026:** macOS cleared `/private/tmp`, which held the old briefs, planner files and checksums. From now on, briefs live in `/Users/kunanonjarat/Developer/jotbun/.claude/controller/briefs/`, reviews in `.../controller/reviews/`, and each agent's scratch files in `.../controller/scratch/<task>/`. Never put anything you need to keep under `/private/tmp`. The heavy lock stays at `/private/tmp/claude-501/jotbun-heavy.lock`.
