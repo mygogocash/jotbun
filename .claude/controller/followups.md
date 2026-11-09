@@ -50,7 +50,10 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - m-2: the "new animation per call" test covers 2 of the 6 builders, and misses `trayExiting`.
     - Nit: `motionFor` returns the table's own objects, so a caller that mutates one changes every later answer.
   - **P2-T24 and P2-T30:** GrowBar has no `style` or `testID` prop.
-  - **P2-T13:** a Sheet inside a tray mixes two animation systems on one screen, which the new motion.ts comment says never happens.
+  - **P2-T13:** a Sheet inside a tray mixes two animation systems on one screen, which the new motion.ts comment says never happens. (P2-T13's brief, P5: kept apart, one system per surface. The Sheet is its own Modal over the tray, and `motion.ts`'s comment now says so. P2-T13 also pins m-2: all six builders, mutants M1 to M4. Drop m-2 here once P2-T13 merges; m-1 stays.)
+  - **From P2-T13's planner (briefs/P2-T13.md, notes):**
+    - **P2-T33:** on the web, Sheet's backdrop is a keyboard stop, because react-native-web's Pressable ignores `focusable={false}`. Use `tabIndex={-1}`, as the tray's backdrop does.
+    - **P2-T16:** on the web, the planned check "the sheet's dialog is inside the tray's dialog" cannot be read from the page structure, since each Modal sits directly under the page body. P2-T13's brief notes give a working check.
   - **P2-T12 and P2-T21:** a new wallet's card drops from a full screen height on an underdamped spring and overshoots by about 200 pt.
   - **E2:**
     - the board says "success" for the first wallet and the recap, but the plan plays success for every new wallet and `celebration` for the recap;
@@ -248,3 +251,15 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **P4-T20:** n4, the fake's exactly-full last page and `drafts(undefined, n)` are unpinned; n5, pin that `dismiss` rejects and never throws synchronously.
   - **P6A:** n9, test that the delete passes `accessGroup`, and device-check that the erase without a group removes the extension's copy.
   - **Whoever next edits `slipRefs.test.ts`** (fold into P4-T14): n6, a base64url salt with `-` and `_` decodes to the exact bytes; n7, the `HEX_SALT` end anchor (add a 66-character damaged value).
+- ci-parallel-jobs (#377, not merged: held for the owner's Actions-minutes answer; review in reviews/ci-parallel-jobs.md, a two-lens Opus workflow, Approved with three minors and seven nits; probes in scratch/ci-parallel-review/):
+  - **The controller, before merging (m1):** #377's only CI run was against the old base 4850463. Close and reopen #377 for a fresh nine-job run on the current base, and check it: render 107 files with the two split files, and sections 162, 196 and 218 of 576, unless more render files have merged since.
+  - **P6C-T7, m2:** the ban on `if:` and `continue-on-error:` (`backend-workflow.test.mjs:281`) misses other YAML spellings of the same keys (`"if":`, `'continue-on-error':`, `if :`, `- 'if':`, `? if`). Six mutants pass while js-yaml reads them as the key. The review's widened regex catches all six with no false positive (`synth/ban-spot-check.out`).
+  - **P6C-T7, m3:** `renderSplitProblems` checks for doubled tests only on `sampleNames()`. A top-level `|` alternative in part 1 or 2 keeps the construction, and only the layout list kills it; on the real names 4 or 10 tests would run twice. Reject a top-level `|` in every pattern but the last, and add real-shaped samples.
+  - Nits, for a follow-up or the controller's "After, measured" housekeeping commit:
+    - n1: the `render` job is the critical path, at 283 s against an estimate of 179 to 246 s; the receipt's scaling note covers only the sections jobs.
+    - n2: a describe wrapper in either per-section file would silently move all its tests to `sections-3`, because vitest's `-t` matches the full name. Add a comment to keep the `test.each` calls top-level.
+    - n3: the switched-off case misses `shell: 'true {0}'`, a `defaults: run: shell:`, and `pull_request: paths:`.
+    - n4: `appFileExists` checks the case of the file name but not of its folders (macOS only; Linux CI still catches it).
+    - n5: README's full-gate block (lines 244 to 259) lacks `typecheck:routes` and `export:ios`.
+    - n6: receipt line 3 names 857b9f2 as the head at implementation time; it was 4850463.
+    - n7: every job logs a Node 20 deprecation warning for the pinned checkout and setup-node commits. Bump both pins, by commit, to releases that run on Node 24.

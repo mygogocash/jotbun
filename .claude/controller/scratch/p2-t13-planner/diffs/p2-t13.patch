@@ -1,0 +1,1214 @@
+--- /dev/null
++++ b/apps/app/src/ui/lockCover.tsx
+@@ -0,0 +1,34 @@
++// The lock's cover (P2-T13, R63). A Modal draws above the app, so the lock's
++// own screen cannot hide a tray or a sheet: each Modal hides its own content.
++// P2-T33's LockGate provides the answer, hidden while the app is locked or only
++// covered (W18), and a Tray (and, from P2-T33, a Sheet) then draws
++// LockCoverArt in place of its backdrop and card. Outside a LockGate nothing is
++// hidden.
++import { createContext, useContext } from 'react';
++import { View } from 'react-native';
++
++import { useWalletColors } from '@mobile/theme/ThemeProvider';
++import { DECORATIVE } from './a11y';
++
++export type LockCover = { hidden: boolean };
++
++const UNCOVERED: LockCover = { hidden: false };
++
++/** LockGate provides it (P2-T33); the default hides nothing. */
++export const LockCoverContext = createContext<LockCover>(UNCOVERED);
++
++export function useLockCover(): LockCover {
++  return useContext(LockCoverContext);
++}
++
++/** Fills its parent with the wallet's ground: no text, and hidden from screen readers. */
++export function LockCoverArt() {
++  const colors = useWalletColors();
++  return (
++    <View
++      {...DECORATIVE}
++      testID="lock-cover"
++      style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: colors.ground }}
++    />
++  );
++}
+--- /dev/null
++++ b/apps/app/src/wallet/tray/trayGesture.ts
+@@ -0,0 +1,15 @@
++// The tray's shape and its swipe (P2-T13, W3; bw-style: a tray floats 8 pt in
++// from the edges, bw-tray-amount: radius 34). Pure, so the swipe's rule has a
++// Node test: Tray.tsx follows the finger down its header row and asks
++// shouldDismiss whether the pull, or the flick, closes the tray.
++
++/** How far the tray floats in from the screen's left, right and bottom edges. */
++export const TRAY_INSET = 8;
++
++/** The tray's corner radius. */
++export const TRAY_RADIUS = 34;
++
++/** A pull past 120 pt closes the tray, and so does a quick flick past 60 pt (faster than 900 pt a second). A pull up never does. */
++export function shouldDismiss(translationY: number, velocityY: number): boolean {
++  return translationY > 120 || (translationY > 60 && velocityY > 900);
++}
+--- /dev/null
++++ b/apps/app/src/wallet/tray/trayGesture.test.ts
+@@ -0,0 +1,42 @@
++// The tray's swipe (P2-T13, W3): a pull past 120 pt, or a quick flick past
++// 60 pt, closes it; a pull up never does. Gesture Handler 3 runs a hook's
++// callbacks on the UI thread unless runOnJS is true, and the swipe's end asks
++// the host to close, which sets React state. react-native-web drops the
++// native-only props, so their wiring is read from the source (R72).
++import assert from 'node:assert/strict';
++import { readFileSync } from 'node:fs';
++import { test } from 'node:test';
++
++import { shouldDismiss } from './trayGesture.ts';
++
++const source = readFileSync(new URL('./Tray.tsx', import.meta.url), 'utf8');
++
++test('a pull of 120 pt, or a quick flick past 60 pt, closes the tray; a pull up never does', () => {
++  assert.equal(shouldDismiss(119, 0), false);
++  assert.equal(shouldDismiss(121, 0), true);
++  assert.equal(shouldDismiss(61, 901), true);
++  assert.equal(shouldDismiss(61, 899), false);
++  assert.equal(shouldDismiss(-300, 2000), false);
++});
++
++test('each line is passed, never met: more than 120 pt, more than 60 pt, faster than 900 pt a second', () => {
++  assert.equal(shouldDismiss(120, 0), false);
++  assert.equal(shouldDismiss(120.5, 0), true);
++  assert.equal(shouldDismiss(60, 5000), false);
++  assert.equal(shouldDismiss(60.5, 900.5), true);
++  assert.equal(shouldDismiss(100, 900), false);
++});
++
++test('the swipe runs on the JS runtime', () => {
++  assert.match(source, /runOnJS: true/);
++});
++
++test("what the web drops is wired for a phone: the screen reader's escape, the modal card, the Modal, the keyboard and the cover", () => {
++  assert.match(source, /^\s+onAccessibilityEscape=\{requestClose\}$/m);
++  assert.match(source, /^\s+accessibilityViewIsModal$/m);
++  assert.match(source, /^\s+transparent$/m);
++  assert.match(source, /^\s+statusBarTranslucent$/m);
++  assert.match(source, /behavior=\{Platform\.OS === 'ios' \? 'padding' : undefined\}/);
++  // Covered, the card goes at once: Reanimated skips its exit on a phone, so it never shows over the cover (R63).
++  assert.match(source, /<LayoutAnimationConfig skipExiting>\s*<KeyboardAvoidingView/);
++});
+--- /dev/null
++++ b/apps/app/src/wallet/tray/Tray.tsx
+@@ -0,0 +1,292 @@
++// The Bun Wallet's tray (P2-T13, W3, R63, R69; boards bw-tray-amount,
++// bw-tray-confirm, dk-tray-amount, rh-income, ax-large-tray): a card that
++// floats 8 pt in from the screen's left, right and bottom edges (above the
++// home indicator), radius 34, on the `sheet` colour with the boards' edge,
++// over a dimmed page. At the largest text sizes it is full height under the
++// top safe area. It is React Native's own Modal, transparent and unanimated,
++// with Reanimated moving the card and Gesture Handler reading the swipe: no
++// sheet package, since a native sheet cannot draw the inset, the radius or a
++// height that changes per step.
++//
++// - Names and focus. The title names the dialog. The web makes the Modal's own
++//   layer the dialog (as Sheet does), and that layer takes focus when the tray
++//   opens, since Reanimated keeps the card unseen for its first frames there;
++//   a phone focuses the title, one accessible header. A `header` (P2-T14's type
++//   switch) takes the title's place in the row; the title stays first for
++//   screen readers, unseen.
++// - Closing. Close, the backdrop, the screen reader's escape, the system back
++//   (Escape on the web) and the swipe all ask one requestClose, which does
++//   nothing while `locked` (a save in flight, Review Focus 1) or once the tray
++//   is leaving. Close then says it is unavailable.
++// - Motion: P2-T9's builders, with the wallet's one answer (W6). The card
++//   springs up from below, or fades in. A step change ticks once (trayStep),
++//   fades its new content in and morphs the card's height; under Reduce Motion
++//   the height jumps.
++// - The exit (R69). When `visible` turns false the card leaves while the Modal
++//   stays; the Modal hides when the card's exit ends (220 ms, or the 150 ms
++//   fade), then onClosed fires once. iOS presents no Modal while another is
++//   still leaving, so there onClosed waits for the Modal's own onDismiss. A host
++//   that opens a second tray as one closes opens it from onClosed, never in the
++//   same render, and keeps this tray mounted until then.
++// - A Sheet opened from a tray (Tell Bun's, P2-T16) renders inside the tray's
++//   content, so iOS presents it from the tray's window; never as a sibling
++//   Modal. It keeps its own Animated slide (theme/motion.ts says why).
++// - The keyboard. The card sits in a KeyboardAvoidingView, as EntryPage does,
++//   and `footer` stays pinned under the scrolling content, as ActionFooter does.
++// - The swipe (Gesture Handler 3), on the header row, runs on the JS runtime:
++//   its end asks the host to close, which sets React state. The card follows
++//   the finger down only, closes past shouldDismiss's line, and otherwise
++//   springs back (jumps back under Reduce Motion).
++// - The lock (R63). While useLockCover() says hidden, LockCoverArt takes the
++//   place of the backdrop and the card at once (the card's exit is skipped, so
++//   it never shows over the cover), and the content unmounts; every step is
++//   its host's, so nothing typed is lost. Nothing of the tray is announced.
++import { useEffect, useRef, useState } from 'react';
++import type { ReactNode } from 'react';
++import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, View } from 'react-native';
++import type { HostInstance } from 'react-native';
++import { GestureDetector, GestureHandlerRootView, usePanGesture } from 'react-native-gesture-handler';
++import Animated, { LayoutAnimationConfig, ReduceMotion, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
++import { useSafeAreaInsets } from 'react-native-safe-area-context';
++
++import { playHaptic } from '@mobile/lib/hapticMoment';
++import { motion } from '@mobile/theme/motion';
++import { useWalletColors } from '@mobile/theme/ThemeProvider';
++import { DECORATIVE, moveAccessibilityFocus } from '@mobile/ui/a11y';
++import { Glyph } from '@mobile/ui/Glyph';
++import type { GlyphName } from '@mobile/ui/Glyph';
++import { useLargeText } from '@mobile/ui/largeText';
++import { LockCoverArt, useLockCover } from '@mobile/ui/lockCover';
++import { COMMON_COPY } from '../common/copy';
++import { useDraftCopy } from '../copy/useDraftCopy';
++import { useWalletReducedMotion } from '../motion/reducedMotion';
++import { stepEntering, stepLayout, trayEntering, trayExiting } from '../motion/useWalletMotion';
++import { motionFor } from '../motion/walletMotion';
++import { WalletText } from '../WalletText';
++import { shouldDismiss, TRAY_INSET, TRAY_RADIUS } from './trayGesture';
++
++export type TrayProps = {
++  visible: boolean;
++  onClose: () => void;
++  /** Once the tray has left and its Modal has hidden; open the next tray from here (R69). */
++  onClosed?: () => void;
++  /** Names the dialog; drawn in the header unless `header` takes its place. */
++  title: string;
++  header?: ReactNode;
++  /** Draws back (common.back) before the title. */
++  onBack?: () => void;
++  /** The step shown; a change ticks once and morphs the height. */
++  step?: string;
++  /** Pinned under the scrolling content. */
++  footer?: ReactNode;
++  /** Nothing closes it, and close says it is unavailable (a save in flight). */
++  locked?: boolean;
++  children: ReactNode;
++  /** The card's; defaults to `tray`. */
++  testID?: string;
++};
++
++/** The page behind a tray: ink at 38% by day (bw-tray-amount), black at 60% at night (dk-tray-amount). */
++const BACKDROP = { light: 'rgba(17, 16, 20, 0.38)', dark: 'rgba(0, 0, 0, 0.6)' } as const;
++
++/** The card's edge: a soft shadow up the page by day (bw-tray-amount), a 1 pt light line along its top at night (dk-tray-amount). */
++const EDGE = { light: '0px -10px 40px rgba(17, 16, 20, 0.18)', dark: 'inset 0px 1px 0px rgba(255, 255, 255, 0.08)' } as const;
++
++/** The card's padding and the gap between its parts (bw-tray-amount). */
++const PADDING = 18;
++const GAP = 12;
++
++/** The header's buttons: 44 pt in their own box (§4), a `raised` circle, as rh-income and ax-large-tray draw close. */
++const BUTTON = 44;
++
++/** The title's place when a header is drawn instead: screen readers meet it first, and nothing shows. */
++const UNSEEN = { position: 'absolute', top: 0, left: 0, width: 1, height: 1, overflow: 'hidden' } as const;
++
++function HeaderButton({ label, glyph, onPress, disabled = false }: { label: string; glyph: GlyphName; onPress: () => void; disabled?: boolean }) {
++  const colors = useWalletColors();
++  return (
++    <Pressable
++      accessibilityRole="button"
++      accessibilityLabel={label}
++      accessibilityState={{ disabled }}
++      aria-disabled={disabled}
++      disabled={disabled}
++      onPress={onPress}
++      style={{
++        width: BUTTON,
++        height: BUTTON,
++        borderRadius: BUTTON / 2,
++        backgroundColor: colors.raised,
++        alignItems: 'center',
++        justifyContent: 'center',
++        opacity: disabled ? 0.4 : 1,
++      }}
++    >
++      <Glyph name={glyph} size={16} color={colors.ink} />
++    </Pressable>
++  );
++}
++
++export function Tray({ visible, onClose, onClosed, title, header, onBack, step, footer, locked = false, children, testID = 'tray' }: TrayProps) {
++  const colors = useWalletColors();
++  const insets = useSafeAreaInsets();
++  const large = useLargeText();
++  const reduced = useWalletReducedMotion();
++  const { hidden } = useLockCover();
++  const t = useDraftCopy(COMMON_COPY);
++  const web = Platform.OS === 'web';
++
++  // The Modal stays shown while the card leaves (R69): it opens at once and
++  // hides only when the card's exit has ended.
++  const [shown, setShown] = useState(visible);
++  if (visible && !shown) setShown(true);
++
++  const closed = useRef(onClosed);
++  useEffect(() => {
++    closed.current = onClosed;
++  });
++  const exitMs = trayExiting(reduced).getDuration();
++  useEffect(() => {
++    if (visible || !shown) return undefined;
++    const timer = setTimeout(() => {
++      setShown(false);
++      // iOS hears it from the Modal's own onDismiss, once the Modal has gone.
++      if (Platform.OS !== 'ios') closed.current?.();
++    }, exitMs);
++    return () => clearTimeout(timer);
++  }, [visible, shown, exitMs]);
++
++  /** A close may be asked for: never while locked (a save in flight), nor once the tray is leaving. */
++  const closable = visible && !locked;
++  /** One rule for close, the backdrop, the screen reader's escape, the system back and the swipe. */
++  const requestClose = () => {
++    if (closable) onClose();
++  };
++
++  // A step change ticks once while the tray is open; opening it does not.
++  const shownStep = useRef(step);
++  useEffect(() => {
++    if (shownStep.current === step) return;
++    shownStep.current = step;
++    if (!visible) return;
++    const { haptic } = motionFor('trayStep', reduced);
++    if (haptic) playHaptic(haptic);
++  }, [step, visible, reduced]);
++
++  // The swipe: the card follows the finger down only.
++  const drag = useSharedValue(0);
++  useEffect(() => {
++    if (visible) drag.value = 0;
++  }, [visible, drag]);
++  const follow = useAnimatedStyle(() => ({ transform: [{ translateY: drag.value }] }), [drag]);
++  const pan = usePanGesture({
++    activeOffsetY: 10,
++    failOffsetX: [-20, 20],
++    runOnJS: true,
++    onUpdate: (event) => {
++      drag.value = Math.max(0, event.translationY);
++    },
++    onDeactivate: (event) => {
++      if (closable && shouldDismiss(event.translationY, event.velocityY)) {
++        requestClose();
++        return;
++      }
++      // Short of the line, or locked: back to its place.
++      drag.value = reduced ? 0 : withSpring(0, { ...motion.spring.gentle, reduceMotion: ReduceMotion.Never });
++    },
++  });
++
++  const layer = useRef<HostInstance>(null);
++  const titleRef = useRef<HostInstance>(null);
++  const focusTitle = () => moveAccessibilityFocus(web ? layer.current : titleRef.current);
++
++  // Exactly one named dialog: on the web the Modal's own layer (react-native-web
++  // makes it the dialog), on a phone the card. Under the lock nothing is named.
++  const layerProps = web ? { 'aria-label': hidden ? undefined : title, tabIndex: -1 as const } : null;
++  const cardDialog = web ? null : { role: 'dialog' as const, 'aria-modal': true, 'aria-label': title };
++  const titleHeader = { accessible: true, accessibilityRole: 'header' as const, accessibilityLabel: title };
++
++  return (
++    <Modal
++      ref={layer}
++      visible={shown}
++      transparent
++      animationType="none"
++      statusBarTranslucent
++      onRequestClose={requestClose}
++      onShow={focusTitle}
++      onDismiss={Platform.OS === 'ios' ? () => closed.current?.() : undefined}
++      {...layerProps}
++    >
++      <GestureHandlerRootView style={{ flex: 1 }}>
++        {hidden ? (
++          <LockCoverArt />
++        ) : (
++          // Covered, the card goes at once: its exit would show it over the cover (R63).
++          <LayoutAnimationConfig skipExiting>
++            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, justifyContent: 'flex-end' }}>
++              <Pressable
++                {...DECORATIVE}
++                testID="tray-backdrop"
++                // Hidden from screen readers, so never a tab stop either: react-native-web's
++                // Pressable reads tabIndex, not focusable.
++                focusable={false}
++                tabIndex={-1}
++                onPress={requestClose}
++                style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: colors.isDark ? BACKDROP.dark : BACKDROP.light }}
++              />
++              <Animated.View pointerEvents="box-none" style={[{ flexGrow: large ? 1 : 0, flexShrink: 1, paddingTop: insets.top }, follow]}>
++                {visible ? (
++                  <Animated.View
++                    testID={testID}
++                    {...cardDialog}
++                    accessibilityViewIsModal
++                    onAccessibilityEscape={requestClose}
++                    entering={trayEntering(reduced)}
++                    exiting={trayExiting(reduced)}
++                    layout={stepLayout(reduced)}
++                    style={{
++                      flexGrow: large ? 1 : 0,
++                      flexShrink: 1,
++                      marginLeft: TRAY_INSET,
++                      marginRight: TRAY_INSET,
++                      marginBottom: TRAY_INSET + insets.bottom,
++                      borderRadius: TRAY_RADIUS,
++                      backgroundColor: colors.sheet,
++                      boxShadow: colors.isDark ? EDGE.dark : EDGE.light,
++                      padding: PADDING,
++                      gap: GAP,
++                    }}
++                  >
++                    <GestureDetector gesture={pan}>
++                      <View testID="tray-header" style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
++                        {header ? <View ref={titleRef} {...titleHeader} style={UNSEEN} /> : null}
++                        {onBack ? <HeaderButton label={t('common.back')} glyph="chevron-left" onPress={onBack} /> : null}
++                        {header ? (
++                          <View style={{ flex: 1 }}>{header}</View>
++                        ) : (
++                          <View ref={titleRef} {...(web ? null : titleHeader)} style={{ flex: 1 }}>
++                            <WalletText role="h2" accessibilityRole={web ? 'header' : undefined}>{title}</WalletText>
++                          </View>
++                        )}
++                        <HeaderButton label={t('common.close')} glyph="close" onPress={requestClose} disabled={locked} />
++                      </View>
++                    </GestureDetector>
++                    <ScrollView style={{ flexGrow: large ? 1 : 0, flexShrink: 1 }} keyboardShouldPersistTaps="handled">
++                      <LayoutAnimationConfig skipEntering>
++                        <Animated.View key={step} entering={stepEntering()} style={{ gap: GAP }}>
++                          {children}
++                        </Animated.View>
++                      </LayoutAnimationConfig>
++                    </ScrollView>
++                    {footer ? <View testID="tray-footer" style={{ gap: 4 }}>{footer}</View> : null}
++                  </Animated.View>
++                ) : null}
++              </Animated.View>
++            </KeyboardAvoidingView>
++          </LayoutAnimationConfig>
++        )}
++      </GestureHandlerRootView>
++    </Modal>
++  );
++}
+--- /dev/null
++++ b/apps/app/src/wallet/tray/PrimaryButton.tsx
+@@ -0,0 +1,53 @@
++// The Bun Wallet's main button (P2-T13; bw-style, the trays' footers): one per
++// screen or tray, at least 54 pt tall with radius 16, in `primary` with its
++// `onPrimary` words, so ink with white words by day and light with ink words
++// at night. It grows with the text size, so its words are never cut. Busy, it
++// says its busy label and ignores presses; disabled, it dims as the wallet's
++// icon button does.
++import { Pressable } from 'react-native';
++
++import { useWalletColors } from '@mobile/theme/ThemeProvider';
++import { WalletText } from '../WalletText';
++
++const HEIGHT = 54;
++const RADIUS = 16;
++
++export type PrimaryButtonProps = {
++  label: string;
++  onPress: () => void;
++  /** Working: presses are ignored and the button says `busyLabel`. */
++  busy?: boolean;
++  /** What it says while busy, e.g. กำลังบันทึก…; defaults to `label`. */
++  busyLabel?: string;
++  disabled?: boolean;
++  testID?: string;
++};
++
++export function PrimaryButton({ label, onPress, busy = false, busyLabel, disabled = false, testID }: PrimaryButtonProps) {
++  const colors = useWalletColors();
++  const words = busy && busyLabel ? busyLabel : label;
++  return (
++    <Pressable
++      testID={testID}
++      accessibilityRole="button"
++      accessibilityLabel={words}
++      accessibilityState={{ disabled, busy }}
++      aria-disabled={disabled}
++      aria-busy={busy}
++      disabled={disabled || busy}
++      onPress={onPress}
++      style={({ pressed }) => ({
++        minHeight: HEIGHT,
++        borderRadius: RADIUS,
++        backgroundColor: colors.primary,
++        paddingHorizontal: 18,
++        paddingVertical: 12,
++        alignItems: 'center',
++        justifyContent: 'center',
++        opacity: disabled ? 0.4 : pressed ? 0.85 : 1,
++      })}
++    >
++      <WalletText role="body" tone="onPrimary" style={{ fontWeight: '700', textAlign: 'center' }}>{words}</WalletText>
++    </Pressable>
++  );
++}
+--- /dev/null
++++ b/apps/app/src/wallet/tray/TextLink.tsx
+@@ -0,0 +1,30 @@
++// The Bun Wallet's text link (P2-T13; sa-locked, bw-welcome, rh-conflict):
++// words that act, with no fill, at least 44 pt tall in their own box (§4;
++// react-native-web drops hitSlop and the tests measure the box). Violet by
++// default, as links are (§5.1); ink for the quiet second choice under a main
++// button, as sa-locked's ใช้รหัสผ่าน is.
++import { Pressable } from 'react-native';
++
++import { WalletText } from '../WalletText';
++
++const TOUCH = 44;
++
++export function TextLink({ label, onPress, tone = 'violet' }: { label: string; onPress: () => void; tone?: 'violet' | 'ink' }) {
++  return (
++    <Pressable
++      accessibilityRole="button"
++      accessibilityLabel={label}
++      onPress={onPress}
++      style={({ pressed }) => ({
++        minHeight: TOUCH,
++        minWidth: TOUCH,
++        paddingHorizontal: 8,
++        alignItems: 'center',
++        justifyContent: 'center',
++        opacity: pressed ? 0.6 : 1,
++      })}
++    >
++      <WalletText role="label" tone={tone} style={{ textAlign: 'center' }}>{label}</WalletText>
++    </Pressable>
++  );
++}
+--- /dev/null
++++ b/apps/app/src/wallet/tray/Tray.render.test.tsx
+@@ -0,0 +1,522 @@
++// The Bun Wallet's tray (P2-T13, W3, R63, R69, Review Focus 1), its main
++// button and its text link. Each case mounts through mountWallet, in Thai and
++// by day unless it says otherwise, and settles the phone's answer inside act.
++// The tray takes its motion from the wallet's answer, so a case that needs
++// full motion opens the tray after the answer, through rerender.
++//
++// happy-dom runs no CSS animation. Reanimated's web build keeps a view with an
++// entering animation unseen (visibility: hidden) until its animationstart,
++// which a browser fires a frame later and happy-dom never does, and queries by
++// role skip what is unseen: startAnimations() fires it, as a browser would.
++// Gesture Handler reads no pointer here either, so the swipe's cases call the
++// callbacks the tray hands to usePanGesture.
++import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
++import { useEffect } from 'react';
++import { AccessibilityInfo, Platform, View } from 'react-native';
++import { ReduceMotion, ReducedMotionConfig } from 'react-native-reanimated';
++import { afterEach, expect, test, vi } from 'vitest';
++
++// The real safe-area package loads React Native itself, which vitest cannot run.
++vi.mock('react-native-safe-area-context', () => import('../../dev/catalogue/safeAreaTestStub'));
++
++// The swipe's callbacks, as the tray hands them to Gesture Handler.
++type PanEvent = { translationY: number; velocityY: number };
++type PanConfig = { onUpdate?: (event: PanEvent) => void; onDeactivate?: (event: PanEvent) => void } & Record<string, unknown>;
++const swipe = vi.hoisted(() => ({ config: null as PanConfig | null }));
++vi.mock('react-native-gesture-handler', async (importOriginal) => {
++  const actual = await importOriginal<typeof import('react-native-gesture-handler')>();
++  return {
++    ...actual,
++    usePanGesture: (config: Parameters<typeof actual.usePanGesture>[0]) => {
++      swipe.config = config as unknown as PanConfig;
++      return actual.usePanGesture(config);
++    },
++  };
++});
++
++// The motion builders, watched, so a case can see which answer the tray asked with.
++vi.mock('../motion/useWalletMotion', async (importOriginal) => {
++  const actual = await importOriginal<typeof import('../motion/useWalletMotion')>();
++  return {
++    ...actual,
++    trayEntering: vi.fn(actual.trayEntering),
++    trayExiting: vi.fn(actual.trayExiting),
++    stepLayout: vi.fn(actual.stepLayout),
++  };
++});
++
++import { rgba } from '@mobile/dev/catalogue/catalogueTestHarness';
++import { WALLET_SECTIONS } from '@mobile/dev/catalogue/wallet';
++import { haptics } from '@mobile/lib/haptics';
++import { walletDark, walletLight } from '@mobile/theme/walletPalette';
++import { LockCoverContext } from '@mobile/ui/lockCover';
++import { stepLayout, trayEntering, trayExiting } from '../motion/useWalletMotion';
++import { AX5, mountWallet } from '../testing/walletHarness';
++import { WalletText } from '../WalletText';
++import { PrimaryButton } from './PrimaryButton';
++import { TextLink } from './TextLink';
++import { Tray } from './Tray';
++import type { TrayProps } from './Tray';
++
++const os = Platform.OS;
++afterEach(() => {
++  vi.useRealTimers();
++  cleanup();
++  Object.defineProperty(Platform, 'OS', { value: os, configurable: true, writable: true });
++  vi.restoreAllMocks();
++  vi.clearAllMocks();
++  swipe.config = null;
++});
++
++/** Lets the phone's answer, the stores and Bun's AI preferences arrive. */
++const settle = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
++
++const MODES = [['light', walletLight], ['dark', walletDark]] as const;
++const TITLE = { th: 'จดรายจ่าย', en: 'Add spending' } as const;
++const WORDS = { th: { back: 'กลับ', close: 'ปิด' }, en: { back: 'Back', close: 'Close' } } as const;
++
++function tray(props: Partial<TrayProps> = {}) {
++  return (
++    <Tray visible onClose={() => undefined} title={TITLE.th} {...props}>
++      {props.children ?? <WalletText>ข้าวมันไก่ 50</WalletText>}
++    </Tray>
++  );
++}
++
++/** Starts the entering animations, as a browser does a frame after they mount (see the note at the top). */
++function startAnimations() {
++  act(() => {
++    for (const node of document.querySelectorAll<HTMLElement>('[style*="visibility: hidden"]')) node.dispatchEvent(new Event('animationstart'));
++  });
++}
++
++/** The element with this role and name, which must be there. */
++function named(role: string, name: string): HTMLElement {
++  const element = screen.queryByRole(role, { name });
++  expect(element, `a ${role} named ${name}`).not.toBeNull();
++  return element as HTMLElement;
++}
++
++/** The element with this test id, which must be there. */
++function found(testID: string): HTMLElement {
++  const element = screen.queryByTestId(testID);
++  expect(element, testID).not.toBeNull();
++  return element as HTMLElement;
++}
++
++const dialog = (name: string = TITLE.th) => screen.queryByRole('dialog', { name });
++/** What follows the finger: the card's frame. */
++const frame = () => found('tray').parentElement as HTMLElement;
++const escape = () => act(() => { document.dispatchEvent(new KeyboardEvent('keyup', { key: 'Escape' })); });
++
++/** The swipe's callbacks, which the tray must have handed to Gesture Handler. */
++function pan(): PanConfig {
++  expect(swipe.config, 'the swipe').not.toBeNull();
++  return swipe.config as PanConfig;
++}
++const pull = (translationY: number) => act(() => { pan().onUpdate?.({ translationY, velocityY: 0 }); });
++const release = (translationY: number, velocityY = 0) => act(() => { pan().onDeactivate?.({ translationY, velocityY }); });
++
++/** The view that holds a step's words: what fades in when the step changes. */
++const stepOf = (words: string) => screen.queryByText(words)?.parentElement ?? null;
++
++/** The answers a motion builder was asked with, once each. */
++const answers = (builder: unknown) => [...new Set(vi.mocked(builder as (reduced: boolean) => unknown).mock.calls.map(([reduced]) => reduced))];
++
++test('the tray is a named dialog, 8 pt from the edges, radius 34', async () => {
++  for (const locale of ['th', 'en'] as const) {
++    for (const [mode, colors] of MODES) {
++      const at = `${locale} ${mode}`;
++      mountWallet(tray({ title: TITLE[locale], footer: <PrimaryButton label="ถัดไป" onPress={() => undefined} /> }), { locale, mode });
++      await settle();
++      const layer = dialog(TITLE[locale]);
++      expect(layer, `${at}: a dialog named ${TITLE[locale]}`).not.toBeNull();
++      // Exactly one dialog: on the web the Modal's own layer, which holds the card.
++      expect(screen.getAllByRole('dialog'), at).toHaveLength(1);
++      expect(layer?.getAttribute('aria-modal'), at).toBe('true');
++      const card = found('tray');
++      expect(layer?.contains(card), at).toBe(true);
++      // 8 pt from the left, right and bottom, above the home indicator (34 pt on this phone).
++      expect([card.style.marginLeft, card.style.marginRight, card.style.marginBottom, card.style.borderRadius], at).toEqual(['8px', '8px', '42px', '34px']);
++      expect(card.style.backgroundColor, at).toBe(rgba(colors.sheet));
++      // The boards' edge: a soft shadow up the page by day, a light line along the top at night.
++      expect(card.style.boxShadow, at).toBe(mode === 'light' ? '0px -10px 40px rgba(17, 16, 20, 0.18)' : 'inset 0px 1px 0px rgba(255, 255, 255, 0.08)');
++      // The header, the scrolling middle, then the footer, pinned under it.
++      expect([card.children.length, card.lastElementChild === found('tray-footer')], at).toEqual([3, true]);
++      // The page behind is dimmed (bw-tray-amount, dk-tray-amount), and screen readers and the keyboard skip it.
++      const backdrop = found('tray-backdrop');
++      expect([backdrop.getAttribute('aria-hidden'), backdrop.getAttribute('tabindex')], at).toEqual(['true', '-1']);
++      expect(backdrop.style.backgroundColor, at).toBe(mode === 'light' ? 'rgba(17, 16, 20, 0.38)' : 'rgba(0, 0, 0, 0.60)');
++      startAnimations();
++      expect(screen.queryByRole('heading', { name: TITLE[locale] }), `${at}: the title`).not.toBeNull();
++      cleanup();
++    }
++  }
++});
++
++test('close and the backdrop close it, and the title takes focus when it opens', async () => {
++  const onClose = vi.fn();
++  const view = mountWallet(tray({ visible: false, onClose }));
++  await settle();
++  expect(dialog()).toBeNull();
++  view.rerender(tray({ onClose }));
++  await settle();
++  // On the web the dialog itself takes focus: it carries the title as its name, and a browser focuses it only
++  // with a tabindex (a phone's case is below).
++  const layer = dialog();
++  expect(layer, 'the dialog').not.toBeNull();
++  expect([document.activeElement === layer, layer?.getAttribute('tabindex')]).toEqual([true, '-1']);
++  startAnimations();
++  fireEvent.click(named('button', 'ปิด'));
++  expect(onClose).toHaveBeenCalledTimes(1);
++  fireEvent.click(found('tray-backdrop'));
++  expect(onClose).toHaveBeenCalledTimes(2);
++  // The system back: react-native-web routes Escape to onRequestClose, which Android's back button calls.
++  escape();
++  expect(onClose).toHaveBeenCalledTimes(3);
++});
++
++test('while locked nothing closes it, and close says it is unavailable', async () => {
++  const onClose = vi.fn();
++  const view = mountWallet(tray({ locked: true, onClose }));
++  await settle();
++  startAnimations();
++  const close = named('button', 'ปิด');
++  expect([close.getAttribute('aria-disabled'), close.style.opacity]).toEqual(['true', '0.4']);
++  fireEvent.click(close);
++  fireEvent.click(found('tray-backdrop'));
++  escape();
++  vi.useFakeTimers();
++  pull(200);
++  release(200, 2000);
++  act(() => { vi.advanceTimersByTime(2000); });
++  expect(onClose).not.toHaveBeenCalled();
++  expect(dialog()).not.toBeNull();
++  // Pulled past the line, a locked card goes back to its place.
++  expect(frame().style.transform).toBe('translateY(0px)');
++  vi.useRealTimers();
++  // When the lock goes (the save has landed), close works again.
++  view.rerender(tray({ onClose }));
++  expect(named('button', 'ปิด').getAttribute('aria-disabled')).toBeNull();
++  fireEvent.click(named('button', 'ปิด'));
++  expect(onClose).toHaveBeenCalledTimes(1);
++});
++
++test('at AX5 it opens full height', async () => {
++  mountWallet(tray(), { fontScale: AX5 });
++  await settle();
++  // The card fills the screen under the top safe area (62 pt on this phone), still 8 pt above the home indicator.
++  expect([frame().style.flexGrow, frame().style.paddingTop, found('tray').style.flexGrow, found('tray').style.marginBottom]).toEqual(['1', '62px', '1', '42px']);
++  cleanup();
++  // At the default text size it is as tall as its content.
++  mountWallet(tray());
++  await settle();
++  expect([frame().style.flexGrow, found('tray').style.flexGrow]).toEqual(['0', '0']);
++});
++
++test('under reduced motion a new step shows at once', async () => {
++  const tick = vi.spyOn(haptics, 'selection').mockResolvedValue(undefined);
++  const view = mountWallet(tray({ step: 'amount', children: <WalletText>฿50</WalletText> }), { reducedMotion: true });
++  await settle();
++  // The first step came with the tray: its words have no fade of their own.
++  expect(stepOf('฿50')?.style.animationName).toBe('');
++  view.rerender(tray({ step: 'confirm', children: <WalletText>ตรวจก่อนบันทึก</WalletText> }));
++  // The new step is there at once and the last one gone: its words fade in (unseen until that starts), and the
++  // height jumps (no layout animation).
++  expect(stepOf('ตรวจก่อนบันทึก')?.style.visibility).toBe('hidden');
++  expect(screen.queryByText('฿50')).toBeNull();
++  expect(answers(stepLayout)).toEqual([true]);
++  // The tray itself faded in, and would fade out.
++  expect(answers(trayEntering)).toEqual([true]);
++  expect(answers(trayExiting)).toEqual([true]);
++  // The tick does not change under Reduce Motion.
++  expect(tick).toHaveBeenCalledTimes(1);
++});
++
++test('the card leaves before the Modal hides, then onClosed fires once', async () => {
++  for (const [reducedMotion, exitMs] of [[false, 220], [true, 150]] as const) {
++    const at = `reduced motion ${reducedMotion}`;
++    const onClose = vi.fn();
++    const onClosed = vi.fn();
++    const view = mountWallet(tray({ visible: false, onClose, onClosed }), { reducedMotion });
++    await settle();
++    view.rerender(tray({ onClose, onClosed }));
++    await settle();
++    vi.useFakeTimers();
++    view.rerender(tray({ visible: false, onClose, onClosed }));
++    // The card leaves at once and plays its exit; the Modal and the dimmed page stay for it.
++    expect(screen.queryByTestId('tray'), at).toBeNull();
++    expect(dialog(), at).not.toBeNull();
++    expect(vi.mocked(trayExiting).mock.lastCall, at).toEqual([reducedMotion]);
++    // A tap on the page while it leaves asks nothing more.
++    fireEvent.click(found('tray-backdrop'));
++    act(() => { vi.advanceTimersByTime(exitMs - 1); });
++    expect([dialog() !== null, onClosed.mock.calls.length], `${at}, ${exitMs - 1} ms`).toEqual([true, 0]);
++    act(() => { vi.advanceTimersByTime(1); });
++    expect([dialog() !== null, onClosed.mock.calls.length], `${at}, ${exitMs} ms`).toEqual([false, 1]);
++    act(() => { vi.advanceTimersByTime(1000); });
++    expect(onClosed, at).toHaveBeenCalledTimes(1);
++    expect(onClose, at).not.toHaveBeenCalled();
++    vi.useRealTimers();
++    cleanup();
++  }
++  // Opened again while it leaves, it stays, and nothing says it closed.
++  const onClosed = vi.fn();
++  const view = mountWallet(tray({ onClosed }));
++  await settle();
++  vi.useFakeTimers();
++  view.rerender(tray({ visible: false, onClosed }));
++  act(() => { vi.advanceTimersByTime(100); });
++  view.rerender(tray({ onClosed }));
++  act(() => { vi.advanceTimersByTime(1000); });
++  expect([dialog() !== null, screen.queryByTestId('tray') !== null, onClosed.mock.calls.length]).toEqual([true, true, 0]);
++});
++
++test("a hidden lock cover replaces the tray's content", async () => {
++  const unmounted = vi.fn();
++  function Typed() {
++    useEffect(() => unmounted, []);
++    return <WalletText>ข้าวมันไก่ 50</WalletText>;
++  }
++  const covered = (hidden: boolean) => (
++    <LockCoverContext.Provider value={{ hidden }}>{tray({ children: <Typed /> })}</LockCoverContext.Provider>
++  );
++  const view = mountWallet(covered(false));
++  await settle();
++  expect(screen.queryByText('ข้าวมันไก่ 50')).not.toBeNull();
++  view.rerender(covered(true));
++  const cover = screen.queryByTestId('lock-cover');
++  expect(cover, 'the lock cover').not.toBeNull();
++  expect([cover?.getAttribute('aria-hidden'), cover?.textContent, cover?.style.backgroundColor]).toEqual(['true', '', rgba(walletLight.ground)]);
++  // It fills the screen.
++  expect([cover?.style.position, cover?.style.top, cover?.style.right, cover?.style.bottom, cover?.style.left]).toEqual(['absolute', '0px', '0px', '0px', '0px']);
++  // The card, the backdrop and what was in it are gone, and nothing of the tray is announced.
++  expect(screen.queryByTestId('tray')).toBeNull();
++  expect(screen.queryByTestId('tray-backdrop')).toBeNull();
++  expect(unmounted).toHaveBeenCalledTimes(1);
++  expect(document.body.textContent).not.toContain(TITLE.th);
++  expect(dialog()).toBeNull();
++  // Uncovered, the tray is back with its content: every step is its host's, so nothing is lost.
++  view.rerender(covered(false));
++  expect(screen.queryByTestId('lock-cover')).toBeNull();
++  expect(screen.queryByText('ข้าวมันไก่ 50')).not.toBeNull();
++  expect(dialog()).not.toBeNull();
++  cleanup();
++  // At night the cover is the night ground.
++  mountWallet(covered(true), { mode: 'dark' });
++  await settle();
++  expect(found('lock-cover').style.backgroundColor).toBe(rgba(walletDark.ground));
++});
++
++test('the main button is 54 pt tall, radius 16, ink with white text in light and light with ink text in dark; busy says its busy label', async () => {
++  for (const [mode, colors] of MODES) {
++    const onPress = vi.fn();
++    const view = mountWallet(<PrimaryButton label="บันทึก" onPress={onPress} />, { mode });
++    await settle();
++    const button = named('button', 'บันทึก');
++    expect([button.style.minHeight, button.style.borderRadius], mode).toEqual(['54px', '16px']);
++    expect([button.style.backgroundColor, within(button).getByText('บันทึก').style.color], mode).toEqual(
++      mode === 'light' ? [rgba('#111014'), rgba('#FFFFFF')] : [rgba('#F4F2FA'), rgba('#111014')],
++    );
++    expect([colors.primary, colors.onPrimary], mode).toEqual(mode === 'light' ? ['#111014', '#FFFFFF'] : ['#F4F2FA', '#111014']);
++    fireEvent.click(button);
++    expect(onPress, mode).toHaveBeenCalledTimes(1);
++    view.rerender(<PrimaryButton label="บันทึก" busy busyLabel="กำลังบันทึก…" onPress={onPress} />);
++    const busy = named('button', 'กำลังบันทึก…');
++    expect([busy.getAttribute('aria-busy'), busy.textContent], mode).toEqual(['true', 'กำลังบันทึก…']);
++    fireEvent.click(busy);
++    expect(onPress, mode).toHaveBeenCalledTimes(1);
++    // With no busy label it keeps its words.
++    view.rerender(<PrimaryButton label="บันทึก" busy onPress={onPress} />);
++    expect(named('button', 'บันทึก').getAttribute('aria-busy'), mode).toBe('true');
++    view.rerender(<PrimaryButton label="บันทึก" disabled onPress={onPress} />);
++    const off = named('button', 'บันทึก');
++    expect([off.getAttribute('aria-disabled'), off.style.opacity], mode).toEqual(['true', '0.4']);
++    fireEvent.click(off);
++    expect(onPress, mode).toHaveBeenCalledTimes(1);
++    cleanup();
++  }
++});
++
++test('every control in the header is at least 44 pt', async () => {
++  for (const locale of ['th', 'en'] as const) {
++    for (const [mode, colors] of MODES) {
++      const at = `${locale} ${mode}`;
++      const onBack = vi.fn();
++      mountWallet(tray({ title: TITLE[locale], onBack }), { locale, mode });
++      await settle();
++      startAnimations();
++      const buttons = within(found('tray-header')).queryAllByRole('button');
++      expect(buttons.map((button) => button.getAttribute('aria-label')), at).toEqual([WORDS[locale].back, WORDS[locale].close]);
++      for (const button of buttons) {
++        expect([button.style.width, button.style.height, button.style.borderRadius, button.style.backgroundColor], at).toEqual(['44px', '44px', '22px', rgba(colors.raised)]);
++      }
++      fireEvent.click(buttons[0] as HTMLElement);
++      expect(onBack, at).toHaveBeenCalledTimes(1);
++      cleanup();
++    }
++  }
++});
++
++test('the swipe follows the finger down, springs back short of the line, and closes past it', async () => {
++  const onClose = vi.fn();
++  const view = mountWallet(tray({ visible: false, onClose }));
++  await settle();
++  view.rerender(tray({ onClose }));
++  await settle();
++  expect(pan()).toMatchObject({ activeOffsetY: 10, failOffsetX: [-20, 20], runOnJS: true });
++  pull(80);
++  expect(frame().style.transform).toBe('translateY(80px)');
++  // Never up.
++  pull(-40);
++  expect(frame().style.transform).toBe('translateY(0px)');
++  pull(100);
++  vi.useFakeTimers();
++  release(100, 500);
++  expect(onClose).not.toHaveBeenCalled();
++  act(() => { vi.advanceTimersByTime(100); });
++  const partway = Number.parseFloat(frame().style.transform.replace('translateY(', ''));
++  expect(partway > 0 && partway < 100, `${partway} pt, 100 ms after letting go`).toBe(true);
++  act(() => { vi.advanceTimersByTime(2000); });
++  expect(frame().style.transform).toBe('translateY(0px)');
++  // Past the line: a quick flick past 60 pt, or a pull past 120 pt.
++  release(61, 901);
++  expect(onClose).toHaveBeenCalledTimes(1);
++  pull(121);
++  release(121, 0);
++  expect(onClose).toHaveBeenCalledTimes(2);
++  // The host closes it; opened again, the card is back in its place.
++  view.rerender(tray({ visible: false, onClose }));
++  act(() => { vi.advanceTimersByTime(220); });
++  view.rerender(tray({ onClose }));
++  expect(frame().style.transform).toBe('translateY(0px)');
++  vi.useRealTimers();
++  cleanup();
++  // Under Reduce Motion a short pull jumps back.
++  mountWallet(tray(), { reducedMotion: true });
++  await settle();
++  pull(100);
++  release(100, 0);
++  expect(frame().style.transform).toBe('translateY(0px)');
++});
++
++test("the wallet's answer decides the swipe's spring back, not Reanimated's own setting (W6)", async () => {
++  // Reanimated warns once that its own setting is now Always; that warning is expected here.
++  const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
++  const view = mountWallet(<><ReducedMotionConfig mode={ReduceMotion.Always} />{tray({ visible: false })}</>);
++  await settle();
++  view.rerender(<><ReducedMotionConfig mode={ReduceMotion.Always} />{tray()}</>);
++  await settle();
++  pull(100);
++  vi.useFakeTimers();
++  release(100);
++  act(() => { vi.advanceTimersByTime(100); });
++  const partway = Number.parseFloat(frame().style.transform.replace('translateY(', ''));
++  expect(partway > 0 && partway < 100, `${partway} pt, 100 ms after letting go`).toBe(true);
++  act(() => { vi.advanceTimersByTime(2000); });
++  expect(frame().style.transform).toBe('translateY(0px)');
++  expect(warn.mock.calls.length).toBeLessThanOrEqual(1);
++});
++
++test('at full motion the card springs up, and a step change morphs its height and ticks once; opening ticks nothing', async () => {
++  const tick = vi.spyOn(haptics, 'selection').mockResolvedValue(undefined);
++  const view = mountWallet(tray({ visible: false, step: 'amount' }));
++  await settle();
++  view.rerender(tray({ step: 'amount' }));
++  await settle();
++  expect(tick).not.toHaveBeenCalled();
++  expect(answers(trayEntering)).toEqual([false]);
++  view.rerender(tray({ step: 'confirm' }));
++  expect(tick).toHaveBeenCalledTimes(1);
++  expect(answers(stepLayout)).toEqual([false]);
++  // The same step again is no change; back to the first is one more.
++  view.rerender(tray({ step: 'confirm' }));
++  view.rerender(tray({ step: 'amount' }));
++  expect(tick).toHaveBeenCalledTimes(2);
++  // A closed tray is silent, and so is opening it at another step.
++  view.rerender(tray({ visible: false, step: 'confirm' }));
++  view.rerender(tray({ step: 'confirm' }));
++  expect(tick).toHaveBeenCalledTimes(2);
++});
++
++test("on a phone the title takes focus, and on iOS onClosed waits for the Modal's own dismissal", async () => {
++  const focused: [unknown, string][] = [];
++  // react-native-web has no sendAccessibilityEvent; a phone's screen reader moves focus with it.
++  Object.defineProperty(AccessibilityInfo, 'sendAccessibilityEvent', {
++    value: (node: unknown, kind: string) => { focused.push([node, kind]); },
++    configurable: true,
++    writable: true,
++  });
++  const errors = vi.spyOn(console, 'error');
++  try {
++    const present: boolean[] = [];
++    const onClosed = vi.fn(() => { present.push(screen.queryByRole('dialog') !== null); });
++    const view = mountWallet(tray({ visible: false, onClosed }));
++    await settle();
++    Object.defineProperty(Platform, 'OS', { value: 'ios', configurable: true, writable: true });
++    view.rerender(tray({ onClosed }));
++    await settle();
++    // VoiceOver lands on the title: one accessible header that says it.
++    expect(focused.map(([node, kind]) => [kind, (node as HTMLElement | null)?.getAttribute('aria-label'), (node as HTMLElement | null)?.getAttribute('role')])).toEqual([['focus', TITLE.th, 'heading']]);
++    vi.useFakeTimers();
++    view.rerender(tray({ visible: false, onClosed }));
++    act(() => { vi.advanceTimersByTime(220); });
++    // iOS presents no Modal while another is leaving, so the host hears of it once the Modal has gone.
++    expect(onClosed).toHaveBeenCalledTimes(1);
++    expect(present).toEqual([false]);
++    expect(errors).not.toHaveBeenCalled();
++  } finally {
++    delete (AccessibilityInfo as unknown as Record<string, unknown>).sendAccessibilityEvent;
++  }
++});
++
++test('a text link is at least 44 pt, violet by default or ink, and says its words', async () => {
++  for (const [mode, colors] of MODES) {
++    const onPress = vi.fn();
++    mountWallet(
++      <View>
++        <TextLink label="ไว้ทีหลัง" onPress={onPress} />
++        <TextLink label="ใช้รหัสผ่าน" tone="ink" onPress={onPress} />
++      </View>,
++      { mode },
++    );
++    await settle();
++    const later = named('button', 'ไว้ทีหลัง');
++    const passcode = named('button', 'ใช้รหัสผ่าน');
++    for (const link of [later, passcode]) {
++      expect([link.style.minHeight, link.style.minWidth, link.style.backgroundColor], mode).toEqual(['44px', '44px', '']);
++    }
++    expect([within(later).getByText('ไว้ทีหลัง').style.color, within(passcode).getByText('ใช้รหัสผ่าน').style.color], mode).toEqual([rgba(colors.violet), rgba(colors.ink)]);
++    fireEvent.click(later);
++    expect(onPress, mode).toHaveBeenCalledTimes(1);
++    cleanup();
++  }
++});
++
++test("a header takes the title's place, and screen readers meet the title first", async () => {
++  mountWallet(tray({ header: <View testID="type-switch"><WalletText>รายจ่าย</WalletText></View> }));
++  await settle();
++  startAnimations();
++  expect(dialog(), 'the title still names the dialog').not.toBeNull();
++  expect(screen.queryByTestId('type-switch')).not.toBeNull();
++  // The title is not drawn ...
++  expect(screen.queryByText(TITLE.th)).toBeNull();
++  // ... but the header row starts with it, a heading that draws nothing.
++  const heading = screen.queryByRole('heading', { name: TITLE.th });
++  expect(heading, 'the title as a heading').not.toBeNull();
++  expect(found('tray-header').firstElementChild).toBe(heading);
++  expect([heading?.style.width, heading?.style.height, heading?.textContent]).toEqual(['1px', '1px', '']);
++});
++
++test("the catalogue's tray sections come after the kit's, and each tray opens at once", async () => {
++  const ids = WALLET_SECTIONS.map((section) => section.id);
++  expect(ids.slice(0, 2)).toEqual(['bw-amounts', 'bw-private']);
++  expect(ids.slice(-4)).toEqual(['bw-tray-short', 'bw-tray-tall', 'bw-tray-large', 'bw-buttons']);
++  for (const id of ['bw-tray-short', 'bw-tray-tall', 'bw-tray-large']) {
++    const section = WALLET_SECTIONS.find((each) => each.id === id);
++    mountWallet(<>{section?.render()}</>);
++    await settle();
++    expect(screen.queryAllByRole('dialog'), id).toHaveLength(1);
++    cleanup();
++  }
++});
+--- /dev/null
++++ b/apps/app/src/dev/catalogue/wallet/traySections.tsx
+@@ -0,0 +1,156 @@
++// The Bun Wallet tray's catalogue sections (P2-T13, development only): a short
++// tray (bw-tray-short), a tall one whose middle scrolls under its pinned
++// footer and whose height changes per step (bw-tray-tall), a tray to capture
++// at the largest text size, where it fills the screen (bw-tray-large), and the
++// main button with the text link (bw-buttons). Each tray opens at once, so a
++// screenshot of its section shows it over the page; close it, and Open the
++// tray brings it back. Their own list beside kitSections.tsx, spread after the
++// kit's in ./index.ts. The sample words are catalogue samples, not app copy.
++// A section never imports the wallet test harness, which loads vitest.
++import { useState } from 'react';
++import type { ReactNode } from 'react';
++import { View } from 'react-native';
++
++import { useActiveLocale } from '@mobile/i18n/useCopy';
++import { useWalletColors } from '@mobile/theme/ThemeProvider';
++import { BUN_RADIUS, BUN_SPACE } from '@mobile/ui/layout';
++import { COMMON_COPY } from '@mobile/wallet/common/copy';
++import type { DraftTable } from '@mobile/wallet/copy/draftText';
++import { useDraftCopy } from '@mobile/wallet/copy/useDraftCopy';
++import { PrimaryButton } from '@mobile/wallet/tray/PrimaryButton';
++import { TextLink } from '@mobile/wallet/tray/TextLink';
++import { Tray } from '@mobile/wallet/tray/Tray';
++import { WalletText } from '@mobile/wallet/WalletText';
++import { Specimen, SpecimenLabel } from '../parts';
++import type { CatalogueSection } from '../registry';
++
++const SAMPLES = {
++  ...COMMON_COPY,
++  'sample.open': { th: 'เปิดถาด', en: 'Open the tray' },
++  'sample.shortTitle': { th: 'ถาด', en: 'Tray' },
++  'sample.shortBody': {
++    th: 'ลอยห่างขอบจอ 8 พอยต์ ทำได้ทีละอย่าง และสูงเท่าที่แต่ละขั้นต้องใช้',
++    en: 'It floats 8 pt in from the edges, does one thing at a time, and is as tall as each step needs.',
++  },
++  'sample.pickTitle': { th: 'เลือกหมวด', en: 'Pick a category' },
++  'sample.doneTitle': { th: 'เลือกแล้ว', en: 'Picked' },
++  'sample.doneBody': { th: 'ถาดหดลงเมื่อขั้นนี้สั้นกว่า', en: 'The tray shrinks when this step is shorter.' },
++  'sample.largeTitle': { th: 'ถาดที่ตัวอักษรใหญ่ที่สุด เต็มจอใต้แถบสถานะ', en: 'A tray at the largest text size, full height under the status bar' },
++  'sample.busy': { th: 'กำลังบันทึก…', en: 'Saving…' },
++  'sample.passcode': { th: 'ใช้รหัสผ่าน', en: 'Use passcode' },
++} as const satisfies DraftTable;
++
++/** Category names for the tall tray's scrolling list. */
++const CATEGORIES = {
++  th: ['อาหาร', 'กาแฟ', 'เดินทาง', 'ช้อปปิ้ง', 'บ้าน', 'บิล', 'สุขภาพ', 'ทำบุญ', 'ของขวัญ', 'โทรศัพท์', 'สัตว์เลี้ยง', 'หนังสือ', 'เดลิเวอรี', 'อื่น ๆ'],
++  en: ['Food', 'Coffee', 'Travel', 'Shopping', 'Home', 'Bills', 'Health', 'Merit', 'Gifts', 'Phone', 'Pets', 'Books', 'Delivery', 'Other'],
++} as const;
++
++/** One row, on the tray's raised fill. */
++function Row({ children }: { children: string }) {
++  const colors = useWalletColors();
++  return (
++    <View style={{ minHeight: 48, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 16, backgroundColor: colors.raised }}>
++      <WalletText>{children}</WalletText>
++    </View>
++  );
++}
++
++/** A tray that opens at once, and the link that opens it again. */
++function OpenTray({ label, render }: { label: string; render: (open: boolean, close: () => void) => ReactNode }) {
++  const t = useDraftCopy(SAMPLES);
++  const [open, setOpen] = useState(true);
++  return (
++    <View style={{ gap: BUN_SPACE.xs, alignItems: 'flex-start' }}>
++      <SpecimenLabel>{label}</SpecimenLabel>
++      <TextLink label={t('sample.open')} onPress={() => setOpen(true)} />
++      {render(open, () => setOpen(false))}
++    </View>
++  );
++}
++
++function ShortTray() {
++  const t = useDraftCopy(SAMPLES);
++  return (
++    <OpenTray
++      label="A short tray: its height is its content's, with the main button and a text link pinned under it"
++      render={(open, close) => (
++        <Tray
++          visible={open}
++          onClose={close}
++          title={t('sample.shortTitle')}
++          footer={(
++            <>
++              <PrimaryButton label={t('common.done')} onPress={close} />
++              <TextLink label={t('common.later')} tone="ink" onPress={close} />
++            </>
++          )}
++        >
++          <WalletText>{t('sample.shortBody')}</WalletText>
++        </Tray>
++      )}
++    />
++  );
++}
++
++/** Two steps: a list that scrolls under the pinned footer, then a short step with back. */
++function StepTray({ title, label }: { title: 'sample.pickTitle' | 'sample.largeTitle'; label: string }) {
++  const t = useDraftCopy(SAMPLES);
++  const locale = useActiveLocale();
++  const [step, setStep] = useState<'pick' | 'done'>('pick');
++  const words = locale === 'th' ? CATEGORIES.th : CATEGORIES.en;
++  return (
++    <OpenTray
++      label={label}
++      render={(open, close) => (
++        <Tray
++          visible={open}
++          onClose={close}
++          onClosed={() => setStep('pick')}
++          title={step === 'pick' ? t(title) : t('sample.doneTitle')}
++          step={step}
++          onBack={step === 'done' ? () => setStep('pick') : undefined}
++          footer={step === 'pick' ? <PrimaryButton label={t('common.next')} onPress={() => setStep('done')} /> : <PrimaryButton label={t('common.done')} onPress={close} />}
++        >
++          {step === 'pick' ? words.map((name) => <Row key={name}>{name}</Row>) : <WalletText>{t('sample.doneBody')}</WalletText>}
++        </Tray>
++      )}
++    />
++  );
++}
++
++function ButtonsSection() {
++  const t = useDraftCopy(SAMPLES);
++  const colors = useWalletColors();
++  const noop = () => undefined;
++  return (
++    <View style={{ backgroundColor: colors.sheet, borderRadius: BUN_RADIUS.card, padding: BUN_SPACE.md, gap: BUN_SPACE.sm }}>
++      <Specimen label="The main button: 54 pt, radius 16, one per tray"><PrimaryButton label={t('common.save')} onPress={noop} /></Specimen>
++      <Specimen label="Busy: it says so, and presses wait"><PrimaryButton label={t('common.save')} busy busyLabel={t('sample.busy')} onPress={noop} /></Specimen>
++      <Specimen label="Disabled"><PrimaryButton label={t('common.next')} disabled onPress={noop} /></Specimen>
++      <Specimen label="Text links, at least 44 pt: violet, then ink for the quiet second choice">
++        <View style={{ alignItems: 'flex-start' }}>
++          <TextLink label={t('common.later')} onPress={noop} />
++          <TextLink label={t('sample.passcode')} tone="ink" onPress={noop} />
++        </View>
++      </Specimen>
++    </View>
++  );
++}
++
++export const WALLET_TRAY_SECTIONS: readonly CatalogueSection[] = [
++  { id: 'bw-tray-short', title: 'Bun Wallet: tray, short', group: 'Kit', render: () => <ShortTray /> },
++  {
++    id: 'bw-tray-tall',
++    title: 'Bun Wallet: tray, tall',
++    group: 'Kit',
++    render: () => <StepTray title="sample.pickTitle" label="A tall tray: the list scrolls under the pinned footer; Next shows a shorter step, and the tray's height follows" />,
++  },
++  {
++    id: 'bw-tray-large',
++    title: 'Bun Wallet: tray, largest text',
++    group: 'Kit',
++    render: () => <StepTray title="sample.largeTitle" label="Capture at AX5: the tray fills the screen under the status bar, and nothing is cut" />,
++  },
++  { id: 'bw-buttons', title: 'Bun Wallet: main button and text link', group: 'Kit', render: () => <ButtonsSection /> },
++];
+--- a/apps/app/src/dev/catalogue/wallet/index.ts
++++ b/apps/app/src/dev/catalogue/wallet/index.ts
+@@ -4,7 +4,9 @@
+ // with `Bun Wallet: ` (R72); walletHarness.render.test.tsx holds them to that.
+ import type { CatalogueSection } from '../registry';
+ import { WALLET_KIT_SECTIONS } from './kitSections';
++import { WALLET_TRAY_SECTIONS } from './traySections';
+ 
+ export const WALLET_SECTIONS: readonly CatalogueSection[] = [
+   ...WALLET_KIT_SECTIONS,
++  ...WALLET_TRAY_SECTIONS,
+ ];
+--- a/apps/app/src/theme/motion.ts
++++ b/apps/app/src/theme/motion.ts
+@@ -128,8 +128,11 @@
+    * (`theme/animatedMotion.ts`'s `runSpringTransform`). The Bun Wallet
+    * screens (`src/wallet/`, plan P2) drive them through Reanimated, whose
+    * springs read the same three fields (`wallet/motion/useWalletMotion.ts`).
+-   * Never both in one screen: a second animation system in one screen is
+-   * worse than a slightly less ergonomic API.
++   * Never both on one surface: a second animation system on one surface is
++   * worse than a slightly less ergonomic API. The one place both show at once
++   * is a kit `Sheet` opened from a wallet tray (Tell Bun's, P2-T16): the Sheet
++   * is its own Modal over the tray (`wallet/tray/Tray.tsx`, R69), keeps its
++   * `Animated` slide, and the tray's Reanimated motion never moves it.
+    *
+    * `bouncy` is RATIONED to moments that are genuinely good news (a save
+    * landing, cashback arriving). Overshoot on an ordinary control is the
+--- a/apps/app/src/wallet/motion/useWalletMotion.render.test.tsx
++++ b/apps/app/src/wallet/motion/useWalletMotion.render.test.tsx
+@@ -97,7 +97,13 @@
+ });
+ 
+ test('each call builds its own animation, so one part changing its copy never changes another', () => {
+-  expect(trayEntering(false)).not.toBe(trayEntering(false));
+-  expect(trayEntering(true)).not.toBe(trayEntering(true));
++  // Every builder, both answers (P2-T9's review m-2; the tray, P2-T13, takes trayExiting).
++  for (const reduced of [false, true]) {
++    expect(trayEntering(reduced)).not.toBe(trayEntering(reduced));
++    expect(trayExiting(reduced)).not.toBe(trayExiting(reduced));
++    expect(toastEntering(reduced)).not.toBe(toastEntering(reduced));
++    expect(walletAddedEntering(reduced)).not.toBe(walletAddedEntering(reduced));
++  }
+   expect(stepEntering()).not.toBe(stepEntering());
++  expect(stepLayout(false)).not.toBe(stepLayout(false));
+ });
