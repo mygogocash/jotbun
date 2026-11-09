@@ -60,7 +60,10 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - #377's own CI is the first nine-job run, including the iOS export's first Linux build. Its measured times go in the receipt's "After, measured" line.
     - **The review approved** (`reviews/ci-parallel-jobs.md`, two-lens workflow, resumed after the stop): no blocker or major, three minors and seven nits (followups.md; m2 and m3 go to P6C-T7). The render split is whole, every old step still runs once, and the iOS export passes on Linux.
     - **Before merging (review m1):** #377's only CI run was on the old base 4850463. Once the owner answers, close and reopen #377 for a fresh nine-job run on the current base and check its totals. Only then run `merge_task_pr.sh 377 46b30a0` (no task id). Each extra run costs about 33 billable minutes, which is why it waits for the answer.
-    - **The owner answered on 10 Nov at 06:2x: "keep the nine-job CI, merge".** The controller closed and reopened #377 at 06:24, and fresh run 42720201154 is on the current base (review m1).
+    - **The owner answered on 10 Nov at 06:2x: "keep the nine-job CI, merge".**
+      - The controller closed and reopened #377 at 06:24, but that run (42720201154, green, 256 s wall) checked out the stale merge commit `c56e0e4` (into 4850463), so it proved nothing new (lessons.md).
+      - An API read then rebuilt the merge ref as 97f299c (base b272f0c, which holds P4-T13, 1B-T8 and P4-T12). The PR was reopened again at 06:32, for run 42721236288.
+      - **Confirm its checkout line says "Merge 46b30a0 into b272f0c" or later** (render 107 files with P4-T12's, plus 162, 196 and 218 of 576) before merging.
     - When that run is green, with its totals checked: `merge_task_pr.sh 377 46b30a0` (no task id). Then `promote_pr.sh ci-parallel-jobs 377`, and add the measured times to the receipt's "After, measured" line in a housekeeping commit (with review nits n1 and n6).
     - Then lift protocol.md's iOS-export correction (CI now runs it), and drop 1A-T10's minor 1 from P6C-T7 in followups.md.
     - **Its merge waits on the owner's Actions-minutes answer** (Owner decisions waiting).

@@ -26,6 +26,11 @@
 - **`watch_prs.sh` records `<pr>:<head>` in `watch_prs.seen`.** A rerun on the same head is never reported again, so after `gh run rerun`, wait with `C/wait_ci.sh <pr>` (background Bash) instead.
 - **Logs only once the whole run has finished.** `gh run view --log-failed` refuses while any job of the run is still going. `ci_failures.sh` uses `gh api --allow-escape-sequences repos/.../actions/jobs/<id>/logs` and strips ANSI.
 - **CI tests the merge with the base.** GitHub runs PR checks on `refs/pull/N/merge`, so a branch does not need re-merging locally after the integration head moves, unless there are conflicts. Check that with `git merge-tree --write-tree --name-only HEAD origin/claude/p1a-vault-core`.
+- **But that merge ref can be stale.** GitHub rebuilds `refs/pull/N/merge` lazily.
+  - On 10 Nov, closing and reopening #377 to retest it on a newer base ran on the old merge commit (`c56e0e4 Merge 46b30a0 into 4850463`), and the reopened run proved nothing new.
+  - Read the PR through the API first: `gh api repos/mygogocash/jotbun/pulls/<n>`, and check that `merge_commit_sha` and `base.sha` are fresh. That read makes GitHub recompute them. Then close and reopen.
+  - Before trusting the run, confirm the base in a job log: `HEAD is now at <sha> Merge <head> into <base>`.
+  - The same applies to any PR whose old green run predates merges into its base.
 
 ## Parity and data
 
