@@ -762,3 +762,87 @@ test('a yes waiting while the same account signs out and in again is still sent 
   assert.equal(s.analytics.status(), 'yes');
   assert.deepEqual(s.stored(), { accountId: ACCOUNT_A, answer: 'yes', pendingServer: false });
 });
+
+// 1D-T8: Privacy's "stopped on this phone" caption reads whether the no in force has reached the server.
+test('a no is pending from the call until the server takes it, and listeners hear when it lands', async () => {
+  const h = harness({ consent: 'yes' });
+  await h.analytics.setAccount(ACCOUNT_A);
+  assert.equal(h.analytics.pendingNo(), false);
+  h.setFailSet(true);
+  const saidNo = h.analytics.answer('no');
+  // In force at the call, before the server is asked.
+  assert.equal(h.analytics.status(), 'no');
+  assert.equal(h.analytics.pendingNo(), true);
+  await saidNo;
+  // The server could not be reached: still pending, and stored so.
+  assert.equal(h.analytics.pendingNo(), true);
+  assert.equal(h.stored()?.pendingServer, true);
+  let told = 0;
+  const stop = h.analytics.subscribe(() => { told += 1; });
+  h.setFailSet(false);
+  await h.analytics.refresh();
+  stop();
+  // The next refresh sends it: the status stays no, and the change is heard.
+  assert.equal(h.analytics.status(), 'no');
+  assert.equal(h.analytics.pendingNo(), false);
+  assert.equal(told, 1);
+  assert.deepEqual(h.consentCalls, [false, false]);
+  assert.deepEqual(h.stored(), { accountId: ACCOUNT_A, answer: 'no', pendingServer: false });
+});
+
+test('a no the server takes at once is pending only while its call is on its way', async () => {
+  const h = harness({ consent: 'yes' });
+  await h.analytics.setAccount(ACCOUNT_A);
+  h.holdSetConsent(true);
+  const saidNo = h.analytics.answer('no');
+  await settle();
+  assert.deepEqual(h.consentCalls, [false]);
+  assert.equal(h.analytics.pendingNo(), true);
+  h.holdSetConsent(false);
+  await h.landSetConsentNewestFirst();
+  await saidNo;
+  assert.equal(h.analytics.pendingNo(), false);
+  assert.equal(h.analytics.status(), 'no');
+});
+
+test('at a load, only a stored no this phone has not delivered is pending', async () => {
+  const pending = harness({ consent: 'yes', stored: { accountId: ACCOUNT_A, answer: 'no', pendingServer: true } });
+  pending.setFailSet(true);
+  await pending.analytics.setAccount(ACCOUNT_A);
+  assert.equal(pending.analytics.status(), 'no');
+  assert.equal(pending.analytics.pendingNo(), true);
+  pending.setFailSet(false);
+  await pending.analytics.refresh();
+  assert.equal(pending.analytics.pendingNo(), false);
+
+  // Delivered on an earlier run, and the server cannot be reached now.
+  const delivered = harness({ stored: { accountId: ACCOUNT_A, answer: 'no', pendingServer: false } });
+  delivered.setFailRead(true);
+  await delivered.analytics.setAccount(ACCOUNT_A);
+  assert.equal(delivered.analytics.status(), 'no');
+  assert.equal(delivered.analytics.pendingNo(), false);
+
+  // Said on another phone: the server's own no.
+  const elsewhere = harness({ consent: 'no' });
+  await elsewhere.analytics.setAccount(ACCOUNT_A);
+  assert.equal(elsewhere.analytics.status(), 'no');
+  assert.equal(elsewhere.analytics.pendingNo(), false);
+});
+
+test('a yes, or a sign-out, ends a pending no', async () => {
+  const h = harness({ consent: 'yes' });
+  await h.analytics.setAccount(ACCOUNT_A);
+  h.setFailSet(true);
+  await h.analytics.answer('no');
+  assert.equal(h.analytics.pendingNo(), true);
+  h.setFailSet(false);
+  await h.analytics.answer('yes');
+  assert.equal(h.analytics.status(), 'yes');
+  assert.equal(h.analytics.pendingNo(), false);
+  h.setFailSet(true);
+  await h.analytics.answer('no');
+  assert.equal(h.analytics.pendingNo(), true);
+  await h.analytics.setAccount(null);
+  assert.equal(h.analytics.status(), 'signed_out');
+  assert.equal(h.analytics.pendingNo(), false);
+});

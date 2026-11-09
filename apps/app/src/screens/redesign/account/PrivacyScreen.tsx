@@ -17,6 +17,8 @@
 //   after a refusal, otherwise kept). A fresh sign-in that does not go
 //   through sends nothing and leaves the copy as it is. A confirmed erase
 //   also forgets this account's kept wallet looks. Done signs this device out.
+// - Help improve Jotbun (1D-T8, D34), only while the `analytics` area is on:
+//   the analytics answer as one switch, draft copy until E2.
 //
 // While the account's method has no fresh sign-in on this build (email until
 // 1C Task 9, Apple and Google until 1C Task 7), both actions say plainly that
@@ -26,7 +28,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ScrollView, View } from 'react-native';
 
+import { AccountChangedError } from '@mobile/analytics/controller';
+import { useAnalyticsConsent } from '@mobile/analytics/useAnalyticsConsent';
 import { V1Error } from '@mobile/api/client';
+import { isRedesignEnabled } from '@mobile/config/featureFlags';
 import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
 import { FRESH_SIGN_IN_FAILED, requestAccountDeletion, settleDeviceCopy, submitDeletionRequest } from '@mobile/spend/v1/deletion';
 import type { DeletionResources, DeletionState, PendingDeletionRequest } from '@mobile/spend/v1/deletion';
@@ -49,6 +54,8 @@ import { ConfirmSheet } from '@mobile/ui/Sheet';
 import { StageHeader } from '@mobile/ui/StageHeader';
 import { StagedProgress } from '@mobile/ui/StagedProgress';
 import { Notice } from '../HistoryParts';
+import { ReminderSwitch } from '../insights/RemindersParts';
+import { useConsentCopy } from './analyticsConsentCopy.draft';
 import type { PrivacyServices } from './PrivacyParts';
 import { PAGE_STYLE, Section, useBackTo } from './SettingsParts';
 
@@ -59,6 +66,8 @@ export type PrivacyScreenProps = {
   services: PrivacyServices;
   /** The clock "today" is read from (tests and the catalogue pin it). */
   now?: Date;
+  /** The `analytics` area (1D-T8): the Help improve Jotbun switch. Defaults to the app's flag; the catalogue passes it. */
+  analyticsArea?: boolean;
 };
 
 /** Outcomes that mean Jotbun could not answer, not that it said no. */
@@ -104,6 +113,56 @@ function Promises() {
           { key: 'yours', text: tc('Export or delete your diary any time.') },
         ]}
       />
+    </OutlinedCard>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Help improve Jotbun (1D-T8, D34)
+
+/**
+ * The analytics answer as one switch (today's ReminderSwitch), on when the
+ * answer is yes. Off is in force at once. On waits for the server, with the
+ * question's line when it fails; a yes refused because the account changed
+ * says nothing, and the switch shows that account's answer. While a no has
+ * not reached the server, a caption says it stopped on this phone.
+ */
+function AnalyticsSwitch() {
+  const cc = useConsentCopy();
+  const live = useLive();
+  const { status, pendingNo, answer } = useAnalyticsConsent();
+  const [saving, setSaving] = useState(false);
+  const [failed, setFailed] = useState(false);
+  // One yes on its way at a time, however fast the switch is pressed.
+  const sending = useRef(false);
+
+  async function change(on: boolean) {
+    setFailed(false);
+    if (!on) {
+      // In force at the call. A rejection (this phone's store) leaves the no in force too.
+      answer('no').catch(() => undefined);
+      return;
+    }
+    if (sending.current) return;
+    sending.current = true;
+    setSaving(true);
+    let failure = false;
+    try {
+      await answer('yes');
+    } catch (error) {
+      failure = !(error instanceof AccountChangedError);
+    }
+    sending.current = false;
+    if (!live()) return;
+    setSaving(false);
+    setFailed(failure);
+  }
+
+  return (
+    <OutlinedCard testID="privacy-analytics">
+      <ReminderSwitch label={cc('switchLabel')} value={status === 'yes'} disabled={saving} onChange={(on) => void change(on)} />
+      {pendingNo ? <BunText testID="privacy-analytics-pending" variant="caption" tone="muted">{cc('stoppedHere')}</BunText> : null}
+      {failed ? <Notice message={cc('saveFailed')} /> : null}
     </OutlinedCard>
   );
 }
@@ -453,7 +512,7 @@ function DeleteCard({ services }: { services: PrivacyServices }) {
 
 // ---------------------------------------------------------------------------
 
-export function PrivacyScreen({ services, now }: PrivacyScreenProps) {
+export function PrivacyScreen({ services, now, analyticsArea = isRedesignEnabled('analytics') }: PrivacyScreenProps) {
   const tc = useCopy();
   const colors = useBunColors();
   const back = useBackTo('/settings');
@@ -463,6 +522,7 @@ export function PrivacyScreen({ services, now }: PrivacyScreenProps) {
         <StageHeader back={{ onPress: back }} title={tc('Privacy and data')} />
         <View style={PAGE_STYLE}>
           <Promises />
+          {analyticsArea ? <AnalyticsSwitch /> : null}
           <ExportCard services={services} now={now} />
           <DeleteCard services={services} />
         </View>
