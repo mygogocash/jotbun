@@ -16,8 +16,10 @@
 // The screens of each later area have their own list here, in the 'Screens'
 // group, in plan order: Planning (R4), Insights (R5), Account (R6) and Import
 // (R7), all approved at E2 checkpoints 2–5. The conflict choice (1D-T9, the
-// `conflict` area, not yet approved) comes last, with the area on for its
-// sections only.
+// `conflict` area, not yet approved) comes next, with the area on for its
+// sections only. The Bun Wallet (plan P2, the `wallet` area, not yet
+// approved) comes last: its own list is ./wallet/index.ts, where each wallet
+// task adds its sections.
 import type { ReactNode } from 'react';
 
 import { ENTRY_SECTIONS } from './entrySections';
@@ -35,6 +37,7 @@ import { MASCOT_SECTIONS } from './mascotSections';
 import { BUDGET_SECTIONS } from './planning/budgetSections';
 import { CATEGORY_SECTIONS } from './planning/categorySections';
 import { WALLET_SECTIONS } from './planning/walletSections';
+import { WALLET_SECTIONS as BUN_WALLET_SECTIONS } from './wallet';
 import { QUICK_ADD_SECTIONS } from './quickAddSections';
 import { RECENTLY_DELETED_SECTIONS } from './recentlyDeletedSections';
 import { RECORD_SECTIONS } from './recordSections';
@@ -101,4 +104,5 @@ export const CATALOGUE_SECTIONS: readonly CatalogueSection[] = [
   ...IMPORT_SCREEN_SECTIONS,
   ...COMPANION_SECTIONS,
   ...CONFLICT_SECTIONS,
+  ...BUN_WALLET_SECTIONS,
 ];
