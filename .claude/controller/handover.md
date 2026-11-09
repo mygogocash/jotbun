@@ -55,7 +55,13 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
   - Fix round DONE: merge 36adb96 (5dbd7be), fix ddc9317, and the controller's receipt correction 03da870. Every count matched: unit 882, render 90 files and 1694 tests, 45 of 45 mutants.
   - Pushed to #354 (MERGEABLE) and the PR body updated.
   - Confirming Opus review under way, writing `reviews/1D-T9-confirm.md`. Merge on its approval and green CI with `merge_task_pr.sh 354 03da870 1D-T9`.
-- **1C-T6 (Haiku), worktree p1-1c-t6:** base files are byte-identical at 5dbd7be (20 of 20). Expected: app 33, unit 887, render 90 files and 1660 tests.
+- **1C-T6:** DONE at caecf12 (base 5dbd7be): app 33, unit 887, render 90 files and 1660 tests, 41 of 41 mutants. It merges cleanly with #361's client.ts edits.
+  - PR #364 is open (issue #123) and the Opus review is under way. The reviewer gates the merged tree: expected app 34, unit 901, render 94 files and 1717 tests.
+- **1B-T9: brief READY** (size L; kit `scratch/1b-t9-planner/`, with SHA256SUMS and SHA256SUMS.logs). It starts only after #362 merges with R96's fix round; its Step 0 checks that `headOf` cancels the body.
+  - Expected: workers = the head's own count plus 1 file and 52 cases; Node +0.
+  - R-B does not reach the vault (one transaction).
+  - Planner calls to rule on at dispatch: P1 (the copy's 3-minute deadline is checked before publish), P3 (copy slot before prepare, as the API does), P11 (imports `attachments.service`, +33 kB, no driver).
+- **1C-T6 history (Haiku), worktree p1-1c-t6:** base files are byte-identical at 5dbd7be (20 of 20). Expected: app 33, unit 887, render 90 files and 1660 tests.
 - **1D-T6: merged 9a4a2f1 (#361, about 10:25).** The review approved with minors m1 to m4 (`reviews/1D-T6.md`; all in followups.md, and m1 is an owner question, below). Issue #137 is closed and the worktree and branches are removed.
   - **Baseline measured at cecf3a5** (app code as at 9a4a2f1) with `scripts/baseline.sh`; summary in `scratch/baseline-cecf3a5/`:
     - test:app 33, test:unit 894, render 93 files and 1706 tests;
