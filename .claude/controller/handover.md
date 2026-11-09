@@ -60,7 +60,9 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - #377's own CI is the first nine-job run, including the iOS export's first Linux build. Its measured times go in the receipt's "After, measured" line.
     - **The review approved** (`reviews/ci-parallel-jobs.md`, two-lens workflow, resumed after the stop): no blocker or major, three minors and seven nits (followups.md; m2 and m3 go to P6C-T7). The render split is whole, every old step still runs once, and the iOS export passes on Linux.
     - **Before merging (review m1):** #377's only CI run was on the old base 4850463. Once the owner answers, close and reopen #377 for a fresh nine-job run on the current base and check its totals. Only then run `merge_task_pr.sh 377 46b30a0` (no task id). Each extra run costs about 33 billable minutes, which is why it waits for the answer.
-    - Merge it **only after the owner's Actions-minutes answer**. Then run `promote_pr.sh ci-parallel-jobs 377`, and add the measured times to the receipt's "After, measured" line in a housekeeping commit (with review nits n1 and n6).
+    - **The owner answered on 10 Nov at 06:2x: "keep the nine-job CI, merge".** The controller closed and reopened #377 at 06:24, and fresh run 42720201154 is on the current base (review m1).
+    - When that run is green, with its totals checked: `merge_task_pr.sh 377 46b30a0` (no task id). Then `promote_pr.sh ci-parallel-jobs 377`, and add the measured times to the receipt's "After, measured" line in a housekeeping commit (with review nits n1 and n6).
+    - Then lift protocol.md's iOS-export correction (CI now runs it), and drop 1A-T10's minor 1 from P6C-T7 in followups.md.
     - **Its merge waits on the owner's Actions-minutes answer** (Owner decisions waiting).
     - After the merge: P6C-T7 no longer carries 1A-T10's minor 1, briefs that say "CI's database job runs `test:edge:db`" now mean the `edge` job, and the protocol's iOS-export correction can be lifted.
   - **P4-T12: brief READY on 606e131's code** (M; 18 new files in `src/slips/` and ten placeholder routes under `app/spend/slips/`).
@@ -329,7 +331,8 @@ R84 (P4-T10 fixtures), R85 (two API test-only fixes), R86 (token sid must match 
 Merge each PR when its CI on the current head is green; close its issue by hand (backlog-map.json); remove worktree and branch (local and remote). Open PRs that conflict only in docs/implementation/premium-progress.md: merge the head and run ledger_union.py (keeps both sides), except 1C (hand-merge: one `## 1C:` heading) and P4 (one `## P4` heading). New tasks write receipts under R87, which avoids those conflicts.
 
 ## Owner decisions waiting
-- **NEW (9 Nov, 23:10): Actions minutes before ci-parallel-jobs merges.** The repo is private on the Free plan, which includes 2,000 Actions minutes a month.
+- **ANSWERED (10 Nov, 06:2x): keep the nine-job CI, merge.** Below is the question as it was asked. The owner accepted about 33 billable minutes a run.
+- **(was) Actions minutes before ci-parallel-jobs merges.** The repo is private on the Free plan, which includes 2,000 Actions minutes a month.
   - Usage: 80 pull-request runs have happened since 1 Nov, about 1,400 billable minutes at today's roughly 18 per run, and each merged task now adds a promotion PR run. The controller cannot read the actual usage: GitHub's timing API reports 0, and the billing endpoint needs `admin:org`.
   - The parallel layout costs about 31 billable minutes a run (P11). If the minutes run out with no payment method, Actions stop, and every merge stops with them.
   - **Measured on #377's own run (42652925056, all nine green):**
