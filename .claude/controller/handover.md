@@ -118,6 +118,13 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
 - **P4-T12 (slip core) and P4-T13 (photos) planners (Opus), dispatched about 00:40 under R100.**
   - WT p4-t12 on p4/t12-slip-core; WT p4-t13 on p4/t13-photos.
   - P4-T12 carries 1D-T6's m4 (the analytics-off header on slip transports).
+- **ci-parallel-jobs planner (Opus), dispatched about 00:55** at the owner's go-ahead: halve PR CI time by splitting jobs and sharding render, with no suite dropped.
+  - It also takes 1A-T10's minor 1 (no `if:` or `continue-on-error:`), which was assigned to P6C-T7.
+  - WT ci-parallel on chore/ci-parallel-jobs.
+- **Owner's speed approvals (9 Nov):**
+  - Sonnet for confirming and S-task reviews (`make_prompt.py --size S`).
+  - `new_task_worktree.sh ... install|install-edge` pre-installs, so dispatch with `--installed`. A clone cache was dropped, because npm ci already takes about 15 s.
+  - Faster CI, as above.
 - **Held:**
   - 1B-T7 (AI routes) follows 1B-T8 in the server lane (the same route files).
   - fix-download-aborts follows 1B-T8 (downloads.ts). 1C-T2 and P3-T12 are still held on owner answers.

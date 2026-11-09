@@ -34,11 +34,13 @@ FINAL_IMPL = ("Your final message must follow the protocol's \"Your final messag
               "`STATUS: BLOCKED` with the exact blocker), the commit SHA, RED and GREEN counts, the mutants, each gate command with its result, "
               "SKIPPED items, and deviations.")
 
-def task(tid):
+def task(tid, a):
     for t in json.load(open(f"{C}/backlog/tasks.json")):
         if t["id"] == tid:
             return t
-    sys.exit(f"no task {tid} in backlog/tasks.json")
+    if a.title and a.spec:   # a follow-up task the backlog does not list (e.g. fix-download-aborts)
+        return {"title": a.title, "heading": None, "spec": a.spec}
+    sys.exit(f"no task {tid} in backlog/tasks.json (for a follow-up task, pass --title and --spec)")
 
 def worktree(a, fresh_from=None):
     s = f"Your worktree: {W}/{a.wt}"
@@ -52,13 +54,14 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("role", choices=["implementer", "fixer", "reviewer", "confirm", "planner"])
     p.add_argument("task")
-    for o in ("wt", "branch", "head", "accepted", "pr", "sha", "shape", "notes", "out"):
+    for o in ("wt", "branch", "head", "accepted", "pr", "sha", "shape", "notes", "out", "title", "spec"):
         p.add_argument(f"--{o}")
     p.add_argument("--installed", action="store_true")
     p.add_argument("--lock", action="store_true")
+    p.add_argument("--size", choices=["S", "M", "L"], default="M", help="task size: an S task's review runs on Sonnet")
     a = p.parse_args()
-    t = task(a.task); tl = a.task.lower()
-    plan = f"docs/superpowers/plans/{t['plan_file']}, \"### {t['heading']}\" (line {t['line']})"
+    t = task(a.task, a); tl = a.task.lower()
+    plan = t["spec"] if t.get("spec") else f"docs/superpowers/plans/{t['plan_file']}, \"### {t['heading']}\" (line {t['line']})"
     proto = f"{C}/protocol.md"
     L = []
     if a.role in ("implementer", "fixer"):
@@ -103,7 +106,10 @@ def main():
     out = a.out or f"{C}/scratch/dispatch/{a.task}-{a.role}.prompt.md"
     os.makedirs(os.path.dirname(out), exist_ok=True)
     open(out, "w").write("\n".join(L) + "\n")
-    model = "opus" if a.role in ("planner", "reviewer", "confirm") else "haiku"
+    # Owner's routing (9 Nov): Opus plans and gives first reviews of M and L tasks; Sonnet gives confirming
+    # reviews and S tasks' reviews; Haiku implements and fixes.
+    model = {"planner": "opus", "implementer": "haiku", "fixer": "haiku", "confirm": "sonnet",
+             "reviewer": "sonnet" if a.size == "S" else "opus"}[a.role]
     print(out)
     noun = {"confirm": "confirming reviewer", "fixer": "fix-round implementer"}.get(a.role, a.role)
     print(f"model={model}  prompt: You are the {noun} for Jotbun task {a.task} \"{t['title']}\". Your full assignment is in {out}. Read it first and follow it exactly.")

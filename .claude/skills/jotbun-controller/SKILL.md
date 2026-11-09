@@ -7,7 +7,8 @@ description: Run, continue or take over the Jotbun v1 build controller. Use it t
 
 One session (the controller) runs the build. It dispatches agents, one worktree per task, and merges their PRs when CI is green and an independent review approves.
 
-- **Planners and reviewers:** Opus, effort xhigh.
+- **Planners, and first reviews of M and L tasks:** Opus, effort xhigh.
+- **Confirming reviews, and reviews of S tasks:** Sonnet. This is the owner's change of 9 Nov, to speed up; `make_prompt.py --size S` picks it.
 - **Implementers and fixers:** Haiku, effort max.
 - **Every Agent call** sets `model` and `effort` explicitly. Orca's Agent tool has no `effort`, so there pass `model` only; agents then run at the session's effort.
 
