@@ -81,3 +81,13 @@ test('the wallet area is off unless named', () => {
     assert.equal(isRedesignEnabled('wallet', value), true, value);
   }
 });
+
+// 1C-T8: the sign-in drafts wait for their E2 screenshots (1C-T9 approves them), so the area is on only when named.
+test('the signin area is off unless named', () => {
+  for (const value of [undefined, '', 'core', 'account', 'catalogue,companion,conflict,wallet', 'signins', '-signin,all', 'signin,off']) {
+    assert.equal(isRedesignEnabled('signin', value), false, String(value));
+  }
+  for (const value of ['signin', ' SIGNIN ', 'catalogue, signin', 'all']) {
+    assert.equal(isRedesignEnabled('signin', value), true, value);
+  }
+});

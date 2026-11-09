@@ -11,6 +11,8 @@
 // - Sign-in: a provider can be chosen only with the terms ticked. Only a
 //   session the seam reports `active` leaves the screen; "not configured" and
 //   every other answer stay on it, so nothing pretends to sign in.
+// - With the `signin` area on (1C-T8, K16), the story ends at sign-in
+//   (`afterStory`) and the reminder question moves to right after it (R55).
 import type { SignInOutcome } from '@mobile/auth/credentialProvider';
 
 import { SPEND_INTRO_YEARLY_BAHT, formatIntroBaht } from '../../../spendIntro.ts';
@@ -82,6 +84,17 @@ export function afterOnboarding(signedIn: boolean): '/login' | '/spend/add' {
   return signedIn ? '/spend/add' : '/login';
 }
 
+/**
+ * With the `signin` area on (1C-T8, K16): the story ends at sign-in, which
+ * knows it came from onboarding; with a session already, at the reminder
+ * question, which now follows sign-in (R55).
+ */
+export function afterStory(signedIn: false): '/login?from=onboarding';
+export function afterStory(signedIn: boolean): '/login?from=onboarding' | '/onboarding/reminder';
+export function afterStory(signedIn: boolean): '/login?from=onboarding' | '/onboarding/reminder' {
+  return signedIn ? '/onboarding/reminder' : '/login?from=onboarding';
+}
+
 // ---------------------------------------------------------------------------
 // Promises (onboarding's private step and sign-in's reassurance)
 
@@ -115,14 +128,19 @@ export function canChooseProvider(termsAccepted: boolean, state: SignInState): b
 }
 
 /**
- * Where an attempt leaves the screen. Only `active` goes anywhere (the
- * diary). Cancelled is back where it was; a failure or a sign-in that needs
- * doing again says so; "not configured" says today's message.
+ * Where an attempt leaves the screen. Only `active` goes anywhere: the diary,
+ * or from onboarding (the `signin` area, K16) the reminder question that now
+ * follows sign-in (R55). Cancelled is back where it was; a failure or a
+ * sign-in that needs doing again says so; "not configured" says today's
+ * message. Without `from` the answer never names the reminder route, which
+ * Task 9 adds.
  */
-export function afterSignInAttempt(attempt: SignInAttempt): { state: SignInState; go: '/spend' | null } {
+export function afterSignInAttempt(attempt: SignInAttempt): { state: SignInState; go: '/spend' | null };
+export function afterSignInAttempt(attempt: SignInAttempt, from: 'onboarding' | undefined): { state: SignInState; go: '/spend' | '/onboarding/reminder' | null };
+export function afterSignInAttempt(attempt: SignInAttempt, from?: 'onboarding'): { state: SignInState; go: '/spend' | '/onboarding/reminder' | null } {
   switch (attempt) {
     case 'active':
-      return { state: { phase: 'idle' }, go: '/spend' };
+      return { state: { phase: 'idle' }, go: from === 'onboarding' ? '/onboarding/reminder' : '/spend' };
     case 'cancelled':
       return { state: { phase: 'idle' }, go: null };
     case 'not_configured':
