@@ -5,7 +5,9 @@ save each one's original prompt, and print where its transcript is.
 Usage: python3 -I inflight_agents.py <controller-session.jsonl> [save-dir]
   save-dir defaults to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/takeover
 An agent counts as finished when its LAST task notification says it finished (or failed,
-was killed or stopped). "is waiting on its own background work" is not finished.
+was killed or stopped). "is waiting on its own background work" is not finished, and neither
+is a failure from a usage limit ("error type rate_limit, HTTP 429"): that agent was cut off
+mid-task. (On 9 Nov this missed the P4-T12 and P4-T13 planners, whose last notice was such a failure.)
 Read a dead agent's last steps with:
   python3 -I /Users/kunanonjarat/Developer/jotbun/.claude/controller/tail_transcript.py <agent.jsonl> 80
 """
@@ -51,7 +53,8 @@ subdir = os.path.join(os.path.dirname(path), os.path.basename(path)[:-len(".json
 for tu, (desc, model, effort, prompt) in launched.items():
     aid = agent_of.get(tu)
     status, summary = last.get(aid) or last.get(tu) or ("", "")
-    finished = status in ("failed", "killed", "stopped") or (status == "completed" and "waiting on its own background work" not in summary)
+    cut_off = status == "failed" and re.search(r"rate_limit|HTTP 429|hit your [^.]*limit", summary)
+    finished = (status in ("failed", "killed", "stopped") and not cut_off) or (status == "completed" and "waiting on its own background work" not in summary)
     if finished:
         continue
     name = re.sub(r"[^a-z0-9]+", "-", desc.lower()).strip("-")[:50] or tu

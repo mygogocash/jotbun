@@ -11,6 +11,7 @@ One session (the controller) runs the build. It dispatches agents, one worktree 
 - **Confirming reviews, and reviews of S tasks:** Sonnet. This is the owner's change of 9 Nov, to speed up; `make_prompt.py --size S` picks it.
 - **Implementers and fixers:** Haiku, effort max.
 - **Every Agent call** sets `model` and `effort` explicitly. Orca's Agent tool has no `effort`, so there pass `model` only; agents then run at the session's effort.
+- **In T3 Code**, dispatch with `delegate_task` instead (its native Agent tool has no `effort` either): `target: {providerInstanceId: "claudeAgent", model: "claude-opus-5-5" | "claude-sonnet-5-5" | "claude-haiku-5-5", options: {effort: "xhigh" | "max", ultracode: false}}`. Keep `ultracode: false`, so children follow their briefs instead of starting workflows. A child's completion wakes the controller. `t3_thread_send` to a child's thread continues it with its context (this skill's SendMessage). Wait on PR checks with `watch_pull_request`, not a Monitor.
 
 The owner has authorised this to keep moving without pausing between tasks:
 - push task branches;

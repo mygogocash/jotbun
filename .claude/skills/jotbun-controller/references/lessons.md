@@ -46,6 +46,12 @@
 - **`sc chat stop <thread_id>` only cancels the current turn.** Find a chat's thread id with `sc chat list --worktree <path> --json`.
 - **Background agents die with their session.** Restart each from its saved prompt (`inflight_agents.py`) with the resume template, and record the takeover in `handover.md`.
 - **A "waiting on its own background work" notice is not a finish.** The agent is still alive. Stop a planner that has delivered its brief but keeps an expired watch (`TaskStop`).
+- **A killed mutant runner can leave its mutant in place.** Runners restore each file in a `finally` block, which a hard kill skips.
+  - On 9 Nov the cutoff killed 1D-T8's runner at mutant P8, and `PrivacyScreen.tsx` kept the mutant.
+  - Before resuming an agent that was mid-mutation, check the worktree against the kit (`cd <wt> && shasum -a 256 -c <kit>/SHA256SUMS.real`). Copy back from `real/` any file that differs.
+  - A planner's proof tree heals itself when its run script copies `real/` over the tree first, as 1B-T8's `run-final.sh` does.
+- **A failure on a usage limit is a cutoff, not a finish.** Its last notice is `failed` with "error type rate_limit, HTTP 429". `inflight_agents.py` now lists such agents; before the 9 Nov fix it missed the P4-T12 and P4-T13 planners.
+- **A killed run can leave the heavy lock held.** Once `ps` shows no test process, `rmdir` it at takeover.
 
 ## Merging
 

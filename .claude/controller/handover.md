@@ -1,8 +1,24 @@
-# Controller handover (9 Nov 2026, morning Bangkok)
+# Controller handover (9 Nov 2026, 22:15 Bangkok)
 
 Durable folder: `/Users/kunanonjarat/Developer/jotbun/.claude/controller/` (protocol.md, briefs/, reviews/, scratch/, followups.md, ledger_union.py, wait_ci.sh, watch_prs.sh, backlog/). Never use /private/tmp for anything kept; macOS cleared it once (late Oct). Only the heavy lock lives there: `/private/tmp/claude-501/jotbun-heavy.lock`.
 
-Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vault-core`), head 5dbd7be (controller state after #358).
+Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vault-core`), head 0bd5659 (controller state after 1D-T8's dispatch). Nothing outside `.claude/` changed since 606e131. No PR is open into the integration branch; only #70 into main.
+
+## Takeover in T3 Code (9 Nov, 22:05 Bangkok): READ THIS FIRST
+
+The Orca controller (session 121af0e6) hit its 5-hour usage limit at 22:04; the limit resets at 01:50 on 10 Nov. Its agents died with it, and its background jobs were killed. **Do not let that Orca session continue when its limit resets**, including through its "Continue automatically when limits reset" option: two controllers would collide in the same worktrees.
+
+New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkout, `/Users/kunanonjarat/.t3/worktrees/jotbun/t3-d9c08cd1-928de148f4930c37`, is main at afcf884; the controller works on the main checkout's `.claude/controller` and the task worktrees by absolute path.
+- **Dispatch:** T3's `delegate_task`, which pins model and effort (Opus xhigh, Haiku max, Sonnet xhigh), with `ultracode: false` for every child (SKILL.md).
+- **Cleanup at takeover:**
+  - 1D-T8's killed mutant runner had left mutant P8 in `PrivacyScreen.tsx`. The controller copied the kit's `real/` file back (checksum verified).
+  - The heavy lock, held since 21:53 by 1B-T8's killed final proof, was removed; no test process was alive.
+  - `inflight_agents.py` now lists agents that failed on a usage limit; it had missed the P4-T12 and P4-T13 planners.
+- **Resumed at about 22:15**, with resume notes in `scratch/takeover/*.resume.md`. The T3 task ids end with the uuid shown.
+  - **1D-T8 implementer** (Haiku max, 239717c6), in p1-1d-t8 at 0bd5659. It reruns the whole mutation check (the cut run reached 39 of 47), then the gate, receipt and commit. Next: open its PR (issue from backlog-map.json) and dispatch the Opus review.
+  - **1B-T8 planner** (Opus xhigh, cd2b39ae). It reruns its final proof, because `real/` changed during the killed run (the entity-order check, mutant S40). Its base becomes 0bd5659.
+  - **ci-parallel-jobs planner** (ad778c27), **P4-T12 planner** (e438b5ac) and **P4-T13 planner** (50706531): Opus xhigh, continuing their kits. The P4 planners were given 1D-T8's exact files.
+  - The old P2-T10 planner (a0363fb1, "waiting on its own background work") is obsolete: P2-T10 merged as #370.
 
 ## PR #371: the integration branch into main. The owner merged it on 9 Nov, 21:30 Bangkok, as afcf884
 - It was merged with a merge commit, so history is kept. The controller then fast-forwarded claude/p1a-vault-core to afcf884, which adds main's README and CHANGELOG, so the two branches were level.
