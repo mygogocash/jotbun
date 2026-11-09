@@ -9,6 +9,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "export:web": "expo export --platform web",
+    "export:ios": "expo export --platform ios",
     "test": "node --test src/api/*.test.ts",
     "test:unit": "node scripts/test-unit.mjs",
     "test:render": "vitest run --config vitest.render.config.ts",
