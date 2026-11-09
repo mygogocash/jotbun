@@ -1,0 +1,82 @@
+S1 KILLED (the preferences answer without `available`) [workers 4 failed | 34 passed (38)] restored=True
+    failed: ai.test.ts: AI is off until the user agrees to the current notice
+    failed: ai.test.ts: consent to another notice version does not count: the companion reads off, the routes that need consent refuse, and the note is the plain facts
+    failed: ai.test.ts: with no model given, the env decides: AI needs AI_ENABLED and an API key, and AI_MODEL names the model
+    failed: ai.test.ts: without AI configured, answers from the rules and spends no uses
+S2 KILLED (a preferences update answers without `available`) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: with no model given, the env decides: AI needs AI_ENABLED and an API key, and AI_MODEL names the model
+S3 KILLED (Tell Bun and slips do not need consent) [workers 2 failed | 36 passed (38)] restored=True
+    failed: ai.test.ts: AI is off until the user agrees to the current notice
+    failed: ai.test.ts: consent to another notice version does not count: the companion reads off, the routes that need consent refuse, and the note is the plain facts
+S4 KILLED (Ask Bun does not need consent) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: consent to another notice version does not count: the companion reads off, the routes that need consent refuse, and the note is the plain facts
+S5 KILLED (the note does not need consent for the model) [workers 2 failed | 36 passed (38)] restored=True
+    failed: ai.test.ts: consent to another notice version does not count: the companion reads off, the routes that need consent refuse, and the note is the plain facts
+    failed: ai.test.ts: without consent: the plain facts, and no model call
+S6 KILLED (a slip without AI spends a use) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: without AI, a slip and a question are 503 AI_PAUSED and spend no use, and the note is the plain facts
+S7 KILLED (a question without AI spends a use) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: without AI, a slip and a question are 503 AI_PAUSED and spend no use, and the note is the plain facts
+S8 KILLED (the note without AI spends a use) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: without AI, a slip and a question are 503 AI_PAUSED and spend no use, and the note is the plain facts
+S9 KILLED (a slip's use is counted after the model call) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+S10 KILLED (a question's use is counted after the first model call) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+S11 KILLED (the note's use is counted after the model call) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+S12 KILLED (any client date is trusted) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the model sees only the active wallets' and categories' ids and names, and a date more than a day from the server's is replaced
+S13 KILLED (a client date a day away is replaced) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the model sees only the active wallets' and categories' ids and names, and a date more than a day from the server's is replaced
+S14 KILLED (the model is offered archived wallets) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the model sees only the active wallets' and categories' ids and names, and a date more than a day from the server's is replaced
+S15 KILLED (the model is offered archived categories) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the model sees only the active wallets' and categories' ids and names, and a date more than a day from the server's is replaced
+S16 KILLED (the model sees a category's built-in key only) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the model sees only the active wallets' and categories' ids and names, and a date more than a day from the server's is replaced
+S17 KILLED (a slip's bank name is not cut) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: a slip's bank name is trimmed and cut to 60 characters, and anything else reads null
+S18 KILLED (a slip's empty bank name is kept) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: a slip's bank name is trimmed and cut to 60 characters, and anything else reads null
+S19 KILLED (the note's words may not use the day's date) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the note's words may use the day's date and every number of its facts, and nothing else, in at most 200 characters
+S20 KILLED (the note's words may not use the facts' counts) [workers 2 failed | 36 passed (38)] restored=True
+    failed: ai.test.ts: the note's words may use the day's date and every number of its facts, and nothing else, in at most 200 characters
+    failed: ai.test.ts: uses Claude’s words only when every number is one of the facts
+S21 KILLED (the note's words may not use the facts' amounts) [workers 2 failed | 36 passed (38)] restored=True
+    failed: ai.test.ts: the note's words may use the day's date and every number of its facts, and nothing else, in at most 200 characters
+    failed: ai.test.ts: uses Claude’s words only when every number is one of the facts
+S22 KILLED (the note's words may run to 201 characters) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the note's words may use the day's date and every number of its facts, and nothing else, in at most 200 characters
+S23 KILLED (the note's empty words are used) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the note's words may use the day's date and every number of its facts, and nothing else, in at most 200 characters
+S24 KILLED (Ask Bun takes six tool turns) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: Ask Bun stops after five tool turns and answers from the figures it read
+S25 KILLED (only the first tool of a turn runs) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: two tools in one turn both run, and their results go back to Claude together
+S26 KILLED (a refused tool input goes back to Claude as a plain result) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: a bad tool input is reported back to Claude, not run
+S27 KILLED (the answer's grounding leaves out the tools' amounts) [workers 3 failed | 35 passed (38)] restored=True
+    failed: ai.test.ts: a tool's allowance reaches the grounding check
+    failed: ai.test.ts: answers through a read-only tool and returns the figures it used
+    failed: ai.test.ts: two tools in one turn both run, and their results go back to Claude together
+S28 KILLED (the answer's grounding leaves out the tools' counts) [workers 2 failed | 36 passed (38)] restored=True
+    failed: ai.test.ts: a tool's allowance reaches the grounding check
+    failed: ai.test.ts: answers through a read-only tool and returns the figures it used
+S29 KILLED (the answer's grounding leaves out the tools' dates) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: a tool's allowance reaches the grounding check
+S30 KILLED (a vault step that failed (500) is a refusal) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+S31 KILLED (a refusal falls back instead of answering) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: a session signed out while Ask Bun runs is refused at its next tool step, and no tool reads the records
+S32 KILLED (Ask Bun is never paused after a failure) [workers 2 failed | 36 passed (38)] restored=True
+    failed: ai.test.ts: Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+    failed: ai.test.ts: every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+S33 KILLED (a step's refusal is read as its answer) [workers 6 failed | 32 passed (38)] restored=True
+    failed: ai.test.ts: a session signed out while Ask Bun runs is refused at its next tool step, and no tool reads the records
+    failed: ai.test.ts: each AI route is refused at its first step when a newer policy is pending, the session ended or the account stopped being active, before any model call
+    failed: ai.test.ts: every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+    failed: ai.test.ts: stops at the daily limit until the next Bangkok day
+    failed: ai.test.ts: the day's uses follow the vault clock in Bangkok: the last use is allowed, the next waits for midnight, and counts older than 35 days are forgotten
+    failed: ai.test.ts: turning AI on needs the current notice version; tips can be set alone

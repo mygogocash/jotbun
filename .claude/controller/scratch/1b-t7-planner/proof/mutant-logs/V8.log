@@ -1,0 +1,156 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t7-planner/tree/apps/edge
+
+ ✓ test/workers/ai.test.ts > consent > AI is off until the user agrees to the current notice 28ms
+ ✓ test/workers/ai.test.ts > consent > turning AI on needs the current notice version; tips can be set alone 24ms
+ ✓ test/workers/ai.test.ts > consent > preferences are the person's own 52ms
+ ✓ test/workers/ai.test.ts > consent > consent to another notice version does not count: the companion reads off, the routes that need consent refuse, and the note is the plain facts 28ms
+ ✓ test/workers/ai.test.ts > Tell Bun > turns a sentence into a grounded draft, asking Claude through the shared settings 29ms
+ ✓ test/workers/ai.test.ts > Tell Bun > never passes on an amount the person did not write 23ms
+ ✓ test/workers/ai.test.ts > Tell Bun > falls back to the offline rules when Claude refuses, fails or has nothing 28ms
+ ✓ test/workers/ai.test.ts > Tell Bun > without AI configured, answers from the rules and spends no uses 19ms
+ × test/workers/ai.test.ts > Tell Bun > stops at the daily limit until the next Bangkok day 21ms
+   → expected 200 to be 429 // Object.is equality
+ ✓ test/workers/ai.test.ts > Tell Bun > validates the sentence 17ms
+ ✓ test/workers/ai.test.ts > Tell Bun > the model sees only the active wallets' and categories' ids and names, and a date more than a day from the server's is replaced 35ms
+ × test/workers/ai.test.ts > Tell Bun > the day's uses follow the vault clock in Bangkok: the last use is allowed, the next waits for midnight, and counts older than 35 days are forgotten 26ms
+   → expected 200 to be 429 // Object.is equality
+ ✓ test/workers/ai.test.ts > slips > reads a slip image into drafts and keeps nothing 25ms
+ ✓ test/workers/ai.test.ts > slips > refuses other files and broken base64 before any model call 17ms
+ ✓ test/workers/ai.test.ts > slips > a slip read stores nothing: no object, no upload and no row but today's use 31ms
+ ✓ test/workers/ai.test.ts > slips > a slip's bank name is trimmed and cut to 60 characters, and anything else reads null 21ms
+ ✓ test/workers/ai.test.ts > Bun’s daily note > without consent: the plain facts, and no model call 22ms
+ ✓ test/workers/ai.test.ts > Bun’s daily note > uses Claude’s words only when every number is one of the facts 23ms
+ ✓ test/workers/ai.test.ts > Bun’s daily note > out of note uses, the facts still come 16ms
+ ✓ test/workers/ai.test.ts > Bun’s daily note > the note's words may use the day's date and every number of its facts, and nothing else, in at most 200 characters 33ms
+ ✓ test/workers/ai.test.ts > Ask Bun > answers through a read-only tool and returns the figures it used 24ms
+ ✓ test/workers/ai.test.ts > Ask Bun > an answer with a number no tool read becomes the plain figures 19ms
+ ✓ test/workers/ai.test.ts > Ask Bun > a bad tool input is reported back to Claude, not run 14ms
+ ✓ test/workers/ai.test.ts > Ask Bun > a tool's allowance reaches the grounding check 21ms
+ ✓ test/workers/ai.test.ts > Ask Bun > a session signed out while Ask Bun runs is refused at its next tool step, and no tool reads the records 15ms
+ ✓ test/workers/ai.test.ts > Ask Bun > Ask Bun stops after five tool turns and answers from the figures it read 16ms
+ ✓ test/workers/ai.test.ts > Ask Bun > two tools in one turn both run, and their results go back to Claude together 21ms
+ ✓ test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none 27ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > with no model given, the env decides: AI needs AI_ENABLED and an API key, and AI_MODEL names the model 27ms
+ × test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked 26ms
+   → expected 503 to be 429 // Object.is equality
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > without AI, a slip and a question are 503 AI_PAUSED and spend no use, and the note is the plain facts 20ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > each AI route is refused at its first step when a newer policy is pending, the session ended or the account stopped being active, before any model call 55ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > the note and Ask Bun read their input before any step, and a HEAD on an AI read answers its GET with no body 21ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > the day's facts come from the vault's records in dayFacts' order: over budget first, then today, the pace, the week, the top category and the month 25ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > spending_total and category_totals read the records runTool read, and allow each number they return 21ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > top_merchants and budget_status read the records runTool read, and allow each number they return 21ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > category_totals answers at most 12 categories and top_merchants at most 8 places, largest first 19ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > a tool input the tool refuses comes back as its error, and an unknown tool is refused by name 17ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 35 passed (38)
+   Start at  06:25:30
+   Duration  3.18s (transform 878ms, setup 1.68s, import 50ms, tests 927ms, environment 0ms)
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t7-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ai.test.ts > Tell Bun > falls back to the offline rules when Claude refuses, fails or has nothing
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"ModelUnavailable:refusal"}
+
+stderr | test/workers/ai.test.ts > Tell Bun > falls back to the offline rules when Claude refuses, fails or has nothing
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > Tell Bun > stops at the daily limit until the next Bangkok day
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > Tell Bun > the day's uses follow the vault clock in Bangkok: the last use is allowed, the next waits for midnight, and counts older than 35 days are forgotten
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > Bun’s daily note > out of note uses, the facts still come
+{"level":"warn","event":"ai_fallback","feature":"note","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"ProblemException"}
+
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"note","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai.test.ts > Tell Bun > stops at the daily limit until the next Bangkok day
+AssertionError: expected 200 to be 429 // Object.is equality
+
+- Expected
++ Received
+
+- 429
++ 200
+
+ ❯ test/workers/ai.test.ts:242:24
+    240|     await vaultExec(user, "INSERT INTO ai_usage (day, feature, uses) V…
+    241|     const res = await client.as(user).post('/v1/ai/parse', { text: 'กา…
+    242|     expect(res.status).toBe(429)
+       |                        ^
+    243|     expect(Number(res.headers.get('retry-after'))).toBeGreaterThan(0)
+    244|     expect((await body(res)).code).toBe('AI_LIMIT_REACHED')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  test/workers/ai.test.ts > Tell Bun > the day's uses follow the vault clock in Bangkok: the last use is allowed, the next waits for midnight, and counts older than 35 days are forgotten
+AssertionError: expected 200 to be 429 // Object.is equality
+
+- Expected
++ Received
+
+- 429
++ 200
+
+ ❯ test/workers/ai.test.ts:300:28
+    298|     expect((await body(await client.as(user).get('/v1/me/ai-preference…
+    299|     const refused = await parse()
+    300|     expect(refused.status).toBe(429)
+       |                            ^
+    301|     expect(refused.headers.get('retry-after')).toBe('90')
+    302|     expect(await body(refused)).toMatchObject({ code: 'AI_LIMIT_REACHE…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+AssertionError: expected 503 to be 429 // Object.is equality
+
+- Expected
++ Received
+
+- 429
++ 503
+
+ ❯ test/workers/ai.test.ts:597:26
+    595|     await vaultExec(user, "UPDATE ai_usage SET uses = CASE feature WHE…
+    596|     for (const res of [await slip(), await ask()]) {
+    597|       expect(res.status).toBe(429)
+       |                          ^
+    598|       expect((await body(res)).code).toBe('AI_LIMIT_REACHED')
+    599|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

@@ -1,0 +1,45 @@
+--- a/src/v1/routes.ts
++++ b/src/v1/routes.ts
+@@ -111,6 +111,14 @@
+   { method: 'POST', path: '/v1/sync/snapshots', access: 'bound_session', vault: 'snapshots.request', gates: ['jobs'], starts: true },
+   { method: 'GET', path: '/v1/sync/snapshots/:id', access: 'bound_session', vault: 'snapshots.status' },
+   { method: 'GET', path: '/v1/sync/snapshot-chunks/:grant', access: 'bound_session', worker: 'snapshot.chunk.download' },
++  // The AI companion (1B-T7): the PostgreSQL edge's own routes, run in the Worker with the vault's `ai.*` steps.
++  // No gate (owner answer 3): AI_ENABLED is the switch until phase 3's `ai` gate.
++  { method: 'GET', path: '/v1/me/ai-preferences', access: 'bound_session', worker: 'ai.preferences.get' },
++  { method: 'PUT', path: '/v1/me/ai-preferences', access: 'bound_session', worker: 'ai.preferences.put' },
++  { method: 'POST', path: '/v1/ai/parse', access: 'current_policy', worker: 'ai.parse', status: 200 },
++  { method: 'POST', path: '/v1/ai/slip', access: 'current_policy', worker: 'ai.slip', status: 200 },
++  { method: 'GET', path: '/v1/ai/note', access: 'bound_session', worker: 'ai.note' },
++  { method: 'POST', path: '/v1/ai/ask', access: 'current_policy', worker: 'ai.ask', status: 200 },
+ ]
+ 
+ const ROUTE_BY_ID = new Map<VaultRouteId, VaultRoute>(VAULT_V1_ROUTES.flatMap((route) => (route.vault ? [[route.vault, route] as const] : [])))
+@@ -154,6 +162,14 @@
+   'imports.confirm': {},
+   // 1B-T8: the snapshot chunk download's step. It checks the session: a download needs the session that asked.
+   'snapshots.chunk': {},
++  // 1B-T7: the AI routes' steps. Each checks the session, and on a current_policy route the policy, so a
++  // request whose session ends or whose policy changes is refused at its next step, before any model call.
++  'ai.preferences': {},
++  'ai.setPreferences': {},
++  'ai.context': {},
++  'ai.consume': {},
++  'ai.facts': {},
++  'ai.tool': {},
+ }
+ 
+ /** The step-only entry a vault call names, or undefined when the id is not a step. */
+@@ -177,12 +193,6 @@
+ export const VAULT_DEFERRED_ROUTES: readonly string[] = [
+   'POST /v1/me/deletion',
+   'POST /v1/auth/deletion-receipt',
+-  'GET /v1/me/ai-preferences',
+-  'PUT /v1/me/ai-preferences',
+-  'POST /v1/ai/parse',
+-  'POST /v1/ai/slip',
+-  'GET /v1/ai/note',
+-  'POST /v1/ai/ask',
+ ]
+ 
+ /** §6.4 retires these: the sign-in steps move to Better Auth in 1C. */

@@ -51,7 +51,13 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - **Edge baseline now (CI):** workers 28 files, 675 passed and 1 todo; `test:edge` 15 files and 176 tests.
     - **Promotion PR #380** is stacked on #378 (stack #379: #373, #378, #380).
 - **Server lane, dispatched at 23:20 from 1c14dd1 (Opus xhigh, in parallel; no shared file in their listings):**
-  - **1B-T7 planner** (fa58dddd), the AI routes: WT p1-1b-t7 on p1/1b-t7-ai-routes. It keeps its `handler.ts` edits minimal, for fix-download-aborts.
+  - **1B-T7: brief READY at 712574d** (M), the AI routes. New: `vault/ai.ts`, `v1/ai/service.ts`, `v1/ai/routes.ts`, `test/workers/ai.test.ts`. It also edits nine shared files, including three minimal `handler.ts` edits, none on a `headOf` line.
+    - P1 to P18 are accepted. P2: a signed-out session with a malformed body gets 422 where the PostgreSQL edge gave 401; the token is still verified first, and these routes are edge-only. P5: every step rechecks the session, the policy and that the account is active.
+    - The vault bundle grows to about 1,645 kB (gzip 377 kB), mostly the Anthropic SDK, by the plan's design.
+    - Kit `scratch/1b-t7-planner/`: check_kit at d340ffe gives 44 OK, and the 9 `orig/` files are identical. The planner's proof: 99 of 99 mutants. For CI: workers +1 file and +38 tests.
+    - The implementer (Haiku max, 603c183d) was dispatched at 06:38 in a pre-installed p1-1b-t7 from d340ffe, under the heavy lock for workers runs.
+    - Then: PR (issue from backlog-map.json) and an Opus review (M).
+  - **fix-download-aborts: not yet planned.** It is held until a review workflow finishes, to keep about six local agents (the thermal lesson). Plan it on top of `scratch/1b-t7-planner/real/src/v1/handler.ts`, carrying the full list in followups.md (R97, plus the review cases from 1B-T6, 1B-T8, 1B-T9 and 1B-T10).
   - **1B-T11 planner** (6407a432), files on the vault alarm: WT p1-1b-t11 on p1/1b-t11-files-alarm. It carries 1B-T8's m-1 and the alarm notes from 1B-T4, 1B-T5, 1B-T6, 1B-T9 and 1B-T10.
   - **fix-download-aborts** is planned next, on top of 1B-T7's `real/` `handler.ts`. It must land before 1B-T13; its list in followups.md now includes 1B-T8's review cases.
   - **ci-parallel-jobs: brief READY at 857b9f2** (M), with the controller's amendment (the iOS export and `typecheck:routes` in CI).
