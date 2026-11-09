@@ -105,7 +105,13 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
   - It folds in P2-T8's m-1 (harness cases H6 and H7, mutants HA2 to HA4) and m-2's harness sentence.
   - Kit `scratch/p2-t11-planner/`: check_kit at 6e51a3d gives 41 OK, and the 4 `orig/` files are identical. The planner's proof: 119 of 119 mutants.
   - The implementer (Haiku max, 3b2e8ff2) was dispatched at 23:24 in a pre-installed p2-t11 from 6e51a3d. No iOS export is needed (no route, entry or native change).
-  - Then: PR (issue #157) and an Opus review (L). P2-T13 (planner f362a7c3) follows in the wallet lane.
+  - **DONE at 31d9d59 (base e7fad50); PR #382 opened at 06:29 (issue #157).**
+    - RED: Node 10 of 10, render 19 of 27. GREEN: 14 and 27. 119 of 119 mutants. `test:unit` 955, `test:app` 34.
+    - It was BLOCKED once, on the whole-file `CatalogueScreen` run, by the Mac's thermal sleeps. Under ruling R103 that run went to CI, on the per-case evidence (298 and 300 of 301, then 4 of 4 targeted).
+    - The controller checked the 18 files against the kit and the clean merge with the head.
+    - **The review runs as a workflow** (run wf_4e503333-e15): two Opus lenses (the data rules and card words; the drawings, harness, catalogue and CI), a skeptic for each blocker or major, and a synthesizer writing `reviews/P2-T11.md`.
+    - **CI on #382 is R103's record** for the whole `CatalogueScreen` file.
+    - On approval and green CI: `merge_task_pr.sh 382 31d9d59 P2-T11`, then `promote_pr.sh P2-T11 382`. No iOS export is needed. P2-T13 (implementer 094336d2) follows in the wallet lane.
 
 ## PR #371: the integration branch into main. The owner merged it on 9 Nov, 21:30 Bangkok, as afcf884
 - It was merged with a merge commit, so history is kept. The controller then fast-forwarded claude/p1a-vault-core to afcf884, which adds main's README and CHANGELOG, so the two branches were level.
