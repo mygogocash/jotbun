@@ -71,7 +71,8 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
   - Confirming Opus review under way, writing `reviews/1D-T9-confirm.md`. Merge on its approval and green CI with `merge_task_pr.sh 354 03da870 1D-T9`.
 - **1C-T6: merged f544c28 (#364, about 17:10).** The review approved: m1 is carried to 1C-T7, and an owner question is below. Issue #123 is closed and the worktree and branches are removed.
   - **App baseline now:** test:app 34, test:unit 901, render 94 files and 1717 tests (the reviewer and CI on the merged tree); web 4785.
-- **P2-T8:** DONE at 47f4b59 (built at 2e9c3b7, before 1C-T6): app 33, unit 894, render 94 files and 1712 tests, web 4785. PR #365 is open (issue #154) and the Opus review is under way.
+- **P2-T8: merged 1502e65 (#365, about 19:00).** The review approved: m-1 is carried to P2-T11, m-2 to P2-T35. Issue #154 is closed and the worktree and branches are removed.
+  - **App baseline now** (CI on #365's merge ref): test:app 34, test:unit 901, render 95 files and 1723 tests, web 4785 modules.
 - **1B-T9: brief READY** (size L; kit `scratch/1b-t9-planner/`, with SHA256SUMS and SHA256SUMS.logs). It starts only after #362 merges with R96's fix round; its Step 0 checks that `headOf` cancels the body.
   - Expected: workers = the head's own count plus 1 file and 52 cases; Node +0.
   - R-B does not reach the vault (one transaction).
