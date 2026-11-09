@@ -234,9 +234,17 @@ export type DiaryRow = {
   canDiscard: boolean;
   /** Edit and Delete work on confirmed records only (Copy works on both). */
   canEdit: boolean;
+  /** C16: the record has a refused edit waiting for the person's choice on this phone. Never on a draft. */
+  choicePending: boolean;
 };
 
-export type RowContext = { lookups: Lookups; tc: Translate; locale: MoneyLocale };
+export type RowContext = {
+  lookups: Lookups;
+  tc: Translate;
+  locale: MoneyLocale;
+  /** C16: records with a pending choice on this phone. confirmedRow reads it; History passes it, Home leaves it out. */
+  pendingChoiceIds?: ReadonlySet<string>;
+};
 
 /** The fields a confirmed record and a draft's payload share. */
 export type EntryLike = { id: string; amount_minor: Minor; occurred_on: string; note?: string | null; merchant?: string | null } & (
@@ -275,7 +283,7 @@ export function confirmedRow(record: TransactionDto, context: RowContext): Diary
     key: record.id, recordId: record.id, commandId: null, version: record.version, outboxState: null,
     type: record.type, occurredOn: record.occurred_on, note: record.note, merchant: record.merchant, amountMinor: record.amount_minor,
     ...words, state: 'confirmed', stateText: null, accessibilityLabel: `${words.title}, ${words.amountLabel}`,
-    canUndo: false, canDiscard: false, canEdit: true,
+    canUndo: false, canDiscard: false, canEdit: true, choicePending: context.pendingChoiceIds?.has(record.id) ?? false,
   };
 }
 
@@ -290,7 +298,7 @@ export function draftRow(command: OutboxCommand, context: RowContext): DiaryRow 
     key: `draft:${command.commandId}`, recordId: entry.id, commandId: command.commandId, version: null, outboxState: command.state,
     type: entry.type, occurredOn: entry.occurred_on, note: entry.note ?? null, merchant: entry.merchant ?? null, amountMinor: entry.amount_minor,
     ...words, state, stateText, accessibilityLabel: `${words.title}, ${words.amountLabel}, ${stateText}`,
-    canUndo: canUndoDraft(command), canDiscard: canDiscardDraft(command), canEdit: false,
+    canUndo: canUndoDraft(command), canDiscard: canDiscardDraft(command), canEdit: false, choicePending: false,
   };
 }
 

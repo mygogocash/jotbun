@@ -12,26 +12,43 @@
 // version (a new command). An unconfirmed edit or delete is frozen and "Try
 // again" resends the same command. An entry deleted on another device says
 // so, and can be restored while it is inside the 30-day window.
+//
+// In the `conflict` redesign area (C16, 1D-T9) a refused edit is kept on this
+// phone as a pending choice instead, and `choicePanel` gives 1D's ChoicePanel
+// its props: "Use yours" (the same changes on the server's current version,
+// under the `choice:<id>` key), "Use the server's" (drop it, send nothing) and
+// "Decide later" (leave, still kept). Opening a record that has a choice reads
+// the record first: a choice the server already holds clears itself.
+// `editing.conflict` stays the signal that a conflict is up, so
+// cancelEditing's notice rule holds for the choice too.
 import { isTransactionSnapshot } from '@gogospend/contracts';
 import type { CategoryDto, TransactionDto, WalletDto } from '@gogospend/contracts';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { trackConflictShown } from '@mobile/analytics/events';
 import { V1Error } from '@mobile/api/client';
+import { isRedesignEnabled } from '@mobile/config/featureFlags';
 import { useCopy } from '@mobile/i18n/useCopy';
 import { playHaptic } from '@mobile/lib/hapticMoment';
+import { bangkokClock } from '@mobile/spend/v1/redesign/account/privacyModel';
+import { choiceAgainst, choiceSettled, draftFromChoice, resendForChoice } from '@mobile/spend/v1/redesign/pendingChoice';
 import type { FieldErrors } from '@mobile/spend/v1/redesign/quickAddModel';
-import { buildEditChanges, editDraftFrom, rebaseEdit } from '@mobile/spend/v1/redesign/recordModel';
-import type { EditDraft } from '@mobile/spend/v1/redesign/recordModel';
-import { openDrafts } from '@mobile/spend/v1/redesign/shared';
+import { buildEditChanges, conflictModel, editDraftFrom, rebaseEdit } from '@mobile/spend/v1/redesign/recordModel';
+import type { ConflictModel, EditDraft } from '@mobile/spend/v1/redesign/recordModel';
+import { dateTagFor, openDrafts } from '@mobile/spend/v1/redesign/shared';
 import type { Lookups } from '@mobile/spend/v1/redesign/shared';
 import { useDiaryView, useSpendDiary } from '@mobile/spend/v1/SpendDiaryContext';
 import { useSpendV1 } from '@mobile/spend/v1/SpendV1Context';
 import { todayInBangkok } from '@mobile/spend/v1/viewModels';
-import type { OutboxCommand } from '@mobile/storage/types';
+import type { OutboxCommand, PendingChoice } from '@mobile/storage/types';
+import { fullDateLabel } from '@mobile/ui/dateStep';
+import type { DateLocale } from '@mobile/ui/dateStep';
 import { applyKey, keypadFromMinor, settleForSave } from '@mobile/ui/keypadExpression';
 import type { KeypadKey, KeypadProblem, KeypadState } from '@mobile/ui/keypadExpression';
-import { saveProblem, useCommandKeys } from '../../v1/parts';
-import { useGoBack } from '../HistoryParts';
+import { saveProblem, useCommandKeys, useMoneyLocale } from '../../v1/parts';
+import type { ChoicePanelProps } from '../conflict/ChoicePanel';
+import { useConflictCopy } from '../conflict/conflictCopy.draft';
+import { useDateLocale, useGoBack } from '../HistoryParts';
 
 export type RecordLoaded =
   | { state: 'loading' }
@@ -72,6 +89,10 @@ export type RecordActionsState = {
   remove(record: TransactionDto): Promise<void>;
   restore(target: { id: string; version: number }): Promise<void>;
   settleDraft(commandId: string, how: 'remove' | 'discard'): Promise<void>;
+  /** C16 (the `conflict` area): the open choice's panel props, or null. P2-T27 reads it by this name. */
+  choicePanel: ChoicePanelProps | null;
+  /** C16: "Discard my change" while a choice is open; the screen offers it where the record is deleted or gone. */
+  discardChoice: (() => Promise<void>) | null;
 };
 
 export const KEYPAD_PROBLEM_TEXT: Readonly<Record<KeypadProblem, string>> = {
@@ -99,15 +120,43 @@ export function earliestDate(record: TransactionDto, wallets: readonly WalletDto
   return starts.sort().at(-1);
 }
 
-export function useRecordActions(input: { id: string; mode: 'view' | 'edit'; now?: Date }): RecordActionsState {
+/** The route pattern conflict_shown names, never the record's id. */
+const RECORD_SCREEN = '/spend/record/[id]';
+
+/** C16: a choice open on this screen, and whether this phone's diary keeps it. */
+type OpenChoice = { choice: PendingChoice; kept: boolean };
+
+/** The edit the choice panel compares: the person's change over the record they opened, against `server`. */
+export function editingFromChoice(choice: PendingChoice, server: TransactionDto): RecordEditing {
+  const draft = draftFromChoice(choice);
+  return { draft, keypad: keypadFromMinor(draft.amountMinor), errors: {}, message: null, conflict: server, unconfirmed: false };
+}
+
+/** The date row in the kit's words for the active locale, as today's ConflictPanel shows it. */
+function withFullDates(model: Extract<ConflictModel, { kind: 'changed' }>, draft: EditDraft, server: TransactionDto, locale: DateLocale): Extract<ConflictModel, { kind: 'changed' }> {
+  const full = (date: string) => fullDateLabel(date, locale);
+  const rows = model.rows.map((row) => (row.key === 'date' ? { ...row, yours: full(row.youChanged ? draft.occurredOn : server.occurred_on), server: full(server.occurred_on) } : row));
+  return { ...model, rows };
+}
+
+/** The read could not reach the server: the choice compares with the record it stored. */
+const unreachable = (error: unknown) => error instanceof V1Error && (error.outcome === 'network' || error.outcome === 'unavailable');
+
+export function useRecordActions(input: { id: string; mode: 'view' | 'edit'; now?: Date; conflictArea?: boolean }): RecordActionsState {
   const { id, mode, now } = input;
   const resources = useSpendV1();
   const tc = useCopy();
+  const copy = useConflictCopy();
+  const locale = useMoneyLocale();
+  const dateLocale = useDateLocale();
   const keys = useCommandKeys();
   const diary = useSpendDiary();
   const diaryView = useDiaryView();
   const goBack = useGoBack();
   const today = todayInBangkok(now ?? new Date());
+  const clock = () => (now ?? new Date()).toISOString();
+  /** C16's choice flow: the `conflict` area, or the caller's word (the catalogue's choice sections pass true). */
+  const choicesOn = input.conflictArea ?? isRedesignEnabled('conflict');
 
   const draftCommand = diaryView.phase === 'ready' ? openDrafts(diaryView.outbox).find((command) => command.payload.id === id) : undefined;
   const fromDevice = draftCommand !== undefined;
@@ -135,31 +184,111 @@ export function useRecordActions(input: { id: string; mode: 'view' | 'edit'; now
   const acting = useRef(false);
   const leaving = useRef(false);
   const autoEdit = useRef(mode === 'edit');
+  /** C16: the choice open on this screen. The screen's own truth; the diary keeps the copy that outlives it. */
+  const [open, setOpenState] = useState<OpenChoice | null>(null);
+  const openRef = useRef<OpenChoice | null>(null);
+  const setOpen = useCallback((next: OpenChoice | null) => {
+    openRef.current = next;
+    setOpenState(next);
+  }, []);
+  /** C16: the last read could not reach the server, so the panel compares with the stored record and cannot send yours. */
+  const [offline, setOffline] = useState(false);
+  /** C16: "Use the server's" was chosen here. A copy the diary failed to drop waits for the next open (P7), not this screen's reload. */
+  const declined = useRef(false);
+
+  /** The record's stored choice, read from the diary now (never a render behind). */
+  const storedChoice = useCallback((): PendingChoice | null => {
+    const view = diary?.getView();
+    return view?.phase === 'ready' ? view.pendingChoices.find((choice) => choice.recordId === id) ?? null : null;
+  }, [diary, id]);
+
+  /** Keeps a choice in the diary while one is open; otherwise (web, locked, a failed write) on this screen only. */
+  const keepOpen = useCallback(async (choice: PendingChoice) => {
+    let kept = false;
+    if (diary && diary.getView().phase === 'ready') {
+      try {
+        await diary.keepChoice(choice);
+        kept = true;
+      } catch {
+        kept = false;
+      }
+    }
+    setOpen({ choice, kept });
+  }, [diary, setOpen]);
+
+  /**
+   * Drops the open choice, and this phone's copy of it: also when this screen could not keep it again, since the diary
+   * may still hold an earlier copy. A diary that refuses keeps its copy: the next open finds it settled, or offers it again.
+   */
+  const dropOpen = useCallback(async () => {
+    const current = openRef.current;
+    setOpen(null);
+    if (current && diary) await diary.dropChoice(current.choice.recordId).catch(() => undefined);
+  }, [diary, setOpen]);
 
   /** Reads the entry; what is on screen stays while it reloads. */
   const load = useCallback(async () => {
     const turn = ++generation.current;
     setLoaded((previous) => (previous.state === 'ready' ? previous : { state: 'loading' }));
+    // C16: the record's choice, open on this screen or kept in the diary (unless the server's was chosen here).
+    const choice = choicesOn ? openRef.current?.choice ?? (declined.current ? null : storedChoice()) : null;
+    if (choice && !openRef.current) setOpen({ choice, kept: true });
     try {
       const [record, wallets, categories] = await Promise.all([resources.transaction(id), resources.wallets(), resources.ensureBuiltinCategories()]);
       if (turn !== generation.current) return;
       setLoaded({ state: 'ready', record, wallets, categories });
+      setOffline(false);
+      if (choice && !record.deleted_at) {
+        // Opening a record that has a choice reads the record first.
+        autoEdit.current = false;
+        if (choiceSettled(choice, record)) {
+          // The server already holds the change: the choice clears itself and the record shows as usual.
+          setEditing(null);
+          await dropOpen();
+          return;
+        }
+        // Otherwise the panel compares with the fresh record, which is also kept as the choice's server. It shows
+        // in the same render as the record, so the receipt never flashes up first with Edit and Delete.
+        const fresh: PendingChoice = { ...choice, server: choiceAgainst(choice, record) };
+        setEditing(editingFromChoice(fresh, record));
+        await keepOpen(fresh);
+        return;
+      }
       if (autoEdit.current && !record.deleted_at) {
         autoEdit.current = false;
         setEditing(startEdit(record));
       }
     } catch (error) {
-      if (turn === generation.current) setLoaded({ state: 'error', error });
+      if (turn !== generation.current) return;
+      setLoaded({ state: 'error', error });
+      if (choice && unreachable(error)) {
+        // Offline: the panel compares with the stored record, and yours waits for the network.
+        autoEdit.current = false;
+        setOffline(true);
+        setEditing(editingFromChoice(choice, choice.server));
+      }
     }
-  }, [resources, id, setEditing]);
+  }, [resources, id, setEditing, choicesOn, storedChoice, setOpen, keepOpen, dropOpen]);
 
   useEffect(() => {
     if (!fromDevice && !leaving.current) void load();
   }, [load, fromDevice]);
 
+  // C16: a diary that opens after this screen's first read may hold a choice for this record. Read again when it shows
+  // up, unless a choice or an edit is already on screen (an edit in progress is never replaced). Only in the area.
+  const heldHere = choicesOn && diaryView.phase === 'ready' && diaryView.pendingChoices.some((choice) => choice.recordId === id);
+  useEffect(() => {
+    if (heldHere && !openRef.current && !editingRef.current) void load();
+  }, [heldHere, load]);
+
   async function submitEdit() {
     const seen = editingRef.current;
-    if (loaded.state !== 'ready' || !seen || acting.current) return;
+    if (!seen || acting.current) return;
+    // C16: while a choice is up, Save is "Use yours", and Try again resends it under the same key.
+    const choice = openRef.current?.choice;
+    if (choicesOn && choice && seen.conflict) return sendYours(seen, seen.conflict, choice);
+    if (loaded.state !== 'ready') return;
+    const editedAt = clock();
     // Apply my change calls this while the conflict is still the editing state.
     // The send uses the server's version, and the panel stays up until the answer.
     const current = seen.conflict ? { ...seen, draft: rebaseEdit(seen.draft, seen.conflict), conflict: null } : seen;
@@ -199,6 +328,11 @@ export function useRecordActions(input: { id: string; mode: 'view' | 'edit'; now
         setGone(true);
         void load();
       } else if (outcome === 'conflict' && snapshot) {
+        if (choicesOn) {
+          // C16: the refused edit is kept on this phone until the person chooses, and said once, from this rule.
+          await keepOpen({ recordId: result.id, original: draft.original, changes: result.changes, server: snapshot, editedAt, refusedAt: clock() });
+          trackConflictShown({ screen: RECORD_SCREEN });
+        }
         setEditing({ ...current, draft, keypad, errors: {}, message: null, conflict: snapshot, unconfirmed: false });
       } else if (outcome === 'conflict') {
         // No usable current record: reload rather than loop on a stale version.
@@ -216,6 +350,70 @@ export function useRecordActions(input: { id: string; mode: 'view' | 'edit'; now
     // Reading the result is a separate load: its failure is a load problem, never an unconfirmed save.
     void load();
   }
+
+  /** C16, "Use yours": the same changes on the server's current version, under the choice's own key. */
+  async function sendYours(seen: RecordEditing, server: TransactionDto, choice: PendingChoice) {
+    if (offline) return;
+    const sent = resendForChoice(choice, server);
+    const slot = `choice:${sent.id}`;
+    const key = keys.keyFor(slot, { version: sent.version, changes: sent.changes });
+    acting.current = true;
+    setBusy(true);
+    try {
+      await resources.updateTransaction(sent.id, sent.version, sent.changes, key);
+      keys.settle(slot);
+      // Close the edit before the diary's drop: no conflict may stay on screen without the panel.
+      setEditing(null);
+      setNotice(null);
+      await dropOpen();
+    } catch (problem) {
+      const outcome = problem instanceof V1Error ? problem.outcome : undefined;
+      const saved = saveProblem(problem, tc);
+      if (!saved.unconfirmed) keys.settle(slot);
+      const current = problem instanceof V1Error ? problem.current : undefined;
+      const snapshot = isTransactionSnapshot(current) && current.id === sent.id ? current : null;
+      if (outcome === 'deleted' || outcome === 'not_found' || (outcome === 'conflict' && snapshot?.deleted_at)) {
+        // Gone: the deleted notice offers Restore and Discard my change; the choice stays until one is used.
+        setEditing(null);
+        setGone(true);
+        void load();
+      } else if (outcome === 'conflict' && snapshot) {
+        // Changed again: keep the choice with the newer record and show it again.
+        await keepOpen({ ...choice, server: snapshot, refusedAt: clock() });
+        trackConflictShown({ screen: RECORD_SCREEN });
+        setEditing({ ...seen, conflict: snapshot, message: null, unconfirmed: false });
+      } else if (outcome === 'conflict') {
+        setEditing(null);
+        setNotice(tc('This entry changed on another device.'));
+        void load();
+      } else {
+        // Unknown: frozen with only Try again (the same key) until it is confirmed; the choice stays kept.
+        setEditing({ ...seen, unconfirmed: saved.unconfirmed, message: saved.message });
+      }
+      return;
+    } finally {
+      acting.current = false;
+      setBusy(false);
+    }
+    void load();
+  }
+
+  /** C16, "Use the server's": drop the choice, send nothing, and read the record as it is. */
+  async function useServer() {
+    if (acting.current || editingRef.current?.unconfirmed) return;
+    declined.current = true;
+    // Leave the edit before the diary's drop (P2-T6's notice rule still sees the conflict): no conflict may stay on
+    // screen without the panel, and today's panel never offers "Apply my change" here.
+    cancelEditing();
+    await dropOpen();
+    void load();
+  }
+
+  /** C16, "Decide later": leave the screen; the choice stays kept. */
+  const decideLater = () => {
+    leaving.current = true;
+    goBack();
+  };
 
   async function remove(record: TransactionDto) {
     if (acting.current) return;
@@ -314,8 +512,29 @@ export function useRecordActions(input: { id: string; mode: 'view' | 'edit'; now
     setEditing((current) => (current && !current.unconfirmed ? change(current) : current));
   };
 
+  // C16: the panel's props while a choice is up and not frozen.
+  let choicePanel: ChoicePanelProps | null = null;
+  if (choicesOn && open && editing?.conflict && !editing.unconfirmed) {
+    const references = loaded.state === 'ready' ? loaded : diaryView;
+    const context = { lookups: lookupsOf(references.wallets, references.categories), tc, locale, dateTag: dateTagFor(locale) };
+    const model = conflictModel(editing.draft, editing.conflict, context);
+    if (model.kind === 'changed') {
+      choicePanel = {
+        model: withFullDates(model, editing.draft, editing.conflict, dateLocale),
+        yoursAt: bangkokClock(open.choice.editedAt).time,
+        busy,
+        canSendYours: !offline,
+        note: open.kept ? null : copy('cannotKeep'),
+        onUseYours: () => void submitEdit(),
+        onUseServer: () => void useServer(),
+        onDecideLater: open.kept ? decideLater : undefined,
+      };
+    }
+  }
+
   return {
     today, draftCommand, loaded, editing, deleted, pending, gone, notice, busy,
     load, startEditing, cancelEditing, changeEditing, pressKey, submitEdit, remove, restore, settleDraft,
+    choicePanel, discardChoice: open ? dropOpen : null,
   };
 }

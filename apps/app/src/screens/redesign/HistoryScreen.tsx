@@ -12,6 +12,9 @@
 // wallet and category also scope the server's query, so the month's totals
 // and the summary for a filter are exact.
 //
+// In the `conflict` area (C16, 1D-T9) a record whose refused edit waits on
+// this phone says so under its row; a tap opens the record as usual.
+//
 // Rows open the record screen; long-press and the screen reader's actions
 // menu offer Edit (the record screen in edit mode), Copy (quick add with
 // `copyOf`) and Delete (with an undo bar). The bun appears only on an empty
@@ -38,6 +41,7 @@ import { FlatList, View } from 'react-native';
 import type { ListRenderItemInfo } from 'react-native';
 
 import { V1Error } from '@mobile/api/client';
+import { isRedesignEnabled } from '@mobile/config/featureFlags';
 import { useCopy } from '@mobile/i18n/useCopy';
 import { Bun } from '@mobile/mascot/Bun';
 import { formatMinor } from '@mobile/spend/v1/money';
@@ -50,7 +54,7 @@ import type { DiaryView } from '@mobile/spend/v1/spendDiary';
 import { useDiaryView } from '@mobile/spend/v1/SpendDiaryContext';
 import { useSpendV1 } from '@mobile/spend/v1/SpendV1Context';
 import { categoryName, monthOf, monthRange, shiftMonth, todayInBangkok } from '@mobile/spend/v1/viewModels';
-import type { OutboxCommand } from '@mobile/storage/types';
+import type { OutboxCommand, PendingChoice } from '@mobile/storage/types';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { POLITE_LIVE_REGION, useSettledAnnouncement } from '@mobile/ui/a11y';
 import { BunText } from '@mobile/ui/BunText';
@@ -73,18 +77,21 @@ import { saveProblem, useCommandKeys, useMoneyLocale } from '../v1/parts';
 import { useHistoryKeep } from './HistoryKeepProvider';
 import type { KeptHistoryView } from './historyKeep';
 import { useRefreshOnRevision } from './useRefreshOnRevision';
-import { LoadingBlock, Notice, RECENTLY_DELETED_ROUTE, copyHref, lookOf, recordHref, recordRowState, useDateLocale } from './HistoryParts';
+import { ChoiceWaitingCaption, LoadingBlock, Notice, RECENTLY_DELETED_ROUTE, copyHref, lookOf, recordHref, recordRowState, useDateLocale } from './HistoryParts';
 
 export type HistoryScreenProps = {
   now?: Date;
   /** `YYYY-MM` to open on. The route keeps it in the URL, so Back from a record returns to the same month. */
   initialMonth?: string;
   onMonthChange?: (month: string) => void;
+  /** C16's waiting caption: the `conflict` redesign area by default. The catalogue's choice section passes true. */
+  conflictArea?: boolean;
 };
 
 const PAGE = 50;
 const ALL = 'all';
 const NO_DRAFTS: readonly OutboxCommand[] = [];
+const NO_CHOICES: readonly PendingChoice[] = [];
 const MONTH = /^[0-9]{4}-(0[1-9]|1[0-2])$/;
 
 type Lists = { page: HistoryPage; items: TransactionDto[] };
@@ -115,6 +122,8 @@ type RowItem = {
   readonly canEdit: boolean;
   /** A confirmed record, and no other delete is on its way. */
   readonly deletable: boolean;
+  /** C16: a refused edit of this record waits for the person's choice. */
+  readonly choicePending: boolean;
 };
 type DayItem = { readonly kind: 'day'; readonly key: string; readonly day: string; readonly outMinor: Minor; readonly inMinor: Minor; readonly pendingLines: readonly string[] };
 /** The list: the sticky search, the controls (banner, filters, summary, notices), then each day's header and rows. */
@@ -135,7 +144,7 @@ const HistoryDay = memo(function HistoryDay({ day, today, outMinor, inMinor, pen
 });
 
 /** One record or draft. Memoized: typing a search, a banner or a notice never redraws a row whose words did not change. */
-const HistoryRow = memo(function HistoryRow({ recordId, title, detail, type, amountMinor, state, builtinKey, color, canEdit, deletable, actions }: Omit<RowItem, 'kind' | 'key'> & { actions: RowActions }) {
+const HistoryRow = memo(function HistoryRow({ recordId, title, detail, type, amountMinor, state, builtinKey, color, canEdit, deletable, choicePending, actions }: Omit<RowItem, 'kind' | 'key'> & { actions: RowActions }) {
   return (
     <View style={{ paddingHorizontal: BUN_SPACE.md }}>
       <RecordRow
@@ -151,6 +160,7 @@ const HistoryRow = memo(function HistoryRow({ recordId, title, detail, type, amo
         onCopy={() => actions.copy(recordId)}
         onDelete={deletable ? () => actions.remove(recordId) : undefined}
       />
+      {choicePending ? <ChoiceWaitingCaption /> : null}
     </View>
   );
 });
@@ -173,7 +183,7 @@ function bannerFor(view: DiaryView, offline: boolean, review: (() => void) | nul
   return null;
 }
 
-export function HistoryScreen({ now, initialMonth, onMonthChange }: HistoryScreenProps) {
+export function HistoryScreen({ now, initialMonth, onMonthChange, conflictArea }: HistoryScreenProps) {
   const resources = useSpendV1();
   const router = useRouter();
   const tc = useCopy();
@@ -395,6 +405,9 @@ export function HistoryScreen({ now, initialMonth, onMonthChange }: HistoryScree
   // What the device holds, and the references to read it with: the server's
   // when the month loaded, the diary's when it could not (offline).
   const drafts = diaryView.phase === 'ready' ? diaryView.outbox : NO_DRAFTS;
+  // C16: records waiting for the person's choice, marked only in the `conflict` area (draft copy until E2).
+  const choices = diaryView.phase === 'ready' && (conflictArea ?? isRedesignEnabled('conflict')) ? diaryView.pendingChoices : NO_CHOICES;
+  const pendingChoiceIds = useMemo(() => new Set(choices.map((choice) => choice.recordId)), [choices]);
   const offline = Boolean(error) && diaryView.phase === 'ready';
   const chipRefs: References | null = refs ?? (diaryView.phase === 'ready' ? { wallets: diaryView.wallets, categories: diaryView.categories } : null);
   const lookups = useMemo(() => {
@@ -407,11 +420,11 @@ export function HistoryScreen({ now, initialMonth, onMonthChange }: HistoryScree
   const searchQuery = useDeferredValue(query);
   const model: HistoryModel | null = useMemo(() => (lookups
     ? historyModel({
-      month, today, tc, locale, lookups, filters: { type, walletId, categoryId }, query: searchQuery, drafts,
+      month, today, tc, locale, lookups, filters: { type, walletId, categoryId }, query: searchQuery, drafts, pendingChoiceIds,
       records: error ? [] : lists?.items ?? [],
       complete: error ? true : !lists?.page.next_cursor,
     })
-    : null), [lookups, month, today, tc, locale, type, walletId, categoryId, searchQuery, drafts, error, lists]);
+    : null), [lookups, month, today, tc, locale, type, walletId, categoryId, searchQuery, drafts, pendingChoiceIds, error, lists]);
   const searching = foldForSearch(searchQuery) !== '';
 
   // Filters alone are scoped on the server, so its totals for them are exact.
@@ -507,6 +520,7 @@ export function HistoryScreen({ now, initialMonth, onMonthChange }: HistoryScree
         color: look ? look.color : null,
         canEdit: item.canEdit,
         deletable: item.state === 'confirmed' && records.has(item.recordId) && canDelete,
+        choicePending: item.choicePending,
       };
     };
     const list: ListItem[] = [{ kind: 'search', key: 'search' }, { kind: 'controls', key: 'controls' }];

@@ -15,7 +15,9 @@
 //
 // The screens of each later area have their own list here, in the 'Screens'
 // group, in plan order: Planning (R4), Insights (R5), Account (R6) and Import
-// (R7), all approved at E2 checkpoints 2–5.
+// (R7), all approved at E2 checkpoints 2–5. The conflict choice (1D-T9, the
+// `conflict` area, not yet approved) comes last, with the area on for its
+// sections only.
 import type { ReactNode } from 'react';
 
 import { ENTRY_SECTIONS } from './entrySections';
@@ -37,6 +39,7 @@ import { QUICK_ADD_SECTIONS } from './quickAddSections';
 import { RECENTLY_DELETED_SECTIONS } from './recentlyDeletedSections';
 import { RECORD_SECTIONS } from './recordSections';
 import { COMPANION_SECTIONS } from './companion/companionSections';
+import { CONFLICT_SECTIONS } from './conflictSections';
 
 export type CatalogueGroup = 'Kit' | 'Mascot' | 'Screens';
 
@@ -97,4 +100,5 @@ export const CATALOGUE_SECTIONS: readonly CatalogueSection[] = [
   ...ACCOUNT_SECTIONS,
   ...IMPORT_SCREEN_SECTIONS,
   ...COMPANION_SECTIONS,
+  ...CONFLICT_SECTIONS,
 ];

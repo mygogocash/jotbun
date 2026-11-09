@@ -37,6 +37,8 @@ export type HistoryInput = {
   lookups: Lookups;
   filters?: HistoryFilters;
   query?: string;
+  /** C16: records with a refused edit waiting for the person's choice on this phone; their rows are marked. */
+  pendingChoiceIds?: ReadonlySet<string>;
 };
 
 export type SearchSummary = {
@@ -139,7 +141,7 @@ export function historyModel(input: HistoryInput): HistoryModel {
   const pageEdgeDay = pageEdgeOf(month, loaded, input.complete);
   const records = loaded.filter(keep);
   const drafts = openDrafts(input.drafts).filter((command) => monthOf(command.payload.occurred_on) === month && keep(command.payload));
-  const context = { lookups, tc, locale, today: input.today, dateTag: input.dateTag ?? dateTagFor(locale) };
+  const context = { lookups, tc, locale, today: input.today, dateTag: input.dateTag ?? dateTagFor(locale), pendingChoiceIds: input.pendingChoiceIds };
   const rows = mergeRows(records, drafts, context);
   const groups = groupDays(rows, context, (day) => pageEdgeDay !== null && day <= pageEdgeDay);
   const empty = rows.length === 0;
