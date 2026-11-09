@@ -66,7 +66,10 @@ Their work is saved, but their background jobs and Monitors die.
 4. **Implementer DONE:** write `C/pr-<id>.md` in the house style: Summary bullets, Test plan checklist, "Closes #N once merged (closed by hand ...)", and the Claude Code footer. Then run `scripts/open_task_pr.sh <worktree> "<title>" C/pr-<id>.md` and dispatch the Opus reviewer.
 5. **Implementer BLOCKED:** read the exact blocker. For a known flake (`references/lessons.md`), rule it and SendMessage the same agent to continue. For a real question the plan cannot answer, ask the owner. If a task fails review three fix rounds running, tell the owner and suggest escalating it.
 6. **Review "Needs fixes":** write the fix brief (model: `C/briefs/1A-T9-fix.md`), give it a ruling number when it changes behaviour, dispatch Haiku, push, update the PR body, then run a confirming Opus review.
-7. **Merge** when CI is green on the reviewed head and the review approves: `scripts/merge_task_pr.sh <pr> <reviewed-sha> [task-id]`. Record the review's minors in `followups.md`. If the receipt has stale lines, fix them in a housekeeping commit on the integration branch.
+7. **Merge** when CI is green on the reviewed head and the review approves: `scripts/merge_task_pr.sh <pr> <reviewed-sha> [task-id]`.
+   - Record the review's minors in `followups.md`.
+   - If the receipt has stale lines, fix them in a housekeeping commit on the integration branch.
+   - Then open the task's small PR into main with `bash scripts/promote_pr.sh <task-id> <pr>`. This is the owner's ask of 9 Nov: one reviewable PR per task, merged by the owner in order. Never merge into main yourself.
 8. **Keep GitHub current.** After each merge or dispatch, update `handover.md`. Then run `scripts/sync_state.sh "Sync the controller state" <kits of ready, unbuilt briefs>`. It pushes the live state to the integration branch, so a move to another machine or a dead session loses nothing.
 9. **CI watching:**
    - Keep a Monitor running on `C/watch_prs.sh`; it re-arms every 30 minutes.
@@ -87,6 +90,7 @@ Their work is saved, but their background jobs and Monitors die.
 - `references/lessons.md`: what saved or cost time: rebase-before-dispatch, planning on top of unmerged work, lockfile serialisation, the known flakes, jsonb key order (R92), merge and issue rules, session pitfalls.
 - `scripts/`:
   - `status.sh`, `check_kit.sh`, `baseline.sh` and `make_prompt.py` (the fast paths above)
+  - `promote_pr.sh` (one PR into main per merged task)
   - `ready_tasks.py`
   - `new_task_worktree.sh`
   - `open_task_pr.sh`

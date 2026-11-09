@@ -6,7 +6,10 @@ Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vaul
 
 ## PR #371: the integration branch into main. The owner merged it on 9 Nov, 21:30 Bangkok, as afcf884
 - It was merged with a merge commit, so history is kept. The controller then fast-forwarded claude/p1a-vault-core to afcf884, which adds main's README and CHANGELOG, so the two branches were level.
-- **Next time:** open the next integration-to-main PR when the owner asks, in the same way, with the PR body in `pr-integration-to-main.md`. Never merge into main as the controller.
+- **From now on (owner's ask, 9 Nov): one small PR into main per merged task**, not one big integration PR.
+  - Right after `merge_task_pr.sh`, run `bash scripts/promote_pr.sh <task-id> <pr>`. It pushes `promote/<task>` at the task's merge commit and opens the PR into main, with the task's summary, review and CI.
+  - The owner merges them in order. Never merge into main as the controller.
+  - `.claude/**` is marked `linguist-generated` (f4cb34b), so controller files collapse in those diffs.
 - **#70** (claude/jotbun-redesign-plan) is superseded and still open. Closing it is the owner's call.
 - **The main checkout's uncommitted reminder edits** need no commit. They are #359's work, apart from the `previewDay` TODO stub that #359 filled in.
 
