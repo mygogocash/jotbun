@@ -65,6 +65,9 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
   - P11: the plan's whole-1A-range review is the controller's to schedule after 1A-T10's own review.
   - Closing epic #83 is the owner's call.
 - **Third usage-limit cutoff, about 19:45.** The owner's credit reset at 19:50. 1C-T8's implementer and the 1B-T10 planner were resumed; the P2-T9 and P2-T10 planners had stayed alive.
+- **P2-T10: brief READY** (M; P1 to P16 accepted). The implementer (Haiku) was dispatched about 21:40 in p2-t10 from bf7bc20.
+  - Expected: app 34, unit 907, render 97 files and 1741 tests, web 4788.
+  - E2-A notes (P9): the hidden eye has no filled state; the tip uses toast colours, not the board's #3A57E8; P2-T9's 150 ms fade is not wired yet.
 - **P2-T9:** DONE at b7e32d9: app 34, unit 905, render 97 files and 1735 tests, web 4785, 62 of 65 mutants killed and 3 equivalent. PR #368 is open (issue #155) and the Opus review is under way.
 - **P2-T9 history:** brief READY (M; P1 to P14 accepted); the implementer (Haiku) was dispatched about 20:15 in p2-t9 from f9d32b4.
   - Expected: app 34, unit 905, render 97 files and 1735 tests, web 4785.
