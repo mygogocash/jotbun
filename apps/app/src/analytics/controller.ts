@@ -25,7 +25,16 @@ export type AnalyticsDeps = {
   server: { read(): Promise<ServerAnalyticsState>; setConsent(analytics: boolean): Promise<void> };
 };
 export interface Analytics {
+  /** Rejects when the store or the server fails while loading the answer: callers catch it. */
   setAccount(accountId: string | null): Promise<void>;
+  /**
+   * A no is in force at once and stored at once, and reaches the server after any
+   * call still on its way. Rejects when the queue's store write of a no fails (the
+   * no stays in force), when the server refuses a yes, and with AccountChangedError
+   * when the account that gave a yes is no longer signed in once the queue reaches
+   * it. A yes reached while that same account is signed in again is still sent: it
+   * is that account's own answer. Callers catch every rejection.
+   */
   answer(answer: ConsentAnswer): Promise<void>;
   status(): ConsentStatus;
   allowsAnalytics(): boolean;
@@ -37,6 +46,14 @@ export interface Analytics {
 }
 
 export const HELD_LIMIT = 50;
+
+/** answer('yes') reached the queue after the account that gave it stopped being signed in: nothing was sent. */
+export class AccountChangedError extends Error {
+  constructor() {
+    super('The account changed before the yes was sent');
+    this.name = 'AccountChangedError';
+  }
+}
 
 type Held = { name: AppEventName; properties: CleanProps };
 
@@ -192,9 +209,14 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
       const token = generation;
       latestAnswer = token;
       if (choice === 'no') {
-        // In force at once; the store and the server hear it after any call still on its way.
+        // In force at once, and stored at once, so a no given while another call is on its
+        // way outlives the app being closed before that call ends. The server hears it after
+        // that call.
         applyNo();
+        const storedAtCall = deps.store.write({ accountId: account, answer: 'no', pendingServer: true }).catch(() => undefined);
         await serialize(async () => {
+          // The queue's own writes come last: after that write, and after any the earlier call made.
+          await storedAtCall;
           await deps.store.write({ accountId: account, answer: 'no', pendingServer: true });
           if (stale(token, account)) return;
           try {
@@ -211,7 +233,7 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
         // Checked when the queue reaches this yes, before anything is sent: the server call
         // acts for whoever is signed in by then. A yes for an account that is no longer
         // signed in is refused, and a later answer replaces it; a refresh alone does not.
-        if (accountId !== account) throw new Error('The account changed before the yes was sent');
+        if (accountId !== account) throw new AccountChangedError();
         if (latestAnswer !== token) return;
         await deps.server.setConsent(true);
         if (stale(token, account)) return;

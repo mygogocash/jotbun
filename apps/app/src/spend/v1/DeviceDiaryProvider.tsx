@@ -10,6 +10,7 @@ import { AppState, Platform } from 'react-native';
 import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
 
+import { eraseStoredConsent } from '@mobile/analytics/consentStorage';
 import { fetchAccountId } from '@mobile/api/sharedV1';
 import { getV1SessionSnapshot, subscribeSession } from '@mobile/auth/session';
 import { eraseStoredBunIntensity } from '@mobile/mascot/bunIntensityStorage';
@@ -51,14 +52,15 @@ const knownAccount = createKnownAccount(
  * draft): a plain-text import draft an older build left for this account, the
  * bun's device settings (its intensity and the day the Quick add cheer last
  * showed), History's view kept while a record is open (memory only), and the
- * wallet's device settings, so the next person starts from the defaults. An
+ * wallet's device settings, and this phone's analytics answer (1D-T6), so the
+ * next person starts from the defaults. An
  * account's looks stay. A setting that cannot be erased never stops the
  * diary's erase. Exported for its test.
  */
 export async function eraseWithDiary(accountId: string): Promise<void> {
   forgetKeptHistory();
   await eraseLegacyImportDraft(accountId);
-  await Promise.all([eraseStoredBunIntensity().catch(() => undefined), eraseStoredHapticPreference().catch(() => undefined), eraseCheerDay(), eraseCelebratedWeek(), eraseCashbackDeclined()]);
+  await Promise.all([eraseStoredBunIntensity().catch(() => undefined), eraseStoredHapticPreference().catch(() => undefined), eraseCheerDay(), eraseCelebratedWeek(), eraseCashbackDeclined(), eraseStoredConsent().catch(() => undefined)]);
   await eraseDeviceSettings().catch(() => undefined);
 }
 

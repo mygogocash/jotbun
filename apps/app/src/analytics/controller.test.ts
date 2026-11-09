@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { getAnalytics } from './bus.ts';
-import { HELD_LIMIT, createAnalytics } from './controller.ts';
+import { AccountChangedError, HELD_LIMIT, createAnalytics } from './controller.ts';
 import type { ConsentStatus, PostHogLike, ServerAnalyticsState, ServerConsent, StoredConsent } from './controller.ts';
 import { recordAnalytics } from './testing/recordAnalytics.ts';
 
@@ -31,6 +31,8 @@ function harness(options?: {
   let failErase = false;
   let holdSet = false;
   let holdYes = false;
+  let holdNo = false;
+  let heldNo: (() => void) | null = null;
   const heldSets: Array<() => void> = [];
   const heldWrites: Array<() => void> = [];
   let remote: ServerAnalyticsState = {
@@ -54,6 +56,10 @@ function harness(options?: {
       read: async () => (stored === null ? null : { ...stored }),
       write: async (value) => {
         if (holdYes && value.answer === 'yes') await new Promise<void>((resolve) => { heldWrites.push(resolve); });
+        if (holdNo && value.answer === 'no') {
+          holdNo = false;
+          await new Promise<void>((resolve) => { heldNo = resolve; });
+        }
         if (failWrite) throw new Error('store unavailable');
         stored = { ...value };
       },
@@ -86,6 +92,12 @@ function harness(options?: {
     setFailErase(value: boolean) { failErase = value; },
     holdSetConsent(value: boolean) { holdSet = value; },
     holdYesWrites(value: boolean) { holdYes = value; },
+    /** Holds the next write of a no until releaseNoWrite(). */
+    holdNextNoWrite() { holdNo = true; },
+    releaseNoWrite() {
+      heldNo?.();
+      heldNo = null;
+    },
     /** Lets every held setConsent call land, the newest first, until none is left. */
     async landSetConsentNewestFirst() {
       for (;;) {
@@ -604,7 +616,7 @@ test('a yes waiting behind another call is refused once another account has sign
   s.holdReads();
   const refreshing = s.analytics.refresh().catch(() => undefined);
   await settle();
-  const saidYes = s.analytics.answer('yes').then(() => 'resolved', () => 'rejected');
+  const saidYes = s.analytics.answer('yes').then(() => 'resolved', (error: unknown) => (error instanceof AccountChangedError ? 'refused' : 'rejected'));
   s.signIn(null);
   await s.analytics.setAccount(null);
   s.signIn(ACCOUNT_B);
@@ -614,7 +626,7 @@ test('a yes waiting behind another call is refused once another account has sign
   await refreshing;
   await signedInB;
   assert.deepEqual(s.serverLog, []);
-  assert.equal(await saidYes, 'rejected');
+  assert.equal(await saidYes, 'refused');
   assert.equal(s.consent(ACCOUNT_B), 'unasked');
   assert.equal(s.analytics.status(), 'unanswered');
   assert.equal(s.stored(), null);
@@ -688,4 +700,65 @@ test('a refresh after a yes does not keep the yes from the server', async () => 
   assert.equal(s.analytics.status(), 'yes');
   assert.deepEqual(s.stored(), { accountId: ACCOUNT_A, answer: 'yes', pendingServer: false });
   assert.deepEqual(s.since(mark), ['identify:A', 'start']);
+});
+
+test('a no given while a refresh is on its way is stored at once', async () => {
+  const s = sessions({ [ACCOUNT_A]: 'yes' });
+  s.signIn(ACCOUNT_A);
+  await s.analytics.setAccount(ACCOUNT_A);
+  assert.equal(s.analytics.status(), 'yes');
+  s.holdReads();
+  const refreshing = s.analytics.refresh();
+  await settle();
+  const saidNo = s.analytics.answer('no');
+  await settle();
+  // The refresh's read is still on its way: the app could be closed now and keep the no.
+  assert.equal(s.analytics.status(), 'no');
+  assert.deepEqual(s.stored(), { accountId: ACCOUNT_A, answer: 'no', pendingServer: true });
+  assert.deepEqual(s.serverLog, []);
+  await s.releaseReads();
+  await refreshing;
+  await saidNo;
+  assert.deepEqual(s.serverLog, ['A:no']);
+  assert.deepEqual(s.stored(), { accountId: ACCOUNT_A, answer: 'no', pendingServer: false });
+  assert.equal(s.analytics.status(), 'no');
+});
+
+test('the no stored at the call lands before the queue writes and sends it', async () => {
+  const h = harness({ consent: 'yes', weeks: 1 });
+  await h.analytics.setAccount(ACCOUNT_A);
+  assert.equal(h.analytics.status(), 'yes');
+  h.holdNextNoWrite();
+  const saidNo = h.analytics.answer('no');
+  await settle();
+  assert.equal(h.analytics.status(), 'no');
+  // Nothing is sent or written behind a no that is still being stored.
+  assert.deepEqual(h.consentCalls, []);
+  h.releaseNoWrite();
+  await saidNo;
+  assert.deepEqual(h.consentCalls, [false]);
+  assert.deepEqual(h.stored(), { accountId: ACCOUNT_A, answer: 'no', pendingServer: false });
+});
+
+test('a yes waiting while the same account signs out and in again is still sent for it', async () => {
+  const s = sessions({ [ACCOUNT_A]: 'unasked' });
+  s.signIn(ACCOUNT_A);
+  await s.analytics.setAccount(ACCOUNT_A);
+  assert.equal(s.analytics.status(), 'unanswered');
+  s.holdReads();
+  const refreshing = s.analytics.refresh().catch(() => undefined);
+  await settle();
+  const saidYes = s.analytics.answer('yes');
+  s.signIn(null);
+  await s.analytics.setAccount(null);
+  s.signIn(ACCOUNT_A);
+  const signedInAgain = s.analytics.setAccount(ACCOUNT_A);
+  await s.releaseReads();
+  await refreshing;
+  await saidYes;
+  await signedInAgain;
+  // It is that account's own answer: sent once, then read back by the new sign-in.
+  assert.deepEqual(s.serverLog, ['A:yes']);
+  assert.equal(s.analytics.status(), 'yes');
+  assert.deepEqual(s.stored(), { accountId: ACCOUNT_A, answer: 'yes', pendingServer: false });
 });
