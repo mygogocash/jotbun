@@ -5,6 +5,7 @@ import type { PolicyKind, PolicyVersionDto } from '@gogospend/contracts'
 
 import { ProblemException } from '@api/common/api-problem.filter'
 
+import type { SendMessage } from '../server/ai/model'
 import { BASE_HEADERS, errorResponse, jsonResponse, problemResponse } from '../server/http/problem'
 import { queryOf, readJsonBody, reqLike } from '../server/http/request'
 import { bindCatalogueFetch } from './bridge'
@@ -32,6 +33,8 @@ export type V1Deps = {
   fetchCatalogue?: typeof fetch
   /** Starts the vault's pending work after a `starts` route answers 2xx (B5). The default is `stub.startPendingWork()`. */
   startWork?: (stub: DurableObjectStub<UserVault>) => Promise<unknown>
+  /** The AI routes' model call (1B-T7). Tests give a fake, or null for AI that is not configured; absent, AI_ENABLED and ANTHROPIC_API_KEY decide. */
+  send?: SendMessage | null
 }
 
 /** A route marked `starts` hands its vault to startWork only after a 2xx answer. */
@@ -123,6 +126,7 @@ export async function handleVaultV1(request: Request, env: V1Env, deps: V1Deps =
         body,
         stream,
         vault,
+        send: deps.send,
         waitUntil: deps.waitUntil ?? waitUntil,
       })
     }
