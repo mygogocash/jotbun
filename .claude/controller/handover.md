@@ -31,7 +31,14 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
   - #352 changed `test/vault-route-coverage.test.ts` and `test/workers/sync.test.ts`. The controller's pre-applied copies (planner diffs plus #352's lines) are in `scratch/1b-t6-rebased/`, with SHA256SUMS.
   - Gate: test:edge 15 files and 176 tests; workers 25 files, 521 passed and 3 todo.
   - It BLOCKED at Step 6.4 on the `node-postgres` count (1, from #352's comment). Ruled R95 and resumed with SendMessage. Everything before that passed: 176 / 521 + 3 todo, 27 of 27 mutants.
-  - On DONE: open its PR, then the Opus review. 1B-T9 (receipt attachments, which also creates downloads.ts) is planned after it.
+  - DONE at 34798c8. PR #362 is open (issue #110) and the Opus review is under way (`reviews/1B-T6.md`).
+- **Planners dispatched (Opus, ~09:55):**
+  - **P2-T8**, the wallet test harness (depth 20, the deepest ready task): `briefs/P2-T8.md`, kit `scratch/p2-t8-planner/`, WT p2-t8 on p2/t8-wallet-harness.
+  - **1B-T9**, receipt attachments (depth 15): planned on top of 1B-T6's 34798c8, and starts after #362 merges. `briefs/1B-T9.md`, kit `scratch/1b-t9-planner/`, WT p1-1b-t9 on p1/1b-t9-receipt-attachments. It also answers whether the vault has the API's R-B copy race.
+  - **1A-T10**, CI, docs and the phase 1A receipt: `briefs/1A-T10.md`, kit `scratch/1a-t10-planner/`, WT p1-1a-t10 on p1/1a-t10-ci-docs.
+
+  Prompts are in `scratch/dispatch/`. Planners keep `*.log` out of the SHA256SUMS the implementer checks.
+- **Held:** 1B-T7 (AI routes) shares four route files with 1B-T6 and 1B-T9, so it is planned after them. 1C-T2 and P3-T12 are still held on owner answers.
 - **#354 1D-T9 fix round (Haiku), worktree p1-1d-t9:**
   - The merge now conflicts on `featureFlags.ts` and its test (#358). The controller resolved both, keeping both areas, in `scratch/1d-t9-merge/` (SHA256SUMS; `node --test` passes 11 of 11). The fixer copies them in Step 1.3.
   - Fix round DONE: merge 36adb96 (5dbd7be), fix ddc9317, and the controller's receipt correction 03da870. Every count matched: unit 882, render 90 files and 1694 tests, 45 of 45 mutants.
