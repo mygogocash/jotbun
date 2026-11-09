@@ -80,7 +80,8 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
   - P19 extends 1A-T8a's and 1B-T5's pinned lists additively.
   - 1B-T8 and 1B-T7 follow in this lane, after its `// 1B-T10` entries.
 - **P2-T10: merged 51be132 (#370, about 00:05).** The review approved. m1 (a failed read shows hidden amounts) and m2 go to the private-mode-hardening follow-up, before the wallet area's E2 approval. Issue #156 is closed and the worktree and branches are removed.
-  - **App baseline, computed** (the reviewer's merged tree before #367 was 922 unit, 106 files and 1842 tests, which includes 1C-T8): app 34, unit 922, render 106 files and 1842 tests, web 4788 plus 3 (re-measure).
+  - **App baseline now**, measured by P2-T10's reviewer on its merge with 5c7a380, which holds 1C-T8 and P2-T9: app 34, unit 922, render 106 files and 1842 tests.
+  - Web is not measured on the combined head. 1C-T8 and P2-T10 each added 3 modules to 4785, so measure it with `scripts/baseline.sh` before the next app dispatch.
 - **P2-T10 history:** brief READY (M; P1 to P16 accepted). The implementer (Haiku) was dispatched about 21:40 in p2-t10 from bf7bc20.
   - Expected: app 34, unit 907, render 97 files and 1741 tests, web 4788.
   - E2-A notes (P9): the hidden eye has no filled state; the tip uses toast colours, not the board's #3A57E8; P2-T9's 150 ms fade is not wired yet.
