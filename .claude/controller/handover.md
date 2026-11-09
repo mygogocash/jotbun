@@ -4,6 +4,12 @@ Durable folder: `/Users/kunanonjarat/Developer/jotbun/.claude/controller/` (prot
 
 Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vault-core`), head 5dbd7be (controller state after #358).
 
+## PR #371: the integration branch into main (opened 9 Nov, about 23:55, at the owner's request)
+- **What it is:** claude/p1a-vault-core into main (435 commits, 49 plan tasks). It follows the branch, so it updates with every merge and state sync. CI's `concurrency: cancel-in-progress` keeps one run per ref.
+- **State:** the trial merge with main is clean, and it supersedes #70.
+- **Owner's calls:** merging it, and closing #70. Never merge it as the controller.
+- **The main checkout's uncommitted reminder edits** need no commit. They are #359's work, apart from the `previewDay` TODO stub that #359 filled in.
+
 ## Takeover on the owner's machine (9 Nov, from 08:40 Bangkok): READ THIS FIRST
 
 New controller: session 121af0e6, in the Orca app (Claude Code 2.1.319; transcripts under `~/Library/Application Support/orca/claude-profiles/c0f6e42a-811f-4ea2-9daa-9fb9378005cf/home/projects/-Users-kunanonjarat-Developer-jotbun/`). The owner calls the old controller "the session from Super Engineering" (the app behind `~/.superconductor`).
