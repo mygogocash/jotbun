@@ -23,6 +23,9 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - **Promotion PR #373** (`promote/1d-t8`, base main) is the first of the stack; the next promotion stacks on it. The owner merges into main.
     - The P2-T11 planner was told 1D-T8's files are now on the head.
   - **App baseline at 30fb26b** (CI): render 108 files and 1865 cases, `test:unit` 927, `test:app` 34, web 4794, iOS 5760.
+- **P2-T13 planner** (Opus xhigh, f362a7c3), dispatched about 23:00 at b4a0811 (depth 18; the tray, main button, text link and lock cover). WT p2-t13 on p2/t13-tray.
+  - It carries P2-T9's note on a Sheet inside a tray (two animation systems) and P2-T9's m-2 if it touches `motion/`.
+  - It is planned in parallel with P2-T11. Any shared edit (`walletHarness.tsx`, wallet sections in `registry.tsx`) must sit at an anchor of its own and apply in either merge order.
   - **1B-T8: brief READY at 0bd5659** (L, 16 files under apps/edge). P1 to P17 are accepted, with P4 recorded as R101.
     - Kit `scratch/1b-t8-planner/`: check_kit at db19056 gives 47 OK, and the 13 `orig/` files are identical.
     - The planner's proof: RED 38 of 53 failing, GREEN 52 plus 1 todo, 62 of 62 mutants. In the ten-times memory case, `peakHeldBytes` was at most 20,644,143 against a bound of 20,644,976.
