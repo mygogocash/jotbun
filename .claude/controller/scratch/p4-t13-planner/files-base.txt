@@ -1,0 +1,2 @@
+packages/contracts/src/v1/ai.ts
+packages/contracts/src/v1/slips.ts

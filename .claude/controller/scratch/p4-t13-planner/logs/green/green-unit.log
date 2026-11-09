@@ -1,0 +1,47 @@
+(node:30122) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/slips/imageShrink.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:30122) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ a picked image or a shared file within 1,200,000 bytes is used as it is, its type read from its first bytes, and a larger one, such as a 1.5 MB PNG screenshot, is not sent (2.848166ms)
+✔ only a JPEG, a PNG or a WebP is sent: a HEIC photo, another RIFF file, text, or text that is not whole base64 is not (0.200333ms)
+✔ a copy that is gone throws, so the scan can tell it from a photo it cannot send (0.203042ms)
+✔ the limit holds on the bytes read, also where the phone gives no size (2.245542ms)
+✔ an image's byte count is its decoded length, whatever its padding (0.294917ms)
+✔ the fake shrink answers null for a photo too large, throws for a copy that is gone, and records each image removed (0.142042ms)
+(node:30123) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/slips/photoLibrary.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:30123) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ the picker path picks up to the limit at quality 0.7 in the compatible representation, without base64, and has no albums and no lookup by id (0.6305ms)
+✔ a picked image without an asset id is known by its uri (0.11375ms)
+✔ releasing a picked photo deletes its cache copy (0.115709ms)
+✔ photo access reads all, limited, none and undetermined from the picker's permission (0.1735ms)
+✔ the phone's settings open through expo-linking, and a phone that cannot open them does nothing (0.306083ms)
+✔ the fake library lists photos oldest first, strictly after the watermark, ties broken by id, and finds one again only by its id (0.27675ms)
+✔ the fake library answers its access, picks up to the limit and records each call (0.118375ms)
+(node:30124) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/slips/slipBatches.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:30124) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ batches hold at most 5 slips and 8 MiB of JSON, in order (17.582708ms)
+✔ the byte count is the JSON body's UTF-8 length (0.313209ms)
+✔ a batch is cut at exactly 8 MiB, counting the commas between slips, and is measured with last false (22.695125ms)
+✔ a slip that fills a batch alone is sent alone, and one larger than a batch throws (10.354916ms)
+✔ each slip's album is sent as the server keeps it: NFC, trimmed, at most 60 characters, and null when nothing is left (0.179625ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 183.418208

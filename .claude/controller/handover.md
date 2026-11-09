@@ -25,7 +25,13 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - For CI: workers +1 file, +37 passed and -2 todo; `test:edge` +0.
     - The implementer (Haiku max, a4857037) was dispatched about 22:55 in a pre-installed p1-1b-t8 from db19056. Its workers runs hold the heavy lock.
     - Then: PR (issue #112), Opus review (L). 1B-T7 and fix-download-aborts follow in this lane.
-  - **ci-parallel-jobs planner** (ad778c27), **P4-T12 planner** (e438b5ac) and **P4-T13 planner** (50706531): Opus xhigh, continuing their kits. The P4 planners were given 1D-T8's exact files.
+  - **ci-parallel-jobs planner** (ad778c27) and **P4-T12 planner** (e438b5ac): Opus xhigh, continuing their kits. The P4 planners were given 1D-T8's exact files.
+  - **P4-T13: brief READY at 0bd5659** (S, 7 new files in `src/slips/`, none shared; no package or lockfile change).
+    - P1 to P18 are accepted. The Q1 and Q2 adapters wait on the owner (P18).
+    - Kit `scratch/p4-t13-planner/`: check_kit at d579f94 gives 31 OK, SHA256SUMS.base 2 OK, and both `base/` files identical.
+    - The planner's proof: 84 of 84 mutants. For CI: `test:unit` +18, everything else +0.
+    - The implementer (Haiku max, c5f063e0) was dispatched about 23:05 in a pre-installed p4-t13 from d579f94.
+    - Then: PR (issue #221) and a **Sonnet** review (S). Its P4-T14 notes are in followups.md.
   - The old P2-T10 planner (a0363fb1, "waiting on its own background work") is obsolete: P2-T10 merged as #370.
 - **P2-T11 planner** (Opus xhigh, df615dc8), dispatched about 22:25 at 331c2b2 as the sixth agent: the deepest ready task (depth 18). WT p2-t11 on p2/t11-wallet-looks. It carries P2-T8's m-1 (the harness's E2, E3 and X2) and P2-T10's balance-sign note. P2-T13 (depth 18, tray and lock cover, no shared files) follows in the wallet lane.
 

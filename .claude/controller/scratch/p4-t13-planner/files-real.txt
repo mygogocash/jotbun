@@ -1,0 +1,7 @@
+apps/app/src/slips/imageShrink.test.ts
+apps/app/src/slips/imageShrink.ts
+apps/app/src/slips/photoLibrary.test.ts
+apps/app/src/slips/photoLibrary.ts
+apps/app/src/slips/slipBatches.test.ts
+apps/app/src/slips/slipBatches.ts
+apps/app/src/slips/testing/fakePhotos.ts

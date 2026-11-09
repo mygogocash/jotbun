@@ -1,0 +1,27 @@
+P4-T13 brief rehearsal (planner, 9 November 2026, about 22:40 Bangkok)
+
+The brief's own commands, typed as written with WT, S and PL substituted, in a throwaway git
+repository: `git archive 0bd5659` extracted, `git init` and one commit of the whole tree, then
+`npm ci --ignore-scripts --no-audit --no-fund` (exit 0, "added 1416 packages"). PL was this folder.
+The throwaway copy lived in the session's temporary scratchpad and was deleted afterwards.
+
+Step 0.3  ls of the seven paths: "No such file or directory" for all seven.
+Step 0.4  shasum -a 256 -c PL/SHA256SUMS.base: exit 0, two OK lines.
+Step 1.1  cp -R PL/real/apps WT/ ; cp -R PL/stubs/apps WT/: done.
+Step 1.2  git status --short --untracked-files=all: exactly the seven `??` lines of the brief.
+Step 1.3  shasum -a 256 -c PL/SHA256SUMS.red: 7 OK, exit 0.
+Step 1.4  npm run typecheck:app: exit 0.
+Step 2.1  the three files on the stubs: exit 1, tests 18, pass 0, fail 18.
+Step 2.2  ERR_ASSERTION 18; missing module 0; TypeError/RangeError/ReferenceError/SyntaxError 0.
+Step 3.1  the files-stubs.txt loop, then shasum -a 256 -c PL/SHA256SUMS.real: 7 OK, exit 0.
+Step 3.2  npm run typecheck:app: exit 0.
+Step 3.3  the three files: exit 0, tests 18, pass 18, fail 0.
+Step 4    mutants.py --check: exit 0, 84 APPLIES. The run: exit 0, 84 KILLED, 84 restored=True,
+          and `diff S/mutants.out PL/logs/mutants.out` printed nothing. Afterwards git status showed
+          the seven `??` lines and SHA256SUMS.real still checked 7 OK.
+Step 7    git add apps/app/src/slips and a placeholder receipt: git status --short showed 8 `A`
+          lines (the seven files and the receipt); git diff --cached --check: no output, exit 0;
+          the commit: exit 0; git diff --check <base>...HEAD: no output, exit 0. The commit's
+          stat: 7 files of the kit, 758 lines added, plus the placeholder receipt.
+Step 5    not rehearsed: test:app (34 of 34) and test:unit (940 of 940) ran on the same files in
+          PL/work (logs/gate/).

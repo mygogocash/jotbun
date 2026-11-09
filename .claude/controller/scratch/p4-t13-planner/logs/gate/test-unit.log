@@ -1,0 +1,1558 @@
+
+> gogospend@0.0.0 test:unit
+> npm run test:unit -w gogospend-app
+
+
+> gogospend-app@0.1.0 test:unit
+> node scripts/test-unit.mjs
+
+(node:34202) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/analytics/analyticsServer.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ read answers the consent, the analytics id and the weeks (31.26775ms)
+✔ a null analytics id is accepted, a malformed one is invalid_response (14.231542ms)
+✔ a server without the route falls back to /v1/me (3.966083ms)
+✔ setConsent sends exactly { analytics } and checks the answer (2.804667ms)
+(node:34203) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/analytics/catalog.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34203) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ the allow-list holds exactly the 40 events of the spec's table (0.659584ms)
+✔ no rule can carry free text (0.814458ms)
+✔ cleanEvent drops unknown events, unknown properties and values outside their rule (0.208708ms)
+✔ a category is a built-in key, a pack key or custom (0.08275ms)
+✔ phase 2's wallet types, materials and faces are accepted (0.05625ms)
+✔ screen names are route patterns, never values (0.150083ms)
+(node:34204) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/analytics/controller.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34204) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ signed out, events are held and never sent (0.602958ms)
+✔ events tracked before sign-in are held across the sign-in and sent after a yes (0.463416ms)
+✔ held events are dropped when another account signs in, and on no (0.158917ms)
+✔ the server's yes sends at once, identifies with the analytics id and starts replay (0.154833ms)
+✔ replay never starts when it is not allowed (0.085208ms)
+✔ never asked: the question is open, events wait in memory, and the identity is reset (0.071875ms)
+✔ a no read at launch after an earlier yes resets the identity (0.07825ms)
+✔ a no given on another phone stops this phone at its next foreground (0.073834ms)
+✔ a pending no is kept until the server has it (0.137583ms)
+✔ saying no stops replay and resets the identity (0.105709ms)
+✔ a no from another phone is not asked again on this one (0.072917ms)
+✔ a yes the server could not save rejects and changes nothing (0.127667ms)
+✔ offline with nothing known waits, then asks (0.080667ms)
+✔ the held events stop at 50, oldest first out (0.088708ms)
+✔ screens are sent only as patterns and only after yes (0.223208ms)
+✔ without an analytics id the person stays anonymous, and a later refresh identifies them (0.107958ms)
+✔ a stored yes with the server unreachable enters yes without an identity (0.075125ms)
+✔ without a client, nothing is sent and consent still resolves (0.035834ms)
+✔ recordAnalytics installs a consented recorder and restores the previous one (0.109584ms)
+✔ a no from the server stops capture before this phone stores it (0.061083ms)
+✔ an answer gone from the server stops capture before this phone erases its own (0.059542ms)
+✔ a yes still on its way cannot outlast a later no at the server (8.102208ms)
+✔ a yes being stored when the person says no cannot replace the no (4.684834ms)
+✔ a foreground refresh waiting behind a yes cannot undo a later no (4.949834ms)
+✔ a yes waiting behind another call is refused once another account has signed in (5.88975ms)
+✔ a yes on its way when another account signs in is never stored or applied for the next one (4.727625ms)
+✔ a yes still waiting when the person says no is never sent (4.677167ms)
+✔ a refresh after a yes does not keep the yes from the server (4.223417ms)
+✔ a no given while a refresh is on its way is stored at once (4.210084ms)
+✔ the no stored at the call lands before the queue writes and sends it (1.554084ms)
+✔ a yes waiting while the same account signs out and in again is still sent for it (4.160625ms)
+(node:34205) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/analytics/events.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34205) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ the typed emitters send §7's names and nothing else (1.703875ms)
+(node:34206) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/analytics/gate.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34206) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ before yes, only scrubbed exceptions leave, without a person profile (0.821708ms)
+✔ with the switch off, exceptions also wait for yes (0.088958ms)
+✔ after yes, allow-listed events, screens, identify and replay pass; anything else is dropped (0.124625ms)
+✔ the device name, $set and $set_once never leave (0.087875ms)
+(node:34207) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/analytics/neverSent.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34207) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ nothing a person typed leaves through an event, a screen or an exception (1.356583ms)
+(node:34208) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/analytics/posthogOptions.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the client is built with replay masked, logs and network capture off, no lifecycle, flag, push or GeoIP traffic, and console errors not captured (0.715875ms)
+✔ replay can start after a yes: the installed SDK lets native replay keep tap positions out (0.078333ms)
+(node:34209) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/api/client.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ signed-out reads fail before any network request (1.533ms)
+✔ JSON writes send the active bearer credential and preserve integer satang (14.186875ms)
+✔ multipart uploads let the runtime generate a matching boundary (4.236833ms)
+✔ server failures stay failures with their actionable code (1.596917ms)
+✔ absolute URLs cannot receive session credentials (0.165959ms)
+✔ a development build may reach wrangler dev on the LAN; a release build may not (0.492875ms)
+✔ a v1 request with no session id is refused before anything is sent (0.227083ms)
+✔ a bound v1 request sends no X-GoGoSpend-Session header (1.230959ms)
+✔ acceptLanguage sends Accept-Language and nothing else changes (0.820125ms)
+✔ a response from the previous account cannot become the current diary (1.714042ms)
+✔ requests carry X-GoGoSpend-Analytics: off unless this phone's answer is yes (3.737834ms)
+(node:34210) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/api/sessionEpoch.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34210) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ a token renewed while a request is in flight keeps its response (same identity) (36.562583ms)
+✔ a sign-out, account switch or A -> B -> A during a request drops its response (48.54175ms)
+✔ one 401 allows one refresh and one resend of the same body and key; a second 401 signs out (5.346833ms)
+✔ 426 never triggers a refresh or a sign-out; other auth refusals are not refreshed either (3.432542ms)
+✔ token-only routes need no binding and send none, even from a bound session (1.405042ms)
+✔ a session change while the token is read sends nothing (never one identity's binding with another's token) (0.130291ms)
+✔ a 401 that arrives after the session changed is neither refreshed nor resent (24.717666ms)
+✔ a session change while the token is re-read or refreshed stops the resend (never sent under another identity) (8.575791ms)
+✔ a lost command is not resent once the session changed (255.675208ms)
+✔ a 401 for a token another request already renewed is resent with the new token, without a second refresh (44.540875ms)
+✔ credentials that cannot be read right now are a network outcome, never a sign-out (1.195542ms)
+✔ a request with its own credentials uses them, is never refreshed and never ends the session (1.692417ms)
+✔ a server-ended session is reported with the epoch the request started under; proof and token-only refusals are not (3.3355ms)
+✔ return_to_a_does_not_accept_old_a_response (4.801583ms)
+✔ a server-ended session leaves active through the seam; a stale report from an earlier session changes nothing (4.055ms)
+✔ sign-out from a locked session still revokes its binding over the transport (1.331375ms)
+✔ a request begun during an account switch sends nothing: never the next session's token under the first session (R86) (1.034083ms)
+✔ offline token reads neither lock the session nor close the diary (S4 resolver) (9.18775ms)
+(node:34211) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/api/v1Contracts.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34211) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ money parses as exact satang and never accepts JS numbers (0.624583ms)
+✔ totals beyond the safe-integer range stay exact (0.091333ms)
+✔ Bangkok day boundary and occurred-on window (4.913916ms)
+✔ command normalization is order-independent and matches the server form (0.194459ms)
+✔ unknown request fields and malformed client headers are rejected (0.47ms)
+(node:34212) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/auth/betterAuthPort.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ email: a code is asked for sign-in only (1.083084ms)
+✔ the right code signs in and names the account and the session (4.913208ms)
+✔ the first code for an address says it created the account; the next code does not (0.227875ms)
+✔ createdOf reads only a created that is exactly true (0.072ms)
+✔ a wrong code is WRONG_CODE, and nothing is stored (0.347083ms)
+✔ the server's cap is CODE_LIMIT (0.105583ms)
+✔ offline, a timeout or a 5xx is AuthUnavailable, never a refusal (0.193208ms)
+✔ a cancelled Apple sheet is AuthCancelled and the server is never called (0.115625ms)
+✔ the sign-in screen asks to sign up; a fresh sign-in never does (0.475583ms)
+✔ ACCOUNT_EXISTS carries the methods the server named (0.180375ms)
+✔ AuthRefused keeps its code and methods as fields (0.057292ms)
+✔ a fresh sign-in by email uses only the account's own address (0.199292ms)
+✔ a fresh sign-in by Google checks the token's subject against the linked account first; another subject is OTHER_ACCOUNT and nothing is sent (8.002875ms)
+✔ a fresh sign-in that still lands in another account signs that session out and is OTHER_ACCOUNT (0.589542ms)
+✔ the JWT is reused until a minute before it expires, then renewed (0.6205ms)
+✔ a sign-in drops the cached JWT: the next token is the new account's (0.315084ms)
+✔ a token read in flight across a sign-in is never kept for the new account (email and Google) (0.926083ms)
+✔ a refresh in flight across a fresh sign-in is never kept for the new session (0.197667ms)
+✔ a token read in flight across a sign-out is not kept for after it (0.065667ms)
+✔ signing out a device or everywhere answers 204 with no body, which is success (0.135166ms)
+✔ a sign-in whose session read fails after the server accepted it drops that session (email and Google, R86) (0.147709ms)
+✔ refresh always renews (0.129584ms)
+✔ a session the server deleted reads as no token, not as an outage (0.083417ms)
+✔ linking from a stale sign-in is REAUTH_REQUIRED (0.149792ms)
+✔ unlinking calls unlink with the provider (0.09875ms)
+✔ the device calls use the jotbun routes, and REAUTH_REQUIRED and SIGNED_OUT stay apart (16.53825ms)
+✔ linked methods are Apple and Google when the account has them, then always email (0.19975ms)
+✔ the web build reports sign-in unsupported (0.093584ms)
+(node:34213) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/auth/credentialProvider.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34213) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ sign-in by email code stores the session only after the server signed in, then moves the epoch (2.099834ms)
+✔ a cancelled, refused or unreachable sign-in changes nothing stored and returns to where it was (0.707125ms)
+✔ an ACCOUNT_EXISTS sign-in returns the methods to use (0.162292ms)
+✔ a sign-in result says whether it created the account (0.467ms)
+✔ hydration: a stored session with its cookie is active; without the cookie it is locked; nothing stored is signed out (0.329666ms)
+✔ token reads and refreshes are serialized: one token call each, however many callers (0.316708ms)
+✔ a token read after a refresh never returns the pre-refresh token (2.915625ms)
+✔ offline is not a denial: the session stays active; a deleted session locks, and the lock lifts once a token works again (0.403708ms)
+✔ sign-out tells the vault first with the session's own token, then Better Auth, then clears the record and moves the epoch (0.331125ms)
+✔ sign-out during a sign-in wins: the late session is signed out at the server and never stored (0.212375ms)
+✔ sign-out during a fresh sign-in wins: the new session is signed out at the server and never stored (0.31575ms)
+✔ a sign-out while a fresh sign-in saves its record waits for the save, then leaves no record (1.329042ms)
+✔ the server ending the session keeps the account and says why (0.449292ms)
+✔ requestCredentials reads one token and the session id together, and is null unless active (3.334584ms)
+✔ requestCredentials never pairs a token with the id of a session that replaced it (0.34575ms)
+✔ after an account switch, a token read that began before it never reaches the new account (0.424084ms)
+✔ requestCredentials never pairs the old session's token, read before a fresh sign-in, with the new session's id (0.219042ms)
+✔ during an account switch, requestCredentials is not ready: never the new session's token with the old session id (R86) (0.312375ms)
+✔ during a fresh sign-in, the new session's token never goes out with the old session id (R86) (0.227709ms)
+✔ during an account switch, a token read under the old session never gets the new session's token, and nothing locks (R86) (0.243708ms)
+✔ an account switch whose session read fails drops the new cookie: the first account locks, also after a relaunch (R86) (0.234ms)
+✔ a sign-in from a locked session whose session read fails leaves it locked, never unlocked on the other account's cookie (R86) (0.188583ms)
+✔ a token whose session cannot be read is never handed out, and nothing locks (R86) (0.308ms)
+✔ a sign-out during an account switch never gives the vault one session's token with another session's id (R86) (0.211333ms)
+✔ a fresh sign-in into the same account swaps the session, signs the old one out and moves the epoch (0.145ms)
+✔ an OTHER_ACCOUNT fresh sign-in changes nothing (0.118584ms)
+✔ if the new session cannot be stored, it is signed out at the server and the device ends signed out (0.22025ms)
+✔ a method this build cannot offer is not_configured and calls nothing (0.1755ms)
+✔ the installation epoch never goes backwards across launches (0.268875ms)
+✔ the secure session store keeps the record on this device only, refuses malformed values, and removes the old Auth0 binding item (0.425625ms)
+✔ the secure session store removes the old Auth0 binding item on its first load only (0.07375ms)
+✔ sign-in during hydrate waits for it: the session record and the session agree (4.559416ms)
+✔ a second sign-in while one runs joins it (one server sign-in) (0.238166ms)
+✔ refused transitions change nothing and do nothing (0.106916ms)
+✔ a token read while a forced refresh runs waits for it (0.236584ms)
+✔ sign-out waits for an in-flight forced refresh, and tells the vault before Better Auth (0.700458ms)
+✔ sign-out ends the session even when the record cannot be cleared, then reports it (0.22825ms)
+✔ an installed provider drives the shared session seam: the token, the session id as the binding, and the epoch (0.22125ms)
+(node:34214) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/auth/globalLogout.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ accepted: one fresh sign-in, then one sign-out-everywhere call; every session is now gone (1.662708ms)
+✔ the person cancels the fresh sign-in: nothing is sent (0.077666ms)
+✔ a fresh sign-in that fails sends nothing (0.124875ms)
+✔ a lost answer resent meets SIGNED_OUT because the first one landed: that is signed out (0.105917ms)
+✔ Jotbun cannot be reached: still signed in here, and Try again resends with no new sign-in (0.073ms)
+✔ a stale sign-in is reauth_required and changes nothing (0.052542ms)
+✔ any other refusal changes nothing and says which (0.196375ms)
+(node:34215) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/auth/jotbunAccountClient.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the jotbun sign-out routes are sent as JSON, with an empty object when there is nothing to send (14.835708ms)
+✔ a 204 from a jotbun sign-out route, read by Better Auth's own client, is success at the port (1.100375ms)
+(node:34216) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/auth/sessionEnded.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a locked or server-ended session shows the session-ended view with the unsent count and the account's method (0.899792ms)
+✔ active and signed-out sessions show no session-ended view (0.111167ms)
+✔ signing in again to the same account resumes (0.070083ms)
+✔ another account with unsent records asks keep or erase (0.057458ms)
+✔ erasing another account's records needs the explicit confirmation (0.054833ms)
+✔ keep never erases (0.038666ms)
+(node:34217) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/auth/sessionMachine.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the epoch moves only when the identity (account or binding) changes, never on a token refresh (0.777791ms)
+✔ sign-out always starts a new epoch, even while a sign-in is still establishing an identity (0.096209ms)
+✔ hydration never shows a previous account, and impossible events change nothing (0.082208ms)
+(node:34218) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/config/env.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ PostHog stays off until its project key is set, and goes through the Worker proxy unless told otherwise (0.5575ms)
+✔ scrubbed crash reports are sent without consent unless the switch says 0 (0.125583ms)
+(node:34219) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/config/featureFlags.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ an approved area is on by default (0.507875ms)
+✔ off (or 0) switches every area off, and -area switches one off (0.557583ms)
+✔ an area not yet approved is on only by name, or all at once (0.066667ms)
+✔ planning is on by default since its approval, and -planning or off switches it off (0.06ms)
+✔ insights is on by default since its approval, and -insights or off switches it off (0.045ms)
+✔ account is on by default since its approval, and -account or off switches it off (0.034583ms)
+✔ import is on by default since its approval, and -import or off switches it off (0.032125ms)
+✔ companion is on by default, and -companion or off switches it off (0.046792ms)
+✔ the catalogue is still opt-in (0.053ms)
+✔ conflict is off by default, on when named, and on with all (0.0795ms)
+✔ the wallet area is off unless named (0.066875ms)
+✔ the signin area is off unless named (0.050542ms)
+(node:34220) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/dev/catalogue/params.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a deep link names the section, theme and locale (0.703958ms)
+✔ missing or empty params leave the catalogue on its defaults (0.088625ms)
+✔ values the app does not ship are ignored, not guessed (0.066375ms)
+✔ case and surrounding spaces do not matter, so hand-typed links work (0.620958ms)
+✔ a repeated param takes its first value (0.088666ms)
+✔ a tour steps every N milliseconds, between 1 and 10 seconds (0.275ms)
+✔ chrome=off hides the catalogue header, so a screen shows as it does on a phone (0.084417ms)
+(node:34221) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/i18n/catalogs.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ th.json translates every key in en.json (1.6615ms)
+✔ th.json has only en.json's keys, each keeping its placeholders (1.384ms)
+✔ vi.json has only en.json's keys, each keeping its placeholders (0.658542ms)
+✔ every literal the redesign passes to tc() is copy in en.json (6.141167ms)
+✔ every literal the signin folder passes to its copy hook has a Thai draft (14.244291ms)
+✔ every literal the signin folder passes to tc() is approved copy already in en.json (0.549625ms)
+(node:34222) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/i18n/languagePreference.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the choices: System (the phone), Thai and English; Vietnamese is not offered while it waits for its translation (0.5965ms)
+✔ a stored choice is read back only when it is one of the choices (0.084084ms)
+✔ System follows the phone, Vietnamese included; a choice wins over the phone (0.057917ms)
+(node:34223) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/lib/hapticPreference.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ haptics are on until the person chooses otherwise; only the three words parse (1.165334ms)
+✔ On plays every moment as the table says, silence included (0.094208ms)
+✔ Subtle keeps only outcomes; a celebration plays as one success (0.059458ms)
+✔ Off is silence for every moment (0.051792ms)
+✔ saved offline never feels like saved: queued is light, landed is success (0.050875ms)
+✔ the current preference is shared module state (0.045416ms)
+(node:34224) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/lib/haptics.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ each verb plays its own native feedback (0.768916ms)
+✔ a celebration is three beats with a pause between them (0.128625ms)
+✔ the web plays nothing and loads no native module (0.069958ms)
+✔ a failing native module never throws to the caller (0.621416ms)
+(node:34225) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/mascot/bunIntensity.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the bun is at full intensity until the person chooses otherwise (0.476083ms)
+✔ only the three stored words parse (0.079792ms)
+✔ a missing or damaged stored value falls back to full (0.048416ms)
+✔ off hides every bun, quiet keeps the bun but drops the bubble (0.0555ms)
+(node:34226) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/mascot/poses.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the twelve poses, holding a receipt by default (0.604708ms)
+✔ sizes are 32, 56, 96 and 160 pt and the outline is 2.5 at 64 pt (0.139542ms)
+✔ every pose is plain geometry: known paints and finite numbers (0.35825ms)
+✔ every pose has the body and eyes, with cheeks on all but peek and quiet (0.08ms)
+✔ the default pose holds the blue receipt, with two lines, in front of the body (0.063ms)
+✔ peek shows only the eyes and the top of the bun (0.064083ms)
+✔ arms go up for cheer, one arm waves for hello and wave-bye (0.04825ms)
+✔ sleepy closes its eyes, oops-kind stays kind, quiet stays small and neutral (0.130167ms)
+✔ each moment carries its prop (0.057959ms)
+✔ mascot colours come from the palette, and the face reads in light and dark (0.230708ms)
+✔ height follows the pose box (0.052166ms)
+(node:34227) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/notifications/localReminders.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ turning reminders on asks once, then schedules seven weekly reminders, each in its own day's words (0.993292ms)
+✔ a denied permission is a settled, usable state: off, nothing scheduled, no retry loop (0.158084ms)
+✔ unsupported platforms (web) say so; bad times are refused (0.2235ms)
+✔ a time zone or language change re-schedules the reminders once; no change does nothing (0.388875ms)
+✔ an install scheduled before the weekly wording re-schedules once at its next launch, so its daily reminder goes (0.147791ms)
+✔ provisional iOS delivery counts as granted; a denial the OS still allows is asked again only on opt-in (0.05625ms)
+✔ on Android the reminder has its own notification channel; on iOS quiet (provisional) delivery is asked for (0.189208ms)
+✔ a stored preference without weekdays (S4) reads as every day: one weekly reminder per day (0.149959ms)
+✔ chosen days: one weekly reminder per day under its own fixed id, in that day's own words (0.162167ms)
+✔ a new time, days, time zone or language replaces the weekly reminders and never adds a second (0.23725ms)
+✔ turning reminders off or a denial cancels every reminder, daily and weekly, and keeps the chosen days (0.262083ms)
+✔ at least one day must stay chosen; only the days 1 (Monday) to 7 (Sunday) are accepted (0.158167ms)
+✔ the service says whether the platform can remind at all (0.033375ms)
+✔ the web stub has no reminders: unsupported, with every day by default (0.088125ms)
+✔ a weekly reminder is an expo-notifications weekly trigger, counted from Sunday = 1, on the Android channel (0.108167ms)
+(node:34228) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/notifications/reminderWording.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ each weekday has its own reminder wording, as the owner approved it (0.711ms)
+✔ every reminder wording is copy in en.json, in the Thai the owner approved (2.862334ms)
+(node:34229) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/slips/imageShrink.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34229) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ a picked image or a shared file within 1,200,000 bytes is used as it is, its type read from its first bytes, and a larger one, such as a 1.5 MB PNG screenshot, is not sent (3.529ms)
+✔ only a JPEG, a PNG or a WebP is sent: a HEIC photo, another RIFF file, text, or text that is not whole base64 is not (0.322167ms)
+✔ a copy that is gone throws, so the scan can tell it from a photo it cannot send (0.278917ms)
+✔ the limit holds on the bytes read, also where the phone gives no size (2.516417ms)
+✔ an image's byte count is its decoded length, whatever its padding (0.153875ms)
+✔ the fake shrink answers null for a photo too large, throws for a copy that is gone, and records each image removed (0.174458ms)
+(node:34230) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/slips/photoLibrary.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34230) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ the picker path picks up to the limit at quality 0.7 in the compatible representation, without base64, and has no albums and no lookup by id (0.673084ms)
+✔ a picked image without an asset id is known by its uri (0.124458ms)
+✔ releasing a picked photo deletes its cache copy (0.112ms)
+✔ photo access reads all, limited, none and undetermined from the picker's permission (0.161125ms)
+✔ the phone's settings open through expo-linking, and a phone that cannot open them does nothing (0.105959ms)
+✔ the fake library lists photos oldest first, strictly after the watermark, ties broken by id, and finds one again only by its id (0.265667ms)
+✔ the fake library answers its access, picks up to the limit and records each call (0.11725ms)
+(node:34231) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/slips/qrDecoder.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ noQrDecoder is unavailable and finds nothing (0.617791ms)
+✔ fakeQrDecoder is available and answers only the uris it was given (0.1425ms)
+✔ slipQrIn returns the first payload that is a bank slip (0.316792ms)
+✔ a decoder that throws finds no slip (0.120791ms)
+✔ installQrDecoder replaces the app's decoder and null restores noQrDecoder (0.07725ms)
+(node:34232) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/slips/slipBatches.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34232) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ batches hold at most 5 slips and 8 MiB of JSON, in order (29.168834ms)
+✔ the byte count is the JSON body's UTF-8 length (0.407416ms)
+✔ a batch is cut at exactly 8 MiB, counting the commas between slips, and is measured with last false (31.839792ms)
+✔ a slip that fills a batch alone is sent alone, and one larger than a batch throws (20.784792ms)
+✔ each slip's album is sent as the server keeps it: NFC, trimmed, at most 60 characters, and null when nothing is left (0.211709ms)
+(node:34233) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/slips/slipQr.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a Thai bank slip QR gives its sending bank and reference (1.489375ms)
+✔ the CRC covers everything up to 9104 and is read in either case (0.166125ms)
+✔ a CRC whose leading zero was dropped is padded back (0.0765ms)
+✔ TrueMoney and payment QR codes are not bank slips (0.075375ms)
+✔ a slip-shaped QR whose root is not 000001 is not a bank slip (B14) (0.078334ms)
+✔ anything malformed is null (0.122333ms)
+✔ the CRC is CRC-16/CCITT-FALSE over the UTF-8 bytes (0.048666ms)
+✔ a slip QR may be 512 characters long, skip other fields and leave out 51 (0.158917ms)
+✔ a reference may be 64 letters and digits in either case, not 65 (0.101583ms)
+✔ one root, and one CRC field of length 04 that comes last (0.112291ms)
+✔ every field header is four digits and every root field fits the root (0.075042ms)
+✔ the bank code is three digits and each root field appears once (0.119125ms)
+✔ only printable ASCII counts (0.085542ms)
+(node:34234) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/ai/cashbackModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34234) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ counts the month’s purchases at cashback shops, by merchant or note, busiest first (0.794333ms)
+✔ nothing shows before 7 logged days, without purchases, or while preferences are unknown (0.092792ms)
+✔ asks once, then shows tips only when the person said yes (0.051667ms)
+(node:34235) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/ai/oftenLogged.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ an entry repeated at least twice becomes a draft dated today, with nothing guessed (0.85125ms)
+✔ the most repeated come first, then the most recent, and only a few are shown (0.1875ms)
+✔ the same place at another amount, category or wallet is another entry (0.077458ms)
+✔ places differing only in letter case or spaces count together, named as last written (0.096084ms)
+✔ transfers, deleted records, records without a place and archived wallets never count (0.479167ms)
+✔ amounts read the way people type them (0.149459ms)
+(node:34236) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/ai/tellBun.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34236) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ the phone answers a sentence on its own, offline (13.423416ms)
+✔ a draft fills the fields it knows and keeps the rest (0.152125ms)
+✔ an income draft switches the type and keeps the other type’s category (0.094875ms)
+✔ what Bun could not tell is said plainly, in order (0.142209ms)
+(node:34237) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/attachments.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34237) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ retain posts the receipt with the retention consent, its own key and the record's If-Match (16.731ms)
+✔ replace puts the new receipt with the consent; remove deletes with no body (3.273292ms)
+✔ a lost response is resent as the same command: same key, same If-Match, same body (257.549083ms)
+✔ an acknowledgement must be this command's, for this record, an update past the version sent (6.059042ms)
+✔ malformed ids, keys and versions are refused before anything is sent, as rejections (0.430625ms)
+✔ refusals keep their outcome: a stale version carries the current record, a passed window names the field (21.607959ms)
+✔ a grant is read for the receipt (no command headers) and must be exactly the grant shape (14.43325ms)
+✔ the file comes through the grant with the session's headers, byte for byte, checked against its size and digest (11.412917ms)
+✔ a download whose access token expired is refreshed once and sent again, as every v1 read is (3.377209ms)
+✔ an expired or foreign grant is not found; a busy server is unavailable; nothing is sent for a malformed grant (1.613084ms)
+✔ downloads need a session: signed out, unbound, another platform and a session that changed meanwhile (3.056166ms)
+✔ retain and replace wait past the server's 60 s copy, where an ordinary call would have given up (1.741334ms)
+✔ a retain that does give up is resent as the same command: same key, same If-Match, same body (0.727ms)
+✔ a retain or replace ends by 100 s in all: a resend gets only what is left, never a fresh 90 s (2.17275ms)
+✔ a retain refreshed after a 401 stays within the same 100 s: its resend gets only what is left (1.298708ms)
+✔ remove and the grant keep the transport's own limit (2.909167ms)
+(node:34238) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/deletion.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34238) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ a fresh sign-in, then today's body with a random proof id, the command id as the key, the new session's own token and the app's language (25.26225ms)
+✔ cancelling the fresh sign-in requests nothing (0.189292ms)
+✔ a fresh sign-in that does not go through, or a new session that cannot be read, requests nothing (1.107417ms)
+✔ REAUTH_REQUIRED requests nothing more (3.442375ms)
+✔ a lost answer asks for the receipt with the same token: found is accepted; not found keeps it unconfirmed (289.003833ms)
+✔ a resend after a lost answer repeats the same key, proof id and token (762.367167ms)
+✔ only a confirmed acceptance lets the device erase its copy; a refusal locks it and keeps the drafts (6.154208ms)
+✔ a receipt reports completion once the server data is purged; a malformed receipt is not trusted (1.051917ms)
+(node:34239) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/diarySession.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34239) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ offline on a fresh install, no account is assumed (0.761458ms)
+✔ the verified account is remembered across resolvers for the same binding, never for another (0.725791ms)
+✔ a token refresh for the same identity does not ask the server again (0.100416ms)
+✔ an account recalled offline is verified again on the next refresh (0.1585ms)
+✔ an older answer that arrives after a newer one is ignored (1.773375ms)
+✔ after dispose nothing reopens (1.823125ms)
+(node:34240) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/importDraftStore.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34240) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+▶ the import draft store over a key-value port
+  ✔ is empty until something is saved (0.481583ms)
+  ✔ saves the whole journey and loads it back exactly (6.121791ms)
+  ✔ survives a restart: a new store over the same storage resumes and resolves the pending batch first (14.114ms)
+  ✔ a journey that is discarded, or finished, leaves nothing on the device (0.247459ms)
+  ✔ an account's draft is its own: another account loads nothing, and clearing one leaves the other (0.24675ms)
+  ✔ sign-out erase removes the account draft only; erasing every draft keeps unrelated keys (0.370459ms)
+  ✔ a draft that cannot be trusted is no draft: corrupt text and a wrong shape are dropped (0.126667ms)
+  ✔ a newer app's draft is left in place, not read and not deleted (0.067916ms)
+  ✔ a device that cannot store rejects the save, so the journey never claims a draft it does not have (0.446542ms)
+  ✔ refuses a store for anything but an account id (0.179292ms)
+✔ the import draft store over a key-value port (28.085375ms)
+▶ the import draft store inside the encrypted diary
+  ✔ keeps the whole journey in the diary, and a restart resumes it (8.531208ms)
+  ✔ a draft naming another account is never returned, and is removed (2.665917ms)
+  ✔ a corrupt draft is removed (3.154875ms)
+  ✔ a newer app's draft is left alone (2.664417ms)
+  ✔ a locked or superseded diary refuses, so the journey never claims a draft it does not have (2.347958ms)
+  ✔ the sign-out and device-reset erases work over the diary rows too (2.873584ms)
+  ✔ its first use removes the account's leftover plain-text (AsyncStorage) draft, and only that account's (3.416125ms)
+  ✔ a leftover draft that cannot be removed yet never blocks the diary draft, and is tried again (2.523458ms)
+✔ the import draft store inside the encrypted diary (28.401625ms)
+(node:34241) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/importReview.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34241) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+▶ upload, parsing and review
+  ✔ parsing succeeded never means saved: the journey waits in review with nothing committed (1.352958ms)
+  ✔ a lost upload response resends the same file under the same key (0.342583ms)
+  ✔ freezing needs explicit row, direction, date, category and wallet review, and every label mapped (0.690709ms)
+  ✔ a transfer row cannot be selected for saving; changing its direction is an explicit correction (0.233083ms)
+✔ upload, parsing and review (3.143125ms)
+▶ corrections
+  ✔ are saved in commands of at most 500 rows against the current revision, and a lost response resends the same command (222.5335ms)
+  ✔ a correction against a revision another device moved keeps the edits and asks for a reload (0.371833ms)
+✔ corrections (223.008833ms)
+▶ confirmation
+  ✔ freezes the full selection once, and later batches confirm against the same selection (26.847375ms)
+  ✔ a lost confirmation response keeps the review and resends the same key and body (113.388625ms)
+  ✔ a proven COMMAND_TOO_LARGE splits the batch, with new command ids, and saves every row once (29.580333ms)
+  ✔ an unknown outcome is resolved with the original key and body before any split (20.313417ms)
+  ✔ overlapping retries acknowledge rows another attempt committed and continue the untouched ones (36.813458ms)
+  ✔ conflicted rows are reported and never resent; the rest are saved (60.459375ms)
+  ✔ after a restart, the saved draft resumes and resolves the pending batch first (16.995625ms)
+  ✔ a corrected preview needs a new selection: the review is kept and committed rows are acknowledged (48.98ms)
+  ✔ discarding clears the kept draft (0.201166ms)
+✔ confirmation (353.954041ms)
+▶ a receipt photo (P2c)
+  ✔ the image is kept with its record only when the user chose to keep it (0.43375ms)
+  ✔ without the choice no receipt is sent (0.254708ms)
+  ✔ a receipt that can no longer be kept saves nothing; the record can then be saved without it, as a new command (0.325042ms)
+✔ a receipt photo (P2c) (1.088375ms)
+▶ the import port on the wire
+  ✔ an upload sends the raw file with its type, encoded name and command key (16.873458ms)
+  ✔ corrections carry the review revision as If-Match; confirmation results are checked exactly (5.120083ms)
+✔ the import port on the wire (24.502458ms)
+(node:34242) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/importsPaging.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34242) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ without paging the request is today's whole-preview GET, and a page object in the answer is refused (20.416291ms)
+✔ a paged read names offset and limit and must come back as exactly that page (4.407625ms)
+✔ paging that the server would refuse is never sent (0.284709ms)
+✔ fetchWholePreview joins the pages into the same preview a whole read gives (12.552083ms)
+✔ fetchWholePreview returns a preview that has no page (not ready) as it is, after one read (1.9975ms)
+✔ fetchWholePreview starts over when the review revision moved between pages, and gives up after repeated moves (10.975875ms)
+(node:34243) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/knownAccount.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34243) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ the verified account is recalled only for the binding it was verified for (1.035584ms)
+✔ a malformed or foreign stored value recalls nothing (0.174708ms)
+(node:34244) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/money.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34244) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ large_minor_amount_is_formatted_exactly (0.547667ms)
+✔ formats satang exactly with grouping, two decimals and a sign, never through floats (0.107208ms)
+✔ refuses to format anything but a canonical integer string (0.193708ms)
+✔ parses typed amounts exactly (0.20225ms)
+✔ rejects ambiguous or invalid input instead of guessing (0.298333ms)
+✔ edit fields show the exact amount without grouping (0.078417ms)
+(node:34245) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/pendingTotals.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ pending_expense_is_distinct_from_confirmed_total (0.90075ms)
+✔ income, expenses and transfers adjust exactly, per wallet, beyond safe integers (0.249458ms)
+✔ no drafts means a zero adjustment and estimates equal to the confirmed totals (0.051667ms)
+(node:34246) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/policies.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34246) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ accept posts exactly { kind, version } and takes the empty 204 (15.621583ms)
+✔ acceptPending accepts each pending version once, in order, and stops at the first refusal (4.983041ms)
+✔ pending reads only pending_policies, whatever else /v1/me carries (6.303792ms)
+✔ a malformed pending list is invalid_response (11.665917ms)
+✔ watchPolicyRequired reports each policy_required answer and rethrows it (3.994625ms)
+✔ a malformed published list is invalid_response (5.94375ms)
+(node:34247) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/privacy.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34247) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ a fresh sign-in, then today's export body with a random proof id and the new session's own token (23.664667ms)
+✔ statuses and grants must be exactly the shared shapes (7.151542ms)
+✔ a download is checked against the ready export size and digest, byte order mark included (4.334958ms)
+✔ cancelling the fresh sign-in requests nothing (0.449333ms)
+✔ ready after polling: the journey returns the ready export and paces its polls (6.191208ms)
+✔ a stale sign-in is reauth_required (1.796334ms)
+✔ a lost answer resends the same request with the same token, key and proof id (779.849375ms)
+✔ polling reports queued after its budget, and failed, expired or unknown exports as such (4.077042ms)
+✔ downloading a ready export asks for a fresh grant; an expired one asks for nothing (3.660875ms)
+(node:34248) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/redesign/account/onboardingModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the story is three steps, then the reminder question; Skip goes straight to the question (0.7215ms)
+✔ the dots count the story only: 1, 2, 3 of 3, and none on the reminder question (0.100458ms)
+✔ the coffee maths is today's intro maths: ฿60 a day is ฿21,900 a year (0.133ms)
+✔ turning the reminder on asks for 20:00, enabled, and nothing else (0.066208ms)
+✔ each answer from the reminder service has its own words; anything unexpected is a calm failure (0.054041ms)
+✔ after onboarding: sign in, or with a session log the first coffee (0.04375ms)
+✔ the three promises are plain, distinct sentences (0.124459ms)
+✔ each promise is copy in en.json, with Thai (1.478209ms)
+✔ Apple, Google and email, in that order, and none of them first among equals (0.069209ms)
+✔ a provider can be chosen only with the terms ticked, and not while one is running or sign-in is not configured (0.0975ms)
+✔ only a session the seam reports active leaves the screen; nothing pretends to sign in (0.090708ms)
+✔ the story ends at sign-in from onboarding, or with a session at the reminder question (0.047458ms)
+✔ an active sign-in from onboarding goes on to the reminder question; anywhere else, to the diary (0.058667ms)
+(node:34249) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/redesign/account/privacyModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34249) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ the export period: everything up to today, or this year when everything is too large for one file (0.636208ms)
+✔ a ready file's expiry on Bangkok's clock (UTC+7, no daylight saving) (0.967542ms)
+✔ privacy.ts's journey states as the screen shows them (0.134583ms)
+✔ after a download: a file that expired or failed meanwhile says so; one still being made is preparing (0.090083ms)
+✔ deletion: what the screen shows for each of deletion.ts's outcomes, with this device's copy (0.0875ms)
+(node:34250) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/redesign/account/settingsModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the choices: System, Light and Dark; System, TH and EN by their own names; Full, Quiet and Off (0.622375ms)
+✔ the diary links: planning brings Wallets, Categories and Budget; insights brings Reminders; import only with its flag (0.106875ms)
+✔ every link goes to its own route (0.064125ms)
+✔ unsynced entries: every draft Jotbun has not confirmed, which an erase would lose (0.161167ms)
+✔ offline: sync is backing off with entries waiting, as Home says it (0.108458ms)
+(node:34251) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/redesign/budgetPace.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34251) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ the first day of the month: the whole month left, today included (2.208875ms)
+✔ left per day rounds down to whole satang, never up (2.715834ms)
+✔ the tight threshold is more than 10% ahead of the even pace, exactly (0.239833ms)
+✔ the last day: one day left, and exactly at the limit is on track (0.103375ms)
+✔ exactly zero left mid-month is not over, but ahead of pace (0.079458ms)
+✔ over by one satang is over, stated plainly with the days to go (0.077875ms)
+✔ after the month ends: no days left, no per day, never tight (0.097125ms)
+✔ before the month starts, the whole month is ahead (0.057292ms)
+✔ no budget: spent only, and a prompt to set one (0.077417ms)
+✔ money stays exact beyond JavaScript numbers (0.101208ms)
+✔ drafts waiting to sync count as pending; sending and uncertain drafts are checked apart; refused ones never count (0.215416ms)
+✔ Home-3: a draft whose record is already confirmed is never counted again, waiting or checking (0.142791ms)
+✔ each category limit gets its own left and state (0.134875ms)
+✔ a budget for another month than the summary is refused (0.16425ms)
+✔ pace copy is kind and factual in every state (0.280958ms)
+(node:34252) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/redesign/historyModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34252) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ a month reads by day, newest first, with each day's total (11.734583ms)
+✔ drafts join their days with their state; other months and acknowledged commands stay out (0.775458ms)
+✔ a record waiting for a choice is marked (0.968125ms)
+✔ filters: type, wallet (either side of a move) and category, for drafts too (0.762542ms)
+✔ search covers the category name, merchant and note, ignoring case and width (3.664125ms)
+✔ Thai search is mark-safe: canonical order and sara am match, and marks are never dropped (0.396584ms)
+✔ a search says how many entries and how much, drafts counted apart (1.089042ms)
+✔ History-1: while more pages exist, the oldest loaded day (and any older one) is marked partial (0.79675ms)
+✔ an empty month says so (0.067417ms)
+✔ recently deleted: restorable for 30 days by the server's rule, newest first (0.337583ms)
+✔ recently deleted rows carry what a record row draws: type, exact amount, category, merchant and note (0.07975ms)
+✔ a restore says what happened in plain words (0.113417ms)
+✔ every summary line is copy in en.json, with Thai (1.3335ms)
+(node:34253) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/redesign/homeModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34253) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ loading (0.807ms)
+✔ load problems keep the current screens' messages and retry rule (0.197209ms)
+✔ a load problem without a diary shows only the problem (0.08ms)
+✔ offline, the device still shows its drafts by day, its waiting money, and Add (4.159791ms)
+✔ a locked diary shows no drafts and says why (0.452875ms)
+✔ first run: no wallet asks for the first one (2.396041ms)
+✔ ready: the budget pace, today's receipt with drafts kept apart, and earlier days (9.139333ms)
+✔ an empty today still has its receipt, and drafts show only from an open diary (0.256ms)
+✔ no budget prompts for one; over budget is kind and plain (0.136958ms)
+✔ waiting money for the month: waiting and checking apart, sending with checking (0.204875ms)
+✔ Home-3: a sending draft whose record the server already confirmed is counted once, in confirmed money only (0.443875ms)
+✔ Home-1: every open draft is listed with its row, whatever its date, for Review and the draft actions (2.529875ms)
+✔ Home-2: a draft dated before the oldest whole day loaded does not bring back a day without its confirmed money (0.4835ms)
+✔ earlier records are cut back to whole days, naming the oldest whole day (0.116958ms)
+✔ a day with more records than Home reads is marked partial instead of failing (0.214958ms)
+(node:34254) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/redesign/import/importModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34254) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ a picked file must be a CSV, XLSX, JPEG, PNG or WebP under 12 MB whose name and type agree (4.36825ms)
+✔ the phase follows the journey and what the screen is doing, never claiming more than the server said (0.275209ms)
+✔ upload refusals: uploads off (404) is its own answer; a lost answer is not a refusal (0.087875ms)
+✔ rows carry flags for what the file left unclear; the values stay unknown, never filled in (0.601959ms)
+✔ a missing value without its own issue is still flagged, a saved row says so, and a fixed value drops its flag (0.215917ms)
+✔ filters: rows that need a look, probable duplicates, and the selection, in file order (0.17625ms)
+✔ select all keeps probable duplicates; leaving rows out is the person’s explicit choice (0.176166ms)
+✔ the selected total is exact satang, split by money out and in, and counts rows it cannot add (0.126542ms)
+✔ bulk type edits the chosen rows and counts as checking their type (0.092333ms)
+✔ bulk category applies to the chosen rows of its type and maps a label of its own, never taking over another row’s label (0.278125ms)
+✔ bulk wallet maps a wallet label of its own for the chosen rows (0.118709ms)
+✔ marking rows as checked marks all four fields of exactly those rows (0.049334ms)
+✔ the label step lists each wallet and category label in the file with its row count and its match (0.119375ms)
+✔ blockers are counted in words, and Continue waits for every chosen row (0.188917ms)
+✔ blocker lines name each reason with its count, the way forward first (0.123208ms)
+✔ freezing saves nothing: the frozen summary is ready to save, and going back is allowed until a batch is sent (0.644ms)
+✔ progress stages and the result use the server’s counts: committed, remaining and conflicted (0.531042ms)
+✔ parse stages: uploaded, reading, rows found (0.083625ms)
+✔ a kept draft resumes when it has something to pick up, and says what (0.089625ms)
+✔ each problem says what happened, what was kept, and the one way forward (0.084625ms)
+✔ a rejected file lists why, in plain words, once per reason (0.073458ms)
+✔ saving corrections then freezing sends the patch before the freeze, and the freeze before any batch (0.355708ms)
+✔ every flag, blocker, stage, summary, notice and file reason is copy in en.json, with Thai (1.707083ms)
+✔ a diary draft that locks mid-visit falls back to this visit's memory, from the latest journey, and says so once (0.435041ms)
+✔ offline, the notice says where the import is kept: on this phone, or only while the screen is open (1.24025ms)
+(node:34255) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/redesign/import/receiptModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34255) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ a picked photo becomes an upload of a plain name and its own type, inside the size cap (0.966625ms)
+✔ only a ready preview with a photo still inside its window gives an attachment id (0.137208ms)
+✔ a grant is used only while it has more than the margin left (0.447875ms)
+✔ an upload: unknown outcomes freeze, a switched-off server says so, the photo's own refusals start over (0.350875ms)
+✔ a receipt command: the record moved on, went away, or the photo can no longer be kept (0.288208ms)
+✔ only the outcomes that may have committed, or that wait for room, keep the command frozen (0.834209ms)
+✔ a frozen command and each refusal say so in words that are copy in en.json, with Thai (1.339791ms)
+✔ verified bytes become a base64 data URI in memory (0.208375ms)
+(node:34256) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/redesign/insights/insightsModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34256) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ a day's facts: confirmed money out is expenses only, and any entry logs the day (0.662625ms)
+✔ a deleted entry counts nowhere: neither money nor a logged day (0.071458ms)
+✔ drafts on this device log their day, with their money kept apart from confirmed money (0.128958ms)
+✔ heat steps: none without money out, then four steps of the busiest day, exact (0.067125ms)
+✔ weekdays are Bangkok calendar dates: Sunday is 0 (0.890625ms)
+✔ a month calendar: Sunday-first weeks, blanks outside the month, each day with its money out (0.854334ms)
+✔ today is marked and named; days after today are future and say nothing (0.209542ms)
+✔ a day's drafts are said after its confirmed money, never added to it (0.224791ms)
+✔ an empty month: every day says nothing logged, at heat 0 (0.157958ms)
+✔ a past month has no today and no future: every day can be opened (0.183ms)
+✔ the days logged line counts days, never money, and leaves a month with none unsaid (0.081959ms)
+✔ the rhythm is the last seven days up to today, oldest first, across a month end (0.205833ms)
+✔ a skipped day never breaks anything: every logged day in the week still counts (0.108791ms)
+✔ a good week is five logged days or more; one day and none read kindly (1.136375ms)
+✔ the rhythm skips deleted entries and counts drafts on this device (0.185791ms)
+✔ the rhythm needs its own read only when its week is not inside the month shown (0.096041ms)
+✔ reads every page of a range, in order, with the whole range totals (0.142792ms)
+✔ a page saying the diary changed meanwhile is passed on, and a cursor that repeats is refused (0.252042ms)
+(node:34257) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/redesign/insights/recapModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34257) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ a month is past, current or future against Bangkok today (0.539459ms)
+✔ the bars compare the last six months up to this month, and never a month after it (0.179875ms)
+✔ days logged counts each day with any entry once, across every page (0.778375ms)
+✔ days logged leaves out deleted entries and dates outside the month (0.082833ms)
+✔ days logged stops at its page limit and says it may be more; it stops early once every day is counted (0.145167ms)
+✔ days logged in words: one day, several, or at least that many (0.113958ms)
+✔ top categories: money out only, largest first, at most five, each with its exact amount (0.236458ms)
+✔ top categories compare exact satang, past where floating point can tell them apart, and break ties by name (3.915583ms)
+✔ kept is earned minus spent when positive, and kind words when it is not (0.077333ms)
+✔ the budget line: spent of the limit, and over said kindly with the exact amount (0.112208ms)
+✔ each bar names its month and its exact money out; the month shown is chosen and this month is marked so far (0.228ms)
+✔ entries still on this device for the month are mentioned, since the recap holds only confirmed money (0.092208ms)
+✔ load problems: offline says the records are safe and offers a retry; the others say what to do (0.102041ms)
+✔ a past month: the receipt facts, the hero, the bars and the exact share text (0.197792ms)
+✔ the share text: over budget kindly, money in only, more out than in, and every word through the translator (0.247333ms)
+✔ this month so far: the hero, the subtitle and the share heading say so (0.073959ms)
+✔ loading, a problem, an empty month and a month not started yet (0.168083ms)
+✔ the waiting note rides along on a recap and an empty month alike (0.099333ms)
+(node:34258) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/redesign/insights/remindersModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the time is HH:MM, chosen as an hour 00-23 and a minute in 5-minute steps (0.86425ms)
+✔ the week runs Monday first (0.070125ms)
+✔ weekday names come from the locale's Intl data, Monday first (11.0875ms)
+✔ a day turns on or off, kept Monday first; the last chosen day stays chosen (0.101792ms)
+✔ the days in words: every day, weekdays, weekends, or the short names in order (0.557209ms)
+✔ a date's ISO weekday is read on the phone's own calendar, Monday = 1 to Sunday = 7 (0.065792ms)
+✔ the preview shows the next reminder the person gets: today's when chosen, else the next chosen day (0.071083ms)
+(node:34259) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/redesign/loggedDays.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34259) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ the streak counts every logged day; a skipped day pauses it and never lowers it (1.292959ms)
+✔ a day dated in the future does not count yet, and repeats count once (0.08775ms)
+✔ loggedOn finds a day (0.055292ms)
+(node:34260) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/redesign/milestones.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ budget levels: under 80%, from 80%, from 100%, none without a limit (0.402458ms)
+✔ a crossing is only upward, within one month, and never the first reading (0.095041ms)
+✔ ISO weeks start on Monday and roll over the year correctly (0.994ms)
+✔ a good week is celebrated once per week (0.10925ms)
+(node:34261) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/redesign/pendingChoice.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34261) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ the draft shows the person's change over the record they opened (0.696542ms)
+✔ use yours resends the same changes on the server's current version (1.365083ms)
+✔ a fresh server record wins over the stored one (0.114917ms)
+✔ a choice the server already holds is settled (0.093042ms)
+(node:34262) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/redesign/planning/budgetModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34262) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ the switcher reaches every earlier month and one month ahead, to plan the next (0.475084ms)
+✔ spending by day: confirmed expenses of the month, and waiting drafts once (0.545ms)
+✔ the burn-down: cumulative spending through today against the even pace, exact (1.235125ms)
+✔ the even pace rounds down to the satang, and the top grows when spending passes the limit (0.101291ms)
+✔ before the month nothing is drawn; after it, the whole month is (0.138625ms)
+✔ the chart is in thousandths: x along the month, y up from the bottom, scaled to the top (0.206416ms)
+✔ the burn-down in words: spent and even pace by today, then how far ahead or under, kindly (0.342292ms)
+✔ category rows: the server’s spending plus waiting drafts, against each limit, in the categories’ order (1.114ms)
+✔ a category ahead of the even pace is tight; after the month nothing is tight; an unknown category comes last (0.309042ms)
+✔ prefill months: up to three earlier months that have ended and were tracked from their first day (0.197667ms)
+✔ the average: months with spending only, rounded down to the satang; none, no prefill (0.178583ms)
+✔ a budget needs a total; limits are optional and must not add up to more than it (4.865625ms)
+✔ limits are for expense categories in use, and for archived ones the budget already limits (0.088708ms)
+✔ the editor starts from the budget being changed, else from the average, else empty (0.070958ms)
+✔ a budget Jotbun already holds is the same as yours only when every figure is (0.065333ms)
+✔ a conflict, figure by figure: the total, then each category either side limits (0.121625ms)
+✔ every line the Budget screen is given is copy in en.json, with Thai (1.62525ms)
+(node:34263) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/redesign/planning/categoriesModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34263) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ every palette colour has its own English name, in the palette order (0.830584ms)
+✔ a new category is offered the first colour its type does not use yet (0.12075ms)
+✔ the grid shows one type: built-ins in their own order, then your categories by name, and the archived apart (8.245125ms)
+✔ a renamed built-in shows its label; names go through tc; no budget means no limits (0.138334ms)
+✔ a label is trimmed and NFC-normalized, and counted the way the API counts it (0.509ms)
+✔ a custom category needs a visible name of one line and at most 80 characters (0.150917ms)
+✔ a built-in with no label of its own uses its default name (null) (0.066209ms)
+✔ a limit is exact satang, typed like any amount; empty means no limit (0.363791ms)
+✔ the category limits must fit inside the month's overall budget (equal is fine) (0.165042ms)
+✔ a budget holds at most 100 category limits; changing one already there is fine (0.209708ms)
+✔ setting a limit replaces the whole month budget at its version: the overall limit unchanged, limits sorted by category id (0.137875ms)
+✔ the edit draft starts from the category and this month's limit as read (0.164334ms)
+✔ creating sends one create command with a trimmed label; a limit follows only when the month has a budget (0.209291ms)
+✔ nothing is sent while the label or the limit is wrong, and each problem is said in words (0.372875ms)
+✔ editing sends only what changed, at the version read, and a limit change replaces the budget (0.161667ms)
+✔ a built-in goes back to its default name with label null; a custom category cannot lose its name (2.026959ms)
+✔ after the category command is acknowledged, saving again sends only the budget command, exactly as before (0.175ms)
+✔ archive and unarchive carry the version read; each command has its own key slot (0.059875ms)
+✔ a conflict's server copy is used only when it is this category, or this month's budget (0.154334ms)
+✔ a changed category shows yours and the server's name and colour; an archived one says so (0.097458ms)
+✔ a changed budget shows yours and the server's limit for this category and the month's total (0.094125ms)
+✔ every colour name and every problem word is copy in en.json, with Thai (13.1245ms)
+(node:34264) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/redesign/planning/thaiPack.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34264) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ every pack colour is one of the category hues, and every key is unique (0.45775ms)
+✔ a fresh account gets the whole pack, named in Thai for Thai and in English otherwise (0.48175ms)
+✔ items the person already has, in either language or archived, are skipped; types are kept apart (0.091042ms)
+✔ the pack is C3: eight expense categories and one income, in order (0.069ms)
+✔ a person who added the earlier pack gets no second delivery or top-up category (0.082417ms)
+✔ packKeyOf names a pack category by any of its names, never a built-in or another type (0.073125ms)
+✔ analyticsCategoryKey sends a built-in key, a pack key or custom, never a label (0.061541ms)
+✔ packCommands creates only the picked items, in the person's language (0.06025ms)
+✔ the routed screen keeps today's seven until the switch (0.069458ms)
+(node:34265) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/redesign/planning/walletsModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34265) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ the total adds up the active wallets exactly, and leaves archived ones out (0.605542ms)
+✔ the total never passes through a float: balances past 2^53 and below zero stay exact (0.058709ms)
+✔ wallets keep the order Jotbun lists them in (the order they were added), each section on its own (0.06525ms)
+✔ first run is no wallet at all; only archived wallets is not first run, and its total is zero (0.053916ms)
+✔ a wallet can be archived only at exactly ฿0.00, and never twice (0.089791ms)
+✔ why a wallet cannot be archived yet is said in words, with the exact balance and the way forward (0.18625ms)
+✔ a correction is a changed opening balance or tracking start; a new name is not (0.06725ms)
+✔ a correction needs its reason once the wallet has entries, and also while that is not known yet (0.039083ms)
+✔ a new wallet starts empty: no name, ฿0.00 opening and tracking from today (0.045709ms)
+✔ the live preview follows what is typed: the trimmed name (or none yet), the exact opening and the start (0.365333ms)
+✔ an edit's preview moves the balance by exactly the change to the opening balance (0.060542ms)
+✔ the form refuses a missing, invisible or over-long name, an amount past the cap and a future start, in its own words (0.198833ms)
+✔ create builds one exact command: the id, the trimmed NFC name, the exact satang and the start (0.082917ms)
+✔ an edit sends only what changed, with the version that was read; nothing changed sends nothing (0.08675ms)
+✔ with entries in the wallet, a correction is refused until its reason is chosen, and then carries it (0.064667ms)
+✔ a reason never travels without a correction (Jotbun refuses that), and an empty wallet needs none (0.040958ms)
+✔ an edit is checked like a new wallet before anything is sent (0.036375ms)
+✔ Jotbun's field problems land on their own field, in the screen's words (0.091791ms)
+✔ a correction Jotbun refuses for want of a reason asks for the reason (0.031333ms)
+✔ an archive refused for its balance, and a wallet archived elsewhere, are told apart from field problems (12.401125ms)
+✔ a conflict carries Jotbun's copy only when it is this wallet in the exact shape (0.259666ms)
+✔ the conflict shows theirs beside yours, field by field, and marks what differs (0.179292ms)
+✔ every line the Wallets screen is given, and each of Jotbun's field words, is copy in en.json, with Thai (1.847708ms)
+(node:34266) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/redesign/quickAddModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34266) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ quick add parity table: the same errors, keys, messages and inputs as the current form (14.377875ms)
+✔ keypad amounts: canonical satang above zero and within the cap (0.148083ms)
+✔ errors go through tc (0.11625ms)
+✔ a new draft starts like the current form (0.105875ms)
+✔ a missing wallet asks the user to choose one, with the keys the form renders (0.073208ms)
+✔ the move-wallets rule: two different wallets, in either order (0.072208ms)
+✔ one record id per draft: building again names the same record, and a device draft gains its type (0.067833ms)
+✔ "add another" starts a new draft with new ids, keeping the choices (0.128542ms)
+✔ the date chip steps by days, never into the future or before 1970 (1.277666ms)
+(node:34267) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/redesign/recentCategories.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34267) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ with nothing logged, the built-in order fills the top and the rest keeps the default order (5.412083ms)
+✔ frequency and recency both count (3.66475ms)
+✔ the window is the last 60 days counting today (0.241959ms)
+✔ ties fall back to the built-in order, then the label; custom categories after built-ins (0.084833ms)
+✔ archived categories and other types are left out, even when used (0.098084ms)
+✔ drafts count, a confirmed draft counts once, and deleted records do not count (0.091041ms)
+✔ top N is configurable and never repeats a category in the rest (0.063541ms)
+(node:34268) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/redesign/recordModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34268) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ the receipt of a confirmed expense: amount, type, category, wallet, date, merchant and note (32.742292ms)
+✔ a move shows From → To and no category; empty merchant and note are left out (0.314125ms)
+✔ a draft's receipt says its sync state and offers only what the device allows (0.394708ms)
+✔ the edit draft keeps the record's fields and its version (0.093958ms)
+✔ an edit sends only what changed, with the version as If-Match (0.962792ms)
+✔ an edit runs the quick-add checks (0.314959ms)
+✔ "Apply my change" after a conflict sends the same changes on the server's version (0.121667ms)
+✔ the conflict view puts yours beside what is on the server (0.613917ms)
+✔ Copy makes a new draft dated today with new ids, never the source's (0.841083ms)
+✔ Copy leaves a closed wallet or category unchosen, and copies drafts and moves too (0.607333ms)
+(node:34269) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/redesign/shared.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34269) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ Bangkok calendar maths crosses months, years and leap days (2.801958ms)
+✔ day labels: today, yesterday, then the short date the current list shows (15.490209ms)
+✔ every outbox state maps to a draft state; a sending draft may be committed, so it is being checked (0.329167ms)
+✔ a draft's label, its money group and every total it joins agree in each state (1.081625ms)
+✔ a draft whose record is already confirmed is left out of the open drafts that count (0.09175ms)
+✔ undo only for a draft never transmitted; discard only for one that needs review (0.102542ms)
+✔ a confirmed row reads exactly as the current record view (0.213375ms)
+✔ a draft row says its state in words and never looks confirmed (0.166625ms)
+✔ rows merge drafts first, newest first, and a draft already confirmed shows once (0.115417ms)
+✔ day totals: out and in apart, transfers neither, drafts never in confirmed money (26.805958ms)
+✔ days group newest first with their totals and kept-apart draft money (0.377ms)
+✔ a transfer row in the day is shown but unsigned (0.084083ms)
+(node:34270) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/resources.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34270) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ reads send the access token, binding and client version, and no command headers (15.485625ms)
+✔ signed out, unbound or unsupported clients fail before any request (0.35425ms)
+✔ commands send their key, the command schema and If-Match with the exact body (15.855542ms)
+✔ a lost response is retried as the same immutable command (262.452208ms)
+✔ DTOs with number money or unknown fields are refused, not coerced (3.008917ms)
+✔ problems map to outcomes a screen can act on (12.488166ms)
+✔ a response that arrives after a sign-out or account switch is dropped (0.1975ms)
+✔ history builds its query from the filter; a month without a budget is null (1.319583ms)
+✔ recently deleted pages by cursor and accepts only deleted records in the record shape (4.578167ms)
+✔ only https, or loopback http, API addresses are accepted (0.43975ms)
+✔ a gateway error page is "unavailable" (maybe committed), never a definite refusal (1.608875ms)
+✔ a sign-out during a command retry stops resending (252.780125ms)
+✔ an acknowledgement for another command or entity is refused (0.831834ms)
+✔ FORBIDDEN and RESYNC_REQUIRED are not field errors (1.208625ms)
+✔ an outbox command is sent as itself: its own key, its own schema version and its exact body (1.064666ms)
+✔ delta pages are fetched by opaque cursor and checked group by group (1.606458ms)
+✔ delta pages and snapshot chunks may carry entity types this build does not know; a malformed one is still refused (1.816125ms)
+✔ snapshots: requested with a key, polled, and each chunk verified by size and SHA-256 (1.290917ms)
+✔ planning commands: budget set, wallet and category changes, each with its key, If-Match and exact body (2.989209ms)
+✔ planning commands refuse an acknowledgement for another command or entity, and a malformed month or id before sending (0.772292ms)
+(node:34271) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/sessionResume.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34271) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ after a session ended, the same account sends the unsent records once; another account never sees them (24.615208ms)
+(node:34272) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/spendDiary.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34272) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ opens the signed-in account's diary, syncs it, and saves a draft before resolving (27.2105ms)
+✔ a remote sign-in refusal locks the diary and keeps its drafts (8.074334ms)
+✔ switching accounts never shows or sends another account's drafts (14.197084ms)
+✔ signed out means no diary: saving is refused rather than kept somewhere unencrypted (7.473458ms)
+✔ a diary whose key is gone is locked with its reason, never replaced (6.403625ms)
+✔ a failed local save is reported and nothing is shown as saved (5.30175ms)
+✔ a session notification for the same identity keeps the open diary and its sync (24.86075ms)
+✔ a diary opens and flushes only for the session epoch it belongs to (26.860958ms)
+✔ a superseded session change never overwrites the newer view (31.175625ms)
+✔ a superseded open of another account's diary is closed (1.976041ms)
+✔ a diary written by a newer app version is locked with that reason (0.311417ms)
+✔ synced wallets and categories are in the view, for forms that work offline (10.498834ms)
+✔ a wallet created online moments ago is pulled once before a device save (13.60875ms)
+✔ saving the same draft twice under one command id saves it once (10.44375ms)
+✔ an unsent draft can be undone on the device; a needs-review draft can be discarded (16.62875ms)
+✔ a locked diary can be discarded and starts over from the synced diary (17.969875ms)
+✔ an explicit sign-out erases only this account's diary on the device (20.262917ms)
+✔ an explicit sign-out also erases the account's other on-device copies (the import draft); a diary discard does not (10.659083ms)
+✔ a sync run reports live n-of-m progress, then clears it (24.974208ms)
+✔ after launch a foreground timer is armed even when the first flush waits (2.858708ms)
+✔ the import draft store is the open account's, inside its diary, and follows the session (21.62475ms)
+✔ no import draft store while no diary is open: opening, locked, signed out, or no local diary (web) (13.029708ms)
+✔ the view names the open diary's account, and nobody without one (25.832167ms)
+✔ the explicit sign-out erase takes the diary's import draft with it (13.213667ms)
+✔ logged days come from the open diary, and null without one (12.7095ms)
+✔ a kept choice appears in the view and leaves when dropped (6.495167ms)
+(node:34273) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/spend/v1/viewModels.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34273) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ category names use the custom label, else the translated built-in name (0.525125ms)
+✔ the golden wallets total exactly, beyond JavaScript numbers too (0.108042ms)
+✔ records read as signed amounts with their wallet and category (0.799875ms)
+✔ months and Bangkok dates (2.043875ms)
+✔ rows group by day in order (0.144959ms)
+(node:34274) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/storage/accountDatabase.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34274) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ a new account gets its own keyed, migrated diary that survives a restart (9.070958ms)
+✔ two accounts with the same entity ids never see each other (7.219667ms)
+✔ concurrent opens of one account share one store and one key, so nothing saved is lost (16.878625ms)
+✔ a missing key locks the diary instead of creating an empty replacement, until an explicit discard (6.08375ms)
+✔ a rejected or malformed key locks the diary; a failing key store is only temporarily unavailable (2.990334ms)
+✔ a diary recorded for another account is refused before any migration (2.274125ms)
+✔ a failing migration rolls back, leaving the diary usable at its previous version (8.082417ms)
+✔ a diary from a newer app version is refused, not downgraded (4.584375ms)
+✔ a version-1 diary upgrades to version 2 and keeps its data; the import drafts table starts empty (7.747792ms)
+✔ a locked store refuses every operation; data stays for the next unlock (9.276291ms)
+✔ erase drops only that account's diary and key (13.798458ms)
+✔ discard deletes the key first and can always be retried (4.310833ms)
+✔ a write from an older session epoch is refused, including A -> B -> A (10.788125ms)
+✔ a store from an older session can never erase the account (6.293875ms)
+✔ a write in flight when the epoch moves is rolled back (8.21325ms)
+✔ a read is one consistent view, and one racing a session change returns nothing (8.745208ms)
+✔ a session change while a diary is opening leaves no store and no open connection (3.424583ms)
+✔ on the web there is no local diary, before any key is read (0.31275ms)
+(node:34276) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/storage/diaryRepository.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34276) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ a saved draft and its outbox command persist together, or not at all (65.271958ms)
+✔ saving the same draft again (a retry after an unknown outcome) is a no-op; a different body under the same ids is refused (5.117ms)
+✔ a draft must match its command and account, be a valid create, and use synced, open references (7.509583ms)
+✔ delta records, totals and cursor commit together: a failure at any statement keeps the previous state (59.670375ms)
+✔ a page fetched before the cursor moved is refused, never written back (6.530042ms)
+✔ applies versions forward only, keeps tombstones, drops purged data, and recomputes exact totals (13.200375ms)
+✔ refuses out-of-order or already-applied groups and invalid changes, applying nothing (5.114041ms)
+✔ failed_snapshot_swap_preserves_cursor_and_outbox (66.079791ms)
+✔ a confirmed replacement swaps the confirmed state but never removes unresolved outbox commands or drafts (4.642959ms)
+✔ stores exact integer strings and no credentials (4.622666ms)
+✔ a build without the import validators skips import changes, applies the rest and advances the cursor (4.705875ms)
+✔ a snapshot with import entities replaces the confirmed state without them for a build that does not know them (2.345875ms)
+✔ a known entity that does not match its validator, and an unknown entity that is not an entity change at all, still refuse the page (2.713875ms)
+✔ a build that knows the import entities stores them (2.384916ms)
+✔ import draft rows are written, replaced, listed and removed, kept across a restart, and leave with the diary (9.23975ms)
+✔ import draft rows follow the store: refused once it is locked or from an earlier session, and a write racing a session change rolls back (4.192333ms)
+✔ logged days are the distinct dates of live records and drafts (4.102875ms)
+✔ the applied revision is read without loading the diary (4.457916ms)
+✔ a pending choice is kept, replaced per record and dropped (4.417291ms)
+✔ a choice for a mismatched record, or one that is not a valid choice, is refused (3.590583ms)
+✔ a choice written after the session moved is refused, and a write racing the move rolls back (3.394708ms)
+✔ choices survive a lock and reopen, and go with the erase (4.570542ms)
+✔ a stored choice that no longer validates is left out of the list and not deleted (4.058666ms)
+✔ migration 3 adds the table and keeps a version 2 diary's drafts (3.847667ms)
+(node:34277) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/storage/keyStore.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34277) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ creates a random 256-bit key per account, kept on this device only (0.769375ms)
+✔ refuses a malformed stored key or account id instead of using it (0.186084ms)
+✔ never overwrites an existing key, and reports a malformed one as such (0.187042ms)
+(node:34278) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/storage/serialDatabase.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a transaction runs every statement on the one keyed connection, between BEGIN IMMEDIATE and COMMIT (7.033125ms)
+✔ concurrent transactions and plain statements never interleave (15.726792ms)
+✔ a failure rolls back and reports the original error, even if the rollback fails too (21.415959ms)
+✔ a failed COMMIT rolls back (17.870541ms)
+✔ a transaction handle cannot be used after it ended, and a closed database refuses work (3.92575ms)
+(node:34279) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/sync/engineHardening.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34279) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ an edit made before a draft is transmitted is exactly what gets sent and committed (27.758875ms)
+✔ a draft removed before its turn is skipped; the flush still finishes and nothing is sent after it (55.239084ms)
+✔ a failure in one worker is not erased by a success in the other (15.332625ms)
+✔ outbox sends make exactly one attempt per request (no hidden transport resend) (0.661958ms)
+✔ a command that committed resolves whatever its local state (refused, unsent or needs review) (11.432125ms)
+✔ "id already used" refusals (409/410) are uncertain, not needs-review, and resolve (12.548333ms)
+✔ after a server restore, an acknowledged command missing from the confirmed state is resent, never deleted (10.457833ms)
+✔ a resent uncertain command that is paced keeps its uncertain mark (18.210875ms)
+✔ 426 on a send pauses the unsent commands and stops sending (21.915084ms)
+✔ a known command status acknowledges the command even if the next pull fails (13.904125ms)
+✔ a status answer that does not match the command is refused (15.8955ms)
+✔ stale uncertain commands are reviewed, not resent (9.998709ms)
+✔ a write during a running flush is sent by one follow-up run (24.497625ms)
+✔ pending adjustment counts unconfirmed expenses only (5.606042ms)
+✔ 410 without a problem body, and a refused cursor, both lead to a full resync (20.851167ms)
+✔ a chunk from another snapshot is refused and the diary is left as it was (4.79875ms)
+✔ an expired chunk grant is renewed before the download (6.834959ms)
+✔ the scheduler survives a failing flush, re-arms its timer, and marks launch as foreground (22.529209ms)
+✔ every run reports its outcome, including a flush that failed outright (0.266167ms)
+(node:34289) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/sync/liveChannel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ it connects with the token and the client header to the live URL (2.142459ms)
+✔ without a token or a client version it stays quiet (0.428375ms)
+✔ the open runs a live flush, and a newer revision runs another (0.468709ms)
+✔ anything but an exact poke is ignored and the socket stays open (0.598667ms)
+✔ parsePoke reads only an exact revision poke of at most 64 characters (0.134417ms)
+✔ no pong within 10 seconds closes and reconnects; the open runs a live flush (0.706834ms)
+✔ a pong keeps the socket open (0.946833ms)
+✔ the channel sends nothing but ping (0.772167ms)
+✔ each reconnect reads the token again (1.554209ms)
+✔ a token that cannot be read yet is tried again after the backoff (2.158083ms)
+✔ a late close from a replaced socket changes nothing (2.038959ms)
+✔ an ended session stops reconnecting and flushes once (3.227375ms)
+✔ a replaced socket does not come back (0.718209ms)
+✔ other closes back off from 1 second to 15 seconds, and an open resets it (3.248459ms)
+✔ stop closes the socket, cancels a pending connect, and ignores late events (1.01925ms)
+✔ start replaces an open socket, and the old socket's close changes nothing (0.366666ms)
+(node:34295) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/sync/outbox.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34295) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ each send result has one verdict: committed-maybe is uncertain, refusals need review, pacing and auth restore the previous state (0.748625ms)
+✔ drafts older than 30 days need review (10.401ms)
+✔ a transmission freezes the command; state changes are compare-and-set; resolving removes command and draft together (12.16675ms)
+✔ a never-sent draft can be edited (its command follows) or removed (10.46025ms)
+(node:34297) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/sync/reconcile.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34297) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ an acknowledgement alone never becomes confirmed state; every delta page is pulled, then the command resolves (33.32525ms)
+✔ a cursor behind retention gets a full snapshot, then deltas; unresolved commands survive the swap (23.536ms)
+✔ a snapshot that is not ready in time leaves the diary as it was (7.272416ms)
+✔ purged_ack_does_not_resurrect_original_draft (12.573208ms)
+✔ a committed draft deleted elsewhere drops its pending effect and is never re-inserted (10.678291ms)
+✔ pending expenses not yet confirmed are an exact separate adjustment (6.728958ms)
+✔ if the cursor moves while a page is in flight, the pull continues from the new cursor (12.815375ms)
+(node:34298) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/sync/syncEngine.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34298) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ sends drafts once, in order, and resolves them only from the confirmed state (25.871083ms)
+✔ airplane mode: an unreachable server leaves the command uncertain and frozen; the retry checks status, then resends the same command (21.782584ms)
+✔ a timeout after the commit resolves through command status, without a resend (19.3985ms)
+✔ an app killed after the commit but before the local acknowledgement recovers on the next launch (20.810792ms)
+✔ a response that arrives after a session change is dropped; the next session resolves the command (16.796625ms)
+✔ an expired token is refreshed once and the same command resent; a second refusal stops with drafts kept (20.699375ms)
+✔ a denied account stops the flush without losing drafts (9.199667ms)
+✔ 429 is pacing (Retry-After, no failure count); a 5xx may have committed, so it is uncertain and counts (59.452875ms)
+✔ five transport failures in a row pause the engine until the app comes to the foreground or the user retries (18.497208ms)
+✔ validation refusals need review instead of retrying forever; others still go (34.698667ms)
+✔ 426 pauses unsent commands for an upgrade, keeps uncertain ones uncertain, and stops all sending (11.997917ms)
+✔ an unsupported command schema needs review and keeps its draft; the rest are sent (12.889333ms)
+✔ a 200-draft backlog drains at the write limit with progress, never pausing and never sending twice at once (338.185583ms)
+✔ one flush at a time per account: a call during a run waits and runs once after it (14.804709ms)
+✔ archived or deleted references, and drafts older than 30 days, need review without data loss (5.485416ms)
+✔ a flush for another account or session does nothing (3.120417ms)
+✔ retry delays start at 1 s, double with jitter to 60 s, honour Retry-After, and pause after five failures (0.09875ms)
+✔ the scheduler keeps at most one 60-second foreground timer and tears it down on background or switch (0.199791ms)
+✔ a live flush lifts the failure pause but waits out the server's pacing (23.074375ms)
+✔ a poke that joins a queued follow-up still lifts the pause (17.131458ms)
+✔ a follow-up keeps the strongest trigger asked for, whatever order the calls came in (17.071375ms)
+✔ twenty pokes during a flush run one follow-up (6.708042ms)
+✔ the scheduler starts the live channel with the foreground, stops it in the background, and runs a live flush for a poke (0.143667ms)
+✔ a pending choice is never sent by the sync engine (9.026709ms)
+(node:34299) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/testing/hermesGlobals.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ no app code reaches for the Web Crypto global, which Hermes lacks (24.134042ms)
+(node:34300) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/testing/svgAssetRegistryStub.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the stub registers no assets (0.3485ms)
+✔ only the render config reaches the stub: no app, harness or test file imports it (38.833875ms)
+(node:34301) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/theme/bunPalette.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34301) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ contrast follows WCAG 2.x (0.783833ms)
+✔ both modes define every colour as #RRGGBB (0.4265ms)
+✔ every text pair the kit uses meets WCAG AA (4.5:1) in both modes (0.16675ms)
+✔ the lavender stage carries ink text only (0.125792ms)
+✔ outlines are visible (3:1) and budget states are distinct (0.130834ms)
+✔ category tiles: the tile ink meets AA on every category pastel in both modes (0.099917ms)
+(node:34308) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/theme/bunType.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the scale steps down from hero to micro, never below 11 (0.466416ms)
+✔ Thai text gets more leading than Latin at every size (0.140208ms)
+✔ Thai uses Anuphan, Latin and Vietnamese use DM Sans (0.128625ms)
+✔ receipt amounts use the platform serif with tabular figures (0.374708ms)
+✔ every role follows the person’s text size through all the standard sizes, uncapped (0.056667ms)
+✔ at the largest accessibility size, reading text grows the most and display text the least, so words stay whole (0.076125ms)
+(node:34309) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/theme/walletPalette.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34309) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ the §5.1 tokens, exactly (0.588375ms)
+✔ text pairs clear 4.5:1 and graphic pairs 3:1 in both modes; the board bar did not (§5.3) (0.325458ms)
+✔ material text and quiet text clear 4.5:1 on every stop, light and dark (0.243209ms)
+✔ the calendar ramp is wc-calendar, and each day number clears 4.5:1 on its fill (0.2425ms)
+✔ category tiles: the mode ink clears 4.5:1 on every hue tint (0.693834ms)
+(node:34310) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/theme/walletType.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ AX5 sizes follow ax-large-home: body 53, title 58, footnote 44 (0.390959ms)
+✔ an amount never passes 64 pt nor grows more than body text (0.106917ms)
+✔ Thai leading is 1.5 times the size and Latin 1.3, rounded up (0.300167ms)
+(node:34311) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/ui/budgetWords.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34311) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ on track leads with the daily pace and says so in words (0.889083ms)
+✔ tight is still under budget, and the word says it is tight (0.092292ms)
+✔ over budget is kind and factual, never colour alone (0.158416ms)
+✔ no budget says so and still shows what was spent (0.076583ms)
+✔ the last day and the end of the month read naturally (0.088583ms)
+✔ a finished month reads as a plain result, never a pace (0.193209ms)
+✔ amounts stay exact and the fill never passes the limit (0.073167ms)
+(node:34313) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/ui/dateStep.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34313) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ steps one day across month and year ends (0.561042ms)
+✔ leap days follow the Gregorian rules (0.092167ms)
+✔ only real YYYY-MM-DD dates are accepted (0.199084ms)
+✔ never steps into the future (0.101584ms)
+✔ never steps before the earliest date (the wallet tracking start, or 1970) (0.059125ms)
+✔ Today and Yesterday in English, Thai and Vietnamese (0.312334ms)
+✔ other days are written out, with the year only when it is not this year (0.113167ms)
+✔ Thai dates show Buddhist-era years (0.121834ms)
+✔ full dates and month names in English and Vietnamese keep the Gregorian year (0.085333ms)
+✔ weekday initials run Sunday first in each language (0.101625ms)
+(node:34314) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/ui/dynamicType.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the scan reads a whole tag, through arrows, comparisons and strings, and skips type arguments (0.82075ms)
+✔ every text field and raw Text in the redesign sets a ceiling on how far its text grows (10.6735ms)
+(node:34316) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/ui/keypadExpression.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34316) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ digits build an amount; the display groups thousands; the minor is exact satang (0.780875ms)
+✔ an empty keypad shows 0 and saving it says the amount is empty (0.413583ms)
+✔ leading zeros collapse (0.175833ms)
+✔ 000 on an empty amount is a single 0, and after digits it multiplies by a thousand (0.123834ms)
+✔ zero is refused for a record unless the caller allows it (0.151208ms)
+✔ a decimal point starts 0. on an empty amount and is typed at most once (0.082084ms)
+✔ at most two decimals per operand; a third is refused and says why (0.068625ms)
+✔ decimals after an operator start a new operand (0.065209ms)
+✔ 0.1 + 0.2 is exactly 0.30 (0.116125ms)
+✔ sums of exact decimals never drift (no floating point) (1.01175ms)
+✔ 999999999.99 is the largest amount; + 0.01 is refused as too large (0.097916ms)
+✔ an operand can never be typed above the cap (0.1385ms)
+✔ backspace removes a character, then crosses back over an operator (0.104667ms)
+✔ an operator replaces a dangling one and cannot start an amount (0.190666ms)
+✔ division by zero is refused, at = and on save (0.219708ms)
+✔ ÷ is exact until the end, then rounds half-up to the satang (0.093708ms)
+✔ half-up holds exactly on the half satang, where rounded floats go the wrong way (0.047958ms)
+✔ × and ÷ bind tighter than + and − (0.040334ms)
+✔ a negative result is refused; a negative step on the way is fine (0.292875ms)
+✔ = shows the result; a digit then starts afresh and an operator carries on (0.145375ms)
+✔ clear empties the keypad (0.034208ms)
+✔ saving applies = for the user (0.076959ms)
+✔ an existing amount opens on the keypad exactly (0.188959ms)
+(node:34320) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/ui/largeTextScale.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ large text starts at the accessibility sizes, not at the standard ones (0.368167ms)
+✔ a missing or odd scale is ordinary text (0.0655ms)
+(node:34321) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/ui/paceAdapter.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34321) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ mid-month on track: the state and every amount carry over exactly (3.92275ms)
+✔ ahead of pace stays tight, not over (0.121833ms)
+✔ pending money: confirmed spending plus waiting drafts; sending, checking and refused drafts are left out (0.181875ms)
+✔ zero: nothing spent on the first day, and exactly nothing left (0.129167ms)
+✔ over by one satang: over, left is minus the over amount, no per day (0.099542ms)
+✔ over with a left figure of zero: the over amount comes from overByMinor (0.076708ms)
+✔ no budget: no limit, left or per day, and spent still counts waiting drafts (0.0985ms)
+✔ the last day: one day left, read as "Last day", over or not (0.109333ms)
+✔ phases: before the month reads like its first day; after it, a plain result with no pace words (0.236417ms)
+✔ every state the logic gives is one the kit takes, word for word (0.122292ms)
+(node:34322) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/wallet/copy/draftText.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ every draft line has Thai and English, with the same placeholders (3.961917ms)
+✔ no draft line has an emoji or a dash used as punctuation (1.210209ms)
+✔ every key is unique across every table and has an area prefix (0.973083ms)
+✔ draftText picks Thai for th and English for en and vi, then fills placeholders (0.283958ms)
+(node:34323) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/wallet/money/walletMoney.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34323) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ the compact form drops .00 only when the satang are zero; the exact form keeps two decimals (0.528208ms)
+✔ an expense takes the true minus, income a plus, a balance a minus only below zero, and zero no sign (0.096708ms)
+✔ only a canonical satang string is money (0.2015ms)
+✔ the per-day hint is whole baht, rounded down (0.067209ms)
+✔ spoken money says baht, and satang only when there are some, inside minus below zero (0.199041ms)
+✔ a hidden amount is ฿ and four dots (0.039166ms)
+(node:34324) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/wallet/motion/walletMotion.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the reduced-motion table is ax-motion, moment by moment (0.669584ms)
+✔ with reduced motion nothing travels, springs or zooms, and haptics do not change (0.273833ms)
+✔ a selection tick per tray step and on opening a wallet; success for a new wallet (0.087625ms)
+✔ every moment, at full motion and under Reduce Motion, with its haptic (0.1375ms)
+(node:34325) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/wallet/outside/accountFile.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the marker is the first 16 hex characters of SHA-256 over the labelled account id (1.051709ms)
+✔ two accounts get different markers (0.147959ms)
+✔ the file has exactly v, marker, locale and hidden and never the account id (0.637375ms)
+✔ writing refuses what reading refuses, so an account id is never written as the marker (0.66325ms)
+(node:34326) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/wallet/outside/appGroup.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the memory store reads what it wrote, lists a folder and removes (0.854042ms)
+✔ unsafe names are refused (0.289333ms)
+✔ noAppGroup reads nothing and accepts writes (0.1835ms)
+✔ the memory store, like the device one, never copies onto a folder's name (0.107542ms)
+(node:34327) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/wallet/outside/deviceAppGroup.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ on iOS the app group container is the root (1.646584ms)
+✔ on iOS without the group nothing is available and nothing is written (0.209292ms)
+✔ on Android the documents folder is the root (0.114584ms)
+✔ on the web nothing is available (0.077666ms)
+✔ a missing folder is created before a write (0.135709ms)
+✔ a copy that fails answers false (0.166916ms)
+✔ an unsafe name is refused before any file call (0.289042ms)
+✔ a native failure answers null or false, and a failed write or remove still resolves (0.169292ms)
+✔ removing a folder's name leaves the folder and its files (0.165833ms)
+✔ a copy onto a folder's name answers false and leaves the folder (0.220792ms)
+(node:34328) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/wallet/outside/outsideIds.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ with no extra the temporary ids apply (0.680417ms)
+✔ each valid field overrides its default and a malformed one keeps it (0.222042ms)
+✔ a keychain group needs a ten-character team id (0.069625ms)
+✔ the Android package allows _ and refuses - (0.176375ms)
+✔ outsideLink('gogospend', 'record') is 'gogospend://outside/record' (0.072208ms)
+(node:34329) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/wallet/settings/deletionCode.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34329) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ the short code is DEL and eight Crockford digits of the request id (0.332959ms)
+(node:34330) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/wallet/store/walletStore.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the device erase removes every jotbun.wallet. key and nothing else (0.425083ms)
+✔ an account erase removes only that account's keys (0.083084ms)
+✔ names are prefixed by their scope (0.215875ms)
+ℹ tests 940
+ℹ suites 7
+ℹ pass 940
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1922.790292

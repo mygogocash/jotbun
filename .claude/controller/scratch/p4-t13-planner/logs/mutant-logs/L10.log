@@ -1,0 +1,62 @@
+(node:32696) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/slips/photoLibrary.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:32696) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ the picker path picks up to the limit at quality 0.7 in the compatible representation, without base64, and has no albums and no lookup by id (0.634708ms)
+✖ a picked image without an asset id is known by its uri (0.639541ms)
+✔ releasing a picked photo deletes its cache copy (0.108375ms)
+✔ photo access reads all, limited, none and undetermined from the picker's permission (0.168417ms)
+✔ the phone's settings open through expo-linking, and a phone that cannot open them does nothing (0.105208ms)
+✔ the fake library lists photos oldest first, strictly after the watermark, ties broken by id, and finds one again only by its id (0.409084ms)
+✔ the fake library answers its access, picks up to the limit and records each call (0.112042ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 6
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 139.984583
+
+✖ failing tests:
+
+test at src/slips/photoLibrary.test.ts:79:1
+✖ a picked image without an asset id is known by its uri (0.639541ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    [
+      {
+        albumId: null,
+        bytes: 412000,
+        createdMs: 1794238265387,
+  ...
+        createdMs: 1794238265387,
+  +     id: '',
+  -     id: 'file:///data/user/0/co.gogocash.spend/cache/ImagePicker/7d2e.jpeg',
+        uri: 'file:///data/user/0/co.gogocash.spend/cache/ImagePicker/7d2e.jpeg'
+      },
+      {
+        albumId: null,
+        createdMs: 1794238265387,
+  +     id: '',
+  -     id: 'file:///data/user/0/co.gogocash.spend/cache/ImagePicker/9a41.png',
+        uri: 'file:///data/user/0/co.gogocash.spend/cache/ImagePicker/9a41.png'
+      }
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/slips/photoLibrary.test.ts:95:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { id: 'PH-1', uri: 'file:///var/mobile/Containers/Data/Application/A1/Library/Caches/ImagePicker/1F0C.jpg', createdMs: 1794238265387, albumId: null, bytes: 412000 }, { id: '', uri: 'file:///data/user/0/co.gogocash.spend/cache/ImagePicker/7d2e.jpeg', createdMs: 1794238265387, albumId: null, bytes: 96500 }, { id: '', uri: 'file:///data/user/0/co.gogocash.spend/cache/ImagePicker/9a41.png', createdMs: 1794238265387, albumId: null } ],
+    expected: [ { id: 'PH-1', uri: 'file:///var/mobile/Containers/Data/Application/A1/Library/Caches/ImagePicker/1F0C.jpg', createdMs: 1794238265387, albumId: null, bytes: 412000 }, { id: 'file:///data/user/0/co.gogocash.spend/cache/ImagePicker/7d2e.jpeg', uri: 'file:///data/user/0/co.gogocash.spend/cache/ImagePicker/7d2e.jpeg', createdMs: 1794238265387, albumId: null, bytes: 96500 }, { id: 'file:///data/user/0/co.gogocash.spend/cache/ImagePicker/9a41.png', uri: 'file:///data/user/0/co.gogocash.spend/cache/ImagePicker/9a41.png', createdMs: 1794238265387, albumId: null } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

@@ -1,0 +1,84 @@
+M1 APPLIES: plan: pick with base64
+M2 APPLIES: plan: six slips a batch
+M3 APPLIES: plan: base64 length without the JSON (the batch builder)
+M3b APPLIES: plan: base64 length without the JSON (the byte count)
+M4 APPLIES: plan: ignore ties (the fake's order)
+L1 APPLIES: albums supported on the picker path
+L2 APPLIES: picked at full quality
+L3 APPLIES: no compatible representation
+L4 APPLIES: one photo at a time
+L5 APPLIES: no selection limit
+L6 APPLIES: videos too
+L7 APPLIES: a picked copy found by its id
+L8 APPLIES: an album listed on the picker path
+L8b APPLIES: album photos listed on the picker path
+L9 APPLIES: a picked photo always known by its uri
+L10 APPLIES: a picked photo without an asset id has no id
+L11 APPLIES: a cancelled pick not checked
+L12 APPLIES: a pick not dated
+L13 APPLIES: a size always set, even when the picker gives none
+L14 APPLIES: release deletes an album photo
+L15 APPLIES: release throws for a copy already gone
+L16 APPLIES: release keeps the copy
+L17 APPLIES: limited access read as all
+L18 APPLIES: granted with no privileges (the web) read as limited
+L19 APPLIES: undetermined read as none
+L20 APPLIES: denied read as undetermined
+L21 APPLIES: request() only reads
+L22 APPLIES: access() asks
+L23 APPLIES: settings never open
+L24 APPLIES: settings failure not caught
+S1 APPLIES: the phone's size never checked
+S2 APPLIES: a photo of exactly 1,200,000 bytes refused by its size
+S3 APPLIES: the bytes read never checked
+S4 APPLIES: exactly 1,200,000 bytes read refused
+S5 APPLIES: any letters taken as base64
+S6 APPLIES: any length taken as base64
+S7 APPLIES: padding ignored in the byte count
+S8 APPLIES: padding counts swapped
+S9 APPLIES: every image a JPEG
+S10 APPLIES: no PNG
+S11 APPLIES: any RIFF file a WebP
+S12 APPLIES: the first bytes read short
+S13 APPLIES: a sent image keeps the photo's uri
+S14 APPLIES: a copy that is gone read as one too large
+B1 APPLIES: commas not counted in the cut
+B2 APPLIES: commas not counted in the sum
+B3 APPLIES: measured with the batch's own last
+B4 APPLIES: a batch of exactly 8 MiB cut
+B5 APPLIES: a slip larger than a batch let through
+B6 APPLIES: a slip that fills a batch alone refused
+B7 APPLIES: UTF-16 length, not UTF-8
+B8 APPLIES: the last batch dropped
+B9 APPLIES: slips reversed within a batch
+B10 APPLIES: batches reversed
+B11 APPLIES: the album sent as given
+B12 APPLIES: the album not NFC
+B13 APPLIES: the album not trimmed before the cut
+B14 APPLIES: the album not trimmed after the cut
+B15 APPLIES: the album not cut
+B16 APPLIES: the album cut in UTF-16 units
+B17 APPLIES: a blank album sent as empty text
+F1 APPLIES: the watermark's id ignored on a tie
+F2 APPLIES: the watermark's own photo again
+F3 APPLIES: photos at the watermark's time always skipped
+F4 APPLIES: newest first
+F5 APPLIES: the page limit ignored
+F6 APPLIES: a photo found again by its uri
+F7 APPLIES: a pick found by its id
+F8 APPLIES: a listed photo not a copy
+F9 APPLIES: a found photo not a copy
+F10 APPLIES: a picked photo not a copy
+F11 APPLIES: the pick limit ignored
+F12 APPLIES: album photos without their album
+F13 APPLIES: an album's count wrong
+F14 APPLIES: the access option ignored
+F15 APPLIES: albums unsupported by default
+F16 APPLIES: a release not recorded
+F17 APPLIES: calls not recorded
+F18 APPLIES: request() answers all
+G1 APPLIES: the fake shrink's tooLarge ignored
+G2 APPLIES: the fake shrink's gone ignored
+G3 APPLIES: the fake shrink's removals not recorded
+G4 APPLIES: one fake image for every photo
+G5 APPLIES: the fake image not a JPEG
