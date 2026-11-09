@@ -1,0 +1,16 @@
+apps/app/src/screens/redesign/account/OnboardingScreen.tsx
+apps/app/src/screens/redesign/signin/AccountExistsScreen.tsx
+apps/app/src/screens/redesign/signin/ConfirmItsYouSheet.tsx
+apps/app/src/screens/redesign/signin/DevicesScreen.tsx
+apps/app/src/screens/redesign/signin/EmailCodeScreen.tsx
+apps/app/src/screens/redesign/signin/OtherAccountRecords.tsx
+apps/app/src/screens/redesign/signin/ReminderQuestionScreen.tsx
+apps/app/src/screens/redesign/signin/SessionEndedScreen.tsx
+apps/app/src/screens/redesign/signin/SigninParts.tsx
+apps/app/src/screens/redesign/signin/TermsGate.tsx
+apps/app/src/screens/redesign/signin/TermsScreen.tsx
+apps/app/src/screens/redesign/signin/WelcomeSignInLink.tsx
+apps/app/src/screens/redesign/signin/draftCopy.ts
+apps/app/src/screens/redesign/signin/useFreshSignIn.tsx
+apps/app/src/spend/v1/policies.ts
+apps/app/src/spend/v1/redesign/account/onboardingModel.ts
