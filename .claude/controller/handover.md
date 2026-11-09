@@ -15,7 +15,7 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
   - The heavy lock, held since 21:53 by 1B-T8's killed final proof, was removed; no test process was alive.
   - `inflight_agents.py` now lists agents that failed on a usage limit; it had missed the P4-T12 and P4-T13 planners.
 - **Resumed at about 22:15**, with resume notes in `scratch/takeover/*.resume.md`. The T3 task ids end with the uuid shown.
-  - **1D-T8: merged as 30fb26b (#372, about 22:55).** Issue #139 is closed, and the worktree and branches are removed.
+  - **1D-T8: merged as 30fb26b (#372, at 22:50).** Issue #139 is closed, and the worktree and branches are removed.
     - The Opus review (`reviews/1D-T8.md`) approved with one minor and five nits. They are in followups.md under the analytics-consent-hardening task, which must land before `analytics` is approved, plus P2-T18's swap.
     - CI on 2ff0b8d: render 108 files and 1865 cases, `test:unit` 927, `test:app` 34, `export:web` 4794.
     - **CI has no iOS export and no `typecheck:routes`** (review n5). The controller ran the iOS export on 2ff0b8d before the merge (exit 0, 5760 modules); receipt corrected in 8979ad6.
@@ -23,7 +23,7 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - **Promotion PR #373** (`promote/1d-t8`, base main) is the first of the stack; the next promotion stacks on it. The owner merges into main.
     - The P2-T11 planner was told 1D-T8's files are now on the head.
   - **App baseline at 30fb26b** (CI): render 108 files and 1865 cases, `test:unit` 927, `test:app` 34, web 4794, iOS 5760.
-- **P2-T13 planner** (Opus xhigh, f362a7c3), dispatched about 23:00 at b4a0811 (depth 18; the tray, main button, text link and lock cover). WT p2-t13 on p2/t13-tray.
+- **P2-T13 planner** (Opus xhigh, f362a7c3), dispatched at 22:51 at b4a0811 (depth 18; the tray, main button, text link and lock cover). WT p2-t13 on p2/t13-tray.
   - It carries P2-T9's note on a Sheet inside a tray (two animation systems) and P2-T9's m-2 if it touches `motion/`.
   - It is planned in parallel with P2-T11. Any shared edit (`walletHarness.tsx`, wallet sections in `registry.tsx`) must sit at an anchor of its own and apply in either merge order.
   - **1B-T8: brief READY at 0bd5659** (L, 16 files under apps/edge). P1 to P17 are accepted, with P4 recorded as R101.
@@ -31,7 +31,11 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - The planner's proof: RED 38 of 53 failing, GREEN 52 plus 1 todo, 62 of 62 mutants. In the ten-times memory case, `peakHeldBytes` was at most 20,644,143 against a bound of 20,644,976.
     - For CI: workers +1 file, +37 passed and -2 todo; `test:edge` +0.
     - The implementer (Haiku max, a4857037) was dispatched about 22:34 in a pre-installed p1-1b-t8 from db19056. Its workers runs hold the heavy lock.
-    - Then: PR (issue #112), Opus review (L). 1B-T7 and fix-download-aborts follow in this lane.
+    - **DONE at f416f24; PR #374 opened at 22:53 (issue #112).** RED 38 of 53, GREEN 52 plus 1 todo, 62 of 62 mutants, `test:edge` 15 files and 176 tests, and `build:edge` with no driver markers. In the ten-times case, `peakHeldBytes` was 20,644,119 against a bound of 20,644,976.
+    - The controller checked the 16 files against the kit and the clean merge with the head.
+    - The Opus review (7a873da0, `reviews/1B-T8.md`) is under way.
+    - On approval and green CI: `merge_task_pr.sh 374 f416f24 1B-T8`, then `promote_pr.sh 1B-T8 374`. No iOS export is needed (edge only).
+    - 1B-T7 and fix-download-aborts follow in this lane.
   - **ci-parallel-jobs planner** (ad778c27): Opus xhigh, continuing its kit.
   - **P4-T12: brief READY on 606e131's code** (M; 18 new files in `src/slips/` and ten placeholder routes under `app/spend/slips/`).
     - Shared files: `sharedV1.ts`, `DeviceDiaryProvider.tsx` and its test, and one line in `bunSettingsErase.render.test.tsx`. P1 to P15 are accepted, with P2 recorded as R102.
