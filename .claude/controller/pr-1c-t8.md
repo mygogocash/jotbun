@@ -1,0 +1,45 @@
+## Summary
+- 1C-T8 adds the sign-in screens as drafts, for the owner's E2 review:
+  - email code;
+  - account exists;
+  - terms, with its gate;
+  - session ended, with the other account's records;
+  - devices;
+  - the "Confirm it's you" sheet, with `useFreshSignIn`;
+  - the reminder question;
+  - the welcome sign-in link.
+
+  They live in `apps/app/src/screens/redesign/signin/` (13 screens and parts, 7 render tests). They sit behind a redesign area that stays off until approved, and the catalogue draws them in 22 sections (`signinSections.tsx`).
+- `spend/v1/policies.ts` (with tests) holds the terms and policy model. `onboardingModel` and `OnboardingScreen` gain the sign-in steps.
+- Shared files take additive edits:
+  - `registry.tsx`: `SIGNIN_SECTIONS` goes last, and the header now names the companion list, fixing P2-T8's review nit;
+  - `featureFlags.ts` and its test: `'signin'` goes after `'wallet'`;
+  - `catalogs.test.ts`.
+
+  1D-T8 follows in the same lane.
+- The controller accepted planner calls P1 to P16. Look first at:
+  - **P1:** approved words stay on `tc`; new lines go through `sc` and the Thai drafts.
+  - **P4:** one `as unknown as Href` cast in `OnboardingScreen`. `/onboarding/reminder` is 1C-T9's route, which deletes the cast.
+  - **P5:** the "Confirm it's you" sheet opens for every method, so Apple and Google take one more tap. That is an owner question for E2.
+- The receipt is its own file under R87: `docs/implementation/receipts/1C-T8.md`. It lists the 22 catalogue deep links for the screenshots.
+
+## Test plan
+- [x] RED:
+  - unit: 8 of 36 failing;
+  - render: 34 of 61 failing.
+
+  None fails on a missing module. GREEN: 36 of 36, 61 of 61, and the catalogue's sign-in sections pass 48.
+- [x] 67 of 67 mutants killed, with every file restored byte for byte.
+- [x] Checks, each the head's measured baseline plus this task:
+  - `typecheck:app`, `typecheck:routes`;
+  - `test:app` 34, `test:unit` 911;
+  - full `test:render`: 102 files and 1802 tests;
+  - `export:web`: 4788 modules;
+  - `git diff --check`.
+- [ ] SKIPPED: the E2 screenshots of the 22 sections. No simulator or browser runs here; the deep links are in the receipt.
+- [ ] CI on this pull request is green.
+- [ ] Independent review.
+
+Closes #125 once merged (closed by hand, since the base is not the default branch).
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
