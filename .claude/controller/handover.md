@@ -19,7 +19,12 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - The Opus review (538c0bd5, `reviews/1D-T8.md`) is under way.
     - On approval and green CI: `merge_task_pr.sh 372 2ff0b8d 1D-T8`, close #139, then `promote_pr.sh 1D-T8 372`.
     - Followups: P2-T18 for the wallet swap, P4 for the import transports.
-  - **1B-T8 planner** (Opus xhigh, cd2b39ae). It reruns its final proof, because `real/` changed during the killed run (the entity-order check, mutant S40). Its base becomes 0bd5659.
+  - **1B-T8: brief READY at 0bd5659** (L, 16 files under apps/edge). P1 to P17 are accepted, with P4 recorded as R101.
+    - Kit `scratch/1b-t8-planner/`: check_kit at db19056 gives 47 OK, and the 13 `orig/` files are identical.
+    - The planner's proof: RED 38 of 53 failing, GREEN 52 plus 1 todo, 62 of 62 mutants. In the ten-times memory case, `peakHeldBytes` was at most 20,644,143 against a bound of 20,644,976.
+    - For CI: workers +1 file, +37 passed and -2 todo; `test:edge` +0.
+    - The implementer (Haiku max, a4857037) was dispatched about 22:55 in a pre-installed p1-1b-t8 from db19056. Its workers runs hold the heavy lock.
+    - Then: PR (issue #112), Opus review (L). 1B-T7 and fix-download-aborts follow in this lane.
   - **ci-parallel-jobs planner** (ad778c27), **P4-T12 planner** (e438b5ac) and **P4-T13 planner** (50706531): Opus xhigh, continuing their kits. The P4 planners were given 1D-T8's exact files.
   - The old P2-T10 planner (a0363fb1, "waiting on its own background work") is obsolete: P2-T10 merged as #370.
 - **P2-T11 planner** (Opus xhigh, df615dc8), dispatched about 22:25 at 331c2b2 as the sixth agent: the deepest ready task (depth 18). WT p2-t11 on p2/t11-wallet-looks. It carries P2-T8's m-1 (the harness's E2, E3 and X2) and P2-T10's balance-sign note. P2-T13 (depth 18, tray and lock cover, no shared files) follows in the wallet lane.
@@ -222,6 +227,7 @@ To stop a chat session in the app: `sc chat stop <thread_id>` cancels its turn o
 - Held: P2-T2 and 1D-T6 wait for #347 (lockfile, _layout). P3-T12 waits on owner Q1. 1C-T2 waits on the owner's lockout answer, and its brief must first pin 1C-T1's six untested security options (followups.md).
 
 ## Rulings this session
+R101 (9 Nov, 1B-T8's P4): a snapshot build whose view was read below the purge watermark throws instead of answering the plan's `skipped`. SnapshotWorkflow's step then retries with a fresh read after the purge, as the API retries `snapshot_not_recorded`. A skip would leave the snapshot `pending` with its Workflow complete, so clients poll it until they give up and it stays stuck until `pruneSnapshots` fails it a day later. The other two refusals stay `skipped`: a snapshot no longer pending, and a vault no longer active. 1B-T12's parity session should expect the throw.
 R100 (9 Nov, the owner's ask to speed up): CI is the gate for whole suites. That covers the full render suite, the full workers suite, export:web (unless routes or the entry change), the iOS export, the database suites and test:ops.
   - Agents run only the fast local gate in `protocol.md`, and no whole-suite totals appear in briefs, prompts or receipts. Reviewers read CI instead of re-running suites.
   - The running planners of 1B-T8 and 1D-T8 were told to adopt it.
