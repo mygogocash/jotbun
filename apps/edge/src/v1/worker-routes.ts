@@ -3,7 +3,8 @@ import type { FeatureGates } from '@api/common/feature-gates'
 import type { UserVault } from '../vault/user-vault'
 import { bridgeCatalogue } from './bridge'
 import { uploadRoute } from './files/uploads'
-import { serveExportFile } from './files/downloads'
+import { serveExportFile, serveReceiptFile } from './files/downloads'
+import { replaceRoute, retainRoute } from './files/receipts'
 import { livePolicies } from './config'
 import type { EdgeConfig } from './config'
 import type { V1Env } from './env'
@@ -43,6 +44,9 @@ export const WORKER_HANDLERS: Partial<Record<WorkerRouteId, WorkerHandler>> = {
   'bridge.catalogue': bridgeCatalogue,
   'import.upload': uploadRoute,
   'export.file.download': serveExportFile,
+  'attachment.retain': retainRoute,
+  'attachment.replace': replaceRoute,
+  'attachment.file.download': serveReceiptFile,
 }
 
 export function vaultSession(env: V1Env, claims: VaultClaims, policies: PublishedPolicies, access: VaultAccess, charge: 'read' | 'write'): VaultSession {
