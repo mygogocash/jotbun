@@ -39,7 +39,9 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
 
   Prompts are in `scratch/dispatch/`. Planners keep `*.log` out of the SHA256SUMS the implementer checks.
 - **Held:** 1B-T7 (AI routes) shares four route files with 1B-T6 and 1B-T9, so it is planned after them. 1C-T2 and P3-T12 are still held on owner answers.
-- **#354 1D-T9 fix round (Haiku), worktree p1-1d-t9:**
+- **#354 1D-T9: merged 687e764 (about 10:00).** The confirming review approved (`reviews/1D-T9-confirm.md`; nits n1 to n4 are in followups.md for the m5 task). Issue #140 is closed and the worktree and branches are removed. The receipt's n5 was fixed in housekeeping commit 8a1f587.
+  - **App baseline at 687e764**, measured by the confirming reviewer on the same tree: test:app 32, test:unit 882, render 90 files and 1694 tests, export:web 4778 modules. iOS was not measured: 5563 at 5dbd7be, plus 1D-T9's modules.
+- **#354 history (fix round, Haiku, worktree p1-1d-t9):**
   - The merge now conflicts on `featureFlags.ts` and its test (#358). The controller resolved both, keeping both areas, in `scratch/1d-t9-merge/` (SHA256SUMS; `node --test` passes 11 of 11). The fixer copies them in Step 1.3.
   - Fix round DONE: merge 36adb96 (5dbd7be), fix ddc9317, and the controller's receipt correction 03da870. Every count matched: unit 882, render 90 files and 1694 tests, 45 of 45 mutants.
   - Pushed to #354 (MERGEABLE) and the PR body updated.
