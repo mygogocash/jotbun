@@ -2,10 +2,13 @@
 // app imports it. `mountWallet` mounts an element inside the app's providers,
 // nested as the app nests them (R58): the language, the theme in the mode
 // asked for, the bun's intensity, a phone's safe area, the wallet root
-// (Gesture Handler's root view and the one reduced-motion answer), then the v1
-// resources, the device diary and Bun's AI help, each a fake unless the test
-// passes its own. It also keeps the wallet's two stores in memory, sets the
-// text size and gives the phone's reduced-motion answer, or holds it.
+// (Gesture Handler's root view, the one reduced-motion answer and private
+// mode), then the v1 resources, the device diary and Bun's AI help, each a
+// fake unless the test passes its own, and innermost the looks kept for the
+// diary's account, as WalletShell mounts them (P2-T11, P2-T18). It also keeps
+// the wallet's two stores in memory, sets the text size and gives the phone's
+// reduced-motion answer, or holds it: every part that asks the phone, the
+// wallet root or a kit part such as Sheet, gets that one answer.
 //
 // Test files mock react-native-safe-area-context with
 // src/dev/catalogue/safeAreaTestStub (the real package cannot load in
@@ -16,7 +19,10 @@
 // see the answer, mounts after it through `rerender`, which keeps the
 // providers and what they hold. It installs no analytics: a test that counts
 // events awaits recordAnalytics() before mounting, so the companion's
-// `ai_enabled` property is set at mount (1D-T6).
+// `ai_enabled` property is set at mount (1D-T6). The mount draws the language
+// it is given: a language chosen inside it (useLanguage().setPreference)
+// changes the stored preference, not the language drawn, so mount with
+// `locale: 'en'` to see English.
 import { render, type RenderResult } from '@testing-library/react';
 import type { ReactElement, ReactNode } from 'react';
 import { IntlProvider } from 'react-intl';
@@ -38,6 +44,7 @@ import { createFakeDiary } from '@mobile/spend/v1/testing/fakeDiary';
 import { createFakeResources } from '@mobile/spend/v1/testing/fakeResources';
 import { ThemePreferenceOverride, ThemeProvider } from '@mobile/theme/ThemeProvider';
 import { WalletRoot } from '../WalletRoot';
+import { WalletLooksProvider } from '../looks/WalletLooksProvider';
 import { installStoreBackend } from '../store/deviceWalletStore';
 import { ACCOUNT_PREFIX, DEVICE_PREFIX, type StoreBackend } from '../store/walletStore';
 
@@ -126,7 +133,7 @@ export function mountWallet(element: ReactElement, options: MountWalletOptions =
                     <SpendV1Provider resources={resources}>
                       <SpendDiaryProvider diary={diary}>
                         <AiCompanionProvider resources={ai}>
-                          {children}
+                          <WalletLooksProvider>{children}</WalletLooksProvider>
                         </AiCompanionProvider>
                       </SpendDiaryProvider>
                     </SpendV1Provider>
