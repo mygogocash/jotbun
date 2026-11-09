@@ -1,0 +1,529 @@
+diff -ruN a/apps/app/src/theme/motion.ts b/apps/app/src/theme/motion.ts
+--- a/apps/app/src/theme/motion.ts
++++ b/apps/app/src/theme/motion.ts
+@@ -124,10 +124,12 @@
+    * bezier easings above cannot drive a spring: a cubic-bezier has no
+    * damping to give it.
+    *
+-   * GoGoSpend drives these through `Animated.spring`
+-   * (`theme/animatedMotion.ts`'s `runSpringTransform`); the spend screens
+-   * have no reanimated, and a second animation system in one screen is worse
+-   * than a slightly less ergonomic API.
++   * The Bun diary screens drive these through `Animated.spring`
++   * (`theme/animatedMotion.ts`'s `runSpringTransform`). The Bun Wallet
++   * screens (`src/wallet/`, plan P2) drive them through Reanimated, whose
++   * springs read the same three fields (`wallet/motion/useWalletMotion.ts`).
++   * Never both in one screen: a second animation system in one screen is
++   * worse than a slightly less ergonomic API.
+    *
+    * `bouncy` is RATIONED to moments that are genuinely good news (a save
+    * landing, cashback arriving). Overshoot on an ordinary control is the
+@@ -193,6 +195,14 @@
+     celebration: "celebrate",
+     aiSuggestionReady: "light",
+     aiAccepted: "impact",
++    /*
++     * The Bun Wallet (plan P2, board ax-motion): a selection tick per tray
++     * step and on opening a wallet, and success when a new wallet joins the
++     * stack. Reduce Motion never changes them (`wallet/motion/walletMotion.ts`).
++     */
++    trayStep: "selection",
++    walletOpen: "selection",
++    walletAdded: "success",
+   },
+   scale: {
+     hover: 1.01,
+diff -ruN a/apps/app/src/wallet/motion/GrowBar.render.test.tsx b/apps/app/src/wallet/motion/GrowBar.render.test.tsx
+--- a/apps/app/src/wallet/motion/GrowBar.render.test.tsx
++++ b/apps/app/src/wallet/motion/GrowBar.render.test.tsx
+@@ -0,0 +1,119 @@
++// The grow bar (P2-T9; ax-motion's budget bar, R66). It is decorative. Under
++// Reduce Motion, and before the phone has answered, it is drawn at its value
++// and never moves; at full motion it grows from nothing to its value over
++// 320 ms, whatever Reanimated's own reduce-motion setting says (W6). Each case
++// mounts once through mountWallet and settles the phone's answer inside act. A
++// bar decides at mount, so a case that needs the answer mounts the bar after
++// it, through rerender. No case counts the phone's asks: the harness's spy
++// adds them up across mounts, and kit parts ask too.
++import { act, cleanup, screen } from '@testing-library/react';
++import { Text } from 'react-native';
++import { ReduceMotion, ReducedMotionConfig } from 'react-native-reanimated';
++import { afterEach, expect, test, vi } from 'vitest';
++
++// The real safe-area package loads React Native itself, which vitest cannot run.
++vi.mock('react-native-safe-area-context', () => import('../../dev/catalogue/safeAreaTestStub'));
++
++import { rgba } from '@mobile/dev/catalogue/catalogueTestHarness';
++import { useReducedMotion } from '@mobile/hooks/useReducedMotion';
++import { walletLight } from '@mobile/theme/walletPalette';
++import { mountWallet } from '../testing/walletHarness';
++import { GrowBar } from './GrowBar';
++
++afterEach(() => {
++  vi.useRealTimers();
++  cleanup();
++  vi.restoreAllMocks();
++});
++
++/** Lets the phone's answer and Bun's AI preferences arrive. */
++const settle = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
++
++const INK = walletLight.ink;
++const TRACK = walletLight.track;
++const bar = (fraction: number) => <GrowBar fraction={fraction} color={INK} track={TRACK} />;
++const track = () => screen.getByTestId('grow-bar');
++const fill = () => screen.getByTestId('grow-bar-fill');
++
++/**
++ * A kit part that asks the phone itself, as Sheet, UndoBar and BunPeek do
++ * (src/hooks/useReducedMotion.ts). It asks before the wallet root does, so
++ * with it on screen the bar must still get the phone's answer from the root.
++ */
++function AsksThePhone() {
++  return <Text testID="app-wide">{`app-wide reduced=${useReducedMotion()}`}</Text>;
++}
++
++test('under reduced motion the bar is drawn at its value', async () => {
++  const view = mountWallet(<><AsksThePhone /><Text>before</Text></>, { reducedMotion: true });
++  await settle();
++  expect(screen.getByTestId('app-wide').textContent).toBe('app-wide reduced=true');
++  view.rerender(<><AsksThePhone />{bar(0.62)}</>);
++  expect(fill().style.width).toBe('62%');
++  expect([fill().style.backgroundColor, fill().style.height, fill().style.borderRadius]).toEqual([rgba(INK), '100%', '3px']);
++  expect([track().style.backgroundColor, track().style.height, track().style.borderRadius]).toEqual([rgba(TRACK), '6px', '3px']);
++  view.rerender(<><AsksThePhone /><GrowBar fraction={0.62} color={INK} track={TRACK} height={10} /></>);
++  expect([track().style.height, track().style.borderRadius, fill().style.borderRadius, fill().style.width]).toEqual(['10px', '5px', '5px', '62%']);
++});
++
++test('before the phone answers, the bar is drawn still at its value', async () => {
++  const { answerReducedMotion } = mountWallet(bar(0.62), { reducedMotion: 'pending' });
++  await settle();
++  expect(fill().style.width).toBe('62%');
++  await act(async () => { answerReducedMotion(false); });
++  // The answer came after the bar was drawn, so the bar stays as it was.
++  expect(fill().style.width).toBe('62%');
++});
++
++test('the fill never passes the track', async () => {
++  const view = mountWallet(bar(1.4), { reducedMotion: true });
++  await settle();
++  expect(fill().style.width).toBe('100%');
++  // Not a number draws an empty bar. (The page keeps a width it cannot read,
++  // so each case follows one that drew another width.)
++  view.rerender(bar(Number.NaN));
++  expect(fill().style.width).toBe('0%');
++  view.rerender(bar(0.5));
++  expect(fill().style.width).toBe('50%');
++  view.rerender(bar(-0.2));
++  expect(fill().style.width).toBe('0%');
++});
++
++test('the bar is hidden from screen readers', async () => {
++  const view = mountWallet(<Text>before</Text>);
++  await settle();
++  view.rerender(bar(0.62));
++  expect(track().getAttribute('aria-hidden')).toBe('true');
++  expect(fill().closest('[aria-hidden="true"]')).toBe(track());
++  expect(track().textContent).toBe('');
++});
++
++test('at full motion the bar grows from nothing to its value over 320 ms, and on to a new value', async () => {
++  const view = mountWallet(<Text>before</Text>);
++  await settle();
++  vi.useFakeTimers();
++  view.rerender(bar(0.62));
++  expect(fill().style.width).toBe('0%');
++  expect([fill().style.backgroundColor, fill().style.borderRadius]).toEqual([rgba(INK), '3px']);
++  act(() => { vi.advanceTimersByTime(160); });
++  const halfway = Number.parseFloat(fill().style.width);
++  expect(halfway > 0 && halfway < 62, `${halfway}% at 160 ms`).toBe(true);
++  act(() => { vi.advanceTimersByTime(160); });
++  expect(fill().style.width).toBe('62%');
++  view.rerender(bar(0.8));
++  act(() => { vi.advanceTimersByTime(320); });
++  expect(fill().style.width).toBe('80%');
++});
++
++test("the wallet's answer decides, not Reanimated's own reduce-motion setting (W6)", async () => {
++  // Reanimated warns once that its setting is overwritten here.
++  const warned = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
++  const view = mountWallet(<><ReducedMotionConfig mode={ReduceMotion.Always} /><Text>before</Text></>);
++  await settle();
++  vi.useFakeTimers();
++  view.rerender(<><ReducedMotionConfig mode={ReduceMotion.Always} />{bar(0.62)}</>);
++  act(() => { vi.advanceTimersByTime(160); });
++  const halfway = Number.parseFloat(fill().style.width);
++  expect(halfway > 0 && halfway < 62, `${halfway}% at 160 ms`).toBe(true);
++  expect(warned).toHaveBeenCalledWith(expect.stringContaining("Reduced motion setting is overwritten with mode 'always'"));
++});
+diff -ruN a/apps/app/src/wallet/motion/GrowBar.tsx b/apps/app/src/wallet/motion/GrowBar.tsx
+--- a/apps/app/src/wallet/motion/GrowBar.tsx
++++ b/apps/app/src/wallet/motion/GrowBar.tsx
+@@ -0,0 +1,50 @@
++// The Bun Wallet's grow bar (P2-T9; ax-motion's budget bar): a thin rounded
++// fill on a track, for the budget card and the budget screen. Decorative: the
++// words beside it carry the numbers, so screen readers skip it. It reads the
++// wallet's reduced-motion answer once, at mount (W6), and keeps what
++// motionFor('budgetBar') said then: at full motion the fill grows from nothing
++// to its value; under Reduce Motion, and before the phone has answered (R66),
++// it is drawn at its value and never moves, even once the answer arrives.
++// The fill animates its width, not a scale, so its rounded end keeps its shape
++// as it grows (bw-home draws the fill with the track's radius).
++import { useEffect, useState } from 'react';
++import { View } from 'react-native';
++import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
++
++import { useWalletReducedMotion } from './reducedMotion';
++import { motionFor } from './walletMotion';
++
++export type GrowBarProps = { fraction: number; color: string; track: string; height?: number };
++
++/** The fill's share of the track, 0 to 100: a fraction outside 0..1 (or not a number) is clamped. */
++function percentOf(fraction: number): number {
++  return fraction > 0 ? Math.min(fraction, 1) * 100 : 0;
++}
++
++export function GrowBar({ fraction, color, track, height = 6 }: GrowBarProps) {
++  const reduced = useWalletReducedMotion();
++  // Decided at mount, never after: a still bar does not start growing when the phone answers.
++  const [plan] = useState(() => motionFor('budgetBar', reduced).motion);
++  const percent = percentOf(fraction);
++  const radius = height / 2;
++  return (
++    <View testID="grow-bar" aria-hidden style={{ height, borderRadius: radius, backgroundColor: track }}>
++      {plan.kind === 'grow' ? (
++        <GrowingFill percent={percent} durationMs={plan.durationMs} radius={radius} color={color} />
++      ) : (
++        <View testID="grow-bar-fill" style={{ width: `${percent}%`, height: '100%', borderRadius: radius, backgroundColor: color }} />
++      )}
++    </View>
++  );
++}
++
++/** The fill at full motion: from nothing to its value, and on to a new value when it changes. */
++function GrowingFill({ percent, durationMs, radius, color }: { percent: number; durationMs: number; radius: number; color: string }) {
++  const grown = useSharedValue(0);
++  useEffect(() => {
++    grown.value = withTiming(percent, { duration: durationMs, reduceMotion: ReduceMotion.Never });
++  }, [grown, percent, durationMs]);
++  // The dependency array names the shared value itself (R72).
++  const growth = useAnimatedStyle(() => ({ width: `${grown.value}%` }), [grown]);
++  return <Animated.View testID="grow-bar-fill" style={[{ height: '100%', borderRadius: radius, backgroundColor: color }, growth]} />;
++}
+diff -ruN a/apps/app/src/wallet/motion/useWalletMotion.render.test.tsx b/apps/app/src/wallet/motion/useWalletMotion.render.test.tsx
+--- a/apps/app/src/wallet/motion/useWalletMotion.render.test.tsx
++++ b/apps/app/src/wallet/motion/useWalletMotion.render.test.tsx
+@@ -0,0 +1,103 @@
++// The Bun Wallet's Reanimated builders (P2-T9, W6). Each follows motionFor's
++// table, each ends with ReduceMotion.Never (the wallet's answer decides, not
++// Reanimated's), and the springs carry motion.spring's physics. Nothing is
++// mounted: a builder says what it will play through Reanimated's own
++// getAnimationAndConfig and getReduceMotion. This file is in the render suite
++// because Node cannot load Reanimated.
++import {
++  FadeIn,
++  FadeOut,
++  LinearTransition,
++  ReduceMotion,
++  SlideInDown,
++  SlideInUp,
++  SlideOutDown,
++  withSpring,
++  withTiming,
++} from 'react-native-reanimated';
++import { expect, test } from 'vitest';
++
++import { motion } from '@mobile/theme/motion';
++import {
++  stepEntering,
++  stepLayout,
++  toastEntering,
++  TRAY_EXIT_MS,
++  trayEntering,
++  trayExiting,
++  walletAddedEntering,
++} from './useWalletMotion';
++import { motionFor, type WalletMoment } from './walletMotion';
++
++type Built = { getReduceMotion(): ReduceMotion; getAnimationAndConfig(): readonly [unknown, unknown] };
++
++/** What a builder plays: its driver, its timing or physics, and whether Reanimated may cut it short. */
++function plays(builder: Built) {
++  const [driver, config] = builder.getAnimationAndConfig();
++  return {
++    driver: driver === withSpring ? 'spring' : driver === withTiming ? 'timing' : 'other',
++    config,
++    reduceMotion: builder.getReduceMotion(),
++  };
++}
++
++/** The spring a moment names at full motion, as motion.spring holds it. */
++function springOf(moment: WalletMoment) {
++  const spec = motionFor(moment, false).motion;
++  expect(spec.kind, `${moment} at full motion`).toBe('spring');
++  return spec.kind === 'spring' ? { ...motion.spring[spec.spring] } : null;
++}
++
++/** How long a moment's fade lasts under Reduce Motion. */
++function fadeOf(moment: WalletMoment) {
++  const spec = motionFor(moment, true).motion;
++  expect(spec.kind, `${moment} under Reduce Motion`).toBe('fade');
++  return spec.kind === 'fade' ? spec.durationMs : null;
++}
++
++const NEVER = ReduceMotion.Never;
++
++test('a tray springs up from below on the gentle spring, or fades in', () => {
++  expect(trayEntering(false)).toBeInstanceOf(SlideInDown);
++  expect(plays(trayEntering(false))).toEqual({ driver: 'spring', config: springOf('trayOpen'), reduceMotion: NEVER });
++  expect(trayEntering(true)).toBeInstanceOf(FadeIn);
++  expect(plays(trayEntering(true))).toEqual({ driver: 'timing', config: { duration: fadeOf('trayOpen') }, reduceMotion: NEVER });
++});
++
++test('a tray leaves downward in 220 ms, or fades out in 150 ms', () => {
++  expect(TRAY_EXIT_MS).toBe(220);
++  expect(trayExiting(false)).toBeInstanceOf(SlideOutDown);
++  expect(plays(trayExiting(false))).toEqual({ driver: 'timing', config: { duration: 220 }, reduceMotion: NEVER });
++  expect(trayExiting(true)).toBeInstanceOf(FadeOut);
++  expect(plays(trayExiting(true))).toEqual({ driver: 'timing', config: { duration: 150 }, reduceMotion: NEVER });
++});
++
++test('the saved toast slides down from the top on the snappy spring, or fades in', () => {
++  expect(toastEntering(false)).toBeInstanceOf(SlideInUp);
++  expect(plays(toastEntering(false))).toEqual({ driver: 'spring', config: springOf('savedToast'), reduceMotion: NEVER });
++  expect(toastEntering(true)).toBeInstanceOf(FadeIn);
++  expect(plays(toastEntering(true))).toEqual({ driver: 'timing', config: { duration: fadeOf('savedToast') }, reduceMotion: NEVER });
++});
++
++test("a tray step's content fades in either way; its height morphs on the gentle spring, or jumps", () => {
++  expect(stepEntering()).toBeInstanceOf(FadeIn);
++  expect(plays(stepEntering())).toEqual({ driver: 'timing', config: { duration: fadeOf('trayStep') }, reduceMotion: NEVER });
++  expect(motionFor('trayStep', false).motion).toEqual({ kind: 'morph' });
++  const morph = stepLayout(false);
++  expect(morph).toBeInstanceOf(LinearTransition);
++  expect(plays(morph as LinearTransition)).toEqual({ driver: 'spring', config: { ...motion.spring.gentle }, reduceMotion: NEVER });
++  expect(stepLayout(true)).toBeUndefined();
++});
++
++test("a new wallet's card drops into the stack on the bouncy spring, or fades in", () => {
++  expect(walletAddedEntering(false)).toBeInstanceOf(SlideInUp);
++  expect(plays(walletAddedEntering(false))).toEqual({ driver: 'spring', config: springOf('walletAdded'), reduceMotion: NEVER });
++  expect(walletAddedEntering(true)).toBeInstanceOf(FadeIn);
++  expect(plays(walletAddedEntering(true))).toEqual({ driver: 'timing', config: { duration: fadeOf('walletAdded') }, reduceMotion: NEVER });
++});
++
++test('each call builds its own animation, so one part changing its copy never changes another', () => {
++  expect(trayEntering(false)).not.toBe(trayEntering(false));
++  expect(trayEntering(true)).not.toBe(trayEntering(true));
++  expect(stepEntering()).not.toBe(stepEntering());
++});
+diff -ruN a/apps/app/src/wallet/motion/useWalletMotion.ts b/apps/app/src/wallet/motion/useWalletMotion.ts
+--- a/apps/app/src/wallet/motion/useWalletMotion.ts
++++ b/apps/app/src/wallet/motion/useWalletMotion.ts
+@@ -0,0 +1,73 @@
++// The Bun Wallet's Reanimated animations (P2-T9, W6): every entering,
++// exiting and layout animation a wallet part plays comes from here (P2-T37's
++// sweep holds this). Each builder takes the wallet's one reduced-motion
++// answer, read at mount (useWalletReducedMotion), and follows motionFor's
++// table (walletMotion.ts). Each ends with ReduceMotion.Never, because the
++// wallet's answer decides, not Reanimated's own start-up read. Springs use
++// motion.spring's physics.
++import {
++  FadeIn,
++  FadeOut,
++  LinearTransition,
++  ReduceMotion,
++  SlideInDown,
++  SlideInUp,
++  SlideOutDown,
++} from 'react-native-reanimated';
++
++import { motion } from '@mobile/theme/motion';
++
++/** How long a tray takes to leave at full motion. Under Reduce Motion it fades out in 150 ms. P2-T13 hides the tray's Modal after the one that applies. */
++export const TRAY_EXIT_MS = 220;
++
++/** ax-motion's interface fade. */
++const FADE_MS = 150;
++
++type SpringName = keyof typeof motion.spring;
++
++/** The builder methods a spring needs, shared by every slide and transition here. */
++type Springable<B> = { springify(): B; damping(value: number): B; stiffness(value: number): B; mass(value: number): B };
++
++/** A builder on one of motion.spring's springs. */
++function sprung<B extends Springable<B>>(builder: B, spring: SpringName): B {
++  const { damping, stiffness, mass } = motion.spring[spring];
++  return builder.springify().damping(damping).stiffness(stiffness).mass(mass);
++}
++
++/** A tray opening (trayOpen): it springs up from below on the gentle spring, or fades in. */
++export function trayEntering(reduced: boolean): FadeIn | SlideInDown {
++  return reduced
++    ? FadeIn.duration(FADE_MS).reduceMotion(ReduceMotion.Never)
++    : sprung(new SlideInDown(), 'gentle').reduceMotion(ReduceMotion.Never);
++}
++
++/** A tray closing: it slides down and away in TRAY_EXIT_MS, or fades out. */
++export function trayExiting(reduced: boolean): FadeOut | SlideOutDown {
++  return reduced
++    ? FadeOut.duration(FADE_MS).reduceMotion(ReduceMotion.Never)
++    : SlideOutDown.duration(TRAY_EXIT_MS).reduceMotion(ReduceMotion.Never);
++}
++
++/** The saved toast (savedToast): it slides down from the top on the snappy spring, or fades in. */
++export function toastEntering(reduced: boolean): FadeIn | SlideInUp {
++  return reduced
++    ? FadeIn.duration(FADE_MS).reduceMotion(ReduceMotion.Never)
++    : sprung(new SlideInUp(), 'snappy').reduceMotion(ReduceMotion.Never);
++}
++
++/** A tray step's new content (trayStep): it fades in, at full motion and under Reduce Motion. */
++export function stepEntering(): FadeIn {
++  return FadeIn.duration(FADE_MS).reduceMotion(ReduceMotion.Never);
++}
++
++/** A tray step's height (trayStep): it morphs on the gentle spring, or jumps (no layout animation). */
++export function stepLayout(reduced: boolean): LinearTransition | undefined {
++  return reduced ? undefined : sprung(new LinearTransition(), 'gentle').reduceMotion(ReduceMotion.Never);
++}
++
++/** A new wallet's card (walletAdded): it drops into the stack on the bouncy spring, or fades in. */
++export function walletAddedEntering(reduced: boolean): FadeIn | SlideInUp {
++  return reduced
++    ? FadeIn.duration(FADE_MS).reduceMotion(ReduceMotion.Never)
++    : sprung(new SlideInUp(), 'bouncy').reduceMotion(ReduceMotion.Never);
++}
+diff -ruN a/apps/app/src/wallet/motion/walletMotion.test.ts b/apps/app/src/wallet/motion/walletMotion.test.ts
+--- a/apps/app/src/wallet/motion/walletMotion.test.ts
++++ b/apps/app/src/wallet/motion/walletMotion.test.ts
+@@ -0,0 +1,43 @@
++// The Bun Wallet's motion table (P2-T9, board ax-motion). With Reduce Motion
++// on, nothing travels, springs or zooms; feedback moves to fades, instant
++// swaps and haptics, and the haptics never change with it.
++import assert from 'node:assert/strict';
++import { test } from 'node:test';
++
++import { motion } from '../../theme/motion.ts';
++import { motionFor, WALLET_MOMENTS } from './walletMotion.ts';
++
++test('the reduced-motion table is ax-motion, moment by moment', () => {
++  assert.deepEqual(motionFor('trayOpen', true), { motion: { kind: 'fade', durationMs: 150 }, haptic: null });
++  assert.deepEqual(motionFor('trayStep', true), { motion: { kind: 'fade', durationMs: 150 }, haptic: 'trayStep' });
++  assert.deepEqual(motionFor('walletOpen', true), { motion: { kind: 'instant' }, haptic: 'walletOpen' });
++  assert.deepEqual(motionFor('budgetBar', false), { motion: { kind: 'grow', durationMs: 320 }, haptic: null });
++  assert.deepEqual(motionFor('recap', true), { motion: { kind: 'instant' }, haptic: 'celebration' });
++});
++
++test('with reduced motion nothing travels, springs or zooms, and haptics do not change', () => {
++  for (const moment of WALLET_MOMENTS) {
++    assert.ok(['fade', 'instant', 'system'].includes(motionFor(moment, true).motion.kind), moment);
++    assert.equal(motionFor(moment, true).haptic, motionFor(moment, false).haptic, moment);
++  }
++});
++
++test('a selection tick per tray step and on opening a wallet; success for a new wallet', () => {
++  assert.deepEqual([motion.haptic.trayStep, motion.haptic.walletOpen, motion.haptic.walletAdded], ['selection', 'selection', 'success']);
++});
++
++// Every cell of the table, each moment once, in order: full motion, then Reduce Motion.
++test('every moment, at full motion and under Reduce Motion, with its haptic', () => {
++  assert.deepEqual(WALLET_MOMENTS.map((moment) => [moment, motionFor(moment, false), motionFor(moment, true)]), [
++    ['trayOpen', { motion: { kind: 'spring', spring: 'gentle' }, haptic: null }, { motion: { kind: 'fade', durationMs: 150 }, haptic: null }],
++    ['trayStep', { motion: { kind: 'morph' }, haptic: 'trayStep' }, { motion: { kind: 'fade', durationMs: 150 }, haptic: 'trayStep' }],
++    ['save', { motion: { kind: 'fly' }, haptic: null }, { motion: { kind: 'fade', durationMs: 200 }, haptic: null }],
++    ['savedToast', { motion: { kind: 'spring', spring: 'snappy' }, haptic: null }, { motion: { kind: 'fade', durationMs: 150 }, haptic: null }],
++    ['walletOpen', { motion: { kind: 'spring', spring: 'gentle' }, haptic: 'walletOpen' }, { motion: { kind: 'instant' }, haptic: 'walletOpen' }],
++    ['hideAmounts', { motion: { kind: 'fade', durationMs: 150 }, haptic: null }, { motion: { kind: 'instant' }, haptic: null }],
++    ['budgetBar', { motion: { kind: 'grow', durationMs: 320 }, haptic: null }, { motion: { kind: 'instant' }, haptic: null }],
++    ['walletAdded', { motion: { kind: 'spring', spring: 'bouncy' }, haptic: 'walletAdded' }, { motion: { kind: 'fade', durationMs: 150 }, haptic: 'walletAdded' }],
++    ['recap', { motion: { kind: 'confetti' }, haptic: 'celebration' }, { motion: { kind: 'instant' }, haptic: 'celebration' }],
++    ['page', { motion: { kind: 'system' }, haptic: null }, { motion: { kind: 'system' }, haptic: null }],
++  ]);
++});
+diff -ruN a/apps/app/src/wallet/motion/walletMotion.ts b/apps/app/src/wallet/motion/walletMotion.ts
+--- a/apps/app/src/wallet/motion/walletMotion.ts
++++ b/apps/app/src/wallet/motion/walletMotion.ts
+@@ -0,0 +1,82 @@
++// The Bun Wallet's motion table (P2-T9, board ax-motion; W6, R66). Pure: for
++// each moment, what moves at full motion, what takes its place under Reduce
++// Motion, and the haptic it plays in both. With Reduce Motion on, nothing
++// travels, springs or zooms: feedback moves to fades, instant swaps and
++// haptics, and the haptics do not change. Fades are 150 ms for the interface
++// and 200 ms for the save. The builders in useWalletMotion.ts and GrowBar
++// follow this table, and the part that plays a moment plays its haptic
++// (playHaptic, src/lib/hapticMoment.ts).
++//
++// The save's success haptic belongs to the save rule (W17: useEntrySave's
++// savedHaptic), so `save` names none here; a second one would play it twice.
++import type { HapticMoment } from '../../lib/hapticPreference.ts';
++
++export type WalletMoment =
++  | 'trayOpen'
++  | 'trayStep'
++  | 'save'
++  | 'savedToast'
++  | 'walletOpen'
++  | 'hideAmounts'
++  | 'budgetBar'
++  | 'walletAdded'
++  | 'recap'
++  | 'page';
++
++/** Every moment, in the table's order. */
++export const WALLET_MOMENTS: readonly WalletMoment[] = [
++  'trayOpen',
++  'trayStep',
++  'save',
++  'savedToast',
++  'walletOpen',
++  'hideAmounts',
++  'budgetBar',
++  'walletAdded',
++  'recap',
++  'page',
++];
++
++export type MotionSpec =
++  | { kind: 'spring'; spring: 'snappy' | 'gentle' | 'bouncy' }
++  | { kind: 'morph' }
++  | { kind: 'fly' }
++  | { kind: 'grow'; durationMs: number }
++  | { kind: 'confetti' }
++  | { kind: 'system' }
++  | { kind: 'fade'; durationMs: 150 | 200 }
++  | { kind: 'instant' };
++
++export type MotionPlan = { motion: MotionSpec; haptic: HapticMoment | null };
++
++type Row = { full: MotionSpec; reduced: MotionSpec; haptic: HapticMoment | null };
++
++// ax-motion, row by row: full motion, then Reduce Motion, then the haptic.
++const TABLE: Readonly<Record<WalletMoment, Row>> = {
++  // The tray springs up from below; it fades in.
++  trayOpen: { full: { kind: 'spring', spring: 'gentle' }, reduced: { kind: 'fade', durationMs: 150 }, haptic: null },
++  // Its height morphs; a crossfade, and the height jumps.
++  trayStep: { full: { kind: 'morph' }, reduced: { kind: 'fade', durationMs: 150 }, haptic: 'trayStep' },
++  // The record flies into its card; a 200 ms crossfade.
++  save: { full: { kind: 'fly' }, reduced: { kind: 'fade', durationMs: 200 }, haptic: null },
++  // The saved toast slides down; it fades in place.
++  savedToast: { full: { kind: 'spring', spring: 'snappy' }, reduced: { kind: 'fade', durationMs: 150 }, haptic: null },
++  // The card lifts and the stack spreads; an instant switch.
++  walletOpen: { full: { kind: 'spring', spring: 'gentle' }, reduced: { kind: 'instant' }, haptic: 'walletOpen' },
++  // The amounts fade out; an instant swap to the mask.
++  hideAmounts: { full: { kind: 'fade', durationMs: 150 }, reduced: { kind: 'instant' }, haptic: null },
++  // The fill grows on open; it is drawn at its value.
++  budgetBar: { full: { kind: 'grow', durationMs: 320 }, reduced: { kind: 'instant' }, haptic: null },
++  // The new card drops into the stack; it fades in.
++  walletAdded: { full: { kind: 'spring', spring: 'bouncy' }, reduced: { kind: 'fade', durationMs: 150 }, haptic: 'walletAdded' },
++  // Confetti; no confetti, and one haptic.
++  recap: { full: { kind: 'confetti' }, reduced: { kind: 'instant' }, haptic: 'celebration' },
++  // Pages and tabs move as the system moves them, in both.
++  page: { full: { kind: 'system' }, reduced: { kind: 'system' }, haptic: null },
++};
++
++/** What a moment plays: its motion at full motion or under Reduce Motion, and its haptic, the same in both. */
++export function motionFor(moment: WalletMoment, reducedMotion: boolean): MotionPlan {
++  const row = TABLE[moment];
++  return { motion: reducedMotion ? row.reduced : row.full, haptic: row.haptic };
++}
