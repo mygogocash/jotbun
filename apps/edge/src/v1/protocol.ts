@@ -33,6 +33,8 @@ export type WorkerRouteId =
   | 'attachment.retain' | 'attachment.replace' | 'attachment.file.download'
   // 1B-T10
   | 'import.confirm'
+  // 1B-T8
+  | 'snapshot.chunk.download'
 
 /** The published policy versions from config:v1, or null when none are published. */
 export type PublishedPolicies = PolicyVersionDto[] | null
@@ -51,6 +53,8 @@ export type VaultRouteId =
   | 'attachments.remove' | 'attachments.grant' | 'attachments.prepare' | 'attachments.release' | 'attachments.retain' | 'attachments.replace' | 'attachments.file'
   // 1B-T10: the four review routes, then the confirmation's prepare and command steps.
   | 'imports.preview' | 'imports.patchRows' | 'imports.freeze' | 'imports.progress' | 'imports.confirmPrepare' | 'imports.confirm'
+  // 1B-T8: the two snapshot routes, then the chunk download's step-only id.
+  | 'snapshots.request' | 'snapshots.status' | 'snapshots.chunk'
 
 export type VaultCall = {
   route: VaultRouteId

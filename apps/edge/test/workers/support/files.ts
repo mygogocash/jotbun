@@ -9,6 +9,7 @@ import type { CandidateRecord, PreviewRecord } from '@api/imports/parse-outcome'
 import type { ParseServiceReply } from '@api/imports/parse-server'
 import type { ParserRunOutcome } from '@api/imports/parser-runner'
 import type { ParseFormat, ParsedRow } from '@api/imports/parsers/protocol'
+import { changeGroupBytes } from '@api/sync/change-writer'
 
 import type { ParseMessage, ParserPort } from '../../../src/background/parse-consumer'
 import type { FileContext } from '../../../src/vault/files/context'
@@ -475,4 +476,91 @@ export async function seedPreview(user: TestUser, candidates: CandidateRecord[],
   const { recorded } = await runInDurableObject(vaultOf(user), (vault: UserVault) => vault.recordPreview(jobId, { record, image: stored }))
   if (!recorded) throw new Error('seedPreview: the preview was not recorded')
   return jobId
+}
+
+// ---------------------------------------------------------------------------
+// 1B-T8: resync snapshots and the ten-times ledger
+// ---------------------------------------------------------------------------
+
+/** The Thai note and merchant on every seeded record, so every record's line holds multi-byte UTF-8 (B14). */
+const LEDGER_NOTE = 'ข้าวมันไก่ต้มกับน้ำซุปร้อน มื้อกลางวันที่ร้านประจำ'
+const LEDGER_MERCHANT = 'ร้านข้าวมันไก่ประตูน้ำ'
+
+/**
+ * A writer of records straight into a vault's SQL, as its commands leave them:
+ * it first adds one wallet and one expense category, then `write(count)` adds
+ * expense records with LEDGER_NOTE and LEDGER_MERCHANT across ten years, in
+ * one transactionSync per call. Every entity gets its row, its change row (a
+ * DTO its sync validator accepts, with the group's stored size) and its head,
+ * under a revision of its own, as the triggers require.
+ */
+function ledgerWriter(state: DurableObjectState) {
+  const sql = state.storage.sql
+  const at = new Date().toISOString()
+  const commit = (entity: string, id: string, snapshot: Record<string, unknown>) => {
+    sql.exec('UPDATE sync_state SET revision = revision + 1 WHERE id = 1')
+    const commandId = randomUUID()
+    sql.exec(
+      `INSERT INTO entity_changes (revision, ordinal, command_id, entity, entity_id, version, state, snapshot, committed_at, group_bytes)
+       VALUES ((SELECT revision FROM sync_state WHERE id = 1), 0, ?, ?, ?, 1, 'active', ?, ?, ?)`,
+      commandId, entity, id, JSON.stringify(snapshot), at, changeGroupBytes(commandId, [{ entity, id, version: 1, state: 'active', snapshot }]),
+    )
+    sql.exec("INSERT INTO entity_heads (entity, entity_id, version, state, revision) VALUES (?, ?, 1, 'active', (SELECT revision FROM sync_state WHERE id = 1))", entity, id)
+  }
+  const wallet = randomUUID()
+  const category = randomUUID()
+  state.storage.transactionSync(() => {
+    sql.exec("INSERT INTO wallets (id, name, currency, opening_minor, tracking_start, archived, version, created_at, updated_at) VALUES (?, 'บัญชีออมทรัพย์', 'THB', 0, '2016-01-01', 0, 1, ?, ?)", wallet, at, at)
+    commit('wallet', wallet, { id: wallet, name: 'บัญชีออมทรัพย์', currency: 'THB', opening_minor: '0', tracking_start: '2016-01-01', archived: false, version: 1 })
+    sql.exec("INSERT INTO categories (id, type, builtin_key, label, color, archived, version, created_at, updated_at) VALUES (?, 'expense', NULL, 'อาหารกลางวัน', NULL, 0, 1, ?, ?)", category, at, at)
+    commit('category', category, { id: category, type: 'expense', builtin_key: null, label: 'อาหารกลางวัน', color: null, archived: false, version: 1 })
+  })
+  let records = 0
+  return {
+    wallet,
+    category,
+    get records() {
+      return records
+    },
+    write(count: number): string[] {
+      const ids: string[] = []
+      state.storage.transactionSync(() => {
+        for (let i = 0; i < count; i += 1) {
+          const id = randomUUID()
+          const amount = String(1000 + (records % 99_000))
+          const occurredOn = new Date(Date.UTC(2016, 0, 1) + (records % 3650) * DAY).toISOString().slice(0, 10)
+          sql.exec(
+            "INSERT INTO transactions (id, type, amount_minor, occurred_on, wallet_id, category_id, note, merchant, version, created_at, updated_at) VALUES (?, 'expense', ?, ?, ?, ?, ?, ?, 1, ?, ?)",
+            id, Number(amount), occurredOn, wallet, category, LEDGER_NOTE, LEDGER_MERCHANT, at, at,
+          )
+          commit('transaction', id, { id, amount_minor: amount, occurred_on: occurredOn, note: LEDGER_NOTE, merchant: LEDGER_MERCHANT, deleted_at: null, version: 1, type: 'expense', wallet_id: wallet, category_id: category })
+          ids.push(id)
+          records += 1
+        }
+      })
+      return ids
+    },
+  }
+}
+
+/**
+ * Ten times the yearly ledger (owner answer 4, B14): writes the person's vault
+ * as ledgerWriter does, 1,000 records per transactionSync, until its SQLite
+ * file holds at least `targetBytes` (ctx.storage.sql.databaseSize). The person
+ * must already be a member. Returns how many records it wrote.
+ */
+export async function seedLedger(user: TestUser, targetBytes: number): Promise<{ records: number }> {
+  return runInDurableObject(vaultOf(user), (_vault, state) => {
+    const ledger = ledgerWriter(state)
+    while (state.storage.sql.databaseSize < targetBytes) ledger.write(1000)
+    return { records: ledger.records }
+  })
+}
+
+/** `count` records in a new wallet and category, written as seedLedger writes them, in one transactionSync. Returns their ids in order. */
+export async function seedRecords(user: TestUser, count: number): Promise<{ wallet: string; category: string; ids: string[] }> {
+  return runInDurableObject(vaultOf(user), (_vault, state) => {
+    const ledger = ledgerWriter(state)
+    return { wallet: ledger.wallet, category: ledger.category, ids: ledger.write(count) }
+  })
 }

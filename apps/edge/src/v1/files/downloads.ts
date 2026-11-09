@@ -5,6 +5,7 @@ import { DownloadSlots, bodyStream, fileResponse, verifiedChunks, within } from 
 import { R2ObjectStore, UnavailableObjectStore } from '../../server/storage/r2-object-store'
 import { EXPORT_CONTENT_TYPE } from '../../vault/files/exports'
 import type { StoredExportFile } from '../../vault/files/exports'
+import { SNAPSHOT_CONTENT_TYPE } from '../../vault/files/snapshots'
 import type { StoredReceiptFile } from '../../vault/files/attachments'
 import type { V1Env } from '../env'
 import type { VaultReply } from '../protocol'
@@ -62,6 +63,42 @@ export async function serveExportFile(w: WorkerContext): Promise<Response | Vaul
     const body = await matchingObject(w.env, file)
     const chunks = verifiedChunks(body, file.bytes, file.sha256)[Symbol.asyncIterator]()
     return fileResponse(bodyStream(chunks, release), { contentType: EXPORT_CONTENT_TYPE, bytes: file.bytes, fileName: file.fileName })
+  } catch (error) {
+    release()
+    throw error
+  }
+}
+
+// 1B-T8: snapshot chunks.
+
+/**
+ * Snapshot chunk downloads one isolate streams at once. The API read each
+ * chunk whole and counted none; the vault streams it, as it streams an export,
+ * so it takes the export download's number (4), in a pool of its own.
+ */
+export const SNAPSHOT_SLOTS = new DownloadSlots(4)
+
+/**
+ * GET /v1/sync/snapshot-chunks/:grant (the edge's handler, on the vault). The
+ * `snapshots.chunk` step names the chunk a current grant of the caller's names,
+ * while its snapshot is ready, unexpired and not below the purge watermark;
+ * anything else is the vault's 404. Then a SNAPSHOT_SLOTS slot (503 with a
+ * retry when none is free), the object only while it matches its record (404
+ * otherwise), and the JSON streamed with its recorded length, its digest
+ * checked as it goes. The slot is returned when the body ends. A client that
+ * goes away mid-download keeps the slot in workerd (ruling R97): the follow-up
+ * fix-download-aborts fixes this download with the others.
+ */
+export async function serveSnapshotChunk(w: WorkerContext): Promise<Response | VaultReply> {
+  if (!w.vault) throw new Error('a snapshot chunk download needs a session')
+  const reply = await w.vault.call('snapshots.chunk', { params: { grant: w.params.grant ?? '' } })
+  if (!reply.ok) return reply
+  const file = reply.body as StoredFile
+  const release = SNAPSHOT_SLOTS.take()
+  try {
+    const body = await matchingObject(w.env, file)
+    const chunks = verifiedChunks(body, file.bytes, file.sha256)[Symbol.asyncIterator]()
+    return fileResponse(bodyStream(chunks, release), { contentType: SNAPSHOT_CONTENT_TYPE, bytes: file.bytes })
   } catch (error) {
     release()
     throw error
