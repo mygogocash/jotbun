@@ -26,6 +26,8 @@ for kit in "$@"; do
   (cd "$dst" && bad=$(shasum -a 256 -c SHA256SUMS 2>&1 | grep -vc ': OK$' || true); echo "$kit: $bad not OK"; [ "$bad" = 0 ])
 done
 /usr/bin/git add -A .claude
+# A kit's proof logs (*.log) are gitignored, so `add -A` skips them; force-add each kit so its SHA256SUMS still verifies elsewhere.
+for kit in "$@"; do /usr/bin/git add -f ".claude/controller/scratch/$kit"; done
 if /usr/bin/git diff --cached --quiet; then echo "nothing to sync"; exit 0; fi
 /usr/bin/git diff --cached --check
 /usr/bin/git commit -q -m "$msg" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
