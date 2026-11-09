@@ -1,0 +1,20 @@
+--- a/src/v1/protocol.ts
++++ b/src/v1/protocol.ts
+@@ -31,6 +31,8 @@
+   | 'export.file.download'
+   // 1B-T9
+   | 'attachment.retain' | 'attachment.replace' | 'attachment.file.download'
++  // 1B-T10
++  | 'import.confirm'
+ 
+ /** The published policy versions from config:v1, or null when none are published. */
+ export type PublishedPolicies = PolicyVersionDto[] | null
+@@ -47,6 +49,8 @@
+   | 'exports.request' | 'exports.status' | 'exports.grant' | 'exports.file'
+   // 1B-T9: the two receipt routes, then the retain, replace and download steps.
+   | 'attachments.remove' | 'attachments.grant' | 'attachments.prepare' | 'attachments.release' | 'attachments.retain' | 'attachments.replace' | 'attachments.file'
++  // 1B-T10: the four review routes, then the confirmation's prepare and command steps.
++  | 'imports.preview' | 'imports.patchRows' | 'imports.freeze' | 'imports.progress' | 'imports.confirmPrepare' | 'imports.confirm'
+ 
+ export type VaultCall = {
+   route: VaultRouteId

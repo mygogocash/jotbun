@@ -1,0 +1,42 @@
+--- a/src/vault/routes.ts
++++ b/src/vault/routes.ts
+@@ -1,5 +1,6 @@
+-import { MAX_COMMAND_STATUS_IDS, ContractValidationError, assertKnownFields, isUuid } from '@gogospend/contracts'
++import { MAX_COMMAND_STATUS_IDS, ContractValidationError, assertKnownFields, isUuid, parseImportPreviewPaging } from '@gogospend/contracts'
+ 
++import { routeId } from '@api/commands/versioned-entity'
+ import { ProblemException } from '@api/common/api-problem.filter'
+ import type { BeginInput, FinishInput, IntakeOutcomeCode } from '@api/imports/import.repository'
+ 
+@@ -20,6 +21,8 @@
+ import { abortUpload, beginUpload, discardUploadParts, finishUpload, reserveUploadPart, uploadBytesRetry, uploadStatus } from './files/intake'
+ import { exportFile, exportGrant, exportStatus, requestExport } from './files/exports'
+ import { prepareInput, prepareReceipt, receiptFile, receiptGrant, releaseReceiptCopy, removeReceipt, replaceReceipt, retainReceipt } from './files/attachments'
++import { confirmImportBatch, confirmPrepare, freezeImportSelection, patchImportRows, selectionProgress } from './files/confirmation'
++import { previewOf } from './files/previews'
+ 
+ export type VaultHandler = (c: VaultContext, call: VaultCall) => VaultReply
+ 
+@@ -161,4 +164,22 @@
+     if (!file) throw new ProblemException(404, 'NOT_FOUND')
+     return okReply(call.route, file)
+   },
++  // 1B-T10: the review routes and the confirmation's steps (src/v1/files/receipts.ts).
++  'imports.preview': (c, call) => {
++    // The id first, then the paging, as the API's controller reads them: a malformed id is 404 whatever the paging.
++    const id = call.params.id
++    if (!isUuid(id)) throw new ProblemException(404, 'NOT_FOUND')
++    const found = previewOf(c, id, parseImportPreviewPaging(call.query))
++    if (!found) throw new ProblemException(404, 'NOT_FOUND')
++    return okReply(call.route, found)
++  },
++  'imports.patchRows': (c, call) => okReply(call.route, patchImportRows(c, call)),
++  'imports.freeze': (c, call) => okReply(call.route, freezeImportSelection(c, call)),
++  'imports.progress': (c, call) => {
++    const found = selectionProgress(c, routeId(call.params.id ?? ''), routeId(call.params.selectionId ?? ''))
++    if (!found) throw new ProblemException(404, 'NOT_FOUND')
++    return okReply(call.route, found)
++  },
++  'imports.confirmPrepare': (c, call) => okReply(call.route, confirmPrepare(c, call)),
++  'imports.confirm': (c, call) => okReply(call.route, confirmImportBatch(c, call)),
+ }

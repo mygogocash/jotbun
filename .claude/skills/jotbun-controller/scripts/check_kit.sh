@@ -36,7 +36,8 @@ if [ -f "$kit/SHA256SUMS.base" ]; then
   printf '%s\n' "$res" | grep ': FAILED' | sed 's/^/  /'
 fi
 
-for b in orig base; do [ -d "$kit/$b" ] || continue
+# orig/ wins when a kit has both: some planners keep a whole proof tree (with dist/ and .wrangler/) in base/.
+for b in orig base; do [ -d "$kit/$b" ] || continue; [ "$b" = base ] && [ -d "$kit/orig" ] && continue
   same=0; diff_list=""
   while read -r f; do
     p=""; for pre in "" apps/edge/ apps/app/ apps/api/; do G cat-file -e "$ref:$pre$f" 2>/dev/null && { p=$pre$f; break; }; done
