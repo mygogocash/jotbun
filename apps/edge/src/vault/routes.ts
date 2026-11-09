@@ -1,5 +1,8 @@
 import { MAX_COMMAND_STATUS_IDS, ContractValidationError, assertKnownFields, isUuid } from '@gogospend/contracts'
 
+import { ProblemException } from '@api/common/api-problem.filter'
+import type { BeginInput, FinishInput, IntakeOutcomeCode } from '@api/imports/import.repository'
+
 import type { VaultCall, VaultReply, VaultRouteId } from '../v1/protocol'
 import { lookupStatuses } from './commands/receipts'
 import type { VaultContext } from './context'
@@ -14,6 +17,7 @@ import { syncChanges } from './reads/sync'
 import { acceptPolicy, describeMe, setPrivacy } from './policies'
 import { okReply } from './replies'
 import { revokeSession } from './session'
+import { abortUpload, beginUpload, discardUploadParts, finishUpload, reserveUploadPart, uploadBytesRetry, uploadStatus } from './files/intake'
 
 export type VaultHandler = (c: VaultContext, call: VaultCall) => VaultReply
 
@@ -24,6 +28,28 @@ function commandIdsOf(body: unknown): string[] {
     throw new ContractValidationError('VALIDATION_FAILED', `command_ids must be 1-${MAX_COMMAND_STATUS_IDS} UUIDs.`, 'command_ids')
   }
   return ids
+}
+
+/** A step body from the Worker's own upload code: an object, or the call is refused before anything is written. */
+function stepBody(body: unknown): Record<string, unknown> {
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) throw new Error('a step body is an object')
+  return body as Record<string, unknown>
+}
+
+/** An upload step names its job and intake token as UUIDs. */
+function uploadIds(body: Record<string, unknown>, job: string, token: string): { jobId: string; intakeToken: string } {
+  const jobId = body[job]
+  const intakeToken = body[token]
+  if (!isUuid(jobId) || !isUuid(intakeToken)) throw new Error('an upload step names its job and intake token')
+  return { jobId, intakeToken }
+}
+
+/** GET /v1/imports/:id: the caller's own accepted import; any other id is 404. */
+function importStatusOf(c: VaultContext, id: string | undefined) {
+  if (!isUuid(id)) throw new ProblemException(404, 'NOT_FOUND')
+  const found = uploadStatus(c, id)
+  if (!found) throw new ProblemException(404, 'NOT_FOUND')
+  return found
 }
 
 /**
@@ -67,4 +93,33 @@ export const VAULT_HANDLERS: Partial<Record<VaultRouteId, VaultHandler>> = {
   'summary.get': (c, call) => okReply(call.route, summary(c, call.query)),
   'commands.status': (c, call) => okReply(call.route, { statuses: lookupStatuses(c, commandIdsOf(call.body)) }),
   'sync.changes': (c, call) => okReply(call.route, syncChanges(c, call.query)),
+  // 1B-T5: the import status route and the upload's steps (src/v1/files/uploads.ts).
+  'imports.status': (c, call) => okReply(call.route, importStatusOf(c, call.params.id)),
+  'imports.begin': (c, call) => {
+    const body = stepBody(call.body)
+    uploadIds(body, 'jobId', 'intakeToken')
+    return okReply(call.route, beginUpload(c, body as BeginInput))
+  },
+  'imports.reservePart': (c, call) => {
+    const body = stepBody(call.body)
+    const { jobId, intakeToken } = uploadIds(body, 'job_id', 'intake_token')
+    return okReply(call.route, { key: reserveUploadPart(c, jobId, intakeToken, Number(body.index)) })
+  },
+  'imports.finish': (c, call) => {
+    const body = stepBody(call.body)
+    uploadIds(body, 'jobId', 'intakeToken')
+    return okReply(call.route, finishUpload(c, body as FinishInput))
+  },
+  'imports.abort': (c, call) => {
+    const body = stepBody(call.body)
+    const { jobId, intakeToken } = uploadIds(body, 'job_id', 'intake_token')
+    return okReply(call.route, { keys: abortUpload(c, jobId, intakeToken, body.status as 'rejected' | 'failed', String(body.code) as IntakeOutcomeCode) })
+  },
+  'imports.discarded': (c, call) => {
+    const body = stepBody(call.body)
+    const { jobId, intakeToken } = uploadIds(body, 'job_id', 'intake_token')
+    discardUploadParts(c, jobId, intakeToken, Array.isArray(body.keys) ? (body.keys as string[]) : [])
+    return okReply(call.route, {})
+  },
+  'imports.bytesRetry': (c, call) => okReply(call.route, { seconds: uploadBytesRetry(c, Number(stepBody(call.body).need)) }),
 }

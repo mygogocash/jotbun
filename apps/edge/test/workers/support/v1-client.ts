@@ -29,6 +29,8 @@ export type UserClient = {
   patch(path: string, body: unknown, options?: CommandOptions): Promise<Response>
   put(path: string, body: unknown, options?: CommandOptions): Promise<Response>
   del(path: string, options?: CommandOptions): Promise<Response>
+  /** Any request with the token and client headers added; the caller gives the rest (1B-T5's uploads). */
+  request(method: string, path: string, init?: { body?: BodyInit; headers?: Record<string, string> }): Promise<Response>
 }
 
 export type V1Client = {
@@ -106,6 +108,8 @@ function clientFor(raw: (request: Request) => Promise<Response>, user: TestUser,
     patch: (path, body, options) => send('PATCH', path, body, options),
     put: (path, body, options) => send('PUT', path, body, options),
     del: (path, options) => send('DELETE', path, undefined, options),
+    request: async (method, path, init = {}) =>
+      raw(new Request(`${BASE}${path}`, { method, headers: { ...init.headers, 'x-gogospend-client': client, authorization: `Bearer ${await tokenFor(user, opts)}` }, body: init.body })),
   }
 }
 

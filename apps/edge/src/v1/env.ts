@@ -1,3 +1,4 @@
+import type { StatementParser } from '../background/statement-parser'
 import type { VaultBucket } from '../vault/files/keys'
 import type { UserVault } from '../vault/user-vault'
 
@@ -24,4 +25,6 @@ export type V1Env = {
   GOGOCASH_BRIDGE_ENABLED?: string
   /** GoGoCash's public brand catalogue. Without it, the built-in brands are served. */
   GOGOCASH_CATALOGUE_URL?: string
+  /** The stateless parser's Durable Object, with its container (1B-T5). Without it, every parse asks to be retried. */
+  PARSER?: DurableObjectNamespace<StatementParser>
 }
