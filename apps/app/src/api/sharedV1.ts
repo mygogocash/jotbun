@@ -10,6 +10,8 @@ import { createSpendV1Resources, createSyncResources } from '@mobile/spend/v1/re
 import type { SpendV1Resources } from '@mobile/spend/v1/resources';
 import { createAiResources } from '@mobile/spend/v1/ai/aiResources';
 import type { AiResources } from '@mobile/spend/v1/ai/aiResources';
+import { createSlipResources } from '@mobile/slips/slipResources';
+import type { SlipResources } from '@mobile/slips/slipResources';
 import { isUuid } from '@gogospend/contracts';
 import * as Crypto from 'expo-crypto';
 
@@ -33,6 +35,7 @@ let shared: SpendV1Resources | null = null;
 let sync: SyncRemote | null = null;
 let ai: AiResources | null = null;
 let analyticsServer: AnalyticsDeps['server'] | null = null;
+let slips: SlipResources | null = null;
 
 /** The one v1 transport. Sign-out uses it so a second client is not opened. */
 export function getSharedV1Transport(): V1Transport {
@@ -95,4 +98,14 @@ export function getSharedAiResources(): AiResources {
 export function getSharedAnalyticsServer(): AnalyticsDeps['server'] {
   analyticsServer ??= createAnalyticsServer(sharedTransport());
   return analyticsServer;
+}
+
+/**
+ * The slip calls (P4-T12) over the same transport, so each carries
+ * X-GoGoSpend-Analytics: off unless this phone's answer is yes: the slip read
+ * can lead to the server's slip_scan_finished (1D-T6's m4).
+ */
+export function getSharedSlipResources(): SlipResources {
+  slips ??= createSlipResources(sharedTransport());
+  return slips;
 }
