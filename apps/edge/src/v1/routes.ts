@@ -99,6 +99,13 @@ export const VAULT_V1_ROUTES: readonly VaultRoute[] = [
   { method: 'GET', path: '/v1/attachments/:id/grant', access: 'bound_session', vault: 'attachments.grant' },
   // The image streams from R2 in the Worker, after the `attachments.file` step names it.
   { method: 'GET', path: '/v1/attachment-files/:grant', access: 'bound_session', worker: 'attachment.file.download' },
+  // imports/imports.controller.ts and confirmation.controller.ts (1B-T10): the preview, corrections, the frozen
+  // selection and its progress are one vault call each; a confirmation with a receipt copies the image between its steps.
+  { method: 'GET', path: '/v1/imports/:id/preview', access: 'bound_session', vault: 'imports.preview' },
+  { method: 'PATCH', path: '/v1/imports/:id/rows', access: 'current_policy', vault: 'imports.patchRows', gates: ['imports'], status: 200 },
+  { method: 'POST', path: '/v1/imports/:id/selections', access: 'current_policy', vault: 'imports.freeze', gates: ['imports'], status: 201 },
+  { method: 'POST', path: '/v1/imports/:id/confirmations', access: 'current_policy', worker: 'import.confirm', gates: ['imports', 'writes'], status: 200 },
+  { method: 'GET', path: '/v1/imports/:id/selections/:selectionId', access: 'bound_session', vault: 'imports.progress' },
 ]
 
 const ROUTE_BY_ID = new Map<VaultRouteId, VaultRoute>(VAULT_V1_ROUTES.flatMap((route) => (route.vault ? [[route.vault, route] as const] : [])))
@@ -137,6 +144,9 @@ export const VAULT_STEP_ROUTES: Partial<Record<VaultRouteId, VaultStepRoute>> = 
   'attachments.retain': {},
   'attachments.replace': {},
   'attachments.file': {},
+  // 1B-T10: the confirmation's steps. Both check the session: prepare reserves a receipt copy and confirm commits records.
+  'imports.confirmPrepare': {},
+  'imports.confirm': {},
 }
 
 /** The step-only entry a vault call names, or undefined when the id is not a step. */
@@ -163,11 +173,6 @@ export const VAULT_DEFERRED_ROUTES: readonly string[] = [
   'POST /v1/sync/snapshots',
   'GET /v1/sync/snapshots/:id',
   'GET /v1/sync/snapshot-chunks/:grant',
-  'GET /v1/imports/:id/preview',
-  'PATCH /v1/imports/:id/rows',
-  'POST /v1/imports/:id/selections',
-  'POST /v1/imports/:id/confirmations',
-  'GET /v1/imports/:id/selections/:selectionId',
   'GET /v1/me/ai-preferences',
   'PUT /v1/me/ai-preferences',
   'POST /v1/ai/parse',

@@ -29,8 +29,8 @@ import { publishObject, reserveObject } from './objects'
 
 /** A copy's reservation lasts three minutes: the copy's one-minute deadline plus the command that publishes it (0017). */
 export const RECEIPT_COPY_GRACE_MS = 180_000
-/** An import image is copied only while it has more than this left before it is due. */
-const SOURCE_MARGIN_MS = 2 * 60_000
+/** An import image is copied only while it has more than this left before it is due (1B-T10's preview serves the same margin as `attachable_until`). */
+export const SOURCE_MARGIN_MS = 2 * 60_000
 /** At most this many copies in flight per vault, and this many reserved in a day (0017). */
 const COPIES_IN_FLIGHT = 4
 const COPIES_PER_DAY = 100
@@ -154,9 +154,10 @@ export function prepareReceipt(c: VaultContext, input: { attachment_id: string; 
  * extension, and the size and SHA-256 the HEAD reported must equal the import
  * image's registered ones; anything else is 422 `expired`, checked before
  * publishObject (which would throw). Then the copy is published with no expiry
- * and recorded as a retained receipt.
+ * and recorded as a retained receipt. 1B-T10's confirmation calls it too, for
+ * the record an import's image row becomes.
  */
-function ready(c: VaultContext, attachmentId: string, copy: StoredCopy | null): void {
+export function ready(c: VaultContext, attachmentId: string, copy: StoredCopy | null): void {
   const [existing] = c.sql.exec<{ status: string }>('SELECT status FROM attachments WHERE id = ?', attachmentId).toArray()
   if (existing) {
     if (copy) releaseReceiptCopy(c, copy.key)

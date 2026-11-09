@@ -5,6 +5,7 @@ import { createExecutionContext, createMessageBatch, getQueueResult, runInDurabl
 import { createHash, randomUUID } from 'node:crypto'
 
 import { previewFromOutcome, toPreviewRecord } from '@api/imports/parse-outcome'
+import type { CandidateRecord, PreviewRecord } from '@api/imports/parse-outcome'
 import type { ParseServiceReply } from '@api/imports/parse-server'
 import type { ParserRunOutcome } from '@api/imports/parser-runner'
 import type { ParseFormat, ParsedRow } from '@api/imports/parsers/protocol'
@@ -12,6 +13,7 @@ import type { ParseFormat, ParsedRow } from '@api/imports/parsers/protocol'
 import type { ParseMessage, ParserPort } from '../../../src/background/parse-consumer'
 import type { FileContext } from '../../../src/vault/files/context'
 import type { VaultBucket } from '../../../src/vault/files/keys'
+import type { ParsedPreview } from '../../../src/vault/files/parse'
 import type { UserVault } from '../../../src/vault/user-vault'
 import { vaultOf } from './v1-client'
 import type { TestUser, V1Client } from './v1-client'
@@ -431,4 +433,46 @@ export async function seedImportImage(user: TestUser, opts: { expiresInMs?: numb
     })
   })
   return { jobId, attachmentId, key, bytes, sha256, contentType }
+}
+
+// ---------------------------------------------------------------------------
+// 1B-T10: import review and confirmation
+// ---------------------------------------------------------------------------
+
+/**
+ * The job id of an accepted, parsed upload whose preview holds `candidates`,
+ * written as the parse pipeline (1B-T5) writes it: an accepted upload row left
+ * `parsing` on its first attempt, then the vault's own recordPreview, which
+ * stores the preview (revision 1, 7 days, exact totals from the stored
+ * candidates) and marks the upload parsed. With `image`, the preview is a
+ * receipt photo's: TINY_JPEG is stored at the key reserveImageKey gave, and
+ * recordPreview publishes it for 24 hours as the preview's 1 × 1 image under a
+ * fresh image_attachment_id. The person must already be a member.
+ */
+export async function seedPreview(user: TestUser, candidates: CandidateRecord[], opts: { image?: boolean } = {}): Promise<string> {
+  const image = opts.image === true
+  const jobId = randomUUID()
+  const now = Date.now()
+  const at = (ms: number) => new Date(ms).toISOString()
+  await vaultExec(
+    user,
+    `INSERT INTO import_uploads (job_id, intake_token, status, file_name, declared_type, format, bytes, sha256, part_count, parse_state, parse_attempts, created_at, receive_deadline, accepted_at, expires_at)
+     VALUES (?, ?, 'accepted', ?, ?, ?, 1024, ?, 1, 'parsing', 1, ?, ?, ?, ?)`,
+    jobId, randomUUID(), image ? 'receipt.jpg' : 'statement.csv', image ? 'image/jpeg' : 'text/csv', image ? 'jpeg' : 'csv', 'ab'.repeat(32), at(now - MIN), at(now + 9 * MIN), at(now - MIN), at(now - MIN + DAY),
+  )
+  let stored: ParsedPreview['image'] = null
+  if (image) {
+    const key = await runInDurableObject(vaultOf(user), (vault: UserVault) => vault.reserveImageKey(jobId, 'jpeg'))
+    if (key === null) throw new Error('seedPreview: no image key was reserved')
+    const sha256 = createHash('sha256').update(TINY_JPEG).digest('hex')
+    await env.OBJECTS.put(key, TINY_JPEG, { sha256, customMetadata: { sha256 }, httpMetadata: { contentType: 'image/jpeg' } })
+    stored = { key, bytes: TINY_JPEG.byteLength, sha256, width: 1, height: 1 }
+  }
+  const record: PreviewRecord = {
+    preview: { status: 'ready', layout: image ? 'receipt' : 'generic', issues: image ? ['receipt_fields_unread'] : [], image: image ? { width: 1, height: 1 } : null, header_fingerprint: null },
+    candidates,
+  }
+  const { recorded } = await runInDurableObject(vaultOf(user), (vault: UserVault) => vault.recordPreview(jobId, { record, image: stored }))
+  if (!recorded) throw new Error('seedPreview: the preview was not recorded')
+  return jobId
 }

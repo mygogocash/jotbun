@@ -5,11 +5,13 @@ import type { AttachmentLimits } from '@api/attachments/attachment-limits'
 import { commandHeaders } from '@api/commands/command-headers'
 import { routeId } from '@api/commands/versioned-entity'
 import { ProblemException } from '@api/common/api-problem.filter'
+import { parseConfirmBody } from '@api/imports/confirmation.service'
 
 import { DownloadSlots } from '../../server/http/files'
 import { R2ObjectStore, UnavailableObjectStore } from '../../server/storage/r2-object-store'
 import { receiptChoice, supportsReceiptSchema } from '../../vault/files/attachments'
 import type { PreparedCopy, StoredCopy } from '../../vault/files/attachments'
+import type { ConfirmPrepared, ConfirmReceipt } from '../../vault/files/confirmation'
 import type { V1Env } from '../env'
 import type { VaultReply, VaultRouteId } from '../protocol'
 import type { VaultSession, WorkerContext } from '../worker-routes'
@@ -91,19 +93,22 @@ async function copyOf(vault: VaultSession, env: Pick<V1Env, 'OBJECTS'>, prepared
 }
 
 /**
- * AttachmentService.prepare: the `attachments.prepare` step (the request's
- * first, charged call) and, when it answers `copy`, the copy. Each attempt
- * holds a COPY_SLOTS slot from before the step until the copy ends, so a busy
- * isolate answers 503 before anything is reserved. While another request is
- * copying the same image (`wait`) it looks again every 75 ms, up to
- * copyDeadlineMs, then answers 503. A 429 from the step is the answer.
+ * AttachmentService.prepare: the prepare step (`attachments.prepare`, or 1B-T10's
+ * `imports.confirmPrepare`; the request's first, charged call) and, when it
+ * answers `copy`, the copy. Each attempt holds a COPY_SLOTS slot from before
+ * the step until the copy ends, so a busy isolate answers 503 before anything
+ * is reserved. While another request is copying the same image (`wait`) it
+ * looks again every 75 ms, up to copyDeadlineMs, then answers 503. A 429 from
+ * the step is the answer. `refused` (a confirmation's read-only checks would
+ * refuse its batch) reserves and copies nothing.
  */
-async function prepare(w: WorkerContext, vault: VaultSession, input: { attachment_id: string; command_id: string; record: { id: string; expected_version: number | undefined; needs: 'none' | 'other' } }): Promise<StoredCopy | null> {
+async function prepare(w: WorkerContext, vault: VaultSession, route: 'attachments.prepare' | 'imports.confirmPrepare', input: unknown, params: Record<string, string> = {}): Promise<StoredCopy | null | 'refused'> {
   const deadline = Date.now() + RECEIPT_LIMITS.copyDeadlineMs
   for (;;) {
     const slot = COPY_SLOTS.take()
     try {
-      const prepared = await step<PreparedCopy>(vault, 'attachments.prepare', { body: input })
+      const prepared = await step<ConfirmPrepared>(vault, route, { params, body: input })
+      if (prepared.kind === 'refused') return 'refused'
       if (prepared.kind === 'none') return null
       if (prepared.kind === 'copy') return await copyOf(vault, w.env, prepared)
     } finally {
@@ -129,9 +134,11 @@ async function withReceipt(w: WorkerContext, route: 'attachments.retain' | 'atta
   const command = commandHeaders(w.headers, 'required')
   const transactionId = routeId(w.params.id ?? '')
   const attachmentId = receiptChoice(assertKnownFields(w.body, ['attachment_id', 'consent']))
-  const copy = supportsReceiptSchema(command.schemaVersion)
-    ? await prepare(w, vault, { attachment_id: attachmentId, command_id: command.commandId, record: { id: transactionId, expected_version: command.expectedVersion, needs } })
+  const prepared = supportsReceiptSchema(command.schemaVersion)
+    ? await prepare(w, vault, 'attachments.prepare', { attachment_id: attachmentId, command_id: command.commandId, record: { id: transactionId, expected_version: command.expectedVersion, needs } })
     : null
+  // A receipt's prepare step never refuses; only a confirmation's does.
+  const copy = prepared === 'refused' ? null : prepared
   try {
     const headers = Object.fromEntries(COMMAND_HEADERS.map((name) => [name, w.headers[name]]))
     return await vault.call(route, { params: { id: transactionId }, headers, body: { attachment_id: attachmentId, consent: RECEIPT_RETENTION_CONSENT, prepared: copy } })
@@ -148,4 +155,33 @@ export function retainRoute(w: WorkerContext): Promise<VaultReply> {
 /** PUT /v1/transactions/:id/attachment: replaces the record's receipt; the one it held is deleted once nothing else holds it. */
 export function replaceRoute(w: WorkerContext): Promise<VaultReply> {
   return withReceipt(w, 'attachments.replace', 'other')
+}
+
+// 1B-T10: confirmations.
+
+/**
+ * POST /v1/imports/:id/confirmations (ConfirmationService.confirm): the
+ * import's id, the command headers (If-Match forbidden) and the batch are read
+ * as the API's controller reads them. Without a receipt, one `imports.confirm`
+ * step. With one, `imports.confirmPrepare` and the copy first (nothing is
+ * reserved when the batch's read-only checks would refuse it), then
+ * `imports.confirm` with what was prepared, and in every case the release of
+ * a copy the command did not use.
+ */
+export async function confirmRoute(w: WorkerContext): Promise<VaultReply> {
+  if (!w.vault) throw new Error('a confirmation needs a session')
+  const vault = w.vault
+  const jobId = routeId(w.params.id ?? '')
+  const command = commandHeaders(w.headers, 'forbidden')
+  const batch = parseConfirmBody(w.body)
+  // A batch without a receipt prepares nothing, and its command gets null, as one whose read-only checks refused.
+  const prepared = batch.receipt ? await prepare(w, vault, 'imports.confirmPrepare', { command_id: command.commandId, batch }, { id: jobId }) : 'refused'
+  const copy = prepared === 'refused' ? null : prepared
+  const receipt: ConfirmReceipt = prepared === 'refused' ? null : copy ? { kind: 'copied', ...copy } : { kind: 'none' }
+  try {
+    const headers = Object.fromEntries(COMMAND_HEADERS.map((name) => [name, w.headers[name]]))
+    return await vault.call('imports.confirm', { params: { id: jobId }, headers, body: { batch, prepared: receipt } })
+  } finally {
+    if (copy) await release(vault, copy.key)
+  }
 }

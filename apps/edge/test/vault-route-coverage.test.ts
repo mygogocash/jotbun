@@ -32,7 +32,7 @@ describe('the vault route table covers each v1 route exactly once', () => {
     expect(new Set(listed).size).toBe(listed.length)
   })
 
-  it('Tasks 2 to 7 and 8a, the bridge, 1B-T5, 1B-T6 and 1B-T9 port the front door, wallets, categories, transactions, budgets, history, the summary, command status, the sync delta feed, the cashback catalogue, statement uploads, exports and receipts, and nothing else', () => {
+  it('Tasks 2 to 7 and 8a, the bridge, 1B-T5, 1B-T6, 1B-T9 and 1B-T10 port the front door, wallets, categories, transactions, budgets, history, the summary, command status, the sync delta feed, the cashback catalogue, statement uploads, exports, receipts and import review, and nothing else', () => {
     expect(VAULT_V1_ROUTES.map((route) => keyOf(route.method, route.path)).filter((key) => !VAULT_ADDED_ROUTES.includes(key)).sort()).toEqual([
       'DELETE /v1/transactions/:id',
       'DELETE /v1/transactions/:id/attachment',
@@ -47,6 +47,8 @@ describe('the vault route table covers each v1 route exactly once', () => {
       'GET /v1/history',
       'GET /v1/history/deleted',
       'GET /v1/imports/:id',
+      'GET /v1/imports/:id/preview',
+      'GET /v1/imports/:id/selections/:selectionId',
       'GET /v1/me',
       'GET /v1/policies',
       'GET /v1/summary',
@@ -55,6 +57,7 @@ describe('the vault route table covers each v1 route exactly once', () => {
       'GET /v1/wallets',
       'GET /v1/wallets/:id',
       'PATCH /v1/categories/:id',
+      'PATCH /v1/imports/:id/rows',
       'PATCH /v1/transactions/:id',
       'PATCH /v1/wallets/:id',
       'POST /v1/categories',
@@ -64,6 +67,8 @@ describe('the vault route table covers each v1 route exactly once', () => {
       'POST /v1/commands/status',
       'POST /v1/exports',
       'POST /v1/imports',
+      'POST /v1/imports/:id/confirmations',
+      'POST /v1/imports/:id/selections',
       'POST /v1/me/logout',
       'POST /v1/me/policy-acceptances',
       'POST /v1/transactions',
