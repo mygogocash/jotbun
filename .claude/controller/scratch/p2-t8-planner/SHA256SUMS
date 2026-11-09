@@ -1,0 +1,9 @@
+ae81b011a9f68d52d9d33cc171fa22f8995bbafde7e42b4605a56262c7105f18  diffs/p2-t8.patch
+0778938e8a38c75660e04e01aae6f3e12c9c801a931f1e42515ff107c69d7280  orig/apps/app/src/dev/catalogue/registry.tsx
+97559e7b4ed4c3f353325f9f9cf171481fe6bb49aef0e5a9c20ab36f6ce7729e  real/apps/app/src/dev/catalogue/registry.tsx
+539dcee2c4a221973ecca85c8a63a9603ab81b6a81965b3ca9f78f52b0b598a4  real/apps/app/src/dev/catalogue/wallet/index.ts
+b0ace864cc73ef8573fe5460414c94bf261ccacdfe29f29fcdc3d5040a8c13c6  real/apps/app/src/wallet/testing/walletHarness.render.test.tsx
+9cc3a6ae649beefb72edabd0849aa9f5aedabd70dc14713c8fad8c476c9a6fad  real/apps/app/src/wallet/testing/walletHarness.tsx
+3404f2bcdca1a28ccf88d96c14952536b8d0695fca706c55ef9b2af495cd3b3a  stubs/apps/app/src/wallet/testing/walletHarness.tsx
+cb01ad830e63238f969dd7b7266c5d1e42f6d1d8a113ed4e119c50f6f29aeee0  tools/mutants.py
+4a60450ad3dd7d630597488a962090acc07f06d728472339461912f98d2d86fd  tools/prove.sh

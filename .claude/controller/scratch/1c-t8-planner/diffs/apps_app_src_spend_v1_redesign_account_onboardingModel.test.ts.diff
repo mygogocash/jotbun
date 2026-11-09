@@ -1,0 +1,28 @@
+--- a/apps/app/src/spend/v1/redesign/account/onboardingModel.test.ts	2026-11-09 19:12:56
++++ b/apps/app/src/spend/v1/redesign/account/onboardingModel.test.ts	2026-11-09 19:13:33
+@@ -5,7 +5,7 @@
+ import { untranslated } from '../testing/catalog.ts';
+ import {
+   COFFEE_PER_DAY_BAHT, FIRST_REMINDER, PRIVACY_PROMISES, SIGN_IN_METHODS, STORY_STEPS,
+-  afterOnboarding, afterSignInAttempt, canChooseProvider, coffeeMaths, primingAnswer, stepAfter, storyProgress, SKIP_TO,
++  afterOnboarding, afterSignInAttempt, afterStory, canChooseProvider, coffeeMaths, primingAnswer, stepAfter, storyProgress, SKIP_TO,
+ } from './onboardingModel.ts';
+ import type { SignInState } from './onboardingModel.ts';
+ 
+@@ -82,3 +82,16 @@
+   assert.deepEqual(afterSignInAttempt('failed'), { state: { phase: 'failed' }, go: null });
+   assert.deepEqual(afterSignInAttempt('reauth_required'), { state: { phase: 'failed' }, go: null });
+ });
++
++// 1C-T8, with the `signin` area on (K16, R55): the story ends at sign-in, and the reminder question follows it.
++test('the story ends at sign-in from onboarding, or with a session at the reminder question', () => {
++  assert.equal(afterStory(false), '/login?from=onboarding');
++  assert.equal(afterStory(true), '/onboarding/reminder');
++});
++
++test('an active sign-in from onboarding goes on to the reminder question; anywhere else, to the diary', () => {
++  assert.deepEqual(afterSignInAttempt('active', 'onboarding'), { state: { phase: 'idle' }, go: '/onboarding/reminder' });
++  assert.deepEqual(afterSignInAttempt('active', undefined), { state: { phase: 'idle' }, go: '/spend' });
++  assert.deepEqual(afterSignInAttempt('failed', 'onboarding'), { state: { phase: 'failed' }, go: null });
++  assert.deepEqual(afterSignInAttempt('cancelled', 'onboarding'), { state: { phase: 'idle' }, go: null });
++});

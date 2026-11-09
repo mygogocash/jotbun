@@ -1,8 +1,13 @@
 import assert from 'node:assert/strict';
-import { describe, test } from 'node:test';
+import { afterEach, describe, test } from 'node:test';
 
+import { AccountDatabase } from '../../storage/accountDatabase.ts';
 import { ACCOUNT_A, ACCOUNT_B } from '../../storage/testing/diaryFixtures.ts';
-import { IMPORT_DRAFT_KEY_PREFIX, createStorageDraftStore, eraseImportDrafts } from './importDraftStore.ts';
+import { createMemoryKeyStore } from '../../storage/testing/memoryKeys.ts';
+import { createTestDiaryFiles } from '../../storage/testing/nodeSqlite.ts';
+import type { TestDiaryFiles } from '../../storage/testing/nodeSqlite.ts';
+import { DiaryLocked, StaleEpochError } from '../../storage/types.ts';
+import { IMPORT_DRAFT_KEY_PREFIX, createDiaryDraftStore, createStorageDraftStore, diaryDraftStorage, eraseImportDrafts } from './importDraftStore.ts';
 import type { DraftStorage } from './importDraftStore.ts';
 import {
   awaitPreview,
@@ -28,7 +33,7 @@ const FOOD = '0000000c-0000-4000-8000-000000000001';
 const SALARY = '0000000c-0000-4000-8000-000000000004';
 const FILE: ImportFile = { bytes: new TextEncoder().encode('date,amount\n2026-01-02,65\n'), contentType: 'text/csv', name: 'statement.csv' };
 
-/** AsyncStorage's behaviour over a Map: what "the device" keeps. A restart is a new store over the same map. */
+/** A key-value port over a Map (AsyncStorage's shape, also the legacy plain-text store). A restart is a new store over the same map. */
 function deviceStorage(entries: Record<string, string> = {}) {
   const map = new Map(Object.entries(entries));
   const calls = { failWrites: false };
@@ -61,7 +66,7 @@ async function reviewedJourney(deps: ImportDeps): Promise<ImportJourney> {
   return journey;
 }
 
-describe('the device-backed import draft store', () => {
+describe('the import draft store over a key-value port', () => {
   test('is empty until something is saved', async () => {
     const { storage } = deviceStorage();
     assert.equal(await createStorageDraftStore(storage, ACCOUNT_A).load(), null);
@@ -182,5 +187,117 @@ describe('the device-backed import draft store', () => {
 
   test('refuses a store for anything but an account id', () => {
     assert.throws(() => createStorageDraftStore(deviceStorage().storage, '../escape'), RangeError);
+  });
+});
+
+// Decision 7: the same store and envelope, over the encrypted diary's draft rows.
+describe('the import draft store inside the encrypted diary', () => {
+  let files: TestDiaryFiles | undefined;
+  afterEach(() => files?.dispose());
+
+  async function openDiary() {
+    files?.dispose();
+    files = createTestDiaryFiles();
+    const session = { epoch: 1 };
+    const database = new AccountDatabase({ files, keys: createMemoryKeyStore(), epoch: () => session.epoch });
+    const diary = await database.open(ACCOUNT_A);
+    return { database, diary, session, rows: diaryDraftStorage(diary) };
+  }
+  const key = `${IMPORT_DRAFT_KEY_PREFIX}${ACCOUNT_A}`;
+
+  test('keeps the whole journey in the diary, and a restart resumes it', async () => {
+    const { database, diary, rows } = await openDiary();
+    const store = createDiaryDraftStore(diary);
+    const { deps } = setup(6, store);
+    const journey = await freezeSelection(await reviewedJourney(deps), deps);
+    await store.save(journey);
+    assert.deepEqual(await rows.getAllKeys(), [key]);
+    const envelope = JSON.parse((await rows.getItem(key)) as string) as { version: number; account_id: string; job_id: string };
+    assert.deepEqual([envelope.version, envelope.account_id, envelope.job_id], [1, ACCOUNT_A, JOB_ID]);
+    await diary.lock();
+    const restarted = createDiaryDraftStore(await database.open(ACCOUNT_A));
+    assert.deepEqual(await restarted.load(), journey);
+    await restarted.clear();
+    assert.equal(await restarted.load(), null);
+  });
+
+  test('a draft naming another account is never returned, and is removed', async () => {
+    const { diary, rows } = await openDiary();
+    await rows.setItem(key, JSON.stringify({ version: 1, account_id: ACCOUNT_B, job_id: null, journey: newJourney() }));
+    assert.equal(await createDiaryDraftStore(diary).load(), null);
+    assert.deepEqual(await rows.getAllKeys(), []);
+  });
+
+  test('a corrupt draft is removed', async () => {
+    const { diary, rows } = await openDiary();
+    const store = createDiaryDraftStore(diary);
+    await rows.setItem(key, '{not json');
+    assert.equal(await store.load(), null);
+    assert.equal(await rows.getItem(key), null);
+    await rows.setItem(key, JSON.stringify({ version: 1, account_id: ACCOUNT_A, job_id: null, journey: { stage: 'bogus' } }));
+    assert.equal(await store.load(), null);
+    assert.equal(await rows.getItem(key), null);
+  });
+
+  test("a newer app's draft is left alone", async () => {
+    const { diary, rows } = await openDiary();
+    const future = JSON.stringify({ version: 2, account_id: ACCOUNT_A, job_id: null, journey: { anything: true } });
+    await rows.setItem(key, future);
+    assert.equal(await createDiaryDraftStore(diary).load(), null);
+    assert.equal(await rows.getItem(key), future);
+  });
+
+  test('a locked or superseded diary refuses, so the journey never claims a draft it does not have', async () => {
+    const { database, diary, session } = await openDiary();
+    const store = createDiaryDraftStore(diary);
+    await diary.lock();
+    await assert.rejects(store.save(newJourney()), (error) => error instanceof DiaryLocked);
+    await assert.rejects(store.load(), (error) => error instanceof DiaryLocked);
+    const current = createDiaryDraftStore(await database.open(ACCOUNT_A));
+    session.epoch = 2;
+    await assert.rejects(current.save(newJourney()), (error) => error instanceof StaleEpochError);
+  });
+
+  test('the sign-out and device-reset erases work over the diary rows too', async () => {
+    const { diary, rows } = await openDiary();
+    await createDiaryDraftStore(diary).save(newJourney());
+    await rows.setItem(`${IMPORT_DRAFT_KEY_PREFIX}${ACCOUNT_B}`, '{}');
+    await eraseImportDrafts(rows, ACCOUNT_A);
+    assert.deepEqual(await rows.getAllKeys(), [`${IMPORT_DRAFT_KEY_PREFIX}${ACCOUNT_B}`]);
+    await eraseImportDrafts(rows);
+    assert.deepEqual(await rows.getAllKeys(), []);
+  });
+
+  test("its first use removes the account's leftover plain-text (AsyncStorage) draft, and only that account's", async () => {
+    const { diary } = await openDiary();
+    const legacy = deviceStorage({ 'gogospend.reminder.v1': '{"enabled":true,"localTime":"20:00"}' });
+    await createStorageDraftStore(legacy.storage, ACCOUNT_A).save({ ...newJourney(), stage: 'review', jobId: JOB_ID });
+    await createStorageDraftStore(legacy.storage, ACCOUNT_B).save(newJourney());
+    const erased: string[] = [];
+    const store = createDiaryDraftStore(diary, async (accountId) => {
+      erased.push(accountId);
+      await eraseImportDrafts(legacy.storage, accountId);
+    });
+    // The plain-text draft is not carried over: the diary has none, and the old copy is gone.
+    assert.equal(await store.load(), null);
+    assert.deepEqual(erased, [ACCOUNT_A]);
+    assert.deepEqual([...legacy.map.keys()].sort(), [`${IMPORT_DRAFT_KEY_PREFIX}${ACCOUNT_B}`, 'gogospend.reminder.v1'].sort());
+    // Once is enough while this diary is open.
+    await store.save(newJourney());
+    await store.load();
+    assert.deepEqual(erased, [ACCOUNT_A]);
+  });
+
+  test('a leftover draft that cannot be removed yet never blocks the diary draft, and is tried again', async () => {
+    const { diary } = await openDiary();
+    let failures = 1;
+    const erased: string[] = [];
+    const store = createDiaryDraftStore(diary, async (accountId) => {
+      erased.push(accountId);
+      if (failures-- > 0) throw new Error('storage busy');
+    });
+    await store.save({ ...newJourney(), stage: 'failed' });
+    assert.equal((await store.load())?.stage, 'failed');
+    assert.deepEqual(erased, [ACCOUNT_A, ACCOUNT_A]);
   });
 });

@@ -7,7 +7,7 @@ import { DIARY_MIGRATIONS } from './migrations.ts';
 import { createMemoryKeyStore } from './testing/memoryKeys.ts';
 import { createTestDiaryFiles } from './testing/nodeSqlite.ts';
 import type { TestDiaryFiles } from './testing/nodeSqlite.ts';
-import { ACCOUNT_A, ACCOUNT_B, WALLET, change, draft, expense, group, outbox, references, wallet } from './testing/diaryFixtures.ts';
+import { ACCOUNT_A, ACCOUNT_B, SAVINGS, WALLET, change, draft, expense, group, outbox, references, wallet } from './testing/diaryFixtures.ts';
 import { DiaryLocked, DiarySchemaTooNew, MalformedDiaryKey, StaleEpochError } from './types.ts';
 import type { KeyStore } from './types.ts';
 
@@ -127,10 +127,38 @@ test('a failing migration rolls back, leaving the diary usable at its previous v
 test('a diary from a newer app version is refused, not downgraded', async () => {
   const { database } = setup();
   await (await database.open(ACCOUNT_A)).lock();
+  // The version just after this build's latest (3 today), and one far ahead.
+  for (const version of [DIARY_MIGRATIONS.length + 1, 999]) {
+    const raw = files.raw(nameOf(ACCOUNT_A));
+    raw.exec(`PRAGMA user_version = ${version}`);
+    raw.close();
+    await assert.rejects(database.open(ACCOUNT_A), (error) => error instanceof DiarySchemaTooNew);
+  }
+});
+
+test('a version-1 diary upgrades to version 2 and keeps its data; the import drafts table starts empty', async () => {
+  const { keys, session } = setup();
+  const v1 = new AccountDatabase({ files, keys, epoch: () => session.epoch, migrations: DIARY_MIGRATIONS.slice(0, 1) });
+  const old = await v1.open(ACCOUNT_A);
+  await old.applyChangeGroups([references()], 'c1', null);
+  const entry = draft();
+  await old.savePending(entry, outbox(entry));
+  await old.lock();
+
+  const upgraded = await new AccountDatabase({ files, keys, epoch: () => session.epoch }).open(ACCOUNT_A);
+  const state = await upgraded.readState();
+  assert.equal(state.cursor, 'c1');
+  assert.deepEqual(state.pending, [entry]);
+  assert.deepEqual((await upgraded.readOutbox()).map((command) => command.payload.id), [entry.id]);
+  assert.deepEqual(state.walletTotals, { [WALLET]: '100000', [SAVINGS]: '0' });
   const raw = files.raw(nameOf(ACCOUNT_A));
-  raw.exec('PRAGMA user_version = 999');
+  assert.equal(DIARY_MIGRATIONS[1].version, 2);
+  assert.equal((raw.prepare('PRAGMA user_version').get() as { user_version: number }).user_version, DIARY_MIGRATIONS.length);
+  const table = raw.prepare(`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'import_drafts'`).get() as { sql: string } | undefined;
+  assert.equal(table?.sql, 'CREATE TABLE import_drafts (key TEXT PRIMARY KEY, value TEXT NOT NULL) STRICT');
+  assert.equal((raw.prepare('SELECT count(*) AS n FROM import_drafts').get() as { n: number }).n, 0);
+  assert.equal((raw.prepare(`SELECT value FROM diary_meta WHERE key = 'account_id'`).get() as { value: string }).value, ACCOUNT_A);
   raw.close();
-  await assert.rejects(database.open(ACCOUNT_A), (error) => error instanceof DiarySchemaTooNew);
 });
 
 test('a locked store refuses every operation; data stays for the next unlock', async () => {

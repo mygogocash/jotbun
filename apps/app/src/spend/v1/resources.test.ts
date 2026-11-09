@@ -67,7 +67,7 @@ test('reads send the access token, binding and client version, and no command he
   assert.equal(request.method, 'GET');
   assert.equal(request.url, '/v1/wallets');
   assert.equal(request.headers.authorization, 'Bearer access-token');
-  assert.equal(request.headers['x-gogospend-session'], 'b'.repeat(43));
+  assert.equal(request.headers['x-gogospend-session'], undefined);
   assert.equal(request.headers['x-gogospend-client'], 'ios/1.2.3');
   assert.equal(request.headers['idempotency-key'], undefined);
 });
@@ -183,6 +183,40 @@ test('history builds its query from the filter; a month without a budget is null
   assert.equal(await resources().budget('2026-09'), null);
 });
 
+test('recently deleted pages by cursor and accepts only deleted records in the record shape', async () => {
+  const deleted = {
+    id: ACK.entity_id, type: 'expense', amount_minor: '6500', occurred_on: '2026-09-20', wallet_id: WALLET.id, category_id: '1d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f5a',
+    note: 'Latte', merchant: null, deleted_at: '2026-09-21T03:00:00.000Z', version: 2,
+  };
+  const page = { items: [deleted], next_cursor: 'abc_-1', as_of_revision: '12', refresh_suggested: false };
+  replies.push({ status: 200, body: page }, { status: 200, body: { ...page, next_cursor: null } });
+  assert.deepEqual(await resources().recentlyDeleted('abc_-1', 20), page);
+  assert.equal(seen[0].method, 'GET');
+  const url = new URL(seen[0].url, 'http://x');
+  assert.equal(url.pathname, '/v1/history/deleted');
+  assert.deepEqual(Object.fromEntries(url.searchParams), { cursor: 'abc_-1', limit: '20' });
+  // A read: no command headers. Without a cursor or limit there is no query at all.
+  assert.equal(seen[0].headers['idempotency-key'], undefined);
+  assert.equal(seen[0].headers['x-gogospend-session'], undefined);
+  assert.deepEqual((await resources().recentlyDeleted()).next_cursor, null);
+  assert.equal(seen[1].url, '/v1/history/deleted');
+  // Refused, never coerced: an active record, history's page, number money, an unknown field, a bad cursor or revision.
+  const refused: unknown[] = [
+    { ...page, items: [{ ...deleted, deleted_at: null }] },
+    { ...page, items: [{ ...deleted, amount_minor: 6500 }] },
+    { ...page, items: [{ ...deleted, owner: 'x' }] },
+    { ...page, summary: { income_minor: '0', expense_minor: '0', balance_minor: '0', by_wallet: {}, count: 1 } },
+    { ...page, next_cursor: 'not a cursor' },
+    { ...page, as_of_revision: 12 },
+    { ...page, refresh_suggested: 'no' },
+    { items: [deleted], next_cursor: null, as_of_revision: '12' },
+  ];
+  for (const body of refused) {
+    replies.push({ status: 200, body });
+    assert.equal((await outcome(() => resources().recentlyDeleted())).outcome, 'invalid_response', JSON.stringify(body));
+  }
+});
+
 test('only https, or loopback http, API addresses are accepted', () => {
   assert.throws(() => createV1Transport({ baseUrl: 'http://api.example.com', credentials, client: null }), V1Error);
   assert.throws(() => createV1Transport({ baseUrl: 'https://user:pw@api.example.com', credentials, client: null }), V1Error);
@@ -296,4 +330,57 @@ test('snapshots: requested with a key, polled, and each chunk verified by size a
   assert.equal((await outcome(() => sync().snapshotChunk(grant))).outcome, 'invalid_response');
   replies.push({ status: 200, body: { snapshot_id: id, status: 'ready' } });
   assert.equal((await outcome(() => sync().snapshotStatus(id))).outcome, 'invalid_response');
+});
+
+// R4 (Planning): the budget, wallet and category commands the server already
+// has, each sent as an immutable command with its own key and, for a change
+// to something that exists, If-Match with the version the screen read.
+test('planning commands: budget set, wallet and category changes, each with its key, If-Match and exact body', async () => {
+  const month = '2026-09';
+  const budgetId = randomUUID();
+  const categoryId = randomUUID();
+  const keys = Array.from({ length: 9 }, () => randomUUID());
+  const ackFor = (index: number, entity: string, outcome = 'updated') => ({ status: 200, body: { ...ACK, command_id: keys[index], entity_id: entity, outcome } });
+  replies.push(
+    ackFor(0, budgetId, 'created'), ackFor(1, budgetId), ackFor(2, WALLET.id), ackFor(3, WALLET.id), ackFor(4, WALLET.id),
+    { status: 201, body: { ...ACK, command_id: keys[5], entity_id: categoryId, outcome: 'created' } }, ackFor(6, categoryId), ackFor(7, categoryId), ackFor(8, categoryId),
+  );
+  const budget = { overall_limit_minor: '1800000', category_limits: [{ category_id: categoryId, limit_minor: '500000' }] };
+  const r = resources();
+  await r.setBudget(month, budget, keys[0]);
+  await r.setBudget(month, { overall_limit_minor: '2000000' }, keys[1], { version: 4, id: budgetId });
+  await r.updateWallet(WALLET.id, 1, { name: 'Pocket cash' }, keys[2]);
+  await r.archiveWallet(WALLET.id, 2, keys[3]);
+  await r.unarchiveWallet(WALLET.id, 3, keys[4]);
+  await r.createCategory({ id: categoryId, type: 'expense', label: 'Coffee', color: null }, keys[5]);
+  await r.updateCategory(categoryId, 1, { label: 'Coffee and tea' }, keys[6]);
+  await r.archiveCategory(categoryId, 2, keys[7]);
+  await r.unarchiveCategory(categoryId, 3, keys[8]);
+  const sent = seen.slice(-9).map((request) => [request.method, request.url, request.headers['idempotency-key'], request.headers['if-match'] ?? null, request.body === '' ? null : JSON.parse(request.body)]);
+  assert.deepEqual(sent, [
+    ['PUT', `/v1/budgets/${month}`, keys[0], null, budget],
+    ['PUT', `/v1/budgets/${month}`, keys[1], '"4"', { overall_limit_minor: '2000000' }],
+    ['PATCH', `/v1/wallets/${WALLET.id}`, keys[2], '"1"', { name: 'Pocket cash' }],
+    ['POST', `/v1/wallets/${WALLET.id}/archive`, keys[3], '"2"', {}],
+    ['POST', `/v1/wallets/${WALLET.id}/unarchive`, keys[4], '"3"', {}],
+    ['POST', '/v1/categories', keys[5], null, { id: categoryId, type: 'expense', label: 'Coffee', color: null }],
+    ['PATCH', `/v1/categories/${categoryId}`, keys[6], '"1"', { label: 'Coffee and tea' }],
+    ['POST', `/v1/categories/${categoryId}/archive`, keys[7], '"2"', {}],
+    ['POST', `/v1/categories/${categoryId}/unarchive`, keys[8], '"3"', {}],
+  ]);
+  for (const request of seen.slice(-9)) assert.equal(request.headers['x-gogospend-command-schema'], String(V1_COMMAND_SCHEMA));
+});
+
+test('planning commands refuse an acknowledgement for another command or entity, and a malformed month or id before sending', async () => {
+  const key = randomUUID();
+  replies.push({ status: 200, body: { ...ACK, command_id: key, entity_id: randomUUID() } });
+  await assert.rejects(resources().updateWallet(WALLET.id, 1, { name: 'x' }, key), (error: unknown) => error instanceof V1Error && error.outcome === 'invalid_response');
+  // A budget replace knows its budget; a create accepts the id the server derives.
+  const replaceKey = randomUUID();
+  replies.push({ status: 200, body: { ...ACK, command_id: replaceKey, entity_id: randomUUID() } });
+  await assert.rejects(resources().setBudget('2026-09', { overall_limit_minor: '1' }, replaceKey, { version: 2, id: randomUUID() }), (error: unknown) => error instanceof V1Error && error.outcome === 'invalid_response');
+  const before = seen.length;
+  await assert.rejects(resources().setBudget('2026-9', { overall_limit_minor: '1' }, randomUUID()), (error: unknown) => error instanceof V1Error && error.outcome === 'invalid');
+  await assert.rejects(resources().archiveCategory('not-a-uuid', 1, randomUUID()), (error: unknown) => error instanceof V1Error && error.outcome === 'invalid');
+  assert.equal(seen.length, before);
 });

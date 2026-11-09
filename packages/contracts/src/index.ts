@@ -92,8 +92,29 @@ export {
   bangkokDate,
   assertKnownFields,
   isUuid,
+  addDays,
 } from "./v1/validation.ts";
 export type { MinorOptions, CanonicalCommand } from "./v1/validation.ts";
+export {
+  ISO_4217_MINOR_UNITS,
+  DEFAULT_HOME_CURRENCY,
+  PICKER_CURRENCIES,
+  CURRENCY_SYMBOLS,
+  RATE_SOURCES,
+  isCurrencyCode,
+  minorUnitsOf,
+  parseRate,
+  canonicalQuote,
+  convertMinor,
+  convertMinorDown,
+  crossRate,
+  rateFromAmounts,
+  minorToDecimal,
+  decimalToMinor,
+  moneyText,
+  rateText,
+} from "./v1/currency.ts";
+export type { MinorUnits, CurrencyCode, RateSource } from "./v1/currency.ts";
 export { WALLET_CURRENCY, WALLET_CORRECTION_REASONS, isWalletSnapshot } from "./v1/wallets.ts";
 export type { WalletCorrectionReason, WalletSnapshot, WalletDto, CreateWalletRequest, UpdateWalletRequest } from "./v1/wallets.ts";
 export { CATEGORY_TYPES, CATEGORY_COLORS, BUILTIN_CATEGORIES, isCategorySnapshot } from "./v1/categories.ts";
@@ -103,7 +124,7 @@ export type { TransactionType, EntryType, EntryDto, TransferDto, TransactionDto,
 export { MAX_BUDGET_CATEGORY_LIMITS, parseMonth, isBudgetSnapshot } from "./v1/budgets.ts";
 export type { BudgetCategoryLimit, BudgetDto, SetMonthlyBudgetRequest } from "./v1/budgets.ts";
 export { HISTORY_SORTS, HISTORY_DEFAULT_LIMIT, HISTORY_MAX_LIMIT, HISTORY_QUERY_MAX_CHARS } from "./v1/history.ts";
-export type { HistorySort, HistoryFilter, Totals, FilteredTotals, HistoryPage } from "./v1/history.ts";
+export type { HistorySort, HistoryFilter, Totals, FilteredTotals, HistoryPage, DeletedTransactionDto, DeletedHistoryPage } from "./v1/history.ts";
 export type { CategoryTotal, BudgetCategoryUsage, BudgetUsage, MonthSummary } from "./v1/summary.ts";
 export {
   SYNC_DEFAULT_GROUPS,
@@ -124,6 +145,12 @@ export {
   isSnapshotDto,
 } from "./v1/sync.ts";
 export type { SyncChangesPage, SyncEntityValidators, SyncReadOptions, SnapshotStatus, SnapshotChunkGrant, SnapshotDto, SnapshotChunk } from "./v1/sync.ts";
+export { TRIP_MAX_DAYS, isTripSnapshot, isTripSummaryDto } from "./v1/trips.ts";
+export type { TripDto, CreateTripRequest, UpdateTripRequest, TripMoney, TripRateUsed, TripSummaryDto } from "./v1/trips.ts";
+export { isSettingsSnapshot, isHomeCurrencyPreview } from "./v1/settings.ts";
+export type { SettingsSnapshot, HomeCurrencyRequest, HomeCurrencyPreview } from "./v1/settings.ts";
+export { isRatesTodayDto } from "./v1/rates.ts";
+export type { FxQuoteDto, RatesTodayDto } from "./v1/rates.ts";
 export {
   EXPORT_TTL_HOURS,
   EXPORT_GRANT_MINUTES,
@@ -143,6 +170,7 @@ export {
   DELETION_RECEIPT_STATUSES,
   isDeletionAccepted,
   isDeletionReceipt,
+  deletionShortCode,
 } from "./v1/privacy.ts";
 export type { ExportFailureReason, ExportStatus, ExportFilter, ExportRequest, ExportRequestSnapshot, ExportDto, ExportGrant, ExportCsvColumn, DeletionReceiptStatus, DeletionRequest, DeletionAccepted, DeletionReceiptRequest, DeletionReceipt } from "./v1/privacy.ts";
 export {
@@ -242,3 +270,97 @@ export type {
   AttachmentContentType,
   AttachmentGrant,
 } from "./v1/attachments.ts";
+export {
+  AI_NOTICE_VERSION,
+  AI_FEATURES,
+  AI_DAILY_LIMITS,
+  AI_LOCALES,
+  AI_TEXT_MAX_CHARS,
+  AI_QUESTION_MAX_CHARS,
+  AI_SLIP_MAX_BYTES,
+  AI_SLIP_MEDIA_TYPES,
+  AI_DRAFT_TYPES,
+  AI_CONFIDENCE,
+  AI_DRAFT_FLAGS,
+  AI_DRAFTS_MAX,
+  BUN_FACT_KINDS,
+  parseAiPreferencesUpdate,
+  parseAiLocale,
+  parseAiDate,
+  parseAiParseRequest,
+  parseAiAskRequest,
+  parseAiSlipRequest,
+} from "./v1/ai.ts";
+export type {
+  AiFeature,
+  AiLocale,
+  AiSlipMediaType,
+  AiPreferences,
+  AiPreferencesDto,
+  AiPreferencesUpdate,
+  AiDraftType,
+  AiConfidence,
+  AiDraftFlag,
+  AiDraft,
+  AiParseRequest,
+  AiParseResult,
+  AiSlipRequest,
+  AiSlipResult,
+  BunFactKind,
+  BunFact,
+  AiNoteResult,
+  AiAskRequest,
+  AiFigure,
+  AiAskResult,
+} from "./v1/ai.ts";
+export {
+  THAI_BANK_KEYS,
+  SLIP_PURPOSES,
+  SLIP_OUTCOMES,
+  SLIP_ORIGINS,
+  SLIP_LIMITS,
+  SLIP_INBOX_ID,
+  SLIP_REF_HASH_LABEL,
+  isThaiBankKey,
+  isSlipInboxSnapshot,
+  isSlipBatchResult,
+  isSlipDraftsPage,
+  isSlipAccountDto,
+  isSlipAccountsDto,
+  isSlipSaltDto,
+  isBankAlbumsDto,
+  parseSlipBatchRequest,
+  parseSlipConfirmRequest,
+  parseSlipAccountUpdate,
+  parseSlipRefRequest,
+  normalizeSlipRef,
+  slipRefHash,
+  isSlipRefHash,
+  accountLast4,
+} from "./v1/slips.ts";
+export type {
+  ThaiBankKey,
+  SlipPurpose,
+  SlipOutcome,
+  SlipOrigin,
+  SlipReadModel,
+  SlipInboxSnapshot,
+  SlipBatchItem,
+  SlipBatchRequest,
+  SlipParty,
+  SlipDraftDto,
+  SlipResult,
+  SlipBatchResult,
+  SlipDraftsPage,
+  SlipConfirmRequest,
+  SlipAccountDto,
+  SlipRefRequest,
+  SlipSaltDto,
+  BankAlbumDto,
+} from "./v1/slips.ts";
+export { PUSH_KINDS, EXPO_PUSH_TOKEN, isPushData, parseDeviceRegistration } from "./v1/push.ts";
+export type { PushKind, PushData, DeviceRegistration } from "./v1/push.ts";
+export { parseQuickText, thaiWordsToNumber, draftFromQuickText } from "./v1/quickText.ts";
+export type { QuickTextGuess, QuickTextContext } from "./v1/quickText.ts";
+export { GOGOCASH_HOME, BUILTIN_CASHBACK_BRANDS, isCashbackBrand, isCashbackCatalogue, matchCashbackBrand } from "./v1/bridge.ts";
+export type { CashbackBrand, CashbackCatalogue } from "./v1/bridge.ts";

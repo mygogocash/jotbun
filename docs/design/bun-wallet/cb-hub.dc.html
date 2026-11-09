@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Bun Wallet cashback tab</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;700&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F3F9; color: #111014; font-family: 'Anuphan', 'DM Sans', sans-serif; line-height: 1.5; position: relative; overflow: hidden">
+  <div style="padding: 52px 18px 0; display: flex; flex-direction: column; gap: 12px">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <h1 style="margin: 0; font-size: 28px; font-weight: 700; line-height: 1.4">แคชแบ็ก</h1>
+      <button type="button" aria-label="ทำไมฉันเห็นสิ่งนี้" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid #E6E4EE; background: rgba(255, 255, 255, 0.85); display: flex; align-items: center; justify-content: center; padding: 0"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="#111014" stroke-width="2"></circle><path d="M12 11v6M12 7.5v.5" fill="none" stroke="#111014" stroke-width="2.2" stroke-linecap="round"></path></svg></button>
+    </div>
+
+    <section aria-labelledby="bw-cb-head" style="background: #FFFFFF; border-radius: 24px; overflow: hidden">
+      <div style="position: relative; background: linear-gradient(135deg, #FFE2CF, #FFAE85); padding: 16px 100px 16px 16px">
+        <h2 id="bw-cb-head" style="margin: 0; font-size: 20px; font-weight: 700; line-height: 1.4">ร้านที่คุณจดบ่อย<br><span style="white-space: nowrap">อาจได้แคชแบ็ก</span></h2>
+        <div style="font-size: 14px; margin-top: 4px">เดือนนี้ <span style="font-family: 'DM Sans', sans-serif; font-weight: 700">14</span> รายการ จาก 3 ร้าน</div>
+        <span aria-hidden="true" style="position: absolute; right: 18px; top: 18px; width: 70px; height: 62px">
+          <svg aria-hidden="true" width="62" height="56" viewBox="4 6 56 50" style="position: absolute; left: 0; bottom: 0"><path d="M6 44C6 22 18 8 32 8C46 8 58 22 58 44C58 51 52 54 44 54H20C12 54 6 51 6 44Z" fill="#FFF6E6" stroke="#111014" stroke-width="3"></path><circle cx="24" cy="30" r="3.4" fill="#111014"></circle><circle cx="40" cy="30" r="3.4" fill="#111014"></circle><ellipse cx="18.5" cy="36" rx="4" ry="2.4" fill="#F6B6CE"></ellipse><ellipse cx="45.5" cy="36" rx="4" ry="2.4" fill="#F6B6CE"></ellipse><path d="M29 36Q32 39 35 36" fill="none" stroke="#111014" stroke-width="2.6" stroke-linecap="round"></path></svg>
+          <span style="position: absolute; right: -6px; top: -6px; width: 26px; height: 26px; border-radius: 50%; background: #111014; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8Z" fill="#FFFFFF"></path></svg></span>
+        </span>
+      </div>
+
+      <ul style="list-style: none; margin: 0; padding: 0 16px">
+        <li style="border-bottom: 1px solid #E6E4EE">
+          <a href="#" style="display: flex; align-items: center; gap: 12px; min-height: 64px; text-decoration: none; color: #111014">
+            <span aria-hidden="true" style="width: 42px; height: 42px; border-radius: 13px; background: #FFE3CC; display: flex; align-items: center; justify-content: center; flex: none; font-family: 'DM Sans', sans-serif; font-size: 18px; font-weight: 700">S</span>
+            <span style="flex: 1; min-width: 0"><span style="display: block; font-size: 16px; font-weight: 700; line-height: 1.4">Shopee</span><span style="display: block; font-size: 13px; color: #6B6878; line-height: 1.4">จดเดือนนี้ 9 ครั้ง</span></span>
+            <span style="font-size: 12px; font-weight: 500; color: #6A4BD4; background: #ECE7FC; padding: 3px 9px; border-radius: 8px">อาจได้แคชแบ็ก</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="#8A879A" stroke-width="2.6" stroke-linecap="round"></path></svg>
+          </a>
+        </li>
+        <li style="border-bottom: 1px solid #E6E4EE">
+          <a href="#" style="display: flex; align-items: center; gap: 12px; min-height: 64px; text-decoration: none; color: #111014">
+            <span aria-hidden="true" style="width: 42px; height: 42px; border-radius: 13px; background: #DCE8FF; display: flex; align-items: center; justify-content: center; flex: none; font-family: 'DM Sans', sans-serif; font-size: 18px; font-weight: 700">L</span>
+            <span style="flex: 1; min-width: 0"><span style="display: block; font-size: 16px; font-weight: 700; line-height: 1.4">Lazada</span><span style="display: block; font-size: 13px; color: #6B6878; line-height: 1.4">จดเดือนนี้ 4 ครั้ง</span></span>
+            <span style="font-size: 12px; font-weight: 500; color: #6A4BD4; background: #ECE7FC; padding: 3px 9px; border-radius: 8px">อาจได้แคชแบ็ก</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="#8A879A" stroke-width="2.6" stroke-linecap="round"></path></svg>
+          </a>
+        </li>
+        <li style="border-bottom: 1px solid #E6E4EE">
+          <a href="#" style="display: flex; align-items: center; gap: 12px; min-height: 64px; text-decoration: none; color: #111014">
+            <span aria-hidden="true" style="width: 42px; height: 42px; border-radius: 13px; background: #E9E1FF; display: flex; align-items: center; justify-content: center; flex: none; font-family: 'DM Sans', sans-serif; font-size: 18px; font-weight: 700">A</span>
+            <span style="flex: 1; min-width: 0"><span style="display: block; font-size: 16px; font-weight: 700; line-height: 1.4">Agoda</span><span style="display: block; font-size: 13px; color: #6B6878; line-height: 1.4">จดเดือนนี้ 1 ครั้ง</span></span>
+            <span style="font-size: 12px; font-weight: 500; color: #6A4BD4; background: #ECE7FC; padding: 3px 9px; border-radius: 8px">อาจได้แคชแบ็ก</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="#8A879A" stroke-width="2.6" stroke-linecap="round"></path></svg>
+          </a>
+        </li>
+      </ul>
+      <a href="#" style="display: flex; align-items: center; justify-content: space-between; min-height: 50px; padding: 0 16px; text-decoration: none; color: #6A4BD4; font-size: 15px; font-weight: 500">ดูอัตราใน GoGoCash<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" fill="none" stroke="#6A4BD4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></a>
+    </section>
+
+    <a href="#" style="display: flex; align-items: center; gap: 12px; background: #FFFFFF; border-radius: 18px; padding: 0 16px; min-height: 58px; text-decoration: none; color: #111014">
+      <span aria-hidden="true" style="display: flex; gap: 3px; flex: none">
+        <span style="width: 20px; height: 20px; border-radius: 50%; background: #111014; color: #FFFFFF; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center">1</span>
+        <span style="width: 20px; height: 20px; border-radius: 50%; background: #111014; color: #FFFFFF; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center">2</span>
+        <span style="width: 20px; height: 20px; border-radius: 50%; background: #111014; color: #FFFFFF; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center">3</span>
+      </span>
+      <span style="flex: 1; font-size: 15px; font-weight: 500">แคชแบ็กได้มาอย่างไร</span>
+      <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="#8A879A" stroke-width="2.6" stroke-linecap="round"></path></svg>
+    </a>
+
+    <div style="background: #FFFFFF; border-radius: 18px; padding: 8px 16px 12px">
+      <div style="display: flex; align-items: center; gap: 12px; min-height: 46px">
+        <label for="bw-cb-tips" style="flex: 1; font-size: 16px; font-weight: 700">เคล็ดลับแคชแบ็ก</label>
+        <span style="position: relative; width: 51px; height: 31px; flex: none">
+          <input id="bw-cb-tips" type="checkbox" role="switch" checked="" style="position: absolute; left: -4px; top: -7px; width: 59px; height: 45px; margin: 0; opacity: 0; z-index: 1">
+          <span aria-hidden="true" style="position: absolute; inset: 0; border-radius: 999px; background: #6A4BD4"></span>
+          <span aria-hidden="true" style="position: absolute; top: 2px; right: 2px; width: 27px; height: 27px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 2px 4px rgba(17, 16, 20, 0.2)"></span>
+        </span>
+      </div>
+      <div style="font-size: 13px; line-height: 1.55; color: #6B6878">บันจับคู่ร้านค้าในเครื่องของคุณ ไม่ส่งบันทึกไปที่ GoGoCash ปิดได้ทุกเมื่อ</div>
+    </div>
+
+    <div style="display: flex; gap: 8px; align-items: flex-start; font-size: 12px; line-height: 1.55; color: #6B6878; padding: 0 4px">
+      <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 2px"><circle cx="12" cy="12" r="9" fill="none" stroke="#6B6878" stroke-width="2"></circle><path d="M12 11v6M12 7.5v.5" fill="none" stroke="#6B6878" stroke-width="2.2" stroke-linecap="round"></path></svg>
+      <span>GoGoCash เป็นบริการในเครือของ Jotbun · Jotbun นับแค่<span style="white-space: nowrap">จำนวนครั้ง</span> ไม่เดาจำนวนเงิน อัตราและเงื่อนไขกำหนดโดย GoGoCash</span>
+    </div>
+  </div>
+
+  <nav aria-label="เมนูหลัก" style="position: absolute; left: 0; right: 0; bottom: 0; height: 84px; padding-bottom: 18px; box-sizing: border-box; background: rgba(244, 243, 249, 0.94); border-top: 1px solid #E6E4EE; display: flex; align-items: center; justify-content: space-around">
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #6B6878; text-decoration: none; font-size: 11px; min-width: 56px; min-height: 48px"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="3" fill="none" stroke="#6B6878" stroke-width="2"></rect><path d="M3 10h18" stroke="#6B6878" stroke-width="2"></path></svg>กระเป๋า</a>
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #6B6878; text-decoration: none; font-size: 11px; min-width: 56px; min-height: 48px"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-6" fill="none" stroke="#6B6878" stroke-width="2.2" stroke-linecap="round"></path></svg>สรุป</a>
+    <a href="#" aria-current="page" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #111014; text-decoration: none; font-size: 11px; font-weight: 700; min-width: 56px; min-height: 48px"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8Z" fill="#111014" stroke="#111014" stroke-width="1.8" stroke-linejoin="round"></path></svg>แคชแบ็ก</a>
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #6B6878; text-decoration: none; font-size: 11px; min-width: 56px; min-height: 48px"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="none" stroke="#6B6878" stroke-width="2"></circle><path d="M4 21c1-4 4-6 8-6s7 2 8 6" fill="none" stroke="#6B6878" stroke-width="2" stroke-linecap="round"></path></svg>ฉัน</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

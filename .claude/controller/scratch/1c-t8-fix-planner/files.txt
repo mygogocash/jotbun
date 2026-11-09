@@ -1,0 +1,13 @@
+apps/app/src/screens/redesign/signin/SessionEndedScreen.tsx
+apps/app/src/screens/redesign/signin/draftCopy.ts
+apps/app/src/screens/redesign/signin/TermsScreen.tsx
+apps/app/src/screens/redesign/account/OnboardingScreen.tsx
+apps/app/src/dev/catalogue/account/signinSections.tsx
+apps/app/src/screens/redesign/signin/SessionEndedScreen.render.test.tsx
+apps/app/src/screens/redesign/signin/useFreshSignIn.render.test.tsx
+apps/app/src/screens/redesign/signin/TermsGate.render.test.tsx
+apps/app/src/screens/redesign/signin/EmailCodeScreen.render.test.tsx
+apps/app/src/screens/redesign/signin/DevicesScreen.render.test.tsx
+apps/app/src/screens/redesign/account/OnboardingScreen.render.test.tsx
+apps/app/src/spend/v1/policies.test.ts
+docs/implementation/receipts/1C-T8.md

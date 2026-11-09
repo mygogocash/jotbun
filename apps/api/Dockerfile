@@ -5,6 +5,9 @@
 #   security worker   node dist/jobs/security-worker.js
 #   deletion worker   node dist/privacy/deletion-worker.js --registry-fd 3
 #                     (fd 3 piped from the secret manager; never an env var)
+#   parse worker      node dist/imports/parse-worker.js
+#                     (import_parse only; the Cloudflare jobs Worker's parser
+#                     container, apps/edge src/roles/parser.ts)
 #   migration (a release step before any of the above starts; never on startup)
 #                     node dist/database/migrate-cli.js   (DATABASE_DIRECT_URL)
 #
@@ -14,7 +17,7 @@
 #   docker run --rm gogospend-local node scripts/release-smoke.cjs
 #
 # The runtime stage holds only the release graph (apps/api/scripts/
-# release-graph.mjs): the dist files the seven entries reach (the five
+# release-graph.mjs): the dist files the eight entries reach (the six
 # processes above and P2b's two parser children), the migrations,
 # the contracts TypeScript source (loaded through Node's type stripping, the
 # master contracts rule) and the package closure of the reviewed runtime
@@ -22,8 +25,11 @@
 # Firebase and Mongo code and packages, tests and the app are not in it.
 # No secret is baked in; every setting comes from the platform at run time.
 
-# node:24-bookworm-slim (Node 24.22.0), pinned by its multi-architecture digest.
-ARG NODE_IMAGE=node:24-bookworm-slim@sha256:a5f4366e834695d5f363b920c104953a535d3a9864d1bdf74566a0ebe01daee5
+# Node 26.9.0 (bookworm-slim), pinned by its multi-architecture index digest
+# (built 19 September 2026). Node 26, not 24, by the owner's decision
+# (19 October 2026): the permission model denies the parser child the
+# network only from Node 25 on, so on 24 imports fail closed.
+ARG NODE_IMAGE=node:26.9.0-bookworm-slim@sha256:582460f614631b59b824ac6020533b9bf339c7fdf3a6d7db31abb6b4065f0212
 
 FROM ${NODE_IMAGE} AS build
 WORKDIR /app
@@ -34,14 +40,12 @@ COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/
 COPY apps/app/package.json apps/app/
 COPY packages/contracts/package.json packages/contracts/
+# The lockfile pins the Linux glibc bindings (x64, arm64) of @swc/core and
+# sharp with their integrity, so npm ci installs them here (owner decision
+# §7.2). The swc compiler stays in the build stage; sharp's binding is staged
+# into the runtime with the release graph, because P2b's image parser child
+# loads it.
 RUN npm ci --workspace gogospend-api --include-workspace-root=false --ignore-scripts --no-audit --no-fund
-# The lockfile records only the darwin-arm64 bindings of @swc/core and sharp
-# (P6b finding): add the Linux ones at the exact locked versions, refused
-# unless their sha512 matches the pin. The swc compiler stays in the build
-# stage; sharp's binding is staged into the runtime with the release graph,
-# because P2b's image parser child loads it.
-COPY scripts/ci/linux-native-bindings.mjs scripts/ci/
-RUN node scripts/ci/linux-native-bindings.mjs swc sharp
 COPY packages/contracts/src packages/contracts/src
 COPY apps/api/.swcrc apps/api/tsconfig.json apps/api/release-graph.json apps/api/
 COPY apps/api/drizzle apps/api/drizzle

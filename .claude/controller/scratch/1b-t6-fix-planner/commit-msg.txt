@@ -1,0 +1,11 @@
+Read a HEAD's dropped body to its end so a download gives its slot back
+
+A HEAD on an export download kept its download slot: the front door
+dropped the GET's body without finishing it, so four HEADs closed export
+downloads in the isolate for every account. headOf now reads that body
+to its end before it answers (R96); a cancel did not reach the stream
+holding the slot in the Workers runtime. New tests pin the HEAD, the
+write's check that the vault is active before it reads, and the slot a
+refused download gives back.
+
+Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>

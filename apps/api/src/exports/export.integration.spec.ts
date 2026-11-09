@@ -605,14 +605,26 @@ describe('P4 review fixes', () => {
     const open = store.getStream.bind(store);
     let release: () => void = () => undefined;
     const gate = new Promise<void>((resolve) => (release = resolve));
+    // A download opens its file only after it takes a slot, so four files opened are four slots held.
+    // Only those four wait at the gate: a fifth would mean the limit let it in, and it must come back
+    // at once and fail the test, not wait for a gate the test opens only after it returns.
+    let opened = 0;
+    let fourHeld: () => void = () => undefined;
+    const allHeld = new Promise<void>((resolve) => (fourHeld = resolve));
     store.getStream = async (key) => {
+      opened += 1;
+      const gated = opened <= 4;
+      if (opened === 4) fourHeld();
       const found = await open(key);
-      if (!found) return found;
+      if (!found || !gated) return found;
       return { ...found, body: (async function* held() { await gate; yield* found.body; })() };
     };
     try {
       const held = Array.from({ length: 4 }, () => fetchFile(user, grant.url));
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      // Wait until all four hold a slot, not a fixed 300 ms: on a busy runner one took 410 ms, the
+      // fifth took its slot and the test waited on itself (CI job 128694248812). One that ends
+      // first (refused, say) fails the test here instead of hanging it.
+      await Promise.race([allHeld, ...held.map((download) => download.then((res) => { throw new Error(`a held download ended early: ${res.status}`); }))]);
       const extra = await fetchFile(user, grant.url);
       expect([extra.status, extra.body instanceof Buffer ? JSON.parse(extra.body.toString()).code : extra.body.code]).toEqual([503, 'SERVICE_UNAVAILABLE']);
       release();

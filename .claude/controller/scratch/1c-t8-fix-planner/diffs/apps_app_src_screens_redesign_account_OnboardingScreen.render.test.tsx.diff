@@ -1,0 +1,45 @@
+--- a/apps/app/src/screens/redesign/account/OnboardingScreen.render.test.tsx
++++ b/apps/app/src/screens/redesign/account/OnboardingScreen.render.test.tsx
+@@ -338,20 +338,36 @@
+   first.unmount();
+   // Skip leaves the story for sign-in too.
+   nav.router.replace.mockReset();
+-  const skipped = mount(<OnboardingScreen reminders={service} />);
++  mount(<OnboardingScreen reminders={service} />);
+   await settle();
+   press(COPY.skip);
+   expect(nav.router.replace).toHaveBeenCalledWith('/login?from=onboarding');
+   expect(screen.queryByRole('heading', { name: COPY.reminder })).toBeNull();
+-  skipped.unmount();
+-  // With a session already, the story ends at the reminder question, which now follows sign-in.
+-  nav.router.replace.mockReset();
++  expect(service.setPreference).not.toHaveBeenCalled();
++});
++
++// The 1C-T8 fix round (R99): nothing goes to /onboarding/reminder before 1C-T9 adds that route.
++test("with a session, today's reminder step still follows the story until 1C-T9 adds its route", async () => {
++  vi.stubEnv('EXPO_PUBLIC_REDESIGN', 'signin');
+   setSession({ access_token: 'session-token', userId: 'user-1' });
+-  mount(<OnboardingScreen reminders={service} />);
++  const service = reminders('scheduled');
++  const skipped = mount(<OnboardingScreen reminders={service} />);
+   await settle();
+   press(COPY.skip);
+-  expect(nav.router.replace).toHaveBeenCalledWith('/onboarding/reminder');
++  expect(heading(COPY.reminder)).toBeTruthy();
++  skipped.unmount();
++  mount(<OnboardingScreen reminders={service} />);
++  await settle();
++  press(COPY.next);
++  press(COPY.next);
++  press(COPY.start);
++  expect(heading(COPY.reminder)).toBeTruthy();
++  expect(nav.router.replace).not.toHaveBeenCalled();
+   expect(service.setPreference).not.toHaveBeenCalled();
++  // Its answer then goes on to Quick add, as today.
++  press(COPY.notNow);
++  expect(nav.router.replace).toHaveBeenCalledTimes(1);
++  expect(nav.router.replace).toHaveBeenCalledWith('/spend/add');
+ });
+ 
+ test("with 'signin' off the order is today's", async () => {

@@ -1,0 +1,47 @@
+// "Left to spend" as a bar (redesign R2b). Presentational: the numbers and the
+// state arrive worked out. The words lead ("฿420.00 a day left"), the bar
+// only repeats them, and its colour is the one place green (under) and red
+// (over) appear. The state is always spelled out too, so colour is never the
+// only signal (WCAG 1.4.1).
+import { View } from 'react-native';
+
+import { useCopy } from '@mobile/i18n/useCopy';
+import { useBunColors } from '@mobile/theme/ThemeProvider';
+
+import { useMoneyLocale } from './Amount';
+import { BunText } from './BunText';
+import { budgetWords } from './budgetWords';
+import type { BudgetPace } from './budgetWords';
+import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE } from './layout';
+
+export type BudgetBarProps = BudgetPace;
+
+export function BudgetBar(props: BudgetBarProps) {
+  const colors = useBunColors();
+  const tc = useCopy();
+  const words = budgetWords(props, tc, useMoneyLocale());
+  const share = words.spentPermille;
+  const headline = <BunText variant="heading" tone={words.tone === 'over' ? 'over' : 'ink'} style={{ fontVariant: ['tabular-nums'] }}>{words.headline}</BunText>;
+  const detail = <BunText variant="caption" tone="muted">{words.detail}</BunText>;
+  if (share === null) return <View style={{ gap: BUN_SPACE.xs }}>{headline}{detail}</View>;
+  // The words and the bar are one element whose value says them all, so a
+  // screen reader reads them once, and finds it anywhere on the words or the bar.
+  return (
+    <View
+      accessible
+      role="progressbar"
+      accessibilityLabel={tc('Budget')}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.floor(share / 10)}
+      aria-valuetext={words.spoken}
+      style={{ gap: BUN_SPACE.xs }}
+    >
+      {headline}
+      <View style={{ height: 14, borderRadius: BUN_RADIUS.pill, borderWidth: BUN_OUTLINE.control, borderColor: colors.ink, backgroundColor: colors.card, overflow: 'hidden' }}>
+        <View testID="budget-fill" style={{ width: `${share / 10}%`, height: '100%', backgroundColor: words.tone === 'over' ? colors.over : colors.under }} />
+      </View>
+      {detail}
+    </View>
+  );
+}

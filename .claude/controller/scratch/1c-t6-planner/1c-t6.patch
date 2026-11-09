@@ -1,0 +1,2722 @@
+diff --git a/apps/app/src/api/client.test.ts b/apps/app/src/api/client.test.ts
+index d7026bac59859cf42dbe6b4728f3d0a4d627ea60..909c73c3b4b64f7aadeccbe3fffb3e88210a65c1 100644
+--- a/apps/app/src/api/client.test.ts
++++ b/apps/app/src/api/client.test.ts
+@@ -108,6 +108,34 @@ test('a bound v1 request sends no X-GoGoSpend-Session header', async () => {
+   assert.equal(result.session, null);
+ });
+ 
++test('acceptLanguage sends Accept-Language and nothing else changes', async () => {
++  const sent: Record<string, string>[] = [];
++  const fetchImpl: typeof fetch = async (_url, init) => {
++    sent.push(Object.fromEntries(new Headers(init?.headers).entries()));
++    return new Response('{}', { status: 202, headers: { 'Content-Type': 'application/json' } });
++  };
++  const transport = createV1Transport({
++    baseUrl,
++    client: { platform: 'ios', version: '1.2.3' },
++    credentials: { getAccessToken: async () => 'token-1', getSessionSnapshot: () => ({ binding: 'b'.repeat(43), epoch: 1 }) },
++    fetchImpl,
++  });
++  const send = (acceptLanguage?: 'th' | 'en') =>
++    transport.request('POST', '/v1/me/deletion', {
++      body: { proof_id: '0a000000-0000-4000-8000-00000000000a' },
++      command: { id: '0c000000-0000-4000-8000-00000000000c', schemaVersion: 1 },
++      acceptLanguage,
++      validate: (value): value is object => typeof value === 'object' && value !== null,
++    });
++  await send();
++  await send('th');
++  await send('en');
++  const [without, thai, english] = sent;
++  assert.equal(without['accept-language'], undefined);
++  assert.deepEqual(thai, { ...without, 'accept-language': 'th' });
++  assert.deepEqual(english, { ...without, 'accept-language': 'en' });
++});
++
+ test('a response from the previous account cannot become the current diary', async () => {
+   let reads = 0;
+   const client = createMobileApiClient({ baseUrl, getToken: async () => ++reads === 1 ? 'account-a' : 'account-b' });
+diff --git a/apps/app/src/api/client.ts b/apps/app/src/api/client.ts
+index 5828d60ba21a16c7d56a4714e4ddd9a712659a34..af682fc4b50b0429dbd32f994a80b793085e72cc 100644
+--- a/apps/app/src/api/client.ts
++++ b/apps/app/src/api/client.ts
+@@ -160,6 +160,8 @@ export type V1RequestOptions<T> = {
+    * refreshed, and never reported as the session ending.
+    */
+   credentials?: { accessToken: string; binding?: string };
++  /** Sent as Accept-Language: the language of anything the server sends later about this request (deletion's email, K11). */
++  acceptLanguage?: 'th' | 'en';
+   /** The command carries a purpose proof: REAUTH_REQUIRED refuses that proof, not the session. */
+   proof?: boolean;
+   /**
+@@ -352,6 +354,7 @@ export function createV1Transport(options: {
+         headers['X-GoGoSpend-Command-Schema'] = String(request.command.schemaVersion);
+         if (request.command.ifMatch !== undefined) headers['If-Match'] = `"${request.command.ifMatch}"`;
+       }
++      if (request.acceptLanguage) headers['Accept-Language'] = request.acceptLanguage;
+       // Serialized once, so every retry sends byte-identical content.
+       const body: string | Uint8Array | undefined = request.raw ? request.raw.bytes : request.body === undefined ? undefined : JSON.stringify(request.body);
+       const send = async (): Promise<Answer> => {
+diff --git a/apps/app/src/auth/globalLogout.test.ts b/apps/app/src/auth/globalLogout.test.ts
+index d26b67587b4b14e7ad7c3d6b426655a6a4803eb8..1148000c2ddbff7b386fe6b039304030a57c6d03 100644
+--- a/apps/app/src/auth/globalLogout.test.ts
++++ b/apps/app/src/auth/globalLogout.test.ts
+@@ -1,174 +1,115 @@
+ import assert from 'node:assert/strict';
+-import { randomUUID } from 'node:crypto';
+-import { createServer } from 'node:http';
+-import type { IncomingHttpHeaders } from 'node:http';
+-import { after, before, beforeEach, test } from 'node:test';
+-
+-import { createV1Transport } from '../api/client.ts';
+-import type { V1Credentials, V1SessionEnd } from '../api/client.ts';
+-import { createGlobalLogoutResources, requestGlobalLogout, submitGlobalLogout } from './globalLogout.ts';
+-import type { Proof } from './reauthentication.ts';
+-
+-type Seen = { method: string; url: string; headers: IncomingHttpHeaders; body: string };
+-type Reply = { status: number; body?: unknown; drop?: boolean };
+-
+-let baseUrl = '';
+-let seen: Seen[] = [];
+-let replies: Reply[] = [];
+-const server = createServer(async (req, res) => {
+-  let body = '';
+-  for await (const chunk of req) body += chunk.toString();
+-  seen.push({ method: req.method ?? '', url: req.url ?? '', headers: req.headers, body });
+-  const reply = replies.shift() ?? { status: 500, body: { code: 'INTERNAL_ERROR' } };
+-  if (reply.drop) {
+-    req.socket.destroy();
+-    return;
+-  }
+-  res.writeHead(reply.status, { 'content-type': 'application/json' });
+-  res.end(JSON.stringify(reply.body ?? null));
+-});
++import { test } from 'node:test';
++
++import { AuthRefused, AuthUnavailable, createBetterAuthPort } from './betterAuthPort.ts';
++import type { RefusalCode } from './betterAuthPort.ts';
++import { createCredentialProvider } from './credentialProvider.ts';
++import type { FreshOutcome } from './credentialProvider.ts';
++import { FRESH_SIGN_IN_FAILED, requestGlobalLogout, submitGlobalLogout } from './globalLogout.ts';
++import type { GlobalLogoutResources } from './globalLogout.ts';
++import type { SessionRecordStore, StoredSession } from './sessionStore.ts';
++import { createFakeAuthServer } from './testing/fakeAuthServer.ts';
++
++const EMAIL = 'kan@example.test';
++const PENDING = { kind: 'sign_out_everywhere' } as const;
++
++type Answer = 'ok' | 'unavailable' | RefusalCode;
++
++/** The port's sign-out everywhere as a script: one answer per call (the last repeats), each call logged. */
++function scripted(answers: readonly Answer[], log: string[] = []) {
++  let calls = 0;
++  const resources: GlobalLogoutResources = {
++    async signOutEverywhere() {
++      const answer = answers[Math.min(calls, answers.length - 1)];
++      calls += 1;
++      log.push('signOutEverywhere');
++      if (answer === 'unavailable') throw new AuthUnavailable();
++      if (answer !== 'ok') throw new AuthRefused(answer);
++    },
++  };
++  return { resources, log, calls: () => calls };
++}
+ 
+-const BINDING = 'b'.repeat(43);
+-let ended: V1SessionEnd[] = [];
+-const credentials: V1Credentials = {
+-  getAccessToken: async () => 'access-token',
+-  getSessionSnapshot: () => ({ binding: BINDING, epoch: 1 }),
+-  sessionEnded: (event) => void ended.push(event),
++/** A fresh sign-in that answers `outcome` and logs that it was asked. */
++const fresh = (outcome: FreshOutcome, log: string[]) => async (): Promise<FreshOutcome> => {
++  log.push('freshSignIn');
++  return outcome;
+ };
+-const resources = (session: V1Credentials = credentials) =>
+-  createGlobalLogoutResources(createV1Transport({ baseUrl, credentials: session, client: { platform: 'ios', version: '1.2.3' }, timeoutMs: 2_000 }));
+-const proof = (): Proof => ({ proofId: randomUUID(), commandId: randomUUID(), expiresAt: '2026-10-20T03:05:00.000Z' });
+-const problem = (status: number, code: string): Reply => ({ status, body: { code, request_id: randomUUID(), message_key: 'errors.x' } });
+-const ACCEPTED: Reply = { status: 202, body: { generation: 4, provider_cleanup: 'pending' } };
+ 
+-/** A fresh sign-in that hands out `p` and counts how often it was asked. */
+-function signIn(p: Proof | null) {
+-  const asked = { count: 0 };
+-  return { asked, reauthenticate: async () => { asked.count += 1; return p; } };
++function memorySessions(): SessionRecordStore {
++  let value: StoredSession | null = null;
++  return {
++    async load() { return value; },
++    async save(next) { value = next; },
++    async clear() { value = null; },
++  };
+ }
+ 
+-before(async () => {
+-  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+-  const address = server.address();
+-  assert.ok(address && typeof address !== 'string');
+-  baseUrl = `http://127.0.0.1:${address.port}`;
+-});
+-after(() => new Promise<void>((resolve) => server.close(() => resolve())));
+-beforeEach(() => {
+-  seen = [];
+-  replies = [];
+-  ended = [];
+-});
+-
+-test('accepted: one fresh sign-in, then the proof as the body and its command as the key, on this session; every binding is now dead', async () => {
+-  const p = proof();
+-  const auth = signIn(p);
+-  replies.push(ACCEPTED);
+-  assert.deepEqual(await requestGlobalLogout({ resources: resources(), reauthenticate: auth.reauthenticate }), { state: 'signed_out' });
+-  assert.equal(auth.asked.count, 1);
+-  const [sent] = seen;
+-  assert.equal(seen.length, 1);
+-  assert.equal(sent.method, 'POST');
+-  assert.equal(sent.url, '/v1/me/global-logout');
+-  assert.equal(sent.headers['idempotency-key'], p.commandId);
+-  assert.equal(sent.headers['x-gogospend-session'], undefined);
+-  assert.equal(sent.headers['x-gogospend-command-schema'], '1');
+-  assert.deepEqual(JSON.parse(sent.body), { proof_id: p.proofId });
++test('accepted: one fresh sign-in, then one sign-out-everywhere call; every session is now gone', async () => {
++  const server = createFakeAuthServer();
++  const port = createBetterAuthPort({ client: server.client, native: server.native({}) });
++  const provider = createCredentialProvider({ port, sessions: memorySessions() });
++  await port.sendEmailCode(EMAIL);
++  assert.equal((await provider.signIn({ method: 'email', email: EMAIL, code: server.codeFor(EMAIL) })).outcome, 'active');
++  const before = provider.getSessionSnapshot().binding;
++  server.calls.length = 0;
++  const state = await requestGlobalLogout({
++    resources: { signOutEverywhere: () => port.signOutEverywhere() },
++    freshSignIn: () => provider.freshSignIn({ method: 'email', email: EMAIL, code: server.codeFor(EMAIL) }),
++  });
++  assert.deepEqual(state, { state: 'signed_out' });
++  // The fresh sign-in (its new session, the old one signed out), then exactly one request, sent on the new session.
++  assert.deepEqual(server.calls.filter((call) => call !== 'token'), [`signInWithCode:${EMAIL}`, `signOutDevice:${before}`, 'signOutEverywhere']);
++  assert.notEqual(provider.getSessionSnapshot().binding, before);
+ });
+ 
+ test('the person cancels the fresh sign-in: nothing is sent', async () => {
+-  const auth = signIn(null);
+-  assert.deepEqual(await requestGlobalLogout({ resources: resources(), reauthenticate: auth.reauthenticate }), { state: 'cancelled' });
+-  assert.equal(auth.asked.count, 1);
+-  assert.equal(seen.length, 0);
+-});
+-
+-test('a sign-in that fails throws to the caller, and nothing is sent', async () => {
+-  const reauthenticate = async (): Promise<Proof | null> => { throw new Error('Could not reach the sign-in service.'); };
+-  await assert.rejects(requestGlobalLogout({ resources: resources(), reauthenticate }), /sign-in service/);
+-  assert.equal(seen.length, 0);
++  const fake = scripted(['ok']);
++  assert.deepEqual(await requestGlobalLogout({ resources: fake.resources, freshSignIn: fresh('cancelled', fake.log) }), { state: 'cancelled' });
++  assert.deepEqual(fake.log, ['freshSignIn']);
+ });
+ 
+-test('a lost answer: the transport resends the same request, which meets 401 SESSION_REQUIRED because the first one landed; that is signed out', async () => {
+-  const p = proof();
+-  replies.push({ status: 0, drop: true }, problem(401, 'SESSION_REQUIRED'));
+-  assert.deepEqual(await requestGlobalLogout({ resources: resources(), reauthenticate: signIn(p).reauthenticate }), { state: 'signed_out' });
+-  assert.equal(seen.length, 2);
+-  assert.deepEqual(seen.map((request) => request.headers['idempotency-key']), [p.commandId, p.commandId]);
+-  assert.equal(seen[1].body, seen[0].body);
++test('a fresh sign-in that fails sends nothing', async () => {
++  assert.equal(FRESH_SIGN_IN_FAILED, 'FRESH_SIGN_IN_FAILED');
++  for (const outcome of ['failed', 'unavailable', 'not_configured', 'other_account', 'wrong_code', 'rate_limited'] as const) {
++    const fake = scripted(['ok']);
++    assert.deepEqual(await requestGlobalLogout({ resources: fake.resources, freshSignIn: fresh(outcome, fake.log) }), { state: 'refused', code: FRESH_SIGN_IN_FAILED }, outcome);
++    assert.deepEqual(fake.log, ['freshSignIn'], outcome);
++  }
+ });
+ 
+-test('Jotbun cannot be reached at all: still signed in here, and Try again resends exactly that request with no new sign-in', async () => {
+-  const p = proof();
+-  const auth = signIn(p);
+-  replies.push({ status: 0, drop: true }, { status: 0, drop: true }, { status: 0, drop: true });
+-  const first = await requestGlobalLogout({ resources: resources(), reauthenticate: auth.reauthenticate });
+-  assert.deepEqual(first, { state: 'unconfirmed', request: { proofId: p.proofId, commandId: p.commandId } });
+-  assert.equal(seen.length, 3, "the first send and the transport's two resends");
++test('a lost answer resent meets SIGNED_OUT because the first one landed: that is signed out', async () => {
++  const fake = scripted(['unavailable', 'SIGNED_OUT']);
++  const first = await requestGlobalLogout({ resources: fake.resources, freshSignIn: fresh('fresh', fake.log) });
++  assert.deepEqual(first, { state: 'unconfirmed', request: PENDING });
+   if (first.state !== 'unconfirmed') return;
+-  // The request did land after all: the resend meets a dead binding.
+-  replies.push(problem(401, 'SESSION_REQUIRED'));
+-  assert.deepEqual(await submitGlobalLogout(first.request, { resources: resources() }), { state: 'signed_out' });
+-  assert.equal(auth.asked.count, 1);
+-  assert.equal(seen[3].headers['idempotency-key'], p.commandId);
+-  assert.equal(seen[3].body, seen[0].body);
+-  // Or it had not: the resend is accepted.
+-  replies.push(ACCEPTED);
+-  assert.deepEqual(await submitGlobalLogout(first.request, { resources: resources() }), { state: 'signed_out' });
++  assert.deepEqual(await submitGlobalLogout(first.request, { resources: fake.resources }), { state: 'signed_out' });
++  assert.deepEqual(fake.log, ['freshSignIn', 'signOutEverywhere', 'signOutEverywhere']);
+ });
+ 
+-test('Try again once this phone has no binding or token sends nothing, so it is never signed out: still unconfirmed, the same request kept', async () => {
+-  const p = proof();
+-  replies.push({ status: 0, drop: true }, { status: 0, drop: true }, { status: 0, drop: true });
+-  const first = await requestGlobalLogout({ resources: resources(), reauthenticate: signIn(p).reauthenticate });
+-  assert.equal(first.state, 'unconfirmed');
++test('Jotbun cannot be reached: still signed in here, and Try again resends with no new sign-in', async () => {
++  const fake = scripted(['unavailable', 'RATE_LIMITED', 'ok']);
++  const first = await requestGlobalLogout({ resources: fake.resources, freshSignIn: fresh('fresh', fake.log) });
++  assert.deepEqual(first, { state: 'unconfirmed', request: PENDING });
+   if (first.state !== 'unconfirmed') return;
+-  const sent = seen.length;
+-  // The session moved on meanwhile (e.g. to reauth_required, which holds no binding), or its token is gone.
+-  const unbound: V1Credentials = { ...credentials, getSessionSnapshot: () => ({ binding: null, epoch: 1 }) };
+-  const tokenless: V1Credentials = { ...credentials, getAccessToken: async () => null };
+-  for (const session of [unbound, tokenless]) {
+-    assert.deepEqual(await submitGlobalLogout(first.request, { resources: resources(session) }), { state: 'unconfirmed', request: first.request });
+-  }
+-  assert.equal(seen.length, sent, 'nothing left this phone');
+-  assert.deepEqual(ended, []);
+-  // Bound again, the same request goes out, and only Jotbun's own 401 SESSION_REQUIRED says it landed.
+-  replies.push(problem(401, 'SESSION_REQUIRED'));
+-  assert.deepEqual(await submitGlobalLogout(first.request, { resources: resources() }), { state: 'signed_out' });
+-  assert.equal(seen[sent].headers['idempotency-key'], p.commandId);
+-});
+-
+-test('a used or stale proof: nothing changed, and the session is not reported ended (the proof was refused, not the session)', async () => {
+-  replies.push(problem(401, 'REAUTH_REQUIRED'));
+-  assert.deepEqual(await requestGlobalLogout({ resources: resources(), reauthenticate: signIn(proof()).reauthenticate }), { state: 'reauth_required' });
+-  assert.deepEqual(ended, []);
++  // A rate limit is not an answer either: the same request stays to resend.
++  assert.deepEqual(await submitGlobalLogout(first.request, { resources: fake.resources }), { state: 'unconfirmed', request: PENDING });
++  assert.deepEqual(await submitGlobalLogout(first.request, { resources: fake.resources }), { state: 'signed_out' });
++  assert.deepEqual(fake.log, ['freshSignIn', 'signOutEverywhere', 'signOutEverywhere', 'signOutEverywhere']);
+ });
+ 
+-test('an outage, a gateway or a rate limit is not an answer: still signed in here, resend the same request', async () => {
+-  for (const reply of [problem(503, 'SERVICE_UNAVAILABLE'), problem(429, 'RATE_LIMITED')]) {
+-    const p = proof();
+-    replies.push(reply);
+-    assert.deepEqual(await requestGlobalLogout({ resources: resources(), reauthenticate: signIn(p).reauthenticate }), {
+-      state: 'unconfirmed',
+-      request: { proofId: p.proofId, commandId: p.commandId },
+-    });
+-  }
+-});
+-
+-test('a success that is not exactly the result may still have landed: unconfirmed, never signed out on a guess', async () => {
+-  for (const body of [{ generation: 4 }, { generation: '4', provider_cleanup: 'pending' }, { generation: 4, provider_cleanup: 'done' }, { generation: 4, provider_cleanup: 'pending', extra: 1 }]) {
+-    replies.push({ status: 202, body });
+-    const state = await requestGlobalLogout({ resources: resources(), reauthenticate: signIn(proof()).reauthenticate });
+-    assert.equal(state.state, 'unconfirmed', JSON.stringify(body));
+-  }
++test('a stale sign-in is reauth_required and changes nothing', async () => {
++  const fake = scripted(['REAUTH_REQUIRED']);
++  assert.deepEqual(await requestGlobalLogout({ resources: fake.resources, freshSignIn: fresh('fresh', fake.log) }), { state: 'reauth_required' });
++  assert.equal(fake.calls(), 1);
+ });
+ 
+ test('any other refusal changes nothing and says which', async () => {
+-  replies.push(problem(400, 'VALIDATION_FAILED'));
+-  assert.deepEqual(await requestGlobalLogout({ resources: resources(), reauthenticate: signIn(proof()).reauthenticate }), { state: 'refused', code: 'VALIDATION_FAILED' });
+-  // A proof whose command id is not a UUID never leaves the phone.
+-  const bad = { ...proof(), commandId: 'not-a-uuid' };
+-  const before = seen.length;
+-  assert.deepEqual(await requestGlobalLogout({ resources: resources(), reauthenticate: signIn(bad).reauthenticate }), { state: 'refused', code: 'INVALID_ID' });
+-  assert.equal(seen.length, before);
++  for (const code of ['REFUSED', 'ACCOUNT_UNAVAILABLE', 'CODE_LIMIT'] as const) {
++    const fake = scripted([code]);
++    assert.deepEqual(await requestGlobalLogout({ resources: fake.resources, freshSignIn: fresh('fresh', fake.log) }), { state: 'refused', code }, code);
++  }
++  // Anything that is not the port's answer is not swallowed.
++  const broken: GlobalLogoutResources = { signOutEverywhere: async () => { throw new TypeError('not the port'); } };
++  await assert.rejects(submitGlobalLogout(PENDING, { resources: broken }), TypeError);
+ });
+diff --git a/apps/app/src/auth/globalLogout.ts b/apps/app/src/auth/globalLogout.ts
+index ad4a420751bb0fe9e72cd248a6b59ba69c4cd001..7fc274282d4461552817f5472828c1af21832bdc 100644
+--- a/apps/app/src/auth/globalLogout.ts
++++ b/apps/app/src/auth/globalLogout.ts
+@@ -1,100 +1,60 @@
+-// Signing out everywhere (F6a's POST /v1/me/global-logout), client side: a
+-// fresh `global_logout` proof, then the request as that proof's command (its
+-// id is the Idempotency-Key). Settings drives it; nothing here shows UI or
+-// touches this phone's diary.
++// Signing out everywhere, client side: a fresh sign-in with the account's own
++// method first, then one sign-out-everywhere call on that new session (the
++// port's POST /jotbun/sign-out-everywhere: the server tells the vault first,
++// then ends every session of the account, this phone's too). Settings drives
++// it; nothing here shows UI or touches this phone's diary.
+ //
+-// Once the server accepts it (202 `{generation, provider_cleanup: "pending"}`)
+-// every binding is dead, this phone's too, and new sign-ins wait until Auth0's
+-// refresh grants are revoked. A resend after a lost answer - the transport's
+-// own, or Try again - meets 401 SESSION_REQUIRED, because the first one
+-// landed: that is signed out as well. Only those two let the screen erase
+-// this phone's diary and end the session here. Anything Jotbun did not answer
+-// keeps the person signed in, with the exact request kept to resend - as does
+-// a resend this phone could not send at all (no token or binding any more):
+-// the transport's own SESSION_REQUIRED says nothing about the first one.
+-import { isUuid } from '@gogospend/contracts';
+-import type { GlobalLogoutResult } from '@gogospend/contracts';
+-
+-import { V1Error } from '../api/client.ts';
+-import type { V1Transport } from '../api/client.ts';
+-import { V1_COMMAND_SCHEMA } from '../spend/v1/resources.ts';
+-import type { Proof } from './reauthentication.ts';
+-
+-export type GlobalLogoutProof = Pick<Proof, 'proofId' | 'commandId'>;
++// Once the server accepts it, every session is gone. A resend after a lost
++// answer meets SIGNED_OUT, because the first one landed: that is signed out
++// as well. Only those two let the screen erase this phone's diary and end the
++// session here. Anything Jotbun did not answer (unreachable, a 5xx, a rate
++// limit) keeps the person signed in, with the request kept to resend. A stale
++// sign-in (REAUTH_REQUIRED) or any other refusal changes nothing.
++import { AuthRefused, AuthUnavailable } from './betterAuthPort.ts';
++import type { FreshOutcome } from './credentialProvider.ts';
+ 
+ export type GlobalLogoutResources = {
+-  /** POST /v1/me/global-logout as the proof's command (its id is the Idempotency-Key), on the current session. */
+-  globalLogout(proof: GlobalLogoutProof): Promise<GlobalLogoutResult>;
++  /** The port's signOutEverywhere(), on the session the fresh sign-in just made. */
++  signOutEverywhere(): Promise<void>;
+ };
+ 
+-const isGlobalLogoutResult = (value: unknown): value is GlobalLogoutResult =>
+-  typeof value === 'object' && value !== null && !Array.isArray(value) &&
+-  Object.keys(value).sort().join(',') === 'generation,provider_cleanup' &&
+-  Number.isSafeInteger((value as GlobalLogoutResult).generation) && (value as GlobalLogoutResult).provider_cleanup === 'pending';
++/** A request whose answer never came: resend it, with no new sign-in. It carries no proof any more: freshness is the session's own. */
++export type PendingGlobalLogout = { readonly kind: 'sign_out_everywhere' };
+ 
+-const commandId = (id: string) => {
+-  if (!isUuid(id)) throw new V1Error('invalid', 0, 'INVALID_ID');
+-  return id;
+-};
+-
+-export function createGlobalLogoutResources(transport: V1Transport): GlobalLogoutResources {
+-  return {
+-    globalLogout: (proof) =>
+-      transport.request('POST', '/v1/me/global-logout', {
+-        body: { proof_id: proof.proofId },
+-        command: { id: commandId(proof.commandId), schemaVersion: V1_COMMAND_SCHEMA },
+-        // REAUTH_REQUIRED here refuses the proof, not the session.
+-        proof: true,
+-        validate: isGlobalLogoutResult,
+-      }),
+-  };
+-}
+-
+-/** A request whose answer never came: resend exactly this (same proof and key). */
+-export type PendingGlobalLogout = GlobalLogoutProof;
++/** The fresh sign-in did not go through (any outcome but `fresh` or `cancelled`): nothing was sent. */
++export const FRESH_SIGN_IN_FAILED = 'FRESH_SIGN_IN_FAILED';
+ 
+ export type GlobalLogoutState =
+   /** The person cancelled the fresh sign-in: nothing was sent. */
+   | { state: 'cancelled' }
+-  /** Every binding is dead, this phone's too (accepted, or a resend of one that was): end the session here. */
++  /** Every session is gone, this phone's too (accepted, or a resend of one that was): end the session here. */
+   | { state: 'signed_out' }
+-  /** The proof was stale or used: nothing changed. */
++  /** The sign-in was too old for the server: nothing changed. */
+   | { state: 'reauth_required' }
+-  /** Jotbun did not answer (network, gateway, rate limit, an unreadable success), or nothing could be sent (no token or binding here): still signed in here; resend this request. */
++  /** Jotbun did not answer (unreachable, a 5xx, a rate limit): still signed in here; resend this request. */
+   | { state: 'unconfirmed'; request: PendingGlobalLogout }
+-  /** Refused for another reason: nothing changed. */
++  /** Refused for another reason, or the fresh sign-in failed (FRESH_SIGN_IN_FAILED): nothing changed. */
+   | { state: 'refused'; code: string };
+ 
+-export type GlobalLogoutDeps = {
+-  resources: GlobalLogoutResources;
+-  /** A fresh `global_logout` proof (F5's reauthenticate('global_logout', ...)); null when the person cancels. */
+-  reauthenticate: () => Promise<Proof | null>;
+-};
+-
+-const unknownOutcome = (error: V1Error) =>
+-  error.outcome === 'network' || error.outcome === 'unavailable' || error.outcome === 'invalid_response' || error.outcome === 'rate_limited';
+-
+-/** Reauthenticates for `global_logout` and sends the request. A sign-in that fails throws: nothing was sent. */
+-export async function requestGlobalLogout(deps: GlobalLogoutDeps): Promise<GlobalLogoutState> {
+-  const proof = await deps.reauthenticate();
+-  if (!proof) return { state: 'cancelled' };
+-  return submitGlobalLogout({ proofId: proof.proofId, commandId: proof.commandId }, deps);
++/** A fresh sign-in, then the request. A sign-in that does not go through sends nothing. */
++export async function requestGlobalLogout(deps: { resources: GlobalLogoutResources; freshSignIn: () => Promise<FreshOutcome> }): Promise<GlobalLogoutState> {
++  const outcome = await deps.freshSignIn();
++  if (outcome === 'cancelled') return { state: 'cancelled' };
++  if (outcome !== 'fresh') return { state: 'refused', code: FRESH_SIGN_IN_FAILED };
++  return submitGlobalLogout({ kind: 'sign_out_everywhere' }, deps);
+ }
+ 
+-/** Sends (or resends) one global sign-out request. */
+-export async function submitGlobalLogout(request: PendingGlobalLogout, deps: Pick<GlobalLogoutDeps, 'resources'>): Promise<GlobalLogoutState> {
++/** Sends (or resends) one sign-out-everywhere request on the current session. */
++export async function submitGlobalLogout(request: PendingGlobalLogout, deps: { resources: GlobalLogoutResources }): Promise<GlobalLogoutState> {
+   try {
+-    await deps.resources.globalLogout(request);
++    await deps.resources.signOutEverywhere();
+   } catch (error) {
+-    if (!(error instanceof V1Error)) throw error;
+-    if (error.code === 'SESSION_REQUIRED') {
+-      // Jotbun's own 401: the binding is already dead, so this request (or the one it resends) landed.
+-      if (error.status === 401) return { state: 'signed_out' };
+-      // Refused here, before sending (no token or binding now): an earlier send may still have landed.
+-      return { state: 'unconfirmed', request };
+-    }
++    if (error instanceof AuthUnavailable) return { state: 'unconfirmed', request };
++    if (!(error instanceof AuthRefused)) throw error;
++    // The session this request was sent on is gone: an earlier send (or this one) landed.
++    if (error.code === 'SIGNED_OUT') return { state: 'signed_out' };
+     if (error.code === 'REAUTH_REQUIRED') return { state: 'reauth_required' };
+-    if (unknownOutcome(error)) return { state: 'unconfirmed', request };
++    if (error.code === 'RATE_LIMITED') return { state: 'unconfirmed', request };
+     return { state: 'refused', code: error.code };
+   }
+   return { state: 'signed_out' };
+diff --git a/apps/app/src/auth/reauthentication.ts b/apps/app/src/auth/reauthentication.ts
+deleted file mode 100644
+index e5fa6ec686e8f2bf51b1528503666590fb9ed11e..0000000000000000000000000000000000000000
+--- a/apps/app/src/auth/reauthentication.ts
++++ /dev/null
+@@ -1,2 +0,0 @@
+-/** A purpose proof. Task 6 removes this file once nothing imports the type. */
+-export type Proof = { proofId: string; commandId: string; expiresAt: string }
+diff --git a/apps/app/src/auth/sessionEnded.test.ts b/apps/app/src/auth/sessionEnded.test.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..b65456c423cc58dad280bae01f8b282d9d797f2e
+--- /dev/null
++++ b/apps/app/src/auth/sessionEnded.test.ts
+@@ -0,0 +1,52 @@
++import assert from 'node:assert/strict';
++import { test } from 'node:test';
++
++import { afterEndedSignIn, mayEraseOtherAccount, sessionEndedView } from './sessionEnded.ts';
++import type { SessionEndedView } from './sessionEnded.ts';
++import type { SessionSnapshot } from './sessionMachine.ts';
++import type { StoredSession } from './sessionStore.ts';
++
++const ACCOUNT_A = '0a000000-0000-4000-8000-00000000000a';
++const ACCOUNT_B = '0b000000-0000-4000-8000-00000000000b';
++const SESSION = '0c000000-0000-4000-8000-00000000000c';
++const RECORD: StoredSession = { accountId: ACCOUNT_A, sessionId: SESSION, email: 'kan@example.test', method: 'apple' };
++const snapshot = (state: SessionSnapshot['state'], accountId: string | null = ACCOUNT_A): SessionSnapshot => ({ state, accountId, binding: accountId ? SESSION : null, epoch: 4 });
++
++test('a locked or server-ended session shows the session-ended view with the unsent count and the account\'s method', () => {
++  assert.deepEqual(sessionEndedView(snapshot('reauth_required'), RECORD, 'signed_out_elsewhere', 3), { kind: 'signed_out_elsewhere', accountId: ACCOUNT_A, method: 'apple', unsent: 3 });
++  assert.deepEqual(sessionEndedView(snapshot('reauth_required'), RECORD, 'account_unavailable', 0), { kind: 'account_unavailable', accountId: ACCOUNT_A, method: 'apple', unsent: 0 });
++  assert.deepEqual(sessionEndedView(snapshot('locked'), { ...RECORD, method: 'email' }, 'signed_out_elsewhere', 1), { kind: 'signed_out_elsewhere', accountId: ACCOUNT_A, method: 'email', unsent: 1 });
++  // Locked at launch without its cookie: no reason was given, so it reads as signed out elsewhere.
++  assert.deepEqual(sessionEndedView(snapshot('locked'), RECORD, null, 2), { kind: 'signed_out_elsewhere', accountId: ACCOUNT_A, method: 'apple', unsent: 2 });
++});
++
++test('active and signed-out sessions show no session-ended view', () => {
++  for (const state of ['active', 'signed_out', 'hydrating', 'authenticating', 'bootstrap_pending'] as const) {
++    assert.equal(sessionEndedView(snapshot(state), RECORD, 'signed_out_elsewhere', 3), null, state);
++  }
++  // Nothing stored, or a record that is not this session's account: no view either.
++  assert.equal(sessionEndedView(snapshot('locked'), null, 'signed_out_elsewhere', 3), null);
++  assert.equal(sessionEndedView(snapshot('reauth_required', ACCOUNT_B), RECORD, 'signed_out_elsewhere', 3), null);
++});
++
++const ENDED: SessionEndedView = { kind: 'signed_out_elsewhere', accountId: ACCOUNT_A, method: 'apple', unsent: 3 };
++
++test('signing in again to the same account resumes', () => {
++  assert.deepEqual(afterEndedSignIn(ENDED, ACCOUNT_A), { kind: 'resumed' });
++  assert.deepEqual(afterEndedSignIn({ ...ENDED, kind: 'account_unavailable', unsent: 0 }, ACCOUNT_A), { kind: 'resumed' });
++});
++
++test('another account with unsent records asks keep or erase', () => {
++  assert.deepEqual(afterEndedSignIn(ENDED, ACCOUNT_B), { kind: 'other_account', previousAccountId: ACCOUNT_A, unsent: 3 });
++  // With none waiting it is still another account: nothing is replayed, and the screen has nothing to ask.
++  assert.deepEqual(afterEndedSignIn({ ...ENDED, unsent: 0 }, ACCOUNT_B), { kind: 'other_account', previousAccountId: ACCOUNT_A, unsent: 0 });
++});
++
++test('erasing another account\'s records needs the explicit confirmation', () => {
++  assert.equal(mayEraseOtherAccount({ kind: 'erase', confirmed: true }), true);
++  assert.equal(mayEraseOtherAccount({ kind: 'erase', confirmed: false }), false);
++});
++
++test('keep never erases', () => {
++  assert.equal(mayEraseOtherAccount({ kind: 'keep' }), false);
++});
+diff --git a/apps/app/src/auth/sessionEnded.ts b/apps/app/src/auth/sessionEnded.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..a5b50de69693582a16abe832e890385bb9549398
+--- /dev/null
++++ b/apps/app/src/auth/sessionEnded.ts
+@@ -0,0 +1,47 @@
++// D37 (spec §3), the model behind the session-ended screen (Task 8 draws it).
++// A phone whose session ended elsewhere (signed out from another phone,
++// unused too long, or the account unavailable) locks, pauses its outbox and
++// keeps every unsent record. Signing in again to the same account resumes and
++// sends them. Another account never replays them: the phone asks whether to
++// keep the first account's records or erase them, and erasing needs an
++// explicit confirmation. Pure: no storage, no network, no copy.
++import type { SignInMethod } from './betterAuthPort.ts';
++import type { SessionSnapshot } from './sessionMachine.ts';
++import type { StoredSession } from './sessionStore.ts';
++
++export type EndedKind = 'signed_out_elsewhere' | 'account_unavailable';
++
++/** What the session-ended screen shows: why, whose records, how that account signs in, and how many records wait. */
++export type SessionEndedView = { kind: EndedKind; accountId: string; method: SignInMethod | null; unsent: number };
++
++/**
++ * The session-ended view, only while the session is `locked` or
++ * `reauth_required` and the stored record is that session's account. A lock
++ * with no reason given (a cold start without the cookie) reads as signed out
++ * elsewhere.
++ */
++export function sessionEndedView(snapshot: SessionSnapshot, record: StoredSession | null, reason: EndedKind | null, unsent: number): SessionEndedView | null {
++  if (snapshot.state !== 'locked' && snapshot.state !== 'reauth_required') return null;
++  if (!record || record.accountId !== snapshot.accountId) return null;
++  return { kind: reason ?? 'signed_out_elsewhere', accountId: record.accountId, method: record.method, unsent };
++}
++
++export type AfterEndedSignIn = { kind: 'resumed' } | { kind: 'other_account'; previousAccountId: string; unsent: number };
++
++/**
++ * After a sign-in from the session-ended screen: the same account resumes
++ * (its outbox sends); another account leaves the first one's diary on the
++ * phone, never replayed, and names how many of its records wait (the screen
++ * asks keep or erase when there are any).
++ */
++export function afterEndedSignIn(previous: SessionEndedView, signedInAccountId: string): AfterEndedSignIn {
++  if (signedInAccountId === previous.accountId) return { kind: 'resumed' };
++  return { kind: 'other_account', previousAccountId: previous.accountId, unsent: previous.unsent };
++}
++
++export type OtherAccountChoice = { kind: 'keep' } | { kind: 'erase'; confirmed: boolean };
++
++/** True only for an erase the person confirmed; keeping never erases. */
++export function mayEraseOtherAccount(choice: OtherAccountChoice): boolean {
++  return choice.kind === 'erase' && choice.confirmed === true;
++}
+diff --git a/apps/app/src/auth/useAuthGuardSession.render.test.tsx b/apps/app/src/auth/useAuthGuardSession.render.test.tsx
+new file mode 100644
+index 0000000000000000000000000000000000000000..07d0665ca9143be9f69b03341923d587851b9d22
+--- /dev/null
++++ b/apps/app/src/auth/useAuthGuardSession.render.test.tsx
+@@ -0,0 +1,100 @@
++// The layout guards' view of the session (Task 9 sends an ended session to
++// /session-ended): signed in while the account is active, locked or ended by
++// the server, and `ended` only for those last two (D37).
++import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
++import { afterEach, expect, test } from 'vitest';
++
++import { createBetterAuthPort } from '@mobile/auth/betterAuthPort';
++import { createCredentialProvider } from '@mobile/auth/credentialProvider';
++import { installCredentialProvider, setSession } from '@mobile/auth/session';
++import type { SessionRecordStore, StoredSession } from '@mobile/auth/sessionStore';
++import { createFakeAuthServer } from '@mobile/auth/testing/fakeAuthServer';
++import { useAuthGuardSession } from '@mobile/auth/useAuthGuardSession';
++
++const EMAIL = 'kan@example.test';
++
++afterEach(() => {
++  cleanup();
++  installCredentialProvider(null);
++  setSession(null);
++});
++
++/** A record store whose first load waits until `release()`, so hydration can be seen in progress. */
++function heldSessions(): SessionRecordStore & { release(): void } {
++  let value: StoredSession | null = null;
++  let release = () => undefined as void;
++  const held = new Promise<void>((resolve) => { release = resolve; });
++  return {
++    release: () => release(),
++    async load() { await held; return value; },
++    async save(next) { value = next; },
++    async clear() { value = null; },
++  };
++}
++
++async function signedInProvider() {
++  const server = createFakeAuthServer();
++  const port = createBetterAuthPort({ client: server.client, native: server.native({}) });
++  const sessions = heldSessions();
++  const provider = createCredentialProvider({ port, sessions });
++  installCredentialProvider(provider);
++  const view = renderHook(() => useAuthGuardSession());
++  expect(view.result.current).toEqual({ isAuthed: false, ready: true, ended: false });
++  const hydrating = provider.hydrate();
++  await waitFor(() => expect(provider.getSessionSnapshot().state).toBe('hydrating'));
++  return { server, port, sessions, provider, view, hydrating };
++}
++
++test('no provider and no legacy token: signed out, ready, not ended', () => {
++  const { result } = renderHook(() => useAuthGuardSession());
++  expect(result.current).toEqual({ isAuthed: false, ready: true, ended: false });
++});
++
++test('active is signed in and not ended; hydrating is not ready yet', async () => {
++  const { server, port, sessions, provider, view, hydrating } = await signedInProvider();
++  expect(view.result.current).toEqual({ isAuthed: false, ready: false, ended: false });
++  await act(async () => {
++    sessions.release();
++    await hydrating;
++  });
++  expect(view.result.current).toEqual({ isAuthed: false, ready: true, ended: false });
++  await act(async () => {
++    await port.sendEmailCode(EMAIL);
++    await provider.signIn({ method: 'email', email: EMAIL, code: server.codeFor(EMAIL) });
++  });
++  expect(provider.getSessionSnapshot().state).toBe('active');
++  expect(view.result.current).toEqual({ isAuthed: true, ready: true, ended: false });
++});
++
++test('a session the server ended, or a locked one, is still signed in, and ended', async () => {
++  const { server, port, sessions, provider, view, hydrating } = await signedInProvider();
++  await act(async () => {
++    sessions.release();
++    await hydrating;
++    await port.sendEmailCode(EMAIL);
++    await provider.signIn({ method: 'email', email: EMAIL, code: server.codeFor(EMAIL) });
++  });
++  // The server ended this session (a v1 refusal): reauth_required keeps the account.
++  act(() => provider.sessionEnded({ code: 'SESSION_REQUIRED', epoch: provider.getSessionSnapshot().epoch }));
++  expect(provider.getSessionSnapshot().state).toBe('reauth_required');
++  expect(view.result.current).toEqual({ isAuthed: true, ready: true, ended: true });
++  // Signed in again, then the session deleted at the server: the next token read locks it.
++  await act(async () => {
++    await provider.signIn({ method: 'email', email: EMAIL, code: server.codeFor(EMAIL) });
++  });
++  expect(view.result.current).toEqual({ isAuthed: true, ready: true, ended: false });
++  const sessionId = provider.getSessionSnapshot().binding;
++  if (sessionId) server.deleteSession(sessionId);
++  await act(async () => { await provider.getAccessToken(); });
++  expect(provider.getSessionSnapshot().state).toBe('locked');
++  expect(view.result.current).toEqual({ isAuthed: true, ready: true, ended: true });
++  // Signing out ends it all: signed out, not ended.
++  await act(async () => { await provider.signOut(); });
++  expect(view.result.current).toEqual({ isAuthed: false, ready: true, ended: false });
++});
++
++test('the legacy seam: a token is signed in, never ended', () => {
++  setSession({ access_token: 'legacy-token', userId: 'u1' });
++  const { result } = renderHook(() => useAuthGuardSession());
++  expect(result.current).toEqual({ isAuthed: true, ready: true, ended: false });
++});
+diff --git a/apps/app/src/auth/useAuthGuardSession.ts b/apps/app/src/auth/useAuthGuardSession.ts
+index 882bf2945421f71af94471713edca841e5a11155..7a122c50fbbb16efe5771d8a07b72b374f1978d7 100644
+--- a/apps/app/src/auth/useAuthGuardSession.ts
++++ b/apps/app/src/auth/useAuthGuardSession.ts
+@@ -1,8 +1,13 @@
+ import { useSyncExternalStore } from 'react';
+ import { getCredentialProvider, getSession, subscribeSession } from './session';
+ 
+-/** Signed in when the legacy seam has a token, or the installed provider has an account (active or locked). */
+-export function useAuthGuardSession(): { isAuthed: boolean; ready: boolean } {
++/**
++ * Signed in when the legacy seam has a token, or the installed provider has an
++ * account (active, locked or ended by the server). `ended`: the session is
++ * locked or needs signing in again (D37), so a guard can send the person to
++ * the session-ended screen (Task 9) while the account and its unsent records stay.
++ */
++export function useAuthGuardSession(): { isAuthed: boolean; ready: boolean; ended: boolean } {
+   const view = useSyncExternalStore(
+     subscribeSession,
+     () => {
+@@ -10,9 +15,10 @@ export function useAuthGuardSession(): { isAuthed: boolean; ready: boolean } {
+       if (!provider) return getSession()?.access_token ? 'authed' : 'signed_out';
+       const { state } = provider.getSessionSnapshot();
+       if (state === 'hydrating') return 'hydrating';
+-      return state === 'active' || state === 'locked' || state === 'reauth_required' ? 'authed' : 'signed_out';
++      if (state === 'locked' || state === 'reauth_required') return 'ended';
++      return state === 'active' ? 'authed' : 'signed_out';
+     },
+     () => 'signed_out',
+   );
+-  return { isAuthed: view === 'authed', ready: view !== 'hydrating' };
++  return { isAuthed: view === 'authed' || view === 'ended', ready: view !== 'hydrating', ended: view === 'ended' };
+ }
+diff --git a/apps/app/src/dev/catalogue/account/settingsSections.tsx b/apps/app/src/dev/catalogue/account/settingsSections.tsx
+index 8157fa1fdf5989ab6c70f4d0fbc6e520c2b958f9..c8ef8db494bd729929b6a38b55636edd9151eebf 100644
+--- a/apps/app/src/dev/catalogue/account/settingsSections.tsx
++++ b/apps/app/src/dev/catalogue/account/settingsSections.tsx
+@@ -1,7 +1,7 @@
+ // Settings and Privacy and data in each of their states (redesign R6,
+ // development only), drawn by the real screens on fakes: a fake account (its
+-// sign-outs and global sign-out client recorded), fake export and deletion
+-// clients and a fake re-authentication. No network, no sign-in.
++// sign-outs and sign out everywhere recorded), fake export and deletion
++// clients and a fake fresh sign-in. No network, no sign-in.
+ //
+ // Not registered yet: R6 waits for E2 checkpoint 4, and registry.tsx adds
+ // these to SCREEN_SECTIONS then.
+@@ -9,16 +9,16 @@ import type { CommandAck, ExportDto, ExportFilter } from '@gogospend/contracts';
+ import type { ReactNode } from 'react';
+ 
+ import { V1Error } from '@mobile/api/client';
+-import type { GlobalLogoutProof } from '@mobile/auth/globalLogout';
+-import type { Proof } from '@mobile/auth/reauthentication';
++import { AuthRefused, AuthUnavailable } from '@mobile/auth/betterAuthPort';
++import type { FreshOutcome, RequestCredentials } from '@mobile/auth/credentialProvider';
+ import { LanguagePreferenceOverride } from '@mobile/i18n/LanguageProvider';
+ import { useActiveLocale } from '@mobile/i18n/useCopy';
+ import { PrivacyScreen } from '@mobile/screens/redesign/account/PrivacyScreen';
+-import type { ProofPurpose, PrivacyServices } from '@mobile/screens/redesign/account/PrivacyParts';
++import type { PrivacyServices } from '@mobile/screens/redesign/account/PrivacyParts';
+ import type { AccountServices } from '@mobile/screens/redesign/account/SettingsParts';
+ import { SettingsScreen } from '@mobile/screens/redesign/account/SettingsScreen';
+-import type { DeletionProof, DeletionResources } from '@mobile/spend/v1/deletion';
+-import type { PrivacyResources } from '@mobile/spend/v1/privacy';
++import type { DeletionResources, PendingDeletionRequest } from '@mobile/spend/v1/deletion';
++import type { PendingExportRequest, PrivacyResources } from '@mobile/spend/v1/privacy';
+ import type { SettingsAreas, SignInMethod } from '@mobile/spend/v1/redesign/account/settingsModel';
+ import type { DiaryView } from '@mobile/spend/v1/spendDiary';
+ import type { CatalogueSection } from '../registry';
+@@ -29,14 +29,22 @@ import type { ScreenFixture, ScriptStep, Translate } from '../screenSection';
+ // ---------------------------------------------------------------------------
+ // Fakes (the screens' render tests use them too)
+ 
++/**
++ * The fresh sign-in: its outcome (`fresh`, `cancelled`, or one that did not go
++ * through, such as `wrong_code`); `unreachable`: it throws, so nothing answered;
++ * `none`: this build has no fresh sign-in for the account's method.
++ */
++export type FakeFreshSignIn = FreshOutcome | 'unreachable' | 'none';
++
+ export type FakeAccountOptions = {
+   readonly signInMethod?: SignInMethod | null;
+-  /** The fresh sign-in: a proof; the person cancels; the sign-in service can't be reached; or this build can't re-authenticate. Default `proof`. */
+-  readonly reauth?: 'proof' | 'cancel' | 'unreachable' | 'unavailable';
++  /** The fresh sign-in. Default `fresh`. */
++  readonly fresh?: FakeFreshSignIn;
+   /**
+-   * POST /v1/me/global-logout, one answer per call (the last repeats):
+-   * accepted (202); already signed out, as a resend after a lost answer is
+-   * (401 SESSION_REQUIRED); the answer lost; a used proof; refused. Default `accepted`.
++   * The port's sign out everywhere, one answer per call (the last repeats):
++   * accepted; already signed out, as a resend after a lost answer is
++   * (SIGNED_OUT); the answer lost (unreachable); a sign-in too old for the
++   * server (REAUTH_REQUIRED); refused. Default `accepted`.
+    */
+   readonly globalLogouts?: readonly ('accepted' | 'signed_out' | 'lost' | 'reauth' | 'refused')[];
+   /** Never answers a global sign-out, so its working state stays on screen. */
+@@ -45,34 +53,39 @@ export type FakeAccountOptions = {
+   readonly log?: string[];
+ };
+ 
+-/** An account whose fresh sign-ins, global sign-outs and sign-outs are recorded. */
++/** A fresh sign-in that answers as `fresh` says, counting and logging each ask; null for `none`. */
++function fakeFreshSignIn(fresh: FakeFreshSignIn, onAsk: () => void): (() => Promise<FreshOutcome>) | null {
++  if (fresh === 'none') return null;
++  return async () => {
++    onAsk();
++    if (fresh === 'unreachable') throw new Error('Could not reach the sign-in service. Try again.');
++    return fresh;
++  };
++}
++
++/** An account whose fresh sign-ins, sign-outs everywhere and sign-outs are recorded. */
+ export function fakeAccount(options: FakeAccountOptions = {}) {
+   const log = options.log ?? [];
+-  const calls = { reauth: [] as 'global_logout'[], globalLogouts: [] as GlobalLogoutProof[] };
+-  const reauth = options.reauth ?? 'proof';
++  const calls = { fresh: 0, globalLogouts: 0 };
+   const services: AccountServices = {
+     signInMethod: options.signInMethod ?? null,
+     signOut: async () => { log.push('signOut'); },
+     sessions: {
+-      async globalLogout(proof) {
+-        const answer = pick(options.globalLogouts, 'accepted', calls.globalLogouts.length);
+-        calls.globalLogouts.push({ proofId: proof.proofId, commandId: proof.commandId });
+-        log.push('globalLogout');
++      async signOutEverywhere() {
++        const answer = pick(options.globalLogouts, 'accepted', calls.globalLogouts);
++        calls.globalLogouts += 1;
++        log.push('signOutEverywhere');
+         if (options.holdGlobalLogout) return new Promise(() => undefined);
+-        if (answer === 'signed_out') throw new V1Error('signed_out', 401, 'SESSION_REQUIRED');
+-        if (answer === 'lost') throw unreachable();
+-        if (answer === 'reauth') throw new V1Error('signed_out', 401, 'REAUTH_REQUIRED');
+-        if (answer === 'refused') throw new V1Error('invalid', 400, 'VALIDATION_FAILED');
+-        return { generation: 2, provider_cleanup: 'pending' };
++        if (answer === 'signed_out') throw new AuthRefused('SIGNED_OUT');
++        if (answer === 'lost') throw new AuthUnavailable();
++        if (answer === 'reauth') throw new AuthRefused('REAUTH_REQUIRED');
++        if (answer === 'refused') throw new AuthRefused('REFUSED');
+       },
+     },
+-    reauthenticate: reauth === 'unavailable' ? null : async (purpose) => {
+-      calls.reauth.push(purpose);
+-      log.push('reauth');
+-      if (reauth === 'cancel') return null;
+-      if (reauth === 'unreachable') throw new Error('Could not reach the sign-in service. Try again.');
+-      return fakeProof();
+-    },
++    freshSignIn: fakeFreshSignIn(options.fresh ?? 'fresh', () => {
++      calls.fresh += 1;
++      log.push('freshSignIn');
++    }),
+   };
+   return { services, log, calls };
+ }
+@@ -86,9 +99,9 @@ const EXPIRES_AT = '2026-09-30T03:00:00.000Z';
+ const FAKE_CSV = '﻿record_id,date,type,amount,amount_minor,currency\n';
+ 
+ export type FakePrivacyOptions = {
+-  /** The fresh sign-in: a proof; the person cancels; the sign-in service can't be reached; or this build can't re-authenticate. Default `proof`. */
+-  readonly reauth?: 'proof' | 'cancel' | 'unreachable' | 'unavailable';
+-  /** POST /v1/exports, one answer per call (the last repeats): accepted; the answer lost; a used proof; refused. Default `ack`. */
++  /** The fresh sign-in. Default `fresh`. */
++  readonly fresh?: FakeFreshSignIn;
++  /** POST /v1/exports, one answer per call (the last repeats): accepted; the answer lost; a sign-in too old for the server; refused. Default `ack`. */
+   readonly exportRequests?: readonly ('ack' | 'lost' | 'reauth' | 'refused')[];
+   /** GET /v1/exports/:id, one answer per check (the last repeats). `offline`: Jotbun can't be reached. Default `pending`. */
+   readonly statuses?: readonly ('pending' | 'ready' | 'expired' | 'failed' | 'too_large' | 'offline')[];
+@@ -96,49 +109,51 @@ export type FakePrivacyOptions = {
+   readonly download?: 'ok' | 'offline';
+   /** Whether the person sends the file somewhere from the share sheet. Default true. */
+   readonly save?: boolean;
+-  /** POST /v1/me/deletion, one answer per call (the last repeats). Default `accepted`. */
+-  readonly deletions?: readonly ('accepted' | 'lost' | 'refused' | 'reauth')[];
++  /** POST /v1/me/deletion, one answer per call (the last repeats); `broken`: a failure that is not Jotbun's answer. Default `accepted`. */
++  readonly deletions?: readonly ('accepted' | 'lost' | 'refused' | 'reauth' | 'broken')[];
+   /** The initiating device's receipt: accepted, completed, none (404) or offline. Default `none`. */
+   readonly receipt?: 'accepted' | 'completed' | 'none' | 'offline';
+   /** Never answers a deletion, so its working state stays on screen. */
+   readonly holdDeletion?: boolean;
+ };
+ 
+-let proofs = 0;
+-const fakeProof = (): Proof => {
+-  proofs += 1;
+-  const tail = proofs.toString(16).padStart(12, '0');
+-  return { proofId: `0000000a-0000-4000-8000-${tail}`, commandId: `0000000c-0000-4000-8000-${tail}`, expiresAt: '2026-09-29T03:05:00.000Z' };
++/** The fresh session's credentials the fakes hand out: a fake token, never a real one. */
++export const FAKE_CREDENTIALS: RequestCredentials = { accessToken: 'fake-fresh-token', sessionId: '5e55e55e-0000-4000-8000-000000000001' };
++let ids = 0;
++/** A distinct UUID per call, so a request's command id and proof id differ and a new request draws new ones. */
++const fakeId = (): string => {
++  ids += 1;
++  return `0000000c-0000-4000-8000-${ids.toString(16).padStart(12, '0')}`;
+ };
+ const pick = <T,>(answers: readonly T[] | undefined, fallback: T, index: number): T =>
+   answers && answers.length > 0 ? answers[Math.min(index, answers.length - 1)] : fallback;
+ const unreachable = () => new V1Error('network', 0, 'NETWORK');
+ const notFound = () => new V1Error('not_found', 404, 'NOT_FOUND');
+ 
+-/** Export and deletion clients, a re-authentication and a share sheet, all recorded. Every wait is instant. */
++/** Export and deletion clients, a fresh sign-in and a share sheet, all recorded. Every wait is instant. */
+ export function fakePrivacy(options: FakePrivacyOptions = {}) {
+   const calls = {
+-    reauth: [] as ProofPurpose[],
+-    exportRequests: [] as { filter: ExportFilter; proofId: string; commandId: string }[],
++    fresh: 0,
++    exportRequests: [] as PendingExportRequest[],
+     statusChecks: [] as string[],
+     grants: 0,
+     saved: [] as { csv: string; fileName: string }[],
+-    deletions: [] as DeletionProof[],
+-    receipts: [] as string[],
++    deletions: [] as PendingDeletionRequest[],
++    receipts: [] as { commandId: string; accessToken: string }[],
+     signOut: 0,
+   };
+   let period: ExportFilter = { from: '1970-01-01', through: '2026-09-29' };
+   const base = () => ({ export_id: FAKE_EXPORT_ID, from: period.from, through: period.through, requested_at: REQUESTED_AT });
+ 
+   const privacy: PrivacyResources = {
+-    async requestExport(filter, proof) {
++    async requestExport(filter, request, credentials) {
+       const answer = pick(options.exportRequests, 'ack', calls.exportRequests.length);
+-      calls.exportRequests.push({ filter, proofId: proof.proofId, commandId: proof.commandId });
++      calls.exportRequests.push({ filter, commandId: request.commandId, proofId: request.proofId, credentials });
+       period = filter;
+       if (answer === 'lost') throw unreachable();
+       if (answer === 'reauth') throw new V1Error('signed_out', 401, 'REAUTH_REQUIRED');
+       if (answer === 'refused') throw new V1Error('rate_limited', 429, 'RATE_LIMITED');
+-      const ack: CommandAck = { command_id: proof.commandId, entity_id: FAKE_EXPORT_ID, version: 1, committed_revision: '42', outcome: 'accepted', entity_state: 'active' };
++      const ack: CommandAck = { command_id: request.commandId, entity_id: FAKE_EXPORT_ID, version: 1, committed_revision: '42', outcome: 'accepted', entity_state: 'active' };
+       return ack;
+     },
+     async exportStatus(exportId) {
+@@ -167,17 +182,18 @@ export function fakePrivacy(options: FakePrivacyOptions = {}) {
+   };
+ 
+   const deletion: DeletionResources = {
+-    async requestDeletion(proof) {
++    async requestDeletion(input, credentials) {
+       const answer = pick(options.deletions, 'accepted', calls.deletions.length);
+-      calls.deletions.push({ proofId: proof.proofId, commandId: proof.commandId });
++      calls.deletions.push({ commandId: input.commandId, proofId: input.proofId, language: input.language, credentials });
+       if (options.holdDeletion) return new Promise(() => undefined);
+       if (answer === 'lost') throw unreachable();
+       if (answer === 'refused') throw new V1Error('signed_out', 401, 'SESSION_REQUIRED');
+       if (answer === 'reauth') throw new V1Error('signed_out', 401, 'REAUTH_REQUIRED');
++      if (answer === 'broken') throw new Error('Not an answer from Jotbun.');
+       return { request_id: FAKE_REQUEST_ID, status: 'accepted' };
+     },
+-    async deletionReceipt(commandId) {
+-      calls.receipts.push(commandId);
++    async deletionReceipt(commandId, accessToken) {
++      calls.receipts.push({ commandId, accessToken });
+       const receipt = options.receipt ?? 'none';
+       if (receipt === 'none') throw notFound();
+       if (receipt === 'offline') throw unreachable();
+@@ -185,16 +201,12 @@ export function fakePrivacy(options: FakePrivacyOptions = {}) {
+     },
+   };
+ 
+-  const reauth = options.reauth ?? 'proof';
+   const services: PrivacyServices = {
+     privacy,
+     deletion,
+-    reauthenticate: reauth === 'unavailable' ? null : async (purpose) => {
+-      calls.reauth.push(purpose);
+-      if (reauth === 'cancel') return null;
+-      if (reauth === 'unreachable') throw new Error('Could not reach the sign-in service. Try again.');
+-      return fakeProof();
+-    },
++    freshSignIn: fakeFreshSignIn(options.fresh ?? 'fresh', () => { calls.fresh += 1; }),
++    credentials: async () => FAKE_CREDENTIALS,
++    newId: fakeId,
+     async saveExport(file) {
+       calls.saved.push(file);
+       return options.save ?? true;
+@@ -331,14 +343,14 @@ const SETTINGS: CatalogueSection[] = [
+   screenSection({
+     id: 'settings-everywhere-cancelled',
+     title: 'Settings: sign out everywhere cancelled',
+-    fixture: () => accountFixture({ reauth: 'cancel' }),
++    fixture: () => accountFixture({ fresh: 'cancelled' }),
+     script: (tc) => [...everywhereVia(tc), { waitFor: tc('Nothing changed.') }],
+     render: settings(),
+   }),
+   screenSection({
+     id: 'settings-everywhere-signin-unreachable',
+     title: 'Settings: sign out everywhere, sign-in unreachable',
+-    fixture: () => accountFixture({ reauth: 'unreachable' }),
++    fixture: () => accountFixture({ fresh: 'unreachable' }),
+     script: (tc) => [...everywhereVia(tc), { waitFor: tc("Couldn't reach the sign-in service. Nothing changed. Try again.") }],
+     render: settings(),
+   }),
+@@ -377,7 +389,7 @@ const SETTINGS: CatalogueSection[] = [
+   screenSection({
+     id: 'settings-everywhere-unavailable',
+     title: 'Settings: sign out everywhere unavailable',
+-    fixture: () => accountFixture({ reauth: 'unavailable' }),
++    fixture: () => accountFixture({ fresh: 'none' }),
+     script: (tc) => [{ waitFor: tc("Signing out everywhere needs a fresh sign-in, which this build can't do yet.") }],
+     render: settings(),
+   }),
+@@ -388,7 +400,7 @@ const PRIVACY: CatalogueSection[] = [
+   screenSection({
+     id: 'privacy-no-reauth',
+     title: 'Privacy: no fresh sign-in in this build',
+-    fixture: () => privacyFixture({ reauth: 'unavailable' }),
++    fixture: () => privacyFixture({ fresh: 'none' }),
+     script: (tc) => [{ waitFor: tc("Deleting your account needs a fresh sign-in, which this build can't do yet.") }],
+     render: privacy,
+   }),
+diff --git a/apps/app/src/screens/redesign/account/PrivacyParts.tsx b/apps/app/src/screens/redesign/account/PrivacyParts.tsx
+index 96a7454a3d9e984628f07d94bc4603e07030564c..167cda0d541363852faa4765a1c90085fb90e5ed 100644
+--- a/apps/app/src/screens/redesign/account/PrivacyParts.tsx
++++ b/apps/app/src/screens/redesign/account/PrivacyParts.tsx
+@@ -1,24 +1,23 @@
+ // The services Privacy and data runs on (R6). The app's own wiring of them
+ // lives in privacyServices.ts, which only the route imports, so importing the
+ // screen (tests, the catalogue) never loads the app's transport.
+-import type { Proof } from '@mobile/auth/reauthentication';
++import type { FreshOutcome, RequestCredentials } from '@mobile/auth/credentialProvider';
+ import type { DeletionResources } from '@mobile/spend/v1/deletion';
+ import type { PrivacyResources } from '@mobile/spend/v1/privacy';
+ 
+-/** The purpose a fresh sign-in proves (F5's `reauthenticate`). */
+-export type ProofPurpose = 'export' | 'deletion';
+-
+ export type PrivacyServices = {
+   readonly privacy: PrivacyResources;
+   readonly deletion: DeletionResources;
+   /**
+-   * A fresh, purpose-bound proof through the person's own sign-in method
+-   * (`reauthenticate(purpose, { auth0, api, newId })`); it answers null when
+-   * they cancel. null itself when this build cannot re-authenticate: the
+-   * Auth0 SDK arrives with E1/E2, and until then the screen says so instead
+-   * of pretending.
++   * A fresh sign-in with the account's own method (the installed credential
++   * provider's). null while that method has no fresh sign-in on this build
++   * (`freshSignInOf`), and the screen then says so instead of pretending.
+    */
+-  readonly reauthenticate: ((purpose: ProofPurpose) => Promise<Proof | null>) | null;
++  readonly freshSignIn: (() => Promise<FreshOutcome>) | null;
++  /** The new session's token and id, read together after the fresh sign-in (the provider's requestCredentials()); null with no usable session. */
++  credentials(): Promise<RequestCredentials | null>;
++  /** A random UUID: each request's command id and proof id. */
++  newId(): string;
+   /** Hands the verified CSV to the person. True once they sent it somewhere; false when they closed the sheet. */
+   saveExport(file: { csv: string; fileName: string }): Promise<boolean>;
+   /** Ends the session on this device, after a deletion was accepted. */
+diff --git a/apps/app/src/screens/redesign/account/PrivacyScreen.render.test.tsx b/apps/app/src/screens/redesign/account/PrivacyScreen.render.test.tsx
+index 10569103a2525958dfb7bc8f5aea39223c9c2e6e..49357ac6659bdd3fc4bc6841f8edf138de6fc425 100644
+--- a/apps/app/src/screens/redesign/account/PrivacyScreen.render.test.tsx
++++ b/apps/app/src/screens/redesign/account/PrivacyScreen.render.test.tsx
+@@ -1,7 +1,7 @@
+ // R6 Privacy and data (plan §6.4): the promises, the export through
+ // privacy.ts and account deletion through deletion.ts, on the fakes in the
+-// catalogue's settings sections. Re-authentication is the fake's; the app
+-// build has none yet, and the screen says so.
++// catalogue's settings sections. The fresh sign-in is the fake's; the app
++// build has none yet for any method, and the screen says so.
+ import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+ import { afterEach, beforeAll, beforeEach, expect, test, vi } from 'vitest';
+ 
+@@ -15,7 +15,7 @@ vi.mock('@mobile/api/sharedV1', () => ({
+   getSharedV1Resources: () => { throw new Error('Privacy never reads the real API in a test.'); },
+ }));
+ 
+-import { FAKE_EXPORT_ID, FAKE_REQUEST_ID, fakePrivacy } from '@mobile/dev/catalogue/account/settingsSections';
++import { FAKE_CREDENTIALS, FAKE_EXPORT_ID, FAKE_REQUEST_ID, fakePrivacy } from '@mobile/dev/catalogue/account/settingsSections';
+ import { installStoreBackend } from '@mobile/wallet/store/deviceWalletStore';
+ import type { StoreBackend } from '@mobile/wallet/store/walletStore';
+ import type { FakePrivacyOptions } from '@mobile/dev/catalogue/account/settingsSections';
+@@ -82,7 +82,7 @@ test('export, idle: what it gives and that it asks for a fresh sign-in; nothing
+   expect(within(exportCard()).getByText('Get every entry in your diary as a spreadsheet file (CSV).')).toBeTruthy();
+   expect(within(exportCard()).getByText("You'll sign in again to confirm it's you.")).toBeTruthy();
+   expect(within(exportCard()).getByRole('button', { name: 'Request export' })).toBeTruthy();
+-  expect(fake.calls.reauth).toEqual([]);
++  expect(fake.calls.fresh).toBe(0);
+   expect(fake.calls.exportRequests).toEqual([]);
+ });
+ 
+@@ -90,8 +90,12 @@ test('export, ready: a fresh sign-in for export, everything up to today, then re
+   const fake = mountPrivacy({ statuses: ['ready'] });
+   press('Request export', exportCard());
+   expect(await within(exportCard()).findByText('Your file is ready')).toBeTruthy();
+-  expect(fake.calls.reauth).toEqual(['export']);
++  expect(fake.calls.fresh).toBe(1);
+   expect(fake.calls.exportRequests.map((request) => request.filter)).toEqual([EVERYTHING]);
++  // On the fresh session's own credentials, with a command id and a proof id of its own.
++  const [sent] = fake.calls.exportRequests;
++  expect(sent.credentials).toEqual(FAKE_CREDENTIALS);
++  expect(sent.proofId).not.toBe(sent.commandId);
+   expect(within(exportCard()).getByText('Ready until Wed 30 Sep, 10:00')).toBeTruthy();
+   expect(within(exportCard()).getByText('4 entries')).toBeTruthy();
+   press('Download', exportCard());
+@@ -129,7 +133,7 @@ test('export, expired: says how long files are kept, and a new export needs a ne
+   expect(await within(exportCard()).findByText("This file has expired. Files are kept for 24 hours after they're ready.")).toBeTruthy();
+   press('Request a new export', exportCard());
+   expect(await within(exportCard()).findByText('Your file is ready')).toBeTruthy();
+-  expect(fake.calls.reauth).toEqual(['export', 'export']);
++  expect(fake.calls.fresh).toBe(2);
+   expect(fake.calls.exportRequests[1].commandId).not.toBe(fake.calls.exportRequests[0].commandId);
+ });
+ 
+@@ -153,23 +157,46 @@ test('export, the answer was lost: Try again resends the very same request, with
+   expect(await within(exportCard()).findByText("We couldn't tell if Jotbun got your request. Try again to send the same request.")).toBeTruthy();
+   press('Try again', exportCard());
+   expect(await within(exportCard()).findByText('Your file is ready')).toBeTruthy();
+-  expect(fake.calls.reauth).toEqual(['export']);
++  expect(fake.calls.fresh).toBe(1);
+   expect(fake.calls.exportRequests).toHaveLength(2);
+   expect(fake.calls.exportRequests[1]).toEqual(fake.calls.exportRequests[0]);
+ });
+ 
+-test('export, a used proof or a cancelled sign-in: nothing was requested, and saying so', async () => {
++test('export, a rate limit after the request: the very same request is kept, and Try again resends it', async () => {
++  const fake = mountPrivacy({ exportRequests: ['refused', 'ack'], statuses: ['ready'] });
++  press('Request export', exportCard());
++  expect(await within(exportCard()).findByText("We couldn't tell if Jotbun got your request. Try again to send the same request.")).toBeTruthy();
++  press('Try again', exportCard());
++  expect(await within(exportCard()).findByText('Your file is ready')).toBeTruthy();
++  expect(fake.calls.fresh).toBe(1);
++  expect(fake.calls.exportRequests).toHaveLength(2);
++  expect(fake.calls.exportRequests[1]).toEqual(fake.calls.exportRequests[0]);
++});
++
++test('export, a sign-in too old for the server or a cancelled sign-in: nothing was requested, and saying so', async () => {
+   mountPrivacy({ exportRequests: ['reauth'] });
+   press('Request export', exportCard());
+   expect(await within(exportCard()).findByText('Your sign-in check expired. Nothing was requested.')).toBeTruthy();
+   expect(within(exportCard()).getByRole('button', { name: 'Request export' })).toBeTruthy();
+   cleanup();
+-  const fake = mountPrivacy({ reauth: 'cancel' });
++  const fake = mountPrivacy({ fresh: 'cancelled' });
+   press('Request export', exportCard());
+   expect(await within(exportCard()).findByText('Nothing was requested.')).toBeTruthy();
+   expect(fake.calls.exportRequests).toEqual([]);
+ });
+ 
++test('export, a fresh sign-in that does not go through, or cannot be reached: nothing was requested, and saying so', async () => {
++  const fake = mountPrivacy({ fresh: 'wrong_code' });
++  press('Request export', exportCard());
++  expect(await within(exportCard()).findByText('Your sign-in check expired. Nothing was requested.')).toBeTruthy();
++  expect(fake.calls.exportRequests).toEqual([]);
++  cleanup();
++  const unreachable = mountPrivacy({ fresh: 'unreachable' });
++  press('Request export', exportCard());
++  expect(await within(exportCard()).findByText("Couldn't reach the sign-in service. Nothing was requested. Try again.")).toBeTruthy();
++  expect(unreachable.calls.exportRequests).toEqual([]);
++});
++
+ test('offline: a status check that cannot reach Jotbun says so, and Check again asks once more', async () => {
+   const fake = mountPrivacy({ statuses: ['pending', 'offline', 'ready'] });
+   press('Request export', exportCard());
+@@ -192,7 +219,7 @@ test('delete, the warning: calm, plain, "download your data first", and the butt
+ });
+ 
+ test('delete without a fresh sign-in in this build: it says so plainly; nothing is asked or deleted', () => {
+-  const fake = mountPrivacy({ reauth: 'unavailable' });
++  const fake = mountPrivacy({ fresh: 'none' });
+   expect(within(deleteCard()).getByText("Deleting your account needs a fresh sign-in, which this build can't do yet.")).toBeTruthy();
+   expect(within(exportCard()).getByText("Exporting needs a fresh sign-in, which this build can't do yet.")).toBeTruthy();
+   const button = within(deleteCard()).getByRole('button', { name: 'Delete my account' });
+@@ -200,7 +227,7 @@ test('delete without a fresh sign-in in this build: it says so plainly; nothing
+   fireEvent.click(button);
+   fireEvent.click(within(exportCard()).getByRole('button', { name: 'Request export' }));
+   expect(screen.queryByRole('dialog')).toBeNull();
+-  expect(fake.calls.reauth).toEqual([]);
++  expect(fake.calls.fresh).toBe(0);
+   expect(fake.calls.deletions).toEqual([]);
+ });
+ 
+@@ -215,7 +242,7 @@ test('delete asks first, with the consequence; Keep my account is the safe defau
+   expect(keep.style.backgroundColor).toEqual(rgb(bunLight.ink));
+   fireEvent.click(keep);
+   expect(screen.queryByRole('dialog')).toBeNull();
+-  expect(fake.calls.reauth).toEqual([]);
++  expect(fake.calls.fresh).toBe(0);
+ });
+ 
+ test("delete, accepted: a fresh sign-in for deletion, the receipt, and this phone's copy erased; Done signs out", async () => {
+@@ -224,7 +251,7 @@ test("delete, accepted: a fresh sign-in for deletion, the receipt, and this phon
+   press('Delete my account', deleteCard());
+   press('Delete my account', dialog('Delete your account?'));
+   expect(await within(deleteCard()).findByText('Your account is being deleted')).toBeTruthy();
+-  expect(fake.calls.reauth).toEqual(['deletion']);
++  expect(fake.calls.fresh).toBe(1);
+   expect(within(deleteCard()).getByText(`Request number: ${FAKE_REQUEST_ID}`)).toBeTruthy();
+   expect(within(deleteCard()).getByText("Jotbun finishes erasing your data within 24 hours. You don't need to do anything else.")).toBeTruthy();
+   expect(within(deleteCard()).getByText("This phone's copy of your diary has been erased.")).toBeTruthy();
+@@ -256,12 +283,63 @@ test('delete, the answer was lost: nothing on this phone is erased, and Try agai
+   expect(diary.calls.eraseForSignOut).toBe(0);
+   press('Try again', deleteCard());
+   expect(await within(deleteCard()).findByText('Your account is being deleted')).toBeTruthy();
+-  expect(fake.calls.reauth).toEqual(['deletion']);
++  expect(fake.calls.fresh).toBe(1);
+   expect(fake.calls.deletions).toHaveLength(2);
+   expect(fake.calls.deletions[1]).toEqual(fake.calls.deletions[0]);
+   expect(diary.calls.eraseForSignOut).toBe(1);
+ });
+ 
++test("delete, the request: on the fresh session's own credentials, in the app's language (Thai in Thai, English otherwise)", async () => {
++  const english = mountPrivacy();
++  press('Delete my account', deleteCard());
++  press('Delete my account', dialog('Delete your account?'));
++  expect(await within(deleteCard()).findByText('Your account is being deleted')).toBeTruthy();
++  const [sent] = english.calls.deletions;
++  expect(sent.language).toBe('en');
++  expect(sent.credentials).toEqual(FAKE_CREDENTIALS);
++  expect(sent.proofId).not.toBe(sent.commandId);
++  cleanup();
++  const thai = mountPrivacy({ locale: 'th' });
++  const remove = translateCopy('Delete my account', 'th');
++  press(remove, deleteCard());
++  press(remove, dialog(translateCopy('Delete your account?', 'th')));
++  await waitFor(() => expect(thai.calls.deletions).toHaveLength(1));
++  expect(thai.calls.deletions[0].language).toBe('th');
++});
++
++test("delete, a fresh sign-in that does not go through: nothing was deleted, and this phone's copy is neither erased nor locked", async () => {
++  const diary = createFakeDiary();
++  let locked = 0;
++  diary.diary.close = async () => { locked += 1; };
++  const fake = mountPrivacy({ diary, fresh: 'other_account' });
++  press('Delete my account', deleteCard());
++  press('Delete my account', dialog('Delete your account?'));
++  expect(await within(deleteCard()).findByText('Your sign-in check expired. Nothing was deleted.')).toBeTruthy();
++  expect(fake.calls.deletions).toEqual([]);
++  expect(diary.calls.eraseForSignOut).toBe(0);
++  expect(locked).toBe(0);
++  expect(within(deleteCard()).getByRole('button', { name: 'Delete my account' })).toBeTruthy();
++});
++
++test("delete, a sign-in that cannot be reached sends nothing; a failure after the request that is not Jotbun's answer keeps that request for Try again", async () => {
++  const unreachable = mountPrivacy({ fresh: 'unreachable' });
++  press('Delete my account', deleteCard());
++  press('Delete my account', dialog('Delete your account?'));
++  expect(await within(deleteCard()).findByText("Couldn't reach the sign-in service. Nothing was deleted. Try again.")).toBeTruthy();
++  expect(unreachable.calls.deletions).toEqual([]);
++  cleanup();
++  const diary = createFakeDiary();
++  const fake = mountPrivacy({ diary, deletions: ['broken', 'accepted'] });
++  press('Delete my account', deleteCard());
++  press('Delete my account', dialog('Delete your account?'));
++  expect(await within(deleteCard()).findByText("We couldn't confirm your request. Nothing on this phone was erased. Try again to send the same request.")).toBeTruthy();
++  expect(diary.calls.eraseForSignOut).toBe(0);
++  press('Try again', deleteCard());
++  expect(await within(deleteCard()).findByText('Your account is being deleted')).toBeTruthy();
++  expect(fake.calls.fresh).toBe(1);
++  expect(fake.calls.deletions[1]).toEqual(fake.calls.deletions[0]);
++});
++
+ function memoryBackend(): { rows: Map<string, string>; backend: StoreBackend } {
+   const rows = new Map<string, string>();
+   const backend: StoreBackend = {
+diff --git a/apps/app/src/screens/redesign/account/PrivacyScreen.tsx b/apps/app/src/screens/redesign/account/PrivacyScreen.tsx
+index b0ffe1aeebe508d5f3d42465322a8c8153a62e02..f94619ca6ffb7396baa57fb89589b554f49e381b 100644
+--- a/apps/app/src/screens/redesign/account/PrivacyScreen.tsx
++++ b/apps/app/src/screens/redesign/account/PrivacyScreen.tsx
+@@ -3,34 +3,35 @@
+ //
+ // - Promises in plain words: no bank connection, never sold, no ads, and not
+ //   even Jotbun reads the diary.
+-// - Export (P4, privacy.ts): a fresh sign-in for `export`, the request for
+-//   everything up to today, then the file's status (preparing, ready until a
+-//   set time, expired, failed) and the download, checked against the ready
+-//   export's size and digest and handed to the share sheet. An answer that was
+-//   lost keeps the exact request, and Try again resends it: same key, same
+-//   body, same proof. A file too large for one export can be asked for this
+-//   year only.
++// - Export (P4, privacy.ts): a fresh sign-in with the account's own method,
++//   the request for everything up to today on that new session, then the
++//   file's status (preparing, ready until a set time, expired, failed) and the
++//   download, checked against the ready export's size and digest and handed
++//   to the share sheet. An answer that was lost keeps the exact request, and
++//   Try again resends it: same key, same body, same credentials. A file too
++//   large for one export can be asked for this year only.
+ // - Delete account (P5, deletion.ts): a calm warning and "download your data
+-//   first", a confirm, a fresh sign-in for `deletion`, then the receipt of the
+-//   request, with what became of this phone's copy (`settleDeviceCopy`: erased
+-//   only after a confirmed acceptance, locked after a refusal, otherwise
+-//   kept). A confirmed erase also forgets this account's kept wallet looks.
+-//   Done signs this device out.
++//   first", a confirm, a fresh sign-in, then the request in the app's
++//   language and its receipt, with what became of this phone's copy
++//   (`settleDeviceCopy`: erased only after a confirmed acceptance, locked
++//   after a refusal, otherwise kept). A fresh sign-in that does not go
++//   through sends nothing and leaves the copy as it is. A confirmed erase
++//   also forgets this account's kept wallet looks. Done signs this device out.
+ //
+-// Today's build has no fresh sign-in (the Auth0 SDK arrives with E1/E2), so
+-// both actions say plainly that they can't be done yet; nothing pretends.
++// While the account's method has no fresh sign-in on this build (email until
++// 1C Task 9, Apple and Google until 1C Task 7), both actions say plainly that
++// they can't be done yet; nothing pretends.
+ import { DELETION_TARGET_HOURS, EXPORT_TTL_HOURS } from '@gogospend/contracts';
+ import { useCallback, useEffect, useRef, useState } from 'react';
+ import type { ReactNode } from 'react';
+ import { ScrollView, View } from 'react-native';
+ 
+ import { V1Error } from '@mobile/api/client';
+-import type { Proof } from '@mobile/auth/reauthentication';
+ import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
+-import { requestAccountDeletion, settleDeviceCopy, submitDeletionRequest } from '@mobile/spend/v1/deletion';
+-import type { DeletionState, PendingDeletionRequest } from '@mobile/spend/v1/deletion';
++import { FRESH_SIGN_IN_FAILED, requestAccountDeletion, settleDeviceCopy, submitDeletionRequest } from '@mobile/spend/v1/deletion';
++import type { DeletionResources, DeletionState, PendingDeletionRequest } from '@mobile/spend/v1/deletion';
+ import { downloadExport, pollExport, requestExport, retryExportRequest } from '@mobile/spend/v1/privacy';
+-import type { ExportState, PendingExportRequest } from '@mobile/spend/v1/privacy';
++import type { ExportState, PendingExportRequest, PrivacyResources } from '@mobile/spend/v1/privacy';
+ import { bangkokClock, deletionPhase, downloadPhase, exportFilter, exportPhase } from '@mobile/spend/v1/redesign/account/privacyModel';
+ import type { DeletionPhase, DeviceCopyOutcome, ExportPhase, ExportScope, IdleNote, ReadyExport } from '@mobile/spend/v1/redesign/account/privacyModel';
+ import { unsyncedEntries } from '@mobile/spend/v1/redesign/account/settingsModel';
+@@ -54,7 +55,7 @@ import { PAGE_STYLE, Section, useBackTo } from './SettingsParts';
+ type Tc = ReturnType<typeof useCopy>;
+ 
+ export type PrivacyScreenProps = {
+-  /** The export, deletion, re-authentication and sign-out services (the route passes the app's own: privacyServices.ts). */
++  /** The export, deletion, fresh sign-in and sign-out services (the route passes the app's own: privacyServices.ts). */
+   services: PrivacyServices;
+   /** The clock "today" is read from (tests and the catalogue pin it). */
+   now?: Date;
+@@ -132,7 +133,7 @@ function ExportCard({ services, now }: { services: PrivacyServices; now?: Date }
+   const live = useLive();
+   const [phase, setPhase] = useState<ExportPhase>({ phase: 'idle', note: null });
+   const scope = useRef<ExportScope>('everything');
+-  const reauth = services.reauthenticate;
++  const fresh = services.freshSignIn;
+   const today = todayInBangkok(now ?? new Date());
+   const resources = services.privacy;
+   // Status checks stop once the screen has gone: the wait between two checks ends the polling.
+@@ -162,22 +163,30 @@ function ExportCard({ services, now }: { services: PrivacyServices; now?: Date }
+     if (keepWatching && next.phase === 'preparing') void watch(next.exportId, true);
+   }
+ 
+-  /** A fresh sign-in for `export`, then the request; its first status check comes back at once. */
++  /** A fresh sign-in, then the request on the new session; its first status check comes back at once. */
+   async function request(nextScope: ExportScope) {
+-    if (!reauth) return;
++    if (!fresh) return;
+     scope.current = nextScope;
+     const filter = exportFilter(today, nextScope);
+     setPhase({ phase: 'requesting' });
+-    const seen: { proof: Proof | null } = { proof: null };
++    // The request as it is handed over, so a failure after that keeps exactly it.
++    const seen: { request: PendingExportRequest | null } = { request: null };
++    const recorded: PrivacyResources = {
++      ...resources,
++      requestExport: (period, ids, credentials) => {
++        seen.request = { filter: period, ...ids, credentials };
++        return resources.requestExport(period, ids, credentials);
++      },
++    };
+     try {
+-      const result = await requestExport(filter, { resources, ...pace, maxPolls: 1, reauthenticate: async () => (seen.proof = await reauth('export')) });
++      const result = await requestExport(filter, { resources: recorded, ...pace, maxPolls: 1, freshSignIn: fresh, credentials: () => services.credentials(), newId: () => services.newId() });
+       if (live()) show(result, true);
+     } catch (error) {
+       if (!live()) return;
+-      // No proof: the sign-in itself failed. Unreachable after it: the answer (or the first check) was lost, so the very same request is kept.
+-      const sent = seen.proof;
++      // Nothing handed over: the sign-in itself failed. Unreachable after it: the answer (or the first check) was lost, so the very same request is kept.
++      const sent = seen.request;
+       if (!sent) setPhase({ phase: 'idle', note: 'signin_unreachable' });
+-      else if (unreachable(error)) setPhase({ phase: 'unconfirmed', request: { filter, proofId: sent.proofId, commandId: sent.commandId } });
++      else if (unreachable(error)) setPhase({ phase: 'unconfirmed', request: sent });
+       else setPhase({ phase: 'idle', note: 'refused' });
+     }
+   }
+@@ -186,8 +195,8 @@ function ExportCard({ services, now }: { services: PrivacyServices; now?: Date }
+   async function retry(pending: PendingExportRequest) {
+     setPhase({ phase: 'requesting' });
+     try {
+-      // A resend carries the proof it was first sent with: it never asks for a new one.
+-      const result = await retryExportRequest(pending, { resources, ...pace, maxPolls: 1, reauthenticate: async () => null });
++      // A resend carries the ids and credentials it was first sent with: it never signs in again.
++      const result = await retryExportRequest(pending, { resources, ...pace, maxPolls: 1 });
+       if (live()) show(result, true);
+     } catch (error) {
+       if (live()) setPhase(unreachable(error) ? { phase: 'unconfirmed', request: pending } : { phase: 'idle', note: 'refused' });
+@@ -210,7 +219,7 @@ function ExportCard({ services, now }: { services: PrivacyServices; now?: Date }
+ 
+   const unavailable = tc("Exporting needs a fresh sign-in, which this build can't do yet.");
+   const requestButton = (label: string, nextScope: ExportScope = scope.current) => (
+-    <PillButton label={label} disabled={!reauth} disabledReason={unavailable} onPress={() => void request(nextScope)} />
++    <PillButton label={label} disabled={!fresh} disabledReason={unavailable} onPress={() => void request(nextScope)} />
+   );
+ 
+   let body: ReactNode;
+@@ -221,7 +230,7 @@ function ExportCard({ services, now }: { services: PrivacyServices; now?: Date }
+         <>
+           {line ? <Notice message={line} /> : null}
+           {requestButton(tc('Request export'), 'everything')}
+-          {reauth ? <BunText variant="caption" tone="muted">{tc("You'll sign in again to confirm it's you.")}</BunText> : null}
++          {fresh ? <BunText variant="caption" tone="muted">{tc("You'll sign in again to confirm it's you.")}</BunText> : null}
+         </>
+       );
+       break;
+@@ -304,11 +313,17 @@ function DeleteCard({ services }: { services: PrivacyServices }) {
+   const view = useDiaryView();
+   const [phase, setPhase] = useState<DeletionPhase>({ phase: 'idle', note: null });
+   const [confirming, setConfirming] = useState(false);
+-  const reauth = services.reauthenticate;
++  const fresh = services.freshSignIn;
++  const locale = useActiveLocale();
+   const unsynced = unsyncedEntries(diary ? view : null);
+ 
+   /** deletion.ts's outcome, and this phone's copy settled by its one rule. */
+   async function settle(result: DeletionState) {
++    // A fresh sign-in that did not go through sent nothing: this phone's copy stays exactly as it is.
++    if (result.state === 'denied' && result.code === FRESH_SIGN_IN_FAILED) {
++      if (live()) setPhase({ phase: 'idle', note: 'reauth_required' });
++      return;
++    }
+     const accountId = view.accountId;
+     let device: DeviceCopyOutcome = 'none';
+     if (diary) {
+@@ -323,17 +338,27 @@ function DeleteCard({ services }: { services: PrivacyServices }) {
+   }
+ 
+   async function start() {
+-    if (!reauth) return;
++    if (!fresh) return;
+     setConfirming(false);
+     setPhase({ phase: 'working' });
+-    const seen: { proof: Proof | null } = { proof: null };
++    // The request as it is handed over, so a failure after that keeps exactly it.
++    const seen: { request: PendingDeletionRequest | null } = { request: null };
++    const recorded: DeletionResources = {
++      ...services.deletion,
++      requestDeletion: (input, credentials) => {
++        seen.request = { ...input, credentials };
++        return services.deletion.requestDeletion(input, credentials);
++      },
++    };
++    // The deletion email's language (K11): Thai in Thai, English otherwise.
++    const language = locale === 'th' ? 'th' : 'en';
+     try {
+-      await settle(await requestAccountDeletion({ resources: services.deletion, reauthenticate: async () => (seen.proof = await reauth('deletion')) }));
++      await settle(await requestAccountDeletion({ resources: recorded, freshSignIn: fresh, credentials: () => services.credentials(), newId: () => services.newId(), language }));
+     } catch {
+       if (!live()) return;
+       // Only the sign-in, or something that is not Jotbun's answer, throws: nothing here is erased.
+-      const sent = seen.proof;
+-      setPhase(sent ? { phase: 'unconfirmed', request: { proofId: sent.proofId, commandId: sent.commandId }, device: 'kept' } : { phase: 'idle', note: 'signin_unreachable' });
++      const sent = seen.request;
++      setPhase(sent ? { phase: 'unconfirmed', request: sent, device: 'kept' } : { phase: 'idle', note: 'signin_unreachable' });
+     }
+   }
+ 
+@@ -367,7 +392,7 @@ function DeleteCard({ services }: { services: PrivacyServices }) {
+             label={tc('Delete my account')}
+             busy={phase.phase === 'working'}
+             busyLabel={tc('Sending your request…')}
+-            disabled={!reauth}
++            disabled={!fresh}
+             disabledReason={tc("Deleting your account needs a fresh sign-in, which this build can't do yet.")}
+             onPress={() => setConfirming(true)}
+           />
+diff --git a/apps/app/src/screens/redesign/account/SettingsParts.tsx b/apps/app/src/screens/redesign/account/SettingsParts.tsx
+index efaca7adeae41dbac473ff45b6728403134e459f..5195fb7b18d7fd2c60975bac6f7d11ac02033fae 100644
+--- a/apps/app/src/screens/redesign/account/SettingsParts.tsx
++++ b/apps/app/src/screens/redesign/account/SettingsParts.tsx
+@@ -10,8 +10,8 @@ import { useCallback } from 'react';
+ import type { ReactNode } from 'react';
+ import { Pressable, View } from 'react-native';
+ 
++import type { CredentialProvider, FreshOutcome } from '@mobile/auth/credentialProvider';
+ import type { GlobalLogoutResources } from '@mobile/auth/globalLogout';
+-import type { Proof } from '@mobile/auth/reauthentication';
+ import { getCredentialProvider, setSession } from '@mobile/auth/session';
+ import { isLegacySpendEnabled, isRedesignEnabled } from '@mobile/config/featureFlags';
+ import type { SettingsAreas, SignInMethod } from '@mobile/spend/v1/redesign/account/settingsModel';
+@@ -30,22 +30,34 @@ export type AccountServices = {
+   readonly signInMethod: SignInMethod | null;
+   /** Ends the session on this device. The screen erases this phone's diary first. */
+   signOut(): Promise<void>;
+-  /** `POST /v1/me/global-logout` (F6a), through globalLogout.ts. */
++  /** Sign out everywhere (the Better Auth port's), through globalLogout.ts. */
+   readonly sessions: GlobalLogoutResources;
+   /**
+-   * A fresh, purpose-bound proof through the person's own sign-in method
+-   * (`reauthenticate('global_logout', { auth0, api, newId })`); it answers
+-   * null when they cancel. null itself when this build cannot re-authenticate:
+-   * the Auth0 SDK arrives with E1/E2, and until then the screen says so
+-   * instead of offering Sign out everywhere.
++   * A fresh sign-in with the account's own method (the installed credential
++   * provider's). null while that method has no fresh sign-in on this build
++   * (`freshSignInOf`), and the screen then says so instead of offering Sign
++   * out everywhere.
+    */
+-  readonly reauthenticate: ((purpose: 'global_logout') => Promise<Proof | null>) | null;
++  readonly freshSignIn: (() => Promise<FreshOutcome>) | null;
+ };
+ 
+ /**
+- * Signs this device out through today's session seam: F5's credential
+- * provider when one is installed (it revokes this binding and forgets the
+- * stored sign-in), otherwise the legacy session store.
++ * The installed provider's fresh sign-in for the account's own method, or
++ * null while this build cannot run one for it: email until its code screen is
++ * routed (1C Task 9), Apple and Google until the build has their native
++ * sign-in (1C Task 7). Read once, when a screen's services are made.
++ */
++export function freshSignInOf(provider: CredentialProvider | null): (() => Promise<FreshOutcome>) | null {
++  const method = provider?.account()?.method;
++  if (!provider || !method || method === 'email' || !provider.methods().includes(method)) return null;
++  return () => provider.freshSignIn({ method, signUp: false });
++}
++
++/**
++ * Signs this device out through today's session seam: the credential
++ * provider when one is installed (it tells the vault, signs this session out
++ * of Better Auth and forgets the stored sign-in), otherwise the legacy
++ * session store.
+  */
+ export async function signOutOfThisDevice(): Promise<void> {
+   const provider = getCredentialProvider();
+diff --git a/apps/app/src/screens/redesign/account/SettingsScreen.render.test.tsx b/apps/app/src/screens/redesign/account/SettingsScreen.render.test.tsx
+index a90b393af9c3e4b146698ce5f66a5ece1b5f21bc..86bef78a037f89cdcb46e9f9eb15834b8d9f7343 100644
+--- a/apps/app/src/screens/redesign/account/SettingsScreen.render.test.tsx
++++ b/apps/app/src/screens/redesign/account/SettingsScreen.render.test.tsx
+@@ -18,6 +18,11 @@ import { render } from '@testing-library/react';
+ import type { ReactElement } from 'react';
+ import { SafeAreaProvider } from 'react-native-safe-area-context';
+ 
++import { createBetterAuthPort } from '@mobile/auth/betterAuthPort';
++import { createCredentialProvider } from '@mobile/auth/credentialProvider';
++import type { SessionRecordStore, StoredSession } from '@mobile/auth/sessionStore';
++import { createFakeAuthServer } from '@mobile/auth/testing/fakeAuthServer';
++
+ import { PHONE, mountInApp } from '@mobile/dev/catalogue/catalogueTestHarness';
+ import { SETTINGS_SECTIONS, fakeAccount } from '@mobile/dev/catalogue/account/settingsSections';
+ import { router } from '@mobile/dev/catalogue/routerTestStub';
+@@ -38,6 +43,7 @@ import { THEME_PREFERENCE_STORAGE_KEY } from '@mobile/theme/themePreferenceStora
+ import { leading, mountScreen, outboxCommand, pendingExpense, rgb } from '../HistoryTestHarness';
+ import { SettingsScreen } from './SettingsScreen';
+ import { appAccountServices } from './accountServices';
++import { freshSignInOf } from './SettingsParts';
+ import type { AccountServices } from './SettingsParts';
+ import type { SettingsScreenProps } from './SettingsScreen';
+ 
+@@ -311,9 +317,10 @@ test('offline with entries waiting: the banner says so, and Sign out counts what
+   expect(within(dialog('Sign out?')).getByText(`${SIGN_OUT_CONSEQUENCE} 2 entries on this phone haven't synced yet.`)).toBeTruthy();
+ });
+ 
+-// Sign out everywhere: a confirm, a fresh sign-in for `global_logout`, then
+-// POST /v1/me/global-logout with that proof, then this phone's erase and the
+-// sign-out here. Re-authentication is the fake's; the app build has none yet.
++// Sign out everywhere: a confirm, a fresh sign-in with the account's own
++// method, then the port's sign out everywhere on that new session, then this
++// phone's erase and the sign-out here. The fresh sign-in is the fake's; the
++// app build has none yet for any method.
+ 
+ /** Opens Sign out everywhere and confirms it. */
+ function confirmEverywhere() {
+@@ -323,7 +330,7 @@ function confirmEverywhere() {
+ 
+ const STILL_SIGNED_IN = "Couldn't reach Jotbun. You're still signed in on this phone. Try again to send the same request.";
+ 
+-test('Sign out everywhere: a confirm; Stay signed in changes nothing; confirming signs in again, sends the request with that proof, then erases this phone and signs out here', async () => {
++test('Sign out everywhere: a confirm; Stay signed in changes nothing; confirming signs in again, sends the request, then erases this phone and signs out here', async () => {
+   const log: string[] = [];
+   const diary = loggingDiary(log);
+   const account = fakeAccount({ log });
+@@ -335,61 +342,69 @@ test('Sign out everywhere: a confirm; Stay signed in changes nothing; confirming
+   expect(screen.queryByRole('dialog')).toBeNull();
+   expect(log).toEqual([]);
+   confirmEverywhere();
+-  await waitFor(() => expect(log).toEqual(['reauth', 'globalLogout', 'erase', 'signOut']));
+-  expect(account.calls.reauth).toEqual(['global_logout']);
+-  // The request carries the fresh proof, and its command is the proof's.
+-  expect(account.calls.globalLogouts).toHaveLength(1);
+-  expect(account.calls.globalLogouts[0].proofId).toMatch(/^0000000a-/);
+-  expect(account.calls.globalLogouts[0].commandId).toMatch(/^0000000c-/);
++  await waitFor(() => expect(log).toEqual(['freshSignIn', 'signOutEverywhere', 'erase', 'signOut']));
++  expect(account.calls.fresh).toBe(1);
++  expect(account.calls.globalLogouts).toBe(1);
+   // The sheet stays up, busy, through the whole request, and closes on the render after it.
+   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+ });
+ 
+ test('cancelling the fresh sign-in: nothing is sent or erased, and the person stays signed in', async () => {
+   const log: string[] = [];
+-  const account = fakeAccount({ log, reauth: 'cancel' });
++  const account = fakeAccount({ log, fresh: 'cancelled' });
+   mountSettings({ diary: loggingDiary(log), services: account.services });
+   confirmEverywhere();
+   expect(await screen.findByText('Nothing changed.')).toBeTruthy();
+-  expect(log).toEqual(['reauth']);
++  expect(log).toEqual(['freshSignIn']);
+   // The sheet stays up, busy, through the whole request, and closes on the render after it.
+   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+ });
+ 
+-test('a sign-in that fails: nothing is sent or erased, still signed in, and saying so', async () => {
++test('a sign-in that cannot be reached: nothing is sent or erased, still signed in, and saying so', async () => {
+   const log: string[] = [];
+-  mountSettings({ diary: loggingDiary(log), services: fakeAccount({ log, reauth: 'unreachable' }).services });
++  mountSettings({ diary: loggingDiary(log), services: fakeAccount({ log, fresh: 'unreachable' }).services });
+   confirmEverywhere();
+   expect(await screen.findByText("Couldn't reach the sign-in service. Nothing changed. Try again.")).toBeTruthy();
+-  expect(log).toEqual(['reauth']);
++  expect(log).toEqual(['freshSignIn']);
+ });
+ 
+-test('Jotbun refuses the fresh sign-in (a used or stale proof): nothing changed, still signed in', async () => {
++test('a fresh sign-in that does not go through (a wrong code, another account, the service down): nothing is sent or erased, still signed in, and saying so', async () => {
++  for (const fresh of ['wrong_code', 'other_account', 'unavailable'] as const) {
++    const log: string[] = [];
++    mountSettings({ diary: loggingDiary(log), services: fakeAccount({ log, fresh }).services });
++    confirmEverywhere();
++    expect(await screen.findByText('Your sign-in check expired. Nothing changed.')).toBeTruthy();
++    expect(log).toEqual(['freshSignIn']);
++    cleanup();
++  }
++});
++
++test('the server finds the sign-in too old: nothing changed, still signed in', async () => {
+   const log: string[] = [];
+   mountSettings({ diary: loggingDiary(log), services: fakeAccount({ log, globalLogouts: ['reauth'] }).services });
+   confirmEverywhere();
+   expect(await screen.findByText('Your sign-in check expired. Nothing changed.')).toBeTruthy();
+-  expect(log).toEqual(['reauth', 'globalLogout']);
++  expect(log).toEqual(['freshSignIn', 'signOutEverywhere']);
+ });
+ 
+-test('a resend after a lost answer meets 401 SESSION_REQUIRED: the first one landed, so this phone is signed out too', async () => {
++test('a resend after a lost answer meets SIGNED_OUT: the first one landed, so this phone is signed out too', async () => {
+   const log: string[] = [];
+   mountSettings({ diary: loggingDiary(log), services: fakeAccount({ log, globalLogouts: ['signed_out'] }).services });
+   confirmEverywhere();
+-  await waitFor(() => expect(log).toEqual(['reauth', 'globalLogout', 'erase', 'signOut']));
++  await waitFor(() => expect(log).toEqual(['freshSignIn', 'signOutEverywhere', 'erase', 'signOut']));
+ });
+ 
+-test('Jotbun cannot be reached: still signed in, and saying so; Try again resends the same request with no new sign-in, and its 401 SESSION_REQUIRED signs out here', async () => {
++test('Jotbun cannot be reached: still signed in, and saying so; Try again resends the request with no new sign-in, and its SIGNED_OUT signs out here', async () => {
+   const log: string[] = [];
+   const account = fakeAccount({ log, globalLogouts: ['lost', 'signed_out'] });
+   mountSettings({ diary: loggingDiary(log), services: account.services });
+   confirmEverywhere();
+   expect(await screen.findByText(STILL_SIGNED_IN)).toBeTruthy();
+-  expect(log).toEqual(['reauth', 'globalLogout']);
++  expect(log).toEqual(['freshSignIn', 'signOutEverywhere']);
+   fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+-  await waitFor(() => expect(log).toEqual(['reauth', 'globalLogout', 'globalLogout', 'erase', 'signOut']));
+-  expect(account.calls.reauth).toHaveLength(1);
+-  expect(account.calls.globalLogouts[1]).toEqual(account.calls.globalLogouts[0]);
++  await waitFor(() => expect(log).toEqual(['freshSignIn', 'signOutEverywhere', 'signOutEverywhere', 'erase', 'signOut']));
++  expect(account.calls.fresh).toBe(1);
++  expect(account.calls.globalLogouts).toBe(2);
+ });
+ 
+ test('Jotbun cannot be reached on Try again either: still signed in, and Try again stays', async () => {
+@@ -398,7 +413,7 @@ test('Jotbun cannot be reached on Try again either: still signed in, and Try aga
+   mountSettings({ diary: loggingDiary(log), services: account.services });
+   confirmEverywhere();
+   fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+-  await waitFor(() => expect(log).toEqual(['reauth', 'globalLogout', 'globalLogout']));
++  await waitFor(() => expect(log).toEqual(['freshSignIn', 'signOutEverywhere', 'signOutEverywhere']));
+   expect(await screen.findByText(STILL_SIGNED_IN)).toBeTruthy();
+   expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+ });
+@@ -408,7 +423,7 @@ test('refused for another reason: nothing changed, try later', async () => {
+   mountSettings({ diary: loggingDiary(log), services: fakeAccount({ log, globalLogouts: ['refused'] }).services });
+   confirmEverywhere();
+   expect(await screen.findByText("Jotbun couldn't take your request right now. Try again later.")).toBeTruthy();
+-  expect(log).toEqual(['reauth', 'globalLogout']);
++  expect(log).toEqual(['freshSignIn', 'signOutEverywhere']);
+ });
+ 
+ test("signed out everywhere, but this phone's diary can't be erased: it says so, and this phone stays signed in to try again", async () => {
+@@ -418,13 +433,13 @@ test("signed out everywhere, but this phone's diary can't be erased: it says so,
+   mountSettings({ diary, services: fakeAccount({ log }).services });
+   confirmEverywhere();
+   expect(await screen.findByText("You're signed out everywhere else, but this phone's diary couldn't be erased. Sign out to try again.")).toBeTruthy();
+-  expect(log).toEqual(['reauth', 'globalLogout']);
++  expect(log).toEqual(['freshSignIn', 'signOutEverywhere']);
+ });
+ 
+ test("the app's own wiring has no fresh sign-in yet: Sign out everywhere shows, disabled, says why, and can't be started", () => {
+   const log: string[] = [];
+   const services = appAccountServices();
+-  expect(services.reauthenticate).toBeNull();
++  expect(services.freshSignIn).toBeNull();
+   mountSettings({ diary: loggingDiary(log), services });
+   const button = screen.getByRole('button', { name: 'Sign out everywhere' });
+   expect(button.getAttribute('aria-disabled')).toBe('true');
+@@ -434,6 +449,47 @@ test("the app's own wiring has no fresh sign-in yet: Sign out everywhere shows,
+   expect(log).toEqual([]);
+ });
+ 
++function memorySessions(): SessionRecordStore {
++  let value: StoredSession | null = null;
++  return {
++    async load() { return value; },
++    async save(next) { value = next; },
++    async clear() { value = null; },
++  };
++}
++
++test("the app's wiring offers a fresh sign-in only for a method this build can run: Apple or Google with their native sign-in, never email yet", async () => {
++  expect(freshSignInOf(null)).toBeNull();
++  // An email account: its code screen is not routed yet (1C Task 9).
++  const emailServer = createFakeAuthServer();
++  const emailPort = createBetterAuthPort({ client: emailServer.client, native: emailServer.native({}) });
++  const emailProvider = createCredentialProvider({ port: emailPort, sessions: memorySessions() });
++  expect(freshSignInOf(emailProvider)).toBeNull();
++  await emailPort.sendEmailCode('kan@example.test');
++  expect((await emailProvider.signIn({ method: 'email', email: 'kan@example.test', code: emailServer.codeFor('kan@example.test') })).outcome).toBe('active');
++  expect(freshSignInOf(emailProvider)).toBeNull();
++  // A Google account on a build with Google's native sign-in: its fresh sign-in is Google's, never a sign-up.
++  const server = createFakeAuthServer();
++  const identity = { sub: 'g-kan', email: 'kan@example.test' };
++  const port = createBetterAuthPort({ client: server.client, native: server.native({ google: identity }) });
++  const provider = createCredentialProvider({ port, sessions: memorySessions() });
++  expect((await provider.signIn({ method: 'google', signUp: true })).outcome).toBe('active');
++  const fresh = freshSignInOf(provider);
++  expect(fresh).not.toBeNull();
++  server.calls.length = 0;
++  expect(await fresh?.()).toBe('fresh');
++  expect(server.calls).toContain('signInWithIdToken:google:false');
++  // The same Google account on a build without native sign-in (today's: Task 7 adds it): none.
++  const bare = createFakeAuthServer();
++  const stored = memorySessions();
++  const signedIn = createCredentialProvider({ port: createBetterAuthPort({ client: bare.client, native: bare.native({ google: identity }) }), sessions: stored });
++  expect((await signedIn.signIn({ method: 'google', signUp: true })).outcome).toBe('active');
++  const withoutNative = createCredentialProvider({ port: createBetterAuthPort({ client: bare.client, native: bare.native({}) }), sessions: stored });
++  await withoutNative.hydrate();
++  expect(withoutNative.account()?.method).toBe('google');
++  expect(freshSignInOf(withoutNative)).toBeNull();
++});
++
+ // ---------------------------------------------------------------------------
+ // Back, Thai, dark, touch targets
+ 
+diff --git a/apps/app/src/screens/redesign/account/SettingsScreen.tsx b/apps/app/src/screens/redesign/account/SettingsScreen.tsx
+index 7e88918af37f874aa71869075acd21fb7303a7ee..9c7b4cfa9a5de975a920725f14f7804606046717 100644
+--- a/apps/app/src/screens/redesign/account/SettingsScreen.tsx
++++ b/apps/app/src/screens/redesign/account/SettingsScreen.tsx
+@@ -19,14 +19,15 @@
+ //   entries not yet synced are lost. The diary is erased first, then the
+ //   session ends; a diary that cannot be erased keeps the person signed in.
+ //   Linking logins stays hidden until F6c.
+-// - Sign out everywhere (F6a, globalLogout.ts): after the confirm, a fresh
+-//   sign-in for `global_logout`, then POST /v1/me/global-logout with that
+-//   proof. Accepted, or a resend that meets 401 SESSION_REQUIRED (the first
++// - Sign out everywhere (globalLogout.ts): after the confirm, a fresh sign-in
++//   with the account's own method, then the port's sign out everywhere on
++//   that new session. Accepted, or a resend that meets SIGNED_OUT (the first
+ //   one landed), signs this phone out too: erase, then the session ends. A
+-//   cancelled or failed sign-in, a refused proof or a refusal changes nothing.
+-//   An answer that never came keeps the person signed in, says so, and Try
+-//   again resends the very same request with no new sign-in. Today's build
+-//   has no fresh sign-in (the Auth0 SDK arrives with E1/E2), so the app's
++//   cancelled or failed sign-in, a sign-in too old for the server or a
++//   refusal changes nothing. An answer that never came keeps the person
++//   signed in, says so, and Try again resends the request with no new
++//   sign-in. While the account's method has no fresh sign-in on this build
++//   (email until 1C Task 9, Apple and Google until 1C Task 7), the app's
+ //   wiring shows the action disabled, with the reason, as Privacy does.
+ //
+ // No bun here: Settings is a calm data screen.
+@@ -34,9 +35,8 @@ import { useRouter } from 'expo-router';
+ import { useState } from 'react';
+ import { ScrollView, View } from 'react-native';
+ 
+-import { requestGlobalLogout, submitGlobalLogout } from '@mobile/auth/globalLogout';
+-import type { GlobalLogoutState, PendingGlobalLogout } from '@mobile/auth/globalLogout';
+-import type { Proof } from '@mobile/auth/reauthentication';
++import { FRESH_SIGN_IN_FAILED, requestGlobalLogout, submitGlobalLogout } from '@mobile/auth/globalLogout';
++import type { GlobalLogoutResources, GlobalLogoutState, PendingGlobalLogout } from '@mobile/auth/globalLogout';
+ import { useLanguage } from '@mobile/i18n/LanguageProvider';
+ import { useCopy } from '@mobile/i18n/useCopy';
+ import type { BunIntensity } from '@mobile/mascot/bunIntensity';
+@@ -171,7 +171,11 @@ function everywhereNote(state: Exclude<GlobalLogoutState, { state: 'signed_out'
+     case 'cancelled': return { tone: 'status', text: tc('Nothing changed.') };
+     case 'reauth_required': return { tone: 'status', text: tc('Your sign-in check expired. Nothing changed.') };
+     case 'unconfirmed': return { tone: 'status', text: tc("Couldn't reach Jotbun. You're still signed in on this phone. Try again to send the same request."), resend: state.request };
+-    case 'refused': return { tone: 'status', text: tc("Jotbun couldn't take your request right now. Try again later.") };
++    // A fresh sign-in that did not go through sent nothing: the same line as a sign-in check the server found too old.
++    case 'refused':
++      return state.code === FRESH_SIGN_IN_FAILED
++        ? { tone: 'status', text: tc('Your sign-in check expired. Nothing changed.') }
++        : { tone: 'status', text: tc("Jotbun couldn't take your request right now. Try again later.") };
+   }
+ }
+ 
+@@ -188,7 +192,7 @@ export function SettingsScreen({ services, areas: givenAreas }: SettingsScreenPr
+   const [note, setNote] = useState<Note | null>(null);
+ 
+   const lost = unsyncedLine(unsyncedEntries(diary ? view : null), tc);
+-  const reauth = services.reauthenticate;
++  const fresh = services.freshSignIn;
+ 
+   /** Erases this phone's diary, then ends the session here. A diary that can't be erased keeps the person signed in. */
+   async function eraseThenSignOut(afterEverywhere: boolean): Promise<void> {
+@@ -224,24 +228,29 @@ export function SettingsScreen({ services, areas: givenAreas }: SettingsScreenPr
+     else setNote(everywhereNote(state, tc));
+   }
+ 
+-  /** A fresh sign-in for `global_logout`, then the request with that proof. */
++  /** A fresh sign-in with the account's own method, then the request on that new session. */
+   async function signOutEverywhere() {
+-    if (!reauth) return;
++    if (!fresh) return;
+     setWorking(true);
+     setNote(null);
+-    const seen: { proof: Proof | null } = { proof: null };
++    const seen = { sent: false };
++    const sessions: GlobalLogoutResources = {
++      signOutEverywhere: () => {
++        seen.sent = true;
++        return services.sessions.signOutEverywhere();
++      },
++    };
+     try {
+-      await settleEverywhere(await requestGlobalLogout({ resources: services.sessions, reauthenticate: async () => (seen.proof = await reauth('global_logout')) }));
++      await settleEverywhere(await requestGlobalLogout({ resources: sessions, freshSignIn: fresh }));
+     } catch {
+-      // No proof: the sign-in itself failed, and nothing was sent. After one, it is not Jotbun's answer: keep the request.
+-      const sent = seen.proof;
+-      setNote(sent ? everywhereNote({ state: 'unconfirmed', request: { proofId: sent.proofId, commandId: sent.commandId } }, tc) : { tone: 'status', text: tc("Couldn't reach the sign-in service. Nothing changed. Try again.") });
++      // Not sent: the sign-in itself failed, and nothing changed. Sent: it is not Jotbun's answer, so the request is kept.
++      setNote(seen.sent ? everywhereNote({ state: 'unconfirmed', request: { kind: 'sign_out_everywhere' } }, tc) : { tone: 'status', text: tc("Couldn't reach the sign-in service. Nothing changed. Try again.") });
+     }
+     setWorking(false);
+     setConfirming(null);
+   }
+ 
+-  /** Resends exactly the request whose answer never came: no new sign-in, no new key. */
++  /** Resends the request whose answer never came: no new sign-in. */
+   async function resendEverywhere(request: PendingGlobalLogout) {
+     setWorking(true);
+     try {
+@@ -274,7 +283,7 @@ export function SettingsScreen({ services, areas: givenAreas }: SettingsScreenPr
+               <PillButton
+                 kind="secondary"
+                 label={tc('Sign out everywhere')}
+-                disabled={!reauth}
++                disabled={!fresh}
+                 disabledReason={tc("Signing out everywhere needs a fresh sign-in, which this build can't do yet.")}
+                 onPress={() => setConfirming('everywhere')}
+               />
+diff --git a/apps/app/src/screens/redesign/account/accountServices.ts b/apps/app/src/screens/redesign/account/accountServices.ts
+index ee9df5c5fa56c910c85d04da4dae964e844ccbd1..f32d069a31a3bb4c658aeb8cff8c37b630b4e8e6 100644
+--- a/apps/app/src/screens/redesign/account/accountServices.ts
++++ b/apps/app/src/screens/redesign/account/accountServices.ts
+@@ -1,28 +1,28 @@
+-// The app's own wiring of Settings' account services (R6): the F6a global
+-// sign-out client (globalLogout.ts) over a v1 transport built exactly as the
+-// shared one is (sharedV1.ts), and today's sign-out. Only the route imports
+-// this; tests and the catalogue pass fakes.
++// The app's own wiring of Settings' account services (R6): sign out
++// everywhere through the installed credential provider's Better Auth port
++// (globalLogout.ts drives it after a fresh sign-in), the fresh sign-in for the
++// account's own method, and today's sign-out. Only the route imports this;
++// tests and the catalogue pass fakes.
+ //
+-// Today's build has no fresh sign-in (the Auth0 SDK arrives with E1/E2), so
+-// `reauthenticate` is null and Settings shows Sign out everywhere disabled,
+-// with the reason, as Privacy and data does for export and deletion.
+-import { createV1Transport } from '@mobile/api/client';
+-import { v1ClientVersion } from '@mobile/api/sharedV1';
+-import { createGlobalLogoutResources } from '@mobile/auth/globalLogout';
++// While the account's method has no fresh sign-in on this build (email until
++// 1C Task 9, Apple and Google until 1C Task 7), `freshSignIn` is null and
++// Settings shows Sign out everywhere disabled, with the reason, as Privacy and
++// data does for export and deletion.
++import { AuthUnavailable } from '@mobile/auth/betterAuthPort';
+ import type { GlobalLogoutResources } from '@mobile/auth/globalLogout';
+-import { v1SessionCredentials } from '@mobile/auth/session';
+-import { getMobileEnv } from '@mobile/config/env';
++import { getCredentialProvider } from '@mobile/auth/session';
+ import type { AccountServices } from './SettingsParts';
+-import { signOutOfThisDevice } from './SettingsParts';
++import { freshSignInOf, signOutOfThisDevice } from './SettingsParts';
+ 
+-let shared: GlobalLogoutResources | null = null;
+-
+-/** The global sign-out client over the app's v1 session, made once. */
+-function appSessions(): GlobalLogoutResources {
+-  shared ??= createGlobalLogoutResources(createV1Transport({ baseUrl: getMobileEnv().v1ApiUrl, client: v1ClientVersion(), credentials: v1SessionCredentials }));
+-  return shared;
+-}
++/** Sign out everywhere on the provider's current session (the one a fresh sign-in just made). */
++const appSessions: GlobalLogoutResources = {
++  async signOutEverywhere() {
++    const provider = getCredentialProvider();
++    if (!provider) throw new AuthUnavailable();
++    await provider.port().signOutEverywhere();
++  },
++};
+ 
+ export function appAccountServices(): AccountServices {
+-  return { signInMethod: null, signOut: signOutOfThisDevice, sessions: appSessions(), reauthenticate: null };
++  return { signInMethod: null, signOut: signOutOfThisDevice, sessions: appSessions, freshSignIn: freshSignInOf(getCredentialProvider()) };
+ }
+diff --git a/apps/app/src/screens/redesign/account/privacyServices.ts b/apps/app/src/screens/redesign/account/privacyServices.ts
+index f2342b465a6dc5f5629e6414326d70a3c8a06b72..207e1740a44aa3c550af385b44100a3e0a9a222f 100644
+--- a/apps/app/src/screens/redesign/account/privacyServices.ts
++++ b/apps/app/src/screens/redesign/account/privacyServices.ts
+@@ -1,21 +1,22 @@
+ // The app's own wiring of Privacy and data's services (R6): the P4 export and
+ // P5 deletion clients (privacy.ts, deletion.ts) over a v1 transport built
+-// exactly as the shared one is (sharedV1.ts), the share sheet for the
+-// verified file, and today's sign-out. Only the route imports this; tests and
+-// the catalogue pass fakes.
++// exactly as the shared one is (sharedV1.ts), the installed credential
++// provider's fresh sign-in and request credentials, random ids, the share
++// sheet for the verified file, and today's sign-out. Only the route imports
++// this; tests and the catalogue pass fakes.
+ import * as Crypto from 'expo-crypto';
+ import { Share } from 'react-native';
+ 
+ import { createV1Transport } from '@mobile/api/client';
+ import { v1ClientVersion } from '@mobile/api/sharedV1';
+-import { v1SessionCredentials } from '@mobile/auth/session';
++import { getCredentialProvider, v1SessionCredentials } from '@mobile/auth/session';
+ import { getMobileEnv } from '@mobile/config/env';
+ import { createDeletionResources } from '@mobile/spend/v1/deletion';
+ import type { DeletionResources } from '@mobile/spend/v1/deletion';
+ import { createPrivacyResources } from '@mobile/spend/v1/privacy';
+ import type { PrivacyResources } from '@mobile/spend/v1/privacy';
+ import type { PrivacyServices } from './PrivacyParts';
+-import { signOutOfThisDevice } from './SettingsParts';
++import { freshSignInOf, signOutOfThisDevice } from './SettingsParts';
+ 
+ let shared: { privacy: PrivacyResources; deletion: DeletionResources } | null = null;
+ 
+@@ -42,5 +43,12 @@ async function shareExport({ csv, fileName }: { csv: string; fileName: string })
+ }
+ 
+ export function appPrivacyServices(): PrivacyServices {
+-  return { ...appResources(), reauthenticate: null, saveExport: shareExport, signOut: signOutOfThisDevice };
++  return {
++    ...appResources(),
++    freshSignIn: freshSignInOf(getCredentialProvider()),
++    credentials: async () => (await getCredentialProvider()?.requestCredentials()) ?? null,
++    newId: () => Crypto.randomUUID(),
++    saveExport: shareExport,
++    signOut: signOutOfThisDevice,
++  };
+ }
+diff --git a/apps/app/src/spend/v1/deletion.test.ts b/apps/app/src/spend/v1/deletion.test.ts
+index 2605cf9ed8b9fd44a98cf6bf1eba99a642dfbcae..5e50be4492baea6394a050171b75c509a90be118 100644
+--- a/apps/app/src/spend/v1/deletion.test.ts
++++ b/apps/app/src/spend/v1/deletion.test.ts
+@@ -4,11 +4,13 @@ import { createServer } from 'node:http';
+ import type { IncomingHttpHeaders } from 'node:http';
+ import { after, before, beforeEach, test } from 'node:test';
+ 
++import { isUuid } from '@gogospend/contracts';
++
+ import { createV1Transport } from '../../api/client.ts';
+-import type { V1Credentials } from '../../api/client.ts';
+-import type { Proof } from '../../auth/reauthentication.ts';
+-import { confirmDeletionRequest, createDeletionResources, mayEraseDeviceData, requestAccountDeletion, settleDeviceCopy, submitDeletionRequest } from './deletion.ts';
+-import type { DeletionState, DeviceCopy } from './deletion.ts';
++import type { V1Credentials, V1SessionEnd } from '../../api/client.ts';
++import type { FreshOutcome, RequestCredentials } from '../../auth/credentialProvider.ts';
++import { FRESH_SIGN_IN_FAILED, confirmDeletionRequest, createDeletionResources, mayEraseDeviceData, requestAccountDeletion, settleDeviceCopy, submitDeletionRequest } from './deletion.ts';
++import type { DeletionDeps, DeletionState, DeviceCopy, PendingDeletionRequest } from './deletion.ts';
+ 
+ type Seen = { method: string; url: string; headers: IncomingHttpHeaders; body: string };
+ type Reply = { status: number; body?: unknown; raw?: string; drop?: boolean };
+@@ -30,11 +32,36 @@ const server = createServer(async (req, res) => {
+   res.end(reply.raw ?? JSON.stringify(reply.body ?? null));
+ });
+ 
+-const BINDING = 'b'.repeat(43);
+-const credentials: V1Credentials = { getAccessToken: async () => 'access-token', getSessionSnapshot: () => ({ binding: BINDING, epoch: 1 }) };
+-const resources = () => createDeletionResources(createV1Transport({ baseUrl, credentials, client: { platform: 'ios', version: '1.2.3' }, timeoutMs: 2_000 }));
+-const proof = (): Proof => ({ proofId: randomUUID(), commandId: randomUUID(), expiresAt: '2026-10-17T03:05:00.000Z' });
++// The shared transport's own session (the one before the fresh sign-in) and the fresh session's credentials.
++let ended: V1SessionEnd[] = [];
++const session: V1Credentials = {
++  getAccessToken: async () => 'session-token',
++  getSessionSnapshot: () => ({ binding: '0e000000-0000-4000-8000-00000000000e', epoch: 1 }),
++  sessionEnded: (event) => void ended.push(event),
++};
++const FRESH: RequestCredentials = { accessToken: 'fresh-token', sessionId: '0d000000-0000-4000-8000-00000000000d' };
++const resources = () => createDeletionResources(createV1Transport({ baseUrl, credentials: session, client: { platform: 'ios', version: '1.2.3' }, timeoutMs: 2_000 }));
+ const problem = (status: number, code: string): Reply => ({ status, body: { code, request_id: randomUUID(), message_key: 'errors.x' } });
++const ACCEPTED: Reply = { status: 202, body: { request_id: REQUEST_ID, status: 'accepted' } };
++const pending = (): PendingDeletionRequest => ({ commandId: randomUUID(), proofId: randomUUID(), language: 'th', credentials: FRESH });
++const posts = () => seen.filter((request) => request.url === '/v1/me/deletion');
++const receipts = () => seen.filter((request) => request.url === '/v1/auth/deletion-receipt');
++
++/** The journey's dependencies: a fresh sign-in answering `fresh`, the fresh session's credentials, recorded ids, Thai. */
++function deps(overrides: Partial<DeletionDeps> = {}): DeletionDeps & { log: string[]; drawn: string[] } {
++  const log: string[] = [];
++  const drawn: string[] = [];
++  return {
++    resources: resources(),
++    freshSignIn: async (): Promise<FreshOutcome> => { log.push('freshSignIn'); return 'fresh'; },
++    credentials: async () => { log.push('credentials'); return FRESH; },
++    newId: () => { const id = randomUUID(); drawn.push(id); return id; },
++    language: 'th',
++    log,
++    drawn,
++    ...overrides,
++  };
++}
+ 
+ /** A device copy that records what happened to it. */
+ function deviceCopy(): DeviceCopy & { erased: number; locked: number } {
+@@ -60,45 +87,108 @@ after(() => new Promise<void>((resolve) => server.close(() => resolve())));
+ beforeEach(() => {
+   seen = [];
+   replies = [];
++  ended = [];
+ });
+ 
+-test('a confirmed acceptance: the proof is the body, its command the key, and only then may the device erase its copy', async () => {
+-  const p = proof();
+-  replies.push({ status: 202, body: { request_id: REQUEST_ID, status: 'accepted' } });
+-  const state = await requestAccountDeletion({ resources: resources(), reauthenticate: async () => p });
++test("a fresh sign-in, then today's body with a random proof id, the command id as the key, the new session's own token and the app's language", async () => {
++  const d = deps();
++  replies.push(ACCEPTED);
++  const state = await requestAccountDeletion(d);
+   assert.deepEqual(state, { state: 'accepted', requestId: REQUEST_ID, completed: false });
++  assert.deepEqual(d.log, ['freshSignIn', 'credentials']);
+   const [sent] = seen;
++  assert.equal(seen.length, 1);
+   assert.equal(sent.method, 'POST');
+   assert.equal(sent.url, '/v1/me/deletion');
+-  assert.equal(sent.headers['idempotency-key'], p.commandId);
++  const [command, proof] = d.drawn;
++  assert.deepEqual(JSON.parse(sent.body), { proof_id: proof });
++  assert.ok(isUuid(proof));
++  assert.notEqual(proof, command);
++  assert.equal(sent.headers['idempotency-key'], command);
++  assert.equal(sent.headers['x-gogospend-command-schema'], '1');
++  assert.equal(sent.headers.authorization, 'Bearer fresh-token');
++  assert.equal(sent.headers['accept-language'], 'th');
+   assert.equal(sent.headers['x-gogospend-session'], undefined);
+-  assert.deepEqual(JSON.parse(sent.body), { proof_id: p.proofId });
+-  assert.equal(mayEraseDeviceData(state), true);
+-  const copy = deviceCopy();
+-  assert.equal(await settleDeviceCopy(state, copy), 'erased');
+-  assert.equal(copy.erased, 1);
++  // English when the app is in English.
++  replies.push(ACCEPTED);
++  await requestAccountDeletion(deps({ language: 'en' }));
++  assert.equal(seen[1].headers['accept-language'], 'en');
++});
++
++test('cancelling the fresh sign-in requests nothing', async () => {
++  const d = deps({ freshSignIn: async () => 'cancelled' });
++  assert.deepEqual(await requestAccountDeletion(d), { state: 'cancelled' });
++  assert.deepEqual(d.log, [], 'the credentials are never read');
++  assert.equal(seen.length, 0);
++});
++
++test('a fresh sign-in that does not go through, or a new session that cannot be read, requests nothing', async () => {
++  assert.equal(FRESH_SIGN_IN_FAILED, 'FRESH_SIGN_IN_FAILED');
++  for (const outcome of ['failed', 'unavailable', 'not_configured', 'other_account', 'wrong_code', 'rate_limited'] as const) {
++    const d = deps({ freshSignIn: async () => outcome });
++    assert.deepEqual(await requestAccountDeletion(d), { state: 'denied', code: FRESH_SIGN_IN_FAILED }, outcome);
++    assert.deepEqual(d.log, [], `${outcome}: the credentials are never read`);
++  }
++  assert.deepEqual(await requestAccountDeletion(deps({ credentials: async () => null })), { state: 'reauth_required' });
++  assert.equal(seen.length, 0);
++});
++
++test('REAUTH_REQUIRED requests nothing more', async () => {
++  replies.push(problem(401, 'REAUTH_REQUIRED'));
++  assert.deepEqual(await requestAccountDeletion(deps()), { state: 'reauth_required' });
++  assert.equal(seen.length, 1, 'no receipt is asked for');
++  assert.deepEqual(ended, [], "the request's own credentials never end the shared session");
+ });
+ 
+-test('a lost acceptance: the identical resend is refused, and the receipt confirms it', async () => {
+-  const p = proof();
++test('a lost answer asks for the receipt with the same token: found is accepted; not found keeps it unconfirmed', async () => {
++  // The answer is lost; the transport's resend meets a dead session (the first one landed); the receipt says accepted.
++  const request = pending();
+   replies.push({ drop: true, status: 0 }, problem(401, 'SESSION_REQUIRED'), { status: 200, body: { request_id: REQUEST_ID, status: 'accepted' } });
+-  const state = await submitDeletionRequest({ proofId: p.proofId, commandId: p.commandId }, { resources: resources() });
+-  assert.deepEqual(state, { state: 'accepted', requestId: REQUEST_ID, completed: false });
+-  const posts = seen.filter((request) => request.url === '/v1/me/deletion');
+-  assert.equal(posts.length, 2);
+-  assert.equal(posts[0].body, posts[1].body);
+-  assert.equal(posts[0].headers['idempotency-key'], posts[1].headers['idempotency-key']);
+-  const asked = seen.find((request) => request.url === '/v1/auth/deletion-receipt');
+-  assert.ok(asked);
+-  assert.equal(asked.headers['x-gogospend-session'], undefined);
+-  assert.deepEqual(JSON.parse(asked.body), { command_id: p.commandId });
++  assert.deepEqual(await submitDeletionRequest(request, { resources: resources() }), { state: 'accepted', requestId: REQUEST_ID, completed: false });
++  const [asked] = receipts();
++  assert.equal(asked.headers.authorization, 'Bearer fresh-token');
++  assert.deepEqual(JSON.parse(asked.body), { command_id: request.commandId });
++  // A gateway error, then no receipt: still unknown, and the exact request is kept.
++  seen = [];
++  replies.push(problem(503, 'SERVICE_UNAVAILABLE'), problem(404, 'NOT_FOUND'));
++  assert.deepEqual(await submitDeletionRequest(request, { resources: resources() }), { state: 'unconfirmed', request });
++  assert.equal(receipts()[0].headers.authorization, 'Bearer fresh-token');
++});
++
++test('a resend after a lost answer repeats the same key, proof id and token', async () => {
++  const d = deps();
++  // Network: the transport sends the command three times; then the receipt finds nothing.
++  replies.push({ drop: true, status: 0 }, { drop: true, status: 0 }, { drop: true, status: 0 }, problem(404, 'NOT_FOUND'));
++  const first = await requestAccountDeletion(d);
++  assert.equal(first.state, 'unconfirmed');
++  if (first.state !== 'unconfirmed') return;
++  // Try again: the very same request, with no new sign-in.
++  replies.push(ACCEPTED);
++  assert.deepEqual(await submitDeletionRequest(first.request, { resources: resources() }), { state: 'accepted', requestId: REQUEST_ID, completed: false });
++  const sends = posts();
++  assert.equal(sends.length, 4);
++  for (const sent of sends) {
++    assert.equal(sent.headers['idempotency-key'], d.drawn[0]);
++    assert.equal(sent.body, sends[0].body);
++    assert.equal(sent.headers.authorization, 'Bearer fresh-token');
++    assert.equal(sent.headers['accept-language'], 'th');
++  }
++  assert.deepEqual(JSON.parse(sends[0].body), { proof_id: d.drawn[1] });
++  assert.equal(d.drawn.length, 2);
++  assert.deepEqual(d.log, ['freshSignIn', 'credentials']);
+ });
+ 
+-test('signed out with no receipt is a refusal: nothing was deleted, and the copy is locked with its drafts', async () => {
++test('only a confirmed acceptance lets the device erase its copy; a refusal locks it and keeps the drafts', async () => {
++  replies.push(ACCEPTED);
++  const accepted = await requestAccountDeletion(deps());
++  assert.equal(mayEraseDeviceData(accepted), true);
++  const erased = deviceCopy();
++  assert.equal(await settleDeviceCopy(accepted, erased), 'erased');
++  assert.equal(erased.erased, 1);
++  // Refused, and no receipt: nothing was deleted, and the copy is locked with its drafts.
+   for (const refusal of [problem(401, 'SESSION_REQUIRED'), problem(403, 'ACCOUNT_UNAVAILABLE'), problem(401, 'UNAUTHENTICATED')]) {
+-    seen = [];
+     replies = [refusal, problem(404, 'NOT_FOUND')];
+-    const state = await submitDeletionRequest({ proofId: randomUUID(), commandId: randomUUID() }, { resources: resources() });
++    const state = await submitDeletionRequest(pending(), { resources: resources() });
+     assert.equal(state.state, 'denied');
+     assert.equal(mayEraseDeviceData(state), false);
+     const copy = deviceCopy();
+@@ -106,46 +196,32 @@ test('signed out with no receipt is a refusal: nothing was deleted, and the copy
+     assert.equal(copy.erased, 0);
+     assert.equal(copy.locked, 1);
+   }
+-});
+-
+-test('an unknown outcome keeps everything and the exact request; it never implies deletion', async () => {
+-  const cases: Reply[][] = [
+-    // Network: the transport resends the command twice, then the receipt is unreachable too.
+-    [{ drop: true, status: 0 }, { drop: true, status: 0 }, { drop: true, status: 0 }, { drop: true, status: 0 }],
++  // An unknown outcome never implies deletion.
++  const unknown: Reply[][] = [
+     [problem(503, 'SERVICE_UNAVAILABLE'), problem(404, 'NOT_FOUND')],
+     [problem(429, 'RATE_LIMITED'), problem(404, 'NOT_FOUND')],
+     [{ status: 202, raw: '<html>gateway</html>' }, problem(404, 'NOT_FOUND')],
+     // Refused, but the receipt check itself failed: still unknown.
+     [problem(401, 'SESSION_REQUIRED'), problem(502, 'HTTP_502')],
+   ];
+-  for (const replyList of cases) {
+-    seen = [];
++  for (const replyList of unknown) {
+     replies = [...replyList];
+-    const request = { proofId: randomUUID(), commandId: randomUUID() };
++    const request = pending();
+     const state = await submitDeletionRequest(request, { resources: resources() });
+     assert.deepEqual(state, { state: 'unconfirmed', request });
+     const copy = deviceCopy();
+     assert.equal(await settleDeviceCopy(state, copy), 'kept');
+     assert.equal(copy.erased + copy.locked, 0);
+   }
+-});
+-
+-test('a stale proof asks for a new one; a cancelled sign-in requests nothing', async () => {
+-  replies.push(problem(401, 'REAUTH_REQUIRED'));
+-  assert.deepEqual(await submitDeletionRequest({ proofId: randomUUID(), commandId: randomUUID() }, { resources: resources() }), { state: 'reauth_required' });
+-  assert.equal(seen.length, 1);
+-  seen = [];
+-  assert.deepEqual(await requestAccountDeletion({ resources: resources(), reauthenticate: async () => null }), { state: 'cancelled' });
+-  assert.equal(seen.length, 0);
+   for (const state of [{ state: 'reauth_required' }, { state: 'cancelled' }] as DeletionState[]) {
+     const copy = deviceCopy();
+     assert.equal(await settleDeviceCopy(state, copy), 'kept');
+-    assert.equal(copy.erased, 0);
++    assert.equal(copy.erased + copy.locked, 0);
+   }
+ });
+ 
+ test('a receipt reports completion once the server data is purged; a malformed receipt is not trusted', async () => {
+-  const request = { proofId: randomUUID(), commandId: randomUUID() };
++  const request = pending();
+   replies.push({ status: 200, body: { request_id: REQUEST_ID, status: 'completed' } });
+   assert.deepEqual(await confirmDeletionRequest(request, { resources: resources() }), { state: 'accepted', requestId: REQUEST_ID, completed: true });
+   replies.push({ status: 200, body: { request_id: REQUEST_ID, status: 'deleted', extra: true } });
+diff --git a/apps/app/src/spend/v1/deletion.ts b/apps/app/src/spend/v1/deletion.ts
+index 4c7fe716887d941a871b4765ce41bd185faa5bc4..f8af206798caf08d3be1992ef0b9a5c183484f30 100644
+--- a/apps/app/src/spend/v1/deletion.ts
++++ b/apps/app/src/spend/v1/deletion.ts
+@@ -1,7 +1,15 @@
+-// P5 account deletion, client side: the request (with a fresh `deletion`
+-// proof), the initiating device's receipt after a lost response, and the one
+-// rule for this device's own copy. The settings/privacy screen that drives it
+-// waits for approved visuals (E2); nothing here shows UI or logs anything.
++// Account deletion, client side (§6.12): a fresh sign-in with the account's
++// own method, then the request on that new session's own credentials, the
++// initiating device's receipt after a lost answer, and the one rule for this
++// device's own copy. The screen that drives it is Privacy and data; nothing
++// here shows UI or logs anything.
++//
++// The request keeps today's v1 body, { proof_id } (R46, C2): a random UUID the
++// server records but no longer checks, since freshness now comes from the
++// session's sign-in time (`auth_time`). Its command id is the Idempotency-Key,
++// and it carries the app's language for the deletion email (K11). A resend
++// after a lost answer, and the receipt, use the same credentials, command id
++// and proof id.
+ //
+ // Only a server-confirmed acceptance (`accepted`) lets this device discard
+ // its diary. Every ordinary failure - network, timeout, gateway, 401/403,
+@@ -15,16 +23,14 @@ import type { DeletionAccepted, DeletionReceipt } from '@gogospend/contracts';
+ 
+ import { V1Error } from '../../api/client.ts';
+ import type { V1Transport } from '../../api/client.ts';
+-import type { Proof } from '../../auth/reauthentication.ts';
++import type { FreshOutcome, RequestCredentials } from '../../auth/credentialProvider.ts';
+ import { V1_COMMAND_SCHEMA } from './resources.ts';
+ 
+-export type DeletionProof = Pick<Proof, 'proofId' | 'commandId'>;
+-
+ export type DeletionResources = {
+-  /** POST /v1/me/deletion as the proof's command (its id is the Idempotency-Key). */
+-  requestDeletion(proof: DeletionProof): Promise<DeletionAccepted>;
+-  /** The initiating device's receipt for that command (its old binding is sent); 404 when there is none. */
+-  deletionReceipt(commandId: string): Promise<DeletionReceipt>;
++  /** POST /v1/me/deletion with today's body { proof_id } (R46), the command id as Idempotency-Key, the request's own credentials and Accept-Language. */
++  requestDeletion(input: { commandId: string; proofId: string; language: 'th' | 'en' }, credentials: RequestCredentials): Promise<DeletionAccepted>;
++  /** POST DELETION_RECEIPT_PATH, token only, with the request's own token; 404 when there is none. */
++  deletionReceipt(commandId: string, accessToken: string): Promise<DeletionReceipt>;
+ };
+ 
+ const commandId = (id: string) => {
+@@ -34,60 +40,77 @@ const commandId = (id: string) => {
+ 
+ export function createDeletionResources(transport: V1Transport): DeletionResources {
+   return {
+-    requestDeletion: (proof) =>
++    requestDeletion: (input, credentials) =>
+       transport.request('POST', '/v1/me/deletion', {
+-        body: { proof_id: proof.proofId },
+-        command: { id: commandId(proof.commandId), schemaVersion: V1_COMMAND_SCHEMA },
++        body: { proof_id: input.proofId },
++        command: { id: commandId(input.commandId), schemaVersion: V1_COMMAND_SCHEMA },
++        credentials: { accessToken: credentials.accessToken, binding: credentials.sessionId },
++        acceptLanguage: input.language,
+         validate: isDeletionAccepted,
+       }),
+-    deletionReceipt: (id) =>
++    deletionReceipt: (id, accessToken) =>
+       transport.request('POST', DELETION_RECEIPT_PATH, {
+         body: { command_id: commandId(id) },
++        tokenOnly: true,
++        credentials: { accessToken },
+         validate: (value): value is DeletionReceipt => isDeletionReceipt(value),
+       }),
+   };
+ }
+ 
+-/** A request whose outcome is not known: resend exactly this (same proof and key), or ask for its receipt. */
+-export type PendingDeletionRequest = { proofId: string; commandId: string };
++/** A request whose outcome is not known: resend exactly this (same key, proof id, language and credentials), or ask for its receipt. */
++export type PendingDeletionRequest = { commandId: string; proofId: string; language: 'th' | 'en'; credentials: RequestCredentials };
++
++/** The fresh sign-in did not go through (any outcome but `fresh` or `cancelled`): nothing was requested. */
++export const FRESH_SIGN_IN_FAILED = 'FRESH_SIGN_IN_FAILED';
+ 
+ export type DeletionState =
+-  /** The user cancelled the fresh sign-in: nothing was requested. */
++  /** The person cancelled the fresh sign-in: nothing was requested. */
+   | { state: 'cancelled' }
+-  /** The proof was stale or used: ask for a new one. Nothing was requested. */
++  /** The sign-in was too old for the server, or its new session could not be read: sign in again. Nothing was requested. */
+   | { state: 'reauth_required' }
+   /** Not known yet (network, gateway, rate limit): keep everything and retry this request. */
+   | { state: 'unconfirmed'; request: PendingDeletionRequest }
+   /** The server confirmed it: the account is being erased. `completed` once its server data is purged. */
+   | { state: 'accepted'; requestId: string; completed: boolean }
+-  /** Refused (signed out, account unavailable, invalid): no deletion was requested by this device. */
++  /** Refused (signed out, account unavailable, invalid), or the fresh sign-in failed (FRESH_SIGN_IN_FAILED, nothing sent): no deletion was requested by this device. */
+   | { state: 'denied'; code: string };
+ 
+ export type DeletionDeps = {
+   resources: DeletionResources;
+-  /** A fresh `deletion` proof (F5's reauthenticate('deletion', ...)); null when the user cancels. */
+-  reauthenticate: () => Promise<Proof | null>;
++  /** A fresh sign-in with the account's own method (the credential provider's). */
++  freshSignIn: () => Promise<FreshOutcome>;
++  /** The new session's token and id, read together (the provider's requestCredentials()); null when there is no usable session. */
++  credentials: () => Promise<RequestCredentials | null>;
++  /** A random UUID: the command id, then the proof id. */
++  newId: () => string;
++  /** The app's language, for the deletion email. */
++  language: 'th' | 'en';
+ };
+ 
+ const unknownOutcome = (error: V1Error) =>
+   error.outcome === 'network' || error.outcome === 'unavailable' || error.outcome === 'invalid_response' || error.outcome === 'rate_limited';
+ 
+-/** Reauthenticates for `deletion` and sends the request. */
++/** A fresh sign-in, then the request on the new session's own credentials. A sign-in that does not go through requests nothing. */
+ export async function requestAccountDeletion(deps: DeletionDeps): Promise<DeletionState> {
+-  const proof = await deps.reauthenticate();
+-  if (!proof) return { state: 'cancelled' };
+-  return submitDeletionRequest({ proofId: proof.proofId, commandId: proof.commandId }, deps);
++  const outcome = await deps.freshSignIn();
++  if (outcome === 'cancelled') return { state: 'cancelled' };
++  if (outcome !== 'fresh') return { state: 'denied', code: FRESH_SIGN_IN_FAILED };
++  // Read once: every send of this request, and its receipt, use these.
++  const credentials = await deps.credentials();
++  if (!credentials) return { state: 'reauth_required' };
++  return submitDeletionRequest({ commandId: deps.newId(), proofId: deps.newId(), language: deps.language, credentials }, deps);
+ }
+ 
+ /**
+- * Sends (or resends) one deletion request. Once it is accepted every binding
++ * Sends (or resends) one deletion request. Once it is accepted every session
+  * is dead, so a resend after a lost response is refused like any signed-out
+  * request: only the receipt can then say it was accepted.
+  */
+ export async function submitDeletionRequest(request: PendingDeletionRequest, deps: Pick<DeletionDeps, 'resources'>): Promise<DeletionState> {
+   let accepted: DeletionAccepted;
+   try {
+-    accepted = await deps.resources.requestDeletion(request);
++    accepted = await deps.resources.requestDeletion({ commandId: request.commandId, proofId: request.proofId, language: request.language }, request.credentials);
+   } catch (error) {
+     if (!(error instanceof V1Error)) throw error;
+     if (error.code === 'REAUTH_REQUIRED') return { state: 'reauth_required' };
+@@ -100,13 +123,14 @@ export async function submitDeletionRequest(request: PendingDeletionRequest, dep
+ }
+ 
+ /**
+- * Asks for the initiating device's receipt. Found: accepted. Not found: the
+- * request never committed - `denied` when the server had refused the device
+- * (`refusal`), otherwise still `unconfirmed`. Any failure is `unconfirmed`.
++ * Asks for the initiating device's receipt, with the request's own token.
++ * Found: accepted. Not found: the request never committed - `denied` when the
++ * server had refused the device (`refusal`), otherwise still `unconfirmed`.
++ * Any failure is `unconfirmed`.
+  */
+ export async function confirmDeletionRequest(request: PendingDeletionRequest, deps: Pick<DeletionDeps, 'resources'>, refusal: string | null = null): Promise<DeletionState> {
+   try {
+-    const receipt = await deps.resources.deletionReceipt(request.commandId);
++    const receipt = await deps.resources.deletionReceipt(request.commandId, request.credentials.accessToken);
+     return { state: 'accepted', requestId: receipt.request_id, completed: receipt.status === 'completed' };
+   } catch (error) {
+     if (!(error instanceof V1Error)) throw error;
+diff --git a/apps/app/src/spend/v1/privacy.test.ts b/apps/app/src/spend/v1/privacy.test.ts
+index 8600b7fd1bebb880df73bb70ed4b1637783cd56b..ca94fa3471bdafecf5a8bddd51f29b7841e720d5 100644
+--- a/apps/app/src/spend/v1/privacy.test.ts
++++ b/apps/app/src/spend/v1/privacy.test.ts
+@@ -4,9 +4,11 @@ import { createServer } from 'node:http';
+ import type { IncomingHttpHeaders } from 'node:http';
+ import { after, before, beforeEach, test } from 'node:test';
+ 
++import { isUuid } from '@gogospend/contracts';
++
+ import { V1Error, createV1Transport } from '../../api/client.ts';
+ import type { V1Credentials } from '../../api/client.ts';
+-import type { Proof } from '../../auth/reauthentication.ts';
++import type { FreshOutcome, RequestCredentials } from '../../auth/credentialProvider.ts';
+ import { createPrivacyResources, downloadExport, pollExport, requestExport, retryExportRequest } from './privacy.ts';
+ import type { ExportDeps } from './privacy.ts';
+ 
+@@ -38,17 +40,33 @@ const server = createServer(async (req, res) => {
+   res.end(reply.raw ?? JSON.stringify(reply.body ?? null));
+ });
+ 
+-const snapshot = { binding: 'b'.repeat(43), epoch: 1 };
+-const credentials: V1Credentials = { getAccessToken: async () => 'access-token', getSessionSnapshot: () => snapshot };
++// The shared transport's own session (status checks, grants and downloads use it) and the fresh session's credentials (the request uses them).
++const snapshot = { binding: '0e000000-0000-4000-8000-00000000000e', epoch: 1 };
++const credentials: V1Credentials = { getAccessToken: async () => 'session-token', getSessionSnapshot: () => snapshot };
++const FRESH: RequestCredentials = { accessToken: 'fresh-token', sessionId: '0d000000-0000-4000-8000-00000000000d' };
+ const sha256Hex = async (text: string) => createHash('sha256').update(text).digest('hex');
+ const resources = () => createPrivacyResources(createV1Transport({ baseUrl, credentials, client: { platform: 'ios', version: '1.2.3' }, timeoutMs: 2_000 }), { sha256Hex });
+ 
+-const proof = (): Proof => ({ proofId: randomUUID(), commandId: randomUUID(), expiresAt: '2026-10-17T03:05:00.000Z' });
+ const ackFor = (commandId: string) => ({ command_id: commandId, entity_id: EXPORT_ID, version: 1, committed_revision: '12', outcome: 'accepted', entity_state: 'active' });
+ 
+-function deps(overrides: Partial<ExportDeps> = {}): ExportDeps & { sleeps: number[] } {
++/** The journey's dependencies: a fresh sign-in answering `fresh`, the fresh session's credentials, recorded ids, instant waits. */
++function deps(overrides: Partial<ExportDeps> = {}): ExportDeps & { sleeps: number[]; log: string[]; drawn: string[] } {
+   const sleeps: number[] = [];
+-  return { resources: resources(), reauthenticate: async () => proof(), sleep: async (ms) => void sleeps.push(ms), pollMs: 2_000, maxPolls: 3, sleeps, ...overrides };
++  const log: string[] = [];
++  const drawn: string[] = [];
++  return {
++    resources: resources(),
++    freshSignIn: async (): Promise<FreshOutcome> => { log.push('freshSignIn'); return 'fresh'; },
++    credentials: async () => { log.push('credentials'); return FRESH; },
++    newId: () => { const id = randomUUID(); drawn.push(id); return id; },
++    sleep: async (ms) => void sleeps.push(ms),
++    pollMs: 2_000,
++    maxPolls: 3,
++    sleeps,
++    log,
++    drawn,
++    ...overrides,
++  };
+ }
+ 
+ async function failure(run: () => Promise<unknown>): Promise<V1Error> {
+@@ -73,22 +91,38 @@ beforeEach(() => {
+   replies = [];
+ });
+ 
+-test('an export request sends the proof as its body and the proof command as its key and schema', async () => {
+-  const p = proof();
+-  replies.push({ status: 202, body: ackFor(p.commandId) });
+-  assert.deepEqual(await resources().requestExport(MARCH, p), ackFor(p.commandId));
+-  const [sent] = seen;
++test("a fresh sign-in, then today's export body with a random proof id and the new session's own token", async () => {
++  // The ids the app will draw, known up front so the acknowledgement can name the command.
++  const ids = [randomUUID(), randomUUID()];
++  const d = deps({ maxPolls: 1 });
++  d.newId = () => {
++    const id = ids[d.drawn.length] ?? randomUUID();
++    d.drawn.push(id);
++    return id;
++  };
++  replies.push({ status: 202, body: ackFor(ids[0]) }, { status: 200, body: READY });
++  assert.deepEqual(await requestExport(MARCH, d), { state: 'ready', exportId: EXPORT_ID, file: READY });
++  assert.deepEqual(d.log, ['freshSignIn', 'credentials']);
++  const [sent, status] = seen;
+   assert.equal(sent.method, 'POST');
+   assert.equal(sent.url, '/v1/exports');
+-  assert.equal(sent.headers['idempotency-key'], p.commandId);
++  const [command, proof] = d.drawn;
++  assert.deepEqual(JSON.parse(sent.body), { proof_id: proof, from: MARCH.from, through: MARCH.through });
++  assert.ok(isUuid(proof));
++  assert.notEqual(proof, command);
++  assert.equal(sent.headers['idempotency-key'], command);
+   assert.equal(sent.headers['x-gogospend-command-schema'], '1');
++  assert.equal(sent.headers.authorization, 'Bearer fresh-token');
+   assert.equal(sent.headers['x-gogospend-session'], undefined);
+-  assert.deepEqual(JSON.parse(sent.body), { proof_id: p.proofId, from: MARCH.from, through: MARCH.through });
++  // The status check reads on the shared session (which, after the fresh sign-in, is that new session).
++  assert.equal(status.url, `/v1/exports/${EXPORT_ID}`);
++  assert.equal(status.headers.authorization, 'Bearer session-token');
+   // An acknowledgement for another command, or not "accepted", is refused.
++  const request = { commandId: randomUUID(), proofId: randomUUID() };
+   replies.push({ status: 202, body: ackFor(randomUUID()) });
+-  assert.equal((await failure(() => resources().requestExport(MARCH, p))).outcome, 'invalid_response');
+-  replies.push({ status: 202, body: { ...ackFor(p.commandId), outcome: 'created' } });
+-  assert.equal((await failure(() => resources().requestExport(MARCH, p))).outcome, 'invalid_response');
++  assert.equal((await failure(() => resources().requestExport(MARCH, request, FRESH))).outcome, 'invalid_response');
++  replies.push({ status: 202, body: { ...ackFor(request.commandId), outcome: 'created' } });
++  assert.equal((await failure(() => resources().requestExport(MARCH, request, FRESH))).outcome, 'invalid_response');
+ });
+ 
+ test('statuses and grants must be exactly the shared shapes', async () => {
+@@ -123,39 +157,56 @@ test('a download is checked against the ready export size and digest, byte order
+   assert.equal((await failure(() => resources().downloadExport({ ...GRANT, url: 'https://elsewhere.example/x' }, { bytes: CSV_BYTES, sha256: CSV_SHA }))).code, 'INVALID_GRANT');
+ });
+ 
+-test('cancelling the reauthentication requests nothing', async () => {
+-  const outcome = await requestExport(MARCH, deps({ reauthenticate: async () => null }));
+-  assert.deepEqual(outcome, { state: 'cancelled' });
++test('cancelling the fresh sign-in requests nothing', async () => {
++  const d = deps({ freshSignIn: async () => 'cancelled' });
++  assert.deepEqual(await requestExport(MARCH, d), { state: 'cancelled' });
++  assert.deepEqual(d.log, [], 'the credentials are never read');
+   assert.equal(seen.length, 0);
+ });
+ 
+ test('ready after polling: the journey returns the ready export and paces its polls', async () => {
+-  const p = proof();
+-  replies.push({ status: 202, body: ackFor(p.commandId) }, { status: 200, body: { ...BASE, status: 'pending' } }, { status: 200, body: { ...BASE, status: 'pending' } }, { status: 200, body: READY });
+-  const d = deps({ reauthenticate: async () => p });
++  const commandId = randomUUID();
++  replies.push({ status: 202, body: ackFor(commandId) }, { status: 200, body: { ...BASE, status: 'pending' } }, { status: 200, body: { ...BASE, status: 'pending' } }, { status: 200, body: READY });
++  const d = deps({ newId: () => commandId });
+   assert.deepEqual(await requestExport(MARCH, d), { state: 'ready', exportId: EXPORT_ID, file: READY });
+   assert.deepEqual(d.sleeps, [2_000, 2_000]);
+   assert.deepEqual(seen.map((s) => `${s.method} ${s.url}`), ['POST /v1/exports', `GET /v1/exports/${EXPORT_ID}`, `GET /v1/exports/${EXPORT_ID}`, `GET /v1/exports/${EXPORT_ID}`]);
+ });
+ 
+-test('a stale or used proof asks for reauthentication instead of signing out', async () => {
++test('a stale sign-in is reauth_required', async () => {
++  // The server finds the sign-in too old.
+   replies.push({ status: 401, body: { code: 'REAUTH_REQUIRED', request_id: 'r', message_key: 'errors.reauth_required' } });
+   assert.deepEqual(await requestExport(MARCH, deps()), { state: 'reauth_required' });
++  assert.equal(seen.length, 1);
++  // A fresh sign-in that does not go through, or a new session that cannot be read: the same, and nothing is sent.
++  seen = [];
++  for (const outcome of ['failed', 'unavailable', 'not_configured', 'other_account', 'wrong_code', 'rate_limited'] as const) {
++    const d = deps({ freshSignIn: async () => outcome });
++    assert.deepEqual(await requestExport(MARCH, d), { state: 'reauth_required' }, outcome);
++    assert.deepEqual(d.log, [], `${outcome}: the credentials are never read`);
++  }
++  assert.deepEqual(await requestExport(MARCH, deps({ credentials: async () => null })), { state: 'reauth_required' });
++  assert.equal(seen.length, 0);
+ });
+ 
+-test('an unknown outcome keeps the exact request, and a retry sends the same key, body and proof', async () => {
+-  const p = proof();
++test('a lost answer resends the same request with the same token, key and proof id', async () => {
++  const d = deps();
+   replies.push({ status: 0, drop: true }, { status: 0, drop: true }, { status: 0, drop: true });
+-  const outcome = await requestExport(MARCH, deps({ reauthenticate: async () => p }));
+-  assert.deepEqual(outcome, { state: 'unconfirmed', request: { filter: MARCH, proofId: p.proofId, commandId: p.commandId } });
++  const outcome = await requestExport(MARCH, d);
++  const [commandId, proofId] = d.drawn;
++  assert.deepEqual(outcome, { state: 'unconfirmed', request: { filter: MARCH, commandId, proofId, credentials: FRESH } });
+   assert.equal(seen.length, 3);
+-  assert.ok(seen.every((s) => s.headers['idempotency-key'] === p.commandId && s.body === seen[0].body));
++  assert.ok(seen.every((s) => s.headers['idempotency-key'] === commandId && s.body === seen[0].body && s.headers.authorization === 'Bearer fresh-token'));
+   seen = [];
+-  replies.push({ status: 202, body: ackFor(p.commandId) }, { status: 200, body: READY });
++  replies.push({ status: 202, body: ackFor(commandId) }, { status: 200, body: READY });
+   if (outcome.state !== 'unconfirmed') throw new Error('expected unconfirmed');
++  // Try again: no new sign-in, no new ids.
+   assert.deepEqual(await retryExportRequest(outcome.request, deps()), { state: 'ready', exportId: EXPORT_ID, file: READY });
+-  assert.equal(seen[0].headers['idempotency-key'], p.commandId);
+-  assert.deepEqual(JSON.parse(seen[0].body), { proof_id: p.proofId, ...MARCH });
++  assert.equal(seen[0].headers['idempotency-key'], commandId);
++  assert.equal(seen[0].headers.authorization, 'Bearer fresh-token');
++  assert.deepEqual(JSON.parse(seen[0].body), { proof_id: proofId, ...MARCH });
++  assert.equal(d.drawn.length, 2);
++  assert.deepEqual(d.log, ['freshSignIn', 'credentials']);
+ });
+ 
+ test('polling reports queued after its budget, and failed, expired or unknown exports as such', async () => {
+diff --git a/apps/app/src/spend/v1/privacy.ts b/apps/app/src/spend/v1/privacy.ts
+index b516ee10dbcddfb0a8994c882cc0c2917774d34a..fc1d20cc4ca40ad493405c7f81685b2872522be8 100644
+--- a/apps/app/src/spend/v1/privacy.ts
++++ b/apps/app/src/spend/v1/privacy.ts
+@@ -1,23 +1,25 @@
+-// P4 export, client side: request (with a fresh purpose-bound proof), status,
+-// short-lived grant and download, plus the journey the privacy screen will
+-// drive once its visuals are approved (E2). Every response is checked against
+-// the shared contract, a download against the ready export's size and digest,
+-// and nothing here logs CSV contents, grants or amounts. "Ready" means the
+-// file exists on the server, never that the user saved it.
++// P4 export, client side: request (after a fresh sign-in, on the new
++// session's own credentials), status, short-lived grant and download, plus
++// the journey the privacy screen drives. The request keeps today's v1 body,
++// { proof_id, from, through } (R46, C2), where proof_id is a random UUID the
++// server records but no longer checks: freshness comes from the session's
++// sign-in time. Every response is checked against the shared contract, a
++// download against the ready export's size and digest, and nothing here logs
++// CSV contents, grants, tokens or amounts. "Ready" means the file exists on
++// the server, never that the user saved it.
+ import { EXPORT_CSV_BOM, exportFileName, isExportDto, isExportGrant, isUuid } from '@gogospend/contracts';
+ import type { CommandAck, ExportDto, ExportFilter, ExportGrant } from '@gogospend/contracts';
+ 
+ import { V1Error } from '../../api/client.ts';
+ import type { V1Transport } from '../../api/client.ts';
+-import type { Proof } from '../../auth/reauthentication.ts';
++import type { FreshOutcome, RequestCredentials } from '../../auth/credentialProvider.ts';
+ import { V1_COMMAND_SCHEMA, isCommandAck } from './resources.ts';
+ 
+-export type ExportProof = Pick<Proof, 'proofId' | 'commandId'>;
+ type ReadyExport = Extract<ExportDto, { status: 'ready' }>;
+ 
+ export type PrivacyResources = {
+-  /** POST /v1/exports as the proof's command (its id is the Idempotency-Key). */
+-  requestExport(filter: ExportFilter, proof: ExportProof): Promise<CommandAck>;
++  /** POST /v1/exports with today's body { proof_id, from, through } (R46), the command id as the Idempotency-Key, on the request's own credentials. */
++  requestExport(filter: ExportFilter, request: { commandId: string; proofId: string }, credentials: RequestCredentials): Promise<CommandAck>;
+   exportStatus(exportId: string): Promise<ExportDto>;
+   exportGrant(exportId: string): Promise<ExportGrant>;
+   /** The CSV (byte order mark included), only if it matches the ready export's size and SHA-256. */
+@@ -31,11 +33,12 @@ const segment = (id: string) => {
+ 
+ export function createPrivacyResources(transport: V1Transport, options: { sha256Hex: (text: string) => Promise<string> }): PrivacyResources {
+   return {
+-    requestExport: (filter, proof) =>
++    requestExport: (filter, request, credentials) =>
+       transport.request('POST', '/v1/exports', {
+-        body: { proof_id: proof.proofId, from: filter.from, through: filter.through },
+-        command: { id: segment(proof.commandId), schemaVersion: V1_COMMAND_SCHEMA },
+-        validate: (value): value is CommandAck => isCommandAck(value) && value.command_id === proof.commandId && value.outcome === 'accepted',
++        body: { proof_id: request.proofId, from: filter.from, through: filter.through },
++        command: { id: segment(request.commandId), schemaVersion: V1_COMMAND_SCHEMA },
++        credentials: { accessToken: credentials.accessToken, binding: credentials.sessionId },
++        validate: (value): value is CommandAck => isCommandAck(value) && value.command_id === request.commandId && value.outcome === 'accepted',
+       }),
+     exportStatus: (exportId) =>
+       transport.request('GET', `/v1/exports/${segment(exportId)}`, { validate: (value): value is ExportDto => isExportDto(value) && value.export_id === exportId }),
+@@ -53,8 +56,8 @@ export function createPrivacyResources(transport: V1Transport, options: { sha256
+   };
+ }
+ 
+-/** A request whose outcome is not known yet: retry exactly this (same key, body and proof) - never a new proof or key. */
+-export type PendingExportRequest = { filter: ExportFilter; proofId: string; commandId: string };
++/** A request whose outcome is not known yet: retry exactly this (same key, body, proof id and credentials) - never a new sign-in, proof id or key. */
++export type PendingExportRequest = { filter: ExportFilter; commandId: string; proofId: string; credentials: RequestCredentials };
+ 
+ export type ExportState =
+   | { state: 'cancelled' }
+@@ -68,8 +71,12 @@ export type ExportState =
+ 
+ export type ExportDeps = {
+   resources: PrivacyResources;
+-  /** A fresh `export` proof (F5's reauthenticate('export', ...)); null when the user cancels. */
+-  reauthenticate: () => Promise<Proof | null>;
++  /** A fresh sign-in with the account's own method (the credential provider's). */
++  freshSignIn: () => Promise<FreshOutcome>;
++  /** The new session's token and id, read together (the provider's requestCredentials()); null when there is no usable session. */
++  credentials: () => Promise<RequestCredentials | null>;
++  /** A random UUID: the command id, then the proof id. */
++  newId: () => string;
+   sleep?: (ms: number) => Promise<void>;
+   /** Wait between status checks (default 2 s). */
+   pollMs?: number;
+@@ -79,23 +86,31 @@ export type ExportDeps = {
+ 
+ const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+ 
+-/** Reauthenticates for `export`, requests the period and polls until it settles (or reports it queued). */
++/**
++ * A fresh sign-in, then the request for the period on the new session's own
++ * credentials, polled until it settles (or reported queued). A sign-in that
++ * does not go through, or a new session that cannot be read, requests nothing.
++ */
+ export async function requestExport(filter: ExportFilter, deps: ExportDeps): Promise<ExportState> {
+-  const proof = await deps.reauthenticate();
+-  if (!proof) return { state: 'cancelled' };
+-  return retryExportRequest({ filter, proofId: proof.proofId, commandId: proof.commandId }, deps);
++  const outcome = await deps.freshSignIn();
++  if (outcome === 'cancelled') return { state: 'cancelled' };
++  if (outcome !== 'fresh') return { state: 'reauth_required' };
++  // Read once: every send of this request uses these.
++  const credentials = await deps.credentials();
++  if (!credentials) return { state: 'reauth_required' };
++  return retryExportRequest({ filter, commandId: deps.newId(), proofId: deps.newId(), credentials }, deps);
+ }
+ 
+ /**
+- * Sends (or resends) one export request. A stale or used proof asks for a new
+- * one; an outcome the app cannot know (network, gateway, garbled answer) keeps
+- * the exact request, whose retry returns the original acknowledgement if it
+- * had committed.
++ * Sends (or resends) one export request. A sign-in too old for the server
++ * asks for a new one; an outcome the app cannot know (network, gateway,
++ * garbled answer) keeps the exact request, whose retry returns the original
++ * acknowledgement if it had committed.
+  */
+-export async function retryExportRequest(request: PendingExportRequest, deps: ExportDeps): Promise<ExportState> {
++export async function retryExportRequest(request: PendingExportRequest, deps: Pick<ExportDeps, 'resources' | 'sleep' | 'pollMs' | 'maxPolls'>): Promise<ExportState> {
+   let ack: CommandAck;
+   try {
+-    ack = await deps.resources.requestExport(request.filter, { proofId: request.proofId, commandId: request.commandId });
++    ack = await deps.resources.requestExport(request.filter, { commandId: request.commandId, proofId: request.proofId }, request.credentials);
+   } catch (error) {
+     if (error instanceof V1Error) {
+       if (error.code === 'REAUTH_REQUIRED') return { state: 'reauth_required' };
+diff --git a/apps/app/src/spend/v1/redesign/account/privacyModel.test.ts b/apps/app/src/spend/v1/redesign/account/privacyModel.test.ts
+index b360dec0593f99f46c0914ca2f620300b1112955..4cc54d8d0370d827e9f1f023e177b7f6cf89e6f3 100644
+--- a/apps/app/src/spend/v1/redesign/account/privacyModel.test.ts
++++ b/apps/app/src/spend/v1/redesign/account/privacyModel.test.ts
+@@ -10,7 +10,8 @@ const READY: Extract<ExportDto, { status: 'ready' }> = {
+   export_id: EXPORT_ID, status: 'ready', from: '1970-01-01', through: '2026-09-29', requested_at: '2026-09-29T03:00:00.000Z',
+   as_of_revision: '42', row_count: 4, bytes: 512, sha256: 'a'.repeat(64), expires_at: '2026-09-30T03:05:00.000Z',
+ };
+-const REQUEST = { filter: { from: '1970-01-01', through: '2026-09-29' }, proofId: '11111111-1111-4111-8111-111111111111', commandId: '22222222-2222-4222-8222-222222222222' };
++const CREDENTIALS = { accessToken: 'fresh-token', sessionId: '33333333-3333-4333-8333-333333333333' };
++const REQUEST = { filter: { from: '1970-01-01', through: '2026-09-29' }, proofId: '11111111-1111-4111-8111-111111111111', commandId: '22222222-2222-4222-8222-222222222222', credentials: CREDENTIALS };
+ 
+ test('the export period: everything up to today, or this year when everything is too large for one file', () => {
+   assert.deepEqual(exportFilter('2026-09-29', 'everything'), { from: '1970-01-01', through: '2026-09-29' });
+@@ -49,6 +50,6 @@ test("deletion: what the screen shows for each of deletion.ts's outcomes, with t
+   assert.deepEqual(deletionPhase({ state: 'reauth_required' }, 'kept'), { phase: 'idle', note: 'reauth_required' });
+   assert.deepEqual(deletionPhase({ state: 'accepted', requestId: EXPORT_ID, completed: false }, 'erased'), { phase: 'accepted', requestId: EXPORT_ID, completed: false, device: 'erased' });
+   assert.deepEqual(deletionPhase({ state: 'denied', code: 'SESSION_REQUIRED' }, 'locked'), { phase: 'refused', device: 'locked' });
+-  const request = { proofId: REQUEST.proofId, commandId: REQUEST.commandId };
++  const request = { proofId: REQUEST.proofId, commandId: REQUEST.commandId, language: 'th' as const, credentials: CREDENTIALS };
+   assert.deepEqual(deletionPhase({ state: 'unconfirmed', request }, 'kept'), { phase: 'unconfirmed', request, device: 'kept' });
+ });
+diff --git a/apps/app/src/spend/v1/sessionResume.test.ts b/apps/app/src/spend/v1/sessionResume.test.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f3fd72e7ad3d3999d82aec8c3a8dfdbe047a1404
+--- /dev/null
++++ b/apps/app/src/spend/v1/sessionResume.test.ts
+@@ -0,0 +1,36 @@
++// D37 (spec §3): a phone signed out from elsewhere keeps its unsent records
++// and sends them once the same account signs in again; another account never
++// sees them, and the first account's diary stays on the phone until an
++// explicit erase. Today's outbox already pauses on `signed_out` (verdictFor:
++// not processed), so this pins the behaviour 1C keeps.
++import assert from 'node:assert/strict';
++import { test } from 'node:test';
++
++import { ACCOUNT_A, ACCOUNT_B } from '../../storage/testing/diaryFixtures.ts';
++import { bench } from '../../sync/testing/harness.ts';
++
++test('after a session ended, the same account sends the unsent records once; another account never sees them', async () => {
++  const b = await bench();
++  try {
++    const queued = await b.save();
++    // The server ended the session: a token refresh cannot renew it (the provider's refresh answers false).
++    b.refreshes.result = false;
++    b.server.scriptSends({ kind: 'problem', outcome: 'signed_out', status: 401, code: 'SESSION_REQUIRED' });
++    assert.equal((await b.flush('foreground')).status, 'signed_out');
++    assert.equal(b.server.receipts.has(queued.commandId), false);
++    // The same account signs in again: a new session moves the epoch, the diary reopens, the outbox sends.
++    b.session.epoch += 1;
++    const again = await b.database.open(ACCOUNT_A, b.session.epoch);
++    await b.newEngine(again).flush({ accountId: ACCOUNT_A, epoch: b.session.epoch }, 'launch');
++    assert.equal(b.server.sent.filter((s) => s.commandId === queued.commandId).length, 2, 'the refused try and the one that landed');
++    assert.equal(b.server.receipts.has(queued.commandId), true);
++    // Another account signs in: its own diary opens; account A's file stays until an explicit erase.
++    b.session.epoch += 1;
++    const other = await b.database.open(ACCOUNT_B, b.session.epoch);
++    await b.newEngine(other).flush({ accountId: ACCOUNT_B, epoch: b.session.epoch }, 'launch');
++    assert.equal(b.server.sent.filter((s) => s.commandId === queued.commandId).length, 2);
++    assert.ok(b.files.names().includes(`diary-${ACCOUNT_A}.db`));
++  } finally {
++    b.dispose();
++  }
++});

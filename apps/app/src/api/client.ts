@@ -68,7 +68,7 @@ export function createMobileApiClient(options: {
 }
 
 // ---------------------------------------------------------------------------
-// v1 transport (PostgreSQL/Auth0 API). Separate from the legacy /spend client
+// v1 transport (the PostgreSQL API). Separate from the legacy /spend client
 // above, which stays only for unconverted development screens.
 
 /** What the session layer (F5) exposes to the transport. */
@@ -138,6 +138,20 @@ export type V1RequestOptions<T> = {
   command?: V1CommandHeaders;
   /** Hand the raw response text to `validate` (e.g. to check a digest) instead of parsed JSON. */
   text?: boolean;
+  /**
+   * Hand a success's raw bytes to `validate` instead of parsed JSON (a
+   * receipt's image, which a text read would change), asking for these media
+   * types; a refusal is still read as a JSON problem.
+   */
+  bytes?: { accept: readonly string[] };
+  /** This request's own time limit instead of the transport's (a slow server-side copy, a large download). */
+  timeoutMs?: number;
+  /**
+   * One limit for the whole request, from the call: every resend (after a
+   * lost answer or a refreshed token) waits only for what is left of it, and
+   * none is sent once it passed. Without it, each attempt gets its full limit.
+   */
+  deadlineMs?: number;
   /** Token-only routes (challenge, bootstrap, proof): no application binding is sent or required. */
   tokenOnly?: boolean;
   /**
@@ -146,6 +160,8 @@ export type V1RequestOptions<T> = {
    * refreshed, and never reported as the session ending.
    */
   credentials?: { accessToken: string; binding?: string };
+  /** Sent as Accept-Language: the language of anything the server sends later about this request (deletion's email, K11). */
+  acceptLanguage?: 'th' | 'en';
   /** The command carries a purpose proof: REAUTH_REQUIRED refuses that proof, not the session. */
   proof?: boolean;
   /**
@@ -209,6 +225,16 @@ const sessionEnd = (status: number, code: string): V1SessionEnd['code'] | null =
 };
 const NETWORK_RETRIES = 2;
 
+/** A private IPv4 literal (10/8, 172.16/12, 192.168/16), read from the hostname the URL parser normalised. */
+function privateIpv4(hostname: string): boolean {
+  const match = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(hostname);
+  if (!match) return false;
+  const octets = match.slice(1).map(Number);
+  if (octets.some((octet) => octet > 255)) return false;
+  const [first, second] = octets;
+  return first === 10 || (first === 172 && second >= 16 && second <= 31) || (first === 192 && second === 168);
+}
+
 /**
  * The v1 transport: every private request carries the access token, the
  * opaque session binding and `X-GoGoSpend-Client`; every command carries its
@@ -222,6 +248,9 @@ const NETWORK_RETRIES = 2;
  * to the credentials with the epoch the request was sent under. A token that
  * can't be read right now (offline) is a `network` outcome, never a sign-out.
  * Responses must pass the caller's exact DTO validator; nothing is coerced.
+ * A binary read (a receipt's image) gets the same headers, refresh and
+ * session checks, with a success read as bytes. A request with its own
+ * deadline ends by then, resends and a refreshed resend included.
  */
 export function createV1Transport(options: {
   baseUrl: string;
@@ -229,6 +258,13 @@ export function createV1Transport(options: {
   client: V1ClientVersion | null;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
+  /**
+   * true: `http://` to a private IPv4 literal (10/8, 172.16/12, 192.168/16) is accepted, as loopback is.
+   * For a development build reaching `wrangler dev` on the LAN; release builds never set it (plan 1D, L8).
+   */
+  allowLanHttp?: boolean;
+  /** true adds `X-GoGoSpend-Analytics: off`, which stops server events for that request (plan 1D, L4). Read at each request. */
+  analyticsOff?: () => boolean;
 }): V1Transport {
   let base: URL;
   try {
@@ -237,7 +273,8 @@ export function createV1Transport(options: {
     throw new V1Error('invalid', 0, 'CONFIG_REQUIRED');
   }
   const loopback = ['localhost', '127.0.0.1', '[::1]'].includes(base.hostname);
-  if (base.username || base.password || !(base.protocol === 'https:' || (base.protocol === 'http:' && loopback))) {
+  const lan = options.allowLanHttp === true && privateIpv4(base.hostname);
+  if (base.username || base.password || !(base.protocol === 'https:' || (base.protocol === 'http:' && (loopback || lan)))) {
     throw new V1Error('invalid', 0, 'CONFIG_REQUIRED');
   }
   const baseUrl = options.baseUrl.replace(/\/+$/, '');
@@ -245,11 +282,15 @@ export function createV1Transport(options: {
   const timeoutMs = options.timeoutMs ?? 20_000;
   const credentials = options.credentials;
 
-  async function once(url: string, init: RequestInit): Promise<{ status: number; payload: unknown; readable: boolean; text: string }> {
+  type Answer = { status: number; payload: unknown; readable: boolean; text: string; bytes?: Uint8Array };
+  async function once(url: string, init: RequestInit, limitMs: number, binary: boolean): Promise<Answer> {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const timer = setTimeout(() => controller.abort(), limitMs);
     try {
       const response = await fetchImpl(url, { ...init, signal: controller.signal, redirect: 'error' });
+      if (binary && response.status >= 200 && response.status <= 299) {
+        return { status: response.status, payload: null, readable: true, text: '', bytes: new Uint8Array(await response.arrayBuffer()) };
+      }
       const text = await response.text();
       try {
         return { status: response.status, payload: text ? JSON.parse(text) : null, readable: true, text };
@@ -286,6 +327,7 @@ export function createV1Transport(options: {
     async request<T>(method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE', path: string, request: V1RequestOptions<T>): Promise<T> {
       if (!path.startsWith('/v1/') || path.includes('\\') || path.includes('//')) throw new V1Error('invalid', 0, 'INVALID_PATH');
       if (!options.client) throw new V1Error('unsupported_platform', 0, 'CLIENT_UNSUPPORTED');
+      const deadline = request.deadlineMs === undefined ? Infinity : Date.now() + request.deadlineMs;
       const before = credentials.getSessionSnapshot();
       const stillCurrent = () => {
         if (credentials.getSessionSnapshot().epoch !== before.epoch) throw new V1Error('session_changed', 0, 'SESSION_CHANGED');
@@ -295,13 +337,15 @@ export function createV1Transport(options: {
       const token = own ? own.accessToken : await readToken();
       stillCurrent();
       const binding = request.tokenOnly ? null : own ? (own.binding ?? null) : before.binding;
-      if (!token || (!binding && !request.tokenOnly)) throw new V1Error('signed_out', 401, 'SESSION_REQUIRED');
+      // Status 0 like every refusal made here: nothing was sent, so it is never the server's 401.
+      if (!token || (!binding && !request.tokenOnly)) throw new V1Error('signed_out', 0, 'SESSION_REQUIRED');
       const headers: Record<string, string> = {
-        Accept: 'application/json',
+        Accept: request.bytes ? [...request.bytes.accept, 'application/json'].join(', ') : 'application/json',
         Authorization: `Bearer ${token}`,
         'X-GoGoSpend-Client': `${options.client.platform}/${options.client.version}`,
       };
-      if (binding) headers['X-GoGoSpend-Session'] = binding;
+      if (options.analyticsOff?.() === true) headers['X-GoGoSpend-Analytics'] = 'off';
+      // The vault reads the session from the JWT (the `sid` claim). The session id stays on the snapshot so a missing one still refuses the request before anything is sent.
       if (request.body !== undefined && request.raw) throw new V1Error('invalid', 0, 'INVALID_BODY');
       if (request.body !== undefined) headers['Content-Type'] = 'application/json';
       if (request.raw) {
@@ -313,13 +357,17 @@ export function createV1Transport(options: {
         headers['X-GoGoSpend-Command-Schema'] = String(request.command.schemaVersion);
         if (request.command.ifMatch !== undefined) headers['If-Match'] = `"${request.command.ifMatch}"`;
       }
+      if (request.acceptLanguage) headers['Accept-Language'] = request.acceptLanguage;
       // Serialized once, so every retry sends byte-identical content.
       const body: string | Uint8Array | undefined = request.raw ? request.raw.bytes : request.body === undefined ? undefined : JSON.stringify(request.body);
-      const send = async (): Promise<{ status: number; payload: unknown; readable: boolean; text: string }> => {
+      const send = async (): Promise<Answer> => {
         const init: RequestInit = { method, headers, body: body as BodyInit | undefined };
         for (let attempt = 0; ; attempt += 1) {
+          // Each attempt waits for its own limit or what is left of the request's, whichever is less.
+          const limitMs = Math.min(request.timeoutMs ?? timeoutMs, deadline - Date.now());
+          if (limitMs <= 0) throw new V1Error('network', 0, 'TIMEOUT');
           try {
-            return await once(`${baseUrl}${path}`, init);
+            return await once(`${baseUrl}${path}`, init, limitMs, Boolean(request.bytes));
           } catch (error) {
             // Only a command may be resent blindly, and only as itself, and
             // never once the session changed; a read is retried from the screen.
@@ -347,7 +395,11 @@ export function createV1Transport(options: {
         result = await send();
       }
       stillCurrent();
-      const { status, payload, readable, text } = result;
+      const { status, payload, readable, text, bytes } = result;
+      if (status >= 200 && status <= 299 && request.bytes) {
+        if (!bytes || !request.validate(bytes)) throw new V1Error('invalid_response', status, 'INVALID_RESPONSE');
+        return bytes;
+      }
       if (status >= 200 && status <= 299 && request.text) {
         if (!request.validate(text)) throw new V1Error('invalid_response', status, 'INVALID_RESPONSE');
         return text as T;

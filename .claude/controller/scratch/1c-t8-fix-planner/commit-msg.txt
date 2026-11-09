@@ -1,0 +1,13 @@
+Let the session-ended draft reach another account and drop the onboarding route cast
+
+Review fixes for the 1C-T8 drafts. R98: when the session-ended screen's
+main button is the email code to the account's own address, "Use another
+way" also offers an email code to another address, so a failure always
+has another way and another account can sign in, even on a build that
+offers only the email code; a catalogue section shows it for E2. R99:
+nothing goes to /onboarding/reminder before 1C-T9 adds the route, so a
+session keeps today's reminder step and the cast is gone. New tests pin
+seven guards the review found unpinned, the terms title uses its
+approved copy, and the receipt's E2 list gains two owner questions.
+
+Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>

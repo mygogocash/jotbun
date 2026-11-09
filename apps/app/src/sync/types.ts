@@ -15,8 +15,11 @@ export interface SyncRemote {
   snapshotChunk(grant: SnapshotChunkGrant): Promise<SnapshotChunk>;
 }
 
-/** What started a flush. Foreground and manual flushes lift a failure pause. */
-export type FlushTrigger = 'launch' | 'foreground' | 'manual' | 'write' | 'timer';
+/**
+ * What started a flush. Foreground, manual and live flushes lift a failure pause.
+ * `live`: the live channel's poke, or its (re)connect (plan 1D, L2).
+ */
+export type FlushTrigger = 'launch' | 'foreground' | 'manual' | 'write' | 'timer' | 'live';
 
 export type SyncStatus =
   | 'synced'

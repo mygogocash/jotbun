@@ -4,8 +4,16 @@ import { ProfileSubPageFrame } from '@mobile/components/ProfileSubPageFrame';
 import { Text } from '@mobile/theme/AppText';
 import { useTheme } from '@mobile/theme/ThemeProvider';
 import { useCopy } from '@mobile/i18n/useCopy';
+import { isRedesignEnabled } from '@mobile/config/featureFlags';
+import { SignInScreen } from '@mobile/screens/redesign/account/SignInScreen';
 
 export default function Login() {
+  // R6: the redesigned sign-in under the `account` area (E2 checkpoint 4).
+  if (isRedesignEnabled('account')) return <SignInScreen />;
+  return <CurrentLogin />;
+}
+
+function CurrentLogin() {
   const { colors } = useTheme();
   const tc = useCopy();
   const router = useRouter();

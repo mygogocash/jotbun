@@ -2765,7 +2765,7 @@ Observed, not changed (pre-existing):
   - `incident.md` (the `ocr` row) now says an OCR pause parks queued image parses attempt-neutrally; `feature-gates.ts` comments follow.
 - **P3, device-backed `ImportDraftStore`.** `importReview.ts` had only `memoryDraftStore`.
   - New `spend/v1/importDraftStore.ts` (pure, over an AsyncStorage-shaped port) and `deviceImportDraftStore.ts` (the AsyncStorage binding, like `localReminders.ts`). One draft per account under `gogospend.import-draft.v1.<account id>`; the envelope records account and job id. The port is single-slot and a journey exists before it has a job, so the job id is not part of the key. A corrupt or foreign envelope is dropped, a newer-version draft is left untouched, a failed write rejects.
-  - Cleared by `clear()` (journey finished or discarded: `confirmBatches`, `discardImport`) and by the explicit sign-out erase: `spendDiary.eraseForSignOut` calls the new optional `eraseWithDiary(accountId)` dep, wired in `DeviceDiaryProvider`. A locked diary's discard and an ordinary sign-out keep the draft, like the diary's own drafts. `eraseImportDrafts(storage)` erases every account's draft.
+  - Cleared by `clear()` (journey finished or discarded: `confirmBatches`, `discardImport`) and by the explicit sign-out erase: `spendDiary.eraseForSignOut` calls the new optional `eraseWithDiary(accountId)` dep, wired in `DeviceDiaryProvider`. A locked diary's discard and an ordinary sign-out keep the draft, like the diary's own drafts. `eraseImportDrafts(storage)` erases every account's draft. (Since decision 7, 19 October 2026, the draft lives inside the diary file, at diary schema version 2, so a locked diary's discard deletes it too.)
   - `memoryDraftStore` is kept for tests. The review screen is **not routed** and no locale catalog was touched (E2). Tests: `importDraftStore.test.ts` (load/save/clear, exact round trip, restart persistence resuming a pending confirmation batch to completion and clearing at the end, account isolation, erase scope, corrupt/newer/foreign drafts, write failure) and `spendDiary.test.ts` (erased at sign-out, not at discard).
   - **Not encrypted at rest.** AsyncStorage is plain storage, unlike the SQLCipher diary, and on iOS it falls under the backup exclusion that S2 still lacks. A draft holds the preview's rows (amounts, merchants, notes) and the user's corrections. Before the review screen is routed the owner must accept that, or the native exclusion must cover it, or the draft must move into the encrypted diary (decision added to the handover).
 - **S2 seam.** `storage/deviceDiary.ts` now carries a `TODO(S2)` documenting the missing iOS `NSURLIsExcludedFromBackupKey` step (a config plugin or native module: needs authorization), for the diary and the draft directory.
@@ -2774,3 +2774,58 @@ Observed, not changed (pre-existing):
 - **Hygiene:** `gogospend_v1` was confirmed empty (0 accounts, 0 transactions, 0 wallets) and recreated empty; `gogospend_test_*` databases were not touched. Local images `gogospend-local-integration` and `gogospend-local` were removed.
 - **Gate after paging (local, Node 26.10.0), all PASS:** `typecheck`, `typecheck:app`, `test:api` (41 suites, 929), `test:db` (40 suites, 681), `test:app` (28), `test:unit` (263), `test:dev` (7), `test:ops` (107, `GOGOSPEND_OPS_REQUIRE_DB=1`), `test:render` (66), API build, `release-graph.mjs check` (145 files, no problems), `export:web`, `git diff --check`.
 - **Image smoke** on this tree: `docker build` + `release-smoke.cjs` → `ok: true` on Node v24.22.0, parsers `sandbox_unsupported` (fail closed). The check image was removed afterwards.
+
+## Node 26 worker runtime (owner decision §7.1, 19 October 2026)
+
+- **Decision:** the owner chose Node 26 for the worker runtime. Node's permission model denies the parser children the network only from Node 25 on; on Node 24 imports fail closed.
+- **What changed:**
+  - **Image:** `apps/api/Dockerfile` is pinned to `node:26.9.0-bookworm-slim@sha256:582460f614631b59b824ac6020533b9bf339c7fdf3a6d7db31abb6b4065f0212`, the multi-architecture index built 19 September 2026. 26.10.0's image was 13 days old, inside the dependency-age wait.
+  - **CI:** `NODE_VERSION: 26.9.0`. **`.nvmrc`:** 26.
+  - **Test:** `backend-workflow.test.mjs` requires the image, CI and `.nvmrc` to name the same Node, at least 26, with the image pinned by digest. RED: the workflow still said 24.22.0.
+- **Found by the first Node 26 image smoke:**
+  - `ok: false`, with `csv: parsed` and `png: sandbox_unsupported`. The image child crashed in its self-check with `ERR_ACCESS_DENIED` on `/app/apps/api/node_modules/detect-libc/package.json`.
+  - The release image keeps sharp under the API's node_modules and hoists detect-libc and semver to the root. Looking for detect-libc from sharp, Node reads each candidate's `package.json`, even a missing one. Outside the child's read roots the permission model answers with "access denied" rather than "not found", so the child crashed.
+  - The tests never showed it, although this machine has the same layout. Jest starts the children from TypeScript, where sharp loads through its ES module build, and Node's ES module resolver checks that a package directory exists before it reads `package.json`. Only the built CommonJS files read the missing file.
+  - Allowing the missing directory did not help. Allowing the exact file did.
+- **Fix:** `imageReadRoots` (now exported) adds `lookupFiles`: the exact `package.json` path of each candidate Node tries, in node_modules directories that exist, before the one that holds each package. Nothing else is opened up: only those `package.json` files, by exact path.
+  - RED: a spec builds the image's layout in a temp directory and requires those paths. Mutation: never adding them fails it.
+  - The existing read-roots test now accepts these files, and only for the same package names.
+- **Image smoke on Node 26.9.0:** `docker build` and `release-smoke.cjs` gave `ok: true` with `csv: parsed` and `png: parsed`. The processes still fail closed at the database, and `/live` is 200 with `/ready` 503. The image is arm64 (this Mac); x64 was not run. The check image was removed.
+- **Review of the two commits** (independent). No security or correctness bug in the fix: each grant is an exact `package.json` path, and the child cannot write one. Its sharp 0.35.5 load chain is covered on arm64, x64 and non-hoisted layouts. Fixed test-first:
+  1. **No gate step ran the path that crashed.** `apps/api/scripts/parser-sandbox-check.cjs` runs both children's self-check from `dist` after the build, in the Full gate (handover) and in CI. RED: the CI workflow test failed until CI ran it. With `lookupFiles` disabled and `dist` rebuilt, the check reports `probe_failed`; with it, `supported`.
+  2. **Nothing made the image run Node 26.** The release smoke now fails below Node 26 and always expects both parses. Before, an image on Node 24 passed, with imports off for good.
+  3. The layout test's file check is scope-aware: `node_modules/@img/<name>/package.json`.
+  - **`engines` stays `>=24`:** everything runs on Node 24, where imports fail closed. Changing it would also mean editing the lockfile, which waits for the owner. The image, CI and `.nvmrc` carry the Node 26 decision.
+
+## Lockfile: the Linux native bindings (owner decision §7.2, 19 October 2026)
+
+- **Decision:** the owner authorized the lockfile change. No new packages; only the Linux bindings the lockfile was missing.
+- **What changed:** eight entries under `apps/api/node_modules/`:
+  - `@swc/core-linux-{x64,arm64}-gnu` 1.16.18;
+  - `@unrs/resolver-binding-linux-{x64,arm64}-gnu` 1.12.2;
+  - `@img/sharp-linux-{x64,arm64}` 0.35.5;
+  - `@img/sharp-libvips-linux-{x64,arm64}` 1.3.4.
+  Each is the version its parent names, with the registry's tarball, integrity, `cpu`, `os`, `libc: glibc`, `optional`, license and engines. No existing entry changed, and key order is kept: the diff is 162 added lines.
+- **Why not a plain regeneration:**
+  - `npm install --package-lock-only` called the lockfile up to date.
+  - Re-resolving the three packages hoisted sharp and swc to the root and folded Jest's nested `unrs-resolver` into the root copy. That changes the image layout and a version.
+  - So the entries were added at their nested locations, from `npm view` metadata.
+  - npm then keeps the lockfile byte-for-byte on a macOS `npm install --package-lock-only`.
+- **Retired:** `scripts/ci/linux-native-bindings.mjs` and its test. The Dockerfile, both CI jobs and `.dockerignore` no longer use it.
+- **Guard:** `scripts/ci/lockfile-bindings.test.mjs` (in test:ops).
+  - Every nested native package has its Linux glibc x64 and arm64 bindings, at the parent's version, with a registry URL and integrity.
+  - Neither the Dockerfile nor CI fetches bindings any more.
+  - RED: both tests failed on the old lockfile and workflow.
+- **Image without the helper:**
+  - **arm64:** `docker build --no-cache` and `release-smoke.cjs` give `ok: true`, with CSV and PNG parsed on Node 26.9.0.
+  - **x64 under emulation on this Mac (QEMU):** the build installed the x64 swc binding, and the API compiled. The smoke then reported the sandbox unsupported, because Node added `UV_USE_IO_URING` to the children's environment under emulation. The same smoke passes on GitHub's native x64 runner (PR #70, "Release image and smoke"), so this is the emulation, not the image.
+
+## Recently deleted: `GET /v1/history/deleted` (20 October 2026)
+
+- **Why:** the architecture requires the 30-day restore window to be disclosed before release, and the app had no way to list deleted records (redesign plan §6.1, the recorded `RECENTLY_DELETED_GAP`). Built by a sub-agent in its own worktree (`389b61e`), reviewed and merged locally.
+- **Route:** `GET /v1/history/deleted` in `HistoryController`, next to history, with the same access (`bound_session`, no write gate) and the same owner snapshot transaction, so row-level security keeps it to the signed-in account. Not under `/v1/transactions/…`, where it would clash with `GET /v1/transactions/:id`.
+- **What it lists:** records with `deleted_at >= now() - RESTORE_WINDOW_DAYS`, the restore command's own rule, so everything listed can still be restored. Purged records have no row; records past the window but not yet purged are left out.
+- **Paging:** newest deletion first, keyset on `(deleted_at, id)`. The cursor carries the deletion instant to the microsecond (PostgreSQL's own text, compared as `timestamptz`), so no row is lost between pages. It has its own kind, so a history cursor is refused and vice versa. `limit` and `cursor` are the only parameters; anything else is a 422 naming it. Later pages suggest a refresh when the account's revision moved, as history does.
+- **Contracts:** `DeletedTransactionDto` (the record with `deleted_at`) and `DeletedHistoryPage`. Restoring stays `POST /v1/transactions/:id/restore`; no new write.
+- **Tests:** RED first, 10 of 12 API unit tests and 13 of 13 DB integration tests failing on stubs. They cover account isolation, the window boundary just inside and outside 30 days, purged rows, ordering, paging and cursor forgery. Eight mutants were killed: window removed, order reversed, `<=` in the keyset, a millisecond cursor, refresh never suggested, the field allow-list removed, the real-date check removed, and the cursor-kind check removed. The last one survived at first, so a test was added for it. The operational-safety probe list includes the route.
+- **Open:** the listing has no index of its own and reads the account's rows through the primary key. A partial index on `(account_id, deleted_at DESC, id) WHERE deleted_at IS NOT NULL` would need a migration; it isn't worth one until the P6b performance smoke says so.

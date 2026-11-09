@@ -21,12 +21,17 @@ import type {
   CategoryDto,
   CommandAck,
   CommandStatus,
+  CreateCategoryRequest,
   CreateWalletRequest,
+  DeletedHistoryPage,
   HistoryFilter,
   HistoryPage,
   MonthSummary,
+  SetMonthlyBudgetRequest,
   TransactionDto,
+  UpdateCategoryRequest,
   UpdateTransactionRequest,
+  UpdateWalletRequest,
   WalletDto,
 } from '@gogospend/contracts';
 
@@ -56,8 +61,27 @@ export type SpendV1Resources = {
   deleteTransaction(id: string, version: number, commandId: string): Promise<CommandAck>;
   restoreTransaction(id: string, version: number, commandId: string): Promise<CommandAck>;
   history(filter: HistoryFilter, cursor?: string, limit?: number): Promise<HistoryPage>;
+  /**
+   * "Recently deleted" (GET /v1/history/deleted): deleted records still
+   * inside the 30-day restore window, most recently deleted first. Each is
+   * restored with `restoreTransaction` and its own version.
+   */
+  recentlyDeleted(cursor?: string, limit?: number): Promise<DeletedHistoryPage>;
   summary(month: string): Promise<MonthSummary>;
   budget(month: string): Promise<BudgetDto | null>;
+  /**
+   * Sets a month's whole budget (R4). Without `existing` it creates, and the
+   * server derives the budget's id; with the version and id the screen read,
+   * it replaces.
+   */
+  setBudget(month: string, input: SetMonthlyBudgetRequest, commandId: string, existing?: { version: number; id: string }): Promise<CommandAck>;
+  updateWallet(id: string, version: number, changes: UpdateWalletRequest, commandId: string): Promise<CommandAck>;
+  archiveWallet(id: string, version: number, commandId: string): Promise<CommandAck>;
+  unarchiveWallet(id: string, version: number, commandId: string): Promise<CommandAck>;
+  createCategory(input: CreateCategoryRequest, commandId: string): Promise<CommandAck>;
+  updateCategory(id: string, version: number, changes: UpdateCategoryRequest, commandId: string): Promise<CommandAck>;
+  archiveCategory(id: string, version: number, commandId: string): Promise<CommandAck>;
+  unarchiveCategory(id: string, version: number, commandId: string): Promise<CommandAck>;
   commandStatus(ids: readonly string[]): Promise<CommandStatus[]>;
 };
 
@@ -92,12 +116,24 @@ function isTotals(value: unknown, withCount: boolean): boolean {
     (!withCount || (Number.isSafeInteger(value.count) && (value.count as number) >= 0));
 }
 
+/** An opaque keyset cursor as the server writes it (base64url), or null on the last page. */
+const isPageCursor = (value: unknown) => value === null || (typeof value === 'string' && /^[A-Za-z0-9_-]{1,512}$/.test(value));
+
 export function isHistoryPage(value: unknown): value is HistoryPage {
   return isObject(value) && hasExactly(value, ['items', 'next_cursor', 'as_of_revision', 'refresh_suggested', 'summary']) &&
     Array.isArray(value.items) && value.items.every(isTransactionSnapshot) &&
-    (value.next_cursor === null || (typeof value.next_cursor === 'string' && /^[A-Za-z0-9_-]{1,512}$/.test(value.next_cursor))) &&
+    isPageCursor(value.next_cursor) &&
     typeof value.as_of_revision === 'string' && REVISION.test(value.as_of_revision) &&
     typeof value.refresh_suggested === 'boolean' && isTotals(value.summary, true);
+}
+
+/** A "Recently deleted" page: every item is a persisted record that is deleted (`deleted_at` set). */
+export function isDeletedHistoryPage(value: unknown): value is DeletedHistoryPage {
+  return isObject(value) && hasExactly(value, ['items', 'next_cursor', 'as_of_revision', 'refresh_suggested']) &&
+    Array.isArray(value.items) && value.items.every((item) => isTransactionSnapshot(item) && typeof item.deleted_at === 'string') &&
+    isPageCursor(value.next_cursor) &&
+    typeof value.as_of_revision === 'string' && REVISION.test(value.as_of_revision) &&
+    typeof value.refresh_suggested === 'boolean';
 }
 
 export function isMonthSummary(value: unknown): value is MonthSummary {
@@ -130,6 +166,12 @@ const command = (id: string, ifMatch?: number) => ({ id, schemaVersion: V1_COMMA
 /** An acknowledgement must be for this command and this entity. */
 const ackFor = (commandId: string, entityId: string) => (value: unknown): value is CommandAck =>
   isCommandAck(value) && value.command_id === commandId && value.entity_id === entityId;
+/** An acknowledgement must be for this command (the server derives the entity, as for a new budget). */
+const ackForCommand = (commandId: string) => (value: unknown): value is CommandAck => isCommandAck(value) && value.command_id === commandId;
+const monthSegment = (month: string) => {
+  if (!MONTH.test(month)) throw new V1Error('invalid', 0, 'INVALID_MONTH');
+  return month;
+};
 const segment = (id: string) => {
   if (!isUuid(id)) throw new V1Error('invalid', 0, 'INVALID_ID');
   return id;
@@ -157,6 +199,13 @@ export function createSpendV1Resources(transport: V1Transport): SpendV1Resources
       if (limit !== undefined) query.set('limit', String(limit));
       return transport.request('GET', `/v1/history?${query.toString()}`, { validate: isHistoryPage });
     },
+    recentlyDeleted: (cursor, limit) => {
+      const query = new URLSearchParams();
+      if (cursor !== undefined) query.set('cursor', cursor);
+      if (limit !== undefined) query.set('limit', String(limit));
+      const search = query.toString();
+      return transport.request('GET', `/v1/history/deleted${search ? `?${search}` : ''}`, { validate: isDeletedHistoryPage });
+    },
     summary: (month) => transport.request('GET', `/v1/summary?month=${encodeURIComponent(month)}`, { validate: isMonthSummary }),
     budget: async (month) => {
       try {
@@ -166,6 +215,26 @@ export function createSpendV1Resources(transport: V1Transport): SpendV1Resources
         throw error;
       }
     },
+    // Async, so a malformed month or id is a rejection like any other refusal.
+    setBudget: async (month, input, commandId, existing) =>
+      transport.request('PUT', `/v1/budgets/${monthSegment(month)}`, {
+        body: input,
+        command: command(commandId, existing?.version),
+        validate: existing ? ackFor(commandId, existing.id) : ackForCommand(commandId),
+      }),
+    updateWallet: async (id, version, changes, commandId) =>
+      transport.request('PATCH', `/v1/wallets/${segment(id)}`, { body: changes, command: command(commandId, version), validate: ackFor(commandId, id) }),
+    archiveWallet: async (id, version, commandId) =>
+      transport.request('POST', `/v1/wallets/${segment(id)}/archive`, { body: {}, command: command(commandId, version), validate: ackFor(commandId, id) }),
+    unarchiveWallet: async (id, version, commandId) =>
+      transport.request('POST', `/v1/wallets/${segment(id)}/unarchive`, { body: {}, command: command(commandId, version), validate: ackFor(commandId, id) }),
+    createCategory: async (input, commandId) => transport.request('POST', '/v1/categories', { body: input, command: command(commandId), validate: ackFor(commandId, input.id) }),
+    updateCategory: async (id, version, changes, commandId) =>
+      transport.request('PATCH', `/v1/categories/${segment(id)}`, { body: changes, command: command(commandId, version), validate: ackFor(commandId, id) }),
+    archiveCategory: async (id, version, commandId) =>
+      transport.request('POST', `/v1/categories/${segment(id)}/archive`, { body: {}, command: command(commandId, version), validate: ackFor(commandId, id) }),
+    unarchiveCategory: async (id, version, commandId) =>
+      transport.request('POST', `/v1/categories/${segment(id)}/unarchive`, { body: {}, command: command(commandId, version), validate: ackFor(commandId, id) }),
     commandStatus: (ids) => fetchCommandStatus(transport, ids),
   };
 }

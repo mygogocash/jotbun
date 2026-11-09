@@ -55,6 +55,12 @@ export const API_ERROR_CODES = [
   "IMPORT_PREVIEW_UNAVAILABLE",
   "IMPORT_SELECTION_CONFLICT",
   "IMPORT_ROW_COMMITTED",
+  // AI companion (D15): 403 until the user agrees to the AI notice; 429 when
+  // today's uses are spent (retry_after_seconds reaches the next Bangkok day);
+  // 503 while AI is paused or not configured (the app falls back to its rules).
+  "AI_CONSENT_REQUIRED",
+  "AI_LIMIT_REACHED",
+  "AI_PAUSED",
   // Server side (500/503); never carries internal detail
   "INTERNAL_ERROR",
   "SERVICE_UNAVAILABLE",

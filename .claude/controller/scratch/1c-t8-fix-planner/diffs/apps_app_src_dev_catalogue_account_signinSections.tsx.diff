@@ -1,0 +1,64 @@
+--- a/apps/app/src/dev/catalogue/account/signinSections.tsx
++++ b/apps/app/src/dev/catalogue/account/signinSections.tsx
+@@ -1,9 +1,10 @@
+ // 1C-T8's drafts in each of their states (development only), for the owner's
+ // E2 screenshots: the email code, account exists, session ended with the
+-// keep-or-erase choice, devices and methods, confirm it's you, the reminder
+-// question after sign-in, the terms step and the welcome link. The `signin`
+-// area is not approved yet; only the welcome link reads it, and its section
+-// turns it on. The copy is a draft (signin/draftCopy.ts).
++// keep-or-erase choice and an email account's other way (R98), devices and
++// methods, confirm it's you, the reminder question after sign-in, the terms
++// step and the welcome link. The `signin` area is not approved yet; only the
++// welcome link reads it, and its section turns it on. The copy is a draft
++// (signin/draftCopy.ts).
+ //
+ // Every section is drawn on fakes: no sign-in, no network, no notification
+ // prompt. Draft labels are not in the catalogs, so the scripts reach controls
+@@ -47,6 +48,8 @@
+   readonly code?: CodeOutcome;
+   readonly signIn?: SignInResult['outcome'];
+   readonly fresh?: FreshOutcome;
++  /** The methods this build offers; every method unless named. */
++  readonly methods?: readonly SignInMethod[];
+ };
+ 
+ /** A credential provider that only answers as scripted: it never signs anyone in. */
+@@ -54,7 +57,7 @@
+   let current: StoredSession | null = script.account ?? APPLE_ACCOUNT;
+   return {
+     account: () => current,
+-    methods: () => EVERY_METHOD,
++    methods: () => script.methods ?? EVERY_METHOD,
+     sendEmailCode: async () => script.code ?? 'sent',
+     async signIn() {
+       const outcome = script.signIn ?? 'active';
+@@ -133,11 +136,11 @@
+ const withTerms = (accept: 'ok' | 'never' | 'fails' = 'ok') => (): TermsFixture => ({ resources: createFakeResources().resources, diary: null, policies: fakePolicies(accept) });
+ 
+ const nothing = () => undefined;
+-const ended = (kind: SessionEndedView['kind'] = 'signed_out_elsewhere'): SessionEndedView => ({ kind, accountId: APPLE_ACCOUNT.accountId, method: 'apple', unsent: 3 });
++const ended = (kind: SessionEndedView['kind'] = 'signed_out_elsewhere', account: StoredSession = APPLE_ACCOUNT): SessionEndedView => ({ kind, accountId: account.accountId, method: account.method, unsent: 3 });
+ 
+ const emailCode = ({ provider }: DraftFixture) => <EmailCodeScreen provider={provider} mode="sign_in" onDone={nothing} onBack={nothing} />;
+-const sessionEnded = (kind?: SessionEndedView['kind']) => ({ provider }: DraftFixture) => (
+-  <SessionEndedScreen view={ended(kind)} unsentRows={UNSENT} provider={provider} eraseAccount={async () => undefined} onResumed={nothing} />
++const sessionEnded = (kind?: SessionEndedView['kind'], account?: StoredSession) => ({ provider }: DraftFixture) => (
++  <SessionEndedScreen view={ended(kind, account)} unsentRows={UNSENT} provider={provider} eraseAccount={async () => undefined} onResumed={nothing} />
+ );
+ const devicesScreen = ({ port, provider }: DevicesFixture) => (
+   <DevicesScreen port={port} freshSignIn={async () => 'cancelled'} account={provider.account() ?? APPLE_ACCOUNT} />
+@@ -224,6 +227,13 @@
+     script: () => [...toOtherAccount(), { call: 'onPress', on: { testID: 'other-account-erase' } }, { waitFor: 'sheet-panel' }],
+     render: sessionEnded(),
+   }),
++  screenSection({
++    id: 'signin-session-ended-email',
++    title: 'Sign-in drafts: session ended, an email account, another way (R98)',
++    fixture: drafts({ account: EMAIL_ACCOUNT, methods: ['email'] }),
++    script: () => [{ call: 'onPress', on: { testID: 'session-ended-other-ways' } }, { waitFor: 'session-ended-way-email-other' }],
++    render: sessionEnded('signed_out_elsewhere', EMAIL_ACCOUNT),
++  }),
+   screenSection({ id: 'signin-devices', title: 'Sign-in drafts: devices, three of them', fixture: withDevices(APPLE_ACCOUNT, ['apple', 'email']), script: () => [{ waitFor: 'devices-list' }], render: devicesScreen }),
+   screenSection({
+     id: 'signin-devices-methods',

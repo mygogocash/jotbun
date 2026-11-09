@@ -1,0 +1,129 @@
+{
+ "1A-T1": {
+  "state": "Done"
+ },
+ "1A-T2": {
+  "state": "Done"
+ },
+ "1A-T3": {
+  "state": "Done"
+ },
+ "1A-T4": {
+  "state": "Done"
+ },
+ "1A-T8a": {
+  "state": "Done"
+ },
+ "1B-T1": {
+  "state": "Done",
+  "pr": 72
+ },
+ "1D-T2": {
+  "state": "Done",
+  "pr": 74
+ },
+ "1A-T5": {
+  "state": "Done",
+  "pr": 81
+ },
+ "1A-T6": {
+  "state": "Done",
+  "pr": 80
+ },
+ "1B-T2": {
+  "state": "Done",
+  "pr": 75
+ },
+ "1D-T3": {
+  "state": "Done",
+  "pr": 77
+ },
+ "1D-T4": {
+  "state": "Done",
+  "pr": 73
+ },
+ "1D-T5": {
+  "state": "Done",
+  "pr": 76
+ },
+ "P2-T3": {
+  "state": "Done",
+  "pr": 79
+ },
+ "P2-T4": {
+  "state": "Done",
+  "pr": 78
+ },
+ "P2-T7": {
+  "state": "Done",
+  "pr": 82
+ },
+ "1B-T3": {
+  "state": "Done",
+  "pr": 327
+ },
+ "1D-T1": {
+  "state": "Done",
+  "pr": 337
+ },
+ "1C-T1": {
+  "state": "Done",
+  "pr": 334
+ },
+ "1C-T5": {
+  "state": "In review",
+  "pr": 347
+ },
+ "P2-T1": {
+  "state": "Done",
+  "pr": 329
+ },
+ "P2-T5": {
+  "state": "Done",
+  "pr": 333
+ },
+ "P2-T6": {
+  "state": "Done",
+  "pr": 335
+ },
+ "P4-T1": {
+  "state": "Done",
+  "pr": 332
+ },
+ "P6B-T0": {
+  "state": "Done",
+  "pr": 328
+ },
+ "P5-T1": {
+  "state": "Done",
+  "pr": 331
+ },
+ "1A-T7": {
+  "state": "Done",
+  "pr": 339
+ },
+ "1A-T8b": {
+  "state": "Done",
+  "pr": 344
+ },
+ "P3-T1": {
+  "state": "Done",
+  "pr": 336
+ },
+ "P5-T4": {
+  "state": "Done",
+  "pr": 343
+ },
+ "P4-T10": {
+  "state": "Done",
+  "pr": 345
+ },
+ "1B-T4": {
+  "state": "Done",
+  "pr": 341
+ },
+ "P6A-T1": {
+  "state": "Done",
+  "pr": 340
+ }
+}

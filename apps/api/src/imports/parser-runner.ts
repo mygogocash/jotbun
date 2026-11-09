@@ -123,23 +123,45 @@ function packageDir(name: string, from: string): string | null {
 }
 
 /**
- * The package directories the image child reads to load sharp: sharp itself,
- * its dependencies (detect-libc, semver, @img/colour) and the prebuilt
- * binding and libvips packages installed for this platform (@img/sharp-*) -
- * each resolved as sharp resolves it, never a whole node_modules.
+ * The package.json files Node reads while looking for `name` from `from`, in
+ * the node_modules directories it tries before the one that holds the
+ * package. Node reads a candidate's package.json even when it is missing, and
+ * outside the child's roots the permission model answers that read with
+ * ERR_ACCESS_DENIED rather than "not found", so the child would crash (the
+ * release image hoists detect-libc and semver above sharp). Each is allowed
+ * by exact path; Node skips node_modules directories that do not exist.
  */
-function imageReadRoots(): string[] {
-  const sharpDir = packageDir('sharp', PARSER_ENTRIES.image);
+function lookupFiles(name: string, from: string): string[] {
+  const files: string[] = [];
+  for (const dir of createRequire(from).resolve.paths(name) ?? []) {
+    const candidate = join(dir, name, 'package.json');
+    if (existsSync(candidate)) return files;
+    if (existsSync(dir)) files.push(candidate);
+  }
+  return files;
+}
+
+/**
+ * What the image child reads to load sharp: the package directories of sharp
+ * itself, its dependencies (detect-libc, semver, @img/colour) and the
+ * prebuilt binding and libvips packages installed for this platform
+ * (@img/sharp-*) - each resolved as sharp resolves it, never a whole
+ * node_modules - and the missing package.json files Node reads on the way to
+ * each (`lookupFiles`). Exported for its test.
+ */
+export function imageReadRoots(entry: string = PARSER_ENTRIES.image): string[] {
+  const sharpDir = packageDir('sharp', entry);
   if (!sharpDir) return [];
   const fromSharp = join(sharpDir, 'package.json');
   const names = new Set(['detect-libc', 'semver', '@img/colour']);
   for (const dir of createRequire(fromSharp).resolve.paths('@img/colour') ?? []) {
     const scope = join(dir, '@img');
     if (!existsSync(scope)) continue;
-    for (const entry of readdirSync(scope)) if (entry.startsWith('sharp-')) names.add(`@img/${entry}`);
+    for (const scoped of readdirSync(scope)) if (scoped.startsWith('sharp-')) names.add(`@img/${scoped}`);
   }
   const dirs = [sharpDir, ...[...names].map((name) => packageDir(name, fromSharp)).filter((dir): dir is string => dir !== null)];
-  return [...new Set(dirs)].map(withSep);
+  const files = [...lookupFiles('sharp', entry), ...[...names].flatMap((name) => lookupFiles(name, fromSharp))];
+  return [...new Set([...dirs.map(withSep), ...files])];
 }
 
 type SpawnOptions = { timeoutMs: number; signal?: AbortSignal; onSpawn?: (pid: number) => void; memoryLimitKb?: number };
@@ -398,6 +420,7 @@ const ROW_ID = /^row:[1-9][0-9]{0,7}$/;
 const AMOUNT = /^[1-9][0-9]{0,10}$/;
 const DATE = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/;
 const BASE64 = /^[A-Za-z0-9+/]*={0,2}$/;
+const FINGERPRINT = /^[0-9a-f]{64}$/;
 const LAYOUTS = ['meowjot', 'moneylover', 'spendee', 'generic', 'receipt'];
 const TYPES = ['expense', 'income', 'transfer'];
 const ROW_KEYS = ['source_row_id', 'occurred_on', 'type', 'amount_minor', 'wallet_label', 'category_label', 'merchant', 'note', 'issues'];
@@ -424,6 +447,8 @@ const RECEIPT_ROW = JSON.stringify({
 const isCount = (value: unknown) => Number.isSafeInteger(value) && (value as number) >= 0;
 const isUsage = (value: unknown) => isRecord(value) && keysAre(value, ['max_rss_kb', 'cpu_ms']) && isCount(value.max_rss_kb) && isCount(value.cpu_ms);
 const isText = (value: unknown) => value === null || (typeof value === 'string' && value.length > 0 && value.length <= LIMITS.cellChars);
+/** A table's header fingerprint (64 lowercase hex), or null. */
+const isFingerprint = (value: unknown) => value === null || (typeof value === 'string' && FINGERPRINT.test(value));
 
 function isDate(value: unknown): boolean {
   if (value === null) return true;
@@ -494,13 +519,13 @@ export function validateParseResult(value: unknown): ParseResult | null {
   if (value.ok === false) {
     return keysAre(value, ['ok', 'code', 'usage']) && typeof value.code === 'string' && CODE.test(value.code) && isUsage(value.usage) ? (value as ParseResult) : null;
   }
-  if (value.ok !== true || !keysAre(value, ['ok', 'layout', 'rows', 'file_issues', 'image', 'usage'])) return null;
-  if (!LAYOUTS.includes(value.layout as string) || !isUsage(value.usage)) return null;
+  if (value.ok !== true || !keysAre(value, ['ok', 'layout', 'rows', 'file_issues', 'image', 'header_fingerprint', 'usage'])) return null;
+  if (!LAYOUTS.includes(value.layout as string) || !isUsage(value.usage) || !isFingerprint(value.header_fingerprint)) return null;
   if (!Array.isArray(value.file_issues) || value.file_issues.length > 32 || !value.file_issues.every((code) => typeof code === 'string' && FILE_ISSUES.includes(code))) return null;
   if (!Array.isArray(value.rows)) return null;
   if (value.layout === 'receipt') {
-    // Exactly one image, one review-only row and the notice that nothing was read from it.
-    if (value.image === null || !isImageResult(value.image)) return null;
+    // Exactly one image, one review-only row and the notice that nothing was read from it; an image has no header.
+    if (value.image === null || !isImageResult(value.image) || value.header_fingerprint !== null) return null;
     if (value.rows.length !== 1 || !isReceiptRow(value.rows[0]) || JSON.stringify(value.file_issues) !== '["receipt_fields_unread"]') return null;
     return value as ParseResult;
   }

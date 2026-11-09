@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Passkey offer</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;700&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F3F9; color: #111014; font-family: 'Anuphan', 'DM Sans', sans-serif; line-height: 1.4; position: relative; overflow: hidden; padding: 56px 20px 30px; display: flex; flex-direction: column">
+  <div role="status" style="display: flex; align-items: center; gap: 8px; font-size: 14px; line-height: 1.4; color: #111014">
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="10" fill="#6A4BD4"></circle><path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+    <span>เข้าสู่ระบบแล้ว · <span style="font-family: 'DM Sans', sans-serif">k•••@gmail.com</span></span>
+  </div>
+
+  <h1 style="margin: 16px 0 0; font-size: 28px; font-weight: 700; line-height: 1.4">ครั้งหน้าเข้าสู่ระบบ<br>ด้วย Face ID</h1>
+  <p style="margin: 10px 0 0; font-size: 16px; line-height: 1.6; color: #6B6878">สร้างพาสคีย์ไว้ในเครื่องนี้ ครั้งหน้าแค่มองหน้าจอก็เข้าได้ ไม่ต้องรอรหัสทางอีเมล</p>
+
+  <ul style="margin: 16px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px">
+    <li style="display: flex; align-items: flex-start; gap: 10px; font-size: 15px; line-height: 1.5">
+      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 3px"><circle cx="12" cy="12" r="10" fill="#6A4BD4"></circle><path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      <span>ใช้แทนรหัส 6 หลัก ไม่มีรหัสผ่านให้จำ หรือให้ใครหลอกถาม</span>
+    </li>
+    <li style="display: flex; align-items: flex-start; gap: 10px; font-size: 15px; line-height: 1.5">
+      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 3px"><circle cx="12" cy="12" r="10" fill="#6A4BD4"></circle><path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      <span>กุญแจลับอยู่ในพวงกุญแจ (Keychain) ของคุณเสมอ ไม่เคยถูกส่งมาที่ Jotbun</span>
+    </li>
+    <li style="display: flex; align-items: flex-start; gap: 10px; font-size: 15px; line-height: 1.5">
+      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 3px"><circle cx="12" cy="12" r="10" fill="#6A4BD4"></circle><path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      <span>ลบได้ทุกเมื่อที่ การตั้งค่า › บัญชี</span>
+    </li>
+  </ul>
+
+  <div aria-hidden="true" style="position: relative; flex: 1; min-height: 0">
+    <div style="position: absolute; left: 50%; top: 50%; width: 250px; height: 250px; margin: -125px 0 0 -125px; border-radius: 50%; background: radial-gradient(circle, rgba(168, 145, 247, 0.26), rgba(168, 145, 247, 0) 68%)"></div>
+    <div style="position: absolute; left: 50%; top: 50%; width: 206px; height: 130px; margin: -50px 0 0 -118px; border-radius: 20px; background: linear-gradient(135deg, #D9CCFF, #A891F7 55%, #EFE9FF); transform: rotate(-6deg); box-shadow: 0 -4px 14px rgba(17, 16, 20, 0.08), 0 20px 40px rgba(106, 75, 212, 0.26); padding: 14px 16px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between">
+      <span style="align-self: flex-end; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700">Jotbun</span>
+      <span style="font-size: 13px; font-weight: 500">บัญชีของกานต์</span>
+    </div>
+    <div style="position: absolute; left: 50%; top: 50%; width: 84px; height: 84px; margin: -86px 0 0 22px; border-radius: 26px; background: #FFFFFF; box-shadow: 0 12px 28px rgba(17, 16, 20, 0.16); display: flex; align-items: center; justify-content: center">
+      <svg width="48" height="48" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V6.5A2.5 2.5 0 0 1 6.5 4H8M16 4h1.5A2.5 2.5 0 0 1 20 6.5V8M20 16v1.5a2.5 2.5 0 0 1-2.5 2.5H16M8 20H6.5A2.5 2.5 0 0 1 4 17.5V16" fill="none" stroke="#111014" stroke-width="1.7" stroke-linecap="round"></path><path d="M9 9.5v1.4M15 9.5v1.4M12 9.5v3.6h-1M9.6 15.6c1.4 1.1 3.4 1.1 4.8 0" fill="none" stroke="#6A4BD4" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+    </div>
+    <div style="position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: 36px 0 0 58px; border-radius: 18px; background: #111014; box-shadow: 0 10px 22px rgba(17, 16, 20, 0.22); display: flex; align-items: center; justify-content: center">
+      <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="4" fill="none" stroke="#FFFFFF" stroke-width="2"></circle><path d="M12 12h8.5M17.5 12v3.2M20.5 12v2.4" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 6px; flex: none">
+    <button type="button" style="height: 56px; border-radius: 18px; border: none; background: #111014; color: #FFFFFF; font-family: inherit; font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="4" fill="none" stroke="#FFFFFF" stroke-width="2"></circle><path d="M12 12h8.5M17.5 12v3.2M20.5 12v2.4" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>สร้างพาสคีย์</button>
+    <button type="button" style="height: 48px; border-radius: 16px; border: none; background: transparent; color: #111014; font-family: inherit; font-size: 16px; font-weight: 500">ไว้ทีหลัง</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

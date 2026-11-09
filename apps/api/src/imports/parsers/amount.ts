@@ -25,7 +25,9 @@ export type AmountConvention = 'dot' | 'comma' | 'mixed' | null;
 
 const THAI_DIGITS = /[๐-๙]/g;
 const THB_PREFIX = /^(?:฿|thb|บาท)\s*/i;
-const THB_SUFFIX = /\s*(?:฿|thb|บาท)$/i;
+// The marker alone: numberText trims the spaces before it. A leading `\s*` here was
+// tried from every space of a long run, quadratic in its length (fix-parser-regex, R89).
+const THB_SUFFIX = /(?:฿|thb|บาท)$/i;
 const OTHER_CURRENCY = /[$€£¥₩₫₹]|\b(?:usd|eur|gbp|jpy|cny|sgd|myr|vnd|krw|aud|hkd)\b/i;
 const GROUPED = /^[0-9]{1,3}(?:,[0-9]{3})+$/;
 const PLAIN = /^[0-9]+$/;

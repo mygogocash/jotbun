@@ -20,7 +20,7 @@ concurrency:
 
 env:
   # The release image's Node (apps/api/Dockerfile).
-  NODE_VERSION: 24.22.0
+  NODE_VERSION: 26.9.0
 
 jobs:
   gate:
@@ -37,10 +37,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - name: Install (lockfile only, no install scripts)
+      - name: Install (lockfile only, no install scripts; the lockfile pins the Linux native bindings)
         run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Add the Linux native bindings the lockfile lacks (pinned versions and sha512)
-        run: node scripts/ci/linux-native-bindings.mjs swc unrs sharp
       - run: npm run typecheck
       - run: npm run typecheck:app
       - run: npm run test:api
@@ -51,6 +49,8 @@ jobs:
       - run: npm run build -w gogospend-api
       - name: Release graph (no legacy code or unreviewed package reachable)
         run: node apps/api/scripts/release-graph.mjs check
+      - name: Parser sandbox from the built files (both children, Node 26)
+        run: node apps/api/scripts/parser-sandbox-check.cjs
       - run: npm run export:web -w gogospend-app -- --max-workers 2
       - name: Whitespace (the change under test)
         run: git diff --check ${{ github.event.pull_request.base.sha || 'HEAD^' }} HEAD
@@ -68,7 +68,6 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: node scripts/ci/linux-native-bindings.mjs swc unrs sharp
       # test:db starts the loopback PostgreSQL 17 container itself
       # (scripts/dev-v1.mjs db-up, compose.postgres.yml, pinned digest).
       - run: npm run test:db
@@ -78,6 +77,17 @@ jobs:
       - run: npm run test:ops
         env:
           GOGOSPEND_OPS_REQUIRE_DB: '1'
+      # The edge Worker (apps/edge, its own lockfile): types, unit tests, the
+      # UserVault suites in workerd and build, then its PostgreSQL suites,
+      # including the differential run against the built NestJS v1 server and
+      # the built Worker in workerd.
+      - run: npm run build -w gogospend-api
+      - run: npm run install:edge
+      - run: npm run typecheck:edge
+      - run: npm run test:edge
+      - run: npm run test:edge:workers
+      - run: npm run build:edge
+      - run: npm run test:edge:db
 
   image:
     name: Release image and smoke (never pushed)

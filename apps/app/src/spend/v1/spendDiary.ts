@@ -3,11 +3,13 @@ import type { CategoryDto, WalletSnapshot } from '@gogospend/contracts';
 
 import type { DiaryStore } from '../../storage/diaryRepository.ts';
 import { DiaryLocked, DiarySchemaTooNew, DraftReferenceUnavailable, StaleEpochError } from '../../storage/types.ts';
-import type { DiaryLockReason, OutboxCommand, PendingEntry } from '../../storage/types.ts';
+import type { DiaryLockReason, OutboxCommand, PendingChoice, PendingEntry } from '../../storage/types.ts';
 import type { DiaryState } from '../../storage/diaryRepository.ts';
 import type { SyncScheduler } from '../../sync/scheduler.ts';
 import type { SyncEngine } from '../../sync/syncEngine.ts';
 import type { SyncOutcome, SyncSession } from '../../sync/types.ts';
+import { createDiaryDraftStore } from './importDraftStore.ts';
+import type { ImportDraftStore } from './importReview.ts';
 
 export type DiaryPhase = 'unavailable' | 'opening' | 'ready' | 'locked';
 
@@ -19,9 +21,15 @@ export type DiaryView = {
   progress: { sent: number; total: number } | null;
   pending: PendingEntry[];
   outbox: OutboxCommand[];
+  /** Refused online edits kept on this device until the person picks a version (C16), oldest refusal first. */
+  pendingChoices: PendingChoice[];
   /** Synced, open wallets and categories on this device: what an offline draft may use. */
   wallets: WalletSnapshot[];
   categories: CategoryDto[];
+  /** The open diary's account; null with no open diary (web, opening, locked, signed out). */
+  accountId: string | null;
+  /** The revision of the last change group applied on this device; '0' when no diary is open. A screen refreshes when it grows. */
+  appliedRevision: string;
 };
 
 /** The signed-in account (its internal id) and the session epoch, or nobody. */
@@ -35,8 +43,10 @@ export type SpendDiaryDeps = {
   open(accountId: string, epoch: number): Promise<DiaryStore>;
   /** Closes the account's diary and deletes its key and file. */
   discard(accountId: string): Promise<void>;
-  /** Other on-device copies of the account's data that leave with its diary at an explicit sign-out erase (not at a locked diary's discard): the import review draft. */
+  /** Other on-device copies of the account's data that leave with its diary at an explicit sign-out erase (not at a locked diary's discard): an older build's plain-text import draft. */
   eraseWithDiary?(accountId: string): Promise<void>;
+  /** Removes the plain-text import draft an older build kept for the account; called before the diary's import draft is first used. */
+  eraseLegacyImportDraft?(accountId: string): Promise<void>;
   session(): DiarySession;
   /** The sync for one open store, flushing only as `session` (the session the store was opened for). */
   makeSync(store: DiaryStore, session: SyncSession, report: SyncReport): { engine: SyncEngine; scheduler: SyncScheduler };
@@ -60,17 +70,32 @@ export interface SpendDiary {
   removeDraft(commandId: string): Promise<void>;
   /** Discards a draft that needs review (the server never committed it). */
   discardDraft(commandId: string): Promise<void>;
+  /** Keeps a refused online edit as a pending choice on the device (C16). Never sent by itself; rejects when no diary is open. */
+  keepChoice(choice: PendingChoice): Promise<void>;
+  /** Drops a record's pending choice; a missing one is not an error. */
+  dropChoice(recordId: string): Promise<void>;
   /** A locked diary's explicit discard: deletes this account's diary on the device and starts over from the synced one. */
   discardDiary(): Promise<void>;
   /** Explicit sign-out: deletes this account's diary on the device (call after the user confirmed). */
   eraseForSignOut(): Promise<void>;
+  /**
+   * The open account's import review draft, kept inside its encrypted diary;
+   * null while no diary is open (web, opening, locked, signed out). A store
+   * handed out before a session change rejects from then on: ask again.
+   */
+  importDraftStore(): ImportDraftStore | null;
   retry(): Promise<void>;
   foreground(): Promise<void>;
   background(): void;
   close(): Promise<void>;
+  /**
+   * Distinct dates with a live confirmed record or a draft, oldest first.
+   * Null while no diary is open (web, opening, locked, signed out).
+   */
+  loggedDays(): Promise<readonly string[] | null>;
 }
 
-const EMPTY: DiaryView = { phase: 'unavailable', lockReason: null, outcome: null, progress: null, pending: [], outbox: [], wallets: [], categories: [] };
+const EMPTY: DiaryView = { phase: 'unavailable', lockReason: null, outcome: null, progress: null, pending: [], outbox: [], pendingChoices: [], wallets: [], categories: [], appliedRevision: '0', accountId: null };
 
 const BUILTIN_ORDER = new Map<string, number>(BUILTIN_CATEGORIES.map((category, index) => [category.key, index]));
 
@@ -110,6 +135,8 @@ const sameSession = (a: DiarySession | null, b: DiarySession) => a !== null && a
 export function createSpendDiary(deps: SpendDiaryDeps): SpendDiary {
   let view: DiaryView = EMPTY;
   let store: DiaryStore | null = null;
+  // The import draft store over `store`, made once per open diary.
+  let drafts: { diary: DiaryStore; store: ImportDraftStore } | null = null;
   let sync: { engine: SyncEngine; scheduler: SyncScheduler } | null = null;
   let generation = 0;
   // The session whose diary is open or opening, and the run doing it.
@@ -127,8 +154,8 @@ export function createSpendDiary(deps: SpendDiaryDeps): SpendDiary {
   async function refresh(target: DiaryStore | null): Promise<void> {
     if (!target || target !== store) return;
     try {
-      const [state, outbox] = await Promise.all([target.readState(), target.readOutbox()]);
-      if (target === store) emit({ ...view, pending: state.pending, outbox, ...references(state) });
+      const [state, outbox, pendingChoices] = await Promise.all([target.readState(), target.readOutbox(), target.readChoices()]);
+      if (target === store) emit({ ...view, pending: state.pending, outbox, pendingChoices, appliedRevision: state.appliedRevision, ...references(state) });
     } catch {
       // Locked or from an earlier session: nothing to show from it.
     }
@@ -139,13 +166,14 @@ export function createSpendDiary(deps: SpendDiaryDeps): SpendDiary {
     sync = null;
     const closing = store;
     store = null;
+    drafts = null;
     await closing?.lock().catch(() => undefined);
   }
 
   function onOutcome(target: DiaryStore, outcome: SyncOutcome): void {
     if (target !== store) return;
     if (outcome.status === 'signed_out') {
-      emit({ ...view, phase: 'locked', lockReason: 'signed_out', outcome, progress: null });
+      emit({ ...view, phase: 'locked', lockReason: 'signed_out', outcome, progress: null, accountId: null });
       void closeCurrent();
       return;
     }
@@ -183,7 +211,7 @@ export function createSpendDiary(deps: SpendDiaryDeps): SpendDiary {
     }
     store = opened;
     sync = deps.makeSync(opened, { accountId, epoch: next.epoch }, { outcome: (outcome) => onOutcome(opened, outcome), progress: (progress) => onProgress(opened, progress) });
-    emit({ ...EMPTY, phase: 'ready' });
+    emit({ ...EMPTY, phase: 'ready', accountId });
     await refresh(opened);
     await sync.scheduler.launch();
     await refresh(opened);
@@ -263,6 +291,16 @@ export function createSpendDiary(deps: SpendDiaryDeps): SpendDiary {
       await target.discardReviewed(commandId);
       await refresh(target);
     },
+    async keepChoice(choice) {
+      const target = current();
+      await target.keepChoice(choice);
+      await refresh(target);
+    },
+    async dropChoice(recordId) {
+      const target = current();
+      await target.dropChoice(recordId);
+      await refresh(target);
+    },
     async discardDiary() {
       if (!(await discardCurrent())) return;
       await sessionChanged();
@@ -273,6 +311,11 @@ export function createSpendDiary(deps: SpendDiaryDeps): SpendDiary {
       erasedFor = session;
       emit(EMPTY);
       if (session.accountId) await deps.eraseWithDiary?.(session.accountId);
+    },
+    importDraftStore() {
+      if (!store || view.phase !== 'ready') return null;
+      if (drafts?.diary !== store) drafts = { diary: store, store: createDiaryDraftStore(store, deps.eraseLegacyImportDraft) };
+      return drafts.store;
     },
 
     async retry() {
@@ -295,6 +338,10 @@ export function createSpendDiary(deps: SpendDiaryDeps): SpendDiary {
       active = null;
       await closeCurrent();
       emit(EMPTY);
+    },
+    async loggedDays() {
+      if (!store || view.phase !== 'ready') return null;
+      return store.loggedDays();
     },
   };
 }

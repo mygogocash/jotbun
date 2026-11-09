@@ -72,7 +72,7 @@ Rules (an entry that breaks one is `invalid`, and the API is not ready):
 | Area | Receipt | Command / target | Status |
 | --- | --- | --- | --- |
 | Local gate | full gate, Docker build and release smoke on the release commit | `docs/implementation/backend-progress.md`, P6b section | PASS locally (this branch) |
-| Hosted CI | `.github/workflows/backend.yml` green on the release commit | GitHub Actions after an authorized push/PR (E4) | SKIPPED |
+| Hosted CI | `.github/workflows/backend.yml` green on the release commit | GitHub Actions after an authorized push/PR (E4) | first run green: [PR #70](https://github.com/mygogocash/jotbun/pull/70) at `f8058b5`, all three jobs (gate, SQL and ops, release image and smoke on x64); re-run on the release commit |
 | Storage | P1 hosted R2 gate | above | SKIPPED (E1) |
 | Uploads | P2a: one real bounded quarantine upload, stall timeout and expiry | R2 test scope | SKIPPED (E1); uploads stay off |
 | Imports | P2b, P2c, P3 local and hosted gates; dependency audit of parser packages | their plans | built locally and merged (P2b, P2c, P3); hosted gates SKIPPED (E1); uploads stay off |
@@ -85,7 +85,7 @@ Rules (an entry that breaks one is `invalid`, and the API is not ready):
 | Performance | `node scripts/ops/performance-smoke.mjs --target staging-synthetic …` from a named Thailand location: warm p95 reads < 800 ms, writes < 1,200 ms, ≤ 1% failed, at 20 req/s over ≥ 20 synthetic accounts | authorized staging target | SKIPPED (no authorized target) |
 | Native journeys | stage-1 smoke in [release.md](../operations/release.md#staged-enablement) on both platforms | release builds | SKIPPED (E2) |
 | Operations | alert routing for every line in [incident.md](../operations/incident.md), provider budget alerts at 50/80/100% of US$100, 7-day log retention, the deploy health check on `/live`, an external monitor on `/ready` | provider consoles (E3) | SKIPPED |
-| Lockfile | Linux bindings recorded in `package-lock.json` (or the CI/Docker workaround accepted) | authorized dependency change | open |
+| Lockfile | Linux bindings recorded in `package-lock.json` | `scripts/ci/lockfile-bindings.test.mjs` | done locally (19 October 2026) |
 | Approvals | E3 release (exact target, revision, secrets by name, alert owner, rollback) and E4 Git delivery | founder | not given |
 
 ## Performance receipt (template)

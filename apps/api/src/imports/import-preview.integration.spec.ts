@@ -541,7 +541,7 @@ describe('rejected files leave nothing to confirm', () => {
     ['output over its cap', { kind: 'output_too_large' }, 'parse_resource_limit'],
     [
       'a parse that exceeded the 512 MiB budget',
-      { kind: 'result', result: { ok: true, layout: 'generic', rows: [], file_issues: [], image: null, usage: { max_rss_kb: 600 * 1024, cpu_ms: 10 } } },
+      { kind: 'result', result: { ok: true, layout: 'generic', rows: [], file_issues: [], image: null, header_fingerprint: null, usage: { max_rss_kb: 600 * 1024, cpu_ms: 10 } } },
       'parse_resource_limit',
     ],
   ])('%s fails visibly as a rejected preview, never with guessed fields', async (_label, outcome, code) => {
@@ -612,7 +612,7 @@ describe('rejected files leave nothing to confirm', () => {
         return {
           kind: 'result',
           result: {
-            ok: true, layout: 'generic', file_issues: [], image: null, usage: { max_rss_kb: 1024, cpu_ms: 5 },
+            ok: true, layout: 'generic', file_issues: [], image: null, header_fingerprint: null, usage: { max_rss_kb: 1024, cpu_ms: 5 },
             rows: [{ source_row_id: 'row:2', occurred_on: '2026-01-01', type: 'expense', amount_minor: '100', wallet_label: 'Cash', category_label: null, merchant: null, note: null, issues: [] }],
           },
         };
@@ -631,7 +631,7 @@ describe('rejected files leave nothing to confirm', () => {
     const result: ParserRunOutcome = {
       kind: 'result',
       result: {
-        ok: true, layout: 'receipt', file_issues: ['receipt_fields_unread'], usage: { max_rss_kb: 1024, cpu_ms: 5 },
+        ok: true, layout: 'receipt', file_issues: ['receipt_fields_unread'], header_fingerprint: null, usage: { max_rss_kb: 1024, cpu_ms: 5 },
         image: { format: 'jpeg', width: 16, height: 16, base64: (await sharp(image).jpeg().toBuffer()).toString('base64') },
         rows: [{ source_row_id: 'image:1', occurred_on: null, type: null, amount_minor: null, wallet_label: null, category_label: null, merchant: null, note: null, issues: [] }],
       },
@@ -890,7 +890,7 @@ describe('the job worker never claims a parse it cannot sandbox (B1)', () => {
     const claimed = (base64: string, width: number): ParserRunOutcome => ({
       kind: 'result',
       result: {
-        ok: true, layout: 'receipt', file_issues: ['receipt_fields_unread'], usage: { max_rss_kb: 1024, cpu_ms: 5 },
+        ok: true, layout: 'receipt', file_issues: ['receipt_fields_unread'], header_fingerprint: null, usage: { max_rss_kb: 1024, cpu_ms: 5 },
         image: { format: 'jpeg', width, height: 16, base64 },
         rows: [{ source_row_id: 'image:1', occurred_on: null, type: null, amount_minor: null, wallet_label: null, category_label: null, merchant: null, note: null,
           issues: [{ field: 'occurred_on', code: 'missing_date' }, { field: 'type', code: 'missing_type' }, { field: 'amount_minor', code: 'missing_amount' }, { field: 'wallet_label', code: 'missing_wallet' }] }],

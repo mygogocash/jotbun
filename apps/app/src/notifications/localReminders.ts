@@ -6,7 +6,7 @@ import { Platform } from 'react-native';
 
 import { createNotificationsPort } from './notificationsPort.ts';
 import { createLocalReminderService } from './reminders.ts';
-import type { LocalReminderService, ReminderContent, ReminderPreference } from './reminders.ts';
+import type { LocalReminderService, ReminderContent, StoredReminderPreference, Weekday } from './reminders.ts';
 
 const PREFERENCE_KEY = 'gogospend.reminder.v1';
 const SCHEDULED_FOR_KEY = 'gogospend.reminder.scheduled-for.v1';
@@ -15,7 +15,7 @@ const SCHEDULED_FOR_KEY = 'gogospend.reminder.scheduled-for.v1';
  * `context` names the device time zone and language the reminder is written
  * for; `refresh()` re-schedules when it changes.
  */
-export function createDeviceReminderService(content: () => ReminderContent, context: () => string, channelName: () => string): LocalReminderService {
+export function createDeviceReminderService(content: (day: Weekday) => ReminderContent, context: () => string, channelName: () => string): LocalReminderService {
   const port = createNotificationsPort(
     {
       getPermissionsAsync: () => Notifications.getPermissionsAsync(),
@@ -25,7 +25,8 @@ export function createDeviceReminderService(content: () => ReminderContent, cont
         Notifications.scheduleNotificationAsync({
           identifier,
           content: message,
-          trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: trigger.hour, minute: trigger.minute, channelId: trigger.channelId },
+          // SDK 58's WeeklyTriggerInput: it repeats by itself (no `repeats`).
+          trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday: trigger.weekday, hour: trigger.hour, minute: trigger.minute, channelId: trigger.channelId },
         }),
       setNotificationChannelAsync: (id, channel) => Notifications.setNotificationChannelAsync(id, { name: channel.name, importance: Notifications.AndroidImportance.DEFAULT }),
     },
@@ -39,7 +40,8 @@ export function createDeviceReminderService(content: () => ReminderContent, cont
         const raw = await AsyncStorage.getItem(PREFERENCE_KEY);
         if (!raw) return null;
         try {
-          const value = JSON.parse(raw) as ReminderPreference;
+          // An S4 value has no `weekdays`; the service reads it (or damaged days) as every day.
+          const value = JSON.parse(raw) as StoredReminderPreference;
           return typeof value.enabled === 'boolean' && typeof value.localTime === 'string' ? value : null;
         } catch {
           return null;

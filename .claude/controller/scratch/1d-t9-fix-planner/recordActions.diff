@@ -1,0 +1,77 @@
+--- base/apps/app/src/screens/redesign/record/recordActions.ts	2026-11-08 19:47:53
++++ real/apps/app/src/screens/redesign/record/recordActions.ts	2026-11-08 19:48:22
+@@ -193,6 +193,8 @@
+   }, []);
+   /** C16: the last read could not reach the server, so the panel compares with the stored record and cannot send yours. */
+   const [offline, setOffline] = useState(false);
++  /** C16: "Use the server's" was chosen here. A copy the diary failed to drop waits for the next open (P7), not this screen's reload. */
++  const declined = useRef(false);
+ 
+   /** The record's stored choice, read from the diary now (never a render behind). */
+   const storedChoice = useCallback((): PendingChoice | null => {
+@@ -214,19 +216,22 @@
+     setOpen({ choice, kept });
+   }, [diary, setOpen]);
+ 
+-  /** Drops the open choice. A diary that refuses keeps its copy: the next open finds it settled, or offers it again. */
++  /**
++   * Drops the open choice, and this phone's copy of it: also when this screen could not keep it again, since the diary
++   * may still hold an earlier copy. A diary that refuses keeps its copy: the next open finds it settled, or offers it again.
++   */
+   const dropOpen = useCallback(async () => {
+     const current = openRef.current;
+     setOpen(null);
+-    if (current?.kept && diary) await diary.dropChoice(current.choice.recordId).catch(() => undefined);
++    if (current && diary) await diary.dropChoice(current.choice.recordId).catch(() => undefined);
+   }, [diary, setOpen]);
+ 
+   /** Reads the entry; what is on screen stays while it reloads. */
+   const load = useCallback(async () => {
+     const turn = ++generation.current;
+     setLoaded((previous) => (previous.state === 'ready' ? previous : { state: 'loading' }));
+-    // C16: the record's choice, open on this screen or kept in the diary.
+-    const choice = choicesOn ? openRef.current?.choice ?? storedChoice() : null;
++    // C16: the record's choice, open on this screen or kept in the diary (unless the server's was chosen here).
++    const choice = choicesOn ? openRef.current?.choice ?? (declined.current ? null : storedChoice()) : null;
+     if (choice && !openRef.current) setOpen({ choice, kept: true });
+     try {
+       const [record, wallets, categories] = await Promise.all([resources.transaction(id), resources.wallets(), resources.ensureBuiltinCategories()]);
+@@ -268,6 +273,13 @@
+   useEffect(() => {
+     if (!fromDevice && !leaving.current) void load();
+   }, [load, fromDevice]);
++
++  // C16: a diary that opens after this screen's first read may hold a choice for this record. Read again when it shows
++  // up, unless a choice or an edit is already on screen (an edit in progress is never replaced). Only in the area.
++  const heldHere = choicesOn && diaryView.phase === 'ready' && diaryView.pendingChoices.some((choice) => choice.recordId === id);
++  useEffect(() => {
++    if (heldHere && !openRef.current && !editingRef.current) void load();
++  }, [heldHere, load]);
+ 
+   async function submitEdit() {
+     const seen = editingRef.current;
+@@ -350,9 +362,10 @@
+     try {
+       await resources.updateTransaction(sent.id, sent.version, sent.changes, key);
+       keys.settle(slot);
+-      await dropOpen();
++      // Close the edit before the diary's drop: no conflict may stay on screen without the panel.
+       setEditing(null);
+       setNotice(null);
++      await dropOpen();
+     } catch (problem) {
+       const outcome = problem instanceof V1Error ? problem.outcome : undefined;
+       const saved = saveProblem(problem, tc);
+@@ -388,8 +401,11 @@
+   /** C16, "Use the server's": drop the choice, send nothing, and read the record as it is. */
+   async function useServer() {
+     if (acting.current || editingRef.current?.unconfirmed) return;
+-    await dropOpen();
++    declined.current = true;
++    // Leave the edit before the diary's drop (P2-T6's notice rule still sees the conflict): no conflict may stay on
++    // screen without the panel, and today's panel never offers "Apply my change" here.
+     cancelEditing();
++    await dropOpen();
+     void load();
+   }
+ 

@@ -124,10 +124,12 @@ export const motion = {
    * bezier easings above cannot drive a spring: a cubic-bezier has no
    * damping to give it.
    *
-   * GoGoSpend drives these through `Animated.spring`
-   * (`theme/animatedMotion.ts`'s `runSpringTransform`); the spend screens
-   * have no reanimated, and a second animation system in one screen is worse
-   * than a slightly less ergonomic API.
+   * The Bun diary screens drive these through `Animated.spring`
+   * (`theme/animatedMotion.ts`'s `runSpringTransform`). The Bun Wallet
+   * screens (`src/wallet/`, plan P2) drive them through Reanimated, whose
+   * springs read the same three fields (`wallet/motion/useWalletMotion.ts`).
+   * Never both in one screen: a second animation system in one screen is
+   * worse than a slightly less ergonomic API.
    *
    * `bouncy` is RATIONED to moments that are genuinely good news (a save
    * landing, cashback arriving). Overshoot on an ordinary control is the
@@ -165,6 +167,42 @@ export const motion = {
     scroll: "none",
     navigate: "none",
     listPage: "none",
+    /*
+     * The premium layer (premium and AI plan, A1). Each moment is something
+     * the person did or something that happened to their money, never a
+     * scroll or a page turn.
+     *
+     * - Typing an amount ticks like a good calculator; clearing it is a
+     *   lighter tap, so the two feel different under the thumb.
+     * - Choosing (type, category, day, tab) is a selection tick.
+     * - Saved offline is light, not success: it has not reached the server,
+     *   and "saving" must never feel saved.
+     * - A delete lands with a rigid tap; its undo is light.
+     * - Crossing 80% or 100% of a budget is a warning, said once.
+     * - A logging milestone (a good week, the month recap) is the only
+     *   celebration, a three-beat pattern, at most once a day.
+     * - Bun's suggestions arrive lightly; accepting one is a press.
+     */
+    keyTap: "selection",
+    amountCleared: "light",
+    chipPick: "selection",
+    dateStep: "selection",
+    tabChange: "selection",
+    saveQueued: "light",
+    deleteDone: "rigid",
+    undoDone: "light",
+    thresholdCrossed: "warning",
+    celebration: "celebrate",
+    aiSuggestionReady: "light",
+    aiAccepted: "impact",
+    /*
+     * The Bun Wallet (plan P2, board ax-motion): a selection tick per tray
+     * step and on opening a wallet, and success when a new wallet joins the
+     * stack. Reduce Motion never changes them (`wallet/motion/walletMotion.ts`).
+     */
+    trayStep: "selection",
+    walletOpen: "selection",
+    walletAdded: "success",
   },
   scale: {
     hover: 1.01,

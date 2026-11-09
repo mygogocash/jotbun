@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, sep } from 'node:path';
 
@@ -24,7 +24,7 @@ import type { WorkerDeps } from '../jobs/handlers';
 import { NET_PERMISSION, OpenNetRunner, UngatedParserRunner, parsingRunner } from './fixtures/parsing-runner';
 import { importParsingStartup } from './import-parsing';
 import { sanitizedImageHeader, toPreviewRecord } from './parse-handler';
-import { PARSER_CHILD_MEMORY_MIB, PARSER_ENTRIES, PARSER_WORKER_HEADROOM_MIB, ParserRunner, sandboxVerdict, validateParseResult } from './parser-runner';
+import { PARSER_CHILD_MEMORY_MIB, PARSER_ENTRIES, PARSER_WORKER_HEADROOM_MIB, ParserRunner, imageReadRoots, sandboxVerdict, validateParseResult } from './parser-runner';
 import type { ChildLaunch, ParserRunOutcome, SandboxVerdict } from './parser-runner';
 import { detectAmountConvention, parseAmountText } from './parsers/amount';
 import { readCsv } from './parsers/csv';
@@ -782,8 +782,17 @@ describe('the parser child runs isolated and bounded', () => {
   it('the image child reads only the sharp, @img, detect-libc and semver package directories besides its own', () => {
     const reads = (launch: ChildLaunch) => launch.args.filter((arg) => arg.startsWith('--allow-fs-read=')).map((arg) => arg.slice('--allow-fs-read='.length));
     expect(reads(runner.launch('csv'))).toEqual([`${dirname(PARSER_ENTRIES.table)}${sep}`]);
-    const [own, ...packages] = reads(runner.launch('webp'));
+    const [own, ...rest] = reads(runner.launch('webp'));
     expect(own).toBe(`${dirname(PARSER_ENTRIES.image)}${sep}`);
+    // Besides directories, only the missing package.json files Node reads on the way to one of these packages.
+    const packages = rest.filter((path) => path.endsWith(sep));
+    for (const file of rest.filter((path) => !path.endsWith(sep))) {
+      expect(basename(file)).toBe('package.json');
+      const [name, parent, grandparent] = dirname(file).split(sep).filter(Boolean).reverse();
+      const full = parent === '@img' ? `@img/${name}` : name;
+      expect(parent === 'node_modules' || (parent === '@img' && grandparent === 'node_modules')).toBe(true);
+      expect(['sharp', 'detect-libc', 'semver'].includes(full as string) || full?.startsWith('@img/')).toBe(true);
+    }
     const names = packages.map((dir) => {
       const [last, parent, grandparent] = dir.split(sep).filter(Boolean).reverse();
       expect(parent === 'node_modules' || (parent === '@img' && grandparent === 'node_modules')).toBe(true);
@@ -793,6 +802,47 @@ describe('the parser child runs isolated and bounded', () => {
     expect(names.some((name) => name?.startsWith('@img/sharp-'))).toBe(true);
     expect(names.filter((name) => !['sharp', 'detect-libc', 'semver'].includes(name as string) && !name?.startsWith('@img/'))).toEqual([]);
     for (const dir of packages) expect(basename(dir)).not.toBe('node_modules');
+  });
+
+  it('the image child may read the package.json Node looks for in each node_modules on the way to a package (the release image\'s layout)', () => {
+    // The release image: sharp and its @img packages under the API's
+    // node_modules, detect-libc and semver hoisted to the root. Loading
+    // detect-libc from sharp, Node first reads apps/api/node_modules/detect-libc/package.json,
+    // which is not there; outside the child's roots the permission model
+    // answers that read with ERR_ACCESS_DENIED instead of "not found", and the
+    // child crashed (found by the Node 26 image smoke). Each such path is allowed exactly.
+    const root = realpathSync(mkdtempSync(join(tmpdir(), 'p2b-layout-')));
+    try {
+      const pkg = (dir: string, name: string) => {
+        mkdirSync(join(dir, name), { recursive: true });
+        writeFileSync(join(dir, name, 'package.json'), JSON.stringify({ name, version: '1.0.0' }));
+      };
+      const api = join(root, 'app', 'apps', 'api');
+      const entry = join(api, 'dist', 'imports', 'parsers', 'image-child.js');
+      mkdirSync(dirname(entry), { recursive: true });
+      writeFileSync(entry, '');
+      for (const name of ['sharp', '@img/colour', '@img/sharp-linux-arm64', '@img/sharp-libvips-linux-arm64']) pkg(join(api, 'node_modules'), name);
+      for (const name of ['detect-libc', 'semver']) pkg(join(root, 'app', 'node_modules'), name);
+      const roots = imageReadRoots(entry);
+      const apiModules = join(api, 'node_modules');
+      expect(roots).toEqual(expect.arrayContaining([
+        `${join(apiModules, 'sharp')}${sep}`,
+        `${join(root, 'app', 'node_modules', 'detect-libc')}${sep}`,
+        `${join(root, 'app', 'node_modules', 'semver')}${sep}`,
+        join(apiModules, 'detect-libc', 'package.json'),
+        join(apiModules, 'semver', 'package.json'),
+      ]));
+      // Only package.json files are allowed by exact path, and only in node_modules directories that exist.
+      for (const file of roots.filter((path) => !path.endsWith(sep))) {
+        expect(basename(file)).toBe('package.json');
+        // node_modules/<name>/package.json, or node_modules/@img/<name>/package.json for a scoped package.
+        const [, parent, grandparent] = dirname(file).split(sep).filter(Boolean).reverse();
+        expect(parent === 'node_modules' || (parent === '@img' && grandparent === 'node_modules')).toBe(true);
+      }
+      expect(roots.some((path) => path.includes(`${sep}dist${sep}imports${sep}node_modules`))).toBe(false);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
   it('a child that cannot be started is a spawn failure (retried), not a parse failure', async () => {
@@ -880,7 +930,8 @@ describe('the parser child runs isolated and bounded', () => {
 });
 
 describe('the worker re-validates everything a child says', () => {
-  const ok = (rows: unknown[], extra: Record<string, unknown> = {}) => ({ ok: true, layout: 'generic', rows, file_issues: [], image: null, usage: { max_rss_kb: 1, cpu_ms: 1 }, ...extra });
+  const fingerprint = 'ab'.repeat(32);
+  const ok = (rows: unknown[], extra: Record<string, unknown> = {}) => ({ ok: true, layout: 'generic', rows, file_issues: [], image: null, header_fingerprint: fingerprint, usage: { max_rss_kb: 1, cpu_ms: 1 }, ...extra });
   const good = { source_row_id: 'row:2', occurred_on: '2026-01-01', type: 'expense', amount_minor: '100', wallet_label: 'Cash', category_label: null, merchant: null, note: null, issues: [] };
   const receiptRow = {
     source_row_id: 'image:1', occurred_on: null, type: null, amount_minor: null, wallet_label: null, category_label: null, merchant: null, note: null,
@@ -888,11 +939,12 @@ describe('the worker re-validates everything a child says', () => {
   };
   const receipt = (overrides: Record<string, unknown>) => ({
     ok: true, layout: 'receipt', rows: [{ ...receiptRow, ...overrides }], file_issues: ['receipt_fields_unread'],
-    image: { format: 'png', width: 1, height: 1, base64: 'AAAA' }, usage: { max_rss_kb: 1, cpu_ms: 1 },
+    image: { format: 'png', width: 1, height: 1, base64: 'AAAA' }, header_fingerprint: null, usage: { max_rss_kb: 1, cpu_ms: 1 },
   });
 
   it('accepts the protocol shape', () => {
     expect(validateParseResult(ok([good]))).toEqual(ok([good]));
+    expect(validateParseResult(ok([good], { header_fingerprint: null }))).toEqual(ok([good], { header_fingerprint: null }));
     expect(validateParseResult(receipt({}))).toEqual(receipt({}));
     expect(validateParseResult({ ok: false, code: 'formulas', usage: { max_rss_kb: 1, cpu_ms: 1 } })).toEqual({ ok: false, code: 'formulas', usage: { max_rss_kb: 1, cpu_ms: 1 } });
   });
@@ -919,6 +971,13 @@ describe('the worker re-validates everything a child says', () => {
     ['a receipt without its review issues', receipt({ issues: [] })],
     ['a receipt with a second row', { ...receipt({}), rows: [receiptRow, { ...receiptRow, source_row_id: 'row:2' }] }],
     ['a receipt without the unread notice', { ...receipt({}), file_issues: [] }],
+    ['a result without the header fingerprint', (({ header_fingerprint: _fingerprint, ...rest }) => rest)(ok([good]))],
+    ['an upper-case header fingerprint', ok([good], { header_fingerprint: 'AB'.repeat(32) })],
+    ['a header fingerprint of 63 characters', ok([good], { header_fingerprint: 'a'.repeat(63) })],
+    ['a header fingerprint that is not hex', ok([good], { header_fingerprint: 'g'.repeat(64) })],
+    ['an empty header fingerprint', ok([good], { header_fingerprint: '' })],
+    ['a header fingerprint that is not a string', ok([good], { header_fingerprint: 1 })],
+    ['a receipt with a header fingerprint', { ...receipt({}), header_fingerprint: fingerprint }],
   ])('refuses %s', (_label, value) => {
     expect(validateParseResult(value)).toBeNull();
   });

@@ -1,0 +1,37 @@
+--- a/src/vault/files/work.ts
++++ b/src/vault/files/work.ts
+@@ -140,3 +140,34 @@
+ }
+ 
+ WORK_STARTERS.push(PARSE_STARTER)
++
++// 1B-T6: the export starter (B5). An export the vault recorded but has not
++// started is a pending row with no started_at. Its Workflow instance is named
++// by the export's id, so a second start (two overlapping runs, or the alarm
++// after a hand-off that did start) finds the instance and changes nothing.
++
++export const EXPORT_STARTER: WorkStarter = {
++  kind: 'export',
++  unstarted(c) {
++    // Bounded: at most EXPORT_MAX_OPEN (2) exports are pending at once.
++    return c.sql
++      .exec<{ id: string }>("SELECT id FROM exports WHERE status = 'pending' AND started_at IS NULL ORDER BY requested_at, id")
++      .toArray()
++      .map((row) => row.id)
++  },
++  dueAt(c) {
++    const { oldest } = c.sql.exec<{ oldest: string | null }>("SELECT min(requested_at) AS oldest FROM exports WHERE status = 'pending' AND started_at IS NULL").one()
++    return oldest === null ? null : Date.parse(oldest) + START_RETRY_MS
++  },
++  async start(env, vaultId, id) {
++    if (!env.EXPORT_WORKFLOW) return 'unbound'
++    await createOnce(env.EXPORT_WORKFLOW, id, { vault: vaultId, export: id })
++    return 'started'
++  },
++  markStarted(c, id) {
++    c.sql.exec("UPDATE exports SET started_at = ? WHERE id = ? AND status = 'pending' AND started_at IS NULL", c.now.toISOString(), id)
++    touch(c)
++  },
++}
++
++WORK_STARTERS.push(EXPORT_STARTER)

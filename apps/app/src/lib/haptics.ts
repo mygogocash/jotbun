@@ -14,12 +14,12 @@
 // keeps the node test environment — which cannot parse the Flow-typed react-native
 // source — from ever loading it, so the unit tests live in the fast source suite.
 
-type ExpoHapticsModule = {
+export type ExpoHapticsModule = {
   notificationAsync: (type: unknown) => Promise<void>;
   impactAsync: (style?: unknown) => Promise<void>;
   selectionAsync: () => Promise<void>;
-  NotificationFeedbackType: { Success: unknown; Error: unknown };
-  ImpactFeedbackStyle: { Medium: unknown };
+  NotificationFeedbackType: { Success: unknown; Warning: unknown; Error: unknown };
+  ImpactFeedbackStyle: { Light: unknown; Medium: unknown; Rigid: unknown };
 };
 
 export type HapticsCallOptions = {
@@ -27,7 +27,14 @@ export type HapticsCallOptions = {
   platformOS?: string;
   /** Override the native module loader (defaults to a lazy expo-haptics import). */
   loadModule?: () => Promise<ExpoHapticsModule>;
+  /** Override the pause between a pattern's beats (tests). */
+  wait?: (ms: number) => Promise<void>;
 };
+
+/** The gap between the beats of the celebration pattern. */
+export const CELEBRATE_BEAT_MS = 110;
+
+const pause = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 async function defaultPlatformOS(): Promise<string> {
   // NEVER import the `react-native` barrel here — not statically, and not via
@@ -89,5 +96,34 @@ export const haptics = {
     return runHaptic(options, (mod) =>
       mod.notificationAsync(mod.NotificationFeedbackType.Error),
     );
+  },
+  /** Light impact: a soft confirmation (saved offline, undo, a suggestion arriving). */
+  light(options: HapticsCallOptions = {}): Promise<void> {
+    return runHaptic(options, (mod) =>
+      mod.impactAsync(mod.ImpactFeedbackStyle.Light),
+    );
+  },
+  /** Rigid impact: something was removed (a delete that can still be undone). */
+  rigid(options: HapticsCallOptions = {}): Promise<void> {
+    return runHaptic(options, (mod) =>
+      mod.impactAsync(mod.ImpactFeedbackStyle.Rigid),
+    );
+  },
+  /** Warning notification haptic (a budget threshold crossed). */
+  warning(options: HapticsCallOptions = {}): Promise<void> {
+    return runHaptic(options, (mod) =>
+      mod.notificationAsync(mod.NotificationFeedbackType.Warning),
+    );
+  },
+  /** Three beats for a real milestone: success, then two light taps. */
+  celebrate(options: HapticsCallOptions = {}): Promise<void> {
+    const wait = options.wait ?? pause;
+    return runHaptic(options, async (mod) => {
+      await mod.notificationAsync(mod.NotificationFeedbackType.Success);
+      await wait(CELEBRATE_BEAT_MS);
+      await mod.impactAsync(mod.ImpactFeedbackStyle.Light);
+      await wait(CELEBRATE_BEAT_MS);
+      await mod.impactAsync(mod.ImpactFeedbackStyle.Light);
+    });
   },
 };

@@ -172,11 +172,35 @@ export function saveProblem(error: unknown, tc: Translate): SaveProblem {
 }
 
 /**
+ * Refusals that come before the server processes a command: no usable
+ * session, terms to accept, an app update, another platform, an unknown
+ * command schema, too many requests. On a resend of a command whose first
+ * attempt is unconfirmed they say nothing about whether that attempt
+ * committed, so the entry stays frozen with its key until the outcome is
+ * known (a later resend of the same command, under the same key, tells).
+ */
+export function refusedBeforeProcessing(error: unknown): boolean {
+  if (!(error instanceof V1Error)) return false;
+  return ['signed_out', 'session_changed', 'policy_required', 'upgrade_required', 'unsupported_platform', 'schema_unsupported', 'rate_limited'].includes(error.outcome);
+}
+
+/**
  * A create refused because its record id already exists in this account:
  * an earlier attempt of the same draft committed, so the entry is saved.
  */
 export function isOwnCreate(error: unknown, id: string): boolean {
   return error instanceof V1Error && error.outcome === 'conflict' && (error.current as { id?: unknown } | undefined)?.id === id;
+}
+
+/**
+ * Whether the record Jotbun holds under this draft's id (see `isOwnCreate`)
+ * is the draft as it was sent: every field the create named is the same.
+ * Anything else is a conflict to show, never "saved".
+ */
+export function ownCreateMatches(error: unknown, input: object): boolean {
+  const held = error instanceof V1Error ? (error.current as Record<string, unknown> | undefined) : undefined;
+  if (!held || typeof held !== 'object') return false;
+  return Object.entries(input).every(([field, value]) => (held[field] ?? null) === (value ?? null));
 }
 
 /**

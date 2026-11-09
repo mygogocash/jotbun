@@ -30,5 +30,6 @@ export function receiptBody(image: SanitizedImage, format: ImageFormat): ChildBo
     ],
     file_issues: ['receipt_fields_unread'],
     image: { format, width: image.width, height: image.height, bytes: image.bytes },
+    header_fingerprint: null,
   };
 }

@@ -41,12 +41,15 @@ function part(zip: ZipArchive, name: string): string | null {
 }
 
 function isDateFormat(code: string): boolean {
-  const visible = code
+  const unquoted = code
     .replace(/"[^"]*"/g, '')
     .replace(/\\./g, '')
-    .replace(/[_*]./g, '')
-    .replace(/\[[^\]]*\]/g, '')
-    .toLowerCase();
+    .replace(/[_*]./g, '');
+  // A bracketed section ends at a "]", so only the text up to the last "]" can hold one.
+  // Past it, the strip scanned from every "[" to the end and failed: quadratic in the
+  // run's length (fix-parser-regex, R89).
+  const end = unquoted.lastIndexOf(']') + 1;
+  const visible = (unquoted.slice(0, end).replace(/\[[^\]]*\]/g, '') + unquoted.slice(end)).toLowerCase();
   return /[yd]|[วดป]/.test(visible);
 }
 
@@ -171,20 +174,23 @@ function readSharedStrings(zip: ZipArchive): string[] {
 function readDateStyles(zip: ZipArchive): boolean[] {
   const text = part(zip, 'xl/styles.xml');
   if (text === null) return [];
-  const custom = new Map<number, string>();
+  // Each custom number format is judged once, when it is read; a cell style only looks
+  // its verdict up. Judged again for every style that used it, one long format code and
+  // many styles cost their product (fix-parser-regex, R89).
+  const custom = new Map<number, boolean>();
   const styles: boolean[] = [];
   let inCellXfs = false;
   let depth = 0;
   for (const event of xmlEvents(text)) {
     if (event.kind === 'open') {
-      if (event.local === 'numFmt') custom.set(Number(event.attrs.numFmtId), event.attrs.formatCode ?? '');
+      if (event.local === 'numFmt') custom.set(Number(event.attrs.numFmtId), isDateFormat(event.attrs.formatCode ?? ''));
       if (event.local === 'cellXfs' && !event.selfClosing) {
         inCellXfs = true;
         depth = 0;
       } else if (inCellXfs) {
         if (depth === 0 && event.local === 'xf') {
           const id = Number(event.attrs.numFmtId ?? 0);
-          styles.push(custom.has(id) ? isDateFormat(custom.get(id) ?? '') : BUILTIN_DATE_FORMATS.has(id));
+          styles.push(custom.get(id) ?? BUILTIN_DATE_FORMATS.has(id));
         }
         if (!event.selfClosing) depth += 1;
       }
