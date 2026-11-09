@@ -97,7 +97,13 @@ test("a new wallet's card drops into the stack on the bouncy spring, or fades in
 });
 
 test('each call builds its own animation, so one part changing its copy never changes another', () => {
-  expect(trayEntering(false)).not.toBe(trayEntering(false));
-  expect(trayEntering(true)).not.toBe(trayEntering(true));
+  // Every builder, both answers (P2-T9's review m-2; the tray, P2-T13, takes trayExiting).
+  for (const reduced of [false, true]) {
+    expect(trayEntering(reduced)).not.toBe(trayEntering(reduced));
+    expect(trayExiting(reduced)).not.toBe(trayExiting(reduced));
+    expect(toastEntering(reduced)).not.toBe(toastEntering(reduced));
+    expect(walletAddedEntering(reduced)).not.toBe(walletAddedEntering(reduced));
+  }
   expect(stepEntering()).not.toBe(stepEntering());
+  expect(stepLayout(false)).not.toBe(stepLayout(false));
 });
