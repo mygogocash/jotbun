@@ -1,0 +1,64 @@
+M1 APPLIES: plan: the salt fetched per hash (nothing kept or held)
+M2 APPLIES: plan: the reference hashed without the bank code
+M3 APPLIES: plan: keychainAccessible omitted
+M4 APPLIES: plan: the account update sent without a command
+R1 APPLIES: the batch sent as a JSON body (parsed by the dispatcher at 2 MiB; the route gets no stream)
+R2 APPLIES: the batch's bytes typed application/json
+R3 APPLIES: the read waits the transport's 20 s
+R4 APPLIES: the read is a command, so the transport resends it
+R5 APPLIES: any salt answer
+R6 APPLIES: any batch answer
+R7 APPLIES: any drafts page
+R8 APPLIES: a later page without its limit
+R9 APPLIES: a later page without its cursor
+R10 APPLIES: an ack for another entity
+R11 APPLIES: an ack for another command
+R12 APPLIES: confirm without its command
+R13 APPLIES: dismiss without its command
+R14 APPLIES: dismiss without a body
+R15 APPLIES: a draft id that is no UUID is sent
+R16 APPLIES: an account id that is no UUID is sent
+R17 APPLIES: the account update without If-Match
+R18 APPLIES: the account update's command id is the account's
+R19 APPLIES: another account's answer accepted
+R20 APPLIES: any accounts answer
+R21 APPLIES: any 204 answer
+R22 APPLIES: any albums answer
+R23 APPLIES: the device registered with POST
+R24 APPLIES: the update's default id is not expo-crypto's
+H1 APPLIES: keychainAccessible WHEN_UNLOCKED (an iCloud backup may restore it to another device)
+H2 APPLIES: the access group ignored
+H3 APPLIES: another key prefix
+H4 APPLIES: a kept value read without its check
+H5 APPLIES: the read without its options
+H6 APPLIES: the write without its options
+H7 APPLIES: forget deletes nothing
+H8 APPLIES: forget without its options
+H9 APPLIES: an unnormalizable reference is hashed
+H10 APPLIES: a failed salt load is kept, so it fails for good
+H11 APPLIES: the kept salt ignored
+H12 APPLIES: the fetched salt not kept
+H13 APPLIES: a locked keychain falls back to the server
+H14 APPLIES: base64url read as base64
+H15 APPLIES: hex without leading zeros
+H16 APPLIES: SHA-512 for SHA-256
+F1 APPLIES: slip import closed is ignored
+F2 APPLIES: the salt behind the release
+F3 APPLIES: slip refs behind the release
+F4 APPLIES: a confirm naming a gone draft is accepted
+F5 APPLIES: a dismiss of a gone draft is accepted
+F6 APPLIES: confirm takes nothing out
+F7 APPLIES: a stale account update is accepted
+F8 APPLIES: an unknown account is updated
+F9 APPLIES: an update keeps the version
+F10 APPLIES: pages ignore the limit
+F11 APPLIES: an unscripted slip is read
+F12 APPLIES: the fake salt is not a salt
+F13 APPLIES: calls are not recorded
+D1 APPLIES: the erase forgets no slip salt
+D2 APPLIES: a keychain that refuses stops the erase
+D3 APPLIES: the web's erase reaches the keychain
+V1 APPLIES: slip calls over a transport without the analytics header
+V2 APPLIES: a new slip client per call
+T1 APPLIES: a link to a route that does not exist
+T2 APPLIES: the manual run's link to a route that does not exist

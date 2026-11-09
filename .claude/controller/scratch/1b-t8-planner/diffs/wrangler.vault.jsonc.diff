@@ -1,0 +1,14 @@
+--- a/wrangler.vault.jsonc
++++ b/wrangler.vault.jsonc
+@@ -29,8 +29,10 @@
+   },
+   // Exports (1B-T6, B5): the vault records a request and starts one instance per
+   // export, named by its id; each step calls the vault, which writes the file to R2.
++  // Resync snapshots (1B-T8) run the same way, one instance per snapshot.
+   "workflows": [
+-    { "name": "jotbun-export", "binding": "EXPORT_WORKFLOW", "class_name": "ExportWorkflow", "default_retention": { "success_retention": "1 day", "error_retention": "7 days" } }
++    { "name": "jotbun-export", "binding": "EXPORT_WORKFLOW", "class_name": "ExportWorkflow", "default_retention": { "success_retention": "1 day", "error_retention": "7 days" } },
++    { "name": "jotbun-snapshot", "binding": "SNAPSHOT_WORKFLOW", "class_name": "SnapshotWorkflow", "default_retention": { "success_retention": "1 day", "error_retention": "7 days" } }
+   ],
+   // The stateless parser (B3): the API's release image started as its parse
+   // server (apps/api/src/imports/parse-server.ts), with no secrets, no bindings

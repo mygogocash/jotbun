@@ -1,0 +1,4 @@
+apps/app/src/api/sharedV1.ts
+apps/app/src/mascot/bunSettingsErase.render.test.tsx
+apps/app/src/spend/v1/DeviceDiaryProvider.render.test.tsx
+apps/app/src/spend/v1/DeviceDiaryProvider.tsx

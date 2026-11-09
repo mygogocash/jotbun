@@ -1,0 +1,50 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app
+
+ ❯ src/mascot/bunSettingsErase.render.test.tsx (3 tests | 1 failed) 5ms
+   × the sign-out erase hook forgets the bun settings after the import draft, and a setting that cannot be erased never stops it 2ms
+ ❯ src/spend/v1/DeviceDiaryProvider.render.test.tsx (5 tests | 1 failed) 22ms
+   × the sign-out erase forgets this account's slip salt, and a keychain that refuses never stops the erase 4ms
+
+ Test Files  2 failed (2)
+      Tests  2 failed | 6 passed (8)
+   Start at  22:32:45
+   Duration  447ms (transform 193ms, setup 82ms, import 405ms, tests 27ms, environment 162ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/mascot/bunSettingsErase.render.test.tsx > the sign-out erase hook forgets the bun settings after the import draft, and a setting that cannot be erased never stops it
+AssertionError: promise rejected "Error: keychain locked" instead of resolving
+ ❯ src/mascot/bunSettingsErase.render.test.tsx:79:71
+
+
+Caused by: Error: keychain locked
+ ❯ src/mascot/bunSettingsErase.render.test.tsx:78:43
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/spend/v1/DeviceDiaryProvider.render.test.tsx > the sign-out erase forgets this account's slip salt, and a keychain that refuses never stops the erase
+AssertionError: promise rejected "Error: the keychain is locked" instead of resolving
+ ❯ src/spend/v1/DeviceDiaryProvider.render.test.tsx:171:41
+    169|   secure.refuse.add(`${SALT_KEY_PREFIX}${A}`);
+    170|   plain.set('jotbun.wallet.lock', 'on');
+    171|   await expect(deps.eraseWithDiary?.(A)).resolves.toBeUndefined();
+       |                                         ^
+    172|   expect(plain.has('jotbun.wallet.lock')).toBe(false);
+    173|   expect([...secure.items.keys()]).toEqual([`${SALT_KEY_PREFIX}${A}`]);
+
+Caused by: Error: the keychain is locked
+ ❯ Proxy.deleteItemAsync src/spend/v1/DeviceDiaryProvider.render.test.tsx:48:39
+ ❯ Object.forget src/slips/slipRefs.ts:60:19
+ ❯ eraseSlipSalt src/spend/v1/DeviceDiaryProvider.tsx:54:30
+ ❯ Object.eraseWithDiary src/spend/v1/DeviceDiaryProvider.tsx:70:3
+ ❯ src/spend/v1/DeviceDiaryProvider.render.test.tsx:171:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

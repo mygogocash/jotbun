@@ -7,9 +7,11 @@ description: Run, continue or take over the Jotbun v1 build controller. Use it t
 
 One session (the controller) runs the build. It dispatches agents, one worktree per task, and merges their PRs when CI is green and an independent review approves.
 
-- **Planners and reviewers:** Opus, effort xhigh.
+- **Planners, and first reviews of M and L tasks:** Opus, effort xhigh.
+- **Confirming reviews, and reviews of S tasks:** Sonnet. This is the owner's change of 9 Nov, to speed up; `make_prompt.py --size S` picks it.
 - **Implementers and fixers:** Haiku, effort max.
 - **Every Agent call** sets `model` and `effort` explicitly. Orca's Agent tool has no `effort`, so there pass `model` only; agents then run at the session's effort.
+- **In T3 Code**, dispatch with `delegate_task` instead (its native Agent tool has no `effort` either): `target: {providerInstanceId: "claudeAgent", model: "claude-opus-5-5" | "claude-sonnet-5-5" | "claude-haiku-5-5", options: {effort: "xhigh" | "max", ultracode: false}}`. Keep `ultracode: false`, so children follow their briefs instead of starting workflows. A child's completion wakes the controller. `t3_thread_send` to a child's thread continues it with its context (this skill's SendMessage). Wait on PR checks with `watch_pull_request`, not a Monitor.
 
 The owner has authorised this to keep moving without pausing between tasks:
 - push task branches;
@@ -32,6 +34,12 @@ Merging anything into `main` stays the owner's call.
 
 The skill and `C/` are committed in the repo; the scratch proof trees are not, apart from the one a ready brief needs. Scripts and briefs use absolute paths under `/Users/kunanonjarat/Developer/jotbun`. If the clone lives elsewhere, run `grep -rl /Users/kunanonjarat/Developer/jotbun .claude/` and fix the paths. The main checkout must have the integration branch, or this commit's files, for `.claude/controller` to exist. Then read `C/handover.md`, starting with its migration section.
 
+## Speed rules (owner's ask, 9 Nov: "find the way to speed up development")
+
+- **R100: CI is the gate for whole suites.** Agents run only the fast local gate in `protocol.md`. No briefs, prompts or receipts carry whole-suite totals any more, so there is no count drift and no load flake from full runs. Read CI before merging.
+- **Lighter fix rounds.** A fix that applies the first reviewer's own verified patch or probes byte for byte (checked against that kit's SHA256SUMS) is merged on green CI without a confirming review. A fix that writes new logic still gets one.
+- **Concurrency.** R100 cuts each agent's tokens a lot, so run up to about 6 agents at once, across lanes that share no hot file.
+
 ## Fast paths (use these instead of hand-written checks and prompts)
 
 - **Where things stand:** `bash scripts/status.sh [minutes]` shows, in one call:
@@ -42,7 +50,7 @@ The skill and `C/` are committed in the repo; the scratch proof trees are not, a
   - recently written scratch folders (live agents);
   - the load.
 - **Does a brief's base hold:** `bash scripts/check_kit.sh <kit> [--rebase-out <dir>]`. It checks the kit's sums (skipping lost `*.log` lines), its `SHA256SUMS.base`, and its `orig/` or `base/` files at the head. It dry-runs per-file diffs for the files that changed. `--rebase-out` writes patched copies, with SHA256SUMS, for the implementer to copy.
-- **Exact counts after the head moved:** `bash scripts/baseline.sh <worktree> app|edge|all [--exports]`. Expected = the measured head total + the brief's delta. Never hand-adjust.
+- **Whole-suite counts:** rarely needed under R100. When a question needs them, `bash scripts/baseline.sh <worktree> app|edge|all [--exports]` measures them; never hand-adjust.
 - **Dispatch:** `python3 -I scripts/make_prompt.py <implementer|fixer|reviewer|confirm|planner> <TASK> --wt --branch --head [--accepted] [--pr --sha] [--lock] [--installed] [--notes <file>]`.
   - It writes the assignment file from the role templates and prints a one-line Agent prompt and its model.
   - Write only the task's own notes (what moved, totals, rulings, review focus) in `--notes`.
@@ -66,7 +74,11 @@ Their work is saved, but their background jobs and Monitors die.
 4. **Implementer DONE:** write `C/pr-<id>.md` in the house style: Summary bullets, Test plan checklist, "Closes #N once merged (closed by hand ...)", and the Claude Code footer. Then run `scripts/open_task_pr.sh <worktree> "<title>" C/pr-<id>.md` and dispatch the Opus reviewer.
 5. **Implementer BLOCKED:** read the exact blocker. For a known flake (`references/lessons.md`), rule it and SendMessage the same agent to continue. For a real question the plan cannot answer, ask the owner. If a task fails review three fix rounds running, tell the owner and suggest escalating it.
 6. **Review "Needs fixes":** write the fix brief (model: `C/briefs/1A-T9-fix.md`), give it a ruling number when it changes behaviour, dispatch Haiku, push, update the PR body, then run a confirming Opus review.
-7. **Merge** when CI is green on the reviewed head and the review approves: `scripts/merge_task_pr.sh <pr> <reviewed-sha> [task-id]`. Record the review's minors in `followups.md`. If the receipt has stale lines, fix them in a housekeeping commit on the integration branch.
+7. **Merge** when CI is green on the reviewed head and the review approves: `scripts/merge_task_pr.sh <pr> <reviewed-sha> [task-id]`.
+   - Record the review's minors in `followups.md`.
+   - If the receipt has stale lines, fix them in a housekeeping commit on the integration branch.
+   - Then open the task's small PR into main with `bash scripts/promote_pr.sh <task-id> <pr>`. This is the owner's ask of 9 Nov: one reviewable PR per task, merged by the owner in order. Never merge into main yourself.
+   - It stacks the PR (GitHub stacked PRs, `gh stack link`) on the newest open promotion PR, so each diff shows one task. The owner merges bottom-up, or up to any PR at once with `gh stack merge <pr>`.
 8. **Keep GitHub current.** After each merge or dispatch, update `handover.md`. Then run `scripts/sync_state.sh "Sync the controller state" <kits of ready, unbuilt briefs>`. It pushes the live state to the integration branch, so a move to another machine or a dead session loses nothing.
 9. **CI watching:**
    - Keep a Monitor running on `C/watch_prs.sh`; it re-arms every 30 minutes.
@@ -87,6 +99,7 @@ Their work is saved, but their background jobs and Monitors die.
 - `references/lessons.md`: what saved or cost time: rebase-before-dispatch, planning on top of unmerged work, lockfile serialisation, the known flakes, jsonb key order (R92), merge and issue rules, session pitfalls.
 - `scripts/`:
   - `status.sh`, `check_kit.sh`, `baseline.sh` and `make_prompt.py` (the fast paths above)
+  - `promote_pr.sh` (one PR into main per merged task)
   - `ready_tasks.py`
   - `new_task_worktree.sh`
   - `open_task_pr.sh`

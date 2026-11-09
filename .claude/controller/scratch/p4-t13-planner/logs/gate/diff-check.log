@@ -1,0 +1,7 @@
+apps/app/src/slips/photoLibrary.ts: clean
+apps/app/src/slips/imageShrink.ts: clean
+apps/app/src/slips/slipBatches.ts: clean
+apps/app/src/slips/testing/fakePhotos.ts: clean
+apps/app/src/slips/photoLibrary.test.ts: clean
+apps/app/src/slips/imageShrink.test.ts: clean
+apps/app/src/slips/slipBatches.test.ts: clean

@@ -1,0 +1,39 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app
+
+ ❯ src/mascot/bunSettingsErase.render.test.tsx (3 tests | 1 failed) 6ms
+   × the sign-out erase hook forgets the bun settings after the import draft, and a setting that cannot be erased never stops it 3ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 7 passed (8)
+   Start at  22:32:45
+   Duration  443ms (transform 183ms, setup 84ms, import 393ms, tests 26ms, environment 163ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/mascot/bunSettingsErase.render.test.tsx > the sign-out erase hook forgets the bun settings after the import draft, and a setting that cannot be erased never stops it
+AssertionError: expected [ …(8) ] to deeply equal [ 'gogospend.bun.intensity', …(6) ]
+
+- Expected
++ Received
+
+@@ -1,6 +1,7 @@
+  [
++   "jotbun.slip-salt.a0000000-0000-4000-8000-000000000001",
+    "gogospend.bun.intensity",
+    "gogospend.haptics",
+    "gogospend.bun.cheerDay",
+    "gogospend.bun.celebratedWeek",
+    "gogospend.cashback.declined",
+
+ ❯ src/mascot/bunSettingsErase.render.test.tsx:81:82
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

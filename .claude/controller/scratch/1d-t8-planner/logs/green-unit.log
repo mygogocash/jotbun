@@ -1,0 +1,67 @@
+(node:11998) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t8-planner/work/apps/app/src/analytics/controller.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t8-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:11998) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t8-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t8-planner/tree/packages/contracts/package.json.
+✔ signed out, events are held and never sent (0.812833ms)
+✔ events tracked before sign-in are held across the sign-in and sent after a yes (0.574125ms)
+✔ held events are dropped when another account signs in, and on no (0.235583ms)
+✔ the server's yes sends at once, identifies with the analytics id and starts replay (0.216ms)
+✔ replay never starts when it is not allowed (0.122792ms)
+✔ never asked: the question is open, events wait in memory, and the identity is reset (0.097583ms)
+✔ a no read at launch after an earlier yes resets the identity (0.09725ms)
+✔ a no given on another phone stops this phone at its next foreground (0.10575ms)
+✔ a pending no is kept until the server has it (0.793708ms)
+✔ saying no stops replay and resets the identity (0.249417ms)
+✔ a no from another phone is not asked again on this one (0.1605ms)
+✔ a yes the server could not save rejects and changes nothing (0.233833ms)
+✔ offline with nothing known waits, then asks (0.128334ms)
+✔ the held events stop at 50, oldest first out (0.124334ms)
+✔ screens are sent only as patterns and only after yes (0.269958ms)
+✔ without an analytics id the person stays anonymous, and a later refresh identifies them (0.256ms)
+✔ a stored yes with the server unreachable enters yes without an identity (0.290416ms)
+✔ without a client, nothing is sent and consent still resolves (0.069584ms)
+✔ recordAnalytics installs a consented recorder and restores the previous one (0.20625ms)
+✔ a no from the server stops capture before this phone stores it (0.196042ms)
+✔ an answer gone from the server stops capture before this phone erases its own (0.125916ms)
+✔ a yes still on its way cannot outlast a later no at the server (8.766542ms)
+✔ a yes being stored when the person says no cannot replace the no (5.083292ms)
+✔ a foreground refresh waiting behind a yes cannot undo a later no (5.9975ms)
+✔ a yes waiting behind another call is refused once another account has signed in (4.79925ms)
+✔ a yes on its way when another account signs in is never stored or applied for the next one (3.829625ms)
+✔ a yes still waiting when the person says no is never sent (3.914208ms)
+✔ a refresh after a yes does not keep the yes from the server (3.18125ms)
+✔ a no given while a refresh is on its way is stored at once (5.3175ms)
+✔ the no stored at the call lands before the queue writes and sends it (0.62375ms)
+✔ a yes waiting while the same account signs out and in again is still sent for it (4.228584ms)
+✔ a no is pending from the call until the server takes it, and listeners hear when it lands (0.199583ms)
+✔ a no the server takes at once is pending only while its call is on its way (2.750125ms)
+✔ at a load, only a stored no this phone has not delivered is pending (0.227667ms)
+✔ a yes, or a sign-out, ends a pending no (0.096583ms)
+(node:11999) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t8-planner/work/apps/app/src/config/featureFlags.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t8-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ an approved area is on by default (1.054541ms)
+✔ off (or 0) switches every area off, and -area switches one off (0.12475ms)
+✔ an area not yet approved is on only by name, or all at once (0.079458ms)
+✔ planning is on by default since its approval, and -planning or off switches it off (0.064709ms)
+✔ insights is on by default since its approval, and -insights or off switches it off (0.057125ms)
+✔ account is on by default since its approval, and -account or off switches it off (0.034125ms)
+✔ import is on by default since its approval, and -import or off switches it off (0.031917ms)
+✔ companion is on by default, and -companion or off switches it off (0.063875ms)
+✔ the catalogue is still opt-in (0.050084ms)
+✔ conflict is off by default, on when named, and on with all (0.098583ms)
+✔ the wallet area is off unless named (0.073375ms)
+✔ the signin area is off unless named (0.065917ms)
+✔ analytics is off by default, on when named, and on with all (0.059792ms)
+ℹ tests 48
+ℹ suites 0
+ℹ pass 48
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 241.730833

@@ -1,0 +1,40 @@
+[22:27:36 load 30.14] base: start (work/ as archived; nothing placed)
+[22:27:41 load 30.69] base typecheck:app exit=0
+[22:27:41 load 30.69] base unit (slipQr, qrDecoder) exit=0 ℹ tests 18 ℹ pass 18 ℹ fail 0 
+[22:27:43 load 30.40] base render (DeviceDiaryProvider, bunSettingsErase, sharedV1) exit=0  Test Files 3 passed (3)  Tests 8 passed (8) 
+[22:28:28 load 25.35] red: placed every final file, then stubs/ over: apps/app/src/slips/slipRefs.ts apps/app/src/slips/slipResources.ts apps/app/src/slips/testing/fakeSlipResources.ts apps/app/src/spend/v1/DeviceDiaryProvider.tsx 
+[22:28:33 load 25.35] red typecheck:app exit=0
+[22:28:33 load 25.35] red unit exit=1 ℹ tests 11 ℹ pass 0 ℹ fail 11  assertion-errors=11 missing-module=0
+[22:28:34 load 24.44] red render exit=1  Test Files 3 failed | 1 passed (4)  Tests 3 failed | 7 passed (10)  assertion-errors=3 missing-module=0
+[22:28:45 load 22.30] green: placed every final file
+[22:28:49 load 22.36] green typecheck:app exit=2
+[22:28:49 load 22.36] green unit exit=0 ℹ tests 11 ℹ pass 11 ℹ fail 0 
+[22:28:51 load 22.36] green render (sharedSlipResources, DeviceDiaryProvider, bunSettingsErase, sharedV1) exit=0  Test Files 4 passed (4)  Tests 10 passed (10) 
+[22:29:15] note: green 1 typecheck failed (expo-crypto digest's BufferSource, slipRefs.ts:73); fixed with a copy; green rerun follows (superseded/green-1-typecheck.log)
+[22:29:15 load 17.41] green: placed every final file
+[22:29:19 load 16.58] green typecheck:app exit=0
+[22:29:20 load 16.58] green unit exit=0 ℹ tests 11 ℹ pass 11 ℹ fail 0 
+[22:29:21 load 16.58] green render (sharedSlipResources, DeviceDiaryProvider, bunSettingsErase, sharedV1) exit=0  Test Files 4 passed (4)  Tests 10 passed (10) 
+[22:33:15] note: mutants run 1: 64 KILLED, exit 0 (logs/superseded/mutants-run-1); rerun with the Vitest case names
+[22:34:16] note: final RED and GREEN record after the mutants (all files final)
+[22:34:16 load 5.65] red: placed every final file, then stubs/ over: apps/app/src/slips/slipRefs.ts apps/app/src/slips/slipResources.ts apps/app/src/slips/testing/fakeSlipResources.ts apps/app/src/spend/v1/DeviceDiaryProvider.tsx 
+[22:34:24 load 8.64] red typecheck:app exit=0
+[22:34:24 load 8.64] red unit exit=1 ℹ tests 11 ℹ pass 0 ℹ fail 11  assertion-errors=11 missing-module=0
+[22:34:27 load 8.64] red render exit=1  Test Files 3 failed | 1 passed (4)  Tests 3 failed | 7 passed (10)  assertion-errors=3 missing-module=0
+[22:34:27 load 8.64] green: placed every final file
+[22:34:35 load 11.56] green typecheck:app exit=0
+[22:34:35 load 11.56] green unit exit=0 ℹ tests 11 ℹ pass 11 ℹ fail 0 
+[22:34:37 load 11.56] green render (sharedSlipResources, DeviceDiaryProvider, bunSettingsErase, sharedV1) exit=0  Test Files 4 passed (4)  Tests 10 passed (10) 
+[22:34:41 load 12.15] gate: start
+[22:34:46 load 12.22] gate typecheck:app exit=0
+[22:34:50 load 11.96] gate typecheck:routes exit=0
+[22:34:50 load 11.96] gate focused unit exit=0 ℹ tests 11 ℹ pass 11 ℹ fail 0 
+[22:34:51 load 11.96] gate focused render exit=0  Test Files 4 passed (4)  Tests 10 passed (10) 
+[22:34:52 load 11.96] gate test:app exit=0 ℹ tests 34 ℹ pass 34 ℹ fail 0 
+[22:34:55 load 16.61] gate test:unit exit=0 ℹ tests 933 ℹ pass 933 ℹ fail 0 
+[22:34:56 load 16.61] gate export:web exit=0 Web Bundled 823ms node_modules/expo-router/entry.js (4803 modules) Exported: dist 
+[22:34:56 load 16.61] gate export:web slip routes in dist: 
+[22:35:21] base export:web (work/ back at the head) exit=0 Web Bundled 915ms node_modules/expo-router/entry.js (4791 modules) Exported: dist 
+[22:35:29] base test:unit (work/ at the head) exit=0 ℹ tests 922 ℹ pass 922 ℹ fail 0 
+work/ restored to the final files; differing=0
+[22:37:37] extra (planner's own): the render files that mount the real DeviceDiaryProvider or the spend layout (bunSettingsErase, HistoryReturn, SpendLayout, AccountRoutes, DeviceDiaryProvider): 5 files, 33 tests passed (logs/extra-diary-render.log)

@@ -1,0 +1,34 @@
+(node:25087) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/qrDecoder.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ noQrDecoder is unavailable and finds nothing (0.490417ms)
+✔ fakeQrDecoder is available and answers only the uris it was given (0.115167ms)
+✔ slipQrIn returns the first payload that is a bank slip (0.264667ms)
+✔ a decoder that throws finds no slip (0.156458ms)
+✔ installQrDecoder replaces the app's decoder and null restores noQrDecoder (0.062083ms)
+(node:25088) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipQr.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a Thai bank slip QR gives its sending bank and reference (0.834459ms)
+✔ the CRC covers everything up to 9104 and is read in either case (0.137333ms)
+✔ a CRC whose leading zero was dropped is padded back (0.075125ms)
+✔ TrueMoney and payment QR codes are not bank slips (0.142417ms)
+✔ a slip-shaped QR whose root is not 000001 is not a bank slip (B14) (0.084459ms)
+✔ anything malformed is null (0.103709ms)
+✔ the CRC is CRC-16/CCITT-FALSE over the UTF-8 bytes (0.03575ms)
+✔ a slip QR may be 512 characters long, skip other fields and leave out 51 (0.105417ms)
+✔ a reference may be 64 letters and digits in either case, not 65 (0.148792ms)
+✔ one root, and one CRC field of length 04 that comes last (0.097083ms)
+✔ every field header is four digits and every root field fits the root (0.070333ms)
+✔ the bank code is three digits and each root field appears once (0.054917ms)
+✔ only printable ASCII counts (0.061ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 115.03325

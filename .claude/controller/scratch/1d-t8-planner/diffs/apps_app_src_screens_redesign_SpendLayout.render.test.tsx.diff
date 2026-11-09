@@ -1,0 +1,73 @@
+--- a/apps/app/src/screens/redesign/SpendLayout.render.test.tsx
++++ b/apps/app/src/screens/redesign/SpendLayout.render.test.tsx
+@@ -3,7 +3,7 @@
+ // Add and on a record, and leaves the current layout (and its auth redirect)
+ // exactly as it was when the flag is off. app/spend/index.tsx picks the new
+ // Home only under the flag, with the legacy flag still checked first.
+-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
++import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+ import type { ReactElement } from 'react';
+ import { IntlProvider } from 'react-intl';
+ import { afterEach, beforeEach, expect, test, vi } from 'vitest';
+@@ -12,6 +12,9 @@
+ // asset registry, which only Metro provides. The tab icons draw no images, so
+ // that one resolver is stubbed and the real SVG elements still render.
+ 
++import { getAnalytics, setAnalytics } from '@mobile/analytics/bus';
++import { fakeConsent } from '@mobile/analytics/testing/fakeConsent';
++import { recordAnalytics } from '@mobile/analytics/testing/recordAnalytics';
+ import type { Locale } from '@mobile/i18n/locales';
+ import { translateCopy } from '@mobile/i18n/messages';
+ import { bunDark, bunLight } from '@mobile/theme/bunPalette';
+@@ -256,3 +259,51 @@
+   expect(spendTab('/spend/insights')).toEqual({ visible: true, active: 'insights' });
+   for (const path of ['/spend/recap/2026-09', '/spend/reminders']) expect(spendTab(path)).toEqual({ visible: false, active: '' });
+ });
++
++// D34 (1D-T8): an account never asked answers the analytics question in place
++// of the screens, inside the diary and CompanionBoundary, only while the
++// `analytics` area is on. Loading never blocks, and a no brings the screens
++// back at once.
++test("a never-asked question takes the screens' place only in the analytics area", async () => {
++  const question = () => screen.queryByRole('heading', { name: 'Help improve Jotbun' });
++  const recorded = await recordAnalytics({ consent: 'unasked' });
++  try {
++    expect(recorded.analytics.status()).toBe('unanswered');
++    flags({ redesign: 'analytics' });
++    mount(<SpendLayout />);
++    expect(question()).toBeTruthy();
++    expect(within(screen.getByTestId('device-diary')).getByRole('button', { name: 'No, thanks' })).toBeTruthy();
++    expect(screen.queryByText('current screen')).toBeNull();
++    cleanup();
++    // The area off (as it ships until E2), or switched off: the screens as today.
++    for (const redesign of [undefined, 'all,-analytics']) {
++      flags({ redesign });
++      mount(<SpendLayout />);
++      expect(screen.getByText('current screen')).toBeTruthy();
++      expect(question()).toBeNull();
++      cleanup();
++    }
++    // A no is in force at the call: the screens come back at once.
++    flags({ redesign: 'analytics' });
++    mount(<SpendLayout />);
++    act(() => { void recorded.analytics.answer('no'); });
++    expect(screen.getByText('current screen')).toBeTruthy();
++    expect(question()).toBeNull();
++  } finally {
++    recorded.restore();
++  }
++  cleanup();
++  // A controller still loading the answer (the server not reached yet) never blocks the screens.
++  const loading = fakeConsent({ offline: true });
++  await loading.signIn();
++  expect(loading.analytics.status()).toBe('loading');
++  const previous = getAnalytics();
++  setAnalytics(loading.analytics);
++  try {
++    mount(<SpendLayout />);
++    expect(screen.getByText('current screen')).toBeTruthy();
++    expect(question()).toBeNull();
++  } finally {
++    setAnalytics(previous);
++  }
++});

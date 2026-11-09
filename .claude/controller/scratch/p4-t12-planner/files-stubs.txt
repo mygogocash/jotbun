@@ -1,0 +1,4 @@
+apps/app/src/slips/slipRefs.ts
+apps/app/src/slips/slipResources.ts
+apps/app/src/slips/testing/fakeSlipResources.ts
+apps/app/src/spend/v1/DeviceDiaryProvider.tsx

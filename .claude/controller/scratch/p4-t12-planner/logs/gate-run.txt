@@ -1,0 +1,10 @@
+[22:34:41 load 12.15] gate: start
+[22:34:46 load 12.22] gate typecheck:app exit=0
+[22:34:50 load 11.96] gate typecheck:routes exit=0
+[22:34:50 load 11.96] gate focused unit exit=0 ℹ tests 11 ℹ pass 11 ℹ fail 0 
+[22:34:51 load 11.96] gate focused render exit=0  Test Files 4 passed (4)  Tests 10 passed (10) 
+[22:34:52 load 11.96] gate test:app exit=0 ℹ tests 34 ℹ pass 34 ℹ fail 0 
+[22:34:55 load 16.61] gate test:unit exit=0 ℹ tests 933 ℹ pass 933 ℹ fail 0 
+[22:34:56 load 16.61] gate export:web exit=0 Web Bundled 823ms node_modules/expo-router/entry.js (4803 modules) Exported: dist 
+[22:34:56 load 16.61] gate export:web slip routes in dist: 
+exit=0

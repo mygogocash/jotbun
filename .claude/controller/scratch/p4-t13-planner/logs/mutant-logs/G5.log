@@ -1,0 +1,48 @@
+(node:33548) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/slips/imageShrink.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:33548) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ a picked image or a shared file within 1,200,000 bytes is used as it is, its type read from its first bytes, and a larger one, such as a 1.5 MB PNG screenshot, is not sent (2.900542ms)
+✔ only a JPEG, a PNG or a WebP is sent: a HEIC photo, another RIFF file, text, or text that is not whole base64 is not (0.197792ms)
+✔ a copy that is gone throws, so the scan can tell it from a photo it cannot send (0.201875ms)
+✔ the limit holds on the bytes read, also where the phone gives no size (2.576541ms)
+✔ an image's byte count is its decoded length, whatever its padding (0.332625ms)
+✖ the fake shrink answers null for a photo too large, throws for a copy that is gone, and records each image removed (0.605166ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 5
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 127.271834
+
+✖ failing tests:
+
+test at src/slips/imageShrink.test.ts:120:1
+✖ the fake shrink answers null for a photo too large, throws for a copy that is gone, and records each image removed (0.605166ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+      bytes: 50,
+      head: 'ÿØÿfile%3A%2F%2F%2Fcache%2FImagePicker%2Fp%201.jpg',
+  +   type: 'image/png',
+  -   type: 'image/jpeg',
+      uri: null
+    }
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/slips/imageShrink.test.ts:127:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { head: 'ÿØÿfile%3A%2F%2F%2Fcache%2FImagePicker%2Fp%201.jpg', bytes: 50, uri: null, type: 'image/png' },
+    expected: { head: 'ÿØÿfile%3A%2F%2F%2Fcache%2FImagePicker%2Fp%201.jpg', bytes: 50, uri: null, type: 'image/jpeg' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

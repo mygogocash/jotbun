@@ -1,0 +1,2199 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t8-planner/work/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t8-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t8-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+ ❯ src/screens/redesign/account/privacyServices.render.test.tsx (1 test | 1 failed) 5ms
+   × Privacy's transport reaches a LAN Worker in a development build, and turns server events off unless the answer is yes 4ms
+(node:7266) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ src/screens/redesign/SpendLayout.render.test.tsx (18 tests | 1 failed) 148ms
+   × a never-asked question takes the screens' place only in the analytics area 9ms
+(node:7320) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx (6 tests | 6 failed) 97ms
+   × neither answer is chosen before the person taps 34ms
+   × no applies at once and leaves the question 23ms
+   × yes waits for the server and stays with a calm line when it fails 17ms
+   × every refusal is caught: a yes refused because the account changed asks again, with no line 14ms
+   × the screen names what is never sent 6ms
+   × useAnalyticsConsent says whether analytics is installed 2ms
+ ❯ src/screens/redesign/account/PrivacyScreen.render.test.tsx (32 tests | 4 failed) 687ms
+   × the switch shows the answer and turns off at once 27ms
+   × turning it on waits for the server 23ms
+   × a pending no says it stopped on this phone 20ms
+   × every refusal is caught: a yes refused because the account changed says nothing 19ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 12 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/SpendLayout.render.test.tsx > a never-asked question takes the screens' place only in the analytics area
+AssertionError: expected null to be truthy
+
+- Expected:
+true
+
++ Received:
+null
+
+ ❯ src/screens/redesign/SpendLayout.render.test.tsx:274:24
+    272|     flags({ redesign: 'analytics' });
+    273|     mount(<SpendLayout />);
+    274|     expect(question()).toBeTruthy();
+       |                        ^
+    275|     expect(within(screen.getByTestId('device-diary')).getByRole('butto…
+    276|     expect(screen.queryByText('current screen')).toBeNull();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/12]⎯
+
+ FAIL  src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx > neither answer is chosen before the person taps
+AssertionError: expected null to be truthy
+
+- Expected:
+true
+
++ Received:
+null
+
+ ❯ src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx:92:22
+     90|   const fake = await consentOf();
+     91|   mount(<SpendLayout />);
+     92|   expect(question()).toBeTruthy();
+       |                      ^
+     93|   expect(screen.queryByText('current screen')).toBeNull();
+     94|   const [yes, no] = [button(YES), button(NO)];
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/12]⎯
+
+ FAIL  src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx > no applies at once and leaves the question
+TestingLibraryElementError: Unable to find an accessible element with the role "button" and name "No, thanks"
+
+Here are the accessible roles:
+
+  tablist:
+
+  Name "":
+  [36m<div[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"tablist"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: center; gap: 4px; background-color: rgba(35, 27, 58, 1.00); padding: 8px; border-radius: 999px;"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  tab:
+
+  Name "Home":
+  [36m<div[39m
+    [33maria-label[39m=[32m"Home"[39m
+    [33maria-selected[39m=[32m"true"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"tab"[39m
+    [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(255, 248, 236, 1.00); align-items: center; justify-content: center; gap: 2px; padding: 4px; border-radius: 999px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+  [36m/>[39m
+
+  Name "History":
+  [36m<div[39m
+    [33maria-label[39m=[32m"History"[39m
+    [33maria-selected[39m=[32m"false"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"tab"[39m
+    [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(0, 0, 0, 0.00); align-items: center; justify-content: center; gap: 2px; padding: 4px; border-radius: 999px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+  [36m/>[39m
+
+  Name "Insights":
+  [36m<div[39m
+    [33maria-label[39m=[32m"Insights"[39m
+    [33maria-selected[39m=[32m"false"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"tab"[39m
+    [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(0, 0, 0, 0.00); align-items: center; justify-content: center; gap: 2px; padding: 4px; border-radius: 999px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Add an entry":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Add an entry"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"button"[39m
+    [33mstyle[39m=[32m"min-height: 56px; min-width: 56px; background-color: rgba(255, 248, 236, 1.00); align-items: center; justify-content: center; border-width: 2px; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+      [33mstyle[39m=[32m"background-color: rgba(237, 230, 255, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"css-view-g5y9jx"[39m
+          [33mdata-testid[39m=[32m"device-diary"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-text-146c3p1"[39m
+            [33mdir[39m=[32m"auto"[39m
+          [36m>[39m
+            [0mcurrent screen[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mdata-testid[39m=[32m"tab-bar"[39m
+        [33mstyle[39m=[32m"padding: 8px 16px 42px;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mrole[39m=[32m"tablist"[39m
+            [33mstyle[39m=[32m"flex-direction: row; align-items: center; gap: 4px; background-color: rgba(35, 27, 58, 1.00); padding: 8px; border-radius: 999px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"Home"[39m
+              [33maria-selected[39m=[32m"true"[39m
+              [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+              [33mrole[39m=[32m"tab"[39m
+              [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(255, 248, 236, 1.00); align-items: center; justify-content: center; gap: 2px; padding: 4px; border-radius: 999px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33mheight[39m=[32m"22"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"22"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M3 11l9-7 9 7"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"#231B3A"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M6 9.5V20h12V9.5"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"#231B3A"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M10 20v-5h4v5"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"#231B3A"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-text-146c3p1"[39m
+                [33mdir[39m=[32m"auto"[39m
+                [33mstyle[39m=[32m"font-size: 11px; line-height: 15px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00); text-align: center;"[39m
+              [36m>[39m
+                [0mHome[0m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"History"[39m
+              [33maria-selected[39m=[32m"false"[39m
+              [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+              [33mrole[39m=[32m"tab"[39m
+              [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(0, 0, 0, 0.00); align-items: center; justify-content: center; gap: 2px; padding: 4px; border-radius: 999px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33mheight[39m=[32m"22"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"22"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M6 3h12v18l-3-2-3 2-3-2-3 2z"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"#FFF8EC"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M9 8h6M9 12h6M9 16h3"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"#FFF8EC"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-text-146c3p1"[39m
+                [33mdir[39m=[32m"auto"[39m
+                [33mstyle[39m=[32m"font-size: 11px; line-height: 15px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(255, 248, 236, 1.00); text-align: center;"[39m
+              [36m>[39m
+                [0mHistory[0m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mdata-testid[39m=[32m"tab-bar-add-space"[39m
+              [33mstyle[39m=[32m"width: 56px; height: 56px;"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"Insights"[39m
+              [33maria-selected[39m=[32m"false"[39m
+              [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+              [33mrole[39m=[32m"tab"[39m
+              [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(0, 0, 0, 0.00); align-items: center; justify-content: center; gap: 2px; padding: 4px; border-radius: 999px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33mheight[39m=[32m"22"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"22"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M4 20V10M10 20V4M16 20v-7M22 20H2"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"#FFF8EC"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-text-146c3p1"[39m
+                [33mdir[39m=[32m"auto"[39m
+                [33mstyle[39m=[32m"font-size: 11px; line-height: 15px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(255, 248, 236, 1.00); text-align: center;"[39m
+              [36m>[39m
+                [0mInsights[0m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx r-pointerEvents-12vffkv"[39m
+            [33mstyle[39m=[32m"position: absolute; top: 0px; right: 0px; bottom: 0px; left: 0px; align-items: center; justify-content: center;"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Add an entry"[39m
+              [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+              [33mrole[39m=[32m"button"[39m
+              [33mstyle[39m=[32m"min-height: 56px; min-width: 56px; background-color: rgba(255, 248, 236, 1.00); align-items: center; justify-content: center; border-width: 2px; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"[39m
+              [33mtabindex[39m=[32m"0"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mstyle[39m=[32m"font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0m+[0m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../../tree/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ button src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx:85:41
+     83| const rgb = (hex: string) => expect.stringMatching(new RegExp(`^rgba?\…
+     84| const question = () => screen.queryByRole('heading', { name: 'Help imp…
+     85| const button = (name: string) => screen.getByRole('button', { name });
+       |                                         ^
+     86| /** Lets every promise step that is ready run. */
+     87| const flush = () => act(async () => { await new Promise<void>((resolve…
+ ❯ src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx:112:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/12]⎯
+
+ FAIL  src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx > yes waits for the server and stays with a calm line when it fails
+TestingLibraryElementError: Unable to find an accessible element with the role "button" and name "Yes, I'll help"
+
+Here are the accessible roles:
+
+  tablist:
+
+  Name "":
+  [36m<div[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"tablist"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: center; gap: 4px; background-color: rgba(35, 27, 58, 1.00); padding: 8px; border-radius: 999px;"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  tab:
+
+  Name "Home":
+  [36m<div[39m
+    [33maria-label[39m=[32m"Home"[39m
+    [33maria-selected[39m=[32m"true"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"tab"[39m
+    [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(255, 248, 236, 1.00); align-items: center; justify-content: center; gap: 2px; padding: 4px; border-radius: 999px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+  [36m/>[39m
+
+  Name "History":
+  [36m<div[39m
+    [33maria-label[39m=[32m"History"[39m
+    [33maria-selected[39m=[32m"false"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"tab"[39m
+    [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(0, 0, 0, 0.00); align-items: center; justify-content: center; gap: 2px; padding: 4px; border-radius: 999px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+  [36m/>[39m
+
+  Name "Insights":
+  [36m<div[39m
+    [33maria-label[39m=[32m"Insights"[39m
+    [33maria-selected[39m=[32m"false"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"tab"[39m
+    [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(0, 0, 0, 0.00); align-items: center; justify-content: center; gap: 2px; padding: 4px; border-radius: 999px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Add an entry":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Add an entry"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"button"[39m
+    [33mstyle[39m=[32m"min-height: 56px; min-width: 56px; background-color: rgba(255, 248, 236, 1.00); align-items: center; justify-content: center; border-width: 2px; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+      [33mstyle[39m=[32m"background-color: rgba(237, 230, 255, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"css-view-g5y9jx"[39m
+          [33mdata-testid[39m=[32m"device-diary"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-text-146c3p1"[39m
+            [33mdir[39m=[32m"auto"[39m
+          [36m>[39m
+            [0mcurrent screen[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mdata-testid[39m=[32m"tab-bar"[39m
+        [33mstyle[39m=[32m"padding: 8px 16px 42px;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mrole[39m=[32m"tablist"[39m
+            [33mstyle[39m=[32m"flex-direction: row; align-items: center; gap: 4px; background-color: rgba(35, 27, 58, 1.00); padding: 8px; border-radius: 999px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"Home"[39m
+              [33maria-selected[39m=[32m"true"[39m
+              [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+              [33mrole[39m=[32m"tab"[39m
+              [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(255, 248, 236, 1.00); align-items: center; justify-content: center; gap: 2px; padding: 4px; border-radius: 999px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33mheight[39m=[32m"22"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"22"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M3 11l9-7 9 7"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"#231B3A"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M6 9.5V20h12V9.5"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"#231B3A"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M10 20v-5h4v5"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"#231B3A"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-text-146c3p1"[39m
+                [33mdir[39m=[32m"auto"[39m
+                [33mstyle[39m=[32m"font-size: 11px; line-height: 15px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00); text-align: center;"[39m
+              [36m>[39m
+                [0mHome[0m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"History"[39m
+              [33maria-selected[39m=[32m"false"[39m
+              [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+              [33mrole[39m=[32m"tab"[39m
+              [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(0, 0, 0, 0.00); align-items: center; justify-content: center; gap: 2px; padding: 4px; border-radius: 999px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33mheight[39m=[32m"22"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"22"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M6 3h12v18l-3-2-3 2-3-2-3 2z"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"#FFF8EC"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M9 8h6M9 12h6M9 16h3"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"#FFF8EC"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-text-146c3p1"[39m
+                [33mdir[39m=[32m"auto"[39m
+                [33mstyle[39m=[32m"font-size: 11px; line-height: 15px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(255, 248, 236, 1.00); text-align: center;"[39m
+              [36m>[39m
+                [0mHistory[0m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mdata-testid[39m=[32m"tab-bar-add-space"[39m
+              [33mstyle[39m=[32m"width: 56px; height: 56px;"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"Insights"[39m
+              [33maria-selected[39m=[32m"false"[39m
+              [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+              [33mrole[39m=[32m"tab"[39m
+              [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(0, 0, 0, 0.00); align-items: center; justify-content: center; gap: 2px; padding: 4px; border-radius: 999px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33mheight[39m=[32m"22"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"22"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M4 20V10M10 20V4M16 20v-7M22 20H2"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"#FFF8EC"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-text-146c3p1"[39m
+                [33mdir[39m=[32m"auto"[39m
+                [33mstyle[39m=[32m"font-size: 11px; line-height: 15px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(255, 248, 236, 1.00); text-align: center;"[39m
+              [36m>[39m
+                [0mInsights[0m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx r-pointerEvents-12vffkv"[39m
+            [33mstyle[39m=[32m"position: absolute; top: 0px; right: 0px; bottom: 0px; left: 0px; align-items: center; justify-content: center;"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Add an entry"[39m
+              [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+              [33mrole[39m=[32m"button"[39m
+              [33mstyle[39m=[32m"min-height: 56px; min-width: 56px; background-color: rgba(255, 248, 236, 1.00); align-items: center; justify-content: center; border-width: 2px; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"[39m
+              [33mtabindex[39m=[32m"0"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mstyle[39m=[32m"font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0m+[0m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../../tree/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ button src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx:85:41
+     83| const rgb = (hex: string) => expect.stringMatching(new RegExp(`^rgba?\…
+     84| const question = () => screen.queryByRole('heading', { name: 'Help imp…
+     85| const button = (name: string) => screen.getByRole('button', { name });
+       |                                         ^
+     86| /** Lets every promise step that is ready run. */
+     87| const flush = () => act(async () => { await new Promise<void>((resolve…
+ ❯ src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx:130:21
+ ❯ ../../../tree/node_modules/@testing-library/react/dist/act-compat.js:47:24
+ ❯ process.env.NODE_ENV.exports.act ../../../tree/node_modules/react/cjs/react.development.js:890:22
+ ❯ Proxy.<anonymous> ../../../tree/node_modules/@testing-library/react/dist/act-compat.js:46:25
+ ❯ src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx:129:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/12]⎯
+
+ FAIL  src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx > every refusal is caught: a yes refused because the account changed asks again, with no line
+TestingLibraryElementError: Unable to find an accessible element with the role "button" and name "Yes, I'll help"
+
+Here are the accessible roles:
+
+  tablist:
+
+  Name "":
+  [36m<div[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"tablist"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: center; gap: 4px; background-color: rgba(35, 27, 58, 1.00); padding: 8px; border-radius: 999px;"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  tab:
+
+  Name "Home":
+  [36m<div[39m
+    [33maria-label[39m=[32m"Home"[39m
+    [33maria-selected[39m=[32m"true"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"tab"[39m
+    [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(255, 248, 236, 1.00); align-items: center; justify-content: center; gap: 2px; padding: 4px; border-radius: 999px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+  [36m/>[39m
+
+  Name "History":
+  [36m<div[39m
+    [33maria-label[39m=[32m"History"[39m
+    [33maria-selected[39m=[32m"false"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"tab"[39m
+    [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(0, 0, 0, 0.00); align-items: center; justify-content: center; gap: 2px; padding: 4px; border-radius: 999px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+  [36m/>[39m
+
+  Name "Insights":
+  [36m<div[39m
+    [33maria-label[39m=[32m"Insights"[39m
+    [33maria-selected[39m=[32m"false"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"tab"[39m
+    [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(0, 0, 0, 0.00); align-items: center; justify-content: center; gap: 2px; padding: 4px; border-radius: 999px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Add an entry":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Add an entry"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"button"[39m
+    [33mstyle[39m=[32m"min-height: 56px; min-width: 56px; background-color: rgba(255, 248, 236, 1.00); align-items: center; justify-content: center; border-width: 2px; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+      [33mstyle[39m=[32m"background-color: rgba(237, 230, 255, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"css-view-g5y9jx"[39m
+          [33mdata-testid[39m=[32m"device-diary"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-text-146c3p1"[39m
+            [33mdir[39m=[32m"auto"[39m
+          [36m>[39m
+            [0mcurrent screen[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mdata-testid[39m=[32m"tab-bar"[39m
+        [33mstyle[39m=[32m"padding: 8px 16px 42px;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mrole[39m=[32m"tablist"[39m
+            [33mstyle[39m=[32m"flex-direction: row; align-items: center; gap: 4px; background-color: rgba(35, 27, 58, 1.00); padding: 8px; border-radius: 999px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"Home"[39m
+              [33maria-selected[39m=[32m"true"[39m
+              [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+              [33mrole[39m=[32m"tab"[39m
+              [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(255, 248, 236, 1.00); align-items: center; justify-content: center; gap: 2px; padding: 4px; border-radius: 999px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33mheight[39m=[32m"22"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"22"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M3 11l9-7 9 7"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"#231B3A"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M6 9.5V20h12V9.5"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"#231B3A"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M10 20v-5h4v5"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"#231B3A"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-text-146c3p1"[39m
+                [33mdir[39m=[32m"auto"[39m
+                [33mstyle[39m=[32m"font-size: 11px; line-height: 15px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00); text-align: center;"[39m
+              [36m>[39m
+                [0mHome[0m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"History"[39m
+              [33maria-selected[39m=[32m"false"[39m
+              [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+              [33mrole[39m=[32m"tab"[39m
+              [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(0, 0, 0, 0.00); align-items: center; justify-content: center; gap: 2px; padding: 4px; border-radius: 999px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33mheight[39m=[32m"22"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"22"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M6 3h12v18l-3-2-3 2-3-2-3 2z"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"#FFF8EC"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M9 8h6M9 12h6M9 16h3"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"#FFF8EC"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-text-146c3p1"[39m
+                [33mdir[39m=[32m"auto"[39m
+                [33mstyle[39m=[32m"font-size: 11px; line-height: 15px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(255, 248, 236, 1.00); text-align: center;"[39m
+              [36m>[39m
+                [0mHistory[0m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mdata-testid[39m=[32m"tab-bar-add-space"[39m
+              [33mstyle[39m=[32m"width: 56px; height: 56px;"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"Insights"[39m
+              [33maria-selected[39m=[32m"false"[39m
+              [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+              [33mrole[39m=[32m"tab"[39m
+              [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(0, 0, 0, 0.00); align-items: center; justify-content: center; gap: 2px; padding: 4px; border-radius: 999px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33mheight[39m=[32m"22"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"22"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M4 20V10M10 20V4M16 20v-7M22 20H2"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"#FFF8EC"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-text-146c3p1"[39m
+                [33mdir[39m=[32m"auto"[39m
+                [33mstyle[39m=[32m"font-size: 11px; line-height: 15px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(255, 248, 236, 1.00); text-align: center;"[39m
+              [36m>[39m
+                [0mInsights[0m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx r-pointerEvents-12vffkv"[39m
+            [33mstyle[39m=[32m"position: absolute; top: 0px; right: 0px; bottom: 0px; left: 0px; align-items: center; justify-content: center;"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Add an entry"[39m
+              [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+              [33mrole[39m=[32m"button"[39m
+              [33mstyle[39m=[32m"min-height: 56px; min-width: 56px; background-color: rgba(255, 248, 236, 1.00); align-items: center; justify-content: center; border-width: 2px; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"[39m
+              [33mtabindex[39m=[32m"0"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mstyle[39m=[32m"font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0m+[0m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../../tree/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ button src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx:85:41
+     83| const rgb = (hex: string) => expect.stringMatching(new RegExp(`^rgba?\…
+     84| const question = () => screen.queryByRole('heading', { name: 'Help imp…
+     85| const button = (name: string) => screen.getByRole('button', { name });
+       |                                         ^
+     86| /** Lets every promise step that is ready run. */
+     87| const flush = () => act(async () => { await new Promise<void>((resolve…
+ ❯ src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx:168:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/12]⎯
+
+ FAIL  src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx > the screen names what is never sent
+TestingLibraryElementError: Unable to find an element with the text: We never send amounts, shop or wallet names, notes, your email or slip photos.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+      [33mstyle[39m=[32m"background-color: rgba(237, 230, 255, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"css-view-g5y9jx"[39m
+          [33mdata-testid[39m=[32m"device-diary"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-text-146c3p1"[39m
+            [33mdir[39m=[32m"auto"[39m
+          [36m>[39m
+            [0mcurrent screen[0m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mdata-testid[39m=[32m"tab-bar"[39m
+        [33mstyle[39m=[32m"padding: 8px 16px 42px;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mrole[39m=[32m"tablist"[39m
+            [33mstyle[39m=[32m"flex-direction: row; align-items: center; gap: 4px; background-color: rgba(35, 27, 58, 1.00); padding: 8px; border-radius: 999px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"Home"[39m
+              [33maria-selected[39m=[32m"true"[39m
+              [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+              [33mrole[39m=[32m"tab"[39m
+              [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(255, 248, 236, 1.00); align-items: center; justify-content: center; gap: 2px; padding: 4px; border-radius: 999px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33mheight[39m=[32m"22"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"22"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M3 11l9-7 9 7"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"#231B3A"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M6 9.5V20h12V9.5"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"#231B3A"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M10 20v-5h4v5"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"#231B3A"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-text-146c3p1"[39m
+                [33mdir[39m=[32m"auto"[39m
+                [33mstyle[39m=[32m"font-size: 11px; line-height: 15px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00); text-align: center;"[39m
+              [36m>[39m
+                [0mHome[0m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"History"[39m
+              [33maria-selected[39m=[32m"false"[39m
+              [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+              [33mrole[39m=[32m"tab"[39m
+              [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(0, 0, 0, 0.00); align-items: center; justify-content: center; gap: 2px; padding: 4px; border-radius: 999px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33mheight[39m=[32m"22"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"22"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M6 3h12v18l-3-2-3 2-3-2-3 2z"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"#FFF8EC"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M9 8h6M9 12h6M9 16h3"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"#FFF8EC"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-text-146c3p1"[39m
+                [33mdir[39m=[32m"auto"[39m
+                [33mstyle[39m=[32m"font-size: 11px; line-height: 15px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(255, 248, 236, 1.00); text-align: center;"[39m
+              [36m>[39m
+                [0mHistory[0m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mdata-testid[39m=[32m"tab-bar-add-space"[39m
+              [33mstyle[39m=[32m"width: 56px; height: 56px;"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"Insights"[39m
+              [33maria-selected[39m=[32m"false"[39m
+              [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+              [33mrole[39m=[32m"tab"[39m
+              [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(0, 0, 0, 0.00); align-items: center; justify-content: center; gap: 2px; padding: 4px; border-radius: 999px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33mheight[39m=[32m"22"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"22"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M4 20V10M10 20V4M16 20v-7M22 20H2"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"#FFF8EC"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-text-146c3p1"[39m
+                [33mdir[39m=[32m"auto"[39m
+                [33mstyle[39m=[32m"font-size: 11px; line-height: 15px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(255, 248, 236, 1.00); text-align: center;"[39m
+              [36m>[39m
+                [0mInsights[0m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx r-pointerEvents-12vffkv"[39m
+            [33mstyle[39m=[32m"position: absolute; top: 0px; right: 0px; bottom: 0px; left: 0px; align-items: center; justify-content: center;"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Add an entry"[39m
+              [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+              [33mrole[39m=[32m"button"[39m
+              [33mstyle[39m=[32m"min-height: 56px; min-width: 56px; background-color: rgba(255, 248, 236, 1.00); align-items: center; justify-content: center; border-width: 2px; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"[39m
+              [33mtabindex[39m=[32m"0"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mstyle[39m=[32m"font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0m+[0m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../../tree/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx:184:17
+    182|   await consentOf();
+    183|   mount(<SpendLayout />);
+    184|   expect(screen.getByText('We never send amounts, shop or wallet names…
+       |                 ^
+    185|   expect(screen.getByText('This includes screen recordings with every …
+    186|   cleanup();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/12]⎯
+
+ FAIL  src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx > useAnalyticsConsent says whether analytics is installed
+AssertionError: promise resolved "undefined" instead of rejecting
+
+- Expected:
+Error {
+  "message": "rejected promise",
+}
+
++ Received:
+undefined
+
+ ❯ src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx:204:38
+    202|   const view = mount(<Probe />);
+    203|   expect(screen.getByTestId('consent').textContent).toBe('signed_out f…
+    204|   await expect(latest?.answer('yes')).rejects.toThrow();
+       |                                      ^
+    205|   const recorded = await recordAnalytics({ consent: 'unasked' });
+    206|   const previous = restore;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/12]⎯
+
+ FAIL  src/screens/redesign/account/PrivacyScreen.render.test.tsx > the switch shows the answer and turns off at once
+TestingLibraryElementError: Unable to find an accessible element with the role "switch" and name "Help improve Jotbun"
+
+Here are the accessible roles:
+
+  button:
+
+  Name "Back":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Back"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"button"[39m
+    [33mstyle[39m=[32m"align-self: flex-start; min-height: 44px; min-width: 44px; flex-direction: row; align-items: center; gap: 4px; padding-right: 8px; border-radius: 999px;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Request export":
+  [36m<button[39m
+    [33maria-busy[39m=[32m"false"[39m
+    [33maria-label[39m=[32m"Request export"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"button"[39m
+    [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(35, 27, 58, 1.00); flex-direction: row; align-items: center; justify-content: center; gap: 8px; opacity: 1; padding: 8px 24px; border-width: 1.5px; border-style: solid; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Delete my account":
+  [36m<button[39m
+    [33maria-busy[39m=[32m"false"[39m
+    [33maria-label[39m=[32m"Delete my account"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"button"[39m
+    [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(0, 0, 0, 0.00); flex-direction: row; align-items: center; justify-content: center; gap: 8px; opacity: 1; padding: 8px 24px; border-width: 1.5px; border-style: solid; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  heading:
+
+  Name "Privacy and data":
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m/>[39m
+
+  Name "Our promises":
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m/>[39m
+
+  Name "Export your data":
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m/>[39m
+
+  Name "Delete your account":
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  list:
+
+  Name "":
+  [36m<ul[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"list"[39m
+    [33mstyle[39m=[32m"gap: 12px;"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  listitem:
+
+  Name "":
+  [36m<li[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"listitem"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<li[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"listitem"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<li[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"listitem"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<li[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"listitem"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+      [33mdata-testid[39m=[32m"privacy-screen"[39m
+      [33mstyle[39m=[32m"background-color: rgba(237, 230, 255, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx r-WebkitOverflowScrolling-150rngu r-flexDirection-eqz5dr r-flexGrow-16y2uox r-flexShrink-1wbh5a2 r-overflowX-11yh6sk r-overflowY-1rnoaur r-transform-agouwx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"css-view-g5y9jx"[39m
+          [33mstyle[39m=[32m"padding-bottom: 32px;"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mdata-testid[39m=[32m"stage-header"[39m
+            [33mstyle[39m=[32m"background-color: rgba(185, 163, 249, 1.00); border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; gap: 12px; padding: 78px 16px 24px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mstyle[39m=[32m"flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33maria-label[39m=[32m"Back"[39m
+                [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+                [33mrole[39m=[32m"button"[39m
+                [33mstyle[39m=[32m"align-self: flex-start; min-height: 44px; min-width: 44px; flex-direction: row; align-items: center; gap: 4px; padding-right: 8px; border-radius: 999px;"[39m
+                [33mtabindex[39m=[32m"0"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0m‹[0m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mstyle[39m=[32m"font-size: 15px; line-height: 20px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0mBack[0m
+                [36m</div>[39m
+              [36m</button>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mstyle[39m=[32m"flex-direction: row; align-items: flex-end; gap: 12px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mstyle[39m=[32m"gap: 4px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+              [36m>[39m
+                [36m<h1[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mrole[39m=[32m"heading"[39m
+                  [33mstyle[39m=[32m"font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0mPrivacy and data[0m
+                [36m</h1>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mstyle[39m=[32m"gap: 16px; padding: 16px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mdata-testid[39m=[32m"privacy-promises"[39m
+              [33mstyle[39m=[32m"background-color: rgba(0, 0, 0, 0.00); gap: 12px; padding: 16px; border-width: 2px; border-style: solid; border-color: rgba(35, 27, 58, 1.00); border-radius: 16px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mstyle[39m=[32m"gap: 12px;"[39m
+              [36m>[39m
+                [36m<h1[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mrole[39m=[32m"heading"[39m
+                  [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0mOur promises[0m
+                [36m</h1>[39m
+                [36m<ul[39m
+                  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                  [33mrole[39m=[32m"list"[39m
+                  [33mstyle[39m=[32m"gap: 12px;"[39m
+                [36m>[39m
+                  [36m<li[39m
+                    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                    [33mrole[39m=[32m"listitem"[39m
+                    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                      [33mstyle[39m=[32m"min-width: 24px; align-items: center;"[39m
+                    [36m>[39m
+                      [36m<div[39m
+                        [33mclass[39m=[32m"css-text-146c3p1"[39m
+                        [33mdir[39m=[32m"auto"[39m
+                        [33mstyle[39m=[32m"font-size: 17px; line-height: 23px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                      [36m>[39m
+                        [0m✓[0m
+                      [36m</div>[39m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"css-text-146c3p1"[39m
+                      [33mdir[39m=[32m"auto"[39m
+                      [33mstyle[39m=[32m"font-size: 17px; line-height: 23px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+                    [36m>[39m
+                      [0mJotbun never connects to your bank.[0m
+                    [36m</div>[39m
+                  [36m</li>[39m
+                  [36m<li[39m
+                  ...
+ ❯ Object.getElementError ../../../tree/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ analyticsSwitch src/screens/redesign/account/PrivacyScreen.render.test.tsx:446:38
+    444| const STOPPED = "Stopped on this phone. Jotbun will be told when you'r…
+    445| const NOT_SAVED = "Couldn't save your answer. Check your connection an…
+    446| const analyticsSwitch = () => screen.getByRole('switch', { name: SWITC…
+       |                                      ^
+    447| /** Lets every promise step that is ready run. */
+    448| const flush = () => act(async () => { await new Promise<void>((resolve…
+ ❯ src/screens/redesign/account/PrivacyScreen.render.test.tsx:468:10
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/12]⎯
+
+ FAIL  src/screens/redesign/account/PrivacyScreen.render.test.tsx > turning it on waits for the server
+TestingLibraryElementError: Unable to find an accessible element with the role "switch" and name "Help improve Jotbun"
+
+Here are the accessible roles:
+
+  button:
+
+  Name "Back":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Back"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"button"[39m
+    [33mstyle[39m=[32m"align-self: flex-start; min-height: 44px; min-width: 44px; flex-direction: row; align-items: center; gap: 4px; padding-right: 8px; border-radius: 999px;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Request export":
+  [36m<button[39m
+    [33maria-busy[39m=[32m"false"[39m
+    [33maria-label[39m=[32m"Request export"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"button"[39m
+    [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(35, 27, 58, 1.00); flex-direction: row; align-items: center; justify-content: center; gap: 8px; opacity: 1; padding: 8px 24px; border-width: 1.5px; border-style: solid; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Delete my account":
+  [36m<button[39m
+    [33maria-busy[39m=[32m"false"[39m
+    [33maria-label[39m=[32m"Delete my account"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"button"[39m
+    [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(0, 0, 0, 0.00); flex-direction: row; align-items: center; justify-content: center; gap: 8px; opacity: 1; padding: 8px 24px; border-width: 1.5px; border-style: solid; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  heading:
+
+  Name "Privacy and data":
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m/>[39m
+
+  Name "Our promises":
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m/>[39m
+
+  Name "Export your data":
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m/>[39m
+
+  Name "Delete your account":
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  list:
+
+  Name "":
+  [36m<ul[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"list"[39m
+    [33mstyle[39m=[32m"gap: 12px;"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  listitem:
+
+  Name "":
+  [36m<li[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"listitem"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<li[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"listitem"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<li[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"listitem"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<li[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"listitem"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+      [33mdata-testid[39m=[32m"privacy-screen"[39m
+      [33mstyle[39m=[32m"background-color: rgba(237, 230, 255, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx r-WebkitOverflowScrolling-150rngu r-flexDirection-eqz5dr r-flexGrow-16y2uox r-flexShrink-1wbh5a2 r-overflowX-11yh6sk r-overflowY-1rnoaur r-transform-agouwx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"css-view-g5y9jx"[39m
+          [33mstyle[39m=[32m"padding-bottom: 32px;"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mdata-testid[39m=[32m"stage-header"[39m
+            [33mstyle[39m=[32m"background-color: rgba(185, 163, 249, 1.00); border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; gap: 12px; padding: 78px 16px 24px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mstyle[39m=[32m"flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33maria-label[39m=[32m"Back"[39m
+                [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+                [33mrole[39m=[32m"button"[39m
+                [33mstyle[39m=[32m"align-self: flex-start; min-height: 44px; min-width: 44px; flex-direction: row; align-items: center; gap: 4px; padding-right: 8px; border-radius: 999px;"[39m
+                [33mtabindex[39m=[32m"0"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0m‹[0m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mstyle[39m=[32m"font-size: 15px; line-height: 20px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0mBack[0m
+                [36m</div>[39m
+              [36m</button>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mstyle[39m=[32m"flex-direction: row; align-items: flex-end; gap: 12px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mstyle[39m=[32m"gap: 4px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+              [36m>[39m
+                [36m<h1[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mrole[39m=[32m"heading"[39m
+                  [33mstyle[39m=[32m"font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0mPrivacy and data[0m
+                [36m</h1>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mstyle[39m=[32m"gap: 16px; padding: 16px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mdata-testid[39m=[32m"privacy-promises"[39m
+              [33mstyle[39m=[32m"background-color: rgba(0, 0, 0, 0.00); gap: 12px; padding: 16px; border-width: 2px; border-style: solid; border-color: rgba(35, 27, 58, 1.00); border-radius: 16px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mstyle[39m=[32m"gap: 12px;"[39m
+              [36m>[39m
+                [36m<h1[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mrole[39m=[32m"heading"[39m
+                  [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0mOur promises[0m
+                [36m</h1>[39m
+                [36m<ul[39m
+                  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                  [33mrole[39m=[32m"list"[39m
+                  [33mstyle[39m=[32m"gap: 12px;"[39m
+                [36m>[39m
+                  [36m<li[39m
+                    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                    [33mrole[39m=[32m"listitem"[39m
+                    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                      [33mstyle[39m=[32m"min-width: 24px; align-items: center;"[39m
+                    [36m>[39m
+                      [36m<div[39m
+                        [33mclass[39m=[32m"css-text-146c3p1"[39m
+                        [33mdir[39m=[32m"auto"[39m
+                        [33mstyle[39m=[32m"font-size: 17px; line-height: 23px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                      [36m>[39m
+                        [0m✓[0m
+                      [36m</div>[39m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"css-text-146c3p1"[39m
+                      [33mdir[39m=[32m"auto"[39m
+                      [33mstyle[39m=[32m"font-size: 17px; line-height: 23px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+                    [36m>[39m
+                      [0mJotbun never connects to your bank.[0m
+                    [36m</div>[39m
+                  [36m</li>[39m
+                  [36m<li[39m
+                  ...
+ ❯ Object.getElementError ../../../tree/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ analyticsSwitch src/screens/redesign/account/PrivacyScreen.render.test.tsx:446:38
+    444| const STOPPED = "Stopped on this phone. Jotbun will be told when you'r…
+    445| const NOT_SAVED = "Couldn't save your answer. Check your connection an…
+    446| const analyticsSwitch = () => screen.getByRole('switch', { name: SWITC…
+       |                                      ^
+    447| /** Lets every promise step that is ready run. */
+    448| const flush = () => act(async () => { await new Promise<void>((resolve…
+ ❯ src/screens/redesign/account/PrivacyScreen.render.test.tsx:485:10
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/12]⎯
+
+ FAIL  src/screens/redesign/account/PrivacyScreen.render.test.tsx > a pending no says it stopped on this phone
+TestingLibraryElementError: Unable to find an accessible element with the role "switch" and name "Help improve Jotbun"
+
+Here are the accessible roles:
+
+  button:
+
+  Name "Back":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Back"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"button"[39m
+    [33mstyle[39m=[32m"align-self: flex-start; min-height: 44px; min-width: 44px; flex-direction: row; align-items: center; gap: 4px; padding-right: 8px; border-radius: 999px;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Request export":
+  [36m<button[39m
+    [33maria-busy[39m=[32m"false"[39m
+    [33maria-label[39m=[32m"Request export"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"button"[39m
+    [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(35, 27, 58, 1.00); flex-direction: row; align-items: center; justify-content: center; gap: 8px; opacity: 1; padding: 8px 24px; border-width: 1.5px; border-style: solid; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Delete my account":
+  [36m<button[39m
+    [33maria-busy[39m=[32m"false"[39m
+    [33maria-label[39m=[32m"Delete my account"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"button"[39m
+    [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(0, 0, 0, 0.00); flex-direction: row; align-items: center; justify-content: center; gap: 8px; opacity: 1; padding: 8px 24px; border-width: 1.5px; border-style: solid; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  heading:
+
+  Name "Privacy and data":
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m/>[39m
+
+  Name "Our promises":
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m/>[39m
+
+  Name "Export your data":
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m/>[39m
+
+  Name "Delete your account":
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  list:
+
+  Name "":
+  [36m<ul[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"list"[39m
+    [33mstyle[39m=[32m"gap: 12px;"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  listitem:
+
+  Name "":
+  [36m<li[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"listitem"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<li[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"listitem"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<li[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"listitem"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<li[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"listitem"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+      [33mdata-testid[39m=[32m"privacy-screen"[39m
+      [33mstyle[39m=[32m"background-color: rgba(237, 230, 255, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx r-WebkitOverflowScrolling-150rngu r-flexDirection-eqz5dr r-flexGrow-16y2uox r-flexShrink-1wbh5a2 r-overflowX-11yh6sk r-overflowY-1rnoaur r-transform-agouwx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"css-view-g5y9jx"[39m
+          [33mstyle[39m=[32m"padding-bottom: 32px;"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mdata-testid[39m=[32m"stage-header"[39m
+            [33mstyle[39m=[32m"background-color: rgba(185, 163, 249, 1.00); border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; gap: 12px; padding: 78px 16px 24px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mstyle[39m=[32m"flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33maria-label[39m=[32m"Back"[39m
+                [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+                [33mrole[39m=[32m"button"[39m
+                [33mstyle[39m=[32m"align-self: flex-start; min-height: 44px; min-width: 44px; flex-direction: row; align-items: center; gap: 4px; padding-right: 8px; border-radius: 999px;"[39m
+                [33mtabindex[39m=[32m"0"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0m‹[0m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mstyle[39m=[32m"font-size: 15px; line-height: 20px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0mBack[0m
+                [36m</div>[39m
+              [36m</button>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mstyle[39m=[32m"flex-direction: row; align-items: flex-end; gap: 12px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mstyle[39m=[32m"gap: 4px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+              [36m>[39m
+                [36m<h1[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mrole[39m=[32m"heading"[39m
+                  [33mstyle[39m=[32m"font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0mPrivacy and data[0m
+                [36m</h1>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mstyle[39m=[32m"gap: 16px; padding: 16px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mdata-testid[39m=[32m"privacy-promises"[39m
+              [33mstyle[39m=[32m"background-color: rgba(0, 0, 0, 0.00); gap: 12px; padding: 16px; border-width: 2px; border-style: solid; border-color: rgba(35, 27, 58, 1.00); border-radius: 16px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mstyle[39m=[32m"gap: 12px;"[39m
+              [36m>[39m
+                [36m<h1[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mrole[39m=[32m"heading"[39m
+                  [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0mOur promises[0m
+                [36m</h1>[39m
+                [36m<ul[39m
+                  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                  [33mrole[39m=[32m"list"[39m
+                  [33mstyle[39m=[32m"gap: 12px;"[39m
+                [36m>[39m
+                  [36m<li[39m
+                    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                    [33mrole[39m=[32m"listitem"[39m
+                    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                      [33mstyle[39m=[32m"min-width: 24px; align-items: center;"[39m
+                    [36m>[39m
+                      [36m<div[39m
+                        [33mclass[39m=[32m"css-text-146c3p1"[39m
+                        [33mdir[39m=[32m"auto"[39m
+                        [33mstyle[39m=[32m"font-size: 17px; line-height: 23px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                      [36m>[39m
+                        [0m✓[0m
+                      [36m</div>[39m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"css-text-146c3p1"[39m
+                      [33mdir[39m=[32m"auto"[39m
+                      [33mstyle[39m=[32m"font-size: 17px; line-height: 23px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+                    [36m>[39m
+                      [0mJotbun never connects to your bank.[0m
+                    [36m</div>[39m
+                  [36m</li>[39m
+                  [36m<li[39m
+                  ...
+ ❯ Object.getElementError ../../../tree/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ analyticsSwitch src/screens/redesign/account/PrivacyScreen.render.test.tsx:446:38
+    444| const STOPPED = "Stopped on this phone. Jotbun will be told when you'r…
+    445| const NOT_SAVED = "Couldn't save your answer. Check your connection an…
+    446| const analyticsSwitch = () => screen.getByRole('switch', { name: SWITC…
+       |                                      ^
+    447| /** Lets every promise step that is ready run. */
+    448| const flush = () => act(async () => { await new Promise<void>((resolve…
+ ❯ src/screens/redesign/account/PrivacyScreen.render.test.tsx:517:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/12]⎯
+
+ FAIL  src/screens/redesign/account/PrivacyScreen.render.test.tsx > every refusal is caught: a yes refused because the account changed says nothing
+TestingLibraryElementError: Unable to find an accessible element with the role "switch" and name "Help improve Jotbun"
+
+Here are the accessible roles:
+
+  button:
+
+  Name "Back":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Back"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"button"[39m
+    [33mstyle[39m=[32m"align-self: flex-start; min-height: 44px; min-width: 44px; flex-direction: row; align-items: center; gap: 4px; padding-right: 8px; border-radius: 999px;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Request export":
+  [36m<button[39m
+    [33maria-busy[39m=[32m"false"[39m
+    [33maria-label[39m=[32m"Request export"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"button"[39m
+    [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(35, 27, 58, 1.00); flex-direction: row; align-items: center; justify-content: center; gap: 8px; opacity: 1; padding: 8px 24px; border-width: 1.5px; border-style: solid; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Delete my account":
+  [36m<button[39m
+    [33maria-busy[39m=[32m"false"[39m
+    [33maria-label[39m=[32m"Delete my account"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"button"[39m
+    [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(0, 0, 0, 0.00); flex-direction: row; align-items: center; justify-content: center; gap: 8px; opacity: 1; padding: 8px 24px; border-width: 1.5px; border-style: solid; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  heading:
+
+  Name "Privacy and data":
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m/>[39m
+
+  Name "Our promises":
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m/>[39m
+
+  Name "Export your data":
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m/>[39m
+
+  Name "Delete your account":
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  list:
+
+  Name "":
+  [36m<ul[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"list"[39m
+    [33mstyle[39m=[32m"gap: 12px;"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  listitem:
+
+  Name "":
+  [36m<li[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"listitem"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<li[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"listitem"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<li[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"listitem"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<li[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"listitem"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+      [33mdata-testid[39m=[32m"privacy-screen"[39m
+      [33mstyle[39m=[32m"background-color: rgba(237, 230, 255, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx r-WebkitOverflowScrolling-150rngu r-flexDirection-eqz5dr r-flexGrow-16y2uox r-flexShrink-1wbh5a2 r-overflowX-11yh6sk r-overflowY-1rnoaur r-transform-agouwx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"css-view-g5y9jx"[39m
+          [33mstyle[39m=[32m"padding-bottom: 32px;"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mdata-testid[39m=[32m"stage-header"[39m
+            [33mstyle[39m=[32m"background-color: rgba(185, 163, 249, 1.00); border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; gap: 12px; padding: 78px 16px 24px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mstyle[39m=[32m"flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33maria-label[39m=[32m"Back"[39m
+                [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+                [33mrole[39m=[32m"button"[39m
+                [33mstyle[39m=[32m"align-self: flex-start; min-height: 44px; min-width: 44px; flex-direction: row; align-items: center; gap: 4px; padding-right: 8px; border-radius: 999px;"[39m
+                [33mtabindex[39m=[32m"0"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0m‹[0m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mstyle[39m=[32m"font-size: 15px; line-height: 20px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0mBack[0m
+                [36m</div>[39m
+              [36m</button>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mstyle[39m=[32m"flex-direction: row; align-items: flex-end; gap: 12px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mstyle[39m=[32m"gap: 4px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+              [36m>[39m
+                [36m<h1[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mrole[39m=[32m"heading"[39m
+                  [33mstyle[39m=[32m"font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0mPrivacy and data[0m
+                [36m</h1>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mstyle[39m=[32m"gap: 16px; padding: 16px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mdata-testid[39m=[32m"privacy-promises"[39m
+              [33mstyle[39m=[32m"background-color: rgba(0, 0, 0, 0.00); gap: 12px; padding: 16px; border-width: 2px; border-style: solid; border-color: rgba(35, 27, 58, 1.00); border-radius: 16px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mstyle[39m=[32m"gap: 12px;"[39m
+              [36m>[39m
+                [36m<h1[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mrole[39m=[32m"heading"[39m
+                  [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0mOur promises[0m
+                [36m</h1>[39m
+                [36m<ul[39m
+                  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                  [33mrole[39m=[32m"list"[39m
+                  [33mstyle[39m=[32m"gap: 12px;"[39m
+                [36m>[39m
+                  [36m<li[39m
+                    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                    [33mrole[39m=[32m"listitem"[39m
+                    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                      [33mstyle[39m=[32m"min-width: 24px; align-items: center;"[39m
+                    [36m>[39m
+                      [36m<div[39m
+                        [33mclass[39m=[32m"css-text-146c3p1"[39m
+                        [33mdir[39m=[32m"auto"[39m
+                        [33mstyle[39m=[32m"font-size: 17px; line-height: 23px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                      [36m>[39m
+                        [0m✓[0m
+                      [36m</div>[39m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"css-text-146c3p1"[39m
+                      [33mdir[39m=[32m"auto"[39m
+                      [33mstyle[39m=[32m"font-size: 17px; line-height: 23px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+                    [36m>[39m
+                      [0mJotbun never connects to your bank.[0m
+                    [36m</div>[39m
+                  [36m</li>[39m
+                  [36m<li[39m
+                  ...
+ ❯ Object.getElementError ../../../tree/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ analyticsSwitch src/screens/redesign/account/PrivacyScreen.render.test.tsx:446:38
+    444| const STOPPED = "Stopped on this phone. Jotbun will be told when you'r…
+    445| const NOT_SAVED = "Couldn't save your answer. Check your connection an…
+    446| const analyticsSwitch = () => screen.getByRole('switch', { name: SWITC…
+       |                                      ^
+    447| /** Lets every promise step that is ready run. */
+    448| const flush = () => act(async () => { await new Promise<void>((resolve…
+ ❯ src/screens/redesign/account/PrivacyScreen.render.test.tsx:563:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/12]⎯
+
+ FAIL  src/screens/redesign/account/privacyServices.render.test.tsx > Privacy's transport reaches a LAN Worker in a development build, and turns server events off unless the answer is yes
+AssertionError: expected [Function] to not throw an error but 'V1Error: CONFIG_REQUIRED (0)' was thrown
+
+- Expected:
+undefined
+
++ Received:
+"V1Error: CONFIG_REQUIRED (0)"
+
+ ❯ src/screens/redesign/account/privacyServices.render.test.tsx:39:42
+     37|   setSession({ access_token: 'token-a', userId: ACCOUNT, binding: 'ses…
+     38|   // A release build refuses http:// to a LAN address; a development b…
+     39|   expect(() => appPrivacyServices()).not.toThrow();
+       |                                          ^
+     40|   const services = appPrivacyServices();
+     41|   const check = () => services.privacy.exportStatus(EXPORT_ID).catch((…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/12]⎯
+
+
+ Test Files  4 failed (4)
+      Tests  12 failed | 45 passed (57)
+   Start at  21:50:38
+   Duration  2.60s (transform 748ms, setup 316ms, import 1.80s, tests 937ms, environment 1.06s)
+

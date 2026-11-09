@@ -1,0 +1,115 @@
+--- a/apps/app/src/analytics/controller.ts
++++ b/apps/app/src/analytics/controller.ts
+@@ -37,6 +37,13 @@
+    */
+   answer(answer: ConsentAnswer): Promise<void>;
+   status(): ConsentStatus;
++  /**
++   * True while the no in force here has not reached the server yet: from a no
++   * given on this phone, or found stored undelivered at a load, until the server
++   * takes it (the next refresh sends it again). False for any other status.
++   * Listeners hear when it changes (1D-T8: Privacy's "stopped on this phone").
++   */
++  pendingNo(): boolean;
+   allowsAnalytics(): boolean;
+   subscribe(listener: () => void): () => void;
+   setCommon(patch: Partial<CommonProps>): void;
+@@ -62,6 +69,8 @@
+   // undefined: the app has not said who is signed in yet. null: signed out.
+   let accountId: string | null | undefined;
+   let current: ConsentStatus = 'loading';
++  // While `current` is no: that no has not reached the server yet (the stored pendingServer).
++  let undelivered = false;
+   let identifiedId: string | null = null;
+   let common: Partial<CommonProps> = {};
+   const held: Held[] = [];
+@@ -83,9 +92,11 @@
+     return token !== generation || accountId !== account;
+   }
+ 
+-  function setStatus(next: ConsentStatus): void {
+-    if (current === next) return;
++  /** `pendingNo`: with `no`, whether that no has not reached the server yet. Any other status clears it. */
++  function setStatus(next: ConsentStatus, pendingNo = false): void {
++    if (current === next && undelivered === pendingNo) return;
+     current = next;
++    undelivered = pendingNo;
+     for (const listener of [...listeners]) listener();
+   }
+ 
+@@ -93,14 +104,15 @@
+     return { ...properties, ...cleanCommon(common), origin: 'app' };
+   }
+ 
+-  function applyNo(): void {
++  /** `pending`: the server does not have this no yet. */
++  function applyNo(pending: boolean): void {
+     client?.stopSessionRecording();
+     // A no resets even when this process was only `loading`: the SDK can still
+     // be carrying the id from the previous run.
+     client?.reset();
+     identifiedId = null;
+     held.length = 0;
+-    setStatus('no');
++    setStatus('no', pending);
+   }
+ 
+   function enterYes(remote: ServerAnalyticsState | null): void {
+@@ -126,10 +138,12 @@
+   }
+ 
+   async function deliverPendingNo(token: number, account: string): Promise<void> {
+-    applyNo();
++    applyNo(true);
+     try {
+       await deps.server.setConsent(false);
+       if (stale(token, account)) return;
++      // The server has it: the no is no longer pending.
++      setStatus('no');
+       await deps.store.write({ accountId: account, answer: 'no', pendingServer: false });
+     } catch {
+       if (stale(token, account)) return;
+@@ -161,7 +175,7 @@
+     if (!reachable || remote === null) {
+       if (mine?.answer === 'yes') enterYes(null);
+       else if (mine?.answer === 'no') {
+-        applyNo();
++        applyNo(false);
+         await deps.store.write({ accountId: account, answer: 'no', pendingServer: false });
+       } else setStatus('loading');
+       return;
+@@ -175,7 +189,7 @@
+     }
+     // Capture stops before the store is touched, so a failed write cannot leave yes running.
+     if (remote.consent === 'no') {
+-      applyNo();
++      applyNo(false);
+       await deps.store.write({ accountId: account, answer: 'no', pendingServer: false });
+       return;
+     }
+@@ -212,7 +226,7 @@
+         // In force at once, and stored at once, so a no given while another call is on its
+         // way outlives the app being closed before that call ends. The server hears it after
+         // that call.
+-        applyNo();
++        applyNo(true);
+         const storedAtCall = deps.store.write({ accountId: account, answer: 'no', pendingServer: true }).catch(() => undefined);
+         await serialize(async () => {
+           // The queue's own writes come last: after that write, and after any the earlier call made.
+@@ -222,6 +236,8 @@
+           try {
+             await deps.server.setConsent(false);
+             if (stale(token, account)) return;
++            // The server has it: the no is no longer pending.
++            setStatus('no');
+             await deps.store.write({ accountId: account, answer: 'no', pendingServer: false });
+           } catch {
+             // The no is already in force on this phone. The next refresh tries again.
+@@ -251,6 +267,7 @@
+     },
+ 
+     status: () => current,
++    pendingNo: () => undelivered,
+     allowsAnalytics: () => current === 'yes',
+     subscribe(listener) {
+       listeners.add(listener);

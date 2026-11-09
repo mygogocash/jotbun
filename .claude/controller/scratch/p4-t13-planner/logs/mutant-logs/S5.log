@@ -1,0 +1,34 @@
+(node:33038) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/slips/imageShrink.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:33038) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/packages/contracts/package.json.
+✔ a picked image or a shared file within 1,200,000 bytes is used as it is, its type read from its first bytes, and a larger one, such as a 1.5 MB PNG screenshot, is not sent (1.9305ms)
+✖ only a JPEG, a PNG or a WebP is sent: a HEIC photo, another RIFF file, text, or text that is not whole base64 is not (0.236708ms)
+✔ a copy that is gone throws, so the scan can tell it from a photo it cannot send (0.282667ms)
+✔ the limit holds on the bytes read, also where the phone gives no size (0.662958ms)
+✔ an image's byte count is its decoded length, whatever its padding (0.142708ms)
+✔ the fake shrink answers null for a photo too large, throws for a copy that is gone, and records each image removed (0.161875ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 5
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 129.655333
+
+✖ failing tests:
+
+test at src/slips/imageShrink.test.ts:79:1
+✖ only a JPEG, a PNG or a WebP is sent: a HEIC photo, another RIFF file, text, or text that is not whole base64 is not (0.236708ms)
+  InvalidCharacterError: Invalid character
+      at atob (node:buffer:1473:13)
+      at imageTypeOf (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/slips/imageShrink.ts:28:16)
+      at Object.shrink (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/slips/imageShrink.ts:52:25)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t13-planner/work/apps/app/src/slips/imageShrink.test.ts:96:83)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

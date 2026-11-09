@@ -1,0 +1,1 @@
+src/slips/slipRoutes.ts(10,46): error TS2820: Type '"/spend/slips/scanning"' is not assignable to type '"/" | RelativePathString | ExternalPathString | "/login" | "/_sitemap" | "/dev/catalogue" | "/settings" | "/settings/privacy" | "/spend/add" | ... 21 more ... | "/spend/record/[id]"'. Did you mean '"/spend/slips/scan"'?

@@ -1,0 +1,15 @@
+22:29:40 red typecheck:app exit=0
+22:29:40 red focused exit=1 ℹ tests 18 ℹ pass 0 ℹ fail 18 
+22:29:40 red assertion failures=18 missing modules=0 other errors=0
+22:29:44 green typecheck:app exit=0
+22:29:44 green focused exit=0 ℹ tests 18 ℹ pass 18 ℹ fail 0 
+22:29:44 green photoLibrary exit=0 ℹ tests 7 ℹ pass 7 ℹ fail 0 
+22:29:44 green imageShrink exit=0 ℹ tests 6 ℹ pass 6 ℹ fail 0 
+22:29:45 green slipBatches exit=0 ℹ tests 5 ℹ pass 5 ℹ fail 0 
+22:29:45 same as real: photoLibrary.ts
+22:29:45 same as real: imageShrink.ts
+22:29:45 same as real: slipBatches.ts
+22:29:45 same as real: testing/fakePhotos.ts
+22:29:45 same as real: photoLibrary.test.ts
+22:29:45 same as real: imageShrink.test.ts
+22:29:45 same as real: slipBatches.test.ts

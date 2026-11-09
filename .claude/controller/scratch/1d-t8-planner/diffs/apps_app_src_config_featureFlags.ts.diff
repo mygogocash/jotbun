@@ -1,0 +1,22 @@
+--- a/apps/app/src/config/featureFlags.ts
++++ b/apps/app/src/config/featureFlags.ts
+@@ -11,7 +11,7 @@
+ }
+ 
+ /** Areas of the "Bun diary" redesign, each switched on once its screenshots are approved (E2). */
+-export type RedesignArea = 'core' | 'catalogue' | 'planning' | 'insights' | 'account' | 'import' | 'companion' | 'conflict' | 'wallet' | 'signin';
++export type RedesignArea = 'core' | 'catalogue' | 'planning' | 'insights' | 'account' | 'import' | 'companion' | 'conflict' | 'wallet' | 'signin' | 'analytics';
+ 
+ /**
+  * Approved areas, on by default. The core loop (Home, Quick add, History,
+@@ -41,6 +41,10 @@
+  * session-ended, devices and reminder drafts, and the welcome link) waits for
+  * its E2 screenshots, so it is on only when named or with `all`; 1C-T9 routes
+  * its screens and approves it.
++ *
++ * The analytics area (1D-T8: D34's consent question in the spend layout and
++ * Privacy's ช่วยพัฒนา Jotbun switch) waits for its E2 screenshots (decided,
++ * Q9), so it is on only when named or with `all`.
+  */
+ const APPROVED: readonly RedesignArea[] = ['core', 'planning', 'insights', 'account', 'import', 'companion'];
+ 

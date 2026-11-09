@@ -1,0 +1,330 @@
+(node:40892) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipRefs.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:40892) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/packages/contracts/package.json.
+✖ the salt is fetched once per account and kept with WHEN_UNLOCKED_THIS_DEVICE_ONLY, and in the given accessGroup (1.20075ms)
+✖ forgetting deletes only that account's salt, and a kept value that is not a salt is fetched again (0.697958ms)
+✖ the phone's hash of P3's slip QR is the contract's vector (0.981ms)
+✖ the app's SHA-256 is expo-crypto's digest, and gives the same vector (0.151834ms)
+✖ a reference that cannot be normalized gives no hash, and asks for no salt (0.20475ms)
+✖ a salt that could not be fetched is asked for again, and a locked keychain fetches none (0.306958ms)
+(node:40893) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipResources.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:40893) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/packages/contracts/package.json.
+✖ each slip call sends its route, its body and its headers, and refuses an answer of any other shape (2.372334ms)
+✖ the slip read waits 90 seconds and a lost answer is not resent by the transport (0.426ms)
+✖ a stale account update throws VERSION_CONFLICT with the current account (0.265167ms)
+✖ the fake slip server answers in the contract shapes, keeps what was confirmed, dismissed and mapped, and refuses a draft that is gone (1.852167ms)
+✖ with slip import closed the fake answers only the salt, slip refs, bank albums and devices, and every other slip call is 404 (0.257792ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 0
+ℹ fail 11
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 192.594916
+
+✖ failing tests:
+
+test at src/slips/slipRefs.test.ts:76:1
+✖ the salt is fetched once per account and kept with WHEN_UNLOCKED_THIS_DEVICE_ONLY, and in the given accessGroup (1.20075ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + ''
+  - 'jotbun.slip-salt.'
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipRefs.test.ts:77:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: 'jotbun.slip-salt.',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/slips/slipRefs.test.ts:107:1
+✖ forgetting deletes only that account's salt, and a kept value that is not a salt is fetched again (0.697958ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - Uint8Array(32) [
+  -   1,
+  -   2,
+  -   3,
+  -   4,
+  -   5,
+  -   6,
+  -   7,
+  -   8,
+  -   9,
+  -   10,
+  -   11,
+  -   12,
+  -   13,
+  -   14,
+  -   15,
+  -   16,
+  -   17,
+  -   18,
+  -   19,
+  -   20,
+  -   21,
+  -   22,
+  -   23,
+  -   24,
+  -   25,
+  -   26,
+  -   27,
+  -   28,
+  -   29,
+  -   30,
+  -   31,
+  -   32
+  - ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipRefs.test.ts:112:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: Uint8Array(32) [
+       1,  2,  3,  4,  5,  6,  7,  8,  9,
+      10, 11, 12, 13, 14, 15, 16, 17, 18,
+      19, 20, 21, 22, 23, 24, 25, 26, 27,
+      28, 29, 30, 31, 32
+    ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/slips/slipRefs.test.ts:128:1
+✖ the phone's hash of P3's slip QR is the contract's vector (0.981ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + ''
+  - 'c4f3b6c8f15a0e588cfdb0a59d02f281e28eae69f0a3f8b22d6bda69f7ec1493'
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipRefs.test.ts:132:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: 'c4f3b6c8f15a0e588cfdb0a59d02f281e28eae69f0a3f8b22d6bda69f7ec1493',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/slips/slipRefs.test.ts:137:1
+✖ the app's SHA-256 is expo-crypto's digest, and gives the same vector (0.151834ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + ''
+  - 'c4f3b6c8f15a0e588cfdb0a59d02f281e28eae69f0a3f8b22d6bda69f7ec1493'
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipRefs.test.ts:149:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: 'c4f3b6c8f15a0e588cfdb0a59d02f281e28eae69f0a3f8b22d6bda69f7ec1493',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/slips/slipRefs.test.ts:153:1
+✖ a reference that cannot be normalized gives no hash, and asks for no salt (0.20475ms)
+  AssertionError [ERR_ASSERTION]: {"bankCode":"0041","reference":"A1"}
+  
+  '' !== null
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipRefs.test.ts:158:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/slips/slipRefs.test.ts:164:1
+✖ a salt that could not be fetched is asked for again, and a locked keychain fetches none (0.306958ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipRefs.test.ts:176:3)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at src/slips/slipResources.test.ts:92:1
+✖ each slip call sends its route, its body and its headers, and refuses an answer of any other shape (2.372334ms)
+  AssertionError [ERR_ASSERTION]: salt
+  + actual - expected
+  
+    {
+  +   salt: ''
+  -   salt: 'AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA'
+    }
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipResources.test.ts:114:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { salt: '' },
+    expected: { salt: 'AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/slips/slipResources.test.ts:133:1
+✖ the slip read waits 90 seconds and a lost answer is not resent by the transport (0.426ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   results: [],
+  -   results: [
+  -     {
+  -       draft: {
+  -         album: 'K PLUS',
+  -         amount_minor: '125050',
+  -         category_guessed: false,
+  -         category_id: null,
+  -         created_at: '2026-11-09T02:00:00.000Z',
+  -         direction: 'out',
+  -         duplicate_of: null,
+  -         escalated: false,
+  -         expires_at: '2026-12-09T02:00:00.000Z',
+  -         flags: [],
+  -         from: {
+  -           account_last4: '1234',
+  -           bank: 'kbank',
+  -           name: 'นาย กานต์ ใจดี'
+  -         },
+  -         id: '6a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d',
+  -         model: 'claude-haiku-5-5',
+  -         occurred_on: '2026-11-08',
+  -         occurred_time: '18:40',
+  -         origin: 'album',
+  -         to: {
+  -           account_last4: '9876',
+  -           bank: 'scb',
+  -           name: 'ร้านป้าแดง ข้าวแกง'
+  -         }
+  -       },
+  -       outcome: 'read',
+  -       ref_hash: 'c4f3b6c8f15a0e588cfdb0a59d02f281e28eae69f0a3f8b22d6bda69f7ec1493'
+  -     }
+  -   ],
+      retry_after_seconds: null,
+      uses_left: {
+  +     backfill: 0,
+  +     live: 0
+  -     backfill: 499,
+  -     live: 10
+      }
+    }
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipResources.test.ts:143:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { results: [], uses_left: { live: 0, backfill: 0 }, retry_after_seconds: null },
+    expected: { results: [ [Object] ], uses_left: { live: 10, backfill: 499 }, retry_after_seconds: null },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/slips/slipResources.test.ts:157:1
+✖ a stale account update throws VERSION_CONFLICT with the current account (0.265167ms)
+  AssertionError [ERR_ASSERTION]: expected a V1Error
+      at refusal (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipResources.test.ts:77:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipResources.test.ts:160:17)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'fail',
+    diff: 'simple'
+  }
+
+test at src/slips/slipResources.test.ts:167:1
+✖ the fake slip server answers in the contract shapes, keeps what was confirmed, dismissed and mapped, and refuses a draft that is gone (1.852167ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(isSlipSaltDto(FAKE_SLIP_SALT))
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipResources.test.ts:177:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at src/slips/slipResources.test.ts:236:1
+✖ with slip import closed the fake answers only the salt, slip refs, bank albums and devices, and every other slip call is 404 (0.257792ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   {
+  -     album_name: 'K PLUS',
+  -     bank: 'kbank',
+  -     platform: 'ios'
+  -   }
+  - ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipResources.test.ts:240:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ { bank: 'kbank', platform: 'ios', album_name: 'K PLUS' } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

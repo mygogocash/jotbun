@@ -1,0 +1,127 @@
+(node:35323) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipRefs.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:35323) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/packages/contracts/package.json.
+✖ the salt is fetched once per account and kept with WHEN_UNLOCKED_THIS_DEVICE_ONLY, and in the given accessGroup (1.440125ms)
+✖ forgetting deletes only that account's salt, and a kept value that is not a salt is fetched again (0.321792ms)
+✖ the phone's hash of P3's slip QR is the contract's vector (0.128209ms)
+✖ the app's SHA-256 is expo-crypto's digest, and gives the same vector (0.1575ms)
+✔ a reference that cannot be normalized gives no hash, and asks for no salt (0.12925ms)
+✖ a salt that could not be fetched is asked for again, and a locked keychain fetches none (0.291375ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 1
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 129.500917
+
+✖ failing tests:
+
+test at src/slips/slipRefs.test.ts:76:1
+✖ the salt is fetched once per account and kept with WHEN_UNLOCKED_THIS_DEVICE_ONLY, and in the given accessGroup (1.440125ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+  +   '5a2410a09c29cef01c751505733c2dd527513df6d56748799ccfe97bbdd1c11e',
+  +   '4268f2d6e0897007364336eb191241419018c1fcb8652300666649b538235484'
+  -   'c4f3b6c8f15a0e588cfdb0a59d02f281e28eae69f0a3f8b22d6bda69f7ec1493',
+  -   'f206ae1301b4dc7472cc7680335bc23d1eb1fae34c91eaa6094ca2b9c21fb531'
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipRefs.test.ts:85:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ '5a2410a09c29cef01c751505733c2dd527513df6d56748799ccfe97bbdd1c11e', '4268f2d6e0897007364336eb191241419018c1fcb8652300666649b538235484' ],
+    expected: [ 'c4f3b6c8f15a0e588cfdb0a59d02f281e28eae69f0a3f8b22d6bda69f7ec1493', 'f206ae1301b4dc7472cc7680335bc23d1eb1fae34c91eaa6094ca2b9c21fb531' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/slips/slipRefs.test.ts:107:1
+✖ forgetting deletes only that account's salt, and a kept value that is not a salt is fetched again (0.321792ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '5a2410a09c29cef01c751505733c2dd527513df6d56748799ccfe97bbdd1c11e'
+  - 'c4f3b6c8f15a0e588cfdb0a59d02f281e28eae69f0a3f8b22d6bda69f7ec1493'
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipRefs.test.ts:123:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '5a2410a09c29cef01c751505733c2dd527513df6d56748799ccfe97bbdd1c11e',
+    expected: 'c4f3b6c8f15a0e588cfdb0a59d02f281e28eae69f0a3f8b22d6bda69f7ec1493',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/slips/slipRefs.test.ts:128:1
+✖ the phone's hash of P3's slip QR is the contract's vector (0.128209ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '5a2410a09c29cef01c751505733c2dd527513df6d56748799ccfe97bbdd1c11e'
+  - 'c4f3b6c8f15a0e588cfdb0a59d02f281e28eae69f0a3f8b22d6bda69f7ec1493'
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipRefs.test.ts:132:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '5a2410a09c29cef01c751505733c2dd527513df6d56748799ccfe97bbdd1c11e',
+    expected: 'c4f3b6c8f15a0e588cfdb0a59d02f281e28eae69f0a3f8b22d6bda69f7ec1493',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/slips/slipRefs.test.ts:137:1
+✖ the app's SHA-256 is expo-crypto's digest, and gives the same vector (0.1575ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '5a2410a09c29cef01c751505733c2dd527513df6d56748799ccfe97bbdd1c11e'
+  - 'c4f3b6c8f15a0e588cfdb0a59d02f281e28eae69f0a3f8b22d6bda69f7ec1493'
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipRefs.test.ts:149:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '5a2410a09c29cef01c751505733c2dd527513df6d56748799ccfe97bbdd1c11e',
+    expected: 'c4f3b6c8f15a0e588cfdb0a59d02f281e28eae69f0a3f8b22d6bda69f7ec1493',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/slips/slipRefs.test.ts:164:1
+✖ a salt that could not be fetched is asked for again, and a locked keychain fetches none (0.291375ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '5a2410a09c29cef01c751505733c2dd527513df6d56748799ccfe97bbdd1c11e'
+  - 'c4f3b6c8f15a0e588cfdb0a59d02f281e28eae69f0a3f8b22d6bda69f7ec1493'
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipRefs.test.ts:178:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '5a2410a09c29cef01c751505733c2dd527513df6d56748799ccfe97bbdd1c11e',
+    expected: 'c4f3b6c8f15a0e588cfdb0a59d02f281e28eae69f0a3f8b22d6bda69f7ec1493',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

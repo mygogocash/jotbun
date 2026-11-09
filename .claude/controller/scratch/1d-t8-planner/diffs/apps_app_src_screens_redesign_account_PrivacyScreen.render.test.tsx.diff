@@ -1,0 +1,188 @@
+--- a/apps/app/src/screens/redesign/account/PrivacyScreen.render.test.tsx
++++ b/apps/app/src/screens/redesign/account/PrivacyScreen.render.test.tsx
+@@ -2,7 +2,7 @@
+ // privacy.ts and account deletion through deletion.ts, on the fakes in the
+ // catalogue's settings sections. The fresh sign-in is the fake's; the app
+ // build has none yet for any method, and the screen says so.
+-import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
++import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+ import { afterEach, beforeAll, beforeEach, expect, test, vi } from 'vitest';
+ 
+ vi.mock('expo-router', () => import('@mobile/dev/catalogue/routerTestStub'));
+@@ -15,6 +15,11 @@
+   getSharedV1Resources: () => { throw new Error('Privacy never reads the real API in a test.'); },
+ }));
+ 
++import { getAnalytics, setAnalytics } from '@mobile/analytics/bus';
++import { AccountChangedError } from '@mobile/analytics/controller';
++import type { Analytics } from '@mobile/analytics/controller';
++import { fakeConsent } from '@mobile/analytics/testing/fakeConsent';
++import type { FakeConsentOptions } from '@mobile/analytics/testing/fakeConsent';
+ import { FAKE_CREDENTIALS, FAKE_EXPORT_ID, FAKE_REQUEST_ID, fakePrivacy } from '@mobile/dev/catalogue/account/settingsSections';
+ import { installStoreBackend } from '@mobile/wallet/store/deviceWalletStore';
+ import type { StoreBackend } from '@mobile/wallet/store/walletStore';
+@@ -29,6 +34,7 @@
+ import { NOW, leading, mountScreen, rgb } from '../HistoryTestHarness';
+ import { PrivacyScreen } from './PrivacyScreen';
+ 
++let restoreAnalytics: () => void = () => undefined;
+ beforeAll(() => { installBrowserStorage(); });
+ beforeEach(() => {
+   for (const fn of [router.push, router.replace, router.back]) fn.mockReset();
+@@ -37,6 +43,9 @@
+ afterEach(() => {
+   cleanup();
+   window.localStorage.clear();
++  restoreAnalytics();
++  restoreAnalytics = () => undefined;
++  vi.unstubAllEnvs();
+ });
+ 
+ type Mount = FakePrivacyOptions & { diary?: ReturnType<typeof createFakeDiary> | null; locale?: Locale; mode?: 'light' | 'dark' };
+@@ -424,4 +433,146 @@
+   const controls = screen.getAllByRole('button');
+   expect(controls.length).toBeGreaterThanOrEqual(3);
+   for (const control of controls) expect(Number.parseFloat(control.style.minHeight)).toBeGreaterThanOrEqual(44);
++});
++
++// ---------------------------------------------------------------------------
++// Help improve Jotbun (1D-T8, D34): one switch for the analytics answer, only
++// in the `analytics` area, on 1D-T1's controller over a scripted server
++// (`fakeConsent`), installed as the app's.
++
++const SWITCH = 'Help improve Jotbun';
++const STOPPED = "Stopped on this phone. Jotbun will be told when you're online.";
++const NOT_SAVED = "Couldn't save your answer. Check your connection and try again.";
++const analyticsSwitch = () => screen.getByRole('switch', { name: SWITCH });
++/** Lets every promise step that is ready run. */
++const flush = () => act(async () => { await new Promise<void>((resolve) => { setTimeout(resolve, 0); }); });
++
++function installAnalytics(analytics: Analytics) {
++  const previous = getAnalytics();
++  setAnalytics(analytics);
++  restoreAnalytics = () => setAnalytics(previous);
++}
++
++/** The `analytics` area on, and a signed-in account its server answers for as `options` say. */
++async function withConsent(options: FakeConsentOptions) {
++  vi.stubEnv('EXPO_PUBLIC_REDESIGN', 'analytics');
++  const fake = fakeConsent(options);
++  await fake.signIn();
++  installAnalytics(fake.analytics);
++  return fake;
++}
++
++test('the switch shows the answer and turns off at once', async () => {
++  const fake = await withConsent({ consent: 'yes', send: 'held' });
++  mountPrivacy();
++  expect(analyticsSwitch().getAttribute('aria-checked')).toBe('true');
++  fireEvent.click(analyticsSwitch());
++  // Off at the call, before the server answers.
++  expect(analyticsSwitch().getAttribute('aria-checked')).toBe('false');
++  expect(fake.analytics.status()).toBe('no');
++  await waitFor(() => expect(fake.answers).toEqual([false]));
++  // Once the server has it, nothing is left waiting.
++  act(() => { fake.settle('lands'); });
++  await waitFor(() => expect(screen.queryByText(STOPPED)).toBeNull());
++  expect(fake.server.consent).toBe('no');
++  expect(analyticsSwitch().getAttribute('aria-checked')).toBe('false');
++  expect(screen.queryByText(NOT_SAVED)).toBeNull();
+ });
++
++test('turning it on waits for the server', async () => {
++  const fake = await withConsent({ consent: 'no', send: 'held' });
++  mountPrivacy();
++  expect(analyticsSwitch().getAttribute('aria-checked')).toBe('false');
++  // Two presses before the screen draws again send one yes.
++  act(() => {
++    fireEvent.click(analyticsSwitch());
++    fireEvent.click(analyticsSwitch());
++  });
++  await waitFor(() => expect(fake.answers).toEqual([true]));
++  await flush();
++  // Still off, and held, until the server takes it.
++  expect(analyticsSwitch().getAttribute('aria-checked')).toBe('false');
++  expect(analyticsSwitch().getAttribute('aria-disabled')).toBe('true');
++  act(() => { fake.settle('lands'); });
++  await waitFor(() => expect(analyticsSwitch().getAttribute('aria-checked')).toBe('true'));
++  expect(analyticsSwitch().getAttribute('aria-disabled')).not.toBe('true');
++  expect(fake.answers).toEqual([true]);
++  cleanup();
++  // A yes the server cannot take leaves it off, with the question's line.
++  restoreAnalytics();
++  const offline = await withConsent({ consent: 'no', send: 'fails' });
++  mountPrivacy();
++  fireEvent.click(analyticsSwitch());
++  expect(await screen.findByText(NOT_SAVED)).toBeTruthy();
++  expect(analyticsSwitch().getAttribute('aria-checked')).toBe('false');
++  expect(analyticsSwitch().getAttribute('aria-disabled')).not.toBe('true');
++  expect(offline.analytics.status()).toBe('no');
++});
++
++test('a pending no says it stopped on this phone', async () => {
++  // Turned off offline: off at once, and the caption stays until the server has the no.
++  const fake = await withConsent({ consent: 'yes', send: 'fails' });
++  mountPrivacy();
++  expect(screen.queryByText(STOPPED)).toBeNull();
++  fireEvent.click(analyticsSwitch());
++  expect(analyticsSwitch().getAttribute('aria-checked')).toBe('false');
++  expect(screen.getByText(STOPPED)).toBeTruthy();
++  await waitFor(() => expect(fake.answers).toEqual([false]));
++  await flush();
++  expect(screen.getByText(STOPPED)).toBeTruthy();
++  expect(fake.stored()?.pendingServer).toBe(true);
++  expect(screen.queryByText(NOT_SAVED)).toBeNull();
++  // Online again: the next refresh (a return to the foreground) delivers it, and the caption goes.
++  fake.server.send = 'lands';
++  await act(async () => { await fake.analytics.refresh(); });
++  expect(screen.queryByText(STOPPED)).toBeNull();
++  expect(fake.server.consent).toBe('no');
++  cleanup();
++  // A no this phone stored without delivering it says so from the start.
++  restoreAnalytics();
++  await withConsent({ consent: 'yes', storedNo: 'pending', send: 'fails' });
++  mountPrivacy({ locale: 'th' });
++  expect(screen.getByText('หยุดส่งจากเครื่องนี้แล้ว จะแจ้ง Jotbun เมื่อออนไลน์')).toBeTruthy();
++  expect(screen.getByRole('switch', { name: 'ช่วยพัฒนา Jotbun' }).getAttribute('aria-checked')).toBe('false');
++});
++
++test('with the analytics area off there is no switch', async () => {
++  await withConsent({ consent: 'yes' });
++  vi.unstubAllEnvs();
++  mountPrivacy();
++  expect(screen.queryByRole('switch')).toBeNull();
++  expect(screen.queryByText(SWITCH)).toBeNull();
++  expect(screen.getByTestId('privacy-export')).toBeTruthy();
++});
++
++/** The installed controller, refusing every answer as 1D-T6's does: a yes once another account has signed in, a no this phone could not store. */
++function refusing(analytics: Analytics, asked: string[]): Analytics {
++  return {
++    ...analytics,
++    answer: async (value) => {
++      asked.push(value);
++      throw value === 'yes' ? new AccountChangedError() : new Error('The store is unavailable');
++    },
++  };
++}
++
++test('every refusal is caught: a yes refused because the account changed says nothing', async () => {
++  const asked: string[] = [];
++  installAnalytics(refusing((await withConsent({ consent: 'no' })).analytics, asked));
++  mountPrivacy();
++  fireEvent.click(analyticsSwitch());
++  await waitFor(() => expect(asked).toEqual(['yes']));
++  await flush();
++  expect(screen.queryByText(NOT_SAVED)).toBeNull();
++  expect(analyticsSwitch().getAttribute('aria-checked')).toBe('false');
++  expect(analyticsSwitch().getAttribute('aria-disabled')).not.toBe('true');
++  cleanup();
++  // A refused no is caught as well: the controller keeps it in force.
++  restoreAnalytics();
++  installAnalytics(refusing((await withConsent({ consent: 'yes' })).analytics, asked));
++  mountPrivacy();
++  fireEvent.click(analyticsSwitch());
++  await waitFor(() => expect(asked).toEqual(['yes', 'no']));
++  await flush();
++  expect(screen.queryByText(NOT_SAVED)).toBeNull();
++});

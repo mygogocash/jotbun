@@ -1,0 +1,182 @@
+--- a/test/workers/sync.test.ts
++++ b/test/workers/sync.test.ts
+@@ -1,23 +1,26 @@
+ // Sync changes in the vault, ported by name from
+ // apps/api/src/sync/sync-query.integration.spec.ts (13 cases) and
+-// sync-api.integration.spec.ts (5 cases). Ported in full: 10, the 30-day
+-// retention case with 8b's prune run. In part: 3, each with its missing half in
+-// 1B (the lifecycle generation, the snapshot step, the export and import
+-// entities of the registry check). Not applicable: 3, two lock waits and the
+-// batch across accounts (a vault call runs to completion, and one vault holds
+-// one account). Deferred to 1B: the two snapshot cases. The receipts give each
+-// case's reason.
++// sync-api.integration.spec.ts (5 cases). Ported in full: 13, the 30-day
++// retention case with 8b's prune run, and from 1B-T8 the two snapshot cases and
++// the snapshot step of the retention recovery case, each built by
++// SnapshotWorkflow. In part: 2, each with its missing half in a later task (the
++// lifecycle generation; the registry check's phase 4 and phase 5 entities). Not
++// applicable: 3, two lock waits and the batch across accounts (a vault call runs
++// to completion, and one vault holds one account). The receipts give each case's
++// reason.
+ // The fixture domain builds the wide and large groups a page budget needs. Those
+ // cases read through syncChanges inside the call's transaction, since the
+ // vault's registry holds only wallets; the route cases use wallets.
+-import { randomUUID } from 'node:crypto'
++import { createHash, randomUUID } from 'node:crypto'
+ 
+-import { runInDurableObject } from 'cloudflare:test'
++import { env } from 'cloudflare:workers'
++import { introspectWorkflowInstance, runInDurableObject } from 'cloudflare:test'
+ import { beforeEach, describe, expect, it } from 'vitest'
+ 
+-import { SYNC_ENTITY_VALIDATORS, SYNC_PAGE_BYTES, isCommittedChangeGroup } from '@gogospend/contracts'
+-import type { CommittedChangeGroup, SyncChangesPage } from '@gogospend/contracts'
++import { SYNC_ENTITY_VALIDATORS, SYNC_PAGE_BYTES, isCommittedChangeGroup, isSnapshotChunk, isSnapshotChunkGrant } from '@gogospend/contracts'
++import type { CommittedChangeGroup, SnapshotChunk, SnapshotDto, SyncChangesPage } from '@gogospend/contracts'
+ 
++import { derivedUuid } from '@api/commands/derived-id'
+ import { decodeSyncCursor, encodeSyncCursor } from '@api/sync/sync-cursor'
+ import { parseSyncRequest } from '@api/sync/sync-query'
+ 
+@@ -25,7 +28,7 @@
+ import { jsonbOrder, syncChanges } from '../../src/vault/reads/sync'
+ import { pruneChanges } from '../../src/vault/retention'
+ import { FIXTURE_ENTITY, fixtureCommands, inVault, purchase, sqlExec, sqlRows, syncRegistry } from './support/command-fixtures'
+-import { member, startV1, vaultOf } from './support/v1-client'
++import { BASE, member, startV1, vaultOf } from './support/v1-client'
+ import type { TestUser, V1Client } from './support/v1-client'
+ 
+ let client: V1Client
+@@ -65,6 +68,41 @@
+   return { status: res.status, code: ((await res.json()) as { code?: string }).code }
+ }
+ 
++/** One food expense in the wallet, through the route. */
++async function record(user: TestUser, wallet: string, amount: string, note: string | null = null): Promise<void> {
++  const food = derivedUuid(user.sub, 'builtin-category', 'food')
++  const res = await client.as(user).post('/v1/transactions', { id: randomUUID(), type: 'expense', amount_minor: amount, occurred_on: '2026-03-02', wallet_id: wallet, category_id: food, note })
++  expect(res.status).toBe(201)
++}
++
++/** The API spec's diary: a member with the built-in categories, a Cash wallet and one coffee. */
++async function diary(): Promise<{ user: TestUser; wallet: string }> {
++  const user = await member(client)
++  expect((await client.as(user).post('/v1/categories/builtins')).status).toBe(200)
++  const wallet = await createWallet(user, 'Cash')
++  await record(user, wallet, '6500', 'coffee')
++  return { user, wallet }
++}
++
++/** POST /v1/sync/snapshots, then SnapshotWorkflow's run to its end (1B-T8): the snapshot's id. */
++async function builtSnapshot(user: TestUser): Promise<string> {
++  const key = randomUUID()
++  const id = derivedUuid(user.sub, 'snapshot-request', key)
++  const instance = await introspectWorkflowInstance(env.SNAPSHOT_WORKFLOW, id)
++  try {
++    expect((await client.as(user).post('/v1/sync/snapshots', {}, { key })).status).toBe(202)
++    await client.settle()
++    expect(await startedOf(user, id)).toEqual([{ started: 1 }])
++    await instance.waitForStatus('complete')
++  } finally {
++    await instance.dispose()
++  }
++  return id
++}
++
++/** Whether the front door's hand-off started the snapshot: its row is marked once its Workflow instance exists. */
++const startedOf = (user: TestUser, id: string) => sqlRows<{ started: number }>(user, 'SELECT started_at IS NOT NULL AS started FROM snapshots WHERE id = ?', id)
++
+ /**
+  * One page read in the vault's transaction. The fixture groups need the fixture
+  * registry, which the route does not hold, so these calls go to syncChanges directly.
+@@ -265,9 +303,64 @@
+   })
+ 
+   it.todo('snapshots validate exactly the entities the API registers: every key of SYNC_ENTITY_VALIDATORS, once 1B and phase 4 register theirs')
+-  it.todo('requests, builds, and downloads a snapshot through short-lived grants, then continues with deltas (1B-T8)')
+-  it.todo('asking again while a snapshot is ready answers 200 with it (1B-T8)')
++
++  it('requests, builds, and downloads a snapshot through short-lived grants, then continues with deltas', async () => {
++    // 1B-T8: SnapshotWorkflow builds the snapshot after the 202, as the API's job worker built it.
++    const { user, wallet } = await diary()
++    const other = await member(client)
++    expect((await client.as(user).post('/v1/sync/snapshots', {}, { key: 'not-a-uuid' })).status).toBe(422)
++    const key = randomUUID()
++    const id = derivedUuid(user.sub, 'snapshot-request', key)
++    const instance = await introspectWorkflowInstance(env.SNAPSHOT_WORKFLOW, id)
++    try {
++      const requested = await client.as(user).post('/v1/sync/snapshots', {}, { key })
++      expect(requested.status).toBe(202)
++      expect(await requested.json()).toEqual({ snapshot_id: id, status: 'pending' })
++      expect(((await (await client.as(user).post('/v1/sync/snapshots', {}, { key })).json()) as SnapshotDto).snapshot_id).toBe(id)
++      expect((await client.as(other).get(`/v1/sync/snapshots/${id}`)).status).toBe(404)
++      await client.settle()
++      expect(await startedOf(user, id)).toEqual([{ started: 1 }])
++      await instance.waitForStatus('complete')
++    } finally {
++      await instance.dispose()
++    }
++    await record(user, wallet, '100')
+ 
++    const ready = (await (await client.as(user).get(`/v1/sync/snapshots/${id}`)).json()) as SnapshotDto
++    if (ready.status !== 'ready') throw new Error(`snapshot is ${ready.status}`)
++    expect(ready.chunks.every(isSnapshotChunkGrant)).toBe(true)
++    const entities: { entity: string }[] = []
++    for (const chunk of ready.chunks) {
++      const res = await client.as(user).get(`/v1/sync/snapshot-chunks/${chunk.grant}`)
++      expect(res.status).toBe(200)
++      expect(res.headers.get('content-type')).toMatch(/^application\/json/)
++      expect(res.headers.get('cache-control')).toBe('no-store')
++      const text = await res.text()
++      expect(createHash('sha256').update(Buffer.from(text, 'utf8')).digest('hex')).toBe(chunk.sha256)
++      const parsed = JSON.parse(text) as unknown
++      expect(isSnapshotChunk(parsed)).toBe(true)
++      entities.push(...(parsed as SnapshotChunk).entities)
++      expect((await client.as(other).get(`/v1/sync/snapshot-chunks/${chunk.grant}`)).status).toBe(404)
++    }
++    expect(entities.filter((e) => e.entity === 'transaction')).toHaveLength(1)
++    expect(entities.filter((e) => e.entity === 'wallet')).toHaveLength(1)
++    expect((await client.as(user).get('/v1/sync/snapshot-chunks/AAAAAAAAAAAAAAAAAAAAAAAA')).status).toBe(404)
++    // Unauthenticated chunk requests are refused before any lookup.
++    expect((await client.raw(new Request(`${BASE}/v1/sync/snapshot-chunks/${ready.chunks[0].grant}`, { headers: { 'x-gogospend-client': 'ios/1.0.0' } }))).status).toBe(401)
++
++    const after = await pageFrom(user, `?cursor=${encodeURIComponent(ready.cursor)}`)
++    expect(after.groups).toHaveLength(1)
++    expect(after.groups[0].changes[0]).toMatchObject({ entity: 'transaction', state: 'active' })
++  }, 30_000)
++
++  it('asking again while a snapshot is ready answers 200 with it', async () => {
++    const { user } = await diary()
++    const id = await builtSnapshot(user)
++    const again = await client.as(user).post('/v1/sync/snapshots', {})
++    expect(again.status).toBe(200)
++    expect(await again.json()).toMatchObject({ snapshot_id: id, status: 'ready' })
++  }, 30_000)
++
+   it('serves whole, valid change groups and refuses bad parameters', async () => {
+     const user = await member(client)
+     for (const name of ['Cash', 'Bank', 'Savings']) await createWallet(user, name)
+@@ -321,15 +414,20 @@
+   })
+ 
+   it('a client behind retention recovers: 410, then a snapshot, then deltas from its cursor', async () => {
+-    // Partly ported: the snapshot half is 1B's. The client's line is the retention line, and deltas continue from it.
++    // The snapshot step is 1B-T8's: SnapshotWorkflow builds the snapshot at the retention line, and deltas continue from its cursor.
+     const user = await member(client)
+     await createWallet(user, 'Cash')
+     const old = await pageFrom(user)
+     await createWallet(user, 'Bank')
+     await sqlExec(user, 'UPDATE sync_state SET pruned_through = 2 WHERE id = 1')
+     expect(await problemOf(user, `?cursor=${encodeURIComponent(old.next_cursor)}`)).toMatchObject({ status: 410, code: 'RESYNC_REQUIRED' })
++    const ready = (await (await client.as(user).get(`/v1/sync/snapshots/${await builtSnapshot(user)}`)).json()) as SnapshotDto
++    if (ready.status !== 'ready') throw new Error(`snapshot is ${ready.status}`)
++    expect([ready.high_water, decodeSyncCursor(user.sub, ready.cursor)]).toEqual(['2', '2'])
++    const chunk = (await (await client.as(user).get(`/v1/sync/snapshot-chunks/${ready.chunks[0].grant}`)).json()) as SnapshotChunk
++    expect(chunk.entities.filter((e) => e.entity === 'wallet')).toHaveLength(2)
+     await createWallet(user, 'Savings')
+-    const after = await pageFrom(user, `?cursor=${encodeSyncCursor(user.sub, '2')}`)
++    const after = await pageFrom(user, `?cursor=${encodeURIComponent(ready.cursor)}`)
+     expect(after.groups.map((g) => g.revision)).toEqual(['3'])
+-  })
++  }, 30_000)
+ })

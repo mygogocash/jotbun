@@ -1,0 +1,39 @@
+--- a/apps/app/src/dev/catalogue/registry.tsx
++++ b/apps/app/src/dev/catalogue/registry.tsx
+@@ -16,8 +16,10 @@
+ // The screens of each later area have their own list here, in the 'Screens'
+ // group, in plan order: Planning (R4), Insights (R5), Account (R6) and Import
+ // (R7), all approved at E2 checkpoints 2–5. Account's list ends with the
+-// sign-in drafts (1C-T8, the `signin` area, not yet approved). The companion
+-// area's screens follow Import. The conflict choice (1D-T9, the `conflict`
++// sign-in drafts (1C-T8, the `signin` area, not yet approved), then the
++// analytics consent drafts (1D-T8, the `analytics` area, not yet approved),
++// each drawn with its area on for its sections only. The companion area's
++// screens follow Import. The conflict choice (1D-T9, the `conflict`
+ // area, not yet approved) comes next, drawn with that area on for its
+ // sections only. The Bun Wallet (plan P2, the `wallet` area, not yet
+ // approved) comes last: its own list is ./wallet/index.ts, where each wallet
+@@ -31,6 +33,7 @@
+ import { FIRST_RUN_SECTIONS } from './account/firstRunSections';
+ import { SETTINGS_SECTIONS } from './account/settingsSections';
+ import { SIGNIN_SECTIONS } from './account/signinSections';
++import { ANALYTICS_SECTIONS } from './account/analyticsSections';
+ import { IMPORT_SECTIONS } from './import/importSections';
+ import { RECEIPT_SECTIONS } from './import/receiptSections';
+ import { INSIGHTS_SECTIONS } from './insights/insightsSections';
+@@ -87,12 +90,14 @@
+ /**
+  * R6 Account (the `account` area, on since E2 checkpoint 4): first run,
+  * sign-in, Settings, privacy; then 1C-T8's sign-in drafts (the `signin`
+- * area, awaiting E2).
++ * area, awaiting E2), then 1D-T8's consent question and Privacy switch (the
++ * `analytics` area, awaiting E2).
+  */
+ export const ACCOUNT_SECTIONS: readonly CatalogueSection[] = [
+   ...FIRST_RUN_SECTIONS,
+   ...SETTINGS_SECTIONS,
+   ...SIGNIN_SECTIONS,
++  ...ANALYTICS_SECTIONS,
+ ];
+ 
+ /** R7 Import (the `import` area, on since E2 checkpoint 5): the import journey and a record's receipt. */

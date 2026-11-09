@@ -1,13 +1,56 @@
-# Controller handover (9 Nov 2026, morning Bangkok)
+# Controller handover (9 Nov 2026, 22:15 Bangkok)
 
 Durable folder: `/Users/kunanonjarat/Developer/jotbun/.claude/controller/` (protocol.md, briefs/, reviews/, scratch/, followups.md, ledger_union.py, wait_ci.sh, watch_prs.sh, backlog/). Never use /private/tmp for anything kept; macOS cleared it once (late Oct). Only the heavy lock lives there: `/private/tmp/claude-501/jotbun-heavy.lock`.
 
-Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vault-core`), head 5dbd7be (controller state after #358).
+Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vault-core`), head 0bd5659 (controller state after 1D-T8's dispatch). Nothing outside `.claude/` changed since 606e131. No PR is open into the integration branch; only #70 into main.
 
-## PR #371: the integration branch into main (opened 9 Nov, about 23:55, at the owner's request)
-- **What it is:** claude/p1a-vault-core into main (435 commits, 49 plan tasks). It follows the branch, so it updates with every merge and state sync. CI's `concurrency: cancel-in-progress` keeps one run per ref.
-- **State:** the trial merge with main is clean, and it supersedes #70.
-- **Owner's calls:** merging it, and closing #70. Never merge it as the controller.
+## Takeover in T3 Code (9 Nov, 22:05 Bangkok): READ THIS FIRST
+
+The Orca controller (session 121af0e6) hit its 5-hour usage limit at 22:04; the limit resets at 01:50 on 10 Nov. Its agents died with it, and its background jobs were killed. **Do not let that Orca session continue when its limit resets**, including through its "Continue automatically when limits reset" option: two controllers would collide in the same worktrees.
+
+New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkout, `/Users/kunanonjarat/.t3/worktrees/jotbun/t3-d9c08cd1-928de148f4930c37`, is main at afcf884; the controller works on the main checkout's `.claude/controller` and the task worktrees by absolute path.
+- **Dispatch:** T3's `delegate_task`, which pins model and effort (Opus xhigh, Haiku max, Sonnet xhigh), with `ultracode: false` for every child (SKILL.md).
+- **Cleanup at takeover:**
+  - 1D-T8's killed mutant runner had left mutant P8 in `PrivacyScreen.tsx`. The controller copied the kit's `real/` file back (checksum verified).
+  - The heavy lock, held since 21:53 by 1B-T8's killed final proof, was removed; no test process was alive.
+  - `inflight_agents.py` now lists agents that failed on a usage limit; it had missed the P4-T12 and P4-T13 planners.
+- **Resumed at about 22:15**, with resume notes in `scratch/takeover/*.resume.md`. The T3 task ids end with the uuid shown.
+  - **1D-T8: DONE at 2ff0b8d (on 6d7fc6a), PR #372 opened about 22:45 (issue #139).** 47 of 47 mutants; the fast gate passed (test:app 34, test:unit 927, export:web 4794). The controller checked the 18 files against the kit's checksums and the clean merge with the head.
+    - The Opus review (538c0bd5, `reviews/1D-T8.md`) is under way.
+    - On approval and green CI: `merge_task_pr.sh 372 2ff0b8d 1D-T8`, close #139, then `promote_pr.sh 1D-T8 372`.
+    - Followups: P2-T18 for the wallet swap, P4 for the import transports.
+  - **1B-T8: brief READY at 0bd5659** (L, 16 files under apps/edge). P1 to P17 are accepted, with P4 recorded as R101.
+    - Kit `scratch/1b-t8-planner/`: check_kit at db19056 gives 47 OK, and the 13 `orig/` files are identical.
+    - The planner's proof: RED 38 of 53 failing, GREEN 52 plus 1 todo, 62 of 62 mutants. In the ten-times memory case, `peakHeldBytes` was at most 20,644,143 against a bound of 20,644,976.
+    - For CI: workers +1 file, +37 passed and -2 todo; `test:edge` +0.
+    - The implementer (Haiku max, a4857037) was dispatched about 22:55 in a pre-installed p1-1b-t8 from db19056. Its workers runs hold the heavy lock.
+    - Then: PR (issue #112), Opus review (L). 1B-T7 and fix-download-aborts follow in this lane.
+  - **ci-parallel-jobs planner** (ad778c27): Opus xhigh, continuing its kit.
+  - **P4-T12: brief READY on 606e131's code** (M; 18 new files in `src/slips/` and ten placeholder routes under `app/spend/slips/`).
+    - Shared files: `sharedV1.ts`, `DeviceDiaryProvider.tsx` and its test, and one line in `bunSettingsErase.render.test.tsx`. P1 to P15 are accepted, with P2 recorded as R102.
+    - Kit `scratch/p4-t12-planner/`: check_kit at c1637ec gives 51 OK, SHA256SUMS.base 4 OK, and the 4 `orig/` files identical.
+    - The planner's proof: 64 of 64 mutants. For CI: `test:unit` +11, web +12 modules, render +1 file and +2 cases.
+    - The implementer (Haiku max, 30b6286d) was dispatched about 23:15 in a pre-installed p4-t12 from c1637ec. Its notes allow exactly 1D-T8's shift if #372 merges before its sync.
+    - Then: PR (issue #220) and an Opus review (M).
+  - **P4-T13: brief READY at 0bd5659** (S, 7 new files in `src/slips/`, none shared; no package or lockfile change).
+    - P1 to P18 are accepted. The Q1 and Q2 adapters wait on the owner (P18).
+    - Kit `scratch/p4-t13-planner/`: check_kit at d579f94 gives 31 OK, SHA256SUMS.base 2 OK, and both `base/` files identical.
+    - The planner's proof: 84 of 84 mutants. For CI: `test:unit` +18, everything else +0.
+    - The implementer (Haiku max, c5f063e0) was dispatched about 23:05 in a pre-installed p4-t13 from d579f94.
+    - Then: PR (issue #221) and a **Sonnet** review (S). Its P4-T14 notes are in followups.md.
+  - The old P2-T10 planner (a0363fb1, "waiting on its own background work") is obsolete: P2-T10 merged as #370.
+- **P2-T11 planner** (Opus xhigh, df615dc8), dispatched about 22:25 at 331c2b2 as the sixth agent: the deepest ready task (depth 18). WT p2-t11 on p2/t11-wallet-looks. It carries P2-T8's m-1 (the harness's E2, E3 and X2) and P2-T10's balance-sign note. P2-T13 (depth 18, tray and lock cover, no shared files) follows in the wallet lane.
+
+## PR #371: the integration branch into main. The owner merged it on 9 Nov, 21:30 Bangkok, as afcf884
+- It was merged with a merge commit, so history is kept. The controller then fast-forwarded claude/p1a-vault-core to afcf884, which adds main's README and CHANGELOG, so the two branches were level.
+- **From now on (owner's ask, 9 Nov): one small PR into main per merged task**, not one big integration PR.
+  - Right after `merge_task_pr.sh`, run `bash scripts/promote_pr.sh <task-id> <pr>`. It pushes `promote/<task>` at the task's merge commit and opens the PR into main, with the task's summary, review and CI.
+  - The owner merges them in order. Never merge into main as the controller.
+  - `.claude/**` is marked `linguist-generated` (f4cb34b), so controller files collapse in those diffs.
+  - **Stacked (owner's ask, "maximize github stack"):** each promotion PR is based on the newest open one and linked with `gh stack link` (github/gh-stack v0.3.0 is installed), so its diff is one task. The owner merges bottom-up, or with `gh stack merge <pr>`, an atomic merge up to that PR.
+  - If the repo turns out not to support native stacks, the chained bases still form a manual stack and the script warns.
+  - Repo settings were left as they are (`delete_branch_on_merge` is false). The controller deletes merged branches itself.
+- **#70** (claude/jotbun-redesign-plan) is superseded and still open. Closing it is the owner's call.
 - **The main checkout's uncommitted reminder edits** need no commit. They are #359's work, apart from the `previewDay` TODO stub that #359 filled in.
 
 ## Takeover on the owner's machine (9 Nov, from 08:40 Bangkok): READ THIS FIRST
@@ -93,7 +136,11 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
   - E2-D note: fades keep Reanimated's default curve, while the board says ease-out and the plan names durations only.
 - **1C-T8: merged 6fbe9a8 (#367, about 23:20)** after the fix round R98 and R99. The confirming review approved; its m1 is carried to 1C-T9. Issue #125 is closed and the worktree and branches are removed.
   - **App baseline, computed** (4aa6cf1's counts plus P2-T9's): app 34, unit 916, render 104 files and 1824 tests, web 4788.
-- **1D-T8 planner (Opus), dispatched about 23:25.** WT p1-1d-t8 on p1/1d-t8-consent-question. Its edits go after 1C-T8's in registry.tsx and featureFlags.ts.
+- **1D-T8: brief READY** (M, 18 files; P1 to P13 accepted). The implementer (Haiku) was dispatched about 01:05 in a pre-installed p1-1d-t8 from ba916cb, with the R100 fast gate.
+  - It adds `pendingNo()` to 1D-T1's controller, because the plan's caption had no source.
+  - **E2 note:** "stopped on this phone" shows briefly while a no is being sent.
+  - Privacy's transport gains the analytics-off header. The receipt and import transports are left for P4.
+  - Deltas for CI: unit +5, render +2 files and +23 cases, web +3.
 - **#367 history:** review Needs fixes (`reviews/1C-T8.md`; CI green on 5e8b70e).
   - M1: the session-ended screen strands an email-only account. R98 offers an email code to another address under "Use another way".
   - R99: no navigation to 1C-T9's unbuilt route; the in-place reminder step stays.
@@ -109,10 +156,19 @@ In flight (this controller; dispatched 09:05 to 09:10, prompts in `scratch/dispa
 - **1B-T8 planner (Opus), dispatched about 23:00.** It is planned on top of 1B-T10's dcdb773 (#369) and starts after #369 merges.
   - Brief `briefs/1B-T8.md`, kit `scratch/1b-t8-planner/`, WT p1-1b-t8 on p1/1b-t8-snapshots.
   - It carries the R96, R92, R95 and R97 notes, and the vault-active checks at read and publish.
+- **P4-T12 (slip core) and P4-T13 (photos) planners (Opus), dispatched about 00:40 under R100.**
+  - WT p4-t12 on p4/t12-slip-core; WT p4-t13 on p4/t13-photos.
+  - P4-T12 carries 1D-T6's m4 (the analytics-off header on slip transports).
+- **ci-parallel-jobs planner (Opus), dispatched about 00:55** at the owner's go-ahead: halve PR CI time by splitting jobs and sharding render, with no suite dropped.
+  - It also takes 1A-T10's minor 1 (no `if:` or `continue-on-error:`), which was assigned to P6C-T7.
+  - WT ci-parallel on chore/ci-parallel-jobs.
+- **Owner's speed approvals (9 Nov):**
+  - Sonnet for confirming and S-task reviews (`make_prompt.py --size S`).
+  - `new_task_worktree.sh ... install|install-edge` pre-installs, so dispatch with `--installed`. A clone cache was dropped, because npm ci already takes about 15 s.
+  - Faster CI, as above.
 - **Held:**
   - 1B-T7 (AI routes) follows 1B-T8 in the server lane (the same route files).
-  - 1D-T8 follows #367 (registry.tsx, featureFlags.ts).
-  - P4-T12 and P4-T13 are ready and independent, but held to keep agents to about four after three usage-limit cutoffs. 1C-T2 and P3-T12 are still held on owner answers.
+  - fix-download-aborts follows 1B-T8 (downloads.ts). 1C-T2 and P3-T12 are still held on owner answers.
 - **#354 1D-T9: merged 687e764 (about 10:00).** The confirming review approved (`reviews/1D-T9-confirm.md`; nits n1 to n4 are in followups.md for the m5 task). Issue #140 is closed and the worktree and branches are removed. The receipt's n5 was fixed in housekeeping commit 8a1f587.
   - **App baseline at 687e764**, measured by the confirming reviewer on the same tree: test:app 32, test:unit 882, render 90 files and 1694 tests, export:web 4778 modules. iOS was not measured: 5563 at 5dbd7be, plus 1D-T9's modules.
 - **#354 history (fix round, Haiku, worktree p1-1d-t9):**
@@ -183,6 +239,16 @@ To stop a chat session in the app: `sc chat stop <thread_id>` cancels its turn o
 - Held: P2-T2 and 1D-T6 wait for #347 (lockfile, _layout). P3-T12 waits on owner Q1. 1C-T2 waits on the owner's lockout answer, and its brief must first pin 1C-T1's six untested security options (followups.md).
 
 ## Rulings this session
+R102 (9 Nov, P4-T12's P2; binds P4-T6): the phone sends a slip batch as the UTF-8 bytes of its JSON, typed `application/octet-stream`, as the import upload sends its file.
+  - P4-T6's handler reads at most 8 MiB of `w.stream`, accepts `application/octet-stream`, and parses the text with the contract's `parseSlipBatchRequest`.
+  - A body typed `application/json` cannot work: the dispatcher's `readRouteBody` parses it (`readJsonBody`, capped at 2 MiB, 413 `COMMAND_TOO_LARGE` above that), and a stream route is then left with no stream. P4-T13's batches are up to 8 MiB.
+  - P4-T6's planner decides what a JSON-typed body answers.
+R101 (9 Nov, 1B-T8's P4): a snapshot build whose view was read below the purge watermark throws instead of answering the plan's `skipped`. SnapshotWorkflow's step then retries with a fresh read after the purge, as the API retries `snapshot_not_recorded`. A skip would leave the snapshot `pending` with its Workflow complete, so clients poll it until they give up and it stays stuck until `pruneSnapshots` fails it a day later. The other two refusals stay `skipped`: a snapshot no longer pending, and a vault no longer active. 1B-T12's parity session should expect the throw.
+R100 (9 Nov, the owner's ask to speed up): CI is the gate for whole suites. That covers the full render suite, the full workers suite, export:web (unless routes or the entry change), the iOS export, the database suites and test:ops.
+  - Agents run only the fast local gate in `protocol.md`, and no whole-suite totals appear in briefs, prompts or receipts. Reviewers read CI instead of re-running suites.
+  - The running planners of 1B-T8 and 1D-T8 were told to adopt it.
+  - Fix rounds that apply the first reviewer's verified patch byte for byte merge on green CI without a confirming review.
+  - Up to about 6 agents.
 R98 (9 Nov, 1C-T8 review M1, amends 1C-T8's P6): on the session-ended screen, whenever the main button is the email code to the account's own address, "Use another way" also offers an email code to another address. This keeps "every failure offers another way" on email-only builds, and reaches keep-or-erase for another account.
 R99 (9 Nov, 1C-T8 review, P4): nothing navigates to `/onboarding/reminder` before 1C-T9 adds it. OnboardingScreen keeps today's in-place reminder step until then, so there is no cast and no unmatched route with the signin or all area on. 1C-T9 adds the route, the `from=onboarding` handling and the switch in one change.
 R97 (9 Nov, 1B-T6 confirming review MA-1): in workerd, a GET whose client goes away mid-download keeps its download slot, because the cancel never reaches the stream behind FixedLengthStream. This is a follow-up task, not a blocker for #362, since the vault routes are not live before 1B-T13.

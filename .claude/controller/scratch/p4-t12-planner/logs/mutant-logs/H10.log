@@ -1,0 +1,43 @@
+(node:38230) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipRefs.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:38230) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/packages/contracts/package.json.
+✔ the salt is fetched once per account and kept with WHEN_UNLOCKED_THIS_DEVICE_ONLY, and in the given accessGroup (1.200167ms)
+✔ forgetting deletes only that account's salt, and a kept value that is not a salt is fetched again (0.235125ms)
+✔ the phone's hash of P3's slip QR is the contract's vector (0.110708ms)
+✔ the app's SHA-256 is expo-crypto's digest, and gives the same vector (0.131125ms)
+✔ a reference that cannot be normalized gives no hash, and asks for no salt (0.126458ms)
+✖ a salt that could not be fetched is asked for again, and a locked keychain fetches none (0.260667ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 5
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 126.130875
+
+✖ failing tests:
+
+test at src/slips/slipRefs.test.ts:164:1
+✖ a salt that could not be fetched is asked for again, and a locked keychain fetches none (0.260667ms)
+  Error [V1Error]: NETWORK_ERROR (0)
+      at Object.salt (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipRefs.test.ts:171:33)
+      at load (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipRefs.ts:100:52)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipRefs.ts:110:24
+      at async waitForActual (node:assert:615:5)
+      at async strict.rejects (node:assert:738:25)
+      at async TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipRefs.test.ts:176:3)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    status: 0,
+    code: 'NETWORK_ERROR',
+    outcome: 'network',
+    fields: undefined,
+    current: undefined,
+    retryAfterSeconds: undefined
+  }

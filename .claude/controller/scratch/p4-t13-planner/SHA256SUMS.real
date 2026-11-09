@@ -1,0 +1,7 @@
+5598a2b09bda893772be74eb514fffd4319f2bb626328c282c036f167624a667  apps/app/src/slips/imageShrink.test.ts
+91a346ac7a8e459a4260ac9e5632229c005d82442ebdcd4ca6a5786db389a917  apps/app/src/slips/imageShrink.ts
+b997b35e38e984bebece742856084fc1f2eb30866072e447f2dcd61a50d1a88c  apps/app/src/slips/photoLibrary.test.ts
+a588635270e9d65af6bf96a3286cf14a6758b4c8947fae3692b3726f3bd3d7c9  apps/app/src/slips/photoLibrary.ts
+0e9b9e0bbc26300701ba585027e14888edf2acbb30ce26721b83fc79d69fbe7c  apps/app/src/slips/slipBatches.test.ts
+d878aa3b135b77e93abc88928057361b1249f8dc1f54c0456698ff1ed516aa82  apps/app/src/slips/slipBatches.ts
+f3928e8cf741f9097ad73eddf3d7613767dff159a9187fbed28bb3144b4c5a0a  apps/app/src/slips/testing/fakePhotos.ts

@@ -1,0 +1,81 @@
+(node:35839) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipRefs.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:35839) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/packages/contracts/package.json.
+✔ the salt is fetched once per account and kept with WHEN_UNLOCKED_THIS_DEVICE_ONLY, and in the given accessGroup (1.370708ms)
+✖ forgetting deletes only that account's salt, and a kept value that is not a salt is fetched again (0.623833ms)
+✔ the phone's hash of P3's slip QR is the contract's vector (0.132791ms)
+✔ the app's SHA-256 is expo-crypto's digest, and gives the same vector (0.148167ms)
+✔ a reference that cannot be normalized gives no hash, and asks for no salt (0.133709ms)
+✔ a salt that could not be fetched is asked for again, and a locked keychain fetches none (0.353916ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 5
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 129.627666
+
+✖ failing tests:
+
+test at src/slips/slipRefs.test.ts:107:1
+✖ forgetting deletes only that account's salt, and a kept value that is not a salt is fetched again (0.623833ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + Uint8Array(32) [
+  +   1,
+  +   2,
+  +   3,
+  +   4,
+  +   5,
+  +   6,
+  +   7,
+  +   8,
+  +   9,
+  +   10,
+  +   11,
+  +   12,
+  +   13,
+  +   14,
+  +   15,
+  +   16,
+  +   17,
+  +   18,
+  +   19,
+  +   20,
+  +   21,
+  +   22,
+  +   23,
+  +   24,
+  +   25,
+  +   26,
+  +   27,
+  +   28,
+  +   29,
+  +   30,
+  +   31,
+  +   32
+  + ]
+  - null
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app/src/slips/slipRefs.test.ts:114:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Uint8Array(32) [
+       1,  2,  3,  4,  5,  6,  7,  8,  9,
+      10, 11, 12, 13, 14, 15, 16, 17, 18,
+      19, 20, 21, 22, 23, 24, 25, 26, 27,
+      28, 29, 30, 31, 32
+    ],
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

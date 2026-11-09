@@ -1,0 +1,19 @@
+--- a/src/v1/worker-routes.ts
++++ b/src/v1/worker-routes.ts
+@@ -3,7 +3,7 @@
+ import type { UserVault } from '../vault/user-vault'
+ import { bridgeCatalogue } from './bridge'
+ import { uploadRoute } from './files/uploads'
+-import { serveExportFile, serveReceiptFile } from './files/downloads'
++import { serveExportFile, serveReceiptFile, serveSnapshotChunk } from './files/downloads'
+ import { confirmRoute, replaceRoute, retainRoute } from './files/receipts'
+ import { livePolicies } from './config'
+ import type { EdgeConfig } from './config'
+@@ -48,6 +48,7 @@
+   'attachment.replace': replaceRoute,
+   'attachment.file.download': serveReceiptFile,
+   'import.confirm': confirmRoute,
++  'snapshot.chunk.download': serveSnapshotChunk,
+ }
+ 
+ export function vaultSession(env: V1Env, claims: VaultClaims, policies: PublishedPolicies, access: VaultAccess, charge: 'read' | 'write'): VaultSession {

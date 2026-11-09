@@ -1,0 +1,159 @@
+(node:6952) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t8-planner/work/apps/app/src/analytics/controller.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t8-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:6952) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t8-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t8-planner/tree/packages/contracts/package.json.
+✔ signed out, events are held and never sent (0.731333ms)
+✔ events tracked before sign-in are held across the sign-in and sent after a yes (0.521833ms)
+✔ held events are dropped when another account signs in, and on no (0.194958ms)
+✔ the server's yes sends at once, identifies with the analytics id and starts replay (0.251458ms)
+✔ replay never starts when it is not allowed (0.10775ms)
+✔ never asked: the question is open, events wait in memory, and the identity is reset (0.085333ms)
+✔ a no read at launch after an earlier yes resets the identity (0.134584ms)
+✔ a no given on another phone stops this phone at its next foreground (0.099958ms)
+✔ a pending no is kept until the server has it (0.161667ms)
+✔ saying no stops replay and resets the identity (0.153542ms)
+✔ a no from another phone is not asked again on this one (0.109666ms)
+✔ a yes the server could not save rejects and changes nothing (0.1725ms)
+✔ offline with nothing known waits, then asks (0.129916ms)
+✔ the held events stop at 50, oldest first out (0.091167ms)
+✔ screens are sent only as patterns and only after yes (0.503625ms)
+✔ without an analytics id the person stays anonymous, and a later refresh identifies them (0.116167ms)
+✔ a stored yes with the server unreachable enters yes without an identity (0.084125ms)
+✔ without a client, nothing is sent and consent still resolves (0.040041ms)
+✔ recordAnalytics installs a consented recorder and restores the previous one (0.104541ms)
+✔ a no from the server stops capture before this phone stores it (0.051833ms)
+✔ an answer gone from the server stops capture before this phone erases its own (0.0805ms)
+✔ a yes still on its way cannot outlast a later no at the server (6.085542ms)
+✔ a yes being stored when the person says no cannot replace the no (3.81175ms)
+✔ a foreground refresh waiting behind a yes cannot undo a later no (4.917292ms)
+✔ a yes waiting behind another call is refused once another account has signed in (3.919042ms)
+✔ a yes on its way when another account signs in is never stored or applied for the next one (3.588375ms)
+✔ a yes still waiting when the person says no is never sent (3.631541ms)
+✔ a refresh after a yes does not keep the yes from the server (3.684375ms)
+✔ a no given while a refresh is on its way is stored at once (4.882125ms)
+✔ the no stored at the call lands before the queue writes and sends it (1.316334ms)
+✔ a yes waiting while the same account signs out and in again is still sent for it (3.562125ms)
+✖ a no is pending from the call until the server takes it, and listeners hear when it lands (0.669375ms)
+✖ a no the server takes at once is pending only while its call is on its way (1.922209ms)
+✖ at a load, only a stored no this phone has not delivered is pending (0.203792ms)
+✖ a yes, or a sign-out, ends a pending no (0.066875ms)
+(node:6953) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t8-planner/work/apps/app/src/config/featureFlags.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t8-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ an approved area is on by default (0.559542ms)
+✔ off (or 0) switches every area off, and -area switches one off (0.673833ms)
+✔ an area not yet approved is on only by name, or all at once (0.139542ms)
+✔ planning is on by default since its approval, and -planning or off switches it off (0.140292ms)
+✔ insights is on by default since its approval, and -insights or off switches it off (0.051583ms)
+✔ account is on by default since its approval, and -account or off switches it off (0.032042ms)
+✔ import is on by default since its approval, and -import or off switches it off (0.028833ms)
+✔ companion is on by default, and -companion or off switches it off (0.045167ms)
+✔ the catalogue is still opt-in (0.048083ms)
+✔ conflict is off by default, on when named, and on with all (0.072166ms)
+✔ the wallet area is off unless named (0.093792ms)
+✔ the signin area is off unless named (0.054666ms)
+✖ analytics is off by default, on when named, and on with all (0.388042ms)
+ℹ tests 48
+ℹ suites 0
+ℹ pass 43
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 226.022625
+
+✖ failing tests:
+
+test at src/analytics/controller.test.ts:767:1
+✖ a no is pending from the call until the server takes it, and listeners hear when it lands (0.669375ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t8-planner/work/apps/app/src/analytics/controller.test.ts:775:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/analytics/controller.test.ts:793:1
+✖ a no the server takes at once is pending only while its call is on its way (1.922209ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t8-planner/work/apps/app/src/analytics/controller.test.ts:800:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/analytics/controller.test.ts:808:1
+✖ at a load, only a stored no this phone has not delivered is pending (0.203792ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t8-planner/work/apps/app/src/analytics/controller.test.ts:813:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/analytics/controller.test.ts:832:1
+✖ a yes, or a sign-out, ends a pending no (0.066875ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t8-planner/work/apps/app/src/analytics/controller.test.ts:837:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/config/featureFlags.test.ts:96:1
+✖ analytics is off by default, on when named, and on with all (0.388042ms)
+  AssertionError [ERR_ASSERTION]: undefined
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t8-planner/work/apps/app/src/config/featureFlags.test.ts:98:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

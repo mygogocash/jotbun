@@ -1,0 +1,868 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t8-planner/work/apps/app
+
+ ❯ src/dev/catalogue/CatalogueScreen.render.test.tsx (298 tests | 5 failed | 292 skipped) 16196ms
+   × section analytics-consent renders without errors in light and dark, in en, th and vi 48ms
+   × section analytics-consent-failed renders without errors in light and dark, in en, th and vi 8017ms
+   × section privacy-analytics-on renders without errors in light and dark, in en, th and vi 47ms
+   × section privacy-analytics-off renders without errors in light and dark, in en, th and vi 45ms
+   × section privacy-analytics-pending renders without errors in light and dark, in en, th and vi 8031ms
+ ❯ src/dev/catalogue/screenReader.render.test.tsx (278 tests | 2 failed | 273 skipped) 24255ms
+   × section analytics-consent: every control has a name, nothing hidden takes focus 38ms
+   × section analytics-consent-failed: every control has a name, nothing hidden takes focus 8021ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/dev/catalogue/CatalogueScreen.render.test.tsx > section analytics-consent renders without errors in light and dark, in en, th and vi
+TestingLibraryElementError: Unable to find an accessible element with the role "heading" and name ""
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+  [33mdata-testid[39m=[32m"catalogue-section-analytics-consent"[39m
+  [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mdata-testid[39m=[32m"catalogue-screen-ready"[39m
+    [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+      [33mdata-testid[39m=[32m"analytics-consent-screen"[39m
+    [36m/>[39m
+  [36m</div>[39m
+[36m</div>[39m
+ ❯ Object.getElementError ../../../tree/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ Object.analytics-consent src/dev/catalogue/CatalogueScreen.render.test.tsx:540:25
+    538|   // The consent question and Privacy's switch (1D-T8), each on its ow…
+    539|   'analytics-consent': (body, locale) => {
+    540|     expect(within(body).getByRole('heading', { name: consent('title', …
+       |                         ^
+    541|     const [yes, no] = [within(body).getByRole('button', { name: consen…
+    542|     // Neither chosen: two outlines of the same weight.
+ ❯ src/dev/catalogue/CatalogueScreen.render.test.tsx:617:45
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  src/dev/catalogue/CatalogueScreen.render.test.tsx > section analytics-consent-failed renders without errors in light and dark, in en, th and vi
+AssertionError: analytics-consent-failed light en: Script stopped at step 1 of 2: call onPress on {"testID":"analytics-consent-yes"}.: expected <div class="css-view-g5y9jx" …(2)>…(2)</div> to be null
+
+- Expected:
+null
+
++ Received:
+<div
+  class="css-view-g5y9jx"
+  data-testid="catalogue-screen-stopped"
+  style="flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+>
+  <div
+    class="css-view-g5y9jx"
+    data-testid="analytics-consent-screen"
+  />
+  <div
+    class="css-view-g5y9jx"
+    style="position: absolute; top: 0px; left: 0px; right: 0px; background-color: rgba(35, 27, 58, 1.00); padding: 12px;"
+  >
+    <div
+      class="css-text-146c3p1"
+      dir="auto"
+      style="font-size: 15px; line-height: 20px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(255, 248, 236, 1.00);"
+    >
+      Script stopped at step 1 of 2: call onPress on {"testID":"analytics-consent-yes"}.
+    </div>
+  </div>
+</div>
+
+ ❯ src/dev/catalogue/CatalogueScreen.render.test.tsx:609:158
+    607|       expect(body.childElementCount).toBeGreaterThan(0);
+    608|       // A screen's script reached its state rather than stopping on t…
+    609|       expect(screen.queryByTestId('catalogue-screen-stopped'), `${id} …
+       |                                                                                                                                                              ^
+    610|       const heading = screen.getByRole('heading', { name: title });
+    611|       expect(heading.style.lineHeight).toBe(`${bunText('heading', scri…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  src/dev/catalogue/CatalogueScreen.render.test.tsx > section privacy-analytics-on renders without errors in light and dark, in en, th and vi
+TestingLibraryElementError: Unable to find an accessible element with the role "switch" and name ""
+
+Here are the accessible roles:
+
+  button:
+
+  Name "Back":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Back"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"button"[39m
+    [33mstyle[39m=[32m"align-self: flex-start; min-height: 44px; min-width: 44px; flex-direction: row; align-items: center; gap: 4px; padding-right: 8px; border-radius: 999px;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Request export":
+  [36m<button[39m
+    [33maria-busy[39m=[32m"false"[39m
+    [33maria-label[39m=[32m"Request export"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"button"[39m
+    [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(35, 27, 58, 1.00); flex-direction: row; align-items: center; justify-content: center; gap: 8px; opacity: 1; padding: 8px 24px; border-width: 1.5px; border-style: solid; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Delete my account":
+  [36m<button[39m
+    [33maria-busy[39m=[32m"false"[39m
+    [33maria-label[39m=[32m"Delete my account"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"button"[39m
+    [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(0, 0, 0, 0.00); flex-direction: row; align-items: center; justify-content: center; gap: 8px; opacity: 1; padding: 8px 24px; border-width: 1.5px; border-style: solid; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  heading:
+
+  Name "Privacy and data":
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m/>[39m
+
+  Name "Our promises":
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m/>[39m
+
+  Name "Export your data":
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m/>[39m
+
+  Name "Delete your account":
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  list:
+
+  Name "":
+  [36m<ul[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"list"[39m
+    [33mstyle[39m=[32m"gap: 12px;"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  listitem:
+
+  Name "":
+  [36m<li[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"listitem"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<li[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"listitem"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<li[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"listitem"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<li[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"listitem"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+  [33mdata-testid[39m=[32m"catalogue-section-privacy-analytics-on"[39m
+  [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mdata-testid[39m=[32m"catalogue-screen-ready"[39m
+    [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+      [33mdata-testid[39m=[32m"privacy-screen"[39m
+      [33mstyle[39m=[32m"background-color: rgba(237, 230, 255, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx r-WebkitOverflowScrolling-150rngu r-flexDirection-eqz5dr r-flexGrow-16y2uox r-flexShrink-1wbh5a2 r-overflowX-11yh6sk r-overflowY-1rnoaur r-transform-agouwx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"css-view-g5y9jx"[39m
+          [33mstyle[39m=[32m"padding-bottom: 32px;"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mdata-testid[39m=[32m"stage-header"[39m
+            [33mstyle[39m=[32m"background-color: rgba(185, 163, 249, 1.00); border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; gap: 12px; padding: 16px 16px 24px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mstyle[39m=[32m"flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33maria-label[39m=[32m"Back"[39m
+                [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+                [33mrole[39m=[32m"button"[39m
+                [33mstyle[39m=[32m"align-self: flex-start; min-height: 44px; min-width: 44px; flex-direction: row; align-items: center; gap: 4px; padding-right: 8px; border-radius: 999px;"[39m
+                [33mtabindex[39m=[32m"0"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0m‹[0m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mstyle[39m=[32m"font-size: 15px; line-height: 20px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0mBack[0m
+                [36m</div>[39m
+              [36m</button>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mstyle[39m=[32m"flex-direction: row; align-items: flex-end; gap: 12px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mstyle[39m=[32m"gap: 4px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+              [36m>[39m
+                [36m<h1[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mrole[39m=[32m"heading"[39m
+                  [33mstyle[39m=[32m"font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0mPrivacy and data[0m
+                [36m</h1>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mstyle[39m=[32m"gap: 16px; padding: 16px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mdata-testid[39m=[32m"privacy-promises"[39m
+              [33mstyle[39m=[32m"background-color: rgba(0, 0, 0, 0.00); gap: 12px; padding: 16px; border-width: 2px; border-style: solid; border-color: rgba(35, 27, 58, 1.00); border-radius: 16px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mstyle[39m=[32m"gap: 12px;"[39m
+              [36m>[39m
+                [36m<h1[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mrole[39m=[32m"heading"[39m
+                  [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0mOur promises[0m
+                [36m</h1>[39m
+                [36m<ul[39m
+                  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                  [33mrole[39m=[32m"list"[39m
+                  [33mstyle[39m=[32m"gap: 12px;"[39m
+                [36m>[39m
+                  [36m<li[39m
+                    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                    [33mrole[39m=[32m"listitem"[39m
+                    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                      [33mstyle[39m=[32m"min-width: 24px; align-items: center;"[39m
+                    [36m>[39m
+                      [36m<div[39m
+                        [33mclass[39m=[32m"css-text-146c3p1"[39m
+                        [33mdir[39m=[32m"auto"[39m
+                        [33mstyle[39m=[32m"font-size: 17px; line-height: 23px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                      [36m>[39m
+                        [0m✓[0m
+                      [36m</div>[39m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"css-text-146c3p1"[39m
+                      [33mdir[39m=[32m"auto"[39m
+                      [33mstyle[39m=[32m"font-si...
+ ❯ Object.getElementError ../../../tree/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ analyticsSwitch src/dev/catalogue/CatalogueScreen.render.test.tsx:102:77
+    100| /** The consent question's and Privacy switch's draft copy (Thai for T…
+    101| const consent = (key: ConsentCopyKey, locale: Locale) => consentText(k…
+    102| const analyticsSwitch = (body: HTMLElement, locale: Locale) => within(…
+       |                                                                             ^
+    103|
+    104| /** What each section must show, beyond rendering at all. */
+ ❯ Object.privacy-analytics-on src/dev/catalogue/CatalogueScreen.render.test.tsx:555:12
+ ❯ src/dev/catalogue/CatalogueScreen.render.test.tsx:617:45
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  src/dev/catalogue/CatalogueScreen.render.test.tsx > section privacy-analytics-off renders without errors in light and dark, in en, th and vi
+TestingLibraryElementError: Unable to find an accessible element with the role "switch" and name ""
+
+Here are the accessible roles:
+
+  button:
+
+  Name "Back":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Back"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"button"[39m
+    [33mstyle[39m=[32m"align-self: flex-start; min-height: 44px; min-width: 44px; flex-direction: row; align-items: center; gap: 4px; padding-right: 8px; border-radius: 999px;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Request export":
+  [36m<button[39m
+    [33maria-busy[39m=[32m"false"[39m
+    [33maria-label[39m=[32m"Request export"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"button"[39m
+    [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(35, 27, 58, 1.00); flex-direction: row; align-items: center; justify-content: center; gap: 8px; opacity: 1; padding: 8px 24px; border-width: 1.5px; border-style: solid; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Delete my account":
+  [36m<button[39m
+    [33maria-busy[39m=[32m"false"[39m
+    [33maria-label[39m=[32m"Delete my account"[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+    [33mrole[39m=[32m"button"[39m
+    [33mstyle[39m=[32m"min-height: 44px; min-width: 44px; background-color: rgba(0, 0, 0, 0.00); flex-direction: row; align-items: center; justify-content: center; gap: 8px; opacity: 1; padding: 8px 24px; border-width: 1.5px; border-style: solid; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  heading:
+
+  Name "Privacy and data":
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m/>[39m
+
+  Name "Our promises":
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m/>[39m
+
+  Name "Export your data":
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m/>[39m
+
+  Name "Delete your account":
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  list:
+
+  Name "":
+  [36m<ul[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"list"[39m
+    [33mstyle[39m=[32m"gap: 12px;"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  listitem:
+
+  Name "":
+  [36m<li[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"listitem"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<li[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"listitem"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<li[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"listitem"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<li[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mrole[39m=[32m"listitem"[39m
+    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+  [33mdata-testid[39m=[32m"catalogue-section-privacy-analytics-off"[39m
+  [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [33mdata-testid[39m=[32m"catalogue-screen-ready"[39m
+    [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+      [33mdata-testid[39m=[32m"privacy-screen"[39m
+      [33mstyle[39m=[32m"background-color: rgba(237, 230, 255, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx r-WebkitOverflowScrolling-150rngu r-flexDirection-eqz5dr r-flexGrow-16y2uox r-flexShrink-1wbh5a2 r-overflowX-11yh6sk r-overflowY-1rnoaur r-transform-agouwx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"css-view-g5y9jx"[39m
+          [33mstyle[39m=[32m"padding-bottom: 32px;"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mdata-testid[39m=[32m"stage-header"[39m
+            [33mstyle[39m=[32m"background-color: rgba(185, 163, 249, 1.00); border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; gap: 12px; padding: 16px 16px 24px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mstyle[39m=[32m"flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33maria-label[39m=[32m"Back"[39m
+                [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+                [33mrole[39m=[32m"button"[39m
+                [33mstyle[39m=[32m"align-self: flex-start; min-height: 44px; min-width: 44px; flex-direction: row; align-items: center; gap: 4px; padding-right: 8px; border-radius: 999px;"[39m
+                [33mtabindex[39m=[32m"0"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0m‹[0m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mstyle[39m=[32m"font-size: 15px; line-height: 20px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0mBack[0m
+                [36m</div>[39m
+              [36m</button>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mstyle[39m=[32m"flex-direction: row; align-items: flex-end; gap: 12px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mstyle[39m=[32m"gap: 4px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+              [36m>[39m
+                [36m<h1[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mrole[39m=[32m"heading"[39m
+                  [33mstyle[39m=[32m"font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0mPrivacy and data[0m
+                [36m</h1>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mstyle[39m=[32m"gap: 16px; padding: 16px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mdata-testid[39m=[32m"privacy-promises"[39m
+              [33mstyle[39m=[32m"background-color: rgba(0, 0, 0, 0.00); gap: 12px; padding: 16px; border-width: 2px; border-style: solid; border-color: rgba(35, 27, 58, 1.00); border-radius: 16px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mstyle[39m=[32m"gap: 12px;"[39m
+              [36m>[39m
+                [36m<h1[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mrole[39m=[32m"heading"[39m
+                  [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0mOur promises[0m
+                [36m</h1>[39m
+                [36m<ul[39m
+                  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                  [33mrole[39m=[32m"list"[39m
+                  [33mstyle[39m=[32m"gap: 12px;"[39m
+                [36m>[39m
+                  [36m<li[39m
+                    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                    [33mrole[39m=[32m"listitem"[39m
+                    [33mstyle[39m=[32m"flex-direction: row; align-items: flex-start; gap: 12px;"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                      [33mstyle[39m=[32m"min-width: 24px; align-items: center;"[39m
+                    [36m>[39m
+                      [36m<div[39m
+                        [33mclass[39m=[32m"css-text-146c3p1"[39m
+                        [33mdir[39m=[32m"auto"[39m
+                        [33mstyle[39m=[32m"font-size: 17px; line-height: 23px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                      [36m>[39m
+                        [0m✓[0m
+                      [36m</div>[39m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"css-text-146c3p1"[39m
+                      [33mdir[39m=[32m"auto"[39m
+                      [33mstyle[39m=[32m"font-s...
+ ❯ Object.getElementError ../../../tree/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../tree/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ analyticsSwitch src/dev/catalogue/CatalogueScreen.render.test.tsx:102:77
+    100| /** The consent question's and Privacy switch's draft copy (Thai for T…
+    101| const consent = (key: ConsentCopyKey, locale: Locale) => consentText(k…
+    102| const analyticsSwitch = (body: HTMLElement, locale: Locale) => within(…
+       |                                                                             ^
+    103|
+    104| /** What each section must show, beyond rendering at all. */
+ ❯ Object.privacy-analytics-off src/dev/catalogue/CatalogueScreen.render.test.tsx:559:12
+ ❯ src/dev/catalogue/CatalogueScreen.render.test.tsx:617:45
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  src/dev/catalogue/CatalogueScreen.render.test.tsx > section privacy-analytics-pending renders without errors in light and dark, in en, th and vi
+AssertionError: privacy-analytics-pending light en: ‹BackPrivacy and dataOur promises✓Jotbun never connects to your bank.✓Your data is never sold.✓No ads, ever.✓Export or delete your diary any time.Export your dataGet every entry in your diary as a spreadsheet file (CSV).Request exportYou'll sign in again to confirm it's you.Delete your accountDeleting your account erases your diary, wallets, budgets and settings from Jotbun. It can't be undone.Download your data first if you want to keep a copy.Delete my accountScript stopped at step 1 of 1: wait for “privacy-analytics-pending”.: expected <div class="css-view-g5y9jx" …(2)>…(2)</div> to be null
+
+- Expected:
+null
+
++ Received:
+<div
+  class="css-view-g5y9jx"
+  data-testid="catalogue-screen-stopped"
+  style="flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+>
+  <div
+    class="css-view-g5y9jx"
+    data-testid="privacy-screen"
+    style="background-color: rgba(237, 230, 255, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+  >
+    <div
+      class="css-view-g5y9jx r-WebkitOverflowScrolling-150rngu r-flexDirection-eqz5dr r-flexGrow-16y2uox r-flexShrink-1wbh5a2 r-overflowX-11yh6sk r-overflowY-1rnoaur r-transform-agouwx"
+      style="flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+    >
+      <div
+        class="css-view-g5y9jx"
+        style="padding-bottom: 32px;"
+      >
+        <div
+          class="css-view-g5y9jx"
+          data-testid="stage-header"
+          style="background-color: rgba(185, 163, 249, 1.00); border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; gap: 12px; padding: 16px 16px 24px;"
+        >
+          <div
+            class="css-view-g5y9jx"
+            style="flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;"
+          >
+            <button
+              aria-label="Back"
+              class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
+              role="button"
+              style="align-self: flex-start; min-height: 44px; min-width: 44px; flex-direction: row; align-items: center; gap: 4px; padding-right: 8px; border-radius: 999px;"
+              tabindex="0"
+              type="button"
+            >
+              <div
+                aria-hidden="true"
+                class="css-text-146c3p1"
+                dir="auto"
+                style="font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+              >
+                ‹
+              </div>
+              <div
+                class="css-text-146c3p1"
+                dir="auto"
+                style="font-size: 15px; line-height: 20px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+              >
+                Back
+              </div>
+            </button>
+          </div>
+          <div
+            class="css-view-g5y9jx"
+            style="flex-direction: row; align-items: flex-end; gap: 12px;"
+          >
+            <div
+              class="css-view-g5y9jx"
+              style="gap: 4px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+            >
+              <h1
+                class="css-text-146c3p1"
+                dir="auto"
+                role="heading"
+                style="font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+              >
+                Privacy and data
+              </h1>
+            </div>
+          </div>
+        </div>
+        <div
+          class="css-view-g5y9jx"
+          style="gap: 16px; padding: 16px;"
+        >
+          <div
+            class="css-view-g5y9jx"
+            data-testid="privacy-promises"
+            style="background-color: rgba(0, 0, 0, 0.00); gap: 12px; padding: 16px; border-width: 2px; border-style: solid; border-color: rgba(35, 27, 58, 1.00); border-radius: 16px;"
+          >
+            <div
+              class="css-view-g5y9jx"
+              style="gap: 12px;"
+            >
+              <h1
+                class="css-text-146c3p1"
+                dir="auto"
+                role="heading"
+                style="font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+              >
+                Our promises
+              </h1>
+              <ul
+                class="css-view-g5y9jx"
+                role="list"
+                style="gap: 12px;"
+              >
+                <li … />
+                <li … />
+                <li … />
+                <li … />
+              </ul>
+            </div>
+          </div>
+          <div
+            class="css-view-g5y9jx"
+            data-testid="privacy-export"
+            style="background-color: rgba(0, 0, 0, 0.00); gap: 12px; padding: 16px; border-width: 2px; border-style: solid; border-color: rgba(35, 27, 58, 1.00); border-radius: 16px;"
+          >
+            <h1
+              class="css-text-146c3p1"
+              dir="auto"
+              role="heading"
+              style="font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+            >
+              Export your data
+            </h1>
+            <div
+              class="css-text-146c3p1"
+              dir="auto"
+              style="font-size: 17px; line-height: 23px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+            >
+              Get every entry in your diary as a spreadsheet file (CSV).
+            </div>
+            <div
+              class="css-view-g5y9jx"
+              style="gap: 4px;"
+            >
+              <button
+                aria-busy="false"
+                aria-label="Request export"
+                class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
+                role="button"
+                style="min-height: 44px; min-width: 44px; background-color: rgba(35, 27, 58, 1.00); flex-direction: row; align-items: center; justify-content: center; gap: 8px; opacity: 1; padding: 8px 24px; border-width: 1.5px; border-style: solid; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"
+                tabindex="0"
+                type="button"
+              >
+                <div … />
+              </button>
+            </div>
+            <div
+              class="css-text-146c3p1"
+              dir="auto"
+              style="font-size: 13px; line-height: 17px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(91, 79, 128, 1.00);"
+            >
+              You'll sign in again to confirm it's you.
+            </div>
+          </div>
+          <div
+            class="css-view-g5y9jx"
+            data-testid="privacy-delete"
+            style="background-color: rgba(0, 0, 0, 0.00); gap: 12px; padding: 16px; border-width: 2px; border-style: solid; border-color: rgba(35, 27, 58, 1.00); border-radius: 16px;"
+          >
+            <h1
+              class="css-text-146c3p1"
+              dir="auto"
+              role="heading"
+              style="font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+            >
+              Delete your account
+            </h1>
+            <div
+              class="css-text-146c3p1"
+              dir="auto"
+              style="font-size: 17px; line-height: 23px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+            >
+              Deleting your account erases your diary, wallets, budgets and settings from Jotbun. It can't be undone.
+            </div>
+            <div
+              class="css-text-146c3p1"
+              dir="auto"
+              style="font-size: 17px; line-height: 23px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+            >
+              Download your data first if you want to keep a copy.
+            </div>
+            <div
+              class="css-view-g5y9jx"
+              style="gap: 4px;"
+            >
+              <button
+                aria-busy="false"
+                aria-label="Delete my account"
+                class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
+                role="button"
+                style="min-height: 44px; min-width: 44px; background-color: rgba(0, 0, 0, 0.00); flex-direction: row; align-items: center; justify-content: center; gap: 8px; opacity: 1; padding: 8px 24px; border-width: 1.5px; border-style: solid; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"
+                tabindex="0"
+                type="button"
+              >
+                <div … />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div
+    class="css-view-g5y9jx"
+    style="position: absolute; top: 0px; left: 0px; right: 0px; background-color: rgba(35, 27, 58, 1.00); padding: 12px;"
+  >
+    <div
+      class="css-text-146c3p1"
+      dir="auto"
+      style="font-size: 15px; line-height: 20px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(255, 248, 236, 1.00);"
+    >
+      Script stopped at step 1 of 1: wait for “privacy-analytics-pending”.
+    </div>
+  </div>
+</div>
+
+ ❯ src/dev/catalogue/CatalogueScreen.render.test.tsx:609:158
+    607|       expect(body.childElementCount).toBeGreaterThan(0);
+    608|       // A screen's script reached its state rather than stopping on t…
+    609|       expect(screen.queryByTestId('catalogue-screen-stopped'), `${id} …
+       |                                                                                                                                                              ^
+    610|       const heading = screen.getByRole('heading', { name: title });
+    611|       expect(heading.style.lineHeight).toBe(`${bunText('heading', scri…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+ FAIL  src/dev/catalogue/screenReader.render.test.tsx > section analytics-consent: every control has a name, nothing hidden takes focus
+AssertionError: analytics-consent en: a heading of its own: expected 0 to be greater than 0
+ ❯ src/dev/catalogue/screenReader.render.test.tsx:78:133
+     76|     expect(hiddenButFocusable(body), `${id} ${locale}`).toEqual([]);
+     77|     expect(ungroupedProgress(body), `${id} ${locale}`).toEqual([]);
+     78|     if (section.layout === 'screen') expect(within(body).queryAllByRol…
+       |                                                                                                                                     ^
+     79|     for (const dialog of [...document.querySelectorAll<HTMLElement>('[…
+     80|       const name = dialog.getAttribute('aria-label') ?? '';
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯
+
+ FAIL  src/dev/catalogue/screenReader.render.test.tsx > section analytics-consent-failed: every control has a name, nothing hidden takes focus
+AssertionError: analytics-consent-failed en: a heading of its own: expected 0 to be greater than 0
+ ❯ src/dev/catalogue/screenReader.render.test.tsx:78:133
+     76|     expect(hiddenButFocusable(body), `${id} ${locale}`).toEqual([]);
+     77|     expect(ungroupedProgress(body), `${id} ${locale}`).toEqual([]);
+     78|     if (section.layout === 'screen') expect(within(body).queryAllByRol…
+       |                                                                                                                                     ^
+     79|     for (const dialog of [...document.querySelectorAll<HTMLElement>('[…
+     80|       const name = dialog.getAttribute('aria-label') ?? '';
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/7]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  7 failed | 4 passed | 565 skipped (576)
+   Start at  21:50:47
+   Duration  34.17s (transform 16.31s, setup 105ms, import 19.20s, tests 40.45s, environment 234ms)
+

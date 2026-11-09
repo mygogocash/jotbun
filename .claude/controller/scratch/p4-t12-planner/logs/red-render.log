@@ -1,0 +1,111 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t12-planner/work/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+ × src/slips/sharedSlipResources.render.test.tsx > slip calls carry X-GoGoSpend-Analytics: off unless this phone's answer is yes, over the one shared transport 7ms
+   → expected [] to deeply equal [ Array(4) ]
+ ✓ src/mascot/bunSettingsErase.render.test.tsx > on the web the intensity and the cheer day leave browser storage 1ms
+ ✓ src/mascot/bunSettingsErase.render.test.tsx > on native both keys leave the secure store 0ms
+ × src/mascot/bunSettingsErase.render.test.tsx > the sign-out erase hook forgets the bun settings after the import draft, and a setting that cannot be erased never stops it 3ms
+   → expected [ 'gogospend.bun.intensity', …(5) ] to deeply equal [ 'gogospend.bun.intensity', …(6) ]
+ ✓ src/spend/v1/DeviceDiaryProvider.render.test.tsx > the device diary erases every leftover plain-text import draft before first use, and an account's again at the sign-out erase 16ms
+ ✓ src/spend/v1/DeviceDiaryProvider.render.test.tsx > the sign-out erase also forgets History's view, kept while one of its entries is open 2ms
+ ✓ src/spend/v1/DeviceDiaryProvider.render.test.tsx > spend and Settings share one device diary: leaving Settings never closes the diary the spend screens still use 8ms
+ ✓ src/spend/v1/DeviceDiaryProvider.render.test.tsx > the sign-out erase forgets the wallet's device settings and keeps the account's looks 3ms
+ × src/spend/v1/DeviceDiaryProvider.render.test.tsx > the sign-out erase forgets this account's slip salt, and a keychain that refuses never stops the erase 6ms
+   → expected [ …(2) ] to deeply equal [ Array(1) ]
+ ✓ src/api/sharedV1.render.test.tsx > requests from the app carry X-GoGoSpend-Analytics: off unless this phone's answer is yes 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/slips/sharedSlipResources.render.test.tsx > slip calls carry X-GoGoSpend-Analytics: off unless this phone's answer is yes, over the one shared transport
+AssertionError: expected [] to deeply equal [ Array(4) ]
+
+- Expected
++ Received
+
+- [
+-   [
+-     "POST",
+-     "/v1/slips",
+-     "off",
+-   ],
+-   [
+-     "POST",
+-     "/v1/slips",
+-     null,
+-   ],
+-   [
+-     "POST",
+-     "/v1/slips",
+-     "off",
+-   ],
+-   [
+-     "PUT",
+-     "/v1/slip-accounts/2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+-     "off",
+-   ],
+- ]
++ []
+
+ ❯ src/slips/sharedSlipResources.render.test.tsx:57:115
+     55|   await slips.read(BATCH);
+     56|   await slips.updateAccount(SLIP_ACCOUNT.id, 1, null);
+     57|   expect(sent.map((request) => [request.method, request.path, request.…
+       |                                                                                                                   ^
+     58|     ['POST', '/v1/slips', 'off'],
+     59|     ['POST', '/v1/slips', null],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/mascot/bunSettingsErase.render.test.tsx > the sign-out erase hook forgets the bun settings after the import draft, and a setting that cannot be erased never stops it
+AssertionError: expected [ 'gogospend.bun.intensity', …(5) ] to deeply equal [ 'gogospend.bun.intensity', …(6) ]
+
+- Expected
++ Received
+
+@@ -3,7 +3,6 @@
+    "gogospend.haptics",
+    "gogospend.bun.cheerDay",
+    "gogospend.bun.celebratedWeek",
+    "gogospend.cashback.declined",
+    "gogospend.analytics-consent",
+-   "a0000000-0000-4000-8000-000000000001",
+  ]
+
+ ❯ src/mascot/bunSettingsErase.render.test.tsx:81:82
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/spend/v1/DeviceDiaryProvider.render.test.tsx > the sign-out erase forgets this account's slip salt, and a keychain that refuses never stops the erase
+AssertionError: expected [ …(2) ] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+  [
+    "a0000000-0000-4000-8000-000000000001",
++   "b0000000-0000-4000-8000-000000000002",
+  ]
+
+ ❯ src/spend/v1/DeviceDiaryProvider.render.test.tsx:167:36
+    165|   const deps = captured.deps as { eraseWithDiary?: (accountId: string)…
+    166|   await deps.eraseWithDiary?.(B);
+    167|   expect([...secure.items.keys()]).toEqual([`${SALT_KEY_PREFIX}${A}`]);
+       |                                    ^
+    168|   // A salt the locked keychain keeps: the rest of the erase still run…
+    169|   secure.refuse.add(`${SALT_KEY_PREFIX}${A}`);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  3 failed | 1 passed (4)
+      Tests  3 failed | 7 passed (10)
+   Start at  22:34:25
+   Duration  1.89s (transform 484ms, setup 469ms, import 1.48s, tests 55ms, environment 1.10s)
+
