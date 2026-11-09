@@ -42,7 +42,14 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - Kit `scratch/p4-t12-planner/`: check_kit at c1637ec gives 51 OK, SHA256SUMS.base 4 OK, and the 4 `orig/` files identical.
     - The planner's proof: 64 of 64 mutants. For CI: `test:unit` +11, web +12 modules, render +1 file and +2 cases.
     - The implementer (Haiku max, 30b6286d) was dispatched about 22:46 in a pre-installed p4-t12 from c1637ec. Its notes allow exactly 1D-T8's shift if #372 merges before its sync.
-    - Then: PR (issue #220) and an Opus review (M).
+    - **DONE at 8b9e16e; PR #376 opened at 22:57 (issue #220).** RED: Node 11 of 11, render 3 of 10; GREEN 11 and 10; 64 of 64 mutants. `test:unit` 933, `export:web` 4803, `typecheck:routes` passed.
+    - Its sync did not pick up 1D-T8; CI tests the merge ref. The controller checked the 21 files against the kit and the clean merge with the head.
+    - **iOS export (the controller, CI has none):** exit 0, 5769 modules on 8b9e16e.
+    - **The review runs as a workflow** (ultracode; run wf_b4bc3a66-c98).
+      - Three Opus xhigh lenses: the contract, privacy, and integration (which includes a scratch merge with 1D-T8).
+      - An Opus skeptic tries to refute each blocker or major.
+      - A synthesizer writes `reviews/P4-T12.md` with the verdict.
+    - On approval and green CI: `merge_task_pr.sh 376 8b9e16e P4-T12`, then `promote_pr.sh P4-T12 376`.
   - **P4-T13: brief READY at 0bd5659** (S, 7 new files in `src/slips/`, none shared; no package or lockfile change).
     - P1 to P18 are accepted. The Q1 and Q2 adapters wait on the owner (P18).
     - Kit `scratch/p4-t13-planner/`: check_kit at d579f94 gives 31 OK, SHA256SUMS.base 2 OK, and both `base/` files identical.
