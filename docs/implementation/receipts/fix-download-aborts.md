@@ -1,0 +1,57 @@
+# fix-download-aborts: An aborted download gives back its slot (ruling R97)
+
+- **Status:** built and verified locally on `fix/download-aborts`, from `e7b61d7`. That is `origin/claude/p1a-vault-core` as the implementer started: its `apps/edge`, `apps/api`, `packages` and root package files are `d1111f8`'s (1B-T6 to 1B-T11 are in them), and `e7b61d7` adds only controller files under `.claude/`. Not pushed. Under ruling R87 this receipt is its own file; `premium-progress.md` is not edited. Under ruling R100 the whole workers suite is CI's. The independent review is the controller's, after this receipt.
+- **Files:**
+  - New, under `apps/edge`: `src/v1/files/slots.ts` (`untilReturned`) and `test/workers/download-aborts.test.ts` (5 cases).
+  - Shared, four files, each a wiring edit:
+    - `src/v1/files/downloads.ts`: one import; `serveExportFile`, `serveSnapshotChunk` and `serveReceiptFile` take their slots through `untilReturned`; four comments.
+    - `src/v1/files/receipts.ts`: one import; `prepare` takes its `COPY_SLOTS` slot through `untilReturned` on each attempt; its comment.
+    - `src/v1/files/uploads.ts`: one import; `uploadRoute` holds its place among `MAX_UPLOADS_PER_ISOLATE` through `untilReturned` (P4); its comment.
+    - `src/v1/handler.ts`: `return await headOf(...)` at `:133` and `:151`; `headOf`'s comment.
+  - Appendix A: no hunk was applied. All four shared files matched their `orig/` checksums at Step 0.7, so each was copied from the planner's `real/` folder.
+- **RED to GREEN** (`PL/run-focused.sh` on `test/workers/download-aborts.test.ts`, under the heavy lock):
+  - RED, with `untilReturned` as a typed stub that hands nothing to `waitUntil`: rc=1, `Test Files 1 failed (1)`, `Tests 5 failed (5)`. Every failure is an `AssertionError` on a "pending" check: the first check of each case expects a promise still pending and finds it ended. No other error prefix appears.
+  - GREEN, with the real module: rc=0, `Test Files 1 passed (1)`, `Tests 5 passed (5)`.
+- **Mutation check:** 9 mutants, 9 killed, no survivor. Each mutant ran through `PL/run-mutants.sh`, under the heavy lock, and each file was restored byte for byte (the six files match their GREEN checksums again).
+  - A1, the export download takes its slot without `untilReturned`: killed by the export case (1 failed, 4 passed).
+  - A2, the snapshot chunk download, the same: killed by the snapshot chunk case.
+  - A3, the receipt download, the same: killed by the receipt case.
+  - A4, the copy slot without `untilReturned`: killed by the retain case.
+  - A5, the upload's place without `untilReturned`: killed by the upload case.
+  - A6, `untilReturned`'s promise never ends: all five cases fail.
+  - A7, the promise ends at once: all five cases fail.
+  - A8, the promise ends but the slot is never returned: all five cases fail.
+  - A9, the export download hands its promise over before its vault step: killed by the export case.
+- **The `wrangler dev` proof** (the planner's kit, P7, on this tree): `answers {"export":"200","snapshot":"200","receipt":"200","retain":"200","upload":"202"}`.
+  - Export (5394226 bytes), snapshot chunk (7119885 bytes) and receipt (4194304 bytes): each served whole after four aborted GETs (`[200,200,200,200]`), sha256 matching, and 200 again five seconds later.
+  - Retain: four retains of 12582912-byte copies, each aborted mid-copy (`AbortError` four times), then another member's retain answers 200, and 200 again five seconds later.
+  - Upload: sixteen uploads, each aborted mid-body (`AbortError` sixteen times), then another member's upload answers 202, and 202 again five seconds later.
+  - The probe passed 6 of 6. The observations are kept under the controller's scratch folder, at `.claude/controller/scratch/fix-download-aborts/wrangler/observations-green.txt`; the copied tree was removed. The planner's base runs (`PL/proof/wrangler-red-1.txt` and `-red-2.txt`) answered `{"export":"503","snapshot":"503","receipt":"503","retain":"200","upload":"202"}`. The retain and upload answers on the base show no local leak (P3, P4). After the proof, no `wrangler` or `workerd` process was running and none held a listening socket, and the heavy lock was released.
+- **Gate** (R100's fast local gate, from the worktree root):
+  - `npm run typecheck:edge`: exit 0 (at the RED stub, after GREEN, and after the mutants).
+  - FOCUSED: `Test Files 1 passed (1)`, `Tests 5 passed (5)`.
+  - AFFECTED, the 11 files of Step 5.3: `Test Files 11 passed (11)`, `Tests 335 passed | 1 todo (336)`, rc=0, no failed case and no `Errors` line.
+  - `npm run test:edge`: `Test Files 15 passed (15)`, `Tests 176 passed (176)`, exit 0. This task adds no Node case.
+  - `npm run build:edge`: exit 0. The vault bundle is 1,672,809 bytes, and each driver marker (`pg-protocol`, `pg-pool`, `pg-types`, `drizzle-orm/node-postgres`, `from "pg"`) counts 0 (R95).
+  - `npm run test:edge:workers`: **CI** (R100). This task's deltas for the controller's CI check: `test:edge:workers` +1 file (`download-aborts.test.ts`) and +5 passed; `test:edge` +0; `test:edge:db` +0.
+  - `npm run test:edge:db`: **SKIPPED**. Docker is stopped by the controller's order. This task changes no PostgreSQL code, and CI's edge job runs the suite.
+  - `git diff --check` is clean before the commit, and against `origin/claude/p1a-vault-core...HEAD` after it.
+- **SKIPPED (hosted):** nothing is deployed. The deployed runtime's cancellation of a handler whose client went away (the reason the copy and the upload take the wrapper, P3 and P4) and the 30-second `waitUntil` limit (P9) are not exercised locally.
+- **Deviations and calls:** the planner's rulings P1 to P11 are accepted by the controller as written, P4 included (the upload's place takes the wrapper, so the `uploads.ts` hunk and mutant A5 stay). In one line each:
+  - P1: one helper, `untilReturned`, in a new `slots.ts` that imports only a type, so `downloads.ts` and `receipts.ts` need no import cycle; `src/server/http/files.ts` is unchanged.
+  - P2: the promise is handed over with the slot just taken. A request turned away with 503 hands nothing over. For a download, the vault's refusal (404) is answered before any slot is taken, so it hands nothing over either.
+  - P3: the copy slot takes the wrapper, though `wrangler dev` cannot show its leak. Its proof is the wiring pin and the documented deployed cancellation.
+  - P4: the upload's place takes the wrapper, beyond the controller's list (accepted).
+  - P5: the test pins the wiring through the test client's `settle()`, racing it against 100 ms ("pending") or 5 seconds ("ended").
+  - P6: each download case makes one download more than the person's slots; the copy case runs five retains.
+  - P7: the `wrangler dev` proof is the planner's kit, not a committed test; its seeding entry stays out of the repo.
+  - P8: `return await headOf(...)` at `:133` and `:151` is equivalent by construction, since `headOf` never rejects; it has no mutant, and its comment says why.
+  - P9: the 30-second `waitUntil` limit is a residual, named under SKIPPED.
+  - P10: R96's HEAD drain stays a full read.
+  - P11: the hosted checks are SKIPPED, as above.
+- **Notes for later tasks:**
+  - 1B-T13: the PostgreSQL edge's export and attachment downloads (`src/server/app/routes.ts:341-346` and `429-437`) have the same leak and retire with it; `untilReturned` moves with `src/v1`. Any new slot or per-isolate count the Worker holds across awaits takes `untilReturned`.
+  - download-pins: no file in common with this task; the planner ran the two briefs together (12 workers files, 392 passed and 1 todo).
+  - Reviewer's first look: P3 and P4 rest on Cloudflare's documented cancellation, not on a local repro; P5's `settle()` race; P7's seeding entry, which lives only in the planner's kit.
+  - `untilReturned` calls `release()` and then `returned()`. If a `release` threw, its promise would stay pending until the 30-second limit. Every release only updates a counter: the four pools are `DownloadSlots`, whose give-back is guarded by its `given` flag, and the upload's release is `uploading -= 1`. None is expected to throw.
+  - A hosted environment: repeat the proof against the deployed Worker, including an aborted retain and upload (P3, P4, P9).
