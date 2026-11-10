@@ -1,0 +1,199 @@
+diff --git a/apps/app/src/wallet/tray/Tray.render.test.tsx b/apps/app/src/wallet/tray/Tray.render.test.tsx
+index 8343da8..29c98aa 100644
+--- a/apps/app/src/wallet/tray/Tray.render.test.tsx
++++ b/apps/app/src/wallet/tray/Tray.render.test.tsx
+@@ -15,9 +15,9 @@
+ // through Gesture Handler's own event handler, as the native side does.
+ // iOS's Modal says it has gone (onDismiss) when UIKit's dismissal ends, a
+ // frame or more after the hide; react-native-web says it at once. The late
+-// dismissal's case holds it back and ends it itself.
++// dismissal's cases hold it back and end it as React Native's Modal.js does.
+ import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+-import { useEffect } from 'react';
++import { useEffect, useState } from 'react';
+ import { AccessibilityInfo, Platform, View } from 'react-native';
+ import type { ModalProps } from 'react-native';
+ import { State } from 'react-native-gesture-handler';
+@@ -27,20 +27,31 @@ import { afterEach, expect, test, vi } from 'vitest';
+ // The real safe-area package loads React Native itself, which vitest cannot run.
+ vi.mock('react-native-safe-area-context', () => import('../../dev/catalogue/safeAreaTestStub'));
+ 
+-// The Modal, which says it has gone at once unless a case holds its dismissals back (`late`): each one then waits
+-// for endDismissal(), which calls the Modal's latest onDismiss, as React Native's Modal does on iOS.
+-const dismissals = vi.hoisted(() => ({ late: false, held: 0, latest: null as (() => void) | null }));
++// The Modal, which says it has gone at once unless a case holds its dismissals back (`late`). A held one waits for
++// `dismissals.end`, which does what React Native's Modal.js does on iOS when UIKit's dismissal ends: it sets its
++// own state, and that setState's callback calls the latest onDismiss, in the layout phase of the commit that
++// renders it (Modal.js lines 315 to 323), with whatever else React batched into that commit.
++const dismissals = vi.hoisted(() => ({ late: false, held: 0, end: null as (() => void) | null }));
+ vi.mock('react-native', async (importOriginal) => {
+   const actual = await importOriginal<typeof import('react-native')>();
+-  const { createElement, forwardRef } = await import('react');
+-  const Modal = forwardRef<unknown, ModalProps>((props, ref) => {
+-    dismissals.latest = props.onDismiss ?? null;
+-    const onDismiss = props.onDismiss && (() => {
+-      if (dismissals.late) dismissals.held += 1;
+-      else props.onDismiss?.();
+-    });
+-    return createElement(actual.Modal as never, { ...props, ref, onDismiss });
+-  });
++  const { Component, createElement, forwardRef } = await import('react');
++  class IosModal extends Component<ModalProps & { forwarded: unknown }, { isRendered: boolean }> {
++    state = { isRendered: this.props.visible === true };
++    componentDidUpdate(previous: ModalProps) {
++      if (previous.visible === false && this.props.visible === true) this.setState({ isRendered: true });
++    }
++    end = () => this.setState({ isRendered: false }, () => this.props.onDismiss?.());
++    render() {
++      const { forwarded, onDismiss, ...props } = this.props;
++      dismissals.end = this.end;
++      const held = onDismiss && (() => {
++        if (dismissals.late) dismissals.held += 1;
++        else onDismiss();
++      });
++      return createElement(actual.Modal as never, { ...props, ref: forwarded, onDismiss: held });
++    }
++  }
++  const Modal = forwardRef<unknown, ModalProps>((props, ref) => createElement(IosModal, { ...props, forwarded: ref }));
+   return { ...actual, Modal };
+ });
+ 
+@@ -96,7 +107,7 @@ afterEach(() => {
+   vi.clearAllMocks();
+   swipe.config = null;
+   swipe.gesture = null;
+-  Object.assign(dismissals, { late: false, held: 0, latest: null });
++  Object.assign(dismissals, { late: false, held: 0, end: null });
+   delete (AccessibilityInfo as unknown as Record<string, unknown>).sendAccessibilityEvent;
+ });
+ 
+@@ -162,13 +173,16 @@ function dragThrough(translationY: number, end: typeof State.END | typeof State.
+   send({ state: end, oldState: State.ACTIVE, ...at(translationY) });
+ }
+ 
+-/** Ends the dismissal held back longest: React Native's Modal then calls its latest onDismiss, as on iOS. */
++/** Ends the dismissal held back longest, as UIKit's end reaches Modal.js on iOS: alone, in its own commit. */
+ function endDismissal() {
+   expect(dismissals.held, 'a dismissal under way').toBeGreaterThan(0);
+   dismissals.held -= 1;
+-  act(() => { dismissals.latest?.(); });
++  act(() => { dismissals.end?.(); });
+ }
+ 
++/** The card's frame while the card leaves: the card is gone, so it is found beside the backdrop. */
++const leavingFrame = () => found('tray-backdrop').nextElementSibling as HTMLElement;
++
+ /** A phone: React Native's platform, and the screen reader's focus moves, which react-native-web lacks (each one recorded). */
+ const platform = (value: string) => Object.defineProperty(Platform, 'OS', { value, configurable: true, writable: true });
+ function phoneFocus(): [HTMLElement | null, string][] {
+@@ -414,6 +428,28 @@ test('a drag the lock cover cuts off is gone when the cover lifts', async () =>
+   expect(frame().style.transform, 'the card once the cover lifts').toBe('translateY(0px)');
+ });
+ 
++test('a card that leaves stays where the finger let it go, even when the lock cover comes and goes', async () => {
++  const onClose = vi.fn();
++  const covered = (hidden: boolean, visible = true) => (
++    <LockCoverContext.Provider value={{ hidden }}>{tray({ visible, onClose })}</LockCoverContext.Provider>
++  );
++  const view = mountWallet(covered(false));
++  await settle();
++  // A swipe past the line asks to close; the host closes the tray, and the card's exit starts from there.
++  pull(121);
++  release(121);
++  expect(onClose).toHaveBeenCalledTimes(1);
++  vi.useFakeTimers();
++  view.rerender(covered(false, false));
++  expect(leavingFrame().style.transform, 'as it leaves').toBe('translateY(121px)');
++  act(() => { vi.advanceTimersByTime(100); });
++  expect(leavingFrame().style.transform, '100 ms on').toBe('translateY(121px)');
++  // The cover comes and goes while it leaves: nothing moves either.
++  view.rerender(covered(true, false));
++  view.rerender(covered(false, false));
++  expect(leavingFrame().style.transform, 'once the cover lifts').toBe('translateY(121px)');
++});
++
+ test('the main button is 54 pt tall, radius 16, ink with white text in light and light with ink text in dark; busy says its busy label', async () => {
+   for (const [mode, colors] of MODES) {
+     const onPress = vi.fn();
+@@ -588,6 +624,20 @@ test('opening at another step in one render, or a step change under the lock cov
+   expect(tick).toHaveBeenCalledTimes(1);
+ });
+ 
++test('once the lock cover lifts a step change ticks, even when it lifted on the step it had under the cover', async () => {
++  const tick = vi.spyOn(haptics, 'selection').mockResolvedValue(undefined);
++  const at = (step: string, hidden = false) => <LockCoverContext.Provider value={{ hidden }}>{tray({ step })}</LockCoverContext.Provider>;
++  const view = mountWallet(at('amount'));
++  await settle();
++  view.rerender(at('amount', true));
++  view.rerender(at('confirm', true));
++  // Lifted on the same step: no tick, and the tray is open and uncovered again.
++  view.rerender(at('confirm'));
++  expect(tick, 'the cover lifting').not.toHaveBeenCalled();
++  view.rerender(at('amount'));
++  expect(tick).toHaveBeenCalledTimes(1);
++});
++
+ test("on a phone the card is the named dialog and the title takes focus, with or without a header; on iOS onClosed waits for the Modal's own dismissal", async () => {
+   const focused = phoneFocus();
+   const errors = vi.spyOn(console, 'error');
+@@ -657,6 +707,60 @@ test('on iOS a dismissal that ends after the tray is shown again says nothing; t
+   expect(onClosed).toHaveBeenCalledTimes(1);
+ });
+ 
++test('on iOS a dismissal that ends in the commit that opens the tray again says nothing', async () => {
++  phoneFocus();
++  dismissals.late = true;
++  const onClosed = vi.fn();
++  const host = { setVisible: (_: boolean) => undefined as void };
++  function Host() {
++    const [visible, setVisible] = useState(false);
++    host.setVisible = setVisible;
++    return (
++      <>
++        <button type="button" data-testid="add" onClick={() => setVisible(true)}>add</button>
++        {tray({ visible, onClosed })}
++      </>
++    );
++  }
++  const view = mountWallet(<Host />);
++  await settle();
++  platform('ios');
++  view.rerender(<Host />);
++  act(() => { host.setVisible(true); });
++  await settle();
++  vi.useFakeTimers();
++  act(() => { host.setVisible(false); });
++  act(() => { vi.advanceTimersByTime(220); });
++  // The Modal has hidden, and UIKit's dismissal is under way.
++  expect([screen.queryByTestId('tray'), dismissals.held]).toEqual([null, 1]);
++  // UIKit's end, then a tap on add (a DOM button's click is a discrete React event, as a tap is), both before React
++  // renders the end: one commit holds the end and the reopen (the review's R-d5b order). Modal.js calls onDismiss in
++  // that commit's layout phase, before any of its effects run.
++  act(() => {
++    dismissals.end?.();
++    fireEvent.click(screen.getByTestId('add'));
++  });
++  expect(screen.queryByTestId('tray'), 'open again').not.toBeNull();
++  expect(onClosed, 'onClosed while the tray is open').not.toHaveBeenCalled();
++});
++
++test('on iOS a tray with no onClosed closes, its dismissal ends, and it opens again', async () => {
++  phoneFocus();
++  dismissals.late = true;
++  const view = mountWallet(tray({ visible: false }));
++  await settle();
++  platform('ios');
++  view.rerender(tray());
++  await settle();
++  vi.useFakeTimers();
++  view.rerender(tray({ visible: false }));
++  act(() => { vi.advanceTimersByTime(220); });
++  // A host that does not listen: the end says nothing, and throws nothing.
++  expect(() => endDismissal()).not.toThrow();
++  view.rerender(tray());
++  expect(screen.queryByTestId('tray'), 'open again').not.toBeNull();
++});
++
+ test('a text link is at least 44 pt, violet by default or ink, and says its words', async () => {
+   for (const [mode, colors] of MODES) {
+     const onPress = vi.fn();

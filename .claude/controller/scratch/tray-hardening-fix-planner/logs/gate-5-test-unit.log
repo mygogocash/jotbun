@@ -1,0 +1,1617 @@
+
+> gogospend@0.0.0 test:unit
+> npm run test:unit -w gogospend-app
+
+
+> gogospend-app@0.1.0 test:unit
+> node scripts/test-unit.mjs
+
+(node:61398) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/analytics/analyticsServer.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ read answers the consent, the analytics id and the weeks (30.33525ms)
+✔ a null analytics id is accepted, a malformed one is invalid_response (49.736709ms)
+✔ a server without the route falls back to /v1/me (37.339708ms)
+✔ setConsent sends exactly { analytics } and checks the answer (3.096208ms)
+(node:61400) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/analytics/catalog.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61400) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ the allow-list holds exactly the 40 events of the spec's table (0.683542ms)
+✔ no rule can carry free text (1.473875ms)
+✔ cleanEvent drops unknown events, unknown properties and values outside their rule (0.272916ms)
+✔ a category is a built-in key, a pack key or custom (0.117542ms)
+✔ phase 2's wallet types, materials and faces are accepted (0.085958ms)
+✔ screen names are route patterns, never values (0.193833ms)
+(node:61401) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/analytics/controller.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61401) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ signed out, events are held and never sent (0.609417ms)
+✔ events tracked before sign-in are held across the sign-in and sent after a yes (0.446333ms)
+✔ held events are dropped when another account signs in, and on no (0.1925ms)
+✔ the server's yes sends at once, identifies with the analytics id and starts replay (0.1725ms)
+✔ replay never starts when it is not allowed (0.095708ms)
+✔ never asked: the question is open, events wait in memory, and the identity is reset (0.088292ms)
+✔ a no read at launch after an earlier yes resets the identity (0.074041ms)
+✔ a no given on another phone stops this phone at its next foreground (0.083167ms)
+✔ a pending no is kept until the server has it (0.147916ms)
+✔ saying no stops replay and resets the identity (0.104541ms)
+✔ a no from another phone is not asked again on this one (0.076084ms)
+✔ a yes the server could not save rejects and changes nothing (0.14325ms)
+✔ offline with nothing known waits, then asks (0.075917ms)
+✔ the held events stop at 50, oldest first out (0.086667ms)
+✔ screens are sent only as patterns and only after yes (0.246042ms)
+✔ without an analytics id the person stays anonymous, and a later refresh identifies them (0.097292ms)
+✔ a stored yes with the server unreachable enters yes without an identity (0.836875ms)
+✔ without a client, nothing is sent and consent still resolves (0.095875ms)
+✔ recordAnalytics installs a consented recorder and restores the previous one (0.157041ms)
+✔ a no from the server stops capture before this phone stores it (0.086084ms)
+✔ an answer gone from the server stops capture before this phone erases its own (0.072917ms)
+✔ a yes still on its way cannot outlast a later no at the server (29.396458ms)
+✔ a yes being stored when the person says no cannot replace the no (8.798834ms)
+✔ a foreground refresh waiting behind a yes cannot undo a later no (18.727958ms)
+✔ a yes waiting behind another call is refused once another account has signed in (13.640208ms)
+✔ a yes on its way when another account signs in is never stored or applied for the next one (31.126709ms)
+✔ a yes still waiting when the person says no is never sent (4.982417ms)
+✔ a refresh after a yes does not keep the yes from the server (6.454541ms)
+✔ a no given while a refresh is on its way is stored at once (6.872208ms)
+✔ the no stored at the call lands before the queue writes and sends it (2.04925ms)
+✔ a yes waiting while the same account signs out and in again is still sent for it (4.029458ms)
+✔ a no is pending from the call until the server takes it, and listeners hear when it lands (0.202041ms)
+✔ a no the server takes at once is pending only while its call is on its way (4.9685ms)
+✔ at a load, only a stored no this phone has not delivered is pending (0.197125ms)
+✔ a yes, or a sign-out, ends a pending no (0.075708ms)
+(node:61402) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/analytics/events.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61402) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ the typed emitters send §7's names and nothing else (1.15175ms)
+(node:61403) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/analytics/gate.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61403) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ before yes, only scrubbed exceptions leave, without a person profile (0.854541ms)
+✔ with the switch off, exceptions also wait for yes (0.125542ms)
+✔ after yes, allow-listed events, screens, identify and replay pass; anything else is dropped (0.133917ms)
+✔ the device name, $set and $set_once never leave (0.078833ms)
+(node:61404) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/analytics/neverSent.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61404) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ nothing a person typed leaves through an event, a screen or an exception (39.068791ms)
+(node:61405) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/analytics/posthogOptions.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the client is built with replay masked, logs and network capture off, no lifecycle, flag, push or GeoIP traffic, and console errors not captured (0.630917ms)
+✔ replay can start after a yes: the installed SDK lets native replay keep tap positions out (0.0495ms)
+(node:61406) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/api/client.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ signed-out reads fail before any network request (1.7155ms)
+✔ JSON writes send the active bearer credential and preserve integer satang (25.056959ms)
+✔ multipart uploads let the runtime generate a matching boundary (8.547209ms)
+✔ server failures stay failures with their actionable code (1.32225ms)
+✔ absolute URLs cannot receive session credentials (0.181708ms)
+✔ a development build may reach wrangler dev on the LAN; a release build may not (0.745167ms)
+✔ a v1 request with no session id is refused before anything is sent (0.270959ms)
+✔ a bound v1 request sends no X-GoGoSpend-Session header (1.360125ms)
+✔ acceptLanguage sends Accept-Language and nothing else changes (1.101042ms)
+✔ a response from the previous account cannot become the current diary (1.15925ms)
+✔ requests carry X-GoGoSpend-Analytics: off unless this phone's answer is yes (3.913084ms)
+(node:61407) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/api/sessionEpoch.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61407) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ a token renewed while a request is in flight keeps its response (same identity) (48.992959ms)
+✔ a sign-out, account switch or A -> B -> A during a request drops its response (54.359292ms)
+✔ one 401 allows one refresh and one resend of the same body and key; a second 401 signs out (14.934833ms)
+✔ 426 never triggers a refresh or a sign-out; other auth refusals are not refreshed either (3.235625ms)
+✔ token-only routes need no binding and send none, even from a bound session (2.609708ms)
+✔ a session change while the token is read sends nothing (never one identity's binding with another's token) (0.493042ms)
+✔ a 401 that arrives after the session changed is neither refreshed nor resent (33.747875ms)
+✔ a session change while the token is re-read or refreshed stops the resend (never sent under another identity) (5.154583ms)
+✔ a lost command is not resent once the session changed (254.195417ms)
+✔ a 401 for a token another request already renewed is resent with the new token, without a second refresh (45.757ms)
+✔ credentials that cannot be read right now are a network outcome, never a sign-out (0.955833ms)
+✔ a request with its own credentials uses them, is never refreshed and never ends the session (1.573208ms)
+✔ a server-ended session is reported with the epoch the request started under; proof and token-only refusals are not (5.331416ms)
+✔ return_to_a_does_not_accept_old_a_response (2.270208ms)
+✔ a server-ended session leaves active through the seam; a stale report from an earlier session changes nothing (2.389708ms)
+✔ sign-out from a locked session still revokes its binding over the transport (1.455417ms)
+✔ a request begun during an account switch sends nothing: never the next session's token under the first session (R86) (1.291916ms)
+✔ offline token reads neither lock the session nor close the diary (S4 resolver) (10.430792ms)
+(node:61408) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/api/v1Contracts.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61408) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ money parses as exact satang and never accepts JS numbers (0.603584ms)
+✔ totals beyond the safe-integer range stay exact (0.069375ms)
+✔ Bangkok day boundary and occurred-on window (3.7775ms)
+✔ command normalization is order-independent and matches the server form (0.176959ms)
+✔ unknown request fields and malformed client headers are rejected (0.38625ms)
+(node:61409) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/auth/betterAuthPort.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ email: a code is asked for sign-in only (12.630791ms)
+✔ the right code signs in and names the account and the session (1.387833ms)
+✔ the first code for an address says it created the account; the next code does not (0.666792ms)
+✔ createdOf reads only a created that is exactly true (0.08975ms)
+✔ a wrong code is WRONG_CODE, and nothing is stored (0.340958ms)
+✔ the server's cap is CODE_LIMIT (0.109083ms)
+✔ offline, a timeout or a 5xx is AuthUnavailable, never a refusal (0.207542ms)
+✔ a cancelled Apple sheet is AuthCancelled and the server is never called (0.117583ms)
+✔ the sign-in screen asks to sign up; a fresh sign-in never does (0.484041ms)
+✔ ACCOUNT_EXISTS carries the methods the server named (0.178333ms)
+✔ AuthRefused keeps its code and methods as fields (0.056125ms)
+✔ a fresh sign-in by email uses only the account's own address (0.181125ms)
+✔ a fresh sign-in by Google checks the token's subject against the linked account first; another subject is OTHER_ACCOUNT and nothing is sent (0.197375ms)
+✔ a fresh sign-in that still lands in another account signs that session out and is OTHER_ACCOUNT (2.326667ms)
+✔ the JWT is reused until a minute before it expires, then renewed (0.427916ms)
+✔ a sign-in drops the cached JWT: the next token is the new account's (0.26875ms)
+✔ a token read in flight across a sign-in is never kept for the new account (email and Google) (0.977542ms)
+✔ a refresh in flight across a fresh sign-in is never kept for the new session (0.230625ms)
+✔ a token read in flight across a sign-out is not kept for after it (0.075041ms)
+✔ signing out a device or everywhere answers 204 with no body, which is success (0.140375ms)
+✔ a sign-in whose session read fails after the server accepted it drops that session (email and Google, R86) (0.167ms)
+✔ refresh always renews (0.12525ms)
+✔ a session the server deleted reads as no token, not as an outage (0.077125ms)
+✔ linking from a stale sign-in is REAUTH_REQUIRED (0.174625ms)
+✔ unlinking calls unlink with the provider (0.093875ms)
+✔ the device calls use the jotbun routes, and REAUTH_REQUIRED and SIGNED_OUT stay apart (5.167292ms)
+✔ linked methods are Apple and Google when the account has them, then always email (0.151541ms)
+✔ the web build reports sign-in unsupported (0.91175ms)
+(node:61410) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/auth/credentialProvider.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61410) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ sign-in by email code stores the session only after the server signed in, then moves the epoch (6.95075ms)
+✔ a cancelled, refused or unreachable sign-in changes nothing stored and returns to where it was (0.717708ms)
+✔ an ACCOUNT_EXISTS sign-in returns the methods to use (0.174042ms)
+✔ a sign-in result says whether it created the account (0.447625ms)
+✔ hydration: a stored session with its cookie is active; without the cookie it is locked; nothing stored is signed out (8.323667ms)
+✔ token reads and refreshes are serialized: one token call each, however many callers (0.404625ms)
+✔ a token read after a refresh never returns the pre-refresh token (3.393959ms)
+✔ offline is not a denial: the session stays active; a deleted session locks, and the lock lifts once a token works again (0.411ms)
+✔ sign-out tells the vault first with the session's own token, then Better Auth, then clears the record and moves the epoch (0.331833ms)
+✔ sign-out during a sign-in wins: the late session is signed out at the server and never stored (0.252458ms)
+✔ sign-out during a fresh sign-in wins: the new session is signed out at the server and never stored (0.357875ms)
+✔ a sign-out while a fresh sign-in saves its record waits for the save, then leaves no record (0.775167ms)
+✔ the server ending the session keeps the account and says why (0.246083ms)
+✔ requestCredentials reads one token and the session id together, and is null unless active (0.180625ms)
+✔ requestCredentials never pairs a token with the id of a session that replaced it (0.172542ms)
+✔ after an account switch, a token read that began before it never reaches the new account (0.287917ms)
+✔ requestCredentials never pairs the old session's token, read before a fresh sign-in, with the new session's id (0.156542ms)
+✔ during an account switch, requestCredentials is not ready: never the new session's token with the old session id (R86) (0.432333ms)
+✔ during a fresh sign-in, the new session's token never goes out with the old session id (R86) (0.208875ms)
+✔ during an account switch, a token read under the old session never gets the new session's token, and nothing locks (R86) (0.194541ms)
+✔ an account switch whose session read fails drops the new cookie: the first account locks, also after a relaunch (R86) (0.160166ms)
+✔ a sign-in from a locked session whose session read fails leaves it locked, never unlocked on the other account's cookie (R86) (0.136625ms)
+✔ a token whose session cannot be read is never handed out, and nothing locks (R86) (0.177125ms)
+✔ a sign-out during an account switch never gives the vault one session's token with another session's id (R86) (0.17775ms)
+✔ a fresh sign-in into the same account swaps the session, signs the old one out and moves the epoch (0.121125ms)
+✔ an OTHER_ACCOUNT fresh sign-in changes nothing (0.089083ms)
+✔ if the new session cannot be stored, it is signed out at the server and the device ends signed out (0.169166ms)
+✔ a method this build cannot offer is not_configured and calls nothing (0.125625ms)
+✔ the installation epoch never goes backwards across launches (0.189541ms)
+✔ the secure session store keeps the record on this device only, refuses malformed values, and removes the old Auth0 binding item (0.678125ms)
+✔ the secure session store removes the old Auth0 binding item on its first load only (0.087917ms)
+✔ sign-in during hydrate waits for it: the session record and the session agree (5.092667ms)
+✔ a second sign-in while one runs joins it (one server sign-in) (0.234375ms)
+✔ refused transitions change nothing and do nothing (0.109042ms)
+✔ a token read while a forced refresh runs waits for it (0.227083ms)
+✔ sign-out waits for an in-flight forced refresh, and tells the vault before Better Auth (0.346333ms)
+✔ sign-out ends the session even when the record cannot be cleared, then reports it (0.272625ms)
+✔ an installed provider drives the shared session seam: the token, the session id as the binding, and the epoch (0.218667ms)
+(node:61411) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/auth/globalLogout.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ accepted: one fresh sign-in, then one sign-out-everywhere call; every session is now gone (2.324167ms)
+✔ the person cancels the fresh sign-in: nothing is sent (0.093625ms)
+✔ a fresh sign-in that fails sends nothing (0.121833ms)
+✔ a lost answer resent meets SIGNED_OUT because the first one landed: that is signed out (0.114375ms)
+✔ Jotbun cannot be reached: still signed in here, and Try again resends with no new sign-in (0.08025ms)
+✔ a stale sign-in is reauth_required and changes nothing (0.056709ms)
+✔ any other refusal changes nothing and says which (0.213667ms)
+(node:61412) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/auth/jotbunAccountClient.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the jotbun sign-out routes are sent as JSON, with an empty object when there is nothing to send (24.353666ms)
+✔ a 204 from a jotbun sign-out route, read by Better Auth's own client, is success at the port (1.353708ms)
+(node:61413) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/auth/sessionEnded.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a locked or server-ended session shows the session-ended view with the unsent count and the account's method (0.543458ms)
+✔ active and signed-out sessions show no session-ended view (0.072458ms)
+✔ signing in again to the same account resumes (0.051625ms)
+✔ another account with unsent records asks keep or erase (0.043958ms)
+✔ erasing another account's records needs the explicit confirmation (0.042541ms)
+✔ keep never erases (0.0295ms)
+(node:61414) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/auth/sessionMachine.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the epoch moves only when the identity (account or binding) changes, never on a token refresh (0.906209ms)
+✔ sign-out always starts a new epoch, even while a sign-in is still establishing an identity (0.103417ms)
+✔ hydration never shows a previous account, and impossible events change nothing (0.086584ms)
+(node:61415) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/config/env.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ PostHog stays off until its project key is set, and goes through the Worker proxy unless told otherwise (1.529125ms)
+✔ scrubbed crash reports are sent without consent unless the switch says 0 (0.1695ms)
+(node:61420) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/config/featureFlags.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ an approved area is on by default (0.507958ms)
+✔ off (or 0) switches every area off, and -area switches one off (0.464584ms)
+✔ an area not yet approved is on only by name, or all at once (0.0635ms)
+✔ planning is on by default since its approval, and -planning or off switches it off (0.049792ms)
+✔ insights is on by default since its approval, and -insights or off switches it off (0.036084ms)
+✔ account is on by default since its approval, and -account or off switches it off (0.029125ms)
+✔ import is on by default since its approval, and -import or off switches it off (0.029458ms)
+✔ companion is on by default, and -companion or off switches it off (0.044084ms)
+✔ the catalogue is still opt-in (0.043042ms)
+✔ conflict is off by default, on when named, and on with all (0.072958ms)
+✔ the wallet area is off unless named (0.0565ms)
+✔ the signin area is off unless named (0.042958ms)
+✔ analytics is off by default, on when named, and on with all (0.042375ms)
+(node:61421) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/dev/catalogue/params.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a deep link names the section, theme and locale (0.6745ms)
+✔ missing or empty params leave the catalogue on its defaults (0.084833ms)
+✔ values the app does not ship are ignored, not guessed (0.08175ms)
+✔ case and surrounding spaces do not matter, so hand-typed links work (0.051958ms)
+✔ a repeated param takes its first value (0.135042ms)
+✔ a tour steps every N milliseconds, between 1 and 10 seconds (0.173834ms)
+✔ chrome=off hides the catalogue header, so a screen shows as it does on a phone (0.269541ms)
+(node:61422) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/i18n/catalogs.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ th.json translates every key in en.json (6.221333ms)
+✔ th.json has only en.json's keys, each keeping its placeholders (1.165208ms)
+✔ vi.json has only en.json's keys, each keeping its placeholders (2.247667ms)
+✔ every literal the redesign passes to tc() is copy in en.json (26.555042ms)
+✔ every literal the signin folder passes to its copy hook has a Thai draft (9.02275ms)
+✔ every literal the signin folder passes to tc() is approved copy already in en.json (0.940833ms)
+(node:61424) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/i18n/languagePreference.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the choices: System (the phone), Thai and English; Vietnamese is not offered while it waits for its translation (0.69675ms)
+✔ a stored choice is read back only when it is one of the choices (0.112167ms)
+✔ System follows the phone, Vietnamese included; a choice wins over the phone (0.060541ms)
+(node:61425) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/lib/hapticPreference.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ haptics are on until the person chooses otherwise; only the three words parse (3.285875ms)
+✔ On plays every moment as the table says, silence included (0.117042ms)
+✔ Subtle keeps only outcomes; a celebration plays as one success (0.06675ms)
+✔ Off is silence for every moment (0.054417ms)
+✔ saved offline never feels like saved: queued is light, landed is success (0.051542ms)
+✔ the current preference is shared module state (0.047334ms)
+(node:61426) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/lib/haptics.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ each verb plays its own native feedback (0.8605ms)
+✔ a celebration is three beats with a pause between them (0.143417ms)
+✔ the web plays nothing and loads no native module (0.073292ms)
+✔ a failing native module never throws to the caller (1.286542ms)
+(node:61427) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/mascot/bunIntensity.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the bun is at full intensity until the person chooses otherwise (0.626625ms)
+✔ only the three stored words parse (0.113958ms)
+✔ a missing or damaged stored value falls back to full (0.066209ms)
+✔ off hides every bun, quiet keeps the bun but drops the bubble (0.07175ms)
+(node:61429) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/mascot/poses.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the twelve poses, holding a receipt by default (0.579916ms)
+✔ sizes are 32, 56, 96 and 160 pt and the outline is 2.5 at 64 pt (0.139333ms)
+✔ every pose is plain geometry: known paints and finite numbers (0.347417ms)
+✔ every pose has the body and eyes, with cheeks on all but peek and quiet (0.083167ms)
+✔ the default pose holds the blue receipt, with two lines, in front of the body (0.0675ms)
+✔ peek shows only the eyes and the top of the bun (0.073167ms)
+✔ arms go up for cheer, one arm waves for hello and wave-bye (0.051625ms)
+✔ sleepy closes its eyes, oops-kind stays kind, quiet stays small and neutral (0.12ms)
+✔ each moment carries its prop (0.120166ms)
+✔ mascot colours come from the palette, and the face reads in light and dark (0.259709ms)
+✔ height follows the pose box (0.05625ms)
+(node:61430) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/notifications/localReminders.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ turning reminders on asks once, then schedules seven weekly reminders, each in its own day's words (0.981708ms)
+✔ a denied permission is a settled, usable state: off, nothing scheduled, no retry loop (0.137917ms)
+✔ unsupported platforms (web) say so; bad times are refused (0.386ms)
+✔ a time zone or language change re-schedules the reminders once; no change does nothing (0.399125ms)
+✔ an install scheduled before the weekly wording re-schedules once at its next launch, so its daily reminder goes (0.183ms)
+✔ provisional iOS delivery counts as granted; a denial the OS still allows is asked again only on opt-in (0.079917ms)
+✔ on Android the reminder has its own notification channel; on iOS quiet (provisional) delivery is asked for (0.227333ms)
+✔ a stored preference without weekdays (S4) reads as every day: one weekly reminder per day (0.172833ms)
+✔ chosen days: one weekly reminder per day under its own fixed id, in that day's own words (0.19225ms)
+✔ a new time, days, time zone or language replaces the weekly reminders and never adds a second (0.277208ms)
+✔ turning reminders off or a denial cancels every reminder, daily and weekly, and keeps the chosen days (0.268542ms)
+✔ at least one day must stay chosen; only the days 1 (Monday) to 7 (Sunday) are accepted (0.204917ms)
+✔ the service says whether the platform can remind at all (0.050125ms)
+✔ the web stub has no reminders: unsupported, with every day by default (0.114667ms)
+✔ a weekly reminder is an expo-notifications weekly trigger, counted from Sunday = 1, on the Android channel (0.140042ms)
+(node:61432) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/notifications/reminderWording.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ each weekday has its own reminder wording, as the owner approved it (0.684958ms)
+✔ every reminder wording is copy in en.json, in the Thai the owner approved (2.662541ms)
+(node:61433) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/slips/imageShrink.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61433) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ a picked image or a shared file within 1,200,000 bytes is used as it is, its type read from its first bytes, and a larger one, such as a 1.5 MB PNG screenshot, is not sent (3.97925ms)
+✔ only a JPEG, a PNG or a WebP is sent: a HEIC photo, another RIFF file, text, or text that is not whole base64 is not (0.299167ms)
+✔ a copy that is gone throws, so the scan can tell it from a photo it cannot send (0.265041ms)
+✔ the limit holds on the bytes read, also where the phone gives no size (2.738083ms)
+✔ an image's byte count is its decoded length, whatever its padding (0.172458ms)
+✔ the fake shrink answers null for a photo too large, throws for a copy that is gone, and records each image removed (0.840209ms)
+(node:61436) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/slips/photoLibrary.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61436) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ the picker path picks up to the limit at quality 0.7 in the compatible representation, without base64, and has no albums and no lookup by id (0.684459ms)
+✔ a picked image without an asset id is known by its uri (0.120417ms)
+✔ releasing a picked photo deletes its cache copy (0.109833ms)
+✔ photo access reads all, limited, none and undetermined from the picker's permission (0.159042ms)
+✔ the phone's settings open through expo-linking, and a phone that cannot open them does nothing (0.103333ms)
+✔ the fake library lists photos oldest first, strictly after the watermark, ties broken by id, and finds one again only by its id (0.278083ms)
+✔ the fake library answers its access, picks up to the limit and records each call (0.122ms)
+(node:61437) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/slips/qrDecoder.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ noQrDecoder is unavailable and finds nothing (0.694958ms)
+✔ fakeQrDecoder is available and answers only the uris it was given (0.133209ms)
+✔ slipQrIn returns the first payload that is a bank slip (0.284917ms)
+✔ a decoder that throws finds no slip (0.436708ms)
+✔ installQrDecoder replaces the app's decoder and null restores noQrDecoder (0.1295ms)
+(node:61442) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/slips/slipBatches.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61442) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ batches hold at most 5 slips and 8 MiB of JSON, in order (73.924584ms)
+✔ the byte count is the JSON body's UTF-8 length (0.434041ms)
+✔ a batch is cut at exactly 8 MiB, counting the commas between slips, and is measured with last false (33.160875ms)
+✔ a slip that fills a batch alone is sent alone, and one larger than a batch throws (73.733792ms)
+✔ each slip's album is sent as the server keeps it: NFC, trimmed, at most 60 characters, and null when nothing is left (0.212792ms)
+(node:61451) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/slips/slipQr.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a Thai bank slip QR gives its sending bank and reference (7.918833ms)
+✔ the CRC covers everything up to 9104 and is read in either case (0.142542ms)
+✔ a CRC whose leading zero was dropped is padded back (0.07125ms)
+✔ TrueMoney and payment QR codes are not bank slips (0.064917ms)
+✔ a slip-shaped QR whose root is not 000001 is not a bank slip (B14) (0.0735ms)
+✔ anything malformed is null (0.080833ms)
+✔ the CRC is CRC-16/CCITT-FALSE over the UTF-8 bytes (0.038542ms)
+✔ a slip QR may be 512 characters long, skip other fields and leave out 51 (0.085042ms)
+✔ a reference may be 64 letters and digits in either case, not 65 (0.064958ms)
+✔ one root, and one CRC field of length 04 that comes last (0.083584ms)
+✔ every field header is four digits and every root field fits the root (0.050834ms)
+✔ the bank code is three digits and each root field appears once (0.054041ms)
+✔ only printable ASCII counts (2.376375ms)
+(node:61452) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/slips/slipRefs.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61452) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ the salt is fetched once per account and kept with WHEN_UNLOCKED_THIS_DEVICE_ONLY, and in the given accessGroup (1.709042ms)
+✔ forgetting deletes only that account's salt, and a kept value that is not a salt is fetched again (0.345916ms)
+✔ the phone's hash of P3's slip QR is the contract's vector (0.735875ms)
+✔ the app's SHA-256 is expo-crypto's digest, and gives the same vector (0.476625ms)
+✔ a reference that cannot be normalized gives no hash, and asks for no salt (0.171625ms)
+✔ a salt that could not be fetched is asked for again, and a locked keychain fetches none (1.654417ms)
+(node:61453) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/slips/slipResources.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61453) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ each slip call sends its route, its body and its headers, and refuses an answer of any other shape (53.180625ms)
+✔ the slip read waits 90 seconds and a lost answer is not resent by the transport (2.244708ms)
+✔ a stale account update throws VERSION_CONFLICT with the current account (2.383125ms)
+✔ the fake slip server answers in the contract shapes, keeps what was confirmed, dismissed and mapped, and refuses a draft that is gone (0.776458ms)
+✔ with slip import closed the fake answers only the salt, slip refs, bank albums and devices, and every other slip call is 404 (0.226625ms)
+(node:61454) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/ai/cashbackModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61454) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ counts the month’s purchases at cashback shops, by merchant or note, busiest first (0.774834ms)
+✔ nothing shows before 7 logged days, without purchases, or while preferences are unknown (0.0945ms)
+✔ asks once, then shows tips only when the person said yes (0.053708ms)
+(node:61455) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/ai/oftenLogged.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ an entry repeated at least twice becomes a draft dated today, with nothing guessed (0.680084ms)
+✔ the most repeated come first, then the most recent, and only a few are shown (0.148084ms)
+✔ the same place at another amount, category or wallet is another entry (0.060959ms)
+✔ places differing only in letter case or spaces count together, named as last written (0.077ms)
+✔ transfers, deleted records, records without a place and archived wallets never count (0.151042ms)
+✔ amounts read the way people type them (0.069291ms)
+(node:61456) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/ai/tellBun.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61456) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ the phone answers a sentence on its own, offline (6.248375ms)
+✔ a draft fills the fields it knows and keeps the rest (0.153125ms)
+✔ an income draft switches the type and keeps the other type’s category (0.080333ms)
+✔ what Bun could not tell is said plainly, in order (0.121ms)
+(node:61457) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/attachments.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61457) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ retain posts the receipt with the retention consent, its own key and the record's If-Match (27.298916ms)
+✔ replace puts the new receipt with the consent; remove deletes with no body (3.058292ms)
+✔ a lost response is resent as the same command: same key, same If-Match, same body (258.876958ms)
+✔ an acknowledgement must be this command's, for this record, an update past the version sent (11.073ms)
+✔ malformed ids, keys and versions are refused before anything is sent, as rejections (1.116625ms)
+✔ refusals keep their outcome: a stale version carries the current record, a passed window names the field (3.916459ms)
+✔ a grant is read for the receipt (no command headers) and must be exactly the grant shape (3.825458ms)
+✔ the file comes through the grant with the session's headers, byte for byte, checked against its size and digest (1.195583ms)
+✔ a download whose access token expired is refreshed once and sent again, as every v1 read is (1.255875ms)
+✔ an expired or foreign grant is not found; a busy server is unavailable; nothing is sent for a malformed grant (2.39025ms)
+✔ downloads need a session: signed out, unbound, another platform and a session that changed meanwhile (1.963125ms)
+✔ retain and replace wait past the server's 60 s copy, where an ordinary call would have given up (0.967084ms)
+✔ a retain that does give up is resent as the same command: same key, same If-Match, same body (0.457ms)
+✔ a retain or replace ends by 100 s in all: a resend gets only what is left, never a fresh 90 s (0.914333ms)
+✔ a retain refreshed after a 401 stays within the same 100 s: its resend gets only what is left (0.669583ms)
+✔ remove and the grant keep the transport's own limit (0.669792ms)
+(node:61460) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/deletion.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61460) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ a fresh sign-in, then today's body with a random proof id, the command id as the key, the new session's own token and the app's language (25.143084ms)
+✔ cancelling the fresh sign-in requests nothing (0.264875ms)
+✔ a fresh sign-in that does not go through, or a new session that cannot be read, requests nothing (0.28575ms)
+✔ REAUTH_REQUIRED requests nothing more (1.711166ms)
+✔ a lost answer asks for the receipt with the same token: found is accepted; not found keeps it unconfirmed (279.358041ms)
+✔ a resend after a lost answer repeats the same key, proof id and token (756.673333ms)
+✔ only a confirmed acceptance lets the device erase its copy; a refusal locks it and keeps the drafts (9.800041ms)
+✔ a receipt reports completion once the server data is purged; a malformed receipt is not trusted (2.913792ms)
+(node:61461) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/diarySession.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61461) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ offline on a fresh install, no account is assumed (0.779083ms)
+✔ the verified account is remembered across resolvers for the same binding, never for another (0.768083ms)
+✔ a token refresh for the same identity does not ask the server again (0.105375ms)
+✔ an account recalled offline is verified again on the next refresh (0.206666ms)
+✔ an older answer that arrives after a newer one is ignored (1.476333ms)
+✔ after dispose nothing reopens (3.430042ms)
+(node:61463) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/importDraftStore.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61463) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+▶ the import draft store over a key-value port
+  ✔ is empty until something is saved (0.552833ms)
+  ✔ saves the whole journey and loads it back exactly (2.040375ms)
+  ✔ survives a restart: a new store over the same storage resumes and resolves the pending batch first (58.224209ms)
+  ✔ a journey that is discarded, or finished, leaves nothing on the device (0.393125ms)
+  ✔ an account's draft is its own: another account loads nothing, and clearing one leaves the other (0.133833ms)
+  ✔ sign-out erase removes the account draft only; erasing every draft keeps unrelated keys (0.715208ms)
+  ✔ a draft that cannot be trusted is no draft: corrupt text and a wrong shape are dropped (0.136792ms)
+  ✔ a newer app's draft is left in place, not read and not deleted (0.067208ms)
+  ✔ a device that cannot store rejects the save, so the journey never claims a draft it does not have (0.107333ms)
+  ✔ refuses a store for anything but an account id (0.099167ms)
+✔ the import draft store over a key-value port (63.286958ms)
+▶ the import draft store inside the encrypted diary
+  ✔ keeps the whole journey in the diary, and a restart resumes it (7.096375ms)
+  ✔ a draft naming another account is never returned, and is removed (2.5455ms)
+  ✔ a corrupt draft is removed (23.11325ms)
+  ✔ a newer app's draft is left alone (2.32375ms)
+  ✔ a locked or superseded diary refuses, so the journey never claims a draft it does not have (2.213042ms)
+  ✔ the sign-out and device-reset erases work over the diary rows too (2.888167ms)
+  ✔ its first use removes the account's leftover plain-text (AsyncStorage) draft, and only that account's (2.154208ms)
+  ✔ a leftover draft that cannot be removed yet never blocks the diary draft, and is tried again (2.160625ms)
+✔ the import draft store inside the encrypted diary (44.738792ms)
+(node:61464) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/importReview.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61464) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+▶ upload, parsing and review
+  ✔ parsing succeeded never means saved: the journey waits in review with nothing committed (6.108834ms)
+  ✔ a lost upload response resends the same file under the same key (0.538708ms)
+  ✔ freezing needs explicit row, direction, date, category and wallet review, and every label mapped (1.12025ms)
+  ✔ a transfer row cannot be selected for saving; changing its direction is an explicit correction (0.872125ms)
+✔ upload, parsing and review (10.769958ms)
+▶ corrections
+  ✔ are saved in commands of at most 500 rows against the current revision, and a lost response resends the same command (505.535959ms)
+  ✔ a correction against a revision another device moved keeps the edits and asks for a reload (0.474208ms)
+✔ corrections (506.140917ms)
+▶ confirmation
+  ✔ freezes the full selection once, and later batches confirm against the same selection (29.049708ms)
+  ✔ a lost confirmation response keeps the review and resends the same key and body (33.44725ms)
+  ✔ a proven COMMAND_TOO_LARGE splits the batch, with new command ids, and saves every row once (28.821541ms)
+  ✔ an unknown outcome is resolved with the original key and body before any split (56.322125ms)
+  ✔ overlapping retries acknowledge rows another attempt committed and continue the untouched ones (33.248833ms)
+  ✔ conflicted rows are reported and never resent; the rest are saved (8.477084ms)
+  ✔ after a restart, the saved draft resumes and resolves the pending batch first (13.144416ms)
+  ✔ a corrected preview needs a new selection: the review is kept and committed rows are acknowledged (34.775125ms)
+  ✔ discarding clears the kept draft (0.194583ms)
+✔ confirmation (237.844167ms)
+▶ a receipt photo (P2c)
+  ✔ the image is kept with its record only when the user chose to keep it (0.401542ms)
+  ✔ without the choice no receipt is sent (0.241792ms)
+  ✔ a receipt that can no longer be kept saves nothing; the record can then be saved without it, as a new command (0.291167ms)
+✔ a receipt photo (P2c) (1.002458ms)
+▶ the import port on the wire
+  ✔ an upload sends the raw file with its type, encoded name and command key (20.18375ms)
+  ✔ corrections carry the review revision as If-Match; confirmation results are checked exactly (5.646667ms)
+✔ the import port on the wire (31.532833ms)
+(node:61465) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/importsPaging.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61465) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ without paging the request is today's whole-preview GET, and a page object in the answer is refused (22.378416ms)
+✔ a paged read names offset and limit and must come back as exactly that page (10.743792ms)
+✔ paging that the server would refuse is never sent (0.634917ms)
+✔ fetchWholePreview joins the pages into the same preview a whole read gives (5.945917ms)
+✔ fetchWholePreview returns a preview that has no page (not ready) as it is, after one read (1.645667ms)
+✔ fetchWholePreview starts over when the review revision moved between pages, and gives up after repeated moves (13.705167ms)
+(node:61466) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/knownAccount.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61466) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ the verified account is recalled only for the binding it was verified for (1.067541ms)
+✔ a malformed or foreign stored value recalls nothing (0.167167ms)
+(node:61467) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/money.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61467) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ large_minor_amount_is_formatted_exactly (0.552958ms)
+✔ formats satang exactly with grouping, two decimals and a sign, never through floats (0.092209ms)
+✔ refuses to format anything but a canonical integer string (0.208084ms)
+✔ parses typed amounts exactly (0.19525ms)
+✔ rejects ambiguous or invalid input instead of guessing (0.287625ms)
+✔ edit fields show the exact amount without grouping (0.070625ms)
+(node:61468) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/pendingTotals.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ pending_expense_is_distinct_from_confirmed_total (1.071042ms)
+✔ income, expenses and transfers adjust exactly, per wallet, beyond safe integers (0.335167ms)
+✔ no drafts means a zero adjustment and estimates equal to the confirmed totals (0.082083ms)
+(node:61469) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/policies.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61469) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ accept posts exactly { kind, version } and takes the empty 204 (47.860667ms)
+✔ acceptPending accepts each pending version once, in order, and stops at the first refusal (33.571ms)
+✔ pending reads only pending_policies, whatever else /v1/me carries (11.531542ms)
+✔ a malformed pending list is invalid_response (12.09975ms)
+✔ watchPolicyRequired reports each policy_required answer and rethrows it (3.039042ms)
+✔ a malformed published list is invalid_response (43.742041ms)
+(node:61470) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/privacy.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61470) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ a fresh sign-in, then today's export body with a random proof id and the new session's own token (20.339292ms)
+✔ statuses and grants must be exactly the shared shapes (110.327208ms)
+✔ a download is checked against the ready export size and digest, byte order mark included (2.863208ms)
+✔ cancelling the fresh sign-in requests nothing (0.263917ms)
+✔ ready after polling: the journey returns the ready export and paces its polls (2.321583ms)
+✔ a stale sign-in is reauth_required (1.056834ms)
+✔ a lost answer resends the same request with the same token, key and proof id (762.645666ms)
+✔ polling reports queued after its budget, and failed, expired or unknown exports as such (3.759666ms)
+✔ downloading a ready export asks for a fresh grant; an expired one asks for nothing (5.704833ms)
+(node:61471) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/redesign/account/onboardingModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the story is three steps, then the reminder question; Skip goes straight to the question (0.673625ms)
+✔ the dots count the story only: 1, 2, 3 of 3, and none on the reminder question (0.108167ms)
+✔ the coffee maths is today's intro maths: ฿60 a day is ฿21,900 a year (0.134291ms)
+✔ turning the reminder on asks for 20:00, enabled, and nothing else (0.163625ms)
+✔ each answer from the reminder service has its own words; anything unexpected is a calm failure (0.389542ms)
+✔ after onboarding: sign in, or with a session log the first coffee (0.109167ms)
+✔ the three promises are plain, distinct sentences (0.280459ms)
+✔ each promise is copy in en.json, with Thai (1.517125ms)
+✔ Apple, Google and email, in that order, and none of them first among equals (0.076791ms)
+✔ a provider can be chosen only with the terms ticked, and not while one is running or sign-in is not configured (0.091792ms)
+✔ only a session the seam reports active leaves the screen; nothing pretends to sign in (0.074792ms)
+✔ the story ends at sign-in from onboarding, or with a session at the reminder question (0.037167ms)
+✔ an active sign-in from onboarding goes on to the reminder question; anywhere else, to the diary (0.0445ms)
+(node:61472) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/redesign/account/privacyModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61472) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ the export period: everything up to today, or this year when everything is too large for one file (0.629209ms)
+✔ a ready file's expiry on Bangkok's clock (UTC+7, no daylight saving) (1.751583ms)
+✔ privacy.ts's journey states as the screen shows them (27.413792ms)
+✔ after a download: a file that expired or failed meanwhile says so; one still being made is preparing (0.117708ms)
+✔ deletion: what the screen shows for each of deletion.ts's outcomes, with this device's copy (0.099959ms)
+(node:61473) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/redesign/account/settingsModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the choices: System, Light and Dark; System, TH and EN by their own names; Full, Quiet and Off (0.713791ms)
+✔ the diary links: planning brings Wallets, Categories and Budget; insights brings Reminders; import only with its flag (0.098459ms)
+✔ every link goes to its own route (0.059ms)
+✔ unsynced entries: every draft Jotbun has not confirmed, which an erase would lose (0.178333ms)
+✔ offline: sync is backing off with entries waiting, as Home says it (0.093875ms)
+(node:61474) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/redesign/budgetPace.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61474) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ the first day of the month: the whole month left, today included (8.149833ms)
+✔ left per day rounds down to whole satang, never up (0.236375ms)
+✔ the tight threshold is more than 10% ahead of the even pace, exactly (0.188667ms)
+✔ the last day: one day left, and exactly at the limit is on track (0.104125ms)
+✔ exactly zero left mid-month is not over, but ahead of pace (0.071125ms)
+✔ over by one satang is over, stated plainly with the days to go (0.079542ms)
+✔ after the month ends: no days left, no per day, never tight (0.1245ms)
+✔ before the month starts, the whole month is ahead (2.727583ms)
+✔ no budget: spent only, and a prompt to set one (1.678792ms)
+✔ money stays exact beyond JavaScript numbers (0.147166ms)
+✔ drafts waiting to sync count as pending; sending and uncertain drafts are checked apart; refused ones never count (0.22025ms)
+✔ Home-3: a draft whose record is already confirmed is never counted again, waiting or checking (0.130458ms)
+✔ each category limit gets its own left and state (0.108708ms)
+✔ a budget for another month than the summary is refused (0.138041ms)
+✔ pace copy is kind and factual in every state (0.232041ms)
+(node:61475) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/redesign/historyModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61475) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ a month reads by day, newest first, with each day's total (13.872458ms)
+✔ drafts join their days with their state; other months and acknowledged commands stay out (0.776541ms)
+✔ a record waiting for a choice is marked (0.966583ms)
+✔ filters: type, wallet (either side of a move) and category, for drafts too (0.788417ms)
+✔ search covers the category name, merchant and note, ignoring case and width (6.011958ms)
+✔ Thai search is mark-safe: canonical order and sara am match, and marks are never dropped (0.403041ms)
+✔ a search says how many entries and how much, drafts counted apart (0.710375ms)
+✔ History-1: while more pages exist, the oldest loaded day (and any older one) is marked partial (1.056042ms)
+✔ an empty month says so (0.091459ms)
+✔ recently deleted: restorable for 30 days by the server's rule, newest first (0.401333ms)
+✔ recently deleted rows carry what a record row draws: type, exact amount, category, merchant and note (0.107ms)
+✔ a restore says what happened in plain words (0.146875ms)
+✔ every summary line is copy in en.json, with Thai (1.809208ms)
+(node:61476) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/redesign/homeModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61476) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ loading (16.79325ms)
+✔ load problems keep the current screens' messages and retry rule (8.065375ms)
+✔ a load problem without a diary shows only the problem (0.103958ms)
+✔ offline, the device still shows its drafts by day, its waiting money, and Add (10.703375ms)
+✔ a locked diary shows no drafts and says why (1.162666ms)
+✔ first run: no wallet asks for the first one (6.768042ms)
+✔ ready: the budget pace, today's receipt with drafts kept apart, and earlier days (13.19775ms)
+✔ an empty today still has its receipt, and drafts show only from an open diary (0.34425ms)
+✔ no budget prompts for one; over budget is kind and plain (0.167459ms)
+✔ waiting money for the month: waiting and checking apart, sending with checking (0.159041ms)
+✔ Home-3: a sending draft whose record the server already confirmed is counted once, in confirmed money only (0.275292ms)
+✔ Home-1: every open draft is listed with its row, whatever its date, for Review and the draft actions (2.524292ms)
+✔ Home-2: a draft dated before the oldest whole day loaded does not bring back a day without its confirmed money (0.485667ms)
+✔ earlier records are cut back to whole days, naming the oldest whole day (0.125334ms)
+✔ a day with more records than Home reads is marked partial instead of failing (0.211833ms)
+(node:61477) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/redesign/import/importModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61477) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ a picked file must be a CSV, XLSX, JPEG, PNG or WebP under 12 MB whose name and type agree (1.796291ms)
+✔ the phase follows the journey and what the screen is doing, never claiming more than the server said (0.216041ms)
+✔ upload refusals: uploads off (404) is its own answer; a lost answer is not a refusal (0.071042ms)
+✔ rows carry flags for what the file left unclear; the values stay unknown, never filled in (1.1105ms)
+✔ a missing value without its own issue is still flagged, a saved row says so, and a fixed value drops its flag (6.5755ms)
+✔ filters: rows that need a look, probable duplicates, and the selection, in file order (0.228208ms)
+✔ select all keeps probable duplicates; leaving rows out is the person’s explicit choice (0.224291ms)
+✔ the selected total is exact satang, split by money out and in, and counts rows it cannot add (0.154625ms)
+✔ bulk type edits the chosen rows and counts as checking their type (0.106917ms)
+✔ bulk category applies to the chosen rows of its type and maps a label of its own, never taking over another row’s label (0.265916ms)
+✔ bulk wallet maps a wallet label of its own for the chosen rows (0.127208ms)
+✔ marking rows as checked marks all four fields of exactly those rows (0.057125ms)
+✔ the label step lists each wallet and category label in the file with its row count and its match (0.151875ms)
+✔ blockers are counted in words, and Continue waits for every chosen row (0.222083ms)
+✔ blocker lines name each reason with its count, the way forward first (0.132625ms)
+✔ freezing saves nothing: the frozen summary is ready to save, and going back is allowed until a batch is sent (0.669375ms)
+✔ progress stages and the result use the server’s counts: committed, remaining and conflicted (0.598416ms)
+✔ parse stages: uploaded, reading, rows found (0.09675ms)
+✔ a kept draft resumes when it has something to pick up, and says what (0.105958ms)
+✔ each problem says what happened, what was kept, and the one way forward (0.089625ms)
+✔ a rejected file lists why, in plain words, once per reason (0.067375ms)
+✔ saving corrections then freezing sends the patch before the freeze, and the freeze before any batch (0.426042ms)
+✔ every flag, blocker, stage, summary, notice and file reason is copy in en.json, with Thai (1.740375ms)
+✔ a diary draft that locks mid-visit falls back to this visit's memory, from the latest journey, and says so once (0.429666ms)
+✔ offline, the notice says where the import is kept: on this phone, or only while the screen is open (1.338625ms)
+(node:61478) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/redesign/import/receiptModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61478) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ a picked photo becomes an upload of a plain name and its own type, inside the size cap (0.657584ms)
+✔ only a ready preview with a photo still inside its window gives an attachment id (0.133792ms)
+✔ a grant is used only while it has more than the margin left (0.160708ms)
+✔ an upload: unknown outcomes freeze, a switched-off server says so, the photo's own refusals start over (5.49475ms)
+✔ a receipt command: the record moved on, went away, or the photo can no longer be kept (0.241709ms)
+✔ only the outcomes that may have committed, or that wait for room, keep the command frozen (0.115875ms)
+✔ a frozen command and each refusal say so in words that are copy in en.json, with Thai (2.259167ms)
+✔ verified bytes become a base64 data URI in memory (0.255667ms)
+(node:61479) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/redesign/insights/insightsModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61479) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ a day's facts: confirmed money out is expenses only, and any entry logs the day (0.810083ms)
+✔ a deleted entry counts nowhere: neither money nor a logged day (0.100791ms)
+✔ drafts on this device log their day, with their money kept apart from confirmed money (0.167333ms)
+✔ heat steps: none without money out, then four steps of the busiest day, exact (0.093792ms)
+✔ weekdays are Bangkok calendar dates: Sunday is 0 (9.16425ms)
+✔ a month calendar: Sunday-first weeks, blanks outside the month, each day with its money out (0.789458ms)
+✔ today is marked and named; days after today are future and say nothing (0.191709ms)
+✔ a day's drafts are said after its confirmed money, never added to it (0.263125ms)
+✔ an empty month: every day says nothing logged, at heat 0 (0.174375ms)
+✔ a past month has no today and no future: every day can be opened (0.210375ms)
+✔ the days logged line counts days, never money, and leaves a month with none unsaid (0.094542ms)
+✔ the rhythm is the last seven days up to today, oldest first, across a month end (0.234958ms)
+✔ a skipped day never breaks anything: every logged day in the week still counts (0.1165ms)
+✔ a good week is five logged days or more; one day and none read kindly (0.18575ms)
+✔ the rhythm skips deleted entries and counts drafts on this device (0.084625ms)
+✔ the rhythm needs its own read only when its week is not inside the month shown (0.066334ms)
+✔ reads every page of a range, in order, with the whole range totals (0.11925ms)
+✔ a page saying the diary changed meanwhile is passed on, and a cursor that repeats is refused (0.230375ms)
+(node:61480) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/redesign/insights/recapModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61480) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ a month is past, current or future against Bangkok today (0.7145ms)
+✔ the bars compare the last six months up to this month, and never a month after it (0.255708ms)
+✔ days logged counts each day with any entry once, across every page (12.449458ms)
+✔ days logged leaves out deleted entries and dates outside the month (0.123917ms)
+✔ days logged stops at its page limit and says it may be more; it stops early once every day is counted (0.209834ms)
+✔ days logged in words: one day, several, or at least that many (0.165459ms)
+✔ top categories: money out only, largest first, at most five, each with its exact amount (0.342209ms)
+✔ top categories compare exact satang, past where floating point can tell them apart, and break ties by name (4.636916ms)
+✔ kept is earned minus spent when positive, and kind words when it is not (0.1105ms)
+✔ the budget line: spent of the limit, and over said kindly with the exact amount (0.154917ms)
+✔ each bar names its month and its exact money out; the month shown is chosen and this month is marked so far (0.305333ms)
+✔ entries still on this device for the month are mentioned, since the recap holds only confirmed money (0.119209ms)
+✔ load problems: offline says the records are safe and offers a retry; the others say what to do (0.141417ms)
+✔ a past month: the receipt facts, the hero, the bars and the exact share text (0.237ms)
+✔ the share text: over budget kindly, money in only, more out than in, and every word through the translator (0.27775ms)
+✔ this month so far: the hero, the subtitle and the share heading say so (0.081792ms)
+✔ loading, a problem, an empty month and a month not started yet (0.192666ms)
+✔ the waiting note rides along on a recap and an empty month alike (0.091875ms)
+(node:61481) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/redesign/insights/remindersModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the time is HH:MM, chosen as an hour 00-23 and a minute in 5-minute steps (0.953792ms)
+✔ the week runs Monday first (0.080583ms)
+✔ weekday names come from the locale's Intl data, Monday first (11.320959ms)
+✔ a day turns on or off, kept Monday first; the last chosen day stays chosen (0.11225ms)
+✔ the days in words: every day, weekdays, weekends, or the short names in order (0.995584ms)
+✔ a date's ISO weekday is read on the phone's own calendar, Monday = 1 to Sunday = 7 (0.088792ms)
+✔ the preview shows the next reminder the person gets: today's when chosen, else the next chosen day (0.094417ms)
+(node:61482) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/redesign/loggedDays.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61482) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ the streak counts every logged day; a skipped day pauses it and never lowers it (15.9525ms)
+✔ a day dated in the future does not count yet, and repeats count once (0.118666ms)
+✔ loggedOn finds a day (0.06025ms)
+(node:61483) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/redesign/milestones.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ budget levels: under 80%, from 80%, from 100%, none without a limit (0.427417ms)
+✔ a crossing is only upward, within one month, and never the first reading (0.098042ms)
+✔ ISO weeks start on Monday and roll over the year correctly (1.259875ms)
+✔ a good week is celebrated once per week (0.135666ms)
+(node:61484) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/redesign/pendingChoice.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61484) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ the draft shows the person's change over the record they opened (0.560625ms)
+✔ use yours resends the same changes on the server's current version (0.165917ms)
+✔ a fresh server record wins over the stored one (0.05725ms)
+✔ a choice the server already holds is settled (0.062166ms)
+(node:61486) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/redesign/planning/budgetModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61486) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ the switcher reaches every earlier month and one month ahead, to plan the next (0.504292ms)
+✔ spending by day: confirmed expenses of the month, and waiting drafts once (0.519666ms)
+✔ the burn-down: cumulative spending through today against the even pace, exact (1.729042ms)
+✔ the even pace rounds down to the satang, and the top grows when spending passes the limit (0.110208ms)
+✔ before the month nothing is drawn; after it, the whole month is (0.138417ms)
+✔ the chart is in thousandths: x along the month, y up from the bottom, scaled to the top (0.209917ms)
+✔ the burn-down in words: spent and even pace by today, then how far ahead or under, kindly (0.80725ms)
+✔ category rows: the server’s spending plus waiting drafts, against each limit, in the categories’ order (0.4555ms)
+✔ a category ahead of the even pace is tight; after the month nothing is tight; an unknown category comes last (0.256083ms)
+✔ prefill months: up to three earlier months that have ended and were tracked from their first day (0.207709ms)
+✔ the average: months with spending only, rounded down to the satang; none, no prefill (0.198625ms)
+✔ a budget needs a total; limits are optional and must not add up to more than it (4.973625ms)
+✔ limits are for expense categories in use, and for archived ones the budget already limits (0.111ms)
+✔ the editor starts from the budget being changed, else from the average, else empty (0.07525ms)
+✔ a budget Jotbun already holds is the same as yours only when every figure is (0.070917ms)
+✔ a conflict, figure by figure: the total, then each category either side limits (0.122916ms)
+✔ every line the Budget screen is given is copy in en.json, with Thai (47.033875ms)
+(node:61487) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/redesign/planning/categoriesModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61487) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ every palette colour has its own English name, in the palette order (0.87175ms)
+✔ a new category is offered the first colour its type does not use yet (0.1345ms)
+✔ the grid shows one type: built-ins in their own order, then your categories by name, and the archived apart (4.899208ms)
+✔ a renamed built-in shows its label; names go through tc; no budget means no limits (0.106916ms)
+✔ a label is trimmed and NFC-normalized, and counted the way the API counts it (0.420416ms)
+✔ a custom category needs a visible name of one line and at most 80 characters (0.110208ms)
+✔ a built-in with no label of its own uses its default name (null) (0.048583ms)
+✔ a limit is exact satang, typed like any amount; empty means no limit (0.30275ms)
+✔ the category limits must fit inside the month's overall budget (equal is fine) (0.136125ms)
+✔ a budget holds at most 100 category limits; changing one already there is fine (0.169667ms)
+✔ setting a limit replaces the whole month budget at its version: the overall limit unchanged, limits sorted by category id (0.102292ms)
+✔ the edit draft starts from the category and this month's limit as read (0.119042ms)
+✔ creating sends one create command with a trimmed label; a limit follows only when the month has a budget (0.143ms)
+✔ nothing is sent while the label or the limit is wrong, and each problem is said in words (0.242458ms)
+✔ editing sends only what changed, at the version read, and a limit change replaces the budget (0.109916ms)
+✔ a built-in goes back to its default name with label null; a custom category cannot lose its name (0.050666ms)
+✔ after the category command is acknowledged, saving again sends only the budget command, exactly as before (0.093625ms)
+✔ archive and unarchive carry the version read; each command has its own key slot (0.053916ms)
+✔ a conflict's server copy is used only when it is this category, or this month's budget (0.468625ms)
+✔ a changed category shows yours and the server's name and colour; an archived one says so (0.111458ms)
+✔ a changed budget shows yours and the server's limit for this category and the month's total (0.088875ms)
+✔ every colour name and every problem word is copy in en.json, with Thai (1.177ms)
+(node:61490) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/redesign/planning/thaiPack.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61490) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ every pack colour is one of the category hues, and every key is unique (0.505542ms)
+✔ a fresh account gets the whole pack, named in Thai for Thai and in English otherwise (0.525917ms)
+✔ items the person already has, in either language or archived, are skipped; types are kept apart (0.1775ms)
+✔ the pack is C3: eight expense categories and one income, in order (0.074375ms)
+✔ a person who added the earlier pack gets no second delivery or top-up category (0.093334ms)
+✔ packKeyOf names a pack category by any of its names, never a built-in or another type (0.092417ms)
+✔ analyticsCategoryKey sends a built-in key, a pack key or custom, never a label (0.0665ms)
+✔ packCommands creates only the picked items, in the person's language (0.062583ms)
+✔ the routed screen keeps today's seven until the switch (0.067ms)
+(node:61491) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/redesign/planning/walletsModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61491) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ the total adds up the active wallets exactly, and leaves archived ones out (0.631083ms)
+✔ the total never passes through a float: balances past 2^53 and below zero stay exact (0.066625ms)
+✔ wallets keep the order Jotbun lists them in (the order they were added), each section on its own (0.071791ms)
+✔ first run is no wallet at all; only archived wallets is not first run, and its total is zero (0.056792ms)
+✔ a wallet can be archived only at exactly ฿0.00, and never twice (0.093292ms)
+✔ why a wallet cannot be archived yet is said in words, with the exact balance and the way forward (0.191833ms)
+✔ a correction is a changed opening balance or tracking start; a new name is not (0.063ms)
+✔ a correction needs its reason once the wallet has entries, and also while that is not known yet (0.043709ms)
+✔ a new wallet starts empty: no name, ฿0.00 opening and tracking from today (0.049083ms)
+✔ the live preview follows what is typed: the trimmed name (or none yet), the exact opening and the start (0.394959ms)
+✔ an edit's preview moves the balance by exactly the change to the opening balance (0.074209ms)
+✔ the form refuses a missing, invisible or over-long name, an amount past the cap and a future start, in its own words (0.219542ms)
+✔ create builds one exact command: the id, the trimmed NFC name, the exact satang and the start (0.090375ms)
+✔ an edit sends only what changed, with the version that was read; nothing changed sends nothing (0.096917ms)
+✔ with entries in the wallet, a correction is refused until its reason is chosen, and then carries it (0.080167ms)
+✔ a reason never travels without a correction (Jotbun refuses that), and an empty wallet needs none (0.057083ms)
+✔ an edit is checked like a new wallet before anything is sent (0.047667ms)
+✔ Jotbun's field problems land on their own field, in the screen's words (0.124167ms)
+✔ a correction Jotbun refuses for want of a reason asks for the reason (0.038875ms)
+✔ an archive refused for its balance, and a wallet archived elsewhere, are told apart from field problems (0.070792ms)
+✔ a conflict carries Jotbun's copy only when it is this wallet in the exact shape (0.146208ms)
+✔ the conflict shows theirs beside yours, field by field, and marks what differs (0.116292ms)
+✔ every line the Wallets screen is given, and each of Jotbun's field words, is copy in en.json, with Thai (1.78925ms)
+(node:61492) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/redesign/quickAddModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61492) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ quick add parity table: the same errors, keys, messages and inputs as the current form (25.53075ms)
+✔ keypad amounts: canonical satang above zero and within the cap (0.188416ms)
+✔ errors go through tc (0.174166ms)
+✔ a new draft starts like the current form (0.143166ms)
+✔ a missing wallet asks the user to choose one, with the keys the form renders (0.093333ms)
+✔ the move-wallets rule: two different wallets, in either order (0.084417ms)
+✔ one record id per draft: building again names the same record, and a device draft gains its type (0.097333ms)
+✔ "add another" starts a new draft with new ids, keeping the choices (0.167958ms)
+✔ the date chip steps by days, never into the future or before 1970 (46.726958ms)
+(node:61493) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/redesign/recentCategories.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61493) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ with nothing logged, the built-in order fills the top and the rest keeps the default order (7.890208ms)
+✔ frequency and recency both count (1.685875ms)
+✔ the window is the last 60 days counting today (0.097375ms)
+✔ ties fall back to the built-in order, then the label; custom categories after built-ins (0.064917ms)
+✔ archived categories and other types are left out, even when used (0.101833ms)
+✔ drafts count, a confirmed draft counts once, and deleted records do not count (0.1095ms)
+✔ top N is configurable and never repeats a category in the rest (0.071708ms)
+(node:61494) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/redesign/recordModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61494) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ the receipt of a confirmed expense: amount, type, category, wallet, date, merchant and note (10.529ms)
+✔ a move shows From → To and no category; empty merchant and note are left out (0.40175ms)
+✔ a draft's receipt says its sync state and offers only what the device allows (0.638542ms)
+✔ the edit draft keeps the record's fields and its version (0.132916ms)
+✔ an edit sends only what changed, with the version as If-Match (0.514375ms)
+✔ an edit runs the quick-add checks (0.245209ms)
+✔ "Apply my change" after a conflict sends the same changes on the server's version (0.0925ms)
+✔ the conflict view puts yours beside what is on the server (0.478958ms)
+✔ Copy makes a new draft dated today with new ids, never the source's (0.225375ms)
+✔ Copy leaves a closed wallet or category unchosen, and copies drafts and moves too (0.137333ms)
+(node:61495) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/redesign/shared.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61495) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ Bangkok calendar maths crosses months, years and leap days (4.968792ms)
+✔ day labels: today, yesterday, then the short date the current list shows (8.665417ms)
+✔ every outbox state maps to a draft state; a sending draft may be committed, so it is being checked (0.326375ms)
+✔ a draft's label, its money group and every total it joins agree in each state (1.057958ms)
+✔ a draft whose record is already confirmed is left out of the open drafts that count (0.0925ms)
+✔ undo only for a draft never transmitted; discard only for one that needs review (0.10525ms)
+✔ a confirmed row reads exactly as the current record view (0.202083ms)
+✔ a draft row says its state in words and never looks confirmed (0.171875ms)
+✔ rows merge drafts first, newest first, and a draft already confirmed shows once (12.933667ms)
+✔ day totals: out and in apart, transfers neither, drafts never in confirmed money (0.285208ms)
+✔ days group newest first with their totals and kept-apart draft money (0.3545ms)
+✔ a transfer row in the day is shown but unsigned (0.074209ms)
+(node:61496) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/resources.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61496) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ reads send the access token, binding and client version, and no command headers (15.545042ms)
+✔ signed out, unbound or unsupported clients fail before any request (0.282541ms)
+✔ commands send their key, the command schema and If-Match with the exact body (11.155333ms)
+✔ a lost response is retried as the same immutable command (257.855125ms)
+✔ DTOs with number money or unknown fields are refused, not coerced (5.0835ms)
+✔ problems map to outcomes a screen can act on (14.050875ms)
+✔ a response that arrives after a sign-out or account switch is dropped (0.4725ms)
+✔ history builds its query from the filter; a month without a budget is null (2.31925ms)
+✔ recently deleted pages by cursor and accepts only deleted records in the record shape (8.399541ms)
+✔ only https, or loopback http, API addresses are accepted (0.407417ms)
+✔ a gateway error page is "unavailable" (maybe committed), never a definite refusal (1.415042ms)
+✔ a sign-out during a command retry stops resending (257.313834ms)
+✔ an acknowledgement for another command or entity is refused (1.741459ms)
+✔ FORBIDDEN and RESYNC_REQUIRED are not field errors (1.9785ms)
+✔ an outbox command is sent as itself: its own key, its own schema version and its exact body (2.154583ms)
+✔ delta pages are fetched by opaque cursor and checked group by group (6.782375ms)
+✔ delta pages and snapshot chunks may carry entity types this build does not know; a malformed one is still refused (2.703625ms)
+✔ snapshots: requested with a key, polled, and each chunk verified by size and SHA-256 (8.509792ms)
+✔ planning commands: budget set, wallet and category changes, each with its key, If-Match and exact body (5.927667ms)
+✔ planning commands refuse an acknowledgement for another command or entity, and a malformed month or id before sending (1.123125ms)
+(node:61497) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/sessionResume.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61497) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ after a session ended, the same account sends the unsent records once; another account never sees them (38.046209ms)
+(node:61498) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/spendDiary.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61498) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ opens the signed-in account's diary, syncs it, and saves a draft before resolving (30.850834ms)
+✔ a remote sign-in refusal locks the diary and keeps its drafts (26.933459ms)
+✔ switching accounts never shows or sends another account's drafts (15.433666ms)
+✔ signed out means no diary: saving is refused rather than kept somewhere unencrypted (4.295625ms)
+✔ a diary whose key is gone is locked with its reason, never replaced (5.734333ms)
+✔ a failed local save is reported and nothing is shown as saved (7.385875ms)
+✔ a session notification for the same identity keeps the open diary and its sync (19.173625ms)
+✔ a diary opens and flushes only for the session epoch it belongs to (8.233875ms)
+✔ a superseded session change never overwrites the newer view (33.7225ms)
+✔ a superseded open of another account's diary is closed (4.516833ms)
+✔ a diary written by a newer app version is locked with that reason (0.253042ms)
+✔ synced wallets and categories are in the view, for forms that work offline (10.4565ms)
+✔ a wallet created online moments ago is pulled once before a device save (27.751083ms)
+✔ saving the same draft twice under one command id saves it once (15.677042ms)
+✔ an unsent draft can be undone on the device; a needs-review draft can be discarded (16.040375ms)
+✔ a locked diary can be discarded and starts over from the synced diary (10.232417ms)
+✔ an explicit sign-out erases only this account's diary on the device (18.14225ms)
+✔ an explicit sign-out also erases the account's other on-device copies (the import draft); a diary discard does not (10.448333ms)
+✔ a sync run reports live n-of-m progress, then clears it (17.4705ms)
+✔ after launch a foreground timer is armed even when the first flush waits (4.613ms)
+✔ the import draft store is the open account's, inside its diary, and follows the session (15.117125ms)
+✔ no import draft store while no diary is open: opening, locked, signed out, or no local diary (web) (5.252667ms)
+✔ the view names the open diary's account, and nobody without one (18.875792ms)
+✔ the explicit sign-out erase takes the diary's import draft with it (14.236834ms)
+✔ logged days come from the open diary, and null without one (11.288167ms)
+✔ a kept choice appears in the view and leaves when dropped (19.738791ms)
+(node:61501) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/spend/v1/viewModels.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61501) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ category names use the custom label, else the translated built-in name (0.379666ms)
+✔ the golden wallets total exactly, beyond JavaScript numbers too (0.103083ms)
+✔ records read as signed amounts with their wallet and category (0.474958ms)
+✔ months and Bangkok dates (26.619333ms)
+✔ rows group by day in order (0.141583ms)
+(node:61503) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/storage/accountDatabase.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61503) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ a new account gets its own keyed, migrated diary that survives a restart (6.106834ms)
+✔ two accounts with the same entity ids never see each other (5.214292ms)
+✔ concurrent opens of one account share one store and one key, so nothing saved is lost (4.396125ms)
+✔ a missing key locks the diary instead of creating an empty replacement, until an explicit discard (4.388416ms)
+✔ a rejected or malformed key locks the diary; a failing key store is only temporarily unavailable (2.0285ms)
+✔ a diary recorded for another account is refused before any migration (2.070791ms)
+✔ a failing migration rolls back, leaving the diary usable at its previous version (2.537ms)
+✔ a diary from a newer app version is refused, not downgraded (3.313917ms)
+✔ a version-1 diary upgrades to version 2 and keeps its data; the import drafts table starts empty (3.40775ms)
+✔ a locked store refuses every operation; data stays for the next unlock (8.54775ms)
+✔ erase drops only that account's diary and key (13.29475ms)
+✔ discard deletes the key first and can always be retried (3.67125ms)
+✔ a write from an older session epoch is refused, including A -> B -> A (5.392625ms)
+✔ a store from an older session can never erase the account (8.334292ms)
+✔ a write in flight when the epoch moves is rolled back (37.808125ms)
+✔ a read is one consistent view, and one racing a session change returns nothing (3.183625ms)
+✔ a session change while a diary is opening leaves no store and no open connection (1.8055ms)
+✔ on the web there is no local diary, before any key is read (0.134167ms)
+(node:61505) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/storage/diaryRepository.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61505) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ a saved draft and its outbox command persist together, or not at all (50.920958ms)
+✔ saving the same draft again (a retry after an unknown outcome) is a no-op; a different body under the same ids is refused (3.554209ms)
+✔ a draft must match its command and account, be a valid create, and use synced, open references (4.6355ms)
+✔ delta records, totals and cursor commit together: a failure at any statement keeps the previous state (74.465708ms)
+✔ a page fetched before the cursor moved is refused, never written back (4.098041ms)
+✔ applies versions forward only, keeps tombstones, drops purged data, and recomputes exact totals (3.91125ms)
+✔ refuses out-of-order or already-applied groups and invalid changes, applying nothing (4.73625ms)
+✔ failed_snapshot_swap_preserves_cursor_and_outbox (82.554833ms)
+✔ a confirmed replacement swaps the confirmed state but never removes unresolved outbox commands or drafts (5.085ms)
+✔ stores exact integer strings and no credentials (17.212417ms)
+✔ a build without the import validators skips import changes, applies the rest and advances the cursor (4.09925ms)
+✔ a snapshot with import entities replaces the confirmed state without them for a build that does not know them (3.474875ms)
+✔ a known entity that does not match its validator, and an unknown entity that is not an entity change at all, still refuse the page (3.050333ms)
+✔ a build that knows the import entities stores them (6.570125ms)
+✔ import draft rows are written, replaced, listed and removed, kept across a restart, and leave with the diary (9.264792ms)
+✔ import draft rows follow the store: refused once it is locked or from an earlier session, and a write racing a session change rolls back (9.775458ms)
+✔ logged days are the distinct dates of live records and drafts (3.458708ms)
+✔ the applied revision is read without loading the diary (12.791833ms)
+✔ a pending choice is kept, replaced per record and dropped (6.41275ms)
+✔ a choice for a mismatched record, or one that is not a valid choice, is refused (2.937792ms)
+✔ a choice written after the session moved is refused, and a write racing the move rolls back (3.109291ms)
+✔ choices survive a lock and reopen, and go with the erase (6.097583ms)
+✔ a stored choice that no longer validates is left out of the list and not deleted (3.888792ms)
+✔ migration 3 adds the table and keeps a version 2 diary's drafts (5.012292ms)
+(node:61507) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/storage/keyStore.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61507) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ creates a random 256-bit key per account, kept on this device only (0.687542ms)
+✔ refuses a malformed stored key or account id instead of using it (0.194292ms)
+✔ never overwrites an existing key, and reports a malformed one as such (0.194708ms)
+(node:61508) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/storage/serialDatabase.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a transaction runs every statement on the one keyed connection, between BEGIN IMMEDIATE and COMMIT (16.56325ms)
+✔ concurrent transactions and plain statements never interleave (31.962084ms)
+✔ a failure rolls back and reports the original error, even if the rollback fails too (5.369416ms)
+✔ a failed COMMIT rolls back (7.333292ms)
+✔ a transaction handle cannot be used after it ended, and a closed database refuses work (6.005791ms)
+(node:61509) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/sync/engineHardening.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61509) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ an edit made before a draft is transmitted is exactly what gets sent and committed (53.329541ms)
+✔ a draft removed before its turn is skipped; the flush still finishes and nothing is sent after it (47.617ms)
+✔ a failure in one worker is not erased by a success in the other (17.205292ms)
+✔ outbox sends make exactly one attempt per request (no hidden transport resend) (1.488625ms)
+✔ a command that committed resolves whatever its local state (refused, unsent or needs review) (13.946667ms)
+✔ "id already used" refusals (409/410) are uncertain, not needs-review, and resolve (11.2945ms)
+✔ after a server restore, an acknowledged command missing from the confirmed state is resent, never deleted (8.769459ms)
+✔ a resent uncertain command that is paced keeps its uncertain mark (17.168792ms)
+✔ 426 on a send pauses the unsent commands and stops sending (26.903167ms)
+✔ a known command status acknowledges the command even if the next pull fails (13.698667ms)
+✔ a status answer that does not match the command is refused (9.250333ms)
+✔ stale uncertain commands are reviewed, not resent (8.511667ms)
+✔ a write during a running flush is sent by one follow-up run (22.644208ms)
+✔ pending adjustment counts unconfirmed expenses only (3.778792ms)
+✔ 410 without a problem body, and a refused cursor, both lead to a full resync (12.202125ms)
+✔ a chunk from another snapshot is refused and the diary is left as it was (4.283625ms)
+✔ an expired chunk grant is renewed before the download (22.8295ms)
+✔ the scheduler survives a failing flush, re-arms its timer, and marks launch as foreground (22.477833ms)
+✔ every run reports its outcome, including a flush that failed outright (0.160208ms)
+(node:61510) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/sync/liveChannel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ it connects with the token and the client header to the live URL (2.56375ms)
+✔ without a token or a client version it stays quiet (1.115041ms)
+✔ the open runs a live flush, and a newer revision runs another (1.594208ms)
+✔ anything but an exact poke is ignored and the socket stays open (21.492375ms)
+✔ parsePoke reads only an exact revision poke of at most 64 characters (2.3405ms)
+✔ no pong within 10 seconds closes and reconnects; the open runs a live flush (6.911042ms)
+✔ a pong keeps the socket open (2.202167ms)
+✔ the channel sends nothing but ping (3.327916ms)
+✔ each reconnect reads the token again (0.600458ms)
+✔ a token that cannot be read yet is tried again after the backoff (0.397417ms)
+✔ a late close from a replaced socket changes nothing (0.628208ms)
+✔ an ended session stops reconnecting and flushes once (0.29575ms)
+✔ a replaced socket does not come back (0.199792ms)
+✔ other closes back off from 1 second to 15 seconds, and an open resets it (6.9575ms)
+✔ stop closes the socket, cancels a pending connect, and ignores late events (1.727834ms)
+✔ start replaces an open socket, and the old socket's close changes nothing (2.260292ms)
+(node:61511) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/sync/outbox.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61511) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ each send result has one verdict: committed-maybe is uncertain, refusals need review, pacing and auth restore the previous state (0.769417ms)
+✔ drafts older than 30 days need review (8.372333ms)
+✔ a transmission freezes the command; state changes are compare-and-set; resolving removes command and draft together (40.9845ms)
+✔ a never-sent draft can be edited (its command follows) or removed (8.252ms)
+(node:61512) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/sync/reconcile.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61512) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ an acknowledgement alone never becomes confirmed state; every delta page is pulled, then the command resolves (51.558458ms)
+✔ a cursor behind retention gets a full snapshot, then deltas; unresolved commands survive the swap (14.733125ms)
+✔ a snapshot that is not ready in time leaves the diary as it was (5.998833ms)
+✔ purged_ack_does_not_resurrect_original_draft (11.52525ms)
+✔ a committed draft deleted elsewhere drops its pending effect and is never re-inserted (9.497167ms)
+✔ pending expenses not yet confirmed are an exact separate adjustment (4.579792ms)
+✔ if the cursor moves while a page is in flight, the pull continues from the new cursor (18.007ms)
+(node:61513) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/sync/syncEngine.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61513) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ sends drafts once, in order, and resolves them only from the confirmed state (24.336917ms)
+✔ airplane mode: an unreachable server leaves the command uncertain and frozen; the retry checks status, then resends the same command (19.427166ms)
+✔ a timeout after the commit resolves through command status, without a resend (22.300666ms)
+✔ an app killed after the commit but before the local acknowledgement recovers on the next launch (13.549042ms)
+✔ a response that arrives after a session change is dropped; the next session resolves the command (24.734625ms)
+✔ an expired token is refreshed once and the same command resent; a second refusal stops with drafts kept (20.114042ms)
+✔ a denied account stops the flush without losing drafts (11.844ms)
+✔ 429 is pacing (Retry-After, no failure count); a 5xx may have committed, so it is uncertain and counts (44.160042ms)
+✔ five transport failures in a row pause the engine until the app comes to the foreground or the user retries (18.498042ms)
+✔ validation refusals need review instead of retrying forever; others still go (23.539167ms)
+✔ 426 pauses unsent commands for an upgrade, keeps uncertain ones uncertain, and stops all sending (8.300375ms)
+✔ an unsupported command schema needs review and keeps its draft; the rest are sent (11.429542ms)
+✔ a 200-draft backlog drains at the write limit with progress, never pausing and never sending twice at once (352.456583ms)
+✔ one flush at a time per account: a call during a run waits and runs once after it (15.276ms)
+✔ archived or deleted references, and drafts older than 30 days, need review without data loss (6.824542ms)
+✔ a flush for another account or session does nothing (2.967042ms)
+✔ retry delays start at 1 s, double with jitter to 60 s, honour Retry-After, and pause after five failures (0.103792ms)
+✔ the scheduler keeps at most one 60-second foreground timer and tears it down on background or switch (0.200417ms)
+✔ a live flush lifts the failure pause but waits out the server's pacing (22.201542ms)
+✔ a poke that joins a queued follow-up still lifts the pause (18.076ms)
+✔ a follow-up keeps the strongest trigger asked for, whatever order the calls came in (17.547083ms)
+✔ twenty pokes during a flush run one follow-up (6.555958ms)
+✔ the scheduler starts the live channel with the foreground, stops it in the background, and runs a live flush for a poke (0.168917ms)
+✔ a pending choice is never sent by the sync engine (9.987209ms)
+(node:61514) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/testing/hermesGlobals.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ no app code reaches for the Web Crypto global, which Hermes lacks (87.803291ms)
+(node:61515) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/testing/svgAssetRegistryStub.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the stub registers no assets (0.384667ms)
+✔ only the render config reaches the stub: no app, harness or test file imports it (236.982625ms)
+(node:61516) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/theme/bunPalette.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61516) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ contrast follows WCAG 2.x (0.579125ms)
+✔ both modes define every colour as #RRGGBB (0.426666ms)
+✔ every text pair the kit uses meets WCAG AA (4.5:1) in both modes (0.203125ms)
+✔ the lavender stage carries ink text only (0.079333ms)
+✔ outlines are visible (3:1) and budget states are distinct (0.124583ms)
+✔ category tiles: the tile ink meets AA on every category pastel in both modes (0.1075ms)
+(node:61519) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/theme/bunType.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the scale steps down from hero to micro, never below 11 (0.362833ms)
+✔ Thai text gets more leading than Latin at every size (0.099666ms)
+✔ Thai uses Anuphan, Latin and Vietnamese use DM Sans (0.039083ms)
+✔ receipt amounts use the platform serif with tabular figures (0.248417ms)
+✔ every role follows the person’s text size through all the standard sizes, uncapped (0.046833ms)
+✔ at the largest accessibility size, reading text grows the most and display text the least, so words stay whole (0.070708ms)
+(node:61520) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/theme/walletPalette.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61520) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ the §5.1 tokens, exactly (0.610583ms)
+✔ text pairs clear 4.5:1 and graphic pairs 3:1 in both modes; the board bar did not (§5.3) (0.366583ms)
+✔ material text and quiet text clear 4.5:1 on every stop, light and dark (0.228625ms)
+✔ the calendar ramp is wc-calendar, and each day number clears 4.5:1 on its fill (0.155667ms)
+✔ category tiles: the mode ink clears 4.5:1 on every hue tint (5.547667ms)
+(node:61521) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/theme/walletType.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ AX5 sizes follow ax-large-home: body 53, title 58, footnote 44 (0.378583ms)
+✔ an amount never passes 64 pt nor grows more than body text (0.211ms)
+✔ Thai leading is 1.5 times the size and Latin 1.3, rounded up (0.427042ms)
+(node:61523) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/ui/budgetWords.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61523) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ on track leads with the daily pace and says so in words (0.910042ms)
+✔ tight is still under budget, and the word says it is tight (0.099167ms)
+✔ over budget is kind and factual, never colour alone (0.162708ms)
+✔ no budget says so and still shows what was spent (0.080916ms)
+✔ the last day and the end of the month read naturally (0.088375ms)
+✔ a finished month reads as a plain result, never a pace (0.212ms)
+✔ amounts stay exact and the fill never passes the limit (0.438917ms)
+(node:61524) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/ui/dateStep.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61524) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ steps one day across month and year ends (0.60775ms)
+✔ leap days follow the Gregorian rules (0.112666ms)
+✔ only real YYYY-MM-DD dates are accepted (0.206375ms)
+✔ never steps into the future (0.1035ms)
+✔ never steps before the earliest date (the wallet tracking start, or 1970) (0.059167ms)
+✔ Today and Yesterday in English, Thai and Vietnamese (0.313917ms)
+✔ other days are written out, with the year only when it is not this year (0.111959ms)
+✔ Thai dates show Buddhist-era years (0.751709ms)
+✔ full dates and month names in English and Vietnamese keep the Gregorian year (0.115708ms)
+✔ weekday initials run Sunday first in each language (0.1085ms)
+(node:61525) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/ui/dynamicType.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the scan reads a whole tag, through arrows, comparisons and strings, and skips type arguments (0.804041ms)
+✔ every text field and raw Text in the redesign sets a ceiling on how far its text grows (17.638292ms)
+(node:61526) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/ui/keypadExpression.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61526) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ digits build an amount; the display groups thousands; the minor is exact satang (0.750625ms)
+✔ an empty keypad shows 0 and saving it says the amount is empty (0.278208ms)
+✔ leading zeros collapse (0.099458ms)
+✔ 000 on an empty amount is a single 0, and after digits it multiplies by a thousand (0.095916ms)
+✔ zero is refused for a record unless the caller allows it (0.100333ms)
+✔ a decimal point starts 0. on an empty amount and is typed at most once (0.077583ms)
+✔ at most two decimals per operand; a third is refused and says why (0.066375ms)
+✔ decimals after an operator start a new operand (0.059792ms)
+✔ 0.1 + 0.2 is exactly 0.30 (0.096875ms)
+✔ sums of exact decimals never drift (no floating point) (0.994666ms)
+✔ 999999999.99 is the largest amount; + 0.01 is refused as too large (0.438833ms)
+✔ an operand can never be typed above the cap (0.073167ms)
+✔ backspace removes a character, then crosses back over an operator (0.087459ms)
+✔ an operator replaces a dangling one and cannot start an amount (0.0685ms)
+✔ division by zero is refused, at = and on save (0.089875ms)
+✔ ÷ is exact until the end, then rounds half-up to the satang (0.091417ms)
+✔ half-up holds exactly on the half satang, where rounded floats go the wrong way (0.05875ms)
+✔ × and ÷ bind tighter than + and − (0.062ms)
+✔ a negative result is refused; a negative step on the way is fine (0.059459ms)
+✔ = shows the result; a digit then starts afresh and an operator carries on (0.082709ms)
+✔ clear empties the keypad (0.039709ms)
+✔ saving applies = for the user (0.101292ms)
+✔ an existing amount opens on the keypad exactly (0.214959ms)
+(node:61527) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/ui/largeTextScale.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ large text starts at the accessibility sizes, not at the standard ones (0.438667ms)
+✔ a missing or odd scale is ordinary text (0.08775ms)
+(node:61528) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/ui/paceAdapter.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61528) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ mid-month on track: the state and every amount carry over exactly (1.71925ms)
+✔ ahead of pace stays tight, not over (0.116416ms)
+✔ pending money: confirmed spending plus waiting drafts; sending, checking and refused drafts are left out (0.160667ms)
+✔ zero: nothing spent on the first day, and exactly nothing left (0.105625ms)
+✔ over by one satang: over, left is minus the over amount, no per day (0.086208ms)
+✔ over with a left figure of zero: the over amount comes from overByMinor (0.06125ms)
+✔ no budget: no limit, left or per day, and spent still counts waiting drafts (0.067833ms)
+✔ the last day: one day left, read as "Last day", over or not (0.084084ms)
+✔ phases: before the month reads like its first day; after it, a plain result with no pace words (0.206542ms)
+✔ every state the logic gives is one the kit takes, word for word (0.108458ms)
+(node:61529) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/wallet/copy/draftText.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ every draft line has Thai and English, with the same placeholders (3.379875ms)
+✔ no draft line has an emoji or a dash used as punctuation (1.310416ms)
+✔ every key is unique across every table and has an area prefix (1.121083ms)
+✔ draftText picks Thai for th and English for en and vi, then fills placeholders (0.121ms)
+(node:61530) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/wallet/looks/categoryIcons.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61530) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ a kept icon wins, then the pack glyph, then the built-in drawing, else the initial (0.826ms)
+✔ damaged kept icons are dropped (0.159542ms)
+✔ C3's nine each have the picker's glyph for them (0.143458ms)
+✔ every picker glyph has shapes copied from the board (4.452875ms)
+✔ every built-in key and a transfer draw today's drawings, moved unchanged (0.60175ms)
+(node:61531) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/wallet/looks/walletLooks.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a derived look is stable and always valid (3.334625ms)
+✔ a derived look is the plan's: FNV-1a over the id's UTF-16 code units, the material from the hash, the face from the hash shifted by 8 (0.094792ms)
+✔ damaged kept looks are dropped, not thrown (0.212792ms)
+✔ the kept order is wallet ids in order, each once; anything else reads as no order (0.077625ms)
+✔ the kinds are §5.2's four and the faces wc-wallet-edit's five, in the boards' order (0.054792ms)
+(node:61532) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/wallet/money/walletMoney.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61532) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ the compact form drops .00 only when the satang are zero; the exact form keeps two decimals (0.519ms)
+✔ an expense takes the true minus, income a plus, a balance a minus only below zero, and zero no sign (0.109875ms)
+✔ only a canonical satang string is money (0.201375ms)
+✔ the per-day hint is whole baht, rounded down (0.070417ms)
+✔ spoken money says baht, and satang only when there are some, inside minus below zero (0.220125ms)
+✔ a hidden amount is ฿ and four dots (0.041792ms)
+(node:61533) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/wallet/motion/walletMotion.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the reduced-motion table is ax-motion, moment by moment (0.638208ms)
+✔ with reduced motion nothing travels, springs or zooms, and haptics do not change (2.866792ms)
+✔ a selection tick per tray step and on opening a wallet; success for a new wallet (6.401916ms)
+✔ every moment, at full motion and under Reduce Motion, with its haptic (0.229416ms)
+(node:61534) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/wallet/outside/accountFile.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the marker is the first 16 hex characters of SHA-256 over the labelled account id (0.994791ms)
+✔ two accounts get different markers (0.142375ms)
+✔ the file has exactly v, marker, locale and hidden and never the account id (0.329792ms)
+✔ writing refuses what reading refuses, so an account id is never written as the marker (0.253791ms)
+(node:61535) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/wallet/outside/appGroup.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the memory store reads what it wrote, lists a folder and removes (0.84975ms)
+✔ unsafe names are refused (0.314417ms)
+✔ noAppGroup reads nothing and accepts writes (3.5565ms)
+✔ the memory store, like the device one, never copies onto a folder's name (0.182584ms)
+(node:61536) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/wallet/outside/deviceAppGroup.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ on iOS the app group container is the root (1.238709ms)
+✔ on iOS without the group nothing is available and nothing is written (0.147875ms)
+✔ on Android the documents folder is the root (0.084125ms)
+✔ on the web nothing is available (0.05525ms)
+✔ a missing folder is created before a write (0.095333ms)
+✔ a copy that fails answers false (0.121625ms)
+✔ an unsafe name is refused before any file call (0.224417ms)
+✔ a native failure answers null or false, and a failed write or remove still resolves (0.129041ms)
+✔ removing a folder's name leaves the folder and its files (0.104958ms)
+✔ a copy onto a folder's name answers false and leaves the folder (0.223209ms)
+(node:61537) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/wallet/outside/outsideIds.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ with no extra the temporary ids apply (0.742875ms)
+✔ each valid field overrides its default and a malformed one keeps it (0.242833ms)
+✔ a keychain group needs a ten-character team id (0.088416ms)
+✔ the Android package allows _ and refuses - (0.095375ms)
+✔ outsideLink('gogospend', 'record') is 'gogospend://outside/record' (0.057958ms)
+(node:61538) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/wallet/settings/deletionCode.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61538) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/packages/contracts/package.json.
+✔ the short code is DEL and eight Crockford digits of the request id (0.374042ms)
+(node:61539) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/wallet/store/walletStore.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the device erase removes every jotbun.wallet. key and nothing else (0.468125ms)
+✔ an account erase removes only that account's keys (0.151417ms)
+✔ names are prefixed by their scope (0.196625ms)
+(node:61540) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/wallet/tray/trayGesture.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a pull of 120 pt, or a quick flick past 60 pt, closes the tray; a pull up never does (0.315959ms)
+✔ each line is passed, never met: more than 120 pt, more than 60 pt, faster than 900 pt a second (0.054ms)
+✔ the swipe runs on the JS runtime (0.0795ms)
+✔ what the web drops is wired for a phone: the screen reader's escape, the modal card, the title, the backdrop, the Modal, the keyboard and the cover (0.462208ms)
+ℹ tests 970
+ℹ suites 7
+ℹ pass 970
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2283.154708

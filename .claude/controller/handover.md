@@ -262,6 +262,15 @@ The list below is kept for the record.
       - The others are test pins for surviving mutants X1, D2 and X4.
       - n-3 goes to P2-T16 and P2-T20 (followups.md).
     - **The tray-hardening planner** (thread 351b244a, run 3, from 09:25) writes `briefs/tray-hardening-fix.md`, with kit `scratch/tray-hardening-fix-planner/`, proven on 784667b merged with the head.
+    - **Fix brief READY at 10:01** (`briefs/tray-hardening-fix.md`; kit `scratch/tray-hardening-fix-planner/`, its sums 0 not OK, SHA256SUMS.base 3 OK on 784667b).
+      - Files: `Tray.tsx`, `Tray.render.test.tsx` (+4 cases, 26 for CI) and the receipt.
+      - F1 to F10 are accepted.
+        - F1: `if (!shown) closed.current?.()`, and the `showing` ref goes.
+        - F2: the Modal seam ends a held dismissal as `Modal.js` does.
+        - F3: m-1's case queues both updates in one `act`. The two-task form flaked once in about 110 loaded runs, and on correct code.
+      - RED 1 of 26 (m-1), GREEN 26, 40 of 40 mutants, proven on 784667b merged with d1111f8.
+    - **The fixer (Haiku max, 9c6f9ed4) was dispatched at 10:01** in the tray-hardening worktree; it merges the head into the branch first (Step 1.2).
+    - After DONE: push `fix/tray-hardening`, update #392's body (+4 cases, the fix round), and run a confirming Sonnet review. Then merge at the new head on green CI.
     - **Then:**
       1. dispatch a Haiku fixer on `fix/tray-hardening`;
       2. push the new head and update #392's body;
