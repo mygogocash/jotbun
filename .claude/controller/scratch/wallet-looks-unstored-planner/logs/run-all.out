@@ -1,0 +1,19 @@
+[08:04:12 load 9.08] base: placed the head's two files
+[08:04:15 load 8.83] base focused (looks + neighbours) exit=0  Test Files 6 passed (6)  Tests 47 passed (47) 
+[08:04:15 load 8.83] red: placed the final test file and the RED provider (the head's own)
+[08:04:20 load 9.09] red typecheck:app exit=0
+[08:04:21 load 9.09] red render exit=1  Test Files 1 failed (1)  Tests 4 failed | 9 passed (13)  assertion=4 load-errors=0
+[08:04:21 load 9.09] green: placed both final files
+[08:04:25 load 9.40] green typecheck:app exit=0
+[08:04:26 load 9.40] green render exit=0  Test Files 1 passed (1)  Tests 13 passed (13) 
+[08:04:29 load 10.41] green neighbours exit=0  Test Files 5 passed (5)  Tests 38 passed (38) 
+[08:04:29 load 10.41] mutants: start
+[08:06:09 load 21.62] mutants exit=0 37 killed, 0 survived, 0 not as expected
+[08:06:09 load 21.62] gate: start
+[08:06:14 load 21.01] gate typecheck:app exit=0
+[08:06:17 load 21.01] gate focused render exit=0  Test Files 6 passed (6)  Tests 51 passed (51) 
+[08:06:18 load 20.13] gate test:app exit=0 ℹ tests 34 ℹ pass 34 ℹ fail 0 
+[08:06:21 load 20.13] gate test:unit exit=0 ℹ tests 966 ℹ pass 966 ℹ fail 0 
+[08:06:21 load 20.13] gate diff --check: 0 lines of whitespace errors
+[08:06:21 load 20.13] gate the work copy holds real/: 2 of 2
+exit=0

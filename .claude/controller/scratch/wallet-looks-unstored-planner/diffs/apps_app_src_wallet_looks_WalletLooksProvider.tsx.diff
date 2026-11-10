@@ -1,0 +1,78 @@
+--- a/apps/app/src/wallet/looks/WalletLooksProvider.tsx
++++ b/apps/app/src/wallet/looks/WalletLooksProvider.tsx
+@@ -8,12 +8,17 @@
+ // mounts the one provider (P2-T18); outside it, looks are derived, no order
+ // or icon is kept, and nothing changes.
+ //
+-// Each change reads its name from the store, changes it and writes it back,
+-// after the account's first read and after the change before it: two quick
+-// changes never drop each other, and a change made just before the account
+-// changes is kept for the account it was made in. A name the store cannot
+-// read counts as nothing kept and is never written over; a change to it, or a
+-// write that fails, shows until the app closes.
++// Every read and every change waits for the one before it (one queue). Each
++// change reads its name from the store, changes it and writes it back, so two
++// quick changes never drop each other and a change made just before the
++// account changes is kept for the account it was made in. A name the store
++// cannot read counts as nothing kept and is never written over. A change that
++// is not stored (its name could not be read, or its write failed) stays in
++// memory for its account, with each change made after it, and is laid over
++// every later read of that account's names, the change's own and the
++// account's first: it shows until the app closes (while this provider stays
++// mounted), and a later change still wins over it. A write holds only what
++// was read and the change itself.
+ import type { CategoryDto } from '@gogospend/contracts';
+ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+ import type { ReactNode } from 'react';
+@@ -56,6 +61,12 @@
+ 
+ const nothingKept = (accountId: string | null): Kept => ({ accountId, looks: {}, order: [], icons: {} });
+ 
++/** One change, as it acts on everything kept: its own name, changed. */
++type Edit = (kept: Kept) => Kept;
++
++/** Lays changes over what was read, in the order they were made. */
++const layOver = (kept: Kept, edits: readonly Edit[]): Kept => edits.reduce((now, edit) => edit(now), kept);
++
+ export type WalletLooks = {
+   /** The kept look, else the one derived from the id. */
+   lookOf(walletId: string): WalletLook;
+@@ -96,6 +107,9 @@
+   const [state, setState] = useState<Kept>(() => nothingKept(accountId));
+   // Every read and every change runs after the one before it.
+   const queue = useRef<Promise<void>>(Promise.resolve());
++  // By account, while this provider is mounted: each change that was not stored and every change made
++  // after it, in the order made. Each read lays them over what it reads.
++  const unstored = useRef(new Map<string, readonly Edit[]>());
+   const enqueue = useCallback((step: () => Promise<void>) => {
+     const run = queue.current.then(step);
+     queue.current = run.catch(() => undefined);
+@@ -109,18 +123,24 @@
+     void enqueue(async () => {
+       const [looks, order, icons] = await Promise.all([LOOKS, ORDER, ICONS].map((slot) => readName(store, slot.name)));
+       const read: Kept = { accountId, looks: parseLooks(looks?.raw ?? null), order: parseOrder(order?.raw ?? null), icons: parseIcons(icons?.raw ?? null) };
+-      setState((now) => (now.accountId === accountId ? read : now));
++      const shown = layOver(read, unstored.current.get(accountId) ?? []);
++      setState((now) => (now.accountId === accountId ? shown : now));
+     });
+   }, [accountId, enqueue]);
+ 
+   const keep = useCallback(<T,>(slot: Slot<T>, change: (value: T) => T): Promise<void> => {
+     if (accountId === null) return Promise.resolve();
+     const store = walletAccountStore(accountId);
++    const edit: Edit = (kept) => slot.put(kept, change(slot.of(kept)));
+     return enqueue(async () => {
+       const stored = await readName(store, slot.name);
+-      const value = stored === null ? null : change(slot.parse(stored.raw));
+-      setState((now) => (now.accountId === accountId ? slot.put(now, value ?? change(slot.of(now))) : now));
+-      if (value !== null) await store.set(slot.name, JSON.stringify(value)).catch(() => undefined);
++      const earlier = unstored.current.get(accountId) ?? [];
++      const edits = [...earlier, edit];
++      // What the store holds (what is shown, when it cannot be read), with each change not stored and this one over it.
++      setState((now) => (now.accountId === accountId ? layOver(stored === null ? now : slot.put(now, slot.parse(stored.raw)), edits) : now));
++      // A name the store cannot read is never written over, and a write that fails is caught.
++      const written = stored !== null && (await store.set(slot.name, JSON.stringify(change(slot.parse(stored.raw)))).then(() => true, () => false));
++      if (!written || earlier.length > 0) unstored.current.set(accountId, edits);
+     });
+   }, [accountId, enqueue]);
+ 

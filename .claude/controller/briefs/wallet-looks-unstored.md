@@ -31,7 +31,8 @@ Read first, in this order:
   - `orig/`: both files as they are at `8194e7f`;
   - `diffs/`: one diff per changed file (`apps_app_src_wallet_looks_WalletLooksProvider.tsx.diff`, `apps_app_src_wallet_looks_WalletLooks.render.test.tsx.diff`), for reading only (each turns `orig/` into `real/`);
   - `probes/`: the review's `DataLensProbes.render.test.tsx`, as the review left it, for the reviewer. It is not part of this task: never copy it into WT;
-  - `tools/`: `mutants.py` (the mutant runner), `prove.sh` and `run-all.sh` (the planner's stages), `killers.py` (every case each mutant fails), `sums.sh`, and `brief.template.md` with `fill_brief.py` (how this brief was built: every code block in the appendix is the kit's file, byte for byte);
+  - `ref/plan-p2-head.md`: the P2 plan as `8194e7f` has it, which the line numbers in this brief cite;
+  - `tools/`: `mutants.py` (the mutant runner), `prove.sh` and `run-all.sh` (the planner's stages), `killers.py` (every case each mutant fails), `rehearse.sh` with `commit_message.py` (this brief's steps, rehearsed), `sums.sh`, and `brief.template.md` with `fill_brief.py` (how this brief was built: every code block in the appendix is the kit's file, byte for byte);
   - `logs/`: see "For the controller";
   - checksums with paths relative to WT, for `shasum -a 256 -c` run from WT: `SHA256SUMS.base` (both files at the head), `SHA256SUMS.red` (the RED state: the final test file and the head's provider) and `SHA256SUMS.real` (both final files); and `SHA256SUMS`, the folder's own (paths under PL; the planner's `*.log` files are listed in `SHA256SUMS.logs`, not in it);
   - `work/`: the planner's proof tree, outside the sums.
@@ -49,7 +50,7 @@ Read first, in this order:
 
 | File | Change |
 | --- | --- |
-| `apps/app/src/wallet/looks/WalletLooksProvider.tsx` | P2-T11's; P2-T20, P2-T21, P2-T29 and P5-T19 build on it. The header's second paragraph; a `Step` type and `layOver` after `nothingKept`; in the provider, the `unstored` ref, the first read's `layOver`, and `keep`'s body (P2 to P8). 153 lines before, 173 after. |
+| `apps/app/src/wallet/looks/WalletLooksProvider.tsx` | P2-T11's; P2-T20, P2-T21, P2-T29 and P5-T19 build on it. The header's second paragraph; an `Edit` type and `layOver` after `nothingKept`; in the provider, the `unstored` ref, the first read's `layOver`, and `keep`'s body (P2 to P8). 153 lines before, 173 after. |
 | `apps/app/src/wallet/looks/WalletLooks.render.test.tsx` | P2-T11's. The header; three imports (`useEffect`, `SpendDiaryProvider`, `WalletLooksProvider`); a `storeOver` helper after `heldReads`; V4 extended; four cases after V4 (P9). 418 lines before, 542 after; 9 cases before, 13 after. |
 | `docs/implementation/receipts/wallet-looks-unstored.md` (repo root) | **new.** Your receipt (R87). |
 
@@ -65,13 +66,13 @@ No exported name, type or signature changes: `WalletLooksProvider`, `useWalletLo
 
 ```ts
 /** One change, as it acts on everything kept: its own name, changed. */
-type Step = (kept: Kept) => Kept;
+type Edit = (kept: Kept) => Kept;
 
 /** Lays changes over what was read, in the order they were made. */
-const layOver = (kept: Kept, steps: readonly Step[]): Kept => steps.reduce((now, step) => step(now), kept);
+const layOver = (kept: Kept, edits: readonly Edit[]): Kept => edits.reduce((now, edit) => edit(now), kept);
 
 // In WalletLooksProvider: by account id, while the provider is mounted.
-const unstored = useRef(new Map<string, readonly Step[]>());
+const unstored = useRef(new Map<string, readonly Edit[]>());
 ```
 
 The test file adds one helper:
@@ -95,10 +96,10 @@ function storeOver(stored: Map<string, string>): { faults: { reads: boolean; wri
   - At the head, the focused file passes 9 of 9, and the review's probe file fails D1, D2, D8 and D8b exactly as the review recorded, while D3 to D7 pass (`PL/logs/base-looks.log`, `PL/logs/base-probes.log`).
 - **P2. The fix is the review's: unstored changes per account, in a ref, laid over each read.**
   - A change is *not stored* when its name could not be read (P3: a name the store cannot read is never written over) or when its write failed.
-  - Each change is kept as a `Step`: the change itself, as it acts on everything kept (one wallet's look set, one category's icon set, or the whole order replaced). A step is replayed, not a value merged, so the module needs no per-name merge rule.
-  - The steps are laid, in the order made, over every read of the account's names:
+  - Each change is kept as an `Edit`: the change itself, as it acts on everything kept (one wallet's look set, one category's icon set, or the whole order replaced). An edit is replayed, not a value merged, so the module needs no per-name merge rule. (`enqueue`'s own parameter keeps its name `step`: a queued task, not an edit.)
+  - The edits are laid, in the order made, over every read of the account's names:
     - the account's first read: `layOver(read, memory)`;
-    - each change's own read: the name replaced by what the store holds, then every step in memory, then this change.
+    - each change's own read: the name replaced by what the store holds, then every edit in memory, then this change.
   - With nothing in memory, every read and every change shows and writes exactly what it did before: the first read publishes `read`, and a change publishes `slot.put(now, change(read))` (`change` over what is shown, when its name cannot be read) and writes `change(read)`.
 - **P3. A later change still wins.** Once an account has a change in memory, every later change for it goes into memory too, stored or not, in the order made.
   - Without that, a stored later look for the same wallet would be read back and then covered again by the earlier, unstored one (mutants WU16 and WU17).
@@ -120,9 +121,9 @@ function storeOver(stored: Map<string, string>): { faults: { reads: boolean; wri
 - **P7. What each read shows.**
   - The first read: what it read, with the account's memory laid over it.
   - A change to a name the store can read: the name replaced by what was read, with the memory and this change laid over it. What was read is the base, so a first read that failed is made good at the next change to that name (V4's last part; mutant WU7).
-  - A change to a name the store cannot read: what is shown, with the memory and this change laid over it. What is shown already holds every step in memory, and laying them again changes nothing; if the account's first read has not landed yet, they show at once.
+  - A change to a name the store cannot read: what is shown, with the memory and this change laid over it. What is shown already holds every edit in memory, and laying them again changes nothing; if the account's first read has not landed yet, they show at once.
   - Every publish keeps its guard: it lands only while the account it was made for is open (P2-T11's PR10, on the new line).
-- **P8. The memory is not trimmed.** It grows by one step per change made after the account's first unstored change, until the provider unmounts. Changes are taps, and each step holds one id and a look or an icon, or one order.
+- **P8. The memory is not trimmed.** It grows by one edit per change made after the account's first unstored change, until the provider unmounts. Changes are taps, and each edit holds one id and a look or an icon, or one order.
 - **P9. The tests, all in `WalletLooks.render.test.tsx`.**
   - Why this file: it already holds the provider's cases and their helpers (`Keeper`, `shown`, the held stores). P5-T19's plan names a later `looks/WalletLooksProvider.render.test.tsx`, so that name is left to it. A new file would add a render file to CI for four cases.
   - **V4** ("a name the store cannot read is never written over, and what fails to store still shows until the app closes") now pins its whole title. After its two failures (W1's look and c1's icon changed while unreadable, W3's look whose write failed), the store works again:
@@ -310,7 +311,7 @@ Create `WT/docs/implementation/receipts/wallet-looks-unstored.md` with the Write
   - P2-T20, P2-T21 and P2-T29: a setter's promise resolves whether or not the change was stored, and the change shows either way; a screen cannot tell the person it was not saved.
   - P5-T19: the upload reads kept values from the store, so an unstored change is never uploaded. If the provider later reads looks from the server, decide whether the memory is laid over the server's values too.
   - The review's D8 still fails on the store's call order only: a change made from a child's mount effect reads and writes its name before the account's first read. Nothing is lost, and what shows is right (D8b).
-  - The memory grows by one step per change made after an account's first unstored change, until the provider unmounts.
+  - The memory grows by one edit per change made after an account's first unstored change, until the provider unmounts.
 ```
 
 ## Step 7: Commit
@@ -367,7 +368,10 @@ As the protocol says:
   - `base-*`, `red-*`, `green-*` and `gate-*`: each stage's own logs.
   - `mutants.out` and `mutant-logs/`: the run; `repeat/`: a second run, whose `mutants.out` is byte for byte the first's; `killers.txt`: every case each mutant fails.
   - `probes.log`: the review's probe file on the final provider. D1 to D7 and D8b pass; D8 fails on the store's call order only (P6). `base-probes.log`: the same file at the head, where D1, D2, D8 and D8b fail as the review recorded. `base-looks.log`: the focused file at the head, 9 of 9.
+  - `mutants-check.out`: the runner's `--check`, 37 `APPLIES`.
+  - `rehearsal.txt`: this brief's Steps 0.2 to 7, typed as written (`tools/rehearse.sh`) in a throwaway git copy of `8194e7f`, deleted afterwards; the commit message came from this brief. Every Expected line held, and its `mutants.out` was identical to `logs/mutants.out`. Step 0.1 needs the real remote, and the receipt was a stand-in.
   - `superseded/run-1/`: the first full run, before V4 gained the diary's lock and open, with 36 mutants. Every mutant failed the same cases as in the final run; WU20 came with the lock and open, which pin that a locked diary keeps the memory (P5).
+  - `superseded/run-2/`: the final files before the provider's new type was renamed from `Step` to `Edit`, so that it no longer shares a word with `enqueue`'s `step`. The same results, case for case.
   - `iter-*`: checks run while the files were written, kept as history.
 - **The CI deltas:** render +0 files and +4 cases (`WalletLooks.render.test.tsx` 9 to 13); `test:unit`, `test:app`, web and iOS +0.
 - **For the reviewer:** the review's D8 (not taken, P6) and the fold it offered (not taken, P4); the memory's lifetime (P5); and that a stored change joins the memory once an unstored one is there (P3). `PL/probes/` holds the review's probe file, to run against the commit.
@@ -448,10 +452,10 @@ const ICONS: Slot<KeptIcons> = { name: CATEGORY_ICONS_NAME, parse: parseIcons, o
 const nothingKept = (accountId: string | null): Kept => ({ accountId, looks: {}, order: [], icons: {} });
 
 /** One change, as it acts on everything kept: its own name, changed. */
-type Step = (kept: Kept) => Kept;
+type Edit = (kept: Kept) => Kept;
 
 /** Lays changes over what was read, in the order they were made. */
-const layOver = (kept: Kept, steps: readonly Step[]): Kept => steps.reduce((now, step) => step(now), kept);
+const layOver = (kept: Kept, edits: readonly Edit[]): Kept => edits.reduce((now, edit) => edit(now), kept);
 
 export type WalletLooks = {
   /** The kept look, else the one derived from the id. */
@@ -495,7 +499,7 @@ export function WalletLooksProvider({ children }: { children: ReactNode }) {
   const queue = useRef<Promise<void>>(Promise.resolve());
   // By account, while this provider is mounted: each change that was not stored and every change made
   // after it, in the order made. Each read lays them over what it reads.
-  const unstored = useRef(new Map<string, readonly Step[]>());
+  const unstored = useRef(new Map<string, readonly Edit[]>());
   const enqueue = useCallback((step: () => Promise<void>) => {
     const run = queue.current.then(step);
     queue.current = run.catch(() => undefined);
@@ -517,16 +521,16 @@ export function WalletLooksProvider({ children }: { children: ReactNode }) {
   const keep = useCallback(<T,>(slot: Slot<T>, change: (value: T) => T): Promise<void> => {
     if (accountId === null) return Promise.resolve();
     const store = walletAccountStore(accountId);
-    const step: Step = (kept) => slot.put(kept, change(slot.of(kept)));
+    const edit: Edit = (kept) => slot.put(kept, change(slot.of(kept)));
     return enqueue(async () => {
       const stored = await readName(store, slot.name);
       const earlier = unstored.current.get(accountId) ?? [];
-      const steps = [...earlier, step];
+      const edits = [...earlier, edit];
       // What the store holds (what is shown, when it cannot be read), with each change not stored and this one over it.
-      setState((now) => (now.accountId === accountId ? layOver(stored === null ? now : slot.put(now, slot.parse(stored.raw)), steps) : now));
+      setState((now) => (now.accountId === accountId ? layOver(stored === null ? now : slot.put(now, slot.parse(stored.raw)), edits) : now));
       // A name the store cannot read is never written over, and a write that fails is caught.
       const written = stored !== null && (await store.set(slot.name, JSON.stringify(change(slot.parse(stored.raw)))).then(() => true, () => false));
-      if (!written || earlier.length > 0) unstored.current.set(accountId, steps);
+      if (!written || earlier.length > 0) unstored.current.set(accountId, edits);
     });
   }, [accountId, enqueue]);
 
@@ -593,10 +597,10 @@ export function useCategoryIcons(): CategoryIcons {
  const nothingKept = (accountId: string | null): Kept => ({ accountId, looks: {}, order: [], icons: {} });
  
 +/** One change, as it acts on everything kept: its own name, changed. */
-+type Step = (kept: Kept) => Kept;
++type Edit = (kept: Kept) => Kept;
 +
 +/** Lays changes over what was read, in the order they were made. */
-+const layOver = (kept: Kept, steps: readonly Step[]): Kept => steps.reduce((now, step) => step(now), kept);
++const layOver = (kept: Kept, edits: readonly Edit[]): Kept => edits.reduce((now, edit) => edit(now), kept);
 +
  export type WalletLooks = {
    /** The kept look, else the one derived from the id. */
@@ -607,7 +611,7 @@ export function useCategoryIcons(): CategoryIcons {
    const queue = useRef<Promise<void>>(Promise.resolve());
 +  // By account, while this provider is mounted: each change that was not stored and every change made
 +  // after it, in the order made. Each read lays them over what it reads.
-+  const unstored = useRef(new Map<string, readonly Step[]>());
++  const unstored = useRef(new Map<string, readonly Edit[]>());
    const enqueue = useCallback((step: () => Promise<void>) => {
      const run = queue.current.then(step);
      queue.current = run.catch(() => undefined);
@@ -624,19 +628,19 @@ export function useCategoryIcons(): CategoryIcons {
    const keep = useCallback(<T,>(slot: Slot<T>, change: (value: T) => T): Promise<void> => {
      if (accountId === null) return Promise.resolve();
      const store = walletAccountStore(accountId);
-+    const step: Step = (kept) => slot.put(kept, change(slot.of(kept)));
++    const edit: Edit = (kept) => slot.put(kept, change(slot.of(kept)));
      return enqueue(async () => {
        const stored = await readName(store, slot.name);
 -      const value = stored === null ? null : change(slot.parse(stored.raw));
 -      setState((now) => (now.accountId === accountId ? slot.put(now, value ?? change(slot.of(now))) : now));
 -      if (value !== null) await store.set(slot.name, JSON.stringify(value)).catch(() => undefined);
 +      const earlier = unstored.current.get(accountId) ?? [];
-+      const steps = [...earlier, step];
++      const edits = [...earlier, edit];
 +      // What the store holds (what is shown, when it cannot be read), with each change not stored and this one over it.
-+      setState((now) => (now.accountId === accountId ? layOver(stored === null ? now : slot.put(now, slot.parse(stored.raw)), steps) : now));
++      setState((now) => (now.accountId === accountId ? layOver(stored === null ? now : slot.put(now, slot.parse(stored.raw)), edits) : now));
 +      // A name the store cannot read is never written over, and a write that fails is caught.
 +      const written = stored !== null && (await store.set(slot.name, JSON.stringify(change(slot.parse(stored.raw)))).then(() => true, () => false));
-+      if (!written || earlier.length > 0) unstored.current.set(accountId, steps);
++      if (!written || earlier.length > 0) unstored.current.set(accountId, edits);
      });
    }, [accountId, enqueue]);
  

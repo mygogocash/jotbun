@@ -1,0 +1,37 @@
+WU1 APPLIES: the first read lays nothing over what it reads
+WU2 APPLIES: the first read lays every account's unstored changes
+WU3 APPLIES: a change lays every account's unstored changes
+WU4 APPLIES: a change keeps and lays only itself
+WU5 APPLIES: a change goes under the earlier unstored ones
+WU6 APPLIES: a change's own read shows only that change over it
+WU7 APPLIES: a change's own read is not shown, only what was shown
+WU8 APPLIES: a change to a name the store cannot read does not show
+WU9 APPLIES: a change shows only what was read, nothing laid over it
+WU10 APPLIES: a write holds only the change, not what was read
+WU11 APPLIES: a write folds in what was never stored
+WU12 APPLIES: a name the store cannot read is written over, as nothing kept
+WU13 APPLIES: a write that fails counts as stored
+WU14 APPLIES: a write that fails is not caught
+WU15 APPLIES: a change not stored is kept in memory only after an earlier one
+WU16 APPLIES: a stored change after an unstored one is not kept in memory
+WU17 APPLIES: changes are kept in memory only after two unstored ones
+WU18 APPLIES: nothing is kept in memory
+WU19 APPLIES: the memory is forgotten when the account changes
+WU20 APPLIES: the memory is forgotten when the diary locks or closes
+PR1 APPLIES: the store is never read
+PR2 APPLIES: setLook keeps nothing
+PR3 APPLIES: setOrder keeps nothing
+PR4 APPLIES: setIcon keeps nothing
+PR5 APPLIES: changes run at once, not one after another
+PR6 APPLIES: the account's first read does not wait its turn
+PR7 APPLIES: nothing resets when the account changes
+PR8 APPLIES: the last account's looks show for a render after the switch
+PR9 APPLIES: a late first read lands on the next account
+PR10 APPLIES: a late change shows under the next account
+PR14 APPLIES: a read that fails is not caught
+PR15 APPLIES: setOrder keeps a repeated id
+PR16 APPLIES: with no account open a change is kept anyway
+PR17 APPLIES: lookOf ignores what was kept
+PR18 APPLIES: the kept order is not given
+PR19 APPLIES: iconOf ignores what was kept
+PR20 APPLIES: icons kept under another name

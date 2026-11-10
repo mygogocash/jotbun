@@ -1,0 +1,66 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:82851) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:82850) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/wallet/privacy/PrivateMode.render.test.tsx > the eye hides every amount and the choice survives a restart 42ms
+ ✓ src/wallet/privacy/PrivateMode.render.test.tsx > the eye says what it will do, at 44 pt 24ms
+ ✓ src/wallet/privacy/PrivateMode.render.test.tsx > the tip shows the first time only 20ms
+ ✓ src/wallet/privacy/PrivateMode.render.test.tsx > toggling sends one private_mode_toggled with no properties 8ms
+ ✓ src/wallet/card/WalletCard.render.test.tsx > a credit card shows what was spent, others show what is left 81ms
+ ✓ src/wallet/privacy/PrivateMode.render.test.tsx > each tap tells VoiceOver what changed (ax-voiceover) 13ms
+ ✓ src/wallet/privacy/PrivateMode.render.test.tsx > until the setting is read, amounts stay hidden and the eye waits; a store that cannot answer shows them 17ms
+ ✓ src/wallet/privacy/PrivateMode.render.test.tsx > outside the wallet root amounts show, and the eye changes nothing 5ms
+ ✓ src/wallet/privacy/PrivateMode.render.test.tsx > the catalogue's private section pins its own preview and never touches the phone's setting 19ms
+ ✓ src/wallet/privacy/PrivateMode.render.test.tsx > an icon button is 44 pt and named; a disabled one says so and does nothing 3ms
+ ✓ src/wallet/card/WalletCard.render.test.tsx > each card says itself as ax-voiceover and rh-offline write it 36ms
+ ✓ src/wallet/card/WalletCard.render.test.tsx > the pending line shows on stack cards too 42ms
+ ✓ src/wallet/card/WalletCard.render.test.tsx > the full card adds the kind line; today's money out shows when it is passed; private mode masks each line in place 56ms
+ ✓ src/wallet/card/WalletCard.render.test.tsx > titanium carries white text, silk ink; dark titanium has a 1 pt edge of #5C5968 18ms
+ ✓ src/wallet/card/WalletCard.render.test.tsx > at AX5 a ฿999,999,999.99 balance and an 80-code-point Thai name wrap and never truncate 11ms
+ ✓ src/wallet/card/WalletCard.render.test.tsx > a card is at least 44 pt tall in every variant 18ms
+ ✓ src/wallet/card/WalletCard.render.test.tsx > looks come from the open diary's account, and a look kept for another wallet is ignored 14ms
+ ✓ src/wallet/card/WalletCard.render.test.tsx > with no diary open the derived look shows and setLook stores nothing 4ms
+(node:82866) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/wallet/money/WalletAmount.render.test.tsx > income is violet with a plus, an expense in a list has no sign 34ms
+ ✓ src/wallet/money/WalletAmount.render.test.tsx > a tone or the colour of a material decides the colour; the label comes first, then the amount in words 7ms
+ ✓ src/wallet/money/WalletAmount.render.test.tsx > private mode draws ฿•••• and says the amount is hidden, with no digit anywhere 11ms
+ ✓ src/wallet/money/WalletAmount.render.test.tsx > a hidden amount keeps the amount's size and line, so rows never change height 16ms
+ ✓ src/wallet/money/WalletAmount.render.test.tsx > an amount is never clamped to a line, and grows to 64 pt at most and never more than body text 4ms
+(node:82867) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+stderr | src/wallet/testing/walletHarness.render.test.tsx > the bun intensity can change inside the harness, and a language chosen there leaves the mount in its own locale
+Bun setting could not be saved.
+Language choice could not be saved.
+
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > the harness nests the providers as the app does 21ms
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > reducedMotion: 'pending' reads as reduced until answerReducedMotion(false) 4ms
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > the harness mounts what it is given: the language, the mode, the text size, the answer and its own fakes 8ms
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > the wallet's two stores live in memory: seeds by scope, every change in stored, and the sign-out erase keeps the account's 2ms
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > a part mounted after the answer reads it at mount, since rerender keeps the providers 3ms
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > the bun intensity can change inside the harness, and a language chosen there leaves the mount in its own locale 3ms
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > a part that asks the phone itself gets the answer the root gets 3ms
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > the harness mounts the wallet's looks innermost, kept for the diary's account 4ms
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > the catalogue lists the Bun Wallet's sections last, each with a bw- id and a 'Bun Wallet: ' title (R72) 0ms
+(node:82868) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/wallet/motion/GrowBar.render.test.tsx > under reduced motion the bar is drawn at its value 22ms
+ ✓ src/wallet/motion/GrowBar.render.test.tsx > before the phone answers, the bar is drawn still at its value 3ms
+ ✓ src/wallet/motion/GrowBar.render.test.tsx > the fill never passes the track 4ms
+ ✓ src/wallet/motion/GrowBar.render.test.tsx > the bar is hidden from screen readers 4ms
+ ✓ src/wallet/motion/GrowBar.render.test.tsx > at full motion the bar grows from nothing to its value over 320 ms, and on to a new value 5ms
+ ✓ src/wallet/motion/GrowBar.render.test.tsx > the wallet's answer decides, not Reanimated's own reduce-motion setting (W6) 3ms
+
+ Test Files  5 passed (5)
+      Tests  38 passed (38)
+   Start at  08:04:27
+   Duration  2.07s (transform 980ms, setup 169ms, import 1.85s, tests 595ms, environment 402ms)
+

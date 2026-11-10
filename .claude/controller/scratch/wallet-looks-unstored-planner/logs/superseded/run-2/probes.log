@@ -1,0 +1,53 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:55391) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/wallet/looks/DataLensProbes.render.test.tsx > D1: a change whose write failed still shows after a later change to the same name 21ms
+ ✓ src/wallet/looks/DataLensProbes.render.test.tsx > D2: a change to an unreadable name still shows after the store reads again and another change lands 3ms
+ ✓ src/wallet/looks/DataLensProbes.render.test.tsx > D3: away and back with reads held and a change made during the first read: kept for its account, never shown under the other 10ms
+ ✓ src/wallet/looks/DataLensProbes.render.test.tsx > D4: two accounts' changes queued: each kept for its own account, and B never shows A's 11ms
+ ✓ src/wallet/looks/DataLensProbes.render.test.tsx > D5: setOrder keeps each id once, read or unreadable; a damaged kept order reads as none and is replaced 3ms
+ ✓ src/wallet/looks/DataLensProbes.render.test.tsx > D6: under StrictMode the first read lands once the queue moves and two changes keep each other 2ms
+ ✓ src/wallet/looks/DataLensProbes.render.test.tsx > D7: when the account closes, every look is derived at once and a new setter keeps nothing 4ms
+ × src/wallet/looks/DataLensProbes.render.test.tsx > D8: a change from a child's mount effect waits for the account's first read (order of the store's reads and writes) 5ms
+   → the store's calls in order: get looks, set looks, get looks, get wallet-order, get category-icons: expected [ 'get looks', 'get looks', …(1) ] to deeply equal [ 'get category-icons', …(2) ]
+ ✓ src/wallet/looks/DataLensProbes.render.test.tsx > D8b: a change from a child's mount effect whose write fails still shows once the first read lands 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/looks/DataLensProbes.render.test.tsx > D8: a change from a child's mount effect waits for the account's first read (order of the store's reads and writes)
+AssertionError: the store's calls in order: get looks, set looks, get looks, get wallet-order, get category-icons: expected [ 'get looks', 'get looks', …(1) ] to deeply equal [ 'get category-icons', …(2) ]
+
+- Expected
++ Received
+
+  [
+-   "get category-icons",
+    "get looks",
+-   "get wallet-order",
++   "get looks",
++   "set looks",
+  ]
+
+ ❯ src/wallet/looks/DataLensProbes.render.test.tsx:264:83
+    262|   await settle();
+    263|   // The brief: each change runs after the account's first read (three…
+    264|   expect(log.slice(0, 3).sort(), `the store's calls in order: ${log.jo…
+       |                                                                                   ^
+    265|   expect(shown()).toMatchObject({ w1: PEACH, w2: SKY });
+    266| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 8 passed (9)
+   Start at  07:52:03
+   Duration  763ms (transform 324ms, setup 40ms, import 473ms, tests 62ms, environment 84ms)
+

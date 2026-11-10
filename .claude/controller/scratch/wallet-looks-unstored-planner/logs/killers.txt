@@ -1,0 +1,139 @@
+PR1
+  WalletLooks.render.test.tsx: a kept look, the wallet order and a category's icon go to this account's store, and two quick changes keep each other
+  WalletLooks.render.test.tsx: when the account changes, nothing of the last one shows, its late read is dropped, and a change stays with the account it was made in
+  WalletLooks.render.test.tsx: a name the store cannot read is never written over, and what fails to store still shows until the app closes
+  WalletLooks.render.test.tsx: a later change wins over one that was never stored, at every later read of the account's names
+  WalletLooks.render.test.tsx: a change made from a child's mount effect, whose write fails, still shows once the account's first read lands
+  WalletLooks.render.test.tsx: a category's tile is its glyph in ink on its hue tinted, or on raised, else its initial; 36 pt with an 11 pt corner, in proportion at 52
+  WalletCard.render.test.tsx: looks come from the open diary's account, and a look kept for another wallet is ignored
+  walletHarness.render.test.tsx: the harness mounts the wallet's looks innermost, kept for the diary's account
+PR2
+  WalletLooks.render.test.tsx: a kept look, the wallet order and a category's icon go to this account's store, and two quick changes keep each other
+  WalletLooks.render.test.tsx: a change waits for the account's first read, so the read never hides it
+  WalletLooks.render.test.tsx: when the account changes, nothing of the last one shows, its late read is dropped, and a change stays with the account it was made in
+  WalletLooks.render.test.tsx: a name the store cannot read is never written over, and what fails to store still shows until the app closes
+  WalletLooks.render.test.tsx: a change whose write failed still shows after a later change to the same name is stored, and the store holds only what was stored
+  WalletLooks.render.test.tsx: a change made while its name could not be read still shows after the store reads again and a later change to it is stored
+  WalletLooks.render.test.tsx: a later change wins over one that was never stored, at every later read of the account's names
+  WalletLooks.render.test.tsx: a change made from a child's mount effect, whose write fails, still shows once the account's first read lands
+PR3
+  WalletLooks.render.test.tsx: a kept look, the wallet order and a category's icon go to this account's store, and two quick changes keep each other
+  WalletLooks.render.test.tsx: a later change wins over one that was never stored, at every later read of the account's names
+PR4
+  WalletLooks.render.test.tsx: a kept look, the wallet order and a category's icon go to this account's store, and two quick changes keep each other
+  WalletLooks.render.test.tsx: a name the store cannot read is never written over, and what fails to store still shows until the app closes
+PR5
+  WalletLooks.render.test.tsx: a kept look, the wallet order and a category's icon go to this account's store, and two quick changes keep each other
+  WalletLooks.render.test.tsx: a change waits for the account's first read, so the read never hides it
+  WalletLooks.render.test.tsx: a change made from a child's mount effect, whose write fails, still shows once the account's first read lands
+PR6
+  WalletLooks.render.test.tsx: a change waits for the account's first read, so the read never hides it
+  WalletLooks.render.test.tsx: a change made from a child's mount effect, whose write fails, still shows once the account's first read lands
+PR7
+  WalletLooks.render.test.tsx: a change waits for the account's first read, so the read never hides it
+  WalletLooks.render.test.tsx: when the account changes, nothing of the last one shows, its late read is dropped, and a change stays with the account it was made in
+  WalletLooks.render.test.tsx: a name the store cannot read is never written over, and what fails to store still shows until the app closes
+PR8
+  WalletLooks.render.test.tsx: when the account changes, nothing of the last one shows, its late read is dropped, and a change stays with the account it was made in
+PR9
+  WalletLooks.render.test.tsx: when the account changes, nothing of the last one shows, its late read is dropped, and a change stays with the account it was made in
+PR10
+  WalletLooks.render.test.tsx: when the account changes, nothing of the last one shows, its late read is dropped, and a change stays with the account it was made in
+PR14
+  WalletLooks.render.test.tsx: a name the store cannot read is never written over, and what fails to store still shows until the app closes
+  WalletLooks.render.test.tsx: a change made while its name could not be read still shows after the store reads again and a later change to it is stored
+PR15
+  WalletLooks.render.test.tsx: a kept look, the wallet order and a category's icon go to this account's store, and two quick changes keep each other
+PR16
+  WalletCard.render.test.tsx: with no diary open the derived look shows and setLook stores nothing
+PR17
+  WalletLooks.render.test.tsx: a kept look, the wallet order and a category's icon go to this account's store, and two quick changes keep each other
+  WalletLooks.render.test.tsx: a change waits for the account's first read, so the read never hides it
+  WalletLooks.render.test.tsx: when the account changes, nothing of the last one shows, its late read is dropped, and a change stays with the account it was made in
+  WalletLooks.render.test.tsx: a name the store cannot read is never written over, and what fails to store still shows until the app closes
+  WalletLooks.render.test.tsx: a change whose write failed still shows after a later change to the same name is stored, and the store holds only what was stored
+  WalletLooks.render.test.tsx: a change made while its name could not be read still shows after the store reads again and a later change to it is stored
+  WalletLooks.render.test.tsx: a later change wins over one that was never stored, at every later read of the account's names
+  WalletLooks.render.test.tsx: a change made from a child's mount effect, whose write fails, still shows once the account's first read lands
+  WalletCard.render.test.tsx: looks come from the open diary's account, and a look kept for another wallet is ignored
+  walletHarness.render.test.tsx: the harness mounts the wallet's looks innermost, kept for the diary's account
+PR18
+  WalletLooks.render.test.tsx: a kept look, the wallet order and a category's icon go to this account's store, and two quick changes keep each other
+  WalletLooks.render.test.tsx: a later change wins over one that was never stored, at every later read of the account's names
+  walletHarness.render.test.tsx: the harness mounts the wallet's looks innermost, kept for the diary's account
+PR19
+  WalletLooks.render.test.tsx: a kept look, the wallet order and a category's icon go to this account's store, and two quick changes keep each other
+  WalletLooks.render.test.tsx: a name the store cannot read is never written over, and what fails to store still shows until the app closes
+  WalletLooks.render.test.tsx: a category's tile is its glyph in ink on its hue tinted, or on raised, else its initial; 36 pt with an 11 pt corner, in proportion at 52
+  walletHarness.render.test.tsx: the harness mounts the wallet's looks innermost, kept for the diary's account
+PR20
+  WalletLooks.render.test.tsx: a kept look, the wallet order and a category's icon go to this account's store, and two quick changes keep each other
+  WalletLooks.render.test.tsx: a category's tile is its glyph in ink on its hue tinted, or on raised, else its initial; 36 pt with an 11 pt corner, in proportion at 52
+  walletHarness.render.test.tsx: the harness mounts the wallet's looks innermost, kept for the diary's account
+WU1
+  WalletLooks.render.test.tsx: a name the store cannot read is never written over, and what fails to store still shows until the app closes
+  WalletLooks.render.test.tsx: a change made from a child's mount effect, whose write fails, still shows once the account's first read lands
+WU2
+  WalletLooks.render.test.tsx: a name the store cannot read is never written over, and what fails to store still shows until the app closes
+WU3
+  WalletLooks.render.test.tsx: a name the store cannot read is never written over, and what fails to store still shows until the app closes
+WU4
+  WalletLooks.render.test.tsx: a name the store cannot read is never written over, and what fails to store still shows until the app closes
+  WalletLooks.render.test.tsx: a change whose write failed still shows after a later change to the same name is stored, and the store holds only what was stored
+  WalletLooks.render.test.tsx: a change made while its name could not be read still shows after the store reads again and a later change to it is stored
+WU5
+  WalletLooks.render.test.tsx: a later change wins over one that was never stored, at every later read of the account's names
+WU6
+  WalletLooks.render.test.tsx: a change whose write failed still shows after a later change to the same name is stored, and the store holds only what was stored
+  WalletLooks.render.test.tsx: a change made while its name could not be read still shows after the store reads again and a later change to it is stored
+WU7
+  WalletLooks.render.test.tsx: a name the store cannot read is never written over, and what fails to store still shows until the app closes
+WU8
+  WalletLooks.render.test.tsx: a name the store cannot read is never written over, and what fails to store still shows until the app closes
+  WalletLooks.render.test.tsx: a change made while its name could not be read still shows after the store reads again and a later change to it is stored
+WU9
+  WalletLooks.render.test.tsx: a kept look, the wallet order and a category's icon go to this account's store, and two quick changes keep each other
+  WalletLooks.render.test.tsx: a change waits for the account's first read, so the read never hides it
+  WalletLooks.render.test.tsx: a name the store cannot read is never written over, and what fails to store still shows until the app closes
+  WalletLooks.render.test.tsx: a change whose write failed still shows after a later change to the same name is stored, and the store holds only what was stored
+  WalletLooks.render.test.tsx: a change made while its name could not be read still shows after the store reads again and a later change to it is stored
+  WalletLooks.render.test.tsx: a later change wins over one that was never stored, at every later read of the account's names
+WU10
+  WalletLooks.render.test.tsx: a kept look, the wallet order and a category's icon go to this account's store, and two quick changes keep each other
+  WalletLooks.render.test.tsx: a change waits for the account's first read, so the read never hides it
+  WalletLooks.render.test.tsx: when the account changes, nothing of the last one shows, its late read is dropped, and a change stays with the account it was made in
+  WalletLooks.render.test.tsx: a change whose write failed still shows after a later change to the same name is stored, and the store holds only what was stored
+  WalletLooks.render.test.tsx: a change made while its name could not be read still shows after the store reads again and a later change to it is stored
+  WalletLooks.render.test.tsx: a later change wins over one that was never stored, at every later read of the account's names
+WU11
+  WalletLooks.render.test.tsx: a change whose write failed still shows after a later change to the same name is stored, and the store holds only what was stored
+  WalletLooks.render.test.tsx: a change made while its name could not be read still shows after the store reads again and a later change to it is stored
+WU12
+  WalletLooks.render.test.tsx: a name the store cannot read is never written over, and what fails to store still shows until the app closes
+  WalletLooks.render.test.tsx: a change made while its name could not be read still shows after the store reads again and a later change to it is stored
+WU13
+  WalletLooks.render.test.tsx: a change whose write failed still shows after a later change to the same name is stored, and the store holds only what was stored
+  WalletLooks.render.test.tsx: a change made from a child's mount effect, whose write fails, still shows once the account's first read lands
+WU14
+  WalletLooks.render.test.tsx: a name the store cannot read is never written over, and what fails to store still shows until the app closes
+  WalletLooks.render.test.tsx: a change whose write failed still shows after a later change to the same name is stored, and the store holds only what was stored
+  WalletLooks.render.test.tsx: a later change wins over one that was never stored, at every later read of the account's names
+  WalletLooks.render.test.tsx: a change made from a child's mount effect, whose write fails, still shows once the account's first read lands
+WU15
+  WalletLooks.render.test.tsx: a name the store cannot read is never written over, and what fails to store still shows until the app closes
+  WalletLooks.render.test.tsx: a change whose write failed still shows after a later change to the same name is stored, and the store holds only what was stored
+  WalletLooks.render.test.tsx: a change made while its name could not be read still shows after the store reads again and a later change to it is stored
+  WalletLooks.render.test.tsx: a change made from a child's mount effect, whose write fails, still shows once the account's first read lands
+WU16
+  WalletLooks.render.test.tsx: a later change wins over one that was never stored, at every later read of the account's names
+WU17
+  WalletLooks.render.test.tsx: a later change wins over one that was never stored, at every later read of the account's names
+WU18
+  WalletLooks.render.test.tsx: a name the store cannot read is never written over, and what fails to store still shows until the app closes
+  WalletLooks.render.test.tsx: a change whose write failed still shows after a later change to the same name is stored, and the store holds only what was stored
+  WalletLooks.render.test.tsx: a change made while its name could not be read still shows after the store reads again and a later change to it is stored
+  WalletLooks.render.test.tsx: a change made from a child's mount effect, whose write fails, still shows once the account's first read lands
+WU19
+  WalletLooks.render.test.tsx: a name the store cannot read is never written over, and what fails to store still shows until the app closes
+WU20
+  WalletLooks.render.test.tsx: a name the store cannot read is never written over, and what fails to store still shows until the app closes
