@@ -108,7 +108,12 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - **Promotion PR #381** (`promote/p4-t12`, based on `promote/1b-t8`). Stack #379 is now #373 → #378 → #380 → #381.
 - **App baseline at 712574d** (CI on #376's merge ref plus P4-T13): `test:unit` 956 (927 + 18 + 11), render 109 files and 1867 cases, web 4806; iOS not measured at the head (computed 5772: 5760 with 1D-T8 plus P4-T12's 12 modules).
 
-## Second usage-limit stop, 10 Nov about 07:00 to 08:10: RESUME THESE
+## Second usage-limit stop, 10 Nov about 07:00 (RESUMED at 07:05)
+**Resumed at 07:05,** after the owner reset the credit early. Do not resume these again:
+- the P2-T11 review (task wmhduu9mn), the P2-T13 review (w3202gbyx) and the 1B-T7 review (wms605bju), each from its saved run;
+- the 1B-T11 planner, steered on run 5 with the cutoff note.
+
+The list below is kept for the record.
 - **Review workflows** (they do not restart themselves). Resume each with `Workflow({scriptPath, resumeFromRunId})`: agents that finished replay from cache.
   - **P2-T11 (#382):** run wf_4e503333-e15, script `review-p2-t11-wf_4e503333-e15.js`. Both lenses are done (data: 5 findings; build: 4; no blocker or major), so only the synthesizer reruns.
   - **P2-T13 (#383):** run wf_74d1e17e-476, script `review-p2-t13-wf_74d1e17e-476.js`. The behaviour lens is done (6 findings, no blocker or major); the surface lens and the synthesizer rerun.
