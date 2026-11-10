@@ -67,7 +67,11 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - P1 to P19 are accepted, with P2 recorded as R104 (a one-minute floor for writes). P1 fixes 1B-T8's m-1 (a stale snapshot keeps its row and reads `expired`), with a residual accepted.
     - Kit `scratch/1b-t11-planner/`: check_kit at 55b5781 gives 29 OK, and the 6 `orig/` files are identical. The planner's proof: RED 25 of 72, GREEN 72, 32 of 32 mutants; the AFFECTED 14 workers files gave 414 passed and 1 todo.
     - The implementer (Haiku max, 2bc80cea) was dispatched at 07:08 in a pre-installed p1-1b-t11 from 55b5781, under the heavy lock.
-    - Then: PR (issue from backlog-map.json) and an Opus review (M).
+    - **DONE at a9a7d27; PR #387 opened at 07:20 (issue #115).**
+      - RED 25 of 72, GREEN 72, 32 of 32 mutants. AFFECTED: 14 files, 414 passed and 1 todo. `test:edge` 176. `build:edge` gives 722 kB with every driver marker at 0.
+      - The controller checked the 9 files against the kit and the clean merge with the head.
+    - **The review runs as a workflow** (run wf_1b001b01-c31): two Opus lenses (the alarm rules, R104 and the rearm wiring; the snapshot fix, the migration, shared files and CI), a skeptic for each blocker or major, and a synthesizer writing `reviews/1B-T11.md`.
+    - On approval and green CI: `merge_task_pr.sh 387 a9a7d27 1B-T11`, then `promote_pr.sh 1B-T11 387`. If 1B-T7 (#385) merges first, refresh #387's merge ref before trusting its CI (lessons.md).
     - fix-download-aborts is then planned on top of 1B-T7 and 1B-T11 once both merge (followups.md).
   - **fix-download-aborts** is planned next, on top of 1B-T7's `real/` `handler.ts`. It must land before 1B-T13; its list in followups.md now includes 1B-T8's review cases.
   - **ci-parallel-jobs: brief READY at 857b9f2** (M), with the controller's amendment (the iOS export and `typecheck:routes` in CI).
@@ -113,6 +117,14 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
       - The minors go to P4-T14 (followups.md). Two of them are privacy rules for the first hasher: m1, a salt fetch in flight during the sign-out erase writes the salt back; m2, the hasher must belong to the open diary's account.
     - **Promotion PR #381** (`promote/p4-t12`, based on `promote/1b-t8`). Stack #379 is now #373 → #378 → #380 → #381.
 - **App baseline at 712574d** (CI on #376's merge ref plus P4-T13): `test:unit` 956 (927 + 18 + 11), render 109 files and 1867 cases, web 4806; iOS not measured at the head (computed 5772: 5760 with 1D-T8 plus P4-T12's 12 modules).
+
+## T3 server restart, 10 Nov about 07:21 (RESUMED at 07:22)
+- The restart cancelled the three running review workflows. They were resumed from their runs, and finished agents replay from cache:
+  - P2-T13: run wf_74d1e17e-476, task w29wpu2c7;
+  - 1B-T7: run wf_529f455b-229, task w9t0fclqe;
+  - 1B-T11: run wf_1b001b01-c31, task wfyqetxeu.
+- At 07:22 the heavy lock was free and no test process was alive. No delegated thread was running.
+- **If they are cancelled again, resume the same runs.** Each run's `journal.jsonl` is under the session's `subagents/workflows/<run>/`.
 
 ## Second usage-limit stop, 10 Nov about 07:00 (RESUMED at 07:05)
 **Resumed at 07:05,** after the owner reset the credit early. Do not resume these again:
