@@ -280,7 +280,7 @@ The list below is kept for the record.
       - dispatch P2-T14;
       - fix the receipt's stale Status and Base lines in a one-line commit if the confirming review lists them.
 
-      The push's own CI run will be refused for billing like the others; rerun it after the fix.
+      The push's CI run 42747590350 was refused for billing (0 steps run). After the fix, rerun that one: `gh run rerun 42747590350 --repo mygogocash/jotbun`.
     - **Then:**
       1. dispatch a Haiku fixer on `fix/tray-hardening`;
       2. push the new head and update #392's body;
@@ -649,7 +649,7 @@ Merge each PR when its CI on the current head is green; close its issue by hand 
     - add a payment method or raise the Actions spending limit for the account that owns the repo;
     - or cut CI cost first. Each merged task runs CI twice today: the task PR, and its promotion PR into main on the same tree. P11's cheaper layouts are another way: fold `image` into `exports`, or split the section suites two ways.
     - Otherwise CI waits for the minutes to reset at the next billing date.
-  - **After the fix:** rerun each refused run (`gh run rerun <run> --repo mygogocash/jotbun`) and merge as each goes green. Refused so far: 42738781210 (#392), 42741146172 (#394), 42741688287 (#395) and 42745408105 (#396).
+  - **After the fix:** rerun each refused run (`gh run rerun <run> --repo mygogocash/jotbun`) and merge as each goes green. Refused so far: 42747590350 (#392 at fc78376; its older 42738781210 on 784667b no longer matters), 42741146172 (#394), 42741688287 (#395) and 42745408105 (#396).
 - **ANSWERED (10 Nov, 06:2x): keep the nine-job CI, merge.** Below is the question as it was asked. The owner accepted about 33 billable minutes a run.
 - **(was) Actions minutes before ci-parallel-jobs merges.** The repo is private on the Free plan, which includes 2,000 Actions minutes a month.
   - Usage: 80 pull-request runs have happened since 1 Nov, about 1,400 billable minutes at today's roughly 18 per run, and each merged task now adds a promotion PR run. The controller cannot read the actual usage: GitHub's timing API reports 0, and the billing endpoint needs `admin:org`.
