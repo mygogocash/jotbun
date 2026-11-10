@@ -1,0 +1,124 @@
+H1
+  Tray.render.test.tsx: under the lock cover nothing asks to close the tray
+H2
+  Tray.render.test.tsx: on iOS a dismissal that ends after the tray is shown again says nothing; the next one says it closed
+  Tray.render.test.tsx: on iOS a dismissal that ends in the commit that opens the tray again says nothing
+  Tray.render.test.tsx: on iOS a dismissal that ends in the commit that hides the tray again says nothing; the next one says it closed
+H3
+  Tray.render.test.tsx: on iOS a dismissal that ends after the tray is shown again says nothing; the next one says it closed
+  Tray.render.test.tsx: on iOS a dismissal that ends in the commit that hides the tray again says nothing; the next one says it closed
+H4
+  Tray.render.test.tsx: on iOS a dismissal that ends in the commit that opens the tray again says nothing
+H5
+  Tray.render.test.tsx: a drag the lock cover cuts off is gone when the cover lifts
+H6
+  Tray.render.test.tsx: opening at another step in one render, or a step change under the lock cover, ticks nothing
+H7
+  Tray.render.test.tsx: opening at another step in one render, or a step change under the lock cover, ticks nothing
+  Tray.render.test.tsx: once the lock cover lifts a step change ticks, even when it lifted on the step it had under the cover
+H8
+  Tray.render.test.tsx: opening at another step in one render, or a step change under the lock cover, ticks nothing
+H9
+  Tray.render.test.tsx: under reduced motion a new step shows at once
+  Tray.render.test.tsx: at full motion the card springs up, and a step change morphs its height and ticks once; opening ticks nothing
+  Tray.render.test.tsx: opening at another step in one render, or a step change under the lock cover, ticks nothing
+  Tray.render.test.tsx: once the lock cover lifts a step change ticks, even when it lifted on the step it had under the cover
+H10
+  Tray.render.test.tsx: a swipe the system cancels springs back, even past the line
+H11
+  Tray.render.test.tsx: a swipe the system cancels springs back, even past the line
+H12
+  Tray.render.test.tsx: on iOS a dismissal that ends in the commit that opens the tray again says nothing
+H13
+  Tray.render.test.tsx: on iOS a dismissal that ends in the commit that hides the tray again says nothing; the next one says it closed
+H14
+  Tray.render.test.tsx: on iOS a dismissal that ends in the commit that opens the tray again says nothing
+  Tray.render.test.tsx: on iOS a dismissal that ends in the commit that hides the tray again says nothing; the next one says it closed
+H15
+  Tray.render.test.tsx: on iOS a dismissal that ends in the commit that hides the tray again says nothing; the next one says it closed
+H16
+  Tray.render.test.tsx: on iOS a dismissal that ends in the commit that hides the tray again says nothing; the next one says it closed
+B1
+  Tray.render.test.tsx: an onClosed given while the card leaves is the one called
+  Tray.render.test.tsx: on iOS an onClosed given while the dismissal is under way is the one called
+B2
+  Tray.render.test.tsx: the card leaves before the Modal hides, then onClosed fires once
+  Tray.render.test.tsx: an onClosed given while the card leaves is the one called
+B4
+  Tray.render.test.tsx: an onClosed given while the card leaves is the one called
+O1
+  Tray.render.test.tsx: on a phone the card is the named dialog and the title takes focus, with or without a header; on iOS onClosed waits for the Modal's own dismissal
+O2
+  Tray.render.test.tsx: on a phone the card is the named dialog and the title takes focus, with or without a header; on iOS onClosed waits for the Modal's own dismissal
+O5
+  Tray.render.test.tsx: on a phone the card is the named dialog and the title takes focus, with or without a header; on iOS onClosed waits for the Modal's own dismissal
+O6
+  Tray.render.test.tsx: on a phone the card is the named dialog and the title takes focus, with or without a header; on iOS onClosed waits for the Modal's own dismissal
+O7
+  trayGesture.test.ts: what the web drops is wired for a phone: the screen reader's escape, the modal card, the title, the backdrop, the Modal, the keyboard and the cover
+O11
+  trayGesture.test.ts: what the web drops is wired for a phone: the screen reader's escape, the modal card, the title, the backdrop, the Modal, the keyboard and the cover
+R1
+  Tray.render.test.tsx: while locked nothing closes it, and close says it is unavailable
+  Tray.render.test.tsx: the card leaves before the Modal hides, then onClosed fires once
+R2
+  Tray.render.test.tsx: the card leaves before the Modal hides, then onClosed fires once
+  Tray.render.test.tsx: a card that leaves stays where the finger let it go, even when the lock cover comes and goes
+  Tray.render.test.tsx: on a phone the card is the named dialog and the title takes focus, with or without a header; on iOS onClosed waits for the Modal's own dismissal
+R3
+  Tray.render.test.tsx: a hidden lock cover replaces the tray's content
+  Tray.render.test.tsx: under the lock cover nothing asks to close the tray
+  Tray.render.test.tsx: a drag the lock cover cuts off is gone when the cover lifts
+  Tray.render.test.tsx: opening at another step in one render, or a step change under the lock cover, ticks nothing
+  Tray.render.test.tsx: once the lock cover lifts a step change ticks, even when it lifted on the step it had under the cover
+R4
+  Tray.render.test.tsx: while locked nothing closes it, and close says it is unavailable
+R5
+  Tray.render.test.tsx: the card leaves before the Modal hides, then onClosed fires once
+R7
+  Tray.render.test.tsx: while locked nothing closes it, and close says it is unavailable
+R13
+  Tray.render.test.tsx: a drag the lock cover cuts off is gone when the cover lifts
+  Tray.render.test.tsx: the swipe follows the finger down, springs back short of the line, and closes past it
+R14
+  Tray.render.test.tsx: under reduced motion a new step shows at once
+  Tray.render.test.tsx: at full motion the card springs up, and a step change morphs its height and ticks once; opening ticks nothing
+  Tray.render.test.tsx: opening at another step in one render, or a step change under the lock cover, ticks nothing
+  Tray.render.test.tsx: once the lock cover lifts a step change ticks, even when it lifted on the step it had under the cover
+R15
+  Tray.render.test.tsx: under reduced motion a new step shows at once
+  Tray.render.test.tsx: at full motion the card springs up, and a step change morphs its height and ticks once; opening ticks nothing
+  Tray.render.test.tsx: opening at another step in one render, or a step change under the lock cover, ticks nothing
+  Tray.render.test.tsx: once the lock cover lifts a step change ticks, even when it lifted on the step it had under the cover
+R16
+  Tray.render.test.tsx: at full motion the card springs up, and a step change morphs its height and ticks once; opening ticks nothing
+  Tray.render.test.tsx: opening at another step in one render, or a step change under the lock cover, ticks nothing
+R25
+  Tray.render.test.tsx: on a phone the card is the named dialog and the title takes focus, with or without a header; on iOS onClosed waits for the Modal's own dismissal
+  Tray.render.test.tsx: on iOS a dismissal that ends after the tray is shown again says nothing; the next one says it closed
+  Tray.render.test.tsx: on iOS a dismissal that ends in the commit that opens the tray again says nothing
+  Tray.render.test.tsx: on iOS a dismissal that ends in the commit that hides the tray again says nothing; the next one says it closed
+  Tray.render.test.tsx: on iOS an onClosed given while the dismissal is under way is the one called
+R26
+  Tray.render.test.tsx: on a phone the card is the named dialog and the title takes focus, with or without a header; on iOS onClosed waits for the Modal's own dismissal
+  Tray.render.test.tsx: on iOS a dismissal that ends after the tray is shown again says nothing; the next one says it closed
+  Tray.render.test.tsx: on iOS a dismissal that ends in the commit that opens the tray again says nothing
+  Tray.render.test.tsx: on iOS a dismissal that ends in the commit that hides the tray again says nothing; the next one says it closed
+  Tray.render.test.tsx: on iOS an onClosed given while the dismissal is under way is the one called
+  Tray.render.test.tsx: on iOS a tray with no onClosed closes, its dismissal ends, and it opens again
+K1
+  Tray.render.test.tsx: the catalogue's tray sections come after the kit's, and each tray opens at once
+K2
+  Tray.render.test.tsx: the catalogue's tray sections come after the kit's, and each tray opens at once
+X1
+  Tray.render.test.tsx: a card that leaves stays where the finger let it go, even when the lock cover comes and goes
+X2
+  Tray.render.test.tsx: the swipe follows the finger down, springs back short of the line, and closes past it
+X4
+  Tray.render.test.tsx: on iOS a tray with no onClosed closes, its dismissal ends, and it opens again
+D1
+  Tray.render.test.tsx: at full motion the card springs up, and a step change morphs its height and ticks once; opening ticks nothing
+D2
+  Tray.render.test.tsx: once the lock cover lifts a step change ticks, even when it lifted on the step it had under the cover
+M3
+  Tray.render.test.tsx: on iOS an onClosed given while the dismissal is under way is the one called

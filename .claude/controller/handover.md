@@ -343,7 +343,15 @@ The list below is kept for the record.
       - In the reviewer's model of 141 length-8 sequences: 44 deviations on 784667b, 22 on fc78376, and 0 with the validated guard `!shown && !showing.current` (the ref restored).
       - **Folded into a second fix round on #392**, with c-n1 (one iOS case for the fresh `onClosed`, mutant M3) and c-n2 (four stale receipt lines). P2-T16 builds `whenClosed` on this guard.
       - **The request to the old planner thread (351b244a) was never delivered:** T3's MCP server rejected this session's authorization at 14:39. The second round's brief is written instead by a fresh Opus xhigh planner in a Claude Code workflow (run wf_41e3ff21-3b6, task wkxjum826), from `scratch/dispatch/tray-hardening-fix2-planner.prompt.md`. Output: `briefs/tray-hardening-fix2.md`, with kit `scratch/tray-hardening-fix2-planner/`.
-    - Then: a Haiku fixer on fc78376, push, update #392's body, and a confirming Sonnet review of round two. Merge at its head on green CI.
+    - **The second-round brief is written** (`briefs/tray-hardening-fix2.md`; kit `scratch/tray-hardening-fix2-planner/`, its sums OK).
+      - G1 and G2: the guard `!shown && !showing.current`, with the ref restored; 0 of 141 deviations in the model.
+      - HIDE-END and the c-n1 case are added; receipt lines 3, 4, 29 and 53 are fixed; 45 of 45 mutants; CI render 26 to 28.
+    - **But its planner reported BLOCKED at 15:17: #392's branch had moved to 99ce506.**
+      - 99ce506 was pushed at 14:41 by an agent with the trailer `Co-Authored-By: Cursor`, matching thread 351b244a's run 4. So the `t3_thread_send` that returned an auth error was in fact delivered, and that thread committed and pushed although it was a planner.
+      - 99ce506's `Tray.tsx` has exactly the kit's guard (comments differ). It adds HIDE-END and edits the receipt, but has no c-n1 case and no proof.
+      - **The controller's ruling: keep 99ce506 (no force push).** The fixer brings all three files to the kit's `real/` (see `scratch/dispatch/tray-hardening-fix2-notes.md`), reruns the c-n1 RED under M3, GREEN, the 45 mutants and the gate, and commits on top.
+      - **When T3 is back, read thread 351b244a first** and cancel it if it is still running, so there are never two writers on the branch.
+    - Then: the fixer (Argon under the new routing), push, update #392's body, a confirming review (Argon), the Opus second review (wallet), and the owner's yes before the merge.
     - **Rule:** a third failing round means telling the owner. This round answers an approval's minor, not a failed review.
     - **On approval and green CI:** `merge_task_pr.sh 392 fc78376` (no task id), then `promote_pr.sh tray-hardening 392`. Then:
       - take P2-T16 off held.txt;
