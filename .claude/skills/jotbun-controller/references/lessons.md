@@ -11,6 +11,7 @@
 - **Give implementers the planner's verified files.** These are `real/`, `stubs/`, `orig/` or `base/`, `diffs/` and `SHA256SUMS` under `scratch/<id>-planner/`. Haiku then copies and verifies instead of re-deriving, and the review checks the committed files are byte-identical to the planner's.
 - **Resume, don't respawn.** A finished planner or reviewer keeps its context. Use SendMessage to ask it for a rebase, a follow-up brief, or a ruling-driven change. A reviewer that found test gaps is the cheapest writer of the follow-up brief.
 - **Fix small doc errors yourself.** A stale receipt line found at review can be fixed by the controller in a one-line commit before merge, or in a housekeeping commit to the integration branch after merge. A housekeeping commit doesn't restart CI.
+- **`git apply` inside `scratch/` can silently do nothing.** `scratch/` sits inside the main checkout's working tree. A `git apply` run from a kit folder takes the patch's paths as the main checkout's, skips them as outside the current folder, and exits 0 with nothing changed. Set `GIT_CEILING_DIRECTORIES` to the kit folder (or apply with `patch -p1`), and check the result against the kit's sums. The tray-hardening planner found this on 10 Nov.
 
 ## CI and flakes
 
