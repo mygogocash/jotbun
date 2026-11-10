@@ -136,6 +136,26 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - **Promotion PR #381** (`promote/p4-t12`, based on `promote/1b-t8`). Stack #379 is now #373 → #378 → #380 → #381.
 - **App baseline at 712574d** (CI on #376's merge ref plus P4-T13): `test:unit` 956 (927 + 18 + 11), render 109 files and 1867 cases, web 4806; iOS not measured at the head (computed 5772: 5760 with 1D-T8 plus P4-T12's 12 modules).
 
+## Fourth usage-limit stop, 10 Nov about 09:50 to 13:50 (RESUMED at 13:50)
+- The previous account (sub5) hit its 5-hour limit; the session continues on another account.
+- **Failed at the stop:**
+  - the review workflows of #395 (P2-T12), #396 (fix-download-aborts) and #397 (download-pins);
+  - #392's fix-round confirmation;
+  - the 1B-T12 planner's fix-brief run (run 3).
+
+  alarm-hardening's implementer finished first (DONE at 14844b9).
+- **At 13:50:** the heavy lock was free, no jotbun test process was alive, and there had been no thermal sleep since 06:05.
+- **Resumed at 13:50.** Finished agents replay from cache.
+  - Review workflows:
+    - P2-T12: run wf_0cba99e1-318, task wlxc90ll5. The stack lens and ST1's skeptic are done; the frames lens and the synthesizer rerun.
+    - fix-download-aborts: run wf_49c67ce8-b3f, task wvpaxxksg. The fix lens is done (3 findings, none serious).
+    - download-pins: run wf_e153ae48-9d5, task wqohgoiyi. Everything reruns.
+    - #392's confirmation: run wf_4739381a-1ab, task wneoycf3d. Everything reruns.
+  - **The 1B-T12 planner** was restarted by T3 at the reset (run 4, a `limit-resume` task) and steered with the cutoff note.
+- **P2-T12's stack lens found a MAJOR, ST1, and its skeptic confirmed it.**
+  - The bug: on iOS with VoiceOver, double-tapping a card behind the front one opens the card in front. Each card's 200 pt accessibility frame is activated at its midpoint, which the next card covers.
+  - The web suite cannot see it. A fix round is expected once the synthesizer writes the verdict: likely `onAccessibilityTap`, so activation calls `onOpen` directly.
+
 ## Third usage-limit stop, 10 Nov about 08:23 (RESUMED at 08:27)
 - The previous account hit its 5-hour limit (it resets at 12:00). The session continues on another account.
 - Failed at the stop:
@@ -411,6 +431,14 @@ The list below is kept for the record.
       - Lines changed against download-pins' pins: `attachments.ts` 346, 354, 365 and 369 (DU-1's guard at 370 untouched); `previews.ts` after 328, and 333, 344-345 and 347 (188 untouched). DU-1 and DU-2 pass on its code.
     - **The implementer (Haiku max, 949cad13) was dispatched at 10:07** in a pre-installed (`install-edge`) alarm-hardening on fix/alarm-hardening from 402c1df, under the heavy lock.
     - Housekeeping later: its P11 correction of 1B-T11's P14 (n9; `receipts/1B-T11.md:82`). This task's receipt carries it; a one-line note in 1B-T11's receipt is optional.
+    - **DONE at 14844b9 (base 06fdd97); PR #398 opened at 13:51 (no task issue).**
+      - RED 9 of 49 (on a table-only 0004 stub), GREEN 49 of 49, 28 of 28 mutants with verdicts matching the planner's.
+      - AFFECTED: 9 files, 261 passed and 1 todo. `test:edge` 176. The vault bundle is 1,676.57 kB.
+      - The controller checked the 10 files against the kit's `real/` (edge-relative paths) and the clean merge with the head.
+    - **The review runs as a two-lens Opus workflow** (run wf_3bcd2a1e-88c, task w64paq5ys), lenses one after the other:
+      - the alarm rules and 0004's schema change (R105);
+      - the tests, and the merges with #397, #396 and #394.
+    - On approval and green CI: `merge_task_pr.sh 398 14844b9` (no task id), then `promote_pr.sh alarm-hardening 398`.
 
 ## PR #371: the integration branch into main. The owner merged it on 9 Nov, 21:30 Bangkok, as afcf884
 - It was merged with a merge commit, so history is kept. The controller then fast-forwarded claude/p1a-vault-core to afcf884, which adds main's README and CHANGELOG, so the two branches were level.
