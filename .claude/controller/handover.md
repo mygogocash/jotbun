@@ -238,7 +238,11 @@ The list below is kept for the record.
       - Kit `scratch/tray-hardening-planner/`: check_kit at 58be2e2 gives 37 OK, SHA256SUMS.base 3 OK, and the 3 `orig/` files are identical.
       - The planner's proof: RED 5 of 22, GREEN 22 of 22 and 4 of 4, 34 of 34 mutants. For CI: render +6 cases.
     - The implementer (Haiku max, af5c01aa) was dispatched at 08:43 in a pre-installed tray-hardening from 58be2e2.
-    - On merge, take P2-T16 off held.txt.
+    - **DONE at 784667b (base ecc00b7); PR #392 opened at 08:50 (no task issue).**
+      - RED 5 of 22, GREEN 22 of 22 and 4 of 4, catalogue `bw-` 18. 34 of 34 mutants, with output identical to the planner's. `test:unit` 970, `test:app` 34.
+      - The controller checked the 3 files against the kit's `SHA256SUMS.real` and the clean merge with the head.
+    - **The review runs as a small Sonnet workflow** (run wf_fa4458e5-3d3, task woa7ka514): one reviewer, a skeptic for any blocker or major, and a synthesizer writing `reviews/tray-hardening.md`.
+    - On approval and green CI: `merge_task_pr.sh 392 784667b` (no task id), then `promote_pr.sh tray-hardening 392`. **Then take P2-T16 off held.txt.**
     - New lesson: `git apply` run inside `scratch/` can silently apply nothing.
   - **P2-T14** (deda1216; WT p2-t14 on p2/t14-add-flow), the add flow, keypad and amount step, depth 17. It plans against today's `Tray` props, without editing `Tray.tsx`.
   - **P2-T12** (e328d240; WT p2-t12 on p2/t12-card-stack), the card stack and frames, depth 15. It takes P2-T11's K5 and decides P2-T9's spring overshoot.
