@@ -424,6 +424,11 @@ The list below is kept for the record.
         - 19 of 19 mutants.
     - **The fixer (Haiku max, 45781f76) was dispatched at 14:00** in the p1-1b-t12 worktree, under the heavy lock (`test:edge` included).
     - After DONE: push, update #394's body, and run a confirming Sonnet review. Then merge at the new head once the `edge` job is green.
+    - **Fix round DONE: merge 68fcbc8, then fix commit 317cf3a**, pushed at 14:16; #394's body is updated.
+      - RED on ef37c41: V1 and O1 survive, and the n6 probe leaks a store. GREEN; 19 of 19 mutants; `test:edge` 176 under the lock.
+      - The three test files match the fix kit's `real/`. The receipt differs only by its merge line and Deviations bullet.
+    - **The confirming Sonnet review runs as a workflow** (run wf_765ee63d-ccc, task w4x5ksd33), writing `reviews/1B-T12-confirm.md`.
+    - **On approval and a green `edge` job:** `merge_task_pr.sh 394 317cf3a 1B-T12`, then `promote_pr.sh 1B-T12 394`. The push's CI run will be refused for billing; rerun it after the fix.
   - **alarm-hardening** (a37bdb47; WT alarm-hardening on fix/alarm-hardening), 1B-T11's m1, m2, m4 and nits n1 to n5 and n9. The planner (Opus xhigh) was dispatched at 08:58, when #391's review freed a slot.
     - It edits `jobs.ts`, `user-vault.ts` and `files-alarm.test.ts`, and for m4 `attachments.ts` (`attachmentsDueAt`) and `previews.ts` (`importsDueAt`).
     - fix-download-aborts pins those two functions' guards in its own test files. The planner was told to keep the guards exactly and to name the lines it changes, so the two merges can be ordered.
