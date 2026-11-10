@@ -1,0 +1,50 @@
+# wallet-looks-unstored: Keep a look, order or icon that was never stored on screen until the app closes
+
+- **Status:** built and verified locally on `fix/wallet-looks-unstored` (`.claude/worktrees/wallet-looks-unstored`), from `9a24180`. Not pushed. The independent review is the controller's, after this receipt. Under R87 this receipt is its own file; `premium-progress.md` is not edited.
+- **Base:** `9a24180`, the head after the sync. The controller's note named `6db889a`; the sync fast-forwarded it by one controller-state commit (`9a24180`, under `.claude/controller/` only: `git diff --stat 6db889a 9a24180` over `apps/`, `packages/`, `docs/implementation/` and `docs/superpowers/` is empty). `shasum -a 256 -c` on the kit's `SHA256SUMS.base` checks both files at this head (2 OK). `npm ci` was not run: `node_modules` was installed by the controller, and its note asks for no reinstall.
+- **What it fixes:** P2-T11's review m1 (`.claude/controller/reviews/P2-T11.md`). A look, order or icon change that `WalletLooksProvider` could not store (its name could not be read, or its write failed) dropped out of view at the next stored change to the same name, or when the account's first read landed. P2-T11's rule P3 says it shows until the app closes. No stored data was ever harmed.
+- **What changed:**
+  - `WalletLooksProvider.tsx`: per account, in a ref, the provider keeps each change that was not stored and every change made after it, in the order made, and lays them over every later read of that account's names: the account's first read and each change's own read. So such a change shows until the app closes (while the provider stays mounted), and a later change still wins over it.
+  - Unchanged: a write holds only what the change's own read found plus that change; a name the store cannot read is never written over; reads for an account no longer open are dropped; nothing of the last account shows after a switch; with no account open the setters keep nothing.
+  - The header says what holds now. Its claim that each change runs "after the account's first read" is gone: a change made from a child's mount effect runs before it (the review's D8, not taken), and the first read lays it over what it reads when it was not stored.
+  - `WalletLooks.render.test.tsx`: V4 pins its whole title (after the store works again, the account's next first read, when the diary opens again or the account comes back, shows what was never stored over what is stored, and another account never shows it); the review's ready cases D1, D2 and D8b; and a case that pins that a later change wins at every later read. 9 cases before, 13 after.
+- **Files:** modified `apps/app/src/wallet/looks/WalletLooksProvider.tsx` (153 lines before, 173 after) and `apps/app/src/wallet/looks/WalletLooks.render.test.tsx` (418 before, 542 after); created this receipt.
+- **RED to GREEN** (the head's provider is the RED form: the fix adds no export):
+  - RED: `npm run typecheck:app` exit 0. `WalletLooks.render.test.tsx`: exit 1, `Tests 4 failed | 9 passed (13)`. The four failing cases are V4, D2, D1 and D8b, each on an assertion: four `AssertionError`s (V4 at `opened again`, D2 at `after a later change to the same name`, D1 at `the earlier change, after the store reads again`, and D8b). No module, type or reference error (`Cannot find module`, `Failed to resolve`, `TypeError`, `ReferenceError`: none).
+  - GREEN: `npm run typecheck:app` exit 0. `WalletLooks.render.test.tsx`: exit 0, `Tests 13 passed (13)`. The other five render files that mount the provider: exit 0, `Test Files 5 passed (5)`, `Tests 38 passed (38)` (WalletCard 9, walletHarness 9, PrivateMode 9, WalletAmount 5, GrowBar 6), none failed. No `act(...)` warning and no `console.error`. The only stderr notices are Node's `ExperimentalWarning` that `localStorage` is unavailable (printed once per test process) and, in the neighbours run, walletHarness's two expected notices "Bun setting could not be saved." and "Language choice could not be saved." (P2-T11 review n7).
+- **Mutation check:** the planner's runner (`.claude/controller/scratch/wallet-looks-unstored-planner/tools/mutants.py`; `--check` first: 37 `APPLIES`), 37 mutants on `WalletLooksProvider.tsx`, each applied alone, run against `WalletLooks`, `WalletCard` and `walletHarness`, and restored (`restored=True`, 37 of 37): **37 killed, 0 survived, 0 not as expected**. The run's output is identical to the planner's `logs/mutants.out`. After the run both files matched `SHA256SUMS.real`, and the worktree showed only the two intended files.
+  - WU1 to WU20: the new lines (what the first read and each change lay, the memory's keying per account, its order, when a change goes into it, that nothing unstored is written, and that neither an account switch nor a locked diary clears it).
+  - PR1 to PR10 and PR14 to PR20: P2-T11's provider mutants, on the lines where they moved.
+- **Gate** (worktree root; R100's fast local gate):
+  - `npm run typecheck:app`: exit 0.
+  - Focused and neighbours in one run (`WalletLooks`, `WalletCard`, `walletHarness`, `PrivateMode`, `WalletAmount`, `GrowBar`): exit 0, `Test Files 6 passed (6)`, `Tests 51 passed (51)`.
+  - `npm run test:app`: exit 0, `ℹ tests 34`, `ℹ pass 34`, `ℹ fail 0`.
+  - `npm run test:unit`: exit 0, `ℹ tests 970`, `ℹ pass 970`, `ℹ fail 0`.
+  - `git diff --check` (before the commit): exit 0, no output. The check after the commit, `git diff --check origin/claude/p1a-vault-core...HEAD`, is in the final message.
+  - CI (R100, not run locally): the full `test:render` suite and the iOS export. This task adds no render file and no bundled module.
+- **SKIPPED:**
+  - A real phone's AsyncStorage failing: no device or simulator here; the cases fail the store through the test backend.
+  - `typecheck:routes` and `export:web` (no route, app config or app entry changes). The edge, API and database suites (nothing outside `apps/app` changed; Docker is stopped). `test:ops` (no package or lockfile change).
+- **Not applicable:** no package, lockfile, route, `en.json` or `th.json` change; no analytics event; no log line.
+- **Deviations:**
+  - The controller accepted the planner's calls P1 to P13 in `.claude/controller/briefs/wallet-looks-unstored.md`, each as written:
+    - P1, ready: P2-T11 merged (#382, `5a33820`); no package, lockfile, resource or owner decision needed.
+    - P2, the review's fix: unstored changes per account, in a ref, laid over each read; each change is kept as an `Edit` and replayed, not merged.
+    - P3, a later change still wins: once an account has an unstored change, every later change for it is kept too.
+    - P4, no fold: a write holds only what was read and the change itself. The review's other way (folding unstored changes into the next write) is not taken.
+    - P5, the memory is a `useRef` per provider, not module scope: it lives while the provider stays mounted.
+    - P6, the review's D8 is not taken: the first read is not queued ahead of a change made from a child's mount effect. D8b pins the outcome instead.
+    - P7, what each read shows: the first read shows what it read, with the memory laid over it; a change shows the name as read (or what is shown, when the store cannot read it), with the memory and this change laid over it.
+    - P8, the memory is not trimmed: one edit per change made after an account's first unstored change, until the provider unmounts.
+    - P9, the tests: V4 extended, D1, D2 and D8b, and the later-wins case, all in `WalletLooks.render.test.tsx`.
+    - P10, the mutants: WU1 to WU20, PR1 to PR10 and PR14 to PR20 (37 in all).
+    - P11, the gate: R100's fast local gate; the whole suites are CI's.
+    - P12, clear of the work in flight: P2-T13 (PR #383), 1B-T7 (#385) and 1B-T11 (#387) touch no file here.
+    - P13, notes for later tasks: carried in the last section below.
+  - Own deviations: (a) the base is `9a24180`, not the `6db889a` the controller's note named: the sync fast-forwarded to it (a controller-state commit only, no code). (b) `npm ci` was not run: `node_modules` was already installed by the controller, as its note asks.
+- **Risks and notes for later tasks:**
+  - P2-T18: an unstored change shows while `WalletShell`'s provider stays mounted; when the shell unmounts (the app leaves the spend area, or 1C's terms step or 1D-T8's consent question takes its place), the account's next first read shows what the store holds.
+  - P2-T20, P2-T21 and P2-T29: a setter's promise resolves whether or not the change was stored, and the change shows either way; a screen cannot tell the person it was not saved.
+  - P5-T19: the upload reads kept values from the store, so an unstored change is never uploaded. If the provider later reads looks from the server, decide whether the memory is laid over the server's values too.
+  - The review's D8 still fails on the store's call order only, per the planner's probe log (not re-run here): a change made from a child's mount effect reads and writes its name before the account's first read. Nothing is lost, and what shows is right (D8b).
+  - The memory grows by one edit per change made after an account's first unstored change, until the provider unmounts.
