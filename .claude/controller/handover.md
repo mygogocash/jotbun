@@ -428,7 +428,7 @@ The list below is kept for the record.
       - RED on ef37c41: V1 and O1 survive, and the n6 probe leaks a store. GREEN; 19 of 19 mutants; `test:edge` 176 under the lock.
       - The three test files match the fix kit's `real/`. The receipt differs only by its merge line and Deviations bullet.
     - **The confirming Sonnet review runs as a workflow** (run wf_765ee63d-ccc, task w4x5ksd33), writing `reviews/1B-T12-confirm.md`.
-    - **On approval and a green `edge` job:** `merge_task_pr.sh 394 317cf3a 1B-T12`, then `promote_pr.sh 1B-T12 394`. The push's CI run will be refused for billing; rerun it after the fix.
+    - **On approval and a green `edge` job:** `merge_task_pr.sh 394 317cf3a 1B-T12`, then `promote_pr.sh 1B-T12 394`. The push's CI run 42774078632 was refused for billing (0 steps run); rerun that one after the fix.
   - **alarm-hardening** (a37bdb47; WT alarm-hardening on fix/alarm-hardening), 1B-T11's m1, m2, m4 and nits n1 to n5 and n9. The planner (Opus xhigh) was dispatched at 08:58, when #391's review freed a slot.
     - It edits `jobs.ts`, `user-vault.ts` and `files-alarm.test.ts`, and for m4 `attachments.ts` (`attachmentsDueAt`) and `previews.ts` (`importsDueAt`).
     - fix-download-aborts pins those two functions' guards in its own test files. The planner was told to keep the guards exactly and to name the lines it changes, so the two merges can be ordered.
@@ -699,7 +699,7 @@ Merge each PR when its CI on the current head is green; close its issue by hand 
     - add a payment method or raise the Actions spending limit for the account that owns the repo;
     - or cut CI cost first. Each merged task runs CI twice today: the task PR, and its promotion PR into main on the same tree. P11's cheaper layouts are another way: fold `image` into `exports`, or split the section suites two ways.
     - Otherwise CI waits for the minutes to reset at the next billing date.
-  - **After the fix:** rerun each refused run (`gh run rerun <run> --repo mygogocash/jotbun`) and merge as each goes green. Refused so far: 42747590350 (#392 at fc78376; its older 42738781210 on 784667b no longer matters), 42741146172 (#394), 42741688287 (#395), 42745408105 (#396), 42748341937 (#397) and 42771332803 (#398).
+  - **After the fix:** rerun each refused run (`gh run rerun <run> --repo mygogocash/jotbun`) and merge as each goes green. Refused so far: 42747590350 (#392 at fc78376; its older 42738781210 on 784667b no longer matters), 42774078632 (#394 at 317cf3a; its older 42741146172 on ef37c41 no longer matters), 42741688287 (#395), 42745408105 (#396), 42748341937 (#397) and 42771332803 (#398).
 - **ANSWERED (10 Nov, 06:2x): keep the nine-job CI, merge.** Below is the question as it was asked. The owner accepted about 33 billable minutes a run.
 - **(was) Actions minutes before ci-parallel-jobs merges.** The repo is private on the Free plan, which includes 2,000 Actions minutes a month.
   - Usage: 80 pull-request runs have happened since 1 Nov, about 1,400 billable minutes at today's roughly 18 per run, and each merged task now adds a promotion PR run. The controller cannot read the actual usage: GitHub's timing API reports 0, and the billing endpoint needs `admin:org`.
