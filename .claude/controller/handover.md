@@ -60,7 +60,13 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
       - RED and GREEN 38 of 38, and 99 of 99 mutants in four batches. `test:edge` 15 files and 176 tests. `build:edge` gives 1,645.04 kB with every driver marker at 0.
       - The controller checked the 13 files against the kit and the clean merge with the head. It is the first task PR in the nine-job CI.
     - **The review runs as a workflow** (run wf_529f455b-229): two Opus lenses (the AI service's order, sessions, fallbacks and privacy; the edge wiring, shared files, bundle and CI), a skeptic for each blocker or major, and a synthesizer writing `reviews/1B-T7.md`.
-    - On approval and green CI: `merge_task_pr.sh 385 6223843 1B-T7`, then `promote_pr.sh 1B-T7 385`. Then plan fix-download-aborts on the merged `handler.ts`.
+    - **Merged as 365ec2e (#385, at 07:58).** Issue #111 is closed, and the worktree and branches are removed.
+      - The review workflow approved: no blocker or major, five minors and nine nits (followups.md).
+        - m-1, the `budget_status` guard for months before 1970, goes to 1B-T13.
+        - m-2, the `ai.consume` session pin, goes to fix-download-aborts.
+        - m-3 to m-5 go to the test-only ai-service-pins follow-up.
+      - CI: nine jobs on 6223843 into c764cf2, with workers 29 files and 713 passed. Only P2-T11's app files merged after that base.
+      - **Promotion PR #388** is stacked on #386; stack #379 now holds seven PRs.
   - **fix-download-aborts: not yet planned.** It is held until a review workflow finishes, to keep about six local agents (the thermal lesson). Plan it on top of `scratch/1b-t7-planner/real/src/v1/handler.ts`, carrying the full list in followups.md (R97, plus the review cases from 1B-T6, 1B-T8, 1B-T9 and 1B-T10).
   - **1B-T11: brief READY at 712574d** (M), files on the vault alarm.
     - Files: new `jobs.ts`, migration `0003_alarm_indexes.sql` and `files-alarm.test.ts` (23 cases). Shared: `user-vault.ts`, `retention.ts`, `executor.ts`, `migrations/index.ts`, and 1B-T8's `snapshots.ts` and `snapshots.test.ts`.
@@ -71,7 +77,10 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
       - RED 25 of 72, GREEN 72, 32 of 32 mutants. AFFECTED: 14 files, 414 passed and 1 todo. `test:edge` 176. `build:edge` gives 722 kB with every driver marker at 0.
       - The controller checked the 9 files against the kit and the clean merge with the head.
     - **The review runs as a workflow** (run wf_1b001b01-c31): two Opus lenses (the alarm rules, R104 and the rearm wiring; the snapshot fix, the migration, shared files and CI), a skeptic for each blocker or major, and a synthesizer writing `reviews/1B-T11.md`.
-    - On approval and green CI: `merge_task_pr.sh 387 a9a7d27 1B-T11`, then `promote_pr.sh 1B-T11 387`. If 1B-T7 (#385) merges first, refresh #387's merge ref before trusting its CI (lessons.md).
+    - **1B-T7 merged first.** At about 07:59 #387's branch was updated through the update-branch API (`expected_head_sha` = the reviewed a9a7d27).
+      - The new head 2f46822 is "Merge branch 'claude/p1a-vault-core' into p1/1b-t11-files-alarm". The task's files are unchanged, and the PR's diff is the same 10 files (+1110, -98).
+      - A fresh nine-job run tests 1B-T11 together with 1B-T7.
+      - **Merge at 2f46822:** `merge_task_pr.sh 387 2f46822 1B-T11` once its review approves and that run is green. Then run `promote_pr.sh 1B-T11 387`, and plan fix-download-aborts.
     - fix-download-aborts is then planned on top of 1B-T7 and 1B-T11 once both merge (followups.md).
   - **fix-download-aborts** is planned next, on top of 1B-T7's `real/` `handler.ts`. It must land before 1B-T13; its list in followups.md now includes 1B-T8's review cases.
   - **ci-parallel-jobs: brief READY at 857b9f2** (M), with the controller's amendment (the iOS export and `typecheck:routes` in CI).
