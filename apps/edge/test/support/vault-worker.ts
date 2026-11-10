@@ -3,7 +3,7 @@
 // the synthetic JWKS issuer as its token issuer. No database. Needs
 // `npm run build` in apps/edge first. Test use only.
 import { execFile } from 'node:child_process'
-import { existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -19,15 +19,37 @@ import type { DevWorker } from './wrangler-dev'
 
 const EDGE_DIR = fileURLToPath(new URL('../../', import.meta.url))
 const VAULT_CONFIG = 'dist/jotbun_vault/wrangler.json'
+/** B13: the built config without background work, next to it so that its `main` still resolves. */
+const PARITY_CONFIG = 'dist/jotbun_vault/wrangler.parity.json'
 
-export type VaultWorker = DevWorker & { send: Send }
+/** `config`: the config file `wrangler dev` started (the built one, or the parity copy). */
+export type VaultWorker = DevWorker & { send: Send; config: string }
+
+/**
+ * The config `wrangler dev` starts. With background work `off` (B13) it is a
+ * copy of the built config without `workflows`, `queues.consumers` and
+ * `containers`, so nothing a request leaves pending advances while a parity
+ * session runs, as the PostgreSQL parity ran with no job runner. The parse
+ * queue's producer stays, so an upload is still sent to it.
+ */
+function configFor(background: 'on' | 'off'): string {
+  if (background === 'on') return join(EDGE_DIR, VAULT_CONFIG)
+  const config = JSON.parse(readFileSync(join(EDGE_DIR, VAULT_CONFIG), 'utf8')) as Record<string, unknown> & { queues?: Record<string, unknown> }
+  delete config.workflows
+  delete config.containers
+  if (config.queues) delete config.queues.consumers
+  writeFileSync(join(EDGE_DIR, PARITY_CONFIG), `${JSON.stringify(config, null, 2)}\n`)
+  return join(EDGE_DIR, PARITY_CONFIG)
+}
 
 /**
  * Starts the vault Worker with `policies` published in config:v1. The KV value
  * is written with wrangler into the same local store the dev Worker then reads
- * (`--persist-to`). `stop()` ends the Worker and removes that store.
+ * (`--persist-to`). `vars` are passed as `--var` after the issuer's settings.
+ * `background` is `on` unless given (see configFor). `stop()` ends the Worker
+ * and removes that store.
  */
-export async function startVaultWorker(o: { issuer: JwksFixture; policies: unknown }): Promise<VaultWorker> {
+export async function startVaultWorker(o: { issuer: JwksFixture; policies: unknown; vars?: Record<string, string>; background?: 'on' | 'off' }): Promise<VaultWorker> {
   if (!existsSync(join(EDGE_DIR, VAULT_CONFIG))) throw new Error('Build the edge first: npm run build (in apps/edge)')
   const persistTo = mkdtempSync(join(tmpdir(), 'jotbun-vault-'))
   const env = { ...process.env, WRANGLER_SEND_METRICS: 'false' }
@@ -36,8 +58,9 @@ export async function startVaultWorker(o: { issuer: JwksFixture; policies: unkno
     ['wrangler', 'kv', 'key', 'put', '--local', '--persist-to', persistTo, '-c', VAULT_CONFIG, '--binding', 'CONFIG', 'config:v1', JSON.stringify({ policies: o.policies })],
     { cwd: EDGE_DIR, env },
   )
+  const config = configFor(o.background ?? 'on')
   const worker = await startDevWorker({
-    config: join(EDGE_DIR, VAULT_CONFIG),
+    config,
     vars: {
       AUTH_ISSUER: o.issuer.issuer,
       AUTH_AUDIENCE: TEST_AUDIENCE,
@@ -46,6 +69,7 @@ export async function startVaultWorker(o: { issuer: JwksFixture; policies: unkno
       MIN_CLIENT_VERSION_IOS: '1.0.0',
       MIN_CLIENT_VERSION_ANDROID: '1.0.0',
       JOTBUN_ENV: 'test',
+      ...o.vars,
     },
     persistTo,
   })
@@ -61,6 +85,7 @@ export async function startVaultWorker(o: { issuer: JwksFixture; policies: unkno
   return {
     ...worker,
     send,
+    config,
     stop() {
       worker.stop()
       rmSync(persistTo, { recursive: true, force: true, maxRetries: 3 })
