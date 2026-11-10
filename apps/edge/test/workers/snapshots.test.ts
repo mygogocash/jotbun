@@ -504,8 +504,10 @@ describe('S1 review: one view and bounded work, ported from snapshot-builder.int
 describe('retention, the snapshot halves of retention.integration.spec.ts', () => {
   it('tombstones reach delta readers, older cursors resync, and snapshots built before the purge are dropped', async () => {
     // The snapshot half (1A-T8b ported the delta half in retention.test.ts). A snapshot built after the deletion still
-    // carries the deleted record's data. After the purge alarm it reads expired and serves nothing, a new request
-    // builds another, and pruneSnapshots drops it with its chunk keys due.
+    // carries the deleted record's data. The purge alarm also runs the file jobs (1B-T11), so after it the snapshot
+    // reads expired and serves nothing, its chunks are deleted from R2 (kept a day as tombstones, B19), and a new
+    // request builds another. Changed form (1B-T8's review m-1, fixed in 1B-T11): the dropped snapshot keeps its row,
+    // so a resend of its key reads expired, as the API's kept job does; only its chunk rows go.
     const { v1, money } = await setup()
     const { user, record } = await deletedLunch(v1, money)
     const before = await readySnapshot(v1, user)
@@ -522,11 +524,11 @@ describe('retention, the snapshot halves of retention.integration.spec.ts', () =
     const again = await requestSnapshot(v1, user)
     expect([again.status, again.body]).toEqual([202, { snapshot_id: again.id, status: 'pending' }])
 
-    await runInDurableObject(vaultOf(user), (_vault, state) => pruneSnapshots(fileAt(state, Date.now())))
-    expect((await snapshotsOf(user)).map((row) => row.id)).toEqual([again.id])
+    expect((await snapshotsOf(user)).map((row) => row.id).sort()).toEqual([before.snapshot_id, again.id].sort())
     expect(await chunkRowsOf(user, before.snapshot_id)).toEqual([])
-    const due = await runInDurableObject(vaultOf(user), (_vault, state) => dueObjectKeys(fileAt(state, Date.now())).map((row) => row.key))
-    expect(due.sort()).toEqual(keys.sort())
+    const registry = await registryOf(user)
+    expect(keys.map((key) => registry.find((row) => row.key === key)?.status)).toEqual(keys.map(() => 'tombstone'))
+    for (const key of keys) expect(await env.OBJECTS.head(key)).toBeNull()
 
     // A new snapshot reads the head's own change: a tombstone without data.
     await drain(user)
@@ -731,16 +733,22 @@ describe('snapshots on the vault (1B-T8)', () => {
     // A purged change at revision 1, so a ready snapshot read at revision 0 is below the purge watermark.
     await vaultExec(user, 'UPDATE sync_state SET revision = revision + 1 WHERE id = 1')
     await vaultExec(user, "INSERT INTO entity_changes (revision, ordinal, command_id, entity, entity_id, version, state, snapshot, committed_at) VALUES (1, 0, ?, 'transaction', ?, 2, 'purged', NULL, ?)", randomUUID(), randomUUID(), iso(t0))
-    const seed = (status: 'pending' | 'ready', highWater: number | null, created: number, expires: number | null) =>
-      vaultExec(
+    const seed = async (status: 'pending' | 'ready', highWater: number | null, created: number, expires: number | null) => {
+      const id = randomUUID()
+      await vaultExec(
         user,
         'INSERT INTO snapshots (id, status, high_water, chunk_count, created_at, ready_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        randomUUID(), status, highWater, status === 'ready' ? 1 : null, iso(created), status === 'ready' ? iso(created) : null, expires === null ? null : iso(expires),
+        id, status, highWater, status === 'ready' ? 1 : null, iso(created), status === 'ready' ? iso(created) : null, expires === null ? null : iso(expires),
       )
+      return id
+    }
     await seed('pending', null, t0, null)
-    await seed('ready', 0, t0 - 2 * HOUR, t0 + 22 * HOUR)
+    const stale = await seed('ready', 0, t0 - 2 * HOUR, t0 + 22 * HOUR)
     await seed('ready', 1, t0 - 6 * DAY, t0 - 5 * DAY)
     await seed('ready', 1, t0 - HOUR, t0 + 23 * HOUR)
+    // The stale snapshot's chunk row: due now until the prune releases it. Changed form (1B-T11, the m-1 fix): its
+    // row then stays until a week past its expiry, so that is one more due time.
+    await vaultExec(user, "INSERT INTO snapshot_chunks (snapshot_id, chunk_index, object_key, bytes, sha256) VALUES (?, 0, ?, 1, ?)", stale, `sync_snapshot/${vaultIdOf(user)}/${stale}/${randomUUID()}/chunk-0000.json`, 'a'.repeat(64))
     const seen: number[] = []
     await runInDurableObject(vaultOf(user), (_vault, state) => {
       let due = snapshotsDueAt(fileAt(state, t0))
@@ -752,7 +760,7 @@ describe('snapshots on the vault (1B-T8)', () => {
         due = next
       }
     })
-    expect(seen).toEqual([t0, t0 + SNAPSHOT_PENDING_MS, t0 - 5 * DAY + SNAPSHOT_KEEP_MS, t0 + 23 * HOUR + SNAPSHOT_KEEP_MS])
+    expect(seen).toEqual([t0, t0 + SNAPSHOT_PENDING_MS, t0 - 5 * DAY + SNAPSHOT_KEEP_MS, t0 + 22 * HOUR + SNAPSHOT_KEEP_MS, t0 + 23 * HOUR + SNAPSHOT_KEEP_MS])
     expect(await snapshotsOf(user)).toEqual([expect.objectContaining({ status: 'failed' })])
   })
 
@@ -987,16 +995,25 @@ describe("the planner's cases (1B-T8): the controller's notes and the rules the 
     expect(await statuses()).toEqual({ pending: 'failed' })
     expect(await chunkRowsOf(user, old.snapshot_id)).toEqual([])
 
-    // A ready snapshot read below the purge watermark goes at once, its chunk keys due now.
+    // A ready snapshot read below the purge watermark is released at once: its chunk keys due now, its chunk rows gone.
+    // Changed form (1B-T8's review m-1, fixed in 1B-T11): its row stays and reads expired, and goes a week past its
+    // expiry like any ready snapshot. The purge runs here without the alarm's file jobs (runDue alone), so this case
+    // checks pruneSnapshots itself.
     const before = await readySnapshot(v1, user)
     const beforeKeys = (await chunkRowsOf(user, before.snapshot_id)).map((row) => row.object_key)
     await age(user, record)
-    expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
+    await runInDurableObject(vaultOf(user), (_vault, state) => expect(runDue({ sql: state.storage.sql, storage: state.storage, now: new Date() })).toEqual([]))
     const now = Date.now()
     await prune(now)
-    expect((await snapshotsOf(user)).map((row) => row.id)).not.toContain(before.snapshot_id)
+    expect((await snapshotsOf(user)).find((row) => row.id === before.snapshot_id)).toMatchObject({ status: 'ready' })
+    expect(await statusOf(v1, user, before.snapshot_id)).toEqual({ snapshot_id: before.snapshot_id, status: 'expired' })
+    expect(await chunkRowsOf(user, before.snapshot_id)).toEqual([])
     const due = await runInDurableObject(vaultOf(user), (_vault, state) => dueObjectKeys(fileAt(state, now)).map((row) => row.key))
     expect(beforeKeys.every((key) => due.includes(key))).toBe(true)
+    await prune(Date.parse(before.expires_at) + SNAPSHOT_KEEP_MS - 1)
+    expect((await snapshotsOf(user)).map((row) => row.id)).toContain(before.snapshot_id)
+    await prune(Date.parse(before.expires_at) + SNAPSHOT_KEEP_MS)
+    expect((await snapshotsOf(user)).map((row) => row.id)).not.toContain(before.snapshot_id)
   })
 
   it('a request takes no body field and a UUID key, waits for the jobs gate, and a status of a malformed or unknown id is 404', async () => {

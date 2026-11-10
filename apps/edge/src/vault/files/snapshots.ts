@@ -323,37 +323,39 @@ export function failSnapshot(c: FileContext, id: string): void {
 /** A ready snapshot read below the purge watermark: it may hold purged data. */
 const BELOW_WATERMARK = `status = 'ready' AND high_water < ${PURGE_WATERMARK}`
 
+/** The chunk rows of every snapshot below the purge watermark: the ones whose keys are not yet released (1B-T11). */
+const STALE_CHUNKS = `snapshot_chunks WHERE snapshot_id IN (SELECT id FROM snapshots WHERE ${BELOW_WATERMARK})`
+
 /**
  * The snapshot rules on the vault clock, in one short block of its own: a
  * pending snapshot created at least a day ago fails; a ready snapshot below the
- * purge watermark makes its chunk keys due now (a subquery over
- * snapshot_chunks, no id list) and is deleted, as the API's purge drops the
- * snapshots built before it; a ready snapshot a week past its expiry is
- * deleted (its chunk rows cascade; its objects were due at its expiry). Each
- * rule acts at its own due time (inclusive), so snapshotsDueAt moves past it
- * (ruling R37). The vault's state is not checked here: the alarm runs it only
- * for an active vault (1B-T11).
+ * purge watermark makes its chunk keys due now and loses its chunk rows (a
+ * subquery over snapshot_chunks, no id list), but its row stays, so its status,
+ * and a resent request with its key, read `expired` as in the API (1B-T8's
+ * review m-1: a deleted row would come back as a pending row under the same id,
+ * which createOnce counts as already started); a ready snapshot a week past its
+ * expiry is deleted, a stale one included (its objects were due at its expiry,
+ * or when it went stale). Each rule acts at its own due time (inclusive), so
+ * snapshotsDueAt moves past it (ruling R37). The vault's state is not checked
+ * here: the alarm runs it only for an active vault (1B-T11).
  */
 export function pruneSnapshots(c: FileContext): void {
   c.storage.transactionSync(() => {
     const now = c.now.getTime()
     const failed = c.sql.exec("UPDATE snapshots SET status = 'failed' WHERE status = 'pending' AND created_at <= ? RETURNING id", iso(now - SNAPSHOT_PENDING_MS)).toArray()
-    c.sql.exec(
-      `UPDATE vault_objects SET delete_after = 0
-        WHERE status <> 'tombstone' AND key IN (SELECT object_key FROM snapshot_chunks WHERE snapshot_id IN (SELECT id FROM snapshots WHERE ${BELOW_WATERMARK}))`,
-    )
-    const stale = c.sql.exec(`DELETE FROM snapshots WHERE ${BELOW_WATERMARK} RETURNING id`).toArray()
+    c.sql.exec(`UPDATE vault_objects SET delete_after = 0 WHERE status <> 'tombstone' AND key IN (SELECT object_key FROM ${STALE_CHUNKS})`)
+    const released = c.sql.exec(`DELETE FROM ${STALE_CHUNKS} RETURNING snapshot_id`).toArray()
     const old = c.sql.exec("DELETE FROM snapshots WHERE status = 'ready' AND expires_at <= ? RETURNING id", iso(now - SNAPSHOT_KEEP_MS)).toArray()
-    if (failed.length + stale.length + old.length > 0) touch(c)
+    if (failed.length + released.length + old.length > 0) touch(c)
   })
 }
 
-/** The earliest time one of pruneSnapshots' rules applies (now, for a snapshot below the purge watermark), from the same constants; null when none will (ruling R37). */
+/** The earliest time one of pruneSnapshots' rules applies (now, while a snapshot below the purge watermark still has chunk rows), from the same constants; null when none will (ruling R37). */
 export function snapshotsDueAt(c: FileContext): number | null {
   const { pending, stale, ready } = c.sql
     .exec<{ pending: string | null; stale: number; ready: string | null }>(
       `SELECT (SELECT min(created_at) FROM snapshots WHERE status = 'pending') AS pending,
-              (SELECT count(*) FROM snapshots WHERE ${BELOW_WATERMARK}) AS stale,
+              EXISTS (SELECT 1 FROM ${STALE_CHUNKS}) AS stale,
               (SELECT min(expires_at) FROM snapshots WHERE status = 'ready') AS ready`,
     )
     .one()

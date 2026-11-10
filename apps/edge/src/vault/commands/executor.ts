@@ -8,6 +8,7 @@ import { ProblemException } from '@api/common/api-problem.filter'
 import type { VaultCall } from '../../v1/protocol'
 import { assertPolicyAccepted } from '../policies'
 import type { VaultContext } from '../context'
+import { touch } from '../files/context'
 import { assertSession } from '../session'
 import { appendChanges } from './change-log'
 import { findReceipt, insertReceipt } from './receipts'
@@ -45,7 +46,9 @@ function primaryChange(command: CommandDefinition, result: VaultMutation): Entit
  *   3. an unsupported command schema is 422, before anything is written;
  *   4. the mutation, then its change group under the next revision, the
  *      receipt and the audit row.
- * A throw rolls back the whole call, so a command id is never half-used.
+ * A throw rolls back the whole call, so a command id is never half-used. A
+ * command that commits touches the context, so call() rearms the alarm after
+ * its block (1B-T11); a replay writes nothing and touches nothing.
  */
 export function runCommand<P>(c: VaultContext, input: CommandInput<P>, mutate: () => VaultMutation): CommandAck {
   const command = c.registry.command(input.kind)
@@ -92,6 +95,7 @@ export function runCommand<P>(c: VaultContext, input: CommandInput<P>, mutate: (
       c.now.toISOString(),
     )
     .toArray()
+  touch(c)
   return ack
 }
 
