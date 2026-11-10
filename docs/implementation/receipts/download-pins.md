@@ -1,0 +1,67 @@
+# download-pins: Pin the checks the 1B-T6 to 1B-T11 reviews found untested
+
+- **Status:** built and verified locally on `fix/download-pins`, from `402c1df`. Not pushed. Under ruling R87 this receipt is its own file; `premium-progress.md` is not edited. Under ruling R100 the whole workers suite is CI's. The independent review is the controller's, after this receipt. Test-only: no source file changes.
+- **Files:** `test/workers/exports.test.ts` (the HEAD case counts bytes per download body; no new case), `attachments.test.ts` (the file header, the receipt HEAD case counted per body, 9 new cases), `snapshots.test.ts` (`watchedSql` yields revocable rows, `TOMBSTONE_MS` joins one import, 5 new cases), `imports-review.test.ts` (2 comments, 2 new cases), `ai.test.ts` (2 type imports, helpers and 3 new cases). The diff is 5 files, 555 insertions and 21 deletions. No file took its diff's hunks: each base file matched its `orig/` checksum, so each was copied from `PL/real/`.
+- **The items and their cases:**
+  - 1B-T6 confirming review n-2: `a HEAD on a download answers its headers, reads its file to the end and gives its slot back` (`exports`, changed in place; V8, V9).
+  - 1B-T9 review m-1 (AC-1 to AC-3): `a signed-out session is refused at the prepare step, and nothing is reserved or copied`; `a session without the current terms is refused at the prepare step of a retain and a replace, and at a removal, and nothing is reserved or copied`; `a deleting account refuses retain, replace, remove, the grant and the download without reserving or copying, and the release step still runs` (V1).
+  - 1B-T9 review m-2 (HD-1): `a HEAD on a receipt download answers its headers, reads its image to the end and gives its slot back (ruling R96)`, renamed and changed in place (V8, V9).
+  - 1B-T9 review m-3 (DU-1): `a stamped release whose object is still live is not due yet; once the object is gone, the row is due 30 days after its release` (V2).
+  - 1B-T9 review m-3 (DU-2): `a retained receipt that nothing holds makes attachmentsDueAt now, so the safety net is scheduled` (V3).
+  - 1B-T9 review n-1 (CP-1): `a request waiting on another copy of the same image gives up at copyDeadlineMs with 503` (V4).
+  - 1B-T9 review n-2 (AC-5): `an unknown body field is refused before anything is reserved or copied, as the API controller reads the body` (V5).
+  - 1B-T9 review n-3 (CP-2): `the image of a preview that is no longer ready is not copied, though its image is still published` (V6).
+  - 1B-T9 review n-4 (RB-2): `a second request for an image whose copy is held only waits, until the first attaches the receipt both then hold` (V7; `two records retaining one image at once keep one receipt, made by one copy` also kills V7).
+  - 1B-T9 review n-5, the header: the file header now names the review's pins (`attachments`, changed in place). Its receipt labels in the merged `receipts/1B-T9.md` are the controller's housekeeping and are not touched here.
+  - 1B-T8 review m-2: `watchedSql` yields each row as a revocable proxy. This is the spy itself, with no new case (P3). V10 is killed by `reads every row before the first R2 call` and `ten times the yearly ledger builds and exports inside the memory budget`.
+  - 1B-T8 review m-3: `a build of a snapshot that is no longer pending reads nothing and stores nothing` (V11).
+  - 1B-T8 review n-1 (probe E): `a chunk whose stored bytes no longer match its digest, at the same length, fails as it streams, and gives its slot back` (V12).
+  - 1B-T8 review n-2 (probe C2): `a snapshot read exactly at the purge revision, with nothing after the purge, is recorded, served and reused` (V13).
+  - 1B-T11 review m3: `a ready snapshot that is not stale is due only a week past its expiry, and an alarm with one leaves nothing due now` (V14).
+  - 1B-T11 review n6: `pruneSnapshots leaves a stale snapshot's tombstones their own day: keys deleted at its expiry are not made due again at once` (V15).
+  - 1B-T10 review m-1 (U9, R57): `a correction of 500 rows at once, the most a correction takes, binds its row ids as one parameter and is saved`, which pins both the known-row check and the committed-row check (V16, V17).
+  - 1B-T10 review m-2 (U1): `an upload that was never accepted (still receiving, or refused at intake) has no preview: 404, as the API answers` (V18).
+  - 1B-T10 review n-2: the two comments in `imports-review.test.ts` (changed form, no case).
+  - 1B-T7 review m-2 (W7): `a session signed out between the context step and the use is refused at the use: 401, no model call and no use spent` (V19).
+  - 1B-T7 review n-1 (W5): `a signed-out session with a malformed body gets 422, with no vault call and no model call; a well-formed body is 401 at its first step`; `a signed-in person without consent who sends a malformed body gets 422, as the PostgreSQL route parsed before AiService checked consent, with no vault call` (V20).
+- **RED** (`mutants.py --red`, the 17 surviving mutants applied at once, `red.out`): `RED with V1, V2, V3, V4, V5, V6, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20 [workers 20 failed | 222 passed (242)] restored=True`. Exactly the expected 20 failed: the 18 new pins and the two cases the 1B-T8 spy arms (`reads every row before the first R2 call`, `ten times the yearly ledger builds and exports inside the memory budget`). No unexpected failure, no expected case passing. Every source file restored.
+- **GREEN** (the five files, under the heavy lock, `green.log`): `Test Files 5 passed (5)`, `Tests 242 passed (242)`, rc=0.
+- **Mutation check:** 20 mutants, 20 killed one at a time (`mutants.out`), each restored byte for byte (`restored=True` on all 20). No survivor.
+  - V1: AC-1, AC-2, AC-3 (3 failed).
+  - V2: DU-1. V3: DU-2.
+  - V4: CP-1.
+  - V5: AC-5.
+  - V6: CP-2.
+  - V7: RB-2 and `two records retaining one image at once ...` (checked alone, P5).
+  - V8: the receipt, export and chunk HEAD cases (checked alone, P5).
+  - V9: the same three HEAD cases (checked alone, P5).
+  - V10: `reads every row before the first R2 call` and the ten-times case.
+  - V11: the not-pending case. V12: probe E. V13: probe C2.
+  - V14: the ready-due case. V15: the tombstone case.
+  - V16 and V17: R57.
+  - V18: U1. V19: the consume case.
+  - V20: both P2 cases.
+- **Gate:**
+  - `typecheck:edge`: rc=0 (`tsc --noEmit`, no output).
+  - FOCUSED (the five files, `gate-focused.log`): `Test Files 5 passed (5)`, `Tests 242 passed (242)`, rc=0.
+  - `test:edge`: rc=0, `Test Files 15 passed (15)`, `Tests 176 passed (176)` (`gate-test-edge.log`). No Node-side file changed. The default vitest config excludes `test/workers/**` and `*.db.test.ts`.
+  - `build:edge`: rc=0. Driver markers in `dist/jotbun_vault/index.js` are all 0: `pg-protocol`, `pg-pool`, `pg-types`, `drizzle-orm/node-postgres`, `from "pg"`.
+  - `test:edge:workers`: **CI** (R100). The controller's CI check: +0 files and +19 passed (attachments +9, snapshots +5, ai +3, imports-review +2).
+  - `test:edge:db`: **SKIPPED** (Docker stopped; CI's edge job runs it). Delta to check: +0.
+  - `git diff --check`: clean before the commit, and `git diff --check origin/claude/p1a-vault-core...HEAD` after it.
+- **Deviations and calls:** the brief's planner calls P1 to P11, accepted by the controller, one line each.
+  - P1. RED is the 17 surviving mutants applied at once (`--red`), with no stubs. Exactly the 20 expected cases failed.
+  - P2. Each probe is adapted to its host file's helpers, and each case names its review and probe label in a comment.
+  - P3. 1B-T8 m-2 is the spy itself (`watchedSql`), with no new case.
+  - P4. The two HEAD cases count bytes per download body (`reads[slot]`), as the chunk HEAD case does.
+  - P5. V7, V8 and V9 are checked alone; each is also killed by an existing case.
+  - P6. 1B-T11 n6 had no probe; the planner's tombstone case is the pin.
+  - P7. 1B-T11 m3 is a new case, not the one-line alternative inside the R37 case. The vault clock is set a day ahead and restored in `finally`.
+  - P8. R57 is pinned at both checks with the 500-row correction (V16, V17).
+  - P9. New cases go at the end of each file in their own blocks. The five in-place edits are the only changes to existing lines.
+  - P10. Every item has a home: 1B-T10 n-3 (ruled by 1B-T11's P14), 1B-T9 n-6 (no change needed), and 1B-T9 n-5's receipt labels (controller housekeeping).
+  - P11. No case calls `settle()` or holds a download unread at its end.
+  - Base. The worktree fast-forwarded from `6a727dc` to `402c1df`. Only `.claude/` changed: `git diff --stat 6a727dc 402c1df -- apps/edge apps/api packages package.json package-lock.json` is empty. Step 0.5 took the copy path.
+  - Locks. The RED, mutant and focused runs took and released the heavy lock inside their scripts. No second lock wrapped them. `test:edge` and `build:edge` are not workers runs, so they took no lock.
+  - Timeouts. The CP-1 failure under V4 and under RED is the designed 15-second timeout (`Test timed out in 15000ms`, one case per run). No other timeout occurred, so no rerun was needed.
+- **Notes for later tasks:** 1B-T12 and 1B-T13 can take the remaining review probes that passed (1B-T9's RB-1, RB-3, RB-4, AC-4, CP-3, ID-1; 1B-T10's S-a, S-b, P4, P2, C, R37, T) as regression cases if they want them. None is required.
