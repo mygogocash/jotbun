@@ -201,6 +201,12 @@ The list below is kept for the record.
       - **Promotion PR #389** is stacked on #388; stack #379 now holds eight PRs.
       - A new lesson: only `CatalogueScreen` and `screenReader` open every catalogue section, so the large-text suite does not pick up new sections.
 - **wallet-looks-unstored planner** (Opus xhigh, 163f00f9), dispatched at 07:26 at 8194e7f: P2-T11's review m1. WT wallet-looks-unstored on fix/wallet-looks-unstored. It unblocks P2-T20, P2-T21 and P2-T29 (held.txt).
+- **The wallet lane: three planners dispatched at 08:04 from 3091b41 (Opus xhigh, no shared files):**
+  - **tray-hardening** (351b244a; WT tray-hardening on fix/tray-hardening): P2-T13's review m1 guard, m2, m3 reset, m4, m5, m6, n1, n3, with ready probes. m5 and m6 were moved here from P2-T14 because they edit the same tray test files. It unblocks P2-T16.
+  - **P2-T14** (deda1216; WT p2-t14 on p2/t14-add-flow), the add flow, keypad and amount step, depth 17. It plans against today's `Tray` props, without editing `Tray.tsx`.
+  - **P2-T12** (e328d240; WT p2-t12 on p2/t12-card-stack), the card stack and frames, depth 15. It takes P2-T11's K5 and decides P2-T9's spring overshoot.
+  - Each task's catalogue sections go in a list file of its own, with one spread in `dev/catalogue/wallet/index.ts` at its own anchor (not in `kitSections.tsx`).
+- **Next in the server lane, once 1B-T11 (#387) merges:** fix-download-aborts (on top of 1B-T7 and 1B-T11), and 1B-T12 (the files parity session, which compares the routes 1B-T11 changes).
 
 ## PR #371: the integration branch into main. The owner merged it on 9 Nov, 21:30 Bangkok, as afcf884
 - It was merged with a merge commit, so history is kept. The controller then fast-forwarded claude/p1a-vault-core to afcf884, which adds main's README and CHANGELOG, so the two branches were level.

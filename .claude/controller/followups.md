@@ -311,14 +311,18 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - m4: opening at another step in one render ticks (P-A), and a step change under the cover ticks (P-K), against brief P11(b). Tick only if the tray was open and uncovered in the previous commit (a `wasOpen` ref), and add the one-render case.
     - n1: `onDeactivate` ignores Gesture Handler's `canceled` flag, so a cancelled drag past the line closes the tray (P-I).
     - n3: no test changes `onClosed` between renders (mutants B1, B4 survive). Pass a new `onClosed` during the exit and expect only the new one to be called.
+    - m5 (the review gave it to P2-T14; the controller moved it here, since it edits the same test files):
+      - no test pins the phone card's dialog (role, `aria-modal`, `aria-label`) or where a phone's focus lands when there is a header (mutants O1, O2, O5 and O6 survive);
+      - extend the phone case with a header, and assert the card and the node sent to `sendAccessibilityEvent`.
+    - m6 (moved here likewise):
+      - R72's Node source case in `trayGesture.test.ts` does not read `accessible: true` (`Tray.tsx:207`) or `focusable={false}` (`:233`), which react-native-web drops (O11 and O7 survive);
+      - add two `assert.match` lines.
   - **P2-T33 (m1 and m3 are a plan gap).** Once the lock gate lands, an open tray's opaque cover hides LockedScreen (plan line 1586): after a cancelled Face ID, an iOS user sees a blank screen with no way to retry. A root-level Modal cannot present over the tray on iOS, because the root view controller is already presenting it.
     - Decide how the lock screen reaches a person whose tray or Sheet is open, and check it on a device; the plan's web case cannot see it.
     - Trays and Sheets should ask nothing while covered.
     - Decide whether the card plays its entering again when the cover lifts (it does today, on every W18 inactive, the Face ID prompt included, and the scroll position resets), and check where VoiceOver lands (`focusTitle` runs only from `onShow`).
   - **P2-T16:** keep the `Tray` mounted until `onClosed`, and open a second tray from it (`whenClosed`). `onClose` must close the tray; pass `locked` to keep it open. Drive the case for a swipe during a save through Gesture Handler's real pointer path: n4, probe 1 shows it works with `getBoundingClientRect` stubbed, so correct `Tray.render.test.tsx:11-12`'s comment.
-  - **P2-T14:**
-    - m5: no test pins the phone card's dialog (role, `aria-modal`, `aria-label`) or where a phone's focus lands when there is a header (mutants O1, O2, O5 and O6 survive). Extend the phone case with a header.
-    - m6: R72's Node source case does not read `accessible: true` (`Tray.tsx:207`) or `focusable={false}` (`:233`), which react-native-web drops (O11 and O7 survive). Add two `assert.match` lines.
+  - **P2-T14:** m5 and m6 moved to tray-hardening, above, because they edit `Tray.render.test.tsx` and `trayGesture.test.ts`.
   - **E2-A:**
     - n2: a deep link from one tray section to the next swaps two presented Modals in one render, which iOS refuses (R69); capture each tray section from a fresh launch;
     - n5: the large-text suite does not open the tray sections (lessons.md), so take the AX5 capture of `bw-tray-large` by hand;
