@@ -474,6 +474,11 @@ The list below is kept for the record.
       - RED on ef37c41: V1 and O1 survive, and the n6 probe leaks a store. GREEN; 19 of 19 mutants; `test:edge` 176 under the lock.
       - The three test files match the fix kit's `real/`. The receipt differs only by its merge line and Deviations bullet.
     - **The confirming Sonnet review runs as a workflow** (run wf_765ee63d-ccc, task w4x5ksd33), writing `reviews/1B-T12-confirm.md`.
+    - **The confirming review approved at 14:42** (`reviews/1B-T12-confirm.md`): all five fixes hold, V1 and O1 are killed, and there is no minor; six nits.
+      - The controller fixed the receipt's stale Files line in **d853122** (docs only), now #394's head.
+      - **Merge once the `edge` job is green:** `merge_task_pr.sh 394 d853122 1B-T12`, then `promote_pr.sh 1B-T12 394`. Expect `test:edge:db` to list vault-parity-files 3, parity-files 1 and vault-parity 3.
+      - **The merge order (confirm-n6):** read the `edge` job of whichever of #394, #396 and #398 merges last, on a head that holds all three.
+      - The real NestJS comparison is still unobserved until that job runs.
     - **On approval and a green `edge` job:** `merge_task_pr.sh 394 317cf3a 1B-T12`, then `promote_pr.sh 1B-T12 394`. The push's CI run 42774078632 was refused for billing (0 steps run); rerun that one after the fix.
   - **alarm-hardening** (a37bdb47; WT alarm-hardening on fix/alarm-hardening), 1B-T11's m1, m2, m4 and nits n1 to n5 and n9. The planner (Opus xhigh) was dispatched at 08:58, when #391's review freed a slot.
     - It edits `jobs.ts`, `user-vault.ts` and `files-alarm.test.ts`, and for m4 `attachments.ts` (`attachmentsDueAt`) and `previews.ts` (`importsDueAt`).
