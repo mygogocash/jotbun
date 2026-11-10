@@ -1,0 +1,102 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t11-planner/tree/apps/edge
+
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a failed start is retried a minute later, not in a loop
+{"level":"error","event":"work_start_failed","failure":"Error"}
+
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a key whose writer never published it is deleted by the alarm at its deadline 31ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > an export file is deleted by the alarm when it expires, and its status reads expired 29ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > work requested before the vault slept is started by its alarm after it wakes 26ms
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a prune that throws is logged, the others still run, and the alarm is set again
+{"level":"error","event":"file_prune_failed","failure":"Error"}
+
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a failed start is retried a minute later, not in a loop 15ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a capped run leaves the alarm set, and the next alarm clears the rest 29ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a prune that throws is logged, the others still run, and the alarm is set again 17ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > the alarm follows the earliest of the core and file jobs 26ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > after any alarm, every scheduled time is later than now 31ms
+ ✓ test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > export requests are purged 30 days after the request; the receipt stays compact 17ms
+ ✓ test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > drops finished upload rows 30 days after they ended, never one still receiving or within the quota window 15ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > a resent snapshot request after its snapshot went stale reads expired and starts nothing; a new key builds a new one 40ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > a vault that is not active runs no file job and keeps no alarm for them 16ms
+stderr | test/workers/files-alarm.test.ts > the controller's notes > an unbound bucket is a failed delete, due again a minute later; the alarm never throws
+{"level":"error","event":"object_delete_failed","failure":"ObjectStoreError"}
+
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > an upload arms the alarm though it commits no command 17ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > only one file run at a time: a second run while the first waits on R2 deletes nothing 65ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > an unbound bucket is a failed delete, due again a minute later; the alarm never throws 16ms
+stderr | test/workers/files-alarm.test.ts > the brief's rulings > a prune that keeps throwing brings the alarm back a minute later, never in a loop
+{"level":"error","event":"file_prune_failed","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > the brief's rulings > after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner
+{"level":"error","event":"vault_retention_purge_failed","failure":"Error"}
+
+ ✓ test/workers/files-alarm.test.ts > the brief's rulings > a background step that writes moves the alarm: a failed export is due only at its purge 14ms
+ × test/workers/files-alarm.test.ts > the brief's rulings > a start moves the alarm on, from the alarm or from the Worker 11ms
+   → expected 1794355052420 to be 1794355112420 // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the brief's rulings > after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner
+AssertionError: expected 1797033482338 to be 1797033512338 // Object.is equality
+
+- Expected
++ Received
+
+- 1797033512338
++ 1797033482338
+
+ ❯ test/workers/files-alarm.test.ts:613:35
+    611|       const [{ id: wallet }] = await vaultRows<{ id: string }>(user, '…
+    612|       expect((await client.as(user).patch(`/v1/wallets/${wallet}`, { n…
+    613|       expect(await alarmOf(user)).toBe(t + 31 * DAY + RETENTION_RETRY_…
+       |                                   ^
+    614|     } finally {
+    615|       await vaultExec(user, 'DROP TRIGGER fail_purge')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the brief's rulings > a write never sets the alarm sooner than a minute ahead, even with work already due, and a later write never postpones it
+AssertionError: expected 1794355052362 to be 1794355112362 // Object.is equality
+
+- Expected
++ Received
+
+- 1794355112362
++ 1794355052362
+
+ ❯ test/workers/files-alarm.test.ts:630:33
+    628|     })
+    629|     const cash = await money.wallet(user)
+    630|     expect(await alarmOf(user)).toBe(t + CALL_ALARM_DELAY_MS)
+       |                                 ^
+    631|     await setVaultClock(user, t + 30_000)
+    632|     expect((await client.as(user).patch(`/v1/wallets/${cash}`, { name:…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the brief's rulings > a start moves the alarm on, from the alarm or from the Worker
+AssertionError: expected 1794355052420 to be 1794355112420 // Object.is equality
+
+- Expected
++ Received
+
+- 1794355112420
++ 1794355052420
+
+ ❯ test/workers/files-alarm.test.ts:688:35
+    686|     try {
+    687|       await runInDurableObject(vaultOf(user), (vault: UserVault) => va…
+    688|       expect(await alarmOf(user)).toBe(t + CALL_ALARM_DELAY_MS)
+       |                                   ^
+    689|       expect(await vaultOf(user).startPendingWork()).toEqual({ started…
+    690|       expect(await alarmOf(user)).toBeNull()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 20 passed (23)
+   Start at  06:57:30
+   Duration  1.70s (transform 366ms, setup 661ms, import 34ms, tests 536ms, environment 0ms)
+

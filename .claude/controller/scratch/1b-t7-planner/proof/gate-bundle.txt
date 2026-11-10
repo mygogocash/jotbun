@@ -1,0 +1,10 @@
+pg-protocol 0
+pg-pool 0
+pg-types 0
+drizzle-orm/node-postgres 0
+from "pg" 0
+present ai_fallback 1
+present server-side-fallback-2026-07-01 1
+present api.anthropic.com 3
+{'JOTBUN_ENV': 'local', 'IMPORT_UPLOADS_ENABLED': 'false', 'GOGOCASH_BRIDGE_ENABLED': 'false', 'AI_ENABLED': 'false'} ['ExportWorkflow', 'SnapshotWorkflow'] ['OBJECTS'] {'cpu_ms': 120000}
+bytes 1645043

@@ -1,0 +1,116 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t11-planner/tree/apps/edge
+
+ ✓ test/workers/snapshots.test.ts > consistent snapshots, ported from snapshot-builder.integration.spec.ts > applying the snapshot and then later deltas yields every latest entity exactly once, from one view 99ms
+ ✓ test/workers/retention.test.ts > deleted records, ported from retention.integration.spec.ts > purged_transactions_are_not_resurrected_by_receipts 42ms
+ ✓ test/workers/retention.test.ts > deleted records, ported from retention.integration.spec.ts > a deleted record stops counting at once and can be undone within 30 days; nothing is purged early 32ms
+ ✓ test/workers/retention.test.ts > deleted records, ported from retention.integration.spec.ts > tombstones reach delta readers, older cursors resync 28ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a key whose writer never published it is deleted by the alarm at its deadline 33ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > an export file is deleted by the alarm when it expires, and its status reads expired 31ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > work requested before the vault slept is started by its alarm after it wakes 28ms
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a failed start is retried a minute later, not in a loop
+{"level":"error","event":"work_start_failed","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a prune that throws is logged, the others still run, and the alarm is set again
+{"level":"error","event":"file_prune_failed","failure":"Error"}
+
+stderr | test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > a failing step is reported and does not stop the others
+{"level":"error","event":"vault_retention_purge_failed","failure":"Error"}
+
+ ✓ test/workers/snapshots.test.ts > consistent snapshots, ported from snapshot-builder.integration.spec.ts > an account deletion during the build publishes nothing, and its chunks are swept 38ms
+ ✓ test/workers/snapshots.test.ts > consistent snapshots, ported from snapshot-builder.integration.spec.ts > a build that runs out of time publishes no manifest 29ms
+ ✓ test/workers/snapshots.test.ts > consistent snapshots, ported from snapshot-builder.integration.spec.ts > an empty account still gets a one-chunk snapshot at its high-water 18ms
+ ✓ test/workers/snapshots.test.ts > consistent snapshots, ported from snapshot-builder.integration.spec.ts > refuses to publish an entity that does not match its persisted DTO 20ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a failed start is retried a minute later, not in a loop 16ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a capped run leaves the alarm set, and the next alarm clears the rest 32ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a prune that throws is logged, the others still run, and the alarm is set again 18ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > the alarm follows the earliest of the core and file jobs 29ms
+ ✓ test/workers/retention.test.ts > deleted records, ported from retention.integration.spec.ts > leaves an account being erased to its erasure: no purge group is written for it 22ms
+ ✓ test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > drops receipt digests after the outbox lifetime: a replay is refused and never re-run; status still answers 24ms
+ ✓ test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > removes a superseded change that sat below the retention line (S1 change log) 25ms
+ ✓ test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > a failing step is reported and does not stop the others 25ms
+stderr | test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > a purge retried after the prune moved the retention line never moves it back
+{"level":"error","event":"vault_retention_purge_failed","failure":"Error"}
+
+ ✓ test/workers/snapshots.test.ts > snapshot requests, status and grants, ported from snapshot-builder.integration.spec.ts > requests are idempotent, share an open build, and reuse a snapshot from the last hour 26ms
+ ✓ test/workers/snapshots.test.ts > snapshot requests, status and grants, ported from snapshot-builder.integration.spec.ts > grants are short-lived, bound to the owner, and refuse another account's snapshot 41ms
+ ✓ test/workers/snapshots.test.ts > snapshot requests, status and grants, ported from snapshot-builder.integration.spec.ts > reports failed and expired snapshots, and grants nothing for them 28ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > after any alarm, every scheduled time is later than now 35ms
+ ✓ test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > export requests are purged 30 days after the request; the receipt stays compact 18ms
+ ✓ test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > drops finished upload rows 30 days after they ended, never one still receiving or within the quota window 16ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > a resent snapshot request after its snapshot went stale reads expired and starts nothing; a new key builds a new one 49ms
+ ✓ test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > a purge retried after the prune moved the retention line never moves it back 28ms
+ ✓ test/workers/retention.test.ts > the retention alarm > a deleted record is purged by the alarm 30 days later, and the alarm follows the earliest job 20ms
+ ✓ test/workers/retention.test.ts > the retention alarm > an alarm that fires after the vault slept still purges 34ms
+ ✓ test/workers/retention.test.ts > the retention alarm > with nothing left to do, the alarm is cleared 19ms
+ ✓ test/workers/snapshots.test.ts > snapshot requests, status and grants, ported from snapshot-builder.integration.spec.ts > SnapshotWorkflow runs the build 30ms
+ ✓ test/workers/snapshots.test.ts > S1 review: one view and bounded work, ported from snapshot-builder.integration.spec.ts > every entity comes from the high-water view even when writes land between single-entity pages 54ms
+ ✓ test/workers/snapshots.test.ts > S1 review: one view and bounded work, ported from snapshot-builder.integration.spec.ts > reads every row before the first R2 call 33ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > a vault that is not active runs no file job and keeps no alarm for them 18ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > an upload arms the alarm though it commits no command 19ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > only one file run at a time: a second run while the first waits on R2 deletes nothing 68ms
+stderr | test/workers/files-alarm.test.ts > the controller's notes > an unbound bucket is a failed delete, due again a minute later; the alarm never throws
+{"level":"error","event":"object_delete_failed","failure":"ObjectStoreError"}
+
+ ✓ test/workers/retention.test.ts > the retention alarm > the alarm follows the earliest job, and each record waits its own 30 days 33ms
+ ✓ test/workers/retention.test.ts > the retention alarm > purges more records than SQLite has parameters, at most 1,000 to a change group 78ms
+ ✓ test/workers/retention.test.ts > the retention alarm > an erased vault runs no retention and keeps no alarm, awake or after it sleeps 45ms
+stderr | test/workers/files-alarm.test.ts > the brief's rulings > a prune that keeps throwing brings the alarm back a minute later, never in a loop
+{"level":"error","event":"file_prune_failed","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > the brief's rulings > after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner
+{"level":"error","event":"vault_retention_purge_failed","failure":"Error"}
+
+ ✓ test/workers/snapshots.test.ts > S1 review: one view and bounded work, ported from snapshot-builder.integration.spec.ts > a head whose change row is missing fails the build instead of vanishing from it 25ms
+ ✓ test/workers/snapshots.test.ts > S1 review: one view and bounded work, ported from snapshot-builder.integration.spec.ts > keeps chunks near their target size and grants within the snapshot expiry 49ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > an unbound bucket is a failed delete, due again a minute later; the alarm never throws 19ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > an erase that lands while the alarm waits on R2 leaves the vault erased, with no alarm and no schedule 27ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > the alarm's due-time read of deleted records and the purge's change lookup use their indexes 14ms
+ ✓ test/workers/files-alarm.test.ts > the brief's rulings > a prune that keeps throwing brings the alarm back a minute later, never in a loop 18ms
+ ✓ test/workers/files-alarm.test.ts > the brief's rulings > after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner 25ms
+ ✓ test/workers/files-alarm.test.ts > the brief's rulings > a write never sets the alarm sooner than a minute ahead, even with work already due, and a later write never postpones it 17ms
+ ✓ test/workers/files-alarm.test.ts > the brief's rulings > the vault knows the alarm it set: alarmAt matches getAlarm() after a write, an alarm, a wake and an erase 35ms
+ ✓ test/workers/files-alarm.test.ts > the brief's rulings > a background step that writes moves the alarm: a failed export is due only at its purge 14ms
+ ✓ test/workers/files-alarm.test.ts > the brief's rulings > a start moves the alarm on, from the alarm or from the Worker 13ms
+ ✓ test/workers/snapshots.test.ts > retention, the snapshot halves of retention.integration.spec.ts > tombstones reach delta readers, older cursors resync, and snapshots built before the purge are dropped 37ms
+ ✓ test/workers/snapshots.test.ts > retention, the snapshot halves of retention.integration.spec.ts > a snapshot read before a purge is never recorded afterwards, so it cannot serve the purged data 28ms
+ ✓ test/workers/snapshots.test.ts > the jobs Worker snapshot, ported from apps/edge/test/jobs.db.test.ts > builds a requested snapshot, whose chunks the edge then serves 21ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a snapshot runs on SnapshotWorkflow, and its cursor continues with /v1/sync/changes 29ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a snapshot that became ready in the last hour is reused, judged by ready_at 23ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a build retried after its chunks were stored completes, and the first attempt's chunks are deleted at their deadline 21ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a build that finishes after the vault stopped being active publishes nothing 17ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a build cut into more chunks than SQLite has parameters records them all 95ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a chunk is served with its exact bytes and digest, and a tampered chunk is 404 38ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > after pruneSnapshots at snapshotsDueAt, the next snapshotsDueAt is later or null 13ms
+An RPC result was not disposed properly. One of the RPC calls you made expects you to call dispose() on the return value, but you didn't do so. You cannot rely on the garbage collector for this because it may take arbitrarily long before actually collecting unreachable objects.
+stdout | test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > ten times the yearly ledger builds and exports inside the memory budget
+ten-times proof: {"databaseSize":50610176,"records":32000,"entities":32002,"chunks":19,"storedBytes":19001807,"longestLine":593,"peakHeldBytes":20050117,"csvBytes":14414226,"exportPeakHeldBytes":28828452,"seedMs":2152,"buildMs":499,"exportMs":252}
+
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > ten times the yearly ledger builds and exports inside the memory budget 2996ms
+uncaught exception; source = Uncaught (in promise); stack = Error: unavailable
+    at doWrapper (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t11-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:2428:30)
+    at async Context.do (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t11-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:2752:17)
+stderr | test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a snapshot whose build fails on all three attempts is recorded failed
+{"level":"error","event":"snapshot_build_failed","failure":"Error"}
+
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a build that starts after the vault stopped being active reads nothing and stores nothing 18ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a too-large snapshot fails visibly and publishes nothing 19ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a snapshot whose build fails on all three attempts is recorded failed 26ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a build that fails on its first two attempts is ready on its third 24ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > the snapshot starter starts each pending snapshot once on SnapshotWorkflow, and is due a minute after an unstarted request 14ms
+uncaught exception; source = Uncaught (in promise); stack = WorkflowError: (instance.already_exists) Workflow instance with id "6245b815-1d3f-8a6d-8a2d-a6f8f52b0cf4" already exists
+    at createWorkflowError (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t11-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:1383:10)
+    at duplicateInstanceError (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t11-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:1435:10)
+    at WorkflowBinding.create (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t11-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:4724:13)
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a snapshot started twice by overlapping runs is built once 22ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > pruneSnapshots fails a snapshot left pending for a day, drops one read below the purge watermark, and deletes one a week past its expiry 45ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a request takes no body field and a UUID key, waits for the jobs gate, and a status of a malformed or unknown id is 404 15ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > at most four chunk downloads run at once in a process, each streamed and never read whole; more are told to retry 23ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a chunk download refused after it took its slot gives the slot back 32ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a HEAD on a chunk download answers its headers, reads its chunk to the end and gives its slot back 63ms
+
+ Test Files  3 passed (3)
+      Tests  72 passed (72)
+   Start at  06:58:50
+   Duration  5.39s (transform 1.16s, setup 2.19s, import 121ms, tests 5.16s, environment 0ms)
+

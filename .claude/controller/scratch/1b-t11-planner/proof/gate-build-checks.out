@@ -1,0 +1,9 @@
+pg-protocol 0
+pg-pool 0
+pg-types 0
+drizzle-orm/node-postgres 0
+from "pg" 0
+transactions_deleted_idx 1
+['ExportWorkflow', 'SnapshotWorkflow'] ['OBJECTS'] {'cpu_ms': 120000}
+circular warnings 0
+dist/jotbun_vault/index.js       722.10 kB │ gzip: 191.71 kB │ map: 1,460.02 kB

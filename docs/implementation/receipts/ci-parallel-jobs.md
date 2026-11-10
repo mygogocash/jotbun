@@ -1,0 +1,56 @@
+# ci-parallel-jobs: Run CI's suites in parallel jobs to halve each PR's wait
+
+- **Status:** built and verified locally on `chore/ci-parallel-jobs` (`.claude/worktrees/ci-parallel`), from the planner's base `857b9f2`, synced by fast-forward to `4850463`, which was the head of `origin/claude/p1a-vault-core` when the task was built. (Controller's correction after the merge, review nit n6.) The owner approved the speed-up on 9 November 2026. Under ruling R87 this receipt is its own file. CI's three jobs become nine jobs that run in parallel. Every command CI ran before still runs, once, and CI now also runs the iOS export and `typecheck:routes` (the controller's amendment, from the 1D-T8 review's n5): before this, no pull request's iOS bundle was built anywhere.
+- **Files:**
+  - `.github/workflows/backend.yml`: the nine jobs below. Triggers, permissions, `concurrency` (with `cancel-in-progress`), the Node version and the pinned actions do not change; no secret, deploy or hosted service is added. Each npm job installs with `npm ci` and the `actions/setup-node` npm cache, and stops after 20 minutes (45 before; every job now takes under 6).
+  - `scripts/ci/backend-workflow.test.mjs`: 9 cases, 6 before. New: the render split runs every test exactly once; each job runs its own steps, in order; no job or step has `if:` or `continue-on-error:` (1A-T10's review, minor 1). Changed: the parser case's job names; the local-gate case accepts the render split; 1A-T10's case pins the six edge steps in the `edge` job.
+  - `docs/implementation/handover.md`: the full gate gains `npm run typecheck:routes -w gogospend-app` and `npm run export:ios -w gogospend-app -- --max-workers 2`, so the local-gate case also requires both in CI.
+  - `apps/app/package.json`: an `export:ios` script, `expo export --platform ios`, beside `export:web`. No dependency or lockfile change.
+  - `README.md`: the CI paragraph describes the nine jobs.
+  - This receipt.
+- **The layout** (job: steps after `npm ci`):
+  - `checks`: `typecheck`, `typecheck:app`, `typecheck:routes`, `test:api`, `test:app`, `test:unit`, `test:dev`, the API build, the release graph, the parser sandbox and the whitespace check.
+  - `exports`: `export:web`, then `export:ios`, both with `--max-workers 2`.
+  - `render`: `test:render` with `--exclude` for the two per-section suites (`src/dev/catalogue/CatalogueScreen.render.test.tsx` and `src/dev/catalogue/screenReader.render.test.tsx`).
+  - `sections-1`, `sections-2`, `sections-3`: `test:render` on those two suites only, with a test name pattern each. Every test there is named `section <id> ...`, apart from the catalogue's other cases. Part 1 runs ids whose length is a multiple of 3, part 2 one more than a multiple of 3, and part 3 every other name: its pattern is the first two negated, so every test matches exactly one part.
+  - `database`: `test:db`, then `test:ops` with `GOGOSPEND_OPS_REQUIRE_DB=1`.
+  - `edge`: the API build, `install:edge`, `typecheck:edge`, `test:edge`, `test:edge:workers`, `build:edge`, `test:edge:db` (it starts its own PostgreSQL container, as `test:db` does).
+  - `image`: unchanged.
+- **RED to GREEN** (`node --test scripts/ci/backend-workflow.test.mjs`, in the worktree):
+  - RED, with the new test and handover and the old workflow: `tests 9`, `pass 4`, `fail 5`. The failing cases: the parser's job names, the local gate (CI lacked `typecheck:routes` and `export:ios`), the render split (no split), the layout, and 1A-T10's case (the edge steps were in the database job).
+  - GREEN, with the new workflow and `package.json`: `tests 9`, `pass 9`, `fail 0`.
+- **Mutation check:** 19 workflow mutants, each in its own probe copy of the files the test reads (never in the worktree), run with the planner's runner (`.claude/controller/scratch/ci-parallel-jobs-planner/tools/probes.mjs`). All 19 fail exactly the expected cases; a control probe passes 9 of 9.
+  - Tests dropped or doubled in the split: M1 (part 2 dropped), M2 (part 2 runs part 1's pattern), M3 (part 2 matches nothing), M4 (part 3 stops negating part 2), M5 (the parts leave out the screen reader suite), M6 (the render job excludes the whole catalogue folder), M8 (the screen reader path miscased everywhere): each fails the render split, the local gate and the layout. M7 (the render job excludes nothing, so the two suites run twice): the render split and the layout.
+  - Steps dropped: M9 (`test:unit`), M17 (the iOS export), M18 (`typecheck:routes`): the local gate and the layout. M10 (`GOGOSPEND_OPS_REQUIRE_DB` dropped): the local gate and the ops case.
+  - Steps moved: M11 (the workers suite into the database job): the layout and 1A-T10's case. M12 (the edge job's API build dropped), M13 (`test:ops` into the edge job), M19 (the iOS export into `checks`): the layout only.
+  - Switched off: M14 (`if: false` on a job), M15 (`if:` on a step), M16 (`continue-on-error: true` on a step): the new `if:` case only.
+  - Not a mutant: A1, a correct two-way split by id parity, passes the render split and fails only the exact layout. The split case checks the construction, not today's three patterns.
+- **The split check** (the planner's `tools/split-check.mjs`, which runs `vitest list` on the worktree's own workflow, so no test runs): `SPLIT OK` at `4850463`: 108 render files, 106 in the render job and the two suites in the parts; the parts list 162, 196 and 218 tests, 576 together, none in two parts.
+- **Gate** (worktree root; R100's fast local gate for a CI change):
+  - `node --test scripts/ci/backend-workflow.test.mjs`: RED to GREEN as above.
+  - `npm run typecheck:app`: exit 0.
+  - `npm run typecheck:routes -w gogospend-app`: exit 0 (the new CI step, at this head).
+  - `npm run test:app`: tests 34, pass 34, fail 0.
+  - `npm run test:unit`: tests 927, pass 927, fail 0.
+  - `git diff --check origin/claude/p1a-vault-core...HEAD`: clean.
+  - CI (R100, not run locally), on this pull request's nine jobs: the full `test:render` (in `render` and `sections-1` to `sections-3`), `export:web` and the iOS export (`exports`), `test:db` and `test:ops` (`database`), `test:edge:workers` and `test:edge:db` (`edge`), and the image and its smoke (`image`). The iOS export has not run on Linux before: the planner ran it on macOS at `0bd5659` and `857b9f2` (5757 and 5760 modules, a Hermes bytecode bundle), and the `hermes-compiler` package ships a Linux `hermesc`.
+- **CI wall time** (from the first job queued to the last job done):
+  - Before, measured on 8 runs of the three-job workflow on 9 November 2026 (runs 42611568141, 42623444689, 42628853793, 42629425617, 42630710521, 42634746140, 42635385929, 42644425491): 577 to 737 s, median about 626 s (10.4 minutes). The critical path was the gate job, 574 to 734 s, whose full render suite took 359 to 457 s. On the latest content (runs 42634746140 and 42644425491) the catalogue suite took 386 and 393 s of it, and the screen reader suite 122 and 127 s, each in one worker.
+  - After, expected from those runs' step times (the planner's `tools/estimate.mjs`): 214 to 309 s, median about 262 s (4.4 minutes). Job by job: `checks` 167 to 211 s, `exports` 183 to 237 s (the iOS export estimated), `render` 179 to 246 s, `sections-1` to `sections-3` 156 to 233 s, `database` 171 to 306 s, `edge` 179 to 262 s, `image` 53 to 68 s. The slowest runs are set by `database`, when `apps/api`'s `import-confirmation.integration.spec.ts` is slow (206 s in run 42644425491, 71 s in run 42630710521).
+  - After, measured (added by the controller after the merge), on three runs of this pull request:
+    - **Run 42721236288, on the merge with the current base** (`97f299c` = `46b30a0` into `b272f0c`, after #374, #375 and #376): wall 288 s, nine jobs green.
+      - The render job had 107 files and 1291 tests, and the sections jobs 162, 196 and 218 of 576 each. Together that is the full suite: 109 files and 1867 tests.
+      - The exports built web 4806 and iOS 5772 modules.
+    - **Run 42652925056, on the first base** (`c56e0e4` = `46b30a0` into `4850463`): wall 285 s.
+      - checks 158 s, exports 217 s (web 81 s, iOS 81 s), render 283 s, sections-1 162 s, sections-2 196 s, sections-3 210 s, database 198 s, edge 248 s, image 58 s.
+      - About 1,730 s of runner time, or about 33 billable minutes once each job is rounded up.
+    - Run 42720201154 reran the same stale merge commit `c56e0e4`; GitHub had not rebuilt `refs/pull/377/merge` (lessons.md). Wall 256 s.
+    - **Against the brief's estimates (review nit n1):** the wall time is inside 214 to 309 s. The `render` job is now the critical path at 283 s, above its estimate of 179 to 246 s, while the `sections-*` jobs sit inside theirs. The next speed-up is splitting the render job's 107 files with `--shard`, as P2 notes for later.
+- **Cost:** each npm job pays its own `npm ci` (20 to 42 s with the cache), so a typical run takes about 31 billable minutes instead of 18. A run uses 9 of the Free plan's 20 concurrent jobs, so two runs at once fit and a third queues.
+- **Deviations:** Planner calls P1 to P14: accepted by the controller. None other. The sync to `4850463` was a fast-forward of controller files only (the controller's brief, its handover notes and the planner kit, no app or CI code), so no count moved from `857b9f2`.
+- **SKIPPED:** nothing hosted; no Cloudflare resource was touched. The whole suites are CI's (above).
+- **Notes for the integrator:**
+  - Open pull requests run the new workflow the next time CI runs on a new merge ref (a push, or merging the head in). None of them edits the workflow, so they pass whenever their code passes every suite.
+  - A later change to the layout updates the layout case in the same commit. P6A-T7 (its `check:native` step goes in `checks`), P6C-T7 and P6C-T9 edit the workflow or this test next. 1A-T10's minor 1 is done here, so P6C-T7 no longer carries it.
+  - If a `sections-*` job's test step passes about 4 minutes as the catalogue grows, split the two suites four ways: add a part, and make the last pattern negate the other three. The render split case accepts any number of parts built that way.
+  - The receipt's expected times are estimates from the old jobs' steps; this pull request's run is the measurement.

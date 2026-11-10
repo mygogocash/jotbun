@@ -8,7 +8,7 @@
 > - the database suites;
 > - `test:ops`.
 >
-> **Correction (controller, 9 November 2026, from the 1D-T8 review's n5):** today's CI has no iOS export and no `typecheck:routes`; the ci-parallel-jobs task adds both. Until it merges, record the iOS export in receipts as "the controller's, not CI's": the controller runs it before merging a task that changes routes, the app entry or native code. Keep running `typecheck:routes` locally whenever routes change, as the fast gate says.
+> **CI's layout (controller, 10 November 2026: ci-parallel-jobs, #377, merged e469d8b):** CI runs nine parallel jobs: `checks` (with `typecheck:routes`), `exports` (`export:web` and the iOS export), `render` and `sections-1` to `sections-3` (the full render suite), `database`, `edge` and `image`. The iOS export is CI's again, so record it in receipts as "CI". Keep running `typecheck:routes` locally whenever routes change, as the fast gate says. (From R100 until this merged, CI had no iOS export or `typecheck:routes`; the 1D-T8 review's n5 found the gap.)
 >
 > Agents no longer run those whole suites locally, and no longer write or check whole-suite totals as "Expected" lines; totals drift whenever the head moves. The local gate is the "Fast local gate" below. A brief written before this note keeps its own steps, except that its whole-suite steps (full render, full workers, exports) are skipped: record them as "CI" in the receipt.
 

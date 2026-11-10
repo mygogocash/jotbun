@@ -1,0 +1,141 @@
+M1 KILLED (start_work ignores lastStartAttemptMs) [workers 1 failed | 22 passed (23)] restored=True
+    failed: files-alarm.test.ts: a failed start is retried a minute later, not in a loop
+M2 KILLED (fileJobsDue is left out of reschedule) [workers 15 failed | 8 passed (23)] restored=True
+    failed: files-alarm.test.ts: a background step that writes moves the alarm: a failed export is due only at its purge
+    failed: files-alarm.test.ts: a capped run leaves the alarm set, and the next alarm clears the rest
+    failed: files-alarm.test.ts: a failed start is retried a minute later, not in a loop
+    failed: files-alarm.test.ts: a key whose writer never published it is deleted by the alarm at its deadline
+    failed: files-alarm.test.ts: a prune that keeps throwing brings the alarm back a minute later, never in a loop
+    failed: files-alarm.test.ts: a start moves the alarm on, from the alarm or from the Worker
+    failed: files-alarm.test.ts: a write never sets the alarm sooner than a minute ahead, even with work already due, and a later write never postpones it
+    failed: files-alarm.test.ts: after any alarm, every scheduled time is later than now
+    failed: files-alarm.test.ts: an erase that lands while the alarm waits on R2 leaves the vault erased, with no alarm and no schedule
+    failed: files-alarm.test.ts: an export file is deleted by the alarm when it expires, and its status reads expired
+    failed: files-alarm.test.ts: an unbound bucket is a failed delete, due again a minute later; the alarm never throws
+    failed: files-alarm.test.ts: an upload arms the alarm though it commits no command
+    failed: files-alarm.test.ts: drops finished upload rows 30 days after they ended, never one still receiving or within the quota window
+    failed: files-alarm.test.ts: the alarm follows the earliest of the core and file jobs
+    failed: files-alarm.test.ts: work requested before the vault slept is started by its alarm after it wakes
+M3 KILLED (prune_files is timed from a fixed daily period, not the five due times) [workers 7 failed | 16 passed (23)] restored=True
+    failed: files-alarm.test.ts: a background step that writes moves the alarm: a failed export is due only at its purge
+    failed: files-alarm.test.ts: a prune that keeps throwing brings the alarm back a minute later, never in a loop
+    failed: files-alarm.test.ts: a prune that throws is logged, the others still run, and the alarm is set again
+    failed: files-alarm.test.ts: a start moves the alarm on, from the alarm or from the Worker
+    failed: files-alarm.test.ts: after any alarm, every scheduled time is later than now
+    failed: files-alarm.test.ts: the alarm follows the earliest of the core and file jobs
+    failed: files-alarm.test.ts: the vault knows the alarm it set: alarmAt matches getAlarm() after a write, an alarm, a wake and an erase
+M4 KILLED (rearm never updates alarmAt (ruling P9: the mirror case, not the earliest-job case)) [workers 4 failed | 19 passed (23)] restored=True
+    failed: files-alarm.test.ts: a start moves the alarm on, from the alarm or from the Worker
+    failed: files-alarm.test.ts: a write never sets the alarm sooner than a minute ahead, even with work already due, and a later write never postpones it
+    failed: files-alarm.test.ts: after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner
+    failed: files-alarm.test.ts: the vault knows the alarm it set: alarmAt matches getAlarm() after a write, an alarm, a wake and an erase
+M5 KILLED (alarm() keeps alarmAt) [workers 4 failed | 19 passed (23)] restored=True
+    failed: files-alarm.test.ts: a capped run leaves the alarm set, and the next alarm clears the rest
+    failed: files-alarm.test.ts: a failed start is retried a minute later, not in a loop
+    failed: files-alarm.test.ts: a prune that keeps throwing brings the alarm back a minute later, never in a loop
+    failed: files-alarm.test.ts: after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner
+M6 KILLED (a prune's error escapes runFileJobs) [workers 1 failed | 22 passed (23)] restored=True
+    failed: files-alarm.test.ts: a prune that throws is logged, the others still run, and the alarm is set again
+J1 KILLED (fileJobsDue ignores the active check) [workers 1 failed | 22 passed (23)] restored=True
+    failed: files-alarm.test.ts: a vault that is not active runs no file job and keeps no alarm for them
+J2 KILLED (runFileJobs ignores the active check) [workers 1 failed | 22 passed (23)] restored=True
+    failed: files-alarm.test.ts: a vault that is not active runs no file job and keeps no alarm for them
+J3 KILLED (a second run overlaps the first (no one-run guard)) [workers 1 failed | 22 passed (23)] restored=True
+    failed: files-alarm.test.ts: only one file run at a time: a second run while the first waits on R2 deletes nothing
+J4 KILLED (the bucket is read when the delete is called, outside its try) [workers 1 failed | 22 passed (23)] restored=True
+    failed: files-alarm.test.ts: an unbound bucket is a failed delete, due again a minute later; the alarm never throws
+J5 KILLED (the alarm never starts work) [workers 2 failed | 21 passed (23)] restored=True
+    failed: files-alarm.test.ts: a failed start is retried a minute later, not in a loop
+    failed: files-alarm.test.ts: work requested before the vault slept is started by its alarm after it wakes
+J6 KILLED (a failed file job is not reported to the alarm) [workers 1 failed | 22 passed (23)] restored=True
+    failed: files-alarm.test.ts: a prune that keeps throwing brings the alarm back a minute later, never in a loop
+J7 KILLED (reschedule never removes a file job with nothing to do) [workers 8 failed | 15 passed (23)] restored=True
+    failed: files-alarm.test.ts: a background step that writes moves the alarm: a failed export is due only at its purge
+    failed: files-alarm.test.ts: a key whose writer never published it is deleted by the alarm at its deadline
+    failed: files-alarm.test.ts: a prune that throws is logged, the others still run, and the alarm is set again
+    failed: files-alarm.test.ts: a start moves the alarm on, from the alarm or from the Worker
+    failed: files-alarm.test.ts: a vault that is not active runs no file job and keeps no alarm for them
+    failed: files-alarm.test.ts: after any alarm, every scheduled time is later than now
+    failed: files-alarm.test.ts: an export file is deleted by the alarm when it expires, and its status reads expired
+    failed: files-alarm.test.ts: the alarm follows the earliest of the core and file jobs
+U1 KILLED (call() rearms only when the revision moved (1A-T8b rule)) [workers 1 failed | 22 passed (23)] restored=True
+    failed: files-alarm.test.ts: an upload arms the alarm though it commits no command
+U2 KILLED (a short-block background method does not rearm) [workers 1 failed | 22 passed (23)] restored=True
+    failed: files-alarm.test.ts: a background step that writes moves the alarm: a failed export is due only at its purge
+U3 KILLED (a writer (writeExport, buildSnapshot, startPendingWork) does not rearm) [workers 4 failed | 19 passed (23)] restored=True
+    failed: files-alarm.test.ts: a key whose writer never published it is deleted by the alarm at its deadline
+    failed: files-alarm.test.ts: a start moves the alarm on, from the alarm or from the Worker
+    failed: files-alarm.test.ts: an export file is deleted by the alarm when it expires, and its status reads expired
+    failed: files-alarm.test.ts: the alarm follows the earliest of the core and file jobs
+U4 KILLED (a writer rearms only when it did not throw) [workers 1 failed | 22 passed (23)] restored=True
+    failed: files-alarm.test.ts: a key whose writer never published it is deleted by the alarm at its deadline
+U5 KILLED (the constructor does not read the alarm) [workers 1 failed | 22 passed (23)] restored=True
+    failed: files-alarm.test.ts: the vault knows the alarm it set: alarmAt matches getAlarm() after a write, an alarm, a wake and an erase
+U6 KILLED (erase() keeps alarmAt) [workers 1 failed | 22 passed (23)] restored=True
+    failed: files-alarm.test.ts: the vault knows the alarm it set: alarmAt matches getAlarm() after a write, an alarm, a wake and an erase
+U7 KILLED (a write rearms with no delay) [workers 3 failed | 20 passed (23)] restored=True
+    failed: files-alarm.test.ts: a start moves the alarm on, from the alarm or from the Worker
+    failed: files-alarm.test.ts: a write never sets the alarm sooner than a minute ahead, even with work already due, and a later write never postpones it
+    failed: files-alarm.test.ts: after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner
+U8 KILLED (a write postpones an alarm already set sooner (no keep)) [workers 2 failed | 21 passed (23)] restored=True
+    failed: files-alarm.test.ts: a write never sets the alarm sooner than a minute ahead, even with work already due, and a later write never postpones it
+    failed: files-alarm.test.ts: after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner
+U9 KILLED (the alarm rearms with no delay after a failed job) [workers 2 failed | 21 passed (23)] restored=True
+    failed: files-alarm.test.ts: a prune that keeps throwing brings the alarm back a minute later, never in a loop
+    failed: files-alarm.test.ts: after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner
+U10 KILLED (the alarm rearms with a write's delay) [workers 1 failed | 22 passed (23)] restored=True
+    failed: files-alarm.test.ts: a capped run leaves the alarm set, and the next alarm clears the rest
+U11 KILLED (the rearm's floor leaves out the clock) [workers 4 failed | 19 passed (23)] restored=True
+    failed: files-alarm.test.ts: a prune that keeps throwing brings the alarm back a minute later, never in a loop
+    failed: files-alarm.test.ts: a start moves the alarm on, from the alarm or from the Worker
+    failed: files-alarm.test.ts: a write never sets the alarm sooner than a minute ahead, even with work already due, and a later write never postpones it
+    failed: files-alarm.test.ts: after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner
+U12 KILLED (the alarm does not run the file jobs) [workers 15 failed | 8 passed (23)] restored=True
+    failed: files-alarm.test.ts: a capped run leaves the alarm set, and the next alarm clears the rest
+    failed: files-alarm.test.ts: a failed start is retried a minute later, not in a loop
+    failed: files-alarm.test.ts: a key whose writer never published it is deleted by the alarm at its deadline
+    failed: files-alarm.test.ts: a prune that keeps throwing brings the alarm back a minute later, never in a loop
+    failed: files-alarm.test.ts: a prune that throws is logged, the others still run, and the alarm is set again
+    failed: files-alarm.test.ts: a resent snapshot request after its snapshot went stale reads expired and starts nothing; a new key builds a new one
+    failed: files-alarm.test.ts: a write never sets the alarm sooner than a minute ahead, even with work already due, and a later write never postpones it
+    failed: files-alarm.test.ts: after any alarm, every scheduled time is later than now
+    failed: files-alarm.test.ts: an erase that lands while the alarm waits on R2 leaves the vault erased, with no alarm and no schedule
+    failed: files-alarm.test.ts: an export file is deleted by the alarm when it expires, and its status reads expired
+    failed: files-alarm.test.ts: an unbound bucket is a failed delete, due again a minute later; the alarm never throws
+    failed: files-alarm.test.ts: drops finished upload rows 30 days after they ended, never one still receiving or within the quota window
+    failed: files-alarm.test.ts: export requests are purged 30 days after the request; the receipt stays compact
+    failed: files-alarm.test.ts: the alarm follows the earliest of the core and file jobs
+    failed: files-alarm.test.ts: work requested before the vault slept is started by its alarm after it wakes
+U13 KILLED (the alarm reads this.bucket before its try) [workers 1 failed | 22 passed (23)] restored=True
+    failed: files-alarm.test.ts: an unbound bucket is a failed delete, due again a minute later; the alarm never throws
+E1 KILLED (a committed command does not touch the context) [workers 16 failed | 21 passed (37)] restored=True
+    failed: files-alarm.test.ts: a write never sets the alarm sooner than a minute ahead, even with work already due, and a later write never postpones it
+    failed: files-alarm.test.ts: after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner
+    failed: files-alarm.test.ts: after any alarm, every scheduled time is later than now
+    failed: files-alarm.test.ts: the vault knows the alarm it set: alarmAt matches getAlarm() after a write, an alarm, a wake and an erase
+    failed: retention.test.ts: a deleted record is purged by the alarm 30 days later, and the alarm follows the earliest job
+    failed: retention.test.ts: a deleted record stops counting at once and can be undone within 30 days; nothing is purged early
+    failed: retention.test.ts: a failing step is reported and does not stop the others
+    failed: retention.test.ts: a purge retried after the prune moved the retention line never moves it back
+    failed: retention.test.ts: an alarm that fires after the vault slept still purges
+    failed: retention.test.ts: drops receipt digests after the outbox lifetime: a replay is refused and never re-run; status still answers
+    failed: retention.test.ts: leaves an account being erased to its erasure: no purge group is written for it
+    failed: retention.test.ts: purged_transactions_are_not_resurrected_by_receipts
+    failed: retention.test.ts: purges more records than SQLite has parameters, at most 1,000 to a change group
+    failed: retention.test.ts: removes a superseded change that sat below the retention line (S1 change log)
+    failed: retention.test.ts: the alarm follows the earliest job, and each record waits its own 30 days
+    failed: retention.test.ts: tombstones reach delta readers, older cursors resync
+S1 KILLED (pruneSnapshots deletes a stale snapshot row (1B-T8 as merged)) [workers 4 failed | 54 passed (58)] restored=True
+    failed: files-alarm.test.ts: a resent snapshot request after its snapshot went stale reads expired and starts nothing; a new key builds a new one
+    failed: snapshots.test.ts: after pruneSnapshots at snapshotsDueAt, the next snapshotsDueAt is later or null
+    failed: snapshots.test.ts: pruneSnapshots fails a snapshot left pending for a day, drops one read below the purge watermark, and deletes one a week past its expiry
+    failed: snapshots.test.ts: tombstones reach delta readers, older cursors resync, and snapshots built before the purge are dropped
+S2 KILLED (snapshotsDueAt answers now for a stale row whose chunks are released) [workers 1 failed | 34 passed (35)] restored=True
+    failed: snapshots.test.ts: after pruneSnapshots at snapshotsDueAt, the next snapshotsDueAt is later or null
+S3 KILLED (a stale snapshot's chunk keys are not made due) [workers 2 failed | 33 passed (35)] restored=True
+    failed: snapshots.test.ts: pruneSnapshots fails a snapshot left pending for a day, drops one read below the purge watermark, and deletes one a week past its expiry
+    failed: snapshots.test.ts: tombstones reach delta readers, older cursors resync, and snapshots built before the purge are dropped
+X1 KILLED (no transactions_deleted_idx) [workers 1 failed | 22 passed (23)] restored=True
+    failed: files-alarm.test.ts: the alarm's due-time read of deleted records and the purge's change lookup use their indexes
+X2 KILLED (no entity_changes_entity_idx) [workers 1 failed | 22 passed (23)] restored=True
+    failed: files-alarm.test.ts: the alarm's due-time read of deleted records and the purge's change lookup use their indexes

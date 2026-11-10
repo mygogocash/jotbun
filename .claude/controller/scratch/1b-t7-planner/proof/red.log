@@ -1,0 +1,996 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t7-planner/tree/apps/edge
+
+ × test/workers/ai.test.ts > consent > AI is off until the user agrees to the current notice 35ms
+   → expected { code: 'INTERNAL_ERROR', …(2) } to deeply equal { companion: false, …(5) }
+ × test/workers/ai.test.ts > consent > turning AI on needs the current notice version; tips can be set alone 15ms
+   → expected 501 to be 403 // Object.is equality
+ × test/workers/ai.test.ts > consent > preferences are the person's own 13ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > consent > consent to another notice version does not count: the companion reads off, the routes that need consent refuse, and the note is the plain facts 18ms
+   → expected { code: 'INTERNAL_ERROR', …(2) } to deeply equal { companion: false, …(5) }
+ × test/workers/ai.test.ts > Tell Bun > turns a sentence into a grounded draft, asking Claude through the shared settings 18ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > Tell Bun > never passes on an amount the person did not write 24ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > Tell Bun > falls back to the offline rules when Claude refuses, fails or has nothing 19ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > Tell Bun > without AI configured, answers from the rules and spends no uses 19ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > Tell Bun > stops at the daily limit until the next Bangkok day 24ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > Tell Bun > validates the sentence 16ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > Tell Bun > the model sees only the active wallets' and categories' ids and names, and a date more than a day from the server's is replaced 16ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > Tell Bun > the day's uses follow the vault clock in Bangkok: the last use is allowed, the next waits for midnight, and counts older than 35 days are forgotten 18ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > slips > reads a slip image into drafts and keeps nothing 19ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > slips > refuses other files and broken base64 before any model call 17ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > slips > a slip read stores nothing: no object, no upload and no row but today's use 18ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > slips > a slip's bank name is trimmed and cut to 60 characters, and anything else reads null 17ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > Bun’s daily note > without consent: the plain facts, and no model call 29ms
+   → expected { code: 'INTERNAL_ERROR', …(2) } to match object { date: '2026-11-10', …(2) }
+(3 matching properties omitted from actual)
+ × test/workers/ai.test.ts > Bun’s daily note > uses Claude’s words only when every number is one of the facts 18ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > Bun’s daily note > out of note uses, the facts still come 18ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > Bun’s daily note > the note's words may use the day's date and every number of its facts, and nothing else, in at most 200 characters 14ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > Ask Bun > answers through a read-only tool and returns the figures it used 17ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > Ask Bun > an answer with a number no tool read becomes the plain figures 26ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > Ask Bun > a bad tool input is reported back to Claude, not run 21ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > Ask Bun > a tool's allowance reaches the grounding check 19ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > Ask Bun > a session signed out while Ask Bun runs is refused at its next tool step, and no tool reads the records 18ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > Ask Bun > Ask Bun stops after five tool turns and answers from the figures it read 16ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > Ask Bun > two tools in one turn both run, and their results go back to Claude together 17ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none 18ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > the AI routes on the vault > with no model given, the env decides: AI needs AI_ENABLED and an API key, and AI_MODEL names the model 17ms
+   → expected undefined to be false // Object.is equality
+ × test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked 15ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > the AI routes on the vault > without AI, a slip and a question are 503 AI_PAUSED and spend no use, and the note is the plain facts 15ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > the AI routes on the vault > each AI route is refused at its first step when a newer policy is pending, the session ended or the account stopped being active, before any model call 15ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > the AI routes on the vault > the note and Ask Bun read their input before any step, and a HEAD on an AI read answers its GET with no body 22ms
+   → expected 501 to be 200 // Object.is equality
+ × test/workers/ai.test.ts > the vault's facts and tools > the day's facts come from the vault's records in dayFacts' order: over budget first, then today, the pace, the week, the top category and the month 29ms
+   → expected [] to deeply equal [ { kind: 'spent_today', …(2) }, …(6) ]
+ × test/workers/ai.test.ts > the vault's facts and tools > spending_total and category_totals read the records runTool read, and allow each number they return 21ms
+   → expected { error: 'stub' } to deeply equal { result: { …(2) }, …(2) }
+ × test/workers/ai.test.ts > the vault's facts and tools > top_merchants and budget_status read the records runTool read, and allow each number they return 19ms
+   → expected { error: 'stub' } to deeply equal { result: [ { …(3) }, …(2) ], …(2) }
+ × test/workers/ai.test.ts > the vault's facts and tools > category_totals answers at most 12 categories and top_merchants at most 8 places, largest first 20ms
+   → expected undefined to deeply equal [ 'c01', 'c02', 'c03', 'c04', …(8) ]
+ × test/workers/ai.test.ts > the vault's facts and tools > a tool input the tool refuses comes back as its error, and an unknown tool is refused by name 17ms
+   → expected { error: 'stub' } to deeply equal { error: 'unknown tool nope' }
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 38 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai.test.ts > consent > AI is off until the user agrees to the current notice
+AssertionError: expected { code: 'INTERNAL_ERROR', …(2) } to deeply equal { companion: false, …(5) }
+
+- Expected
++ Received
+
+  {
+-   "available": true,
+-   "cashback_tips": false,
+-   "companion": false,
+-   "current_notice_version": 1,
+-   "notice_version": null,
+-   "remaining": {
+-     "ask": 20,
+-     "note": 3,
+-     "parse": 30,
+-     "slip": 10,
+-   },
++   "code": "INTERNAL_ERROR",
++   "message_key": "errors.internal_error",
++   "request_id": "7f163dc8-4eab-4bcf-bbf3-2393ae2e1ad7",
+  }
+
+ ❯ test/workers/ai.test.ts:132:19
+    130|     const user = await member(client)
+    131|     const prefs = await body(await client.as(user).get('/v1/me/ai-pref…
+    132|     expect(prefs).toEqual({
+       |                   ^
+    133|       companion: false,
+    134|       cashback_tips: false,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/38]⎯
+
+ FAIL  test/workers/ai.test.ts > consent > turning AI on needs the current notice version; tips can be set alone
+AssertionError: expected 501 to be 403 // Object.is equality
+
+- Expected
++ Received
+
+- 403
++ 501
+
+ ❯ test/workers/ai.test.ts:149:28
+    147|     const user = await member(client)
+    148|     const without = await client.as(user).put('/v1/me/ai-preferences',…
+    149|     expect(without.status).toBe(403)
+       |                            ^
+    150|     expect(await body(without)).toMatchObject({ code: 'AI_CONSENT_REQU…
+    151|     expect((await client.as(user).put('/v1/me/ai-preferences', { compa…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/38]⎯
+
+ FAIL  test/workers/ai.test.ts > consent > preferences are the person's own
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:159:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/38]⎯
+
+ FAIL  test/workers/ai.test.ts > consent > consent to another notice version does not count: the companion reads off, the routes that need consent refuse, and the note is the plain facts
+AssertionError: expected { code: 'INTERNAL_ERROR', …(2) } to deeply equal { companion: false, …(5) }
+
+- Expected
++ Received
+
+  {
+-   "available": true,
+-   "cashback_tips": false,
+-   "companion": false,
+-   "current_notice_version": 1,
+-   "notice_version": 2,
+-   "remaining": {
+-     "ask": 20,
+-     "note": 3,
+-     "parse": 30,
+-     "slip": 10,
+-   },
++   "code": "INTERNAL_ERROR",
++   "message_key": "errors.internal_error",
++   "request_id": "a8ad5b89-3947-4a36-92b8-3f25e5dfbe06",
+  }
+
+ ❯ test/workers/ai.test.ts:167:76
+    165|     const user = await member(client)
+    166|     await vaultExec(user, 'INSERT INTO ai_preferences (id, companion, …
+    167|     expect(await body(await client.as(user).get('/v1/me/ai-preferences…
+       |                                                                            ^
+    168|       companion: false,
+    169|       cashback_tips: false,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/38]⎯
+
+ FAIL  test/workers/ai.test.ts > Tell Bun > turns a sentence into a grounded draft, asking Claude through the shared settings
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:193:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/38]⎯
+
+ FAIL  test/workers/ai.test.ts > Tell Bun > never passes on an amount the person did not write
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:211:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/38]⎯
+
+ FAIL  test/workers/ai.test.ts > Tell Bun > falls back to the offline rules when Claude refuses, fails or has nothing
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:220:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/38]⎯
+
+ FAIL  test/workers/ai.test.ts > Tell Bun > without AI configured, answers from the rules and spends no uses
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:230:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/38]⎯
+
+ FAIL  test/workers/ai.test.ts > Tell Bun > stops at the daily limit until the next Bangkok day
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:239:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/38]⎯
+
+ FAIL  test/workers/ai.test.ts > Tell Bun > validates the sentence
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:250:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/38]⎯
+
+ FAIL  test/workers/ai.test.ts > Tell Bun > the model sees only the active wallets' and categories' ids and names, and a date more than a day from the server's is replaced
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:257:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/38]⎯
+
+ FAIL  test/workers/ai.test.ts > Tell Bun > the day's uses follow the vault clock in Bangkok: the last use is allowed, the next waits for midnight, and counts older than 35 days are forgotten
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:281:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/38]⎯
+
+ FAIL  test/workers/ai.test.ts > slips > reads a slip image into drafts and keeps nothing
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:321:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/38]⎯
+
+ FAIL  test/workers/ai.test.ts > slips > refuses other files and broken base64 before any model call
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:333:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/38]⎯
+
+ FAIL  test/workers/ai.test.ts > slips > a slip read stores nothing: no object, no upload and no row but today's use
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:341:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/38]⎯
+
+ FAIL  test/workers/ai.test.ts > slips > a slip's bank name is trimmed and cut to 60 characters, and anything else reads null
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:356:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/38]⎯
+
+ FAIL  test/workers/ai.test.ts > Bun’s daily note > without consent: the plain facts, and no model call
+AssertionError: expected { code: 'INTERNAL_ERROR', …(2) } to match object { date: '2026-11-10', …(2) }
+(3 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "date": "2026-11-10",
+-   "source": "facts",
+-   "text": StringContaining "1 logged today, ฿60 in all.",
++   "code": "INTERNAL_ERROR",
++   "message_key": "errors.internal_error",
++   "request_id": "5aafabd7-a81e-493d-85c8-534a2f4eff17",
+  }
+
+ ❯ test/workers/ai.test.ts:373:18
+    371|     await lunch(user, cash, food)
+    372|     const note = await body(await client.as(user).get(`/v1/ai/note?dat…
+    373|     expect(note).toMatchObject({ date: today, source: 'facts', text: e…
+       |                  ^
+    374|     expect(note.facts[0]).toEqual({ kind: 'spent_today', amount_minor:…
+    375|     expect(model.calls).toHaveLength(0)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/38]⎯
+
+ FAIL  test/workers/ai.test.ts > Bun’s daily note > uses Claude’s words only when every number is one of the facts
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:379:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/38]⎯
+
+ FAIL  test/workers/ai.test.ts > Bun’s daily note > out of note uses, the facts still come
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:391:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/38]⎯
+
+ FAIL  test/workers/ai.test.ts > Bun’s daily note > the note's words may use the day's date and every number of its facts, and nothing else, in at most 200 characters
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:401:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/38]⎯
+
+ FAIL  test/workers/ai.test.ts > Ask Bun > answers through a read-only tool and returns the figures it used
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:425:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/38]⎯
+
+ FAIL  test/workers/ai.test.ts > Ask Bun > an answer with a number no tool read becomes the plain figures
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:444:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/38]⎯
+
+ FAIL  test/workers/ai.test.ts > Ask Bun > a bad tool input is reported back to Claude, not run
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:453:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/38]⎯
+
+ FAIL  test/workers/ai.test.ts > Ask Bun > a tool's allowance reaches the grounding check
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:461:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/38]⎯
+
+ FAIL  test/workers/ai.test.ts > Ask Bun > a session signed out while Ask Bun runs is refused at its next tool step, and no tool reads the records
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:480:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/38]⎯
+
+ FAIL  test/workers/ai.test.ts > Ask Bun > Ask Bun stops after five tool turns and answers from the figures it read
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:496:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/38]⎯
+
+ FAIL  test/workers/ai.test.ts > Ask Bun > two tools in one turn both run, and their results go back to Claude together
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:506:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[27/38]⎯
+
+ FAIL  test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:522:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[28/38]⎯
+
+ FAIL  test/workers/ai.test.ts > the AI routes on the vault > with no model given, the env decides: AI needs AI_ENABLED and an API key, and AI_MODEL names the model
+AssertionError: expected undefined to be false // Object.is equality
+
+- Expected:
+false
+
++ Received:
+undefined
+
+ ❯ test/workers/ai.test.ts:561:33
+    559|     const available = async (options: Parameters<typeof startV1>[1]) =…
+    560|     // The vault Worker's own var keeps AI off (wrangler.vault.jsonc: …
+    561|     expect(await available({})).toBe(false)
+       |                                 ^
+    562|     expect(await available({ env: { AI_ENABLED: 'true' } })).toBe(fals…
+    563|     expect(await available({ env: { ANTHROPIC_API_KEY: 'synthetic-key'…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[29/38]⎯
+
+ FAIL  test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:578:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[30/38]⎯
+
+ FAIL  test/workers/ai.test.ts > the AI routes on the vault > without AI, a slip and a question are 503 AI_PAUSED and spend no use, and the note is the plain facts
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:604:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[31/38]⎯
+
+ FAIL  test/workers/ai.test.ts > the AI routes on the vault > each AI route is refused at its first step when a newer policy is pending, the session ended or the account stopped being active, before any model call
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:620:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[32/38]⎯
+
+ FAIL  test/workers/ai.test.ts > the AI routes on the vault > the note and Ask Bun read their input before any step, and a HEAD on an AI read answers its GET with no body
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ consenting test/workers/ai.test.ts:48:22
+     46|   const user = await member(client)
+     47|   const res = await client.as(user).put('/v1/me/ai-preferences', { com…
+     48|   expect(res.status).toBe(200)
+       |                      ^
+     49|   return user
+     50| }
+ ❯ test/workers/ai.test.ts:664:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[33/38]⎯
+
+ FAIL  test/workers/ai.test.ts > the vault's facts and tools > the day's facts come from the vault's records in dayFacts' order: over budget first, then today, the pace, the week, the top category and the month
+AssertionError: expected [] to deeply equal [ { kind: 'spent_today', …(2) }, …(6) ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "amount_minor": "10000",
+-     "count": 2,
+-     "kind": "spent_today",
+-   },
+-   {
+-     "amount_minor": "11000",
+-     "days": 16,
+-     "kind": "budget_left",
+-   },
+-   {
+-     "amount_minor": "687",
+-     "days": 16,
+-     "kind": "budget_per_day",
+-   },
+-   {
+-     "count": 4,
+-     "days": 7,
+-     "kind": "logged_days_week",
+-   },
+-   {
+-     "amount_minor": "13500",
+-     "category_key": "food",
+-     "category_label": null,
+-     "kind": "top_category",
+-     "percent": 71,
+-   },
+-   {
+-     "amount_minor": "19000",
+-     "kind": "month_spent",
+-   },
+-   {
+-     "amount_minor": "53000",
+-     "kind": "month_income",
+-   },
+- ]
++ []
+
+ ❯ test/workers/ai.test.ts:718:47
+    716|     await putBudget(user, '2026-08', '15000')
+    717|     await putBudget(user, '2026-07', '5000')
+    718|     expect(await factsOn(user, '2026-09-15')).toEqual([
+       |                                               ^
+    719|       { kind: 'spent_today', amount_minor: '10000', count: 2 },
+    720|       { kind: 'budget_left', amount_minor: '11000', days: 16 },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[34/38]⎯
+
+ FAIL  test/workers/ai.test.ts > the vault's facts and tools > spending_total and category_totals read the records runTool read, and allow each number they return
+AssertionError: expected { error: 'stub' } to deeply equal { result: { …(2) }, …(2) }
+
+- Expected
++ Received
+
+  {
+-   "allow": {
+-     "counts": [
+-       3,
+-     ],
+-     "dates": [
+-       "2026-09-01",
+-       "2026-09-30",
+-     ],
+-     "satang": [
+-       "13500",
+-     ],
+-   },
+-   "figures": [
+-     {
+-       "amount_minor": "13500",
+-       "label": "Money out, 1–30 Sep 2026",
+-     },
+-   ],
+-   "result": {
+-     "count": 3,
+-     "total_say": "฿135",
+-   },
++   "error": "stub",
+  }
+
+ ❯ test/workers/ai.test.ts:761:102
+    759|     const dates = ['2026-09-01', '2026-09-30']
+    760|     const spent = { result: { total_say: '฿135', count: 3 }, figures: …
+    761|     expect(await tool(user, 'spending_total', { ...september, type: 'e…
+       |                                                                                                      ^
+    762|     // Any type but income reads expenses, and a category the person d…
+    763|     expect(await tool(user, 'spending_total', { ...september, type: 't…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[35/38]⎯
+
+ FAIL  test/workers/ai.test.ts > the vault's facts and tools > top_merchants and budget_status read the records runTool read, and allow each number they return
+AssertionError: expected { error: 'stub' } to deeply equal { result: [ { …(3) }, …(2) ], …(2) }
+
+- Expected
++ Received
+
+  {
+-   "allow": {
+-     "counts": [
+-       2,
+-       1,
+-       1,
+-     ],
+-     "dates": [
+-       "2026-09-01",
+-       "2026-09-30",
+-     ],
+-     "satang": [
+-       "5000",
+-       "1500",
+-       "800",
+-     ],
+-   },
+-   "figures": [
+-     {
+-       "amount_minor": "5000",
+-       "label": "Café Amazon, 1–30 Sep 2026",
+-     },
+-     {
+-       "amount_minor": "1500",
+-       "label": "ข้าวมันไก่, 1–30 Sep 2026",
+-     },
+-     {
+-       "amount_minor": "800",
+-       "label": "No description, 1–30 Sep 2026",
+-     },
+-   ],
+-   "result": [
+-     {
+-       "count": 2,
+-       "merchant": "Café Amazon",
+-       "total_say": "฿50",
+-     },
+-     {
+-       "count": 1,
+-       "merchant": "ข้าวมันไก่",
+-       "total_say": "฿15",
+-     },
+-     {
+-       "count": 1,
+-       "merchant": "(no description)",
+-       "total_say": "฿8",
+-     },
+-   ],
++   "error": "stub",
+  }
+
+ ❯ test/workers/ai.test.ts:808:94
+    806|       { type: 'expense', amount_minor: '1000', occurred_on: '2026-07-1…
+    807|     ])
+    808|     expect(await tool(user, 'top_merchants', { from: '2026-09-01', thr…
+       |                                                                                              ^
+    809|       result: [
+    810|         { merchant: 'Café Amazon', total_say: '฿50', count: 2 },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[36/38]⎯
+
+ FAIL  test/workers/ai.test.ts > the vault's facts and tools > category_totals answers at most 12 categories and top_merchants at most 8 places, largest first
+AssertionError: expected undefined to deeply equal [ 'c01', 'c02', 'c03', 'c04', …(8) ]
+
+- Expected:
+[
+  "c01",
+  "c02",
+  "c03",
+  "c04",
+  "c05",
+  "c06",
+  "c07",
+  "c08",
+  "c09",
+  "c10",
+  "c11",
+  "c12",
+]
+
++ Received:
+undefined
+
+ ❯ test/workers/ai.test.ts:845:99
+    843|     type Run = Partial<Extract<AiToolReply, { result: unknown }>>
+    844|     const categories = (await tool(user, 'category_totals', { ...septe…
+    845|     expect((categories.result as { category: string }[] | undefined)?.…
+       |                                                                                                   ^
+    846|     expect(categories.allow?.counts.length).toBe(12)
+    847|     // A person's own category is shown by its label.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[37/38]⎯
+
+ FAIL  test/workers/ai.test.ts > the vault's facts and tools > a tool input the tool refuses comes back as its error, and an unknown tool is refused by name
+AssertionError: expected { error: 'stub' } to deeply equal { error: 'unknown tool nope' }
+
+- Expected
++ Received
+
+  {
+-   "error": "unknown tool nope",
++   "error": "stub",
+  }
+
+ ❯ test/workers/ai.test.ts:857:42
+    855|     const user = await money.member()
+    856|     const order = 'from and through must be YYYY-MM-DD with from <= th…
+    857|     expect(await tool(user, 'nope', {})).toEqual({ error: 'unknown too…
+       |                                          ^
+    858|     expect(await tool(user, 'spending_total', { from: '2026-09-30', th…
+    859|     expect(await tool(user, 'spending_total', { from: '1 Sep 2026', th…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[38/38]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  38 failed (38)
+   Start at  06:24:08
+   Duration  2.45s (transform 597ms, setup 1.02s, import 70ms, tests 728ms, environment 0ms)
+

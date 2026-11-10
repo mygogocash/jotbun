@@ -54,6 +54,7 @@ This page lets another engineer or AI agent continue the GoGoSpend v1 backend an
 ```bash
 npm run typecheck
 npm run typecheck:app
+npm run typecheck:routes -w gogospend-app
 npm run test:api
 npm run test:db
 npm run test:app
@@ -65,6 +66,7 @@ npm run build -w gogospend-api
 node apps/api/scripts/release-graph.mjs check
 node apps/api/scripts/parser-sandbox-check.cjs
 npm run export:web -w gogospend-app -- --max-workers 2
+npm run export:ios -w gogospend-app -- --max-workers 2
 npm run install:edge
 npm run typecheck:edge
 npm run test:edge

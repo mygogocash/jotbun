@@ -1,0 +1,648 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t11-planner/tree/apps/edge
+
+ ✓ test/workers/retention.test.ts > deleted records, ported from retention.integration.spec.ts > purged_transactions_are_not_resurrected_by_receipts 57ms
+ × test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a key whose writer never published it is deleted by the alarm at its deadline 38ms
+   → expected null to be 1794355651743 // Object.is equality
+ × test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > an export file is deleted by the alarm when it expires, and its status reads expired 31ms
+   → expected 1796860351776 to be 1794354751782 // Object.is equality
+ × test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > work requested before the vault slept is started by its alarm after it wakes 22ms
+   → expected 1796860351809 to be 1794268411809 // Object.is equality
+ ✓ test/workers/snapshots.test.ts > consistent snapshots, ported from snapshot-builder.integration.spec.ts > applying the snapshot and then later deltas yields every latest entity exactly once, from one view 139ms
+ ✓ test/workers/retention.test.ts > deleted records, ported from retention.integration.spec.ts > a deleted record stops counting at once and can be undone within 30 days; nothing is purged early 52ms
+ ✓ test/workers/retention.test.ts > deleted records, ported from retention.integration.spec.ts > tombstones reach delta readers, older cursors resync 38ms
+ ✓ test/workers/retention.test.ts > deleted records, ported from retention.integration.spec.ts > leaves an account being erased to its erasure: no purge group is written for it 25ms
+ ✓ test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > drops receipt digests after the outbox lifetime: a replay is refused and never re-run; status still answers 36ms
+ × test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a failed start is retried a minute later, not in a loop 20ms
+   → expected false to be true // Object.is equality
+ × test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a capped run leaves the alarm set, and the next alarm clears the rest 31ms
+   → expected null to be 1794354751853 // Object.is equality
+ × test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a prune that throws is logged, the others still run, and the alarm is set again 20ms
+   → expected false to be true // Object.is equality
+ × test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > the alarm follows the earliest of the core and file jobs 33ms
+   → expected 1796860351896 to be 1794354751896 // Object.is equality
+ ✓ test/workers/snapshots.test.ts > consistent snapshots, ported from snapshot-builder.integration.spec.ts > an account deletion during the build publishes nothing, and its chunks are swept 51ms
+ ✓ test/workers/snapshots.test.ts > consistent snapshots, ported from snapshot-builder.integration.spec.ts > a build that runs out of time publishes no manifest 54ms
+stderr | test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > a failing step is reported and does not stop the others
+{"level":"error","event":"vault_retention_purge_failed","failure":"Error"}
+
+ ✓ test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > removes a superseded change that sat below the retention line (S1 change log) 51ms
+ ✓ test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > a failing step is reported and does not stop the others 39ms
+stderr | test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > a purge retried after the prune moved the retention line never moves it back
+{"level":"error","event":"vault_retention_purge_failed","failure":"Error"}
+
+ × test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > after any alarm, every scheduled time is later than now 46ms
+   → expected [ …(4) ] to deeply equal []
+ × test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > export requests are purged 30 days after the request; the receipt stays compact 26ms
+   → expected [ { '1': 1 } ] to deeply equal []
+ × test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > drops finished upload rows 30 days after they ended, never one still receiving or within the quota window 23ms
+   → expected false to be true // Object.is equality
+ ✓ test/workers/snapshots.test.ts > consistent snapshots, ported from snapshot-builder.integration.spec.ts > an empty account still gets a one-chunk snapshot at its high-water 28ms
+ ✓ test/workers/snapshots.test.ts > consistent snapshots, ported from snapshot-builder.integration.spec.ts > refuses to publish an entity that does not match its persisted DTO 27ms
+ ✓ test/workers/snapshots.test.ts > snapshot requests, status and grants, ported from snapshot-builder.integration.spec.ts > requests are idempotent, share an open build, and reuse a snapshot from the last hour 37ms
+ ✓ test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > a purge retried after the prune moved the retention line never moves it back 39ms
+ ✓ test/workers/retention.test.ts > the retention alarm > a deleted record is purged by the alarm 30 days later, and the alarm follows the earliest job 26ms
+ ✓ test/workers/retention.test.ts > the retention alarm > an alarm that fires after the vault slept still purges 33ms
+ ✓ test/workers/retention.test.ts > the retention alarm > with nothing left to do, the alarm is cleared 19ms
+ × test/workers/files-alarm.test.ts > the controller's notes > a resent snapshot request after its snapshot went stale reads expired and starts nothing; a new key builds a new one 48ms
+   → expected [ { '1': 1 } ] to deeply equal []
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > a vault that is not active runs no file job and keeps no alarm for them 21ms
+ × test/workers/files-alarm.test.ts > the controller's notes > an upload arms the alarm though it commits no command 19ms
+   → expected null to be 1794268412100 // Object.is equality
+ ✓ test/workers/snapshots.test.ts > snapshot requests, status and grants, ported from snapshot-builder.integration.spec.ts > grants are short-lived, bound to the owner, and refuse another account's snapshot 47ms
+ ✓ test/workers/snapshots.test.ts > snapshot requests, status and grants, ported from snapshot-builder.integration.spec.ts > reports failed and expired snapshots, and grants nothing for them 30ms
+ ✓ test/workers/snapshots.test.ts > snapshot requests, status and grants, ported from snapshot-builder.integration.spec.ts > SnapshotWorkflow runs the build 37ms
+stderr | test/workers/files-alarm.test.ts > the brief's rulings > after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner
+{"level":"error","event":"vault_retention_purge_failed","failure":"Error"}
+
+ ✓ test/workers/retention.test.ts > the retention alarm > the alarm follows the earliest job, and each record waits its own 30 days 47ms
+ × test/workers/files-alarm.test.ts > the controller's notes > only one file run at a time: a second run while the first waits on R2 deletes nothing 68ms
+   → expected { firstFailed: [], …(3) } to deeply equal { firstFailed: [], …(3) }
+ × test/workers/files-alarm.test.ts > the controller's notes > an unbound bucket is a failed delete, due again a minute later; the alarm never throws 14ms
+   → expected false to be true // Object.is equality
+ × test/workers/files-alarm.test.ts > the controller's notes > an erase that lands while the alarm waits on R2 leaves the vault erased, with no alarm and no schedule 14ms
+   → expected null to be 1794354752195 // Object.is equality
+ × test/workers/files-alarm.test.ts > the controller's notes > the alarm's due-time read of deleted records and the purge's change lookup use their indexes 14ms
+   → expected 'SEARCH transactions' to contain 'transactions_deleted_idx'
+ × test/workers/files-alarm.test.ts > the brief's rulings > a prune that keeps throwing brings the alarm back a minute later, never in a loop 20ms
+   → expected 1796860352224 to be 1794354812224 // Object.is equality
+ × test/workers/files-alarm.test.ts > the brief's rulings > after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner 30ms
+   → expected 1796946752242 to be 1797033212242 // Object.is equality
+ ✓ test/workers/snapshots.test.ts > S1 review: one view and bounded work, ported from snapshot-builder.integration.spec.ts > every entity comes from the high-water view even when writes land between single-entity pages 62ms
+ ✓ test/workers/snapshots.test.ts > S1 review: one view and bounded work, ported from snapshot-builder.integration.spec.ts > reads every row before the first R2 call 36ms
+ ✓ test/workers/retention.test.ts > the retention alarm > purges more records than SQLite has parameters, at most 1,000 to a change group 72ms
+ ✓ test/workers/retention.test.ts > the retention alarm > an erased vault runs no retention and keeps no alarm, awake or after it sleeps 49ms
+ × test/workers/files-alarm.test.ts > the brief's rulings > a write never sets the alarm sooner than a minute ahead, even with work already due, and a later write never postpones it 22ms
+   → expected 1796946752272 to be 1794354812272 // Object.is equality
+ × test/workers/files-alarm.test.ts > the brief's rulings > the vault knows the alarm it set: alarmAt matches getAlarm() after a write, an alarm, a wake and an erase 20ms
+   → expected [ null, 1796946752294 ] to deeply equal [ 1796946752294, 1796946752294 ]
+ × test/workers/files-alarm.test.ts > the brief's rulings > a background step that writes moves the alarm: a failed export is due only at its purge 17ms
+   → expected 1796860352315 to be 1794268412315 // Object.is equality
+ × test/workers/files-alarm.test.ts > the brief's rulings > a start moves the alarm on, from the alarm or from the Worker 12ms
+   → expected null to be 1794354812331 // Object.is equality
+ ✓ test/workers/snapshots.test.ts > S1 review: one view and bounded work, ported from snapshot-builder.integration.spec.ts > a head whose change row is missing fails the build instead of vanishing from it 24ms
+ ✓ test/workers/snapshots.test.ts > S1 review: one view and bounded work, ported from snapshot-builder.integration.spec.ts > keeps chunks near their target size and grants within the snapshot expiry 52ms
+ × test/workers/snapshots.test.ts > retention, the snapshot halves of retention.integration.spec.ts > tombstones reach delta readers, older cursors resync, and snapshots built before the purge are dropped 40ms
+   → expected [ { chunk_index: +0, …(2) } ] to deeply equal []
+ ✓ test/workers/snapshots.test.ts > retention, the snapshot halves of retention.integration.spec.ts > a snapshot read before a purge is never recorded afterwards, so it cannot serve the purged data 42ms
+ ✓ test/workers/snapshots.test.ts > the jobs Worker snapshot, ported from apps/edge/test/jobs.db.test.ts > builds a requested snapshot, whose chunks the edge then serves 27ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a snapshot runs on SnapshotWorkflow, and its cursor continues with /v1/sync/changes 75ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a snapshot that became ready in the last hour is reused, judged by ready_at 33ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a build retried after its chunks were stored completes, and the first attempt's chunks are deleted at their deadline 29ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a build that finishes after the vault stopped being active publishes nothing 24ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a build cut into more chunks than SQLite has parameters records them all 149ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a chunk is served with its exact bytes and digest, and a tampered chunk is 404 56ms
+ × test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > after pruneSnapshots at snapshotsDueAt, the next snapshotsDueAt is later or null 37ms
+   → expected [ 1794268352838, 1794354752838, …(2) ] to deeply equal [ 1794268352838, 1794354752838, …(3) ]
+An RPC result was not disposed properly. One of the RPC calls you made expects you to call dispose() on the return value, but you didn't do so. You cannot rely on the garbage collector for this because it may take arbitrarily long before actually collecting unreachable objects.
+stdout | test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > ten times the yearly ledger builds and exports inside the memory budget
+ten-times proof: {"databaseSize":50155520,"records":33000,"entities":33002,"chunks":19,"storedBytes":19595807,"longestLine":593,"peakHeldBytes":20644089,"csvBytes":14865226,"exportPeakHeldBytes":29730452,"seedMs":2443,"buildMs":594,"exportMs":307}
+
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > ten times the yearly ledger builds and exports inside the memory budget 3490ms
+uncaught exception; source = Uncaught (in promise); stack = Error: unavailable
+    at doWrapper (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t11-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:2428:30)
+    at async Context.do (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t11-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:2752:17)
+stderr | test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a snapshot whose build fails on all three attempts is recorded failed
+{"level":"error","event":"snapshot_build_failed","failure":"Error"}
+
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a build that starts after the vault stopped being active reads nothing and stores nothing 27ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a too-large snapshot fails visibly and publishes nothing 29ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a snapshot whose build fails on all three attempts is recorded failed 31ms
+uncaught exception; source = Uncaught (in promise); stack = WorkflowError: (instance.already_exists) Workflow instance with id "524cff10-42c7-862a-b532-bc13494482ec" already exists
+    at createWorkflowError (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t11-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:1383:10)
+    at duplicateInstanceError (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t11-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:1435:10)
+    at WorkflowBinding.create (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t11-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:4724:13)
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a build that fails on its first two attempts is ready on its third 26ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > the snapshot starter starts each pending snapshot once on SnapshotWorkflow, and is due a minute after an unstarted request 17ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a snapshot started twice by overlapping runs is built once 25ms
+ × test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > pruneSnapshots fails a snapshot left pending for a day, drops one read below the purge watermark, and deletes one a week past its expiry 43ms
+   → expected undefined to match object { status: 'ready' }
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a request takes no body field and a UUID key, waits for the jobs gate, and a status of a malformed or unknown id is 404 18ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > at most four chunk downloads run at once in a process, each streamed and never read whole; more are told to retry 25ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a chunk download refused after it took its slot gives the slot back 36ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a HEAD on a chunk download answers its headers, reads its chunk to the end and gives its slot back 70ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 25 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a key whose writer never published it is deleted by the alarm at its deadline
+AssertionError: expected null to be 1794355651743 // Object.is equality
+
+- Expected:
+1794355651743
+
++ Received:
+null
+
+ ❯ test/workers/files-alarm.test.ts:114:33
+    112|     expect(await env.OBJECTS.head(row.key)).not.toBeNull()
+    113|     // The build threw and still rearmed: the alarm is the key's deadl…
+    114|     expect(await alarmOf(user)).toBe(t + RESERVATION_GRACE_MS)
+       |                                 ^
+    115|     await fireAt(user, t + RESERVATION_GRACE_MS)
+    116|     expect(await env.OBJECTS.head(row.key)).toBeNull()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/25]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > an export file is deleted by the alarm when it expires, and its status reads expired
+AssertionError: expected 1796860351776 to be 1794354751782 // Object.is equality
+
+- Expected
++ Received
+
+- 1794354751782
++ 1796860351776
+
+ ❯ test/workers/files-alarm.test.ts:131:33
+    129|     expect(file).toMatchObject({ status: 'published', delete_after: ex…
+    130|     // The write rearmed: the file's expiry is the earliest job.
+    131|     expect(await alarmOf(user)).toBe(expiresAt)
+       |                                 ^
+    132|     await fireAt(user, expiresAt)
+    133|     expect(await env.OBJECTS.head(file.key)).toBeNull()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/25]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > work requested before the vault slept is started by its alarm after it wakes
+AssertionError: expected 1796860351809 to be 1794268411809 // Object.is equality
+
+- Expected
++ Received
+
+- 1794268411809
++ 1796860351809
+
+ ❯ test/workers/files-alarm.test.ts:149:35
+    147|       const requested = await requestExport(client, user, key)
+    148|       expect(requested.status).toBe(202)
+    149|       expect(await alarmOf(user)).toBe(requested.requestedAt + START_R…
+       |                                   ^
+    150|       await evictDurableObject(vaultOf(user))
+    151|       await fireAt(user, requested.requestedAt + 61_000)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/25]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a failed start is retried a minute later, not in a loop
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ fireAt test/workers/files-alarm.test.ts:63:54
+     61| async function fireAt(user: TestUser, ms: number): Promise<void> {
+     62|   await setVaultClock(user, ms)
+     63|   expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
+       |                                                      ^
+     64| }
+     65|
+ ❯ test/workers/files-alarm.test.ts:178:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/25]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a capped run leaves the alarm set, and the next alarm clears the rest
+AssertionError: expected null to be 1794354751853 // Object.is equality
+
+- Expected:
+1794354751853
+
++ Received:
+null
+
+ ❯ test/workers/files-alarm.test.ts:201:35
+    199|     })
+    200|     try {
+    201|       expect(await alarmOf(user)).toBe(t)
+       |                                   ^
+    202|       expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
+    203|       expect(await tombstones()).toBe(1_000)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/25]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a prune that throws is logged, the others still run, and the alarm is set again
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ test/workers/files-alarm.test.ts:233:124
+    231|       // Left pending for a day: pruneExports, after the prune that th…
+    232|       await fireAt(user, requested.requestedAt + EXPORT_PENDING_MS)
+    233|       expect(errors.mock.calls.some(([line]) => typeof line === 'strin…
+       |                                                                                                                            ^
+    234|     } finally {
+    235|       errors.mockRestore()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/25]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > the alarm follows the earliest of the core and file jobs
+AssertionError: expected 1796860351896 to be 1794354751896 // Object.is equality
+
+- Expected
++ Received
+
+- 1794354751896
++ 1796860351896
+
+ ❯ test/workers/files-alarm.test.ts:251:33
+    249|     expect(requested.status).toBe(202)
+    250|     expect(await vaultOf(user).writeExport(requested.id)).toEqual({ ou…
+    251|     expect(await alarmOf(user)).toBe(t + DAY)
+       |                                 ^
+    252|     await fireAt(user, t + DAY)
+    253|     // Changed form: the deleted file stays a day as a tombstone and i…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/25]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > after any alarm, every scheduled time is later than now
+AssertionError: expected [ …(4) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "key": "export/d74e14c15c655e38af75bd5c196eb67811926ff4bee6d9383ebfd9cfcf62f46b/1595112c-e345-40e3-a51d-9f508d2af764/ba2bc851-1860-43bb-8e4f-fbbd8dd9a6d3/export.csv",
++   },
++   {
++     "key": "export/d74e14c15c655e38af75bd5c196eb67811926ff4bee6d9383ebfd9cfcf62f46b/19e3a00a-0866-42f1-8660-9a741c4699ba/bd4c823c-71ff-4980-867e-f4937330c074/export.csv",
++   },
++   {
++     "key": "import_image/d74e14c15c655e38af75bd5c196eb67811926ff4bee6d9383ebfd9cfcf62f46b/02036b8d-7fd5-40a0-8830-3d2e67076382/c8185101-5ea1-4971-9856-2c2c2f57d873/image.jpg",
++   },
++   {
++     "key": "receipt/d74e14c15c655e38af75bd5c196eb67811926ff4bee6d9383ebfd9cfcf62f46b/ba601343-9dea-4b07-a052-5d96694eca50/5001c415-397e-4c45-b0ae-bac49d0829ae/image.jpg",
++   },
++ ]
+
+ ❯ test/workers/files-alarm.test.ts:282:68
+    280|     expect(at).toBeNull()
+    281|     // All of it is done, and the snapshot failed before anything star…
+    282|     expect(await vaultRows(user, 'SELECT key FROM vault_objects')).toE…
+       |                                                                    ^
+    283|     expect(await vaultRows(user, 'SELECT id FROM exports')).toEqual([])
+    284|     expect(await vaultRows(user, 'SELECT id, status, started_at FROM s…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/25]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > export requests are purged 30 days after the request; the receipt stays compact
+AssertionError: expected [ { '1': 1 } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "1": 1,
++   },
++ ]
+
+ ❯ test/workers/files-alarm.test.ts:353:87
+    351|     expect(requested.status).toBe(202)
+    352|     await fireAt(user, requested.requestedAt + 31 * DAY)
+    353|     expect(await vaultRows(user, 'SELECT 1 FROM exports WHERE id = ?',…
+       |                                                                                       ^
+    354|     expect(await vaultRows(user, 'SELECT state FROM entity_heads WHERE…
+    355|     expect(await vaultRows(user, 'SELECT state, snapshot FROM entity_c…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/25]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > drops finished upload rows 30 days after they ended, never one still receiving or within the quota window
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ fireAt test/workers/files-alarm.test.ts:63:54
+     61| async function fireAt(user: TestUser, ms: number): Promise<void> {
+     62|   await setVaultClock(user, ms)
+     63|   expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
+       |                                                      ^
+     64| }
+     65|
+ ❯ test/workers/files-alarm.test.ts:389:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/25]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the controller's notes > a resent snapshot request after its snapshot went stale reads expired and starts nothing; a new key builds a new one
+AssertionError: expected [ { '1': 1 } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "1": 1,
++   },
++ ]
+
+ ❯ test/workers/files-alarm.test.ts:421:94
+    419|     await vaultExec(user, 'UPDATE transactions SET deleted_at = ? WHER…
+    420|     expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
+    421|     expect(await vaultRows(user, 'SELECT 1 FROM snapshot_chunks WHERE …
+       |                                                                                              ^
+    422|
+    423|     const resent = await auto.as(user).post('/v1/sync/snapshots', {}, …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/25]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the controller's notes > an upload arms the alarm though it commits no command
+AssertionError: expected null to be 1794268412100 // Object.is equality
+
+- Expected:
+1794268412100
+
++ Received:
+null
+
+ ❯ test/workers/files-alarm.test.ts:469:33
+    467|     const [row] = await vaultRows<{ accepted_at: string }>(user, 'SELE…
+    468|     // Its parse was never sent (no hand-off), so the parse starter is…
+    469|     expect(await alarmOf(user)).toBe(Date.parse(row.accepted_at) + STA…
+       |                                 ^
+    470|   })
+    471|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/25]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the controller's notes > only one file run at a time: a second run while the first waits on R2 deletes nothing
+AssertionError: expected { firstFailed: [], …(3) } to deeply equal { firstFailed: [], …(3) }
+
+- Expected
++ Received
+
+  {
+-   "deletes": 1,
++   "deletes": 0,
+    "firstFailed": [],
+    "rows": [
+      {
+-       "status": "tombstone",
++       "status": "reserved",
+      },
+    ],
+    "secondFailed": [],
+  }
+
+ ❯ test/workers/files-alarm.test.ts:499:21
+    497|     })
+    498|     await resetSeams(user)
+    499|     expect(outcome).toEqual({ firstFailed: [], secondFailed: [], delet…
+       |                     ^
+    500|   })
+    501|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/25]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the controller's notes > an unbound bucket is a failed delete, due again a minute later; the alarm never throws
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ test/workers/files-alarm.test.ts:521:58
+    519|     const errors = vi.spyOn(console, 'error')
+    520|     try {
+    521|       expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
+       |                                                          ^
+    522|       expect(errors.mock.calls.some(([line]) => typeof line === 'strin…
+    523|     } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/25]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the controller's notes > an erase that lands while the alarm waits on R2 leaves the vault erased, with no alarm and no schedule
+AssertionError: expected null to be 1794354752195 // Object.is equality
+
+- Expected:
+1794354752195
+
++ Received:
+null
+
+ ❯ test/workers/files-alarm.test.ts:549:33
+    547|       vault.rearm(vault.fileContext(), 0)
+    548|     })
+    549|     expect(await alarmOf(user)).toBe(t)
+       |                                 ^
+    550|     const run = runDurableObjectAlarm(vaultOf(user))
+    551|     await entered.opened
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/25]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the controller's notes > the alarm's due-time read of deleted records and the purge's change lookup use their indexes
+AssertionError: expected 'SEARCH transactions' to contain 'transactions_deleted_idx'
+
+Expected: "transactions_deleted_idx"
+Received: "SEARCH transactions"
+
+ ❯ test/workers/files-alarm.test.ts:567:103
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/25]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the brief's rulings > a prune that keeps throwing brings the alarm back a minute later, never in a loop
+AssertionError: expected 1796860352224 to be 1794354812224 // Object.is equality
+
+- Expected
++ Received
+
+- 1794354812224
++ 1796860352224
+
+ ❯ test/workers/files-alarm.test.ts:593:35
+    591|       await fireAt(user, at)
+    592|       expect(await vaultRows(user, 'SELECT status FROM exports WHERE i…
+    593|       expect(await alarmOf(user)).toBe(at + RETENTION_RETRY_MS)
+       |                                   ^
+    594|     } finally {
+    595|       await resetSeams(user)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/25]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the brief's rulings > after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner
+AssertionError: expected 1796946752242 to be 1797033212242 // Object.is equality
+
+- Expected
++ Received
+
+- 1797033212242
++ 1796946752242
+
+ ❯ test/workers/files-alarm.test.ts:613:35
+    611|       const [{ id: wallet }] = await vaultRows<{ id: string }>(user, '…
+    612|       expect((await client.as(user).patch(`/v1/wallets/${wallet}`, { n…
+    613|       expect(await alarmOf(user)).toBe(t + 31 * DAY + RETENTION_RETRY_…
+       |                                   ^
+    614|     } finally {
+    615|       await vaultExec(user, 'DROP TRIGGER fail_purge')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/25]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the brief's rulings > a write never sets the alarm sooner than a minute ahead, even with work already due, and a later write never postpones it
+AssertionError: expected 1796946752272 to be 1794354812272 // Object.is equality
+
+- Expected
++ Received
+
+- 1794354812272
++ 1796946752272
+
+ ❯ test/workers/files-alarm.test.ts:630:33
+    628|     })
+    629|     const cash = await money.wallet(user)
+    630|     expect(await alarmOf(user)).toBe(t + CALL_ALARM_DELAY_MS)
+       |                                 ^
+    631|     await setVaultClock(user, t + 30_000)
+    632|     expect((await client.as(user).patch(`/v1/wallets/${cash}`, { name:…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/25]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the brief's rulings > the vault knows the alarm it set: alarmAt matches getAlarm() after a write, an alarm, a wake and an erase
+AssertionError: expected [ null, 1796946752294 ] to deeply equal [ 1796946752294, 1796946752294 ]
+
+- Expected
++ Received
+
+  [
+-   1796946752294,
++   null,
+    1796946752294,
+  ]
+
+ ❯ test/workers/files-alarm.test.ts:645:26
+    643|     const lunch = await createLunch(client, user)
+    644|     expect((await client.as(user).del(`/v1/transactions/${lunch}`, { i…
+    645|     expect(await both()).toEqual([t + 30 * DAY, t + 30 * DAY])
+       |                          ^
+    646|     await evictDurableObject(vaultOf(user))
+    647|     expect(await both()).toEqual([t + 30 * DAY, t + 30 * DAY])
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/25]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the brief's rulings > a background step that writes moves the alarm: a failed export is due only at its purge
+AssertionError: expected 1796860352315 to be 1794268412315 // Object.is equality
+
+- Expected
++ Received
+
+- 1794268412315
++ 1796860352315
+
+ ❯ test/workers/files-alarm.test.ts:665:33
+    663|     const requested = await requestExport(client, user)
+    664|     expect(requested.status).toBe(202)
+    665|     expect(await alarmOf(user)).toBe(requested.requestedAt + START_RET…
+       |                                 ^
+    666|     await vaultOf(user).failExport(requested.id)
+    667|     expect(await alarmOf(user)).toBe(requested.requestedAt + EXPORT_PU…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/25]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the brief's rulings > a start moves the alarm on, from the alarm or from the Worker
+AssertionError: expected null to be 1794354812331 // Object.is equality
+
+- Expected:
+1794354812331
+
++ Received:
+null
+
+ ❯ test/workers/files-alarm.test.ts:688:35
+    686|     try {
+    687|       await runInDurableObject(vaultOf(user), (vault: UserVault) => va…
+    688|       expect(await alarmOf(user)).toBe(t + CALL_ALARM_DELAY_MS)
+       |                                   ^
+    689|       expect(await vaultOf(user).startPendingWork()).toEqual({ started…
+    690|       expect(await alarmOf(user)).toBeNull()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/25]⎯
+
+ FAIL  test/workers/snapshots.test.ts > retention, the snapshot halves of retention.integration.spec.ts > tombstones reach delta readers, older cursors resync, and snapshots built before the purge are dropped
+AssertionError: expected [ { chunk_index: +0, …(2) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "bytes": 3325,
++     "chunk_index": 0,
++     "object_key": "sync_snapshot/c457eb4e582326f9c047878e091c82d1f1043af508be06949641ce85fa9719da/8cb2d942-2238-8641-a12f-f6d8bb474239/726081ef-61be-4b27-ab57-c39e9c844a03/chunk-0000.json",
++   },
++ ]
+
+ ❯ test/workers/snapshots.test.ts:528:57
+    526|
+    527|     expect((await snapshotsOf(user)).map((row) => row.id).sort()).toEq…
+    528|     expect(await chunkRowsOf(user, before.snapshot_id)).toEqual([])
+       |                                                         ^
+    529|     const registry = await registryOf(user)
+    530|     expect(keys.map((key) => registry.find((row) => row.key === key)?.…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/25]⎯
+
+ FAIL  test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > after pruneSnapshots at snapshotsDueAt, the next snapshotsDueAt is later or null
+AssertionError: expected [ 1794268352838, 1794354752838, …(2) ] to deeply equal [ 1794268352838, 1794354752838, …(3) ]
+
+- Expected
++ Received
+
+  [
+    1794268352838,
+    1794354752838,
+    1794441152838,
+-   1794952352838,
+    1794955952838,
+  ]
+
+ ❯ test/workers/snapshots.test.ts:763:18
+    761|       }
+    762|     })
+    763|     expect(seen).toEqual([t0, t0 + SNAPSHOT_PENDING_MS, t0 - 5 * DAY +…
+       |                  ^
+    764|     expect(await snapshotsOf(user)).toEqual([expect.objectContaining({…
+    765|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/25]⎯
+
+ FAIL  test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > pruneSnapshots fails a snapshot left pending for a day, drops one read below the purge watermark, and deletes one a week past its expiry
+AssertionError: expected undefined to match object { status: 'ready' }
+
+- Expected:
+{
+  "status": "ready",
+}
+
++ Received:
+undefined
+
+ ❯ test/workers/snapshots.test.ts:1008:84
+    1006|     const now = Date.now()
+    1007|     await prune(now)
+    1008|     expect((await snapshotsOf(user)).find((row) => row.id === before.s…
+       |                                                                                    ^
+    1009|     expect(await statusOf(v1, user, before.snapshot_id)).toEqual({ sna…
+    1010|     expect(await chunkRowsOf(user, before.snapshot_id)).toEqual([])
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/25]⎯
+
+
+ Test Files  2 failed | 1 passed (3)
+      Tests  25 failed | 47 passed (72)
+   Start at  06:52:29
+   Duration  6.78s (transform 2.00s, setup 3.42s, import 142ms, tests 6.17s, environment 1ms)
+

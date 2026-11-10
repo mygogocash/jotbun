@@ -80,13 +80,13 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - m2: the account-unavailable variant shows lines that are false for a deleted account, and leads with a refused sign-in;
     - m4: K24, the owner may drop today's sign-in terms box when approving.
 - P2-T8 (#365, merged 1502e65 on 9 Nov, issue #154 closed; review in reviews/P2-T8.md, Approved with two minors). Probes are in scratch/p2-t8-review/.
-  - **P2-T11 (next to edit the harness), m-1:** two of the planner's "equivalent" mutants are not equivalent, and X2 survives.
+  - **DONE in P2-T11 (#382, merged 5a33820): m-1.** Two of the planner's "equivalent" mutants were not equivalent, and X2 survived; P2-T11 added the review's cases H6 and H7, which kill E2, E3 and X2 as HA2 to HA4.
     - E2: without `BunIntensityProvider`, `setIntensity` throws and a stored intensity is ignored.
     - E3: without the inner `IntlProvider`, a stored or newly chosen language changes the language drawn.
     - X2: `mockReturnValueOnce` lets kit parts (`Sheet`, `UndoBar`, `BunPeek`) take the reduced-motion answer first, so under `reducedMotion: true` the wallet reads false.
 
     The review's two ready cases close all three.
-  - **P2-T35 (and one sentence in the harness header), m-2:** the inner `IntlProvider` locks the drawn language. Under `mountWallet`, `setPreference('en')` changes the stored preference but the screen stays in Thai. P2-T35's language tray and welcome language switch must choose how to test this.
+  - **P2-T35 (and one sentence in the harness header), m-2:** the inner `IntlProvider` locks the drawn language. Under `mountWallet`, `setPreference('en')` changes the preference but the screen stays in Thai. (Nothing is stored under `mountWallet`; a test that reads the stored language must call `installBrowserStorage()` first. P2-T11's review n7 says to drop "stored" from the harness header's sentence too.) P2-T35's language tray and welcome language switch must choose how to test this.
   - **Wallet screen tasks:**
     - the reduced-motion spy's call count builds up across mounts within one case;
     - `useWindowDimensions()` reads 0 × 0 under `mountWallet`;
@@ -110,7 +110,7 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **Task 12 (m4 from 1D-T6):** the transport in `privacyServices.ts` lacks `allowLanHttp: __DEV__`, so a development build against `wrangler dev` on a LAN address crashes when Privacy opens. It also lacks the analytics opt-out header. m4 now covers three transports, not four.
   - **Task 7 / 1D-T7:** each live fresh sign-in moves the epoch. That resets PostHog, drops held events for the same account, and briefly reopens the diary. Both are by design; check them in Task 7's device run.
 - 1A-T10 (#363, merged 4407025 on 9 Nov, issue #104 closed; review in reviews/1A-T10.md, Approved). The receipt's minor 2 and its nits were fixed in housekeeping commit 9cc31cb.
-  - **Minor 1, now taken by ci-parallel-jobs (9 Nov) instead of P6C-T7; drop it from P6C-T7 once that merges:** the case pins the order and job of the steps, but not that they run. `continue-on-error: true` or `if: false` on the workers step, or `if: false` on the database job, passes all 6 cases. Add `assert.doesNotMatch(workflow, /^\s*(?:-\s+)?(?:if|continue-on-error):/m)` at the end of the case; the reviewer proved it catches all three.
+  - **Minor 1: DONE by ci-parallel-jobs (#377, merged e469d8b on 10 Nov). P6C-T7 no longer carries it**; that PR's review left P6C-T7 two sharper pins (m2, m3), below. As it was: the case pins the order and job of the steps, but not that they run. `continue-on-error: true` or `if: false` on the workers step, or `if: false` on the database job, passes all 6 cases. Add `assert.doesNotMatch(workflow, /^\s*(?:-\s+)?(?:if|continue-on-error):/m)` at the end of the case; the reviewer proved it catches all three.
   - **1C-T12:** the README's issuer line says that from 1C the vault uses `AUTH_JWKS_URL`, but the 1C plan (R50) drops that setting.
   - **1B-T13:** the README's vault row leaves out the live socket and the cashback catalogue the Worker already serves.
   - Other nits:
@@ -129,6 +129,7 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - **m-2:** the receipt HEAD test does not count bytes per HEAD (probe HD-1).
     - **m-3:** neither guard in `attachmentsDueAt` is pinned (`attachments.ts:368-369`); probes DU-1 and DU-2. Without "object gone", the alarm loops on a past due time (against R37); without the safety-net check, an unheld receipt is never scheduled.
     - **For the abort proof:** retain and replace hold a copy slot across awaits, so include four aborted retains, then a retain that answers 200. Receipt downloads allow two slots per account.
+  - **Plan it on top of 1B-T7 and 1B-T11 once both merge.** 1B-T7 edits `handler.ts` (three edits, none on a `headOf` line). 1B-T11 edits `snapshots.ts` (at its end: `STALE_CHUNKS`, `pruneSnapshots`, `snapshotsDueAt`) and `snapshots.test.ts` (inside three existing cases; its brief's P1 names them).
   - **And from 1B-T8's review (reviews/1B-T8.md).** Its ready cases are in `scratch/1b-t8-review/` (`review-fixes.test.ts`, probes C2 and E); each passes on f416f24 and kills its mutant.
     - **The fix is more urgent now:** four aborted snapshot-chunk downloads in one isolate block every chunk download there.
     - m-2: the memory proof's cursor spy (`snapshots.test.ts:136-157`) refuses only `toArray`, `one` and `raw`, so reading every row into an array with a spread passes all 35 cases, the ten-times case included (mutant X1). The reviewer's spy revokes each row once the next is read; it catches X1.
@@ -232,7 +233,7 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - n4: the layout case's comment says the question sits inside `CompanionBoundary`, but the case checks only the diary (mutant R10).
     - n1: S8 and P10 die only by Vitest's unhandled-rejection failure; the house assertion pattern (review m9) would make each a named failing case.
   - **P2-T18:** write the Bun Wallet branch's swap with the layout's existing `ask` (the P2 plan calls it `askConsent`; one condition is enough), with its two consent cases and the plan's seventh mutant.
-  - **n5, CI:** `backend.yml` has no iOS export and no `typecheck:routes`, so since R100 the iOS export ran nowhere. Folded into ci-parallel-jobs (the controller's amendment, 9 Nov). Until it merges, the controller runs the iOS export before merging a task that changes routes, the app entry or native code.
+  - **n5, CI: DONE.** `backend.yml` had no iOS export and no `typecheck:routes`, so from R100 until 10 Nov the iOS export ran nowhere. ci-parallel-jobs (#377, merged e469d8b on 10 Nov) added both, as the `exports` and `checks` jobs. The controller no longer runs the iOS export by hand.
 - P4-T12 planner notes (briefs/P4-T12.md, "For the controller"; the brief was READY on 9 Nov):
   - **P4-T6, under R102 (handover):** the slip batch arrives as its JSON's UTF-8 bytes, typed `application/octet-stream`. Read at most 8 MiB of `w.stream`, accept that type, and parse with `parseSlipBatchRequest`. A body typed `application/json` is parsed by the dispatcher (2 MiB cap) and leaves a stream route no stream (`apps/edge/src/v1/handler.ts`, `readRouteBody`). Decide and pin what a JSON-typed body answers.
   - **1D-T6's m4, still open:** the import screens' two transports (`import/ReceiptParts.tsx`, `import/ImportDeviceParts.tsx`) still lack `allowLanHttp` and the analytics-off header. They are not slip clients, so P4-T12 leaves them; a later import or P4 task must close them.
@@ -251,7 +252,7 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **P4-T20:** n4, the fake's exactly-full last page and `drafts(undefined, n)` are unpinned; n5, pin that `dismiss` rejects and never throws synchronously.
   - **P6A:** n9, test that the delete passes `accessGroup`, and device-check that the erase without a group removes the extension's copy.
   - **Whoever next edits `slipRefs.test.ts`** (fold into P4-T14): n6, a base64url salt with `-` and `_` decodes to the exact bytes; n7, the `HEX_SALT` end anchor (add a 66-character damaged value).
-- ci-parallel-jobs (#377, not merged: held for the owner's Actions-minutes answer; review in reviews/ci-parallel-jobs.md, a two-lens Opus workflow, Approved with three minors and seven nits; probes in scratch/ci-parallel-review/):
+- ci-parallel-jobs (#377, merged e469d8b on 10 Nov after the owner kept the nine-job layout; review in reviews/ci-parallel-jobs.md, a two-lens Opus workflow, Approved with three minors and seven nits; probes in scratch/ci-parallel-review/). Its m1 (a fresh run on the current base) was done before the merge, by run 42721236288. Nits n1 and n6 are fixed in the receipt (9ed39fa). The rest stand:
   - **The controller, before merging (m1):** #377's only CI run was against the old base 4850463. Close and reopen #377 for a fresh nine-job run on the current base, and check it: render 107 files with the two split files, and sections 162, 196 and 218 of 576, unless more render files have merged since.
   - **P6C-T7, m2:** the ban on `if:` and `continue-on-error:` (`backend-workflow.test.mjs:281`) misses other YAML spellings of the same keys (`"if":`, `'continue-on-error':`, `if :`, `- 'if':`, `? if`). Six mutants pass while js-yaml reads them as the key. The review's widened regex catches all six with no false positive (`synth/ban-spot-check.out`).
   - **P6C-T7, m3:** `renderSplitProblems` checks for doubled tests only on `sampleNames()`. A top-level `|` alternative in part 1 or 2 keeps the construction, and only the layout list kills it; on the real names 4 or 10 tests would run twice. Reject a top-level `|` in every pattern but the last, and add real-shaped samples.
@@ -263,3 +264,22 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - n5: README's full-gate block (lines 244 to 259) lacks `typecheck:routes` and `export:ios`.
     - n6: receipt line 3 names 857b9f2 as the head at implementation time; it was 4850463.
     - n7: every job logs a Node 20 deprecation warning for the pinned checkout and setup-node commits. Bump both pins, by commit, to releases that run on Node 24.
+- 1B-T11 planner notes (briefs/1B-T11.md; the brief was READY on 10 Nov, under R104):
+  - **Whoever next edits `apps/edge/test/workers/imports-review.test.ts` (P19, older than 1B-T11):** the case `rows that cannot be saved now are conflicted ...` (line 1621) pins the vault clock to 2026-05-01. Its receipts-digest alarm, 30 days after that clock, lies in the real past, so Miniflare fires it again and again until the file ends (26 firings in the planner's run of the unchanged base). Each firing finds nothing due. Set the clock ahead (R6).
+  - **Residual of 1B-T8's m-1, accepted (P1):** a resend of the same snapshot key more than a week past its snapshot's expiry, once the row is gone, still makes a pending row under the old id. The app takes a fresh key for each resync, and only a transport resend repeats a key, within seconds. Revisit only if a later task resends keys after days.
+- P2-T11 (#382, merged 5a33820 on 10 Nov, issue #157 closed; review in reviews/P2-T11.md, a two-lens Opus workflow, Approved with two minors and seven nits; ready cases in scratch/p2-t11-review/):
+  - **wallet-looks-unstored (a follow-up task; must land before P2-T20 calls `setOrder`, P2-T21 calls `setLook` or P2-T29 calls `setIcon`), m1.**
+    - `WalletLooksProvider.tsx:120-122` replaces the whole slot with what is stored plus the new change, so an earlier change that was never stored (its write failed, or its name could not be read) drops out of view. `:112` also lets the account's first read hide a failed change made from a child's mount effect.
+    - This breaks brief P3's rule that such a change "shows until the app closes". No stored data is harmed.
+    - Fix: keep unstored changes per account in a ref and lay them over each read.
+    - Ready cases: D1, D2 and D8b in `data/ready-cases/DataLensProbes.render.test.tsx`. Take D8 only if the fix also queues the first read ahead of every change. Extend V4 to pin what its title says.
+  - **P2-T29 (m2 and n5):**
+    - assert `CategoryGlyph`'s unfilled rings (stroke, width, `fill="none"`) and round linecaps and linejoins; mutants RV1 and RV2 survive today (plan line 795, brief P5);
+    - pin the glyph's own `DECORATIVE` wrapper and the initial's Thai line height (RV3, RV4, RV4s).
+  - **P2-T12:**
+    - take ready case K5, which pins `sign="balance"` on the spine card (n2, mutant RM5);
+    - until the account's looks are read, each wallet shows its derived look for a few milliseconds, since there is no `ready` flag (also for P2-T24).
+  - **P2-T21 and P2-T22 (the first cards with no `onPress`), n3:** take `data/ready-cases/cardNativeProps.test.ts`, which pins `accessible`; react-native-web 0.21.4 drops that prop, so on the web the card is a div with a label and no role. Decide the card's web role (wc-wallet-edit's preview card uses `role="img"`).
+  - **P2-T21 and P2-T29:** with no account open (the web, opening, locked, signed out), `setLook` and `setIcon` keep nothing and change nothing on screen (plan line 794). Decide whether the look fields and the icon picker show there at all.
+  - **n6, the 40 pt tile:** a follow-up, or whichever of P2-T22 and P2-T28 draws a 40 pt tile first. Expect a 12 pt corner and a 20 pt glyph. E2-A decides whether its initial is 17 (the formula) or 16 (the merchant tiles).
+  - **E2-A:** n1 (private mode keeps ใช้ไป, the pending line and the today line, which bw-private drops; each reveals a fact without an amount); n4 (on the full card, a credit card paid ahead shows ฿500 above the kind line ยอดที่ใช้ไป); and the receipt's board calls (P4, P7, P9).

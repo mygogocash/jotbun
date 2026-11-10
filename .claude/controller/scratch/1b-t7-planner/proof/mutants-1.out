@@ -1,0 +1,76 @@
+M1 KILLED (Tell Bun's use is counted after the model call) [workers 3 failed | 35 passed (38)] restored=True
+    failed: ai.test.ts: every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+    failed: ai.test.ts: stops at the daily limit until the next Bangkok day
+    failed: ai.test.ts: the day's uses follow the vault clock in Bangkok: the last use is allowed, the next waits for midnight, and counts older than 35 days are forgotten
+M2 KILLED (the tool reply's allowance is dropped (empty)) [workers 7 failed | 31 passed (38)] restored=True
+    failed: ai.test.ts: a tool input the tool refuses comes back as its error, and an unknown tool is refused by name
+    failed: ai.test.ts: a tool's allowance reaches the grounding check
+    failed: ai.test.ts: answers through a read-only tool and returns the figures it used
+    failed: ai.test.ts: category_totals answers at most 12 categories and top_merchants at most 8 places, largest first
+    failed: ai.test.ts: spending_total and category_totals read the records runTool read, and allow each number they return
+    failed: ai.test.ts: top_merchants and budget_status read the records runTool read, and allow each number they return
+    failed: ai.test.ts: two tools in one turn both run, and their results go back to Claude together
+V1 KILLED (consent ignores the notice version) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: consent to another notice version does not count: the companion reads off, the routes that need consent refuse, and the note is the plain facts
+V2 KILLED (the preferences read today's uses by the real clock) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the day's uses follow the vault clock in Bangkok: the last use is allowed, the next waits for midnight, and counts older than 35 days are forgotten
+V3 KILLED (the uses left ignore the uses made) [workers 3 failed | 35 passed (38)] restored=True
+    failed: ai.test.ts: every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+    failed: ai.test.ts: the day's uses follow the vault clock in Bangkok: the last use is allowed, the next waits for midnight, and counts older than 35 days are forgotten
+    failed: ai.test.ts: turns a sentence into a grounded draft, asking Claude through the shared settings
+V4 KILLED (an update does not keep the stored choices) [workers 2 failed | 36 passed (38)] restored=True
+    failed: ai.test.ts: each AI route is refused at its first step when a newer policy is pending, the session ended or the account stopped being active, before any model call
+    failed: ai.test.ts: turning AI on needs the current notice version; tips can be set alone
+V5 KILLED (turning AI on does not need the current notice) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: turning AI on needs the current notice version; tips can be set alone
+V6 KILLED (the draft context has no wallets) [workers 3 failed | 35 passed (38)] restored=True
+    failed: ai.test.ts: reads a slip image into drafts and keeps nothing
+    failed: ai.test.ts: the model sees only the active wallets' and categories' ids and names, and a date more than a day from the server's is replaced
+    failed: ai.test.ts: turns a sentence into a grounded draft, asking Claude through the shared settings
+V7 KILLED (the last use of the day is refused (>=)) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the day's uses follow the vault clock in Bangkok: the last use is allowed, the next waits for midnight, and counts older than 35 days are forgotten
+V8 KILLED (no daily limit) [workers 3 failed | 35 passed (38)] restored=True
+    failed: ai.test.ts: every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+    failed: ai.test.ts: stops at the daily limit until the next Bangkok day
+    failed: ai.test.ts: the day's uses follow the vault clock in Bangkok: the last use is allowed, the next waits for midnight, and counts older than 35 days are forgotten
+V9 KILLED (the retry waits for midnight UTC) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the day's uses follow the vault clock in Bangkok: the last use is allowed, the next waits for midnight, and counts older than 35 days are forgotten
+V10 KILLED (a use is counted on the real clock's day) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the day's uses follow the vault clock in Bangkok: the last use is allowed, the next waits for midnight, and counts older than 35 days are forgotten
+V11 KILLED (old daily counts are never forgotten) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the day's uses follow the vault clock in Bangkok: the last use is allowed, the next waits for midnight, and counts older than 35 days are forgotten
+V12 KILLED (the count from exactly 35 days ago is forgotten too) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the day's uses follow the vault clock in Bangkok: the last use is allowed, the next waits for midnight, and counts older than 35 days are forgotten
+V13 KILLED (today's spending counts every type) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the day's facts come from the vault's records in dayFacts' order: over budget first, then today, the pace, the week, the top category and the month
+V14 KILLED (today's spending counts deleted records) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the day's facts come from the vault's records in dayFacts' order: over budget first, then today, the pace, the week, the top category and the month
+V15 KILLED (the week counts its eighth day back) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the day's facts come from the vault's records in dayFacts' order: over budget first, then today, the pace, the week, the top category and the month
+V16 KILLED (the week counts days after the date) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the day's facts come from the vault's records in dayFacts' order: over budget first, then today, the pace, the week, the top category and the month
+V17 KILLED (the week counts deleted records) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the day's facts come from the vault's records in dayFacts' order: over budget first, then today, the pace, the week, the top category and the month
+V18 KILLED (a budget used to the last satang is over budget) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the day's facts come from the vault's records in dayFacts' order: over budget first, then today, the pace, the week, the top category and the month
+V19 KILLED (the pace needs money left) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the day's facts come from the vault's records in dayFacts' order: over budget first, then today, the pace, the week, the top category and the month
+V20 KILLED (the days left leave out today) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the day's facts come from the vault's records in dayFacts' order: over budget first, then today, the pace, the week, the top category and the month
+V21 KILLED (the days over budget count today) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the day's facts come from the vault's records in dayFacts' order: over budget first, then today, the pace, the week, the top category and the month
+V22 KILLED (the pace per day is the whole budget left) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the day's facts come from the vault's records in dayFacts' order: over budget first, then today, the pace, the week, the top category and the month
+V23 KILLED (the top category is the smallest) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the day's facts come from the vault's records in dayFacts' order: over budget first, then today, the pace, the week, the top category and the month
+V24 KILLED (the top category may be an income category) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the day's facts come from the vault's records in dayFacts' order: over budget first, then today, the pace, the week, the top category and the month
+V25 KILLED (the top category's share is of the month's income) [workers 4 failed | 34 passed (38)] restored=True
+    failed: ai.test.ts: the day's facts come from the vault's records in dayFacts' order: over budget first, then today, the pace, the week, the top category and the month
+    failed: ai.test.ts: the note's words may use the day's date and every number of its facts, and nothing else, in at most 200 characters
+    failed: ai.test.ts: uses Claude’s words only when every number is one of the facts
+    failed: ai.test.ts: without consent: the plain facts, and no model call
+V26 KILLED (the top category's label is dropped) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the day's facts come from the vault's records in dayFacts' order: over budget first, then today, the pace, the week, the top category and the month
+V27 KILLED (the month's income is said even when it is none) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the day's facts come from the vault's records in dayFacts' order: over budget first, then today, the pace, the week, the top category and the month

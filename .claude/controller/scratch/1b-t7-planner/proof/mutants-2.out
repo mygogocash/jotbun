@@ -1,0 +1,55 @@
+V28 KILLED (spending_total reads any type it is given) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: spending_total and category_totals read the records runTool read, and allow each number they return
+V29 KILLED (a category the person does not have filters by its id) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: spending_total and category_totals read the records runTool read, and allow each number they return
+V30 KILLED (spending_total counts deleted records) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: spending_total and category_totals read the records runTool read, and allow each number they return
+V31 KILLED (spending_total ignores the category) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: spending_total and category_totals read the records runTool read, and allow each number they return
+V32 KILLED (spending_total does not allow its count) [workers 3 failed | 35 passed (38)] restored=True
+    failed: ai.test.ts: a tool's allowance reaches the grounding check
+    failed: ai.test.ts: answers through a read-only tool and returns the figures it used
+    failed: ai.test.ts: spending_total and category_totals read the records runTool read, and allow each number they return
+V33 KILLED (spending_total does not allow its period's dates) [workers 2 failed | 36 passed (38)] restored=True
+    failed: ai.test.ts: a tool's allowance reaches the grounding check
+    failed: ai.test.ts: spending_total and category_totals read the records runTool read, and allow each number they return
+V34 KILLED (category_totals counts deleted records) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: spending_total and category_totals read the records runTool read, and allow each number they return
+V35 KILLED (category_totals answers the smallest first) [workers 2 failed | 36 passed (38)] restored=True
+    failed: ai.test.ts: category_totals answers at most 12 categories and top_merchants at most 8 places, largest first
+    failed: ai.test.ts: spending_total and category_totals read the records runTool read, and allow each number they return
+V36 KILLED (category_totals answers every category) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: category_totals answers at most 12 categories and top_merchants at most 8 places, largest first
+V37 KILLED (category_totals does not allow its counts) [workers 2 failed | 36 passed (38)] restored=True
+    failed: ai.test.ts: category_totals answers at most 12 categories and top_merchants at most 8 places, largest first
+    failed: ai.test.ts: spending_total and category_totals read the records runTool read, and allow each number they return
+V38 KILLED (top_merchants reads income too) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: top_merchants and budget_status read the records runTool read, and allow each number they return
+V39 KILLED (top_merchants counts deleted records) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: top_merchants and budget_status read the records runTool read, and allow each number they return
+V40 KILLED (top_merchants names a place by its note first) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: top_merchants and budget_status read the records runTool read, and allow each number they return
+V41 KILLED (top_merchants answers every place) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: category_totals answers at most 12 categories and top_merchants at most 8 places, largest first
+V42 KILLED (top_merchants does not allow its counts) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: top_merchants and budget_status read the records runTool read, and allow each number they return
+V43 KILLED (a place without a description has no name on its figure) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: top_merchants and budget_status read the records runTool read, and allow each number they return
+V44 KILLED (budget_status reads a month it has not checked) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: a tool input the tool refuses comes back as its error, and an unknown tool is refused by name
+V45 KILLED (budget_status does not allow its categories' limits and spending) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: top_merchants and budget_status read the records runTool read, and allow each number they return
+V46 KILLED (a range may run backwards) [workers 2 failed | 36 passed (38)] restored=True
+    failed: ai.test.ts: a bad tool input is reported back to Claude, not run
+    failed: ai.test.ts: a tool input the tool refuses comes back as its error, and an unknown tool is refused by name
+V47 KILLED (a range of 400 days is refused) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: a tool input the tool refuses comes back as its error, and an unknown tool is refused by name
+V48 KILLED (an unknown tool answers nothing instead of its error) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: a tool input the tool refuses comes back as its error, and an unknown tool is refused by name
+V49 KILLED (a refused tool input is thrown (500) instead of answered) [workers 2 failed | 36 passed (38)] restored=True
+    failed: ai.test.ts: a bad tool input is reported back to Claude, not run
+    failed: ai.test.ts: a tool input the tool refuses comes back as its error, and an unknown tool is refused by name
+V50 KILLED (a person's own category is named by its built-in key) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: category_totals answers at most 12 categories and top_merchants at most 8 places, largest first
+V51 KILLED (a person's own category's figure loses its label) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: category_totals answers at most 12 categories and top_merchants at most 8 places, largest first

@@ -28,7 +28,14 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
   - P1 to P19 are accepted. P5 keeps the two animation systems one per surface. P6 pins P2-T9's m-2 (drop it from followups.md once merged; m-1 stays). In P17, P10 is equivalent (Pressable reports `disabled` itself).
   - The planner proved it also laid over P2-T11's final files, so it works in either merge order. Kit `scratch/p2-t13-planner/`: check_kit at ee12d43 gives 27 OK, and the 3 `orig/` files are identical. 98 of 99 mutants are killed and one is equivalent.
   - The implementer (Haiku max, 094336d2) was dispatched at about 06:20 in a pre-installed p2-t13 from ee12d43. No iOS export is needed.
-  - Then: PR (issue from backlog-map.json) and an Opus review (L). For E2-A, see P19 (button sizes, the title's alignment, the backdrop without a fade).
+  - For E2-A, see P19 (button sizes, the title's alignment, the backdrop without a fade).
+  - **DONE at 2f0e40e; PR #383 opened at 06:35 (issue #159).**
+    - RED: Node 4 of 4, render 16 of 16. GREEN: 4 and 22, neighbours 42. 98 of 99 mutants killed, with P10 equivalent; the output matches the planner's.
+    - A server restart cut off the first mutation run at R31. The implementer restored `Tray.tsx` from `real/` and reran all 99.
+    - The controller checked the 11 files against the kit and the clean merge with the head.
+    - **The review runs as a workflow** (run wf_74d1e17e-476): two Opus lenses (closing, the lock, the exit and motion; names, focus, buttons, the test traps, shared edits and CI), a skeptic for each blocker or major, and a synthesizer writing `reviews/P2-T13.md`.
+    - On approval and green CI: `merge_task_pr.sh 383 2f0e40e P2-T13`, then `promote_pr.sh P2-T13 383`. No iOS export is needed.
+    - #382 (P2-T11) and #383 share no file. Whichever merges second, CI tests the merge ref; read the PR through the API first (lessons.md: a stale merge ref).
   - **1B-T8: brief READY at 0bd5659** (L, 16 files under apps/edge). P1 to P17 are accepted, with P4 recorded as R101.
     - Kit `scratch/1b-t8-planner/`: check_kit at db19056 gives 47 OK, and the 13 `orig/` files are identical.
     - The planner's proof: RED 38 of 53 failing, GREEN 52 plus 1 todo, 62 of 62 mutants. In the ten-times memory case, `peakHeldBytes` was at most 20,644,143 against a bound of 20,644,976.
@@ -44,8 +51,28 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - **Edge baseline now (CI):** workers 28 files, 675 passed and 1 todo; `test:edge` 15 files and 176 tests.
     - **Promotion PR #380** is stacked on #378 (stack #379: #373, #378, #380).
 - **Server lane, dispatched at 23:20 from 1c14dd1 (Opus xhigh, in parallel; no shared file in their listings):**
-  - **1B-T7 planner** (fa58dddd), the AI routes: WT p1-1b-t7 on p1/1b-t7-ai-routes. It keeps its `handler.ts` edits minimal, for fix-download-aborts.
-  - **1B-T11 planner** (6407a432), files on the vault alarm: WT p1-1b-t11 on p1/1b-t11-files-alarm. It carries 1B-T8's m-1 and the alarm notes from 1B-T4, 1B-T5, 1B-T6, 1B-T9 and 1B-T10.
+  - **1B-T7: brief READY at 712574d** (M), the AI routes. New: `vault/ai.ts`, `v1/ai/service.ts`, `v1/ai/routes.ts`, `test/workers/ai.test.ts`. It also edits nine shared files, including three minimal `handler.ts` edits, none on a `headOf` line.
+    - P1 to P18 are accepted. P2: a signed-out session with a malformed body gets 422 where the PostgreSQL edge gave 401; the token is still verified first, and these routes are edge-only. P5: every step rechecks the session, the policy and that the account is active.
+    - The vault bundle grows to about 1,645 kB (gzip 377 kB), mostly the Anthropic SDK, by the plan's design.
+    - Kit `scratch/1b-t7-planner/`: check_kit at d340ffe gives 44 OK, and the 9 `orig/` files are identical. The planner's proof: 99 of 99 mutants. For CI: workers +1 file and +38 tests.
+    - The implementer (Haiku max, 603c183d) was dispatched at 06:38 in a pre-installed p1-1b-t7 from d340ffe, under the heavy lock for workers runs.
+    - **DONE at 6223843 (synced to e469d8b); PR #385 opened at 06:56 (issue #111).**
+      - RED and GREEN 38 of 38, and 99 of 99 mutants in four batches. `test:edge` 15 files and 176 tests. `build:edge` gives 1,645.04 kB with every driver marker at 0.
+      - The controller checked the 13 files against the kit and the clean merge with the head. It is the first task PR in the nine-job CI.
+    - **The review runs as a workflow** (run wf_529f455b-229): two Opus lenses (the AI service's order, sessions, fallbacks and privacy; the edge wiring, shared files, bundle and CI), a skeptic for each blocker or major, and a synthesizer writing `reviews/1B-T7.md`.
+    - On approval and green CI: `merge_task_pr.sh 385 6223843 1B-T7`, then `promote_pr.sh 1B-T7 385`. Then plan fix-download-aborts on the merged `handler.ts`.
+  - **fix-download-aborts: not yet planned.** It is held until a review workflow finishes, to keep about six local agents (the thermal lesson). Plan it on top of `scratch/1b-t7-planner/real/src/v1/handler.ts`, carrying the full list in followups.md (R97, plus the review cases from 1B-T6, 1B-T8, 1B-T9 and 1B-T10).
+  - **1B-T11: brief READY at 712574d** (M), files on the vault alarm.
+    - Files: new `jobs.ts`, migration `0003_alarm_indexes.sql` and `files-alarm.test.ts` (23 cases). Shared: `user-vault.ts`, `retention.ts`, `executor.ts`, `migrations/index.ts`, and 1B-T8's `snapshots.ts` and `snapshots.test.ts`.
+    - P1 to P19 are accepted, with P2 recorded as R104 (a one-minute floor for writes). P1 fixes 1B-T8's m-1 (a stale snapshot keeps its row and reads `expired`), with a residual accepted.
+    - Kit `scratch/1b-t11-planner/`: check_kit at 55b5781 gives 29 OK, and the 6 `orig/` files are identical. The planner's proof: RED 25 of 72, GREEN 72, 32 of 32 mutants; the AFFECTED 14 workers files gave 414 passed and 1 todo.
+    - The implementer (Haiku max, 2bc80cea) was dispatched at 07:08 in a pre-installed p1-1b-t11 from 55b5781, under the heavy lock.
+    - **DONE at a9a7d27; PR #387 opened at 07:20 (issue #115).**
+      - RED 25 of 72, GREEN 72, 32 of 32 mutants. AFFECTED: 14 files, 414 passed and 1 todo. `test:edge` 176. `build:edge` gives 722 kB with every driver marker at 0.
+      - The controller checked the 9 files against the kit and the clean merge with the head.
+    - **The review runs as a workflow** (run wf_1b001b01-c31): two Opus lenses (the alarm rules, R104 and the rearm wiring; the snapshot fix, the migration, shared files and CI), a skeptic for each blocker or major, and a synthesizer writing `reviews/1B-T11.md`.
+    - On approval and green CI: `merge_task_pr.sh 387 a9a7d27 1B-T11`, then `promote_pr.sh 1B-T11 387`. If 1B-T7 (#385) merges first, refresh #387's merge ref before trusting its CI (lessons.md).
+    - fix-download-aborts is then planned on top of 1B-T7 and 1B-T11 once both merge (followups.md).
   - **fix-download-aborts** is planned next, on top of 1B-T7's `real/` `handler.ts`. It must land before 1B-T13; its list in followups.md now includes 1B-T8's review cases.
   - **ci-parallel-jobs: brief READY at 857b9f2** (M), with the controller's amendment (the iOS export and `typecheck:routes` in CI).
     - Nine parallel jobs; the expected median wall time is about 4.4 minutes, against 10.4.
@@ -60,7 +87,16 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - #377's own CI is the first nine-job run, including the iOS export's first Linux build. Its measured times go in the receipt's "After, measured" line.
     - **The review approved** (`reviews/ci-parallel-jobs.md`, two-lens workflow, resumed after the stop): no blocker or major, three minors and seven nits (followups.md; m2 and m3 go to P6C-T7). The render split is whole, every old step still runs once, and the iOS export passes on Linux.
     - **Before merging (review m1):** #377's only CI run was on the old base 4850463. Once the owner answers, close and reopen #377 for a fresh nine-job run on the current base and check its totals. Only then run `merge_task_pr.sh 377 46b30a0` (no task id). Each extra run costs about 33 billable minutes, which is why it waits for the answer.
-    - Merge it **only after the owner's Actions-minutes answer**. Then run `promote_pr.sh ci-parallel-jobs 377`, and add the measured times to the receipt's "After, measured" line in a housekeeping commit (with review nits n1 and n6).
+    - **The owner answered on 10 Nov at 06:2x: "keep the nine-job CI, merge".**
+      - The controller closed and reopened #377 at 06:24, but that run (42720201154, green, 256 s wall) checked out the stale merge commit `c56e0e4` (into 4850463), so it proved nothing new (lessons.md).
+      - An API read then rebuilt the merge ref as 97f299c (base b272f0c, which holds P4-T13, 1B-T8 and P4-T12). The PR was reopened again at 06:32, for run 42721236288.
+      - Run 42721236288 checked out `97f299c` = `46b30a0` into `b272f0c`, and its nine jobs were green in 288 s wall.
+      - The render job had 107 files and 1291 tests, and the sections jobs 162, 196 and 218 of 576, for the full 1867. The exports built web 4806 and iOS 5772. Workers had 28 files.
+    - **Merged as e469d8b (#377, at 06:39).** No task issue; the worktree and branches are removed.
+      - **Promotion PR #384** (`promote/ci-parallel-jobs`) is on top of stack #379: #373 → #378 → #380 → #381 → #384.
+      - The receipt's "After, measured" line, with nits n1 and n6, is in 9ed39fa.
+      - protocol.md now states the nine-job layout (the iOS export is CI's again), and followups.md drops 1A-T10's minor 1 from P6C-T7 and closes 1D-T8's n5.
+    - **From now on every PR's CI runs the nine jobs** (about 4.75 minutes, about 33 billable minutes). The controller no longer runs the iOS export by hand.
     - **Its merge waits on the owner's Actions-minutes answer** (Owner decisions waiting).
     - After the merge: P6C-T7 no longer carries 1A-T10's minor 1, briefs that say "CI's database job runs `test:edge:db`" now mean the `edge` job, and the protocol's iOS-export correction can be lifted.
   - **P4-T12: brief READY on 606e131's code** (M; 18 new files in `src/slips/` and ten placeholder routes under `app/spend/slips/`).
@@ -81,6 +117,33 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
       - The minors go to P4-T14 (followups.md). Two of them are privacy rules for the first hasher: m1, a salt fetch in flight during the sign-out erase writes the salt back; m2, the hasher must belong to the open diary's account.
     - **Promotion PR #381** (`promote/p4-t12`, based on `promote/1b-t8`). Stack #379 is now #373 → #378 → #380 → #381.
 - **App baseline at 712574d** (CI on #376's merge ref plus P4-T13): `test:unit` 956 (927 + 18 + 11), render 109 files and 1867 cases, web 4806; iOS not measured at the head (computed 5772: 5760 with 1D-T8 plus P4-T12's 12 modules).
+
+## T3 server restart, 10 Nov about 07:21 (RESUMED at 07:22)
+- The restart cancelled the three running review workflows. They were resumed from their runs, and finished agents replay from cache:
+  - P2-T13: run wf_74d1e17e-476, task w29wpu2c7;
+  - 1B-T7: run wf_529f455b-229, task w9t0fclqe;
+  - 1B-T11: run wf_1b001b01-c31, task wfyqetxeu.
+- At 07:22 the heavy lock was free and no test process was alive. No delegated thread was running.
+- **If they are cancelled again, resume the same runs.** Each run's `journal.jsonl` is under the session's `subagents/workflows/<run>/`.
+
+## Second usage-limit stop, 10 Nov about 07:00 (RESUMED at 07:05)
+**Resumed at 07:05,** after the owner reset the credit early. Do not resume these again:
+- the P2-T11 review (task wmhduu9mn), the P2-T13 review (w3202gbyx) and the 1B-T7 review (wms605bju), each from its saved run;
+- the 1B-T11 planner, steered on run 5 with the cutoff note.
+
+The list below is kept for the record.
+- **Review workflows** (they do not restart themselves). Resume each with `Workflow({scriptPath, resumeFromRunId})`: agents that finished replay from cache.
+  - **P2-T11 (#382):** run wf_4e503333-e15, script `review-p2-t11-wf_4e503333-e15.js`. Both lenses are done (data: 5 findings; build: 4; no blocker or major), so only the synthesizer reruns.
+  - **P2-T13 (#383):** run wf_74d1e17e-476, script `review-p2-t13-wf_74d1e17e-476.js`. The behaviour lens is done (6 findings, no blocker or major); the surface lens and the synthesizer rerun.
+  - **1B-T7 (#385):** run wf_529f455b-229, script `review-1b-t7-wf_529f455b-229.js`. All three agents rerun.
+  - The scripts are under `~/.claude/projects/-Users-kunanonjarat--t3-worktrees-jotbun-t3-d9c08cd1-928de148f4930c37/22c24cd3-aa0d-449a-b3ad-bdc2f5954699/workflows/scripts/`.
+- **The 1B-T11 planner** (thread 6407a432) failed again. T3 restarts it at the reset, as it did at 03:10; then steer it with the cutoff note (background runs are dead, rerun unfinished checks, restore mutated files from `real/`).
+- **CI is green on all three PRs:**
+  - #382: render 111 files and 1894 tests, with the whole `CatalogueScreen` file passing (301 tests, R103's record).
+  - #383: render 110 files and 1891 tests.
+  - #385, the first task PR in the nine-job layout (checkout `6223843` into `c764cf2`): workers 29 files and 713 passed plus 1 todo, exactly +1 file and +38 tests.
+
+  Each merge waits only on its review.
 
 ## Usage-limit stop, 9 Nov 23:28 to 10 Nov 03:10
 - The controller's own session and every agent hit the 5-hour limit at about 23:28: the P2-T11 implementer, the P2-T13, 1B-T7 and 1B-T11 planners, and the ci-parallel-jobs review workflow.
@@ -103,7 +166,21 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
   - It folds in P2-T8's m-1 (harness cases H6 and H7, mutants HA2 to HA4) and m-2's harness sentence.
   - Kit `scratch/p2-t11-planner/`: check_kit at 6e51a3d gives 41 OK, and the 4 `orig/` files are identical. The planner's proof: 119 of 119 mutants.
   - The implementer (Haiku max, 3b2e8ff2) was dispatched at 23:24 in a pre-installed p2-t11 from 6e51a3d. No iOS export is needed (no route, entry or native change).
-  - Then: PR (issue #157) and an Opus review (L). P2-T13 (planner f362a7c3) follows in the wallet lane.
+  - **DONE at 31d9d59 (base e7fad50); PR #382 opened at 06:29 (issue #157).**
+    - RED: Node 10 of 10, render 19 of 27. GREEN: 14 and 27. 119 of 119 mutants. `test:unit` 955, `test:app` 34.
+    - It was BLOCKED once, on the whole-file `CatalogueScreen` run, by the Mac's thermal sleeps. Under ruling R103 that run went to CI, on the per-case evidence (298 and 300 of 301, then 4 of 4 targeted).
+    - The controller checked the 18 files against the kit and the clean merge with the head.
+    - **The review runs as a workflow** (run wf_4e503333-e15): two Opus lenses (the data rules and card words; the drawings, harness, catalogue and CI), a skeptic for each blocker or major, and a synthesizer writing `reviews/P2-T11.md`.
+    - **CI on #382 is R103's record** for the whole `CatalogueScreen` file.
+    - **Merged as 5a33820 (#382, at 07:15).** Issue #157 is closed, and the worktree and branches are removed.
+      - The review workflow approved: no blocker or major, two minors and seven nits.
+      - CI tested `31d9d59` into `d2bdb17`: render 111 files and 1894 tests, and the whole `CatalogueScreen` file 301 of 301 (R103's record).
+      - The base moved only by #377 (CI files and one script line) before the merge, so its green run stood.
+    - **m1 becomes the follow-up task wallet-looks-unstored:** a change that was never stored drops from view at the next stored change, which breaks brief P3.
+      - P2-T20, P2-T21 and P2-T29 are HELD in held.txt until it lands. Its ready cases are D1, D2 and D8b.
+      - The other minors and nits are in followups.md (P2-T12, P2-T21, P2-T22, P2-T29, P2-T35, E2-A).
+    - **Promotion PR #386** is stacked on #384; stack #379 now holds six PRs.
+    - **P2-T13 (#383) merges second:** read it through the API, close and reopen it for a nine-job run on top of 5a33820, and confirm the checkout line before merging.
 
 ## PR #371: the integration branch into main. The owner merged it on 9 Nov, 21:30 Bangkok, as afcf884
 - It was merged with a merge commit, so history is kept. The controller then fast-forwarded claude/p1a-vault-core to afcf884, which adds main's README and CHANGELOG, so the two branches were level.
@@ -303,6 +380,14 @@ To stop a chat session in the app: `sc chat stop <thread_id>` cancels its turn o
 - Held: P2-T2 and 1D-T6 wait for #347 (lockfile, _layout). P3-T12 waits on owner Q1. 1C-T2 waits on the owner's lockout answer, and its brief must first pin 1C-T1's six untested security options (followups.md).
 
 ## Rulings this session
+R104 (10 Nov, 1B-T11's P2): a write never arms the vault alarm sooner than a minute ahead (`CALL_ALARM_DELAY_MS`, 60,000 ms), and never postpones an alarm already set sooner. The alarm's own rearm is exact, or a minute out after a failed job (P3).
+  - Why: workerd refuses `setAlarm` at or before 0, which every release asks for (`delete_after = 0`), and in the Workers tests an alarm due at once fires itself, racing about 40 existing cases.
+  - A person never sees the minute, and a burst of writes becomes one alarm. Because a write can only move the alarm earlier, a stream of writes cannot starve the jobs.
+  - Later vault tasks that reason about alarm timing must expect it.
+R103 (10 Nov, P2-T11's gate): when a local whole-file run cannot finish because the machine sleeps (`pmset -g log`: "Dark Wake Thermal Emergency"), and every case has a passing run, the whole-file run goes to CI under R100.
+  - "Every case has a passing run" means the failures are timeouts across recorded sleeps, and a targeted rerun of the failing cases passes.
+  - The receipt records each run, the targeted rerun and the sleep times.
+  - First used for `CatalogueScreen.render.test.tsx` (301 cases): runs of 298 and 300, then 4 of 4 targeted.
 R102 (9 Nov, P4-T12's P2; binds P4-T6): the phone sends a slip batch as the UTF-8 bytes of its JSON, typed `application/octet-stream`, as the import upload sends its file.
   - P4-T6's handler reads at most 8 MiB of `w.stream`, accepts `application/octet-stream`, and parses the text with the contract's `parseSlipBatchRequest`.
   - A body typed `application/json` cannot work: the dispatcher's `readRouteBody` parses it (`readJsonBody`, capped at 2 MiB, 413 `COMMAND_TOO_LARGE` above that), and a stream route is then left with no stream. P4-T13's batches are up to 8 MiB.
@@ -329,7 +414,8 @@ R84 (P4-T10 fixtures), R85 (two API test-only fixes), R86 (token sid must match 
 Merge each PR when its CI on the current head is green; close its issue by hand (backlog-map.json); remove worktree and branch (local and remote). Open PRs that conflict only in docs/implementation/premium-progress.md: merge the head and run ledger_union.py (keeps both sides), except 1C (hand-merge: one `## 1C:` heading) and P4 (one `## P4` heading). New tasks write receipts under R87, which avoids those conflicts.
 
 ## Owner decisions waiting
-- **NEW (9 Nov, 23:10): Actions minutes before ci-parallel-jobs merges.** The repo is private on the Free plan, which includes 2,000 Actions minutes a month.
+- **ANSWERED (10 Nov, 06:2x): keep the nine-job CI, merge.** Below is the question as it was asked. The owner accepted about 33 billable minutes a run.
+- **(was) Actions minutes before ci-parallel-jobs merges.** The repo is private on the Free plan, which includes 2,000 Actions minutes a month.
   - Usage: 80 pull-request runs have happened since 1 Nov, about 1,400 billable minutes at today's roughly 18 per run, and each merged task now adds a promotion PR run. The controller cannot read the actual usage: GitHub's timing API reports 0, and the billing endpoint needs `admin:org`.
   - The parallel layout costs about 31 billable minutes a run (P11). If the minutes run out with no payment method, Actions stop, and every merge stops with them.
   - **Measured on #377's own run (42652925056, all nine green):**

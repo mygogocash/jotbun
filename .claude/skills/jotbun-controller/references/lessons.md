@@ -26,6 +26,11 @@
 - **`watch_prs.sh` records `<pr>:<head>` in `watch_prs.seen`.** A rerun on the same head is never reported again, so after `gh run rerun`, wait with `C/wait_ci.sh <pr>` (background Bash) instead.
 - **Logs only once the whole run has finished.** `gh run view --log-failed` refuses while any job of the run is still going. `ci_failures.sh` uses `gh api --allow-escape-sequences repos/.../actions/jobs/<id>/logs` and strips ANSI.
 - **CI tests the merge with the base.** GitHub runs PR checks on `refs/pull/N/merge`, so a branch does not need re-merging locally after the integration head moves, unless there are conflicts. Check that with `git merge-tree --write-tree --name-only HEAD origin/claude/p1a-vault-core`.
+- **But that merge ref can be stale.** GitHub rebuilds `refs/pull/N/merge` lazily.
+  - On 10 Nov, closing and reopening #377 to retest it on a newer base ran on the old merge commit (`c56e0e4 Merge 46b30a0 into 4850463`), and the reopened run proved nothing new.
+  - Read the PR through the API first: `gh api repos/mygogocash/jotbun/pulls/<n>`, and check that `merge_commit_sha` and `base.sha` are fresh. That read makes GitHub recompute them. Then close and reopen.
+  - Before trusting the run, confirm the base in a job log: `HEAD is now at <sha> Merge <head> into <base>`.
+  - The same applies to any PR whose old green run predates merges into its base.
 
 ## Parity and data
 
@@ -52,6 +57,10 @@
   - A planner's proof tree heals itself when its run script copies `real/` over the tree first, as 1B-T8's `run-final.sh` does.
 - **A failure on a usage limit is a cutoff, not a finish.** Its last notice is `failed` with "error type rate_limit, HTTP 429". `inflight_agents.py` now lists such agents; before the 9 Nov fix it missed the P4-T12 and P4-T13 planners.
 - **A killed run can leave the heavy lock held.** Once `ps` shows no test process, `rmdir` it at takeover.
+- **When agents look stalled, check for thermal sleep first.** On 10 Nov, from 03:11 to 06:05, the owner's Mac slept about 15 minutes in every 20 (`pmset -g log`: "Entering Sleep state due to 'Dark Wake Thermal Emergency'"), with the display off and five or six agents running.
+  - Everything slowed down: a two-lens review took about 3 hours, and a six-minute whole-file render run never finished cleanly (R103).
+  - `pmset -g log | grep -i thermal` shows it at once.
+  - While it happens, run at most about four local agents, start no new heavy one, and tell the owner: open the lid and give it airflow, and keep Spotlight off `.claude/worktrees`.
 
 ## Merging
 
