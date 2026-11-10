@@ -16,16 +16,18 @@
 //   screen readers, unseen.
 // - Closing. Close, the backdrop, the screen reader's escape, the system back
 //   (Escape on the web) and the swipe all ask one requestClose, which does
-//   nothing while `locked` (a save in flight, Review Focus 1) or once the tray
-//   is leaving. Close then says it is unavailable.
+//   nothing while `locked` (a save in flight, Review Focus 1), once the tray
+//   is leaving, or under the lock's cover. Locked, close says it is unavailable.
 // - Motion: P2-T9's builders, with the wallet's one answer (W6). The card
-//   springs up from below, or fades in. A step change ticks once (trayStep),
-//   fades its new content in and morphs the card's height; under Reduce Motion
-//   the height jumps.
+//   springs up from below, or fades in. A step change ticks once (trayStep)
+//   when the tray was open and uncovered before it and still is, fades its new
+//   content in and morphs the card's height; under Reduce Motion the height
+//   jumps.
 // - The exit (R69). When `visible` turns false the card leaves while the Modal
 //   stays; the Modal hides when the card's exit ends (220 ms, or the 150 ms
 //   fade), then onClosed fires once. iOS presents no Modal while another is
-//   still leaving, so there onClosed waits for the Modal's own onDismiss. A host
+//   still leaving, so there onClosed waits for the Modal's own onDismiss, and
+//   an onDismiss that ends after the tray was shown again says nothing. A host
 //   that opens a second tray as one closes opens it from onClosed, never in the
 //   same render, and keeps this tray mounted until then.
 // - A Sheet opened from a tray (Tell Bun's, P2-T16) renders inside the tray's
@@ -36,11 +38,14 @@
 // - The swipe (Gesture Handler 3), on the header row, runs on the JS runtime:
 //   its end asks the host to close, which sets React state. The card follows
 //   the finger down only, closes past shouldDismiss's line, and otherwise
-//   springs back (jumps back under Reduce Motion).
+//   springs back (jumps back under Reduce Motion), as does a swipe the system
+//   cancels.
 // - The lock (R63). While useLockCover() says hidden, LockCoverArt takes the
 //   place of the backdrop and the card at once (the card's exit is skipped, so
 //   it never shows over the cover), and the content unmounts; every step is
-//   its host's, so nothing typed is lost. Nothing of the tray is announced.
+//   its host's, so nothing typed is lost. Nothing of the tray is announced,
+//   nothing asks to close it, and the card is back in its place when the
+//   cover lifts.
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, View } from 'react-native';
@@ -141,9 +146,12 @@ export function Tray({ visible, onClose, onClosed, title, header, onBack, step, 
   const [shown, setShown] = useState(visible);
   if (visible && !shown) setShown(true);
 
+  // The latest onClosed, and whether the Modal is shown, as the last commit left them.
   const closed = useRef(onClosed);
+  const showing = useRef(shown);
   useEffect(() => {
     closed.current = onClosed;
+    showing.current = shown;
   });
   const exitMs = trayExiting(reduced).getDuration();
   useEffect(() => {
@@ -155,29 +163,44 @@ export function Tray({ visible, onClose, onClosed, title, header, onBack, step, 
     }, exitMs);
     return () => clearTimeout(timer);
   }, [visible, shown, exitMs]);
+  // iOS's onDismiss comes when UIKit's dismissal ends, after the hide. A tray
+  // shown again by then (a quick reopen) has not closed, so that late one says
+  // nothing (P10d); the hide that follows has its own onDismiss.
+  const dismissed = () => {
+    if (!showing.current) closed.current?.();
+  };
 
-  /** A close may be asked for: never while locked (a save in flight), nor once the tray is leaving. */
-  const closable = visible && !locked;
+  /** A close may be asked for: never while locked (a save in flight), once the tray is leaving, or under the lock's cover. */
+  const closable = visible && !locked && !hidden;
   /** One rule for close, the backdrop, the screen reader's escape, the system back and the swipe. */
   const requestClose = () => {
     if (closable) onClose();
   };
 
-  // A step change ticks once while the tray is open; opening it does not.
+  // A step change ticks once while the tray is open and uncovered, and only if
+  // it was so in the commit before: opening it at another step in one render,
+  // a step changed under the cover, or the cover lifting plays none.
   const shownStep = useRef(step);
+  const wasOpen = useRef(false);
   useEffect(() => {
-    if (shownStep.current === step) return;
+    const open = visible && !hidden;
+    const changed = shownStep.current !== step;
     shownStep.current = step;
-    if (!visible) return;
+    const tick = changed && open && wasOpen.current;
+    wasOpen.current = open;
+    if (!tick) return;
     const { haptic } = motionFor('trayStep', reduced);
     if (haptic) playHaptic(haptic);
-  }, [step, visible, reduced]);
+  }, [step, visible, hidden, reduced]);
 
-  // The swipe: the card follows the finger down only.
+  // The swipe: the card follows the finger down only. It is back in its place
+  // when the tray opens, and when the lock's cover comes or goes (`hidden` is a
+  // dependency for that): the cover unmounts the header's detector, so a drag
+  // it cuts off may never end in JS.
   const drag = useSharedValue(0);
   useEffect(() => {
     if (visible) drag.value = 0;
-  }, [visible, drag]);
+  }, [visible, hidden, drag]);
   const follow = useAnimatedStyle(() => ({ transform: [{ translateY: drag.value }] }), [drag]);
   const pan = usePanGesture({
     activeOffsetY: 10,
@@ -187,11 +210,12 @@ export function Tray({ visible, onClose, onClosed, title, header, onBack, step, 
       drag.value = Math.max(0, event.translationY);
     },
     onDeactivate: (event) => {
-      if (closable && shouldDismiss(event.translationY, event.velocityY)) {
+      // A swipe the system cancels (a call, a system gesture) never closes: the finger did not let go.
+      if (closable && !event.canceled && shouldDismiss(event.translationY, event.velocityY)) {
         requestClose();
         return;
       }
-      // Short of the line, or locked: back to its place.
+      // Short of the line, cancelled, or locked: back to its place.
       drag.value = reduced ? 0 : withSpring(0, { ...motion.spring.gentle, reduceMotion: ReduceMotion.Never });
     },
   });
@@ -215,7 +239,7 @@ export function Tray({ visible, onClose, onClosed, title, header, onBack, step, 
       statusBarTranslucent
       onRequestClose={requestClose}
       onShow={focusTitle}
-      onDismiss={Platform.OS === 'ios' ? () => closed.current?.() : undefined}
+      onDismiss={Platform.OS === 'ios' ? dismissed : undefined}
       {...layerProps}
     >
       <GestureHandlerRootView style={{ flex: 1 }}>

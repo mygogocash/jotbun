@@ -8,28 +8,56 @@
 // entering animation unseen (visibility: hidden) until its animationstart,
 // which a browser fires a frame later and happy-dom never does, and queries by
 // role skip what is unseen: startAnimations() fires it, as a browser would.
-// Gesture Handler reads no pointer here either, so the swipe's cases call the
-// callbacks the tray hands to usePanGesture.
+// Gesture Handler's web build reads a pointer only against a laid-out view,
+// and happy-dom lays nothing out, so most swipe cases call the callbacks the
+// tray hands to usePanGesture. Gesture Handler takes the latest callbacks on
+// every render, so this is its own path; the cancel's case sends its states
+// through Gesture Handler's own event handler, as the native side does.
+// iOS's Modal says it has gone (onDismiss) when UIKit's dismissal ends, a
+// frame or more after the hide; react-native-web says it at once. The late
+// dismissal's case holds it back and ends it itself.
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useEffect } from 'react';
 import { AccessibilityInfo, Platform, View } from 'react-native';
+import type { ModalProps } from 'react-native';
+import { State } from 'react-native-gesture-handler';
 import { ReduceMotion, ReducedMotionConfig } from 'react-native-reanimated';
 import { afterEach, expect, test, vi } from 'vitest';
 
 // The real safe-area package loads React Native itself, which vitest cannot run.
 vi.mock('react-native-safe-area-context', () => import('../../dev/catalogue/safeAreaTestStub'));
 
-// The swipe's callbacks, as the tray hands them to Gesture Handler.
+// The Modal, which says it has gone at once unless a case holds its dismissals back (`late`): each one then waits
+// for endDismissal(), which calls the Modal's latest onDismiss, as React Native's Modal does on iOS.
+const dismissals = vi.hoisted(() => ({ late: false, held: 0, latest: null as (() => void) | null }));
+vi.mock('react-native', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-native')>();
+  const { createElement, forwardRef } = await import('react');
+  const Modal = forwardRef<unknown, ModalProps>((props, ref) => {
+    dismissals.latest = props.onDismiss ?? null;
+    const onDismiss = props.onDismiss && (() => {
+      if (dismissals.late) dismissals.held += 1;
+      else props.onDismiss?.();
+    });
+    return createElement(actual.Modal as never, { ...props, ref, onDismiss });
+  });
+  return { ...actual, Modal };
+});
+
+// The swipe's callbacks, as the tray hands them to Gesture Handler, and the gesture it makes of them.
 type PanEvent = { translationY: number; velocityY: number };
 type PanConfig = { onUpdate?: (event: PanEvent) => void; onDeactivate?: (event: PanEvent) => void } & Record<string, unknown>;
-const swipe = vi.hoisted(() => ({ config: null as PanConfig | null }));
+type Pan = { handlerTag: number; detectorCallbacks: { jsEventHandler: (event: unknown) => void } };
+const swipe = vi.hoisted(() => ({ config: null as PanConfig | null, gesture: null as Pan | null }));
 vi.mock('react-native-gesture-handler', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-native-gesture-handler')>();
   return {
     ...actual,
     usePanGesture: (config: Parameters<typeof actual.usePanGesture>[0]) => {
       swipe.config = config as unknown as PanConfig;
-      return actual.usePanGesture(config);
+      const gesture = actual.usePanGesture(config);
+      swipe.gesture = gesture as unknown as Pan;
+      return gesture;
     },
   };
 });
@@ -47,6 +75,7 @@ vi.mock('../motion/useWalletMotion', async (importOriginal) => {
 
 import { rgba } from '@mobile/dev/catalogue/catalogueTestHarness';
 import { WALLET_SECTIONS } from '@mobile/dev/catalogue/wallet';
+import { WALLET_KIT_SECTIONS } from '@mobile/dev/catalogue/wallet/kitSections';
 import { haptics } from '@mobile/lib/haptics';
 import { walletDark, walletLight } from '@mobile/theme/walletPalette';
 import { LockCoverContext } from '@mobile/ui/lockCover';
@@ -66,6 +95,9 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.clearAllMocks();
   swipe.config = null;
+  swipe.gesture = null;
+  Object.assign(dismissals, { late: false, held: 0, latest: null });
+  delete (AccessibilityInfo as unknown as Record<string, unknown>).sendAccessibilityEvent;
 });
 
 /** Lets the phone's answer, the stores and Bun's AI preferences arrive. */
@@ -116,6 +148,38 @@ function pan(): PanConfig {
 }
 const pull = (translationY: number) => act(() => { pan().onUpdate?.({ translationY, velocityY: 0 }); });
 const release = (translationY: number, velocityY = 0) => act(() => { pan().onDeactivate?.({ translationY, velocityY }); });
+
+/** One drag through Gesture Handler's own event handler, as the native side sends it: it begins, activates and moves
+ * to translationY, then ends (let go) or is cancelled (the system took the touch, as for a call). */
+function dragThrough(translationY: number, end: typeof State.END | typeof State.CANCELLED) {
+  expect(swipe.gesture, 'the swipe').not.toBeNull();
+  const gesture = swipe.gesture as Pan;
+  const at = (y: number) => ({ handlerData: { x: 0, y: 0, absoluteX: 0, absoluteY: 0, translationX: 0, translationY: y, velocityX: 0, velocityY: 0, numberOfPointers: 1, pointerType: 0 } });
+  const send = (event: Record<string, unknown>) => act(() => { gesture.detectorCallbacks.jsEventHandler({ handlerTag: gesture.handlerTag, ...event }); });
+  send({ state: State.BEGAN, oldState: State.UNDETERMINED, ...at(0) });
+  send({ state: State.ACTIVE, oldState: State.BEGAN, ...at(12) });
+  send(at(translationY));
+  send({ state: end, oldState: State.ACTIVE, ...at(translationY) });
+}
+
+/** Ends the dismissal held back longest: React Native's Modal then calls its latest onDismiss, as on iOS. */
+function endDismissal() {
+  expect(dismissals.held, 'a dismissal under way').toBeGreaterThan(0);
+  dismissals.held -= 1;
+  act(() => { dismissals.latest?.(); });
+}
+
+/** A phone: React Native's platform, and the screen reader's focus moves, which react-native-web lacks (each one recorded). */
+const platform = (value: string) => Object.defineProperty(Platform, 'OS', { value, configurable: true, writable: true });
+function phoneFocus(): [HTMLElement | null, string][] {
+  const focused: [HTMLElement | null, string][] = [];
+  Object.defineProperty(AccessibilityInfo, 'sendAccessibilityEvent', {
+    value: (node: HTMLElement | null, kind: string) => { focused.push([node, kind]); },
+    configurable: true,
+    writable: true,
+  });
+  return focused;
+}
 
 /** The view that holds a step's words: what fades in when the step changes. */
 const stepOf = (words: string) => screen.queryByText(words)?.parentElement ?? null;
@@ -272,6 +336,20 @@ test('the card leaves before the Modal hides, then onClosed fires once', async (
   expect([dialog() !== null, screen.queryByTestId('tray') !== null, onClosed.mock.calls.length]).toEqual([true, true, 0]);
 });
 
+test('an onClosed given while the card leaves is the one called', async () => {
+  const first = vi.fn();
+  const latest = vi.fn();
+  const view = mountWallet(tray({ onClosed: first }));
+  await settle();
+  vi.useFakeTimers();
+  view.rerender(tray({ visible: false, onClosed: first }));
+  act(() => { vi.advanceTimersByTime(100); });
+  // A host that passes a new function on every render (P2-T16's whenClosed queue).
+  view.rerender(tray({ visible: false, onClosed: latest }));
+  act(() => { vi.advanceTimersByTime(120); });
+  expect([first.mock.calls.length, latest.mock.calls.length]).toEqual([0, 1]);
+});
+
 test("a hidden lock cover replaces the tray's content", async () => {
   const unmounted = vi.fn();
   function Typed() {
@@ -306,6 +384,34 @@ test("a hidden lock cover replaces the tray's content", async () => {
   mountWallet(covered(true), { mode: 'dark' });
   await settle();
   expect(found('lock-cover').style.backgroundColor).toBe(rgba(walletDark.ground));
+});
+
+test('under the lock cover nothing asks to close the tray', async () => {
+  const onClose = vi.fn();
+  const covered = (hidden: boolean) => <LockCoverContext.Provider value={{ hidden }}>{tray({ onClose })}</LockCoverContext.Provider>;
+  const view = mountWallet(covered(true));
+  await settle();
+  found('lock-cover');
+  // The system back reaches the Modal under the cover (Android's back; Escape on the web): it asks nothing, so a
+  // host that drops its draft on close loses nothing while the app is locked.
+  escape();
+  expect(onClose, 'asked under the cover').not.toHaveBeenCalled();
+  // Uncovered, it asks again.
+  view.rerender(covered(false));
+  escape();
+  expect(onClose).toHaveBeenCalledTimes(1);
+});
+
+test('a drag the lock cover cuts off is gone when the cover lifts', async () => {
+  const covered = (hidden: boolean) => <LockCoverContext.Provider value={{ hidden }}>{tray()}</LockCoverContext.Provider>;
+  const view = mountWallet(covered(false));
+  await settle();
+  pull(80);
+  expect(frame().style.transform).toBe('translateY(80px)');
+  // The cover takes the header, and the drag's end with it.
+  view.rerender(covered(true));
+  view.rerender(covered(false));
+  expect(frame().style.transform, 'the card once the cover lifts').toBe('translateY(0px)');
 });
 
 test('the main button is 54 pt tall, radius 16, ink with white text in light and light with ink text in dark; busy says its busy label', async () => {
@@ -418,6 +524,27 @@ test("the wallet's answer decides the swipe's spring back, not Reanimated's own 
   expect(warn.mock.calls.length).toBeLessThanOrEqual(1);
 });
 
+test('a swipe the system cancels springs back, even past the line', async () => {
+  const onClose = vi.fn();
+  const view = mountWallet(tray({ visible: false, onClose }));
+  await settle();
+  view.rerender(tray({ onClose }));
+  await settle();
+  vi.useFakeTimers();
+  // Gesture Handler cancels a drag when the system takes the touch (a call, a system gesture): the finger never let go.
+  dragThrough(150, State.CANCELLED);
+  expect(onClose, 'a cancelled swipe').not.toHaveBeenCalled();
+  // It springs back from where the drag was cut off.
+  act(() => { vi.advanceTimersByTime(100); });
+  const partway = Number.parseFloat(frame().style.transform.replace('translateY(', ''));
+  expect(partway > 0 && partway < 150, `${partway} pt, 100 ms after the cancel`).toBe(true);
+  act(() => { vi.advanceTimersByTime(2000); });
+  expect(frame().style.transform).toBe('translateY(0px)');
+  // The same drag, let go, closes it.
+  dragThrough(150, State.END);
+  expect(onClose).toHaveBeenCalledTimes(1);
+});
+
 test('at full motion the card springs up, and a step change morphs its height and ticks once; opening ticks nothing', async () => {
   const tick = vi.spyOn(haptics, 'selection').mockResolvedValue(undefined);
   const view = mountWallet(tray({ visible: false, step: 'amount' }));
@@ -439,35 +566,95 @@ test('at full motion the card springs up, and a step change morphs its height an
   expect(tick).toHaveBeenCalledTimes(2);
 });
 
-test("on a phone the title takes focus, and on iOS onClosed waits for the Modal's own dismissal", async () => {
-  const focused: [unknown, string][] = [];
-  // react-native-web has no sendAccessibilityEvent; a phone's screen reader moves focus with it.
-  Object.defineProperty(AccessibilityInfo, 'sendAccessibilityEvent', {
-    value: (node: unknown, kind: string) => { focused.push([node, kind]); },
-    configurable: true,
-    writable: true,
-  });
+test('opening at another step in one render, or a step change under the lock cover, ticks nothing', async () => {
+  const tick = vi.spyOn(haptics, 'selection').mockResolvedValue(undefined);
+  const at = (step: string, { visible = true, hidden = false } = {}) => (
+    <LockCoverContext.Provider value={{ hidden }}>{tray({ visible, step })}</LockCoverContext.Provider>
+  );
+  const view = mountWallet(at('confirm', { visible: false }));
+  await settle();
+  // A host that starts a new entry as it opens the tray: the step and visible change in one render.
+  view.rerender(at('amount'));
+  await settle();
+  expect(tick, 'opening at another step').not.toHaveBeenCalled();
+  // Covered, a step change plays nothing, and neither does the cover lifting on another step.
+  view.rerender(at('amount', { hidden: true }));
+  view.rerender(at('confirm', { hidden: true }));
+  expect(tick, 'a step change under the cover').not.toHaveBeenCalled();
+  view.rerender(at('amount'));
+  expect(tick, 'the cover lifting on another step').not.toHaveBeenCalled();
+  // Open and uncovered, a step change ticks once.
+  view.rerender(at('confirm'));
+  expect(tick).toHaveBeenCalledTimes(1);
+});
+
+test("on a phone the card is the named dialog and the title takes focus, with or without a header; on iOS onClosed waits for the Modal's own dismissal", async () => {
+  const focused = phoneFocus();
   const errors = vi.spyOn(console, 'error');
-  try {
+  for (const header of [undefined, <WalletText>รายจ่าย</WalletText>]) {
+    const at = header ? 'with a header' : 'with the title';
+    focused.length = 0;
     const present: boolean[] = [];
     const onClosed = vi.fn(() => { present.push(screen.queryByRole('dialog') !== null); });
-    const view = mountWallet(tray({ visible: false, onClosed }));
+    // The platform turns to iOS once the tray has mounted closed: at the mount it would trip the theme store's read.
+    platform(os);
+    const view = mountWallet(tray({ visible: false, onClosed, header }));
     await settle();
-    Object.defineProperty(Platform, 'OS', { value: 'ios', configurable: true, writable: true });
-    view.rerender(tray({ onClosed }));
+    platform('ios');
+    view.rerender(tray({ onClosed, header }));
     await settle();
-    // VoiceOver lands on the title: one accessible header that says it.
-    expect(focused.map(([node, kind]) => [kind, (node as HTMLElement | null)?.getAttribute('aria-label'), (node as HTMLElement | null)?.getAttribute('role')])).toEqual([['focus', TITLE.th, 'heading']]);
+    // The card is the dialog, named by the title (on the web the Modal's own layer is).
+    const card = found('tray');
+    expect([card.getAttribute('role'), card.getAttribute('aria-modal'), card.getAttribute('aria-label')], at).toEqual(['dialog', 'true', TITLE.th]);
+    // VoiceOver lands on the title: one accessible header that says it, first in the row (1 by 1 pt with a header).
+    expect(focused.map(([node, kind]) => [kind, node?.getAttribute('aria-label'), node?.getAttribute('role')]), at).toEqual([['focus', TITLE.th, 'heading']]);
+    expect(focused[0]?.[0], at).toBe(found('tray-header').firstElementChild);
     vi.useFakeTimers();
-    view.rerender(tray({ visible: false, onClosed }));
+    view.rerender(tray({ visible: false, onClosed, header }));
     act(() => { vi.advanceTimersByTime(220); });
     // iOS presents no Modal while another is leaving, so the host hears of it once the Modal has gone.
-    expect(onClosed).toHaveBeenCalledTimes(1);
-    expect(present).toEqual([false]);
-    expect(errors).not.toHaveBeenCalled();
-  } finally {
-    delete (AccessibilityInfo as unknown as Record<string, unknown>).sendAccessibilityEvent;
+    expect(onClosed, at).toHaveBeenCalledTimes(1);
+    expect(present, at).toEqual([false]);
+    vi.useRealTimers();
+    cleanup();
   }
+  expect(errors).not.toHaveBeenCalled();
+});
+
+test('on iOS a dismissal that ends after the tray is shown again says nothing; the next one says it closed', async () => {
+  // On iOS the tray moves the screen reader to its title each time it shows.
+  phoneFocus();
+  dismissals.late = true;
+  const onClosed = vi.fn();
+  const view = mountWallet(tray({ visible: false, onClosed }));
+  await settle();
+  platform('ios');
+  view.rerender(tray({ onClosed }));
+  await settle();
+  vi.useFakeTimers();
+  const close = () => view.rerender(tray({ visible: false, onClosed }));
+  const open = () => view.rerender(tray({ onClosed }));
+  // Closed: the Modal hides at 220 ms, and UIKit's dismissal ends a frame or more later.
+  close();
+  act(() => { vi.advanceTimersByTime(220); });
+  expect([screen.queryByTestId('tray'), dismissals.held, onClosed.mock.calls.length]).toEqual([null, 1, 0]);
+  // Opened again before it ends (a quick second tap on add): that end says nothing, since the tray never closed.
+  open();
+  endDismissal();
+  expect(onClosed, 'while the tray is open').not.toHaveBeenCalled();
+  expect(screen.queryByTestId('tray')).not.toBeNull();
+  // Closed, opened and closed again: an end that comes while the card leaves says nothing either.
+  close();
+  act(() => { vi.advanceTimersByTime(220); });
+  open();
+  close();
+  endDismissal();
+  expect(onClosed, 'while the card leaves').not.toHaveBeenCalled();
+  act(() => { vi.advanceTimersByTime(220); });
+  expect([dismissals.held, onClosed.mock.calls.length], 'hidden, its dismissal under way').toEqual([1, 0]);
+  // Its own dismissal ends: closed, once.
+  endDismissal();
+  expect(onClosed).toHaveBeenCalledTimes(1);
 });
 
 test('a text link is at least 44 pt, violet by default or ink, and says its words', async () => {
@@ -510,8 +697,12 @@ test("a header takes the title's place, and screen readers meet the title first"
 
 test("the catalogue's tray sections come after the kit's, and each tray opens at once", async () => {
   const ids = WALLET_SECTIONS.map((section) => section.id);
-  expect(ids.slice(0, 2)).toEqual(['bw-amounts', 'bw-private']);
-  expect(ids.slice(-4)).toEqual(['bw-tray-short', 'bw-tray-tall', 'bw-tray-large', 'bw-buttons']);
+  const kit = WALLET_KIT_SECTIONS.map((section) => section.id);
+  expect(ids.slice(0, kit.length)).toEqual(kit);
+  // The tray's four together, after the kit's: later tasks' lists may follow them (index.ts adds each in plan order).
+  const first = ids.indexOf('bw-tray-short');
+  expect(first).toBeGreaterThanOrEqual(kit.length);
+  expect(ids.slice(first, first + 4)).toEqual(['bw-tray-short', 'bw-tray-tall', 'bw-tray-large', 'bw-buttons']);
   for (const id of ['bw-tray-short', 'bw-tray-tall', 'bw-tray-large']) {
     const section = WALLET_SECTIONS.find((each) => each.id === id);
     mountWallet(<>{section?.render()}</>);

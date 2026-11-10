@@ -1,0 +1,48 @@
+# tray-hardening: Harden the Bun Wallet tray before its first hosts: the lock cover, a late dismissal, the drag reset and one tick
+
+- **Status:** built and verified locally on `fix/tray-hardening` (`.claude/worktrees/tray-hardening`), from `ecc00b7`. Not pushed. The independent review is the controller's, after this receipt. Under R87 this receipt is its own file; `premium-progress.md` is not edited.
+- **Base:** `ecc00b7`. The dispatch named `58be2e2`. The sync fast-forwarded the branch to `ecc00b7`, which changes three controller files only, none under `apps/`, `packages/` or `scripts/`. `shasum -a 256 -c` against the planner's `SHA256SUMS.base` printed `OK` for the head's three files (`apps/app/src/wallet/tray/Tray.tsx`, `Tray.render.test.tsx` and `trayGesture.test.ts`). At the base: `trayGesture.test.ts` 4 of 4, `Tray.render.test.tsx` 16 of 16.
+- **What it fixes:** P2-T13's review (`.claude/controller/reviews/P2-T13.md`): m1's guard, m2, m3's reset, m4, m5, m6, n1 and n3, and n4's comment. P2-T16, the first host tray, was held until this lands.
+- **What changed:**
+  - `Tray.tsx`:
+    - Under the lock's cover nothing asks to close the tray: `closable` is `visible && !locked && !hidden`, so Android's back cannot close a covered tray and lose a draft (m1).
+    - On iOS, `onClosed` comes from the Modal's `onDismiss` only while the Modal is hidden (`showing`, refreshed with `closed`), so a dismissal that ends after the tray was shown again says nothing, even during a second exit (m2). `shown` is not held until `onDismiss` (planner ruling P4).
+    - The drag is back in its place when the lock's cover comes or goes while the tray is open, so a drag the cover cuts off cannot leave the card pulled down (m3's reset).
+    - A step change ticks only when the tray was open and uncovered in the commit before and still is: opening at another step in one render, a step change under the cover, and the cover lifting on another step play none (m4).
+    - A swipe the system cancels springs back, even past the line (n1).
+    - The header says each of these.
+  - `Tray.render.test.tsx`: six new cases (the review's P-E, P-D, P-I, P-A with P-K and P-M2, and n3's new `onClosed`). The phone case runs without and with a header, and checks the card's dialog and the node VoiceOver is sent to (m5). The catalogue case finds the tray's sections where they sit. The header's note on Gesture Handler is corrected (n4). Two seams: a Modal that can hold its dismissals back, and Gesture Handler's own event handler. 16 cases before, 22 after.
+  - `trayGesture.test.ts`: the source case reads `accessible: true` on the title and `focusable={false}` on the backdrop (m6). 4 cases before and after.
+- **Files:** modified `apps/app/src/wallet/tray/Tray.tsx` (292 lines before, 316 after), `apps/app/src/wallet/tray/Tray.render.test.tsx` (522 before, 713 after) and `apps/app/src/wallet/tray/trayGesture.test.ts` (42 before, 46 after); created this receipt.
+- **RED to GREEN** (the head's `Tray.tsx` is the RED form: the fix adds no export):
+  - RED: `typecheck:app` exit 0; `trayGesture.test.ts` exit 0, `ℹ tests 4`, `ℹ pass 4`, `ℹ fail 0` (its two new lines pin the head's code); `Tray.render.test.tsx` exit 1, `Tests 5 failed | 17 passed (22)`; the five failing cases (m1, m3, n1, m4, m2), 5 `AssertionError`s, no module or type error (a grep for `Cannot find module`, `Failed to resolve`, `SyntaxError`, `TypeError` and `ReferenceError` printed 0).
+  - GREEN: `typecheck:app` exit 0; `trayGesture.test.ts` exit 0, `ℹ tests 4`, `ℹ pass 4`, `ℹ fail 0`; `Tray.render.test.tsx` exit 0, `Tests 22 passed (22)`, no `stderr |` line; the catalogue's wallet sections `Test Files 2 passed (2)`, `Tests 18 passed | 572 skipped (590)`.
+- **Mutation check:** the planner's runner (`.claude/controller/scratch/tray-hardening-planner/tools/mutants.py`, run with `python3 -I`), 34 mutants, each applied alone, run against both of the tray's test files and restored (SHA-256 checked): 34 killed, 0 survived. `.claude/controller/scratch/tray-hardening/mutants.out` is identical to the planner's `logs/mutants.out` (`diff` prints nothing). The runner's `--check` mode printed 34 `APPLIES` lines.
+  - H1 to H11: the new guards (the cover's `closable`, the late dismissal's guard, the drag reset, the tick's `wasOpen` and `open`, the cancel).
+  - B1, B2 and B4 are the behaviour lens's mutants (B1 and B4 survived P2-T13's cases). O1, O2, O5, O6, O7 and O11 are the surface lens's (all six survived).
+  - R1 to R5, R7, R13 to R16, R25, R26, K1 and K2: P2-T13's mutants on the lines this task moved, with the plan's three (R1 to R3).
+- **Gate** (worktree root; R100's fast local gate; logs in `.claude/controller/scratch/tray-hardening/`):
+  - `typecheck:app`: exit 0.
+  - Focused: `trayGesture.test.ts` 4 passed, 0 failed; `Tray.render.test.tsx` 22 passed (22), no stderr; the catalogue's wallet sections `Test Files 2 passed (2)`, `Tests 18 passed | 572 skipped (590)`.
+  - `test:app`: exit 0, `ℹ tests 34`, `ℹ pass 34`, `ℹ fail 0`. `test:unit`: exit 0, `ℹ tests 970`, `ℹ pass 970`, `ℹ fail 0`.
+  - `git diff --check`: exit 0, no output. The check against `origin/claude/p1a-vault-core...HEAD` after the commit is reported in the final message, since this receipt cannot record its own commit.
+  - CI (R100, not run locally): the full `test:render` suite and the iOS export. This task adds 6 render cases and no file, and no bundled module.
+- **SKIPPED:**
+  - On a phone: a quick reopen on iOS while UIKit's dismissal ends; Android's back under the cover; a drag the cover cuts off; a swipe the system cancels (a call). No device or simulator here; the cases drive React Native's Modal and Gesture Handler's own handler.
+  - `typecheck:routes` and `export:web` (no route, app config or app entry changes). The edge, API and database suites (nothing outside `apps/app` changed; Docker is stopped). `test:ops` (no package or lockfile change).
+- **Not applicable:** no package, lockfile, route, `en.json` or `th.json` change; no analytics event; no log line.
+- **Deviations:**
+  - The controller accepted the planner's rulings P1 to P16 in `.claude/controller/briefs/tray-hardening.md`, each in force as written:
+    - P1, ready: after P2-T13 (merged as `08e0566`); no package, lockfile, owner decision or account setting.
+    - P2, m1's guard: `closable = visible && !locked && !hidden`.
+    - P3, m2's guard holds on whether the Modal is shown, not `visible`. P4: `shown` is not held until `onDismiss`.
+    - P5, m3's reset: `hidden` joins the drag reset's dependencies. The rest of m3 (the card's entering when the cover lifts, the review's P-J; VoiceOver; the scroll position) stays with P2-T33.
+    - P6, m4's tick: one effect over `step`, `visible`, `hidden` and `reduced`, with `wasOpen`.
+    - P7, n1's cancel: `!event.canceled` in the swipe's end. The flick-up rule is unchanged (E2-A or the owner).
+    - P8, n3's case. P9, m5 and m6's pins. P10, the test seams (the late Modal, Gesture Handler's own handler, the phone's setup shared). P11, the catalogue case reads the tray's sections where they sit. P12, the six render cases and the two changed. P13, the 34 mutants. P14, the gate under R100. P15, clear of the work in flight. P16, notes for later tasks.
+  - My own: Step 0.3 (`npm ci`) was not run, as the controller's note allows: `node_modules` is installed at the worktree root and in `apps/app`. Step 0.1's merge was a fast-forward (`58be2e2` to `ecc00b7`) rather than "Already up to date.", which the brief's "a clean merge" covers.
+- **Risks and notes for later tasks:**
+  - P2-T16: on iOS `onClosed` fires once per hide, when that hide's dismissal ends; a tray shown again before the end says nothing, and a `whenClosed` run then waits for the next close. Under the cover nothing asks to close, so the host's close never runs while the app is locked. `dragThrough()` in `Tray.render.test.tsx` shows how to drive Gesture Handler's own handler.
+  - P2-T33: how LockedScreen reaches a person whose tray is open (m1); the card's entering when the cover lifts (P-J), where VoiceOver lands, and the scroll position (m3). The tray asks nothing while covered; the Sheet should too.
+  - P2-T14, P2-T12 and later wallet tasks with sections: the tray's catalogue case no longer needs the tray's sections last.
+  - E2-A: n1's flick-up rule, if the owner wants it; a quick reopen on iOS on a device.

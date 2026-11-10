@@ -31,9 +31,13 @@ test('the swipe runs on the JS runtime', () => {
   assert.match(source, /runOnJS: true/);
 });
 
-test("what the web drops is wired for a phone: the screen reader's escape, the modal card, the Modal, the keyboard and the cover", () => {
+test("what the web drops is wired for a phone: the screen reader's escape, the modal card, the title, the backdrop, the Modal, the keyboard and the cover", () => {
   assert.match(source, /^\s+onAccessibilityEscape=\{requestClose\}$/m);
   assert.match(source, /^\s+accessibilityViewIsModal$/m);
+  // The title is one accessibility element, so VoiceOver can land on it, even 1 by 1 pt beside a header.
+  assert.match(source, /titleHeader = \{ accessible: true, accessibilityRole: 'header' as const/);
+  // The decorative backdrop is never a keyboard stop on Android (React Native's Pressable is focusable unless told).
+  assert.match(source, /^\s+focusable=\{false\}$/m);
   assert.match(source, /^\s+transparent$/m);
   assert.match(source, /^\s+statusBarTranslucent$/m);
   assert.match(source, /behavior=\{Platform\.OS === 'ios' \? 'padding' : undefined\}/);
