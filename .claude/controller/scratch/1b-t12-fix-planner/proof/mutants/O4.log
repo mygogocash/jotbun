@@ -1,0 +1,190 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t12-fix-planner/tree/apps/edge
+
+ × test/vault-parity-files.db.test.ts > the vault Worker stores, queues and serves files exactly like the NestJS v1 API 181ms
+   → a listed step whose nest and vault answers print alike differs in key order (R92): compare its nestText and vaultText: expected [ { …(5) }, { …(5) }, { …(5) }, …(1) ] to deeply equal []
+ ✓ test/vault-parity-files.db.test.ts > the vault Worker runs without Workflows, queue consumers or containers (B13) 0ms
+ ✓ test/vault-parity-files.db.test.ts > the retired proof routes answer 404 on the vault Worker 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/vault-parity-files.db.test.ts > the vault Worker stores, queues and serves files exactly like the NestJS v1 API
+AssertionError: a listed step whose nest and vault answers print alike differs in key order (R92): compare its nestText and vaultText: expected [ { …(5) }, { …(5) }, { …(5) }, …(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "nest": {
++       "body": {
++         "snapshot_id": "<id:1>",
++         "status": "pending",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 202,
++     },
++     "nestText": "{\"status\":202,\"headers\":{\"content-type\":\"application/json; charset=utf-8\",\"cache-control\":\"no-store\",\"retry-after\":null},\"body\":{\"snapshot_id\":\"<id:1>\",\"status\":\"pending\"}}",
++     "step": "3. snapshot, same key",
++     "vault": {
++       "body": {
++         "chunks": [
++           {
++             "bytes": 114,
++             "grant": "AXjZfI3T74zFouYSU3d6AjQAAAAAavLAfjBgxfzQb7s1qHBTTDzT30U",
++             "grant_expires_at": "<timestamp>",
++             "index": 0,
++             "sha256": "b1384066b99eeec70b74def5398fdd2629840bf695a313cd3f7840b0c9f63165",
++           },
++         ],
++         "cursor": "<cursor>",
++         "expires_at": "<timestamp>",
++         "high_water": "0",
++         "schema_version": 1,
++         "snapshot_id": "<id:1>",
++         "status": "ready",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 200,
++     },
++     "vaultText": "{\"status\":200,\"headers\":{\"content-type\":\"application/json; charset=utf-8\",\"cache-control\":\"no-store\",\"retry-after\":null},\"body\":{\"snapshot_id\":\"<id:1>\",\"status\":\"ready\",\"schema_version\":1,\"high_water\":\"0\",\"cursor\":\"<cursor>\",\"expires_at\":\"<timestamp>\",\"chunks\":[{\"index\":0,\"bytes\":114,\"sha256\":\"b1384066b99eeec70b74def5398fdd2629840bf695a313cd3f7840b0c9f63165\",\"grant\":\"AXjZfI3T74zFouYSU3d6AjQAAAAAavLAfjBgxfzQb7s1qHBTTDzT30U\",\"grant_expires_at\":\"<timestamp>\"}]}}",
++   },
++   {
++     "nest": {
++       "body": {
++         "snapshot_id": "<id:1>",
++         "status": "pending",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 200,
++     },
++     "nestText": "{\"status\":200,\"headers\":{\"content-type\":\"application/json; charset=utf-8\",\"cache-control\":\"no-store\",\"retry-after\":null},\"body\":{\"snapshot_id\":\"<id:1>\",\"status\":\"pending\"}}",
++     "step": "5. snapshot status",
++     "vault": {
++       "body": {
++         "chunks": [
++           {
++             "bytes": 114,
++             "grant": "AXjZfI3T74zFouYSU3d6AjQAAAAAavLAfjBgxfzQb7s1qHBTTDzT30U",
++             "grant_expires_at": "<timestamp>",
++             "index": 0,
++             "sha256": "b1384066b99eeec70b74def5398fdd2629840bf695a313cd3f7840b0c9f63165",
++           },
++         ],
++         "cursor": "<cursor>",
++         "expires_at": "<timestamp>",
++         "high_water": "0",
++         "schema_version": 1,
++         "snapshot_id": "<id:1>",
++         "status": "ready",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 200,
++     },
++     "vaultText": "{\"status\":200,\"headers\":{\"content-type\":\"application/json; charset=utf-8\",\"cache-control\":\"no-store\",\"retry-after\":null},\"body\":{\"snapshot_id\":\"<id:1>\",\"status\":\"ready\",\"schema_version\":1,\"high_water\":\"0\",\"cursor\":\"<cursor>\",\"expires_at\":\"<timestamp>\",\"chunks\":[{\"index\":0,\"bytes\":114,\"sha256\":\"b1384066b99eeec70b74def5398fdd2629840bf695a313cd3f7840b0c9f63165\",\"grant\":\"AXjZfI3T74zFouYSU3d6AjQAAAAAavLAfjBgxfzQb7s1qHBTTDzT30U\",\"grant_expires_at\":\"<timestamp>\"}]}}",
++   },
++   {
++     "nest": {
++       "body": {
++         "export_id": "<id:3>",
++         "from": "2026-10-01",
++         "requested_at": "<timestamp>",
++         "status": "pending",
++         "through": "2026-10-31",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 200,
++     },
++     "nestText": "{\"status\":200,\"headers\":{\"content-type\":\"application/json; charset=utf-8\",\"cache-control\":\"no-store\",\"retry-after\":null},\"body\":{\"export_id\":\"<id:3>\",\"from\":\"2026-10-01\",\"through\":\"2026-10-31\",\"requested_at\":\"<timestamp>\",\"status\":\"pending\"}}",
++     "step": "15. export status",
++     "vault": {
++       "body": {
++         "as_of_revision": "1",
++         "bytes": 226,
++         "expires_at": "<timestamp>",
++         "export_id": "<id:3>",
++         "from": "2026-10-01",
++         "requested_at": "<timestamp>",
++         "row_count": 0,
++         "sha256": "20eebbd73abf35a852204733a0b68eaba1a19f5e2e24e0b5cda65ffaf7939652",
++         "status": "ready",
++         "through": "2026-10-31",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 200,
++     },
++     "vaultText": "{\"status\":200,\"headers\":{\"content-type\":\"application/json; charset=utf-8\",\"cache-control\":\"no-store\",\"retry-after\":null},\"body\":{\"export_id\":\"<id:3>\",\"from\":\"2026-10-01\",\"through\":\"2026-10-31\",\"requested_at\":\"<timestamp>\",\"status\":\"ready\",\"as_of_revision\":\"1\",\"row_count\":0,\"bytes\":226,\"sha256\":\"20eebbd73abf35a852204733a0b68eaba1a19f5e2e24e0b5cda65ffaf7939652\",\"expires_at\":\"<timestamp>\"}}",
++   },
++   {
++     "nest": {
++       "body": {
++         "code": "NOT_FOUND",
++         "message_key": "errors.not_found",
++         "request_id": "<request-id>",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 404,
++     },
++     "nestText": "{\"status\":404,\"headers\":{\"content-type\":\"application/json; charset=utf-8\",\"cache-control\":\"no-store\",\"retry-after\":null},\"body\":{\"code\":\"NOT_FOUND\",\"request_id\":\"<request-id>\",\"message_key\":\"errors.not_found\"}}",
++     "step": "17. export grant before it is ready",
++     "vault": {
++       "body": {
++         "expires_at": "<timestamp>",
++         "url": "/v1/export-files/Afpa8wSiy4miuYrb10Nx_6kAAAAAavLAfkz7thy228e4Q6MPREOw1ZA",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 200,
++     },
++     "vaultText": "{\"status\":200,\"headers\":{\"content-type\":\"application/json; charset=utf-8\",\"cache-control\":\"no-store\",\"retry-after\":null},\"body\":{\"url\":\"/v1/export-files/Afpa8wSiy4miuYrb10Nx_6kAAAAAavLAfkz7thy228e4Q6MPREOw1ZA\",\"expires_at\":\"<timestamp>\"}}",
++   },
++ ]
+
+ ❯ test/vault-parity-files.db.test.ts:64:144
+     62|   })
+     63|   // vitest prints objects with their keys sorted, so each listed step…
+     64|   expect(differences, 'a listed step whose nest and vault answers prin…
+       |                                                                                                                                                ^
+     65|   // The session reached its success paths, as parity-files.db.test.ts…
+     66|   const byName = new Map(STEPS.map((step, i) => [step.name, nestRun[i]…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  13:53:04
+   Duration  2.33s (transform 221ms, setup 15ms, import 466ms, tests 1.74s, environment 0ms)
+

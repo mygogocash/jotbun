@@ -415,6 +415,15 @@ The list below is kept for the record.
 
       The 1B-T12 planner (thread 373c38a4, run 3, from 10:11) writes `briefs/1B-T12-fix.md`, with kit `scratch/1b-t12-fix-planner/`. The other nits are in followups.md (1B-T13; snapshot-parity-window).
     - The merge then waits for the fix round's confirming review and a green `edge` job, at the fix round's head (not ef37c41).
+    - **Fix brief READY at 14:00** (`briefs/1B-T12-fix.md`; kit `scratch/1b-t12-fix-planner/`, 64 OK, and its 4 `orig/` files equal the branch at ef37c41). It is test-only.
+      - m1 and n4 go in `vault-parity-files.db.test.ts`; n5 is a new case in `vault-parity.db.test.ts` (CI count 3); n6 is in `vault-worker.ts`. The receipt's P3 is corrected.
+      - F1 to F6 are accepted. F1: `nestRun[i]?.status`.
+      - Proven through a scratch-only harness that replays NestJS's answers:
+        - RED on ef37c41: V1 passes 3 of 3, and O1 fails nothing;
+        - GREEN: V1 fails with `expected 404 to be 202`, and O1 fails the new case;
+        - 19 of 19 mutants.
+    - **The fixer (Haiku max, 45781f76) was dispatched at 14:00** in the p1-1b-t12 worktree, under the heavy lock (`test:edge` included).
+    - After DONE: push, update #394's body, and run a confirming Sonnet review. Then merge at the new head once the `edge` job is green.
   - **alarm-hardening** (a37bdb47; WT alarm-hardening on fix/alarm-hardening), 1B-T11's m1, m2, m4 and nits n1 to n5 and n9. The planner (Opus xhigh) was dispatched at 08:58, when #391's review freed a slot.
     - It edits `jobs.ts`, `user-vault.ts` and `files-alarm.test.ts`, and for m4 `attachments.ts` (`attachmentsDueAt`) and `previews.ts` (`importsDueAt`).
     - fix-download-aborts pins those two functions' guards in its own test files. The planner was told to keep the guards exactly and to name the lines it changes, so the two merges can be ordered.

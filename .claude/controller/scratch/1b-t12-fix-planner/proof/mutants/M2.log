@@ -1,0 +1,151 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t12-fix-planner/tree/apps/edge
+
+ × test/vault-files.smoke.db.test.ts > the vault Worker answers each compared step of the files session as NestJS does 163ms
+   → expected [ { vault: { …(4) }, …(1) }, …(2) ] to deeply equal []
+ ✓ test/vault-files.smoke.db.test.ts > the vault Worker runs without Workflows, queue consumers or containers (B13) 0ms
+ ✓ test/vault-files.smoke.db.test.ts > a never-accepted upload has no status and no preview (404), as in the API 27ms
+ ✓ test/vault-files.smoke.db.test.ts > the retired proof routes answer 404 on the vault Worker 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/vault-files.smoke.db.test.ts > the vault Worker answers each compared step of the files session as NestJS does
+AssertionError: expected [ { vault: { …(4) }, …(1) }, …(2) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "nest": {
++       "body": {
++         "bytes": 96,
++         "expires_at": "<timestamp>",
++         "file_name": "บัญชี ต.ค..csv",
++         "format": "csv",
++         "job_id": "<id:4>",
++         "received_at": "<timestamp>",
++         "status": "queued",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 202,
++       "step": "24. upload",
++     },
++     "vault": {
++       "body": {
++         "bytes": 96,
++         "expires_at": "<timestamp>",
++         "file_name": "บัญชี ต.ค..csv",
++         "format": "csv",
++         "job_id": "<id:4>",
++         "received_at": "<timestamp>",
++         "status": "parsing",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 202,
++       "step": "24. upload",
++     },
++   },
++   {
++     "nest": {
++       "body": {
++         "bytes": 96,
++         "expires_at": "<timestamp>",
++         "file_name": "บัญชี ต.ค..csv",
++         "format": "csv",
++         "job_id": "<id:4>",
++         "received_at": "<timestamp>",
++         "status": "queued",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 202,
++       "step": "25. upload replayed",
++     },
++     "vault": {
++       "body": {
++         "bytes": 96,
++         "expires_at": "<timestamp>",
++         "file_name": "บัญชี ต.ค..csv",
++         "format": "csv",
++         "job_id": "<id:4>",
++         "received_at": "<timestamp>",
++         "status": "parsing",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 202,
++       "step": "25. upload replayed",
++     },
++   },
++   {
++     "nest": {
++       "body": {
++         "bytes": 96,
++         "expires_at": "<timestamp>",
++         "file_name": "บัญชี ต.ค..csv",
++         "format": "csv",
++         "job_id": "<id:4>",
++         "received_at": "<timestamp>",
++         "status": "queued",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 200,
++       "step": "26. import status",
++     },
++     "vault": {
++       "body": {
++         "bytes": 96,
++         "expires_at": "<timestamp>",
++         "file_name": "บัญชี ต.ค..csv",
++         "format": "csv",
++         "job_id": "<id:4>",
++         "received_at": "<timestamp>",
++         "status": "parsing",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 200,
++       "step": "26. import status",
++     },
++   },
++ ]
+
+ ❯ test/vault-files.smoke.db.test.ts:56:23
+     54|   const expected = JSON.parse(readFileSync(EXPECTED, 'utf8')) as typeo…
+     55|   const differences = compared.flatMap((c, k) => (JSON.stringify(c) ==…
+     56|   expect(differences).toEqual([])
+       |                       ^
+     57| })
+     58|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  13:52:19
+   Duration  2.28s (transform 201ms, setup 0ms, import 433ms, tests 1.75s, environment 0ms)
+

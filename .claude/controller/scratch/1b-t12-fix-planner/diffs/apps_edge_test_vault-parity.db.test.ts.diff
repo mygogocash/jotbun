@@ -1,0 +1,12 @@
+--- a/apps/edge/test/vault-parity.db.test.ts
++++ b/apps/edge/test/vault-parity.db.test.ts
+@@ -70,3 +70,9 @@
+   expect(peek.status).toBe(404)
+   expect((await peek.json()).code).toBe('NOT_FOUND')
+ })
++
++// startVaultWorker's default (the 1B-T12 review's n5): with no `background` named it starts the built config
++// itself, so this session runs with the Worker's background work, as it did before `background` existed.
++it('the vault Worker starts the built config when no background is named', () => {
++  expect(vault.config).toMatch(/\/dist\/jotbun_vault\/wrangler\.json$/)
++})

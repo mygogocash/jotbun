@@ -1,0 +1,35 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t12-fix-planner/tree/apps/edge
+
+ ↓ test/vault-parity.db.test.ts > the vault Worker answers the money session exactly like the NestJS v1 API
+ ✓ test/vault-parity.db.test.ts > isolates people in the runtime too: one person cannot read another person’s wallet 44ms
+ × test/vault-parity.db.test.ts > the vault Worker starts the built config when no background is named 1ms
+   → expected '/Users/kunanonjarat/Developer/jotbun/…' to match /\/dist\/jotbun_vault\/wrangler\.…/dist\
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/vault-parity.db.test.ts > the vault Worker starts the built config when no background is named
+AssertionError: expected '/Users/kunanonjarat/Developer/jotbun/…' to match /\/dist\/jotbun_vault\/wrangler\.…/dist\
+
+- Expected:
+/\/dist\/jotbun_vault\/wrangler\.json$/
+
++ Received:
+"/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t12-fix-planner/tree/apps/edge/dist/jotbun_vault/wrangler.parity.json"
+
+ ❯ test/vault-parity.db.test.ts:77:24
+     75| // itself, so this session runs with the Worker's background work, as …
+     76| it('the vault Worker starts the built config when no background is nam…
+     77|   expect(vault.config).toMatch(/\/dist\/jotbun_vault\/wrangler\.json$/)
+       |                        ^
+     78| })
+     79|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed | 1 skipped (3)
+   Start at  13:52:56
+   Duration  2.14s (transform 196ms, setup 14ms, import 412ms, tests 1.62s, environment 0ms)
+
