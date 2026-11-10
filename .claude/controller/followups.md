@@ -410,3 +410,15 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - on iOS `onClosed` can come twice for two hides (probe R-c), so `whenClosed` treats a second call as a no-op;
     - it may not come at all for a Modal that never presented (R-f), so do not assume one call per hide;
     - the SKIPPED device check should ask whether UIKit sends a dismissal for a present refused while a dismissal is in flight.
+- P2-T20 planner notes (briefs/P2-T20.md; READY 10 Nov, held until tray-hardening and P2-T14 merge):
+  - **P2-T18:** `WalletShell` mounts `WalletLooksProvider` (plan line 1075). Until it does, the wallet area's list keeps no order on a device. The route keeps its own `SpendV1Provider`, which is harmless under the shell's.
+  - **P2-T21:**
+    - extend `wallets/copy.ts`;
+    - the add tile already opens `/spend/wallet/new`.
+  - **P2-T22:**
+    - a row already opens `/spend/wallet/<id>`;
+    - once both routes exist (P2-T21's and P2-T22's), drop the two `as Href` casts in `WalletsListScreen.tsx` (P9). Until then, a development build shows expo-router's unmatched route for them.
+  - **P2-T23:** build `homeWallets`' order with `frontFirst(wallets, order)` reversed (the front card last), so the list, the reorder tray and Home's stack agree.
+  - **P2-T24:** Home's จัดเรียง is `/spend/wallets?reorder=1`.
+  - **P2-T37:** every amount on the list is a `WalletAmount`, and each row's label says ซ่อนยอดเงินอยู่ in private mode.
+  - **E2-B:** P17's differences from wc-wallets. Capture `bw-wallets-reorder` from a fresh launch (P2-T13's n2).

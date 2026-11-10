@@ -315,6 +315,18 @@ The list below is kept for the record.
   - It carries #391's `setOrder` caller notes (n3, n4, n5), P2-T19's double-send note and the host-tray rules.
   - It plans `ReorderTray` on tray-hardening's `real/` files, and its `index.ts` spread after P2-T14's, proven to merge in either order or stacked on P2-T14.
   - `app/spend/wallets.tsx` is a route, so its gate has `typecheck:routes`; CI runs the exports.
+  - **Brief READY at 10:05 (L), proven on dbfde7d with tray-hardening's and P2-T14's files laid over.**
+    - New: 6 files under `src/wallet/wallets/` and `walletListSections.tsx`. The route `app/spend/wallets.tsx` changes.
+    - Shared:
+      - `index.ts`: its spread goes after P2-T14's, so its diff applies only once P2-T14 has merged;
+      - `PlanningRoutes.render.test.tsx`: it mocks the new screen, since the route now loads `expo-crypto`.
+    - P1 to P18 are accepted.
+      - P4: one order, `frontFirst`. Each press calls `setOrder` once with a new array, and nothing seeds it from an effect.
+      - P6: unarchive goes through P2-T19's hook with a ref guard.
+      - P9: two `as Href` casts stay until P2-T21 and P2-T22 add their routes.
+      - P5: จัดเรียง is hidden with no account open.
+    - Kit `scratch/p2-t20-planner/`: 38 OK; its `index.ts` diff applies on P2-T14's `real/`. RED 4 of 4 Node and 13 of 16 render; 84 of 84 mutants. The gate includes `typecheck:routes` and `export:web`.
+  - **HELD until tray-hardening (#392) and P2-T14 merge** (Step 0 checks both by content). When both have merged: check_kit, create WT p2-t20, and dispatch the implementer with P1 to P18 accepted.
 - **The server lane: two planners dispatched at 08:15 from c8929f2 (Opus xhigh):**
   - **fix-download-aborts** (46ff8a6d; WT fix-download-aborts on fix/download-aborts): R97's `waitUntil` fix for every vault download, with a `wrangler dev` proof, plus every review pin followups.md gives it. It may split the test-only pins into `briefs/download-pins.md`. It must land before 1B-T13.
     - **READY at 09:39 as two briefs that share no file** (they can run in parallel and merge in either order; together: 12 workers files, 392 passed and 1 todo):
@@ -331,6 +343,7 @@ The list below is kept for the record.
         - Kit `scratch/download-pins-planner/`: check_kit at d1111f8 gives 20 OK, and the 5 `orig/` files are identical. GREEN 242 of 242, 20 of 20 mutants.
         - **Waits for a free slot.** Suggested WT download-pins on fix/download-pins. Read its planner calls before dispatch.
         - It pins `attachmentsDueAt`'s guards, which alarm-hardening's m4 rewrites: whichever merges second keeps both.
+        - P1 to P11 are accepted. **The implementer (Haiku max, e43773f5) was dispatched at 10:05** in a pre-installed (`install-edge`) download-pins on fix/download-pins from 6a727dc, under the heavy lock. Its RED and mutation runs mutate source files: after a cut-off run, restore them with `git checkout`.
   - **1B-T12** (373c38a4; WT p1-1b-t12 on p1/1b-t12-files-parity), the files parity session against NestJS.
     - Docker stays stopped: CI's edge job runs `test:edge:db`. The planner reports BLOCKED if it truly needs a local PostgreSQL.
     - It decides n8 (the vault's 404 against NestJS's 30-day `expired`).
