@@ -744,6 +744,39 @@ test('on iOS a dismissal that ends in the commit that opens the tray again says 
   expect(onClosed, 'onClosed while the tray is open').not.toHaveBeenCalled();
 });
 
+test('on iOS a dismissal that ends in the commit that hides the tray again says nothing; its own end says it closed', async () => {
+  phoneFocus();
+  dismissals.late = true;
+  const onClosed = vi.fn();
+  const view = mountWallet(tray({ visible: false, onClosed }));
+  await settle();
+  platform('ios');
+  view.rerender(tray({ onClosed }));
+  await settle();
+  vi.useFakeTimers();
+  const close = () => view.rerender(tray({ visible: false, onClosed }));
+  const open = () => view.rerender(tray({ onClosed }));
+  // Closed: the Modal hides at 220 ms, and UIKit's dismissal 1 is under way.
+  close();
+  act(() => { vi.advanceTimersByTime(220); });
+  expect([dismissals.held, onClosed.mock.calls.length]).toEqual([1, 0]);
+  // Opened and closed again (dismissal 1 has not ended): the card leaves, the Modal still shown.
+  open();
+  close();
+  act(() => { vi.advanceTimersByTime(219); });
+  // Dismissal 1 ends in the very commit that hides the Modal for the second time (the end first, then the timer).
+  dismissals.held -= 1;
+  act(() => {
+    dismissals.end?.();
+    vi.advanceTimersByTime(1);
+  });
+  expect(dismissals.held, 'dismissal 2 under way').toBe(1);
+  expect(onClosed, 'the earlier end, in the commit that hides the Modal again').not.toHaveBeenCalled();
+  // Dismissal 2's own end: closed, once.
+  endDismissal();
+  expect(onClosed).toHaveBeenCalledTimes(1);
+});
+
 test('on iOS a tray with no onClosed closes, its dismissal ends, and it opens again', async () => {
   phoneFocus();
   dismissals.late = true;

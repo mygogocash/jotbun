@@ -146,10 +146,13 @@ export function Tray({ visible, onClose, onClosed, title, header, onBack, step, 
   const [shown, setShown] = useState(visible);
   if (visible && !shown) setShown(true);
 
-  // The latest onClosed, as the last commit left it, for the hide's timer and iOS's onDismiss.
+  // The latest onClosed, and whether the Modal was shown, as the last commit left them, for the hide's timer and
+  // iOS's onDismiss.
   const closed = useRef(onClosed);
+  const showing = useRef(shown);
   useEffect(() => {
     closed.current = onClosed;
+    showing.current = shown;
   });
   const exitMs = trayExiting(reduced).getDuration();
   useEffect(() => {
@@ -163,12 +166,14 @@ export function Tray({ visible, onClose, onClosed, title, header, onBack, step, 
   }, [visible, shown, exitMs]);
   // iOS's onDismiss comes when UIKit's dismissal ends, after the hide. A tray
   // shown again by then (a quick reopen) has not closed, so that late one says
-  // nothing (P10d); the hide that follows has its own onDismiss. The guard reads
-  // this render's `shown`, not a ref an effect refreshes: Modal.js calls the
-  // latest onDismiss in the layout phase of the commit that renders the end, and
-  // a reopen batched with the end is in that same commit, before its effects run.
+  // nothing (P10d); the hide that follows has its own onDismiss. Modal.js calls
+  // the latest onDismiss in the layout phase of the commit that renders the end,
+  // before that commit's effects run. So the render's `shown` is this commit's
+  // and `showing` is the commit before's. The end says closed only if the Modal
+  // is hidden in both: a reopen batched with the end shows it in this commit,
+  // and a second hide batched with the end had it shown in the commit before.
   const dismissed = () => {
-    if (!shown) closed.current?.();
+    if (!shown && !showing.current) closed.current?.();
   };
 
   /** A close may be asked for: never while locked (a save in flight), once the tray is leaving, or under the lock's cover. */
