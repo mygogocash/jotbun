@@ -299,6 +299,17 @@ The list below is kept for the record.
       - Kit `scratch/1b-t12-planner/`: check_kit at cb9913c gives 58 OK, and the 2 `orig/` files are identical. The planner's proof: 12 of 12 mutants.
       - Its completion notice never reached the controller either; the result was read from the thread.
     - The implementer (Haiku max, 86c3bab3) was dispatched at 09:00 in a pre-installed (`install-edge`) p1-1b-t12 from cb9913c, under the heavy lock for workerd runs.
+    - **DONE at ef37c41 (base a58ea2a); PR #394 opened at 09:12 (issue #116).**
+      - RED: 2 of 4, with steps 3, 5, 15 and 17 listed and B13 failing on `workflows`. GREEN: 4 of 4 in three runs.
+      - The money smoke gives 49 statuses. 12 of 12 mutants. `test:edge` 15 files and 176 tests. `build:edge` with every PostgreSQL marker at 0.
+      - The controller checked the 4 files against the kit's `real/` and the clean merge with the head.
+    - **The real NestJS comparison runs only in CI's `edge` job (`test:edge:db`),** which waits on the billing fix. Do not merge before that job is green, even with an approving review.
+    - **The review runs as a Sonnet workflow** (run wf_0443a275-2f4, task wfw8gewvt), with two lenses one after the other:
+      - A re-derives NestJS's 40 answers from `apps/api`, without trusting Appendix B;
+      - B covers the tests and the harness.
+
+      A skeptic checks each blocker or major, and a synthesizer writes `reviews/1B-T12.md`.
+    - On approval and a green CI: `merge_task_pr.sh 394 ef37c41 1B-T12`, then `promote_pr.sh 1B-T12 394`.
   - **alarm-hardening** (a37bdb47; WT alarm-hardening on fix/alarm-hardening), 1B-T11's m1, m2, m4 and nits n1 to n5 and n9. The planner (Opus xhigh) was dispatched at 08:58, when #391's review freed a slot.
     - It edits `jobs.ts`, `user-vault.ts` and `files-alarm.test.ts`, and for m4 `attachments.ts` (`attachmentsDueAt`) and `previews.ts` (`importsDueAt`).
     - fix-download-aborts pins those two functions' guards in its own test files. The planner was told to keep the guards exactly and to name the lines it changes, so the two merges can be ordered.
