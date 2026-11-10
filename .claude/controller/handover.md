@@ -263,7 +263,11 @@ The list below is kept for the record.
       - New: `CardStack.tsx`, `cardFrames.tsx`, `CardStack.render.test.tsx` (12 cases), `cardStackNative.test.ts` (1) and `stackSections.tsx`. Shared: one import and one spread in `dev/catalogue/wallet/index.ts`, placed between the kit's sections and the tray's (plan order).
       - It passes with tray-hardening's files laid over (34 of 34) and with #391's (43 of 43), so it waits on nothing in flight. 59 of 59 mutants.
       - No drop is played on a new wallet: the drop and its overshoot go to P2-T21. The derived-look flash is the caller's (P2-T23, P2-T24).
-    - Its completion notice never reached the controller; the result was read from the thread. At 08:58 the controller told it that #391 merged (run 3, to confirm the proof on the new head). Dispatch its implementer once run 3 ends.
+    - Its completion notice never reached the controller; the result was read from the thread. At 08:58 the controller told it that #391 merged (run 3, to confirm the proof on the new head).
+    - **Run 3 rebuilt the proof on 76b329c** (after #391): the same RED messages, 59 of 59 mutants with the same lines in all three runs, and the focused files at 59.
+      - P1 to P18 are accepted. P3: the spread sits before the tray's, so the task waits on nothing. P11: the drop goes to P2-T21. P12: K5 is in the stack's test file.
+      - Kit `scratch/p2-t12-planner/`: check_kit at a58ea2a gives 17 OK, and the 2 `orig/` files are identical.
+    - The implementer (Haiku max, 5fcc0b84) was dispatched at 09:07 in a pre-installed p2-t12 from a58ea2a.
   - Each task's catalogue sections go in a list file of its own, with one spread in `dev/catalogue/wallet/index.ts` at its own anchor (not in `kitSections.tsx`).
 - **The server lane: two planners dispatched at 08:15 from c8929f2 (Opus xhigh):**
   - **fix-download-aborts** (46ff8a6d; WT fix-download-aborts on fix/download-aborts): R97's `waitUntil` fix for every vault download, with a `wrangler dev` proof, plus every review pin followups.md gives it. It may split the test-only pins into `briefs/download-pins.md`. It must land before 1B-T13.

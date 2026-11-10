@@ -368,3 +368,25 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - 1B-T12 lists the difference in `vault-parity-files.db.test.ts`'s header and its receipt.
     - For parity: keep a ready row until `ready_at` plus 30 days, with a resend case. First check whether a Workflow instance can start under an id whose old instance is past its retention.
     - This edits `pruneSnapshots`, `snapshotsDueAt` and the snapshot tests, which fix-download-aborts pins (1B-T11's m3 and n6).
+- P2-T12 planner notes (briefs/P2-T12.md; READY 10 Nov):
+  - **P2-T21 (P11):** the new wallet's drop is P2-T21's bw-adding step, not the stack's.
+    - `walletAddedEntering(false)` drops a card from a full window height on the under-damped spring, which overshoots by about 22% of the travel (about 190 pt on an 874 pt phone).
+    - Shorten the drop to about one card height (`.withInitialValues({ originY })`; about 44 pt of overshoot), and test it in `useWalletMotion.render.test.tsx`.
+    - Check it on the simulator at E2-B. P2-T9's review also leaves E2 the board's "success on the first wallet" against the plan's success on every new wallet.
+  - **P2-T17 (P10):**
+    - a card behind the front one shows only its top `STACK_PEEK` (54 pt), so aim the flight at the frame's top;
+    - call `measure()` before a flight, since a frame measured after layout does not follow Home's scroll.
+  - **P2-T18:** `WalletShell` mounts `CardFramesProvider` (plan line 1075). Outside it `frameOf` is null and `measure()` does nothing.
+  - **P2-T23 and P2-T24 (P8):**
+    - showing a derived look before the account's looks are read is the caller's call (P2-T24's Home can keep its skeleton up until then);
+    - `order` is `[]` until the first read lands, so a first pass may be in default order;
+    - test ids `card-stack` and `card-stack-<walletId>` are for P2-T24's tests;
+    - P2-T24 decides Home's empty state; the stack draws nothing for no wallets.
+  - **E2-A (P14):**
+    - every stack card is the `stack` variant: bw-home's front-card face, its bottom amount and the mark are not drawn;
+    - no violet glow under the front card;
+    - no VoiceOver hint;
+    - the lift is the plan's 12 pt;
+    - a wrapped name is partly behind the next card at standard sizes (should the peek grow with the name?);
+    - the stack is 362 pt against the board's 364;
+    - `bw-stack-large` must be captured at AX5 by hand.
