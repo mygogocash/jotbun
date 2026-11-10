@@ -448,6 +448,11 @@ The list below is kept for the record.
           - do the pins pin what the reviews asked;
           - robustness, and the merges with #396 and with alarm-hardening's `real/` files.
         - On approval and green CI: `merge_task_pr.sh 397 3894e58` (no task id), then `promote_pr.sh download-pins 397`. CI run 42748341937 never started (billing, 0 steps run); rerun it once the owner fixes billing.
+        - **The review approved at 15:04** (`reviews/download-pins.md`): no blocker or major, one minor and three nits.
+          - Every home-table row has its case, each failing under its review's mutant; RED gives exactly the 20.
+          - The merges with #396 and #398 are clean (247, 165 and 247 passed).
+          - The controller fixed n3 (receipt, **ac61350**, now #397's head). m1, n1 and n2 are in followups.md.
+        - **Merge on green CI** (not money or privacy; the usual rule): `merge_task_pr.sh 397 ac61350`, then `promote_pr.sh download-pins 397`. Expect workers +0 files and +19 passed.
   - **1B-T12** (373c38a4; WT p1-1b-t12 on p1/1b-t12-files-parity), the files parity session against NestJS.
     - Docker stays stopped: CI's edge job runs `test:edge:db`. The planner reports BLOCKED if it truly needs a local PostgreSQL.
     - It decides n8 (the vault's 404 against NestJS's 30-day `expired`).
