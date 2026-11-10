@@ -524,6 +524,12 @@ The list below is kept for the record.
       - the alarm rules and 0004's schema change (R105);
       - the tests, and the merges with #397, #396 and #394.
     - On approval and green CI: `merge_task_pr.sh 398 14844b9` (no task id), then `promote_pr.sh alarm-hardening 398`. CI run 42771332803 never started (billing, 0 steps run); rerun it once the owner fixes billing.
+    - **The review approved at 15:01** (`reviews/alarm-hardening.md`): no blocker or major, one minor and six nits.
+      - 0004's triggers cover every event the vault's statements make, and the backfill is right on an upgraded vault.
+      - The merges with #397, #396 and #394 are clean, and 1B-T12's session answers the same with 0004 applied.
+      - The controller fixed n1 and n2 (R105 and R104), n5 (receipt, **3707c29**, now #398's head) and n6 (this file).
+      - m1, n3 and n4 are test-only: the alarm-pins follow-up, or a fix round once T3 is back (followups.md).
+    - **Merge, under the new rule** (privacy-adjacent: receipt retention): when CI is green, ask the owner with a recommendation, then `merge_task_pr.sh 398 3707c29`. The money and privacy second review (Opus on Antigravity) also applies.
 
 ## PR #371: the integration branch into main. The owner merged it on 9 Nov, 21:30 Bangkok, as afcf884
 - It was merged with a merge commit, so history is kept. The controller then fast-forwarded claude/p1a-vault-core to afcf884, which adds main's README and CHANGELOG, so the two branches were level.
@@ -724,15 +730,18 @@ To stop a chat session in the app: `sc chat stop <thread_id>` cancels its turn o
 
 ## Rulings this session
 R104 (10 Nov, 1B-T11's P2): a write never arms the vault alarm sooner than a minute ahead (`CALL_ALARM_DELAY_MS`, 60,000 ms), and never postpones an alarm already set sooner. The alarm's own rearm is exact, or a minute out after a failed job (P3).
+  - Why: workerd refuses `setAlarm` at or before 0, which every release asks for (`delete_after = 0`), and in the Workers tests an alarm due at once fires itself, racing about 40 existing cases.
+  - A person never sees the minute, and a burst of writes becomes one alarm. Because a write can only move the alarm earlier, a stream of writes cannot starve the jobs.
+  - Later vault tasks that reason about alarm timing must expect it.
+  - **One exception (alarm-hardening's review, n2):** after a refused `setAlarm`, `rearm`'s catch sets `alarmAt` to null. The next write then skips the keep rule once, and an idle vault can be left with no alarm until its next call. Only a storage failure causes this, and the base was worse.
 
 R105 (10 Nov, alarm-hardening's P6): the vault's `attachment_checks` table (migration 0004) lists every retained receipt that may have no holder, and `attachmentsDueAt` reads its safety net from that table alone.
 - Four triggers fill the table, on every SQL statement: a receipt inserted before any record holds it, a receipt set back to retained, a last holder deleted, and a last holder moved.
 - `pruneAttachments`' full pass over every retained receipt stays, once per alarm, and empties the table in the same block. A statement that bypassed the triggers is still found at the next alarm.
 - A migration that rebuilds `attachments` or its holders' table must recreate the four triggers.
+- **Not covered (alarm-hardening's review, n1):** `INSERT OR REPLACE`, `REPLACE INTO` and `UPDATE OR REPLACE` on `transaction_attachments` remove a holder without firing a delete trigger (`recursive_triggers` is 0). B20 and 0004 both miss such a receipt until the next full pass. No vault statement uses these forms today; do not add one without a trigger for it.
 - `importsDueAt` reads the partial index `entity_heads_imports_idx`, whose terms its WHERE names literally (`LIVE_IMPORT_HEADS`).
-  - Why: workerd refuses `setAlarm` at or before 0, which every release asks for (`delete_after = 0`), and in the Workers tests an alarm due at once fires itself, racing about 40 existing cases.
-  - A person never sees the minute, and a burst of writes becomes one alarm. Because a write can only move the alarm earlier, a stream of writes cannot starve the jobs.
-  - Later vault tasks that reason about alarm timing must expect it.
+
 R103 (10 Nov, P2-T11's gate): when a local whole-file run cannot finish because the machine sleeps (`pmset -g log`: "Dark Wake Thermal Emergency"), and every case has a passing run, the whole-file run goes to CI under R100.
   - "Every case has a passing run" means the failures are timeouts across recorded sleeps, and a targeted rerun of the failing cases passes.
   - The receipt records each run, the targeted rerun and the sleep times.
