@@ -108,6 +108,20 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - **Promotion PR #381** (`promote/p4-t12`, based on `promote/1b-t8`). Stack #379 is now #373 → #378 → #380 → #381.
 - **App baseline at 712574d** (CI on #376's merge ref plus P4-T13): `test:unit` 956 (927 + 18 + 11), render 109 files and 1867 cases, web 4806; iOS not measured at the head (computed 5772: 5760 with 1D-T8 plus P4-T12's 12 modules).
 
+## Second usage-limit stop, 10 Nov about 07:00 to 08:10: RESUME THESE
+- **Review workflows** (they do not restart themselves). Resume each with `Workflow({scriptPath, resumeFromRunId})`: agents that finished replay from cache.
+  - **P2-T11 (#382):** run wf_4e503333-e15, script `review-p2-t11-wf_4e503333-e15.js`. Both lenses are done (data: 5 findings; build: 4; no blocker or major), so only the synthesizer reruns.
+  - **P2-T13 (#383):** run wf_74d1e17e-476, script `review-p2-t13-wf_74d1e17e-476.js`. The behaviour lens is done (6 findings, no blocker or major); the surface lens and the synthesizer rerun.
+  - **1B-T7 (#385):** run wf_529f455b-229, script `review-1b-t7-wf_529f455b-229.js`. All three agents rerun.
+  - The scripts are under `~/.claude/projects/-Users-kunanonjarat--t3-worktrees-jotbun-t3-d9c08cd1-928de148f4930c37/22c24cd3-aa0d-449a-b3ad-bdc2f5954699/workflows/scripts/`.
+- **The 1B-T11 planner** (thread 6407a432) failed again. T3 restarts it at the reset, as it did at 03:10; then steer it with the cutoff note (background runs are dead, rerun unfinished checks, restore mutated files from `real/`).
+- **CI is green on all three PRs:**
+  - #382: render 111 files and 1894 tests, with the whole `CatalogueScreen` file passing (301 tests, R103's record).
+  - #383: render 110 files and 1891 tests.
+  - #385, the first task PR in the nine-job layout (checkout `6223843` into `c764cf2`): workers 29 files and 713 passed plus 1 todo, exactly +1 file and +38 tests.
+
+  Each merge waits only on its review.
+
 ## Usage-limit stop, 9 Nov 23:28 to 10 Nov 03:10
 - The controller's own session and every agent hit the 5-hour limit at about 23:28: the P2-T11 implementer, the P2-T13, 1B-T7 and 1B-T11 planners, and the ci-parallel-jobs review workflow.
 - At 03:10, T3 restarted each delegated thread itself, on the same thread with its context (run 2, task ids starting `limit-resume`). **Do not respawn them.** The controller steered each with the cutoff note: background runs are dead, rerun any check not seen to finish, restore any mutated file from `real/`, the lock is free, and P4-T12 merged as 712574d, sharing no file with them.
