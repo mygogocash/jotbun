@@ -62,6 +62,6 @@
   - P10. Every item has a home: 1B-T10 n-3 (ruled by 1B-T11's P14), 1B-T9 n-6 (no change needed), and 1B-T9 n-5's receipt labels (controller housekeeping).
   - P11. No case calls `settle()` or holds a download unread at its end.
   - Base. The worktree fast-forwarded from `6a727dc` to `402c1df`. Only `.claude/` changed: `git diff --stat 6a727dc 402c1df -- apps/edge apps/api packages package.json package-lock.json` is empty. Step 0.5 took the copy path.
-  - Locks. The RED, mutant and focused runs took and released the heavy lock inside their scripts. No second lock wrapped them. `test:edge` and `build:edge` are not workers runs, so they took no lock.
+  - Locks. The RED, mutant and focused runs took and released the heavy lock inside their scripts. No second lock wrapped them. `test:edge` and `build:edge` ran without the lock. `test:edge` should take it, since `r2-object-store.test.ts` starts Miniflare (the controller's lesson, added after this branch's base); no result here depends on it.
   - Timeouts. The CP-1 failure under V4 and under RED is the designed 15-second timeout (`Test timed out in 15000ms`, one case per run). No other timeout occurred, so no rerun was needed.
 - **Notes for later tasks:** 1B-T12 and 1B-T13 can take the remaining review probes that passed (1B-T9's RB-1, RB-3, RB-4, AC-4, CP-3, ID-1; 1B-T10's S-a, S-b, P4, P2, C, R37, T) as regression cases if they want them. None is required.
