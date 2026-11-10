@@ -214,7 +214,9 @@ The list below is kept for the record.
   - P1 to P13 are accepted. P4: never folded into a write, so an unreadable name is never written over. P6: D8 is not taken, since it fails only on the store's call order.
   - Kit `scratch/wallet-looks-unstored-planner/`: check_kit at 6db889a gives 46 OK, SHA256SUMS.base 2 OK, and the 2 `orig/` files are identical. The planner's proof: 37 of 37 mutants; for CI, +4 render cases.
   - The implementer (Haiku max, 7b8c794a) was dispatched at 08:11 in a pre-installed wallet-looks-unstored from 6db889a.
-  - Then: PR (no task issue) and a **Sonnet** review (S). **Once it merges, take P2-T20, P2-T21 and P2-T29 off held.txt.**
+  - **DONE at 8c997d8 (base 9a24180); PR #391 opened at 08:20 (no task issue).** RED 4 of 13, GREEN 13 of 13, neighbours 38 of 38, 37 of 37 mutants, `test:unit` 970. The controller checked the 2 files against the kit and the clean merge with the head.
+  - **The review runs as a small Sonnet workflow** (run wf_c0db7db8-830): one reviewer, a skeptic for any blocker or major, and a synthesizer writing `reviews/wallet-looks-unstored.md`.
+  - On approval and green CI: `merge_task_pr.sh 391 8c997d8` (no task id), then `promote_pr.sh wallet-looks-unstored 391`. **Then take P2-T20, P2-T21 and P2-T29 off held.txt.**
 - **The wallet lane: three planners dispatched at 08:04 from 3091b41 (Opus xhigh, no shared files):**
   - **tray-hardening** (351b244a; WT tray-hardening on fix/tray-hardening): P2-T13's review m1 guard, m2, m3 reset, m4, m5, m6, n1, n3, with ready probes. m5 and m6 were moved here from P2-T14 because they edit the same tray test files. It unblocks P2-T16.
   - **P2-T14** (deda1216; WT p2-t14 on p2/t14-add-flow), the add flow, keypad and amount step, depth 17. It plans against today's `Tray` props, without editing `Tray.tsx`.
