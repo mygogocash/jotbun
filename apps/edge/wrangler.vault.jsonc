@@ -13,7 +13,8 @@
   // snapshot build (1B-T8 measures them, expected a few seconds of CPU). 120
   // seconds leaves wide room and still bounds runaway work; enforced only when deployed.
   "limits": { "cpu_ms": 120000 },
-  "vars": { "JOTBUN_ENV": "local", "IMPORT_UPLOADS_ENABLED": "false", "GOGOCASH_BRIDGE_ENABLED": "false" },
+  // AI stays off until it is switched on with an ANTHROPIC_API_KEY secret (1B-T7, B10).
+  "vars": { "JOTBUN_ENV": "local", "IMPORT_UPLOADS_ENABLED": "false", "GOGOCASH_BRIDGE_ENABLED": "false", "AI_ENABLED": "false" },
   // Published policies, gates and client minimums (config:v1). The id is a
   // local placeholder, as the Hyperdrive ids in wrangler.jsonc are.
   "kv_namespaces": [{ "binding": "CONFIG", "id": "00000000000000000000000000000000" }],

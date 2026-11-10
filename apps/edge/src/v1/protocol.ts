@@ -35,6 +35,8 @@ export type WorkerRouteId =
   | 'import.confirm'
   // 1B-T8
   | 'snapshot.chunk.download'
+  // 1B-T7
+  | 'ai.preferences.get' | 'ai.preferences.put' | 'ai.parse' | 'ai.slip' | 'ai.note' | 'ai.ask'
 
 /** The published policy versions from config:v1, or null when none are published. */
 export type PublishedPolicies = PolicyVersionDto[] | null
@@ -55,6 +57,8 @@ export type VaultRouteId =
   | 'imports.preview' | 'imports.patchRows' | 'imports.freeze' | 'imports.progress' | 'imports.confirmPrepare' | 'imports.confirm'
   // 1B-T8: the two snapshot routes, then the chunk download's step-only id.
   | 'snapshots.request' | 'snapshots.status' | 'snapshots.chunk'
+  // 1B-T7: the AI routes' step-only ids (the six routes are Worker routes).
+  | 'ai.preferences' | 'ai.setPreferences' | 'ai.context' | 'ai.consume' | 'ai.facts' | 'ai.tool'
 
 export type VaultCall = {
   route: VaultRouteId

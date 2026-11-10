@@ -5,6 +5,8 @@ import { bridgeCatalogue } from './bridge'
 import { uploadRoute } from './files/uploads'
 import { serveExportFile, serveReceiptFile, serveSnapshotChunk } from './files/downloads'
 import { confirmRoute, replaceRoute, retainRoute } from './files/receipts'
+import { aiAskRoute, aiNoteRoute, aiParseRoute, aiPreferencesRoute, aiSetPreferencesRoute, aiSlipRoute } from './ai/routes'
+import type { SendMessage } from '../server/ai/model'
 import { livePolicies } from './config'
 import type { EdgeConfig } from './config'
 import type { V1Env } from './env'
@@ -36,6 +38,8 @@ export type WorkerContext = {
   stream?: AsyncIterable<Uint8Array>
   vault: VaultSession | null
   waitUntil(promise: Promise<unknown>): void
+  /** The AI routes' model call (1B-T7), from the front door's deps: a fake in tests, null for AI that is not configured; absent, the env decides. */
+  send?: SendMessage | null
 }
 
 export type WorkerHandler = (w: WorkerContext) => Promise<Response | VaultReply>
@@ -49,6 +53,12 @@ export const WORKER_HANDLERS: Partial<Record<WorkerRouteId, WorkerHandler>> = {
   'attachment.file.download': serveReceiptFile,
   'import.confirm': confirmRoute,
   'snapshot.chunk.download': serveSnapshotChunk,
+  'ai.preferences.get': aiPreferencesRoute,
+  'ai.preferences.put': aiSetPreferencesRoute,
+  'ai.parse': aiParseRoute,
+  'ai.slip': aiSlipRoute,
+  'ai.note': aiNoteRoute,
+  'ai.ask': aiAskRoute,
 }
 
 export function vaultSession(env: V1Env, claims: VaultClaims, policies: PublishedPolicies, access: VaultAccess, charge: 'read' | 'write'): VaultSession {
