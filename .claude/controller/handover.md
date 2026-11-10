@@ -148,6 +148,26 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - **Promotion PR #381** (`promote/p4-t12`, based on `promote/1b-t8`). Stack #379 is now #373 → #378 → #380 → #381.
 - **App baseline at 712574d** (CI on #376's merge ref plus P4-T13): `test:unit` 956 (927 + 18 + 11), render 109 files and 1867 cases, web 4806; iOS not measured at the head (computed 5772: 5760 with 1D-T8 plus P4-T12's 12 modules).
 
+## New model routing (the owner's rule of 10 Nov, in SKILL.md since about 14:36): READ THIS FIRST
+`SKILL.md`, `scripts/make_prompt.py` and `references/prompts.md` were rewritten at 14:36 to 14:37 by the owner (the edit names the owner's setup). The rule: route each task to the cheapest model that does it well.
+- **Planners:** `claudeAgent` Opus xhigh (unchanged).
+- **Implementers, fixers, first reviews and confirming reviews:** T3's `antigravity` provider, `gemini-4-argon-high`.
+- **Money-path or privacy PRs** (wallet, cashback, points, payments, auth, private mode, privacy migrations):
+  - a second review on `antigravity` `claude-opus-5-5-medium` (`make_prompt.py second`);
+  - **ask the owner, with a recommendation, before merging**, even on green CI.
+- **While T3 is down, Antigravity is unreachable.** Builds, fixes and reviews wait for the reconnection rather than spending Claude quota.
+  - Already running on Claude before the change, and allowed to finish: the reviews of #397 and #398.
+  - Planners run on Claude in workflows: tray-hardening fix2 (wf_41e3ff21-3b6) and 1C-T9 (wf_313426aa-c35, task wt9fz2nfb, dispatched at 14:44, WT p1-1c-t9 on p1/1c-t9-approved-routes).
+- **Waiting on T3, for Argon:**
+  - the fixers of P2-T12, fix-download-aborts and tray-hardening (round two), once their briefs are READY;
+  - P2-T14's and P2-T20's implementers, after #392 merges;
+  - 1C-T9's implementer, after its brief.
+- **The open PRs under the new merge rule:**
+  - **Wallet, so ask the owner before merging:** #392 (tray-hardening) and #395 (P2-T12). Each also needs the Opus second review.
+  - **#398 (alarm-hardening):** its migration 0004 changes how receipt retention is scheduled. Treat it as privacy-adjacent and ask the owner.
+  - **The rest merge on green CI and approval as before:** #394 (1B-T12, parity tests), #396 (fix-download-aborts) and #397 (download-pins).
+- **Verify before relying:** re-check each review finding against the code before ruling on it.
+
 ## T3's MCP server lost its authorization, 10 Nov 14:39: READ THIS FIRST
 - `t3_thread_send` failed: "MCP server t3-code rejected the Authorization header in its config (update it, then run /mcp to reconnect)". **Only the owner can reconnect it** (`/mcp`).
 - **Until then, these T3 tools are unavailable:**
