@@ -243,6 +243,7 @@ The list below is kept for the record.
       - The controller checked the 3 files against the kit's `SHA256SUMS.real` and the clean merge with the head.
     - **The review runs as a small Sonnet workflow** (run wf_fa4458e5-3d3, task woa7ka514): one reviewer, a skeptic for any blocker or major, and a synthesizer writing `reviews/tray-hardening.md`.
     - On approval and green CI: `merge_task_pr.sh 392 784667b` (no task id), then `promote_pr.sh tray-hardening 392`. **Then take P2-T16 off held.txt.**
+    - **CI run 42738781210 (08:52) never started: GitHub billing** (Owner decisions waiting, first item). Once the owner fixes it, run `gh run rerun 42738781210 --repo mygogocash/jotbun` and check the nine jobs (render +6 cases).
     - New lesson: `git apply` run inside `scratch/` can silently apply nothing.
   - **P2-T14** (deda1216; WT p2-t14 on p2/t14-add-flow), the add flow, keypad and amount step, depth 17. It plans against today's `Tray` props, without editing `Tray.tsx`.
   - **P2-T12** (e328d240; WT p2-t12 on p2/t12-card-stack), the card stack and frames, depth 15. It takes P2-T11's K5 and decides P2-T9's spring overshoot.
@@ -486,6 +487,14 @@ R84 (P4-T10 fixtures), R85 (two API test-only fixes), R86 (token sid must match 
 Merge each PR when its CI on the current head is green; close its issue by hand (backlog-map.json); remove worktree and branch (local and remote). Open PRs that conflict only in docs/implementation/premium-progress.md: merge the head and run ledger_union.py (keeps both sides), except 1C (hand-merge: one `## 1C:` heading) and P4 (one `## P4` heading). New tasks write receipts under R87, which avoids those conflicts.
 
 ## Owner decisions waiting
+- **OPEN (10 Nov, 08:52): GitHub Actions stopped for billing.** Every job of #392's run 42738781210 failed without starting. Each carries GitHub's annotation: "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings".
+  - The last green run was #391's at 08:20 (42735086363). The Free plan's 2,000 minutes a month are used up: about 1,400 by 6 Nov, then about 11 nine-job runs at about 33 billable minutes each since #377 merged.
+  - **Effect:** no PR can get CI, so nothing new can merge. #391 can still merge on its review, because its run was green before the stop. Planners, implementers and reviews go on, and PRs are opened, but they wait for CI.
+  - **Owner's options:**
+    - add a payment method or raise the Actions spending limit for the account that owns the repo;
+    - or cut CI cost first. Each merged task runs CI twice today: the task PR, and its promotion PR into main on the same tree. P11's cheaper layouts are another way: fold `image` into `exports`, or split the section suites two ways.
+    - Otherwise CI waits for the minutes to reset at the next billing date.
+  - **After the fix:** rerun each refused run (`gh run rerun <run> --repo mygogocash/jotbun`) and merge as each goes green.
 - **ANSWERED (10 Nov, 06:2x): keep the nine-job CI, merge.** Below is the question as it was asked. The owner accepted about 33 billable minutes a run.
 - **(was) Actions minutes before ci-parallel-jobs merges.** The repo is private on the Free plan, which includes 2,000 Actions minutes a month.
   - Usage: 80 pull-request runs have happened since 1 Nov, about 1,400 billable minutes at today's roughly 18 per run, and each merged task now adds a promotion PR run. The controller cannot read the actual usage: GitHub's timing API reports 0, and the billing endpoint needs `admin:org`.
