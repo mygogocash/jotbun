@@ -10,11 +10,13 @@
 // `npm run build -w gogospend-api` and `npm run build` in apps/edge first.
 //
 // A known difference the session cannot reach, since it runs in seconds
-// (1B-T11 review n8; 1B-T12 brief, P3): from about day 8 to day 30 after a
-// snapshot is built, NestJS still answers its status and a resend of its key
-// with `expired` (it keeps a finished job 30 days), while the vault, which
-// deletes a ready row a week past its 24-hour expiry, answers the status 404
-// and a resend with a new pending row under the same id.
+// (1B-T11 review n8; 1B-T12 brief, P3, as the 1B-T12 review's n2 corrects
+// it): from about day 8 to day 30 after a snapshot is built, NestJS still
+// answers its status and a resend of its key with `expired`, from the
+// succeeded job it keeps 30 days once its manifest sweep has dropped the
+// expired manifest (a week past expiry). The vault keeps one row and deletes
+// it a week past its 24-hour expiry: the status is 404, and a resend opens a
+// new pending row under the same id, whose build starts afresh.
 import { readFileSync } from 'node:fs'
 
 import { afterAll, beforeAll, expect, it } from 'vitest'
@@ -55,10 +57,19 @@ it('the vault Worker stores, queues and serves files exactly like the NestJS v1 
     if (step.signIn) return []
     const n = { ...nestRun[i]!, body: a(nestRun[i]!.body) }
     const v = { ...vaultRun[i]!, body: b(vaultRun[i]!.body) }
-    return JSON.stringify(n) === JSON.stringify(v) ? [] : [{ step: `${i + 1}. ${step.name}`, nest: n, vault: v }]
+    const [nestText, vaultText] = [JSON.stringify(n), JSON.stringify(v)]
+    return nestText === vaultText ? [] : [{ step: `${i + 1}. ${step.name}`, nest: n, vault: v, nestText, vaultText }]
   })
-  // vitest prints objects with sorted keys: a listed step whose two answers print alike differs in key order (R92).
-  expect(differences, 'answers that print alike differ in key order (R92)').toEqual([])
+  // vitest prints objects with their keys sorted, so each listed step also carries both answers as text, in their own key order.
+  expect(differences, 'a listed step whose nest and vault answers print alike differs in key order (R92): compare its nestText and vaultText').toEqual([])
+  // The session reached its success paths, as parity-files.db.test.ts checks: a session that fails alike on both sides cannot pass.
+  const byName = new Map(STEPS.map((step, i) => [step.name, nestRun[i]?.status]))
+  expect(byName.get('snapshot')).toBe(202)
+  expect(byName.get('export')).toBe(202)
+  expect(byName.get('upload')).toBe(202)
+  expect(byName.get('import preview')).toBe(200)
+  expect(byName.get('snapshot status')).toBe(200)
+  expect(byName.get('transaction')).toBe(201)
   expect(STEPS.length).toBe(42)
   expect(STEPS.filter((s) => s.signIn).map((s) => s.name)).toEqual(['export: challenge', 'export: proof'])
 })
