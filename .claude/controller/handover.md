@@ -280,12 +280,13 @@ The list below is kept for the record.
       - P1 to P18 are accepted. P3: the spread sits before the tray's, so the task waits on nothing. P11: the drop goes to P2-T21. P12: K5 is in the stack's test file.
       - Kit `scratch/p2-t12-planner/`: check_kit at a58ea2a gives 17 OK, and the 2 `orig/` files are identical.
     - The implementer (Haiku max, 5fcc0b84) was dispatched at 09:07 in a pre-installed p2-t12 from a58ea2a.
-    - **DONE at 90b5079 (base dbfde7d); PR #395 opened at 09:18 (issue #158).**
+    - **DONE at 90b5079 (base dbfde7d); PR #395 opened at 09:17 (issue #158).**
       - RED 13 of 13, GREEN 12 of 12 and 1 of 1, neighbours 47, catalogue `bw-` 22.
       - 59 of 59 mutants, with output byte-identical to the planner's.
       - The controller checked the 6 files against the kit's `real/` and the clean merge with the head.
     - **The review runs as a two-lens Opus workflow** (run wf_0cba99e1-318, task wy3myeu97). The lenses run one after the other, to keep about six agents: the stack and the press; then the frames, the catalogue merges, the tests and CI. A skeptic checks each blocker or major, and a synthesizer writes `reviews/P2-T12.md`.
     - On approval and green CI: `merge_task_pr.sh 395 90b5079 P2-T12`, then `promote_pr.sh P2-T12 395`.
+    - CI run 42741688287 never started (billing, 0 steps run). Once the owner fixes it: `gh run rerun 42741688287 --repo mygogocash/jotbun`.
   - Each task's catalogue sections go in a list file of its own, with one spread in `dev/catalogue/wallet/index.ts` at its own anchor (not in `kitSections.tsx`).
 - **P2-T20** (4be9ff30; WT p2-t20 on p2/t20-wallets-list), the wallets list, the archived list and reorder, depth 14 (the deepest ready task). The planner (Opus xhigh) was dispatched at 09:09, when P2-T14's planner finished.
   - It carries #391's `setOrder` caller notes (n3, n4, n5), P2-T19's double-send note and the host-tray rules.
@@ -560,7 +561,7 @@ Merge each PR when its CI on the current head is green; close its issue by hand 
     - add a payment method or raise the Actions spending limit for the account that owns the repo;
     - or cut CI cost first. Each merged task runs CI twice today: the task PR, and its promotion PR into main on the same tree. P11's cheaper layouts are another way: fold `image` into `exports`, or split the section suites two ways.
     - Otherwise CI waits for the minutes to reset at the next billing date.
-  - **After the fix:** rerun each refused run (`gh run rerun <run> --repo mygogocash/jotbun`) and merge as each goes green. Refused so far: 42738781210 (#392) and 42741146172 (#394).
+  - **After the fix:** rerun each refused run (`gh run rerun <run> --repo mygogocash/jotbun`) and merge as each goes green. Refused so far: 42738781210 (#392), 42741146172 (#394) and 42741688287 (#395).
 - **ANSWERED (10 Nov, 06:2x): keep the nine-job CI, merge.** Below is the question as it was asked. The owner accepted about 33 billable minutes a run.
 - **(was) Actions minutes before ci-parallel-jobs merges.** The repo is private on the Free plan, which includes 2,000 Actions minutes a month.
   - Usage: 80 pull-request runs have happened since 1 Nov, about 1,400 billable minutes at today's roughly 18 per run, and each merged task now adds a promotion PR run. The controller cannot read the actual usage: GitHub's timing API reports 0, and the billing endpoint needs `admin:org`.
