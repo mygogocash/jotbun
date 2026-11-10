@@ -148,6 +148,15 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - **Promotion PR #381** (`promote/p4-t12`, based on `promote/1b-t8`). Stack #379 is now #373 → #378 → #380 → #381.
 - **App baseline at 712574d** (CI on #376's merge ref plus P4-T13): `test:unit` 956 (927 + 18 + 11), render 109 files and 1867 cases, web 4806; iOS not measured at the head (computed 5772: 5760 with 1D-T8 plus P4-T12's 12 modules).
 
+## T3's MCP server lost its authorization, 10 Nov 14:39: READ THIS FIRST
+- `t3_thread_send` failed: "MCP server t3-code rejected the Authorization header in its config (update it, then run /mcp to reconnect)". **Only the owner can reconnect it** (`/mcp`).
+- **Until then, these T3 tools are unavailable:**
+  - `delegate_task` and `t3_thread_send`;
+  - `link_pull_request` and `watch_pull_request`, so PR updates may not wake the controller.
+- **Threads T3 already runs may finish on their own:** the P2-T12 fix-brief planner (e328d240, run 4) and the fix-download-aborts fix-brief planner (46ff8a6d, run 3). Their notices may still arrive; if not, read their briefs from `briefs/` and their kits from `scratch/`.
+- **New agents go through Claude Code's Workflow tool,** which sets `model` and `effort` per agent: Opus xhigh plans and first-reviews M and L tasks; Haiku max implements; Sonnet xhigh reviews S tasks and confirming rounds. Each prompt must name every file, since a fresh agent has no thread context.
+- Check PRs yourself with `gh pr checks` and `status.sh`.
+
 ## Fourth usage-limit stop, 10 Nov about 09:50 to 13:50 (RESUMED at 13:50)
 - The previous account (sub5) hit its 5-hour limit; the session continues on another account.
 - **Failed at the stop:**
@@ -313,7 +322,7 @@ The list below is kept for the record.
     - **c-m1 (minor):** F1 opens a mirrored window. An earlier end rendered in the same commit as the next hide still says closed, so a later hide's end says it again.
       - In the reviewer's model of 141 length-8 sequences: 44 deviations on 784667b, 22 on fc78376, and 0 with the validated guard `!shown && !showing.current` (the ref restored).
       - **Folded into a second fix round on #392**, with c-n1 (one iOS case for the fresh `onClosed`, mutant M3) and c-n2 (four stale receipt lines). P2-T16 builds `whenClosed` on this guard.
-      - The tray-hardening planner (thread 351b244a, run 4, from 14:38) writes `briefs/tray-hardening-fix2.md`, with kit `scratch/tray-hardening-fix2-planner/`.
+      - **The request to the old planner thread (351b244a) was never delivered:** T3's MCP server rejected this session's authorization at 14:39. The second round's brief is written instead by a fresh Opus xhigh planner in a Claude Code workflow (run wf_41e3ff21-3b6, task wkxjum826), from `scratch/dispatch/tray-hardening-fix2-planner.prompt.md`. Output: `briefs/tray-hardening-fix2.md`, with kit `scratch/tray-hardening-fix2-planner/`.
     - Then: a Haiku fixer on fc78376, push, update #392's body, and a confirming Sonnet review of round two. Merge at its head on green CI.
     - **Rule:** a third failing round means telling the owner. This round answers an approval's minor, not a failed review.
     - **On approval and green CI:** `merge_task_pr.sh 392 fc78376` (no task id), then `promote_pr.sh tray-hardening 392`. Then:
