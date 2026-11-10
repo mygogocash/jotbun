@@ -258,6 +258,18 @@ The list below is kept for the record.
     - **CI run 42738781210 (08:52) never started: GitHub billing** (Owner decisions waiting, first item). Once the owner fixes it, run `gh run rerun 42738781210 --repo mygogocash/jotbun` and check the nine jobs (render +6 cases).
     - New lesson: `git apply` run inside `scratch/` can silently apply nothing.
   - **P2-T14** (deda1216; WT p2-t14 on p2/t14-add-flow), the add flow, keypad and amount step, depth 17. It plans against today's `Tray` props, without editing `Tray.tsx`.
+    - **Brief READY at 09:09 (L), proven on b5aa2a7 with tray-hardening's three files laid over.**
+      - New: 9 files under `src/wallet/add/` and `dev/catalogue/wallet/addSections.tsx`. Shared:
+        - `index.ts`: import and spread right after the tray's; it merges cleanly with P2-T12's in either order;
+        - `draftText.test.ts`: `add.chip` joins `LATIN_LINES`.
+      - P1 to P17 are accepted.
+        - P3: `AmountFooter` goes in the tray's pinned footer; `AddStep` gains `transfer`; `confirmRows` takes `tc`.
+        - P9: the typed amount is never masked.
+        - P10: at AX5 the amount scrolls (no tray slot under the header).
+      - Kit `scratch/p2-t14-planner/`: check_kit at dbfde7d gives 29 OK, and the 2 `orig/` files are identical. RED 6 of 6 Node and 12 of 12 render; 92 of 92 mutants.
+    - **HELD until tray-hardening (#392) merges.** Its Step 0.2 checks tray-hardening's own lines, since its spread after the tray's fails the head's `ids.slice(-4)` case.
+      - When #392 merges: check_kit, create WT p2-t14 (install), and dispatch the implementer with P1 to P17 accepted.
+      - If #391's 13 `WalletLooks` cases are counted, N is 53 (its P15).
   - **P2-T12** (e328d240; WT p2-t12 on p2/t12-card-stack), the card stack and frames, depth 15. It takes P2-T11's K5 and decides P2-T9's spring overshoot.
     - **Brief READY at 08:55 (M), proven on b5aa2a7's app tree:**
       - New: `CardStack.tsx`, `cardFrames.tsx`, `CardStack.render.test.tsx` (12 cases), `cardStackNative.test.ts` (1) and `stackSections.tsx`. Shared: one import and one spread in `dev/catalogue/wallet/index.ts`, placed between the kit's sections and the tray's (plan order).
@@ -269,6 +281,10 @@ The list below is kept for the record.
       - Kit `scratch/p2-t12-planner/`: check_kit at a58ea2a gives 17 OK, and the 2 `orig/` files are identical.
     - The implementer (Haiku max, 5fcc0b84) was dispatched at 09:07 in a pre-installed p2-t12 from a58ea2a.
   - Each task's catalogue sections go in a list file of its own, with one spread in `dev/catalogue/wallet/index.ts` at its own anchor (not in `kitSections.tsx`).
+- **P2-T20** (4be9ff30; WT p2-t20 on p2/t20-wallets-list), the wallets list, the archived list and reorder, depth 14 (the deepest ready task). The planner (Opus xhigh) was dispatched at 09:09, when P2-T14's planner finished.
+  - It carries #391's `setOrder` caller notes (n3, n4, n5), P2-T19's double-send note and the host-tray rules.
+  - It plans `ReorderTray` on tray-hardening's `real/` files, and its `index.ts` spread after P2-T14's, proven to merge in either order or stacked on P2-T14.
+  - `app/spend/wallets.tsx` is a route, so its gate has `typecheck:routes`; CI runs the exports.
 - **The server lane: two planners dispatched at 08:15 from c8929f2 (Opus xhigh):**
   - **fix-download-aborts** (46ff8a6d; WT fix-download-aborts on fix/download-aborts): R97's `waitUntil` fix for every vault download, with a `wrangler dev` proof, plus every review pin followups.md gives it. It may split the test-only pins into `briefs/download-pins.md`. It must land before 1B-T13.
   - **1B-T12** (373c38a4; WT p1-1b-t12 on p1/1b-t12-files-parity), the files parity session against NestJS.

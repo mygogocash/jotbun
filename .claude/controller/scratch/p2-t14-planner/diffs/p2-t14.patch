@@ -1,0 +1,1478 @@
+diff --git a/apps/app/src/dev/catalogue/wallet/addSections.tsx b/apps/app/src/dev/catalogue/wallet/addSections.tsx
+new file mode 100644
+index 0000000..835de08
+--- /dev/null
++++ b/apps/app/src/dev/catalogue/wallet/addSections.tsx
+@@ -0,0 +1,132 @@
++// The add tray's catalogue sections (P2-T14, development only): the amount
++// step for spending (bw-tray-amount) and for income (rh-income), each inside a
++// Tray with the type switch as its header and the keypad and Next pinned in
++// its footer, starting from fixed sample props as the boards draw them. Each
++// tray opens at once, so a screenshot of its section shows it over the page;
++// the keys, the switch, the chips and the name field work, the keypad's
++// problem shows in today's words (as the host shows it, P2-T16), and Open the
++// tray brings it back as it started. Next, the wallet chip and บอกบัน go
++// nowhere here: the steps after the amount and Tell Bun's sheet are P2-T15's
++// and P2-T16's. Their own list, spread after the tray's in ./index.ts. The
++// sample words are catalogue samples, not app copy. A section never imports
++// the wallet test harness, which loads vitest.
++import { useState } from 'react';
++import { View } from 'react-native';
++
++import { useCopy } from '@mobile/i18n/useCopy';
++import type { QuickAddDraft } from '@mobile/spend/v1/redesign/quickAddModel';
++import type { Lookups } from '@mobile/spend/v1/redesign/shared';
++import { keypadFromMinor } from '@mobile/ui/keypadExpression';
++import type { KeypadProblem, KeypadState } from '@mobile/ui/keypadExpression';
++import { BUN_SPACE } from '@mobile/ui/layout';
++import { amountProblem, trayTitleKey } from '@mobile/wallet/add/addFlow';
++import type { AddType } from '@mobile/wallet/add/addFlow';
++import { AmountFooter, AmountStep } from '@mobile/wallet/add/AmountStep';
++import { COPY } from '@mobile/wallet/add/copy';
++import type { QuickChip } from '@mobile/wallet/add/QuickChips';
++import { TypeSwitchHeader } from '@mobile/wallet/add/TypeSwitchHeader';
++import type { DraftTable } from '@mobile/wallet/copy/draftText';
++import { useDraftCopy } from '@mobile/wallet/copy/useDraftCopy';
++import { TextLink } from '@mobile/wallet/tray/TextLink';
++import { Tray } from '@mobile/wallet/tray/Tray';
++import { SpecimenLabel } from '../parts';
++import type { CatalogueSection } from '../registry';
++
++const SAMPLES = {
++  ...COPY,
++  'sample.open': { th: 'เปิดถาด', en: 'Open the tray' },
++  'sample.wallet': { th: 'บัญชีหลัก', en: 'Main account' },
++  'sample.salary': { th: 'เงินเดือน', en: 'Salary' },
++  'sample.coffee': { th: 'กาแฟเย็น', en: 'Iced coffee' },
++  'sample.ride': { th: 'วิน', en: 'Motorbike taxi' },
++  'sample.train': { th: 'BTS', en: 'BTS' },
++} as const satisfies DraftTable;
++
++/**
++ * Today's words for the two problems this keypad can meet, read through tc as
++ * the host reads KEYPAD_PROBLEM_TEXT (screens/redesign/entry/entryHelpers.ts,
++ * P2-T16). That module loads the device's id maker (expo-crypto), which no
++ * catalogue list may load: every test that reads the wallet's list would.
++ */
++const PROBLEM_WORDS: Partial<Readonly<Record<KeypadProblem, string>>> = {
++  zero: 'Enter an amount above zero',
++  too_large: 'Amounts go up to ฿999,999,999.99',
++};
++
++/** The sample wallet; its id derives the boards' lavender silk. */
++const WALLET_ID = 'bw-add-main-account';
++
++type Start = { type: AddType; amountMinor: string; named: boolean; chips: boolean; tellBun: boolean };
++
++function firstDraft(type: AddType, merchant: string): QuickAddDraft {
++  return {
++    mode: 'create', recordId: 'bw-add-record', commandId: 'bw-add-command', type, amountMinor: '', occurredOn: '2026-10-24',
++    walletId: WALLET_ID, categoryByType: { expense: null, income: null }, fromWalletId: WALLET_ID, toWalletId: null, note: '', merchant,
++  };
++}
++
++/** The amount step in a tray that opens at once, on the board's sample props; closed and opened again, it starts over. */
++function AmountTray({ label, start }: { label: string; start: Start }) {
++  const t = useDraftCopy(SAMPLES);
++  const tc = useCopy();
++  const begin = () => firstDraft(start.type, start.named ? t('sample.salary') : '');
++  const [open, setOpen] = useState(true);
++  const [draft, setDraft] = useState(begin);
++  const [keypad, setKeypad] = useState<KeypadState>(() => keypadFromMinor(start.amountMinor));
++  const lookups: Lookups = { wallets: new Map([[WALLET_ID, { id: WALLET_ID, name: t('sample.wallet') }]]), categories: new Map() };
++  const fill = (minor: string) => () => setKeypad(keypadFromMinor(minor));
++  const chips: QuickChip[] = start.chips
++    ? [
++      { label: t('sample.coffee'), amountMinor: '6500', apply: fill('6500') },
++      { label: t('sample.ride'), amountMinor: '2000', apply: fill('2000') },
++      { label: t('sample.train'), amountMinor: '4700', apply: fill('4700') },
++    ]
++    : [];
++  const problem = amountProblem(keypad);
++  const problemWords = problem === null ? undefined : PROBLEM_WORDS[problem];
++  const step = { draft, keypad, onDraft: setDraft, onKeypad: setKeypad, onStep: () => undefined };
++  return (
++    <View style={{ gap: BUN_SPACE.xs, alignItems: 'flex-start' }}>
++      <SpecimenLabel>{label}</SpecimenLabel>
++      <TextLink label={t('sample.open')} onPress={() => setOpen(true)} />
++      <Tray
++        visible={open}
++        onClose={() => setOpen(false)}
++        onClosed={() => {
++          setDraft(begin());
++          setKeypad(keypadFromMinor(start.amountMinor));
++        }}
++        title={t(trayTitleKey(draft.type))}
++        header={<TypeSwitchHeader type={draft.type} onType={(type) => setDraft((now) => ({ ...now, type }))} />}
++        footer={<AmountFooter {...step} type={draft.type} problem={problemWords === undefined ? null : tc(problemWords)} />}
++      >
++        <AmountStep {...step} type={draft.type} lookups={lookups} chips={chips} canTellBun={start.tellBun} onTellBun={() => undefined} />
++      </Tray>
++    </View>
++  );
++}
++
++export const WALLET_ADD_SECTIONS: readonly CatalogueSection[] = [
++  {
++    id: 'bw-tray-amount',
++    title: 'Bun Wallet: add tray, amount',
++    group: 'Kit',
++    render: () => (
++      <AmountTray
++        label="Spending: ฿50 typed, the wallet it comes from, Tell Bun and three quick chips, over the keypad and Next (capture AX5 by hand)"
++        start={{ type: 'expense', amountMinor: '5000', named: false, chips: true, tellBun: true }}
++      />
++    ),
++  },
++  {
++    id: 'bw-tray-income',
++    title: 'Bun Wallet: add tray, income',
++    group: 'Kit',
++    render: () => (
++      <AmountTray
++        label="Income: ฿35,000 into the wallet, its name, and that income is not counted in the budget"
++        start={{ type: 'income', amountMinor: '3500000', named: true, chips: false, tellBun: false }}
++      />
++    ),
++  },
++];
+diff --git a/apps/app/src/wallet/add/AmountStep.render.test.tsx b/apps/app/src/wallet/add/AmountStep.render.test.tsx
+new file mode 100644
+index 0000000..63f2bb0
+--- /dev/null
++++ b/apps/app/src/wallet/add/AmountStep.render.test.tsx
+@@ -0,0 +1,460 @@
++// The add tray's amount step (P2-T14; W14, W29; bw-tray-amount, rh-income,
++// ax-large-tray; Review Focus 3). Most cases mount the step as P2-T16's host
++// and the catalogue do: inside a Tray, with the type switch as its header and
++// AmountFooter (the keypad, the problem, Next) as its footer. A probe holds the
++// draft and the keypad, and shows the keypad's problem in today's words
++// (amountProblem, then KEYPAD_PROBLEM_TEXT through tc), as the host will. Each
++// case mounts through mountWallet, in Thai and by day unless it says otherwise.
++//
++// The tray behaviours these cases rely on (P2-T13's Tray, not changed here):
++// `header` is drawn in the header row in the title's place; `footer` is
++// pinned under the scrolling content; the title names the dialog.
++//
++// Reanimated keeps the tray's card unseen (visibility: hidden) until its
++// entering animation starts, which happy-dom never fires, and queries by role
++// skip what is unseen: startAnimations() fires it, as Tray.render.test.tsx
++// does. react-native-web drops maxFontSizeMultiplier and numberOfLines from
++// the DOM, so the props that reach the app's Text are recorded, as
++// WalletCard.render.test.tsx does. Each haptic moment is recorded by name.
++import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
++import { useState } from 'react';
++import { afterEach, expect, test, vi } from 'vitest';
++
++// The real safe-area package loads React Native itself, which vitest cannot run.
++vi.mock('react-native-safe-area-context', () => import('../../dev/catalogue/safeAreaTestStub'));
++
++const seen = vi.hoisted(() => ({ props: [] as Record<string, unknown>[] }));
++vi.mock('@mobile/theme/AppText', async (importOriginal) => {
++  const actual = await importOriginal<typeof import('@mobile/theme/AppText')>();
++  const { createElement, forwardRef } = await import('react');
++  const Text = forwardRef<unknown, Record<string, unknown>>(function RecordedText(props, ref) {
++    seen.props.push(props);
++    return createElement(actual.Text as never, { ...props, ref });
++  });
++  return { ...actual, Text };
++});
++
++vi.mock('@mobile/lib/hapticMoment', () => ({ playHaptic: vi.fn() }));
++// Today's keypad words live beside Quick add's helpers, which load the device's id maker (as the catalogue suites mock it).
++vi.mock('expo-crypto', () => ({ randomUUID: () => globalThis.crypto.randomUUID() }));
++
++import type { Minor } from '@gogospend/contracts';
++
++import { rgba } from '@mobile/dev/catalogue/catalogueTestHarness';
++import { WALLET_SECTIONS } from '@mobile/dev/catalogue/wallet';
++import { useCopy } from '@mobile/i18n/useCopy';
++import { playHaptic } from '@mobile/lib/hapticMoment';
++import { KEYPAD_PROBLEM_TEXT } from '@mobile/screens/redesign/entry/entryHelpers';
++import { fakeAiResources } from '@mobile/spend/v1/ai/testing/fakeAiResources';
++import type { QuickAddDraft } from '@mobile/spend/v1/redesign/quickAddModel';
++import type { Lookups } from '@mobile/spend/v1/redesign/shared';
++import { walletDark, walletLight } from '@mobile/theme/walletPalette';
++import { amountMaxScale } from '@mobile/theme/walletType';
++import { EMPTY_KEYPAD, keypadFromMinor } from '@mobile/ui/keypadExpression';
++import type { KeypadState } from '@mobile/ui/keypadExpression';
++import { useDraftCopy } from '../copy/useDraftCopy';
++import { derivedLook } from '../looks/walletLooks';
++import { PRIVATE_MODE_NAME } from '../privacy/PrivateModeProvider';
++import { AX5, mountWallet } from '../testing/walletHarness';
++import { Tray } from '../tray/Tray';
++import { amountProblem, trayTitleKey } from './addFlow';
++import type { AddStep, StepProps } from './addFlow';
++import { AmountFooter, AmountStep, useCanTellBun } from './AmountStep';
++import { COPY } from './copy';
++import { QuickChips } from './QuickChips';
++import type { QuickChip } from './QuickChips';
++import { TypeSwitchHeader } from './TypeSwitchHeader';
++import { WalletKeypad } from './WalletKeypad';
++
++afterEach(() => {
++  cleanup();
++  vi.unstubAllEnvs();
++  vi.restoreAllMocks();
++  vi.clearAllMocks();
++  seen.props.length = 0;
++});
++
++/** Lets the stores, the phone's answer and Bun's AI preferences arrive. */
++const settle = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
++
++/** Starts the entering animations, as a browser does a frame after they mount (see the note at the top). */
++function startAnimations() {
++  act(() => {
++    for (const node of document.querySelectorAll<HTMLElement>('[style*="visibility: hidden"]')) node.dispatchEvent(new Event('animationstart'));
++  });
++}
++
++/** The element with this role and name, which must be there. */
++function named(role: string, name: string): HTMLElement {
++  const element = screen.queryByRole(role, { name });
++  expect(element, `a ${role} named ${name}`).not.toBeNull();
++  return element as HTMLElement;
++}
++
++/** The element with this test id, which must be there. */
++function found(testID: string): HTMLElement {
++  const element = screen.queryByTestId(testID);
++  expect(element, testID).not.toBeNull();
++  return element as HTMLElement;
++}
++
++const amount = () => found('add-amount');
++const press = (...names: string[]) => { for (const name of names) fireEvent.click(named('button', name)); };
++const moments = () => vi.mocked(playHaptic).mock.calls.map(([moment]) => moment);
++
++const LOCALES = ['th', 'en'] as const;
++const MODES = [['light', walletLight], ['dark', walletDark]] as const;
++const WORDS = {
++  th: {
++    next: 'ถัดไป', spending: 'จดรายจ่าย', incomeTitle: 'จดรายรับ', moving: 'โอนเงิน', group: 'ประเภทรายการ', expense: 'รายจ่าย', income: 'รายรับ', transfer: 'โอน',
++    from: 'จากบัญชีหลัก', into: 'เข้าบัญชีหลัก', choose: 'เลือกกระเป๋า', name: 'ชื่อรายการ', notInBudget: 'ไม่นับในงบ', tellBun: 'บอกบัน', delete: 'ลบตัวเลข',
++    zero: 'กรอกจำนวนเงินที่มากกว่าศูนย์', cap: 'จำนวนเงินสูงสุด ฿999,999,999.99', baht: (amount: string) => `${amount} บาท`, hidden: 'ซ่อนยอดเงินอยู่',
++  },
++  en: {
++    next: 'Next', spending: 'Add spending', incomeTitle: 'Add income', moving: 'Move money', group: 'Entry type', expense: 'Spending', income: 'Income', transfer: 'Move',
++    from: 'From บัญชีหลัก', into: 'Into บัญชีหลัก', choose: 'Choose a wallet', name: 'Name', notInBudget: 'Not counted in the budget', tellBun: 'Tell Bun', delete: 'Delete a digit',
++    zero: 'Enter an amount above zero', cap: 'Amounts go up to ฿999,999,999.99', baht: (amount: string) => `${amount} baht`, hidden: 'Amount hidden',
++  },
++} as const;
++
++/** 80 code points of Thai (Review Focus 3). */
++const LONG_NAME = 'บัญชีออมทรัพย์สำหรับค่าเทอมลูกและค่าใช้จ่ายในบ้านของครอบครัวใหญ่ทุกเดือนตลอดปีนะ';
++
++const LOOKUPS: Lookups = {
++  wallets: new Map([['w-main', { id: 'w-main', name: 'บัญชีหลัก' }], ['w-long', { id: 'w-long', name: LONG_NAME }]]),
++  categories: new Map(),
++};
++
++const DRAFT: QuickAddDraft = {
++  mode: 'create', recordId: 'r-1', commandId: 'k-1', type: 'expense', amountMinor: '', occurredOn: '2026-10-24', walletId: 'w-main',
++  categoryByType: { expense: null, income: null }, fromWalletId: 'w-main', toWalletId: null, note: '', merchant: '',
++};
++
++/** Four of what this person often logs; the step shows three. */
++const chipsOf = (apply: () => void = () => undefined): QuickChip[] => [
++  { label: 'กาแฟเย็น', amountMinor: '6500', apply },
++  { label: 'วิน', amountMinor: '2000', apply },
++  { label: 'BTS', amountMinor: '4700', apply },
++  { label: 'ข้าวมันไก่', amountMinor: '5000', apply },
++];
++
++/** The host's part: the draft, the keypad and the problem in today's words, around the step in a tray. */
++function Probe({ minor, walletId = 'w-main', chips = [], canTellBun, onStep = () => undefined, onTellBun = () => undefined }: {
++  minor?: Minor;
++  walletId?: string | null;
++  chips?: readonly QuickChip[];
++  /** Left out, the step offers บอกบัน as the host will: useCanTellBun(). */
++  canTellBun?: boolean;
++  onStep?: (step: AddStep) => void;
++  onTellBun?: () => void;
++}) {
++  const tc = useCopy();
++  const t = useDraftCopy(COPY);
++  const offered = useCanTellBun();
++  const [draft, setDraft] = useState<QuickAddDraft>(() => ({ ...DRAFT, walletId }));
++  const [keypad, setKeypad] = useState<KeypadState>(() => (minor === undefined ? EMPTY_KEYPAD : keypadFromMinor(minor)));
++  const problem = amountProblem(keypad);
++  const step: StepProps = { draft, keypad, onDraft: setDraft, onKeypad: setKeypad, onStep };
++  return (
++    <Tray
++      visible
++      onClose={() => undefined}
++      title={t(trayTitleKey(draft.type))}
++      header={<TypeSwitchHeader type={draft.type} onType={(type) => setDraft((now) => ({ ...now, type }))} />}
++      footer={<AmountFooter {...step} type={draft.type} problem={problem === null ? null : tc(KEYPAD_PROBLEM_TEXT[problem])} />}
++    >
++      <AmountStep {...step} type={draft.type} lookups={LOOKUPS} chips={chips} canTellBun={canTellBun ?? offered} onTellBun={onTellBun} />
++    </Tray>
++  );
++}
++
++test('typing 5 and 0 shows ฿50 and enables Next', async () => {
++  for (const locale of LOCALES) {
++    for (const [mode, colors] of MODES) {
++      const at = `${locale} ${mode}`;
++      const words = WORDS[locale];
++      const onStep = vi.fn();
++      mountWallet(<Probe onStep={onStep} />, { locale, mode });
++      await settle();
++      startAnimations();
++      // Nothing typed: ฿0, and Next waits without a word (nothing nags).
++      expect([amount().textContent, amount().getAttribute('aria-label')], at).toEqual(['฿0', words.baht('0')]);
++      expect(named('button', words.next).getAttribute('aria-disabled'), at).toBe('true');
++      expect(screen.queryByTestId('add-problem'), at).toBeNull();
++      fireEvent.click(named('button', words.next));
++      expect(onStep, at).not.toHaveBeenCalled();
++      press('5', '0');
++      // The boards' amount: DM Sans 700 at 58 pt in ink, centred, and said in baht.
++      expect([amount().textContent, amount().getAttribute('aria-label')], at).toEqual(['฿50', words.baht('50')]);
++      expect([amount().style.fontSize, amount().style.fontWeight, amount().style.color, amount().style.textAlign], at).toEqual(['58px', '700', rgba(colors.ink), 'center']);
++      // The wallet chip draws the wallet's own material.
++      expect(found('add-wallet').querySelector('linearGradient')?.getAttribute('id'), at).toBe(`wallet-material-${derivedLook('w-main').material}-${mode}`);
++      expect(named('button', words.next).getAttribute('aria-disabled'), at).toBeNull();
++      fireEvent.click(named('button', words.next));
++      expect(onStep.mock.calls, at).toEqual([['confirm']]);
++      expect(moments(), at).toEqual(['keyTap', 'keyTap']);
++      cleanup();
++      vi.clearAllMocks();
++    }
++  }
++});
++
++test("the keypad's problem shows above Next in today's words", async () => {
++  for (const locale of LOCALES) {
++    const words = WORDS[locale];
++    mountWallet(<Probe />, { locale });
++    await settle();
++    startAnimations();
++    press('0');
++    const problem = found('add-problem');
++    expect([problem.textContent, problem.getAttribute('role')], locale).toEqual([words.zero, 'alert']);
++    // Right above Next, which waits for an amount above zero.
++    expect(problem.nextElementSibling, locale).toBe(named('button', words.next));
++    expect(named('button', words.next).getAttribute('aria-disabled'), locale).toBe('true');
++    press(words.delete);
++    expect(screen.queryByTestId('add-problem'), locale).toBeNull();
++    // A tenth 9 would pass ฿999,999,999.99: refused, the amount stays and says why, and Next still takes it.
++    press(...Array<string>(10).fill('9'));
++    expect([amount().textContent, found('add-problem').textContent], locale).toEqual(['฿999,999,999', words.cap]);
++    expect(named('button', words.next).getAttribute('aria-disabled'), locale).toBeNull();
++    press(words.delete);
++    expect([amount().textContent, screen.queryByTestId('add-problem')], locale).toEqual(['฿99,999,999', null]);
++    cleanup();
++  }
++});
++
++test('income asks เข้า{wallet} and ชื่อรายการ, and says it is not counted in the budget', async () => {
++  for (const locale of LOCALES) {
++    const words = WORDS[locale];
++    const onStep = vi.fn();
++    mountWallet(<Probe onStep={onStep} />, { locale });
++    await settle();
++    startAnimations();
++    // Spending says the wallet it comes from, and has no name field or budget note.
++    expect(screen.queryByRole('dialog', { name: words.spending }), locale).not.toBeNull();
++    named('button', words.from);
++    expect([screen.queryByRole('textbox'), screen.queryByText(words.notInBudget)], locale).toEqual([null, null]);
++    fireEvent.click(named('radio', words.income));
++    expect(screen.queryByRole('dialog', { name: words.incomeTitle }), locale).not.toBeNull();
++    expect(screen.queryByRole('button', { name: words.from }), locale).toBeNull();
++    const field = named('textbox', words.name);
++    expect(field.getAttribute('maxlength'), locale).toBe('120');
++    fireEvent.change(field, { target: { value: 'เงินเดือน' } });
++    expect((named('textbox', words.name) as HTMLInputElement).value, locale).toBe('เงินเดือน');
++    expect(screen.queryByText(words.notInBudget), locale).not.toBeNull();
++    // The wallet chip opens the wallet step.
++    fireEvent.click(named('button', words.into));
++    expect(onStep.mock.calls, locale).toEqual([['wallet']]);
++    cleanup();
++    // A wallet not chosen (a copied record's closed wallet) asks for one, with no material.
++    mountWallet(<Probe walletId={null} />, { locale });
++    await settle();
++    startAnimations();
++    expect([named('button', words.choose).querySelector('linearGradient')], locale).toEqual([null]);
++    cleanup();
++  }
++});
++
++test("a transfer's amount stands alone, and its Next goes on to choose the two wallets", async () => {
++  const onStep = vi.fn();
++  mountWallet(<Probe onStep={onStep} canTellBun />);
++  await settle();
++  startAnimations();
++  fireEvent.click(named('radio', 'โอน'));
++  expect(screen.queryByRole('dialog', { name: 'โอนเงิน' })).not.toBeNull();
++  expect([screen.queryByTestId('add-wallet'), screen.queryByTestId('add-tell-bun'), screen.queryByRole('textbox')]).toEqual([null, null, null]);
++  press('5');
++  fireEvent.click(named('button', 'ถัดไป'));
++  expect(onStep.mock.calls).toEqual([['transfer']]);
++});
++
++test('บอกบัน shows only when Bun is on in the companion area', async () => {
++  const bunOn = () => fakeAiResources({}, { companion: true }).resources;
++  const onTellBun = vi.fn();
++  mountWallet(<Probe onTellBun={onTellBun} />, { ai: bunOn() });
++  await settle();
++  startAnimations();
++  fireEvent.click(named('button', 'บอกบัน'));
++  expect(onTellBun).toHaveBeenCalledTimes(1);
++  // For income too, as Quick add offers it; never for a transfer.
++  fireEvent.click(named('radio', 'รายรับ'));
++  expect(screen.queryByRole('button', { name: 'บอกบัน' })).not.toBeNull();
++  fireEvent.click(named('radio', 'โอน'));
++  expect(screen.queryByRole('button', { name: 'บอกบัน' })).toBeNull();
++  cleanup();
++  // Bun's AI help off (the fakes' own setting): no row.
++  mountWallet(<Probe />);
++  await settle();
++  startAnimations();
++  expect(screen.queryByRole('button', { name: 'บอกบัน' })).toBeNull();
++  cleanup();
++  // The companion area switched off: no row, even with Bun's help on.
++  vi.stubEnv('EXPO_PUBLIC_REDESIGN', '-companion');
++  mountWallet(<Probe />, { ai: bunOn() });
++  await settle();
++  startAnimations();
++  expect(screen.queryByRole('button', { name: 'บอกบัน' })).toBeNull();
++});
++
++test('at AX5 the chips are full-width rows and ฿999,999,999.99 never truncates', async () => {
++  expect([...LONG_NAME]).toHaveLength(80);
++  mountWallet(<Probe minor="99999999999" walletId="w-long" chips={chipsOf()} canTellBun />, { fontScale: AX5 });
++  await settle();
++  startAnimations();
++  // Every digit and the whole name are drawn, and no Text is clamped or shrunk to fit.
++  expect(amount().textContent).toBe('฿999,999,999.99');
++  expect(named('button', `จาก${LONG_NAME}`).textContent).toContain(LONG_NAME);
++  expect(seen.props.length).toBeGreaterThan(0);
++  for (const props of seen.props) expect([props.numberOfLines, props.adjustsFontSizeToFit, props.ellipsizeMode]).toEqual([undefined, undefined, undefined]);
++  // The amount grows with the text to 64 pt and no more (W30); the digits stop at 34 pt (ax-large-tray).
++  const scaleOf = (text: string) => seen.props.find((props) => props.children === text)?.maxFontSizeMultiplier;
++  expect([scaleOf('฿999,999,999.99'), scaleOf('5'), scaleOf('000')]).toEqual([amountMaxScale(58), 34 / 24, 34 / 24]);
++  expect(58 * amountMaxScale(58)).toBeCloseTo(64);
++  // The chips are a list of full-width rows of at least 64 pt, and the wallet chip is a full-width row.
++  const list = found('quick-chips');
++  expect(list.style.flexDirection).toBe('column');
++  expect(within(list).queryAllByRole('button').map((chip) => [chip.style.minHeight, chip.style.borderRadius])).toEqual(Array(3).fill(['64px', '']));
++  expect([found('add-wallet').style.alignSelf, found('add-wallet').style.minHeight]).toEqual(['stretch', '64px']);
++  // Keys are 56 pt on raised (ax-large-tray), and the type switch stacks.
++  expect(within(found('wallet-keypad')).queryAllByRole('button').map((key) => [key.style.minHeight, key.style.backgroundColor])).toEqual(Array(12).fill(['56px', rgba(walletLight.raised)]));
++  expect(found('type-switch').style.flexDirection).toBe('column');
++  cleanup();
++  // At the default text size: a row of 44 pt pills, keys 46 pt on nothing, the switch in a row, the wallet chip centred.
++  mountWallet(<Probe chips={chipsOf()} canTellBun />);
++  await settle();
++  startAnimations();
++  expect(found('quick-chips').style.flexDirection).toBe('row');
++  expect(within(found('quick-chips')).queryAllByRole('button').map((chip) => [chip.style.minHeight, chip.style.borderRadius])).toEqual(Array(3).fill(['44px', '22px']));
++  expect(within(found('wallet-keypad')).queryAllByRole('button').map((key) => key.style.minHeight)).toEqual(Array(12).fill('46px'));
++  expect(within(found('wallet-keypad')).queryAllByRole('button').map((key) => key.style.backgroundColor)).not.toContain(rgba(walletLight.raised));
++  expect([found('type-switch').style.flexDirection, found('add-wallet').style.alignSelf, found('add-wallet').style.minHeight]).toEqual(['row', 'center', '44px']);
++});
++
++test('every key, chip and segment is at least 44 pt', async () => {
++  for (const locale of LOCALES) {
++    for (const [mode] of MODES) {
++      const at = `${locale} ${mode}`;
++      const words = WORDS[locale];
++      mountWallet(<Probe chips={chipsOf()} canTellBun />, { locale, mode });
++      await settle();
++      startAnimations();
++      const keys = within(found('wallet-keypad')).queryAllByRole('button');
++      expect(keys.map((key) => key.getAttribute('aria-label')), at).toEqual(['1', '2', '3', '4', '5', '6', '7', '8', '9', '000', '0', words.delete]);
++      const segments = within(found('type-switch')).queryAllByRole('radio');
++      expect(segments.map((segment) => segment.getAttribute('aria-label')), at).toEqual([words.expense, words.income, words.transfer]);
++      const chips = within(found('quick-chips')).queryAllByRole('button');
++      expect(chips, at).toHaveLength(3);
++      for (const control of [...keys, ...segments, ...chips, found('add-wallet'), found('add-tell-bun'), named('button', words.next)]) {
++        expect(Number.parseFloat(control.style.minHeight), `${at}: ${control.getAttribute('aria-label')}`).toBeGreaterThanOrEqual(44);
++      }
++      cleanup();
++    }
++  }
++});
++
++test('the type switch is one named radio group: a new type ticks once and is chosen, and the chosen one does nothing', async () => {
++  for (const locale of LOCALES) {
++    for (const [mode, colors] of MODES) {
++      const at = `${locale} ${mode}`;
++      const words = WORDS[locale];
++      const onType = vi.fn();
++      mountWallet(<TypeSwitchHeader type="expense" onType={onType} />, { locale, mode });
++      await settle();
++      const group = named('radiogroup', words.group);
++      const segments = within(group).getAllByRole('radio');
++      expect(segments.map((segment) => [segment.getAttribute('aria-label'), segment.getAttribute('aria-checked')]), at).toEqual([
++        [words.expense, 'true'], [words.income, 'false'], [words.transfer, 'false'],
++      ]);
++      // The chosen type: a card segment with bold ink words; the others quiet on the raised track.
++      const [chosen, other] = [within(segments[0] as HTMLElement).getByText(words.expense), within(segments[1] as HTMLElement).getByText(words.income)];
++      expect([group.style.backgroundColor, (segments[0] as HTMLElement).style.backgroundColor], at).toEqual([rgba(colors.raised), rgba(colors.card)]);
++      expect((segments[1] as HTMLElement).style.backgroundColor, at).not.toBe(rgba(colors.card));
++      expect([chosen.style.color, chosen.style.fontWeight, other.style.color, other.style.fontWeight], at).toEqual([rgba(colors.ink), '700', rgba(colors.quiet), '500']);
++      fireEvent.click(segments[0] as HTMLElement);
++      expect(onType, at).not.toHaveBeenCalled();
++      fireEvent.click(segments[2] as HTMLElement);
++      expect([onType.mock.calls, moments()], at).toEqual([[['transfer']], ['segmentChange']]);
++      cleanup();
++      vi.clearAllMocks();
++    }
++  }
++});
++
++test("the keypad types through today's rules: 000 on nothing is one 0, delete takes one digit, each key ticks once, and a disabled keypad takes nothing", async () => {
++  mountWallet(<Probe />);
++  await settle();
++  startAnimations();
++  press('000');
++  expect(amount().textContent).toBe('฿0');
++  press('5');
++  expect(amount().textContent).toBe('฿5');
++  press('000');
++  expect(amount().textContent).toBe('฿5,000');
++  press('ลบตัวเลข');
++  expect(amount().textContent).toBe('฿500');
++  expect(moments()).toEqual(['keyTap', 'keyTap', 'keyTap', 'keyTap']);
++  cleanup();
++  vi.clearAllMocks();
++  const onKeypad = vi.fn();
++  mountWallet(<WalletKeypad keypad={EMPTY_KEYPAD} onKeypad={onKeypad} disabled />);
++  await settle();
++  const five = named('button', '5');
++  expect([five.getAttribute('aria-disabled'), five.style.opacity]).toEqual(['true', '0.4']);
++  fireEvent.click(five);
++  expect([onKeypad.mock.calls, moments()]).toEqual([[], []]);
++});
++
++test('the quick chips: at most three, each says its name and amount, and a tap fills the entry through apply', async () => {
++  for (const locale of LOCALES) {
++    const words = WORDS[locale];
++    const apply = [vi.fn(), vi.fn(), vi.fn(), vi.fn()];
++    mountWallet(<QuickChips chips={chipsOf().map((chip, index) => ({ ...chip, apply: apply[index] as () => void }))} />, { locale });
++    await settle();
++    const chips = screen.queryAllByRole('button');
++    expect(chips.map((chip) => chip.getAttribute('aria-label')), locale).toEqual([`กาแฟเย็น ${words.baht('65')}`, `วิน ${words.baht('20')}`, `BTS ${words.baht('47')}`]);
++    expect(chips.map((chip) => chip.textContent), locale).toEqual(['กาแฟเย็น฿65', 'วิน฿20', 'BTS฿47']);
++    fireEvent.click(chips[1] as HTMLElement);
++    expect([apply.map((each) => each.mock.calls.length), moments()], locale).toEqual([[0, 1, 0, 0], ['chipPick']]);
++    cleanup();
++    vi.clearAllMocks();
++  }
++  mountWallet(<QuickChips chips={[]} />);
++  await settle();
++  expect(screen.queryByTestId('quick-chips')).toBeNull();
++});
++
++test("private mode hides the chips' amounts, never the amount being typed", async () => {
++  mountWallet(<Probe minor="5000" chips={chipsOf()} />, { device: { [PRIVATE_MODE_NAME]: '1' } });
++  await settle();
++  startAnimations();
++  expect([amount().textContent, amount().getAttribute('aria-label')]).toEqual(['฿50', '50 บาท']);
++  const chips = within(found('quick-chips')).getAllByRole('button');
++  expect(chips.map((chip) => chip.textContent)).toEqual(['กาแฟเย็น฿••••', 'วิน฿••••', 'BTS฿••••']);
++  expect(chips.map((chip) => chip.getAttribute('aria-label'))).toEqual(['กาแฟเย็น ซ่อนยอดเงินอยู่', 'วิน ซ่อนยอดเงินอยู่', 'BTS ซ่อนยอดเงินอยู่']);
++  press('0');
++  expect(amount().textContent).toBe('฿500');
++});
++
++test("the add tray's sections come right after the tray's, and each opens at once on its board's words", async () => {
++  const ids = WALLET_SECTIONS.map((section) => section.id);
++  const at = ids.indexOf('bw-tray-amount');
++  expect(ids.slice(at - 4, at + 2)).toEqual(['bw-tray-short', 'bw-tray-tall', 'bw-tray-large', 'bw-buttons', 'bw-tray-amount', 'bw-tray-income']);
++  const cases = [
++    ['bw-tray-amount', 'จดรายจ่าย', '฿50', 'จากบัญชีหลัก'],
++    ['bw-tray-income', 'จดรายรับ', '฿35,000', 'เข้าบัญชีหลัก'],
++  ] as const;
++  for (const [id, title, shown, wallet] of cases) {
++    const section = WALLET_SECTIONS.find((each) => each.id === id);
++    mountWallet(<>{section?.render()}</>);
++    await settle();
++    startAnimations();
++    expect(screen.queryAllByRole('dialog', { name: title }), id).toHaveLength(1);
++    expect([amount().textContent, found('add-wallet').getAttribute('aria-label')], id).toEqual([shown, wallet]);
++    if (id === 'bw-tray-amount') {
++      expect([screen.queryByTestId('add-tell-bun') !== null, within(found('quick-chips')).getAllByRole('button').length], id).toEqual([true, 3]);
++    } else {
++      expect((named('textbox', 'ชื่อรายการ') as HTMLInputElement).value, id).toBe('เงินเดือน');
++    }
++    cleanup();
++  }
++});
+diff --git a/apps/app/src/wallet/add/AmountStep.tsx b/apps/app/src/wallet/add/AmountStep.tsx
+new file mode 100644
+index 0000000..3001e8a
+--- /dev/null
++++ b/apps/app/src/wallet/add/AmountStep.tsx
+@@ -0,0 +1,242 @@
++// The add tray's amount step (P2-T14; W14, W15, W29; bw-tray-amount,
++// rh-income, ax-large-tray). AmountStep is the step's middle: the amount at
++// 58 pt from what the keypad holds; the wallet the money comes from (spending)
++// or goes into (income), which opens the wallet step; บอกบัน when Bun can help
++// (P2-T16 opens today's Tell Bun sheet from it); income's name and that income
++// is not counted in the budget; and up to three quick chips. AmountFooter is
++// its footer, which the host passes to the tray's pinned `footer`: the keypad,
++// the keypad's problem in today's words, and Next, which waits for an amount
++// the keypad can save. Both are controlled (StepProps), so the edit tray
++// (P2-T27) reuses them.
++//
++// - What the person types is never masked: private mode hides stored amounts,
++//   such as the chips', not the amount being typed (the controller's P2-T14
++//   ruling).
++// - At the largest text sizes (ax-large-tray) the tray is full height, the
++//   keypad and Next stay pinned in its footer and only the middle scrolls; the
++//   amount opens at the middle's top, grows to 64 pt and wraps; the wallet
++//   chip and the chips become full-width rows.
++// - Tell Bun is for spending and income, as Quick add offers it; a transfer's
++//   amount stands alone, and its Next goes on to choose the two wallets.
++// - No photo row (W15): the receipt stays the record's.
++import { MERCHANT_MAX_CHARS } from '@gogospend/contracts';
++import { Pressable, View } from 'react-native';
++import Svg, { Circle, Path } from 'react-native-svg';
++
++import { isRedesignEnabled } from '@mobile/config/featureFlags';
++import { useAiCompanion } from '@mobile/spend/v1/ai/AiCompanionProvider';
++import type { Lookups } from '@mobile/spend/v1/redesign/shared';
++import { Text, TextInput } from '@mobile/theme/AppText';
++import { useWalletColors } from '@mobile/theme/ThemeProvider';
++import { LATIN_UI_FONT_FAMILY, THAI_UI_FONT_FAMILY } from '@mobile/theme/uiFontFamily';
++import { amountMaxScale, WALLET_TYPE, walletLineHeight } from '@mobile/theme/walletType';
++import { DECORATIVE, POLITE_LIVE_REGION, useAnnouncement } from '@mobile/ui/a11y';
++import { evaluateKeypad, keypadDisplay } from '@mobile/ui/keypadExpression';
++import { useLargeText } from '@mobile/ui/largeText';
++import { COMMON_COPY } from '../common/copy';
++import { useDraftCopy } from '../copy/useDraftCopy';
++import { MaterialFill } from '../looks/MaterialFill';
++import { useWalletLooks } from '../looks/WalletLooksProvider';
++import { spokenMoney } from '../money/walletMoney';
++import { PrimaryButton } from '../tray/PrimaryButton';
++import { WalletText } from '../WalletText';
++import { stepAfterAmount } from './addFlow';
++import type { AddType, StepProps } from './addFlow';
++import { COPY } from './copy';
++import { QuickChips } from './QuickChips';
++import type { QuickChip } from './QuickChips';
++import { WalletKeypad } from './WalletKeypad';
++
++const LINES = { ...COMMON_COPY, ...COPY } as const;
++
++/** The amount's size (bw-tray-amount); it grows to 64 pt and no more (W30, ax-large-tray). */
++const AMOUNT = 58;
++
++/** Whether the step offers บอกบัน: the companion area is on and Bun's AI help is on (P2-T16 passes it as `canTellBun`). */
++export function useCanTellBun(): boolean {
++  const { enabled } = useAiCompanion();
++  return isRedesignEnabled('companion') && enabled;
++}
++
++export function AmountStep({ draft, keypad, onDraft, onStep, type, lookups, chips, canTellBun, onTellBun }: StepProps & {
++  type: AddType;
++  lookups: Lookups;
++  chips: readonly QuickChip[];
++  canTellBun: boolean;
++  onTellBun(): void;
++}) {
++  const colors = useWalletColors();
++  const t = useDraftCopy(LINES);
++  const typed = evaluateKeypad(keypad, { allowZero: true });
++  return (
++    <View style={{ gap: 12 }}>
++      <View style={{ alignItems: 'center', gap: 8 }}>
++        {/* Each key's result is read out where live regions are (the keys say their own names). */}
++        <View {...POLITE_LIVE_REGION} style={{ alignSelf: 'stretch' }}>
++          <Text
++            testID="add-amount"
++            accessibilityLabel={spokenMoney(typed.ok ? typed.minor : '0', t)}
++            maxFontSizeMultiplier={amountMaxScale(AMOUNT)}
++            style={{
++              fontFamily: LATIN_UI_FONT_FAMILY,
++              fontWeight: '700',
++              fontSize: AMOUNT,
++              lineHeight: walletLineHeight(AMOUNT, 'latin'),
++              letterSpacing: (AMOUNT * -2) / 100,
++              color: colors.ink,
++              textAlign: 'center',
++            }}
++          >
++            {`฿${keypadDisplay(keypad)}`}
++          </Text>
++        </View>
++        {type === 'transfer' ? null : <WalletChip type={type} walletId={draft.walletId} lookups={lookups} onPress={() => onStep('wallet')} />}
++      </View>
++      {canTellBun && type !== 'transfer' ? <TellBunRow onPress={onTellBun} /> : null}
++      {type === 'income' ? <NameField value={draft.merchant} onChange={(merchant) => onDraft({ ...draft, merchant })} /> : null}
++      <QuickChips chips={chips} />
++    </View>
++  );
++}
++
++/** The step's footer, for the tray's pinned `footer`: the keypad, then the keypad's problem right above Next. */
++export function AmountFooter({ keypad, onKeypad, onStep, type, problem }: StepProps & { type: AddType; problem: string | null }) {
++  const t = useDraftCopy(COMMON_COPY);
++  // iOS reads no live region, so a new problem is also said once.
++  useAnnouncement(problem);
++  return (
++    <View style={{ gap: 12 }}>
++      <WalletKeypad keypad={keypad} onKeypad={onKeypad} />
++      <View style={{ gap: 8 }}>
++        {problem === null ? null : (
++          <WalletText testID="add-problem" role="label" accessibilityRole="alert" aria-live="polite" style={{ textAlign: 'center' }}>
++            {problem}
++          </WalletText>
++        )}
++        <PrimaryButton testID="add-next" label={t('common.next')} disabled={!evaluateKeypad(keypad).ok} onPress={() => onStep(stepAfterAmount(type))} />
++      </View>
++    </View>
++  );
++}
++
++/** The chip under the amount: the wallet's material and its words, opening the wallet step. A full-width row at the largest text sizes. */
++function WalletChip({ type, walletId, lookups, onPress }: { type: 'expense' | 'income'; walletId: string | null; lookups: Lookups; onPress(): void }) {
++  const colors = useWalletColors();
++  const t = useDraftCopy(COPY);
++  const large = useLargeText();
++  const { lookOf } = useWalletLooks();
++  const wallet = walletId === null ? undefined : lookups.wallets.get(walletId);
++  const words = wallet === undefined
++    ? t('add.chooseWallet')
++    : t(type === 'income' ? 'add.intoWallet' : 'add.fromWallet', { wallet: wallet.name });
++  return (
++    <Pressable
++      testID="add-wallet"
++      accessibilityRole="button"
++      accessibilityLabel={words}
++      onPress={onPress}
++      style={({ pressed }) => ({
++        alignSelf: large ? 'stretch' : 'center',
++        maxWidth: '100%',
++        minHeight: large ? 64 : 44,
++        flexDirection: 'row',
++        alignItems: 'center',
++        gap: large ? 12 : 8,
++        paddingLeft: large ? 14 : 8,
++        paddingRight: 14,
++        paddingVertical: large ? 10 : 4,
++        borderRadius: large ? 18 : 22,
++        backgroundColor: colors.raised,
++        opacity: pressed ? 0.7 : 1,
++      })}
++    >
++      {wallet === undefined ? null : (
++        <View {...DECORATIVE} style={{ width: large ? 44 : 34, height: large ? 28 : 22 }}>
++          <MaterialFill material={lookOf(wallet.id).material} radius={large ? 6 : 5} />
++        </View>
++      )}
++      <WalletText role="label" style={{ flexShrink: 1 }}>{words}</WalletText>
++      <View {...DECORATIVE}>
++        <Svg width={large ? 22 : 12} height={large ? 22 : 12} viewBox="0 0 24 24">
++          <Path d="M6 9l6 6 6-6" fill="none" stroke={colors.ink} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" />
++        </Svg>
++      </View>
++    </Pressable>
++  );
++}
++
++/** บอกบัน: a row that opens Tell Bun (bw-tray-amount draws the sentence typed into it; here the sheet takes it). */
++function TellBunRow({ onPress }: { onPress(): void }) {
++  const colors = useWalletColors();
++  const t = useDraftCopy(COPY);
++  return (
++    <Pressable
++      testID="add-tell-bun"
++      accessibilityRole="button"
++      accessibilityLabel={t('add.tellBun')}
++      onPress={onPress}
++      style={({ pressed }) => ({
++        minHeight: 50,
++        flexDirection: 'row',
++        alignItems: 'center',
++        gap: 8,
++        paddingHorizontal: 14,
++        paddingVertical: 8,
++        borderRadius: 16,
++        backgroundColor: colors.raised,
++        opacity: pressed ? 0.7 : 1,
++      })}
++    >
++      <View {...DECORATIVE}>
++        <Svg width={18} height={18} viewBox="0 0 24 24">
++          <Path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8Z" fill={colors.violet} />
++        </Svg>
++      </View>
++      <WalletText role="body" tone="quiet" style={{ flexShrink: 1 }}>{t('add.tellBun')}</WalletText>
++    </Pressable>
++  );
++}
++
++/** Income's name (rh-income): one line of up to 120 characters, and the note that income is not counted in the budget. */
++function NameField({ value, onChange }: { value: string; onChange(next: string): void }) {
++  const colors = useWalletColors();
++  const t = useDraftCopy(COPY);
++  const large = useLargeText();
++  return (
++    <View
++      testID="add-name"
++      style={{
++        minHeight: 58,
++        flexDirection: large ? 'column' : 'row',
++        alignItems: large ? 'stretch' : 'center',
++        gap: large ? 4 : 12,
++        paddingLeft: large ? 14 : 9,
++        paddingRight: 14,
++        paddingVertical: 8,
++        borderRadius: 16,
++        backgroundColor: colors.raised,
++      }}
++    >
++      {large ? null : (
++        <View {...DECORATIVE} style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' }}>
++          <Svg width={20} height={20} viewBox="0 0 24 24">
++            <Path d="M3 7h18v10H3Z M6.5 10v4M17.5 10v4" fill="none" stroke={colors.ink} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
++            <Circle cx={12} cy={12} r={2.6} fill="none" stroke={colors.ink} strokeWidth={1.8} />
++          </Svg>
++        </View>
++      )}
++      <View style={{ flex: large ? undefined : 1, minWidth: 0 }}>
++        <WalletText role="caption" tone="quiet">{t('add.merchantLabel')}</WalletText>
++        <TextInput
++          accessibilityLabel={t('add.merchantLabel')}
++          value={value}
++          onChangeText={onChange}
++          maxLength={MERCHANT_MAX_CHARS}
++          maxFontSizeMultiplier={WALLET_TYPE.body.maxScale}
++          style={{ fontFamily: THAI_UI_FONT_FAMILY, fontSize: WALLET_TYPE.body.size, fontWeight: '500', color: colors.ink, padding: 0 }}
++        />
++      </View>
++      <WalletText role="caption" tone="quiet">{t('add.notInBudget')}</WalletText>
++    </View>
++  );
++}
+diff --git a/apps/app/src/wallet/add/QuickChips.tsx b/apps/app/src/wallet/add/QuickChips.tsx
+new file mode 100644
+index 0000000..d15d19b
+--- /dev/null
++++ b/apps/app/src/wallet/add/QuickChips.tsx
+@@ -0,0 +1,71 @@
++// The quick chips (bw-tray-amount, ax-large-tray): at most three things this
++// person often logs, each its name and its amount. A tap fills the entry
++// through the host's `apply` (P2-T16 builds them from today's often-logged
++// list) and ticks once (chipPick). By default they are a row of 44 pt pills
++// that wraps (§4: the boards draw 36 pt). At the largest text sizes they are a
++// list of full-width rows of at least 64 pt, where a long name pushes the
++// amount onto the next line. The amount is WalletAmount's, so private mode
++// masks it (W10), and each chip says its name and its amount (add.chip), or
++// that the amount is hidden.
++import type { Minor } from '@gogospend/contracts';
++import { Pressable, View } from 'react-native';
++
++import { playHaptic } from '@mobile/lib/hapticMoment';
++import { useWalletColors } from '@mobile/theme/ThemeProvider';
++import { useLargeText } from '@mobile/ui/largeText';
++import { COMMON_COPY } from '../common/copy';
++import { useDraftCopy } from '../copy/useDraftCopy';
++import { WalletAmount } from '../money/WalletAmount';
++import { spokenMoney } from '../money/walletMoney';
++import { usePrivateMode } from '../privacy/PrivateModeProvider';
++import { WalletText } from '../WalletText';
++import { COPY } from './copy';
++
++export type QuickChip = { label: string; amountMinor: Minor; apply(): void };
++
++const LINES = { ...COMMON_COPY, ...COPY } as const;
++
++/** The most chips the step shows. */
++const MOST = 3;
++
++export function QuickChips({ chips }: { chips: readonly QuickChip[] }) {
++  const colors = useWalletColors();
++  const t = useDraftCopy(LINES);
++  const large = useLargeText();
++  const { hidden } = usePrivateMode();
++  const shown = chips.slice(0, MOST);
++  if (shown.length === 0) return null;
++  return (
++    <View
++      testID="quick-chips"
++      style={large
++        ? { flexDirection: 'column', borderWidth: 1, borderColor: colors.hairline, borderRadius: 18, overflow: 'hidden' }
++        : { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}
++    >
++      {shown.map((chip, index) => (
++        <Pressable
++          key={index}
++          accessibilityRole="button"
++          accessibilityLabel={t('add.chip', { label: chip.label, amount: hidden ? t('common.amountHidden') : spokenMoney(chip.amountMinor, t) })}
++          onPress={() => {
++            playHaptic('chipPick');
++            chip.apply();
++          }}
++          style={({ pressed }) => ({
++            flexDirection: 'row',
++            flexWrap: 'wrap',
++            alignItems: large ? 'baseline' : 'center',
++            columnGap: large ? 14 : 6,
++            opacity: pressed ? 0.7 : 1,
++            ...(large
++              ? { minHeight: 64, alignContent: 'center', paddingVertical: 8, paddingHorizontal: 16, borderTopWidth: index === 0 ? 0 : 1, borderColor: colors.hairline }
++              : { minHeight: 44, flexShrink: 1, paddingHorizontal: 14, borderRadius: 22, borderWidth: 1, borderColor: colors.hairline, backgroundColor: colors.card }),
++          })}
++        >
++          <WalletText role="label">{chip.label}</WalletText>
++          <WalletAmount minor={chip.amountMinor} size={16} />
++        </Pressable>
++      ))}
++    </View>
++  );
++}
+diff --git a/apps/app/src/wallet/add/TypeSwitchHeader.tsx b/apps/app/src/wallet/add/TypeSwitchHeader.tsx
+new file mode 100644
+index 0000000..d628d85
+--- /dev/null
++++ b/apps/app/src/wallet/add/TypeSwitchHeader.tsx
+@@ -0,0 +1,73 @@
++// The add tray's header (W14; rh-income, rh-transfer): one segmented control
++// for spending, income and moving money. It takes the title's place in the
++// tray's header row, where the title still names the dialog and is what a
++// screen reader meets first (P2-T13). A radio group named ประเภทรายการ, as the
++// boards name it and as today's TypeSwitch is a radio group: the chosen type
++// is a `card` segment with bold ink words (lifted by a soft shadow by day),
++// the others quiet on the `raised` track, so the choice never rests on the
++// fill alone. Each segment is at least 44 pt (§4); at the largest text sizes
++// the three stack, so each word stays whole. A new choice ticks once
++// (segmentChange); the chosen one does nothing.
++import { Pressable, View } from 'react-native';
++
++import { playHaptic } from '@mobile/lib/hapticMoment';
++import { useWalletColors } from '@mobile/theme/ThemeProvider';
++import { useLargeText } from '@mobile/ui/largeText';
++import { useDraftCopy } from '../copy/useDraftCopy';
++import { WalletText } from '../WalletText';
++import type { AddType } from './addFlow';
++import { COPY } from './copy';
++
++const TYPES: readonly AddType[] = ['expense', 'income', 'transfer'];
++const LABELS = { expense: 'add.typeExpense', income: 'add.typeIncome', transfer: 'add.typeTransfer' } as const;
++
++/** A segment's height (rh-income), and the chosen one's lift by day. */
++const SEGMENT = 44;
++const LIFT = '0px 1px 4px rgba(17, 16, 20, 0.14)';
++
++export function TypeSwitchHeader({ type, onType }: { type: AddType; onType(type: AddType): void }) {
++  const colors = useWalletColors();
++  const t = useDraftCopy(COPY);
++  const large = useLargeText();
++  return (
++    <View
++      testID="type-switch"
++      role="radiogroup"
++      accessibilityLabel={t('add.typeGroup')}
++      style={{ flexDirection: large ? 'column' : 'row', gap: 2, padding: 4, borderRadius: 17, backgroundColor: colors.raised }}
++    >
++      {TYPES.map((each) => {
++        const checked = each === type;
++        return (
++          <Pressable
++            key={each}
++            accessibilityRole="radio"
++            accessibilityLabel={t(LABELS[each])}
++            accessibilityState={{ checked }}
++            aria-checked={checked}
++            onPress={() => {
++              if (checked) return;
++              playHaptic('segmentChange');
++              onType(each);
++            }}
++            style={{
++              flex: large ? undefined : 1,
++              minHeight: SEGMENT,
++              borderRadius: 13,
++              paddingHorizontal: 8,
++              paddingVertical: 4,
++              alignItems: 'center',
++              justifyContent: 'center',
++              backgroundColor: checked ? colors.card : 'transparent',
++              boxShadow: checked && !colors.isDark ? LIFT : undefined,
++            }}
++          >
++            <WalletText role="label" tone={checked ? 'ink' : 'quiet'} style={{ fontWeight: checked ? '700' : '500', textAlign: 'center' }}>
++              {t(LABELS[each])}
++            </WalletText>
++          </Pressable>
++        );
++      })}
++    </View>
++  );
++}
+diff --git a/apps/app/src/wallet/add/WalletKeypad.tsx b/apps/app/src/wallet/add/WalletKeypad.tsx
+new file mode 100644
+index 0000000..0e9473e
+--- /dev/null
++++ b/apps/app/src/wallet/add/WalletKeypad.tsx
+@@ -0,0 +1,90 @@
++// The add tray's keypad (W29; bw-tray-amount, rh-income, ax-large-tray): 1 to
++// 9, then 000, 0 and delete, three to a row. It types through today's exact
++// rules (applyKey, src/ui/keypadExpression.ts), so an amount stays satang and
++// a key that would pass ฿999,999,999.99 is refused, its problem set for the
++// host to show. No operators and no decimal point: Quick add keeps those. The
++// keys are buttons in DM Sans, as the boards draw them, at least 46 pt tall
++// (§4's 44 pt), with nothing behind them until pressed. At the largest text
++// sizes they are 56 pt on `raised` with the digits capped at 34 pt, so each
++// reads as a target and keeps its digits (the host pins the keypad in the
++// tray's footer, so it never scrolls). Each press ticks once (keyTap).
++import { Pressable, View } from 'react-native';
++
++import { playHaptic } from '@mobile/lib/hapticMoment';
++import { Text } from '@mobile/theme/AppText';
++import { useWalletColors } from '@mobile/theme/ThemeProvider';
++import { LATIN_UI_FONT_FAMILY } from '@mobile/theme/uiFontFamily';
++import { walletLineHeight } from '@mobile/theme/walletType';
++import { Glyph } from '@mobile/ui/Glyph';
++import { applyKey } from '@mobile/ui/keypadExpression';
++import type { KeypadKey, KeypadState } from '@mobile/ui/keypadExpression';
++import { useLargeText } from '@mobile/ui/largeText';
++import { useDraftCopy } from '../copy/useDraftCopy';
++import { COPY } from './copy';
++
++const ROWS: readonly (readonly KeypadKey[])[] = [
++  ['1', '2', '3'],
++  ['4', '5', '6'],
++  ['7', '8', '9'],
++  ['000', '0', 'backspace'],
++];
++
++/** A key's height (bw-tray-amount; ax-large-tray at the largest text sizes). */
++const KEY = 46;
++const LARGE_KEY = 56;
++/** Digits at 24 pt and 000 at 20 (the boards), at most 34 and 28 pt (ax-large-tray). */
++const DIGIT = 24;
++const TRIPLE = 20;
++const DIGIT_CAP = 34 / 24;
++
++export function WalletKeypad({ keypad, onKeypad, disabled = false }: { keypad: KeypadState; onKeypad(next: KeypadState): void; disabled?: boolean }) {
++  const colors = useWalletColors();
++  const t = useDraftCopy(COPY);
++  const large = useLargeText();
++  const press = (key: KeypadKey) => {
++    playHaptic('keyTap');
++    onKeypad(applyKey(keypad, key));
++  };
++  return (
++    <View testID="wallet-keypad" style={{ gap: 4 }}>
++      {ROWS.map((row) => (
++        <View key={row.join(' ')} style={{ flexDirection: 'row', gap: large ? 6 : 8 }}>
++          {row.map((key) => {
++            const size = key === '000' ? TRIPLE : DIGIT;
++            return (
++              <Pressable
++                key={key}
++                accessibilityRole="button"
++                accessibilityLabel={key === 'backspace' ? t('add.deleteKey') : key}
++                accessibilityState={{ disabled }}
++                aria-disabled={disabled}
++                disabled={disabled}
++                onPress={() => press(key)}
++                style={({ pressed }) => ({
++                  flex: 1,
++                  minHeight: large ? LARGE_KEY : KEY,
++                  borderRadius: 14,
++                  backgroundColor: large || pressed ? colors.raised : 'transparent',
++                  alignItems: 'center',
++                  justifyContent: 'center',
++                  opacity: disabled ? 0.4 : 1,
++                })}
++              >
++                {key === 'backspace' ? (
++                  <Glyph name="backspace" size={large ? 32 : 24} color={colors.ink} />
++                ) : (
++                  <Text
++                    maxFontSizeMultiplier={DIGIT_CAP}
++                    style={{ fontFamily: LATIN_UI_FONT_FAMILY, fontWeight: '500', fontSize: size, lineHeight: walletLineHeight(size, 'latin'), color: colors.ink }}
++                  >
++                    {key}
++                  </Text>
++                )}
++              </Pressable>
++            );
++          })}
++        </View>
++      ))}
++    </View>
++  );
++}
+diff --git a/apps/app/src/wallet/add/addFlow.test.ts b/apps/app/src/wallet/add/addFlow.test.ts
+new file mode 100644
+index 0000000..b5f8d7d
+--- /dev/null
++++ b/apps/app/src/wallet/add/addFlow.test.ts
+@@ -0,0 +1,141 @@
++// The add flow's rules (P2-T14; W14, W29; bw-tray-confirm, rh-transfer): the
++// tray's title by type; where the amount's Next goes; which keypad problem the
++// amount step shows; the confirm step's rows, and Bun's guesses until the
++// person changes them; move all, offered only for a known balance above zero;
++// and each wallet's balance after a transfer, exact in BigInt.
++import assert from 'node:assert/strict';
++import { test } from 'node:test';
++
++import type { CategoryDto } from '@gogospend/contracts';
++
++import type { QuickAddDraft } from '../../spend/v1/redesign/quickAddModel.ts';
++import type { Lookups } from '../../spend/v1/redesign/shared.ts';
++import { applyKey, EMPTY_KEYPAD, keypadFromMinor } from '../../ui/keypadExpression.ts';
++import type { KeypadKey, KeypadState } from '../../ui/keypadExpression.ts';
++import { amountProblem, balancesAfter, confirmRows, moveAllMinor, stepAfterAmount, stillGuessed, trayTitleKey } from './addFlow.ts';
++
++const TODAY = '2026-10-24';
++
++const category = (id: string, type: 'expense' | 'income', label: string | null, builtin: CategoryDto['builtin_key'] = null): CategoryDto => (
++  { id, type, builtin_key: builtin, label, color: null, archived: false, version: 1 }
++);
++
++const LOOKUPS: Lookups = {
++  wallets: new Map([['w-main', { id: 'w-main', name: 'บัญชีหลัก' }], ['w-cash', { id: 'w-cash', name: 'เงินสด' }]]),
++  categories: new Map([
++    ['c-food', category('c-food', 'expense', null, 'food')],
++    ['c-merit', category('c-merit', 'expense', 'ทำบุญ')],
++    ['c-salary', category('c-salary', 'income', null, 'salary')],
++  ]),
++};
++
++const DRAFT: QuickAddDraft = {
++  mode: 'create', recordId: 'r-1', commandId: 'k-1', type: 'expense', amountMinor: '', occurredOn: TODAY, walletId: 'w-main',
++  categoryByType: { expense: 'c-food', income: 'c-salary' }, fromWalletId: 'w-main', toWalletId: 'w-cash', note: '', merchant: '',
++};
++
++/** The app's copy as tc gives it in Thai, for the built-in categories these cases name. */
++const THAI: Readonly<Record<string, string>> = { Food: 'อาหาร', Salary: 'เงินเดือน' };
++const tc = (english: string) => THAI[english] ?? english;
++
++const context = (guessed: readonly string[] = []) => ({ lookups: LOOKUPS, today: TODAY, dateLocale: 'th' as const, guessed: new Set(guessed), tc });
++const shown = (rows: ReturnType<typeof confirmRows>) => rows.map((row) => [row.key, row.labelKey, row.value]);
++const guessedKeys = (rows: ReturnType<typeof confirmRows>) => rows.filter((row) => row.guessed).map((row) => row.key);
++
++const typed = (...keys: KeypadKey[]): KeypadState => keys.reduce(applyKey, EMPTY_KEYPAD);
++
++test("the tray's title follows its type, and the amount's Next goes to confirm, or a transfer's to its two wallets", () => {
++  assert.equal(trayTitleKey('expense'), 'add.titleExpense');
++  assert.equal(trayTitleKey('income'), 'add.titleIncome');
++  assert.equal(trayTitleKey('transfer'), 'add.titleTransfer');
++  assert.equal(stepAfterAmount('expense'), 'confirm');
++  assert.equal(stepAfterAmount('income'), 'confirm');
++  assert.equal(stepAfterAmount('transfer'), 'transfer');
++});
++
++test('an expense confirms category, wallet, date and note; a transfer confirms from, to, date and note', () => {
++  assert.deepEqual(shown(confirmRows(DRAFT, context())), [
++    ['category', 'add.rowCategory', 'อาหาร'],
++    ['wallet', 'add.rowWallet', 'บัญชีหลัก'],
++    ['date', 'add.rowDate', 'วันนี้'],
++    ['note', 'add.rowNote', ''],
++  ]);
++  // Income names its own category, a custom name as written; yesterday and an earlier day as dateStep says them; the note trimmed.
++  const income = { ...DRAFT, type: 'income' as const, occurredOn: '2026-10-23', note: '  โบนัสปลายปี ' };
++  assert.deepEqual(shown(confirmRows(income, context())).map(([, , value]) => value), ['เงินเดือน', 'บัญชีหลัก', 'เมื่อวาน', 'โบนัสปลายปี']);
++  const merit = { ...DRAFT, categoryByType: { expense: 'c-merit', income: null }, occurredOn: '2026-10-15' };
++  assert.deepEqual(shown(confirmRows(merit, context())).map(([, , value]) => value), ['ทำบุญ', 'บัญชีหลัก', 'พฤหัส 15 ต.ค.', '']);
++  assert.equal(confirmRows(merit, { ...context(), dateLocale: 'en' })[2]?.value, 'Thu 15 Oct');
++  assert.deepEqual(shown(confirmRows({ ...DRAFT, type: 'transfer', note: 'ค่าห้อง' }, context())), [
++    ['from', 'add.rowFrom', 'บัญชีหลัก'],
++    ['to', 'add.rowTo', 'เงินสด'],
++    ['date', 'add.rowDate', 'วันนี้'],
++    ['note', 'add.rowNote', 'ค่าห้อง'],
++  ]);
++  // Nothing chosen, or a wallet or category no longer listed, shows nothing for the step to ask about.
++  const unchosen = { ...DRAFT, walletId: null, categoryByType: { expense: 'c-gone', income: null } };
++  assert.deepEqual(shown(confirmRows(unchosen, context())).map(([, , value]) => value), ['', '', 'วันนี้', '']);
++  assert.deepEqual(shown(confirmRows({ ...DRAFT, type: 'transfer', fromWalletId: 'w-gone', toWalletId: null }, context())).map(([, , value]) => value), ['', '', 'วันนี้', '']);
++});
++
++test('fields Bun filled are marked guessed until the person changes them', () => {
++  const guess = ['category', 'wallet', 'date', 'merchant'];
++  assert.deepEqual(guessedKeys(confirmRows(DRAFT, context(guess))), ['category', 'wallet', 'date']);
++  // The person picks another category: only that row stops being Bun's guess.
++  const picked = { ...DRAFT, categoryByType: { ...DRAFT.categoryByType, expense: 'c-merit' } };
++  const afterPick = stillGuessed(new Set(guess), DRAFT, picked);
++  assert.deepEqual([...afterPick], ['wallet', 'date', 'merchant']);
++  assert.deepEqual(guessedKeys(confirmRows(picked, context([...afterPick]))), ['wallet', 'date']);
++  // A change that leaves every row as it was keeps every guess; the same value set again is no change.
++  assert.deepEqual([...stillGuessed(new Set(guess), DRAFT, { ...DRAFT, amountMinor: '5000' })], guess);
++  assert.deepEqual([...stillGuessed(new Set(guess), DRAFT, { ...DRAFT })], guess);
++  // A new day and a new wallet are changes too; so is a note, and a type whose category differs.
++  assert.deepEqual([...stillGuessed(new Set(guess), DRAFT, { ...DRAFT, occurredOn: '2026-10-23', walletId: 'w-cash' })], ['category', 'merchant']);
++  assert.deepEqual([...stillGuessed(new Set(['note']), DRAFT, { ...DRAFT, note: 'ข้าวมันไก่' })], []);
++  assert.deepEqual([...stillGuessed(new Set(['category']), DRAFT, { ...DRAFT, type: 'income' })], []);
++  // A transfer's two wallets are their own rows.
++  const transfer = { ...DRAFT, type: 'transfer' as const };
++  assert.deepEqual([...stillGuessed(new Set(['from', 'to']), transfer, { ...transfer, fromWalletId: 'w-cash', toWalletId: 'w-main' })], []);
++  assert.deepEqual(guessedKeys(confirmRows(transfer, context(['from', 'to', 'date']))), ['from', 'to', 'date']);
++});
++
++test('move all offers the available balance only when it is known and above zero', () => {
++  const balances = new Map([['w-main', '2486000'], ['w-zero', '0'], ['w-owed', '-500'], ['w-satang', '1']]);
++  assert.equal(moveAllMinor(null, 'w-main'), null);
++  assert.equal(moveAllMinor(balances, 'w-zero'), null);
++  assert.equal(moveAllMinor(balances, 'w-owed'), null);
++  assert.equal(moveAllMinor(balances, 'w-gone'), null);
++  assert.equal(moveAllMinor(balances, null), null);
++  assert.equal(moveAllMinor(balances, 'w-main'), '2486000');
++  assert.equal(moveAllMinor(balances, 'w-satang'), '1');
++});
++
++test('balances after a transfer move the exact amount', () => {
++  const balances = new Map([['w-main', '2486000'], ['w-cash', '124000'], ['w-card', '-392000'], ['w-big', '99999999999'], ['w-huge', '9007199254740993']]);
++  // rh-transfer's numbers: ฿24,860 and ฿1,240, with ฿500 moved.
++  assert.deepEqual(balancesAfter(balances, 'w-main', 'w-cash', '50000'), { from: '2436000', to: '174000' });
++  // Below zero, and past what a JS number holds exactly (2^53 + 1), still to the satang.
++  assert.deepEqual(balancesAfter(balances, 'w-big', 'w-card', '99999999999'), { from: '0', to: '99999607999' });
++  assert.deepEqual(balancesAfter(balances, 'w-card', 'w-big', '1'), { from: '-392001', to: '100000000000' });
++  assert.deepEqual(balancesAfter(balances, 'w-huge', 'w-cash', '1'), { from: '9007199254740992', to: '124001' });
++  // A balance that is not known stays unknown; offline nothing is known.
++  assert.deepEqual(balancesAfter(balances, 'w-gone', 'w-cash', '50000'), { from: null, to: '174000' });
++  assert.deepEqual(balancesAfter(balances, 'w-main', null, '50000'), { from: '2436000', to: null });
++  assert.deepEqual(balancesAfter(null, 'w-main', 'w-cash', '50000'), { from: null, to: null });
++  // One wallet on both sides moves nothing.
++  assert.deepEqual(balancesAfter(balances, 'w-main', 'w-main', '50000'), { from: '2486000', to: '2486000' });
++});
++
++test("the amount step's problem: a refused key's, else why the amount cannot go on, but nothing for a keypad nothing was typed on", () => {
++  assert.equal(amountProblem(EMPTY_KEYPAD), null);
++  assert.equal(amountProblem(typed('5', 'backspace')), null);
++  assert.equal(amountProblem(typed('5', '0')), null);
++  assert.equal(amountProblem(typed('0')), 'zero');
++  assert.equal(amountProblem(typed('000')), 'zero');
++  // A tenth digit passes ฿999,999,999.99: refused, so the amount stays and says why.
++  const nine = typed('9', '9', '9', '9', '9', '9', '9', '9', '9');
++  assert.equal(amountProblem(nine), null);
++  assert.equal(amountProblem(applyKey(nine, '9')), 'too_large');
++  assert.equal(amountProblem(applyKey(applyKey(nine, '9'), 'backspace')), null);
++  assert.equal(amountProblem(keypadFromMinor('99999999999')), null);
++});
+diff --git a/apps/app/src/wallet/add/addFlow.ts b/apps/app/src/wallet/add/addFlow.ts
+new file mode 100644
+index 0000000..b59d522
+--- /dev/null
++++ b/apps/app/src/wallet/add/addFlow.ts
+@@ -0,0 +1,150 @@
++// The Bun Wallet's add flow (P2-T14; W14, W29; bw-tray-amount, rh-income,
++// rh-transfer, bw-tray-confirm): the tray's types and steps, and the rules its
++// steps share. One tray serves spending, income and money moved between the
++// person's own wallets (W14). Every step is controlled by its host through
++// StepProps, so the add tray (P2-T16) and the edit tray (P2-T27) drive the
++// same steps. Money stays exact: satang strings through BigInt, never a JS
++// number. Pure: a Node test reads it, so it imports by relative path and
++// loads no React or React Native.
++import type { Minor } from '@gogospend/contracts';
++
++import type { QuickAddDraft } from '../../spend/v1/redesign/quickAddModel.ts';
++import type { Lookups, Translate } from '../../spend/v1/redesign/shared.ts';
++import { categoryName } from '../../spend/v1/viewModels.ts';
++import { dayLabel } from '../../ui/dateStep.ts';
++import type { DateLocale } from '../../ui/dateStep.ts';
++import { evaluateKeypad } from '../../ui/keypadExpression.ts';
++import type { KeypadProblem, KeypadState } from '../../ui/keypadExpression.ts';
++
++/** What the tray adds: spending, income, or money moved between the person's own wallets (W14). */
++export type AddType = 'expense' | 'income' | 'transfer';
++
++/**
++ * The tray's steps. Spending and income go amount, then confirm; a transfer
++ * goes amount, transfer (rh-transfer's two wallets), then confirm (P2-T16).
++ * Confirm's rows open the pick steps, which return to confirm (P2-T15).
++ */
++export type AddStep = 'amount' | 'transfer' | 'confirm' | 'category' | 'wallet' | 'from' | 'to' | 'date' | 'note';
++
++/** Every step is controlled: its host holds the draft, the keypad and the step shown. */
++export type StepProps = {
++  draft: QuickAddDraft;
++  keypad: KeypadState;
++  onDraft(next: QuickAddDraft): void;
++  onKeypad(next: KeypadState): void;
++  onStep(step: AddStep): void;
++};
++
++const TITLE_KEYS = { expense: 'add.titleExpense', income: 'add.titleIncome', transfer: 'add.titleTransfer' } as const;
++
++/** The tray's title, which names its dialog: จดรายจ่าย, จดรายรับ or โอนเงิน. */
++export function trayTitleKey(type: AddType): 'add.titleExpense' | 'add.titleIncome' | 'add.titleTransfer' {
++  return TITLE_KEYS[type];
++}
++
++/** Where the amount's Next goes: a transfer chooses its two wallets first. */
++export function stepAfterAmount(type: AddType): AddStep {
++  return type === 'transfer' ? 'transfer' : 'confirm';
++}
++
++/**
++ * The keypad problem the amount step shows above Next, in today's words
++ * (KEYPAD_PROBLEM_TEXT through tc): a refused key's (a tenth digit passes
++ * ฿999,999,999.99), else why the amount cannot go on (zero). A keypad with
++ * nothing typed only keeps Next waiting, and says nothing: nothing nags (§2).
++ */
++export function amountProblem(keypad: KeypadState): KeypadProblem | null {
++  if (keypad.problem !== null) return keypad.problem;
++  const outcome = evaluateKeypad(keypad);
++  return outcome.ok || outcome.problem === 'empty' ? null : outcome.problem;
++}
++
++export type ConfirmRow = { key: 'category' | 'wallet' | 'from' | 'to' | 'date' | 'note'; labelKey: string; value: string; guessed: boolean };
++type RowKey = ConfirmRow['key'];
++
++/** Each row's label: หมวด, กระเป๋า, จาก, ไป, วันที่ and โน้ต, lines P2-T15 adds to add/copy.ts. */
++const ROW_LABELS: Readonly<Record<RowKey, string>> = {
++  category: 'add.rowCategory',
++  wallet: 'add.rowWallet',
++  from: 'add.rowFrom',
++  to: 'add.rowTo',
++  date: 'add.rowDate',
++  note: 'add.rowNote',
++};
++
++/**
++ * The confirm step's rows (bw-tray-confirm): category, wallet, date and note
++ * for spending and income; from, to, date and note for a transfer. Each value
++ * is what its row shows: the category's name (a built-in category's through
++ * `tc`, the app's copy, as every screen names it), the wallet's name, the day
++ * as วันนี้, เมื่อวาน or the date (W12: no time), and the note. A value is empty
++ * when there is nothing chosen or written, and the step says what to add. A
++ * row is `guessed` while Bun filled it and the person has not changed it.
++ */
++export function confirmRows(
++  draft: QuickAddDraft,
++  context: { lookups: Lookups; today: string; dateLocale: DateLocale; guessed: ReadonlySet<string>; tc: Translate },
++): ConfirmRow[] {
++  const { lookups, today, dateLocale, guessed, tc } = context;
++  const row = (key: RowKey, value: string): ConfirmRow => ({ key, labelKey: ROW_LABELS[key], value, guessed: guessed.has(key) });
++  const walletName = (id: string | null) => (id === null ? '' : lookups.wallets.get(id)?.name ?? '');
++  const date = row('date', dayLabel(draft.occurredOn, today, dateLocale).text);
++  const note = row('note', draft.note.trim());
++  if (draft.type === 'transfer') return [row('from', walletName(draft.fromWalletId)), row('to', walletName(draft.toWalletId)), date, note];
++  const categoryId = draft.categoryByType[draft.type];
++  const category = categoryId === null ? undefined : lookups.categories.get(categoryId);
++  return [row('category', category ? categoryName(category, tc) : ''), row('wallet', walletName(draft.walletId)), date, note];
++}
++
++/** What each row shows of the draft, to tell whether the person changed it. */
++const ROW_FIELDS = new Map<string, (draft: QuickAddDraft) => string | null>([
++  ['category', (draft) => (draft.type === 'transfer' ? null : draft.categoryByType[draft.type])],
++  ['wallet', (draft) => draft.walletId],
++  ['from', (draft) => draft.fromWalletId],
++  ['to', (draft) => draft.toWalletId],
++  ['date', (draft) => draft.occurredOn],
++  ['note', (draft) => draft.note],
++]);
++
++/**
++ * What Bun filled stays marked as its guess until the person changes it: each
++ * row whose value changed from `before` to `after` leaves `guessed`. A key
++ * that is not a row stays.
++ */
++export function stillGuessed(guessed: ReadonlySet<string>, before: QuickAddDraft, after: QuickAddDraft): ReadonlySet<string> {
++  const changed = (key: string) => {
++    const field = ROW_FIELDS.get(key);
++    return field !== undefined && field(before) !== field(after);
++  };
++  return new Set([...guessed].filter((key) => !changed(key)));
++}
++
++/**
++ * Move all (rh-transfer): the wallet's available balance, offered only when it
++ * is known and above zero. Offline there are no balances, and no guessed
++ * number is ever offered.
++ */
++export function moveAllMinor(balances: ReadonlyMap<string, Minor> | null, walletId: string | null): Minor | null {
++  if (balances === null || walletId === null) return null;
++  const balance = balances.get(walletId);
++  return balance !== undefined && BigInt(balance) > 0n ? balance : null;
++}
++
++/**
++ * Each card's balance after the move (rh-transfer's หลังโอน), exact in BigInt:
++ * the amount leaves `from` and reaches `to`. A balance that is not known stays
++ * unknown, and one wallet on both sides keeps its balance.
++ */
++export function balancesAfter(
++  balances: ReadonlyMap<string, Minor> | null,
++  fromId: string | null,
++  toId: string | null,
++  amountMinor: Minor,
++): { from: Minor | null; to: Minor | null } {
++  const after = (id: string | null, sign: bigint): Minor | null => {
++    const balance = balances === null || id === null ? undefined : balances.get(id);
++    if (balance === undefined) return null;
++    return fromId === toId ? balance : (BigInt(balance) + sign * BigInt(amountMinor)).toString();
++  };
++  return { from: after(fromId, -1n), to: after(toId, 1n) };
++}
+diff --git a/apps/app/src/wallet/add/copy.ts b/apps/app/src/wallet/add/copy.ts
+new file mode 100644
+index 0000000..f6584c6
+--- /dev/null
++++ b/apps/app/src/wallet/add/copy.ts
+@@ -0,0 +1,31 @@
++import type { DraftTable } from '../copy/draftText.ts';
++
++/**
++ * The add tray's lines (bw-tray-amount, rh-income, rh-transfer): its titles,
++ * the type switch and its name (the boards' ประเภทรายการ), the wallet chip, Tell
++ * Bun, income's name field and its budget note, a quick chip's spoken words
++ * and the keypad's delete key. Data only: read through `useDraftCopy`, with
++ * COMMON_COPY where a part also says an amount. Default pending owner Q3:
++ * built as written; the English lines, and the Thai lines marked draft (no
++ * board shows them), are drafts for E2-B. P2-T15 and P2-T16 add their lines
++ * here.
++ */
++export const COPY = {
++  'add.titleExpense': { th: 'จดรายจ่าย', en: 'Add spending' },
++  'add.titleIncome': { th: 'จดรายรับ', en: 'Add income' },
++  'add.titleTransfer': { th: 'โอนเงิน', en: 'Move money' },
++  'add.typeGroup': { th: 'ประเภทรายการ', en: 'Entry type' },
++  'add.typeExpense': { th: 'รายจ่าย', en: 'Spending' },
++  'add.typeIncome': { th: 'รายรับ', en: 'Income' },
++  'add.typeTransfer': { th: 'โอน', en: 'Move' },
++  'add.fromWallet': { th: 'จาก{wallet}', en: 'From {wallet}' },
++  'add.intoWallet': { th: 'เข้า{wallet}', en: 'Into {wallet}' },
++  // Draft: no board shows a wallet not yet chosen (a copied record's closed wallet).
++  'add.chooseWallet': { th: 'เลือกกระเป๋า', en: 'Choose a wallet' },
++  'add.tellBun': { th: 'บอกบัน', en: 'Tell Bun' },
++  'add.merchantLabel': { th: 'ชื่อรายการ', en: 'Name' },
++  'add.notInBudget': { th: 'ไม่นับในงบ', en: 'Not counted in the budget' },
++  'add.chip': { th: '{label} {amount}', en: '{label} {amount}' },
++  // Draft (the plan's): rh-income names the key ลบตัวเลข, bw-tray-amount ลบ.
++  'add.deleteKey': { th: 'ลบตัวเลข', en: 'Delete a digit' },
++} as const satisfies DraftTable;
+diff --git a/apps/app/src/dev/catalogue/wallet/index.ts b/apps/app/src/dev/catalogue/wallet/index.ts
+index 85f75a2..baf018e 100644
+--- a/apps/app/src/dev/catalogue/wallet/index.ts
++++ b/apps/app/src/dev/catalogue/wallet/index.ts
+@@ -5,8 +5,10 @@
+ import type { CatalogueSection } from '../registry';
+ import { WALLET_KIT_SECTIONS } from './kitSections';
+ import { WALLET_TRAY_SECTIONS } from './traySections';
++import { WALLET_ADD_SECTIONS } from './addSections';
+ 
+ export const WALLET_SECTIONS: readonly CatalogueSection[] = [
+   ...WALLET_KIT_SECTIONS,
+   ...WALLET_TRAY_SECTIONS,
++  ...WALLET_ADD_SECTIONS,
+ ];
+diff --git a/apps/app/src/wallet/copy/draftText.test.ts b/apps/app/src/wallet/copy/draftText.test.ts
+index 0576583..1d66001 100644
+--- a/apps/app/src/wallet/copy/draftText.test.ts
++++ b/apps/app/src/wallet/copy/draftText.test.ts
+@@ -10,8 +10,12 @@ import { COMMON_COPY } from '../common/copy.ts';
+ import type { DraftTable } from './draftText.ts';
+ import { draftText, tableT } from './draftText.ts';
+ 
+-/** Lines the boards write in Latin letters in Thai too, such as card.kindTransit ("BTS / MRT"). */
+-const LATIN_LINES = new Set<string>(['card.kindTransit']);
++/**
++ * Lines with no Thai letters of their own in Thai: what the boards write in
++ * Latin letters in Thai too, such as card.kindTransit ("BTS / MRT"), and a
++ * line made only of placeholders, such as add.chip ("{label} {amount}").
++ */
++const LATIN_LINES = new Set<string>(['card.kindTransit', 'add.chip']);
+ 
+ const THAI = /[\u0E00-\u0E7F]/;
+ const EMOJI = /\p{Extended_Pictographic}/u;

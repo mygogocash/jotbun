@@ -390,3 +390,13 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - a wrapped name is partly behind the next card at standard sizes (should the peek grow with the name?);
     - the stack is 362 pt against the board's 364;
     - `bw-stack-large` must be captured at AX5 by hand.
+- P2-T14 planner notes (briefs/P2-T14.md; READY 10 Nov, held until tray-hardening merges):
+  - **P2-T15 and P2-T16 (P3), the interface they build on:**
+    - `AmountFooter` (the keypad, its problem and Next) goes in the tray's pinned `footer`, and the plan's `problem` prop moved there. Both components take `StepProps`, so a host spreads one object into both.
+    - `AddStep` gains `transfer`: a transfer goes amount, transfer, confirm.
+    - `confirmRows` takes the app's `tc`, so built-in category names show in Thai.
+    - New helpers in `addFlow.ts`: `stepAfterAmount`, `amountProblem` and `stillGuessed` (P2-T16 calls it from `onDraft`). `useCanTellBun()` is in `AmountStep.tsx`.
+    - P2-T15 adds the confirm step's row labels (`labelKey`).
+  - **A tray slot under the header (P10; P2-T16 or a tray task):** at AX5 the board pins the amount under the title, but `Tray` pins only its footer, so the amount scrolls with the middle. Capture `bw-tray-amount` at AX5 by hand.
+  - **P2-T37 (P9):** the typed amount (`add-amount`) is the one amount private mode leaves on screen, by design. The sweep must exempt it.
+  - **E2-B (P17):** the differences from the boards, listed in the brief's P17. Among them: ถัดไป against the boards' ต่อไป, no วันนี้ chip, and ลบตัวเลข.
