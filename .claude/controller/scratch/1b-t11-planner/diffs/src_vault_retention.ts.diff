@@ -1,0 +1,78 @@
+--- a/src/vault/retention.ts
++++ b/src/vault/retention.ts
+@@ -4,11 +4,11 @@
+ // gogospend_prune_account (superseded changes 30 days on) and
+ // gogospend_drop_receipt_digests (request digests after the 30-day outbox
+ // lifetime; the receipts stay). Each job's due time comes from the data, the
+-// vault keeps the due jobs in `schedule`, and the alarm is set to the earliest.
+-// Every job is its own transactionSync block, opened here, so none of these
+-// functions may run inside another block (R21). Revisions stay text: they are
+-// read as CAST(... AS TEXT) and bound as CAST(? AS INTEGER). Id lists bind as one
+-// JSON parameter (R57).
++// vault keeps the due jobs in `schedule` (with 1B-T11's file jobs), and
++// UserVault#rearm sets the alarm to the earliest. Every job is its own
++// transactionSync block, opened here, so none of these functions may run inside
++// another block (R21). Revisions stay text: they are read as CAST(... AS TEXT)
++// and bound as CAST(? AS INTEGER). Id lists bind as one JSON parameter (R57).
+ import { RESTORE_WINDOW_DAYS, SYNC_RETENTION_DAYS } from '@gogospend/contracts'
+ import type { EntityChange } from '@gogospend/contracts'
+ 
+@@ -17,6 +17,8 @@
+ 
+ import { logFailure } from '../v1/log'
+ import type { VaultContext } from './context'
++import type { FileContext } from './files/context'
++import { FILE_JOBS, fileJobsDue } from './files/jobs'
+ 
+ /** What the retention jobs read and write. A VaultContext is one, and so is 1B's FileContext. */
+ export type RetentionContext = Pick<VaultContext, 'sql' | 'storage' | 'now'>
+@@ -85,13 +87,14 @@
+ }
+ 
+ /**
+- * Writes the due jobs into `schedule` (and removes the retention jobs with
+- * nothing to do), then returns the earliest scheduled time, or null. Plain SQL:
+- * the caller holds the block.
++ * Writes the due jobs into `schedule`, the retention jobs of nextDue and the
++ * file jobs of fileJobsDue (1B-T11; `lastStartAttemptMs` is UserVault's, for
++ * start_work), and removes every job with nothing to do. Returns the earliest
++ * scheduled time, or null. Plain SQL: the caller holds the block.
+  */
+-export function reschedule(c: RetentionContext): number | null {
+-  const due = nextDue(c)
+-  for (const job of RETENTION_JOBS) {
++export function reschedule(c: FileContext, lastStartAttemptMs: number | null): number | null {
++  const due = new Map<string, number>([...nextDue(c), ...fileJobsDue(c, lastStartAttemptMs)])
++  for (const job of [...RETENTION_JOBS, ...FILE_JOBS]) {
+     const at = due.get(job)
+     if (at === undefined) c.sql.exec('DELETE FROM schedule WHERE job = ?', job).toArray()
+     else c.sql.exec('INSERT INTO schedule (job, due_at) VALUES (?, ?) ON CONFLICT (job) DO UPDATE SET due_at = excluded.due_at', job, at).toArray()
+@@ -249,28 +252,3 @@
+   }
+   return failed
+ }
+-
+-/**
+- * Sets the vault's alarm to the earliest scheduled job, or deletes it when none
+- * is left. Opens its own block for `schedule`, then calls setAlarm or
+- * deleteAlarm outside it. After a failed job the alarm is a minute out at the
+- * earliest. A failure here is logged, never thrown: the caller's command has
+- * already committed. Returns the time set, or null.
+- */
+-export function armAlarm(c: RetentionContext, failed: readonly RetentionJob[] = []): number | null {
+-  try {
+-    const due = c.storage.transactionSync(() => reschedule(c))
+-    const at = due === null ? null : failed.length > 0 ? Math.max(due, c.now.getTime() + RETENTION_RETRY_MS) : due
+-    if (at === null) void c.storage.deleteAlarm()
+-    else void c.storage.setAlarm(at)
+-    return at
+-  } catch (error) {
+-    logFailure('vault_alarm_unset', error)
+-    return null
+-  }
+-}
+-
+-/** The account's revision as text, so a call can tell whether it committed a change group. */
+-export function committedRevision(c: RetentionContext): string {
+-  return c.sql.exec<{ revision: string }>('SELECT CAST(revision AS TEXT) AS revision FROM sync_state WHERE id = 1').toArray()[0]?.revision ?? '0'
+-}

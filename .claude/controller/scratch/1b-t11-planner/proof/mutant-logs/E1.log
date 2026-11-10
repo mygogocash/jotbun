@@ -1,0 +1,387 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t11-planner/tree/apps/edge
+
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a key whose writer never published it is deleted by the alarm at its deadline 30ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > an export file is deleted by the alarm when it expires, and its status reads expired 30ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > work requested before the vault slept is started by its alarm after it wakes 28ms
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a failed start is retried a minute later, not in a loop
+{"level":"error","event":"work_start_failed","failure":"Error"}
+
+ × test/workers/retention.test.ts > deleted records, ported from retention.integration.spec.ts > purged_transactions_are_not_resurrected_by_receipts 30ms
+   → expected false to be true // Object.is equality
+ × test/workers/retention.test.ts > deleted records, ported from retention.integration.spec.ts > a deleted record stops counting at once and can be undone within 30 days; nothing is purged early 21ms
+   → expected false to be true // Object.is equality
+ × test/workers/retention.test.ts > deleted records, ported from retention.integration.spec.ts > tombstones reach delta readers, older cursors resync 28ms
+   → expected false to be true // Object.is equality
+ × test/workers/retention.test.ts > deleted records, ported from retention.integration.spec.ts > leaves an account being erased to its erasure: no purge group is written for it 19ms
+   → expected false to be true // Object.is equality
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a prune that throws is logged, the others still run, and the alarm is set again
+{"level":"error","event":"file_prune_failed","failure":"Error"}
+
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a failed start is retried a minute later, not in a loop 15ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a capped run leaves the alarm set, and the next alarm clears the rest 32ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a prune that throws is logged, the others still run, and the alarm is set again 18ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > the alarm follows the earliest of the core and file jobs 33ms
+ × test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > drops receipt digests after the outbox lifetime: a replay is refused and never re-run; status still answers 18ms
+   → expected false to be true // Object.is equality
+ × test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > removes a superseded change that sat below the retention line (S1 change log) 18ms
+   → expected false to be true // Object.is equality
+ × test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > a failing step is reported and does not stop the others 19ms
+   → expected false to be true // Object.is equality
+ × test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > a purge retried after the prune moved the retention line never moves it back 20ms
+   → expected false to be true // Object.is equality
+ × test/workers/retention.test.ts > the retention alarm > a deleted record is purged by the alarm 30 days later, and the alarm follows the earliest job 28ms
+   → expected null to be 1796860702920 // Object.is equality
+ × test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > after any alarm, every scheduled time is later than now 26ms
+   → expected false to be true // Object.is equality
+ ✓ test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > export requests are purged 30 days after the request; the receipt stays compact 21ms
+ ✓ test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > drops finished upload rows 30 days after they ended, never one still receiving or within the quota window 16ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > a resent snapshot request after its snapshot went stale reads expired and starts nothing; a new key builds a new one 45ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > a vault that is not active runs no file job and keeps no alarm for them 17ms
+ × test/workers/retention.test.ts > the retention alarm > an alarm that fires after the vault slept still purges 32ms
+   → expected false to be true // Object.is equality
+ ✓ test/workers/retention.test.ts > the retention alarm > with nothing left to do, the alarm is cleared 16ms
+ × test/workers/retention.test.ts > the retention alarm > the alarm follows the earliest job, and each record waits its own 30 days 22ms
+   → expected null to be 1796860702996 // Object.is equality
+ × test/workers/retention.test.ts > the retention alarm > purges more records than SQLite has parameters, at most 1,000 to a change group 54ms
+   → expected false to be true // Object.is equality
+ ✓ test/workers/retention.test.ts > the retention alarm > an erased vault runs no retention and keeps no alarm, awake or after it sleeps 38ms
+stderr | test/workers/files-alarm.test.ts > the controller's notes > an unbound bucket is a failed delete, due again a minute later; the alarm never throws
+{"level":"error","event":"object_delete_failed","failure":"ObjectStoreError"}
+
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > an upload arms the alarm though it commits no command 20ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > only one file run at a time: a second run while the first waits on R2 deletes nothing 66ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > an unbound bucket is a failed delete, due again a minute later; the alarm never throws 15ms
+stderr | test/workers/files-alarm.test.ts > the brief's rulings > a prune that keeps throwing brings the alarm back a minute later, never in a loop
+{"level":"error","event":"file_prune_failed","failure":"Error"}
+
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > an erase that lands while the alarm waits on R2 leaves the vault erased, with no alarm and no schedule 23ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > the alarm's due-time read of deleted records and the purge's change lookup use their indexes 11ms
+ ✓ test/workers/files-alarm.test.ts > the brief's rulings > a prune that keeps throwing brings the alarm back a minute later, never in a loop 16ms
+ × test/workers/files-alarm.test.ts > the brief's rulings > after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner 17ms
+   → expected false to be true // Object.is equality
+ × test/workers/files-alarm.test.ts > the brief's rulings > a write never sets the alarm sooner than a minute ahead, even with work already due, and a later write never postpones it 11ms
+   → expected null to be 1794355163236 // Object.is equality
+ × test/workers/files-alarm.test.ts > the brief's rulings > the vault knows the alarm it set: alarmAt matches getAlarm() after a write, an alarm, a wake and an erase 16ms
+   → expected [ null, null ] to deeply equal [ 1796947103248, 1796947103248 ]
+ ✓ test/workers/files-alarm.test.ts > the brief's rulings > a background step that writes moves the alarm: a failed export is due only at its purge 14ms
+ ✓ test/workers/files-alarm.test.ts > the brief's rulings > a start moves the alarm on, from the alarm or from the Worker 12ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 16 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > after any alarm, every scheduled time is later than now
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ fireAt test/workers/files-alarm.test.ts:63:54
+     61| async function fireAt(user: TestUser, ms: number): Promise<void> {
+     62|   await setVaultClock(user, ms)
+     63|   expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
+       |                                                      ^
+     64| }
+     65|
+ ❯ test/workers/files-alarm.test.ts:273:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/16]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the brief's rulings > after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ fireAt test/workers/files-alarm.test.ts:63:54
+     61| async function fireAt(user: TestUser, ms: number): Promise<void> {
+     62|   await setVaultClock(user, ms)
+     63|   expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
+       |                                                      ^
+     64| }
+     65|
+ ❯ test/workers/files-alarm.test.ts:608:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/16]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the brief's rulings > a write never sets the alarm sooner than a minute ahead, even with work already due, and a later write never postpones it
+AssertionError: expected null to be 1794355163236 // Object.is equality
+
+- Expected:
+1794355163236
+
++ Received:
+null
+
+ ❯ test/workers/files-alarm.test.ts:630:33
+    628|     })
+    629|     const cash = await money.wallet(user)
+    630|     expect(await alarmOf(user)).toBe(t + CALL_ALARM_DELAY_MS)
+       |                                 ^
+    631|     await setVaultClock(user, t + 30_000)
+    632|     expect((await client.as(user).patch(`/v1/wallets/${cash}`, { name:…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/16]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the brief's rulings > the vault knows the alarm it set: alarmAt matches getAlarm() after a write, an alarm, a wake and an erase
+AssertionError: expected [ null, null ] to deeply equal [ 1796947103248, 1796947103248 ]
+
+- Expected
++ Received
+
+  [
+-   1796947103248,
+-   1796947103248,
++   null,
++   null,
+  ]
+
+ ❯ test/workers/files-alarm.test.ts:645:26
+    643|     const lunch = await createLunch(client, user)
+    644|     expect((await client.as(user).del(`/v1/transactions/${lunch}`, { i…
+    645|     expect(await both()).toEqual([t + 30 * DAY, t + 30 * DAY])
+       |                          ^
+    646|     await evictDurableObject(vaultOf(user))
+    647|     expect(await both()).toEqual([t + 30 * DAY, t + 30 * DAY])
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/16]⎯
+
+ FAIL  test/workers/retention.test.ts > deleted records, ported from retention.integration.spec.ts > purged_transactions_are_not_resurrected_by_receipts
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ test/workers/retention.test.ts:137:58
+    135|     // Only the record ages, as in the API: its receipt keeps its dige…
+    136|     await age(d.user, record.body.id, t0, 31)
+    137|     expect(await runDurableObjectAlarm(vaultOf(d.user))).toBe(true)
+       |                                                          ^
+    138|
+    139|     // The private row and every earlier change payload are gone; the …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/16]⎯
+
+ FAIL  test/workers/retention.test.ts > deleted records, ported from retention.integration.spec.ts > a deleted record stops counting at once and can be undone within 30 days; nothing is purged early
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ test/workers/retention.test.ts:171:58
+    169|     expect((await money.balances(d.user))[d.cash]).toBe('-1000')
+    170|     await setClock(d.user, t0 + 29 * DAY)
+    171|     expect(await runDurableObjectAlarm(vaultOf(d.user))).toBe(true)
+       |                                                          ^
+    172|     expect(await headState(d.user, undone.body.id)).toBe('deleted')
+    173|     expect((await client.as(d.user).post(`/v1/transactions/${undone.bo…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/16]⎯
+
+ FAIL  test/workers/retention.test.ts > deleted records, ported from retention.integration.spec.ts > tombstones reach delta readers, older cursors resync
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ test/workers/retention.test.ts:188:58
+    186|     const deletedAt = (await syncState(d.user)).revision
+    187|     await setClock(d.user, t0 + 31 * DAY)
+    188|     expect(await runDurableObjectAlarm(vaultOf(d.user))).toBe(true)
+       |                                                          ^
+    189|
+    190|     // A reader that had seen the deletion gets the tombstone as one m…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/16]⎯
+
+ FAIL  test/workers/retention.test.ts > deleted records, ported from retention.integration.spec.ts > leaves an account being erased to its erasure: no purge group is written for it
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ test/workers/retention.test.ts:216:56
+    214|     const revision = (await syncState(user)).revision
+    215|     await setClock(user, t0 + 31 * DAY)
+    216|     expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
+       |                                                        ^
+    217|     expect(await headState(user, lunch)).toBe('deleted')
+    218|     expect((await syncState(user)).revision).toBe(revision)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/16]⎯
+
+ FAIL  test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > drops receipt digests after the outbox lifetime: a replay is refused and never re-run; status still answers
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ test/workers/retention.test.ts:232:58
+    230|     const fresh = await create(d)
+    231|     await setClock(d.user, t0 + 31 * DAY)
+    232|     expect(await runDurableObjectAlarm(vaultOf(d.user))).toBe(true)
+       |                                                          ^
+    233|     const digests = await sqlRows<{ command_id: string; dropped: numbe…
+    234|       d.user,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/16]⎯
+
+ FAIL  test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > removes a superseded change that sat below the retention line (S1 change log)
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ test/workers/retention.test.ts:256:58
+    254|     expect((await client.as(d.user).patch(`/v1/wallets/${d.cash}`, { n…
+    255|     await setClock(d.user, t0 + 31 * DAY)
+    256|     expect(await runDurableObjectAlarm(vaultOf(d.user))).toBe(true)
+       |                                                          ^
+    257|     // The create is the head, so it survived and the retention line m…
+    258|     expect(BigInt((await syncState(d.user)).pruned_through)).toBeGreat…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/16]⎯
+
+ FAIL  test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > a failing step is reported and does not stop the others
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ test/workers/retention.test.ts:281:58
+    279|     try {
+    280|       await setClock(user, t0 + 31 * DAY)
+    281|       expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
+       |                                                          ^
+    282|       expect(await headState(user, lunch)).toBe('deleted')
+    283|       expect(await count(user, 'SELECT count(*) AS n FROM command_rece…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/16]⎯
+
+ FAIL  test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > a purge retried after the prune moved the retention line never moves it back
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ test/workers/retention.test.ts:307:58
+    305|     try {
+    306|       await setClock(user, t0 + 31 * DAY)
+    307|       expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
+       |                                                          ^
+    308|       expect(await headState(user, lunch)).toBe('deleted')
+    309|     } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/16]⎯
+
+ FAIL  test/workers/retention.test.ts > the retention alarm > a deleted record is purged by the alarm 30 days later, and the alarm follows the earliest job
+AssertionError: expected null to be 1796860702920 // Object.is equality
+
+- Expected:
+1796860702920
+
++ Received:
+null
+
+ ❯ test/workers/retention.test.ts:327:86
+    325|     const lunch = await createLunch(client, user)
+    326|     await client.as(user).del(`/v1/transactions/${lunch}`, { ifMatch: …
+    327|     expect(await runInDurableObject(vaultOf(user), (_v, s) => s.storag…
+       |                                                                                      ^
+    328|     await setClock(user, t0 + 31 * DAY)
+    329|     expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/16]⎯
+
+ FAIL  test/workers/retention.test.ts > the retention alarm > an alarm that fires after the vault slept still purges
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ test/workers/retention.test.ts:341:56
+    339|     await evictAllDurableObjects()
+    340|     await setClock(user, t0 + 31 * DAY)
+    341|     expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
+       |                                                        ^
+    342|     expect(await headState(user, lunch)).toBe('purged')
+    343|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/16]⎯
+
+ FAIL  test/workers/retention.test.ts > the retention alarm > the alarm follows the earliest job, and each record waits its own 30 days
+AssertionError: expected null to be 1796860702996 // Object.is equality
+
+- Expected:
+1796860702996
+
++ Received:
+null
+
+ ❯ test/workers/retention.test.ts:365:33
+    363|     const dinner = await createLunch(client, user)
+    364|     await client.as(user).del(`/v1/transactions/${dinner}`, { ifMatch:…
+    365|     expect(await alarmOf(user)).toBe(t0 + 30 * DAY)
+       |                                 ^
+    366|     await setClock(user, t0 + 31 * DAY)
+    367|     expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/16]⎯
+
+ FAIL  test/workers/retention.test.ts > the retention alarm > purges more records than SQLite has parameters, at most 1,000 to a change group
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ test/workers/retention.test.ts:390:56
+    388|     await seedDeleted(user, lunch, 1_001, t0)
+    389|     await setClock(user, t0 + 31 * DAY)
+    390|     expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
+       |                                                        ^
+    391|     expect(await count(user, "SELECT count(*) AS n FROM entity_heads W…
+    392|     expect(await count(user, 'SELECT count(*) AS n FROM transactions W…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/16]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  16 failed | 21 passed (37)
+   Start at  06:58:21
+   Duration  1.80s (transform 767ms, setup 1.44s, import 63ms, tests 896ms, environment 0ms)
+

@@ -129,6 +129,7 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - **m-2:** the receipt HEAD test does not count bytes per HEAD (probe HD-1).
     - **m-3:** neither guard in `attachmentsDueAt` is pinned (`attachments.ts:368-369`); probes DU-1 and DU-2. Without "object gone", the alarm loops on a past due time (against R37); without the safety-net check, an unheld receipt is never scheduled.
     - **For the abort proof:** retain and replace hold a copy slot across awaits, so include four aborted retains, then a retain that answers 200. Receipt downloads allow two slots per account.
+  - **Plan it on top of 1B-T7 and 1B-T11 once both merge.** 1B-T7 edits `handler.ts` (three edits, none on a `headOf` line). 1B-T11 edits `snapshots.ts` (at its end: `STALE_CHUNKS`, `pruneSnapshots`, `snapshotsDueAt`) and `snapshots.test.ts` (inside three existing cases; its brief's P1 names them).
   - **And from 1B-T8's review (reviews/1B-T8.md).** Its ready cases are in `scratch/1b-t8-review/` (`review-fixes.test.ts`, probes C2 and E); each passes on f416f24 and kills its mutant.
     - **The fix is more urgent now:** four aborted snapshot-chunk downloads in one isolate block every chunk download there.
     - m-2: the memory proof's cursor spy (`snapshots.test.ts:136-157`) refuses only `toArray`, `one` and `raw`, so reading every row into an array with a spread passes all 35 cases, the ten-times case included (mutant X1). The reviewer's spy revokes each row once the next is read; it catches X1.
@@ -263,3 +264,6 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - n5: README's full-gate block (lines 244 to 259) lacks `typecheck:routes` and `export:ios`.
     - n6: receipt line 3 names 857b9f2 as the head at implementation time; it was 4850463.
     - n7: every job logs a Node 20 deprecation warning for the pinned checkout and setup-node commits. Bump both pins, by commit, to releases that run on Node 24.
+- 1B-T11 planner notes (briefs/1B-T11.md; the brief was READY on 10 Nov, under R104):
+  - **Whoever next edits `apps/edge/test/workers/imports-review.test.ts` (P19, older than 1B-T11):** the case `rows that cannot be saved now are conflicted ...` (line 1621) pins the vault clock to 2026-05-01. Its receipts-digest alarm, 30 days after that clock, lies in the real past, so Miniflare fires it again and again until the file ends (26 firings in the planner's run of the unchanged base). Each firing finds nothing due. Set the clock ahead (R6).
+  - **Residual of 1B-T8's m-1, accepted (P1):** a resend of the same snapshot key more than a week past its snapshot's expiry, once the row is gone, still makes a pending row under the old id. The app takes a fresh key for each resync, and only a transport resend repeats a key, within seconds. Revisit only if a later task resends keys after days.
