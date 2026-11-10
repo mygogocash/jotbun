@@ -354,6 +354,14 @@ The list below is kept for the record.
         - **Waits for a free slot.** Suggested WT download-pins on fix/download-pins. Read its planner calls before dispatch.
         - It pins `attachmentsDueAt`'s guards, which alarm-hardening's m4 rewrites: whichever merges second keeps both.
         - P1 to P11 are accepted. **The implementer (Haiku max, e43773f5) was dispatched at 10:05** in a pre-installed (`install-edge`) download-pins on fix/download-pins from 6a727dc, under the heavy lock. Its RED and mutation runs mutate source files: after a cut-off run, restore them with `git checkout`.
+        - **DONE at 3894e58 (base 402c1df); PR #397 opened at 10:16 (no task issue).**
+          - RED: the 17 review mutants together fail exactly 20 cases. GREEN 242 of 242. 20 of 20 mutants.
+          - `test:edge` 176; `build:edge` with every driver marker at 0. No source file changed.
+          - The controller checked the 5 files against the kit's `real/` and the clean merge with the head.
+        - **The review runs as a two-lens Opus workflow** (run wf_e153ae48-9d5, task wrj8alejz), lenses one after the other:
+          - do the pins pin what the reviews asked;
+          - robustness, and the merges with #396 and with alarm-hardening's `real/` files.
+        - On approval and green CI: `merge_task_pr.sh 397 3894e58` (no task id), then `promote_pr.sh download-pins 397`.
   - **1B-T12** (373c38a4; WT p1-1b-t12 on p1/1b-t12-files-parity), the files parity session against NestJS.
     - Docker stays stopped: CI's edge job runs `test:edge:db`. The planner reports BLOCKED if it truly needs a local PostgreSQL.
     - It decides n8 (the vault's 404 against NestJS's 30-day `expired`).
