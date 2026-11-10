@@ -345,3 +345,68 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **1B-T12 (n8):** from about day 8 to day 30 after a build, NestJS answers 200 and 202 `expired`, because it keeps the job 30 days (`0015_privacy.sql:822-826`). The vault answers 404, and a resend then makes the stuck pending row. Either keep the vault row until `ready_at` plus 30 days, or list the difference.
   - **1B-T13 (n10):** with 0003's indexes, the ten-times 50,000,000-byte vault holds 32,000 records instead of 33,000, about 3% fewer. The proof's criterion still holds; size the hosted check against the new figure.
   - **1C-T11 (n7):** `markDeleting` (p1c plan line 1311) must set `alarmAt = null` next to its `deleteAlarm`, or call `this.rearm(this.fileContext())`, so that `alarmAt` keeps mirroring `getAlarm()`.
+- wallet-looks-unstored (#391, merged 76b329c on 10 Nov, no task issue; review in reviews/wallet-looks-unstored.md, a Sonnet workflow, Approved with one minor and five nits; probes in scratch/wallet-looks-unstored-review/). D8 stays unfixed by design (P6).
+  - **wallet-looks-pins (a test-only follow-up; no task waits on it):**
+    - m1: no committed case has two changes in flight while an earlier one is unstored. Hoisting `const earlier = unstored.current.get(accountId) ?? []` (`WalletLooksProvider.tsx:137`) out of the queued step therefore survives (mutant OM1).
+      - Add the reviewer's PE, PE2 and PF to `WalletLooks.render.test.tsx`, on that file's own helpers. They are in `scratch/wallet-looks-unstored-review/src/apps/app/src/wallet/looks/ReviewProbes.render.test.tsx`, lines 283, 298 and 314.
+      - PF needs `storeOver` to fail writes by attempt number.
+    - Optional, n2: brief P7's "if the first read has not landed yet, they show at once" is unpinned (OM9; the difference is transient only).
+  - **P2-T20 and P2-T21 (n3):** the memory holds the caller's look object and ids array by reference (`WalletLooksProvider.tsx:134`, `:147`, `:148`). A caller that mutates them after the call changes later reads (case PM). Pass a fresh object or array per call, or copy in the setter.
+  - **P2-T20 (n4):** call `setOrder` once per drop, not per drag tick. The memory is never trimmed; 400 changes took 27 to 57 ms in total, with no growth.
+  - **P2-T20, P2-T21 and P2-T29 (n5):**
+    - a setter resolves whether or not the change was stored;
+    - `order` is `[]` until the first read lands, so do not seed `setOrder` from an effect keyed on an empty `order`.
+  - **P2-T18 (n5):** where WalletShell mounts the provider sets how long an unstored change shows.
+  - **P5-T19 (n1, n5):**
+    - the upload reads the store, so an unstored change is never uploaded;
+    - if the provider reads server values, decide whether the memory is laid over them;
+    - carry the reviewer's PX, which pins that a session where every write lands keeps nothing (mutant OM3).
+- 1B-T12 planner notes (briefs/1B-T12.md; READY 10 Nov, test-only):
+  - **snapshot-parity-window (an optional follow-up, only after fix-download-aborts merges; P3 of 1B-T12):**
+    - From about day 8 to day 30 after a build, NestJS answers a snapshot's status, and a resend of its key, with `expired`. It keeps a finished job 30 days (`apps/api/drizzle/0015_privacy.sql:813-829`).
+    - The vault deletes a ready row a week past its 24-hour expiry (`pruneSnapshots`, `src/vault/files/snapshots.ts:348`), so it answers 404 and opens a new pending row for a resend.
+    - 1B-T12 lists the difference in `vault-parity-files.db.test.ts`'s header and its receipt.
+    - For parity: keep a ready row until `ready_at` plus 30 days, with a resend case. First check whether a Workflow instance can start under an id whose old instance is past its retention.
+    - This edits `pruneSnapshots`, `snapshotsDueAt` and the snapshot tests, which fix-download-aborts pins (1B-T11's m3 and n6).
+- P2-T12 planner notes (briefs/P2-T12.md; READY 10 Nov):
+  - **P2-T21 (P11):** the new wallet's drop is P2-T21's bw-adding step, not the stack's.
+    - `walletAddedEntering(false)` drops a card from a full window height on the under-damped spring, which overshoots by about 22% of the travel (about 190 pt on an 874 pt phone).
+    - Shorten the drop to about one card height (`.withInitialValues({ originY })`; about 44 pt of overshoot), and test it in `useWalletMotion.render.test.tsx`.
+    - Check it on the simulator at E2-B. P2-T9's review also leaves E2 the board's "success on the first wallet" against the plan's success on every new wallet.
+  - **P2-T17 (P10):**
+    - a card behind the front one shows only its top `STACK_PEEK` (54 pt), so aim the flight at the frame's top;
+    - call `measure()` before a flight, since a frame measured after layout does not follow Home's scroll.
+  - **P2-T18:** `WalletShell` mounts `CardFramesProvider` (plan line 1075). Outside it `frameOf` is null and `measure()` does nothing.
+  - **P2-T23 and P2-T24 (P8):**
+    - showing a derived look before the account's looks are read is the caller's call (P2-T24's Home can keep its skeleton up until then);
+    - `order` is `[]` until the first read lands, so a first pass may be in default order;
+    - test ids `card-stack` and `card-stack-<walletId>` are for P2-T24's tests;
+    - P2-T24 decides Home's empty state; the stack draws nothing for no wallets.
+  - **E2-A (P14):**
+    - every stack card is the `stack` variant: bw-home's front-card face, its bottom amount and the mark are not drawn;
+    - no violet glow under the front card;
+    - no VoiceOver hint;
+    - the lift is the plan's 12 pt;
+    - a wrapped name is partly behind the next card at standard sizes (should the peek grow with the name?);
+    - the stack is 362 pt against the board's 364;
+    - `bw-stack-large` must be captured at AX5 by hand.
+- P2-T14 planner notes (briefs/P2-T14.md; READY 10 Nov, held until tray-hardening merges):
+  - **P2-T15 and P2-T16 (P3), the interface they build on:**
+    - `AmountFooter` (the keypad, its problem and Next) goes in the tray's pinned `footer`, and the plan's `problem` prop moved there. Both components take `StepProps`, so a host spreads one object into both.
+    - `AddStep` gains `transfer`: a transfer goes amount, transfer, confirm.
+    - `confirmRows` takes the app's `tc`, so built-in category names show in Thai.
+    - New helpers in `addFlow.ts`: `stepAfterAmount`, `amountProblem` and `stillGuessed` (P2-T16 calls it from `onDraft`). `useCanTellBun()` is in `AmountStep.tsx`.
+    - P2-T15 adds the confirm step's row labels (`labelKey`).
+  - **A tray slot under the header (P10; P2-T16 or a tray task):** at AX5 the board pins the amount under the title, but `Tray` pins only its footer, so the amount scrolls with the middle. Capture `bw-tray-amount` at AX5 by hand.
+  - **P2-T37 (P9):** the typed amount (`add-amount`) is the one amount private mode leaves on screen, by design. The sweep must exempt it.
+  - **E2-B (P17):** the differences from the boards, listed in the brief's P17. Among them: ถัดไป against the boards' ต่อไป, no วันนี้ chip, and ลบตัวเลข.
+- tray-hardening (#392, approved 10 Nov on 784667b; review in reviews/tray-hardening.md, a Sonnet workflow; probes in scratch/tray-hardening-review/; two minors and three nits). CI could not run (billing), so the controller folded m-1, m-2, n-1 and n-2 into a fix round on the same PR: `briefs/tray-hardening-fix.md`, written by the tray-hardening planner.
+  - **The fix round:**
+    - m-1: `dismissed` reads the rendered `shown`, not the `showing` ref refreshed in a passive effect. A batched native end plus reopen otherwise calls `onClosed` while the tray is open (R-d to R-d5b).
+    - m-2: pin "nothing moves during an exit" (mutant X1).
+    - n-1: pin the tick's `hidden` dependency (D2).
+    - n-2: an iOS case with no `onClosed` (X4).
+  - **P2-T16 (n-3), and any host tray (P2-T20's `ReorderTray`):**
+    - on iOS `onClosed` can come twice for two hides (probe R-c), so `whenClosed` treats a second call as a no-op;
+    - it may not come at all for a Modal that never presented (R-f), so do not assume one call per hide;
+    - the SKIPPED device check should ask whether UIKit sends a dismissal for a present refused while a dismissal is in flight.

@@ -1,0 +1,451 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stdout | test/workers/files-front-door.test.ts > the bridge serves the built-in brands through the front door, with the v1 headers
+{"level":"warn","event":"cashback_catalogue_unavailable","error":"Error"}
+
+stdout | test/workers/files-front-door.test.ts > the bridge serves the built-in brands through the front door, with the v1 headers
+{"level":"warn","event":"cashback_catalogue_unavailable","error":"Error"}
+
+stderr | test/workers/front-door.test.ts > the access pipeline, in the API’s order > a call naming another person is refused by the vault, which writes nothing
+{"level":"error","event":"vault_owner_mismatch","failure":"VaultOwnerMismatch"}
+{"level":"error","event":"vault_call_failed","failure":"VaultOwnerMismatch"}
+
+ ✓ test/workers/files-front-door.test.ts > the bridge catalogue is public and 404 while the bridge is off 5ms
+ ✓ test/workers/files-front-door.test.ts > the bridge serves the built-in brands through the front door, with the v1 headers 3ms
+ ✓ test/workers/files-front-door.test.ts > assertFreshSignIn accepts a sign-in up to 300 seconds old and refuses older, missing or future ones 0ms
+ ✓ test/workers/files-front-door.test.ts > a token's auth_time is optional, and one in the future is 401 UNAUTHENTICATED 23ms
+ ✓ test/workers/files-front-door.test.ts > a step-only id answers 200 from the vault 15ms
+ ✓ test/workers/front-door.test.ts > the v1 response envelope > every response is no-store with its own request id and helmet-style headers 6ms
+ ✓ test/workers/front-door.test.ts > the v1 response envelope > a client-sent request id is ignored 2ms
+ ✓ test/workers/front-door.test.ts > the v1 response envelope > an unknown route is 404 NOT_FOUND as an ApiProblem when nothing is forwarded 1ms
+ ✓ test/workers/front-door.test.ts > the access pipeline, in the API’s order > no client header is 426 before any token check 1ms
+ ✓ test/workers/front-door.test.ts > the access pipeline, in the API’s order > an outdated client is 426 2ms
+ ✓ test/workers/front-door.test.ts > the access pipeline, in the API’s order > no bearer token is 401 UNAUTHENTICATED 1ms
+ ✓ test/workers/front-door.test.ts > the access pipeline, in the API’s order > a token from an unpublished key is 401 2ms
+ ✓ test/workers/front-door.test.ts > the access pipeline, in the API’s order > a token without a session id is 401 SESSION_REQUIRED 2ms
+ ✓ test/workers/front-door.test.ts > the access pipeline, in the API’s order > a token living longer than 15 minutes is 401 UNAUTHENTICATED 2ms
+ ✓ test/workers/front-door.test.ts > the access pipeline, in the API’s order > a token issued in the future is 401 UNAUTHENTICATED 1ms
+ ✓ test/workers/front-door.test.ts > the access pipeline, in the API’s order > a token issued after its own expiry is 401 UNAUTHENTICATED 1ms
+ ✓ test/workers/front-door.test.ts > the access pipeline, in the API’s order > a token whose subject is not a UUID is 401 UNAUTHENTICATED 2ms
+ ✓ test/workers/front-door.test.ts > the access pipeline, in the API’s order > a token whose session id is not a UUID is 401 SESSION_REQUIRED 2ms
+ ✓ test/workers/front-door.test.ts > the access pipeline, in the API’s order > signing out ends this session only 24ms
+ ✓ test/workers/front-door.test.ts > the access pipeline, in the API’s order > a token issued before not_before is 401, and an account being deleted is 403 ACCOUNT_UNAVAILABLE 25ms
+ ✓ test/workers/front-door.test.ts > the access pipeline, in the API’s order > a call naming another person is refused by the vault, which writes nothing 22ms
+stderr | test/workers/files-objects.test.ts > a failed R2 delete keeps the rows and retries them a minute later
+{"level":"error","event":"object_delete_failed","failure":"Error"}
+
+ ✓ test/workers/exports.test.ts > requesting an export, ported from export.integration.spec.ts > needs a fresh export proof bound to its own command, and queues one owned job 50ms
+ ✓ test/workers/exports.test.ts > requesting an export, ported from export.integration.spec.ts > a replayed request returns the same acknowledgement and queues nothing new 30ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > pagination_never_splits_a_command_group 64ms
+ ✓ test/workers/imports-review.test.ts > nothing is saved before a confirmation batch commits > parse, corrections and the freeze alone save no transaction 60ms
+ ✓ test/workers/imports-review.test.ts > nothing is saved before a confirmation batch commits > progress shows a frozen selection with every row remaining 38ms
+ ✓ test/workers/attachments.test.ts > ownership: another account can neither use nor learn of a receipt > foreign_attachment_grant_is_denied 84ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a key whose writer never published it is deleted by the alarm at its deadline 54ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > an export file is deleted by the alarm when it expires, and its status reads expired 42ms
+ ✓ test/workers/files-objects.test.ts > a reserved key is due at its grace deadline, a published one at its expiry, and a held receipt never until released 18ms
+ ✓ test/workers/files-objects.test.ts > a key written after it was forgotten is still deleted 38ms
+ ✓ test/workers/files-objects.test.ts > publishing a key that was never reserved throws and writes nothing 16ms
+ ✓ test/workers/files-objects.test.ts > a failed R2 delete keeps the rows and retries them a minute later 15ms
+ ✓ test/workers/files-objects.test.ts > registry functions take more key lists than SQLite has parameters 42ms
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a failed start is retried a minute later, not in a loop
+{"level":"error","event":"work_start_failed","failure":"Error"}
+
+ ✓ test/workers/exports.test.ts > requesting an export, ported from export.integration.spec.ts > validates the period like history, and refuses an unsupported schema before using the proof 32ms
+ ✓ test/workers/exports.test.ts > requesting an export, ported from export.integration.spec.ts > stays reachable while a required policy is not accepted, but needs a bound session 38ms
+ ✓ test/workers/imports-review.test.ts > foreign jobs, selections and rows > another account cannot correct, freeze, confirm or read an import, and a foreign row or wallet is refused 78ms
+ ✓ test/workers/imports-review.test.ts > foreign jobs, selections and rows > the app login cannot write selections or candidates directly, nor record progress that is not its frozen row 39ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > pages whole groups in revision order within the 2 MiB budget, with no gaps 66ms
+ ✓ test/workers/snapshots.test.ts > consistent snapshots, ported from snapshot-builder.integration.spec.ts > applying the snapshot and then later deltas yields every latest entity exactly once, from one view 160ms
+ ✓ test/workers/snapshots.test.ts > consistent snapshots, ported from snapshot-builder.integration.spec.ts > an account deletion during the build publishes nothing, and its chunks are swept 61ms
+stderr | test/workers/files-objects.test.ts > startPendingWork starts each item once and marks it, counts an existing instance as started, and leaves an unbound kind for later
+{"level":"error","event":"work_start_failed","failure":"Error"}
+
+stderr | test/workers/files-objects.test.ts > startPendingWork starts each item once and marks it, counts an existing instance as started, and leaves an unbound kind for later
+{"level":"error","event":"work_start_failed","failure":"Error"}
+
+ ✓ test/workers/files-objects.test.ts > putConcatenated stores one create-only object with its SHA-256 and refuses an existing key 6ms
+ ✓ test/workers/files-objects.test.ts > grants are per purpose, and a receipt grant is bound to its session 1ms
+ ✓ test/workers/files-objects.test.ts > a route marked starts hands its vault to startWork only after a 2xx 1ms
+ ✓ test/workers/files-objects.test.ts > the front door starts pending work after a starts route answers 2xx, and not after an error or in manual mode 62ms
+ ✓ test/workers/files-objects.test.ts > a Worker route marked starts hands its session's vault to startWork after a 2xx 19ms
+ ✓ test/workers/files-objects.test.ts > startPendingWork starts each item once and marks it, counts an existing instance as started, and leaves an unbound kind for later 15ms
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a prune that throws is logged, the others still run, and the alarm is set again
+{"level":"error","event":"file_prune_failed","failure":"Error"}
+
+ ✓ test/workers/imports-intake.test.ts > POST /v1/imports streams into bounded private quarantine > oversized_stream_is_rejected_before_buffering 236ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > work requested before the vault slept is started by its alarm after it wakes 49ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a failed start is retried a minute later, not in a loop 23ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a capped run leaves the alarm set, and the next alarm clears the rest 48ms
+ ✓ test/workers/attachments.test.ts > ownership: another account can neither use nor learn of a receipt > cross-owner association is denied with 404 and no existence leak, and copies nothing 87ms
+ ✓ test/workers/attachments.test.ts > ownership: another account can neither use nor learn of a receipt > a preview image nobody retained, a quarantined upload and an import id never get a grant 29ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > needs explicit consent and the record version, and makes the receipt part of the record 51ms
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > an export download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled or answered to a HEAD 283ms
+ ✓ test/workers/files-front-door.test.ts > only the first vault call of a request is charged 288ms
+ ✓ test/workers/exports.test.ts > the export file, ported from export.integration.spec.ts > holds every income, expense and transfer field of the period exactly, and reconciles with history 70ms
+ ✓ test/workers/exports.test.ts > the export file, ported from export.integration.spec.ts > a concurrent edit during the export does not tear its one consistent view 91ms
+ ✓ test/workers/snapshots.test.ts > consistent snapshots, ported from snapshot-builder.integration.spec.ts > a build that runs out of time publishes no manifest 47ms
+ ✓ test/workers/snapshots.test.ts > consistent snapshots, ported from snapshot-builder.integration.spec.ts > an empty account still gets a one-chunk snapshot at its high-water 29ms
+ ✓ test/workers/snapshots.test.ts > consistent snapshots, ported from snapshot-builder.integration.spec.ts > refuses to publish an entity that does not match its persisted DTO 34ms
+ ✓ test/workers/files-front-door.test.ts > a Worker route's vault calls see only the live policies 18ms
+ ✓ test/workers/imports-intake.test.ts > POST /v1/imports streams into bounded private quarantine > a declared Content-Length over 12 MiB is refused before the body is read 30ms
+ ✓ test/workers/imports-intake.test.ts > POST /v1/imports streams into bounded private quarantine > accepts a CSV into private quarantine and queues exactly one parse job; nothing is parsed or saved 36ms
+ ✓ test/workers/imports-intake.test.ts > POST /v1/imports streams into bounded private quarantine > refuses a PNG named and declared as JPEG: nothing quarantined, published, parsed or saved 27ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a prune that throws is logged, the others still run, and the alarm is set again 31ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > the alarm follows the earliest of the core and file jobs 48ms
+ ✓ test/workers/files-objects.test.ts > startPendingWork starts nothing while jobs is paused 34ms
+ ✓ test/workers/files-objects.test.ts > createOnce treats an existing instance as created and rethrows otherwise 0ms
+ ✓ test/workers/files-objects.test.ts > TINY_JPEG is a valid 1×1 baseline JPEG 0ms
+ ✓ test/workers/files-objects.test.ts > startPendingWork does nothing in an erased vault or one that is not active 61ms
+ ✓ test/workers/files-objects.test.ts > startDueAt is the later of the starters' earliest and the last attempt plus a minute 16ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > copies inside the store, registered before the copy, and the receipt outlives the import image and the preview 60ms
+stderr | test/workers/files-objects.test.ts > readGates reads only the gates of config:v1 and fails closed as readEdgeConfig does
+{"level":"error","event":"config_unreadable","failure":"Error"}
+
+stderr | test/workers/files-objects.test.ts > readGates reads only the gates of config:v1 and fails closed as readEdgeConfig does
+{"level":"error","event":"config_malformed","failure":"Error"}
+
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > defaults to 200 groups a page and refuses more than 1,000 306ms
+ ✓ test/workers/snapshots.test.ts > snapshot requests, status and grants, ported from snapshot-builder.integration.spec.ts > requests are idempotent, share an open build, and reuse a snapshot from the last hour 45ms
+ ✓ test/workers/exports.test.ts > the export file, ported from export.integration.spec.ts > an export over its byte limit fails visibly and publishes nothing 64ms
+ ✓ test/workers/exports.test.ts > deletion and cancellation races, ported from export.integration.spec.ts > an account deleted mid-export publishes nothing, and the file it wrote is swept 61ms
+ ✓ test/workers/imports-intake.test.ts > POST /v1/imports streams into bounded private quarantine > refuses a HEIC photo named and declared as JPEG: nothing quarantined, published, parsed or saved 29ms
+ ✓ test/workers/imports-intake.test.ts > POST /v1/imports streams into bounded private quarantine > refuses a ZIP named and declared as CSV: nothing quarantined, published, parsed or saved 27ms
+ ✓ test/workers/imports-intake.test.ts > POST /v1/imports streams into bounded private quarantine > refuses a declared HEIC type: nothing quarantined, published, parsed or saved 19ms
+ ✓ test/workers/imports-intake.test.ts > POST /v1/imports streams into bounded private quarantine > refuses a path-like name: nothing quarantined, published, parsed or saved 24ms
+ ✓ test/workers/imports-intake.test.ts > POST /v1/imports streams into bounded private quarantine > refuses an encoded backslash path: nothing quarantined, published, parsed or saved 28ms
+ ✓ test/workers/files-objects.test.ts > after deleteDueObjects at objectsDueAt, the next objectsDueAt is later or null 15ms
+ ✓ test/workers/files-objects.test.ts > readGates reads only the gates of config:v1 and fails closed as readEdgeConfig does 0ms
+ ✓ test/workers/files-objects.test.ts > a vault call's context carries the vault's own id, and vaultById reaches the vault by that id 18ms
+ ✓ test/workers/files-objects.test.ts > the download slots keep the API limits: four exports an isolate, eight receipts and two an account 1ms
+ ✓ test/workers/files-objects.test.ts > a reservation is published only before its deadline 13ms
+ ✓ test/workers/files-objects.test.ts > a write or a forget that lands while a delete is in flight is never lost 23ms
+ ✓ test/workers/files-objects.test.ts > a vault reserves only keys under its own prefix 15ms
+ ✓ test/workers/files-objects.test.ts > putConcatenated refuses a bad key, or parts that do not add up to totalBytes, before it stores anything 3ms
+uncaught exception; source = Uncaught (in promise); stack = Error: unreadable
+    at Object.unstarted (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/tree/apps/edge/test/workers/files-objects.test.ts:642:13)
+    at startPendingWork (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/tree/apps/edge/src/vault/files/work.ts:87:30)
+    at UserVault.rearming (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/tree/apps/edge/src/vault/user-vault.ts:434:14)
+stderr | test/workers/files-objects.test.ts > a start that rejects is logged and never fails the reply
+{"level":"error","event":"pending_work_unstarted","failure":"Error"}
+
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > after any alarm, every scheduled time is later than now 72ms
+ ✓ test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > export requests are purged 30 days after the request; the receipt stays compact 30ms
+ ✓ test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > drops finished upload rows 30 days after they ended, never one still receiving or within the quota window 31ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > is versioned and idempotent: a stale version keeps nothing, a resend replays, a second receipt needs replace 66ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > never publishes a copy that differs from the import image 44ms
+stderr | test/workers/files-objects.test.ts > a failed batch does not stop the next one
+{"level":"error","event":"object_delete_failed","failure":"Error"}
+
+stderr | test/workers/files-objects.test.ts > a failed batch does not stop the next one
+{"level":"error","event":"object_delete_failed","failure":"Error"}
+
+stderr | test/workers/files-objects.test.ts > a failed delete leaves a deadline a writer moved during it
+{"level":"error","event":"object_delete_failed","failure":"Error"}
+
+ ✓ test/workers/files-objects.test.ts > a start that rejects is logged and never fails the reply 28ms
+ ✓ test/workers/files-objects.test.ts > a failed batch does not stop the next one 27ms
+ ✓ test/workers/files-objects.test.ts > releasing a tombstone keeps its second delete a day later 15ms
+ ✓ test/workers/files-objects.test.ts > a failed delete leaves a deadline a writer moved during it 14ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > rejects malformed, foreign and future cursors, and needs a resync below retention 62ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > 30-day retention drops superseded changes, keeps every head, and expires older cursors 39ms
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > a 5,000-row frozen selection succeeds, but a 501-row confirmation batch is rejected 200ms
+ ✓ test/workers/exports.test.ts > deletion and cancellation races, ported from export.integration.spec.ts > a ready export cannot be granted or downloaded once the account is deleting or locked 78ms
+ ✓ test/workers/imports-intake.test.ts > POST /v1/imports streams into bounded private quarantine > refuses an undecodable name: nothing quarantined, published, parsed or saved 23ms
+ ✓ test/workers/imports-intake.test.ts > POST /v1/imports streams into bounded private quarantine > refuses an empty body: nothing quarantined, published, parsed or saved 22ms
+ ✓ test/workers/imports-intake.test.ts > POST /v1/imports streams into bounded private quarantine > keeps Thai file names as labels and replays an accepted key without a second job 55ms
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > a snapshot chunk download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled or answered to a HEAD 276ms
+ ✓ test/workers/snapshots.test.ts > snapshot requests, status and grants, ported from snapshot-builder.integration.spec.ts > grants are short-lived, bound to the owner, and refuse another account's snapshot 77ms
+ ✓ test/workers/snapshots.test.ts > snapshot requests, status and grants, ported from snapshot-builder.integration.spec.ts > reports failed and expired snapshots, and grants nothing for them 50ms
+stderr | test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > refuses to serve a stored change that no longer matches its entity DTO
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > a resent snapshot request after its snapshot went stale reads expired and starts nothing; a new key builds a new one 83ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > a vault that is not active runs no file job and keeps no alarm for them 36ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > an upload arms the alarm though it commits no command 32ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > the retain routine publishes only this account's own unexpired copy at its generation, matching the image 62ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > an account has at most four copies in flight; a fifth retain is told when to retry 65ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > refuses to serve a stored change that no longer matches its entity DTO 26ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > a cursor is bound to its account and names a revision, nothing else 2ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > a cursor from an earlier lifecycle generation needs a resync 27ms
+ ✓ test/workers/imports-intake.test.ts > POST /v1/imports streams into bounded private quarantine > is disabled by default: 404 with the body unread and nothing recorded 18ms
+ ✓ test/workers/imports-intake.test.ts > per-account quotas hold under concurrent uploads > at most 5 upload attempts in 15 minutes 50ms
+ ✓ test/workers/imports-intake.test.ts > per-account quotas hold under concurrent uploads > at most 50 MiB of accepted bytes per 24 hours, decided under the account lock 39ms
+ ✓ test/workers/snapshots.test.ts > snapshot requests, status and grants, ported from snapshot-builder.integration.spec.ts > SnapshotWorkflow runs the build 53ms
+ ✓ test/workers/snapshots.test.ts > S1 review: one view and bounded work, ported from snapshot-builder.integration.spec.ts > every entity comes from the high-water view even when writes land between single-entity pages 96ms
+stderr | test/workers/files-alarm.test.ts > the controller's notes > an unbound bucket is a failed delete, due again a minute later; the alarm never throws
+{"level":"error","event":"object_delete_failed","failure":"ObjectStoreError"}
+
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > only one file run at a time: a second run while the first waits on R2 deletes nothing 73ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > an unbound bucket is a failed delete, due again a minute later; the alarm never throws 26ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > refuses an image past its window, and a deleted record 48ms
+ ✓ test/workers/attachments.test.ts > replace and remove are versioned against the record > replace moves the record to its next version and queues the image it dropped 72ms
+ ✓ test/workers/exports.test.ts > ownership, ported from export.integration.spec.ts > another account's export, job and grant are each the same 404 as an unknown id 117ms
+ ✓ test/workers/exports.test.ts > expiry and cleanup, ported from export.integration.spec.ts > grants last five minutes; the file expires after 24 hours and the sweep deletes it 93ms
+ ✓ test/workers/imports-intake.test.ts > per-account quotas hold under concurrent uploads > at most 10 parse jobs per 24 hours 32ms
+ ✓ test/workers/imports-intake.test.ts > job ids belong to their account > another account gets the same 404 for an existing import as for an unknown id 57ms
+stderr | test/workers/files-alarm.test.ts > the brief's rulings > a prune that keeps throwing brings the alarm back a minute later, never in a loop
+{"level":"error","event":"file_prune_failed","failure":"Error"}
+
+stderr | test/workers/exports.test.ts > expiry and cleanup, ported from export.integration.spec.ts > a failed cleanup stays visible as overdue until a later sweep deletes the file
+{"level":"error","event":"object_delete_failed","failure":"Error"}
+
+ ✓ test/workers/front-door.test.ts > the access pipeline, in the API’s order > an invented session id still spends the person’s budget 723ms
+stderr | test/workers/files-alarm.test.ts > the brief's rulings > after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner
+{"level":"error","event":"vault_retention_purge_failed","failure":"Error"}
+
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > a page reads about its byte budget, not every group the limit allows 226ms
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > a receipt download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled or answered to a HEAD 262ms
+ ✓ test/workers/snapshots.test.ts > S1 review: one view and bounded work, ported from snapshot-builder.integration.spec.ts > reads every row before the first R2 call 59ms
+ ✓ test/workers/snapshots.test.ts > S1 review: one view and bounded work, ported from snapshot-builder.integration.spec.ts > a head whose change row is missing fails the build instead of vanishing from it 37ms
+ ✓ test/workers/exports.test.ts > expiry and cleanup, ported from export.integration.spec.ts > a failed cleanup stays visible as overdue until a later sweep deletes the file 69ms
+ ✓ test/workers/attachments.test.ts > replace and remove are versioned against the record > remove is versioned, deletes the image with no undo, and cannot be repeated 62ms
+ ✓ test/workers/attachments.test.ts > shared references prevent premature deletion > a receipt two records hold is one object, deleted only after both let go 64ms
+ ✓ test/workers/front-door.test.ts > the access pipeline, in the API’s order > /v1/me shows the pending terms until they are accepted 20ms
+ ✓ test/workers/front-door.test.ts > policies and the account > privacy preferences are saved and read back 22ms
+ ✓ test/workers/front-door.test.ts > policies and the account > a version scheduled for later is invisible and cannot be accepted 21ms
+ ✓ test/workers/imports-intake.test.ts > cancelled, failed and expired uploads are swept > expires quarantine after 24 hours through the import_expire job: objects deleted, the parse job cancelled 38ms
+ ✓ test/workers/imports-intake.test.ts > cancelled, failed and expired uploads are swept > an expiry job that is not due yet changes nothing 29ms
+ ✓ test/workers/imports-intake.test.ts > cancelled, failed and expired uploads are swept > the P1 sweep deletes quarantine past its 24-hour registry deadline even if the expiry job never runs 26ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > the retention line can never pass the account revision 21ms
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > snapshots validate exactly the entities the API registers 2ms
+ □ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > snapshots validate exactly the entities the API registers: every key of SYNC_ENTITY_VALIDATORS, once 1B and phase 4 register theirs
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > requests, builds, and downloads a snapshot through short-lived grants, then continues with deltas 92ms
+ ✓ test/workers/snapshots.test.ts > S1 review: one view and bounded work, ported from snapshot-builder.integration.spec.ts > keeps chunks near their target size and grants within the snapshot expiry 76ms
+ ✓ test/workers/snapshots.test.ts > retention, the snapshot halves of retention.integration.spec.ts > tombstones reach delta readers, older cursors resync, and snapshots built before the purge are dropped 80ms
+ ✓ test/workers/exports.test.ts > runtime logs, ported from export.integration.spec.ts > carry no CSV contents, grants, object keys or amounts 39ms
+ ✓ test/workers/exports.test.ts > P4 review fixes, ported from export.integration.spec.ts > a download streams the stored file and never reads it whole 77ms
+ ✓ test/workers/files-alarm.test.ts > the brief's rulings > the vault knows the alarm it set: alarmAt matches getAlarm() after a write, an alarm, a wake and an erase 74ms
+ ✓ test/workers/files-alarm.test.ts > the brief's rulings > a background step that writes moves the alarm: a failed export is due only at its purge 33ms
+ ✓ test/workers/files-alarm.test.ts > the brief's rulings > a start moves the alarm on, from the alarm or from the Worker 27ms
+ ✓ test/workers/imports-intake.test.ts > cancelled, failed and expired uploads are swept > a client that goes away mid-stream leaves nothing in quarantine 68ms
+ ✓ test/workers/imports-intake.test.ts > cancelled, failed and expired uploads are swept > an upload whose session ended while it streamed is not accepted and leaves nothing 93ms
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > a retain hands waitUntil a promise that is pending while it holds a copy slot and ends once the slot is back; a retain turned away for want of a slot hands over nothing 207ms
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > asking again while a snapshot is ready answers 200 with it 53ms
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > serves whole, valid change groups and refuses bad parameters 41ms
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > orders keys as jsonb does: shorter first, equal lengths bytewise, nested objects too, arrays kept in order 1ms
+ ✓ test/workers/exports.test.ts > P4 review fixes, ported from export.integration.spec.ts > at most four export downloads run at once in a process; more are told to retry 92ms
+ ✓ test/workers/exports.test.ts > P4 review fixes, ported from export.integration.spec.ts > a too-large export says why, and is not an operator alert 57ms
+ ✓ test/workers/snapshots.test.ts > retention, the snapshot halves of retention.integration.spec.ts > a snapshot read before a purge is never recorded afterwards, so it cannot serve the purged data 71ms
+ ✓ test/workers/snapshots.test.ts > the jobs Worker snapshot, ported from apps/edge/test/jobs.db.test.ts > builds a requested snapshot, whose chunks the edge then serves 41ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a snapshot runs on SnapshotWorkflow, and its cursor continues with /v1/sync/changes 53ms
+ ✓ test/workers/imports-intake.test.ts > cancelled, failed and expired uploads are swept > an API that died between a PUT and finishing: the reservation is swept after its deadline, and the upload counts as failed 30ms
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > serves each snapshot with its keys in the API's order: PostgreSQL jsonb, shortest key first, then bytewise 36ms
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > a client behind retention recovers: 410, then a snapshot, then deltas from its cursor 50ms
+An RPC result was not disposed properly. One of the RPC calls you made expects you to call dispose() on the return value, but you didn't do so. You cannot rely on the garbage collector for this because it may take arbitrarily long before actually collecting unreachable objects.
+ ✓ test/workers/attachments.test.ts > shared references prevent premature deletion > two records retaining one image at once keep one receipt, made by one copy 352ms
+ ✓ test/workers/exports.test.ts > P4 review fixes, ported from export.integration.spec.ts > an account can have at most two exports open; a third waits 88ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a snapshot that became ready in the last hour is reused, judged by ready_at 59ms
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > an upload hands waitUntil a promise that is pending while it holds its place among the isolate's uploads and ends once it gives the place back 146ms
+ ✓ test/workers/imports-intake.test.ts > review fixes: stalled uploads and request timeouts > an account streams at most 2 uploads at once (429 in_progress), so stalled uploads cannot starve other accounts 112ms
+ ✓ test/workers/imports-intake.test.ts > review fixes: stalled uploads and request timeouts > after an error reply the server closes the connection instead of reading an endless body 23ms
+ ✓ test/workers/imports-intake.test.ts > review fixes: quotas while streaming and refusals that are not permanent > a chunked upload is refused as soon as it passes the bytes left today, before any part is written 44ms
+ ✓ test/workers/attachments.test.ts > shared references prevent premature deletion > the 30-day purge of a deleted record releases its receipt only when no other record holds it 62ms
+ ✓ test/workers/exports.test.ts > P4 review fixes, ported from export.integration.spec.ts > an expired file is not served even while its grant and object remain 62ms
+ ✓ test/workers/exports.test.ts > P4 review fixes, ported from export.integration.spec.ts > recording a file needs the current lease, an active account and the published object itself 62ms
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > second_batch_uses_same_frozen_selection 870ms
+ ✓ test/workers/imports-intake.test.ts > review fixes: quotas while streaming and refusals that are not permanent > a quota refusal does not stick to its key: the same key gets 429 with a retry time, then succeeds once room returns 41ms
+ ✓ test/workers/attachments.test.ts > a deleted record keeps its receipt for the undo window > grants wait until the record is restored; the object is never queued meanwhile 49ms
+ ✓ test/workers/attachments.test.ts > a deleted record keeps its receipt for the undo window > a grant issued before the record was deleted no longer downloads 61ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a build retried after its chunks were stored completes, and the first attempt's chunks are deleted at their deadline 43ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a build that finishes after the vault stopped being active publishes nothing 32ms
+ ✓ test/workers/exports.test.ts > the jobs Worker export, ported from apps/edge/test/jobs.db.test.ts > writes a requested export, streamed back with its length, and never serves a tampered file 41ms
+ ✓ test/workers/exports.test.ts > exports on the vault (1B-T6) > an export needs a sign-in from the last five minutes, and a resent export still replays 26ms
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > a changed frozen revision, a stale selection and rows outside the selection conflict, and committed rows are never rewritten 55ms
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > overlapping retries acknowledge committed rows and continue the untouched ones 41ms
+uncaught exception; source = Uncaught (in promise); stack = Error: unavailable
+    at doWrapper (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:2428:30)
+    at async Context.do (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:2752:17)
+stderr | test/workers/exports.test.ts > exports on the vault (1B-T6) > an export whose write keeps failing is recorded failed after its retries
+{"level":"error","event":"export_write_failed","failure":"Error"}
+
+ ✓ test/workers/imports-intake.test.ts > review fixes: quotas while streaming and refusals that are not permanent > a parse-job refusal decided at finish does not stick to its key either 87ms
+ ✓ test/workers/imports-intake.test.ts > review fixes: quotas while streaming and refusals that are not permanent > the 10 parse jobs per day hold under concurrent uploads 65ms
+ ✓ test/workers/attachments.test.ts > retention and erasure (P5) > account erasure deletes every retained receipt object 61ms
+ ✓ test/workers/attachments.test.ts > retention and erasure (P5) > the retention step releases a receipt nothing holds and drops released rows 30 days on, once their object is gone 57ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > serializes reservations: five at once from one account reserve exactly four 27ms
+uncaught exception; source = Uncaught (in promise); stack = WorkflowError: (instance.already_exists) Workflow instance with id "6a37401f-4911-810b-b1c5-5b6b10dadb94" already exists
+    at createWorkflowError (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:1383:10)
+    at duplicateInstanceError (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:1435:10)
+    at WorkflowBinding.create (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:4724:13)
+ ✓ test/workers/exports.test.ts > exports on the vault (1B-T6) > an export runs on ExportWorkflow and is ready to download 42ms
+ ✓ test/workers/exports.test.ts > exports on the vault (1B-T6) > an export whose write keeps failing is recorded failed after its retries 38ms
+ ✓ test/workers/exports.test.ts > exports on the vault (1B-T6) > the export starter starts each pending export once on ExportWorkflow, and is due a minute after an unstarted request 22ms
+ ✓ test/workers/imports-intake.test.ts > review fixes: fencing through the real upload > every quarantine part is registered before its PUT 59ms
+ ✓ test/workers/imports-intake.test.ts > review fixes: fencing through the real upload > a receive deadline that passed while the body streamed refuses the next part 36ms
+ ✓ test/workers/imports-intake.test.ts > review fixes: fencing through the real upload > finish accepts only the parts reserved by the same upload, with sizes that add up 24ms
+ ✓ test/workers/imports-intake.test.ts > review fixes: maintenance, retention and alerts > fails uploads left receiving past their deadline (clearing their names) without waiting for another upload 22ms
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > a record id already used is never written again, even if its progress row were lost 36ms
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > a kill after commit and before the response, retried with the original key and body, has the same outcome 29ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > a busy process answers 503 with when to retry, before it reserves anything 39ms
+ ✓ test/workers/exports.test.ts > exports on the vault (1B-T6) > an export started twice by overlapping runs is written once 50ms
+ ✓ test/workers/exports.test.ts > exports on the vault (1B-T6) > a text cell that starts like a formula is written as text 31ms
+ ✓ test/workers/exports.test.ts > exports on the vault (1B-T6) > an export that finishes after the vault stopped being active publishes nothing 52ms
+ ✓ test/workers/imports-intake.test.ts > review fixes: maintenance, retention and alerts > a parsed import keeps its file name for its 7-day preview window only (the retention hook) 22ms
+ ✓ test/workers/imports-intake.test.ts > 1B-T5: the vault side of uploads > an upload streams into 1 MiB quarantine parts under the vault's prefix, each published for 24 hours 73ms
+ ✓ test/workers/imports-intake.test.ts > 1B-T5: the vault side of uploads > uploads are 404 before authentication while IMPORT_UPLOADS_ENABLED is off 2ms
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > a batch over the change-group budget is refused before commit, and smaller batches with new keys save it 239ms
+ ✓ test/workers/exports.test.ts > exports on the vault (1B-T6) > a write retried after its file was stored but before it was recorded completes 66ms
+ ✓ test/workers/exports.test.ts > exports on the vault (1B-T6) > a write whose PUT ends past its own reservation deadline publishes nothing, even when a failed delete moved it on 55ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > a process never has more copies running than its limit 221ms
+ ✓ test/workers/imports-intake.test.ts > 1B-T5: the vault side of uploads > an accepted upload's parse message carries only the vault and job ids, and is sent once 24ms
+ ✓ test/workers/imports-intake.test.ts > 1B-T5: the vault side of uploads > a queued import whose message stopped arriving is sent again an hour later, and one whose message keeps arriving is not 43ms
+ ✓ test/workers/imports-intake.test.ts > 1B-T5: the vault side of uploads > after pruneUploads at uploadsDueAt, the next uploadsDueAt is later or null 57ms
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > a row whose wallet was archived after the freeze is conflicted; the rest are saved 43ms
+ ✓ test/workers/exports.test.ts > exports on the vault (1B-T6) > an export is stored with one put of one buffer, and nothing is left behind 54ms
+ ✓ test/workers/exports.test.ts > exports on the vault (1B-T6) > pruneExports purges an export 30 days after its request and fails one left pending for a day 35ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > refused retains, replaces and removals copy nothing 58ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > a receipt that already exists is attached without another copy 32ms
+ ✓ test/workers/imports-intake.test.ts > 1B-T5: the vault side of uploads > finish publishes only parts whose reservations are still before their deadline 15ms
+ ✓ test/workers/imports-intake.test.ts > 1B-T5: the vault side of uploads > reservePart, abort and discard still run after the session ended; begin and finish do not 0ms
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > a re-freeze after a partial confirmation does not re-validate rows already committed, even if their wallet or category was archived since 59ms
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > a re-freeze of only committed rows succeeds after their wallet and category are archived 37ms
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > a row dated before its wallet's tracking start, moved after the freeze, is conflicted 32ms
+ ✓ test/workers/exports.test.ts > exports on the vault (1B-T6) > pruneExports purges more exports at once than SQLite has parameters 21ms
+ ✓ test/workers/exports.test.ts > exports on the vault (1B-T6) > after pruneExports at exportsDueAt, the next exportsDueAt is later or null 19ms
+ ✓ test/workers/exports.test.ts > 1B-T6 fix round: a HEAD gives its download slot back (R96), and the write and download guards of review m-1 and m-2 > an export whose write starts after the vault stopped being active reads nothing and stores nothing 43ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > an account has a copy budget; past it, retaining is told when the oldest copy leaves the window 53ms
+ ✓ test/workers/imports-intake.test.ts > 1B-T5: the vault side of uploads > an isolate takes at most 16 uploads at once; the next is 503 with a retry 178ms
+ ✓ test/workers/imports-intake.test.ts > 1B-T5: the vault side of uploads > a part is reserved until its upload's receive deadline plus the grace 15ms
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > the database refuses stale, unknown and committed rows even when its routines are called directly 41ms
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > every selected row needs its labels mapped, and transfers cannot be confirmed from a file 30ms
+ ✓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > the record an image row becomes holds the kept receipt, in the same command, only with consent 61ms
+ ✓ test/workers/exports.test.ts > 1B-T6 fix round: a HEAD gives its download slot back (R96), and the write and download guards of review m-1 and m-2 > a download refused after it took its slot gives the slot back 67ms
+ ✓ test/workers/exports.test.ts > 1B-T6 fix round: a HEAD gives its download slot back (R96), and the write and download guards of review m-1 and m-2 > a HEAD on a download answers its headers, reads its file to the end and gives its slot back 82ms
+stderr | test/workers/imports-intake.test.ts > 1B-T5 fix round: the upload steps keep the API session and policy checks (P1), and an image needs ocr (P11) > another account's session reaches no upload step of this vault
+{"level":"error","event":"vault_owner_mismatch","failure":"VaultOwnerMismatch"}
+{"level":"error","event":"vault_call_failed","failure":"VaultOwnerMismatch"}
+
+stderr | test/workers/imports-intake.test.ts > 1B-T5 fix round: the upload steps keep the API session and policy checks (P1), and an image needs ocr (P11) > another account's session reaches no upload step of this vault
+{"level":"error","event":"vault_owner_mismatch","failure":"VaultOwnerMismatch"}
+{"level":"error","event":"vault_call_failed","failure":"VaultOwnerMismatch"}
+
+stderr | test/workers/imports-intake.test.ts > 1B-T5 fix round: the upload steps keep the API session and policy checks (P1), and an image needs ocr (P11) > another account's session reaches no upload step of this vault
+{"level":"error","event":"vault_owner_mismatch","failure":"VaultOwnerMismatch"}
+{"level":"error","event":"vault_call_failed","failure":"VaultOwnerMismatch"}
+
+stderr | test/workers/imports-intake.test.ts > 1B-T5 fix round: the upload steps keep the API session and policy checks (P1), and an image needs ocr (P11) > another account's session reaches no upload step of this vault
+{"level":"error","event":"vault_owner_mismatch","failure":"VaultOwnerMismatch"}
+{"level":"error","event":"vault_call_failed","failure":"VaultOwnerMismatch"}
+
+stderr | test/workers/imports-intake.test.ts > 1B-T5 fix round: the upload steps keep the API session and policy checks (P1), and an image needs ocr (P11) > another account's session reaches no upload step of this vault
+{"level":"error","event":"vault_owner_mismatch","failure":"VaultOwnerMismatch"}
+{"level":"error","event":"vault_call_failed","failure":"VaultOwnerMismatch"}
+
+stderr | test/workers/imports-intake.test.ts > 1B-T5 fix round: the upload steps keep the API session and policy checks (P1), and an image needs ocr (P11) > another account's session reaches no upload step of this vault
+{"level":"error","event":"vault_owner_mismatch","failure":"VaultOwnerMismatch"}
+{"level":"error","event":"vault_call_failed","failure":"VaultOwnerMismatch"}
+
+ ✓ test/workers/imports-intake.test.ts > 1B-T5 fix round: the upload steps keep the API session and policy checks (P1), and an image needs ocr (P11) > after sign-out the four cleanup steps still run; begin, finish and the status read are refused 24ms
+ ✓ test/workers/imports-intake.test.ts > 1B-T5 fix round: the upload steps keep the API session and policy checks (P1), and an image needs ocr (P11) > a terms version the account has not accepted refuses begin and finish; reservePart still runs 19ms
+ ✓ test/workers/imports-intake.test.ts > 1B-T5 fix round: the upload steps keep the API session and policy checks (P1), and an image needs ocr (P11) > in a deleting account reservePart gives no key, begin and finish are refused, and abort still cleans up 25ms
+ ✓ test/workers/imports-intake.test.ts > 1B-T5 fix round: the upload steps keep the API session and policy checks (P1), and an image needs ocr (P11) > another account's session reaches no upload step of this vault 30ms
+ ✓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > an invalid batch makes no copy: a wrong revision, a stale selection or an unknown selection never reaches the receipt copy 55ms
+ ✓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > a receipt that can no longer be kept refuses the batch, and the record can be saved without it 31ms
+ ✓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > a receipt goes only with its image row 21ms
+ ✓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > a confirmation with a receipt copies the import image once and attaches it to the image row's record 32ms
+ ✓ test/workers/imports-intake.test.ts > 1B-T5 fix round: the upload steps keep the API session and policy checks (P1), and an image needs ocr (P11) > an erased vault refuses every upload step, anySession or not 26ms
+ ✓ test/workers/imports-intake.test.ts > 1B-T5 fix round: the upload steps keep the API session and policy checks (P1), and an image needs ocr (P11) > after sign-out an upload is refused at begin and records nothing 13ms
+ ✓ test/workers/imports-intake.test.ts > 1B-T5 fix round: the upload steps keep the API session and policy checks (P1), and an image needs ocr (P11) > while ocr is paused an image upload is 503 with nothing recorded, and a CSV is still accepted 18ms
+ ✓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > a confirmation whose receipt was never prepared answers 503 and saves nothing, and one with nothing copied is refused as expired 40ms
+ ✓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > a selection frozen while its confirmation was being prepared answers 503 with a retry, never saving the image record without its receipt 27ms
+ ✓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > a copy the confirmation did not use is due at once 33ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > gives one deadline to the whole copy: the HEAD that checks it runs on the same signal 430ms
+ ✓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > the confirmation steps check the session: after sign-out nothing is reserved or saved 27ms
+ ✓ test/workers/imports-review.test.ts > review corrections > are versioned commands that clear the corrected issues and recompute the totals 27ms
+ ✓ test/workers/imports-review.test.ts > review corrections > a correction clears the issues of the fields it names and keeps the others 22ms
+ ✓ test/workers/imports-review.test.ts > expiry and retention > an expired preview cannot be frozen or confirmed, and retention removes its frozen copies and synced records 34ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > a copy the store cannot make is a 503 with no reservation left live, and never leaks the failure 29ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > the copy is checked as stored by the database too: a copy that is not the registered image is not published 28ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > serves the image whole, with its length, as it always did 30ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > one account cannot take every download slot: its third waits while another account is served 58ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > the process-wide cap still holds across accounts 61ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > cuts off a download that stops making progress, and frees its slot 235ms
+ ✓ test/workers/imports-review.test.ts > a 5,000-row synthetic import > confirms in batches of 500 through one interruption and restart, and reconciles exact wallet and category totals 718ms
+ ✓ test/workers/imports-review.test.ts > privacy of receipts and synced progress > receipts, audit rows and synced progress carry no candidate fields 34ms
+ ✓ test/workers/imports-review.test.ts > privacy of receipts and synced progress > registers selection retention, and the new tables cascade from accounts 52ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > cuts off a download still running at the total limit even though it keeps trickling 485ms
+ ✓ test/workers/imports-review.test.ts > one command per batch, and lists bound as one parameter > a confirmation batch of 500 rows commits as one command under one revision 92ms
+ ✓ test/workers/imports-review.test.ts > one command per batch, and lists bound as one parameter > a selection naming 1,000 rows freezes 45ms
+ ✓ test/workers/imports-review.test.ts > a parsed upload becomes a reviewable preview and nothing else > serves exact candidates, issues and totals to the owner, with a 7-day expiry and revision 1 27ms
+ ✓ test/workers/imports-review.test.ts > a parsed upload becomes a reviewable preview and nothing else > 5,000 rows parse with exact totals (no float arithmetic anywhere) 94ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > a download that never starts is a 503 problem, not an image-typed body 234ms
+ ✓ test/workers/imports-review.test.ts > a parsed upload becomes a reviewable preview and nothing else > before parsing there is no preview yet: queued, nothing to review 33ms
+ ✓ test/workers/imports-review.test.ts > a parsed upload becomes a reviewable preview and nothing else > is owner-only: another account and an unknown id get the same 404 38ms
+ ✓ test/workers/imports-review.test.ts > duplicates are advice only > names matching records and same-file twins, and keeps every row 49ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > unavailable storage is a 503 with when to retry, and never sends the failure text 30ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > a body that fails before its first byte is a 503 problem, with no error text 30ms
+ ✓ test/workers/imports-review.test.ts > preview paging is additive (P2b) > no parameters is exactly the whole preview, with no page key 37ms
+ ✓ test/workers/imports-review.test.ts > preview paging is additive (P2b) > pages only candidates: summary and issues stay whole-file, advice follows the page rows, pages rejoin the whole 50ms
+ ✓ test/workers/imports-review.test.ts > preview paging is additive (P2b) > defaults the missing parameter, and a page past the end is empty 41ms
+ ✓ test/workers/imports-review.test.ts > preview paging is additive (P2b) > refuses malformed paging as a validation error, and keeps owner-only 404s 61ms
+ ✓ test/workers/imports-review.test.ts > preview paging is additive (P2b) > a preview that is not ready is served as before, whatever the paging 26ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > a HEAD on a receipt download answers its headers and gives its slot back (ruling R96) 290ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > downloads refused after they took a slot give the slot back 42ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > a corrupted object is never served as a complete download 34ms
+ ✓ test/workers/imports-review.test.ts > duplicate advice stays linear in the file and the records (M1) > 5,000 identical rows against 5,000 identical records, with statistics older than the import: answered in time, five matches each 130ms
+ ✓ test/workers/imports-review.test.ts > duplicate advice stays linear in the file and the records (M1) > 5,000 distinct rows with statistics older than the import are answered in time 79ms
+ ✓ test/workers/attachments.test.ts > grants are bound to the session (P2c review fix, minor 2) > a grant verifies only for the session it was issued to 62ms
+ ✓ test/workers/attachments.test.ts > ownership holds for replace and remove too (P2c review fix, minor 6) > another account gets the same 404 as for an unknown record, and nothing changes 83ms
+ ✓ test/workers/imports-review.test.ts > duplicate advice stays linear in the file and the records (M1) > names exactly what the self-join named, row for row 38ms
+ ✓ test/workers/imports-review.test.ts > unconfirmed candidates expire after 7 days > queues one expiry job at the preview expiry, and it deletes the candidates when due 37ms
+ ✓ test/workers/imports-review.test.ts > a preview past its 7 days is expired, whatever happened to its expiry job (M4) > an account disabled at the due time: its job ends superseded, the route says expired at once, retention deletes the candidates 58ms
+ ✓ test/workers/attachments.test.ts > privileges and schema > only the routines write receipts or the registry; logins see only what they should 20ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > a receipt grant is bound to the session that asked 40ms
+ ✓ test/workers/imports-review.test.ts > a preview past its 7 days is expired, whatever happened to its expiry job (M4) > leaves a preview inside its 7 days alone 29ms
+ ✓ test/workers/imports-review.test.ts > a parsed import keeps its state until its rows are pruned (minor 4) > pruning its succeeded parse job does not turn it into an expired upload; its rows, preview and totals go 30 days after its raw expiry 37ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > a retained receipt shows as attachment_id wherever the record is read 46ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > purging a deleted record releases its receipt, stamps the release from the vault clock, and deletes its object 38ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > a copy that is never published is due three minutes after its reservation 21ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > copying is bounded: four in flight and a hundred a day per vault, each answered with when to retry 35ms
+ ✓ test/workers/imports-review.test.ts > the parser container > parses an upload the edge accepted, which the edge then reviews and confirms 36ms
+ ✓ test/workers/imports-review.test.ts > expiry on the vault clock (ruling R37) > a preview expires after 7 days: its candidates go, it reads expired, and an unattached image is due 22ms
+ ✓ test/workers/imports-review.test.ts > expiry on the vault clock (ruling R37) > after pruneImports at importsDueAt, the next importsDueAt is later or null 35ms
+ ✓ test/workers/imports-review.test.ts > expiry on the vault clock (ruling R37) > a confirmation resent to another import is not found, and one resent after its preview expired is told the preview is unavailable 32ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > after pruneAttachments at attachmentsDueAt, the next attachmentsDueAt is later or null 44ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the planner > a second prepare waits for a copy in flight, and needs none once the receipt exists: both checks run in one block 28ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the planner > a retain whose session ends during its copy commits nothing, and its copy is given back at once 27ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the planner > a copy whose import image is gone by then keeps nothing and is refused as expired 24ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the planner > a retain whose copy outlived its own reservation is refused as expired, even when a failed delete moved its deadline on 24ms
+ ✓ test/workers/imports-review.test.ts > expiry on the vault clock (ruling R37) > the preview says until when its image can be kept: two minutes before the image is due, while more than two minutes are left 26ms
+ ✓ test/workers/imports-review.test.ts > the planner's cases on the review rules > a rejected file reads rejected with its issue, and corrections and freezes are refused as rejected 26ms
+ ✓ test/workers/imports-review.test.ts > the planner's cases on the review rules > a freeze names each row it cannot take and why: incomplete, after today or before tracking, an unknown or mistyped wallet or category 21ms
+ ✓ test/workers/imports-review.test.ts > the planner's cases on the review rules > rows that cannot be saved now are conflicted: a category archived after the freeze, a date after today 27ms
+ ✓ test/workers/imports-review.test.ts > the planner's cases on the review rules > progress reads stale after a correction and expired past the preview's expiry, and a re-freeze counts the rows already committed 51ms
+ ✓ test/workers/imports-review.test.ts > the planner's cases on the review rules > an import with no preview reads its parse state: parsing, failed with its issue, cancelled or expired 24ms
+ ✓ test/workers/imports-review.test.ts > the planner's cases on the review rules > the synced records stay while their preview and selection are live, however old their last change 27ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a build cut into more chunks than SQLite has parameters records them all 170ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a chunk is served with its exact bytes and digest, and a tampered chunk is 404 57ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > after pruneSnapshots at snapshotsDueAt, the next snapshotsDueAt is later or null 18ms
+stdout | test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > ten times the yearly ledger builds and exports inside the memory budget
+ten-times proof: {"databaseSize":50716672,"records":32000,"entities":32002,"chunks":19,"storedBytes":19001807,"longestLine":593,"peakHeldBytes":20050118,"csvBytes":14414226,"exportPeakHeldBytes":28828452,"seedMs":3057,"buildMs":630,"exportMs":268}
+
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > ten times the yearly ledger builds and exports inside the memory budget 4059ms
+uncaught exception; source = Uncaught (in promise); stack = Error: unavailable
+    at doWrapper (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:2428:30)
+    at async Context.do (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:2752:17)
+stderr | test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a snapshot whose build fails on all three attempts is recorded failed
+{"level":"error","event":"snapshot_build_failed","failure":"Error"}
+
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a build that starts after the vault stopped being active reads nothing and stores nothing 20ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a too-large snapshot fails visibly and publishes nothing 21ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a snapshot whose build fails on all three attempts is recorded failed 32ms
+uncaught exception; source = Uncaught (in promise); stack = WorkflowError: (instance.already_exists) Workflow instance with id "d271d038-abab-85c4-a875-f733edb61068" already exists
+    at createWorkflowError (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:1383:10)
+    at duplicateInstanceError (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:1435:10)
+    at WorkflowBinding.create (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:4724:13)
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a build that fails on its first two attempts is ready on its third 30ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > the snapshot starter starts each pending snapshot once on SnapshotWorkflow, and is due a minute after an unstarted request 16ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a snapshot started twice by overlapping runs is built once 26ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > pruneSnapshots fails a snapshot left pending for a day, drops one read below the purge watermark, and deletes one a week past its expiry 42ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a request takes no body field and a UUID key, waits for the jobs gate, and a status of a malformed or unknown id is 404 21ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > at most four chunk downloads run at once in a process, each streamed and never read whole; more are told to retry 45ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a chunk download refused after it took its slot gives the slot back 41ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a HEAD on a chunk download answers its headers, reads its chunk to the end and gives its slot back 81ms
+
+ Test Files  11 passed (11)
+      Tests  335 passed | 1 todo (336)
+   Start at  08:59:02
+   Duration  9.44s (transform 11.46s, setup 28.17s, import 1.28s, tests 23.91s, environment 3ms)
+

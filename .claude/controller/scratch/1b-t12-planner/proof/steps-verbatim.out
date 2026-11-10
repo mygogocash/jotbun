@@ -1,0 +1,11 @@
+--- orig STEPS
++++ real STEPS
+@@ -10 +10 @@
+-  { name: 'export: challenge', build: async (st) => json('POST', '/v1/auth/challenges', await headers(st), { request_id: randomUUID(), purpose: 'export', command_id: st.keys.export }), after: (st, body) => (st.challenge = body as State['challenge']) },
++  { name: 'export: challenge', signIn: true, build: async (st) => json('POST', '/v1/auth/challenges', await headers(st), { request_id: randomUUID(), purpose: 'export', command_id: st.keys.export }), after: (st, body) => (st.challenge = body as FilesState['challenge']) },
+@@ -12,0 +13 @@
++    signIn: true,
+@@ -14 +15 @@
+-      const idToken = await edge.issuer.sign({ iss: edge.issuer.issuer, sub: st.user.who.subject, aud: TEST_CLIENT_ID, nonce: st.challenge.nonce, auth_time: now(), iat: now(), exp: now() + 600 })
++      const idToken = await proofToken(st, st.challenge.nonce)
+steps: 42

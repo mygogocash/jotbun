@@ -1,0 +1,602 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app
+
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section amount: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section amount-states: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section pill-button: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section card: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section stage-header: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section receipt: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section tab-bar: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section sheet: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section empty-state: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section empty-state-card: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section sync-banner: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section sync-banner-review: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section undo-bar: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section flag-chip: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section promise-list: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section staged-progress: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section keypad: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section type-switch: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section category-chips: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section category-grid: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section wallet-picker: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section wallet-picker-move: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section date-chip: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section note-field: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section record-row: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section day-header: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section budget-bar: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section pace-ring: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section pace-ring-over: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section bun-m: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section bun-l-1: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section bun-l-2: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section speech-bubble: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section bun-peek: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section home-ready: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section home-over-budget: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section home-no-budget: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section home-first-run: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section home-offline: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section home-saving: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section home-needs-review: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section home-upgrade: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section home-signed-out: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section home-locked: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section quick-add-empty: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section quick-add-sum: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section quick-add-categories: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section quick-add-move: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section quick-add-details: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section quick-add-saving: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section quick-add-unconfirmed: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section quick-add-saved: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section quick-add-copy: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section quick-add-no-wallet: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section quick-add-device-error: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section history-month: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section history-search: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section history-search-thai: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section history-search-partial: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section history-filters: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section history-empty: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section history-no-match: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section history-undo: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section history-drafts: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section history-refresh: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section history-offline: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section recently-deleted-list: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section recently-deleted-empty: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section recently-deleted-restored: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section recently-deleted-unconfirmed: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section recently-deleted-offline: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section record-expense: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section record-income: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section record-move: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section record-draft: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section record-edit: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section record-conflict: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section record-deleted: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section record-unconfirmed: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section budget-loading: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section budget-offline: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section budget-upgrade: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section budget-none: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section budget-first-month: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section budget-prefilled: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section budget-limits: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section budget-on-track: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section budget-tight: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section budget-over: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section budget-last-day: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section budget-saving: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section budget-unconfirmed: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section budget-conflict: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section budget-over-total: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section budget-refused: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section wallets-loading: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section wallets-problem: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section wallets-offline: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section wallets-first-run: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section wallets-list: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section wallets-archived: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section wallets-create: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section wallets-saving: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section wallets-unconfirmed: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section wallets-edit: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section wallets-conflict: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section wallets-archive-confirm: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section wallets-archive-refused: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section wallets-correction: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section wallets-field-error: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section categories-loading: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section categories-load-problem: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section categories-expense: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section categories-income: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section categories-no-custom: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section categories-create: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section categories-edit-builtin: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section categories-saving: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section categories-unconfirmed: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section categories-conflict: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section categories-archived: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section categories-archive-confirm: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section categories-limit-no-budget: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section categories-limit-over: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section categories-label-error: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section insights-month: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section insights-loading: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section insights-problem: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section insights-offline: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section insights-empty: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section insights-past-month: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section insights-gaps: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section insights-good-week: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section insights-drafts: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section recap-month: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section recap-over-budget: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section recap-money-in-only: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section recap-more-out: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section recap-this-month: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section recap-on-device: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section recap-empty: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section recap-loading: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section recap-offline: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section recap-problem: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section reminders-off: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section reminders-every-day: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section reminders-weekdays: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section reminders-time: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section reminders-denied: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section reminders-unsupported: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section reminders-one-day: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section reminders-saving: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section reminders-thai: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section reminders-dark: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section onboarding-coffee: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section onboarding-private: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section onboarding-first-coffee: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section onboarding-skipped: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section onboarding-reminder-on: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section onboarding-reminder-denied: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section onboarding-reminder-unsupported: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section onboarding-reminder-failed: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section sign-in-terms-unticked: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section sign-in-terms-ticked: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section sign-in-signing-in: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section sign-in-not-configured: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section sign-in-failed: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section settings-main: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section settings-all-areas: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section settings-import: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section settings-sign-in-method: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section settings-offline: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section settings-sign-out: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section settings-sign-out-unsynced: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section settings-erase-failed: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section settings-everywhere: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section settings-everywhere-working: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section settings-everywhere-cancelled: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section settings-everywhere-signin-unreachable: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section settings-everywhere-reauth: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section settings-everywhere-offline: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section settings-everywhere-refused: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section settings-everywhere-erase-failed: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section settings-everywhere-unavailable: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section privacy-main: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section privacy-no-reauth: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section privacy-export-preparing: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section privacy-export-ready: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section privacy-export-downloaded: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section privacy-export-expired: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section privacy-export-failed: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section privacy-export-too-large: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section privacy-export-lost: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section privacy-export-offline: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section privacy-export-reauth: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section privacy-delete-confirm: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section privacy-delete-working: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section privacy-delete-receipt: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section privacy-delete-refused: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section privacy-delete-unconfirmed: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section signin-email-address: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section signin-email-code: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section signin-email-wrong-code: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section signin-email-rate-limited: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section signin-account-exists-apple: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section signin-account-exists-email: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section signin-session-ended: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section signin-session-ended-unavailable: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section signin-session-ended-other-account: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section signin-session-ended-erase: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section signin-session-ended-email: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section signin-devices: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section signin-devices-methods: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section signin-confirm-apple: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section signin-confirm-google: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section signin-confirm-email: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section signin-reminder: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section signin-terms: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section signin-terms-ticked: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section signin-terms-accepting: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section signin-terms-failed: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section signin-terms-policy: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section signin-welcome-link: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section analytics-consent: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section analytics-consent-failed: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section privacy-analytics-on: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section privacy-analytics-off: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section privacy-analytics-pending: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section import-expectation: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section import-picking: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section import-uploads-off: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section import-uploading: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section import-parsing: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section import-parse-waiting: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section import-parse-failed: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section import-rejected: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section import-labels: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section import-review: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section import-bulk: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section import-duplicates: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section import-frozen: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section import-confirming: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section import-unconfirmed: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section import-conflict: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section import-done: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section import-resume: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section import-offline: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section receipt-none: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section receipt-consent: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section receipt-uploading: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section receipt-preparing: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section receipt-saving: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section receipt-attached: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section receipt-full-screen: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section receipt-grant-renewed: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section receipt-replace-consent: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section receipt-remove-confirm: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section receipt-removed: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section receipt-unconfirmed: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section receipt-conflict: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section receipt-uploads-off: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section receipt-offline: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section ask-bun-off: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section ask-bun-answer: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section quick-add-tell-bun: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section home-bun-note: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section insights-cashback-ask: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section insights-cashback-tips: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section settings-companion: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section categories-thai-pack: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section record-choice: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section record-choice-server: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section record-choice-offline: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section record-choice-deleted: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section record-choice-cannot-keep: every control has a name, nothing hidden takes focus
+ ↓ src/dev/catalogue/screenReader.render.test.tsx > section history-choice-waiting: every control has a name, nothing hidden takes focus
+ ✓ src/dev/catalogue/screenReader.render.test.tsx > section bw-amounts: every control has a name, nothing hidden takes focus 50ms
+ ✓ src/dev/catalogue/screenReader.render.test.tsx > section bw-private: every control has a name, nothing hidden takes focus 29ms
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > the registry has a section for every component, the mascot and every screen state, with unique ids and titles
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section amount renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section amount-states renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section pill-button renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section card renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section stage-header renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section receipt renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section tab-bar renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section sheet renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section empty-state renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section empty-state-card renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section sync-banner renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section sync-banner-review renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section undo-bar renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section flag-chip renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section promise-list renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section staged-progress renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section bun-m renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section bun-l-1 renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section bun-l-2 renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section speech-bubble renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section bun-peek renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section keypad renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section type-switch renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section category-chips renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section category-grid renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section wallet-picker renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section wallet-picker-move renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section date-chip renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section note-field renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section record-row renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section day-header renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section budget-bar renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section pace-ring renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section pace-ring-over renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section home-ready renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section home-over-budget renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section home-no-budget renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section home-first-run renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section home-offline renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section home-saving renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section home-needs-review renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section home-upgrade renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section home-signed-out renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section home-locked renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section quick-add-empty renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section quick-add-sum renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section quick-add-categories renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section quick-add-move renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section quick-add-details renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section quick-add-saving renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section quick-add-unconfirmed renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section quick-add-saved renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section quick-add-copy renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section quick-add-no-wallet renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section quick-add-device-error renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section history-month renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section history-search renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section history-search-thai renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section history-search-partial renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section history-filters renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section history-empty renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section history-no-match renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section history-undo renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section history-drafts renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section history-refresh renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section history-offline renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section recently-deleted-list renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section recently-deleted-empty renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section recently-deleted-restored renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section recently-deleted-unconfirmed renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section recently-deleted-offline renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section record-expense renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section record-income renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section record-move renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section record-draft renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section record-edit renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section record-conflict renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section record-deleted renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section record-unconfirmed renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section record-choice renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section record-choice-server renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section record-choice-offline renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section record-choice-deleted renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section record-choice-cannot-keep renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section history-choice-waiting renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section analytics-consent renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section analytics-consent-failed renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section privacy-analytics-on renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section privacy-analytics-off renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section privacy-analytics-pending renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section budget-loading renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section budget-offline renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section budget-upgrade renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section budget-none renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section budget-first-month renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section budget-prefilled renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section budget-limits renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section budget-on-track renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section budget-tight renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section budget-over renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section budget-last-day renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section budget-saving renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section budget-unconfirmed renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section budget-conflict renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section budget-over-total renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section budget-refused renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section wallets-loading renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section wallets-problem renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section wallets-offline renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section wallets-first-run renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section wallets-list renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section wallets-archived renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section wallets-create renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section wallets-saving renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section wallets-unconfirmed renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section wallets-edit renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section wallets-conflict renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section wallets-archive-confirm renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section wallets-archive-refused renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section wallets-correction renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section wallets-field-error renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section categories-loading renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section categories-load-problem renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section categories-expense renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section categories-income renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section categories-no-custom renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section categories-create renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section categories-edit-builtin renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section categories-saving renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section categories-unconfirmed renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section categories-conflict renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section categories-archived renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section categories-archive-confirm renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section categories-limit-no-budget renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section categories-limit-over renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section categories-label-error renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section insights-month renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section insights-loading renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section insights-problem renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section insights-offline renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section insights-empty renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section insights-past-month renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section insights-gaps renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section insights-good-week renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section insights-drafts renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section recap-month renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section recap-over-budget renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section recap-money-in-only renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section recap-more-out renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section recap-this-month renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section recap-on-device renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section recap-empty renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section recap-loading renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section recap-offline renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section recap-problem renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section reminders-off renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section reminders-every-day renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section reminders-weekdays renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section reminders-time renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section reminders-denied renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section reminders-unsupported renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section reminders-one-day renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section reminders-saving renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section reminders-thai renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section reminders-dark renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section onboarding-coffee renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section onboarding-private renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section onboarding-first-coffee renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section onboarding-skipped renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section onboarding-reminder-on renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section onboarding-reminder-denied renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section onboarding-reminder-unsupported renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section onboarding-reminder-failed renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section sign-in-terms-unticked renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section sign-in-terms-ticked renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section sign-in-signing-in renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section sign-in-not-configured renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section sign-in-failed renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section settings-main renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section settings-all-areas renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section settings-import renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section settings-sign-in-method renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section settings-offline renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section settings-sign-out renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section settings-sign-out-unsynced renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section settings-erase-failed renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section settings-everywhere renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section settings-everywhere-working renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section settings-everywhere-cancelled renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section settings-everywhere-signin-unreachable renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section settings-everywhere-reauth renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section settings-everywhere-offline renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section settings-everywhere-refused renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section settings-everywhere-erase-failed renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section settings-everywhere-unavailable renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section privacy-main renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section privacy-no-reauth renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section privacy-export-preparing renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section privacy-export-ready renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section privacy-export-downloaded renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section privacy-export-expired renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section privacy-export-failed renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section privacy-export-too-large renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section privacy-export-lost renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section privacy-export-offline renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section privacy-export-reauth renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section privacy-delete-confirm renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section privacy-delete-working renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section privacy-delete-receipt renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section privacy-delete-refused renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section privacy-delete-unconfirmed renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section signin-email-address renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section signin-email-code renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section signin-email-wrong-code renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section signin-email-rate-limited renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section signin-account-exists-apple renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section signin-account-exists-email renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section signin-session-ended renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section signin-session-ended-unavailable renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section signin-session-ended-other-account renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section signin-session-ended-erase renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section signin-session-ended-email renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section signin-devices renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section signin-devices-methods renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section signin-confirm-apple renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section signin-confirm-google renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section signin-confirm-email renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section signin-reminder renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section signin-terms renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section signin-terms-ticked renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section signin-terms-accepting renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section signin-terms-failed renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section signin-terms-policy renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section signin-welcome-link renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section import-expectation renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section import-picking renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section import-uploads-off renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section import-uploading renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section import-parsing renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section import-parse-waiting renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section import-parse-failed renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section import-rejected renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section import-labels renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section import-review renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section import-bulk renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section import-duplicates renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section import-frozen renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section import-confirming renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section import-unconfirmed renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section import-conflict renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section import-done renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section import-resume renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section import-offline renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section receipt-none renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section receipt-consent renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section receipt-uploading renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section receipt-preparing renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section receipt-saving renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section receipt-attached renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section receipt-full-screen renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section receipt-grant-renewed renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section receipt-replace-consent renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section receipt-remove-confirm renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section receipt-removed renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section receipt-unconfirmed renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section receipt-conflict renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section receipt-uploads-off renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section receipt-offline renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section ask-bun-off renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section ask-bun-answer renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section quick-add-tell-bun renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section home-bun-note renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section insights-cashback-ask renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section insights-cashback-tips renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section settings-companion renders without errors in light and dark, in en, th and vi
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section categories-thai-pack renders without errors in light and dark, in en, th and vi
+ ✓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section bw-amounts renders without errors in light and dark, in en, th and vi 97ms
+ ✓ src/dev/catalogue/screenReader.render.test.tsx > section bw-materials: every control has a name, nothing hidden takes focus 21ms
+ ✓ src/dev/catalogue/screenReader.render.test.tsx > section bw-card: every control has a name, nothing hidden takes focus 34ms
+ ✓ src/dev/catalogue/screenReader.render.test.tsx > section bw-category-icons: every control has a name, nothing hidden takes focus 22ms
+ ✓ src/dev/catalogue/screenReader.render.test.tsx > section bw-tray-short: every control has a name, nothing hidden takes focus 37ms
+ ✓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section bw-private renders without errors in light and dark, in en, th and vi 58ms
+ ✓ src/dev/catalogue/screenReader.render.test.tsx > section bw-tray-tall: every control has a name, nothing hidden takes focus 31ms
+ ✓ src/dev/catalogue/screenReader.render.test.tsx > section bw-tray-large: every control has a name, nothing hidden takes focus 29ms
+ ✓ src/dev/catalogue/screenReader.render.test.tsx > section bw-buttons: every control has a name, nothing hidden takes focus 18ms
+ ✓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section bw-materials renders without errors in light and dark, in en, th and vi 63ms
+ ✓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section bw-card renders without errors in light and dark, in en, th and vi 86ms
+ ✓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section bw-category-icons renders without errors in light and dark, in en, th and vi 57ms
+ ✓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section bw-tray-short renders without errors in light and dark, in en, th and vi 75ms
+ ✓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section bw-tray-tall renders without errors in light and dark, in en, th and vi 73ms
+ ✓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section bw-tray-large renders without errors in light and dark, in en, th and vi 70ms
+ ✓ src/dev/catalogue/CatalogueScreen.render.test.tsx > section bw-buttons renders without errors in light and dark, in en, th and vi 39ms
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > screen sections draw the real screens on today pinned to the fixtures, edge to edge under the header
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > chrome=off drops the header: a screen pads by the real status-bar inset, as on a phone
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > a load-problem state stays put for review: Try again meets the same problem
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > a screen script that cannot reach its state stops and says where
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > a deep link opens one section in the theme and locale it names
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > without a theme or locale the catalogue follows the app
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > unknown values are ignored and a repeated param takes its first value
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > without a section the catalogue lists every section, and a tap opens one
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > an unknown section says so and shows the list
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > previous and next step through the sections in order and stop at the ends
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > a tour steps through the sections on a timer and stops at the last one
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > re-opening the same link with a new run restarts the tour from its section
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > a late tour step never skips a section: the next step waits for the section to show
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > without a tour nothing moves on its own
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > the header switches theme and locale for the content without touching the app
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > a new deep link while open moves to its section, theme and locale
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > the bun control previews full, quiet and off, and leaving puts the setting back
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > the sheet section opens each sheet from a button, and each closes again
+ ↓ src/dev/catalogue/CatalogueScreen.render.test.tsx > confirming in a confirm sheet shows it busy, then it closes
+
+ Test Files  2 passed (2)
+      Tests  18 passed | 572 skipped (590)
+   Start at  09:37:35
+   Duration  5.37s (transform 7.28s, setup 81ms, import 9.04s, tests 894ms, environment 162ms)
+

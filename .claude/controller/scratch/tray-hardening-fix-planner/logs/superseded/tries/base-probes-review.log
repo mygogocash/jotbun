@@ -1,0 +1,160 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:78434) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+stdout | src/wallet/tray/reviewProbe.render.test.tsx > R-c: two reopen-and-close rounds before any late end (both ends arrive after the second hide)
+R-c: onClosed after the first late end 1, after the second 2
+
+(node:78433) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+stdout | src/wallet/tray/reviewProbe.render.test.tsx > R-d: the late end and the reopen land in one React batch
+R-d: tray open true, onClosed calls 1
+
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > R-a: one hide, one late end: onClosed once 39ms
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > R-b: hide, reopen, late end says nothing; the next hide and its end say it once 16ms
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > R-c: two reopen-and-close rounds before any late end (both ends arrive after the second hide) 13ms
+ × src/wallet/tray/reviewProbe.render.test.tsx > R-d: the late end and the reopen land in one React batch 17ms
+   → onClosed while the tray is open (same batch): expected "vi.fn()" to be called +0 times, but got 1 times
+ ✓ src/wallet/tray/Tray.render.test.tsx > the tray is a named dialog, 8 pt from the edges, radius 34 78ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > close and the backdrop close it, and the title takes focus when it opens 10ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > while locked nothing closes it, and close says it is unavailable 13ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > at AX5 it opens full height 13ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > under reduced motion a new step shows at once 8ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > the card leaves before the Modal hides, then onClosed fires once 26ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > an onClosed given while the card leaves is the one called 7ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a hidden lock cover replaces the tray's content 13ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > under the lock cover nothing asks to close the tray 5ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a drag the lock cover cuts off is gone when the cover lifts 8ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > the main button is 54 pt tall, radius 16, ink with white text in light and light with ink text in dark; busy says its busy label 8ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > every control in the header is at least 44 pt 30ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > the swipe follows the finger down, springs back short of the line, and closes past it 14ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > the wallet's answer decides the swipe's spring back, not Reanimated's own setting (W6) 7ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a swipe the system cancels springs back, even past the line 7ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > at full motion the card springs up, and a step change morphs its height and ticks once; opening ticks nothing 11ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > opening at another step in one render, or a step change under the lock cover, ticks nothing 10ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > on a phone the card is the named dialog and the title takes focus, with or without a header; on iOS onClosed waits for the Modal's own dismissal 11ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > on iOS a dismissal that ends after the tray is shown again says nothing; the next one says it closed 11ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a text link is at least 44 pt, violet by default or ink, and says its words 6ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a header takes the title's place, and screen readers meet the title first 7ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > the catalogue's tray sections come after the kit's, and each tray opens at once 22ms
+stdout | src/wallet/tray/reviewProbe.render.test.tsx > R-e: the native end is delivered between the hide commit and its passive effects (real scheduler, no act)
+R-e: delivered true, ends 1, onClosed calls 1
+
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > R-e: the native end is delivered between the hide commit and its passive effects (real scheduler, no act) 681ms
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > T-a: open, close, reopen at another step in one render ticks nothing (visible must be a dependency) 15ms
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > T-b: cover, change under it, lift on the same step, then a change ticks once (hidden must be a dependency) 11ms
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > D-a: a swipe that closes leaves the card where the finger let go (nothing moves during the exit) 8ms
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > D-b: the cover arriving or lifting during an exit moves nothing either 8ms
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > N-a: a cancel under Reduce Motion jumps back, and a FAILED end never closes 8ms
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > C-a: a swipe whose end reaches JS after the cover came closes nothing 9ms
+stdout | src/wallet/tray/reviewProbe.render.test.tsx > R-e2: the native end delivered by a microtask in the hide commit itself (the earliest possible), real scheduler
+R-e2: hide commits 1, ends 1, onClosed calls 1
+
+stdout | src/wallet/tray/reviewProbe.render.test.tsx > R-f: a Modal that never presented (no native end ever): onClosed stays silent, the tray still reopens, the next real end says closed once
+R-f: after the hide, no end: onClosed calls 0
+
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > R-e2: the native end delivered by a microtask in the hide commit itself (the earliest possible), real scheduler 681ms
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > R-f: a Modal that never presented (no native end ever): onClosed stays silent, the tray still reopens, the next real end says closed once 14ms
+stdout | src/wallet/tray/reviewProbe.render.test.tsx > R-d2: the same race with the real scheduler and no act: a timer reopens the tray in the task that delivers the native end
+R-d2: tray open true, onClosed calls 1
+
+stdout | src/wallet/tray/reviewProbe.render.test.tsx > R-d3: a tap (discrete event) that reopens the tray, in the same act as the native end, is safe: the sync lane renders alone
+R-d3: tray open true, onClosed calls 1
+
+ × src/wallet/tray/reviewProbe.render.test.tsx > R-d2: the same race with the real scheduler and no act: a timer reopens the tray in the task that delivers the native end 634ms
+   → onClosed while the tray is open: expected "vi.fn()" to be called +0 times, but got 1 times
+ × src/wallet/tray/reviewProbe.render.test.tsx > R-d3: a tap (discrete event) that reopens the tray, in the same act as the native end, is safe: the sync lane renders alone 13ms
+   → onClosed while the tray is open (tap reopen): expected "vi.fn()" to be called +0 times, but got 1 times
+stdout | src/wallet/tray/reviewProbe.render.test.tsx > R-d4: tap reopen first, then the native end in a later task (real scheduler): safe
+R-d4: tray open true, onClosed calls 0
+
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > R-d4: tap reopen first, then the native end in a later task (real scheduler): safe 638ms
+stdout | src/wallet/tray/reviewProbe.render.test.tsx > R-d5: the native end is queued first (default lane pending), then a tap reopens before React has rendered it (real scheduler)
+R-d5: tray open true, onClosed calls 1
+
+ × src/wallet/tray/reviewProbe.render.test.tsx > R-d5: the native end is queued first (default lane pending), then a tap reopens before React has rendered it (real scheduler) 640ms
+   → end first, tap second: expected "vi.fn()" to be called +0 times, but got 1 times
+stdout | src/wallet/tray/reviewProbe.render.test.tsx > R-d5b: the native end and a tap are two tasks, both queued before React runs the render the end scheduled (real scheduler)
+R-d5b: order end,tap, tray open true, onClosed calls 1
+
+ × src/wallet/tray/reviewProbe.render.test.tsx > R-d5b: the native end and a tap are two tasks, both queued before React runs the render the end scheduled (real scheduler) 637ms
+   → end task first, tap task second: expected "vi.fn()" to be called +0 times, but got 1 times
+stdout | src/wallet/tray/reviewProbe.render.test.tsx > R-d6: the same two tasks but the render the end scheduled gets to run first (a macrotask between them): safe
+R-d6: tray open true, onClosed calls 1 (the end ran first, so it legitimately said closed)
+
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > R-d6: the same two tasks but the render the end scheduled gets to run first (a macrotask between them): safe 676ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/tray/reviewProbe.render.test.tsx > R-d: the late end and the reopen land in one React batch
+AssertionError: onClosed while the tray is open (same batch): expected "vi.fn()" to be called +0 times, but got 1 times
+ ❯ src/wallet/tray/reviewProbe.render.test.tsx:162:68
+    160|   console.log(`R-d: tray open ${screen.queryByTestId('tray') !== null}…
+    161|   expect(screen.queryByTestId('tray'), 'open again').not.toBeNull();
+    162|   expect(onClosed, 'onClosed while the tray is open (same batch)').toH…
+       |                                                                    ^
+    163| });
+    164|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/wallet/tray/reviewProbe.render.test.tsx > R-d2: the same race with the real scheduler and no act: a timer reopens the tray in the task that delivers the native end
+AssertionError: onClosed while the tray is open: expected "vi.fn()" to be called +0 times, but got 1 times
+ ❯ src/wallet/tray/reviewProbe.render.test.tsx:344:55
+    342|   console.log(`R-d2: tray open ${screen.queryByTestId('tray') !== null…
+    343|   expect(screen.queryByTestId('tray'), 'open again').not.toBeNull();
+    344|   expect(onClosed, 'onClosed while the tray is open').toHaveBeenCalled…
+       |                                                       ^
+    345| });
+    346|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/wallet/tray/reviewProbe.render.test.tsx > R-d3: a tap (discrete event) that reopens the tray, in the same act as the native end, is safe: the sync lane renders alone
+AssertionError: onClosed while the tray is open (tap reopen): expected "vi.fn()" to be called +0 times, but got 1 times
+ ❯ src/wallet/tray/reviewProbe.render.test.tsx:377:68
+    375|   console.log(`R-d3: tray open ${screen.queryByTestId('tray') !== null…
+    376|   expect(screen.queryByTestId('tray'), 'open again').not.toBeNull();
+    377|   expect(onClosed, 'onClosed while the tray is open (tap reopen)').toH…
+       |                                                                    ^
+    378| });
+    379|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/wallet/tray/reviewProbe.render.test.tsx > R-d5: the native end is queued first (default lane pending), then a tap reopens before React has rendered it (real scheduler)
+AssertionError: end first, tap second: expected "vi.fn()" to be called +0 times, but got 1 times
+ ❯ src/wallet/tray/reviewProbe.render.test.tsx:435:45
+    433|   console.log(`R-d5: tray open ${screen.queryByTestId('tray') !== null…
+    434|   expect(screen.queryByTestId('tray'), 'open again').not.toBeNull();
+    435|   expect(onClosed, 'end first, tap second').toHaveBeenCalledTimes(0);
+       |                                             ^
+    436| });
+    437|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/wallet/tray/reviewProbe.render.test.tsx > R-d5b: the native end and a tap are two tasks, both queued before React runs the render the end scheduled (real scheduler)
+AssertionError: end task first, tap task second: expected "vi.fn()" to be called +0 times, but got 1 times
+ ❯ src/wallet/tray/reviewProbe.render.test.tsx:449:55
+    447|   console.log(`R-d5b: order ${order.join(',')}, tray open ${screen.que…
+    448|   expect(screen.queryByTestId('tray'), 'open again').not.toBeNull();
+    449|   expect(onClosed, 'end task first, tap task second').toHaveBeenCalled…
+       |                                                       ^
+    450| });
+    451|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  5 failed | 36 passed (41)
+   Start at  09:31:37
+   Duration  6.09s (transform 1.42s, setup 146ms, import 2.04s, tests 5.08s, environment 292ms)
+

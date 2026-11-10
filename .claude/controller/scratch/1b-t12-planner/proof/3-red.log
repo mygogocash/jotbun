@@ -1,0 +1,249 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t12-planner/tree/apps/edge
+
+ × test/vault-files.smoke.db.test.ts > the vault Worker answers each compared step of the files session as NestJS does 413ms
+   → expected [ { vault: { …(4) }, …(1) }, …(3) ] to deeply equal []
+ × test/vault-files.smoke.db.test.ts > the vault Worker runs without Workflows, queue consumers or containers (B13) 1ms
+   → expected [ [ { …(4) }, { …(4) } ], …(2) ] to deeply equal [ undefined, undefined, undefined ]
+ ✓ test/vault-files.smoke.db.test.ts > a never-accepted upload has no status and no preview (404), as in the API 45ms
+ ✓ test/vault-files.smoke.db.test.ts > the retired proof routes answer 404 on the vault Worker 8ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/vault-files.smoke.db.test.ts > the vault Worker answers each compared step of the files session as NestJS does
+AssertionError: expected [ { vault: { …(4) }, …(1) }, …(3) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "nest": {
++       "body": {
++         "snapshot_id": "<id:1>",
++         "status": "pending",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 202,
++       "step": "3. snapshot, same key",
++     },
++     "vault": {
++       "body": {
++         "chunks": [
++           {
++             "bytes": 114,
++             "grant": "AXEZZPT3l4GrgcVBjQMEQ_QAAAAAavJ3R0_oMZ7UbbdfEufWiJva9Y8",
++             "grant_expires_at": "<timestamp>",
++             "index": 0,
++             "sha256": "c97643673e96cf5cfeb0a6ab3441c9ab5283462b955e6326aabef5d50eeca708",
++           },
++         ],
++         "cursor": "<cursor>",
++         "expires_at": "<timestamp>",
++         "high_water": "0",
++         "schema_version": 1,
++         "snapshot_id": "<id:1>",
++         "status": "ready",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 200,
++       "step": "3. snapshot, same key",
++     },
++   },
++   {
++     "nest": {
++       "body": {
++         "snapshot_id": "<id:1>",
++         "status": "pending",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 200,
++       "step": "5. snapshot status",
++     },
++     "vault": {
++       "body": {
++         "chunks": [
++           {
++             "bytes": 114,
++             "grant": "AXEZZPT3l4GrgcVBjQMEQ_QAAAAAavJ3R0_oMZ7UbbdfEufWiJva9Y8",
++             "grant_expires_at": "<timestamp>",
++             "index": 0,
++             "sha256": "c97643673e96cf5cfeb0a6ab3441c9ab5283462b955e6326aabef5d50eeca708",
++           },
++         ],
++         "cursor": "<cursor>",
++         "expires_at": "<timestamp>",
++         "high_water": "0",
++         "schema_version": 1,
++         "snapshot_id": "<id:1>",
++         "status": "ready",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 200,
++       "step": "5. snapshot status",
++     },
++   },
++   {
++     "nest": {
++       "body": {
++         "export_id": "<id:3>",
++         "from": "2026-10-01",
++         "requested_at": "<timestamp>",
++         "status": "pending",
++         "through": "2026-10-31",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 200,
++       "step": "15. export status",
++     },
++     "vault": {
++       "body": {
++         "as_of_revision": "1",
++         "bytes": 226,
++         "expires_at": "<timestamp>",
++         "export_id": "<id:3>",
++         "from": "2026-10-01",
++         "requested_at": "<timestamp>",
++         "row_count": 0,
++         "sha256": "20eebbd73abf35a852204733a0b68eaba1a19f5e2e24e0b5cda65ffaf7939652",
++         "status": "ready",
++         "through": "2026-10-31",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 200,
++       "step": "15. export status",
++     },
++   },
++   {
++     "nest": {
++       "body": {
++         "code": "NOT_FOUND",
++         "message_key": "errors.not_found",
++         "request_id": "<request-id>",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 404,
++       "step": "17. export grant before it is ready",
++     },
++     "vault": {
++       "body": {
++         "expires_at": "<timestamp>",
++         "url": "/v1/export-files/AUyCu3Svi4e4lw4GNtLh8PoAAAAAavJ3R8M9D8PTRawjlOpE8aP8Pjg",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 200,
++       "step": "17. export grant before it is ready",
++     },
++   },
++ ]
+
+ ❯ test/vault-files.smoke.db.test.ts:56:23
+     54|   const expected = JSON.parse(readFileSync(EXPECTED, 'utf8')) as typeo…
+     55|   const differences = compared.flatMap((c, k) => (JSON.stringify(c) ==…
+     56|   expect(differences).toEqual([])
+       |                       ^
+     57| })
+     58|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/vault-files.smoke.db.test.ts > the vault Worker runs without Workflows, queue consumers or containers (B13)
+AssertionError: expected [ [ { …(4) }, { …(4) } ], …(2) ] to deeply equal [ undefined, undefined, undefined ]
+
+- Expected
++ Received
+
+  [
+-   undefined,
+-   undefined,
+-   undefined,
++   [
++     {
++       "binding": "EXPORT_WORKFLOW",
++       "class_name": "ExportWorkflow",
++       "default_retention": {
++         "error_retention": "7 days",
++         "success_retention": "1 day",
++       },
++       "name": "jotbun-export",
++     },
++     {
++       "binding": "SNAPSHOT_WORKFLOW",
++       "class_name": "SnapshotWorkflow",
++       "default_retention": {
++         "error_retention": "7 days",
++         "success_retention": "1 day",
++       },
++       "name": "jotbun-snapshot",
++     },
++   ],
++   [
++     {
++       "class_name": "StatementParser",
++       "image": "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t12-planner/tree/apps/api/Dockerfile",
++       "image_build_context": "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t12-planner/tree",
++       "instance_type": "basic",
++       "max_instances": 1,
++       "name": "jotbun-vault-statementparser",
++     },
++   ],
++   [
++     {
++       "max_batch_size": 1,
++       "max_concurrency": 1,
++       "max_retries": 100,
++       "queue": "jotbun-statement-parse",
++       "retry_delay": 30,
++     },
++   ],
+  ]
+
+ ❯ test/vault-files.smoke.db.test.ts:62:74
+     60| it('the vault Worker runs without Workflows, queue consumers or contai…
+     61|   const config = JSON.parse(readFileSync(vault.config, 'utf8')) as { w…
+     62|   expect([config.workflows, config.containers, config.queues.consumers…
+       |                                                                          ^
+     63|   expect(config.queues.producers.map((p) => p.binding)).toEqual(['PARS…
+     64| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 2 passed (4)
+   Start at  08:40:39
+   Duration  4.63s (transform 543ms, setup 0ms, import 1.04s, tests 3.45s, environment 0ms)
+

@@ -1,0 +1,80 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/proof-runs/base/root/apps/edge
+
+ledger {"records":12000}
+export (5394226 bytes): aborted GETs [200,200,200,200]; then GET 503 {"code":"SERVICE_UNAVAILABLE","request_id":"41cbf4ff-66dc-45ec-a6d9-b1669e95197c","message_key":"errors.service_unavaila; 5 s later GET 503 {"code":"SERVICE_UNAVAILABLE","request_id":"cf7a7497-f43c-4171-96ce-5af126fe5e55","message_key":"errors.service_unavaila
+snapshot chunks [1048296,1048374,1048410,1048376,1048358,1048400,830373]
+snapshot chunk (1048296 bytes): aborted GETs [200,200,200,200]; then GET 503 {"code":"SERVICE_UNAVAILABLE","request_id":"53f538b7-b971-4450-8a27-4a4f02ac219b","message_key":"errors.service_unavaila; 5 s later GET 503 {"code":"SERVICE_UNAVAILABLE","request_id":"848900a3-ab95-4d25-b5d0-68a2b0df06d5","message_key":"errors.service_unavaila
+receipt (4194304 bytes): aborted GETs [200,200,503,503]; then GET 503 {"code":"SERVICE_UNAVAILABLE","request_id":"5d302d7c-746b-4871-9031-8a0f67ba16af","message_key":"errors.service_unavaila; 5 s later GET 503 {"code":"SERVICE_UNAVAILABLE","request_id":"0d92e6ff-5622-42f6-a8dd-cb2d3f9a60aa","message_key":"errors.service_unavaila
+answers {"export":"503","snapshot":"503","receipt":"503"}
+[wrangler:info] GET /v1/export-files/AciavWwsdIfjuV9fQOY6UboAAAAAavJ5hpQq0pThciafSa3RHiLqJI8 200 OK (3ms)
+[wrangler:info] GET /v1/export-files/AciavWwsdIfjuV9fQOY6UboAAAAAavJ5hpQq0pThciafSa3RHiLqJI8 200 OK (3ms)
+[wrangler:info] GET /v1/export-files/AciavWwsdIfjuV9fQOY6UboAAAAAavJ5hpQq0pThciafSa3RHiLqJI8 200 OK (2ms)
+[wrangler:info] GET /v1/export-files/AciavWwsdIfjuV9fQOY6UboAAAAAavJ5hpQq0pThciafSa3RHiLqJI8 200 OK (2ms)
+[wrangler:info] GET /v1/export-files/AciavWwsdIfjuV9fQOY6UboAAAAAavJ5hpQq0pThciafSa3RHiLqJI8 503 Service Unavailable (7ms)
+[wrangler:info] GET /v1/export-files/AciavWwsdIfjuV9fQOY6UboAAAAAavJ5hpQq0pThciafSa3RHiLqJI8 503 Service Unavailable (3ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/AUJSCe7tmoaotKZh_bwa9NcAAAAAavJ5jlqx5U-SWOJ_F61BNVoUEy4 200 OK (4ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/AUJSCe7tmoaotKZh_bwa9NcAAAAAavJ5jlqx5U-SWOJ_F61BNVoUEy4 200 OK (6ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/AUJSCe7tmoaotKZh_bwa9NcAAAAAavJ5jlqx5U-SWOJ_F61BNVoUEy4 200 OK (6ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/AUJSCe7tmoaotKZh_bwa9NcAAAAAavJ5jlqx5U-SWOJ_F61BNVoUEy4 200 OK (6ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/AUJSCe7tmoaotKZh_bwa9NcAAAAAavJ5jlqx5U-SWOJ_F61BNVoUEy4 503 Service Unavailable (4ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/AUJSCe7tmoaotKZh_bwa9NcAAAAAavJ5jlqx5U-SWOJ_F61BNVoUEy4 503 Service Unavailable (6ms)
+[wrangler:info] POST /v1/transactions/206198b8-6839-409f-9071-b4961efa2e78/attachment 200 OK (39ms)
+[wrangler:info] GET /v1/attachment-files/AQpOzrEdCEz0hsHZ1HtywkgAAAAAavJ5lVb3fkwW_LFW4r8OhxfXyyg 200 OK (4ms)
+[wrangler:info] GET /v1/attachment-files/AQpOzrEdCEz0hsHZ1HtywkgAAAAAavJ5lVb3fkwW_LFW4r8OhxfXyyg 200 OK (2ms)
+[wrangler:info] GET /v1/attachment-files/AQpOzrEdCEz0hsHZ1HtywkgAAAAAavJ5lVb3fkwW_LFW4r8OhxfXyyg 503 Service Unavailable (2ms)
+[wrangler:info] GET /v1/attachment-files/AQpOzrEdCEz0hsHZ1HtywkgAAAAAavJ5lVb3fkwW_LFW4r8OhxfXyyg 503 Service Unavailable (2ms)
+[wrangler:info] GET /v1/attachment-files/AQpOzrEdCEz0hsHZ1HtywkgAAAAAavJ5lVb3fkwW_LFW4r8OhxfXyyg 503 Service Unavailable (3ms)
+[wrangler:info] GET /v1/attachment-files/AQpOzrEdCEz0hsHZ1HtywkgAAAAAavJ5lVb3fkwW_LFW4r8OhxfXyyg 503 Service Unavailable (3ms)
+ ❯ test/aborts.proof.test.ts (5 tests | 2 failed) 24551ms
+   × a retain whose client goes away during its copy gives its copy slot back: four aborted retains, then another member retains 308ms
+   × the answers after the aborted requests 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/aborts.proof.test.ts > a retain whose client goes away during its copy gives its copy slot back: four aborted retains, then another member retains
+Error: /__proof/image?sub=63579b32-7f38-45ff-ad7a-84fe79734b55&bytes=33554432: expected 200, got 500 Error: CHECK constraint failed: bytes BETWEEN 1 AND 12582912: SQLITE_CONSTRAINT (extended: SQLITE_CONSTRAINT_CHECK)
+    at async Object.fetch (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/cor
+ ❯ ok test/aborts.proof.test.ts:86:36
+     84| async function ok(res: Response, status: number, what: string): Promis…
+     85|   const text = await res.text()
+     86|   if (res.status !== status) throw new Error(`${what}: expected ${stat…
+       |                                    ^
+     87|   return text ? JSON.parse(text) : null
+     88| }
+ ❯ test/aborts.proof.test.ts:191:46
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/aborts.proof.test.ts > the answers after the aborted requests
+AssertionError: expected { Object (export, snapshot, ...) } to deeply equal { Object (export, snapshot, ...) }
+
+- Expected
++ Received
+
+  {
+-   "export": "200",
+-   "receipt": "200",
+-   "retain": "200",
+-   "snapshot": "200",
++   "export": "503",
++   "receipt": "503",
++   "snapshot": "503",
+  }
+
+ ❯ test/aborts.proof.test.ts:236:19
+    234|       .join('\n'),
+    235|   )
+    236|   expect(answers).toEqual({ export: '200', snapshot: '200', receipt: '…
+       |                   ^
+    237| })
+    238|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 3 passed (5)
+   Start at  08:50:15
+   Duration  25.10s (transform 201ms, setup 0ms, import 443ms, tests 24.55s, environment 0ms)
+

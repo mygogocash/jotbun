@@ -1,0 +1,186 @@
+
+> gogospend-app@0.1.0 test:unit
+> node scripts/test-unit.mjs src/wallet/tray/trayGesture.test.ts
+
+(node:57261) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/wallet/tray/trayGesture.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a pull of 120 pt, or a quick flick past 60 pt, closes the tray; a pull up never does (0.313542ms)
+✔ each line is passed, never met: more than 120 pt, more than 60 pt, faster than 900 pt a second (0.050292ms)
+✔ the swipe runs on the JS runtime (0.073333ms)
+✔ what the web drops is wired for a phone: the screen reader's escape, the modal card, the title, the backdrop, the Modal, the keyboard and the cover (0.272708ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 113.073959
+
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app
+
+ ✓ src/wallet/tray/Tray.render.test.tsx > the tray is a named dialog, 8 pt from the edges, radius 34 98ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > close and the backdrop close it, and the title takes focus when it opens 12ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > while locked nothing closes it, and close says it is unavailable 17ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > at AX5 it opens full height 15ms
+ × src/wallet/tray/Tray.render.test.tsx > under reduced motion a new step shows at once 11ms
+   → expected "selection" to be called 1 times, but got 2 times
+ ✓ src/wallet/tray/Tray.render.test.tsx > the card leaves before the Modal hides, then onClosed fires once 32ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > an onClosed given while the card leaves is the one called 11ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a hidden lock cover replaces the tray's content 16ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > under the lock cover nothing asks to close the tray 6ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a drag the lock cover cuts off is gone when the cover lifts 10ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a card that leaves stays where the finger let it go, even when the lock cover comes and goes 9ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > the main button is 54 pt tall, radius 16, ink with white text in light and light with ink text in dark; busy says its busy label 10ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > every control in the header is at least 44 pt 36ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > the swipe follows the finger down, springs back short of the line, and closes past it 18ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > the wallet's answer decides the swipe's spring back, not Reanimated's own setting (W6) 8ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a swipe the system cancels springs back, even past the line 7ms
+ × src/wallet/tray/Tray.render.test.tsx > at full motion the card springs up, and a step change morphs its height and ticks once; opening ticks nothing 8ms
+   → expected "selection" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st selection call:
+
+    Array []
+
+
+Number of calls: 1
+
+ × src/wallet/tray/Tray.render.test.tsx > opening at another step in one render, or a step change under the lock cover, ticks nothing 7ms
+   → opening at another step: expected "selection" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st selection call:
+
+    Array []
+
+
+Number of calls: 1
+
+ × src/wallet/tray/Tray.render.test.tsx > once the lock cover lifts a step change ticks, even when it lifted on the step it had under the cover 11ms
+   → the cover lifting: expected "selection" to not be called at all, but actually been called 2 times
+
+Received:
+
+  1st selection call:
+
+    Array []
+
+  2nd selection call:
+
+    Array []
+
+
+Number of calls: 2
+
+ ✓ src/wallet/tray/Tray.render.test.tsx > on a phone the card is the named dialog and the title takes focus, with or without a header; on iOS onClosed waits for the Modal's own dismissal 16ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > on iOS a dismissal that ends after the tray is shown again says nothing; the next one says it closed 15ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > on iOS a dismissal that ends in the commit that opens the tray again says nothing 10ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > on iOS a tray with no onClosed closes, its dismissal ends, and it opens again 10ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a text link is at least 44 pt, violet by default or ink, and says its words 7ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a header takes the title's place, and screen readers meet the title first 8ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > the catalogue's tray sections come after the kit's, and each tray opens at once 32ms
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 22 passed (26)
+   Start at  09:55:10
+   Duration  2.02s (transform 1.01s, setup 43ms, import 1.33s, tests 441ms, environment 85ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:57319) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/tray/Tray.render.test.tsx > under reduced motion a new step shows at once
+AssertionError: expected "selection" to be called 1 times, but got 2 times
+ ❯ src/wallet/tray/Tray.render.test.tsx:311:16
+    309|   expect(answers(trayExiting)).toEqual([true]);
+    310|   // The tick does not change under Reduce Motion.
+    311|   expect(tick).toHaveBeenCalledTimes(1);
+       |                ^
+    312| });
+    313|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/wallet/tray/Tray.render.test.tsx > at full motion the card springs up, and a step change morphs its height and ticks once; opening ticks nothing
+AssertionError: expected "selection" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st selection call:
+
+    Array []
+
+
+Number of calls: 1
+
+ ❯ src/wallet/tray/Tray.render.test.tsx:590:20
+    588|   view.rerender(tray({ step: 'amount' }));
+    589|   await settle();
+    590|   expect(tick).not.toHaveBeenCalled();
+       |                    ^
+    591|   expect(answers(trayEntering)).toEqual([false]);
+    592|   view.rerender(tray({ step: 'confirm' }));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/wallet/tray/Tray.render.test.tsx > opening at another step in one render, or a step change under the lock cover, ticks nothing
+AssertionError: opening at another step: expected "selection" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st selection call:
+
+    Array []
+
+
+Number of calls: 1
+
+ ❯ src/wallet/tray/Tray.render.test.tsx:615:47
+    613|   view.rerender(at('amount'));
+    614|   await settle();
+    615|   expect(tick, 'opening at another step').not.toHaveBeenCalled();
+       |                                               ^
+    616|   // Covered, a step change plays nothing, and neither does the cover …
+    617|   view.rerender(at('amount', { hidden: true }));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/wallet/tray/Tray.render.test.tsx > once the lock cover lifts a step change ticks, even when it lifted on the step it had under the cover
+AssertionError: the cover lifting: expected "selection" to not be called at all, but actually been called 2 times
+
+Received:
+
+  1st selection call:
+
+    Array []
+
+  2nd selection call:
+
+    Array []
+
+
+Number of calls: 2
+
+ ❯ src/wallet/tray/Tray.render.test.tsx:636:41
+    634|   // Lifted on the same step: no tick, and the tray is open and uncove…
+    635|   view.rerender(at('confirm'));
+    636|   expect(tick, 'the cover lifting').not.toHaveBeenCalled();
+       |                                         ^
+    637|   view.rerender(at('amount'));
+    638|   expect(tick).toHaveBeenCalledTimes(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
