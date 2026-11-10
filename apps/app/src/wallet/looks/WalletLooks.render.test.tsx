@@ -1,12 +1,14 @@
 // Looks kept on the phone (P2-T11, W5, W7, R64): the provider keeps wallet
 // looks, the wallet order and category icons for the open diary's account,
-// one change after another and never over what it could not read; Bun's five
-// faces and the five materials are the boards'; a category's tile; and the
-// kit's catalogue sections.
+// one change after another and never over what it could not read, and what it
+// could not store shows until the app closes (wallet-looks-unstored); Bun's
+// five faces and the five materials are the boards'; a category's tile; and
+// the kit's catalogue sections.
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { useEffect } from 'react';
 import { Text } from 'react-native';
 import { afterEach, expect, test, vi } from 'vitest';
 
@@ -15,7 +17,7 @@ vi.mock('react-native-safe-area-context', () => import('../../dev/catalogue/safe
 
 import { WALLET_SECTIONS } from '@mobile/dev/catalogue/wallet';
 import { rgba } from '@mobile/dev/catalogue/catalogueTestHarness';
-import { useDiaryView } from '@mobile/spend/v1/SpendDiaryContext';
+import { SpendDiaryProvider, useDiaryView } from '@mobile/spend/v1/SpendDiaryContext';
 import { createFakeDiary } from '@mobile/spend/v1/testing/fakeDiary';
 import { materialPaint, tileTint, WALLET_MATERIALS } from '@mobile/theme/walletPalette';
 import { CATEGORY_DRAWINGS } from '@mobile/ui/categoryDrawings';
@@ -27,7 +29,7 @@ import { MaterialFill } from './MaterialFill';
 import { WalletCategoryIcon } from './WalletCategoryIcon';
 import { BUN_FACES, derivedLook } from './walletLooks';
 import type { WalletLook } from './walletLooks';
-import { useCategoryIcons, useWalletLooks } from './WalletLooksProvider';
+import { useCategoryIcons, useWalletLooks, WalletLooksProvider } from './WalletLooksProvider';
 import type { CategoryIcons, WalletLooks } from './WalletLooksProvider';
 
 afterEach(() => {
@@ -124,6 +126,25 @@ function heldReads(seed: Readonly<Record<string, string>>) {
   };
 }
 
+/** The harness's store, read and written in place; while a fault is set, every read or every write fails. */
+function storeOver(stored: Map<string, string>) {
+  const faults = { reads: false, writes: false };
+  const backend: StoreBackend = {
+    getItem: async (key) => {
+      if (faults.reads) throw new Error('the keychain is locked');
+      return stored.get(key) ?? null;
+    },
+    setItem: async (key, value) => {
+      if (faults.writes) throw new Error('the disk is full');
+      stored.set(key, value);
+    },
+    removeItem: async (key) => { stored.delete(key); },
+    getAllKeys: async () => [...stored.keys()],
+    multiRemove: async (keys) => { for (const key of keys) stored.delete(key); },
+  };
+  return { faults, backend };
+}
+
 test("a kept look, the wallet order and a category's icon go to this account's store, and two quick changes keep each other", async () => {
   const { stored } = mountWallet(<Keeper />, { account: { looks: JSON.stringify({ [W2]: SKY }) } });
   await settle();
@@ -193,7 +214,8 @@ test('when the account changes, nothing of the last one shows, its late read is 
 });
 
 test('a name the store cannot read is never written over, and what fails to store still shows until the app closes', async () => {
-  const { stored } = mountWallet(<Keeper />, { account: { looks: JSON.stringify({ [W2]: SKY }) } });
+  const fake = createFakeDiary();
+  const { stored } = mountWallet(<Keeper />, { diary: fake.diary, account: { looks: JSON.stringify({ [W2]: SKY }) } });
   await settle();
   const written: string[] = [];
   const locked = new Error('the keychain is locked');
@@ -223,11 +245,32 @@ test('a name the store cannot read is never written over, and what fails to stor
   });
   await act(async () => { await api?.looks.setLook(W3, CASH); });
   expect(shown().w3).toEqual(CASH);
+
+  // Until the app closes. The store works again. When the diary locks and opens, the account's next first
+  // read lays what was never stored over what the store holds; another account never shows it, at its
+  // first read or at a change.
+  installStoreBackend(storeOver(stored).backend);
+  await act(async () => { fake.set({ accountId: null, phase: 'locked' }); });
+  await settle();
+  expect(shown(), 'locked').toEqual({ w1: derivedLook(W1), w2: derivedLook(W2), w3: derivedLook(W3), order: [], c1: 'lotus' });
+  await act(async () => { fake.set({ accountId: TEST_ACCOUNT_ID, phase: 'ready' }); });
+  await settle();
+  expect(shown(), 'opened again').toEqual({ w1: PEACH, w2: SKY, w3: CASH, order: [], c1: 'book' });
+  stored.set(keyOf(OTHER_ACCOUNT, 'looks'), JSON.stringify({ [W1]: CASH }));
+  await act(async () => { fake.set({ accountId: OTHER_ACCOUNT }); });
+  await settle();
+  expect(shown(), "the other account's first read").toEqual({ w1: CASH, w2: derivedLook(W2), w3: derivedLook(W3), order: [], c1: 'lotus' });
+  await act(async () => { await api?.looks.setLook(W3, SKY); });
+  expect(shown(), "the other account's change").toEqual({ w1: CASH, w2: derivedLook(W2), w3: SKY, order: [], c1: 'lotus' });
+  await act(async () => { fake.set({ accountId: TEST_ACCOUNT_ID }); });
+  await settle();
+  expect(shown(), 'this account again').toEqual({ w1: PEACH, w2: SKY, w3: CASH, order: [], c1: 'book' });
+  expect(stored.get(keyOf(TEST_ACCOUNT_ID, 'looks')), 'never written').toBe(JSON.stringify({ [W2]: SKY }));
   cleanup();
 
-  // An account whose first read fails shows derived looks.
-  const fake = createFakeDiary({ accountId: null });
-  mountWallet(<Keeper />, { diary: fake.diary });
+  // An account whose first read fails shows derived looks; once its names read again, a change shows what they hold.
+  const later = createFakeDiary({ accountId: null });
+  const again = mountWallet(<Keeper />, { diary: later.diary, account: { looks: JSON.stringify({ [W2]: SKY }) } });
   await settle();
   installStoreBackend({
     getItem: async () => { throw locked; },
@@ -236,9 +279,90 @@ test('a name the store cannot read is never written over, and what fails to stor
     getAllKeys: async () => [],
     multiRemove: async () => undefined,
   });
-  await act(async () => { fake.set({ accountId: TEST_ACCOUNT_ID }); });
+  await act(async () => { later.set({ accountId: TEST_ACCOUNT_ID }); });
   await settle();
   expect(shown()).toEqual({ w1: derivedLook(W1), w2: derivedLook(W2), w3: derivedLook(W3), order: [], c1: 'lotus' });
+  installStoreBackend(storeOver(again.stored).backend);
+  await act(async () => { await api?.looks.setLook(W1, PEACH); });
+  expect(shown(), 'what the store holds, with the change over it').toMatchObject({ w1: PEACH, w2: SKY });
+});
+
+// The review's ready case D1 (P2-T11 m1).
+test('a change whose write failed still shows after a later change to the same name is stored, and the store holds only what was stored', async () => {
+  const { stored } = mountWallet(<Keeper />, { account: { looks: JSON.stringify({ [W2]: SKY }) } });
+  await settle();
+  const store = storeOver(stored);
+  installStoreBackend(store.backend);
+  store.faults.writes = true;
+  await act(async () => { await api?.looks.setLook(W1, PEACH); });
+  expect(shown().w1, 'right after the failed write').toEqual(PEACH);
+  store.faults.writes = false;
+  await act(async () => { await api?.looks.setLook(W3, CASH); });
+  expect(JSON.parse(stored.get(keyOf(TEST_ACCOUNT_ID, 'looks')) ?? 'null'), 'what the store holds').toEqual({ [W2]: SKY, [W3]: CASH });
+  expect(shown(), 'after a later change to the same name').toMatchObject({ w1: PEACH, w2: SKY, w3: CASH });
+});
+
+// The review's ready case D2 (P2-T11 m1).
+test('a change made while its name could not be read still shows after the store reads again and a later change to it is stored', async () => {
+  const { stored } = mountWallet(<Keeper />, { account: { looks: JSON.stringify({ [W2]: SKY }) } });
+  await settle();
+  const store = storeOver(stored);
+  installStoreBackend(store.backend);
+  store.faults.reads = true;
+  await act(async () => { await api?.looks.setLook(W1, PEACH); });
+  expect(shown().w1, 'while unreadable').toEqual(PEACH);
+  expect(stored.get(keyOf(TEST_ACCOUNT_ID, 'looks')), 'never written over').toBe(JSON.stringify({ [W2]: SKY }));
+  store.faults.reads = false;
+  await act(async () => { await api?.looks.setLook(W3, CASH); });
+  expect(JSON.parse(stored.get(keyOf(TEST_ACCOUNT_ID, 'looks')) ?? 'null'), 'what the store holds').toEqual({ [W2]: SKY, [W3]: CASH });
+  expect(shown(), 'the earlier change, after the store reads again').toMatchObject({ w1: PEACH, w2: SKY, w3: CASH });
+});
+
+test("a later change wins over one that was never stored, at every later read of the account's names", async () => {
+  const fake = createFakeDiary();
+  const { stored } = mountWallet(<Keeper />, { diary: fake.diary, account: { looks: JSON.stringify({ [W2]: SKY }) } });
+  await settle();
+  const store = storeOver(stored);
+  installStoreBackend(store.backend);
+  // A look that is not stored, then a later look for the same wallet that is; the same for the order.
+  store.faults.writes = true;
+  await act(async () => { await api?.looks.setLook(W1, PEACH); });
+  store.faults.writes = false;
+  await act(async () => { await api?.looks.setLook(W1, CASH); });
+  store.faults.writes = true;
+  await act(async () => { await api?.looks.setOrder([W1, W2]); });
+  store.faults.writes = false;
+  await act(async () => { await api?.looks.setOrder([W2]); });
+  expect(shown(), 'after the later changes').toMatchObject({ w1: CASH, w2: SKY, order: [W2] });
+  // The next change to the name reads it again, and so does the account's first read when it opens again.
+  await act(async () => { await api?.looks.setLook(W3, SKY); });
+  expect(shown(), 'after the next change').toMatchObject({ w1: CASH, w2: SKY, w3: SKY, order: [W2] });
+  await act(async () => { fake.set({ accountId: OTHER_ACCOUNT }); });
+  await settle();
+  await act(async () => { fake.set({ accountId: TEST_ACCOUNT_ID }); });
+  await settle();
+  expect(shown(), "after the account's first read").toEqual({ w1: CASH, w2: SKY, w3: SKY, order: [W2], c1: 'lotus' });
+  expect(JSON.parse(stored.get(keyOf(TEST_ACCOUNT_ID, 'looks')) ?? 'null')).toEqual({ [W2]: SKY, [W1]: CASH, [W3]: SKY });
+  expect(JSON.parse(stored.get(keyOf(TEST_ACCOUNT_ID, 'wallet-order')) ?? 'null')).toEqual([W2]);
+});
+
+// The review's ready case D8b (P2-T11 m1). React runs a child's effects before its parent's, so this
+// change runs before the provider's first read.
+test("a change made from a child's mount effect, whose write fails, still shows once the account's first read lands", async () => {
+  const stored = new Map([[keyOf(TEST_ACCOUNT_ID, 'looks'), JSON.stringify({ [W2]: SKY })]]);
+  const store = storeOver(stored);
+  store.faults.writes = true;
+  installStoreBackend(store.backend);
+  function ChangesOnMount() {
+    const { setLook } = useWalletLooks();
+    useEffect(() => { void setLook(W1, PEACH); }, [setLook]);
+    return null;
+  }
+  render(<SpendDiaryProvider diary={createFakeDiary().diary}><WalletLooksProvider><ChangesOnMount /><Keeper /></WalletLooksProvider></SpendDiaryProvider>);
+  await settle();
+  await settle();
+  expect(shown()).toMatchObject({ w1: PEACH, w2: SKY });
+  expect(stored.get(keyOf(TEST_ACCOUNT_ID, 'looks')), 'never written').toBe(JSON.stringify({ [W2]: SKY }));
 });
 
 test('outside the provider looks are derived, no order or icon is kept, and the setters keep nothing', async () => {
