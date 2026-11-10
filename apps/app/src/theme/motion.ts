@@ -128,8 +128,11 @@ export const motion = {
    * (`theme/animatedMotion.ts`'s `runSpringTransform`). The Bun Wallet
    * screens (`src/wallet/`, plan P2) drive them through Reanimated, whose
    * springs read the same three fields (`wallet/motion/useWalletMotion.ts`).
-   * Never both in one screen: a second animation system in one screen is
-   * worse than a slightly less ergonomic API.
+   * Never both on one surface: a second animation system on one surface is
+   * worse than a slightly less ergonomic API. The one place both show at once
+   * is a kit `Sheet` opened from a wallet tray (Tell Bun's, P2-T16): the Sheet
+   * is its own Modal over the tray (`wallet/tray/Tray.tsx`, R69), keeps its
+   * `Animated` slide, and the tray's Reanimated motion never moves it.
    *
    * `bouncy` is RATIONED to moments that are genuinely good news (a save
    * landing, cashback arriving). Overshoot on an ordinary control is the
