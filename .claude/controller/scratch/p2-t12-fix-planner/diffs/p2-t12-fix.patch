@@ -1,0 +1,352 @@
+diff --git a/apps/app/src/wallet/card/WalletCard.tsx b/apps/app/src/wallet/card/WalletCard.tsx
+index eed96c3..60abc17 100644
+--- a/apps/app/src/wallet/card/WalletCard.tsx
++++ b/apps/app/src/wallet/card/WalletCard.tsx
+@@ -7,9 +7,12 @@
+ // are saving, and today's money out when the caller passes it (the stack's
+ // front card, P2-T12). A credit card at zero or below shows what was spent,
+ // after ใช้ไป (W25). With onPress the card is one button that says its words
+-// (ax-voiceover); private mode masks every amount and the card says only
+-// that it is hidden (W10). Nothing is clamped to a line, so the longest name
+-// and the largest amount wrap at every text size (Review Focus 3).
++// (ax-voiceover), and VoiceOver's double tap runs onPress itself
++// (onAccessibilityTap), because iOS would otherwise tap the card's middle, which
++// in the stack lies under the card in front (P2-T12's review, M1); private mode
++// masks every amount and the card says only that it is hidden (W10). Nothing
++// is clamped to a line, so the longest name and the largest amount wrap at
++// every text size (Review Focus 3).
+ import type { Minor } from '@gogospend/contracts';
+ import type { ReactNode } from 'react';
+ import { Pressable, View } from 'react-native';
+@@ -159,6 +162,6 @@ export function WalletCard({ wallet, look, variant, onPress }: {
+   return onPress === undefined ? (
+     <View accessible accessibilityLabel={words.spoken} style={style}>{content}</View>
+   ) : (
+-    <Pressable accessibilityRole="button" accessibilityLabel={words.spoken} onPress={onPress} style={style}>{content}</Pressable>
++    <Pressable accessibilityRole="button" accessibilityLabel={words.spoken} onPress={onPress} onAccessibilityTap={onPress} style={style}>{content}</Pressable>
+   );
+ }
+diff --git a/apps/app/src/wallet/card/cardFrames.tsx b/apps/app/src/wallet/card/cardFrames.tsx
+index c37fee8..c1f262c 100644
+--- a/apps/app/src/wallet/card/cardFrames.tsx
++++ b/apps/app/src/wallet/card/cardFrames.tsx
+@@ -11,10 +11,13 @@
+ // the page has laid out).
+ //
+ // One view per wallet id: the last one registered. A view that leaves forgets
+-// its wallet's frame, never another view's, and a measurement that lands after
+-// its view has left is never given out. Outside a provider nothing is kept:
+-// every frame is null and measure() does nothing, so a card anywhere (the
+-// catalogue, a test) needs no provider. WalletShell mounts it (P2-T18).
++// its wallet's frame, never another view's, and its own frame too, and a
++// measurement that lands while its view is not registered is dropped, so a
++// view that comes back (React shows a hidden subtree again with the same
++// views) answers only what is measured after it is back. Outside a provider
++// nothing is kept: every frame is null and measure() does nothing, so a card
++// anywhere (the catalogue, a test) needs no provider. WalletShell mounts it
++// (P2-T18).
+ import { createContext, useCallback, useContext, useRef, useState } from 'react';
+ import type { ReactNode } from 'react';
+ import type { HostInstance } from 'react-native';
+@@ -37,25 +40,27 @@ function createRegistry(): Registry {
+   const views = new Map<string, HostInstance>();
+   // Keyed by the view, so a frame measured for a view that has left never answers for its wallet.
+   const frames = new WeakMap<HostInstance, CardFrame>();
+-  const measureView = (view: HostInstance) => {
++  const measureView = (walletId: string, view: HostInstance) => {
+     view.measureInWindow((x, y, width, height) => {
+-      frames.set(view, { x, y, width, height });
++      // An answer that lands while its view is away is dropped.
++      if (views.get(walletId) === view) frames.set(view, { x, y, width, height });
+     });
+   };
+   return {
+     register(walletId, view) {
+       views.set(walletId, view);
+-      measureView(view);
++      measureView(walletId, view);
+     },
+     forget(walletId, view) {
+       if (views.get(walletId) === view) views.delete(walletId);
++      frames.delete(view);
+     },
+     frameOf(walletId) {
+       const view = views.get(walletId);
+       return view === undefined ? null : (frames.get(view) ?? null);
+     },
+     measure() {
+-      for (const view of views.values()) measureView(view);
++      for (const [walletId, view] of views) measureView(walletId, view);
+     },
+   };
+ }
+diff --git a/apps/app/src/wallet/card/CardStack.render.test.tsx b/apps/app/src/wallet/card/CardStack.render.test.tsx
+index 0277fa3..01cd963 100644
+--- a/apps/app/src/wallet/card/CardStack.render.test.tsx
++++ b/apps/app/src/wallet/card/CardStack.render.test.tsx
+@@ -13,10 +13,15 @@
+ // a layout would. Reanimated's springs run on the timers: a case that watches
+ // the lift uses vi.useFakeTimers() and reads each card's transform frame by
+ // frame. withSpring is watched (vi.fn around the real one), so a case sees the
+-// spring the lift asked for; vi.clearAllMocks() after each case.
+-import { act, cleanup, screen, within } from '@testing-library/react';
++// spring the lift asked for; vi.clearAllMocks() after each case. Each
++// Pressable's props are recorded too: react-native-web drops onAccessibilityTap,
++// which iOS calls for VoiceOver's double tap, so the VoiceOver case calls it as
++// iOS would. The registry's own case drives a card's ref by hand, with views
++// whose measurements land when the case says.
++import { act, cleanup, render, screen, within } from '@testing-library/react';
+ import type { ReactNode } from 'react';
+ import { View } from 'react-native';
++import type { HostInstance } from 'react-native';
+ import { ReduceMotion, withSpring } from 'react-native-reanimated';
+ import { afterEach, expect, test, vi } from 'vitest';
+ 
+@@ -43,6 +48,18 @@ vi.mock('react-native-reanimated', async (importOriginal) => {
+   return { ...actual, withSpring: vi.fn(actual.withSpring) };
+ });
+ 
++// Each Pressable's props, recorded, so the VoiceOver case can call what iOS calls (see the note at the top).
++const pressables = vi.hoisted(() => ({ props: [] as Record<string, unknown>[] }));
++vi.mock('react-native', async (importOriginal) => {
++  const actual = await importOriginal<typeof import('react-native')>();
++  const { createElement, forwardRef } = await import('react');
++  const Pressable = forwardRef<unknown, Record<string, unknown>>(function RecordedPressable(props, ref) {
++    pressables.props.push(props);
++    return createElement(actual.Pressable as never, { ...props, ref });
++  });
++  return { ...actual, Pressable };
++});
++
+ import { WALLET_SECTIONS } from '@mobile/dev/catalogue/wallet';
+ import { setCurrentHapticPreference } from '@mobile/lib/hapticPreference';
+ import { haptics } from '@mobile/lib/haptics';
+@@ -58,6 +75,7 @@ afterEach(() => {
+   vi.restoreAllMocks();
+   vi.clearAllMocks();
+   seen.props.length = 0;
++  pressables.props.length = 0;
+   setCurrentHapticPreference('on');
+ });
+ 
+@@ -122,7 +140,7 @@ type Place = { left: number; top: number; width: number; height: number };
+ 
+ /** Gives elements a place in the window, as the page's layout would; anything else is at 0, 0 with no size, as happy-dom says. */
+ function placeViews(places: Map<Element, Place>) {
+-  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function placed(this: HTMLElement) {
++  return vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function placed(this: HTMLElement) {
+     const { left, top, width, height } = places.get(this) ?? { left: 0, top: 0, width: 0, height: 0 };
+     return { left, top, width, height, x: left, y: top, right: left + width, bottom: top + height, toJSON: () => ({}) } as DOMRect;
+   });
+@@ -171,6 +189,8 @@ test('the stack is 54 pt per card plus one whole card', async () => {
+   mountWallet(<CardStack wallets={HOME.slice(3)} onOpen={press} />);
+   await settle();
+   expect([cardFrame('w-main').style.position, cardFrame('w-main').style.marginTop, cardFrame('w-main').style.boxShadow]).toEqual(['', '0px', '']);
++  // The lone card is the front card, so it shows today's money out (P5).
++  expect(drawn(screen.getByRole('button'))).toEqual(['บัญชีหลัก', '฿24,860', `วันนี้ ${MINUS}฿47`]);
+   cleanup();
+   mountWallet(<CardStack wallets={[]} onOpen={press} />);
+   await settle();
+@@ -254,6 +274,8 @@ test('under reduced motion the card opens with no lift', async () => {
+   act(() => { buttons()[3].click(); });
+   expect(springs()).toEqual([[-CARD_LIFT, GENTLE], [0, GENTLE]]);
+   expect(Math.min(...trace(['w-main'], 3000)['w-main'])).toBeLessThan(-11.5);
++  // One open per press: the lift settling opens nothing more.
++  expect(onOpen.mock.calls).toEqual([['w-main'], ['w-main']]);
+ });
+ 
+ test('at full motion a pressed card lifts 12 pt on the gentle spring and settles back in its place; the others stay', async () => {
+@@ -336,6 +358,11 @@ test("screen readers meet the cards in the drawn order, each a button with its c
+       cleanup();
+     }
+   }
++  // A card behind the front one says and draws its own pending total (P5).
++  const saving = HOME.map((wallet) => (wallet.id === 'w-cash' ? { ...wallet, pendingMinor: '5000' } : wallet));
++  mountWallet(<CardStack wallets={saving} onOpen={press} />);
++  await settle();
++  expect([labels()[2], drawn(buttons()[2])]).toEqual(['เงินสด, เหลือ 1,240 บาท, รวม 50 บาทที่กำลังบันทึก', ['เงินสด', '฿1,240', 'รวม ฿50 ที่กำลังบันทึก']]);
+ });
+ 
+ test('a wallet added later joins the front of the stack at once: the stack plays no drop', async () => {
+@@ -367,10 +394,11 @@ test("a bank account below zero keeps its minus in the stack and in the list, in
+ 
+ test("each card's place in the window is known after layout, measured again when the stack lays out, and forgotten when the card leaves", async () => {
+   const places = new Map<Element, Place>();
+-  placeViews(places);
++  const rects = placeViews(places);
+   let frames: CardFrames | null = null;
+   const take = (given: CardFrames) => { frames = given; };
+-  const frameOf = (id: string): CardFrame | null => (frames as CardFrames | null)?.frameOf(id) ?? null;
++  // Read as is, so a frame that is undefined is no null.
++  const frameOf = (id: string): CardFrame | null => (frames as unknown as CardFrames).frameOf(id);
+   const tree = (wallets: readonly StackWallet[]) => (
+     <CardFramesProvider>
+       <FramesProbe onFrames={take} />
+@@ -388,12 +416,23 @@ test("each card's place in the window is known after layout, measured again when
+   await settle();
+   expect(HOME.map(({ id }) => frameOf(id))).toEqual(expected(0));
+   expect(frameOf('w-unknown')).toBeNull();
++  // A render that changes nothing measures nothing again: each card keeps its ref.
++  const measured = () => rects.mock.contexts.filter((element) => HOME.some(({ id }) => element === viewOf(id))).length;
++  const first = measured();
++  view.rerender(tree(HOME));
++  await settle();
++  expect([first, measured()]).toEqual([4, 4]);
+ 
+   // The stack moves 40 pt down the page (say the budget card above it grew): its layout measures every card again.
+   placeAt(40);
+   layOut(stack());
+   await settle();
+   expect(HOME.map(({ id }) => frameOf(id))).toEqual(expected(40));
++  // ...and again at each later layout (on a phone each move of the stack lays it out again).
++  placeAt(80);
++  layOut(stack());
++  await settle();
++  expect(HOME.map(({ id }) => frameOf(id))).toEqual(expected(80));
+ 
+   // measure() measures them again when asked (for P2-T17, before a flight).
+   placeAt(-100);
+@@ -432,7 +471,8 @@ test('one view per wallet id: the last registered answers, and a view that leave
+   placeViews(places);
+   let frames: CardFrames | null = null;
+   const take = (given: CardFrames) => { frames = given; };
+-  const frameOf = (id: string): CardFrame | null => (frames as CardFrames | null)?.frameOf(id) ?? null;
++  // Read as is, so a frame that is undefined is no null.
++  const frameOf = (id: string): CardFrame | null => (frames as unknown as CardFrames).frameOf(id);
+   const tree = (children: ReactNode) => (
+     <CardFramesProvider>
+       <FramesProbe onFrames={take} />
+@@ -502,3 +542,81 @@ test("the catalogue's stack sections come after the kit's and draw bw-home's sta
+   ]);
+   expect(buttons().map(faces)).toEqual([0, 0, 0, 0]);
+ });
++
++test("a VoiceOver double tap on a card behind the front one runs that card's own press, once (M1)", async () => {
++  const onOpen = vi.fn();
++  const tick = vi.spyOn(haptics, 'selection');
++  mountWallet(<CardStack wallets={HOME} onOpen={onOpen} />);
++  await settle();
++  // What each card last handed its Pressable for VoiceOver's double tap. iOS calls it and taps nothing
++  // (accessibilityActivate answers YES); without it, iOS taps the card's middle, which on a card behind
++  // the front one lies under the next card, and that card would open.
++  const voiceOverTap = (label: string) => pressables.props.filter((props) => props.accessibilityLabel === label).at(-1)?.onAccessibilityTap as (() => void) | undefined;
++  expect(WORDS.th.map((label) => typeof voiceOverTap(label))).toEqual(['function', 'function', 'function', 'function']);
++  vi.useFakeTimers();
++  act(() => { voiceOverTap(WORDS.th[1])?.(); });
++  // The same press as a touch: the tick, the 12 pt lift on the gentle spring, and that card's own wallet, at once...
++  expect([onOpen.mock.calls, tick.mock.calls.length, springs()]).toEqual([[['w-transit']], 1, [[-12, GENTLE], [0, GENTLE]]]);
++  expect(Math.min(...trace(['w-transit'], 3000)['w-transit'])).toBeLessThan(-11.5);
++  // ...and only once.
++  expect([onOpen.mock.calls, tick.mock.calls.length]).toEqual([[['w-transit']], 1]);
++});
++
++test('a new order keeps each card its own frame, in the stack and in the list: the cards are keyed by wallet', async () => {
++  // Every card moves: the first card becomes the front card.
++  const turned = [...HOME.slice(1), HOME[0]];
++  for (const fontScale of [1, AX5]) {
++    const view = mountWallet(<CardStack wallets={HOME} onOpen={press} />, { fontScale });
++    await settle();
++    const before = new Map(HOME.map(({ id }) => [id, cardFrame(id)]));
++    view.rerender(<CardStack wallets={turned} onOpen={press} />);
++    const ids = turned.map(({ id }) => id);
++    expect(order(), `${fontScale}`).toEqual(fontScale === 1 ? ids : [...ids].reverse());
++    // Each card keeps its own frame (and with it its lift and its registered view) in its new place.
++    expect(HOME.map(({ id }) => cardFrame(id) === before.get(id)), `${fontScale}`).toEqual([true, true, true, true]);
++    cleanup();
++  }
++});
++
++/** A card's view whose measurements land only when the case says. */
++function heldView() {
++  type Answer = (x: number, y: number, width: number, height: number) => void;
++  const answers: Answer[] = [];
++  const view = { measureInWindow: (answer: Answer) => { answers.push(answer); } } as unknown as HostInstance;
++  return { view, asked: () => answers.length, land: (index: number, x: number, y: number) => { answers[index](x, y, 100, 200); } };
++}
++
++/** Hands the case the ref a card's view takes, to call as React does. */
++function RefProbe({ walletId, onRef }: { walletId: string; onRef: (ref: (view: HostInstance | null) => void) => void }) {
++  onRef(useRegisterCardFrame(walletId));
++  return null;
++}
++
++test('a view that comes back answers only what is measured after it is back, and frameOf is exactly null until then', () => {
++  let frames: CardFrames | null = null;
++  let ref: ((view: HostInstance | null) => void) | null = null;
++  render(
++    <CardFramesProvider>
++      <FramesProbe onFrames={(given) => { frames = given; }} />
++      <RefProbe walletId="w" onRef={(given) => { ref = given; }} />
++    </CardFramesProvider>,
++  );
++  const registry = frames as unknown as CardFrames;
++  const attach = ref as unknown as (view: HostInstance | null) => void;
++  const card = heldView();
++  const at = (x: number, y: number) => ({ x, y, width: 100, height: 200 });
++  attach(card.view);
++  expect(registry.frameOf('w')).toBeNull();
++  card.land(0, 1, 1);
++  expect(registry.frameOf('w')).toEqual(at(1, 1));
++  // The view leaves (React hides its subtree) while a measurement is on the way, which lands while it is away.
++  registry.measure();
++  attach(null);
++  card.land(1, 2, 2);
++  expect(registry.frameOf('w')).toBeNull();
++  // The same view comes back: nothing from before it left or from while it was away, only what is measured now.
++  attach(card.view);
++  expect([card.asked(), registry.frameOf('w')]).toEqual([3, null]);
++  card.land(2, 3, 3);
++  expect(registry.frameOf('w')).toEqual(at(3, 3));
++});
+diff --git a/apps/app/src/wallet/card/cardStackNative.test.ts b/apps/app/src/wallet/card/cardStackNative.test.ts
+index edeab06..66a039d 100644
+--- a/apps/app/src/wallet/card/cardStackNative.test.ts
++++ b/apps/app/src/wallet/card/cardStackNative.test.ts
+@@ -1,7 +1,9 @@
+ // What react-native-web drops from the card stack, read from the source (R72's
+ // trap, as src/ui/dynamicType.test.ts does): on a phone the view each card
+ // registers for its frame must stay a real native view, or React Native may
+-// flatten it away as a layout-only view, and there would be nothing to measure.
++// flatten it away as a layout-only view, and there would be nothing to measure;
++// and no view of the stack may be `accessible`, or VoiceOver would meet the
++// whole stack as one element instead of each card's button (P2-T12's review, n3).
+ import assert from 'node:assert/strict';
+ import { readFileSync } from 'node:fs';
+ import { test } from 'node:test';
+@@ -11,3 +13,8 @@ const source = readFileSync(new URL('./CardStack.tsx', import.meta.url), 'utf8')
+ test('the view each card registers is kept as a native view, so it can be measured', () => {
+   assert.match(source, /<View ref=\{register\} collapsable=\{false\}>/);
+ });
++
++test("no view of the stack groups its cards into one accessibility element, so VoiceOver meets each card's button", () => {
++  const code = source.replace(/\/\/.*$/gm, '');
++  assert.doesNotMatch(code, /\baccessible\b/);
++});
+diff --git a/apps/app/src/wallet/card/cardNativeProps.test.ts b/apps/app/src/wallet/card/cardNativeProps.test.ts
+new file mode 100644
+index 0000000..5a9dce2
+--- /dev/null
++++ b/apps/app/src/wallet/card/cardNativeProps.test.ts
+@@ -0,0 +1,22 @@
++// What react-native-web drops from the wallet card, read from the source (R72's
++// trap, as src/ui/dynamicType.test.ts does). The first case is P2-T11's review's
++// ready case (n3): a card with no onPress is one accessibility element on a
++// phone. The second is P2-T12's review's M1: VoiceOver's double tap runs the
++// card's own press. Without onAccessibilityTap, React Native's iOS view answers
++// NO to accessibilityActivate, and VoiceOver taps the middle of the card, which
++// in the stack lies under the card in front, so that card would open instead.
++import assert from 'node:assert/strict';
++import { readFileSync } from 'node:fs';
++import { dirname, join } from 'node:path';
++import { test } from 'node:test';
++import { fileURLToPath } from 'node:url';
++
++const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'WalletCard.tsx'), 'utf8');
++
++test('a card with no onPress is one accessibility element on a phone, labelled with its words', () => {
++  assert.match(source, /<View accessible accessibilityLabel=\{words\.spoken\}/);
++});
++
++test("VoiceOver's double tap runs the card's own press, never a tap at the card's middle", () => {
++  assert.match(source, /<Pressable accessibilityRole="button" accessibilityLabel=\{words\.spoken\} onPress=\{onPress\} onAccessibilityTap=\{onPress\}/);
++});

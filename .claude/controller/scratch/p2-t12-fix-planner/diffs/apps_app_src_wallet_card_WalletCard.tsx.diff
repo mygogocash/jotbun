@@ -1,0 +1,28 @@
+diff --git a/apps/app/src/wallet/card/WalletCard.tsx b/apps/app/src/wallet/card/WalletCard.tsx
+index eed96c3..60abc17 100644
+--- a/apps/app/src/wallet/card/WalletCard.tsx
++++ b/apps/app/src/wallet/card/WalletCard.tsx
+@@ -7,9 +7,12 @@
+ // are saving, and today's money out when the caller passes it (the stack's
+ // front card, P2-T12). A credit card at zero or below shows what was spent,
+ // after ใช้ไป (W25). With onPress the card is one button that says its words
+-// (ax-voiceover); private mode masks every amount and the card says only
+-// that it is hidden (W10). Nothing is clamped to a line, so the longest name
+-// and the largest amount wrap at every text size (Review Focus 3).
++// (ax-voiceover), and VoiceOver's double tap runs onPress itself
++// (onAccessibilityTap), because iOS would otherwise tap the card's middle, which
++// in the stack lies under the card in front (P2-T12's review, M1); private mode
++// masks every amount and the card says only that it is hidden (W10). Nothing
++// is clamped to a line, so the longest name and the largest amount wrap at
++// every text size (Review Focus 3).
+ import type { Minor } from '@gogospend/contracts';
+ import type { ReactNode } from 'react';
+ import { Pressable, View } from 'react-native';
+@@ -159,6 +162,6 @@ export function WalletCard({ wallet, look, variant, onPress }: {
+   return onPress === undefined ? (
+     <View accessible accessibilityLabel={words.spoken} style={style}>{content}</View>
+   ) : (
+-    <Pressable accessibilityRole="button" accessibilityLabel={words.spoken} onPress={onPress} style={style}>{content}</Pressable>
++    <Pressable accessibilityRole="button" accessibilityLabel={words.spoken} onPress={onPress} onAccessibilityTap={onPress} style={style}>{content}</Pressable>
+   );
+ }

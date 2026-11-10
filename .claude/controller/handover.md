@@ -406,6 +406,15 @@ The list below is kept for the record.
       2. push, and update #395's body;
       3. a confirming review: Opus, since the first round was M and found a major;
       4. merge at the new head on green CI.
+    - **Fix brief READY** (found on disk at 15:18; its T3 notice never arrived): `briefs/P2-T12-fix.md`, kit `scratch/p2-t12-fix-planner/` (26 OK; `SHA256SUMS.orig-in-wt` 6 OK on 90b5079).
+      - F1 to F9 are accepted.
+        - F1: `onAccessibilityTap={onPress}`.
+        - F3: n2 needs two lines.
+        - F4: 3 new cases (12 to 15).
+        - F6: 73 of 73 mutants.
+        - F9: VoiceOver on a real iPhone stays SKIPPED, a device check.
+      - **The fixer waits on T3** (Argon under the new routing); WT p2-t12 on `p2/t12-card-stack`.
+      - Then: a confirming review (Argon), the Opus second review (wallet), and the owner's yes.
     - CI run 42741688287 never started (billing, 0 steps run). Once the owner fixes it: `gh run rerun 42741688287 --repo mygogocash/jotbun`.
   - Each task's catalogue sections go in a list file of its own, with one spread in `dev/catalogue/wallet/index.ts` at its own anchor (not in `kitSections.tsx`).
 - **P2-T20** (4be9ff30; WT p2-t20 on p2/t20-wallets-list), the wallets list, the archived list and reorder, depth 14 (the deepest ready task). The planner (Opus xhigh) was dispatched at 09:09, when P2-T14's planner finished.
@@ -441,7 +450,14 @@ The list below is kept for the record.
         - **The controller folded m1, n2, n3 and n4 into a test-only fix round on #396:** probes PB, PA and PC kill R14, R11 and R13, and the slot cases' `take()` moves inside the `try`.
           - The fix-download-aborts planner (thread 46ff8a6d, run 3, from 14:33) writes `briefs/fix-download-aborts-fix.md`, with kit `scratch/fix-download-aborts-fix-planner/`.
           - n1 is a hosted check; n5 and n6 go to 1B-T13; n7 (#398's receipt lines) is in followups.md.
-        - Then: a Haiku fixer, push, update #396's body, and a confirming Sonnet review. Merge at the new head on green CI.
+        - **Fix brief READY** (found on disk at 15:18): `briefs/fix-download-aborts-fix.md`, kit `scratch/fix-download-aborts-fix-planner/` (9 OK; its `orig/` test file equals the branch at d0cc479).
+          - P1 to P7 are accepted.
+            - P1: PC becomes a line in each download case.
+            - P2: PB is made deterministic.
+            - P4: the case takes its own slots inside the `try`.
+            - P5: 7 cases; CI's delta becomes workers +1 file and +7 passed.
+            - P6: 14 of 14 mutants.
+          - **The fixer waits on T3** (Argon); then a confirming review (Argon). #396 is not money or privacy, so it merges on green CI.
       - **B, `briefs/download-pins.md` (L, test-only).**
         - It edits `test/workers/exports.test.ts`, `attachments.test.ts`, `snapshots.test.ts`, `imports-review.test.ts` and `ai.test.ts`, with every review pin from the followups entry (the table in brief A).
         - Kit `scratch/download-pins-planner/`: check_kit at d1111f8 gives 20 OK, and the 5 `orig/` files are identical. GREEN 242 of 242, 20 of 20 mutants.
