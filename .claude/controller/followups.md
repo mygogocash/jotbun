@@ -400,3 +400,13 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **A tray slot under the header (P10; P2-T16 or a tray task):** at AX5 the board pins the amount under the title, but `Tray` pins only its footer, so the amount scrolls with the middle. Capture `bw-tray-amount` at AX5 by hand.
   - **P2-T37 (P9):** the typed amount (`add-amount`) is the one amount private mode leaves on screen, by design. The sweep must exempt it.
   - **E2-B (P17):** the differences from the boards, listed in the brief's P17. Among them: ถัดไป against the boards' ต่อไป, no วันนี้ chip, and ลบตัวเลข.
+- tray-hardening (#392, approved 10 Nov on 784667b; review in reviews/tray-hardening.md, a Sonnet workflow; probes in scratch/tray-hardening-review/; two minors and three nits). CI could not run (billing), so the controller folded m-1, m-2, n-1 and n-2 into a fix round on the same PR: `briefs/tray-hardening-fix.md`, written by the tray-hardening planner.
+  - **The fix round:**
+    - m-1: `dismissed` reads the rendered `shown`, not the `showing` ref refreshed in a passive effect. A batched native end plus reopen otherwise calls `onClosed` while the tray is open (R-d to R-d5b).
+    - m-2: pin "nothing moves during an exit" (mutant X1).
+    - n-1: pin the tick's `hidden` dependency (D2).
+    - n-2: an iOS case with no `onClosed` (X4).
+  - **P2-T16 (n-3), and any host tray (P2-T20's `ReorderTray`):**
+    - on iOS `onClosed` can come twice for two hides (probe R-c), so `whenClosed` treats a second call as a no-op;
+    - it may not come at all for a Modal that never presented (R-f), so do not assume one call per hide;
+    - the SKIPPED device check should ask whether UIKit sends a dismissal for a present refused while a dismissal is in flight.

@@ -256,6 +256,20 @@ The list below is kept for the record.
     - **The review runs as a small Sonnet workflow** (run wf_fa4458e5-3d3, task woa7ka514): one reviewer, a skeptic for any blocker or major, and a synthesizer writing `reviews/tray-hardening.md`.
     - On approval and green CI: `merge_task_pr.sh 392 784667b` (no task id), then `promote_pr.sh tray-hardening 392`. **Then take P2-T16 off held.txt.**
     - **CI run 42738781210 (08:52) never started: GitHub billing** (Owner decisions waiting, first item). Once the owner fixes it, run `gh run rerun 42738781210 --repo mygogocash/jotbun` and check the nine jobs (render +6 cases).
+    - **The review approved at 09:25** (`reviews/tray-hardening.md`): no blocker or major, two minors and three nits. The reviewer reran 22 of 22 four times and 11 of the 34 mutants.
+    - **The controller folded m-1, m-2, n-1 and n-2 into a fix round on #392**, since CI cannot run before billing is fixed anyway. A separate follow-up PR would cost another CI run later.
+      - m-1 is a real but rare bug: a batched iOS end plus reopen calls `onClosed` while the tray is open. The fix is one line: read `shown`, not the ref.
+      - The others are test pins for surviving mutants X1, D2 and X4.
+      - n-3 goes to P2-T16 and P2-T20 (followups.md).
+    - **The tray-hardening planner** (thread 351b244a, run 3, from 09:25) writes `briefs/tray-hardening-fix.md`, with kit `scratch/tray-hardening-fix-planner/`, proven on 784667b merged with the head.
+    - **Then:**
+      1. dispatch a Haiku fixer on `fix/tray-hardening`;
+      2. push the new head and update #392's body;
+      3. run a confirming Sonnet review;
+      4. merge at the new head on green CI.
+
+      The rerun command above then no longer applies; the push starts a fresh run.
+    - P2-T14 (held) tolerates the changed tray files: its Step 0.2 records a hash difference and goes on. P2-T20's planner was told to check tray-hardening by content.
     - New lesson: `git apply` run inside `scratch/` can silently apply nothing.
   - **P2-T14** (deda1216; WT p2-t14 on p2/t14-add-flow), the add flow, keypad and amount step, depth 17. It plans against today's `Tray` props, without editing `Tray.tsx`.
     - **Brief READY at 09:09 (L), proven on b5aa2a7 with tray-hardening's three files laid over.**
