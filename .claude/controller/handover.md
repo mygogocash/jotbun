@@ -180,7 +180,11 @@ The list below is kept for the record.
       - P2-T20, P2-T21 and P2-T29 are HELD in held.txt until it lands. Its ready cases are D1, D2 and D8b.
       - The other minors and nits are in followups.md (P2-T12, P2-T21, P2-T22, P2-T29, P2-T35, E2-A).
     - **Promotion PR #386** is stacked on #384; stack #379 now holds six PRs.
-    - **P2-T13 (#383) merges second:** read it through the API, close and reopen it for a nine-job run on top of 5a33820, and confirm the checkout line before merging.
+    - **P2-T13 (#383) merges second.** Its merge ref stayed stale, so at 07:25 the controller updated its branch with the base through GitHub's update-branch API (`expected_head_sha` = the reviewed 2f0e40e).
+      - The new head 9b3196d is "Merge branch 'claude/p1a-vault-core' into p2/t13-tray". The task's files are unchanged from 2f0e40e, and the PR's diff is the same 12 files (+1246, -4).
+      - A fresh nine-job run on a true merge with P2-T11 is under way.
+      - **Merge at 9b3196d:** `merge_task_pr.sh 383 9b3196d P2-T13`, once its review approves and that run is green.
+- **wallet-looks-unstored planner** (Opus xhigh, 163f00f9), dispatched at 07:26 at 8194e7f: P2-T11's review m1. WT wallet-looks-unstored on fix/wallet-looks-unstored. It unblocks P2-T20, P2-T21 and P2-T29 (held.txt).
 
 ## PR #371: the integration branch into main. The owner merged it on 9 Nov, 21:30 Bangkok, as afcf884
 - It was merged with a merge commit, so history is kept. The controller then fast-forwarded claude/p1a-vault-core to afcf884, which adds main's README and CHANGELOG, so the two branches were level.
