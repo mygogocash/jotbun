@@ -343,7 +343,10 @@ const OBJECT_GONE = "NOT EXISTS (SELECT 1 FROM vault_objects o WHERE o.key = att
  * already made due; a tombstone keeps its own deadline); and a released
  * receipt's row is dropped 30 days after its release, once its object is gone.
  * Each rule acts at its own due time (inclusive), so attachmentsDueAt moves
- * past it (ruling R37). Set-based statements, no id lists (ruling R57).
+ * past it (ruling R37). Set-based statements, no id lists (ruling R57). The
+ * safety net reads every retained receipt here, so the receipts waiting in
+ * attachment_checks have all been checked, and the table is emptied in the
+ * same block (alarm-hardening).
  */
 export function pruneAttachments(c: FileContext): void {
   c.storage.transactionSync(() => {
@@ -352,6 +355,7 @@ export function pruneAttachments(c: FileContext): void {
       .exec("UPDATE vault_objects SET delete_after = 0 WHERE status <> 'tombstone' AND key IN (SELECT object_key FROM attachments WHERE status = 'released' AND released_at IS NULL) RETURNING key")
       .toArray()
     const stamped = c.sql.exec("UPDATE attachments SET released_at = ? WHERE status = 'released' AND released_at IS NULL RETURNING id", c.now.toISOString()).toArray()
+    c.sql.exec('DELETE FROM attachment_checks').toArray()
     if (unheld.length + due.length + stamped.length > 0) touch(c)
   })
   c.storage.transactionSync(() => {
@@ -362,11 +366,18 @@ export function pruneAttachments(c: FileContext): void {
   })
 }
 
-/** When pruneAttachments next has work: now while a receipt waits for its stamp or has lost its holders, else the earliest release whose object is gone plus 30 days; null when none (ruling R37). */
+/**
+ * When pruneAttachments next has work: now while a receipt waits for its stamp or has lost its holders, else the
+ * earliest release whose object is gone plus 30 days; null when none (ruling R37). It runs after every write
+ * (1B-T11's rearm), so it reads no receipt it need not (alarm-hardening): the stamp through attachments_released_idx,
+ * and the safety net only among attachment_checks, the receipts whose holders changed since pruneAttachments last
+ * checked them all (0004's triggers keep it), read from that table first.
+ */
 export function attachmentsDueAt(c: FileContext): number | null {
   const { waiting, oldest } = c.sql
     .exec<{ waiting: number; oldest: string | null }>(
-      `SELECT EXISTS (SELECT 1 FROM attachments WHERE (status = 'released' AND released_at IS NULL) OR (${UNHELD})) AS waiting,
+      `SELECT EXISTS (SELECT 1 FROM attachments WHERE status = 'released' AND released_at IS NULL)
+           OR EXISTS (SELECT 1 FROM attachment_checks k CROSS JOIN attachments ON attachments.id = k.attachment_id WHERE ${UNHELD}) AS waiting,
               (SELECT min(released_at) FROM attachments WHERE status = 'released' AND released_at IS NOT NULL AND ${OBJECT_GONE}) AS oldest`,
     )
     .one()
