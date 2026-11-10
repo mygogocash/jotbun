@@ -1,0 +1,86 @@
+
+> gogospend-app@0.1.0 test:unit
+> node scripts/test-unit.mjs src/wallet/tray/trayGesture.test.ts
+
+(node:59077) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/wallet/tray/trayGesture.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a pull of 120 pt, or a quick flick past 60 pt, closes the tray; a pull up never does (0.31475ms)
+✔ each line is passed, never met: more than 120 pt, more than 60 pt, faster than 900 pt a second (0.065542ms)
+✔ the swipe runs on the JS runtime (0.076834ms)
+✔ what the web drops is wired for a phone: the screen reader's escape, the modal card, the title, the backdrop, the Modal, the keyboard and the cover (0.292708ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 129.971583
+
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app
+
+ ✓ src/wallet/tray/Tray.render.test.tsx > the tray is a named dialog, 8 pt from the edges, radius 34 97ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > close and the backdrop close it, and the title takes focus when it opens 13ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > while locked nothing closes it, and close says it is unavailable 16ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > at AX5 it opens full height 19ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > under reduced motion a new step shows at once 11ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > the card leaves before the Modal hides, then onClosed fires once 36ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > an onClosed given while the card leaves is the one called 9ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a hidden lock cover replaces the tray's content 22ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > under the lock cover nothing asks to close the tray 8ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a drag the lock cover cuts off is gone when the cover lifts 11ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a card that leaves stays where the finger let it go, even when the lock cover comes and goes 10ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > the main button is 54 pt tall, radius 16, ink with white text in light and light with ink text in dark; busy says its busy label 10ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > every control in the header is at least 44 pt 41ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > the swipe follows the finger down, springs back short of the line, and closes past it 22ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > the wallet's answer decides the swipe's spring back, not Reanimated's own setting (W6) 10ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a swipe the system cancels springs back, even past the line 7ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > at full motion the card springs up, and a step change morphs its height and ticks once; opening ticks nothing 13ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > opening at another step in one render, or a step change under the lock cover, ticks nothing 12ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > once the lock cover lifts a step change ticks, even when it lifted on the step it had under the cover 11ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > on a phone the card is the named dialog and the title takes focus, with or without a header; on iOS onClosed waits for the Modal's own dismissal 18ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > on iOS a dismissal that ends after the tray is shown again says nothing; the next one says it closed 18ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > on iOS a dismissal that ends in the commit that opens the tray again says nothing 13ms
+ × src/wallet/tray/Tray.render.test.tsx > on iOS a tray with no onClosed closes, its dismissal ends, and it opens again 13ms
+   → expected [Function] to not throw an error but 'TypeError: closed.current is not a fu…' was thrown
+ ✓ src/wallet/tray/Tray.render.test.tsx > a text link is at least 44 pt, violet by default or ink, and says its words 8ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a header takes the title's place, and screen readers meet the title first 9ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > the catalogue's tray sections come after the kit's, and each tray opens at once 35ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 25 passed (26)
+   Start at  09:55:42
+   Duration  2.57s (transform 1.37s, setup 61ms, import 1.79s, tests 494ms, environment 102ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:59106) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/tray/Tray.render.test.tsx > on iOS a tray with no onClosed closes, its dismissal ends, and it opens again
+AssertionError: expected [Function] to not throw an error but 'TypeError: closed.current is not a fu…' was thrown
+
+- Expected:
+undefined
+
++ Received:
+"TypeError: closed.current is not a function"
+
+ ❯ src/wallet/tray/Tray.render.test.tsx:759:36
+    757|   act(() => { vi.advanceTimersByTime(220); });
+    758|   // A host that does not listen: the end says nothing, and throws not…
+    759|   expect(() => endDismissal()).not.toThrow();
+       |                                    ^
+    760|   view.rerender(tray());
+    761|   expect(screen.queryByTestId('tray'), 'open again').not.toBeNull();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

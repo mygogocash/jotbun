@@ -368,3 +368,71 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - 1B-T12 lists the difference in `vault-parity-files.db.test.ts`'s header and its receipt.
     - For parity: keep a ready row until `ready_at` plus 30 days, with a resend case. First check whether a Workflow instance can start under an id whose old instance is past its retention.
     - This edits `pruneSnapshots`, `snapshotsDueAt` and the snapshot tests, which fix-download-aborts pins (1B-T11's m3 and n6).
+- P2-T12 planner notes (briefs/P2-T12.md; READY 10 Nov):
+  - **P2-T21 (P11):** the new wallet's drop is P2-T21's bw-adding step, not the stack's.
+    - `walletAddedEntering(false)` drops a card from a full window height on the under-damped spring, which overshoots by about 22% of the travel (about 190 pt on an 874 pt phone).
+    - Shorten the drop to about one card height (`.withInitialValues({ originY })`; about 44 pt of overshoot), and test it in `useWalletMotion.render.test.tsx`.
+    - Check it on the simulator at E2-B. P2-T9's review also leaves E2 the board's "success on the first wallet" against the plan's success on every new wallet.
+  - **P2-T17 (P10):**
+    - a card behind the front one shows only its top `STACK_PEEK` (54 pt), so aim the flight at the frame's top;
+    - call `measure()` before a flight, since a frame measured after layout does not follow Home's scroll.
+  - **P2-T18:** `WalletShell` mounts `CardFramesProvider` (plan line 1075). Outside it `frameOf` is null and `measure()` does nothing.
+  - **P2-T23 and P2-T24 (P8):**
+    - showing a derived look before the account's looks are read is the caller's call (P2-T24's Home can keep its skeleton up until then);
+    - `order` is `[]` until the first read lands, so a first pass may be in default order;
+    - test ids `card-stack` and `card-stack-<walletId>` are for P2-T24's tests;
+    - P2-T24 decides Home's empty state; the stack draws nothing for no wallets.
+  - **E2-A (P14):**
+    - every stack card is the `stack` variant: bw-home's front-card face, its bottom amount and the mark are not drawn;
+    - no violet glow under the front card;
+    - no VoiceOver hint;
+    - the lift is the plan's 12 pt;
+    - a wrapped name is partly behind the next card at standard sizes (should the peek grow with the name?);
+    - the stack is 362 pt against the board's 364;
+    - `bw-stack-large` must be captured at AX5 by hand.
+- P2-T14 planner notes (briefs/P2-T14.md; READY 10 Nov, held until tray-hardening merges):
+  - **P2-T15 and P2-T16 (P3), the interface they build on:**
+    - `AmountFooter` (the keypad, its problem and Next) goes in the tray's pinned `footer`, and the plan's `problem` prop moved there. Both components take `StepProps`, so a host spreads one object into both.
+    - `AddStep` gains `transfer`: a transfer goes amount, transfer, confirm.
+    - `confirmRows` takes the app's `tc`, so built-in category names show in Thai.
+    - New helpers in `addFlow.ts`: `stepAfterAmount`, `amountProblem` and `stillGuessed` (P2-T16 calls it from `onDraft`). `useCanTellBun()` is in `AmountStep.tsx`.
+    - P2-T15 adds the confirm step's row labels (`labelKey`).
+  - **A tray slot under the header (P10; P2-T16 or a tray task):** at AX5 the board pins the amount under the title, but `Tray` pins only its footer, so the amount scrolls with the middle. Capture `bw-tray-amount` at AX5 by hand.
+  - **P2-T37 (P9):** the typed amount (`add-amount`) is the one amount private mode leaves on screen, by design. The sweep must exempt it.
+  - **E2-B (P17):** the differences from the boards, listed in the brief's P17. Among them: ถัดไป against the boards' ต่อไป, no วันนี้ chip, and ลบตัวเลข.
+- tray-hardening (#392, approved 10 Nov on 784667b; review in reviews/tray-hardening.md, a Sonnet workflow; probes in scratch/tray-hardening-review/; two minors and three nits). CI could not run (billing), so the controller folded m-1, m-2, n-1 and n-2 into a fix round on the same PR: `briefs/tray-hardening-fix.md`, written by the tray-hardening planner.
+  - **The fix round:**
+    - m-1: `dismissed` reads the rendered `shown`, not the `showing` ref refreshed in a passive effect. A batched native end plus reopen otherwise calls `onClosed` while the tray is open (R-d to R-d5b).
+    - m-2: pin "nothing moves during an exit" (mutant X1).
+    - n-1: pin the tick's `hidden` dependency (D2).
+    - n-2: an iOS case with no `onClosed` (X4).
+  - **P2-T16 (n-3), and any host tray (P2-T20's `ReorderTray`):**
+    - on iOS `onClosed` can come twice for two hides (probe R-c), so `whenClosed` treats a second call as a no-op;
+    - it may not come at all for a Modal that never presented (R-f), so do not assume one call per hide;
+    - the SKIPPED device check should ask whether UIKit sends a dismissal for a present refused while a dismissal is in flight.
+- P2-T20 planner notes (briefs/P2-T20.md; READY 10 Nov, held until tray-hardening and P2-T14 merge):
+  - **P2-T18:** `WalletShell` mounts `WalletLooksProvider` (plan line 1075). Until it does, the wallet area's list keeps no order on a device. The route keeps its own `SpendV1Provider`, which is harmless under the shell's.
+  - **P2-T21:**
+    - extend `wallets/copy.ts`;
+    - the add tile already opens `/spend/wallet/new`.
+  - **P2-T22:**
+    - a row already opens `/spend/wallet/<id>`;
+    - once both routes exist (P2-T21's and P2-T22's), drop the two `as Href` casts in `WalletsListScreen.tsx` (P9). Until then, a development build shows expo-router's unmatched route for them.
+  - **P2-T23:** build `homeWallets`' order with `frontFirst(wallets, order)` reversed (the front card last), so the list, the reorder tray and Home's stack agree.
+  - **P2-T24:** Home's จัดเรียง is `/spend/wallets?reorder=1`.
+  - **P2-T37:** every amount on the list is a `WalletAmount`, and each row's label says ซ่อนยอดเงินอยู่ in private mode.
+  - **E2-B:** P17's differences from wc-wallets. Capture `bw-wallets-reorder` from a fresh launch (P2-T13's n2).
+- alarm-hardening planner notes (briefs/alarm-hardening.md; READY 10 Nov; ruling R105):
+  - **Any task that adds a migration rebuilding `attachments` or its holders' table:** recreate 0004's four `attachment_checks` triggers (R105).
+  - **A later edge task (P12):**
+    - `recordsDue`, `pruneImports`' purge read, still walks every head of one import entity, once or twice per alarm. It could read `LIVE_IMPORT_HEADS`.
+    - 1A's `nextDue` counts every change and head in `hasSupersededChange`: 0.3 ms at 60,000. This is a note, not a defect.
+  - **1B-T13 (n10, already listed under 1B-T11):** size the hosted check with 0004's table and index too.
+- 1B-T12 (#394, approved 10 Nov on ef37c41; review in reviews/1B-T12.md, a two-lens Sonnet workflow; probes in scratch/1b-t12-review/). Lens A re-derived all 40 NestJS answers from `apps/api`; they hash identically to the planner's `expected-nest.json`. CI never ran (billing), so m1, n4, n5 and n6 are folded into a fix round on #394 (`briefs/1B-T12-fix.md`). **The merge waits for a green `edge` job:** read its `test:edge:db` section (vault-parity-files 3, parity-files 1, vault-parity 2). A listed difference is fixed in the vault, never in the session or the normalizer. If #396 merges first, read the edge job on a head that holds both.
+  - **1B-T13:**
+    - n1: keep `default_retention` (1 day success, 7 days error) on both Workflows bindings (`wrangler.vault.jsonc:35-36`), and pin it in `c1-shape.test.ts`. Without it, Paid's 30-day default makes `createOnce` count a retained id as started.
+    - n7: B13 pins only `workflows`, `containers` and `queues.consumers`. Extend it and `configFor` if the merged config gains `triggers.crons` or another consumer. If any other producer stays, the producers check (`vault-parity-files.db.test.ts:71`) becomes a containment check. Move `VAULT_CONFIG` and `PARITY_CONFIG` together.
+    - n8: `files-session.ts:17-18` and `vault-worker.ts:15` import `BASE`, the `Edge` type and `testSettings` from `edge-harness.ts`, which 1B-T13 deletes with the PostgreSQL edge. Keep all three exported from a module that survives.
+  - **snapshot-parity-window:**
+    - n2: day 8 on the NestJS side comes from the manifest sweep `gogospend_prune_expired_manifests` (`0010_sync.sql:216-226`), not the 30-day job retention. Open question (d) is closed: a resend after day 8 starts a new build under the same id. "Stuck pending row" applies to the first day only.
+    - n3: pending snapshots and exports older than a day turn failed on the vault (R33), never on NestJS. Name it beside n8.

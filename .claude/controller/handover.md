@@ -136,6 +136,26 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - **Promotion PR #381** (`promote/p4-t12`, based on `promote/1b-t8`). Stack #379 is now #373 → #378 → #380 → #381.
 - **App baseline at 712574d** (CI on #376's merge ref plus P4-T13): `test:unit` 956 (927 + 18 + 11), render 109 files and 1867 cases, web 4806; iOS not measured at the head (computed 5772: 5760 with 1D-T8 plus P4-T12's 12 modules).
 
+## Fourth usage-limit stop, 10 Nov about 09:50 to 13:50 (RESUMED at 13:50)
+- The previous account (sub5) hit its 5-hour limit; the session continues on another account.
+- **Failed at the stop:**
+  - the review workflows of #395 (P2-T12), #396 (fix-download-aborts) and #397 (download-pins);
+  - #392's fix-round confirmation;
+  - the 1B-T12 planner's fix-brief run (run 3).
+
+  alarm-hardening's implementer finished first (DONE at 14844b9).
+- **At 13:50:** the heavy lock was free, no jotbun test process was alive, and there had been no thermal sleep since 06:05.
+- **Resumed at 13:50.** Finished agents replay from cache.
+  - Review workflows:
+    - P2-T12: run wf_0cba99e1-318, task wlxc90ll5. The stack lens and ST1's skeptic are done; the frames lens and the synthesizer rerun.
+    - fix-download-aborts: run wf_49c67ce8-b3f, task wvpaxxksg. The fix lens is done (3 findings, none serious).
+    - download-pins: run wf_e153ae48-9d5, task wqohgoiyi. Everything reruns.
+    - #392's confirmation: run wf_4739381a-1ab, task wneoycf3d. Everything reruns.
+  - **The 1B-T12 planner** was restarted by T3 at the reset (run 4, a `limit-resume` task) and steered with the cutoff note.
+- **P2-T12's stack lens found a MAJOR, ST1, and its skeptic confirmed it.**
+  - The bug: on iOS with VoiceOver, double-tapping a card behind the front one opens the card in front. Each card's 200 pt accessibility frame is activated at its midpoint, which the next card covers.
+  - The web suite cannot see it. A fix round is expected once the synthesizer writes the verdict: likely `onAccessibilityTap`, so activation calls `onOpen` directly.
+
 ## Third usage-limit stop, 10 Nov about 08:23 (RESUMED at 08:27)
 - The previous account hit its 5-hour limit (it resets at 12:00). The session continues on another account.
 - Failed at the stop:
@@ -256,17 +276,112 @@ The list below is kept for the record.
     - **The review runs as a small Sonnet workflow** (run wf_fa4458e5-3d3, task woa7ka514): one reviewer, a skeptic for any blocker or major, and a synthesizer writing `reviews/tray-hardening.md`.
     - On approval and green CI: `merge_task_pr.sh 392 784667b` (no task id), then `promote_pr.sh tray-hardening 392`. **Then take P2-T16 off held.txt.**
     - **CI run 42738781210 (08:52) never started: GitHub billing** (Owner decisions waiting, first item). Once the owner fixes it, run `gh run rerun 42738781210 --repo mygogocash/jotbun` and check the nine jobs (render +6 cases).
+    - **The review approved at 09:25** (`reviews/tray-hardening.md`): no blocker or major, two minors and three nits. The reviewer reran 22 of 22 four times and 11 of the 34 mutants.
+    - **The controller folded m-1, m-2, n-1 and n-2 into a fix round on #392**, since CI cannot run before billing is fixed anyway. A separate follow-up PR would cost another CI run later.
+      - m-1 is a real but rare bug: a batched iOS end plus reopen calls `onClosed` while the tray is open. The fix is one line: read `shown`, not the ref.
+      - The others are test pins for surviving mutants X1, D2 and X4.
+      - n-3 goes to P2-T16 and P2-T20 (followups.md).
+    - **The tray-hardening planner** (thread 351b244a, run 3, from 09:25) writes `briefs/tray-hardening-fix.md`, with kit `scratch/tray-hardening-fix-planner/`, proven on 784667b merged with the head.
+    - **Fix brief READY at 10:01** (`briefs/tray-hardening-fix.md`; kit `scratch/tray-hardening-fix-planner/`, its sums 0 not OK, SHA256SUMS.base 3 OK on 784667b).
+      - Files: `Tray.tsx`, `Tray.render.test.tsx` (+4 cases, 26 for CI) and the receipt.
+      - F1 to F10 are accepted.
+        - F1: `if (!shown) closed.current?.()`, and the `showing` ref goes.
+        - F2: the Modal seam ends a held dismissal as `Modal.js` does.
+        - F3: m-1's case queues both updates in one `act`. The two-task form flaked once in about 110 loaded runs, and on correct code.
+      - RED 1 of 26 (m-1), GREEN 26, 40 of 40 mutants, proven on 784667b merged with d1111f8.
+    - **The fixer (Haiku max, 9c6f9ed4) was dispatched at 10:01** in the tray-hardening worktree; it merges the head into the branch first (Step 1.2).
+    - After DONE: push `fix/tray-hardening`, update #392's body (+4 cases, the fix round), and run a confirming Sonnet review. Then merge at the new head on green CI.
+    - **Fix round DONE: merge 33edab1 (the head at 6a727dc into the branch), then fix commit fc78376**, pushed at 10:11; #392's body is updated.
+      - RED 1 of 26 (m-1), GREEN 26 of 26 and 4 of 4, catalogue 18. 40 of 40 mutants, with output byte-identical to the planner's. `test:unit` 970, `test:app` 34.
+      - The controller checked both files against the fix kit's `real/` and the clean merge with the head.
+    - **The confirming Sonnet review runs as a workflow** (run wf_4739381a-1ab, task wv1qqqe83), writing `reviews/tray-hardening-confirm.md`.
+    - **On approval and green CI:** `merge_task_pr.sh 392 fc78376` (no task id), then `promote_pr.sh tray-hardening 392`. Then:
+      - take P2-T16 off held.txt;
+      - dispatch P2-T14;
+      - fix the receipt's stale Status and Base lines in a one-line commit if the confirming review lists them.
+
+      The push's CI run 42747590350 was refused for billing (0 steps run). After the fix, rerun that one: `gh run rerun 42747590350 --repo mygogocash/jotbun`.
+    - **Then:**
+      1. dispatch a Haiku fixer on `fix/tray-hardening`;
+      2. push the new head and update #392's body;
+      3. run a confirming Sonnet review;
+      4. merge at the new head on green CI.
+
+      The rerun command above then no longer applies; the push starts a fresh run.
+    - P2-T14 (held) tolerates the changed tray files: its Step 0.2 records a hash difference and goes on. P2-T20's planner was told to check tray-hardening by content.
     - New lesson: `git apply` run inside `scratch/` can silently apply nothing.
   - **P2-T14** (deda1216; WT p2-t14 on p2/t14-add-flow), the add flow, keypad and amount step, depth 17. It plans against today's `Tray` props, without editing `Tray.tsx`.
+    - **Brief READY at 09:09 (L), proven on b5aa2a7 with tray-hardening's three files laid over.**
+      - New: 9 files under `src/wallet/add/` and `dev/catalogue/wallet/addSections.tsx`. Shared:
+        - `index.ts`: import and spread right after the tray's; it merges cleanly with P2-T12's in either order;
+        - `draftText.test.ts`: `add.chip` joins `LATIN_LINES`.
+      - P1 to P17 are accepted.
+        - P3: `AmountFooter` goes in the tray's pinned footer; `AddStep` gains `transfer`; `confirmRows` takes `tc`.
+        - P9: the typed amount is never masked.
+        - P10: at AX5 the amount scrolls (no tray slot under the header).
+      - Kit `scratch/p2-t14-planner/`: check_kit at dbfde7d gives 29 OK, and the 2 `orig/` files are identical. RED 6 of 6 Node and 12 of 12 render; 92 of 92 mutants.
+    - **HELD until tray-hardening (#392) merges.** Its Step 0.2 checks tray-hardening's own lines, since its spread after the tray's fails the head's `ids.slice(-4)` case.
+      - When #392 merges: check_kit, create WT p2-t14 (install), and dispatch the implementer with P1 to P17 accepted.
+      - If #391's 13 `WalletLooks` cases are counted, N is 53 (its P15).
   - **P2-T12** (e328d240; WT p2-t12 on p2/t12-card-stack), the card stack and frames, depth 15. It takes P2-T11's K5 and decides P2-T9's spring overshoot.
     - **Brief READY at 08:55 (M), proven on b5aa2a7's app tree:**
       - New: `CardStack.tsx`, `cardFrames.tsx`, `CardStack.render.test.tsx` (12 cases), `cardStackNative.test.ts` (1) and `stackSections.tsx`. Shared: one import and one spread in `dev/catalogue/wallet/index.ts`, placed between the kit's sections and the tray's (plan order).
       - It passes with tray-hardening's files laid over (34 of 34) and with #391's (43 of 43), so it waits on nothing in flight. 59 of 59 mutants.
       - No drop is played on a new wallet: the drop and its overshoot go to P2-T21. The derived-look flash is the caller's (P2-T23, P2-T24).
-    - Its completion notice never reached the controller; the result was read from the thread. At 08:58 the controller told it that #391 merged (run 3, to confirm the proof on the new head). Dispatch its implementer once run 3 ends.
+    - Its completion notice never reached the controller; the result was read from the thread. At 08:58 the controller told it that #391 merged (run 3, to confirm the proof on the new head).
+    - **Run 3 rebuilt the proof on 76b329c** (after #391): the same RED messages, 59 of 59 mutants with the same lines in all three runs, and the focused files at 59.
+      - P1 to P18 are accepted. P3: the spread sits before the tray's, so the task waits on nothing. P11: the drop goes to P2-T21. P12: K5 is in the stack's test file.
+      - Kit `scratch/p2-t12-planner/`: check_kit at a58ea2a gives 17 OK, and the 2 `orig/` files are identical.
+    - The implementer (Haiku max, 5fcc0b84) was dispatched at 09:07 in a pre-installed p2-t12 from a58ea2a.
+    - **DONE at 90b5079 (base dbfde7d); PR #395 opened at 09:17 (issue #158).**
+      - RED 13 of 13, GREEN 12 of 12 and 1 of 1, neighbours 47, catalogue `bw-` 22.
+      - 59 of 59 mutants, with output byte-identical to the planner's.
+      - The controller checked the 6 files against the kit's `real/` and the clean merge with the head.
+    - **The review runs as a two-lens Opus workflow** (run wf_0cba99e1-318, task wy3myeu97). The lenses run one after the other, to keep about six agents: the stack and the press; then the frames, the catalogue merges, the tests and CI. A skeptic checks each blocker or major, and a synthesizer writes `reviews/P2-T12.md`.
+    - On approval and green CI: `merge_task_pr.sh 395 90b5079 P2-T12`, then `promote_pr.sh P2-T12 395`.
+    - CI run 42741688287 never started (billing, 0 steps run). Once the owner fixes it: `gh run rerun 42741688287 --repo mygogocash/jotbun`.
   - Each task's catalogue sections go in a list file of its own, with one spread in `dev/catalogue/wallet/index.ts` at its own anchor (not in `kitSections.tsx`).
+- **P2-T20** (4be9ff30; WT p2-t20 on p2/t20-wallets-list), the wallets list, the archived list and reorder, depth 14 (the deepest ready task). The planner (Opus xhigh) was dispatched at 09:09, when P2-T14's planner finished.
+  - It carries #391's `setOrder` caller notes (n3, n4, n5), P2-T19's double-send note and the host-tray rules.
+  - It plans `ReorderTray` on tray-hardening's `real/` files, and its `index.ts` spread after P2-T14's, proven to merge in either order or stacked on P2-T14.
+  - `app/spend/wallets.tsx` is a route, so its gate has `typecheck:routes`; CI runs the exports.
+  - **Brief READY at 10:05 (L), proven on dbfde7d with tray-hardening's and P2-T14's files laid over.**
+    - New: 6 files under `src/wallet/wallets/` and `walletListSections.tsx`. The route `app/spend/wallets.tsx` changes.
+    - Shared:
+      - `index.ts`: its spread goes after P2-T14's, so its diff applies only once P2-T14 has merged;
+      - `PlanningRoutes.render.test.tsx`: it mocks the new screen, since the route now loads `expo-crypto`.
+    - P1 to P18 are accepted.
+      - P4: one order, `frontFirst`. Each press calls `setOrder` once with a new array, and nothing seeds it from an effect.
+      - P6: unarchive goes through P2-T19's hook with a ref guard.
+      - P9: two `as Href` casts stay until P2-T21 and P2-T22 add their routes.
+      - P5: จัดเรียง is hidden with no account open.
+    - Kit `scratch/p2-t20-planner/`: 38 OK; its `index.ts` diff applies on P2-T14's `real/`. RED 4 of 4 Node and 13 of 16 render; 84 of 84 mutants. The gate includes `typecheck:routes` and `export:web`.
+  - **HELD until tray-hardening (#392) and P2-T14 merge** (Step 0 checks both by content). When both have merged: check_kit, create WT p2-t20, and dispatch the implementer with P1 to P18 accepted.
 - **The server lane: two planners dispatched at 08:15 from c8929f2 (Opus xhigh):**
   - **fix-download-aborts** (46ff8a6d; WT fix-download-aborts on fix/download-aborts): R97's `waitUntil` fix for every vault download, with a `wrangler dev` proof, plus every review pin followups.md gives it. It may split the test-only pins into `briefs/download-pins.md`. It must land before 1B-T13.
+    - **READY at 09:39 as two briefs that share no file** (they can run in parallel and merge in either order; together: 12 workers files, 392 passed and 1 todo):
+      - **A, `briefs/fix-download-aborts.md` (M).**
+        - Files: new `src/v1/files/slots.ts` (`untilReturned`) and `test/workers/download-aborts.test.ts` (5 cases); shared `downloads.ts`, `receipts.ts`, `uploads.ts` and `handler.ts` (awaited `headOf` returns).
+        - The `wrangler dev` proof: on the base, export, snapshot-chunk and receipt downloads each answer 503 after four aborted GETs; with the fix each is served whole (3 of 3).
+        - Retains and uploads do not leak locally (wrangler runs a handler on after its client leaves). Their wrappers rest on Cloudflare's documented cancellation (P3, P4).
+        - P1 to P11 are accepted, **P4 included**: the upload's place takes the wrapper too. Kit `scratch/fix-download-aborts-planner/`: check_kit at d1111f8 gives 31 OK, and the 4 `orig/` files are identical. 9 of 9 mutants.
+        - The implementer (Haiku max, c5d323ab) was dispatched at 09:39 in a pre-installed (`install-edge`) fix-download-aborts from d1111f8, under the heavy lock.
+        - **DONE at d0cc479 (base e7b61d7); PR #396 opened at 09:49 (no task issue).** RED 5 of 5, GREEN 5 of 5, 9 of 9 mutants; AFFECTED 11 files, 335 passed and 1 todo; `test:edge` 176; `build:edge` with every driver marker at 0. The `wrangler dev` proof on its tree: export, chunk and receipt served whole after four aborted GETs; retain 200 after four aborted; upload 202 after sixteen aborted. The controller checked the 6 files against the kit's `real/` (edge-relative paths) and the clean merge with the head.
+        - **The review runs as a two-lens Opus workflow** (run wf_49c67ce8-b3f, task wp4pexu50), lenses one after the other: the fix and its proof; the tests, shared files and CI. On approval and green CI: `merge_task_pr.sh 396 d0cc479` (no task id), then `promote_pr.sh fix-download-aborts 396`. CI run 42745408105 never started (billing, 0 steps run); rerun it once the owner fixes billing.
+      - **B, `briefs/download-pins.md` (L, test-only).**
+        - It edits `test/workers/exports.test.ts`, `attachments.test.ts`, `snapshots.test.ts`, `imports-review.test.ts` and `ai.test.ts`, with every review pin from the followups entry (the table in brief A).
+        - Kit `scratch/download-pins-planner/`: check_kit at d1111f8 gives 20 OK, and the 5 `orig/` files are identical. GREEN 242 of 242, 20 of 20 mutants.
+        - **Waits for a free slot.** Suggested WT download-pins on fix/download-pins. Read its planner calls before dispatch.
+        - It pins `attachmentsDueAt`'s guards, which alarm-hardening's m4 rewrites: whichever merges second keeps both.
+        - P1 to P11 are accepted. **The implementer (Haiku max, e43773f5) was dispatched at 10:05** in a pre-installed (`install-edge`) download-pins on fix/download-pins from 6a727dc, under the heavy lock. Its RED and mutation runs mutate source files: after a cut-off run, restore them with `git checkout`.
+        - **DONE at 3894e58 (base 402c1df); PR #397 opened at 10:16 (no task issue).**
+          - RED: the 17 review mutants together fail exactly 20 cases. GREEN 242 of 242. 20 of 20 mutants.
+          - `test:edge` 176; `build:edge` with every driver marker at 0. No source file changed.
+          - The controller checked the 5 files against the kit's `real/` and the clean merge with the head.
+        - **The review runs as a two-lens Opus workflow** (run wf_e153ae48-9d5, task wrj8alejz), lenses one after the other:
+          - do the pins pin what the reviews asked;
+          - robustness, and the merges with #396 and with alarm-hardening's `real/` files.
+        - On approval and green CI: `merge_task_pr.sh 397 3894e58` (no task id), then `promote_pr.sh download-pins 397`. CI run 42748341937 never started (billing, 0 steps run); rerun it once the owner fixes billing.
   - **1B-T12** (373c38a4; WT p1-1b-t12 on p1/1b-t12-files-parity), the files parity session against NestJS.
     - Docker stays stopped: CI's edge job runs `test:edge:db`. The planner reports BLOCKED if it truly needs a local PostgreSQL.
     - It decides n8 (the vault's 404 against NestJS's 30-day `expired`).
@@ -279,9 +394,60 @@ The list below is kept for the record.
       - Kit `scratch/1b-t12-planner/`: check_kit at cb9913c gives 58 OK, and the 2 `orig/` files are identical. The planner's proof: 12 of 12 mutants.
       - Its completion notice never reached the controller either; the result was read from the thread.
     - The implementer (Haiku max, 86c3bab3) was dispatched at 09:00 in a pre-installed (`install-edge`) p1-1b-t12 from cb9913c, under the heavy lock for workerd runs.
+    - **DONE at ef37c41 (base a58ea2a); PR #394 opened at 09:12 (issue #116).**
+      - RED: 2 of 4, with steps 3, 5, 15 and 17 listed and B13 failing on `workflows`. GREEN: 4 of 4 in three runs.
+      - The money smoke gives 49 statuses. 12 of 12 mutants. `test:edge` 15 files and 176 tests. `build:edge` with every PostgreSQL marker at 0.
+      - The controller checked the 4 files against the kit's `real/` and the clean merge with the head.
+    - **The real NestJS comparison runs only in CI's `edge` job (`test:edge:db`),** which waits on the billing fix. Do not merge before that job is green, even with an approving review.
+    - CI run 42741146172 never started (billing: every job has GitHub's annotation, with 0 steps run). Once the owner fixes it: `gh run rerun 42741146172 --repo mygogocash/jotbun`.
+    - **The review runs as a Sonnet workflow** (run wf_0443a275-2f4, task wfw8gewvt), with two lenses one after the other:
+      - A re-derives NestJS's 40 answers from `apps/api`, without trusting Appendix B;
+      - B covers the tests and the harness.
+
+      A skeptic checks each blocker or major, and a synthesizer writes `reviews/1B-T12.md`.
+    - On approval and a green CI: `merge_task_pr.sh 394 ef37c41 1B-T12`, then `promote_pr.sh 1B-T12 394`.
+    - **The review approved at 10:11** (`reviews/1B-T12.md`): no blocker or major, one minor and eight nits. Lens A re-derived all 40 NestJS answers; they hash identically to `expected-nest.json`. One link is unobserved: that NestJS answers what its code reads as. That is CI's `edge` job.
+    - **The controller folded m1, n4, n5 and n6 into a fix round on #394,** since CI cannot run before billing is fixed:
+      - m1: six sanity assertions, so a comparison cannot pass when both sides fail alike (probe V1);
+      - n4: the R92 message;
+      - n5: pin the default background `'on'`;
+      - n6: `persistTo` is no longer leaked.
+
+      The 1B-T12 planner (thread 373c38a4, run 3, from 10:11) writes `briefs/1B-T12-fix.md`, with kit `scratch/1b-t12-fix-planner/`. The other nits are in followups.md (1B-T13; snapshot-parity-window).
+    - The merge then waits for the fix round's confirming review and a green `edge` job, at the fix round's head (not ef37c41).
+    - **Fix brief READY at 14:00** (`briefs/1B-T12-fix.md`; kit `scratch/1b-t12-fix-planner/`, 64 OK, and its 4 `orig/` files equal the branch at ef37c41). It is test-only.
+      - m1 and n4 go in `vault-parity-files.db.test.ts`; n5 is a new case in `vault-parity.db.test.ts` (CI count 3); n6 is in `vault-worker.ts`. The receipt's P3 is corrected.
+      - F1 to F6 are accepted. F1: `nestRun[i]?.status`.
+      - Proven through a scratch-only harness that replays NestJS's answers:
+        - RED on ef37c41: V1 passes 3 of 3, and O1 fails nothing;
+        - GREEN: V1 fails with `expected 404 to be 202`, and O1 fails the new case;
+        - 19 of 19 mutants.
+    - **The fixer (Haiku max, 45781f76) was dispatched at 14:00** in the p1-1b-t12 worktree, under the heavy lock (`test:edge` included).
+    - After DONE: push, update #394's body, and run a confirming Sonnet review. Then merge at the new head once the `edge` job is green.
   - **alarm-hardening** (a37bdb47; WT alarm-hardening on fix/alarm-hardening), 1B-T11's m1, m2, m4 and nits n1 to n5 and n9. The planner (Opus xhigh) was dispatched at 08:58, when #391's review freed a slot.
     - It edits `jobs.ts`, `user-vault.ts` and `files-alarm.test.ts`, and for m4 `attachments.ts` (`attachmentsDueAt`) and `previews.ts` (`importsDueAt`).
     - fix-download-aborts pins those two functions' guards in its own test files. The planner was told to keep the guards exactly and to name the lines it changes, so the two merges can be ordered.
+    - **Brief READY at 10:07 (M), proven on cb9913c's edge tree.**
+      - Files: `jobs.ts`, `user-vault.ts`, `attachments.ts` and `previews.ts`; new migration `0004_alarm_bounds.sql`, with `migrations/index.ts` and `schema.ts`; `cloudflare-workers.d.ts` (`rowsRead`); `files-alarm.test.ts` and `vault-schema.test.ts`; the receipt.
+      - P1 to P14 are accepted, with **P6 recorded as R105** (`attachment_checks`, filled by four triggers).
+        - P1: `pruneSnapshots` runs last.
+        - P4: a held guard reports `delete_objects`.
+        - P5: `rearm`'s `.catch` clears `alarmAt` only if it still names that alarm.
+        - P7: `entity_heads_imports_idx`.
+        - P10: the prune list calls its functions at run time.
+      - At the review's sizes, `reschedule`'s per-write block goes from 1.7 ms to 0.04 ms (rows read 10,001 to 2, and 6,006 to 6).
+      - Kit `scratch/alarm-hardening-planner/`: check_kit at 402c1df gives 45 OK, and the 9 `orig/` files are identical. RED 9 of 49, GREEN 49, 28 of 28 mutants. The vault bundle grows by 5.53 kB.
+      - Lines changed against download-pins' pins: `attachments.ts` 346, 354, 365 and 369 (DU-1's guard at 370 untouched); `previews.ts` after 328, and 333, 344-345 and 347 (188 untouched). DU-1 and DU-2 pass on its code.
+    - **The implementer (Haiku max, 949cad13) was dispatched at 10:07** in a pre-installed (`install-edge`) alarm-hardening on fix/alarm-hardening from 402c1df, under the heavy lock.
+    - Housekeeping later: its P11 correction of 1B-T11's P14 (n9; `receipts/1B-T11.md:82`). This task's receipt carries it; a one-line note in 1B-T11's receipt is optional.
+    - **DONE at 14844b9 (base 06fdd97); PR #398 opened at 13:51 (no task issue).**
+      - RED 9 of 49 (on a table-only 0004 stub), GREEN 49 of 49, 28 of 28 mutants with verdicts matching the planner's.
+      - AFFECTED: 9 files, 261 passed and 1 todo. `test:edge` 176. The vault bundle is 1,676.57 kB.
+      - The controller checked the 10 files against the kit's `real/` (edge-relative paths) and the clean merge with the head.
+    - **The review runs as a two-lens Opus workflow** (run wf_3bcd2a1e-88c, task w64paq5ys), lenses one after the other:
+      - the alarm rules and 0004's schema change (R105);
+      - the tests, and the merges with #397, #396 and #394.
+    - On approval and green CI: `merge_task_pr.sh 398 14844b9` (no task id), then `promote_pr.sh alarm-hardening 398`. CI run 42771332803 never started (billing, 0 steps run); rerun it once the owner fixes billing.
 
 ## PR #371: the integration branch into main. The owner merged it on 9 Nov, 21:30 Bangkok, as afcf884
 - It was merged with a merge commit, so history is kept. The controller then fast-forwarded claude/p1a-vault-core to afcf884, which adds main's README and CHANGELOG, so the two branches were level.
@@ -482,6 +648,12 @@ To stop a chat session in the app: `sc chat stop <thread_id>` cancels its turn o
 
 ## Rulings this session
 R104 (10 Nov, 1B-T11's P2): a write never arms the vault alarm sooner than a minute ahead (`CALL_ALARM_DELAY_MS`, 60,000 ms), and never postpones an alarm already set sooner. The alarm's own rearm is exact, or a minute out after a failed job (P3).
+
+R105 (10 Nov, alarm-hardening's P6): the vault's `attachment_checks` table (migration 0004) lists every retained receipt that may have no holder, and `attachmentsDueAt` reads its safety net from that table alone.
+- Four triggers fill the table, on every SQL statement: a receipt inserted before any record holds it, a receipt set back to retained, a last holder deleted, and a last holder moved.
+- `pruneAttachments`' full pass over every retained receipt stays, once per alarm, and empties the table in the same block. A statement that bypassed the triggers is still found at the next alarm.
+- A migration that rebuilds `attachments` or its holders' table must recreate the four triggers.
+- `importsDueAt` reads the partial index `entity_heads_imports_idx`, whose terms its WHERE names literally (`LIVE_IMPORT_HEADS`).
   - Why: workerd refuses `setAlarm` at or before 0, which every release asks for (`delete_after = 0`), and in the Workers tests an alarm due at once fires itself, racing about 40 existing cases.
   - A person never sees the minute, and a burst of writes becomes one alarm. Because a write can only move the alarm earlier, a stream of writes cannot starve the jobs.
   - Later vault tasks that reason about alarm timing must expect it.
@@ -522,7 +694,7 @@ Merge each PR when its CI on the current head is green; close its issue by hand 
     - add a payment method or raise the Actions spending limit for the account that owns the repo;
     - or cut CI cost first. Each merged task runs CI twice today: the task PR, and its promotion PR into main on the same tree. P11's cheaper layouts are another way: fold `image` into `exports`, or split the section suites two ways.
     - Otherwise CI waits for the minutes to reset at the next billing date.
-  - **After the fix:** rerun each refused run (`gh run rerun <run> --repo mygogocash/jotbun`) and merge as each goes green.
+  - **After the fix:** rerun each refused run (`gh run rerun <run> --repo mygogocash/jotbun`) and merge as each goes green. Refused so far: 42747590350 (#392 at fc78376; its older 42738781210 on 784667b no longer matters), 42741146172 (#394), 42741688287 (#395), 42745408105 (#396), 42748341937 (#397) and 42771332803 (#398).
 - **ANSWERED (10 Nov, 06:2x): keep the nine-job CI, merge.** Below is the question as it was asked. The owner accepted about 33 billable minutes a run.
 - **(was) Actions minutes before ci-parallel-jobs merges.** The repo is private on the Free plan, which includes 2,000 Actions minutes a month.
   - Usage: 80 pull-request runs have happened since 1 Nov, about 1,400 billable minutes at today's roughly 18 per run, and each merged task now adds a promotion PR run. The controller cannot read the actual usage: GitHub's timing API reports 0, and the billing endpoint needs `admin:org`.

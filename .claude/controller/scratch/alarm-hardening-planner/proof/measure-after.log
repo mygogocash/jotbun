@@ -1,0 +1,18 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/alarm-hardening-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/alarm-hardening-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stdout | test/workers/zz-planner-measure.test.ts > m4 before and after > the per-write due-time reads at 30,000 records, 5000 held receipts and 3000 purged import heads
+measure 5000/3000: {"counts":[{"records":30000,"deleted":3000,"held":5000,"purgedImportHeads":3000}],"rowsRead":{"attachmentsDueAt":2,"importsDueAt":6},"msPerCall":{"attachmentsDueAt":0.005,"importsDueAt":0.01,"fileJobsDue":0.035,"nextDue":0.015,"rescheduleBlock":0.04}}
+
+ ✓ test/workers/zz-planner-measure.test.ts > m4 before and after > the per-write due-time reads at 30,000 records, 5000 held receipts and 3000 purged import heads 274ms
+stdout | test/workers/zz-planner-measure.test.ts > m4 before and after > the per-write due-time reads at 30,000 records, 20000 held receipts and 30000 purged import heads
+measure 20000/30000: {"counts":[{"records":30000,"deleted":3000,"held":20000,"purgedImportHeads":30000}],"rowsRead":{"attachmentsDueAt":2,"importsDueAt":6},"msPerCall":{"attachmentsDueAt":0.005,"importsDueAt":0.01,"fileJobsDue":0.03,"nextDue":0.3,"rescheduleBlock":0.365}}
+
+ ✓ test/workers/zz-planner-measure.test.ts > m4 before and after > the per-write due-time reads at 30,000 records, 20000 held receipts and 30000 purged import heads 1105ms
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  09:51:34
+   Duration  3.60s (transform 831ms, setup 1.63s, import 37ms, tests 1.38s, environment 0ms)
+

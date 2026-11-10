@@ -1,0 +1,12 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t12-fix-planner/tree/apps/edge
+
+ ✓ test/vault-parity-files.db.test.ts > the vault Worker stores, queues and serves files exactly like the NestJS v1 API 157ms
+ ✓ test/vault-parity-files.db.test.ts > the vault Worker runs without Workflows, queue consumers or containers (B13) 0ms
+ ✓ test/vault-parity-files.db.test.ts > the retired proof routes answer 404 on the vault Worker 4ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  13:56:12
+   Duration  2.55s (transform 231ms, setup 16ms, import 529ms, tests 1.89s, environment 0ms)
+

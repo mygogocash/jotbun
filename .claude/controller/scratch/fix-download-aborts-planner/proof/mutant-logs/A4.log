@@ -1,0 +1,47 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/tree/apps/edge
+
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > an export download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled or answered to a HEAD 254ms
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > a snapshot chunk download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled or answered to a HEAD 246ms
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > a receipt download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled or answered to a HEAD 243ms
+ × test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > a retain hands waitUntil a promise that is pending while it holds a copy slot and ends once the slot is back; a retain turned away for want of a slot hands over nothing 56ms
+   → expected [ [ 'retain, copy held', true ], …(6) ] to deeply equal [ Array(7) ]
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > an upload hands waitUntil a promise that is pending while it holds its place among the isolate's uploads and ends once it gives the place back 138ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  08:57:05
+   Duration  3.06s (transform 791ms, setup 1.56s, import 27ms, tests 938ms, environment 0ms)
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > a retain hands waitUntil a promise that is pending while it holds a copy slot and ends once the slot is back; a retain turned away for want of a slot hands over nothing
+AssertionError: expected [ [ 'retain, copy held', true ], …(6) ] to deeply equal [ Array(7) ]
+
+- Expected
++ Received
+
+@@ -1,9 +1,9 @@
+  [
+    [
+      "retain, copy held",
+-     false,
++     true,
+    ],
+    [
+      "retain",
+      200,
+      true,
+
+ ❯ test/workers/download-aborts.test.ts:298:19
+    296|       for (const slot of taken) slot()
+    297|     }
+    298|     expect(lines).toEqual([
+       |                   ^
+    299|       ['retain, copy held', false],
+    300|       ['retain', 200, true],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

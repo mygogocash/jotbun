@@ -1,0 +1,36 @@
+ledger {"records":12000}
+export (5394226 bytes): aborted GETs [200,200,200,200]; then GET 200 5394226 bytes, sha256 matches; 5 s later GET 200 5394226 bytes, sha256 matches
+snapshot chunks [1048270,1048405,1048367,1048373,1048408,1048383,830381]
+snapshot chunk (1048270 bytes): aborted GETs [200,200,200,200]; then GET 200 1048270 bytes, sha256 matches; 5 s later GET 200 1048270 bytes, sha256 matches
+receipt (4194304 bytes): aborted GETs [200,200,200,200]; then GET 200 4194304 bytes, sha256 matches; 5 s later GET 200 4194304 bytes, sha256 matches
+retain (12582912-byte copies, one took 117 ms, each aborted after 59 ms): aborted retains ["AbortError","AbortError","AbortError","AbortError"]; then another member's retain 200 {"command_id":"a51847a8-d83f-4cfe-aff2-d9ac86e349fc","entity_id":"b5847554-9ee6-; 5 s later 200 {"command_id":"f7afc577-b400-4e41-9d91-4b66392f9b65","entity_id":"a9a1d674-ee21-
+upload: aborted uploads {"AbortError":16}; then another member's upload 202 {"job_id":"af3b6842-d95a-8609-bbe1-9a9fc8f2f609","status":"queued","format":"csv; 5 s later 202 {"job_id":"a6c4663e-3701-8c04-be64-e665e92175c3","status":"queued","format":"csv
+answers {"export":"200","snapshot":"200","receipt":"200","retain":"200","upload":"202"}
+[wrangler:info] GET /v1/export-files/ARTohtEM8o-spEAjlOyxvpQAAAAAavJ7-P4uMvJ2tY7FI0righbs4ts 200 OK (5ms)
+[wrangler:info] GET /v1/export-files/ARTohtEM8o-spEAjlOyxvpQAAAAAavJ7-P4uMvJ2tY7FI0righbs4ts 200 OK (5ms)
+[wrangler:info] GET /v1/export-files/ARTohtEM8o-spEAjlOyxvpQAAAAAavJ7-P4uMvJ2tY7FI0righbs4ts 200 OK (5ms)
+[wrangler:info] GET /v1/export-files/ARTohtEM8o-spEAjlOyxvpQAAAAAavJ7-P4uMvJ2tY7FI0righbs4ts 200 OK (4ms)
+[wrangler:info] GET /v1/export-files/ARTohtEM8o-spEAjlOyxvpQAAAAAavJ7-P4uMvJ2tY7FI0righbs4ts 200 OK (6ms)
+[wrangler:info] GET /v1/export-files/ARTohtEM8o-spEAjlOyxvpQAAAAAavJ7-P4uMvJ2tY7FI0righbs4ts 200 OK (5ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/AdbY5MduIIG3q1h7luu_OjsAAAAAavJ7_-lRw0iwsf8TnonTxrbsPYI 200 OK (8ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/AdbY5MduIIG3q1h7luu_OjsAAAAAavJ7_-lRw0iwsf8TnonTxrbsPYI 200 OK (11ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/AdbY5MduIIG3q1h7luu_OjsAAAAAavJ7_-lRw0iwsf8TnonTxrbsPYI 200 OK (11ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/AdbY5MduIIG3q1h7luu_OjsAAAAAavJ7_-lRw0iwsf8TnonTxrbsPYI 200 OK (9ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/AdbY5MduIIG3q1h7luu_OjsAAAAAavJ7_-lRw0iwsf8TnonTxrbsPYI 200 OK (9ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/AdbY5MduIIG3q1h7luu_OjsAAAAAavJ7_-lRw0iwsf8TnonTxrbsPYI 200 OK (8ms)
+[wrangler:info] POST /v1/transactions/130ae6be-396d-4238-9f0d-126ff8b2f117/attachment 200 OK (56ms)
+[wrangler:info] GET /v1/attachment-files/Ae-NV-rEnkoTkMXY1rao0d8AAAAAavJ8Bpn3my89xTk2otuaK5XGwcQ 200 OK (5ms)
+[wrangler:info] GET /v1/attachment-files/Ae-NV-rEnkoTkMXY1rao0d8AAAAAavJ8Bpn3my89xTk2otuaK5XGwcQ 200 OK (5ms)
+[wrangler:info] GET /v1/attachment-files/Ae-NV-rEnkoTkMXY1rao0d8AAAAAavJ8Bpn3my89xTk2otuaK5XGwcQ 200 OK (4ms)
+[wrangler:info] GET /v1/attachment-files/Ae-NV-rEnkoTkMXY1rao0d8AAAAAavJ8Bpn3my89xTk2otuaK5XGwcQ 200 OK (4ms)
+[wrangler:info] GET /v1/attachment-files/Ae-NV-rEnkoTkMXY1rao0d8AAAAAavJ8Bpn3my89xTk2otuaK5XGwcQ 200 OK (5ms)
+[wrangler:info] GET /v1/attachment-files/Ae-NV-rEnkoTkMXY1rao0d8AAAAAavJ8Bpn3my89xTk2otuaK5XGwcQ 200 OK (4ms)
+[wrangler:info] POST /v1/transactions/5644c14a-7fbd-41d5-a452-474d31d4148e/attachment 200 OK (115ms)
+[wrangler:info] POST /v1/transactions/92d869b8-cdd3-4b9a-9df4-5b402e0229a9/attachment 200 OK (115ms)
+[wrangler:info] POST /v1/transactions/e4115d91-af79-44df-b9cd-8161d193dfa8/attachment 200 OK (112ms)
+[wrangler:info] POST /v1/transactions/fa5ee902-b8d8-43ef-806a-7d0d07015765/attachment 200 OK (113ms)
+[wrangler:info] POST /v1/transactions/5503db32-f837-4a43-a494-ee348b503027/attachment 200 OK (125ms)
+[wrangler:info] POST /v1/transactions/b5847554-9ee6-4259-86c5-169cedef767d/attachment 200 OK (10ms)
+[wrangler:info] POST /v1/transactions/a9a1d674-ee21-412b-8165-380b8bea3657/attachment 200 OK (12ms)
+[wrangler:info] POST /v1/imports 202 Accepted (15ms)
+[wrangler:info] POST /v1/imports 202 Accepted (16ms)

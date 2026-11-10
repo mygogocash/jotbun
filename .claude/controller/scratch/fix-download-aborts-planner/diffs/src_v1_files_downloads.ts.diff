@@ -1,0 +1,74 @@
+--- a/src/v1/files/downloads.ts
++++ b/src/v1/files/downloads.ts
+@@ -11,12 +11,15 @@ import type { V1Env } from '../env'
+ import type { VaultReply } from '../protocol'
+ import type { WorkerContext } from '../worker-routes'
+ import { RECEIPT_LIMITS } from './receipts'
++import { untilReturned } from './slots'
+ 
+ // File downloads the Worker streams from R2. Each download takes a slot first,
+ // as the API counts downloads per process; here the count is per isolate.
+ // A download asks the caller's vault, in one step, which stored file its grant
+ // names (the vault's refusal is the answer when it names none), then streams
+ // that object only while it matches what the vault recorded (matchingObject).
++// Each slot is taken through untilReturned, so the request stays alive until
++// the slot is back, even when the client goes away mid-download (ruling R97).
+ // 1B-T6 (serveExportFile), 1B-T8 (serveSnapshotChunk) and 1B-T9
+ // (serveReceiptFile) add their serve functions below, in that order, each
+ // under its own `// 1B-Tn:` line.
+@@ -51,14 +54,15 @@ export async function matchingObject(env: Pick<V1Env, 'OBJECTS'>, file: StoredFi
+  * that is not current or not this person's is the vault's 404. Then the CSV
+  * streams from R2 with its recorded length and its download name, its digest
+  * checked as it goes. At most EXPORT_SLOTS downloads stream at once in an
+- * isolate; more are 503 with a retry. The slot is returned when the body ends.
++ * isolate; more are 503 with a retry. The slot is returned when the body ends,
++ * fails or is cancelled, and the request lives until then (R97).
+  */
+ export async function serveExportFile(w: WorkerContext): Promise<Response | VaultReply> {
+   if (!w.vault) throw new Error('an export download needs a session')
+   const reply = await w.vault.call('exports.file', { params: { grant: w.params.grant ?? '' } })
+   if (!reply.ok) return reply
+   const file = reply.body as StoredExportFile
+-  const release = EXPORT_SLOTS.take()
++  const release = untilReturned(w, EXPORT_SLOTS.take())
+   try {
+     const body = await matchingObject(w.env, file)
+     const chunks = verifiedChunks(body, file.bytes, file.sha256)[Symbol.asyncIterator]()
+@@ -85,16 +89,15 @@ export const SNAPSHOT_SLOTS = new DownloadSlots(4)
+  * anything else is the vault's 404. Then a SNAPSHOT_SLOTS slot (503 with a
+  * retry when none is free), the object only while it matches its record (404
+  * otherwise), and the JSON streamed with its recorded length, its digest
+- * checked as it goes. The slot is returned when the body ends. A client that
+- * goes away mid-download keeps the slot in workerd (ruling R97): the follow-up
+- * fix-download-aborts fixes this download with the others.
++ * checked as it goes. The slot is returned when the body ends, fails or is
++ * cancelled, and the request lives until then (R97).
+  */
+ export async function serveSnapshotChunk(w: WorkerContext): Promise<Response | VaultReply> {
+   if (!w.vault) throw new Error('a snapshot chunk download needs a session')
+   const reply = await w.vault.call('snapshots.chunk', { params: { grant: w.params.grant ?? '' } })
+   if (!reply.ok) return reply
+   const file = reply.body as StoredFile
+-  const release = SNAPSHOT_SLOTS.take()
++  const release = untilReturned(w, SNAPSHOT_SLOTS.take())
+   try {
+     const body = await matchingObject(w.env, file)
+     const chunks = verifiedChunks(body, file.bytes, file.sha256)[Symbol.asyncIterator]()
+@@ -117,14 +120,15 @@ export async function serveSnapshotChunk(w: WorkerContext): Promise<Response | V
+  * chunk is read within downloadIdleMs before any header, so a failure up to
+  * then is 503 with a retry, never the failure's text; after it, a stall past
+  * downloadIdleMs or a body still running at downloadTotalMs cuts the
+- * connection. The slot is returned when the body ends.
++ * connection. The slot is returned when the body ends, fails or is
++ * cancelled, and the request lives until then (R97).
+  */
+ export async function serveReceiptFile(w: WorkerContext): Promise<Response | VaultReply> {
+   if (!w.vault || !w.claims) throw new Error('a receipt download needs a session')
+   const reply = await w.vault.call('attachments.file', { params: { grant: w.params.grant ?? '' } })
+   if (!reply.ok) return reply
+   const file = reply.body as StoredReceiptFile
+-  const release = RECEIPT_SLOTS.take(w.claims.accountId)
++  const release = untilReturned(w, RECEIPT_SLOTS.take(w.claims.accountId))
+   let chunks: AsyncIterator<Uint8Array> | undefined
+   try {
+     const body = await matchingObject(w.env, file)

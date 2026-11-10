@@ -1,0 +1,49 @@
+V1 KILLED (the prepare step skips the session, policy and account checks (anySession)) [workers 3 failed | 58 passed (61)] restored=True
+    failed: attachments.test.ts: a deleting account refuses retain, replace, remove, the grant and the download without reserving or copying, and the release step still runs
+    failed: attachments.test.ts: a session without the current terms is refused at the prepare step of a retain and a replace, and at a removal, and nothing is reserved or copied
+    failed: attachments.test.ts: a signed-out session is refused at the prepare step, and nothing is reserved or copied
+V2 KILLED (attachmentsDueAt counts a release whose object is still live) [workers 1 failed | 60 passed (61)] restored=True
+    failed: attachments.test.ts: a stamped release whose object is still live is not due yet; once the object is gone, the row is due 30 days after its release
+V3 KILLED (attachmentsDueAt ignores a retained receipt nothing holds (no safety net)) [workers 1 failed | 60 passed (61)] restored=True
+    failed: attachments.test.ts: a retained receipt that nothing holds makes attachmentsDueAt now, so the safety net is scheduled
+V4 KILLED (a waiting request polls with no deadline) [workers 1 failed | 60 passed (61)] restored=True
+    failed: attachments.test.ts: a request waiting on another copy of the same image gives up at copyDeadlineMs with 503
+V5 KILLED (unknown body fields are not refused) [workers 1 failed | 60 passed (61)] restored=True
+    failed: attachments.test.ts: an unknown body field is refused before anything is reserved or copied, as the API controller reads the body
+V6 KILLED (prepare copies the image of a preview that is no longer ready) [workers 1 failed | 60 passed (61)] restored=True
+    failed: attachments.test.ts: the image of a preview that is no longer ready is not copied, though its image is still published
+V7 KILLED (a copy in flight is answered 503 at once instead of waited for (1B-T9 M38)) [workers 2 failed | 59 passed (61)] restored=True
+    failed: attachments.test.ts: a second request for an image whose copy is held only waits, until the first attaches the receipt both then hold
+    failed: attachments.test.ts: two records retaining one image at once keep one receipt, made by one copy
+V8 KILLED (headOf cancels the body it drops instead of reading it to its end (R96's first wording)) [workers 3 failed | 134 passed (137)] restored=True
+    failed: attachments.test.ts: a HEAD on a receipt download answers its headers, reads its image to the end and gives its slot back (ruling R96)
+    failed: exports.test.ts: a HEAD on a download answers its headers, reads its file to the end and gives its slot back
+    failed: snapshots.test.ts: a HEAD on a chunk download answers its headers, reads its chunk to the end and gives its slot back
+V9 KILLED (headOf starts the read of the body it drops but answers before it ends) [workers 3 failed | 134 passed (137)] restored=True
+    failed: attachments.test.ts: a HEAD on a receipt download answers its headers, reads its image to the end and gives its slot back (ruling R96)
+    failed: exports.test.ts: a HEAD on a download answers its headers, reads its file to the end and gives its slot back
+    failed: snapshots.test.ts: a HEAD on a chunk download answers its headers, reads its chunk to the end and gives its slot back
+V10 KILLED (the entity read collects every row by spread before it encodes any) [workers 2 failed | 38 passed (40)] restored=True
+    failed: snapshots.test.ts: reads every row before the first R2 call
+    failed: snapshots.test.ts: ten times the yearly ledger builds and exports inside the memory budget
+V11 KILLED (the read does not check that the snapshot is still pending) [workers 1 failed | 39 passed (40)] restored=True
+    failed: snapshots.test.ts: a build of a snapshot that is no longer pending reads nothing and stores nothing
+V12 KILLED (the chunk download streams without verifiedChunks (no digest check as it streams)) [workers 1 failed | 39 passed (40)] restored=True
+    failed: snapshots.test.ts: a chunk whose stored bytes no longer match its digest, at the same length, fails as it streams, and gives its slot back
+V13 KILLED (reuse refuses a snapshot read exactly at the purge watermark (strict)) [workers 1 failed | 39 passed (40)] restored=True
+    failed: snapshots.test.ts: a snapshot read exactly at the purge revision, with nothing after the purge, is recorded, served and reused
+V14 KILLED (snapshotsDueAt's stale term counts every chunk row) [workers 1 failed | 39 passed (40)] restored=True
+    failed: snapshots.test.ts: a ready snapshot that is not stale is due only a week past its expiry, and an alarm with one leaves nothing due now
+V15 KILLED (pruneSnapshots makes a stale snapshot's tombstones due at once too) [workers 1 failed | 39 passed (40)] restored=True
+    failed: snapshots.test.ts: pruneSnapshots leaves a stale snapshot's tombstones their own day: keys deleted at its expiry are not made due again at once
+V16 KILLED (the correction's known-row check binds one ? per row id (R57)) [workers 1 failed | 63 passed (64)] restored=True
+    failed: imports-review.test.ts: a correction of 500 rows at once, the most a correction takes, binds its row ids as one parameter and is saved
+V17 KILLED (the correction's committed-row check binds one ? per row id (R57)) [workers 1 failed | 63 passed (64)] restored=True
+    failed: imports-review.test.ts: a correction of 500 rows at once, the most a correction takes, binds its row ids as one parameter and is saved
+V18 KILLED (the preview reads an upload that was never accepted) [workers 1 failed | 63 passed (64)] restored=True
+    failed: imports-review.test.ts: an upload that was never accepted (still receiving, or refused at intake) has no preview: 404, as the API answers
+V19 KILLED (the use step runs after the session ended (anySession)) [workers 1 failed | 40 passed (41)] restored=True
+    failed: ai.test.ts: a session signed out between the context step and the use is refused at the use: 401, no model call and no use spent
+V20 KILLED (Ask Bun's route makes its first step before it reads its input) [workers 2 failed | 39 passed (41)] restored=True
+    failed: ai.test.ts: a signed-in person without consent who sends a malformed body gets 422, as the PostgreSQL route parsed before AiService checked consent, with no vault call
+    failed: ai.test.ts: a signed-out session with a malformed body gets 422, with no vault call and no model call; a well-formed body is 401 at its first step

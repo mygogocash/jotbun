@@ -1,0 +1,90 @@
+
+> gogospend-app@0.1.0 test:unit
+> node scripts/test-unit.mjs src/wallet/tray/trayGesture.test.ts
+
+(node:94321) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/src/wallet/tray/trayGesture.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a pull of 120 pt, or a quick flick past 60 pt, closes the tray; a pull up never does (0.264ms)
+✔ each line is passed, never met: more than 120 pt, more than 60 pt, faster than 900 pt a second (0.047334ms)
+✔ the swipe runs on the JS runtime (0.068417ms)
+✔ what the web drops is wired for a phone: the screen reader's escape, the modal card, the title, the backdrop, the Modal, the keyboard and the cover (0.2545ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 109.840166
+
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/apps/app
+
+ ✓ src/wallet/tray/Tray.render.test.tsx > the tray is a named dialog, 8 pt from the edges, radius 34 71ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > close and the backdrop close it, and the title takes focus when it opens 10ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > while locked nothing closes it, and close says it is unavailable 11ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > at AX5 it opens full height 15ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > under reduced motion a new step shows at once 8ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > the card leaves before the Modal hides, then onClosed fires once 24ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > an onClosed given while the card leaves is the one called 7ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a hidden lock cover replaces the tray's content 11ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > under the lock cover nothing asks to close the tray 4ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a drag the lock cover cuts off is gone when the cover lifts 7ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a card that leaves stays where the finger let it go, even when the lock cover comes and goes 6ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > the main button is 54 pt tall, radius 16, ink with white text in light and light with ink text in dark; busy says its busy label 8ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > every control in the header is at least 44 pt 28ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > the swipe follows the finger down, springs back short of the line, and closes past it 15ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > the wallet's answer decides the swipe's spring back, not Reanimated's own setting (W6) 6ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a swipe the system cancels springs back, even past the line 6ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > at full motion the card springs up, and a step change morphs its height and ticks once; opening ticks nothing 10ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > opening at another step in one render, or a step change under the lock cover, ticks nothing 8ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > once the lock cover lifts a step change ticks, even when it lifted on the step it had under the cover 6ms
+ × src/wallet/tray/Tray.render.test.tsx > on a phone the card is the named dialog and the title takes focus, with or without a header; on iOS onClosed waits for the Modal's own dismissal 9ms
+   → with the title: expected [ 'dialog', 'true', null ] to deeply equal [ 'dialog', 'true', 'จดรายจ่าย' ]
+ ✓ src/wallet/tray/Tray.render.test.tsx > on iOS a dismissal that ends after the tray is shown again says nothing; the next one says it closed 12ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > on iOS a dismissal that ends in the commit that opens the tray again says nothing 371ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > on iOS a tray with no onClosed closes, its dismissal ends, and it opens again 15ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a text link is at least 44 pt, violet by default or ink, and says its words 8ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a header takes the title's place, and screen readers meet the title first 10ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > the catalogue's tray sections come after the kit's, and each tray opens at once 28ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 25 passed (26)
+   Start at  09:38:27
+   Duration  1.84s (transform 684ms, setup 38ms, import 915ms, tests 715ms, environment 75ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/work/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:94392) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/tray/Tray.render.test.tsx > on a phone the card is the named dialog and the title takes focus, with or without a header; on iOS onClosed waits for the Modal's own dismissal
+AssertionError: with the title: expected [ 'dialog', 'true', null ] to deeply equal [ 'dialog', 'true', 'จดรายจ่าย' ]
+
+- Expected
++ Received
+
+  [
+    "dialog",
+    "true",
+-   "จดรายจ่าย",
++   null,
+  ]
+
+ ❯ src/wallet/tray/Tray.render.test.tsx:662:111
+    660|     // The card is the dialog, named by the title (on the web the Moda…
+    661|     const card = found('tray');
+    662|     expect([card.getAttribute('role'), card.getAttribute('aria-modal')…
+       |                                                                                                               ^
+    663|     // VoiceOver lands on the title: one accessible header that says i…
+    664|     expect(focused.map(([node, kind]) => [kind, node?.getAttribute('ar…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,199 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ × test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > an export download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled or answered to a HEAD 92ms
+   → expected [ …(11) ] to deeply equal [ …(11) ]
+ × test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > a snapshot chunk download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled or answered to a HEAD 58ms
+   → expected [ …(11) ] to deeply equal [ …(11) ]
+ × test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > a receipt download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled or answered to a HEAD 43ms
+   → expected [ …(9) ] to deeply equal [ …(9) ]
+ × test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > a retain hands waitUntil a promise that is pending while it holds a copy slot and ends once the slot is back; a retain turned away for want of a slot hands over nothing 70ms
+   → expected [ [ 'retain, copy held', true ], …(6) ] to deeply equal [ Array(7) ]
+ × test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > an upload hands waitUntil a promise that is pending while it holds its place among the isolate's uploads and ends once it gives the place back 42ms
+   → expected [ …(2) ] to deeply equal [ …(2) ]
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > an export download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled or answered to a HEAD
+AssertionError: expected [ …(11) ] to deeply equal [ …(11) ]
+
+- Expected
++ Received
+
+@@ -1,20 +1,20 @@
+  [
+    [
+      "GET, body unread",
+      200,
+-     false,
++     true,
+    ],
+    [
+      "GET, body read to its end",
+      true,
+      true,
+    ],
+    [
+      "GET, body unread",
+      200,
+-     false,
++     true,
+    ],
+    [
+      "GET, body cancelled",
+      true,
+    ],
+
+ ❯ test/workers/download-aborts.test.ts:210:19
+    208|     const grant = (await (await v1.as(user).get(`/v1/exports/${exportI…
+    209|     const lines = await pinnedDownload({ v1, user, bodies, url: grant.…
+    210|     expect(lines).toEqual(PINNED(4))
+       |                   ^
+    211|   }, 30_000)
+    212|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > a snapshot chunk download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled or answered to a HEAD
+AssertionError: expected [ …(11) ] to deeply equal [ …(11) ]
+
+- Expected
++ Received
+
+@@ -1,20 +1,20 @@
+  [
+    [
+      "GET, body unread",
+      200,
+-     false,
++     true,
+    ],
+    [
+      "GET, body read to its end",
+      true,
+      true,
+    ],
+    [
+      "GET, body unread",
+      200,
+-     false,
++     true,
+    ],
+    [
+      "GET, body cancelled",
+      true,
+    ],
+
+ ❯ test/workers/download-aborts.test.ts:233:19
+    231|       slots: 4,
+    232|     })
+    233|     expect(lines).toEqual(PINNED(4))
+       |                   ^
+    234|   }, 30_000)
+    235|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > a receipt download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled or answered to a HEAD
+AssertionError: expected [ …(9) ] to deeply equal [ …(9) ]
+
+- Expected
++ Received
+
+@@ -1,20 +1,20 @@
+  [
+    [
+      "GET, body unread",
+      200,
+-     false,
++     true,
+    ],
+    [
+      "GET, body read to its end",
+      true,
+      true,
+    ],
+    [
+      "GET, body unread",
+      200,
+-     false,
++     true,
+    ],
+    [
+      "GET, body cancelled",
+      true,
+    ],
+
+ ❯ test/workers/download-aborts.test.ts:245:19
+    243|     // The account's two receipt download slots (RECEIPT_SLOTS, per ac…
+    244|     const lines = await pinnedDownload({ v1, user, bodies, url: grant.…
+    245|     expect(lines).toEqual(PINNED(2))
+       |                   ^
+    246|   }, 30_000)
+    247|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > a retain hands waitUntil a promise that is pending while it holds a copy slot and ends once the slot is back; a retain turned away for want of a slot hands over nothing
+AssertionError: expected [ [ 'retain, copy held', true ], …(6) ] to deeply equal [ Array(7) ]
+
+- Expected
++ Received
+
+@@ -1,9 +1,9 @@
+  [
+    [
+      "retain, copy held",
+-     false,
++     true,
+    ],
+    [
+      "retain",
+      200,
+      true,
+
+ ❯ test/workers/download-aborts.test.ts:298:19
+    296|       for (const slot of taken) slot()
+    297|     }
+    298|     expect(lines).toEqual([
+       |                   ^
+    299|       ['retain, copy held', false],
+    300|       ['retain', 200, true],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > an upload hands waitUntil a promise that is pending while it holds its place among the isolate's uploads and ends once it gives the place back
+AssertionError: expected [ …(2) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+@@ -1,9 +1,9 @@
+  [
+    [
+      "upload, body stalled",
+-     false,
++     true,
+    ],
+    [
+      "upload",
+      202,
+      true,
+
+ ❯ test/workers/download-aborts.test.ts:322:19
+    320|     const reply = await accepted
+    321|     lines.push(['upload', reply.status, await ended(ENDED_MS), uploads…
+    322|     expect(lines).toEqual([
+       |                   ^
+    323|       ['upload, body stalled', false],
+    324|       ['upload', 202, true, 0],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed (5)
+   Start at  08:56:19
+   Duration  3.16s (transform 1.15s, setup 2.11s, import 37ms, tests 305ms, environment 0ms)
+

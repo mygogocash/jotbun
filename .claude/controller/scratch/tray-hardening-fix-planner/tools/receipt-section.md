@@ -1,0 +1,26 @@
+## Fix round: the review's m-1, m-2, n-1 and n-2
+
+- **The review:** `.claude/controller/reviews/tray-hardening.md` (Sonnet; Approved, no blocker or major). The controller folded m-1, m-2, n-1 and n-2 into PR #392 before it merges; n-3 stays a note for P2-T16. Brief: `.claude/controller/briefs/tray-hardening-fix.md` (rulings F1 to F10).
+- **Base:** `784667b` merged with `origin/claude/p1a-vault-core` at `<base>` as `<merge commit>`. It brings #391 (`apps/app/src/wallet/looks/WalletLooksProvider.tsx` and its test) <and anything else it lists>; nothing under `apps/app/src/wallet/tray/`. `shasum -a 256 -c` against the planner's `SHA256SUMS.base` printed 3 `OK` lines after the merge.
+- **m-1 (code):** the late iOS dismissal's guard read a ref of `shown` that a passive effect refreshed. `Modal.js` calls `onDismiss` from a `setState` callback in the layout phase of the commit that renders UIKit's end, before that commit's effects run, so when a reopen was batched into that commit the ref still read the hide, and `onClosed` fired with the tray open (the review's R-d, R-d2, R-d3, R-d5 and R-d5b). `dismissed` now reads this render's `shown` (`if (!shown) closed.current?.()`), and the `showing` ref is gone. A new case runs the review's R-d5b order: UIKit's end, then a tap on add, both pending before React renders, so one commit holds both (queued inside one `act`, the brief's F3).
+- **m-2, n-1 and n-2 (cases):** a card that leaves stays where the finger let it go, also when the lock's cover comes and goes during the exit (mutant X1); once the cover lifts on the step it had under the cover, a step change ticks (D2); on iOS a tray with no `onClosed` closes, its dismissal ends without throwing, and it opens again (X4). The test file's Modal seam now ends a held dismissal as `Modal.js` does: a `setState` callback, in the layout phase of the commit that renders it.
+- **Files:** modified `apps/app/src/wallet/tray/Tray.tsx` (316 lines before, 317 after), `apps/app/src/wallet/tray/Tray.render.test.tsx` (713 before, 817 after; 22 cases before, 26 after) and this receipt. `trayGesture.test.ts` is unchanged.
+- **RED to GREEN:**
+  - RED (the final test file over `784667b`'s `Tray.tsx`): `typecheck:app` `<result>`; `Tray.render.test.tsx` `<counts>`; m-1's case fails on its assertion (`<n>` `AssertionError`, no module or type error). The three other new cases pass: they pin code that is right, and fail on their mutants X1, D2 and X4 instead.
+  - GREEN: `typecheck:app` `<result>`; `trayGesture.test.ts` `<counts>`; `Tray.render.test.tsx` `<counts>`, no stderr; the catalogue's wallet sections `<counts>`.
+- **Mutation check:** the planner's runner (`.claude/controller/scratch/tray-hardening-fix-planner/tools/mutants.py`), 40 mutants, each applied alone, run against both of the tray's test files and restored (SHA-256 checked): `<killed> killed, <survived> survived`. `S/mutants.out` `<is identical to / differs from>` the planner's `logs/mutants.out`.
+  - Round one's 34, with H2, H3 and H4 written again for the new guard.
+  - H12 (the guard reads a ref an effect refreshes, as `784667b` did): killed by m-1's case.
+  - X1 (m-2), D2 (n-1) and X4 (n-2), the review's survivors, and D1 and X2 (the two effects' other dependencies).
+- **Gate** (worktree root; R100's fast local gate; logs in `.claude/controller/scratch/tray-hardening-fix/`):
+  - `typecheck:app`: `<result>`.
+  - Focused: `trayGesture.test.ts` `<counts>`; `Tray.render.test.tsx` `<counts>`; the catalogue's wallet sections `<counts>`.
+  - `test:app`: `<counts>`. `test:unit`: `<counts>`.
+  - `git diff --check`: `<result>`. The check against `origin/claude/p1a-vault-core...HEAD` is in the final message.
+  - CI (R100): the full `test:render` suite (with `Tray.render.test.tsx` at 26 cases) and the iOS export, once GitHub Actions runs again.
+- **SKIPPED:** as in the first round. The device check for a quick reopen on iOS should also ask whether React Native 0.88 on Fabric gives a press a discrete lane (how likely m-1's window was).
+- **Deviations:** <none, or your own>.
+- **Notes for later tasks:**
+  - P2-T16 (the review's n-3): on iOS `onClosed` can come twice for two hides, and not at all for a Modal that never presented. `whenClosed` treats a second call as nothing and must not wait on one call per hide; its device check should ask whether UIKit sends a dismissal for a present it refused during a dismissal under way. Keep `whenClosed`'s queue in a ref: iOS's `onClosed` is the one the commit before the end's left.
+  - P2-T16: the exit position is now pinned here; its case for a swipe during a save can drive `dragThrough()`.
+  - Any later change to the iOS path of `Tray.tsx`: m-1's case queues UIKit's end and the tap inside one `act`, so one commit holds both (the brief's F3). Keep it so: on two separate tasks it passes or fails by the scheduler's timing.

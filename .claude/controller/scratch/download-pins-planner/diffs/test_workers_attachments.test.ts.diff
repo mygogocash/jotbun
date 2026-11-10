@@ -1,0 +1,300 @@
+--- a/test/workers/attachments.test.ts
++++ b/test/workers/attachments.test.ts
+@@ -1,7 +1,9 @@
+ // Receipt attachments (1B-T9). Ports the 45 cases of
+ // apps/api/src/attachments/attachments.integration.spec.ts under the
+ // not-applicable rule (40 ported, some in changed form; 5 not applicable),
+-// then the plan's six cases and the planner's three. Images come from
++// then the plan's six cases, the planner's four, the controller's two R96
++// cases (a HEAD, and refused downloads), and at the end the 1B-T9 review's
++// pins (brief download-pins: m-1, m-3 and n-1 to n-4). Images come from
+ // seedImportImage (a parsed receipt photo's preview, written straight into the
+ // vault). The Worker reaches R2 through a hooked bucket, so a case can watch or
+ // change what the copy and the download see, as the API spec patches its
+@@ -1283,24 +1285,43 @@ describe('receipt downloads (P2c review fixes M3, minor 1)', () => {
+     }
+   })
+ 
+-  it('a HEAD on a receipt download answers its headers and gives its slot back (ruling R96)', async () => {
++  it('a HEAD on a receipt download answers its headers, reads its image to the end and gives its slot back (ruling R96)', async () => {
+     const kit = await setup()
+     const { user, records } = await memberWithRecords(kit)
+     // Large enough to stream in many chunks: a small body drains into the response on its own and frees its slot anyway.
+     const large = await seedImportImage(user, { bytes: new Uint8Array(256 * 1024).map((_, i) => (i * 31 + 7) & 0xff) })
+     await retained(kit, user, records[0], large, 1)
+     const grant = (await grantOf(kit.v1, user, large.attachmentId)).body as AttachmentGrant
+-    const heads: [number, string | null][] = []
+-    // More HEADs than the account's two download slots.
+-    for (let i = 0; i < 3; i += 1) {
+-      const head = await kit.v1.as(user).request('HEAD', grant.url)
+-      heads.push([head.status, head.headers.get('content-length')])
+-      await head.arrayBuffer()
++    // Each download's body has its own byte counter, so each HEAD's entry proves its own read (the 1B-T9 review's
++    // m-2, probe HD-1; the export and chunk HEAD cases count the same way).
++    const reads: number[] = []
++    kit.hooks.get = async (key, real) => {
++      const found = await real()
++      if (!found || !key.startsWith('receipt/')) return found
++      const slot = reads.push(0) - 1
++      const body = found.body as unknown as AsyncIterable<Uint8Array>
++      const counted = (async function* () {
++        for await (const chunk of body) {
++          reads[slot] += chunk.byteLength
++          yield chunk
++        }
++      })()
++      return { key: found.key, size: found.size, uploaded: found.uploaded, customMetadata: found.customMetadata, httpMetadata: found.httpMetadata, body: counted, arrayBuffer: () => found.arrayBuffer() } as unknown as Got
++    }
++    try {
++      const heads: [number, string | null, number, number][] = []
++      // More HEADs than the account's two download slots.
++      for (let i = 0; i < 3; i += 1) {
++        const head = await kit.v1.as(user).request('HEAD', grant.url)
++        heads.push([head.status, head.headers.get('content-length'), (await head.arrayBuffer()).byteLength, reads[i]])
++      }
++      expect(heads).toEqual([0, 1, 2].map(() => [200, String(large.bytes.length), 0, large.bytes.length]))
++      const after = await download(kit.v1, user, grant.url)
++      expect([after.status, after.complete]).toEqual([200, true])
++      expect(after.body).toEqual(large.bytes)
++    } finally {
++      kit.reset()
+     }
+-    expect(heads).toEqual([0, 1, 2].map(() => [200, String(large.bytes.length)]))
+-    const after = await download(kit.v1, user, grant.url)
+-    expect([after.status, after.complete]).toEqual([200, true])
+-    expect(after.body).toEqual(large.bytes)
+   })
+ 
+   it('downloads refused after they took a slot give the slot back', async () => {
+@@ -1647,3 +1668,231 @@ describe('1B-T9: the planner', () => {
+     expect(await vaultRows(user, 'SELECT status FROM vault_objects WHERE key = ?', copy.key)).toEqual([{ status: 'reserved' }])
+   })
+ })
++
++// ===========================================================================
++// The 1B-T9 review's pins (brief download-pins). Each is the review's probe,
++// adapted to this file's helpers; its label is in a comment.
++// ===========================================================================
++
++/** The VAULT binding, with the kind of every prepare step's reply recorded in `kinds` (the review's observedVault). */
++function preparesSeen(kinds: string[]): DurableObjectNamespace<UserVault> {
++  const real = env.VAULT
++  return new Proxy(real, {
++    get(target, prop) {
++      if (prop === 'get') {
++        return (id: DurableObjectId, options?: unknown) => {
++          const stub = (target.get as (...args: unknown[]) => DurableObjectStub<UserVault>)(id, options)
++          return new Proxy(stub, {
++            get(s, p) {
++              if (p === 'call') {
++                return async (call: VaultCall) => {
++                  const reply = await s.call(call)
++                  if (call.route === 'attachments.prepare') kinds.push(reply.ok ? (reply.body as { kind: string }).kind : String(reply.status))
++                  return reply
++                }
++              }
++              const value = Reflect.get(s, p)
++              return typeof value === 'function' ? value.bind(s) : value
++            },
++          })
++        }
++      }
++      const value = Reflect.get(target, prop)
++      return typeof value === 'function' ? value.bind(target) : value
++    },
++  }) as DurableObjectNamespace<UserVault>
++}
++
++describe('the 1B-T9 review: prepare checks the session, the policy and the account before it reserves or copies (m-1)', () => {
++  it('a signed-out session is refused at the prepare step, and nothing is reserved or copied', async () => {
++    // Probe AC-1.
++    const kit = await setup()
++    const { user, records } = await memberWithRecords(kit)
++    const image = await seedImportImage(user)
++    expect((await kit.v1.as(user).post('/v1/me/logout')).status).toBe(204)
++    const res = await retain(kit.v1, user, records[0], { attachment_id: image.attachmentId, ...CONSENT }, 1)
++    expect([res.status, res.body.code]).toEqual([401, 'SESSION_REQUIRED'])
++    expect(await receiptRows(user)).toEqual([])
++    expect(kit.receiptWrites()).toBe(0)
++  })
++
++  it('a session without the current terms is refused at the prepare step of a retain and a replace, and at a removal, and nothing is reserved or copied', async () => {
++    // Probe AC-2: terms v2 is published and required, and the person accepted only v1.
++    const kit = await setup()
++    const { user, records } = await memberWithRecords(kit)
++    const image = await seedImportImage(user)
++    const v2 = { kind: 'terms' as const, version: 2, required: true, published_at: '2026-10-25T00:00:00.000Z', text: { th: 'ข้อกำหนด 2', en: 'Terms 2' } }
++    const counted = { writes: 0 }
++    const later = await startV1({ policies: [...TEST_POLICIES, v2], client_versions: { ios: '1.0.0', android: '1.0.0' } }, { env: { OBJECTS: hookedBucket({}, counted) } })
++    try {
++      for (const res of [
++        await retain(later, user, records[0], { attachment_id: image.attachmentId, ...CONSENT }, 1),
++        await replace(later, user, records[0], { attachment_id: image.attachmentId, ...CONSENT }, 1),
++        await remove(later, user, records[0], 1),
++      ]) {
++        expect([res.status, res.body.code]).toEqual([403, 'POLICY_ACCEPTANCE_REQUIRED'])
++      }
++      expect(await receiptRows(user)).toEqual([])
++      expect(counted.writes).toBe(0)
++    } finally {
++      // Back to the file's config (terms v1 only) for the cases after this one.
++      await setup()
++    }
++  })
++
++  it('a deleting account refuses retain, replace, remove, the grant and the download without reserving or copying, and the release step still runs', async () => {
++    // Probe AC-3.
++    const kit = await setup()
++    const { user, records } = await memberWithRecords(kit, 2)
++    const image = await seedImportImage(user)
++    const other = await seedImportImage(user)
++    await retained(kit, user, records[0], image, 1)
++    const grant = (await grantOf(kit.v1, user, image.attachmentId)).body as AttachmentGrant
++    const before = await receiptRows(user)
++    await vaultExec(user, "UPDATE account_state SET status = 'deleting'")
++    const answers = [
++      await retain(kit.v1, user, records[1], { attachment_id: other.attachmentId, ...CONSENT }, 1),
++      await replace(kit.v1, user, records[0], { attachment_id: other.attachmentId, ...CONSENT }, 2),
++      await remove(kit.v1, user, records[0], 2),
++      await grantOf(kit.v1, user, image.attachmentId),
++      await json(await kit.v1.as(user).get(grant.url)),
++    ]
++    expect(answers.map((a) => [a.status, a.body.code])).toEqual(Array.from({ length: 5 }, () => [403, 'ACCOUNT_UNAVAILABLE']))
++    expect(await receiptRows(user)).toEqual(before)
++    expect(kit.receiptWrites()).toBe(1)
++    // Release gives back only a request's own unused copy, so it runs even now, and changes nothing here.
++    expect(await stepCall(user, 'attachments.release', { key: before[0].key })).toMatchObject({ ok: true, status: 200 })
++    expect(await receiptRows(user)).toEqual(before)
++  })
++})
++
++describe('the 1B-T9 review: attachmentsDueAt keeps both of its guards (m-3, R37)', () => {
++  it('a stamped release whose object is still live is not due yet; once the object is gone, the row is due 30 days after its release', async () => {
++    // Probe DU-1: without "object gone" the alarm would come back at once for a row pruneAttachments cannot drop yet.
++    const kit = await setup()
++    const { user, records } = await memberWithRecords(kit)
++    const image = await seedImportImage(user)
++    await retained(kit, user, records[0], image, 1)
++    expect((await remove(kit.v1, user, records[0], 2)).status).toBe(200)
++    const t0 = Date.now()
++    await prune(user, t0)
++    const dueAt = () => runInDurableObject(vaultOf(user), (_vault, state) => attachmentsDueAt(fileAt(state, t0)))
++    expect(await dueAt()).toBeNull()
++    await sweep(user, t0)
++    expect(await dueAt()).toBe(t0 + 30 * DAY)
++  })
++
++  it('a retained receipt that nothing holds makes attachmentsDueAt now, so the safety net is scheduled', async () => {
++    // Probe DU-2: the hold is removed with its release trigger dropped, as a row the trigger missed would look.
++    const kit = await setup()
++    const { user, records } = await memberWithRecords(kit)
++    const image = await seedImportImage(user)
++    await retained(kit, user, records[0], image, 1)
++    await runInDurableObject(vaultOf(user), (_vault, state) => {
++      state.storage.transactionSync(() => {
++        const sql = state.storage.sql
++        const trigger = sql.exec<{ sql: string }>("SELECT sql FROM sqlite_master WHERE type = 'trigger' AND name = 'transaction_attachments_unheld_delete'").one().sql
++        sql.exec('DROP TRIGGER transaction_attachments_unheld_delete')
++        sql.exec('DELETE FROM transaction_attachments WHERE transaction_id = ?', records[0])
++        sql.exec(trigger)
++      })
++    })
++    const t0 = Date.now()
++    expect(await runInDurableObject(vaultOf(user), (_vault, state) => attachmentsDueAt(fileAt(state, t0)))).toBe(t0)
++  })
++})
++
++describe('the 1B-T9 review: the copy path (n-1 to n-4)', () => {
++  it('a request waiting on another copy of the same image gives up at copyDeadlineMs with 503', async () => {
++    // Probe CP-1 (n-1): the first copy is held; the second waits, then answers 503 at its deadline (400 ms here).
++    const kit = await setup()
++    const { user, records } = await memberWithRecords(kit, 2)
++    const image = await seedImportImage(user)
++    const hold = gate()
++    const inside = gate()
++    kit.hooks.get = async (key, real) => {
++      if (key.startsWith('import_image/')) {
++        inside.open()
++        await hold.opened
++      }
++      return real()
++    }
++    try {
++      const first = retain(kit.v1, user, records[0], { attachment_id: image.attachmentId, ...CONSENT }, 1)
++      await inside.opened
++      const started = Date.now()
++      const second = await withLimits({ copyDeadlineMs: 400 }, () => retain(kit.v1, user, records[1], { attachment_id: image.attachmentId, ...CONSENT }, 1))
++      expect([second.status, second.body.code, second.body.retry_after_seconds]).toEqual([503, 'SERVICE_UNAVAILABLE', 5])
++      expect(Date.now() - started).toBeLessThan(3_000)
++      hold.open()
++      expect((await first).status).toBe(200)
++    } finally {
++      hold.open()
++      kit.reset()
++    }
++  }, 15_000)
++
++  it('an unknown body field is refused before anything is reserved or copied, as the API controller reads the body', async () => {
++    // Probe AC-5 (n-2).
++    const kit = await setup()
++    const { user, records } = await memberWithRecords(kit)
++    const image = await seedImportImage(user)
++    const res = await retain(kit.v1, user, records[0], { attachment_id: image.attachmentId, ...CONSENT, prepared: { key: 'x', bytes: 1, sha256: 'ab' } }, 1)
++    expect([res.status, res.body.code]).toEqual([422, 'UNKNOWN_FIELD'])
++    expect(await receiptRows(user)).toEqual([])
++  })
++
++  it('the image of a preview that is no longer ready is not copied, though its image is still published', async () => {
++    // Probe CP-2 (n-3): prepare's source query keeps `p.status = 'ready'`.
++    const kit = await setup()
++    const { user, records } = await memberWithRecords(kit)
++    const image = await seedImportImage(user)
++    await vaultExec(user, "UPDATE import_previews SET status = 'expired', expired_at = ? WHERE job_id = ?", new Date().toISOString(), image.jobId)
++    const res = await retain(kit.v1, user, records[0], { attachment_id: image.attachmentId, ...CONSENT }, 1)
++    expect([res.status, res.body.message_key]).toEqual([422, 'errors.attachment_expired'])
++    expect(await receiptRows(user)).toEqual([])
++    expect(kit.receiptWrites()).toBe(0)
++  })
++
++  it('a second request for an image whose copy is held only waits, until the first attaches the receipt both then hold', async () => {
++    // Probe RB-2 (n-4): `two records retaining one image at once ...` above gives the second request 250 ms to ask;
++    // this case waits until the vault has told it `wait` twice, so its poll is exercised on every run.
++    const hooks: BucketHooks = {}
++    const counted = { writes: 0 }
++    const prepares: string[] = []
++    const v1 = await startV1(undefined, { env: { OBJECTS: hookedBucket(hooks, counted), VAULT: preparesSeen(prepares) } })
++    const money = moneyFixtures(v1)
++    const user = await money.member()
++    const wallet = await money.wallet(user)
++    const records: string[] = []
++    for (let i = 0; i < 2; i += 1) records.push(await money.record(user, { type: 'expense', amount_minor: String(6500 + i), occurred_on: '2026-03-01', wallet_id: wallet, category_id: builtinId(user, 'food') }))
++    const image = await seedImportImage(user)
++    const hold = gate()
++    const inside = gate()
++    let heads = 0
++    hooks.head = async (key, real) => {
++      if (key.startsWith('receipt/') && (heads += 1) === 1) {
++        inside.open()
++        await hold.opened
++      }
++      return real()
++    }
++    try {
++      const first = retain(v1, user, records[0], { attachment_id: image.attachmentId, ...CONSENT }, 1)
++      await inside.opened
++      const second = retain(v1, user, records[1], { attachment_id: image.attachmentId, ...CONSENT }, 1)
++      for (let i = 0; i < 200 && prepares.filter((kind) => kind === 'wait').length < 2; i += 1) await delay(10)
++      expect(prepares.filter((kind) => kind === 'wait').length).toBeGreaterThanOrEqual(2)
++      expect(await receiptRows(user)).toEqual([expect.objectContaining({ status: 'reserved', due: false })])
++      hold.open()
++      expect([(await first).status, (await second).status]).toEqual([200, 200])
++    } finally {
++      hold.open()
++    }
++    expect(counted.writes).toBe(1)
++    expect([prepares[0], prepares[prepares.length - 1]]).toEqual(['copy', 'none'])
++    expect(await receiptRows(user)).toEqual([expect.objectContaining({ status: 'published', forever: true })])
++    expect(await vaultRows(user, 'SELECT id FROM attachments')).toHaveLength(1)
++    expect(await heldBy(user, image.attachmentId)).toEqual([...records].sort())
++  })
++})

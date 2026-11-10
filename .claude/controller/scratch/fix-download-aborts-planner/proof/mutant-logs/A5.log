@@ -1,0 +1,47 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/tree/apps/edge
+
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > an export download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled or answered to a HEAD 264ms
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > a snapshot chunk download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled or answered to a HEAD 266ms
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > a receipt download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled or answered to a HEAD 250ms
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > a retain hands waitUntil a promise that is pending while it holds a copy slot and ends once the slot is back; a retain turned away for want of a slot hands over nothing 170ms
+ × test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > an upload hands waitUntil a promise that is pending while it holds its place among the isolate's uploads and ends once it gives the place back 42ms
+   → expected [ …(2) ] to deeply equal [ …(2) ]
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  08:57:09
+   Duration  2.94s (transform 741ms, setup 1.44s, import 34ms, tests 993ms, environment 0ms)
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > an upload hands waitUntil a promise that is pending while it holds its place among the isolate's uploads and ends once it gives the place back
+AssertionError: expected [ …(2) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+@@ -1,9 +1,9 @@
+  [
+    [
+      "upload, body stalled",
+-     false,
++     true,
+    ],
+    [
+      "upload",
+      202,
+      true,
+
+ ❯ test/workers/download-aborts.test.ts:322:19
+    320|     const reply = await accepted
+    321|     lines.push(['upload', reply.status, await ended(ENDED_MS), uploads…
+    322|     expect(lines).toEqual([
+       |                   ^
+    323|       ['upload, body stalled', false],
+    324|       ['upload', 202, true, 0],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,65 @@
+J1 KILLED (pruneSnapshots back before pruneAttachments and pruneImports (m1)) [workers 2 failed | 33 passed (35)] restored=True
+    failed: files-alarm.test.ts: after any alarm, every scheduled time is later than now
+    failed: files-alarm.test.ts: an import purge in the same alarm releases a ready snapshot it makes stale, so no job is left due at the vault clock
+J2 KILLED (a held one-run guard reports success again (n1)) [workers 2 failed | 33 passed (35)] restored=True
+    failed: files-alarm.test.ts: an alarm that finds another file run in progress reports its delete as failed, so it comes back a minute later
+    failed: files-alarm.test.ts: only one file run at a time: a second run while the first waits on R2 deletes nothing
+J3 KILLED (a held one-run guard is not logged (n1)) [workers 1 failed | 34 passed (35)] restored=True
+    failed: files-alarm.test.ts: an alarm that finds another file run in progress reports its delete as failed, so it comes back a minute later
+J4 KILLED (a delete's throw is logged but not reported to the alarm (m2; the alarm lens's R1)) [workers 1 failed | 34 passed (35)] restored=True
+    failed: files-alarm.test.ts: a delete whose own block throws is reported to the alarm, which comes back a minute later, not at once
+U1 KILLED (rearm's setAlarm and deleteAlarm left unhandled again (n2)) [workers 2 failed | 33 passed (35)] restored=True
+    failed: files-alarm.test.ts: a refusal that lands after a later rearm leaves that alarm alone, and a refused deleteAlarm is logged
+    failed: files-alarm.test.ts: a setAlarm the storage refuses is logged and forgotten, so the next rearm sets the alarm again
+U2 KILLED (a refused alarm is logged but alarmAt keeps it (n2)) [workers 1 failed | 34 passed (35)] restored=True
+    failed: files-alarm.test.ts: a setAlarm the storage refuses is logged and forgotten, so the next rearm sets the alarm again
+U3 KILLED (a refused alarm clears alarmAt even after a later rearm replaced it (n2)) [workers 1 failed | 34 passed (35)] restored=True
+    failed: files-alarm.test.ts: a refusal that lands after a later rearm leaves that alarm alone, and a refused deleteAlarm is logged
+U4 KILLED (a refused alarm is forgotten but not logged (n2)) [workers 2 failed | 33 passed (35)] restored=True
+    failed: files-alarm.test.ts: a refusal that lands after a later rearm leaves that alarm alone, and a refused deleteAlarm is logged
+    failed: files-alarm.test.ts: a setAlarm the storage refuses is logged and forgotten, so the next rearm sets the alarm again
+U5 KILLED (rearm throws a failure instead of logging it (n3; the alarm lens's R11)) [workers 1 failed | 34 passed (35)] restored=True
+    failed: files-alarm.test.ts: a schedule write that fails after a call committed is logged, and the call still answers its success
+U6 KILLED (background() rearms with no write floor (n4; the alarm lens's R2)) [workers 1 failed | 34 passed (35)] restored=True
+    failed: files-alarm.test.ts: a background write that makes work due at once still waits the write floor (R104 through background())
+U7 KILLED (rearming() rearms with no write floor (n4; the alarm lens's R3)) [workers 1 failed | 34 passed (35)] restored=True
+    failed: files-alarm.test.ts: a start through rearming() that makes work due at once still waits the write floor (R104 through rearming())
+A1 KILLED (attachmentsDueAt without the safety net (m4; the 1B-T9 review's X5)) [workers 2 failed | 33 passed (35)] restored=True
+    failed: files-alarm.test.ts: a receipt left with no holder is due at once however it lost its holder, and the prune that releases it empties the checks
+    failed: files-alarm.test.ts: a vault upgraded from 0003 starts its checks with the receipts that already have no holder
+A2 KILLED (the safety net reads every retained receipt again (m4)) [workers 1 failed | 34 passed (35)] restored=True
+    failed: files-alarm.test.ts: the due-time reads after a write read as many rows with a hundred held receipts and purged import records as with none
+A3 KILLED (the safety net joins without CROSS JOIN, so the planner reads attachments first (m4)) [workers 1 failed | 34 passed (35)] restored=True
+    failed: files-alarm.test.ts: the due-time reads after a write read as many rows with a hundred held receipts and purged import records as with none
+A4 KILLED (pruneAttachments leaves the checks (m4)) [workers 2 failed | 33 passed (35)] restored=True
+    failed: files-alarm.test.ts: a receipt left with no holder is due at once however it lost its holder, and the prune that releases it empties the checks
+    failed: files-alarm.test.ts: the due-time reads after a write read as many rows with a hundred held receipts and purged import records as with none
+A5 KILLED (attachmentsDueAt without the stamp a released receipt waits for (m4: the term moved)) [workers 1 failed | 34 passed (35)] restored=True
+    failed: files-alarm.test.ts: a receipt left with no holder is due at once however it lost its holder, and the prune that releases it empties the checks
+P1 KILLED (the import read joins without CROSS JOIN, so the planner walks every change of the two entities (m4)) [workers 1 failed | 34 passed (35)] restored=True
+    failed: files-alarm.test.ts: the due-time reads after a write read as many rows with a hundred held receipts and purged import records as with none
+P2 KILLED (the live import heads without the purged state (m4)) [workers 3 failed | 32 passed (35)] restored=True
+    failed: files-alarm.test.ts: after any alarm, every scheduled time is later than now
+    failed: files-alarm.test.ts: importsDueAt counts the live import records only: a purged one is skipped, a live selection counts
+    failed: files-alarm.test.ts: the due-time reads after a write read as many rows with a hundred held receipts and purged import records as with none
+P3 KILLED (the live import heads without the selections (m4)) [workers 2 failed | 33 passed (35)] restored=True
+    failed: files-alarm.test.ts: importsDueAt counts the live import records only: a purged one is skipped, a live selection counts
+    failed: files-alarm.test.ts: the due-time reads after a write read as many rows with a hundred held receipts and purged import records as with none
+P4 KILLED (the entity names in the other order, so the WHERE no longer matches the index's (m4)) [workers 1 failed | 34 passed (35)] restored=True
+    failed: files-alarm.test.ts: the due-time reads after a write read as many rows with a hundred held receipts and purged import records as with none
+M1 KILLED (no check when a retained receipt is inserted (m4)) [workers 1 failed | 34 passed (35)] restored=True
+    failed: files-alarm.test.ts: a receipt left with no holder is due at once however it lost its holder, and the prune that releases it empties the checks
+M2 KILLED (no check when a receipt is set back to retained (m4)) [workers 1 failed | 34 passed (35)] restored=True
+    failed: files-alarm.test.ts: a receipt left with no holder is due at once however it lost its holder, and the prune that releases it empties the checks
+M3 KILLED (no check when a holder is deleted (m4)) [workers 1 failed | 34 passed (35)] restored=True
+    failed: files-alarm.test.ts: a receipt left with no holder is due at once however it lost its holder, and the prune that releases it empties the checks
+M4 KILLED (no check when a holder moves to another receipt (m4)) [workers 1 failed | 34 passed (35)] restored=True
+    failed: files-alarm.test.ts: a receipt left with no holder is due at once however it lost its holder, and the prune that releases it empties the checks
+M5 KILLED (an upgraded vault does not list the receipts that already have no holder (m4)) [workers 1 failed | 34 passed (35)] restored=True
+    failed: files-alarm.test.ts: a vault upgraded from 0003 starts its checks with the receipts that already have no holder
+M6 KILLED (no index on the live import heads (m4)) [workers 1 failed | 34 passed (35)] restored=True
+    failed: files-alarm.test.ts: the due-time reads after a write read as many rows with a hundred held receipts and purged import records as with none
+M7 KILLED (the import index keeps the purged heads too (m4)) [workers 1 failed | 34 passed (35)] restored=True
+    failed: files-alarm.test.ts: the due-time reads after a write read as many rows with a hundred held receipts and purged import records as with none
+S1 KILLED (attachment_checks missing from the Drizzle schema (VAULT_CORE_TABLES)) [workers 1 failed | 13 passed (14)] restored=True
+    failed: vault-schema.test.ts: a new vault has every core table, migrated once

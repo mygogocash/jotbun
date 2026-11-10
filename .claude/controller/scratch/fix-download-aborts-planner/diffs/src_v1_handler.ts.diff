@@ -1,0 +1,31 @@
+--- a/src/v1/handler.ts
++++ b/src/v1/handler.ts
+@@ -130,7 +130,7 @@ export async function handleVaultV1(request: Request, env: V1Env, deps: V1Deps =
+         waitUntil: deps.waitUntil ?? waitUntil,
+       })
+     }
+-    if (route.access === 'public') return headOf(jsonResponse(200, latestPerKind(policies), requestId), method)
++    if (route.access === 'public') return await headOf(jsonResponse(200, latestPerKind(policies), requestId), method)
+     const claims = await authenticate(request, env, deps, config, route.access)
+     const stub = env.VAULT.get(env.VAULT.idFromName(claims.accountId), { locationHint: 'apac' })
+     // The live socket (1D-T10): after every check above, the vault's fetch answers it in place of the vault call.
+@@ -148,7 +148,7 @@ export async function handleVaultV1(request: Request, env: V1Env, deps: V1Deps =
+       body,
+     })
+     if (startsWork(route, reply.status)) handOffWork(deps, stub)
+-    return headOf(replyResponse(reply, requestId), method)
++    return await headOf(replyResponse(reply, requestId), method)
+   } catch (error) {
+     return errorResponse(error, requestId, `${route.method} ${route.path}`)
+   }
+@@ -208,7 +208,9 @@ function withV1Headers(response: Response, requestId: string): Response {
+  * holds is given back before the HEAD is answered: a download returns its slot
+  * and finishes its R2 read (R96). Cancelling the body is not enough: the
+  * Workers runtime ends the request before a cancel reaches the stream behind
+- * a download's FixedLengthStream, and the slot would stay taken. Never rejects.
++ * a download's FixedLengthStream, and the slot would stay taken. Never rejects;
++ * its callers inside a `try` still await it, so a rejection would reach
++ * errorResponse (the 1B-T6 confirming review's n-1).
+  */
+ async function headOf(response: Response, method: string): Promise<Response> {
+   if (method !== 'HEAD') return response
