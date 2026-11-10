@@ -157,7 +157,7 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
   - **ask the owner, with a recommendation, before merging**, even on green CI.
 - **While T3 is down, Antigravity is unreachable.** Builds, fixes and reviews wait for the reconnection rather than spending Claude quota.
   - Already running on Claude before the change, and allowed to finish: the reviews of #397 and #398.
-  - Planners run on Claude in workflows: tray-hardening fix2 (wf_41e3ff21-3b6) and 1C-T9 (wf_313426aa-c35, task wt9fz2nfb, dispatched at 14:44, WT p1-1c-t9 on p1/1c-t9-approved-routes).
+  - Planners run on Claude in workflows: tray-hardening fix2 (wf_41e3ff21-3b6). **1C-T9's planner (wf_313426aa-c35) reported BLOCKED at 14:50:** the plan (p1c :1052) starts it after the owner's E2 approval of 1C-T8's screenshots, and none is recorded. 1C-T9 is now HELD in held.txt (Owner decisions waiting).
 - **Waiting on T3, for Argon:**
   - the fixers of P2-T12, fix-download-aborts and tray-hardening (round two), once their briefs are READY;
   - P2-T14's and P2-T20's implementers, after #392 merges;
@@ -390,7 +390,7 @@ The list below is kept for the record.
     - **The review runs as a two-lens Opus workflow** (run wf_0cba99e1-318, task wy3myeu97). The lenses run one after the other, to keep about six agents: the stack and the press; then the frames, the catalogue merges, the tests and CI. A skeptic checks each blocker or major, and a synthesizer writes `reviews/P2-T12.md`.
     - On approval and green CI: `merge_task_pr.sh 395 90b5079 P2-T12`, then `promote_pr.sh P2-T12 395`.
     - **The review says Needs fixes (14:27; `reviews/P2-T12.md`):** one major, four minors and four nits. Everything else holds: the shape, the press, P10's frames, the `index.ts` merges in either order with tray-hardening, P2-T14 and P2-T20, and 15 of 59 mutants rerun and killed.
-      - **M1 (ST1):** under VoiceOver a double tap on a back card opens the card in front. The fix is `onAccessibilityTap={onPress}` on `WalletCard`'s Pressable, with a Node pin. **The controller granted leave to edit `WalletCard.tsx`** (P2-T11's file); no task in flight edits it.
+      - **M1 (ST1):** under VoiceOver a double tap on a back card opens the card in front. **The controller verified it against the code at 14:50** (the new verify-before-relying rule): `WalletCard.tsx:162` is a plain Pressable with no `onAccessibilityTap`, and `CardStack.tsx`'s `stackFrame` puts each 200 pt card at `top: 54 × index`, under the next card. The fix is `onAccessibilityTap={onPress}` on `WalletCard`'s Pressable, with a Node pin. **The controller granted leave to edit `WalletCard.tsx`** (P2-T11's file); no task in flight edits it.
       - **The fix round also takes m3, m4, n2, n3 and n4:** pins for the surviving mutants L1, L10, MF7, L3, L4, MF9, MF6 and MF4, and `frames.delete(view)` in `forget()`.
       - m1 and n1 go to P2-T24, and m2 to P2-T17 (followups.md).
     - **The P2-T12 planner** (thread e328d240, run 4, from 14:27) writes `briefs/P2-T12-fix.md`, with kit `scratch/p2-t12-fix-planner/`. Then:
@@ -763,6 +763,18 @@ R84 (P4-T10 fixtures), R85 (two API test-only fixes), R86 (token sid must match 
 Merge each PR when its CI on the current head is green; close its issue by hand (backlog-map.json); remove worktree and branch (local and remote). Open PRs that conflict only in docs/implementation/premium-progress.md: merge the head and run ledger_union.py (keeps both sides), except 1C (hand-merge: one `## 1C:` heading) and P4 (one `## P4` heading). New tasks write receipts under R87, which avoids those conflicts.
 
 ## Owner decisions waiting
+- **OPEN (10 Nov, 14:50): 1C-T9 waits on E2 for 1C-T8** (plan p1c :1052).
+  - Approve the 23 sign-in catalogue sections (the deep links in `receipts/1C-T8.md`), and answer:
+    - P5: keep the extra "Confirm it's you" tap before Apple's and Google's sheets (item 6 below);
+    - m2: the session-ended "account unavailable" variant's wording and main button;
+    - m4: keep or drop the terms box on today's sign-in screen.
+
+    Any changes land first, as a 1C-T8 follow-up.
+  - **Why it waits:** 1C-T9 moves all 99 draft Thai lines into `en.json` and `th.json`, 71 of which you have never seen, and adds `'signin'` to `APPROVED`, which turns the area on by default.
+  - **An option, for speed (a plan change, so the owner decides):** split 1C-T9.
+    - Now: `getSharedPolicyClient`, `onPolicyRequired`, the five routes, the session-ended guards and the TermsGate wiring, all behind the `'signin'` area left off, with the drafts kept.
+    - After E2: the copy move and `APPROVED`.
+  - The controller recommends the split only if E2 will take more than a day.
 - **OPEN (10 Nov, 08:52): GitHub Actions stopped for billing.** Every job of #392's run 42738781210 failed without starting. Each carries GitHub's annotation: "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings".
   - The last green run was #391's at 08:20 (42735086363). The Free plan's 2,000 minutes a month are used up: about 1,400 by 6 Nov, then about 11 nine-job runs at about 33 billable minutes each since #377 merged.
   - **Effect:** no PR can get CI, so nothing new can merge. #391 can still merge on its review, because its run was green before the stop. Planners, implementers and reviews go on, and PRs are opened, but they wait for CI.
