@@ -136,6 +136,16 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - **Promotion PR #381** (`promote/p4-t12`, based on `promote/1b-t8`). Stack #379 is now #373 → #378 → #380 → #381.
 - **App baseline at 712574d** (CI on #376's merge ref plus P4-T13): `test:unit` 956 (927 + 18 + 11), render 109 files and 1867 cases, web 4806; iOS not measured at the head (computed 5772: 5760 with 1D-T8 plus P4-T12's 12 modules).
 
+## Third usage-limit stop, 10 Nov about 08:23 (RESUMED at 08:27)
+- The previous account hit its 5-hour limit (it resets at 12:00). The session continues on another account.
+- Failed at the stop:
+  - all five planners: tray-hardening 351b244a, P2-T14 deda1216, P2-T12 e328d240, fix-download-aborts 46ff8a6d and 1B-T12 373c38a4;
+  - the wallet-looks-unstored review workflow (run wf_c0db7db8-830).
+- At 08:26 the heavy lock was free and no test process was alive. The last thermal sleep was at 06:05.
+- At 08:27 each planner was steered on its own thread (run 2) with the cutoff note: background runs are dead, rerun unfinished checks, restore mutated files from `real/`, the lock is free, and the head moved only in controller files. **Do not respawn them.**
+- The review workflow was resumed from run wf_c0db7db8-830 (task wskvqzln0).
+- #391's CI is green on 8c997d8 (nine jobs); its merge waits only on the review.
+
 ## T3 server restart, 10 Nov about 07:21 (RESUMED at 07:22)
 - The restart cancelled the three running review workflows. They were resumed from their runs, and finished agents replay from cache:
   - P2-T13: run wf_74d1e17e-476, task w29wpu2c7;
