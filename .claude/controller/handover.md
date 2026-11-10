@@ -259,13 +259,29 @@ The list below is kept for the record.
     - New lesson: `git apply` run inside `scratch/` can silently apply nothing.
   - **P2-T14** (deda1216; WT p2-t14 on p2/t14-add-flow), the add flow, keypad and amount step, depth 17. It plans against today's `Tray` props, without editing `Tray.tsx`.
   - **P2-T12** (e328d240; WT p2-t12 on p2/t12-card-stack), the card stack and frames, depth 15. It takes P2-T11's K5 and decides P2-T9's spring overshoot.
+    - **Brief READY at 08:55 (M), proven on b5aa2a7's app tree:**
+      - New: `CardStack.tsx`, `cardFrames.tsx`, `CardStack.render.test.tsx` (12 cases), `cardStackNative.test.ts` (1) and `stackSections.tsx`. Shared: one import and one spread in `dev/catalogue/wallet/index.ts`, placed between the kit's sections and the tray's (plan order).
+      - It passes with tray-hardening's files laid over (34 of 34) and with #391's (43 of 43), so it waits on nothing in flight. 59 of 59 mutants.
+      - No drop is played on a new wallet: the drop and its overshoot go to P2-T21. The derived-look flash is the caller's (P2-T23, P2-T24).
+    - Its completion notice never reached the controller; the result was read from the thread. At 08:58 the controller told it that #391 merged (run 3, to confirm the proof on the new head). Dispatch its implementer once run 3 ends.
   - Each task's catalogue sections go in a list file of its own, with one spread in `dev/catalogue/wallet/index.ts` at its own anchor (not in `kitSections.tsx`).
 - **The server lane: two planners dispatched at 08:15 from c8929f2 (Opus xhigh):**
   - **fix-download-aborts** (46ff8a6d; WT fix-download-aborts on fix/download-aborts): R97's `waitUntil` fix for every vault download, with a `wrangler dev` proof, plus every review pin followups.md gives it. It may split the test-only pins into `briefs/download-pins.md`. It must land before 1B-T13.
   - **1B-T12** (373c38a4; WT p1-1b-t12 on p1/1b-t12-files-parity), the files parity session against NestJS.
     - Docker stays stopped: CI's edge job runs `test:edge:db`. The planner reports BLOCKED if it truly needs a local PostgreSQL.
     - It decides n8 (the vault's 404 against NestJS's 30-day `expired`).
-  - **alarm-hardening** (1B-T11's m1, m2, m4 and nits): plan it when a slot frees. It edits `jobs.ts`, `user-vault.ts` and `files-alarm.test.ts`, with no overlap with the two above.
+    - **Brief READY at 08:58 (S; proven on c8929f2's edge tree). It changes no vault code**: with background work off, the vault already gives the 40 answers the planner traced through the API's code.
+      - Files: new `test/support/files-session.ts` and `test/vault-parity-files.db.test.ts`; modified `test/parity-files.db.test.ts` and the shared `test/support/vault-worker.ts`; the receipt.
+      - P1 to P11 are accepted.
+        - P1: the vault half is proven by local smokes in workerd. The NestJS comparison itself runs only in CI's `edge` job (`test:edge:db`).
+        - P3: n8 is listed, not changed (optional follow-up in followups.md).
+        - P4: a third case pins B13's config.
+      - Kit `scratch/1b-t12-planner/`: check_kit at cb9913c gives 58 OK, and the 2 `orig/` files are identical. The planner's proof: 12 of 12 mutants.
+      - Its completion notice never reached the controller either; the result was read from the thread.
+    - The implementer (Haiku max, 86c3bab3) was dispatched at 09:00 in a pre-installed (`install-edge`) p1-1b-t12 from cb9913c, under the heavy lock for workerd runs.
+  - **alarm-hardening** (a37bdb47; WT alarm-hardening on fix/alarm-hardening), 1B-T11's m1, m2, m4 and nits n1 to n5 and n9. The planner (Opus xhigh) was dispatched at 08:58, when #391's review freed a slot.
+    - It edits `jobs.ts`, `user-vault.ts` and `files-alarm.test.ts`, and for m4 `attachments.ts` (`attachmentsDueAt`) and `previews.ts` (`importsDueAt`).
+    - fix-download-aborts pins those two functions' guards in its own test files. The planner was told to keep the guards exactly and to name the lines it changes, so the two merges can be ordered.
 
 ## PR #371: the integration branch into main. The owner merged it on 9 Nov, 21:30 Bangkok, as afcf884
 - It was merged with a merge commit, so history is kept. The controller then fast-forwarded claude/p1a-vault-core to afcf884, which adds main's README and CHANGELOG, so the two branches were level.

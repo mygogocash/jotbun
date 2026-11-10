@@ -1,0 +1,10 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t12-planner/tree/apps/edge
+
+ ✓ test/vault-money.smoke.db.test.ts > the money session answers as 1A-T9 proved, through the default startVaultWorker 197ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  08:36:09
+   Duration  2.47s (transform 206ms, setup 0ms, import 464ms, tests 1.90s, environment 0ms)
+

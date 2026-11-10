@@ -1,0 +1,755 @@
+[
+  {
+    "step": "1. snapshot, no key",
+    "status": 422,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "VALIDATION_FAILED",
+      "request_id": "<request-id>",
+      "message_key": "errors.validation_failed",
+      "fields": {
+        "idempotency-key": "VALIDATION_FAILED"
+      }
+    }
+  },
+  {
+    "step": "2. snapshot",
+    "status": 202,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "snapshot_id": "<id:1>",
+      "status": "pending"
+    }
+  },
+  {
+    "step": "3. snapshot, same key",
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "snapshot_id": "<id:1>",
+      "status": "ready",
+      "schema_version": 1,
+      "high_water": "0",
+      "cursor": "<cursor>",
+      "expires_at": "<timestamp>",
+      "chunks": [
+        {
+          "index": 0,
+          "bytes": 114,
+          "sha256": "8ddf936c71f7007b680f1db5c93f0088c75f2afd3b921b77fb7b90a09ffde767",
+          "grant": "Aex1-11_tI8jmLZIc3SIoQYAAAAAavJ5vFAeoR4Khqsj8p11x7o32r8",
+          "grant_expires_at": "<timestamp>"
+        }
+      ]
+    }
+  },
+  {
+    "step": "4. snapshot, unknown field",
+    "status": 422,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "UNKNOWN_FIELD",
+      "request_id": "<request-id>",
+      "message_key": "errors.unknown_field",
+      "fields": {
+        "full": "UNKNOWN_FIELD"
+      }
+    }
+  },
+  {
+    "step": "5. snapshot status",
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "snapshot_id": "<id:1>",
+      "status": "ready",
+      "schema_version": 1,
+      "high_water": "0",
+      "cursor": "<cursor>",
+      "expires_at": "<timestamp>",
+      "chunks": [
+        {
+          "index": 0,
+          "bytes": 114,
+          "sha256": "8ddf936c71f7007b680f1db5c93f0088c75f2afd3b921b77fb7b90a09ffde767",
+          "grant": "Aex1-11_tI8jmLZIc3SIoQYAAAAAavJ5vFAeoR4Khqsj8p11x7o32r8",
+          "grant_expires_at": "<timestamp>"
+        }
+      ]
+    }
+  },
+  {
+    "step": "6. snapshot status, bad id",
+    "status": 404,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "NOT_FOUND",
+      "request_id": "<request-id>",
+      "message_key": "errors.not_found"
+    }
+  },
+  {
+    "step": "7. snapshot status, unknown",
+    "status": 404,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "NOT_FOUND",
+      "request_id": "<request-id>",
+      "message_key": "errors.not_found"
+    }
+  },
+  {
+    "step": "8. snapshot chunk, bad grant",
+    "status": 404,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "NOT_FOUND",
+      "request_id": "<request-id>",
+      "message_key": "errors.not_found"
+    }
+  },
+  {
+    "step": "11. export, bad dates",
+    "status": 422,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "VALIDATION_FAILED",
+      "request_id": "<request-id>",
+      "message_key": "errors.validation_failed",
+      "fields": {
+        "through": "VALIDATION_FAILED"
+      }
+    }
+  },
+  {
+    "step": "12. export, unknown field",
+    "status": 422,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "UNKNOWN_FIELD",
+      "request_id": "<request-id>",
+      "message_key": "errors.unknown_field",
+      "fields": {
+        "format": "UNKNOWN_FIELD"
+      }
+    }
+  },
+  {
+    "step": "13. export",
+    "status": 202,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "command_id": "<id:2>",
+      "entity_id": "<id:3>",
+      "version": 1,
+      "committed_revision": "1",
+      "outcome": "accepted",
+      "entity_state": "active"
+    }
+  },
+  {
+    "step": "14. export replayed",
+    "status": 202,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "command_id": "<id:2>",
+      "entity_id": "<id:3>",
+      "version": 1,
+      "committed_revision": "1",
+      "outcome": "accepted",
+      "entity_state": "active"
+    }
+  },
+  {
+    "step": "15. export status",
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "export_id": "<id:3>",
+      "from": "2026-10-01",
+      "through": "2026-10-31",
+      "requested_at": "<timestamp>",
+      "status": "ready",
+      "as_of_revision": "1",
+      "row_count": 0,
+      "bytes": 226,
+      "sha256": "20eebbd73abf35a852204733a0b68eaba1a19f5e2e24e0b5cda65ffaf7939652",
+      "expires_at": "<timestamp>"
+    }
+  },
+  {
+    "step": "16. export status, unknown",
+    "status": 404,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "NOT_FOUND",
+      "request_id": "<request-id>",
+      "message_key": "errors.not_found"
+    }
+  },
+  {
+    "step": "17. export grant before it is ready",
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "url": "/v1/export-files/AYflM2iJLYM-vVVU0jXRg8YAAAAAavJ5vPZnsjBGjyuU-6Or2WZf2G0",
+      "expires_at": "<timestamp>"
+    }
+  },
+  {
+    "step": "18. export file, bad grant",
+    "status": 404,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "NOT_FOUND",
+      "request_id": "<request-id>",
+      "message_key": "errors.not_found"
+    }
+  },
+  {
+    "step": "19. upload, no file name",
+    "status": 422,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "INVALID_FILE_NAME",
+      "request_id": "<request-id>",
+      "message_key": "errors.invalid_file_name",
+      "fields": {
+        "file_name": "INVALID_FILE_NAME"
+      }
+    }
+  },
+  {
+    "step": "20. upload, unsupported type",
+    "status": 415,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "UPLOAD_UNSUPPORTED_TYPE",
+      "request_id": "<request-id>",
+      "message_key": "errors.upload_unsupported_type"
+    }
+  },
+  {
+    "step": "21. upload, type and name differ",
+    "status": 422,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "UPLOAD_TYPE_MISMATCH",
+      "request_id": "<request-id>",
+      "message_key": "errors.upload_type_mismatch"
+    }
+  },
+  {
+    "step": "22. upload, no key",
+    "status": 422,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "VALIDATION_FAILED",
+      "request_id": "<request-id>",
+      "message_key": "errors.validation_failed",
+      "fields": {
+        "idempotency-key": "VALIDATION_FAILED"
+      }
+    }
+  },
+  {
+    "step": "23. upload, empty",
+    "status": 422,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "UPLOAD_EMPTY",
+      "request_id": "<request-id>",
+      "message_key": "errors.upload_empty"
+    }
+  },
+  {
+    "step": "24. upload",
+    "status": 202,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "job_id": "<id:4>",
+      "status": "queued",
+      "format": "csv",
+      "file_name": "บัญชี ต.ค..csv",
+      "bytes": 96,
+      "received_at": "<timestamp>",
+      "expires_at": "<timestamp>"
+    }
+  },
+  {
+    "step": "25. upload replayed",
+    "status": 202,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "job_id": "<id:4>",
+      "status": "queued",
+      "format": "csv",
+      "file_name": "บัญชี ต.ค..csv",
+      "bytes": 96,
+      "received_at": "<timestamp>",
+      "expires_at": "<timestamp>"
+    }
+  },
+  {
+    "step": "26. import status",
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "job_id": "<id:4>",
+      "status": "queued",
+      "format": "csv",
+      "file_name": "บัญชี ต.ค..csv",
+      "bytes": 96,
+      "received_at": "<timestamp>",
+      "expires_at": "<timestamp>"
+    }
+  },
+  {
+    "step": "27. import status, unknown",
+    "status": 404,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "NOT_FOUND",
+      "request_id": "<request-id>",
+      "message_key": "errors.not_found"
+    }
+  },
+  {
+    "step": "28. import preview",
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "job_id": "<id:4>",
+      "status": "queued",
+      "candidates": [],
+      "issues": [],
+      "duplicate_advice": [],
+      "review_revision": null,
+      "expires_at": null,
+      "summary": null
+    }
+  },
+  {
+    "step": "29. import preview, bad paging",
+    "status": 422,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "VALIDATION_FAILED",
+      "request_id": "<request-id>",
+      "message_key": "errors.validation_failed",
+      "fields": {
+        "limit": "VALIDATION_FAILED"
+      }
+    }
+  },
+  {
+    "step": "30. review rows before parsing",
+    "status": 422,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "VALIDATION_FAILED",
+      "request_id": "<request-id>",
+      "message_key": "errors.validation_failed",
+      "fields": {
+        "rows": "VALIDATION_FAILED"
+      }
+    }
+  },
+  {
+    "step": "31. freeze before parsing",
+    "status": 422,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "UNKNOWN_FIELD",
+      "request_id": "<request-id>",
+      "message_key": "errors.unknown_field",
+      "fields": {
+        "select": "UNKNOWN_FIELD"
+      }
+    }
+  },
+  {
+    "step": "32. confirm, unknown selection",
+    "status": 422,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "UNKNOWN_FIELD",
+      "request_id": "<request-id>",
+      "message_key": "errors.unknown_field",
+      "fields": {
+        "batch": "UNKNOWN_FIELD"
+      }
+    }
+  },
+  {
+    "step": "33. selection progress, unknown",
+    "status": 404,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "NOT_FOUND",
+      "request_id": "<request-id>",
+      "message_key": "errors.not_found"
+    }
+  },
+  {
+    "step": "34. built-in categories",
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": [
+      {
+        "id": "<id:5>",
+        "type": "expense",
+        "builtin_key": "food",
+        "label": null,
+        "color": "#F0A868",
+        "archived": false,
+        "version": 1
+      },
+      {
+        "id": "<id:6>",
+        "type": "expense",
+        "builtin_key": "travel",
+        "label": null,
+        "color": "#6FB3F2",
+        "archived": false,
+        "version": 1
+      },
+      {
+        "id": "<id:7>",
+        "type": "expense",
+        "builtin_key": "household",
+        "label": null,
+        "color": "#B49BE8",
+        "archived": false,
+        "version": 1
+      },
+      {
+        "id": "<id:8>",
+        "type": "expense",
+        "builtin_key": "bills",
+        "label": null,
+        "color": "#F2857E",
+        "archived": false,
+        "version": 1
+      },
+      {
+        "id": "<id:9>",
+        "type": "expense",
+        "builtin_key": "shopping",
+        "label": null,
+        "color": "#F291C4",
+        "archived": false,
+        "version": 1
+      },
+      {
+        "id": "<id:10>",
+        "type": "expense",
+        "builtin_key": "fun",
+        "label": null,
+        "color": "#F2CE5C",
+        "archived": false,
+        "version": 1
+      },
+      {
+        "id": "<id:11>",
+        "type": "income",
+        "builtin_key": "salary",
+        "label": null,
+        "color": "#A8CC4A",
+        "archived": false,
+        "version": 1
+      },
+      {
+        "id": "<id:12>",
+        "type": "income",
+        "builtin_key": "bonus",
+        "label": null,
+        "color": "#F2CE5C",
+        "archived": false,
+        "version": 1
+      },
+      {
+        "id": "<id:13>",
+        "type": "income",
+        "builtin_key": "side_job",
+        "label": null,
+        "color": "#6FB3F2",
+        "archived": false,
+        "version": 1
+      },
+      {
+        "id": "<id:14>",
+        "type": "income",
+        "builtin_key": "gift",
+        "label": null,
+        "color": "#F291C4",
+        "archived": false,
+        "version": 1
+      }
+    ]
+  },
+  {
+    "step": "35. wallet",
+    "status": 201,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "command_id": "<id:15>",
+      "entity_id": "<id:16>",
+      "version": 1,
+      "committed_revision": "3",
+      "outcome": "created",
+      "entity_state": "active"
+    }
+  },
+  {
+    "step": "36. transaction",
+    "status": 201,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "command_id": "<id:17>",
+      "entity_id": "<id:18>",
+      "version": 1,
+      "committed_revision": "4",
+      "outcome": "created",
+      "entity_state": "active"
+    }
+  },
+  {
+    "step": "37. retain an unknown receipt",
+    "status": 404,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "NOT_FOUND",
+      "request_id": "<request-id>",
+      "message_key": "errors.not_found"
+    }
+  },
+  {
+    "step": "38. retain without consent",
+    "status": 422,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "VALIDATION_FAILED",
+      "request_id": "<request-id>",
+      "message_key": "errors.consent_required",
+      "fields": {
+        "consent": "errors.consent_required"
+      }
+    }
+  },
+  {
+    "step": "39. replace, stale version",
+    "status": 409,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "VERSION_CONFLICT",
+      "request_id": "<request-id>",
+      "message_key": "errors.version_conflict",
+      "current": {
+        "id": "<id:18>",
+        "amount_minor": "6000",
+        "occurred_on": "2026-10-20",
+        "note": null,
+        "merchant": null,
+        "deleted_at": null,
+        "version": 1,
+        "type": "expense",
+        "wallet_id": "<id:16>",
+        "category_id": "<id:5>"
+      }
+    }
+  },
+  {
+    "step": "40. remove a receipt it does not have",
+    "status": 422,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "VALIDATION_FAILED",
+      "request_id": "<request-id>",
+      "message_key": "errors.attachment_missing",
+      "fields": {
+        "attachment_id": "errors.attachment_missing"
+      }
+    }
+  },
+  {
+    "step": "41. receipt grant, unknown",
+    "status": 404,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "NOT_FOUND",
+      "request_id": "<request-id>",
+      "message_key": "errors.not_found"
+    }
+  },
+  {
+    "step": "42. receipt file, bad grant",
+    "status": 404,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": null
+    },
+    "body": {
+      "code": "NOT_FOUND",
+      "request_id": "<request-id>",
+      "message_key": "errors.not_found"
+    }
+  }
+]

@@ -361,3 +361,10 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - the upload reads the store, so an unstored change is never uploaded;
     - if the provider reads server values, decide whether the memory is laid over them;
     - carry the reviewer's PX, which pins that a session where every write lands keeps nothing (mutant OM3).
+- 1B-T12 planner notes (briefs/1B-T12.md; READY 10 Nov, test-only):
+  - **snapshot-parity-window (an optional follow-up, only after fix-download-aborts merges; P3 of 1B-T12):**
+    - From about day 8 to day 30 after a build, NestJS answers a snapshot's status, and a resend of its key, with `expired`. It keeps a finished job 30 days (`apps/api/drizzle/0015_privacy.sql:813-829`).
+    - The vault deletes a ready row a week past its 24-hour expiry (`pruneSnapshots`, `src/vault/files/snapshots.ts:348`), so it answers 404 and opens a new pending row for a resend.
+    - 1B-T12 lists the difference in `vault-parity-files.db.test.ts`'s header and its receipt.
+    - For parity: keep a ready row until `ready_at` plus 30 days, with a resend case. First check whether a Workflow instance can start under an id whose old instance is past its retention.
+    - This edits `pruneSnapshots`, `snapshotsDueAt` and the snapshot tests, which fix-download-aborts pins (1B-T11's m3 and n6).

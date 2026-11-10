@@ -1,0 +1,661 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t12-planner/tree/apps/edge
+
+ × test/vault-files.smoke.db.test.ts > the vault Worker answers each compared step of the files session as NestJS does 217ms
+   → expected [ { vault: { …(4) }, …(1) }, …(11) ] to deeply equal []
+ ✓ test/vault-files.smoke.db.test.ts > the vault Worker runs without Workflows, queue consumers or containers (B13) 0ms
+ ✓ test/vault-files.smoke.db.test.ts > a never-accepted upload has no status and no preview (404), as in the API 34ms
+ ✓ test/vault-files.smoke.db.test.ts > the retired proof routes answer 404 on the vault Worker 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/vault-files.smoke.db.test.ts > the vault Worker answers each compared step of the files session as NestJS does
+AssertionError: expected [ { vault: { …(4) }, …(1) }, …(11) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "nest": {
++       "body": {
++         "code": "VALIDATION_FAILED",
++         "fields": {
++           "through": "VALIDATION_FAILED",
++         },
++         "message_key": "errors.validation_failed",
++         "request_id": "<request-id>",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 422,
++       "step": "11. export, bad dates",
++     },
++     "vault": {
++       "body": {
++         "code": "VALIDATION_FAILED",
++         "fields": {
++           "proof_id": "VALIDATION_FAILED",
++         },
++         "message_key": "errors.validation_failed",
++         "request_id": "<request-id>",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 422,
++       "step": "11. export, bad dates",
++     },
++   },
++   {
++     "nest": {
++       "body": {
++         "command_id": "<id:2>",
++         "committed_revision": "1",
++         "entity_id": "<id:3>",
++         "entity_state": "active",
++         "outcome": "accepted",
++         "version": 1,
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 202,
++       "step": "13. export",
++     },
++     "vault": {
++       "body": {
++         "code": "VALIDATION_FAILED",
++         "fields": {
++           "proof_id": "VALIDATION_FAILED",
++         },
++         "message_key": "errors.validation_failed",
++         "request_id": "<request-id>",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 422,
++       "step": "13. export",
++     },
++   },
++   {
++     "nest": {
++       "body": {
++         "command_id": "<id:2>",
++         "committed_revision": "1",
++         "entity_id": "<id:3>",
++         "entity_state": "active",
++         "outcome": "accepted",
++         "version": 1,
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 202,
++       "step": "14. export replayed",
++     },
++     "vault": {
++       "body": {
++         "code": "VALIDATION_FAILED",
++         "fields": {
++           "proof_id": "VALIDATION_FAILED",
++         },
++         "message_key": "errors.validation_failed",
++         "request_id": "<request-id>",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 422,
++       "step": "14. export replayed",
++     },
++   },
++   {
++     "nest": {
++       "body": {
++         "export_id": "<id:3>",
++         "from": "2026-10-01",
++         "requested_at": "<timestamp>",
++         "status": "pending",
++         "through": "2026-10-31",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 200,
++       "step": "15. export status",
++     },
++     "vault": {
++       "body": {
++         "code": "NOT_FOUND",
++         "message_key": "errors.not_found",
++         "request_id": "<request-id>",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 404,
++       "step": "15. export status",
++     },
++   },
++   {
++     "nest": {
++       "body": {
++         "bytes": 96,
++         "expires_at": "<timestamp>",
++         "file_name": "บัญชี ต.ค..csv",
++         "format": "csv",
++         "job_id": "<id:4>",
++         "received_at": "<timestamp>",
++         "status": "queued",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 202,
++       "step": "24. upload",
++     },
++     "vault": {
++       "body": {
++         "bytes": 96,
++         "expires_at": "<timestamp>",
++         "file_name": "บัญชี ต.ค..csv",
++         "format": "csv",
++         "job_id": "<id:2>",
++         "received_at": "<timestamp>",
++         "status": "queued",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 202,
++       "step": "24. upload",
++     },
++   },
++   {
++     "nest": {
++       "body": {
++         "bytes": 96,
++         "expires_at": "<timestamp>",
++         "file_name": "บัญชี ต.ค..csv",
++         "format": "csv",
++         "job_id": "<id:4>",
++         "received_at": "<timestamp>",
++         "status": "queued",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 202,
++       "step": "25. upload replayed",
++     },
++     "vault": {
++       "body": {
++         "bytes": 96,
++         "expires_at": "<timestamp>",
++         "file_name": "บัญชี ต.ค..csv",
++         "format": "csv",
++         "job_id": "<id:2>",
++         "received_at": "<timestamp>",
++         "status": "queued",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 202,
++       "step": "25. upload replayed",
++     },
++   },
++   {
++     "nest": {
++       "body": {
++         "bytes": 96,
++         "expires_at": "<timestamp>",
++         "file_name": "บัญชี ต.ค..csv",
++         "format": "csv",
++         "job_id": "<id:4>",
++         "received_at": "<timestamp>",
++         "status": "queued",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 200,
++       "step": "26. import status",
++     },
++     "vault": {
++       "body": {
++         "bytes": 96,
++         "expires_at": "<timestamp>",
++         "file_name": "บัญชี ต.ค..csv",
++         "format": "csv",
++         "job_id": "<id:2>",
++         "received_at": "<timestamp>",
++         "status": "queued",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 200,
++       "step": "26. import status",
++     },
++   },
++   {
++     "nest": {
++       "body": {
++         "candidates": [],
++         "duplicate_advice": [],
++         "expires_at": null,
++         "issues": [],
++         "job_id": "<id:4>",
++         "review_revision": null,
++         "status": "queued",
++         "summary": null,
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 200,
++       "step": "28. import preview",
++     },
++     "vault": {
++       "body": {
++         "candidates": [],
++         "duplicate_advice": [],
++         "expires_at": null,
++         "issues": [],
++         "job_id": "<id:2>",
++         "review_revision": null,
++         "status": "queued",
++         "summary": null,
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 200,
++       "step": "28. import preview",
++     },
++   },
++   {
++     "nest": {
++       "body": [
++         {
++           "archived": false,
++           "builtin_key": "food",
++           "color": "#F0A868",
++           "id": "<id:5>",
++           "label": null,
++           "type": "expense",
++           "version": 1,
++         },
++         {
++           "archived": false,
++           "builtin_key": "travel",
++           "color": "#6FB3F2",
++           "id": "<id:6>",
++           "label": null,
++           "type": "expense",
++           "version": 1,
++         },
++         {
++           "archived": false,
++           "builtin_key": "household",
++           "color": "#B49BE8",
++           "id": "<id:7>",
++           "label": null,
++           "type": "expense",
++           "version": 1,
++         },
++         {
++           "archived": false,
++           "builtin_key": "bills",
++           "color": "#F2857E",
++           "id": "<id:8>",
++           "label": null,
++           "type": "expense",
++           "version": 1,
++         },
++         {
++           "archived": false,
++           "builtin_key": "shopping",
++           "color": "#F291C4",
++           "id": "<id:9>",
++           "label": null,
++           "type": "expense",
++           "version": 1,
++         },
++         {
++           "archived": false,
++           "builtin_key": "fun",
++           "color": "#F2CE5C",
++           "id": "<id:10>",
++           "label": null,
++           "type": "expense",
++           "version": 1,
++         },
++         {
++           "archived": false,
++           "builtin_key": "salary",
++           "color": "#A8CC4A",
++           "id": "<id:11>",
++           "label": null,
++           "type": "income",
++           "version": 1,
++         },
++         {
++           "archived": false,
++           "builtin_key": "bonus",
++           "color": "#F2CE5C",
++           "id": "<id:12>",
++           "label": null,
++           "type": "income",
++           "version": 1,
++         },
++         {
++           "archived": false,
++           "builtin_key": "side_job",
++           "color": "#6FB3F2",
++           "id": "<id:13>",
++           "label": null,
++           "type": "income",
++           "version": 1,
++         },
++         {
++           "archived": false,
++           "builtin_key": "gift",
++           "color": "#F291C4",
++           "id": "<id:14>",
++           "label": null,
++           "type": "income",
++           "version": 1,
++         },
++       ],
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 200,
++       "step": "34. built-in categories",
++     },
++     "vault": {
++       "body": [
++         {
++           "archived": false,
++           "builtin_key": "food",
++           "color": "#F0A868",
++           "id": "<id:3>",
++           "label": null,
++           "type": "expense",
++           "version": 1,
++         },
++         {
++           "archived": false,
++           "builtin_key": "travel",
++           "color": "#6FB3F2",
++           "id": "<id:4>",
++           "label": null,
++           "type": "expense",
++           "version": 1,
++         },
++         {
++           "archived": false,
++           "builtin_key": "household",
++           "color": "#B49BE8",
++           "id": "<id:5>",
++           "label": null,
++           "type": "expense",
++           "version": 1,
++         },
++         {
++           "archived": false,
++           "builtin_key": "bills",
++           "color": "#F2857E",
++           "id": "<id:6>",
++           "label": null,
++           "type": "expense",
++           "version": 1,
++         },
++         {
++           "archived": false,
++           "builtin_key": "shopping",
++           "color": "#F291C4",
++           "id": "<id:7>",
++           "label": null,
++           "type": "expense",
++           "version": 1,
++         },
++         {
++           "archived": false,
++           "builtin_key": "fun",
++           "color": "#F2CE5C",
++           "id": "<id:8>",
++           "label": null,
++           "type": "expense",
++           "version": 1,
++         },
++         {
++           "archived": false,
++           "builtin_key": "salary",
++           "color": "#A8CC4A",
++           "id": "<id:9>",
++           "label": null,
++           "type": "income",
++           "version": 1,
++         },
++         {
++           "archived": false,
++           "builtin_key": "bonus",
++           "color": "#F2CE5C",
++           "id": "<id:10>",
++           "label": null,
++           "type": "income",
++           "version": 1,
++         },
++         {
++           "archived": false,
++           "builtin_key": "side_job",
++           "color": "#6FB3F2",
++           "id": "<id:11>",
++           "label": null,
++           "type": "income",
++           "version": 1,
++         },
++         {
++           "archived": false,
++           "builtin_key": "gift",
++           "color": "#F291C4",
++           "id": "<id:12>",
++           "label": null,
++           "type": "income",
++           "version": 1,
++         },
++       ],
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 200,
++       "step": "34. built-in categories",
++     },
++   },
++   {
++     "nest": {
++       "body": {
++         "command_id": "<id:15>",
++         "committed_revision": "3",
++         "entity_id": "<id:16>",
++         "entity_state": "active",
++         "outcome": "created",
++         "version": 1,
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 201,
++       "step": "35. wallet",
++     },
++     "vault": {
++       "body": {
++         "command_id": "<id:13>",
++         "committed_revision": "2",
++         "entity_id": "<id:14>",
++         "entity_state": "active",
++         "outcome": "created",
++         "version": 1,
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 201,
++       "step": "35. wallet",
++     },
++   },
++   {
++     "nest": {
++       "body": {
++         "command_id": "<id:17>",
++         "committed_revision": "4",
++         "entity_id": "<id:18>",
++         "entity_state": "active",
++         "outcome": "created",
++         "version": 1,
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 201,
++       "step": "36. transaction",
++     },
++     "vault": {
++       "body": {
++         "command_id": "<id:15>",
++         "committed_revision": "3",
++         "entity_id": "<id:16>",
++         "entity_state": "active",
++         "outcome": "created",
++         "version": 1,
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 201,
++       "step": "36. transaction",
++     },
++   },
++   {
++     "nest": {
++       "body": {
++         "code": "VERSION_CONFLICT",
++         "current": {
++           "amount_minor": "6000",
++           "category_id": "<id:5>",
++           "deleted_at": null,
++           "id": "<id:18>",
++           "merchant": null,
++           "note": null,
++           "occurred_on": "2026-10-20",
++           "type": "expense",
++           "version": 1,
++           "wallet_id": "<id:16>",
++         },
++         "message_key": "errors.version_conflict",
++         "request_id": "<request-id>",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 409,
++       "step": "39. replace, stale version",
++     },
++     "vault": {
++       "body": {
++         "code": "VERSION_CONFLICT",
++         "current": {
++           "amount_minor": "6000",
++           "category_id": "<id:3>",
++           "deleted_at": null,
++           "id": "<id:16>",
++           "merchant": null,
++           "note": null,
++           "occurred_on": "2026-10-20",
++           "type": "expense",
++           "version": 1,
++           "wallet_id": "<id:14>",
++         },
++         "message_key": "errors.version_conflict",
++         "request_id": "<request-id>",
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 409,
++       "step": "39. replace, stale version",
++     },
++   },
++ ]
+
+ ❯ test/vault-files.smoke.db.test.ts:56:23
+     54|   const expected = JSON.parse(readFileSync(EXPECTED, 'utf8')) as typeo…
+     55|   const differences = compared.flatMap((c, k) => (JSON.stringify(c) ==…
+     56|   expect(differences).toEqual([])
+       |                       ^
+     57| })
+     58|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  08:51:26
+   Duration  2.85s (transform 263ms, setup 0ms, import 561ms, tests 2.17s, environment 0ms)
+

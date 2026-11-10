@@ -1,0 +1,45 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t12-planner/tree/apps/edge
+
+ ✓ test/vault-files.smoke.db.test.ts > the vault Worker answers each compared step of the files session as NestJS does 225ms
+ ✓ test/vault-files.smoke.db.test.ts > the vault Worker runs without Workflows, queue consumers or containers (B13) 0ms
+ × test/vault-files.smoke.db.test.ts > a never-accepted upload has no status and no preview (404), as in the API 36ms
+   → expected [ [ …(2) ], [ …(2) ] ] to deeply equal [ [ …(2) ], [ …(2) ] ]
+ ✓ test/vault-files.smoke.db.test.ts > the retired proof routes answer 404 on the vault Worker 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/vault-files.smoke.db.test.ts > a never-accepted upload has no status and no preview (404), as in the API
+AssertionError: expected [ [ …(2) ], [ …(2) ] ] to deeply equal [ [ …(2) ], [ …(2) ] ]
+
+- Expected
++ Received
+
+@@ -1,9 +1,9 @@
+  [
+    [
+      "/v1/imports/0b7e9088-2212-8e0d-9960-ce8c0887feb5",
+-     404,
++     200,
+    ],
+    [
+      "/v1/imports/0b7e9088-2212-8e0d-9960-ce8c0887feb5/preview",
+      404,
+    ],
+
+ ❯ test/vault-files.smoke.db.test.ts:81:16
+     79|   const seen: [string, number][] = []
+     80|   for (const path of [`/v1/imports/${job}`, `/v1/imports/${job}/previe…
+     81|   expect(seen).toEqual([
+       |                ^
+     82|     [`/v1/imports/${job}`, 404],
+     83|     [`/v1/imports/${job}/preview`, 404],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  08:51:44
+   Duration  2.80s (transform 293ms, setup 0ms, import 617ms, tests 2.07s, environment 0ms)
+
