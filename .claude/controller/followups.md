@@ -422,3 +422,9 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **P2-T24:** Home's จัดเรียง is `/spend/wallets?reorder=1`.
   - **P2-T37:** every amount on the list is a `WalletAmount`, and each row's label says ซ่อนยอดเงินอยู่ in private mode.
   - **E2-B:** P17's differences from wc-wallets. Capture `bw-wallets-reorder` from a fresh launch (P2-T13's n2).
+- alarm-hardening planner notes (briefs/alarm-hardening.md; READY 10 Nov; ruling R105):
+  - **Any task that adds a migration rebuilding `attachments` or its holders' table:** recreate 0004's four `attachment_checks` triggers (R105).
+  - **A later edge task (P12):**
+    - `recordsDue`, `pruneImports`' purge read, still walks every head of one import entity, once or twice per alarm. It could read `LIVE_IMPORT_HEADS`.
+    - 1A's `nextDue` counts every change and head in `hasSupersededChange`: 0.3 ms at 60,000. This is a note, not a defect.
+  - **1B-T13 (n10, already listed under 1B-T11):** size the hosted check with 0004's table and index too.

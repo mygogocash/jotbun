@@ -1,0 +1,6 @@
+c74149845f881cb287fa550de76b90353942ceed7f36abe53ad2c9d910437432  src/vault/files/jobs.ts
+dada8635f19b56476b44d2020993ff5a77647c41406a25868072804eff15650a  src/vault/user-vault.ts
+bdf28fbc6737d4d43206b81b61119d52d59c3d0e671797ec676e349dfba683d1  src/vault/files/attachments.ts
+7442c3e879da93b89b8276323e7eac895ddc13b43145e56c5f847e0e21d6413c  src/vault/files/previews.ts
+d09df66d920111dca682fe9895ef03bfbdbd2f0ca32124f8479552592a9f02e4  src/vault/migrations/0004_alarm_bounds.sql
+a68853d59a4d54b618b5db56b9745dc5bcc369a836baebce69d78ea5fd098e06  src/vault/schema.ts

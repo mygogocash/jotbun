@@ -1,0 +1,13 @@
+diff --git a/apps/edge/src/cloudflare-workers.d.ts b/apps/edge/src/cloudflare-workers.d.ts
+index 9c18656..e4973f9 100644
+--- a/apps/edge/src/cloudflare-workers.d.ts
++++ b/apps/edge/src/cloudflare-workers.d.ts
+@@ -14,6 +14,8 @@ interface SqlStorageCursor<T> {
+   next(): IteratorResult<T>
+   raw(): IterableIterator<SqlStorageValue[]>
+   [Symbol.iterator](): IterableIterator<T>
++  // The rows the statement has read so far, the storage's own count (a test reads it to show a read stays bounded).
++  readonly rowsRead: number
+ }
+ 
+ interface SqlStorage {

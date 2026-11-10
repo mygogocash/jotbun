@@ -371,6 +371,19 @@ The list below is kept for the record.
   - **alarm-hardening** (a37bdb47; WT alarm-hardening on fix/alarm-hardening), 1B-T11's m1, m2, m4 and nits n1 to n5 and n9. The planner (Opus xhigh) was dispatched at 08:58, when #391's review freed a slot.
     - It edits `jobs.ts`, `user-vault.ts` and `files-alarm.test.ts`, and for m4 `attachments.ts` (`attachmentsDueAt`) and `previews.ts` (`importsDueAt`).
     - fix-download-aborts pins those two functions' guards in its own test files. The planner was told to keep the guards exactly and to name the lines it changes, so the two merges can be ordered.
+    - **Brief READY at 10:07 (M), proven on cb9913c's edge tree.**
+      - Files: `jobs.ts`, `user-vault.ts`, `attachments.ts` and `previews.ts`; new migration `0004_alarm_bounds.sql`, with `migrations/index.ts` and `schema.ts`; `cloudflare-workers.d.ts` (`rowsRead`); `files-alarm.test.ts` and `vault-schema.test.ts`; the receipt.
+      - P1 to P14 are accepted, with **P6 recorded as R105** (`attachment_checks`, filled by four triggers).
+        - P1: `pruneSnapshots` runs last.
+        - P4: a held guard reports `delete_objects`.
+        - P5: `rearm`'s `.catch` clears `alarmAt` only if it still names that alarm.
+        - P7: `entity_heads_imports_idx`.
+        - P10: the prune list calls its functions at run time.
+      - At the review's sizes, `reschedule`'s per-write block goes from 1.7 ms to 0.04 ms (rows read 10,001 to 2, and 6,006 to 6).
+      - Kit `scratch/alarm-hardening-planner/`: check_kit at 402c1df gives 45 OK, and the 9 `orig/` files are identical. RED 9 of 49, GREEN 49, 28 of 28 mutants. The vault bundle grows by 5.53 kB.
+      - Lines changed against download-pins' pins: `attachments.ts` 346, 354, 365 and 369 (DU-1's guard at 370 untouched); `previews.ts` after 328, and 333, 344-345 and 347 (188 untouched). DU-1 and DU-2 pass on its code.
+    - **The implementer (Haiku max, 949cad13) was dispatched at 10:07** in a pre-installed (`install-edge`) alarm-hardening on fix/alarm-hardening from 402c1df, under the heavy lock.
+    - Housekeeping later: its P11 correction of 1B-T11's P14 (n9; `receipts/1B-T11.md:82`). This task's receipt carries it; a one-line note in 1B-T11's receipt is optional.
 
 ## PR #371: the integration branch into main. The owner merged it on 9 Nov, 21:30 Bangkok, as afcf884
 - It was merged with a merge commit, so history is kept. The controller then fast-forwarded claude/p1a-vault-core to afcf884, which adds main's README and CHANGELOG, so the two branches were level.
@@ -571,6 +584,12 @@ To stop a chat session in the app: `sc chat stop <thread_id>` cancels its turn o
 
 ## Rulings this session
 R104 (10 Nov, 1B-T11's P2): a write never arms the vault alarm sooner than a minute ahead (`CALL_ALARM_DELAY_MS`, 60,000 ms), and never postpones an alarm already set sooner. The alarm's own rearm is exact, or a minute out after a failed job (P3).
+
+R105 (10 Nov, alarm-hardening's P6): the vault's `attachment_checks` table (migration 0004) lists every retained receipt that may have no holder, and `attachmentsDueAt` reads its safety net from that table alone.
+- Four triggers fill the table, on every SQL statement: a receipt inserted before any record holds it, a receipt set back to retained, a last holder deleted, and a last holder moved.
+- `pruneAttachments`' full pass over every retained receipt stays, once per alarm, and empties the table in the same block. A statement that bypassed the triggers is still found at the next alarm.
+- A migration that rebuilds `attachments` or its holders' table must recreate the four triggers.
+- `importsDueAt` reads the partial index `entity_heads_imports_idx`, whose terms its WHERE names literally (`LIVE_IMPORT_HEADS`).
   - Why: workerd refuses `setAlarm` at or before 0, which every release asks for (`delete_after = 0`), and in the Workers tests an alarm due at once fires itself, racing about 40 existing cases.
   - A person never sees the minute, and a burst of writes becomes one alarm. Because a write can only move the alarm earlier, a stream of writes cannot starve the jobs.
   - Later vault tasks that reason about alarm timing must expect it.

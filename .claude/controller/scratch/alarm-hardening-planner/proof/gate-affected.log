@@ -1,0 +1,307 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/alarm-hardening-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/alarm-hardening-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/currency-migration.test.ts > the rebuilt wallets keep every row and every reference to them 34ms
+ ✓ test/workers/currency-migration.test.ts > every table that references wallets keeps its rows 35ms
+ ✓ test/workers/currency-migration.test.ts > older records gain THB money fields 30ms
+ ✓ test/workers/live.test.ts > pokes > the other phone hears the new revision, and the saving phone hears nothing 38ms
+ ✓ test/workers/live.test.ts > pokes > the revision is compared as a whole number, so 9 to 10 is a poke 42ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > pagination_never_splits_a_command_group 63ms
+ ✓ test/workers/retention.test.ts > deleted records, ported from retention.integration.spec.ts > purged_transactions_are_not_resurrected_by_receipts 78ms
+ ✓ test/workers/imports-parse.test.ts > a parsed upload becomes a reviewable preview and nothing else > parsing_has_no_financial_side_effect 75ms
+ ✓ test/workers/imports-review.test.ts > nothing is saved before a confirmation batch commits > parse, corrections and the freeze alone save no transaction 61ms
+ ✓ test/workers/files-erase.test.ts > erase empties the vault, cancels its alarm and leaves only the deleted marker 74ms
+ ✓ test/workers/live.test.ts > pokes > a poke reaches a phone whose socket hibernated 32ms
+ ✓ test/workers/live.test.ts > pokes > sockets never carry record data 39ms
+ ✓ test/workers/live.test.ts > pokes > a retention purge pokes every phone 41ms
+ ✓ test/workers/attachments.test.ts > ownership: another account can neither use nor learn of a receipt > foreign_attachment_grant_is_denied 106ms
+ ✓ test/workers/attachments.test.ts > ownership: another account can neither use nor learn of a receipt > cross-owner association is denied with 404 and no existence leak, and copies nothing 98ms
+ ✓ test/workers/imports-review.test.ts > nothing is saved before a confirmation batch commits > progress shows a frozen selection with every row remaining 41ms
+ ✓ test/workers/imports-review.test.ts > foreign jobs, selections and rows > another account cannot correct, freeze, confirm or read an import, and a foreign row or wallet is refused 86ms
+ ✓ test/workers/currency-migration.test.ts > a wallet takes any ISO-shaped currency and never changes it 33ms
+ ✓ test/workers/currency-migration.test.ts > the new columns keep their rules 31ms
+ ✓ test/workers/currency-migration.test.ts > the triggers and views naming wallets are the same after the rebuild 29ms
+ ✓ test/workers/currency-migration.test.ts > the new columns take what phase 5 writes and refuse every shape outside their rules 34ms
+ ✓ test/workers/retention.test.ts > deleted records, ported from retention.integration.spec.ts > a deleted record stops counting at once and can be undone within 30 days; nothing is purged early 52ms
+ ✓ test/workers/retention.test.ts > deleted records, ported from retention.integration.spec.ts > tombstones reach delta readers, older cursors resync 49ms
+ ✓ test/workers/retention.test.ts > deleted records, ported from retention.integration.spec.ts > leaves an account being erased to its erasure: no purge group is written for it 39ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a workbook with a formula is rejected as a whole: no candidate, image or transaction 43ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a valid workbook parses through the same path 31ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a child killed at its 30-second deadline fails visibly as a rejected preview, never with guessed fields 35ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a crashed child fails visibly as a rejected preview, never with guessed fields 32ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > pages whole groups in revision order within the 2 MiB budget, with no gaps 80ms
+ ✓ test/workers/snapshots.test.ts > consistent snapshots, ported from snapshot-builder.integration.spec.ts > applying the snapshot and then later deltas yields every latest entity exactly once, from one view 177ms
+ ✓ test/workers/snapshots.test.ts > consistent snapshots, ported from snapshot-builder.integration.spec.ts > an account deletion during the build publishes nothing, and its chunks are swept 69ms
+ ✓ test/workers/attachments.test.ts > ownership: another account can neither use nor learn of a receipt > a preview image nobody retained, a quarantined upload and an import id never get a grant 35ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > needs explicit consent and the record version, and makes the receipt part of the record 51ms
+ ✓ test/workers/live.test.ts > pokes > a send to a socket that is already closing is skipped, and the others still get the poke 23ms
+ ✓ test/workers/live.test.ts > keepalive and messages > ping is answered, even after the vault sleeps, without waking it 22ms
+ ✓ test/workers/live.test.ts > keepalive and messages > a phone's own close is answered, and the vault no longer holds its socket 25ms
+ ✓ test/workers/live.test.ts > keepalive and messages > a message other than ping closes the socket with 1008 19ms
+ ✓ test/workers/live.test.ts > sessions > signing out closes that phone's socket with 4401 and leaves the other open 22ms
+ ✓ test/workers/currency-migration.test.ts > the trip indexes cover live tagged records and live trips 32ms
+ ✓ test/workers/currency-migration.test.ts > a record, wallet or category the previous release writes after the migration is in baht with no look, icon or pack key 29ms
+ ✓ test/workers/currency-migration.test.ts > an upgrade that fails part way leaves the vault as it was, and the next wake applies it 42ms
+ ✓ test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > drops receipt digests after the outbox lifetime: a replay is refused and never re-run; status still answers 42ms
+ ✓ test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > removes a superseded change that sat below the retention line (S1 change log) 43ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > output that is not the protocol fails visibly as a rejected preview, never with guessed fields 32ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > output over its cap fails visibly as a rejected preview, never with guessed fields 28ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a parse that exceeded the 512 MiB budget fails visibly as a rejected preview, never with guessed fields 33ms
+stderr | test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > a failing step is reported and does not stop the others
+{"level":"error","event":"vault_retention_purge_failed","failure":"Error"}
+
+ ✓ test/workers/snapshots.test.ts > consistent snapshots, ported from snapshot-builder.integration.spec.ts > a build that runs out of time publishes no manifest 52ms
+ ✓ test/workers/snapshots.test.ts > consistent snapshots, ported from snapshot-builder.integration.spec.ts > an empty account still gets a one-chunk snapshot at its high-water 29ms
+ ✓ test/workers/imports-review.test.ts > foreign jobs, selections and rows > the app login cannot write selections or candidates directly, nor record progress that is not its frozen row 41ms
+stderr | test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > a purge retried after the prune moved the retention line never moves it back
+{"level":"error","event":"vault_retention_purge_failed","failure":"Error"}
+
+ ✓ test/workers/live.test.ts > sessions > a refused call still closes the sockets it ended: a raised not_before 26ms
+ ✓ test/workers/live.test.ts > sessions > a refused call still closes the sockets it ended: an account being deleted 23ms
+ ✓ test/workers/live.test.ts > sessions > an erased vault closes every socket when asked (closeEndedSessions with erased) 21ms
+ ✓ test/workers/live.test.ts > sessions > an ended session cannot open a socket 23ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > copies inside the store, registered before the copy, and the receipt outlives the import image and the preview 64ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > is versioned and idempotent: a stale version keeps nothing, a resend replays, a second receipt needs replace 68ms
+ ✓ test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > a failing step is reported and does not stop the others 52ms
+ ✓ test/workers/retention.test.ts > other retention, ported from retention.integration.spec.ts > a purge retried after the prune moved the retention line never moves it back 49ms
+ ✓ test/workers/retention.test.ts > the retention alarm > a deleted record is purged by the alarm 30 days later, and the alarm follows the earliest job 35ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a quarantined part that does not match its registered digest is never parsed 38ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a part whose registered digest disagrees with the stored object is never parsed 32ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a raw file past its 24-hour expiry is not read, even if its parse job is still queued 29ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a parse job cancelled while its child runs (expiry, deletion, maintenance) records nothing 35ms
+ ✓ test/workers/snapshots.test.ts > consistent snapshots, ported from snapshot-builder.integration.spec.ts > refuses to publish an entity that does not match its persisted DTO 38ms
+ ✓ test/workers/snapshots.test.ts > snapshot requests, status and grants, ported from snapshot-builder.integration.spec.ts > requests are idempotent, share an open build, and reuse a snapshot from the last hour 45ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > defaults to 200 groups a page and refuses more than 1,000 328ms
+ ✓ test/workers/live.test.ts > sessions > an erased vault cannot open a socket, and nothing is re-created 38ms
+ ✓ test/workers/live.test.ts > sessions > a session's second socket replaces its first 19ms
+ ✓ test/workers/live.test.ts > the front door and the vault > without a token it is 401, an outdated client 426, and a plain GET 400 20ms
+ ✓ test/workers/live.test.ts > the front door and the vault > the vault answers only the Worker's live request, and checks every claim 21ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > never publishes a copy that differs from the import image 44ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > the retain routine publishes only this account's own unexpired copy at its generation, matching the image 57ms
+ ✓ test/workers/retention.test.ts > the retention alarm > an alarm that fires after the vault slept still purges 55ms
+ ✓ test/workers/retention.test.ts > the retention alarm > with nothing left to do, the alarm is cleared 30ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a lease lost after the image PUT publishes nothing; the sweep deletes the object 36ms
+ ✓ test/workers/imports-parse.test.ts > receipt images are sanitized and expire unattached > publishes a metadata-free re-encoding for 24 hours and a review-only candidate 43ms
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > a 5,000-row frozen selection succeeds, but a 501-row confirmation batch is rejected 198ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > rejects malformed, foreign and future cursors, and needs a resync below retention 60ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > 30-day retention drops superseded changes, keeps every head, and expires older cursors 41ms
+ ✓ test/workers/snapshots.test.ts > snapshot requests, status and grants, ported from snapshot-builder.integration.spec.ts > grants are short-lived, bound to the owner, and refuse another account's snapshot 72ms
+ ✓ test/workers/snapshots.test.ts > snapshot requests, status and grants, ported from snapshot-builder.integration.spec.ts > reports failed and expired snapshots, and grants nothing for them 49ms
+stderr | test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > refuses to serve a stored change that no longer matches its entity DTO
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+ ✓ test/workers/attachments.test.ts > retaining a receipt > an account has at most four copies in flight; a fifth retain is told when to retry 63ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > refuses an image past its window, and a deleted record 44ms
+ ✓ test/workers/live.test.ts > limits > only open sockets count toward 20 82ms
+ ✓ test/workers/imports-parse.test.ts > the job worker never claims a parse it cannot sandbox (B1) > a worker started on a runtime without network permission leaves import_parse queued, without spending an attempt 40ms
+ ✓ test/workers/imports-parse.test.ts > the job worker never claims a parse it cannot sandbox (B1) > a runner that refuses an unsandboxed runtime fails the job retryably and records no preview 40ms
+ ✓ test/workers/imports-parse.test.ts > the job worker never claims a parse it cannot sandbox (B1) > a child that could not be started fails the job retryably and records no preview 46ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > refuses to serve a stored change that no longer matches its entity DTO 24ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > a cursor is bound to its account and names a revision, nothing else 2ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > a cursor from an earlier lifecycle generation needs a resync 23ms
+ ✓ test/workers/snapshots.test.ts > snapshot requests, status and grants, ported from snapshot-builder.integration.spec.ts > SnapshotWorkflow runs the build 63ms
+ ✓ test/workers/retention.test.ts > the retention alarm > the alarm follows the earliest job, and each record waits its own 30 days 59ms
+ ✓ test/workers/attachments.test.ts > replace and remove are versioned against the record > replace moves the record to its next version and queues the image it dropped 78ms
+ ✓ test/workers/imports-parse.test.ts > the job worker never claims a parse it cannot sandbox (B1) > a child stopped past its memory budget gives a rejected preview, never a retry 34ms
+ ✓ test/workers/imports-parse.test.ts > the job worker never claims a parse it cannot sandbox (B1) > an image whose own header disagrees with what the child said is never published 42ms
+ ✓ test/workers/snapshots.test.ts > S1 review: one view and bounded work, ported from snapshot-builder.integration.spec.ts > every entity comes from the high-water view even when writes land between single-entity pages 107ms
+ ✓ test/workers/snapshots.test.ts > S1 review: one view and bounded work, ported from snapshot-builder.integration.spec.ts > reads every row before the first R2 call 59ms
+ ✓ test/workers/snapshots.test.ts > S1 review: one view and bounded work, ported from snapshot-builder.integration.spec.ts > a head whose change row is missing fails the build instead of vanishing from it 34ms
+ ✓ test/workers/retention.test.ts > the retention alarm > purges more records than SQLite has parameters, at most 1,000 to a change group 172ms
+ ✓ test/workers/retention.test.ts > the retention alarm > an erased vault runs no retention and keeps no alarm, awake or after it sleeps 73ms
+ ✓ test/workers/attachments.test.ts > replace and remove are versioned against the record > remove is versioned, deletes the image with no undo, and cannot be repeated 61ms
+ ✓ test/workers/attachments.test.ts > shared references prevent premature deletion > a receipt two records hold is one object, deleted only after both let go 71ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > a page reads about its byte budget, not every group the limit allows 236ms
+ ✓ test/workers/imports-parse.test.ts > a paused OCR gate parks queued image parses attempt-neutrally (P2b) > releases a claimed image job (no attempt spent, nothing read or recorded) and still parses a spreadsheet 44ms
+ ✓ test/workers/imports-parse.test.ts > a paused OCR gate parks queued image parses attempt-neutrally (P2b) > parses the same job after the gate reopens, as its first attempt 39ms
+ ✓ test/workers/imports-parse.test.ts > a paused OCR gate parks queued image parses attempt-neutrally (P2b) > does not park a raw file past its expiry: it still fails visibly 29ms
+ ✓ test/workers/live.test.ts > limits > a socket that is closing does not count toward 20 72ms
+ ✓ test/workers/live.test.ts > limits > opening a socket spends the session's read budget: past 120 a minute it is 429 and nothing upgrades 263ms
+ ✓ test/workers/files-erase.test.ts > an erased vault stays erased after it sleeps 68ms
+ ✓ test/workers/files-erase.test.ts > an erased instance refuses every call, even when its marker is missing 33ms
+ ✓ test/workers/files-erase.test.ts > purgeVaultObjects deletes every object under the vault's prefixes and nothing of another vault 23ms
+ ✓ test/workers/files-erase.test.ts > purgeVaultObjects pages through more than one listing 751ms
+ ✓ test/workers/files-erase.test.ts > vault object keys pass the store's key rule and refuse a vault id that is not 64 hex characters 0ms
+ ✓ test/workers/snapshots.test.ts > S1 review: one view and bounded work, ported from snapshot-builder.integration.spec.ts > keeps chunks near their target size and grants within the snapshot expiry 77ms
+ ✓ test/workers/snapshots.test.ts > retention, the snapshot halves of retention.integration.spec.ts > tombstones reach delta readers, older cursors resync, and snapshots built before the purge are dropped 73ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > the retention line can never pass the account revision 20ms
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > snapshots validate exactly the entities the API registers 2ms
+ □ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > snapshots validate exactly the entities the API registers: every key of SYNC_ENTITY_VALIDATORS, once 1B and phase 4 register theirs
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a parsed CSV becomes a ready preview with its candidates, and the import reads parsed 34ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a parsed receipt image is stored under the vault's import_image prefix for 24 hours and gets an attachment id 36ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > an image whose bytes are not the format it claims is a rejected preview, and nothing is stored 32ms
+ ✓ test/workers/snapshots.test.ts > retention, the snapshot halves of retention.integration.spec.ts > a snapshot read before a purge is never recorded afterwards, so it cannot serve the purged data 48ms
+ ✓ test/workers/snapshots.test.ts > the jobs Worker snapshot, ported from apps/edge/test/jobs.db.test.ts > builds a requested snapshot, whose chunks the edge then serves 32ms
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > requests, builds, and downloads a snapshot through short-lived grants, then continues with deltas 104ms
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > asking again while a snapshot is ready answers 200 with it 37ms
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > serves whole, valid change groups and refuses bad parameters 31ms
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > orders keys as jsonb does: shorter first, equal lengths bytewise, nested objects too, arrays kept in order 1ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a parse that keeps failing is retried and fails after three attempts 39ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a parse that has not started spends no attempt 25ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a parse that finishes after the import expired records nothing 33ms
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > serves each snapshot with its keys in the API's order: PostgreSQL jsonb, shortest key first, then bytewise 32ms
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > a client behind retention recovers: 410, then a snapshot, then deltas from its cursor 43ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a snapshot runs on SnapshotWorkflow, and its cursor continues with /v1/sync/changes 40ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a snapshot that became ready in the last hour is reused, judged by ready_at 41ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a build retried after its chunks were stored completes, and the first attempt's chunks are deleted at their deadline 52ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > while ocr is paused an image parse is held without spending an attempt, and a CSV still parses 44ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > while jobs is paused every parse is held without spending an attempt 31ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > while imports is paused every parse is held without spending an attempt 38ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a missing quarantine part fails the import as quarantine_missing 28ms
+ ✓ test/workers/attachments.test.ts > shared references prevent premature deletion > two records retaining one image at once keep one receipt, made by one copy 355ms
+stderr | test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > an attempt that throws is retried, and a job out of attempts fails without another parse
+{"level":"error","event":"parse_consumer_failed","failure":"Error"}
+
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > second_batch_uses_same_frozen_selection 839ms
+stderr | test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > an attempt that throws is retried, and a job out of attempts fails without another parse
+{"level":"error","event":"parse_consumer_failed","failure":"Error"}
+
+stderr | test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > an attempt that throws is retried, and a job out of attempts fails without another parse
+{"level":"error","event":"parse_consumer_failed","failure":"Error"}
+
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > the Worker's queue handler sends a message through the container parser, which asks to retry while no container runs 27ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > an image reservation past its own deadline is never published, even when a failed delete moved it on 33ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > an attempt that throws is retried, and a job out of attempts fails without another parse 55ms
+ ✓ test/workers/attachments.test.ts > shared references prevent premature deletion > the 30-day purge of a deleted record releases its receipt only when no other record holds it 61ms
+ ✓ test/workers/attachments.test.ts > a deleted record keeps its receipt for the undo window > grants wait until the record is restored; the object is never queued meanwhile 47ms
+An RPC result was not disposed properly. One of the RPC calls you made expects you to call dispose() on the return value, but you didn't do so. You cannot rely on the garbage collector for this because it may take arbitrarily long before actually collecting unreachable objects.
+stderr | test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a message that names no vault or import is dropped, and a parse server reply is checked for its shape
+{"level":"error","event":"parse_message_malformed","failure":"Error"}
+
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a build that finishes after the vault stopped being active publishes nothing 29ms
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > a changed frozen revision, a stale selection and rows outside the selection conflict, and committed rows are never rewritten 51ms
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > overlapping retries acknowledge committed rows and continue the untouched ones 46ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a failed parse makes its unpublished image due at once 22ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a message that names no vault or import is dropped, and a parse server reply is checked for its shape 0ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > an import sent twice by overlapping starts is parsed once; the second message records nothing and spends no attempt 30ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5 fix round: a rejected receipt photo keeps its own issue, as the API records it > a photo over 20 MP is stored with its own issue, never parse_failed 27ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5 fix round: a rejected receipt photo keeps its own issue, as the API records it > a photo that is not the format it claims is stored with its own issue, never parse_failed 27ms
+ ✓ test/workers/attachments.test.ts > a deleted record keeps its receipt for the undo window > a grant issued before the record was deleted no longer downloads 35ms
+ ✓ test/workers/attachments.test.ts > retention and erasure (P5) > account erasure deletes every retained receipt object 62ms
+ ✓ test/workers/attachments.test.ts > retention and erasure (P5) > the retention step releases a receipt nothing holds and drops released rows 30 days on, once their object is gone 59ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5 fix round: a rejected receipt photo keeps its own issue, as the API records it > a photo the image child cannot decode is stored with its own issue, never parse_failed 26ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5 fix round: a rejected receipt photo keeps its own issue, as the API records it > a photo whose child was killed at its deadline is stored with its own issue, never parse_failed 27ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5 fix round: a rejected receipt photo keeps its own issue, as the API records it > a photo whose child went past its memory budget is stored with its own issue, never parse_failed 28ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5 fix round: a rejected receipt photo keeps its own issue, as the API records it > a readable photo reply without its image is still the rejected preview parse_failed 28ms
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > a record id already used is never written again, even if its progress row were lost 35ms
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > a kill after commit and before the response, retried with the original key and body, has the same outcome 38ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > serializes reservations: five at once from one account reserve exactly four 35ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > a busy process answers 503 with when to retry, before it reserves anything 63ms
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > a batch over the change-group budget is refused before commit, and smaller batches with new keys save it 235ms
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > a row whose wallet was archived after the freeze is conflicted; the rest are saved 35ms
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > a re-freeze after a partial confirmation does not re-validate rows already committed, even if their wallet or category was archived since 51ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > a process never has more copies running than its limit 231ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > refused retains, replaces and removals copy nothing 75ms
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > a re-freeze of only committed rows succeeds after their wallet and category are archived 64ms
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > a row dated before its wallet's tracking start, moved after the freeze, is conflicted 40ms
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > the database refuses stale, unknown and committed rows even when its routines are called directly 41ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > a receipt that already exists is attached without another copy 38ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > an account has a copy budget; past it, retaining is told when the oldest copy leaves the window 57ms
+ ✓ test/workers/imports-review.test.ts > the frozen selection and its batches > every selected row needs its labels mapped, and transfers cannot be confirmed from a file 32ms
+ ✓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > the record an image row becomes holds the kept receipt, in the same command, only with consent 65ms
+ ✓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > an invalid batch makes no copy: a wrong revision, a stale selection or an unknown selection never reaches the receipt copy 51ms
+ ✓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > a receipt that can no longer be kept refuses the batch, and the record can be saved without it 39ms
+ ✓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > a receipt goes only with its image row 28ms
+ ✓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > a confirmation with a receipt copies the import image once and attaches it to the image row's record 43ms
+ ✓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > a confirmation whose receipt was never prepared answers 503 and saves nothing, and one with nothing copied is refused as expired 37ms
+ ✓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > a selection frozen while its confirmation was being prepared answers 503 with a retry, never saving the image record without its receipt 37ms
+ ✓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > a copy the confirmation did not use is due at once 41ms
+ ✓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > the confirmation steps check the session: after sign-out nothing is reserved or saved 34ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > gives one deadline to the whole copy: the HEAD that checks it runs on the same signal 431ms
+ ✓ test/workers/imports-review.test.ts > review corrections > are versioned commands that clear the corrected issues and recompute the totals 35ms
+ ✓ test/workers/imports-review.test.ts > review corrections > a correction clears the issues of the fields it names and keeps the others 28ms
+ ✓ test/workers/imports-review.test.ts > expiry and retention > an expired preview cannot be frozen or confirmed, and retention removes its frozen copies and synced records 48ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > a copy the store cannot make is a 503 with no reservation left live, and never leaks the failure 36ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > the copy is checked as stored by the database too: a copy that is not the registered image is not published 31ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > serves the image whole, with its length, as it always did 40ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > one account cannot take every download slot: its third waits while another account is served 82ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > the process-wide cap still holds across accounts 75ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > cuts off a download that stops making progress, and frees its slot 243ms
+ ✓ test/workers/imports-review.test.ts > a 5,000-row synthetic import > confirms in batches of 500 through one interruption and restart, and reconciles exact wallet and category totals 808ms
+ ✓ test/workers/imports-review.test.ts > privacy of receipts and synced progress > receipts, audit rows and synced progress carry no candidate fields 38ms
+ ✓ test/workers/imports-review.test.ts > privacy of receipts and synced progress > registers selection retention, and the new tables cascade from accounts 46ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > cuts off a download still running at the total limit even though it keeps trickling 506ms
+ ✓ test/workers/imports-review.test.ts > one command per batch, and lists bound as one parameter > a confirmation batch of 500 rows commits as one command under one revision 120ms
+ ✓ test/workers/imports-review.test.ts > one command per batch, and lists bound as one parameter > a selection naming 1,000 rows freezes 43ms
+ ✓ test/workers/imports-review.test.ts > a parsed upload becomes a reviewable preview and nothing else > serves exact candidates, issues and totals to the owner, with a 7-day expiry and revision 1 35ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > a download that never starts is a 503 problem, not an image-typed body 239ms
+ ✓ test/workers/imports-review.test.ts > a parsed upload becomes a reviewable preview and nothing else > 5,000 rows parse with exact totals (no float arithmetic anywhere) 97ms
+ ✓ test/workers/imports-review.test.ts > a parsed upload becomes a reviewable preview and nothing else > before parsing there is no preview yet: queued, nothing to review 26ms
+ ✓ test/workers/imports-review.test.ts > a parsed upload becomes a reviewable preview and nothing else > is owner-only: another account and an unknown id get the same 404 56ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > unavailable storage is a 503 with when to retry, and never sends the failure text 43ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > a body that fails before its first byte is a 503 problem, with no error text 38ms
+ ✓ test/workers/imports-review.test.ts > duplicates are advice only > names matching records and same-file twins, and keeps every row 63ms
+ ✓ test/workers/imports-review.test.ts > preview paging is additive (P2b) > no parameters is exactly the whole preview, with no page key 42ms
+ ✓ test/workers/imports-review.test.ts > preview paging is additive (P2b) > pages only candidates: summary and issues stay whole-file, advice follows the page rows, pages rejoin the whole 47ms
+ ✓ test/workers/imports-review.test.ts > preview paging is additive (P2b) > defaults the missing parameter, and a page past the end is empty 40ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > a HEAD on a receipt download answers its headers and gives its slot back (ruling R96) 290ms
+ ✓ test/workers/imports-review.test.ts > preview paging is additive (P2b) > refuses malformed paging as a validation error, and keeps owner-only 404s 68ms
+ ✓ test/workers/imports-review.test.ts > preview paging is additive (P2b) > a preview that is not ready is served as before, whatever the paging 26ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > downloads refused after they took a slot give the slot back 47ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > a corrupted object is never served as a complete download 41ms
+ ✓ test/workers/imports-review.test.ts > duplicate advice stays linear in the file and the records (M1) > 5,000 identical rows against 5,000 identical records, with statistics older than the import: answered in time, five matches each 138ms
+ ✓ test/workers/imports-review.test.ts > duplicate advice stays linear in the file and the records (M1) > 5,000 distinct rows with statistics older than the import are answered in time 78ms
+ ✓ test/workers/attachments.test.ts > grants are bound to the session (P2c review fix, minor 2) > a grant verifies only for the session it was issued to 56ms
+ ✓ test/workers/attachments.test.ts > ownership holds for replace and remove too (P2c review fix, minor 6) > another account gets the same 404 as for an unknown record, and nothing changes 88ms
+ ✓ test/workers/imports-review.test.ts > duplicate advice stays linear in the file and the records (M1) > names exactly what the self-join named, row for row 38ms
+ ✓ test/workers/imports-review.test.ts > unconfirmed candidates expire after 7 days > queues one expiry job at the preview expiry, and it deletes the candidates when due 42ms
+ ✓ test/workers/attachments.test.ts > privileges and schema > only the routines write receipts or the registry; logins see only what they should 22ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > a receipt grant is bound to the session that asked 47ms
+ ✓ test/workers/imports-review.test.ts > a preview past its 7 days is expired, whatever happened to its expiry job (M4) > an account disabled at the due time: its job ends superseded, the route says expired at once, retention deletes the candidates 43ms
+ ✓ test/workers/imports-review.test.ts > a preview past its 7 days is expired, whatever happened to its expiry job (M4) > leaves a preview inside its 7 days alone 33ms
+ ✓ test/workers/imports-review.test.ts > a parsed import keeps its state until its rows are pruned (minor 4) > pruning its succeeded parse job does not turn it into an expired upload; its rows, preview and totals go 30 days after its raw expiry 35ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > a retained receipt shows as attachment_id wherever the record is read 45ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > purging a deleted record releases its receipt, stamps the release from the vault clock, and deletes its object 45ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > a copy that is never published is due three minutes after its reservation 28ms
+ ✓ test/workers/imports-review.test.ts > the parser container > parses an upload the edge accepted, which the edge then reviews and confirms 41ms
+ ✓ test/workers/imports-review.test.ts > expiry on the vault clock (ruling R37) > a preview expires after 7 days: its candidates go, it reads expired, and an unattached image is due 31ms
+ ✓ test/workers/imports-review.test.ts > expiry on the vault clock (ruling R37) > after pruneImports at importsDueAt, the next importsDueAt is later or null 45ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > copying is bounded: four in flight and a hundred a day per vault, each answered with when to retry 46ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > after pruneAttachments at attachmentsDueAt, the next attachmentsDueAt is later or null 57ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the planner > a second prepare waits for a copy in flight, and needs none once the receipt exists: both checks run in one block 36ms
+ ✓ test/workers/imports-review.test.ts > expiry on the vault clock (ruling R37) > a confirmation resent to another import is not found, and one resent after its preview expired is told the preview is unavailable 40ms
+ ✓ test/workers/imports-review.test.ts > expiry on the vault clock (ruling R37) > the preview says until when its image can be kept: two minutes before the image is due, while more than two minutes are left 30ms
+ ✓ test/workers/imports-review.test.ts > the planner's cases on the review rules > a rejected file reads rejected with its issue, and corrections and freezes are refused as rejected 41ms
+ ✓ test/workers/imports-review.test.ts > the planner's cases on the review rules > a freeze names each row it cannot take and why: incomplete, after today or before tracking, an unknown or mistyped wallet or category 27ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the planner > a retain whose session ends during its copy commits nothing, and its copy is given back at once 36ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the planner > a copy whose import image is gone by then keeps nothing and is refused as expired 30ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the planner > a retain whose copy outlived its own reservation is refused as expired, even when a failed delete moved its deadline on 33ms
+ ✓ test/workers/imports-review.test.ts > the planner's cases on the review rules > rows that cannot be saved now are conflicted: a category archived after the freeze, a date after today 38ms
+ ✓ test/workers/imports-review.test.ts > the planner's cases on the review rules > progress reads stale after a correction and expired past the preview's expiry, and a re-freeze counts the rows already committed 65ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a build cut into more chunks than SQLite has parameters records them all 175ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a chunk is served with its exact bytes and digest, and a tampered chunk is 404 58ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > after pruneSnapshots at snapshotsDueAt, the next snapshotsDueAt is later or null 23ms
+ ✓ test/workers/imports-review.test.ts > the planner's cases on the review rules > an import with no preview reads its parse state: parsing, failed with its issue, cancelled or expired 29ms
+ ✓ test/workers/imports-review.test.ts > the planner's cases on the review rules > the synced records stay while their preview and selection are live, however old their last change 43ms
+stdout | test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > ten times the yearly ledger builds and exports inside the memory budget
+ten-times proof: {"databaseSize":50692096,"records":32000,"entities":32002,"chunks":19,"storedBytes":19001807,"longestLine":593,"peakHeldBytes":20050109,"csvBytes":14414226,"exportPeakHeldBytes":28828452,"seedMs":3358,"buildMs":630,"exportMs":304}
+
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > ten times the yearly ledger builds and exports inside the memory budget 4392ms
+uncaught exception; source = Uncaught (in promise); stack = Error: unavailable
+    at doWrapper (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/alarm-hardening-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:2428:30)
+    at async Context.do (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/alarm-hardening-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:2752:17)
+stderr | test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a snapshot whose build fails on all three attempts is recorded failed
+{"level":"error","event":"snapshot_build_failed","failure":"Error"}
+
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a build that starts after the vault stopped being active reads nothing and stores nothing 33ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a too-large snapshot fails visibly and publishes nothing 32ms
+uncaught exception; source = Uncaught (in promise); stack = WorkflowError: (instance.already_exists) Workflow instance with id "dfd0802b-dada-8058-afe4-77f2413381d6" already exists
+    at createWorkflowError (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/alarm-hardening-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:1383:10)
+    at duplicateInstanceError (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/alarm-hardening-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:1435:10)
+    at WorkflowBinding.create (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/alarm-hardening-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:4724:13)
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a snapshot whose build fails on all three attempts is recorded failed 42ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a build that fails on its first two attempts is ready on its third 39ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > the snapshot starter starts each pending snapshot once on SnapshotWorkflow, and is due a minute after an unstarted request 22ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a snapshot started twice by overlapping runs is built once 42ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > pruneSnapshots fails a snapshot left pending for a day, drops one read below the purge watermark, and deletes one a week past its expiry 75ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a request takes no body field and a UUID key, waits for the jobs gate, and a status of a malformed or unknown id is 404 50ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > at most four chunk downloads run at once in a process, each streamed and never read whole; more are told to retry 40ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a chunk download refused after it took its slot gives the slot back 55ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a HEAD on a chunk download answers its headers, reads its chunk to the end and gives its slot back 83ms
+
+ Test Files  9 passed (9)
+      Tests  261 passed | 1 todo (262)
+   Start at  09:56:38
+   Duration  10.81s (transform 13.57s, setup 30.00s, import 951ms, tests 21.50s, environment 1ms)
+
