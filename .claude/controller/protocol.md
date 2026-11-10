@@ -57,7 +57,7 @@ The orchestrator (not you) pushes, opens pull requests, merges and closes issues
      `until mkdir /private/tmp/claude-501/jotbun-heavy.lock 2>/dev/null; do sleep 20; done` before, and `rmdir /private/tmp/claude-501/jotbun-heavy.lock` after (also after a failure). If Docker or PostgreSQL is unavailable, record the suite as SKIPPED with the reason; CI runs it.
    - Always: `/usr/bin/git diff --check origin/claude/p1a-vault-core...HEAD`.
 7. **Receipt:** add your own section to `docs/implementation/premium-progress.md` in the existing style: status, RED to GREEN counts, mutants, the gate with pass counts, deviations, SKIPPED items, risks and notes for the integrator. Never rewrite another task's section.
-8. **Commit** locally: a plain imperative summary line (no type prefix), a short body, then a blank line and `Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>`.
+8. **Commit** locally: a plain imperative summary line (no type prefix), a short body, then a blank line and the `Co-Authored-By:` trailer your assignment gives, naming the model you run as.
 
 ## Your final message (the orchestrator reads only this)
 
@@ -67,7 +67,7 @@ The orchestrator (not you) pushes, opens pull requests, merges and closes issues
 - Each gate command with its result (passed or failed, test counts); anything SKIPPED and why.
 - Deviations from the plan, and anything the reviewer should look at first.
 
-## Reviewers (Opus)
+## Reviewers
 
 - Review the commit range `origin/claude/p1a-vault-core...<sha>` against the plan task, the rulings it cites, and this protocol.
 - **R100:** do not re-run whole suites. Read CI's results on the PR (`gh pr checks <n> --repo mygogocash/jotbun`, and the job logs for counts). Spend the time on the task's focused files, probes for what could be wrong, and your own mutants for untested guards. Rerun at most about 10 of the planner's mutants as a sample.

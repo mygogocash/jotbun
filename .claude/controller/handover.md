@@ -4,6 +4,18 @@ Durable folder: `/Users/kunanonjarat/Developer/jotbun/.claude/controller/` (prot
 
 Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vault-core`), head 0bd5659 (controller state after 1D-T8's dispatch). Nothing outside `.claude/` changed since 606e131. No PR is open into the integration branch; only #70 into main.
 
+## Model routing changed, 10 Nov 14:40 Bangkok (owner's ask: "maximize AI resources")
+
+- The skill's new "Model routing" section and `make_prompt.py` (which now prints a `delegate_task` target) apply to every dispatch from now on:
+  - planners stay on Claude Code Opus xhigh;
+  - builds, fixes, reviews and confirming reviews move to Antigravity Gemini 4 Argon (High);
+  - money-path and privacy PRs also get a second review on Antigravity Claude Opus 5.5 (Medium), and the owner approves their merge;
+  - scouting and CI triage go to Antigravity Gemini 3.8 Flash (High);
+  - Fable 5.2 is an advisor only, about once a day.
+- The sources are `/Users/kunanonjarat/ai-agent-workflow.md` and gogocash's `knowledge/practice/model-routing.md`.
+- Agents already running (#392 to #398) keep their models. The routing starts with the next dispatch, e.g. #396's test-only fixer and its confirming review.
+- `make_prompt.py --size` is gone; `second` and `--claude-limited` are new.
+
 ## Takeover in T3 Code (9 Nov, 22:05 Bangkok): READ THIS FIRST
 
 The Orca controller (session 121af0e6) hit its 5-hour usage limit at 22:04; the limit resets at 01:50 on 10 Nov. Its agents died with it, and its background jobs were killed. **Do not let that Orca session continue when its limit resets**, including through its "Continue automatically when limits reset" option: two controllers would collide in the same worktrees.
@@ -295,6 +307,15 @@ The list below is kept for the record.
       - RED 1 of 26 (m-1), GREEN 26 of 26 and 4 of 4, catalogue 18. 40 of 40 mutants, with output byte-identical to the planner's. `test:unit` 970, `test:app` 34.
       - The controller checked both files against the fix kit's `real/` and the clean merge with the head.
     - **The confirming Sonnet review runs as a workflow** (run wf_4739381a-1ab, task wv1qqqe83), writing `reviews/tray-hardening-confirm.md`.
+    - **The confirming review approved at 14:38** (`reviews/tray-hardening-confirm.md`; resumed after the fourth stop as task wneoycf3d).
+      - m-1 is fixed: all 19 first-review probes pass, and the one-`act` case fails on 784667b.
+      - The Modal seam is faithful, X1, D2 and X4 are killed, and 10 of 40 mutants rerun and killed.
+    - **c-m1 (minor):** F1 opens a mirrored window. An earlier end rendered in the same commit as the next hide still says closed, so a later hide's end says it again.
+      - In the reviewer's model of 141 length-8 sequences: 44 deviations on 784667b, 22 on fc78376, and 0 with the validated guard `!shown && !showing.current` (the ref restored).
+      - **Folded into a second fix round on #392**, with c-n1 (one iOS case for the fresh `onClosed`, mutant M3) and c-n2 (four stale receipt lines). P2-T16 builds `whenClosed` on this guard.
+      - The tray-hardening planner (thread 351b244a, run 4, from 14:38) writes `briefs/tray-hardening-fix2.md`, with kit `scratch/tray-hardening-fix2-planner/`.
+    - Then: a Haiku fixer on fc78376, push, update #392's body, and a confirming Sonnet review of round two. Merge at its head on green CI.
+    - **Rule:** a third failing round means telling the owner. This round answers an approval's minor, not a failed review.
     - **On approval and green CI:** `merge_task_pr.sh 392 fc78376` (no task id), then `promote_pr.sh tray-hardening 392`. Then:
       - take P2-T16 off held.txt;
       - dispatch P2-T14;
