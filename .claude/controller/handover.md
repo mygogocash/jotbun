@@ -271,6 +271,16 @@ The list below is kept for the record.
       - RED 1 of 26 (m-1), GREEN 26, 40 of 40 mutants, proven on 784667b merged with d1111f8.
     - **The fixer (Haiku max, 9c6f9ed4) was dispatched at 10:01** in the tray-hardening worktree; it merges the head into the branch first (Step 1.2).
     - After DONE: push `fix/tray-hardening`, update #392's body (+4 cases, the fix round), and run a confirming Sonnet review. Then merge at the new head on green CI.
+    - **Fix round DONE: merge 33edab1 (the head at 6a727dc into the branch), then fix commit fc78376**, pushed at 10:11; #392's body is updated.
+      - RED 1 of 26 (m-1), GREEN 26 of 26 and 4 of 4, catalogue 18. 40 of 40 mutants, with output byte-identical to the planner's. `test:unit` 970, `test:app` 34.
+      - The controller checked both files against the fix kit's `real/` and the clean merge with the head.
+    - **The confirming Sonnet review runs as a workflow** (run wf_4739381a-1ab, task wv1qqqe83), writing `reviews/tray-hardening-confirm.md`.
+    - **On approval and green CI:** `merge_task_pr.sh 392 fc78376` (no task id), then `promote_pr.sh tray-hardening 392`. Then:
+      - take P2-T16 off held.txt;
+      - dispatch P2-T14;
+      - fix the receipt's stale Status and Base lines in a one-line commit if the confirming review lists them.
+
+      The push's own CI run will be refused for billing like the others; rerun it after the fix.
     - **Then:**
       1. dispatch a Haiku fixer on `fix/tray-hardening`;
       2. push the new head and update #392's body;
@@ -368,6 +378,15 @@ The list below is kept for the record.
 
       A skeptic checks each blocker or major, and a synthesizer writes `reviews/1B-T12.md`.
     - On approval and a green CI: `merge_task_pr.sh 394 ef37c41 1B-T12`, then `promote_pr.sh 1B-T12 394`.
+    - **The review approved at 10:11** (`reviews/1B-T12.md`): no blocker or major, one minor and eight nits. Lens A re-derived all 40 NestJS answers; they hash identically to `expected-nest.json`. One link is unobserved: that NestJS answers what its code reads as. That is CI's `edge` job.
+    - **The controller folded m1, n4, n5 and n6 into a fix round on #394,** since CI cannot run before billing is fixed:
+      - m1: six sanity assertions, so a comparison cannot pass when both sides fail alike (probe V1);
+      - n4: the R92 message;
+      - n5: pin the default background `'on'`;
+      - n6: `persistTo` is no longer leaked.
+
+      The 1B-T12 planner (thread 373c38a4, run 3, from 10:11) writes `briefs/1B-T12-fix.md`, with kit `scratch/1b-t12-fix-planner/`. The other nits are in followups.md (1B-T13; snapshot-parity-window).
+    - The merge then waits for the fix round's confirming review and a green `edge` job, at the fix round's head (not ef37c41).
   - **alarm-hardening** (a37bdb47; WT alarm-hardening on fix/alarm-hardening), 1B-T11's m1, m2, m4 and nits n1 to n5 and n9. The planner (Opus xhigh) was dispatched at 08:58, when #391's review freed a slot.
     - It edits `jobs.ts`, `user-vault.ts` and `files-alarm.test.ts`, and for m4 `attachments.ts` (`attachmentsDueAt`) and `previews.ts` (`importsDueAt`).
     - fix-download-aborts pins those two functions' guards in its own test files. The planner was told to keep the guards exactly and to name the lines it changes, so the two merges can be ordered.
