@@ -1,0 +1,40 @@
+--- a/src/v1/files/uploads.ts
++++ b/src/v1/files/uploads.ts
+@@ -8,6 +8,7 @@ import { UploadIntake } from '@api/imports/upload-intake'
+ import { R2ObjectStore, UnavailableObjectStore } from '../../server/storage/r2-object-store'
+ import type { VaultClaims, VaultReply, VaultRouteId } from '../protocol'
+ import type { VaultSession, WorkerContext } from '../worker-routes'
++import { untilReturned } from './slots'
+ 
+ // POST /v1/imports on the vault (1B-T5): the API's UploadIntake, unchanged,
+ // streams the body into R2 quarantine while each of its database steps is one
+@@ -71,7 +72,9 @@ async function* emptyBody(): AsyncIterable<Uint8Array> {}
+  * The `import.upload` Worker route. The front door has already applied the
+  * `uploads` and `imports` gates (404 while uploads are off), the client
+  * version and the token. An image needs the `ocr` gate open, before any byte
+- * is read; then the intake answers 202 with the accepted import.
++ * is read; then the intake answers 202 with the accepted import. The upload's
++ * place among the isolate's uploads keeps the request alive until it is given
++ * back, even when the client goes away mid-upload (untilReturned, R97).
+  */
+ export async function uploadRoute(w: WorkerContext): Promise<VaultReply> {
+   if (!w.vault || !w.claims) throw new Error('an upload needs a session')
+@@ -79,6 +82,9 @@ export async function uploadRoute(w: WorkerContext): Promise<VaultReply> {
+   if (format === 'jpeg' || format === 'png' || format === 'webp') w.gates.assertOpen('ocr')
+   if (uploading >= MAX_UPLOADS_PER_ISOLATE) throw new ProblemException(503, 'SERVICE_UNAVAILABLE', { retryAfterSeconds: 5 })
+   uploading += 1
++  const done = untilReturned(w, () => {
++    uploading -= 1
++  })
+   try {
+     const store = w.env.OBJECTS ? new R2ObjectStore(w.env.OBJECTS) : new UnavailableObjectStore()
+     const accepted = await new UploadIntake(vaultIntakeRepository(w.vault), store).accept(sessionContextOf(w.claims), w.stream ?? emptyBody(), {
+@@ -89,7 +95,7 @@ export async function uploadRoute(w: WorkerContext): Promise<VaultReply> {
+     })
+     return { ok: true, status: 202, body: accepted }
+   } finally {
+-    uploading -= 1
++    done()
+   }
+ }
+ 

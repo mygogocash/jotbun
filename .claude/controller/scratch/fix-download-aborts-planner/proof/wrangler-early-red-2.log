@@ -1,0 +1,73 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/proof-runs/base2/root/apps/edge
+
+ledger {"records":12000}
+export (5394226 bytes): aborted GETs [200,200,200,200]; then GET 503 {"code":"SERVICE_UNAVAILABLE","request_id":"e1e28bfe-8f1f-443a-bd17-dbdd7d3e6a84","message_key":"errors.service_unavaila; 5 s later GET 503 {"code":"SERVICE_UNAVAILABLE","request_id":"1e8877e8-132b-44d4-8da3-83378de99c09","message_key":"errors.service_unavaila
+snapshot chunks [1048269,1048375,1048350,1048390,1048437,1048404,830362]
+snapshot chunk (1048269 bytes): aborted GETs [200,200,200,200]; then GET 503 {"code":"SERVICE_UNAVAILABLE","request_id":"b08f772e-a84f-4664-b6ba-cae222797d2c","message_key":"errors.service_unavaila; 5 s later GET 503 {"code":"SERVICE_UNAVAILABLE","request_id":"fa61d407-6b42-4f12-bfc5-a6bb58304560","message_key":"errors.service_unavaila
+receipt (4194304 bytes): aborted GETs [200,200,503,503]; then GET 503 {"code":"SERVICE_UNAVAILABLE","request_id":"85e64bd8-0ab3-495c-b2ef-0354086f5100","message_key":"errors.service_unavaila; 5 s later GET 503 {"code":"SERVICE_UNAVAILABLE","request_id":"e61c06b4-45c4-4890-9c01-0b886f3e2b5c","message_key":"errors.service_unavaila
+retain (12582912-byte copies, one took 120 ms, each aborted after 60 ms): aborted retains ["AbortError","AbortError","AbortError","AbortError"]; then another member's retain 200 {"command_id":"fe51e055-e228-4db3-ab8b-fc7bd9547f6a","entity_id":"cca09688-f243-41b5-9052-834b7547f1e6","version":2,"com; 5 s later 200 {"command_id":"65e32a97-5be4-4409-8581-39df3f7adcfd","entity_id":"7e79f369-e836-4d52-be77-706ab4cab253","version":2,"com
+answers {"export":"503","snapshot":"503","receipt":"503","retain":"200"}
+[wrangler:info] GET /v1/export-files/AcO-liLTJ4qPrdWeng63__EAAAAAavJ571BTjwBCAQYBfSAZJ_TvCBA 200 OK (4ms)
+[wrangler:info] GET /v1/export-files/AcO-liLTJ4qPrdWeng63__EAAAAAavJ571BTjwBCAQYBfSAZJ_TvCBA 200 OK (3ms)
+[wrangler:info] GET /v1/export-files/AcO-liLTJ4qPrdWeng63__EAAAAAavJ571BTjwBCAQYBfSAZJ_TvCBA 200 OK (3ms)
+[wrangler:info] GET /v1/export-files/AcO-liLTJ4qPrdWeng63__EAAAAAavJ571BTjwBCAQYBfSAZJ_TvCBA 200 OK (3ms)
+[wrangler:info] GET /v1/export-files/AcO-liLTJ4qPrdWeng63__EAAAAAavJ571BTjwBCAQYBfSAZJ_TvCBA 503 Service Unavailable (4ms)
+[wrangler:info] GET /v1/export-files/AcO-liLTJ4qPrdWeng63__EAAAAAavJ571BTjwBCAQYBfSAZJ_TvCBA 503 Service Unavailable (3ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/Aa3QG8lA34KIhOKjVsWEB0cAAAAAavJ59xrx8YkGQFIoHY3394gmovw 200 OK (6ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/Aa3QG8lA34KIhOKjVsWEB0cAAAAAavJ59xrx8YkGQFIoHY3394gmovw 200 OK (5ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/Aa3QG8lA34KIhOKjVsWEB0cAAAAAavJ59xrx8YkGQFIoHY3394gmovw 200 OK (7ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/Aa3QG8lA34KIhOKjVsWEB0cAAAAAavJ59xrx8YkGQFIoHY3394gmovw 200 OK (6ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/Aa3QG8lA34KIhOKjVsWEB0cAAAAAavJ59xrx8YkGQFIoHY3394gmovw 503 Service Unavailable (3ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/Aa3QG8lA34KIhOKjVsWEB0cAAAAAavJ59xrx8YkGQFIoHY3394gmovw 503 Service Unavailable (4ms)
+[wrangler:info] POST /v1/transactions/034e1d34-d507-4560-8266-a433e0bf3dc2/attachment 200 OK (42ms)
+[wrangler:info] GET /v1/attachment-files/AeuscCMw7UlBizmPIcX_nnMAAAAAavJ5_tMc2JyGhe1plmoaMG8A-5A 200 OK (4ms)
+[wrangler:info] GET /v1/attachment-files/AeuscCMw7UlBizmPIcX_nnMAAAAAavJ5_tMc2JyGhe1plmoaMG8A-5A 200 OK (2ms)
+[wrangler:info] GET /v1/attachment-files/AeuscCMw7UlBizmPIcX_nnMAAAAAavJ5_tMc2JyGhe1plmoaMG8A-5A 503 Service Unavailable (2ms)
+[wrangler:info] GET /v1/attachment-files/AeuscCMw7UlBizmPIcX_nnMAAAAAavJ5_tMc2JyGhe1plmoaMG8A-5A 503 Service Unavailable (2ms)
+[wrangler:info] GET /v1/attachment-files/AeuscCMw7UlBizmPIcX_nnMAAAAAavJ5_tMc2JyGhe1plmoaMG8A-5A 503 Service Unavailable (4ms)
+[wrangler:info] GET /v1/attachment-files/AeuscCMw7UlBizmPIcX_nnMAAAAAavJ5_tMc2JyGhe1plmoaMG8A-5A 503 Service Unavailable (4ms)
+[wrangler:info] POST /v1/transactions/eb743a0b-3091-4058-88d6-c34da6a186fc/attachment 200 OK (118ms)
+[wrangler:info] POST /v1/transactions/10d51db0-7d39-41d9-bf96-b21f26c89308/attachment 200 OK (114ms)
+[wrangler:info] POST /v1/transactions/7c98fed3-3a80-415d-bcd0-35a0cc75aa53/attachment 200 OK (109ms)
+[wrangler:info] POST /v1/transactions/fcd9da66-5595-408f-9018-fe58fd61da62/attachment 200 OK (117ms)
+[wrangler:info] POST /v1/transactions/0239b0fa-1d49-416f-bef7-fc10f8e36b86/attachment 200 OK (123ms)
+[wrangler:info] POST /v1/transactions/cca09688-f243-41b5-9052-834b7547f1e6/attachment 200 OK (9ms)
+[wrangler:info] POST /v1/transactions/7e79f369-e836-4d52-be77-706ab4cab253/attachment 200 OK (9ms)
+ ❯ test/aborts.proof.test.ts (5 tests | 1 failed) 35703ms
+   × the answers after the aborted requests 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/aborts.proof.test.ts > the answers after the aborted requests
+AssertionError: expected { Object (export, snapshot, ...) } to deeply equal { Object (export, snapshot, ...) }
+
+- Expected
++ Received
+
+  {
+-   "export": "200",
+-   "receipt": "200",
++   "export": "503",
++   "receipt": "503",
+    "retain": "200",
+-   "snapshot": "200",
++   "snapshot": "503",
+  }
+
+ ❯ test/aborts.proof.test.ts:236:19
+    234|       .join('\n'),
+    235|   )
+    236|   expect(answers).toEqual({ export: '200', snapshot: '200', receipt: '…
+       |                   ^
+    237| })
+    238|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  08:52:00
+   Duration  36.38s (transform 263ms, setup 0ms, import 555ms, tests 35.70s, environment 0ms)
+

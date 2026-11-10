@@ -308,6 +308,18 @@ The list below is kept for the record.
   - `app/spend/wallets.tsx` is a route, so its gate has `typecheck:routes`; CI runs the exports.
 - **The server lane: two planners dispatched at 08:15 from c8929f2 (Opus xhigh):**
   - **fix-download-aborts** (46ff8a6d; WT fix-download-aborts on fix/download-aborts): R97's `waitUntil` fix for every vault download, with a `wrangler dev` proof, plus every review pin followups.md gives it. It may split the test-only pins into `briefs/download-pins.md`. It must land before 1B-T13.
+    - **READY at 09:39 as two briefs that share no file** (they can run in parallel and merge in either order; together: 12 workers files, 392 passed and 1 todo):
+      - **A, `briefs/fix-download-aborts.md` (M).**
+        - Files: new `src/v1/files/slots.ts` (`untilReturned`) and `test/workers/download-aborts.test.ts` (5 cases); shared `downloads.ts`, `receipts.ts`, `uploads.ts` and `handler.ts` (awaited `headOf` returns).
+        - The `wrangler dev` proof: on the base, export, snapshot-chunk and receipt downloads each answer 503 after four aborted GETs; with the fix each is served whole (3 of 3).
+        - Retains and uploads do not leak locally (wrangler runs a handler on after its client leaves). Their wrappers rest on Cloudflare's documented cancellation (P3, P4).
+        - P1 to P11 are accepted, **P4 included**: the upload's place takes the wrapper too. Kit `scratch/fix-download-aborts-planner/`: check_kit at d1111f8 gives 31 OK, and the 4 `orig/` files are identical. 9 of 9 mutants.
+        - The implementer (Haiku max, c5d323ab) was dispatched at 09:39 in a pre-installed (`install-edge`) fix-download-aborts from d1111f8, under the heavy lock.
+      - **B, `briefs/download-pins.md` (L, test-only).**
+        - It edits `test/workers/exports.test.ts`, `attachments.test.ts`, `snapshots.test.ts`, `imports-review.test.ts` and `ai.test.ts`, with every review pin from the followups entry (the table in brief A).
+        - Kit `scratch/download-pins-planner/`: check_kit at d1111f8 gives 20 OK, and the 5 `orig/` files are identical. GREEN 242 of 242, 20 of 20 mutants.
+        - **Waits for a free slot.** Suggested WT download-pins on fix/download-pins. Read its planner calls before dispatch.
+        - It pins `attachmentsDueAt`'s guards, which alarm-hardening's m4 rewrites: whichever merges second keeps both.
   - **1B-T12** (373c38a4; WT p1-1b-t12 on p1/1b-t12-files-parity), the files parity session against NestJS.
     - Docker stays stopped: CI's edge job runs `test:edge:db`. The planner reports BLOCKED if it truly needs a local PostgreSQL.
     - It decides n8 (the vault's 404 against NestJS's 30-day `expired`).

@@ -1,0 +1,22 @@
+
+> gogospend@0.0.0 test:edge
+> npm test --prefix apps/edge
+
+
+> gogospend-edge@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/download-pins-planner/tree/apps/edge
+
+{"level":"warn","event":"cashback_catalogue_rejected","status":200}
+{"level":"warn","event":"cashback_catalogue_rejected","status":200}
+{"level":"warn","event":"cashback_catalogue_rejected","status":200}
+{"level":"warn","event":"cashback_catalogue_rejected","status":503}
+{"level":"warn","event":"cashback_catalogue_unavailable","error":"TypeError"}
+
+ Test Files  15 passed (15)
+      Tests  176 passed (176)
+   Start at  09:27:02
+   Duration  789ms (transform 1.79s, setup 0ms, import 4.02s, tests 467ms, environment 1ms)
+

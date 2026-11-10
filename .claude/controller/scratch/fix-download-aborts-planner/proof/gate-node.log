@@ -1,0 +1,22 @@
+
+> gogospend@0.0.0 test:edge
+> npm test --prefix apps/edge
+
+
+> gogospend-edge@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/tree/apps/edge
+
+{"level":"warn","event":"cashback_catalogue_rejected","status":200}
+{"level":"warn","event":"cashback_catalogue_rejected","status":200}
+{"level":"warn","event":"cashback_catalogue_rejected","status":200}
+{"level":"warn","event":"cashback_catalogue_rejected","status":503}
+{"level":"warn","event":"cashback_catalogue_unavailable","error":"TypeError"}
+
+ Test Files  15 passed (15)
+      Tests  176 passed (176)
+   Start at  09:08:38
+   Duration  951ms (transform 2.22s, setup 0ms, import 4.95s, tests 621ms, environment 1ms)
+
