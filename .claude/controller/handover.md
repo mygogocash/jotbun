@@ -80,7 +80,16 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - **1B-T7 merged first.** At about 07:59 #387's branch was updated through the update-branch API (`expected_head_sha` = the reviewed a9a7d27).
       - The new head 2f46822 is "Merge branch 'claude/p1a-vault-core' into p1/1b-t11-files-alarm". The task's files are unchanged, and the PR's diff is the same 10 files (+1110, -98).
       - A fresh nine-job run tests 1B-T11 together with 1B-T7.
-      - **Merge at 2f46822:** `merge_task_pr.sh 387 2f46822 1B-T11` once its review approves and that run is green. Then run `promote_pr.sh 1B-T11 387`, and plan fix-download-aborts.
+    - **Merged as c8929f2 (#387, at 08:14).** Issue #115 is closed, and the worktree and branches are removed.
+      - The review workflow approved: no blocker or major, four minors and ten nits.
+      - CI was green alone (29 files and 698 passed) and together with 1B-T7 (30 files and 736 passed).
+      - The findings (followups.md):
+        - m1, m2 and m4 plus nits go to the new **alarm-hardening** follow-up, not yet dispatched;
+        - m3 and n6 go to fix-download-aborts;
+        - n8 (the 30-day expired window) goes to 1B-T12;
+        - n10 to 1B-T13, and n7 to 1C-T11.
+      - **Promotion PR #390** is stacked on #389; stack #379 now holds nine PRs.
+    - **Edge baseline now (CI):** workers 30 files, 736 passed and 1 todo; `test:edge` 15 files and 176 tests.
     - fix-download-aborts is then planned on top of 1B-T7 and 1B-T11 once both merge (followups.md).
   - **fix-download-aborts** is planned next, on top of 1B-T7's `real/` `handler.ts`. It must land before 1B-T13; its list in followups.md now includes 1B-T8's review cases.
   - **ci-parallel-jobs: brief READY at 857b9f2** (M), with the controller's amendment (the iOS export and `typecheck:routes` in CI).
@@ -211,7 +220,12 @@ The list below is kept for the record.
   - **P2-T14** (deda1216; WT p2-t14 on p2/t14-add-flow), the add flow, keypad and amount step, depth 17. It plans against today's `Tray` props, without editing `Tray.tsx`.
   - **P2-T12** (e328d240; WT p2-t12 on p2/t12-card-stack), the card stack and frames, depth 15. It takes P2-T11's K5 and decides P2-T9's spring overshoot.
   - Each task's catalogue sections go in a list file of its own, with one spread in `dev/catalogue/wallet/index.ts` at its own anchor (not in `kitSections.tsx`).
-- **Next in the server lane, once 1B-T11 (#387) merges:** fix-download-aborts (on top of 1B-T7 and 1B-T11), and 1B-T12 (the files parity session, which compares the routes 1B-T11 changes).
+- **The server lane: two planners dispatched at 08:15 from c8929f2 (Opus xhigh):**
+  - **fix-download-aborts** (46ff8a6d; WT fix-download-aborts on fix/download-aborts): R97's `waitUntil` fix for every vault download, with a `wrangler dev` proof, plus every review pin followups.md gives it. It may split the test-only pins into `briefs/download-pins.md`. It must land before 1B-T13.
+  - **1B-T12** (373c38a4; WT p1-1b-t12 on p1/1b-t12-files-parity), the files parity session against NestJS.
+    - Docker stays stopped: CI's edge job runs `test:edge:db`. The planner reports BLOCKED if it truly needs a local PostgreSQL.
+    - It decides n8 (the vault's 404 against NestJS's 30-day `expired`).
+  - **alarm-hardening** (1B-T11's m1, m2, m4 and nits): plan it when a slot frees. It edits `jobs.ts`, `user-vault.ts` and `files-alarm.test.ts`, with no overlap with the two above.
 
 ## PR #371: the integration branch into main. The owner merged it on 9 Nov, 21:30 Bangkok, as afcf884
 - It was merged with a merge commit, so history is kept. The controller then fast-forwarded claude/p1a-vault-core to afcf884, which adds main's README and CHANGELOG, so the two branches were level.
