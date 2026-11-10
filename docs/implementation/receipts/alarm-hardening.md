@@ -1,7 +1,7 @@
 # alarm-hardening: Harden the vault alarm after 1B-T11
 
 - **Status:** built and verified locally on `fix/alarm-hardening` (`.claude/worktrees/alarm-hardening`), from `06fdd97`. The worktree was made at `402c1df`; Step 0.1 fast-forwarded it to `06fdd97`, which changes only `.claude/controller/` files (`followups.md`, `handover.md` and the planner's kit), so no file under `apps/`, `packages/` or `apps/api` moved. Not pushed. Under ruling R87 this receipt is its own file; `premium-progress.md` is not edited. Under ruling R100 the whole workers suite is CI's (`test:edge:workers`), and so is the database suite (`test:edge:db`, SKIPPED here: Docker is stopped). The independent review is the controller's, after this receipt.
-- **Carries:** 1B-T11's review (`reviews/1B-T11.md`): m1, m2, m4, n1, n2, n3, n4, n5 and n9. m3 and n6 are fix-download-aborts'; n7, n8 and n10 are later tasks'.
+- **Carries:** 1B-T11's review (`reviews/1B-T11.md`): m1, m2, m4, n1, n2, n3, n4, n5 and n9. m3 and n6 are download-pins' (#397, the test-only half of fix-download-aborts); n7, n8 and n10 are later tasks'.
 - **Files:**
   - 1B-T11's: `src/vault/files/jobs.ts` (`FILE_PRUNES` and `PRUNE_DUE_TIMES` in the new order, each entry an arrow; a held one-run guard logs `file_run_held` and returns `['delete_objects']`); `test/workers/files-alarm.test.ts` (12 new cases and 2 changed: 35 in all).
   - Shared: `src/vault/user-vault.ts` (`rearm` keeps the promise of its `setAlarm` or `deleteAlarm`); `src/vault/schema.ts` (`attachmentChecks`, in `vaultSchema`); `src/vault/migrations/index.ts` (the `0004_alarm_bounds` journal entry: idx 4, `when` 1761696000000); `src/cloudflare-workers.d.ts` (`SqlStorageCursor.rowsRead`); `test/workers/vault-schema.test.ts` (`'attachment_checks'` in the table list).
@@ -94,7 +94,7 @@
   - P9, the before-and-after cost: the table's figures are the planner's (`proof/measure-before.log`, `proof/measure-after.log`); they were not re-measured here.
   - P10, n5: every `FILE_PRUNES` and `PRUNE_DUE_TIMES` entry is an arrow that calls its function when it runs, with a comment on the cycle. The cycle stays. The R4 what-if is the planner's, not repeated here.
   - P11, n9: the P14 bound holds for import reviews only (see the correction below).
-  - P12, left as they are, with the reason: `recordsDue` (alarm-only, once or twice per alarm), `snapshotsDueAt`'s scan (fix-download-aborts'), 1A's `nextDue`, and the other alarm rules of 1B-T11's brief.
+  - P12, left as they are, with the reason: `recordsDue` (alarm-only, once or twice per alarm), `snapshotsDueAt`'s scan (pinned by download-pins, #397), 1A's `nextDue`, and the other alarm rules of 1B-T11's brief.
   - P13, the RED's stub is 0004 as the table only, and the four source files are at their base.
   - P14, hosted checks are SKIPPED; the whole workers suite is CI's; `test:edge:db` is SKIPPED.
   - Not a planner call: the one-run case's RED message is vitest's abbreviated object diff (RED, item 2). The sync was a fast-forward, `402c1df` to `06fdd97`, which brought the planner kit into the branch; the kit's `SHA256SUMS` then checked 45 OK.
@@ -105,7 +105,7 @@
   - The n2 catch's `alarmAt === at` guard.
   - The R37 seed's comment.
 - **Notes for later tasks:**
-  - fix-download-aborts: the `attachments.ts` and `previews.ts` lines this task changed (the brief's "How this task meets the other open work"), and the 1B-T9 review's X5 text, which is now A1's text.
+  - download-pins (#397): the `attachments.ts` and `previews.ts` lines this task changed (the brief's "How this task meets the other open work"), and the 1B-T9 review's X5 text, which is now A1's text.
   - 1B-T13: 0004's table and index are empty in a vault without receipt changes since its last alarm, or without imports.
   - Any task that writes `attachments` or `transaction_attachments`: 0004's triggers list the receipt in `attachment_checks`, and the next `pruneAttachments` empties it (R105).
   - Later: `recordsDue` could read `LIVE_IMPORT_HEADS` too (alarm-only today); 1A's `nextDue` counts every change and head after every write.
