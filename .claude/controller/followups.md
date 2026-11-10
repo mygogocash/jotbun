@@ -80,13 +80,13 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - m2: the account-unavailable variant shows lines that are false for a deleted account, and leads with a refused sign-in;
     - m4: K24, the owner may drop today's sign-in terms box when approving.
 - P2-T8 (#365, merged 1502e65 on 9 Nov, issue #154 closed; review in reviews/P2-T8.md, Approved with two minors). Probes are in scratch/p2-t8-review/.
-  - **P2-T11 (next to edit the harness), m-1:** two of the planner's "equivalent" mutants are not equivalent, and X2 survives.
+  - **DONE in P2-T11 (#382, merged 5a33820): m-1.** Two of the planner's "equivalent" mutants were not equivalent, and X2 survived; P2-T11 added the review's cases H6 and H7, which kill E2, E3 and X2 as HA2 to HA4.
     - E2: without `BunIntensityProvider`, `setIntensity` throws and a stored intensity is ignored.
     - E3: without the inner `IntlProvider`, a stored or newly chosen language changes the language drawn.
     - X2: `mockReturnValueOnce` lets kit parts (`Sheet`, `UndoBar`, `BunPeek`) take the reduced-motion answer first, so under `reducedMotion: true` the wallet reads false.
 
     The review's two ready cases close all three.
-  - **P2-T35 (and one sentence in the harness header), m-2:** the inner `IntlProvider` locks the drawn language. Under `mountWallet`, `setPreference('en')` changes the stored preference but the screen stays in Thai. P2-T35's language tray and welcome language switch must choose how to test this.
+  - **P2-T35 (and one sentence in the harness header), m-2:** the inner `IntlProvider` locks the drawn language. Under `mountWallet`, `setPreference('en')` changes the preference but the screen stays in Thai. (Nothing is stored under `mountWallet`; a test that reads the stored language must call `installBrowserStorage()` first. P2-T11's review n7 says to drop "stored" from the harness header's sentence too.) P2-T35's language tray and welcome language switch must choose how to test this.
   - **Wallet screen tasks:**
     - the reduced-motion spy's call count builds up across mounts within one case;
     - `useWindowDimensions()` reads 0 × 0 under `mountWallet`;
@@ -267,3 +267,19 @@ The review reports these came from were under /private/tmp and were lost on 8 No
 - 1B-T11 planner notes (briefs/1B-T11.md; the brief was READY on 10 Nov, under R104):
   - **Whoever next edits `apps/edge/test/workers/imports-review.test.ts` (P19, older than 1B-T11):** the case `rows that cannot be saved now are conflicted ...` (line 1621) pins the vault clock to 2026-05-01. Its receipts-digest alarm, 30 days after that clock, lies in the real past, so Miniflare fires it again and again until the file ends (26 firings in the planner's run of the unchanged base). Each firing finds nothing due. Set the clock ahead (R6).
   - **Residual of 1B-T8's m-1, accepted (P1):** a resend of the same snapshot key more than a week past its snapshot's expiry, once the row is gone, still makes a pending row under the old id. The app takes a fresh key for each resync, and only a transport resend repeats a key, within seconds. Revisit only if a later task resends keys after days.
+- P2-T11 (#382, merged 5a33820 on 10 Nov, issue #157 closed; review in reviews/P2-T11.md, a two-lens Opus workflow, Approved with two minors and seven nits; ready cases in scratch/p2-t11-review/):
+  - **wallet-looks-unstored (a follow-up task; must land before P2-T20 calls `setOrder`, P2-T21 calls `setLook` or P2-T29 calls `setIcon`), m1.**
+    - `WalletLooksProvider.tsx:120-122` replaces the whole slot with what is stored plus the new change, so an earlier change that was never stored (its write failed, or its name could not be read) drops out of view. `:112` also lets the account's first read hide a failed change made from a child's mount effect.
+    - This breaks brief P3's rule that such a change "shows until the app closes". No stored data is harmed.
+    - Fix: keep unstored changes per account in a ref and lay them over each read.
+    - Ready cases: D1, D2 and D8b in `data/ready-cases/DataLensProbes.render.test.tsx`. Take D8 only if the fix also queues the first read ahead of every change. Extend V4 to pin what its title says.
+  - **P2-T29 (m2 and n5):**
+    - assert `CategoryGlyph`'s unfilled rings (stroke, width, `fill="none"`) and round linecaps and linejoins; mutants RV1 and RV2 survive today (plan line 795, brief P5);
+    - pin the glyph's own `DECORATIVE` wrapper and the initial's Thai line height (RV3, RV4, RV4s).
+  - **P2-T12:**
+    - take ready case K5, which pins `sign="balance"` on the spine card (n2, mutant RM5);
+    - until the account's looks are read, each wallet shows its derived look for a few milliseconds, since there is no `ready` flag (also for P2-T24).
+  - **P2-T21 and P2-T22 (the first cards with no `onPress`), n3:** take `data/ready-cases/cardNativeProps.test.ts`, which pins `accessible`; react-native-web 0.21.4 drops that prop, so on the web the card is a div with a label and no role. Decide the card's web role (wc-wallet-edit's preview card uses `role="img"`).
+  - **P2-T21 and P2-T29:** with no account open (the web, opening, locked, signed out), `setLook` and `setIcon` keep nothing and change nothing on screen (plan line 794). Decide whether the look fields and the icon picker show there at all.
+  - **n6, the 40 pt tile:** a follow-up, or whichever of P2-T22 and P2-T28 draws a 40 pt tile first. Expect a 12 pt corner and a 20 pt glyph. E2-A decides whether its initial is 17 (the formula) or 16 (the merchant tiles).
+  - **E2-A:** n1 (private mode keeps ใช้ไป, the pending line and the today line, which bw-private drops; each reveals a fact without an amount); n4 (on the full card, a credit card paid ahead shows ฿500 above the kind line ยอดที่ใช้ไป); and the receipt's board calls (P4, P7, P9).

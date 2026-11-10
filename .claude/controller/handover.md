@@ -160,7 +160,15 @@ The list below is kept for the record.
     - The controller checked the 18 files against the kit and the clean merge with the head.
     - **The review runs as a workflow** (run wf_4e503333-e15): two Opus lenses (the data rules and card words; the drawings, harness, catalogue and CI), a skeptic for each blocker or major, and a synthesizer writing `reviews/P2-T11.md`.
     - **CI on #382 is R103's record** for the whole `CatalogueScreen` file.
-    - On approval and green CI: `merge_task_pr.sh 382 31d9d59 P2-T11`, then `promote_pr.sh P2-T11 382`. No iOS export is needed. P2-T13 (implementer 094336d2) follows in the wallet lane.
+    - **Merged as 5a33820 (#382, at 07:15).** Issue #157 is closed, and the worktree and branches are removed.
+      - The review workflow approved: no blocker or major, two minors and seven nits.
+      - CI tested `31d9d59` into `d2bdb17`: render 111 files and 1894 tests, and the whole `CatalogueScreen` file 301 of 301 (R103's record).
+      - The base moved only by #377 (CI files and one script line) before the merge, so its green run stood.
+    - **m1 becomes the follow-up task wallet-looks-unstored:** a change that was never stored drops from view at the next stored change, which breaks brief P3.
+      - P2-T20, P2-T21 and P2-T29 are HELD in held.txt until it lands. Its ready cases are D1, D2 and D8b.
+      - The other minors and nits are in followups.md (P2-T12, P2-T21, P2-T22, P2-T29, P2-T35, E2-A).
+    - **Promotion PR #386** is stacked on #384; stack #379 now holds six PRs.
+    - **P2-T13 (#383) merges second:** read it through the API, close and reopen it for a nine-job run on top of 5a33820, and confirm the checkout line before merging.
 
 ## PR #371: the integration branch into main. The owner merged it on 9 Nov, 21:30 Bangkok, as afcf884
 - It was merged with a merge commit, so history is kept. The controller then fast-forwarded claude/p1a-vault-core to afcf884, which adds main's README and CHANGELOG, so the two branches were level.
