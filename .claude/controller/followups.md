@@ -345,3 +345,19 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **1B-T12 (n8):** from about day 8 to day 30 after a build, NestJS answers 200 and 202 `expired`, because it keeps the job 30 days (`0015_privacy.sql:822-826`). The vault answers 404, and a resend then makes the stuck pending row. Either keep the vault row until `ready_at` plus 30 days, or list the difference.
   - **1B-T13 (n10):** with 0003's indexes, the ten-times 50,000,000-byte vault holds 32,000 records instead of 33,000, about 3% fewer. The proof's criterion still holds; size the hosted check against the new figure.
   - **1C-T11 (n7):** `markDeleting` (p1c plan line 1311) must set `alarmAt = null` next to its `deleteAlarm`, or call `this.rearm(this.fileContext())`, so that `alarmAt` keeps mirroring `getAlarm()`.
+- wallet-looks-unstored (#391, merged 76b329c on 10 Nov, no task issue; review in reviews/wallet-looks-unstored.md, a Sonnet workflow, Approved with one minor and five nits; probes in scratch/wallet-looks-unstored-review/). D8 stays unfixed by design (P6).
+  - **wallet-looks-pins (a test-only follow-up; no task waits on it):**
+    - m1: no committed case has two changes in flight while an earlier one is unstored. Hoisting `const earlier = unstored.current.get(accountId) ?? []` (`WalletLooksProvider.tsx:137`) out of the queued step therefore survives (mutant OM1).
+      - Add the reviewer's PE, PE2 and PF to `WalletLooks.render.test.tsx`, on that file's own helpers. They are in `scratch/wallet-looks-unstored-review/src/apps/app/src/wallet/looks/ReviewProbes.render.test.tsx`, lines 283, 298 and 314.
+      - PF needs `storeOver` to fail writes by attempt number.
+    - Optional, n2: brief P7's "if the first read has not landed yet, they show at once" is unpinned (OM9; the difference is transient only).
+  - **P2-T20 and P2-T21 (n3):** the memory holds the caller's look object and ids array by reference (`WalletLooksProvider.tsx:134`, `:147`, `:148`). A caller that mutates them after the call changes later reads (case PM). Pass a fresh object or array per call, or copy in the setter.
+  - **P2-T20 (n4):** call `setOrder` once per drop, not per drag tick. The memory is never trimmed; 400 changes took 27 to 57 ms in total, with no growth.
+  - **P2-T20, P2-T21 and P2-T29 (n5):**
+    - a setter resolves whether or not the change was stored;
+    - `order` is `[]` until the first read lands, so do not seed `setOrder` from an effect keyed on an empty `order`.
+  - **P2-T18 (n5):** where WalletShell mounts the provider sets how long an unstored change shows.
+  - **P5-T19 (n1, n5):**
+    - the upload reads the store, so an unstored change is never uploaded;
+    - if the provider reads server values, decide whether the memory is laid over them;
+    - carry the reviewer's PX, which pins that a session where every write lands keeps nothing (mutant OM3).

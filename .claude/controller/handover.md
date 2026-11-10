@@ -227,6 +227,18 @@ The list below is kept for the record.
   - **DONE at 8c997d8 (base 9a24180); PR #391 opened at 08:20 (no task issue).** RED 4 of 13, GREEN 13 of 13, neighbours 38 of 38, 37 of 37 mutants, `test:unit` 970. The controller checked the 2 files against the kit and the clean merge with the head.
   - **The review runs as a small Sonnet workflow** (run wf_c0db7db8-830): one reviewer, a skeptic for any blocker or major, and a synthesizer writing `reviews/wallet-looks-unstored.md`.
   - On approval and green CI: `merge_task_pr.sh 391 8c997d8` (no task id), then `promote_pr.sh wallet-looks-unstored 391`. **Then take P2-T20, P2-T21 and P2-T29 off held.txt.**
+  - **Merged as 76b329c (#391, at 08:56). No task issue; the worktree and branches are removed.**
+    - The Sonnet workflow approved, resumed after the third stop: no blocker or major, one minor and five nits.
+    - All five of P2-T11's P3 rules hold, checked against 5,450 random schedules and a differential with the head's provider.
+    - CI run 42735086363 tested 8c997d8 merged into 7508e44, which already held 1B-T11. Only `.claude/` changed after that, so the green run stood through the billing stop.
+    - **P2-T20, P2-T21 and P2-T29 are off held.txt.**
+    - The findings are in followups.md:
+      - m1 (PE, PE2 and PF; mutant OM1) and n2 go to the test-only **wallet-looks-pins** follow-up;
+      - n3 goes to P2-T20 and P2-T21;
+      - n4 to P2-T20;
+      - n5 to P2-T18, P2-T20, P2-T21, P2-T29 and P5-T19;
+      - n1 (PX) to P5-T19.
+    - **Promotion PR #393** is stacked on #390; stack #379 now holds ten PRs. Its CI cannot start until the billing is fixed.
 - **The wallet lane: three planners dispatched at 08:04 from 3091b41 (Opus xhigh, no shared files):**
   - **tray-hardening** (351b244a; WT tray-hardening on fix/tray-hardening): P2-T13's review m1 guard, m2, m3 reset, m4, m5, m6, n1, n3, with ready probes. m5 and m6 were moved here from P2-T14 because they edit the same tray test files. It unblocks P2-T16.
     - **Brief READY at 6db889a (rehearsed on b5aa2a7)** (S): `Tray.tsx`, `Tray.render.test.tsx`, `trayGesture.test.ts` and the receipt; no shared file.
