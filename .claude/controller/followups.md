@@ -436,3 +436,11 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **snapshot-parity-window:**
     - n2: day 8 on the NestJS side comes from the manifest sweep `gogospend_prune_expired_manifests` (`0010_sync.sql:216-226`), not the 30-day job retention. Open question (d) is closed: a resend after day 8 starts a new build under the same id. "Stuck pending row" applies to the first day only.
     - n3: pending snapshots and exports older than a day turn failed on the vault (R33), never on NestJS. Name it beside n8.
+- P2-T12 (#395, Needs fixes on 90b5079: one major, M1; review in reviews/P2-T12.md, a two-lens Opus workflow resumed after the fourth stop; probes in scratch/p2-t12-review/). The fix round (`briefs/P2-T12-fix.md`, by the P2-T12 planner) takes:
+  - M1: `onAccessibilityTap={onPress}` on `WalletCard`'s Pressable, with a Node pin. The controller granted leave to edit `WalletCard.tsx`.
+  - m3, m4, n2, n3 and n4.
+
+  The rest:
+  - **P2-T24 (m1, with E2-A's peek decision):** a card behind the front one that grows past the front card hangs below the stack, across what sits under it. For example, the 80-code-point name with the largest amount at xxxLarge makes a 413 pt card reaching 541 pt, across a today row at 394 to 454.
+  - **P2-T17 (m2):** frames go stale when cards move but the stack's box does not: a same-count reorder, a swapped wallet, or an ancestor that moves. On the web a pure move never fires `onLayout`. Call `measure()` before every flight, not only after a scroll.
+  - **P2-T24 (n1):** two quick presses open the wallet twice. That follows the plan's at-once rule, but Home's push needs a double-tap guard (1C-T8's RV4).

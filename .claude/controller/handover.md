@@ -339,6 +339,15 @@ The list below is kept for the record.
       - The controller checked the 6 files against the kit's `real/` and the clean merge with the head.
     - **The review runs as a two-lens Opus workflow** (run wf_0cba99e1-318, task wy3myeu97). The lenses run one after the other, to keep about six agents: the stack and the press; then the frames, the catalogue merges, the tests and CI. A skeptic checks each blocker or major, and a synthesizer writes `reviews/P2-T12.md`.
     - On approval and green CI: `merge_task_pr.sh 395 90b5079 P2-T12`, then `promote_pr.sh P2-T12 395`.
+    - **The review says Needs fixes (14:27; `reviews/P2-T12.md`):** one major, four minors and four nits. Everything else holds: the shape, the press, P10's frames, the `index.ts` merges in either order with tray-hardening, P2-T14 and P2-T20, and 15 of 59 mutants rerun and killed.
+      - **M1 (ST1):** under VoiceOver a double tap on a back card opens the card in front. The fix is `onAccessibilityTap={onPress}` on `WalletCard`'s Pressable, with a Node pin. **The controller granted leave to edit `WalletCard.tsx`** (P2-T11's file); no task in flight edits it.
+      - **The fix round also takes m3, m4, n2, n3 and n4:** pins for the surviving mutants L1, L10, MF7, L3, L4, MF9, MF6 and MF4, and `frames.delete(view)` in `forget()`.
+      - m1 and n1 go to P2-T24, and m2 to P2-T17 (followups.md).
+    - **The P2-T12 planner** (thread e328d240, run 4, from 14:27) writes `briefs/P2-T12-fix.md`, with kit `scratch/p2-t12-fix-planner/`. Then:
+      1. a Haiku fixer on `p2/t12-card-stack`;
+      2. push, and update #395's body;
+      3. a confirming review: Opus, since the first round was M and found a major;
+      4. merge at the new head on green CI.
     - CI run 42741688287 never started (billing, 0 steps run). Once the owner fixes it: `gh run rerun 42741688287 --repo mygogocash/jotbun`.
   - Each task's catalogue sections go in a list file of its own, with one spread in `dev/catalogue/wallet/index.ts` at its own anchor (not in `kitSections.tsx`).
 - **P2-T20** (4be9ff30; WT p2-t20 on p2/t20-wallets-list), the wallets list, the archived list and reorder, depth 14 (the deepest ready task). The planner (Opus xhigh) was dispatched at 09:09, when P2-T14's planner finished.
