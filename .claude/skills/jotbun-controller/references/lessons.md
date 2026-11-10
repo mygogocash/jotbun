@@ -2,6 +2,7 @@
 
 ## Keep agents from redoing work
 
+- **Only two suites open every catalogue section.** `CatalogueScreen.render.test.tsx` and `screenReader.render.test.tsx` go through every section; the large-text suite opens six named sections. A brief that says "the large-text suite picks up the new sections" is wrong (P2-T13's review n5), so a new section's AX5 look is an E2 capture by hand. Tell planners when a task adds sections.
 - **Check overlap before every dispatch.** Run `git diff --stat <brief base> origin/claude/p1a-vault-core -- <the task's files>`.
   - Empty: dispatch, and tell the implementer the head moved but none of its files did, so every count stands.
   - Not empty: send the brief back to its planner (SendMessage resumes it with full context) to rebase its proof and counts. Dispatching anyway makes Haiku either undo the other task's lines or stop on a wrong "Expected" count. Example: 1B-T5 after 1D-T10 changed 5 of its 13 shared files.

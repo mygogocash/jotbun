@@ -47,7 +47,7 @@ The review reports these came from were under /private/tmp and were lost on 8 No
 - P2-T9 (#368, merged 860990f on 9 Nov, issue #155 closed; review in reviews/P2-T9.md, Approved with two minors). Probe cases and the mutant runner are in scratch/p2-t9-review/.
   - **Whichever task next edits apps/app/src/wallet/motion/ (P2-T24 or P2-T30, whichever is planned first):**
     - m-1: GrowBar's growing path is under-tested. Three mutants pass all 12 cases: no fill height (draws nothing at full motion), the clamp bypassed (an over-budget bar grows to 140%), and a reduced-motion change mid-way (snaps). The screen-reader check covers only the growing bar, and a value change is checked only at its end. The review has five ready cases.
-    - m-2: the "new animation per call" test covers 2 of the 6 builders, and misses `trayExiting`.
+    - ~~m-2: the "new animation per call" test covers 2 of the 6 builders, and misses `trayExiting`.~~ DONE in P2-T13 (#383, merged 08e0566): the case walks all six builders (mutants M1 to M4).
     - Nit: `motionFor` returns the table's own objects, so a caller that mutates one changes every later answer.
   - **P2-T24 and P2-T30:** GrowBar has no `style` or `testID` prop.
   - **P2-T13:** a Sheet inside a tray mixes two animation systems on one screen, which the new motion.ts comment says never happens. (P2-T13's brief, P5: kept apart, one system per surface. The Sheet is its own Modal over the tray, and `motion.ts`'s comment now says so. P2-T13 also pins m-2: all six builders, mutants M1 to M4. Drop m-2 here once P2-T13 merges; m-1 stays.)
@@ -303,3 +303,24 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **Phase 3's `ai` gate:** n-3, `ANTHROPIC_BASE_URL` in `aiSender` (`ai/routes.ts:23`) has no pin (mutant W1). Wiring probe P3 (`:244`) is ready, with fetch stubbed.
   - **P5-T4:** n-6, when the summary reads `home_amount_minor`, `aiDayFacts` and the four tools in `src/vault/ai.ts` must follow it (P17).
   - **Hosted check (P18):** a real Claude reply through the vault Worker, and its latency against the app's 25-second timeout.
+- P2-T13 (#383, merged 08e0566 on 10 Nov, issue #159 closed; review in reviews/P2-T13.md, a two-lens Opus workflow, Approved with six minors and five nits; CI on a true merge with P2-T11; probes in scratch/p2-t13-review/):
+  - **tray-hardening (a follow-up task; must land before P2-T16, which is HELD in held.txt).** It edits `Tray.tsx` and its test. The ready probes are in `scratch/p2-t13-review/behaviour/copy/apps/app/src/wallet/tray/`: `behaviourProbe.render.test.tsx` (P-A, P-D, P-E, P-I, P-J and P-K fail today) and `iosDismissProbe.render.test.tsx` (P-M2 fails today).
+    - m1's guard: `closable` (`Tray.tsx:160`) ignores the lock cover, so Android's back closes a covered tray and its draft can be lost (probe P-E). Add `&& !hidden`.
+    - m2 (PLAUSIBLE, native timing): `onDismiss` (`Tray.tsx:218`) calls `onClosed` without checking the tray is still closed. A reopen between the 220 ms hide and UIKit's dismissal fires `onClosed` while the tray is open (P-M2), which breaks P10(d) and risks R69, since `whenClosed` could open a second tray. Guard with a ref that holds `visible`, and consider holding `shown` until `onDismiss`.
+    - m3's reset: the `drag` shared value is reset only when `visible` turns true, so a drag the cover cut off can leave the frame pulled down (P-D, P-J). Reset `drag` when `hidden` changes.
+    - m4: opening at another step in one render ticks (P-A), and a step change under the cover ticks (P-K), against brief P11(b). Tick only if the tray was open and uncovered in the previous commit (a `wasOpen` ref), and add the one-render case.
+    - n1: `onDeactivate` ignores Gesture Handler's `canceled` flag, so a cancelled drag past the line closes the tray (P-I).
+    - n3: no test changes `onClosed` between renders (mutants B1, B4 survive). Pass a new `onClosed` during the exit and expect only the new one to be called.
+  - **P2-T33 (m1 and m3 are a plan gap).** Once the lock gate lands, an open tray's opaque cover hides LockedScreen (plan line 1586): after a cancelled Face ID, an iOS user sees a blank screen with no way to retry. A root-level Modal cannot present over the tray on iOS, because the root view controller is already presenting it.
+    - Decide how the lock screen reaches a person whose tray or Sheet is open, and check it on a device; the plan's web case cannot see it.
+    - Trays and Sheets should ask nothing while covered.
+    - Decide whether the card plays its entering again when the cover lifts (it does today, on every W18 inactive, the Face ID prompt included, and the scroll position resets), and check where VoiceOver lands (`focusTitle` runs only from `onShow`).
+  - **P2-T16:** keep the `Tray` mounted until `onClosed`, and open a second tray from it (`whenClosed`). `onClose` must close the tray; pass `locked` to keep it open. Drive the case for a swipe during a save through Gesture Handler's real pointer path: n4, probe 1 shows it works with `getBoundingClientRect` stubbed, so correct `Tray.render.test.tsx:11-12`'s comment.
+  - **P2-T14:**
+    - m5: no test pins the phone card's dialog (role, `aria-modal`, `aria-label`) or where a phone's focus lands when there is a header (mutants O1, O2, O5 and O6 survive). Extend the phone case with a header.
+    - m6: R72's Node source case does not read `accessible: true` (`Tray.tsx:207`) or `focusable={false}` (`:233`), which react-native-web drops (O11 and O7 survive). Add two `assert.match` lines.
+  - **E2-A:**
+    - n2: a deep link from one tray section to the next swaps two presented Modals in one render, which iOS refuses (R69); capture each tray section from a fresh launch;
+    - n5: the large-text suite does not open the tray sections (lessons.md), so take the AX5 capture of `bw-tray-large` by hand;
+    - n1's flick-up rule, if the owner wants a 130 pt pull flicked back up to stay open;
+    - P19's differences from the boards.

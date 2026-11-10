@@ -192,7 +192,14 @@ The list below is kept for the record.
     - **P2-T13 (#383) merges second.** Its merge ref stayed stale, so at 07:25 the controller updated its branch with the base through GitHub's update-branch API (`expected_head_sha` = the reviewed 2f0e40e).
       - The new head 9b3196d is "Merge branch 'claude/p1a-vault-core' into p2/t13-tray". The task's files are unchanged from 2f0e40e, and the PR's diff is the same 12 files (+1246, -4).
       - A fresh nine-job run on a true merge with P2-T11 is under way.
-      - **Merge at 9b3196d:** `merge_task_pr.sh 383 9b3196d P2-T13`, once its review approves and that run is green.
+      - **Merged as 08e0566 (#383, at 08:01).** Issue #159 is closed, and the worktree and branches are removed.
+        - The review workflow approved: no blocker or major, six minors and five nits.
+        - CI run 42728251106 was on a true merge with P2-T11: render 112 files and 1918 tests, `test:unit` 970, web 4807, iOS 5773.
+      - **The tray-hardening follow-up** (P2-T13's m1 guard, m2, m3's reset, m4, n1, n3; ready probes) must land before P2-T16, which is HELD in held.txt.
+        - P2-T33 inherits a plan gap: an open tray's lock cover hides LockedScreen.
+        - Everything is in followups.md.
+      - **Promotion PR #389** is stacked on #388; stack #379 now holds eight PRs.
+      - A new lesson: only `CatalogueScreen` and `screenReader` open every catalogue section, so the large-text suite does not pick up new sections.
 - **wallet-looks-unstored planner** (Opus xhigh, 163f00f9), dispatched at 07:26 at 8194e7f: P2-T11's review m1. WT wallet-looks-unstored on fix/wallet-looks-unstored. It unblocks P2-T20, P2-T21 and P2-T29 (held.txt).
 
 ## PR #371: the integration branch into main. The owner merged it on 9 Nov, 21:30 Bangkok, as afcf884
