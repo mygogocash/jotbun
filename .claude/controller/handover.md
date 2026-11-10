@@ -377,6 +377,13 @@ The list below is kept for the record.
         - The implementer (Haiku max, c5d323ab) was dispatched at 09:39 in a pre-installed (`install-edge`) fix-download-aborts from d1111f8, under the heavy lock.
         - **DONE at d0cc479 (base e7b61d7); PR #396 opened at 09:49 (no task issue).** RED 5 of 5, GREEN 5 of 5, 9 of 9 mutants; AFFECTED 11 files, 335 passed and 1 todo; `test:edge` 176; `build:edge` with every driver marker at 0. The `wrangler dev` proof on its tree: export, chunk and receipt served whole after four aborted GETs; retain 200 after four aborted; upload 202 after sixteen aborted. The controller checked the 6 files against the kit's `real/` (edge-relative paths) and the clean merge with the head.
         - **The review runs as a two-lens Opus workflow** (run wf_49c67ce8-b3f, task wp4pexu50), lenses one after the other: the fix and its proof; the tests, shared files and CI. On approval and green CI: `merge_task_pr.sh 396 d0cc479` (no task id), then `promote_pr.sh fix-download-aborts 396`. CI run 42745408105 never started (billing, 0 steps run); rerun it once the owner fixes billing.
+        - **The review approved at 14:33** (`reviews/fix-download-aborts.md`): no blocker or major, one minor and seven nits.
+          - The `wrangler dev` proof reproduces on the commit, Cloudflare's docs are quoted correctly, and 9 of 9 mutants are killed.
+          - #394, #396, #397 and #398 change disjoint files; the merged runs pass.
+        - **The controller folded m1, n2, n3 and n4 into a test-only fix round on #396:** probes PB, PA and PC kill R14, R11 and R13, and the slot cases' `take()` moves inside the `try`.
+          - The fix-download-aborts planner (thread 46ff8a6d, run 3, from 14:33) writes `briefs/fix-download-aborts-fix.md`, with kit `scratch/fix-download-aborts-fix-planner/`.
+          - n1 is a hosted check; n5 and n6 go to 1B-T13; n7 (#398's receipt lines) is in followups.md.
+        - Then: a Haiku fixer, push, update #396's body, and a confirming Sonnet review. Merge at the new head on green CI.
       - **B, `briefs/download-pins.md` (L, test-only).**
         - It edits `test/workers/exports.test.ts`, `attachments.test.ts`, `snapshots.test.ts`, `imports-review.test.ts` and `ai.test.ts`, with every review pin from the followups entry (the table in brief A).
         - Kit `scratch/download-pins-planner/`: check_kit at d1111f8 gives 20 OK, and the 5 `orig/` files are identical. GREEN 242 of 242, 20 of 20 mutants.

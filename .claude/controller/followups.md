@@ -339,7 +339,7 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - n4: the write floor is untested through `background()` and `rearming()`; mutants R2 and R3 survive, and probes PE and PF kill them.
     - n5: P18 gives the wrong reason the import cycle is safe. `jobs.ts:28` and `:31` read imported functions at load time, which works only because they are hoisted declarations, and the build's circular check is vacuous. Say so in a comment, or break the cycle.
     - n9: P14's bound on `pruneImports` does not cover import selections.
-  - **fix-download-aborts:**
+  - **download-pins (#397; the test-only half of the fix-download-aborts entry, which took these):**
     - m3: no test pins `snapshotsDueAt`'s stale term (`snapshots.ts:358`, `EXISTS` over `STALE_CHUNKS`). Mutant R1 counts every chunk row and passes 58 of 58; under it any vault with a ready snapshot would loop the alarm. Take the ready pin in `zz-review-fixes.test.ts`, or give the ready snapshot at `snapshots.test.ts:748` a chunk row.
     - n6: pin `pruneSnapshots`' `status <> 'tombstone'` guard (`snapshots.ts:346`); data mutant R2 survives 58 of 58.
   - **1B-T12 (n8):** from about day 8 to day 30 after a build, NestJS answers 200 and 202 `expired`, because it keeps the job 30 days (`0015_privacy.sql:822-826`). The vault answers 404, and a resend then makes the stuck pending row. Either keep the vault row until `ready_at` plus 30 days, or list the difference.
@@ -367,7 +367,7 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - The vault deletes a ready row a week past its 24-hour expiry (`pruneSnapshots`, `src/vault/files/snapshots.ts:348`), so it answers 404 and opens a new pending row for a resend.
     - 1B-T12 lists the difference in `vault-parity-files.db.test.ts`'s header and its receipt.
     - For parity: keep a ready row until `ready_at` plus 30 days, with a resend case. First check whether a Workflow instance can start under an id whose old instance is past its retention.
-    - This edits `pruneSnapshots`, `snapshotsDueAt` and the snapshot tests, which fix-download-aborts pins (1B-T11's m3 and n6).
+    - This edits `pruneSnapshots`, `snapshotsDueAt` and the snapshot tests, which download-pins (#397) pins (1B-T11's m3 and n6). Start it only after #397 merges.
 - P2-T12 planner notes (briefs/P2-T12.md; READY 10 Nov):
   - **P2-T21 (P11):** the new wallet's drop is P2-T21's bw-adding step, not the stack's.
     - `walletAddedEntering(false)` drops a card from a full window height on the under-damped spring, which overshoots by about 22% of the travel (about 190 pt on an 874 pt phone).
@@ -444,3 +444,13 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **P2-T24 (m1, with E2-A's peek decision):** a card behind the front one that grows past the front card hangs below the stack, across what sits under it. For example, the 80-code-point name with the largest amount at xxxLarge makes a 413 pt card reaching 541 pt, across a today row at 394 to 454.
   - **P2-T17 (m2):** frames go stale when cards move but the stack's box does not: a same-count reorder, a swapped wallet, or an ancestor that moves. On the web a pure move never fires `onLayout`. Call `measure()` before every flight, not only after a scroll.
   - **P2-T24 (n1):** two quick presses open the wallet twice. That follows the plan's at-once rule, but Home's push needs a double-tap guard (1C-T8's RV4).
+- fix-download-aborts (#396, approved 10 Nov on d0cc479; review in reviews/fix-download-aborts.md, a two-lens Opus workflow resumed after the fourth stop; probes in scratch/fix-download-aborts-review/). CI never ran (billing), so m1, n2, n3 and n4 (the probes PB, PA and PC, and the slot cases' `take()`) are folded into a test-only fix round on #396 (`briefs/fix-download-aborts-fix.md`, by its planner). The rest:
+  - **Hosted check (n1):** once an aborted retain's copy slot is back, its promise has ended. The command step and the copy's release (`receipts.ts:147-149`, `186-188`) then run with nothing pending in `waitUntil`, so the deployed runtime may skip them (unverified).
+    - Effect: the copy stays reserved for 180 s; a retry gets `wait`, then 503, and the reservation counts toward `COPIES_IN_FLIGHT`.
+    - This is bounded and predates R97. The hosted check should verify that the release runs.
+  - **1B-T13:**
+    - n5: `slots.ts:16-18` and the call sites say the request lives until its slot is back, without Cloudflare's 30-second `waitUntil` cap. Add one clause.
+    - n6 (optional hardening): make `untilReturned`'s returned function idempotent and exception-safe, with a `given` flag and `try { release() } finally { returned() }`.
+  - **alarm-hardening (#398), n7:**
+    - lines 4, 97 and 108 of #398's receipt give download-pins' items (1B-T11's m3 and n6, and the X5 re-target) to fix-download-aborts. Correct them before #398 merges;
+    - once #398 merges, download-pins' kit mutant V3 no longer applies: rerun it with A1's text.
