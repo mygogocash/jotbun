@@ -14,6 +14,11 @@ Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vaul
   - 1B-T13 (T3 task `1b-t13-planner-20261111b`; WT p1-1b-t13 on p1/1b-t13-vault-http; heavy lock);
   - P2-T33 (T3 task `p2-t33-planner-20261111b`; WT p2-t33 on p2/t33-face-id-lock).
   - Assignments are in `scratch/dispatch/*-planner.prompt.md`.
+- **08:20, Antigravity quota exhausted** ("Usage Limit Reached"; resets about 13:15 ICT). Per Jot (project lead):
+  - The two planners were relaunched on Claude Code Opus 5.5 at xhigh as jotbun-project threads: 1B-T13 `mcp:launch:9ebaef6c1e804f526fa77041ab4422b877197854c952055a788252390cced555`, P2-T33 `mcp:launch:08bd63e532b6ccb4664d7df6e24e4523c252f5081e05d368976fcb044621a1af`.
+  - **Waiting on the Antigravity quota reset (not before 13:15 ICT):** the #395 fixer (P2-T12), the #396 fixer (fix-download-aborts) and the P2-T14 implementer. Relaunch them on Antigravity Sonnet 5.5 High with the same prompt files.
+  - Leftovers from the stopped runs: `worktrees/p2-t12` has a local merge of the integration branch (3e3f515f) plus uncommitted edits to `CardStack.render.test.tsx` and `cardStackNative.test.ts`, and a new `cardNativeProps.test.ts`. `worktrees/fix-download-aborts` has a local merge (bbb63e18) plus an uncommitted edit to `download-aborts.test.ts`. Tell the relaunched fixers to inspect these and either keep or discard them before starting. `worktrees/p2-t14` is clean.
+  - #393 (promotion of wallet-looks-unstored) is red only because of the 10 Nov billing refusal. Its branches predate the `CI_RUNNER` workflow change, so a rerun would be refused again. The owner decides whether to merge on the task PR's green CI or to have the change pushed into that promotion branch.
 - Both delegate_task rounds (ids ending `a`, then `b` with the projectId) stopped unread: a delegated child runs in the parent's checkout, and Antigravity sandboxed it there. At 08:17 all five were relaunched as top-level threads in the jotbun project root (no completion wake; check with `t3_thread_read`):
   - #395 fixer `mcp:launch:d7e0a83e0ef6e4bd7688b3a1cccadfcceda5c6b07c99188530bad3efe07c0334`
   - #396 fixer `mcp:launch:3a4fd6fcc70a9915e49e6982ba2ce277534e955440cc88a7345089734bab66b3`
