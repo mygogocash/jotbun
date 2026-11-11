@@ -10,6 +10,10 @@ import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import { afterEach, expect, test, vi } from 'vitest';
 
+// The root's lock (P2-T33) draws its screens in the safe area, and the real package loads React Native itself,
+// which vitest cannot run: the stub every wallet render file uses.
+vi.mock('react-native-safe-area-context', () => import('../dev/catalogue/safeAreaTestStub'));
+
 import { WalletRoot } from './WalletRoot';
 import { useReducedMotionKnown, useWalletReducedMotion } from './motion/reducedMotion';
 

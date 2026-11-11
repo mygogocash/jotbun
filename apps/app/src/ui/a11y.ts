@@ -24,8 +24,26 @@ export const POLITE_LIVE_REGION = {
   'aria-live': 'polite',
 } as const;
 
-/** Speaks `text` on iOS, where live regions are not read. Never moves focus. */
+/**
+ * While the Face ID lock's cover is up (P2-T33), the app below it says nothing:
+ * iOS speaks an announcement whatever is drawn over the part that made it, so
+ * the hidden app's status lines would still be heard over the lock screen.
+ * LockGate sets it from its `hidden`; outside a gate it stays false.
+ */
+let quietUnderLockCover = false;
+
+/** LockGate's: true while its cover is up, false once the app below is in view again. */
+export function setQuietUnderLockCover(quiet: boolean): void {
+  quietUnderLockCover = quiet;
+}
+
+/** Speaks `text` on iOS, where live regions are not read. Never moves focus. Says nothing while the lock's cover is up. */
 export function announcePolitely(text: string): void {
+  if (!quietUnderLockCover) announceOverLockCover(text);
+}
+
+/** Speaks `text` on iOS even while the lock's cover is up: only for the lock's own notes (LockGate). Never moves focus. */
+export function announceOverLockCover(text: string): void {
   if (Platform.OS === 'ios' && text) AccessibilityInfo.announceForAccessibility(text);
 }
 
