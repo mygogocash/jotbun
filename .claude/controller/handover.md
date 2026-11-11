@@ -24,6 +24,18 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**23:45: #410 (P3-T4) has both reviews approved and waits on CI. #411 and #412 need fixes, with Opus fix planners running. UI-heavy planning goes back to Opus.**
+- **#410:** both reviews approved (Opus `reviews/P3-T4.md`, with m1 to m4 carried; Flash `reviews/P3-T4-second.md`). The carriers are in followups.md (P3-T6, P3-T7, P3-T8, P3-T10, P3-T3, P4-T6, P6C).
+  - **Deployment note:** set `AI_GATEWAY_TOKEN` only together with `ANTHROPIC_BASE_URL`.
+  - CI is at 6 of 9. A background `wait_ci.sh 410` is running; merge on green with `merge_task_pr.sh 410 a68fcd81 P3-T4`, then `promote_pr.sh P3-T4 410`.
+- **#412 (P2-T25):** the first review says Needs fixes, with 2 majors.
+  - **R109:** the wallet screen words a restore without the amount while private mode is on (the old screen keeps its words); the `trackRecordRestored` call is removed, since nothing was carried (1D-T7 #138 has not merged).
+  - Fix planner, on Opus: `mcp:launch:79936cd9fbcf6cb46b7f9d2e01dbae02206a44f460bb1162ee8d6dcad42710dc`, writing `briefs/P2-T25-fix.md` with the kit `scratch/p2-t25-fix-planner/`, on `b840c195`.
+- **#411 (P2-T32):** the first review says Needs fixes, with 8 majors (M1 to M8).
+  - **R110:** fix each as the review proposes, and stop BLOCKED on anything the plan can't settle.
+  - Fix planner, on Opus: `mcp:launch:3bc47b4b91a6048f51f2d075bef60ef6144af6c677e5f4e9bc9e8d53c240c60a`, writing `briefs/P2-T32-fix.md` with the kit `scratch/p2-t32-fix-planner/`, on `71b2255e`.
+- **Routing change (lessons.md):** Flash plans well-specified logic; UI-heavy tasks are planned on Opus. The running Flash planners for P2-T29 and P2-T31 (UI) finish, but each of their briefs gets an **Opus brief review** against the plan's test list, the boards and the wallet kit before any build.
+
 **23:30: #409 (P2-T23) MERGED, promoted as #413. The #406 fix is pushed, with its confirming review running.**
 - **#409 merged as `f22c5a8`,** with no owner yes (ruling of 21:25): CI 9 of 9, and both reviews approved (Opus, Flash). Issue #169 is closed, and WT `p2-t23` and its branches are removed. Promotion PR **#413**.
   - Review m2 (the receipt's `TODAY_PAGES`) is fixed in `7c2682b5`.
