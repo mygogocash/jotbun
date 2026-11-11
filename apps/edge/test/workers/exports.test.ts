@@ -969,19 +969,21 @@ describe('1B-T6 fix round: a HEAD gives its download slot back (R96), and the wr
     // reach the stream behind a download's FixedLengthStream before the request ends, and the slot would stay
     // taken (the review's wrangler dev probe). The file has many chunks, since a one-chunk body drains into its
     // response by itself. Four HEADs (EXPORT_SLOTS), then the GET is still served. This case is the file's last:
-    // on the old front door it keeps all four slots of the isolate.
-    let read = 0
+    // on the old front door it keeps all four slots of the isolate. Each download's body has its own byte counter
+    // (the 1B-T6 confirming review's n-2), so a read still running after one HEAD answers is never counted for the next.
+    const reads: number[] = []
     const counting: VaultBucket = {
       ...spyBucket({}),
       get: async (key) => {
         const found = await env.OBJECTS.get(key)
         if (!found) return found
+        const slot = reads.push(0) - 1
         const body = found.body as unknown as AsyncIterable<Uint8Array>
         return streamedOnly(
           found,
           (async function* () {
             for await (const chunk of body) {
-              read += chunk.byteLength
+              reads[slot] += chunk.byteLength
               yield chunk
             }
           })(),
@@ -997,9 +999,8 @@ describe('1B-T6 fix round: a HEAD gives its download slot back (R96), and the wr
     const grant = (await json(await v1.as(user).get(`/v1/exports/${dto.export_id}/grant`))) as ExportGrant
     const heads: unknown[] = []
     for (let i = 0; i < 4; i += 1) {
-      read = 0
       const head = await v1.as(user).request('HEAD', grant.url)
-      heads.push([head.status, head.headers.get('content-length'), (await head.arrayBuffer()).byteLength, read])
+      heads.push([head.status, head.headers.get('content-length'), (await head.arrayBuffer()).byteLength, reads[i]])
     }
     const file = await v1.as(user).get(grant.url)
     const body = file.status === 200 ? new Uint8Array(await file.arrayBuffer()) : null
