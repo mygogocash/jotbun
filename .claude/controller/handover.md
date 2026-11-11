@@ -4,6 +4,29 @@ Durable folder: `/Users/kunanonjarat/Developer/jotbun/.claude/controller/` (prot
 
 Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vault-core`), head 0bd5659 (controller state after 1D-T8's dispatch). Nothing outside `.claude/` changed since 606e131. No PR is open into the integration branch; only #70 into main.
 
+## 11 Nov 19:50 Bangkok: #395 merged on the owner's word; #396 waits on a flake rerun
+
+In a new T3 thread, the owner said: "check for pending pr if ci pass merge it then cleanup worktree and branch". This was taken as the go-ahead for the parked integration PRs. The rest of the hold stands: no thread or lane was started, nothing was merged into main, and the CI runners were not touched.
+
+- **#395 P2-T12: MERGED** as `ecc10df`, at the reviewed head `af61e89a`.
+  - CI was 9 of 9 green on the local runners.
+  - The controller (Opus 5.5) ran the confirming review inline and approved the fix commit: `reviews/P2-T12-confirm.md`. Its one minor, c-m1 (the receipt's stale Status line), is fixed in `0cc9191f`.
+  - Before the merge, the PR body was updated (`pr-p2-t12.md`) and the PR marked ready.
+  - Issue #158 is closed. WT `p2-t12` and branch `p2/t12-card-stack` are removed, both locally and on origin.
+  - **Not promoted yet:** there is no `promote/p2-t12` PR. It would stack on #402.
+- **#396 fix-download-aborts: NOT merged, still a draft.**
+  - CI on `763edb3f` passed 8 of 9 jobs. The red job is "SQL integration and ops": in `attachments.integration.spec.ts`, the case "copying is bounded › serializes reservations: five at once from one account reserve exactly four" gave `retry_after` 181 where it expects at most 180. The log is `scratch/ci/396-130429559951.log`.
+  - #396 touches only `apps/edge` and its receipt, and the same job passed on #395's run, so this is an `apps/api` flake. It belongs with R-B and followups.md's "API database-suite concurrency flakes".
+  - Both local runners are **offline**, so a rerun would only queue. The Mac's load average was 73 over 1 minute and 178 over 5, with GoGoCash using it.
+  - **Next, once the owner says so:**
+    1. Start Colima, then `bash .claude/controller/local-ci/runners.sh up`.
+    2. `gh run rerun 42992817954 --failed`, then wait with `C/wait_ci.sh 396`.
+    3. On green: update the PR body (`pr-fix-download-aborts.md`) and run `gh pr ready 396`.
+    4. `merge_task_pr.sh 396 763edb3f` (no task issue). The fix is test-only from its planner's kit, so it needs no second review.
+- **Untouched:**
+  - The promotion stack (#373 up to #402) waits on the owner's merge into main. All of it is green except #393, the billing refusal.
+  - #70 is not to be merged.
+
 ## 11 Nov 13:07 Bangkok: HOLD (Fronk). Build capacity moved to GoGoCash
 
 Start no new threads or lanes on any provider. The 13:17 batch is disabled. The held items, their state and their next steps are in `scratch/held-2026-11-11.md`. #395 and #396's fix rounds are DONE but not pushed, and the 1B-T13 brief is READY but unreviewed. Still allowed: watching main for real CI reds and reporting them.
@@ -23,7 +46,7 @@ Start no new threads or lanes on any provider. The 13:17 batch is disabled. The 
 
 | Task | State at the hold | Next step on resume |
 | --- | --- | --- |
-| **#395 P2-T12 fix round** (card stack) | **DONE, committed locally, not pushed.** Branch `p2/t12-card-stack` in WT `p2-t12`. Fix commit `af61e89a`, on top of merges `3e3f515f` and `37e366aa` (the second only brings in `.claude/` changes). Cursor Auto, thread `mcp:launch:daac26a1…`. Every RED, GREEN and mutant Expected line held, and the review's eight survivors are killed. The earlier run's test edits matched the kit and were kept. | Push to `p2/t12-card-stack`, update #395's body, run an Opus-High confirming review (the fix writes new logic), get green local CI, then merge into the integration branch only once Fronk confirms the low-risk merge rule. Promote, then clean up. |
+| **#395 P2-T12 fix round** (card stack) | **MERGED 11 Nov 19:50 as `ecc10df`; see the top section.** Earlier: DONE, committed locally, not pushed. Branch `p2/t12-card-stack` in WT `p2-t12`. Fix commit `af61e89a`, on top of merges `3e3f515f` and `37e366aa` (the second only brings in `.claude/` changes). Cursor Auto, thread `mcp:launch:daac26a1…`. Every RED, GREEN and mutant Expected line held, and the review's eight survivors are killed. The earlier run's test edits matched the kit and were kept. | Push to `p2/t12-card-stack`, update #395's body, run an Opus-High confirming review (the fix writes new logic), get green local CI, then merge into the integration branch only once Fronk confirms the low-risk merge rule. Promote, then clean up. |
 | **#396 fix-download-aborts fix round** | **DONE, committed locally, not pushed.** Branch `fix/download-aborts` in WT `fix-download-aborts`. Fix commit `763edb3f`, on top of merges `bbb63e18` and `75b450e1`. Cursor Auto, thread `mcp:launch:352d7abf…`. Test-only (`download-aborts.test.ts` and the receipt): GREEN 7 of 7, the five review mutants each fail their own case, 14 of 14 killed. The earlier run's test edit matched the kit's `real/` and was kept. | Push to `fix/download-aborts`, update #396's body, and get green local CI. It is test-only from its planner's kit, so the controller checks it instead of a second review. Then merge once Fronk confirms, promote, and clean up. |
 | **P2-T14 build** (add flow, keypad, amount step) | **Not started.** WT `p2-t14` on `p2/t14-add-flow`, clean at `f218796d`. Prompt `scratch/dispatch/P2-T14-implementer.prompt.md`, notes `P2-T14-implementer-notes.md`. P1 to P17 accepted. | Launch with `t3_thread_launch` in the jotbun project (`cc4b9cae-2d3c-4aeb-b98f-affe256dcb86`), `workspaceStrategy: {type: "root"}`, on Antigravity `claude-sonnet-5-5-high`, falling back to Claude Code then Cursor. After DONE: open the PR and run an Opus-High review. P2-T20 waits on its merge. |
 | **P2-T33 build** (Face ID lock) | **Not started.** The brief is READY on `b8095b99` (`briefs/P2-T33.md`, kit `scratch/p2-t33-planner/`). WT `p2-t33` on `p2/t33-face-id-lock` was made at `b8095b99`. Prompt `scratch/dispatch/P2-T33-implementer.prompt.md`, notes `P2-T33-implementer-notes.md`. | Launch as for P2-T14. **Merge order (ruling P17):** P2-T14 first. In `apps/app/src/dev/catalogue/wallet/index.ts` the lock's spread goes last (`...WALLET_ADD_SECTIONS,` then `...WALLET_LOCK_SECTIONS,`). The second PR to merge resolves the one-line conflict as `scratch/p2-t33-planner/merge/index.t33-t14-conflict.ts` shows, or applies the `after-p2-t14` diff if P2-T14 has merged first. If the head moved with code changes, regenerate the prompt (`make_prompt.py implementer P2-T33 --wt p2-t33 --branch p2/t33-face-id-lock --head <head> --notes …`) and recreate the WT. |

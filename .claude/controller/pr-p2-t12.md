@@ -18,6 +18,14 @@
   - K5 (P2-T11's review n2) is in the stack's test file and kills RM5 (P12).
   - The derived-look flash and the empty `order` before the first read are the caller's, P2-T23 and P2-T24 (P8). `WalletLooksProvider` needs no change.
   - The new wallet's drop goes to P2-T21, with a shorter travel suggested (P11).
+- **The fix round (review M1, plus m3, m4, n2, n3 and n4; commit `af61e89a`):**
+  - **M1:** under VoiceOver on iOS, a double tap on a card behind the front one opened the card in front of it. The cause: iOS tapped the middle of the card's box, which lies under the next card.
+    - `WalletCard`'s `Pressable` now has `onAccessibilityTap={onPress}`, so VoiceOver's double tap runs the card's own press. iOS synthesizes no tap; Android and the web ignore the prop.
+    - It is pinned from the source (`cardNativeProps.test.ts`) and by a render case that calls the prop as iOS does.
+    - `WalletCard.tsx` is P2-T11's file; the controller gave leave to edit it.
+  - **n2:** a card view that comes back to the frames answers only what is measured after it is back. `forget()` drops the view's own frame, and a measurement that lands while its view is away is dropped.
+  - **Pins for the review's eight surviving mutants:** pending totals behind the front card, a lone card's today line, one open per press, the list's keys, no `accessible` view in the stack, frames measured again after each layout but not on a plain re-render, and `frameOf`'s exact null.
+  - **Carried elsewhere:** m1 and n1 to P2-T24, m2 to P2-T17 (`followups.md`).
 - The controller accepted the planner's calls P1 to P18 (receipt, Deviations). No route, package, lockfile, edge, API or database change, and no copy line added. The receipt is its own file under R87: `docs/implementation/receipts/P2-T12.md`.
 
 ## Test plan
@@ -29,9 +37,19 @@
   - the focused files (59);
   - the catalogue's `bw-stack` sections in the every-section and screen-reader suites (4);
   - `git diff --check`.
-- [ ] CI on this pull request is green (the nine jobs: render +1 file and +12 cases, plus the two new sections in each catalogue suite; `test:unit` +1). GitHub Actions is paused for billing; CI runs once that is fixed.
-- [ ] Independent review (Opus: size M).
-- [ ] SKIPPED, no device here: the lift and the shadows on a phone, `measureInWindow` on a phone, and the VoiceOver order. For E2-A, `bw-stack-large` has to be captured at AX5 by hand (P14).
+- [x] CI on this pull request is green: 9 of 9 jobs at `af61e89a`, on the local runners.
+- [x] Independent review (Opus): Needs fixes on `90b5079` for one major, M1 (`.claude/controller/reviews/P2-T12.md`).
+- [x] Fix round (`af61e89a`, brief `.claude/controller/briefs/P2-T12-fix.md`):
+  - RED on `90b5079`'s code: M1's two pins and the registry case. The review's eight survivors are each killed by their own pin.
+  - GREEN: Node 4 of 4, `CardStack` and `WalletCard` 24 of 24. 73 of 73 mutants killed.
+  - The post-restart gate: `typecheck:app`, `test:app` 34, `test:unit` 974, `git diff --check` and gitleaks are all clean.
+- [x] Confirming review (Opus) of the fix commit: Approved (`.claude/controller/reviews/P2-T12-confirm.md`).
+- [ ] SKIPPED, no device here:
+  - the lift and the shadows on a phone;
+  - `measureInWindow` on a phone;
+  - the VoiceOver order;
+  - with VoiceOver on an iPhone, a double tap on each card behind the front one opens its own wallet.
+  - For E2-A, `bw-stack-large` has to be captured at AX5 by hand (P14).
 
 Closes #158 once merged (closed by hand, since the base is not the default branch).
 
