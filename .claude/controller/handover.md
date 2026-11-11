@@ -24,6 +24,14 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**21:05: #405 (1B-T13) is ready for the owner's yes. #406 is rerunning a flaky job.**
+- **#405:** CI 9 of 9 on `7eeff709`, and both reviews approve.
+  - The first review (`reviews/1B-T13.md`): m1 (no CI test of the live socket through TanStack Start's `/v1/$`), m2 (the `/api/auth` dispatch is unpinned), m3 (`/ready`'s empty-setting rule is untested), and five nits.
+  - The second review (`reviews/1B-T13-second.md`): six nits. Its n3 and n5 are the first's m3 and m2.
+  - All are carried in followups.md: m1 and m2 to 1D-T12, m3 to 1C-T10b, the rest to a clean-up task. The code is right in every case.
+  - **The controller recommends merging.** The owner must say yes (auth and the vault). Then run `merge_task_pr.sh 405 7eeff709 1B-T13` and `promote_pr.sh 1B-T13 405`. P22's whole-1B read-only review comes after the merge.
+- **#406:** the SQL job failed on the documented R-B flake (`attachments.integration.spec.ts`, "two records retaining one image at once keep one receipt", expected 1, got 2). P2-T33 does not touch `apps/api`. `gh run rerun 43031794055 --failed` is running (attempt 2).
+
 **20:55: P2-T14 DONE → PR #407, both reviews running. Every builder is done; three PRs are in review.**
 - Commit `18876253`. The controller checked it: 12 files (10 A, 2 M), `git diff --check` clean, 10 of 11 `real/` files identical, and `index.ts` = the planner's merge proof (`aa2a47bf…`).
 - Reported: RED and GREEN as briefed, 92 of 92 mutants, `test:unit` 980, focused render 70 of 70.

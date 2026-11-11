@@ -457,6 +457,37 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **alarm-hardening (#398), n7:**
     - lines 4, 97 and 108 of #398's receipt give download-pins' items (1B-T11's m3 and n6, and the X5 re-target) to fix-download-aborts. Correct them before #398 merges;
     - once #398 merges, download-pins' kit mutant V3 no longer applies: rerun it with A1's text.
+- **1B-T13's first review** (`reviews/1B-T13.md`, Approved on `7eeff709`, Claude Opus 5.5 xhigh; three minors, five nits). Both reviews independently found m2 and m3 (the second's n5 and n3). Carriers, as the reviewer suggests:
+  - **1D-T12:**
+    - m1: no CI test of the live socket's production path (TanStack Start's `/v1/$` passing a 101 with `webSocket`). Only P23's uncommitted smoke proves it, and the reviewer reran it: it passes.
+      - Add the smoke's case to `c1-worker.db.test.ts`. It needs no database, and `startVaultWorker` gives it an issuer.
+      - Also: 1D-T12's Step 5 RED ("stops at the socket's open") will not fail as written, because the socket already opens through `/v1/$`. Its planner needs another RED, for example a Node dispatch case answered before `handler.fetch`.
+    - m2: pin the `/api/auth/*` dispatch at `src/server.ts:21`. 1D-T12 is the next task to edit `src/server.ts`.
+  - **1C-T10b:** m3, an `''` row for each setting in `ready.test.ts:54`'s `it.each`. Do it when 10b extends `readyResponseOf` and drops `AUTH_JWKS_URL`; README n3 then resolves itself.
+  - **1C-T10a:** the 1C plan's shared files name `wrangler.vault.jsonc`, which is gone. `wrangler.jsonc` holds `AUTH_DB`, `ERASURE_DB` and the auth vars, and `vitest.workers.config.ts` declares only `AUTH_DB_REFERENCE`.
+  - **1C-T11:**
+    - the plan's `vault-route-coverage.test.ts` checks now live in `route-coverage.test.ts`;
+    - `DELETION_WORKFLOW` goes into `wrangler.jsonc`, `src/vault-worker.ts`, `src/server.ts`'s re-export (`c1-shape.test.ts:54-56`) and `c1-shape`'s Workflow list.
+  - **A later clean-up task:**
+    - n1: the receipt's `uploads.ts:50`/`:61` line is now `:51`/`:62`;
+    - n2: stale comments in `test/support/money-session.ts:2-4`, `files-session.ts:5-7`, `src/server/auth.ts:2-4` and `apps/api/.../parse-worker.spec.ts:9`;
+    - n4: pin `VAULT_ADDED_ROUTES` exactly, not with `toContain`;
+    - n5: pin the parse consumer's B6 settings in `c1-shape`;
+    - P16 to P18's leftovers.
+- 1B-T13's second review (`reviews/1B-T13-second.md`, Approved on `7eeff709`, Claude Opus 5.5 high as Gemini's fallback; no blocker, major or minor; six nits; probes and mutants in `scratch/1b-t13-second/`). The controller checked n1, n3 and n5 against the code. Its n3 and n5 are the first review's m3 and m2 (carried above). n1, n2 and n4 go to the same later clean-up task, or to 1C-T10b for `c1-shape`.
+  - n1: `route-coverage.test.ts:95` skips every route NestJS lacks. Pin the seven edge-only routes' `{ access, gates, status }` (mutants N1 and N2 survive it; `ai.test.ts` kills both today).
+  - n2: P14's "spends no extra use" is unpinned. Add a `remaining` check to the Ask Bun m-1 case (`ai.test.ts:461`); probe P7 kills mutant N5.
+  - n3: `ready.test.ts:54`'s `it.each` sets each setting only to `undefined`. Add `''` (mutant N3 survives).
+  - n4: nothing pins "no secret in `vars`". Add a `c1-shape` assertion that none of `COMMAND_DIGEST_KEY`, `BETTER_AUTH_SECRET`, `ERASURE_KEY` or `ANTHROPIC_API_KEY` is in `vars` (mutant N4).
+  - n5: no test sends `/api/auth/*` through the real entry. Mutant N6 deletes `src/server.ts:21`, and it survives `posthog-proxy` and `c1-shape`. Add a `posthog-proxy.test.ts` case expecting Better Auth's 503 with `env: {}` (probe P1).
+  - n6: the README's deploy steps omit `AUTH_JWKS_URL`, which is needed until 1C-T10b, and replacing the localhost `AUTH_ISSUER` and `AUTH_BASE_URL` (`README.md:90-101`, `wrangler.jsonc:26-27`).
+  - **For any deployment of the one Worker (the owner's call):**
+    - account deletion answers 404 until 1C-T11 (B16), so the Worker must not take real accounts before 1C-T11;
+    - `limits.cpu_ms` 120000 now covers the unauthenticated `/api/auth/*`, `/ingest/*` and the pages, which needs a rate-limit or WAF decision.
+  - **1C-T10a and 1C-T10b:** pin that `AUTH_ISSUER` and `AUTH_AUDIENCE` stay one setting for Better Auth and the vault.
+  - **Later tasks on the deployed path:**
+    - the workers suite runs `src/vault-worker.ts`'s fetch, not TanStack Start's. Anything that must hold on the deployed path (the `/api/auth` dispatch, method handling, CORS preflight) needs a built-Worker case. The template is `scratch/1b-t13-second/tree/apps/edge/test/zz-c1-probe.db.test.ts`.
+    - cleanup: `src/server/env.ts`'s `EdgeSettings` still lists `AUTH0_*`, `RATE_LIMIT_KEY` and `OPERATIONAL_PAUSE*`, which nothing reads now (with the receipt's P16 to P18 leftovers).
 - 1B-T12's confirming review (reviews/1B-T12-confirm.md, Approved on 317cf3a; no minor, six nits):
   - **The merge order (confirm-n6):** #398 (alarm-hardening) edits vault files the 42-step session reaches: `previews.ts`, `attachments.ts`, `jobs.ts`, `user-vault.ts`, `schema.ts` and migration 0004. #396 edits `src/v1/files` and `handler.ts`. Read the `edge` job's `test:edge:db` of whichever of #394, #396 and #398 merges last, on a head that holds all three.
   - confirm-n3: n6's order (`configFor` before `mkdtempSync`) is pinned only by the uncommitted probe (brief F4). No action.
