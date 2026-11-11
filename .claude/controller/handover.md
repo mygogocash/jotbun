@@ -24,6 +24,12 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**22:10: the four new lanes' worktrees are pre-made, so builders start without an install.** `new_task_worktree.sh` made them at `675569e2` (controller-state commits only since the planners' bases):
+- `p2-t23` (`p2/t23-home-data`), `p2-t25` (`p2/t25-recently-deleted`) and `p2-t32` (`p2/t32-month-recap`), each with `npm ci`;
+- `p3-t4` (`p3/t4-gateway-transport`), with `npm ci` and `install:edge`.
+- Dispatch their builders with `--installed`.
+- Notion setup is deferred by the owner ("let's do notion later"); its state is in the auto-memory `notion-setup-pending`.
+
 **21:50: Antigravity's Gemini pool is now used to the full (owner: "Antigravity still have a lot of usages please find the way to maximize").**
 - **The owner's usage screen, 21:34:**
   - Antigravity Gemini: weekly 55% left, 5-hour 100%;
