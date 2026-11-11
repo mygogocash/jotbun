@@ -24,6 +24,13 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**20:40: P2-T14 was BLOCKED at Step 4.2, correctly.**
+- The controller's rebased `index.ts` (`f74fa284…`) put the add spread before the tray's. `check_kit.sh`'s patch fuzz misplaced the hunk.
+- The implementer's `git apply --3way` gave `aa2a47bf…`, which is right: P3f, the planner's `logs/merge/merged-*.ts` and the render test's section order all agree.
+- Ruling sent with `t3_thread_send`: keep its file and continue from Step 4.4. C = 22 is right (the note had said "above 22").
+- `scratch/p2-t14-rebase/` is corrected. `check_kit.sh` now patches with `-F0` and falls back to a 3-way `git merge-file` (lessons.md).
+- P2-T33's `a3acf233…` was checked with the fixed script and holds.
+
 **After each DONE:**
 1. Write `pr-<id>.md` and run `open_task_pr.sh`.
 2. Dispatch the reviewer with `make_prompt.py reviewer … --claude-code` (Opus xhigh).

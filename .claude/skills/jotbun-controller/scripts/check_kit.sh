@@ -46,10 +46,16 @@ for b in orig base; do [ -d "$kit/$b" ] || continue; [ "$b" = base ] && [ -d "$k
     d="$kit/diffs/$(echo "$f" | tr / _).diff"
     if [ ! -f "$d" ]; then echo "  DIFFERS $p (no per-file diff: the brief's fallback applies)"; bad=1; continue; fi
     G show "$ref:$p" > "$tmp/cur"
-    if patch -s -o "$tmp/new" "$tmp/cur" < "$d" >/dev/null 2>&1 && [ ! -e "$tmp/new.rej" ]; then
+    # No fuzz: patch's default fuzz of 2 once placed P2-T14's index.ts spread before the tray's instead of after it
+    # (11 Nov), because P2-T12 had added a line inside the hunk's context. A moved context goes to the 3-way merge below.
+    if patch -s -F0 -o "$tmp/new" "$tmp/cur" < "$d" >/dev/null 2>&1 && [ ! -e "$tmp/new.rej" ]; then
       echo "  DIFFERS $p: its diff applies cleanly to the head's copy"
       if [ -n "$out" ]; then mkdir -p "$out/$(dirname "$p")"; cp "$tmp/new" "$out/$p"; diff_list="$diff_list $p"; fi
-    else echo "  DIFFERS $p: its diff does NOT apply; send the brief back to its planner"; bad=1; fi
+    elif [ -f "$kit/real/$f" ] && cp "$tmp/cur" "$tmp/new" && /usr/bin/git merge-file -q "$tmp/new" "$kit/$b/$f" "$kit/real/$f" 2>/dev/null; then
+      # The head (ours) and the kit's final file (theirs), merged over the kit's base: what `git apply --3way` gives.
+      echo "  DIFFERS $p: its context moved; a 3-way merge with real/ is clean (the brief's git apply --3way gives the same). Read the result before relying on it"
+      if [ -n "$out" ]; then mkdir -p "$out/$(dirname "$p")"; cp "$tmp/new" "$out/$p"; diff_list="$diff_list $p"; fi
+    else echo "  DIFFERS $p: its diff does NOT apply, even by a 3-way merge; send the brief back to its planner"; bad=1; fi
     rm -f "$tmp/new" "$tmp/new.rej" "$tmp/new.orig"
   done < <(cd "$kit/$b" && find . -type f | sed 's|^\./||' | sort)
   echo "$b/: $same files identical at the head"

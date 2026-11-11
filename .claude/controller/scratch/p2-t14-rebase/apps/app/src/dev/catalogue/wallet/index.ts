@@ -11,6 +11,6 @@ import { WALLET_ADD_SECTIONS } from './addSections';
 export const WALLET_SECTIONS: readonly CatalogueSection[] = [
   ...WALLET_KIT_SECTIONS,
   ...WALLET_STACK_SECTIONS,
-  ...WALLET_ADD_SECTIONS,
   ...WALLET_TRAY_SECTIONS,
+  ...WALLET_ADD_SECTIONS,
 ];
