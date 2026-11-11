@@ -24,6 +24,17 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**23:00: P3-T4 DONE (planned and built on Flash) → PR #410, both reviews running.**
+- Commit `a68fcd81`. The controller checked it: 14 files (3 A, 11 M), `git diff --check` clean, 13 of 14 `real/` identical. The receipt differs only by its Deviations (P1 to P5, and the two RED rulings). Trailer: Gemini 3.8 Flash.
+- Reported:
+  - RED: 8 assertions and the one ruled timeout;
+  - GREEN: unit 38, `ai.test.ts` 43, `test:edge` 189;
+  - 8 of 8 mutants.
+- PR **#410** (closes #188 by hand), body `pr-p3-t4.md`.
+- Reviews:
+  - the first, on Claude Code Opus, adding mutants for the `service.ts`, `handler.ts` and `routes.ts` wiring: `mcp:launch:b72fdba54026ab286a2e8c2034ffadf2bfdfad744abe5f4b9d368aec77411fce`;
+  - the second, on Flash, on privacy and secrets (prompts go through a third party): `mcp:launch:4d601c4e04e5f7d552c81072732a06109adf1088b8dacf52711d706347d6c94f`.
+
 **22:55: P2-T23 DONE (the first Gemini 3.8 Flash build) → PR #409, both reviews running.**
 - Commit `0c3bbeb7`. The controller checked it: 11 files (9 A, 2 M), `git diff --check` clean, all 10 `real/` files byte-identical. The trailer is `Co-Authored-By: Gemini 3.8 Flash`.
 - Reported: RED all assertions (14 Node, 6 render), GREEN, 77 of 77 mutants, `test:unit` 988, focused render 158.
