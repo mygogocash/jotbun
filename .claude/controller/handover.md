@@ -24,6 +24,26 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**20:50: P2-T33 DONE → PR #406, both reviews running.**
+- Commit `5844e4c1`. The controller checked it: 21 files (13 A, 8 M), `git diff --check` clean, 19 of 20 `real/` files byte-identical, and `index.ts` = `merge/index.t12-t33.ts` (`a3acf233…`).
+- Reported: RED and GREEN as briefed, 121 of 121 mutants (output identical to the planner's), `typecheck:routes` and `export:web` clean (4830 modules).
+- PR **#406** (closes #179 by hand), body `pr-p2-t33.md`.
+- Reviewers on Claude Code, with notes in `scratch/dispatch/P2-T33-{reviewer,second}-notes.md`:
+  - the first, Opus xhigh: `mcp:launch:ae4fcff346a05feb84db47f6b3dab6a687746786e7ce6ef07db241bedd6e7ad9`;
+  - the second (privacy), Opus high: `mcp:launch:10563bbdefd61c0c57d6f5fbfcf9eb3ace1078a116d0d8562c6f6724bb187679`.
+- Merge needs: green CI, both reviews approved, **the owner's yes** (privacy), and **P2-T14 merged first** (P17). Then resolve `index.ts` as `merge/index.t14-t12-t33.ts`, merge `draftText.test.ts` (`merge/draft.*`), and rerun CI.
+- Five agents are now running on Claude Code: the P2-T14 implementer and four Opus reviewers. Watch for a 429 (the "usage-limit cutoff" steps in SKILL.md). Cursor is the next provider.
+
+**20:45: 1B-T13 DONE → PR #405, both reviews running.**
+- Commit `7eeff709`. The controller checked it: 60 paths (25 M, 1 R, 6 A, 28 D), all 31 `real/` files byte-identical, `git diff --check` clean.
+- Reported: RED and GREEN as briefed, 28 of 28 mutants killed, `test:edge` 180, no PostgreSQL drivers in `dist/server`.
+- PR **#405** (closes #117 by hand), body `pr-1b-t13.md`.
+- Reviewers on Claude Code, with focus notes in `scratch/dispatch/1B-T13-{reviewer,second}-notes.md`:
+  - the first, Opus xhigh: `mcp:launch:74c1a575f433844ce72a14b6d2b9cb21a6423bb9f0a91ad01a17ca83f83a3873`;
+  - the second (auth, privacy and money), Opus high: `mcp:launch:5110865ae9b0f22bcacd33251d02f93f799f3a2175b04b1a2e58cf883688fb88`. It is told not to read the first review before writing its own.
+- Merge needs: green CI on `7eeff709`, both reviews approved, then **the owner's yes** (auth and the vault). Then promote.
+- Housekeeping: `promote_pr.sh` no longer doubles the task-id prefix in titles. #400's and #403's titles are fixed. #403 and #404 passed CI, 9 of 9.
+
 **20:40: P2-T14 was BLOCKED at Step 4.2, correctly.**
 - The controller's rebased `index.ts` (`f74fa284…`) put the add spread before the tray's. `check_kit.sh`'s patch fuzz misplaced the hunk.
 - The implementer's `git apply --3way` gave `aa2a47bf…`, which is right: P3f, the planner's `logs/merge/merged-*.ts` and the render test's section order all agree.
