@@ -24,6 +24,153 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**06:25 (12 Nov): CLAUDE CODE'S WEEKLY LIMIT IS SPENT until 14 Nov 03:00 Bangkok. All planning, building and reviewing moved to Antigravity Gemini.**
+- **The limit.** At 03:24 every Claude Code thread failed with "You've hit your weekly limit · resets Nov 14 at 3am (Asia/Bangkok)", and T3 snoozed them until 2026-11-13T20:00Z.
+  - Antigravity's Claude pool is empty until about 17 Nov.
+  - Gemini 4 Argon was nearly spent on 11 Nov but accepts runs.
+  - Gemini 3.8 Flash has room in each 5-hour window.
+  - Cursor and Grok are nearly spent.
+- **#416 (P2-T20).** CI passed 10 of 10 at `f6a2b681` after one rerun; the iOS export's hermesc crashed with SIGSEGV, and the same job had passed at `4eb15b3e` (lessons.md). The Flash second review approves.
+  - **It waits for its Opus first review**, `mcp:launch:c782b7d9…`, which paused mid-probe and should resume at the reset.
+  - The owner's 10 Nov routing gives money and privacy PRs an Opus review, so it does not merge on Gemini reviews alone.
+- **Handed to Antigravity**, each with a resume note `scratch/dispatch/<task>-resume-20261112.md` that points at the Opus transcript and kit:
+
+| Task | New thread | Model | Old Opus thread (archived) | Writes |
+| --- | --- | --- | --- | --- |
+| P3-T2 planner | `mcp:launch:8cb4f47f44c01b8510bc491c4486e3e5e2a5ef513362fa05bc05a4f0810d794a` | Argon High | `8ab58bd4…` | `briefs/P3-T2.md` |
+| P3-T5 planner | `mcp:launch:84eaaf1cd7050581391d4970335f3f9b46b517b1d2a3a1b88fb9f90ca666bef3` | Argon High | `38f3e353…` | `briefs/P3-T5.md` |
+| P2-T25 fix planner | `mcp:launch:a1379136a12b30ce073d8ddf8f5b909010a7d5eeef95dbd4ea857406da57084a` | Flash High | `79936cd9…` | `briefs/P2-T25-fix.md` |
+| P2-T32 fix planner | `mcp:launch:ea440e4957db9462feb9a9bfa33c89ea06f523b15a19318d7f6a8725176e342e` | Flash High | `3bc47b4b…` | `briefs/P2-T32-fix.md` |
+| P2-T29 brief review | `mcp:launch:ace87dce42421318826d8890e57ae2508b26992f7d04509a85b471baffa8e523` | Argon High | (none) | `reviews/P2-T29-brief.md` |
+| P2-T31 brief review | `mcp:launch:a569ea765b0df6c9b03b8e2b0a6f229e7afcf5329d146fa878f016c06eefa795` | Argon High | (none) | `reviews/P2-T31-brief.md` |
+
+- **The old Opus planner threads.** `t3_thread_interrupt` gave `no_active_run`, so they were archived instead. **At 03:00 on 14 Nov, check that none resumed, and stop any that did**; otherwise they would overwrite the Gemini briefs.
+- **Next steps:**
+  - **A brief lands:** run check_kit, rule on its P-calls, create the worktree, then dispatch a Flash implementer (`make_prompt.py implementer <task> --spread`).
+  - **A brief review says Needs fixes:** send it to the same Flash planner thread (P2-T29 `11bf3529…`, P2-T31 `92c37c30…`).
+  - **A fix brief lands:** dispatch a Flash fixer, push, and update the PR body. The confirming review waits for Opus on 14 Nov.
+- **This controller session still answers** during the weekly limit, so it may be drawing paid extra usage. The owner was told at 06:25.
+
+**03:25 (12 Nov): Claude Code's 5-hour limit stopped everything from 01:15 to 03:10, the controller included. #406 (P2-T33) MERGED; the head is `a00fff7`.**
+- **The limit.** At 01:15 every Claude Code thread paused with "resets 3:10am", and the controller's session ended.
+  - At 03:10 T3 resumed them all, including the finished P2-T14 confirming review and the DONE P2-T20 builder. Both were stopped.
+  - The Mac stayed awake (caffeinate), and CI ran on.
+- **#406:** CI passed 9 of 9 at `c07be421`. Merged as `a00fff7` and promoted as **#417**. Stack #379 holds 21 PRs. The followups are marked merged.
+- **#416 (P2-T20):** the integration head was merged in as `f6a2b681`.
+  - `index.ts` is ADD, LIST and then LOCK, in plan order (sha256 e086e8a0).
+  - On the merged tree: tsc exit 0, and walletHarness, WalletsList, Lock and Tray pass 86 of 86.
+  - CI is restarting on it. The Opus reviewer (resumed) was told the head moved.
+  - The **Flash second review** is dispatched: `mcp:launch:ea82daf6f5087aab2ff4633f122542ab465c51e41f8ec00d1d201c04015de3d4`, writing `reviews/P2-T20-second.md`.
+- **Antigravity is back** (its quota reset at about 02:43). The P2-T29 and P2-T31 Flash planners were resumed with `scratch/dispatch/flash-ui-planner-checklist-20261112.md`.
+  - That file gives the new head and merge proofs with #416, and the ten things the 11 Nov Flash UI plans missed.
+  - **Each brief gets an Opus brief review before any build**, to save the Opus budget (lessons.md).
+- **Running on Opus** (resumed at 03:10):
+  - the P2-T25 fix planner;
+  - the P2-T32 fix planner (told `a00fff7`, and merge proofs with #416 and #412);
+  - the P3-T2 planner;
+  - the P3-T5 planner;
+  - the P2-T20 reviewer.
+
+**01:17 (12 Nov): P2-T20 is built and opened as #416, with its Opus review running.**
+- **The build:** the Haiku builder reported DONE at `4eb15b3e`.
+  - RED was all assertions. GREEN: Node 8, render 16, neighbours 177, catalogue 32. All 84 mutants were killed, and the R100 gate passed (193 focused render tests and the web export).
+  - The controller checked all 10 `real/` files: byte-identical, with `index.ts` matching the 3-way copy.
+- **PR #416** (body `pr-p2-t20.md`, issue #166).
+- **First review**, on Opus xhigh: `mcp:launch:c782b7d9ee6e9c21d706235b3b7e799bfcf60fc89cc1ea25052d3721f4ad437f`. It writes `reviews/P2-T20.md`.
+- **Second review** (the list shows balances and private mode): Gemini 3.8 Flash after about 02:43, when Antigravity's quota resets (`make_prompt.py second P2-T20 --spread`).
+- **When #406 merges first:** merge the head into `p2/t20-wallets-list`, with `index.ts` giving ADD, LIST and then LOCK. Push, then merge on green and approved.
+
+**01:10 (12 Nov): #407 (P2-T14) and #410 (P3-T4) MERGED; the head is `431ea63`. Antigravity's Gemini quota ran out at 00:48 (it resets at about 02:43), so work runs on Claude Code.**
+- **#407:** merged as `7cf4927` at `28b9d5ac` and promoted as **#414**. Its carried notes are in followups.md (P2-T16, P2-T27, P2-T37, P2-T15, E2-B).
+- **#410:** the rerun was green, 9 of 9. Merged as `431ea63` at `a68fcd81` and promoted as **#415**. Stack #379 holds 20 PRs.
+- **#406 (P2-T33):** the integration head was merged in as `c07be421`.
+  - `index.ts` came from the kit's `merge/index.t14-t12-t33.ts` (sha256 6b9dda7e).
+  - `draftText.test.ts` auto-merged to exactly `merge/draft.t14-t33.ts` (80eba034).
+  - On the merged tree: app typecheck clean, walletHarness 9 of 9, draftText 4 of 4.
+  - CI is running (background `wait_ci.sh 406`). **Merge on green with `merge_task_pr.sh 406 c07be421 P2-T33`, then `promote_pr.sh P2-T33 406`.** Its carried notes are already in followups.md.
+- **#408 (promote/1b-t13):** its SQL job failed on `shared-rate-limit` "two API replicas share one write budget" while the head changed nothing in `apps/api`. Rerun once; it is a candidate flake in lessons.md.
+- **Antigravity out:** the P2-T29 and P2-T31 Flash planners stopped at "Usage Limit Reached" with no brief.
+  - Both threads are stopped. Their partial scratch folders are unused.
+  - **Replan both on Opus** (`--claude-code`; they are UI tasks) once the two fix planners finish. Before the new planner starts, move `scratch/p2-t29-planner` and `scratch/p2-t31-planner` aside as `*-flash-partial`.
+- **Dispatched on Claude Code:**
+  - **P2-T20 build**, on Haiku 5.5 max: `mcp:launch:27ea997159a686c7a55050530618263d9e26b05f5a6019b8ede6563e5d506331`. WT `p2-t20` (installed), branch `p2/t20-wallets-list`, from `7cf4927`.
+    - Its kit held at `7cf4927`. The `index.ts` 3-way copy is in `scratch/p2-t20-rebased/`. P1 to P15 are accepted.
+    - The builder must not merge the head in; the controller does that at PR time, because #406's LOCK spread lands first.
+  - **P3-T2 planner** (record source; depth 10), on Opus xhigh: `mcp:launch:8ab58bd4ae7bbfaac790e5ea057b76bc965bda96f7316d266eaa1e121f85f3f3`. Notes `scratch/dispatch/P3-T2-planner-notes-full.md`; it carries P5-T4's vault-migration followups.
+  - **P3-T5 planner** (the Bun AI emitters and the draft review; depth 10), on Opus xhigh: `mcp:launch:38f3e35386a8880a778c846fb661b0491232bd80247bdb478a03fa82ae8546fd`.
+  - P3-T2 and P3-T5 share `apps/app/src/analytics/events.ts`. Each keeps its edit to one additive block, and the second to merge takes a base merge from the controller.
+- **Still running:** the P2-T25 fix planner (Opus; told that the second review adds nothing beyond R109) and the P2-T32 fix planner (Opus; told to rebase `index.ts` onto `7cf4927`).
+  - Their fixers go to Haiku (`--claude-code`) while Antigravity is out, or to Flash after about 02:43.
+
+**00:45 (12 Nov): the Mac slept from 23:08 to 00:31, stalling CI and one agent. It is held awake now. #407 and #406 have their confirming reviews approved; #410 reruns its lost jobs.**
+- **The sleep.** `pmset` shows `sleep 1` (one minute). At 23:08 the Mac entered Idle Sleep, then fell back asleep at each dark wake with "Dark Wake Thermal Emergency".
+  - Both runners went offline. Jobs were cancelled or abandoned, and runner-1 hung, so it was recreated (`docker rm -f` plus `runners.sh up 2`; the image re-registers it with `--replace`).
+  - The P2-T25 second reviewer's turn stopped ("Antigravity sent nothing for 15 minutes"). It was resumed with a message.
+- **Held awake:** `caffeinate -i -s -t 28800` (pid in `scratch/caffeinate.pid`). It started at 00:37 and ends by itself at about 08:37; the display can still sleep. Stop it with `kill $(cat scratch/caffeinate.pid)`.
+  - **For the owner:** thermal pressure read 2 ("heavy") at 00:35. `hybridsearchd` (Spotlight's indexer) used about 3.2 cores, which the worktrees and scratch trees feed. Excluding `~/Developer` from Spotlight (System Settings, Spotlight, Search Privacy) would cut that heat. That is the owner's setting to change.
+- **CI cancelled** on heads that will change: #411 and #412 (fix rounds) and #406 (it must merge the integration head after #407). This keeps the two runners for #410 and #407.
+- **#407 (P2-T14):** the confirming review is Approved (`reviews/P2-T14-confirm.md`: m1, m2, n1, n2; carry them at merge). Waiting on CI at `28b9d5ac` (background `wait_ci.sh 407`).
+- **#406 (P2-T33):** the confirming review is Approved (`reviews/P2-T33-confirm.md`: m1, n1 to n3). After #407 merges, merge the integration head in (`index.ts` as `merge/index.t14-t12-t33.ts`, `draftText.test.ts` merged), push, then wait for CI and merge.
+- **#410 (P3-T4):** the SQL job was "The operation was canceled" at 17:31 UTC (the sleep), and 3n+1 was cancelled. The new `rerun_then_wait.sh 410 43051770978` reruns them once the run ends, then waits.
+- **#411 (P2-T32):** the Flash second review is Approved, with one nit, the first review's m1. The fix round goes ahead (R110).
+- **Watcher:** `verdict:P2-T25-second`, plus `file:` for the briefs of P2-T29, P2-T31, P2-T25-fix and P2-T32-fix.
+
+**23:45: #410 (P3-T4) has both reviews approved and waits on CI. #411 and #412 need fixes, with Opus fix planners running. UI-heavy planning goes back to Opus.**
+- **#410:** both reviews approved (Opus `reviews/P3-T4.md`, with m1 to m4 carried; Flash `reviews/P3-T4-second.md`). The carriers are in followups.md (P3-T6, P3-T7, P3-T8, P3-T10, P3-T3, P4-T6, P6C).
+  - **Deployment note:** set `AI_GATEWAY_TOKEN` only together with `ANTHROPIC_BASE_URL`.
+  - CI is at 6 of 9. A background `wait_ci.sh 410` is running; merge on green with `merge_task_pr.sh 410 a68fcd81 P3-T4`, then `promote_pr.sh P3-T4 410`.
+- **#412 (P2-T25):** the first review says Needs fixes, with 2 majors.
+  - **R109:** the wallet screen words a restore without the amount while private mode is on (the old screen keeps its words); the `trackRecordRestored` call is removed, since nothing was carried (1D-T7 #138 has not merged).
+  - Fix planner, on Opus: `mcp:launch:79936cd9fbcf6cb46b7f9d2e01dbae02206a44f460bb1162ee8d6dcad42710dc`, writing `briefs/P2-T25-fix.md` with the kit `scratch/p2-t25-fix-planner/`, on `b840c195`.
+- **#411 (P2-T32):** the first review says Needs fixes, with 8 majors (M1 to M8).
+  - **R110:** fix each as the review proposes, and stop BLOCKED on anything the plan can't settle.
+  - Fix planner, on Opus: `mcp:launch:3bc47b4b91a6048f51f2d075bef60ef6144af6c677e5f4e9bc9e8d53c240c60a`, writing `briefs/P2-T32-fix.md` with the kit `scratch/p2-t32-fix-planner/`, on `71b2255e`.
+- **Routing change (lessons.md):** Flash plans well-specified logic; UI-heavy tasks are planned on Opus. The running Flash planners for P2-T29 and P2-T31 (UI) finish, but each of their briefs gets an **Opus brief review** against the plan's test list, the boards and the wallet kit before any build.
+
+**23:30: #409 (P2-T23) MERGED, promoted as #413. The #406 fix is pushed, with its confirming review running.**
+- **#409 merged as `f22c5a8`,** with no owner yes (ruling of 21:25): CI 9 of 9, and both reviews approved (Opus, Flash). Issue #169 is closed, and WT `p2-t23` and its branches are removed. Promotion PR **#413**.
+  - Review m2 (the receipt's `TODAY_PAGES`) is fixed in `7c2682b5`.
+  - Review m1 is **ruled R108** for P2-T24: the front card's "today" counts today's waiting expense drafts once (P2-T16's definition), following rh-offline and P2-T12's spec. See followups.md.
+- **#406 (P2-T33).**
+  - The fix commit `8e270766` was checked: 12 files on `5844e4c1`, all 11 fix-kit files identical, 166 of 166 mutants killed, `git diff --check` clean.
+  - Pushed as a fast-forward, so #406's head is `8e270766` and CI reruns. The body has a fix-round section.
+  - The confirming review, on Claude Code Opus high, writes `reviews/P2-T33-confirm.md`: `mcp:launch:5c1c18c7a547ab3ae26469e0c628d2321262c50bd957fd180c256c52b25654db`.
+  - **Merge only after #407:**
+    1. Merge the integration head into `p2/t33-face-id-lock`, with `index.ts` as `merge/index.t14-t12-t33.ts` and `draftText.test.ts` merged.
+    2. Push, wait for CI, then `merge_task_pr.sh 406 <that head> P2-T33`. The head differs from the confirmed `8e270766` only by that planned merge.
+
+**23:25: two more Flash planner lanes, since the Mac's load is about 7 and planning doesn't use Claude Code.**
+- **P2-T29** (categories, the category tray and the Thai pack tray): `mcp:launch:11bf352998e7f62f46eef5950d167ee15f667c8eff10ac068d5b8efb523eb960`. WT `p2-t29` on `p2/t29-categories`, pre-made with `npm ci`.
+- **P2-T31** (insights): `mcp:launch:92c37c30c475ed6ce1e646a9d352a02fabb84d1e44f1c8e9c6fbf0ed8207ba8e`. WT `p2-t31` on `p2/t31-insights`, pre-made.
+- Both carry the Flash notes: asserting lookups, a mutant per guard, BLOCKED rather than guessing.
+- **Check their kits with all three checks before accepting:** the kit, the RED failure types, and RED typecheck proof against the brief's steps.
+
+**23:20: P2-T32 → PR #411 and P2-T25 → PR #412, both in review. #409's second review (Flash) approved.**
+- **P2-T32:** commit `71b2255e` (14 files, all 13 `real/` identical; message in `feat(wallet):` style because the Flash brief named no commit line; cosmetic, left). RED 15 assertions; 31 of 31 mutants (`scratch/p2-t32/mutants.out`).
+  - PR **#411** (closes #178).
+  - Reviews: Opus `mcp:launch:ac27ecb0493487a364a155a0994619f5a18fbf27bc936d8b38255fb4c0a4a070`, Flash `mcp:launch:f17bed097f0ba34de8d89e4491d1ec77b1d3d009e4af15bbd04aace72bce2a21`.
+- **P2-T25:** commit `b840c195` (9 files, all 8 `real/` identical). RED 9 assertions; 19 of 19 mutants.
+  - PR **#412** (closes #171).
+  - Reviews: Opus `mcp:launch:ea088c4bc10e24ec71537ff8456f74b50e9d86066a800c1e00df839dad5bee93`, Flash `mcp:launch:f9d3b090f96b34c8a69734048ff20870054cb835d38d2937c8d768b9ec07beaf`.
+- **#409's second review** (`reviews/P2-T23-second.md`): Approved. Its first review (Opus) is still running.
+- **Load:** five Opus reviews on Claude Code at once (#407 confirm, #409, #410, #411, #412), so no new lanes until some clear.
+- **Merge order on approvals:**
+  1. #407 first (its confirm, then the P2-T20 build, then the #406 update).
+  2. #409, #410, #411 and #412 are independent of each other, except `index.ts`: #411 and #412 both add a spread. The second to merge needs a 3-way update and a CI rerun.
+
+**23:10: the #407 fix is pushed and its confirming review is running. P2-T25's reworked plan is accepted, and its builder is running.**
+- **#407 (P2-T14).**
+  - The fix commit `28b9d5ac` was checked: 11 files on `18876253`, all 10 fix-kit files identical, 138 of 138 mutants killed (`scratch/p2-t14-fix/mutants.out`), `git diff --check` clean.
+  - Pushed as a fast-forward, so #407's head is `28b9d5ac` and CI reruns. The body (`pr-p2-t14.md`) has a fix-round section.
+  - The confirming review, on Claude Code Opus high, writes `reviews/P2-T14-confirm.md`: `mcp:launch:f2e760bb45aaac343b9114eeef25fabb58506f32a10fe9fad03da67d43ad7351`.
+  - **Merge when it approves and CI is green at `28b9d5ac`:** `merge_task_pr.sh 407 28b9d5ac P2-T14`, then `promote_pr.sh P2-T14 407`, then dispatch the P2-T20 build (check its kit with the 3-way fallback first) and update #406.
+- **P2-T25, reworked by its Flash planner.**
+  - The kit checks at `647cb4a0` with 27 OK.
+  - RED is 9 of 9, all `AssertionError` from asserting helpers, with 0 lookup errors.
+  - 19 of 19 mutants (was 9). Typechecks are at the gate, with 0 errors.
+  - P1 to P6 accepted.
+  - The builder, on Flash: `mcp:launch:ef2026572fc37bc0230281552abc5b919928679520452f0d9b462148810e348b`, in WT `p2-t25`.
+
 **23:05: P2-T32's Flash plan (steered) is READY and accepted. Its Flash builder is running.**
 - **The brief:** `briefs/P2-T32.md`, 13 files. The kit `scratch/p2-t32-planner/` checks at `8c6263a4` with 36 OK, and its 3 `orig/` files are identical.
 - **All three checks passed:**

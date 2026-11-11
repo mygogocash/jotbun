@@ -8,11 +8,10 @@ import type { QuickAddDraft } from '@mobile/spend/v1/redesign/quickAddModel';
 import { rankRecentCategories } from '@mobile/spend/v1/redesign/recentCategories';
 import type { RecentCategories } from '@mobile/spend/v1/redesign/recentCategories';
 import { duplicateDraft } from '@mobile/spend/v1/redesign/recordModel';
-import { WAITING_STATES, openDrafts } from '@mobile/spend/v1/redesign/shared';
 import type { Translate } from '@mobile/spend/v1/redesign/shared';
 import type { CreateEntryInput, CreateTransferInput } from '@mobile/spend/v1/resources';
 import { DiaryLocked, DraftReferenceUnavailable } from '@mobile/storage/types';
-import type { OutboxCommand, PendingEntry } from '@mobile/storage/types';
+import type { PendingEntry } from '@mobile/storage/types';
 import { EMPTY_KEYPAD, keypadFromMinor } from '@mobile/ui/keypadExpression';
 import type { KeypadProblem, KeypadState } from '@mobile/ui/keypadExpression';
 import type { WalletChoice } from '@mobile/ui/WalletPicker';
@@ -101,32 +100,9 @@ export function earliestFor(draft: QuickAddDraft, wallets: readonly WalletSnapsh
   return latest;
 }
 
-/**
- * What each wallet holds as far as this device knows: the server's balance,
- * less what drafts waiting on this device take out of it and plus what they
- * bring in. Drafts being checked may already be in the server's balance, so
- * they are left out, as the budget pace leaves them out. "Move all" offers
- * this, so it never offers money a waiting draft already spent.
- */
-export function availableBalances(wallets: readonly { id: string; balance_minor: Minor }[], outbox: readonly OutboxCommand[]): Map<string, Minor> {
-  const held = new Map(wallets.map((wallet) => [wallet.id, BigInt(wallet.balance_minor)]));
-  const move = (id: string, delta: bigint) => {
-    const balance = held.get(id);
-    if (balance !== undefined) held.set(id, balance + delta);
-  };
-  for (const command of openDrafts(outbox)) {
-    if (!WAITING_STATES.includes(command.state)) continue;
-    const entry = command.payload;
-    const amount = BigInt(entry.amount_minor);
-    if (entry.type === 'transfer') {
-      move(entry.source_wallet_id, -amount);
-      move(entry.destination_wallet_id, amount);
-    } else {
-      move(entry.wallet_id, entry.type === 'expense' ? -amount : amount);
-    }
-  }
-  return new Map([...held].map(([id, balance]) => [id, balance.toString()]));
-}
+// Moved unchanged to a pure module, so the Bun Wallet Home's cards read the
+// same rule (P2-T23): `spend/v1/redesign/availableBalances.ts`.
+export { availableBalances } from '@mobile/spend/v1/redesign/availableBalances';
 
 /**
  * Wallets for WalletPicker, each with its balance when the server's list gave

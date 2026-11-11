@@ -42,8 +42,22 @@
   - `export:web`: 4830 modules (a route was added);
   - the focused render files: 213 of 213;
   - `git diff --check`.
-- [ ] CI on this pull request is green: the nine jobs, including the full render suite and the iOS export.
-- [ ] Independent review (Opus), and a second review, since an app lock is privacy work. Then the owner's yes before merging.
+- [x] Independent review (Opus): Approved on `5844e4c1`, with four minors (`.claude/controller/reviews/P2-T33.md`).
+- [x] Second review, privacy: Needs fixes, for one major. M1: the record's receipt photo, a Modal of its own, stayed drawn over the locked app (`reviews/P2-T33-second.md`).
+- [x] **Fix round** (`8e270766`, brief `.claude/controller/briefs/P2-T33-fix.md`; ruling R107):
+  - `ReceiptViewer` draws the lock cover. A source test, `lockCover.test.ts`, keeps every `Modal` in the sweep: three are covered, and the four legacy ones are shown only under the development-only `EXPO_PUBLIC_LEGACY_SPEND=1`.
+  - The gate:
+    - the first automatic ask waits for the phone read;
+    - an opening counts as asked only once its prompt starts;
+    - `try/finally` after every prompt;
+    - answers and readings outside the port's types fail closed;
+    - turning the lock on is stored fail-closed, with a new notice, `lock.notStored`;
+    - the app below is quiet on iOS under the cover (a flag in `ui/a11y.ts`, with `announceStatus` in `sync/announce.ts`);
+    - the keyboard is dismissed;
+    - a lock that was on only because its setting couldn't be read turns off with no false notice.
+  - The proofs: RED Node 2 of 18 and render 9 of 40, all assertions, plus the expected n4 `TypeError`; **166 of 166 mutants killed**. All 11 fix-kit files are byte-identical.
+- [ ] CI on this pull request is green at `8e270766`, and again after #407 merges and `index.ts` is merged (`merge/index.t14-t12-t33.ts`).
+- [ ] Confirming review (Opus) of the fix commit.
 - [ ] SKIPPED, device checks (P19):
   - Face ID on a phone (needs P2-T34);
   - the iOS app-switcher snapshot and Android recents (owner Q1);

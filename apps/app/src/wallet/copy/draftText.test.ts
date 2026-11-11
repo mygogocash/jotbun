@@ -10,13 +10,19 @@ import { COMMON_COPY } from '../common/copy.ts';
 import type { DraftTable } from './draftText.ts';
 import { draftText, tableT } from './draftText.ts';
 
-/** Lines the boards write in Latin letters in Thai too, such as card.kindTransit ("BTS / MRT"). */
-const LATIN_LINES = new Set<string>(['card.kindTransit']);
+/**
+ * Lines with no Thai letters of their own in Thai: what the boards write in
+ * Latin letters in Thai too, such as card.kindTransit ("BTS / MRT"), and a
+ * line made only of placeholders, such as add.chip ("{label} {amount}").
+ */
+const LATIN_LINES = new Set<string>(['card.kindTransit', 'add.chip']);
 
 const THAI = /[\u0E00-\u0E7F]/;
 const EMOJI = /\p{Extended_Pictographic}/u;
 const PUNCTUATION_DASH = /[\u2013\u2014]/;
 const AREA_KEY = /^[a-z]+\.[A-Za-z0-9_.]+$/;
+// The lock's method is named Face ID in Thai too (sa-lock-setup, sa-locked).
+LATIN_LINES.add('lock.methodFace');
 
 const walletRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 

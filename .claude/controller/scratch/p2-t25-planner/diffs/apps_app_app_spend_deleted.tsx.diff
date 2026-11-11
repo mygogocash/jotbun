@@ -1,0 +1,21 @@
+diff --git a/orig/apps/app/app/spend/deleted.tsx b/real/apps/app/app/spend/deleted.tsx
+index b03cf01..3b201a9 100644
+--- a/orig/apps/app/app/spend/deleted.tsx
++++ b/real/apps/app/app/spend/deleted.tsx
+@@ -4,13 +4,14 @@ import { getSharedV1Resources } from '@mobile/api/sharedV1';
+ import { isLegacySpendEnabled, isRedesignEnabled } from '@mobile/config/featureFlags';
+ import { RecentlyDeletedScreen } from '@mobile/screens/redesign/RecentlyDeletedScreen';
+ import { SpendV1Provider } from '@mobile/spend/v1/SpendV1Context';
++import { WalletDeletedScreen } from '@mobile/wallet/records/WalletDeletedScreen';
+ 
+-/** Recently deleted (redesign plan §6.1), opened from History. Only with the `core` redesign flag; otherwise the list. */
++/** Recently deleted (redesign plan §6.1, wallet plan P2-T25), opened from History. */
+ export default function SpendDeletedRoute() {
+   if (isLegacySpendEnabled() || !isRedesignEnabled('core')) return <Redirect href="/spend/all" />;
+   return (
+     <SpendV1Provider resources={getSharedV1Resources()}>
+-      <RecentlyDeletedScreen />
++      {isRedesignEnabled('wallet') ? <WalletDeletedScreen /> : <RecentlyDeletedScreen />}
+     </SpendV1Provider>
+   );
+ }

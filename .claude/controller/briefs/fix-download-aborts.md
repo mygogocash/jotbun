@@ -249,7 +249,7 @@ Use these only for a shared file whose base checksum differed in Step 0.7. Each 
  import type { WorkerContext } from '../worker-routes'
  import { RECEIPT_LIMITS } from './receipts'
 +import { untilReturned } from './slots'
- 
+
  // File downloads the Worker streams from R2. Each download takes a slot first,
  // as the API counts downloads per process; here the count is per isolate.
  // A download asks the caller's vault, in one step, which stored file its grant
@@ -328,7 +328,7 @@ Use these only for a shared file whose base checksum differed in Step 0.7. Each 
  import type { VaultReply, VaultRouteId } from '../protocol'
  import type { VaultSession, WorkerContext } from '../worker-routes'
 +import { untilReturned } from './slots'
- 
+
  // Retaining and replacing a receipt on the vault (1B-T9): ports of
  // AttachmentService.withReceipt and prepare. The copy runs here, in the Worker,
 @@ -97,15 +98,17 @@ async function copyOf(vault: VaultSession, env: Pick<V1Env, 'OBJECTS'>, prepared
@@ -366,7 +366,7 @@ Use these only for a shared file whose base checksum differed in Step 0.7. Each 
  import type { VaultClaims, VaultReply, VaultRouteId } from '../protocol'
  import type { VaultSession, WorkerContext } from '../worker-routes'
 +import { untilReturned } from './slots'
- 
+
  // POST /v1/imports on the vault (1B-T5): the API's UploadIntake, unchanged,
  // streams the body into R2 quarantine while each of its database steps is one
 @@ -71,7 +72,9 @@ async function* emptyBody(): AsyncIterable<Uint8Array> {}

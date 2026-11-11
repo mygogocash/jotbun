@@ -1,0 +1,122 @@
+# P2-T14-fix: room for the amount step's middle, filled amounts masked, and the reviews' pins
+
+- **Status:** built and verified locally on `p2/t14-add-flow` (`.claude/worktrees/p2-t14`), as one commit on `18876253`, PR #407's reviewed head. Not pushed. This is the fix round on PR #407 after two reviews:
+  - the first (`.claude/controller/reviews/P2-T14.md`) said Needs fixes, for one major (M1);
+  - the second (`P2-T14-second.md`, money and privacy) found no major.
+
+  The controller ruled R106 on both, and the planner's brief is `.claude/controller/briefs/P2-T14-fix.md`. Under R87 this receipt is its own file; `P2-T14.md` gains one line pointing here, and `premium-progress.md` is not edited. The independent review is the controller's, after this receipt.
+- **Base:** `18876253`, with no sync merge, as the controller's note says. The integration head `4a5d6532` changes nothing under `apps/app`, `packages` or the lockfiles since `96a52c2a`, the PR's merge base: #405 (1B-T13) changed `apps/edge`, and the rest is controller state.
+- **Files:**
+  - Modified:
+    - `apps/app/src/wallet/add/addFlow.ts`: `filledKeypad`, `isFilled`, `WalletKey` and `walletKey`; the note's guess is compared trimmed;
+    - `AmountStep.tsx`;
+    - `TypeSwitchHeader.tsx`: `disabled` and `useSwitchInHeader`;
+    - `WalletKeypad.tsx`: it types through `walletKey`;
+    - `QuickChips.tsx`: its header and type say a chip's `label` is the name only;
+    - `addFlow.test.ts`: 6 cases before, 7 after;
+    - `AmountStep.render.test.tsx`: 12 cases before, 15 after;
+    - `apps/app/src/dev/catalogue/wallet/addSections.tsx`: the host's new wiring;
+    - `docs/implementation/receipts/P2-T14.md`: one line pointing here.
+  - Created: `apps/app/src/wallet/add/amountStepNative.test.ts` (1 case, R72's source pin) and this receipt.
+  - No shared file changes.
+- **M1, the middle's room (R106.1, with the planner's P1):**
+  - The keypad's problem left the pinned footer at every size. `AmountStep` takes `problem` (the plan's own prop) and draws it right under the amount, a polite alert, said once on iOS (`useAnnouncement`).
+  - The footer is the keys and Next. While income's name field has focus it is Next alone (`AmountStep`'s `onNaming`, `AmountFooter`'s `naming`). The field lets go of focus when the keyboard hides, and when it leaves. Android's back leaves it focused, since React Native 0.88's `ReactEditText` has no back-key handling.
+  - At the largest text sizes the switch leaves the pinned header (`useSwitchInHeader()`), so the header is the tray's title. The host gives the switch to the step (`typeSwitch`), which draws it under the amount and its problem.
+    - R106 put the switch at the middle's top. The planner's P1 showed that hides the amount being typed at AX5 on every phone up to the 6.1-inch ones, so the amount stays first.
+    - `Tray.tsx` is unchanged.
+  - Income's name comes right under the wallet chip, before Tell Bun, as rh-income draws it, so with the keyboard up it is in view on an SE (the planner's P6).
+  - The height budget, AX5 in Thai: the first review's probe on the fixed layout (`.claude/controller/scratch/p2-t14-fix-planner/probes/ax5-budget-fixed.ts`, output `logs/ax5-budget-fixed.log`).
+    - On the SE (375×667) the middle is 161 pt, where it was −25. The amount's 84 pt line opens in full view; with the switch on top, none of it would.
+    - Next is pinned, and on screen with any problem line on every phone listed, since the problem scrolls with the middle.
+    - At the default size with the keyboard up on the SE, the middle is 213 pt, where it was 5. The 72 pt name row fits, starting 140 pt down.
+- **R106.2, private mode:** an amount the person did not type is masked on the amount line as a stored one is, until a key is pressed. The mask is `฿••••` at 58 pt, spaced as `WalletAmount`'s mask and said as ซ่อนยอดเงินอยู่.
+  - `filledKeypad(minor)` marks a fill (`fresh`). `isFilled` also takes satang for a fill, since this keypad has no point.
+  - Built here for the chips' fill: the catalogue's chips and the test's host.
+  - P2-T15 (move all), P2-T16 (Tell Bun and copies) and P2-T27 (the edit tray's opening amount) inherit the rule (the notes below).
+  - The P2-T37 sweep's exemption covers typed amounts only.
+- **R106.3, chip labels:**
+  - `QuickChips`' header and the `QuickChip` type say a chip's `label` is the name only and never holds an amount.
+  - No cheap test guards it here: the component draws whatever its host passes, and a name may hold digits ("7-Eleven").
+  - P2-T16 builds `label` from `item.draft.merchant`, never `OftenLogged.label` (its note below).
+- **R106.4, the minors:**
+  - m1: the name field's own box is at least 44 pt (`minHeight: BUN_TOUCH`). The row's padding went from 8 to 4 pt, and the row is 72 pt.
+  - m2: no quick chips on a transfer's amount.
+  - m3: `TypeSwitchHeader` takes `disabled`: dimmed to 0.4, no tick, no change, and `Pressable` says the segment is unavailable. The test's host passes the tray's `locked`.
+  - m4: the first key on a fill starts the amount over (`walletKey`): a digit begins a new amount, and delete clears it.
+    - So a satang fill never meets `too_precise` or a bare `฿65.`, and no digit of a fill shows after a key.
+    - `too_precise` still passes through `amountProblem`, pinned in Node.
+- **R106.5, the pins, and the nits:**
+  - The first review's M1, M3, M5, M6, M7 and M8 are pinned in the render cases. Its M2, which is the second review's n2, is pinned in `amountStepNative.test.ts`.
+  - The second review's n1 (move all above the cap) and m3's `too_precise` branch are pinned in `addFlow.test.ts`.
+  - n1 is fixed: the spending section's problems are checked in Thai through `tc` (M10), and a section closed and opened again starts over (M9).
+  - n3 is fixed: the caption ชื่อรายการ is hidden from screen readers, since the field says its own name.
+  - n4 is fixed: `stillGuessed` compares the note trimmed, as its row shows it.
+  - Before the round, all 11 of those survivors (RM1 to RM10 but RM4, SR1 and SR3) survive `18876253`'s own focused files (the planner's `logs/before-pins.out`). Each is now killed by its pin.
+- **RED to GREEN:**
+  - RED, on the planner's typed stubs of `addFlow.ts`, `AmountStep.tsx` and `TypeSwitchHeader.tsx`, with the round's tests and its other three files:
+    - `typecheck:app` exit 0.
+    - Node: 8 tests, 6 pass, 2 fail, each an `AssertionError [ERR_ASSERTION]`: the trimmed note's guess, and the fill case.
+    - Render: 10 of 15 fail, each on an `AssertionError`, with no module-load error. The other 5 guard what the first round already did right.
+  - GREEN:
+    - `typecheck:app` exit 0.
+    - Node 12 of 12: `addFlow.test.ts` 7, `amountStepNative.test.ts` 1, `draftText.test.ts` 4.
+    - `AmountStep.render.test.tsx` 15 of 15, with no `stderr |` block.
+    - The neighbours 58 of 58 (N, unchanged), the catalogue's wallet sections 26 (C, unchanged), and the registry rule 1.
+- **Mutation check:** 138 mutants, all killed, none marked equivalent, every restore's SHA-256 checked (`tools/mutants.py`). There are two groups:
+  - The first round's 92. A5, A13 and K2 were re-aimed where the round moved their lines, and A5 now says "the problem under the wallet chip, not the amount".
+  - This round's 46: the switch's place (L1 to L4); the footer and the name field (N1 to N9); private mode (P1 to P10); `walletKey` (W1 to W4); m2 (Q11); m3 (T12, T13); n4 (F24); the catalogue host (S7 to S10); and the reviews' survivors (RM1 to RM10 but RM4, SR1, SR3).
+- **Gate** (worktree root; whole-run totals are measured, not expected values, R100):
+  - `typecheck:app` exit 0.
+  - `test:app` exit 0, `ℹ fail 0` (ℹ tests 34, ℹ pass 34).
+  - `test:unit` exit 0, `ℹ fail 0` (ℹ tests 982, ℹ pass 982).
+  - The focused Node files: 12 of 12.
+  - The focused render files (`AmountStep.render.test.tsx` and the four neighbours): 73 of 73.
+  - The catalogue's wallet sections: 26.
+  - `git diff --check`: clean.
+- **Deviations** (the brief's planner rulings):
+  - P1: the switch goes under the amount and its problem at the largest text sizes, not at the middle's top as R106 wrote. R106's own proof fails with it on top (the height budget above).
+  - P6: income's name moved above Tell Bun.
+  - P8: delete clears a fill rather than taking its satang, so no digit of an amount the person did not type is shown.
+  - P10: the name row is 72 pt, not 58, since a 44 pt box under a 20 pt caption cannot fit 58.
+  - P11: the switch sets no `aria-disabled` of its own; `Pressable` derives it from `disabled`.
+- **SKIPPED and CI:**
+  - The full render suite, `export:web` and the iOS export run in CI (R100). The catalogue's every-section and screen-reader suites open the two sections there.
+  - There is no route, app entry, native, package or lockfile change, so no `typecheck:routes` and no `test:ops`.
+  - Nothing outside `apps/app` changes, so no API, edge or database suite.
+  - The device checks are SKIPPED:
+    - AX5 on a 667 pt phone: the title as the header, and the switch under the amount;
+    - income's name with the system keyboard up on an SE: whether iOS keeps the focused field in view, since the tray's `ScrollView` does not set `automaticallyAdjustKeyboardInsets`;
+    - Android's back with the name field focused;
+    - VoiceOver: the masked amount, and the problem said under the amount.
+- **Notes for later tasks** (these replace `P2-T14.md`'s where they differ):
+  - P2-T15:
+    - Add the row labels `confirmRows` returns as keys (`add.rowCategory`, `add.rowWallet`, `add.rowFrom`, `add.rowTo`, `add.rowDate`, `add.rowNote`) to `add/copy.ts`. A row's value is empty when nothing is chosen or written, so the step says what to add (bw-tray-confirm's เพิ่มโน้ต).
+    - `TransferStep` is the `transfer` step. Its keys and Next belong in the tray's pinned footer as `AmountFooter`'s do, and its keypad problem in the scrolling middle under its amount (R106).
+    - `moveAllMinor` offers a balance above ฿999,999,999.99 too, as Quick add does (pinned since the fix round). So apply it with `filledKeypad` in a try, and set `too_large` when it throws (`QuickAddScreen.tsx`).
+    - Move all inherits R106's rule for an amount the person did not type. It goes in through `filledKeypad`, so private mode masks it on the amount line until a key is pressed, and the first key starts the amount over. Its words (`add.moveAll`, `add.after`) say `common.amountHidden` in private mode, as `QuickChips` does.
+    - `balancesAfter` keeps one wallet's balance when it is on both sides.
+  - P2-T16:
+    - At the standard text sizes pass `header={<TypeSwitchHeader type={draft.type} onType={...} disabled={locked} />}`.
+    - At the largest (`useSwitchInHeader()` is false) leave `header` out, so the tray's title is the pinned header. Give the same switch to the step as `typeSwitch`, which draws it under the amount and its problem (R106).
+    - On the amount step pass `footer={<AmountFooter {...stepProps} type={draft.type} naming={naming} />}`, with `naming` the host's state, set from `AmountStep`'s `onNaming`.
+    - `AmountStep` takes `problem` and draws it under the amount: `amountProblem(keypad)` in today's words, `tc(KEYPAD_PROBLEM_TEXT[problem])`.
+    - Pass `canTellBun={useCanTellBun()}`. Keep the guesses with `stillGuessed(guessed, draft, next)` in `onDraft` (it returns a new set each time). `confirmRows` takes the app's `tc`. Next calls `onStep(stepAfterAmount(type))`.
+    - Tell Bun's fill and a copy (`copyOf`) inherit R106's rule. Every amount the person did not type goes in through `filledKeypad`, never `keypadFromMinor` or `keypadFor`, so private mode masks it until a key is pressed and the first key starts over.
+    - Build each quick chip as `{ label: item.draft.merchant, amountMinor: item.draft.amount_minor, apply }`, never from `OftenLogged.label`, which ends with the amount in digits, past the mask (R106). A chip's `apply` fills the draft and the keypad (`filledKeypad`). The private-mode case should use a real `oftenLogged()` item.
+    - The step draws no chips for a transfer.
+  - P2-T16, or a tray task: a pinned place under the tray's header would keep the amount above the scrolling middle at AX5, as ax-large-tray draws (the first round's P10). Until then the amount opens at the middle's top, with the switch under it, and stays in view while typed.
+  - P2-T27:
+    - The edit tray reuses `AmountStep` and `AmountFooter`; `WalletKeypad`'s `disabled` serves a locked tray (`AmountFooter` does not pass it on yet).
+    - The edit tray's opening amount inherits R106's rule. It goes in through `filledKeypad`, so private mode masks it until a key is pressed, the first key starts over, and a satang record never meets a point this keypad cannot type.
+  - P2-T37: private mode leaves on screen only an amount the person typed: `add-amount` after a key is pressed. A filled amount (a chip, Tell Bun, a copy, move all, an edit's opening amount) is masked until then (R106). The sweep's exemption covers typed amounts only, never `add-amount` as such.
+  - E2-B: the differences from the boards below, with `P2-T14.md`'s. Capture these by hand:
+    - `bw-tray-amount` at AX5, on a 667 pt phone and on the board's 390×844;
+    - `bw-tray-income` with the keyboard up for the name;
+    - each tray section from a fresh launch (P2-T13's n2).
+- **Differences from the boards** (added to `P2-T14.md`'s P17, for E2-B):
+  - At AX5 the pinned header is the tray's title: P2-T13's h2, 43 pt at AX5, where ax-large-tray draws 55 pt.
+  - At AX5 the amount opens at the top of the scrolling middle and scrolls with it (P10). The switch, which the board does not draw at AX5, sits under the amount and its problem.
+  - The keypad's problem shows under the amount, not above Next.
+  - Income's name row is 72 pt in Thai (rh-income draws 58), so its field is 44 pt in its own box.
+  - While the name has focus, the footer is Next alone.

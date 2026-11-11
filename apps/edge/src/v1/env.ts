@@ -33,6 +33,8 @@ export type V1Env = {
   AI_MODEL?: string
   /** A secret. */
   ANTHROPIC_API_KEY?: string
+  /** A secret for authenticated AI Gateway access (P3-T4). */
+  AI_GATEWAY_TOKEN?: string
   /** Optional proxy for the Anthropic API, for example a Cloudflare AI Gateway URL. */
   ANTHROPIC_BASE_URL?: string
 }
