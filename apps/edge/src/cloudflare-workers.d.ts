@@ -14,6 +14,8 @@ interface SqlStorageCursor<T> {
   next(): IteratorResult<T>
   raw(): IterableIterator<SqlStorageValue[]>
   [Symbol.iterator](): IterableIterator<T>
+  // The rows the statement has read so far, the storage's own count (a test reads it to show a read stays bounded).
+  readonly rowsRead: number
 }
 
 interface SqlStorage {

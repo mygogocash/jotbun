@@ -1,0 +1,20 @@
+
+> gogospend-app@0.1.0 test:unit
+> node scripts/test-unit.mjs src/wallet/tray/trayGesture.test.ts
+
+(node:19170) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix2-planner/work/apps/app/src/wallet/tray/trayGesture.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix2-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a pull of 120 pt, or a quick flick past 60 pt, closes the tray; a pull up never does (0.280166ms)
+✔ each line is passed, never met: more than 120 pt, more than 60 pt, faster than 900 pt a second (0.049416ms)
+✔ the swipe runs on the JS runtime (0.068083ms)
+✔ what the web drops is wired for a phone: the screen reader's escape, the modal card, the title, the backdrop, the Modal, the keyboard and the cover (0.272875ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 103.606333

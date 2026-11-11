@@ -1,0 +1,65 @@
+diff --git a/apps/edge/src/vault/files/jobs.ts b/apps/edge/src/vault/files/jobs.ts
+index 33af916..db4d591 100644
+--- a/apps/edge/src/vault/files/jobs.ts
++++ b/apps/edge/src/vault/files/jobs.ts
+@@ -24,11 +24,34 @@ export const FILE_JOBS: readonly FileJob[] = ['prune_files', 'delete_objects', '
+ /** One prune: it opens its own short blocks, so it is never called inside another (R21). */
+ export type FilePrune = (c: FileContext) => void
+ 
+-/** The five prunes, in their tasks' order: uploads (1B-T5), exports (1B-T6), snapshots (1B-T8), receipts (1B-T9), imports (1B-T10). */
+-export const FILE_PRUNES: readonly FilePrune[] = [pruneUploads, pruneExports, pruneSnapshots, pruneAttachments, pruneImports]
++// Each entry below calls its function when it runs, never while this module loads. retention.ts imports this
++// module, which imports exports.ts and previews.ts, which import retention.ts; in that cycle this module can run
++// first (it does in the vault bundle), so an entry that read one of their exports at load time would hold
++// undefined, or throw, unless that export happened to be a hoisted function declaration (the 1B-T11 review's
++// n5). The build would not say so either: Vite drops the bundler's circular-dependency warnings.
++
++/**
++ * The five prunes: uploads (1B-T5), exports (1B-T6), receipts (1B-T9), imports (1B-T10), then snapshots (1B-T8)
++ * last. pruneExports and pruneImports purge records, which raises the purge watermark, so a ready snapshot that
++ * a purge in this run makes stale has its chunks released in this run too, and snapshotsDueAt is not left at
++ * now (the 1B-T11 review's m1; ruling R37).
++ */
++export const FILE_PRUNES: readonly FilePrune[] = [
++  (c) => pruneUploads(c),
++  (c) => pruneExports(c),
++  (c) => pruneAttachments(c),
++  (c) => pruneImports(c),
++  (c) => pruneSnapshots(c),
++]
+ 
+ /** The due time of each prune, in the same order. */
+-const PRUNE_DUE_TIMES: readonly ((c: FileContext) => number | null)[] = [uploadsDueAt, exportsDueAt, snapshotsDueAt, attachmentsDueAt, importsDueAt]
++const PRUNE_DUE_TIMES: readonly ((c: FileContext) => number | null)[] = [
++  (c) => uploadsDueAt(c),
++  (c) => exportsDueAt(c),
++  (c) => attachmentsDueAt(c),
++  (c) => importsDueAt(c),
++  (c) => snapshotsDueAt(c),
++]
+ 
+ /** What a test sets on UserVault#fileJobOptions, as it sets `clock`: fewer delete batches, or other prunes. */
+ export type FileJobOptions = { maxBatches?: number; prunes?: readonly FilePrune[] }
+@@ -70,12 +93,18 @@ const running = new WeakSet<UserVault>()
+  * delete, due again a minute later. Then, unless an erase() landed during the
+  * R2 wait, startPendingWork when start_work is due (it records the attempt).
+  * One run at a time per vault: a run that finds another in progress returns at
+- * once, so deleteDueObjects never overlaps itself (the 1B-T4 follow-up). Each
+- * job's failure is logged and returned, never thrown, so the alarm comes back
+- * a minute later and the platform never retries it in a loop.
++ * once, so deleteDueObjects never overlaps itself (the 1B-T4 follow-up), and
++ * reports delete_objects as failed, since the run in progress holds the delete:
++ * the alarm then comes back a minute later, not at once (the 1B-T11 review's
++ * n1). Each job's failure is logged and returned, never thrown, so the alarm
++ * comes back a minute later and the platform never retries it in a loop.
+  */
+ export async function runFileJobs(v: UserVault, options: FileJobOptions = {}): Promise<FileJob[]> {
+-  if (v.erased || running.has(v)) return []
++  if (v.erased) return []
++  if (running.has(v)) {
++    logFailure('file_run_held', new Error('another file run is in progress'))
++    return ['delete_objects']
++  }
+   running.add(v)
+   const failed: FileJob[] = []
+   const fail = (job: FileJob, event: string, error: unknown): void => {

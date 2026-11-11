@@ -1,0 +1,89 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/download-pins-planner/tree/apps/edge
+
+ ✓ test/workers/attachments.test.ts > ownership: another account can neither use nor learn of a receipt > foreign_attachment_grant_is_denied 53ms
+ ✓ test/workers/attachments.test.ts > ownership: another account can neither use nor learn of a receipt > cross-owner association is denied with 404 and no existence leak, and copies nothing 46ms
+ ✓ test/workers/attachments.test.ts > ownership: another account can neither use nor learn of a receipt > a preview image nobody retained, a quarantined upload and an import id never get a grant 17ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > needs explicit consent and the record version, and makes the receipt part of the record 25ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > copies inside the store, registered before the copy, and the receipt outlives the import image and the preview 29ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > is versioned and idempotent: a stale version keeps nothing, a resend replays, a second receipt needs replace 29ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > never publishes a copy that differs from the import image 22ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > the retain routine publishes only this account's own unexpired copy at its generation, matching the image 26ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > an account has at most four copies in flight; a fifth retain is told when to retry 28ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > refuses an image past its window, and a deleted record 24ms
+ ✓ test/workers/attachments.test.ts > replace and remove are versioned against the record > replace moves the record to its next version and queues the image it dropped 34ms
+ ✓ test/workers/attachments.test.ts > replace and remove are versioned against the record > remove is versioned, deletes the image with no undo, and cannot be repeated 27ms
+ ✓ test/workers/attachments.test.ts > shared references prevent premature deletion > a receipt two records hold is one object, deleted only after both let go 30ms
+ ✓ test/workers/attachments.test.ts > shared references prevent premature deletion > two records retaining one image at once keep one receipt, made by one copy 349ms
+ ✓ test/workers/attachments.test.ts > shared references prevent premature deletion > the 30-day purge of a deleted record releases its receipt only when no other record holds it 52ms
+ ✓ test/workers/attachments.test.ts > a deleted record keeps its receipt for the undo window > grants wait until the record is restored; the object is never queued meanwhile 31ms
+ ✓ test/workers/attachments.test.ts > a deleted record keeps its receipt for the undo window > a grant issued before the record was deleted no longer downloads 23ms
+ ✓ test/workers/attachments.test.ts > retention and erasure (P5) > account erasure deletes every retained receipt object 39ms
+ ✓ test/workers/attachments.test.ts > retention and erasure (P5) > the retention step releases a receipt nothing holds and drops released rows 30 days on, once their object is gone 34ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > serializes reservations: five at once from one account reserve exactly four 20ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > a busy process answers 503 with when to retry, before it reserves anything 26ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > a process never has more copies running than its limit 189ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > refused retains, replaces and removals copy nothing 45ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > a receipt that already exists is attached without another copy 23ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > an account has a copy budget; past it, retaining is told when the oldest copy leaves the window 36ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > gives one deadline to the whole copy: the HEAD that checks it runs on the same signal 436ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > a copy the store cannot make is a 503 with no reservation left live, and never leaks the failure 33ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > the copy is checked as stored by the database too: a copy that is not the registered image is not published 24ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > serves the image whole, with its length, as it always did 25ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > one account cannot take every download slot: its third waits while another account is served 52ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > the process-wide cap still holds across accounts 43ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > cuts off a download that stops making progress, and frees its slot 228ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > cuts off a download still running at the total limit even though it keeps trickling 497ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > a download that never starts is a 503 problem, not an image-typed body 250ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > unavailable storage is a 503 with when to retry, and never sends the failure text 37ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > a body that fails before its first byte is a 503 problem, with no error text 37ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > a HEAD on a receipt download answers its headers, reads its image to the end and gives its slot back (ruling R96) 241ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > downloads refused after they took a slot give the slot back 40ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > a corrupted object is never served as a complete download 32ms
+ ✓ test/workers/attachments.test.ts > grants are bound to the session (P2c review fix, minor 2) > a grant verifies only for the session it was issued to 40ms
+ ✓ test/workers/attachments.test.ts > ownership holds for replace and remove too (P2c review fix, minor 6) > another account gets the same 404 as for an unknown record, and nothing changes 53ms
+ ✓ test/workers/attachments.test.ts > privileges and schema > only the routines write receipts or the registry; logins see only what they should 13ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > a receipt grant is bound to the session that asked 24ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > a retained receipt shows as attachment_id wherever the record is read 27ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > purging a deleted record releases its receipt, stamps the release from the vault clock, and deletes its object 27ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > a copy that is never published is due three minutes after its reservation 17ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > copying is bounded: four in flight and a hundred a day per vault, each answered with when to retry 25ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > after pruneAttachments at attachmentsDueAt, the next attachmentsDueAt is later or null 37ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the planner > a second prepare waits for a copy in flight, and needs none once the receipt exists: both checks run in one block 21ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the planner > a retain whose session ends during its copy commits nothing, and its copy is given back at once 21ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the planner > a copy whose import image is gone by then keeps nothing and is refused as expired 19ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the planner > a retain whose copy outlived its own reservation is refused as expired, even when a failed delete moved its deadline on 19ms
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: prepare checks the session, the policy and the account before it reserves or copies (m-1) > a signed-out session is refused at the prepare step, and nothing is reserved or copied 18ms
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: prepare checks the session, the policy and the account before it reserves or copies (m-1) > a session without the current terms is refused at the prepare step of a retain and a replace, and at a removal, and nothing is reserved or copied 20ms
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: prepare checks the session, the policy and the account before it reserves or copies (m-1) > a deleting account refuses retain, replace, remove, the grant and the download without reserving or copying, and the release step still runs 28ms
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: attachmentsDueAt keeps both of its guards (m-3, R37) > a stamped release whose object is still live is not due yet; once the object is gone, the row is due 30 days after its release 23ms
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: attachmentsDueAt keeps both of its guards (m-3, R37) > a retained receipt that nothing holds makes attachmentsDueAt now, so the safety net is scheduled 20ms
+ × test/workers/attachments.test.ts > the 1B-T9 review: the copy path (n-1 to n-4) > a request waiting on another copy of the same image gives up at copyDeadlineMs with 503 15007ms
+   → Test timed out in 15000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: the copy path (n-1 to n-4) > an unknown body field is refused before anything is reserved or copied, as the API controller reads the body 23ms
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: the copy path (n-1 to n-4) > the image of a preview that is no longer ready is not copied, though its image is still published 19ms
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: the copy path (n-1 to n-4) > a second request for an image whose copy is held only waits, until the first attaches the receipt both then hold 192ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 60 passed (61)
+   Start at  09:23:16
+   Duration  20.73s (transform 653ms, setup 1.27s, import 57ms, tests 18.93s, environment 0ms)
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/download-pins-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/attachments.test.ts > the 1B-T9 review: the copy path (n-1 to n-4) > a request waiting on another copy of the same image gives up at copyDeadlineMs with 503
+Error: Test timed out in 15000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ test/workers/attachments.test.ts:1806:3
+    1804|
+    1805| describe('the 1B-T9 review: the copy path (n-1 to n-4)', () => {
+    1806|   it('a request waiting on another copy of the same image gives up at …
+       |   ^
+    1807|     // Probe CP-1 (n-1): the first copy is held; the second waits, the…
+    1808|     const kit = await setup()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

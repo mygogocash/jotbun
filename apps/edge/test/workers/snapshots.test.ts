@@ -21,7 +21,7 @@ import { decodeSyncCursor } from '@api/sync/sync-cursor'
 import type { V1Env } from '../../src/v1/env'
 import { VAULT_EXPORT_MAX_BYTES, writeExport } from '../../src/vault/files/exports'
 import type { VaultBucket } from '../../src/vault/files/keys'
-import { RESERVATION_GRACE_MS, deleteDueObjects, dueObjectKeys } from '../../src/vault/files/objects'
+import { RESERVATION_GRACE_MS, TOMBSTONE_MS, deleteDueObjects, dueObjectKeys } from '../../src/vault/files/objects'
 import { SNAPSHOT_CHUNK_BYTES, SNAPSHOT_KEEP_MS, SNAPSHOT_PENDING_MS, buildSnapshot, pruneSnapshots, purgeWatermark, snapshotsDueAt } from '../../src/vault/files/snapshots'
 import type { SnapshotWriter } from '../../src/vault/files/snapshots'
 import { SNAPSHOT_STARTER, START_RETRY_MS, WORK_STARTERS } from '../../src/vault/files/work'
@@ -132,7 +132,12 @@ function streamedOnly(found: NonNullable<Awaited<ReturnType<VaultBucket['get']>>
   } as unknown as Awaited<ReturnType<VaultBucket['get']>>
 }
 
-/** The vault's SQL with the entity read watched (B14): the cursor of a statement that reads entity_heads counts the rows it yields and refuses toArray. */
+/**
+ * The vault's SQL with the entity read watched (B14): the cursor of a statement that reads entity_heads counts the
+ * rows it yields and refuses toArray, one and raw. Each row is a revocable proxy, revoked when the next row is
+ * read, so a reader that collects the rows before using them (a spread, Array.from) fails too: the read must turn
+ * each row into its line before it reads the next (the 1B-T8 review's m-2).
+ */
 function watchedSql(sql: SqlStorage, seen: { reads: number; rows: number }): SqlStorage {
   return {
     get databaseSize() {
@@ -143,10 +148,15 @@ function watchedSql(sql: SqlStorage, seen: { reads: number; rows: number }): Sql
       if (!/\bentity_heads\b/.test(query)) return cursor
       seen.reads += 1
       const rows = (function* () {
+        let previous: { revoke: () => void } | undefined
         for (const row of cursor) {
+          previous?.revoke()
           seen.rows += 1
-          yield row
+          const live = Proxy.revocable(row as object, {})
+          previous = live
+          yield live.proxy
         }
+        previous?.revoke()
       })()
       const refuse = () => {
         throw new Error('the entity read must iterate its cursor')
@@ -1133,4 +1143,110 @@ describe("the planner's cases (1B-T8): the controller's notes and the rules the 
       file: [200, chunk.sha256],
     })
   }, 30_000)
+})
+
+describe("the 1B-T8 and 1B-T11 reviews' pins (brief download-pins)", () => {
+  it('a build of a snapshot that is no longer pending reads nothing and stores nothing', async () => {
+    // The 1B-T8 review's m-3 (its X6): the read itself checks that the snapshot is still pending, so a step retried
+    // after the vault recorded the snapshot does not read the whole vault and store every chunk again before it skips.
+    const { v1, money } = await setup()
+    const { user } = await diary(v1, money, 2)
+    const { id } = await requestSnapshot(v1, user)
+    expect((await vaultOf(user).buildSnapshot(id)).outcome).toBe('ready')
+    let puts = 0
+    const seen = { reads: 0, rows: 0 }
+    const again = await runInDurableObject(vaultOf(user), (vault: UserVault, state) =>
+      buildSnapshot(writerOf(vault, state, { bucket: spyBucket({ beforePut: () => void (puts += 1) }), sql: watchedSql(state.storage.sql, seen) }), id),
+    )
+    expect([again.outcome, puts, seen.reads]).toEqual(['skipped', 0, 0])
+    expect((await registryOf(user)).filter((row) => row.status === 'reserved')).toEqual([])
+  })
+
+  it('a chunk whose stored bytes no longer match its digest, at the same length, fails as it streams, and gives its slot back', async () => {
+    // The 1B-T8 review's n-1 (its X2), probe E: the swapped object keeps the recorded size and carries no digest of
+    // its own, so matchingObject lets it through and verifiedChunks fails its stream. Five such downloads, one more
+    // than SNAPSHOT_SLOTS, then a good chunk is still served.
+    const { v1, money } = await setup()
+    const { user } = await diary(v1, money, 2)
+    const ready = await readySnapshot(v1, user, { chunkBytes: 300 })
+    const [bad, good] = ready.chunks
+    const [row] = await chunkRowsOf(user, ready.snapshot_id)
+    await env.OBJECTS.delete(row.object_key)
+    await env.OBJECTS.put(row.object_key, new Uint8Array(bad.bytes).fill(0x20))
+    const outcomes: [number, string][] = []
+    for (let i = 0; i < 5; i += 1) {
+      const res = await v1.as(user).get(`/v1/sync/snapshot-chunks/${bad.grant}`)
+      let body = 'read'
+      try {
+        await res.arrayBuffer()
+      } catch {
+        body = 'errored'
+      }
+      outcomes.push([res.status, body])
+    }
+    expect(outcomes).toEqual(Array.from({ length: 5 }, () => [200, 'errored']))
+    const res = await v1.as(user).get(`/v1/sync/snapshot-chunks/${good.grant}`)
+    expect(res.status).toBe(200)
+    expect(sha256Of(new Uint8Array(await res.arrayBuffer()))).toBe(good.sha256)
+  })
+
+  it('a snapshot read exactly at the purge revision, with nothing after the purge, is recorded, served and reused', async () => {
+    // The 1B-T8 review's n-2 (its X3), probe C2: reuse takes a snapshot whose high water equals the purge watermark.
+    const { v1, money } = await setup()
+    const { user, record } = await deletedLunch(v1, money)
+    await age(user, record)
+    expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
+    const head = await headOf(user, record)
+    expect(await revisionOf(user)).toBe(head.revision)
+    const asked = await requestSnapshot(v1, user)
+    await drain(user)
+    const ready = (await statusOf(v1, user, asked.id)) as Ready
+    expect([ready.status, ready.high_water]).toEqual(['ready', head.revision])
+    const res = await v1.as(user).get(`/v1/sync/snapshot-chunks/${ready.chunks[0].grant}`)
+    expect(res.status).toBe(200)
+    await res.arrayBuffer()
+    const reused = await requestSnapshot(v1, user)
+    expect([reused.status, reused.body.snapshot_id]).toEqual([200, asked.id])
+  })
+
+  it('a ready snapshot that is not stale is due only a week past its expiry, and an alarm with one leaves nothing due now', async () => {
+    // The 1B-T11 review's m3 (its R1): snapshotsDueAt answers now only while a snapshot below the purge watermark
+    // still has chunk rows. A current ready snapshot's chunk rows must not bring the alarm straight back (R37).
+    const v1 = await startV1(undefined, { startWork: 'manual' })
+    const user = await member(v1)
+    const t = Date.now() + DAY
+    await setVaultClock(user, t)
+    try {
+      const res = await v1.as(user).post('/v1/sync/snapshots', {}, { key: randomUUID() })
+      expect(res.status).toBe(202)
+      const id = ((await res.json()) as { snapshot_id: string }).snapshot_id
+      expect(await vaultOf(user).buildSnapshot(id)).toEqual({ outcome: 'ready' })
+      expect(await chunkRowsOf(user, id)).toHaveLength(1)
+      expect(await runInDurableObject(vaultOf(user), (_vault, state) => snapshotsDueAt(fileAt(state, t)))).toBe(t + DAY + SNAPSHOT_KEEP_MS)
+      expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
+      for (const row of await vaultRows<{ job: string; due_at: number }>(user, 'SELECT job, due_at FROM schedule')) expect(row.due_at, row.job).toBeGreaterThan(t)
+    } finally {
+      await setVaultClock(user, null)
+    }
+  })
+
+  it("pruneSnapshots leaves a stale snapshot's tombstones their own day: keys deleted at its expiry are not made due again at once", async () => {
+    // The 1B-T11 review's n6 (its R2). A ready snapshot's keys are deleted at its expiry and kept a day as
+    // tombstones (B19); a purge then makes the snapshot stale inside that day. pruneSnapshots makes a stale
+    // snapshot's keys due at once, but `status <> 'tombstone'` leaves each tombstone its own deadline, so the key is
+    // deleted once more a day after its first delete, and only then forgotten.
+    const { v1, money } = await setup()
+    const { user, record } = await deletedLunch(v1, money)
+    const ready = await readySnapshot(v1, user)
+    const keys = (await chunkRowsOf(user, ready.snapshot_id)).map((row) => row.object_key)
+    const expires = Date.parse(ready.expires_at)
+    await runInDurableObject(vaultOf(user), (_vault, state) => deleteDueObjects({ context: () => fileAt(state, expires), bucket: env.OBJECTS }))
+    const tombstones = async () => (await registryOf(user)).filter((row) => keys.includes(row.key)).map((row) => [row.status, row.delete_after])
+    expect(await tombstones()).toEqual(keys.map(() => ['tombstone', expires + TOMBSTONE_MS]))
+    await age(user, record)
+    await runInDurableObject(vaultOf(user), (_vault, state) => expect(runDue({ sql: state.storage.sql, storage: state.storage, now: new Date() })).toEqual([]))
+    await runInDurableObject(vaultOf(user), (_vault, state) => pruneSnapshots(fileAt(state, expires + HOUR)))
+    expect(await chunkRowsOf(user, ready.snapshot_id)).toEqual([])
+    expect(await tombstones()).toEqual(keys.map(() => ['tombstone', expires + TOMBSTONE_MS]))
+  })
 })

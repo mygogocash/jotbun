@@ -34,7 +34,7 @@ Promotes **$task** into main: the change reviewed and merged into the integratio
 $summary
 
 ## Already done
-- [x] Independent Opus review approved (${review:-see #$pr}), with any fix round confirmed.
+- [x] Independent review approved (${review:-see #$pr}), with any fix round confirmed.
 - [x] CI green on #$pr; the task's issue was closed when it merged into the integration branch.
 
 ## Test plan

@@ -10,6 +10,12 @@
 # test name. scripts/ci/backend-workflow.test.mjs (in test:ops) checks that
 # every gate command runs, which job runs each step, that the render split runs
 # every test exactly once, and that no job or step can be switched off.
+#
+# Every job runs on GitHub's ubuntu-24.04 unless the repository variable
+# CI_RUNNER names another runner label. While GitHub-hosted runners are
+# refused (billing), it is jotbun-local: self-hosted Linux runners on the
+# owner's Mac (.claude/controller/local-ci/runners.sh). Delete the variable to
+# go back.
 name: backend
 
 on:
@@ -32,7 +38,7 @@ env:
 jobs:
   checks:
     name: Typecheck, unit, API, build
-    runs-on: ubuntu-24.04
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -67,7 +73,7 @@ jobs:
   # Linux hermesc that the hermes-compiler package ships).
   exports:
     name: Exports (web and iOS bundles)
-    runs-on: ubuntu-24.04
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -86,7 +92,7 @@ jobs:
   # render every catalogue section and take over half of the suite's time.
   render:
     name: Render (every file but the per-section suites)
-    runs-on: ubuntu-24.04
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -106,7 +112,7 @@ jobs:
   # exactly one of these jobs.
   sections-1:
     name: Render, per-section suites (ids of length 3n)
-    runs-on: ubuntu-24.04
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -121,7 +127,7 @@ jobs:
 
   sections-2:
     name: Render, per-section suites (ids of length 3n+1)
-    runs-on: ubuntu-24.04
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -136,7 +142,7 @@ jobs:
 
   sections-3:
     name: Render, per-section suites (every other test)
-    runs-on: ubuntu-24.04
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -151,7 +157,7 @@ jobs:
 
   database:
     name: SQL integration and ops (local PostgreSQL 17 container)
-    runs-on: ubuntu-24.04
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -179,7 +185,7 @@ jobs:
   # (apps/edge's test:db runs scripts/dev-v1.mjs db-up first).
   edge:
     name: Edge Worker (types, unit, workerd, build, PostgreSQL container)
-    runs-on: ubuntu-24.04
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -200,7 +206,7 @@ jobs:
 
   image:
     name: Release image and smoke (never pushed)
-    runs-on: ubuntu-24.04
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2

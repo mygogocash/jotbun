@@ -1,0 +1,92 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/download-pins-planner/tree/apps/edge
+
+ ✓ test/workers/snapshots.test.ts > consistent snapshots, ported from snapshot-builder.integration.spec.ts > applying the snapshot and then later deltas yields every latest entity exactly once, from one view 83ms
+ ✓ test/workers/snapshots.test.ts > consistent snapshots, ported from snapshot-builder.integration.spec.ts > an account deletion during the build publishes nothing, and its chunks are swept 34ms
+ ✓ test/workers/snapshots.test.ts > consistent snapshots, ported from snapshot-builder.integration.spec.ts > a build that runs out of time publishes no manifest 26ms
+ ✓ test/workers/snapshots.test.ts > consistent snapshots, ported from snapshot-builder.integration.spec.ts > an empty account still gets a one-chunk snapshot at its high-water 16ms
+ ✓ test/workers/snapshots.test.ts > consistent snapshots, ported from snapshot-builder.integration.spec.ts > refuses to publish an entity that does not match its persisted DTO 19ms
+ ✓ test/workers/snapshots.test.ts > snapshot requests, status and grants, ported from snapshot-builder.integration.spec.ts > requests are idempotent, share an open build, and reuse a snapshot from the last hour 23ms
+ ✓ test/workers/snapshots.test.ts > snapshot requests, status and grants, ported from snapshot-builder.integration.spec.ts > grants are short-lived, bound to the owner, and refuse another account's snapshot 38ms
+ ✓ test/workers/snapshots.test.ts > snapshot requests, status and grants, ported from snapshot-builder.integration.spec.ts > reports failed and expired snapshots, and grants nothing for them 24ms
+ ✓ test/workers/snapshots.test.ts > snapshot requests, status and grants, ported from snapshot-builder.integration.spec.ts > SnapshotWorkflow runs the build 26ms
+ ✓ test/workers/snapshots.test.ts > S1 review: one view and bounded work, ported from snapshot-builder.integration.spec.ts > every entity comes from the high-water view even when writes land between single-entity pages 49ms
+ ✓ test/workers/snapshots.test.ts > S1 review: one view and bounded work, ported from snapshot-builder.integration.spec.ts > reads every row before the first R2 call 30ms
+ ✓ test/workers/snapshots.test.ts > S1 review: one view and bounded work, ported from snapshot-builder.integration.spec.ts > a head whose change row is missing fails the build instead of vanishing from it 19ms
+ ✓ test/workers/snapshots.test.ts > S1 review: one view and bounded work, ported from snapshot-builder.integration.spec.ts > keeps chunks near their target size and grants within the snapshot expiry 37ms
+ ✓ test/workers/snapshots.test.ts > retention, the snapshot halves of retention.integration.spec.ts > tombstones reach delta readers, older cursors resync, and snapshots built before the purge are dropped 41ms
+ ✓ test/workers/snapshots.test.ts > retention, the snapshot halves of retention.integration.spec.ts > a snapshot read before a purge is never recorded afterwards, so it cannot serve the purged data 31ms
+ ✓ test/workers/snapshots.test.ts > the jobs Worker snapshot, ported from apps/edge/test/jobs.db.test.ts > builds a requested snapshot, whose chunks the edge then serves 21ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a snapshot runs on SnapshotWorkflow, and its cursor continues with /v1/sync/changes 24ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a snapshot that became ready in the last hour is reused, judged by ready_at 23ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a build retried after its chunks were stored completes, and the first attempt's chunks are deleted at their deadline 22ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a build that finishes after the vault stopped being active publishes nothing 18ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a build cut into more chunks than SQLite has parameters records them all 115ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > a chunk is served with its exact bytes and digest, and a tampered chunk is 404 41ms
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > after pruneSnapshots at snapshotsDueAt, the next snapshotsDueAt is later or null 18ms
+An RPC result was not disposed properly. One of the RPC calls you made expects you to call dispose() on the return value, but you didn't do so. You cannot rely on the garbage collector for this because it may take arbitrarily long before actually collecting unreachable objects.
+stdout | test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > ten times the yearly ledger builds and exports inside the memory budget
+ten-times proof: {"databaseSize":50581504,"records":32000,"entities":32002,"chunks":19,"storedBytes":19001807,"longestLine":593,"peakHeldBytes":20050077,"csvBytes":14414226,"exportPeakHeldBytes":28828452,"seedMs":2524,"buildMs":540,"exportMs":282}
+
+ ✓ test/workers/snapshots.test.ts > snapshots on the vault (1B-T8) > ten times the yearly ledger builds and exports inside the memory budget 3442ms
+uncaught exception; source = Uncaught (in promise); stack = Error: unavailable
+    at doWrapper (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/download-pins-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:2428:30)
+    at async Context.do (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/download-pins-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:2752:17)
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a build that starts after the vault stopped being active reads nothing and stores nothing 20ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a too-large snapshot fails visibly and publishes nothing 20ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a snapshot whose build fails on all three attempts is recorded failed 29ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a build that fails on its first two attempts is ready on its third 26ms
+uncaught exception; source = Uncaught (in promise); stack = WorkflowError: (instance.already_exists) Workflow instance with id "4818ce86-8f6b-82aa-bee1-4d32b77487d6" already exists
+    at createWorkflowError (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/download-pins-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:1383:10)
+    at duplicateInstanceError (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/download-pins-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:1435:10)
+    at WorkflowBinding.create (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/download-pins-planner/tree/apps/edge/node_modules/miniflare/dist/src/workers/workflows/binding.worker.js:4724:13)
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > the snapshot starter starts each pending snapshot once on SnapshotWorkflow, and is due a minute after an unstarted request 15ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a snapshot started twice by overlapping runs is built once 24ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > pruneSnapshots fails a snapshot left pending for a day, drops one read below the purge watermark, and deletes one a week past its expiry 38ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a request takes no body field and a UUID key, waits for the jobs gate, and a status of a malformed or unknown id is 404 28ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > at most four chunk downloads run at once in a process, each streamed and never read whole; more are told to retry 25ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a chunk download refused after it took its slot gives the slot back 38ms
+ ✓ test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a HEAD on a chunk download answers its headers, reads its chunk to the end and gives its slot back 66ms
+ ✓ test/workers/snapshots.test.ts > the 1B-T8 and 1B-T11 reviews' pins (brief download-pins) > a build of a snapshot that is no longer pending reads nothing and stores nothing 20ms
+ ✓ test/workers/snapshots.test.ts > the 1B-T8 and 1B-T11 reviews' pins (brief download-pins) > a chunk whose stored bytes no longer match its digest, at the same length, fails as it streams, and gives its slot back 35ms
+ ✓ test/workers/snapshots.test.ts > the 1B-T8 and 1B-T11 reviews' pins (brief download-pins) > a snapshot read exactly at the purge revision, with nothing after the purge, is recorded, served and reused 25ms
+ ✓ test/workers/snapshots.test.ts > the 1B-T8 and 1B-T11 reviews' pins (brief download-pins) > a ready snapshot that is not stale is due only a week past its expiry, and an alarm with one leaves nothing due now 17ms
+ × test/workers/snapshots.test.ts > the 1B-T8 and 1B-T11 reviews' pins (brief download-pins) > pruneSnapshots leaves a stale snapshot's tombstones their own day: keys deleted at its expiry are not made due again at once 28ms
+   → expected [ [ 'tombstone', +0 ] ] to deeply equal [ [ 'tombstone', 1794450294698 ] ]
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 39 passed (40)
+   Start at  09:24:48
+   Duration  6.48s (transform 661ms, setup 1.28s, import 48ms, tests 4.68s, environment 0ms)
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/download-pins-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/snapshots.test.ts > the planner's cases (1B-T8): the controller's notes and the rules the plan's cases leave open > a snapshot whose build fails on all three attempts is recorded failed
+{"level":"error","event":"snapshot_build_failed","failure":"Error"}
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/snapshots.test.ts > the 1B-T8 and 1B-T11 reviews' pins (brief download-pins) > pruneSnapshots leaves a stale snapshot's tombstones their own day: keys deleted at its expiry are not made due again at once
+AssertionError: expected [ [ 'tombstone', +0 ] ] to deeply equal [ [ 'tombstone', 1794450294698 ] ]
+
+- Expected
++ Received
+
+  [
+    [
+      "tombstone",
+-     1794450294698,
++     0,
+    ],
+  ]
+
+ ❯ test/workers/snapshots.test.ts:1250:32
+    1248|     await runInDurableObject(vaultOf(user), (_vault, state) => pruneSn…
+    1249|     expect(await chunkRowsOf(user, ready.snapshot_id)).toEqual([])
+    1250|     expect(await tombstones()).toEqual(keys.map(() => ['tombstone', ex…
+       |                                ^
+    1251|   })
+    1252| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

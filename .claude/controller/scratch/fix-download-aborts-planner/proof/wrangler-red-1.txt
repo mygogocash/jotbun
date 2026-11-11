@@ -1,0 +1,36 @@
+ledger {"records":12000}
+export (5394226 bytes): aborted GETs [200,200,200,200]; then GET 503 {"code":"SERVICE_UNAVAILABLE","request_id":"5d06bffb-51e6-4475-b326-d05671d2687d","message_key":"errors.service_unavaila; 5 s later GET 503 {"code":"SERVICE_UNAVAILABLE","request_id":"23f1a3bb-25e1-4018-ac88-b81e7239111d","message_key":"errors.service_unavaila
+snapshot chunks [7119885]
+snapshot chunk (7119885 bytes): aborted GETs [200,200,200,200]; then GET 503 {"code":"SERVICE_UNAVAILABLE","request_id":"057abdf5-23cd-4e70-b2b1-34f5b579cddb","message_key":"errors.service_unavaila; 5 s later GET 503 {"code":"SERVICE_UNAVAILABLE","request_id":"347fa87d-fb8e-4e56-9e29-95e38740176e","message_key":"errors.service_unavaila
+receipt (4194304 bytes): aborted GETs [200,200,503,503]; then GET 503 {"code":"SERVICE_UNAVAILABLE","request_id":"c61eb43d-738b-48f8-8a4f-af70ddf81286","message_key":"errors.service_unavaila; 5 s later GET 503 {"code":"SERVICE_UNAVAILABLE","request_id":"5df1b92a-5be6-4914-8c4a-65107d22f47d","message_key":"errors.service_unavaila
+retain (12582912-byte copies, one took 124 ms, each aborted after 62 ms): aborted retains ["AbortError","AbortError","AbortError","AbortError"]; then another member's retain 200 {"command_id":"07dfc191-a252-4d34-a348-ee66556b4d87","entity_id":"2f28f1ba-088c-; 5 s later 200 {"command_id":"ee074c64-af96-4bd7-b5ed-c0a2ae30eb4b","entity_id":"77decfde-58b9-
+upload: aborted uploads {"AbortError":16}; then another member's upload 202 {"job_id":"729b7343-32dd-822c-b455-0b659aec1a5a","status":"queued","format":"csv; 5 s later 202 {"job_id":"fd95e157-e36b-85a5-9e4c-c45b2a1557e7","status":"queued","format":"csv
+answers {"export":"503","snapshot":"503","receipt":"503","retain":"200","upload":"202"}
+[wrangler:info] GET /v1/export-files/AbxLnijp14cljTdOoww3ImAAAAAAavJ8-KkFs2ryXdAXW2qKadZ8hu4 200 OK (4ms)
+[wrangler:info] GET /v1/export-files/AbxLnijp14cljTdOoww3ImAAAAAAavJ8-KkFs2ryXdAXW2qKadZ8hu4 200 OK (3ms)
+[wrangler:info] GET /v1/export-files/AbxLnijp14cljTdOoww3ImAAAAAAavJ8-KkFs2ryXdAXW2qKadZ8hu4 200 OK (3ms)
+[wrangler:info] GET /v1/export-files/AbxLnijp14cljTdOoww3ImAAAAAAavJ8-KkFs2ryXdAXW2qKadZ8hu4 200 OK (4ms)
+[wrangler:info] GET /v1/export-files/AbxLnijp14cljTdOoww3ImAAAAAAavJ8-KkFs2ryXdAXW2qKadZ8hu4 503 Service Unavailable (4ms)
+[wrangler:info] GET /v1/export-files/AbxLnijp14cljTdOoww3ImAAAAAAavJ8-KkFs2ryXdAXW2qKadZ8hu4 503 Service Unavailable (4ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/ATtV68aoaEeXtSBT9OX8yjEAAAAAavJ8_9SPy1R28yISqVGRvICAnnw 200 OK (5ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/ATtV68aoaEeXtSBT9OX8yjEAAAAAavJ8_9SPy1R28yISqVGRvICAnnw 200 OK (7ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/ATtV68aoaEeXtSBT9OX8yjEAAAAAavJ8_9SPy1R28yISqVGRvICAnnw 200 OK (6ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/ATtV68aoaEeXtSBT9OX8yjEAAAAAavJ8_9SPy1R28yISqVGRvICAnnw 200 OK (8ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/ATtV68aoaEeXtSBT9OX8yjEAAAAAavJ8_9SPy1R28yISqVGRvICAnnw 503 Service Unavailable (3ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/ATtV68aoaEeXtSBT9OX8yjEAAAAAavJ8_9SPy1R28yISqVGRvICAnnw 503 Service Unavailable (4ms)
+[wrangler:info] POST /v1/transactions/61f7e80d-c44f-4e4e-859f-061fd19ea71d/attachment 200 OK (40ms)
+[wrangler:info] GET /v1/attachment-files/Ab37fgKLpUbvsPkkKblAW1wAAAAAavJ9BkVcXoFVMibDcIfhMdCMhJg 200 OK (4ms)
+[wrangler:info] GET /v1/attachment-files/Ab37fgKLpUbvsPkkKblAW1wAAAAAavJ9BkVcXoFVMibDcIfhMdCMhJg 200 OK (3ms)
+[wrangler:info] GET /v1/attachment-files/Ab37fgKLpUbvsPkkKblAW1wAAAAAavJ9BkVcXoFVMibDcIfhMdCMhJg 503 Service Unavailable (2ms)
+[wrangler:info] GET /v1/attachment-files/Ab37fgKLpUbvsPkkKblAW1wAAAAAavJ9BkVcXoFVMibDcIfhMdCMhJg 503 Service Unavailable (3ms)
+[wrangler:info] GET /v1/attachment-files/Ab37fgKLpUbvsPkkKblAW1wAAAAAavJ9BkVcXoFVMibDcIfhMdCMhJg 503 Service Unavailable (3ms)
+[wrangler:info] GET /v1/attachment-files/Ab37fgKLpUbvsPkkKblAW1wAAAAAavJ9BkVcXoFVMibDcIfhMdCMhJg 503 Service Unavailable (5ms)
+[wrangler:info] POST /v1/transactions/73c7bd91-d69f-4c6d-87c5-2abb7f5eaf52/attachment 200 OK (123ms)
+[wrangler:info] POST /v1/transactions/78e90058-70db-4264-94aa-aff190e99651/attachment 200 OK (106ms)
+[wrangler:info] POST /v1/transactions/41226935-0391-4cdd-9dd1-958f6042b340/attachment 200 OK (100ms)
+[wrangler:info] POST /v1/transactions/256884ab-8387-40a2-8ff1-011c6b827674/attachment 200 OK (102ms)
+[wrangler:info] POST /v1/transactions/5aaa0066-24d1-43c7-ac09-1e2285a3f680/attachment 200 OK (118ms)
+[wrangler:info] POST /v1/transactions/2f28f1ba-088c-4a37-bbc8-194707fd8160/attachment 200 OK (9ms)
+[wrangler:info] POST /v1/transactions/77decfde-58b9-45e2-ae52-b63fab98776d/attachment 200 OK (9ms)
+[wrangler:info] POST /v1/imports 202 Accepted (15ms)
+[wrangler:info] POST /v1/imports 202 Accepted (20ms)

@@ -1,0 +1,26 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/alarm-hardening-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/alarm-hardening-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ↓ test/workers/zz-planner-du.test.ts > R-B: the vault never reserves a second copy of one image > RB-1 ten prepares at once for one image: exactly one copy, nine waits
+ ↓ test/workers/zz-planner-du.test.ts > R-B: the vault never reserves a second copy of one image > RB-2 the first request held after its HEAD: the second only waits, then attaches the receipt the first made
+ ↓ test/workers/zz-planner-du.test.ts > R-B: the vault never reserves a second copy of one image > RB-3 a first copy held past its reservation: the second makes its own, and the first attaches the second one's receipt
+ ↓ test/workers/zz-planner-du.test.ts > R-B: the vault never reserves a second copy of one image > RB-4 a first command refused after its copy: the waiting second reserves its own copy and wins
+ ↓ test/workers/zz-planner-du.test.ts > access: refused sessions copy nothing > AC-1 a signed-out session is refused and nothing is reserved or copied
+ ↓ test/workers/zz-planner-du.test.ts > access: refused sessions copy nothing > AC-2 a session without the current terms is refused and nothing is reserved or copied
+ ↓ test/workers/zz-planner-du.test.ts > access: refused sessions copy nothing > AC-3 a deleting account refuses retain, replace, remove, the grant and the download; the release step still runs
+ ↓ test/workers/zz-planner-du.test.ts > access: refused sessions copy nothing > AC-4 an erased vault refuses the receipt routes
+ ↓ test/workers/zz-planner-du.test.ts > access: refused sessions copy nothing > AC-5 an unknown body field is refused before anything is copied (the API controller reads the body this way)
+ ↓ test/workers/zz-planner-du.test.ts > copy path > CP-1 a request waiting on another copy gives up at copyDeadlineMs with 503
+ ↓ test/workers/zz-planner-du.test.ts > copy path > CP-2 an image whose preview is no longer ready is not copied
+ ↓ test/workers/zz-planner-du.test.ts > copy path > CP-3 slots: every copy slot and download slot is back after the probes
+ ✓ test/workers/zz-planner-du.test.ts > R37 and the safety net > DU-1 a stamped release whose object is still live is not due yet (the alarm comes back for the object first) 58ms
+ ✓ test/workers/zz-planner-du.test.ts > R37 and the safety net > DU-2 a retained receipt nothing holds makes attachmentsDueAt now (the safety net is scheduled) 27ms
+ ↓ test/workers/zz-planner-du.test.ts > R96 for receipts, per HEAD > HD-1 each HEAD on a 256 KiB receipt reads the whole file, then a GET answers 200
+ ↓ test/workers/zz-planner-du.test.ts > 1B-T9 helpers stay exact > ID-1 the vault id is in every receipt key
+
+ Test Files  1 passed (1)
+      Tests  2 passed | 14 skipped (16)
+   Start at  10:04:28
+   Duration  2.44s (transform 934ms, setup 1.71s, import 32ms, tests 86ms, environment 0ms)
+

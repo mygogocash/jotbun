@@ -1,0 +1,67 @@
+diff --git a/apps/app/src/wallet/tray/Tray.render.test.tsx b/apps/app/src/wallet/tray/Tray.render.test.tsx
+index 29c98aa..a32c390 100644
+--- a/apps/app/src/wallet/tray/Tray.render.test.tsx
++++ b/apps/app/src/wallet/tray/Tray.render.test.tsx
+@@ -744,6 +744,62 @@ test('on iOS a dismissal that ends in the commit that opens the tray again says
+   expect(onClosed, 'onClosed while the tray is open').not.toHaveBeenCalled();
+ });
+ 
++test('on iOS a dismissal that ends in the commit that hides the tray again says nothing; the next one says it closed', async () => {
++  phoneFocus();
++  dismissals.late = true;
++  const onClosed = vi.fn();
++  const view = mountWallet(tray({ visible: false, onClosed }));
++  await settle();
++  platform('ios');
++  view.rerender(tray({ onClosed }));
++  await settle();
++  vi.useFakeTimers();
++  const close = () => view.rerender(tray({ visible: false, onClosed }));
++  const open = () => view.rerender(tray({ onClosed }));
++  // Closed: the Modal hides at 220 ms, and UIKit's dismissal is under way.
++  close();
++  act(() => { vi.advanceTimersByTime(220); });
++  expect([dismissals.held, onClosed.mock.calls.length]).toEqual([1, 0]);
++  // Opened and closed again before it ends: the card leaves, and the Modal stays shown for the exit.
++  open();
++  close();
++  act(() => { vi.advanceTimersByTime(219); });
++  // UIKit's end of the first dismissal, then the exit's last millisecond, both before React renders the end: one
++  // commit holds the end and the Modal's second hide. Modal.js calls onDismiss in that commit's layout phase, before
++  // any of its effects run. (The end leaves the held count here, as endDismissal() does.)
++  dismissals.held -= 1;
++  act(() => {
++    dismissals.end?.();
++    vi.advanceTimersByTime(1);
++  });
++  expect(dismissals.held, 'hidden again, its dismissal under way').toBe(1);
++  expect(onClosed, 'the earlier end, in the commit that hides the Modal again').not.toHaveBeenCalled();
++  // The second hide's own end: closed, once.
++  endDismissal();
++  expect(onClosed).toHaveBeenCalledTimes(1);
++});
++
++test('on iOS an onClosed given while the dismissal is under way is the one called', async () => {
++  phoneFocus();
++  dismissals.late = true;
++  const first = vi.fn();
++  const latest = vi.fn();
++  const view = mountWallet(tray({ visible: false, onClosed: first }));
++  await settle();
++  platform('ios');
++  view.rerender(tray({ onClosed: first }));
++  await settle();
++  vi.useFakeTimers();
++  view.rerender(tray({ visible: false, onClosed: first }));
++  act(() => { vi.advanceTimersByTime(220); });
++  expect([dismissals.held, first.mock.calls.length]).toEqual([1, 0]);
++  // The Modal has hidden; a host that passes a new function on every render (P2-T16's whenClosed queue) does so
++  // before UIKit's dismissal ends.
++  view.rerender(tray({ visible: false, onClosed: latest }));
++  endDismissal();
++  expect([first.mock.calls.length, latest.mock.calls.length], 'calls: the onClosed given first, the one given last').toEqual([0, 1]);
++});
++
+ test('on iOS a tray with no onClosed closes, its dismissal ends, and it opens again', async () => {
+   phoneFocus();
+   dismissals.late = true;

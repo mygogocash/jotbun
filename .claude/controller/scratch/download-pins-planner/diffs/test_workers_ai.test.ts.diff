@@ -1,0 +1,145 @@
+--- a/test/workers/ai.test.ts
++++ b/test/workers/ai.test.ts
+@@ -10,11 +10,12 @@ import type { AiLocale, BunFact } from '@gogospend/contracts'
+ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+ 
+ import type { MessageParams, ModelMessage, SendMessage } from '../../src/server/ai/model'
+-import type { VaultClaims, VaultRouteId } from '../../src/v1/protocol'
++import type { VaultCall, VaultClaims, VaultRouteId } from '../../src/v1/protocol'
+ import { vaultSession } from '../../src/v1/worker-routes'
+ import type { AiToolReply } from '../../src/vault/ai'
+ import { VAULT_OBJECT_PURPOSES, vaultPrefix } from '../../src/vault/files/keys'
+ import { VAULT_HANDLERS } from '../../src/vault/routes'
++import type { UserVault } from '../../src/vault/user-vault'
+ import { fakeModel, json, refusal, text, toolUse } from '../support/fake-model'
+ import { revisionOf } from './support/command-fixtures'
+ import { seedRecords, setVaultClock, storedKeys, vaultExec, vaultIdOf, vaultRows } from './support/files'
+@@ -865,3 +866,128 @@ describe("the vault's facts and tools", () => {
+     expect(await tool(user, 'budget_status', { month: 202609 })).toEqual({ error: 'month must be YYYY-MM' })
+   })
+ })
++
++// ===========================================================================
++// The 1B-T7 review's pins (brief download-pins): its wiring probes, unchanged
++// but for the helper names.
++// ===========================================================================
++
++/** The VAULT binding, recording every call the Worker makes before making it; `after` runs once each call has answered. */
++function recordingVault(log: VaultCall[], after?: (call: VaultCall) => Promise<void>): DurableObjectNamespace<UserVault> {
++  const real = env.VAULT
++  return new Proxy(real, {
++    get(target, prop) {
++      if (prop === 'get') {
++        return (id: DurableObjectId, options?: unknown) => {
++          const stub = (target.get as (...args: unknown[]) => DurableObjectStub<UserVault>)(id, options)
++          return new Proxy(stub, {
++            get(s, p) {
++              if (p === 'call') {
++                return async (call: VaultCall) => {
++                  log.push(structuredClone(call))
++                  const reply = await s.call(call)
++                  if (after) await after(call)
++                  return reply
++                }
++              }
++              const value = Reflect.get(s, p)
++              return typeof value === 'function' ? value.bind(s) : value
++            },
++          })
++        }
++      }
++      const value = Reflect.get(target, prop)
++      return typeof value === 'function' ? value.bind(target) : value
++    },
++  }) as DurableObjectNamespace<UserVault>
++}
++
++/** Malformed input for each AI route that reads one. */
++const MALFORMED: [string, string, unknown][] = [
++  ['POST', '/v1/ai/parse', { text: 'x'.repeat(201), today, locale: 'th' }],
++  ['POST', '/v1/ai/slip', { image_base64: 'not base64!', media_type: 'image/png', today, locale: 'th' }],
++  ['POST', '/v1/ai/ask', { question: 'how much?', today, locale: 'en', extra: 1 }],
++  ['PUT', '/v1/me/ai-preferences', {}],
++  ['GET', '/v1/ai/note?date=24/10/2026&locale=en', undefined],
++]
++
++/** One request of MALFORMED's shape from `user`. */
++async function sendAs(c: V1Client, user: TestUser, method: string, path: string, payload: unknown): Promise<Response> {
++  const as = c.as(user)
++  if (method === 'GET') return as.get(path)
++  if (method === 'PUT') return as.put(path, payload)
++  return as.post(path, payload)
++}
++
++const routesOf = (log: VaultCall[]) => log.map((call) => `${call.route} ${call.access} ${call.charge}`)
++
++describe("the 1B-T7 review's pins: what each AI route checks, and in what order", () => {
++  it('a signed-out session with a malformed body gets 422, with no vault call and no model call; a well-formed body is 401 at its first step', async () => {
++    // The 1B-T7 review's n-1 (its W5), wiring probe "P2 (accepted)": the input is read before any step (P2).
++    const log: VaultCall[] = []
++    const own = fakeModel()
++    const c = await startV1(undefined, { send: own.send, env: { VAULT: recordingVault(log) } })
++    const user = await member(c)
++    expect((await c.as(user).put('/v1/me/ai-preferences', { companion: true, notice_version: 1 })).status).toBe(200)
++    expect((await c.as(user).post('/v1/me/logout')).status).toBe(204)
++    log.length = 0
++    const out: string[] = []
++    for (const [method, path, payload] of MALFORMED) {
++      const res = await sendAs(c, user, method, path, payload)
++      out.push(`${res.status} ${(await body(res)).code}`)
++    }
++    expect(out).toEqual(['422 VALIDATION_FAILED', '422 VALIDATION_FAILED', '422 UNKNOWN_FIELD', '422 VALIDATION_FAILED', '422 INVALID_DATE'])
++    expect(log).toEqual([])
++    const refused = await c.as(user).post('/v1/ai/parse', { text: 'กาแฟ 65', today, locale: 'th' })
++    expect(`${refused.status} ${(await body(refused)).code}`).toBe('401 SESSION_REQUIRED')
++    expect(routesOf(log)).toEqual(['ai.context current_policy write'])
++    expect(own.calls).toHaveLength(0)
++  })
++
++  it('a signed-in person without consent who sends a malformed body gets 422, as the PostgreSQL route parsed before AiService checked consent, with no vault call', async () => {
++    // The 1B-T7 review's n-1 (its W5), wiring probe "P2 parity".
++    const log: VaultCall[] = []
++    const own = fakeModel()
++    const c = await startV1(undefined, { send: own.send, env: { VAULT: recordingVault(log) } })
++    const user = await member(c)
++    log.length = 0
++    const out: string[] = []
++    for (const [method, path, payload] of MALFORMED.slice(0, 3)) {
++      const res = await sendAs(c, user, method, path, payload)
++      out.push(`${res.status} ${(await body(res)).code}`)
++    }
++    expect(out).toEqual(['422 VALIDATION_FAILED', '422 VALIDATION_FAILED', '422 UNKNOWN_FIELD'])
++    expect(log).toEqual([])
++    const refused = await c.as(user).post('/v1/ai/parse', { text: 'กาแฟ 65', today, locale: 'th' })
++    expect(`${refused.status} ${(await body(refused)).code}`).toBe('403 AI_CONSENT_REQUIRED')
++    expect(own.calls).toHaveLength(0)
++  })
++
++  it('a session signed out between the context step and the use is refused at the use: 401, no model call and no use spent', async () => {
++    // The 1B-T7 review's m-2 (its W7), wiring probe "P5": the use step (`ai.consume`) is the last vault check before
++    // every model call, and it checks the session and the policy.
++    const log: VaultCall[] = []
++    const own = fakeModel()
++    const plain = await startV1(undefined, { send: null })
++    let signOut: TestUser | null = null
++    const c = await startV1(undefined, {
++      send: own.send,
++      env: {
++        VAULT: recordingVault(log, async (call) => {
++          if (call.route !== 'ai.context' || !signOut) return
++          const who = signOut
++          signOut = null
++          expect((await plain.as(who).post('/v1/me/logout')).status).toBe(204)
++        }),
++      },
++    })
++    const user = await member(plain)
++    expect((await plain.as(user).put('/v1/me/ai-preferences', { companion: true, notice_version: 1 })).status).toBe(200)
++    signOut = user
++    const refused = await c.as(user).post('/v1/ai/parse', { text: 'กาแฟ 65', today, locale: 'th' })
++    expect(`${refused.status} ${(await body(refused)).code}`).toBe('401 SESSION_REQUIRED')
++    expect(routesOf(log)).toEqual(['ai.context current_policy write', 'ai.consume current_policy step'])
++    expect(own.calls).toHaveLength(0)
++    expect(await vaultRows(user, 'SELECT day, feature, uses FROM ai_usage')).toEqual([])
++  })
++})

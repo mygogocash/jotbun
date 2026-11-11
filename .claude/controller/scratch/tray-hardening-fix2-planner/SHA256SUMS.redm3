@@ -1,0 +1,3 @@
+9405dfe762b2a5c6937ac0b19210582b4eb7956a95eafcb413e4fc42f03ffb06  apps/app/src/wallet/tray/Tray.tsx
+faf3984cec964ebc161845bef6594c96eb9a5437a10a7cc25d17cd7730fe8c29  apps/app/src/wallet/tray/Tray.render.test.tsx
+872fdf1c1632ee8a42a3169ef9a56e7c8925384659fb1301efe4e9dc38a787bb  docs/implementation/receipts/tray-hardening.md

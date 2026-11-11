@@ -1,0 +1,11 @@
+Read the commit before's shown too in the tray's late iOS dismissal
+
+The guard on iOS's late onDismiss read only the render's shown, so an
+earlier dismissal's end rendered in the commit that hides the Modal
+again said the tray closed, and the second hide's own end said it
+again. It now also reads the commit before's (the showing ref, back
+and refreshed with onClosed). Pin that case and which onClosed iOS's
+end calls, and fix four stale receipt lines. The confirming review's
+c-m1, c-n1 and c-n2.
+
+Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>

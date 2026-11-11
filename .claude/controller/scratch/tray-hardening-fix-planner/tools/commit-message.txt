@@ -1,0 +1,11 @@
+Read the render's shown in the tray's late iOS dismissal; pin three more rules
+
+The guard on iOS's late onDismiss read a ref an effect refreshes, but
+Modal.js calls onDismiss in the layout phase of the commit that renders
+UIKit's end, so a reopen batched into that commit still said the tray
+closed. It now reads the render's shown. Pin that a leaving card keeps
+its place, that a step change ticks once the cover lifts on the same
+step, and that a tray with no onClosed closes on iOS. The review's m-1,
+m-2, n-1 and n-2.
+
+Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>

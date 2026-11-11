@@ -1,0 +1,28 @@
+[
+  {
+    "id": "V1",
+    "what": "m1: uploads off on both sides (the vault without vars, NestJS replayed as the vault answers then)",
+    "file": "test/support/vault-worker.ts",
+    "runner": "twin",
+    "exit": 0,
+    "killed": false,
+    "restored": true,
+    "summary": [
+      "Tests  3 passed (3)"
+    ],
+    "listed": null
+  },
+  {
+    "id": "O1",
+    "what": "n5: the default background flips to off",
+    "file": "test/support/vault-worker.ts",
+    "runner": "twin-money",
+    "exit": 0,
+    "killed": false,
+    "restored": true,
+    "summary": [
+      "Tests  1 passed | 1 skipped (2)"
+    ],
+    "listed": null
+  }
+]

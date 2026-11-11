@@ -1,0 +1,62 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/alarm-hardening-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/alarm-hardening-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a failed start is retried a minute later, not in a loop
+{"level":"error","event":"work_start_failed","failure":"Error"}
+
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a key whose writer never published it is deleted by the alarm at its deadline 31ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > an export file is deleted by the alarm when it expires, and its status reads expired 24ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > work requested before the vault slept is started by its alarm after it wakes 28ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a failed start is retried a minute later, not in a loop 17ms
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a prune that throws is logged, the others still run, and the alarm is set again
+{"level":"error","event":"file_prune_failed","failure":"Error"}
+
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a capped run leaves the alarm set, and the next alarm clears the rest 33ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a prune that throws is logged, the others still run, and the alarm is set again 19ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > the alarm follows the earliest of the core and file jobs 27ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > after any alarm, every scheduled time is later than now 34ms
+ ✓ test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > export requests are purged 30 days after the request; the receipt stays compact 19ms
+ ✓ test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > drops finished upload rows 30 days after they ended, never one still receiving or within the quota window 16ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > a resent snapshot request after its snapshot went stale reads expired and starts nothing; a new key builds a new one 46ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > a vault that is not active runs no file job and keeps no alarm for them 18ms
+stderr | test/workers/files-alarm.test.ts > the controller's notes > only one file run at a time: a second run while the first waits on R2 deletes nothing
+{"level":"error","event":"file_run_held","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > the controller's notes > an unbound bucket is a failed delete, due again a minute later; the alarm never throws
+{"level":"error","event":"object_delete_failed","failure":"ObjectStoreError"}
+
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > an upload arms the alarm though it commits no command 20ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > only one file run at a time: a second run while the first waits on R2 deletes nothing 66ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > an unbound bucket is a failed delete, due again a minute later; the alarm never throws 17ms
+stderr | test/workers/files-alarm.test.ts > the brief's rulings > a prune that keeps throwing brings the alarm back a minute later, never in a loop
+{"level":"error","event":"file_prune_failed","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > the brief's rulings > after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner
+{"level":"error","event":"vault_retention_purge_failed","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a delete whose own block throws is reported to the alarm, which comes back a minute later, not at once
+{"level":"error","event":"file_delete_failed","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > an alarm that finds another file run in progress reports its delete as failed, so it comes back a minute later
+{"level":"error","event":"file_run_held","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a setAlarm the storage refuses is logged and forgotten, so the next rearm sets the alarm again
+{"level":"error","event":"vault_alarm_unset","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a refusal that lands after a later rearm leaves that alarm alone, and a refused deleteAlarm is logged
+{"level":"error","event":"vault_alarm_unset","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a refusal that lands after a later rearm leaves that alarm alone, and a refused deleteAlarm is logged
+{"level":"error","event":"vault_alarm_unset","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a schedule write that fails after a call committed is logged, and the call still answers its success
+{"level":"error","event":"vault_alarm_unset","failure":"Error"}
+
+ ✓ test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > importsDueAt counts the live import records only: a purged one is skipped, a live selection counts 13ms
+
+ Test Files  1 passed (1)
+      Tests  35 passed (35)
+   Start at  09:44:47
+   Duration  2.82s (transform 749ms, setup 1.42s, import 37ms, tests 831ms, environment 0ms)
+
