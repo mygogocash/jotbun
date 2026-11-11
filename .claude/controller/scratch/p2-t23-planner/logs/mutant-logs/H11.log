@@ -1,0 +1,71 @@
+
+> gogospend-app@0.1.0 test:unit
+> node scripts/test-unit.mjs src/wallet/home/homeWallets.test.ts
+
+(node:25074) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app/src/wallet/home/homeWallets.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:25074) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/packages/contracts/package.json.
+✔ the stack draws the kept order with the front card last, archived wallets out (0.776333ms)
+✔ front first is the wallets list's order: the kept ids, then the rest by name and then id, drawn back to front (5.722333ms)
+✔ a card's balance takes off what waiting drafts spend and says how much is still saving (0.285583ms)
+✖ income adds and a transfer moves money between its wallets, each still saving; drafts being checked, refused or acknowledged count nowhere (1.09ms)
+✔ today's spending counts confirmed expenses only (0.175875ms)
+✔ each card wears its wallet's look, and money stays exact past 2^53 (0.179875ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 5
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 212.451959
+
+✖ failing tests:
+
+test at src/wallet/home/homeWallets.test.ts:69:1
+✖ income adds and a transfer moves money between its wallets, each still saving; drafts being checked, refused or acknowledged count nowhere (1.09ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      card: {
+        balance: '-392000',
+        pending: '0',
+        todayOut: '0'
+  ...
+        balance: '2456000',
+  +     pending: '0',
+  -     pending: '30000',
+        todayOut: '0'
+      },
+      transit: {
+        balance: '48600',
+        pending: '30000',
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app/src/wallet/home/homeWallets.test.ts:83:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { card: { balance: '-392000', pending: '0', todayOut: '0' }, transit: { balance: '48600', pending: '30000', todayOut: '0' }, cash: { balance: '144000', pending: '20000', todayOut: '0' }, main: { balance: '2456000', pending: '0', todayOut: '0' } },
+    expected: { main: { balance: '2456000', pending: '30000', todayOut: '0' }, cash: { balance: '144000', pending: '20000', todayOut: '0' }, transit: { balance: '48600', pending: '30000', todayOut: '0' }, card: { balance: '-392000', pending: '0', todayOut: '0' } },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+npm error Lifecycle script `test:unit` failed with error:
+npm error code 1
+npm error path /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app
+npm error workspace gogospend-app@0.1.0
+npm error location /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app
+npm error command failed
+npm error command sh -c node scripts/test-unit.mjs src/wallet/home/homeWallets.test.ts

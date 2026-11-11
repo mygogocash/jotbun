@@ -1,0 +1,20 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+ ✓ src/screens/redesign/homeData.render.test.tsx > useHomeData reads what Home reads: today's records page by page, one page of earlier days, and the month's figures 21ms
+ ✓ src/screens/redesign/homeData.render.test.tsx > a draft it was waiting on resolves: it reads again in place; a new draft reads nothing 10ms
+ ✓ src/screens/redesign/homeData.render.test.tsx > a change pulled from another phone reads again in place; the same revision reads nothing 6ms
+ ✓ src/screens/redesign/homeData.render.test.tsx > the hook hands back the load's controls: refresh reads again in place, reload from loading 12ms
+ ✓ src/screens/redesign/homeData.render.test.tsx > a new day reads that day, and a new month that month 6ms
+ ✓ src/screens/redesign/homeData.render.test.tsx > the threshold haptic plays once as spending crosses 80% and then 100%, never on a first reading or a new month, across a remount 1ms
+
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+   Start at  21:57:47
+   Duration  1.18s (transform 262ms, setup 123ms, import 541ms, tests 57ms, environment 278ms)
+

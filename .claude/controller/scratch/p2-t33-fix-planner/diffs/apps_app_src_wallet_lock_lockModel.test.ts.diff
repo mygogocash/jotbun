@@ -1,0 +1,72 @@
+diff --git a/apps/app/src/wallet/lock/lockModel.test.ts b/apps/app/src/wallet/lock/lockModel.test.ts
+index a95ff1417a9a1ac0e43b0f02f6bffef87c8f4f6f..0d2fc7ad773acd4205742513abdefe07aafdc3ab 100644
+--- a/apps/app/src/wallet/lock/lockModel.test.ts
++++ b/apps/app/src/wallet/lock/lockModel.test.ts
+@@ -1,15 +1,16 @@
+ // The Face ID lock's rules (P2-T33, W18, R67): the lock's view as the app
+-// comes and goes, what the locked app does with each answer, the names a
+-// screen gives the phone's method, the setup switch, and where the wallet
+-// root puts the lock (read from its source, as spendLayoutOrder.test.ts reads
+-// the spend layout's).
++// comes and goes, what the locked app does with each answer, what it makes of
++// an answer or a reading outside the port's types, the names a screen gives
++// the phone's method, the setup switch, and where the wallet root puts the
++// lock (read from its source, as spendLayoutOrder.test.ts reads the spend
++// layout's).
+ import assert from 'node:assert/strict';
+ import { readFileSync } from 'node:fs';
+ import { test } from 'node:test';
+ 
+ import { COPY } from './copy.ts';
+-import type { LockMethod, LockView } from './lockModel.ts';
+-import { afterAnswer, afterRecheck, appStateEvent, lockReducer, lockSwitch, METHOD_KEYS, namedMethod, UNLOCKED } from './lockModel.ts';
++import type { LockAvailability, LockMethod, LockView } from './lockModel.ts';
++import { afterAnswer, afterRecheck, appStateEvent, authResultOf, availabilityOf, lockReducer, lockSwitch, METHOD_KEYS, namedMethod, UNLOCKED } from './lockModel.ts';
+ 
+ const open: LockView = { locked: false, covered: false };
+ 
+@@ -61,6 +62,22 @@ test('an answer that does not unlock says why; unavailable reads the phone first
+   assert.deepEqual(afterRecheck(null), { step: 'stay', note: 'lock.tryAgain' });
+ });
+ 
++// The second review's n1: a slip in the port (P2-T34's adapter) never opens the app, and never leaves the gate unable to ask.
++test("an answer or a reading outside the port's types counts as a failed scan, or as a phone that could not be read", () => {
++  for (const result of ['success', 'cancelled', 'failed', 'lockout', 'unavailable'] as const) assert.equal(authResultOf(result), result);
++  for (const odd of ['not_interactive', 'SUCCESS', '', undefined, null, 0, true, {}]) assert.equal(authResultOf(odd), 'failed', String(odd));
++  assert.deepEqual(availabilityOf({ canLock: true, method: 'face' }), { canLock: true, method: 'face' });
++  assert.deepEqual(availabilityOf({ canLock: true, method: 'fingerprint' }), { canLock: true, method: 'fingerprint' });
++  assert.deepEqual(availabilityOf({ canLock: true, method: 'passcode', extra: 1 }), { canLock: true, method: 'passcode' });
++  assert.deepEqual(availabilityOf({ canLock: false, method: null }), { canLock: false, method: null });
++  const odd: readonly unknown[] = [null, undefined, 'face', 1, {}, { method: 'face' }, { canLock: 'no', method: null }, { canLock: 0, method: null }, { canLock: true }, { canLock: true, method: 'retina' }, { canLock: true, method: 'toString' }];
++  for (const reading of odd) assert.equal(availabilityOf(reading), null, JSON.stringify(reading) ?? String(reading));
++  // Only a reading that says canLock: false, in so many words, turns the lock off.
++  for (const reading of [{ method: 'face' }, { canLock: undefined, method: null }, { canLock: 0, method: null }]) {
++    assert.deepEqual(afterRecheck(reading as unknown as LockAvailability), { step: 'stay', note: 'lock.tryAgain' }, JSON.stringify(reading));
++  }
++});
++
+ test("a screen names the phone's method, or the passcode while the phone has not said, and each method has its name, line and body", () => {
+   assert.equal(namedMethod({ canLock: true, method: 'face' }), 'face');
+   assert.equal(namedMethod({ canLock: true, method: 'fingerprint' }), 'fingerprint');
+@@ -87,8 +104,9 @@ test('the setup switch waits for the phone, stays off on a phone that cannot loc
+ });
+ 
+ // The render cases read the draft table, so the plan's Thai lines (sa-lock-setup, sa-locked, and its drafts) are
+-// pinned here, word for word; the three lines the plan does not list are the brief's (P2-T33's ruling P4).
+-test("the lock's Thai lines are the plan's, and only three more", () => {
++// pinned here, word for word; the three lines the plan does not list are the brief's (P2-T33's ruling P4), and the
++// fourth is the fix round's: a lock that could not be kept on.
++test("the lock's Thai lines are the plan's, and only four more", () => {
+   const plan: Readonly<Record<string, string>> = {
+     'lock.step': 'ตั้งค่า · ขั้นที่ 5 จาก 5',
+     'lock.question': 'ล็อก Jotbun ด้วย {method} ไหม?',
+@@ -115,7 +133,8 @@ test("the lock's Thai lines are the plan's, and only three more", () => {
+   };
+   const table: Readonly<Record<string, { th: string }>> = COPY;
+   assert.deepEqual(Object.fromEntries(Object.keys(plan).map((key) => [key, table[key]?.th])), plan);
+-  assert.deepEqual(Object.keys(COPY).filter((key) => !(key in plan)), ['lock.bodyFingerprint', 'lock.bodyPasscode', 'lock.previewName']);
++  assert.deepEqual(Object.keys(COPY).filter((key) => !(key in plan)), ['lock.bodyFingerprint', 'lock.bodyPasscode', 'lock.notStored', 'lock.previewName']);
++  assert.equal(table['lock.notStored']?.th, 'เปิดการล็อกไม่สำเร็จ ลองอีกครั้ง');
+ });
+ 
+ const root = readFileSync(new URL('../WalletRoot.tsx', import.meta.url), 'utf8');

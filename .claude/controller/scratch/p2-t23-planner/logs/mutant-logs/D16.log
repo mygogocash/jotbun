@@ -1,0 +1,80 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app
+
+ × src/screens/redesign/homeData.render.test.tsx > useHomeData reads what Home reads: today's records page by page, one page of earlier days, and the month's figures 24ms
+   → expected [ [ …(3) ], [ …(3) ] ] to deeply equal [ [ …(3) ], [ …(3) ] ]
+ ✓ src/screens/redesign/homeData.render.test.tsx > a draft it was waiting on resolves: it reads again in place; a new draft reads nothing 10ms
+ ✓ src/screens/redesign/homeData.render.test.tsx > a change pulled from another phone reads again in place; the same revision reads nothing 5ms
+ ✓ src/screens/redesign/homeData.render.test.tsx > the hook hands back the load's controls: refresh reads again in place, reload from loading 16ms
+ × src/screens/redesign/homeData.render.test.tsx > a new day reads that day, and a new month that month 5ms
+   → expected [ '2026-09-29', '2026-09-29', …(2) ] to deeply equal [ '2026-09-29', '2026-09-28', …(2) ]
+ ✓ src/screens/redesign/homeData.render.test.tsx > the threshold haptic plays once as spending crosses 80% and then 100%, never on a first reading or a new month, across a remount 1ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 4 passed (6)
+   Start at  22:09:26
+   Duration  1.02s (transform 235ms, setup 108ms, import 467ms, tests 62ms, environment 220ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/homeData.render.test.tsx > useHomeData reads what Home reads: today's records page by page, one page of earlier days, and the month's figures
+AssertionError: expected [ [ …(3) ], [ …(3) ] ] to deeply equal [ [ …(3) ], [ …(3) ] ]
+
+- Expected
++ Received
+
+@@ -10,11 +10,11 @@
+    ],
+    [
+      {
+        "from": "1970-01-01",
+        "sort": "date_desc",
+-       "through": "2026-09-28",
++       "through": "2026-09-29",
+      },
+      undefined,
+      50,
+    ],
+  ]
+
+ ❯ src/screens/redesign/homeData.render.test.tsx:100:60
+     98|   expect(fake.callsOf('summary').map((call) => call.args)).toEqual([['…
+     99|   expect(fake.callsOf('budget').map((call) => call.args)).toEqual([['2…
+    100|   expect(fake.callsOf('history').map((call) => call.args)).toEqual([
+       |                                                            ^
+    101|     [{ from: TODAY, through: TODAY, sort: 'date_desc' }, undefined, 20…
+    102|     [{ from: TRACKING_START_MIN, through: '2026-09-28', sort: 'date_de…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/screens/redesign/homeData.render.test.tsx > a new day reads that day, and a new month that month
+AssertionError: expected [ '2026-09-29', '2026-09-29', …(2) ] to deeply equal [ '2026-09-29', '2026-09-28', …(2) ]
+
+- Expected
++ Received
+
+  [
+    "2026-09-29",
+-   "2026-09-28",
+-   "2026-09-30",
+    "2026-09-29",
++   "2026-09-30",
++   "2026-09-30",
+  ]
+
+ ❯ src/screens/redesign/homeData.render.test.tsx:195:96
+    193|   view.showDay('2026-09-30');
+    194|   await settle();
+    195|   expect(fake.callsOf('history').map((call) => (call.args[0] as { thro…
+       |                                                                                                ^
+    196|   expect(fake.callsOf('summary').map((call) => call.args)).toEqual([['…
+    197|   view.showDay('2026-10-01');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

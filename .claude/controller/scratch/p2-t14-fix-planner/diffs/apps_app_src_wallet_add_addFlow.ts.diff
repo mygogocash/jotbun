@@ -1,0 +1,74 @@
+diff --git a/apps/app/src/wallet/add/addFlow.ts b/apps/app/src/wallet/add/addFlow.ts
+index b59d522..d566a3a 100644
+--- a/apps/app/src/wallet/add/addFlow.ts
++++ b/apps/app/src/wallet/add/addFlow.ts
+@@ -13,8 +13,8 @@ import type { Lookups, Translate } from '../../spend/v1/redesign/shared.ts';
+ import { categoryName } from '../../spend/v1/viewModels.ts';
+ import { dayLabel } from '../../ui/dateStep.ts';
+ import type { DateLocale } from '../../ui/dateStep.ts';
+-import { evaluateKeypad } from '../../ui/keypadExpression.ts';
+-import type { KeypadProblem, KeypadState } from '../../ui/keypadExpression.ts';
++import { applyKey, EMPTY_KEYPAD, evaluateKeypad, keypadFromMinor } from '../../ui/keypadExpression.ts';
++import type { KeypadDigit, KeypadProblem, KeypadState } from '../../ui/keypadExpression.ts';
+ 
+ /** What the tray adds: spending, income, or money moved between the person's own wallets (W14). */
+ export type AddType = 'expense' | 'income' | 'transfer';
+@@ -59,6 +59,41 @@ export function amountProblem(keypad: KeypadState): KeypadProblem | null {
+   return outcome.ok || outcome.problem === 'empty' ? null : outcome.problem;
+ }
+ 
++/**
++ * The keypad for an amount the person did not type: a chip's, Bun's reading,
++ * a copy, move all, or the edit tray's opening amount (R106). It shows as
++ * keypadFromMinor shows it (6550 as 65.50) and is `fresh`, so private mode
++ * masks it until a key is pressed, and the first key starts the amount over
++ * (walletKey).
++ */
++export function filledKeypad(minor: Minor): KeypadState {
++  return { ...keypadFromMinor(minor), fresh: true };
++}
++
++/**
++ * Whether the keypad holds an amount the person did not type: a fill
++ * (filledKeypad), or satang, which only a fill can give, since this keypad has
++ * no point (W29).
++ */
++export function isFilled(keypad: KeypadState): boolean {
++  return keypad.fresh || keypad.operands.some((operand) => operand.includes('.'));
++}
++
++/** The tray keypad's keys (W29): digits, 000, 0 and delete. */
++export type WalletKey = KeypadDigit | '000' | 'backspace';
++
++/**
++ * One key of the tray's keypad, through today's applyKey. On a filled amount
++ * the first key starts over: a digit begins a new amount and delete clears it.
++ * So delete never walks a fill's satang down to a bare point (฿65.50, ฿65.5,
++ * ฿65.), no digit is refused as too precise, and no digit of a fill shows once
++ * a key is pressed (R106).
++ */
++export function walletKey(keypad: KeypadState, key: WalletKey): KeypadState {
++  if (!isFilled(keypad)) return applyKey(keypad, key);
++  return key === 'backspace' ? EMPTY_KEYPAD : applyKey(EMPTY_KEYPAD, key);
++}
++
+ export type ConfirmRow = { key: 'category' | 'wallet' | 'from' | 'to' | 'date' | 'note'; labelKey: string; value: string; guessed: boolean };
+ type RowKey = ConfirmRow['key'];
+ 
+@@ -96,14 +131,14 @@ export function confirmRows(
+   return [row('category', category ? categoryName(category, tc) : ''), row('wallet', walletName(draft.walletId)), date, note];
+ }
+ 
+-/** What each row shows of the draft, to tell whether the person changed it. */
++/** What each row shows of the draft, to tell whether the person changed it: the note as its row shows it, trimmed. */
+ const ROW_FIELDS = new Map<string, (draft: QuickAddDraft) => string | null>([
+   ['category', (draft) => (draft.type === 'transfer' ? null : draft.categoryByType[draft.type])],
+   ['wallet', (draft) => draft.walletId],
+   ['from', (draft) => draft.fromWalletId],
+   ['to', (draft) => draft.toWalletId],
+   ['date', (draft) => draft.occurredOn],
+-  ['note', (draft) => draft.note],
++  ['note', (draft) => draft.note.trim()],
+ ]);
+ 
+ /**

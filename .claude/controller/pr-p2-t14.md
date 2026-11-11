@@ -41,8 +41,19 @@
   - `test:app` 34 and `test:unit` 980;
   - the focused render files: 70 of 70;
   - `git diff --check`.
-- [ ] CI on this pull request is green: the nine jobs, including the full render suite, `export:web` and the iOS export.
-- [ ] Independent review (Opus), and a second review: the add flow enters money, and P9 decides what private mode masks. Then the owner's yes before merging.
+- [x] Independent review (Opus): Needs fixes on `18876253` for one major, M1: at AX5 and with the keyboard up, the pinned header and footer left the middle no room (`.claude/controller/reviews/P2-T14.md`). The second review (`reviews/P2-T14-second.md`) found no major.
+- [x] **Fix round** (`28b9d5ac`, brief `.claude/controller/briefs/P2-T14-fix.md`; ruling R106 with the planner's P1). The changes:
+  - at large text the type switch sits under the amount and its problem;
+  - the problem line leaves the pinned footer;
+  - the keys hide while income's name has focus. With the keyboard up, the SE's middle grows from 5 pt to 213 pt;
+  - a filled amount stays masked in private mode until the first key, and a key starts a fill over (no `too_precise`, no bare `฿65.`);
+  - the type switch is disabled while the tray is locked;
+  - the name field is 44 pt or more;
+  - no chips on a transfer;
+  - a chip `label` holds the name only.
+  - The proofs: RED Node 2 of 8 and render 10 of 15, all assertions; GREEN Node 12, render 15, neighbours 58, catalogue 26; **138 of 138 mutants killed**. All 10 fix-kit files are byte-identical.
+- [ ] CI on this pull request is green at `28b9d5ac`: the nine jobs, including the full render suite, `export:web` and the iOS export.
+- [ ] Confirming review (Opus) of the fix commit.
 - [ ] SKIPPED: device checks (the keypad and the tray's footer on a phone, AX5 by hand for E2-B).
 
 Closes #160 once merged (closed by hand, since the base is not the default branch).

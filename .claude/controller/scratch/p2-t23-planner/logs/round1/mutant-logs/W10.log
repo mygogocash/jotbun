@@ -1,0 +1,67 @@
+
+> gogospend-app@0.1.0 test:unit
+> node scripts/test-unit.mjs src/wallet/home/budgetCardWords.test.ts
+
+(node:95438) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app/src/wallet/home/budgetCardWords.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:95438) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/packages/contracts/package.json.
+✔ on track says เหลือวันละ ฿690 in the under colour (1.474791ms)
+✔ over says เกินงบไป ฿420 in the over colour (0.208542ms)
+✖ private mode says ตามแผน or เกินงบ and no amount (0.616166ms)
+✔ on the month's last day the per-day hint is all that is left (0.077708ms)
+✔ tight says the same words in ink, in whole baht rounded down, shown and said (0.104084ms)
+✔ the figure and the hint are the estimate's: waiting drafts count, drafts being checked do not (0.12425ms)
+✔ with no budget there is no line, and the card says only what was spent (0.050709ms)
+✔ after the month there is no per-day figure, so the line says ตามแผน (0.054083ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 7
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 149.233458
+
+✖ failing tests:
+
+test at src/wallet/home/budgetCardWords.test.ts:61:1
+✖ private mode says ตามแผน or เกินงบ and no amount (0.616166ms)
+  AssertionError [ERR_ASSERTION]: on_track
+  + actual - expected
+  
+    {
+      headline: '฿••••',
+      side: {
+        text: 'ตามแผน',
+        tone: 'under'
+      },
+  +   spoken: 'ใช้ไปเดือนนี้ 12,480 บาท จากงบ 18,000 บาท, ตามแผน'
+  -   spoken: 'ใช้ไปเดือนนี้ ซ่อนยอดเงินอยู่, ตามแผน'
+    }
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app/src/wallet/home/budgetCardWords.test.ts:71:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { headline: '฿••••', side: { text: 'ตามแผน', tone: 'under' }, spoken: 'ใช้ไปเดือนนี้ 12,480 บาท จากงบ 18,000 บาท, ตามแผน' },
+    expected: { headline: '฿••••', side: { text: 'ตามแผน', tone: 'under' }, spoken: 'ใช้ไปเดือนนี้ ซ่อนยอดเงินอยู่, ตามแผน' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+npm error Lifecycle script `test:unit` failed with error:
+npm error code 1
+npm error path /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app
+npm error workspace gogospend-app@0.1.0
+npm error location /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app
+npm error command failed
+npm error command sh -c node scripts/test-unit.mjs src/wallet/home/budgetCardWords.test.ts

@@ -1,0 +1,12 @@
+apps/app/src/dev/catalogue/wallet/addSections.tsx
+apps/app/src/dev/catalogue/wallet/index.ts
+apps/app/src/wallet/add/AmountStep.render.test.tsx
+apps/app/src/wallet/add/AmountStep.tsx
+apps/app/src/wallet/add/QuickChips.tsx
+apps/app/src/wallet/add/TypeSwitchHeader.tsx
+apps/app/src/wallet/add/WalletKeypad.tsx
+apps/app/src/wallet/add/addFlow.test.ts
+apps/app/src/wallet/add/addFlow.ts
+apps/app/src/wallet/add/copy.ts
+apps/app/src/wallet/copy/draftText.test.ts
+docs/implementation/receipts/P2-T14.md

@@ -457,6 +457,29 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **alarm-hardening (#398), n7:**
     - lines 4, 97 and 108 of #398's receipt give download-pins' items (1B-T11's m3 and n6, and the X5 re-target) to fix-download-aborts. Correct them before #398 merges;
     - once #398 merges, download-pins' kit mutant V3 no longer applies: rerun it with A1's text.
+- **P2-T33's first review** (`reviews/P2-T33.md`, Approved on `5844e4c1`; four minors, six nits; probes in `scratch/p2-t33-review/`). None of it is reachable until P2-T34: `getAppLocalAuth()` answers `noLocalAuth`, so the lock cannot be turned on.
+  - **m1, for P2-T34, which needs a phone:**
+    - On Android, React Native sends `background` on every `onHostPause` and never `inactive`. So a credential screen that is an activity (Android 10 or earlier with the passcode fallback, or a passcode-only phone) makes a new opening. The gate then drops the prompt's answer and asks again (probe B).
+    - P2-T34's phone check must cover it. If it happens, the gate needs a ruled change before the lock ships.
+  - **m2** (P2-T34, unless fixed here): on a cold start the first automatic prompt can use the passcode's words on a Face ID or fingerprint phone, because the setting read beats the phone read (probe C). Fix: hold the first automatic ask until the first phone read settles.
+  - **m3:** if the app is back in front before an earlier prompt answers, the new opening never asks by itself. `asked.current` is set even when `unlock` returns early (`LockGate.tsx:235`, `:255-257`). It fails closed, with no prompt (probes A and F). Fix: add `busy` to the effect's condition and dependencies.
+  - **m4:** the turned-off notice's "no timeout" is unpinned (mutant M1 survives). Fix: a fake-timer case that advances 60 s.
+  - **Nits:**
+    - n1: "launched behind waits" has no case (M4);
+    - n2: `app/settings/lock.tsx` has no test (M6, M7);
+    - n3: `change()`'s same-state guard (M2);
+    - n4: `unlock` resets `asking` only on its normal path, so an answer outside `AuthResult` leaves a dead button. Use `try/finally`, and P2-T34's mapping must stay total;
+    - n5: a vacuous assertion at `Lock.render.test.tsx:210`;
+    - n6: an unreadable store gives a false "turned off" notice with `noLocalAuth`.
+  - **P2-T34 also:** keep `getAppLocalAuth()` one stable object. Otherwise `readPhone` changes identity on every render, and the mount effect re-reads the phone (`LockGate.tsx:187-201`).
+  - **P2-T35 and 1C's sign-out need a ruling, possibly the owner's.**
+    - The sign-out erase (`eraseWithDiary`) removes `jotbun.wallet.lock` and `lock-answered`, but the gate does not hear it.
+    - So the lock stays on in memory until the next launch, and then it is off with no notice.
+    - Should a privacy lock leave with the account's sign-out, and should the gate hear it?
+  - **Later Sheet hosts:** under the cover, a Sheet unmounts its children (P10), with the lock on even on `inactive`. A future sheet that keeps state in its children would lose it (probe G).
+  - **P19's device checks gain:**
+    - TalkBack repeats no unchanged live-region note, so two misses are heard once;
+    - VoiceOver may reach both the gate's lock screen and the Modal's copy.
 - **1B-T13's first review** (`reviews/1B-T13.md`, Approved on `7eeff709`, Claude Opus 5.5 xhigh; three minors, five nits). Both reviews independently found m2 and m3 (the second's n5 and n3). Carriers, as the reviewer suggests:
   - **1D-T12:**
     - m1: no CI test of the live socket's production path (TanStack Start's `/v1/$` passing a 101 with `webSocket`). Only P23's uncommitted smoke proves it, and the reviewer reran it: it passes.

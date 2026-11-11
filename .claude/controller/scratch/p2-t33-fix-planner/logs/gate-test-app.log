@@ -1,0 +1,68 @@
+
+> gogospend@0.0.0 test:app
+> npm run test -w gogospend-app
+
+
+> gogospend-app@0.1.0 test
+> node --test src/api/*.test.ts
+
+(node:15460) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/gate/apps/app/src/api/client.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/gate/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ signed-out reads fail before any network request (1.661167ms)
+✔ JSON writes send the active bearer credential and preserve integer satang (13.836833ms)
+✔ multipart uploads let the runtime generate a matching boundary (3.993834ms)
+✔ server failures stay failures with their actionable code (7.104959ms)
+✔ absolute URLs cannot receive session credentials (0.978958ms)
+✔ a development build may reach wrangler dev on the LAN; a release build may not (0.638208ms)
+✔ a v1 request with no session id is refused before anything is sent (0.255542ms)
+✔ a bound v1 request sends no X-GoGoSpend-Session header (3.456333ms)
+✔ acceptLanguage sends Accept-Language and nothing else changes (3.911458ms)
+✔ a response from the previous account cannot become the current diary (1.592375ms)
+✔ requests carry X-GoGoSpend-Analytics: off unless this phone's answer is yes (4.741417ms)
+(node:15461) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/gate/apps/app/src/api/sessionEpoch.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/gate/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15461) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p2-t33/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p2-t33/packages/contracts/package.json.
+✔ a token renewed while a request is in flight keeps its response (same identity) (60.872792ms)
+✔ a sign-out, account switch or A -> B -> A during a request drops its response (47.823417ms)
+✔ one 401 allows one refresh and one resend of the same body and key; a second 401 signs out (6.849875ms)
+✔ 426 never triggers a refresh or a sign-out; other auth refusals are not refreshed either (5.008208ms)
+✔ token-only routes need no binding and send none, even from a bound session (2.122041ms)
+✔ a session change while the token is read sends nothing (never one identity's binding with another's token) (0.153792ms)
+✔ a 401 that arrives after the session changed is neither refreshed nor resent (23.579958ms)
+✔ a session change while the token is re-read or refreshed stops the resend (never sent under another identity) (1.833ms)
+✔ a lost command is not resent once the session changed (253.599834ms)
+✔ a 401 for a token another request already renewed is resent with the new token, without a second refresh (43.55525ms)
+✔ credentials that cannot be read right now are a network outcome, never a sign-out (0.832125ms)
+✔ a request with its own credentials uses them, is never refreshed and never ends the session (1.184584ms)
+✔ a server-ended session is reported with the epoch the request started under; proof and token-only refusals are not (4.159458ms)
+✔ return_to_a_does_not_accept_old_a_response (3.51125ms)
+✔ a server-ended session leaves active through the seam; a stale report from an earlier session changes nothing (4.316916ms)
+✔ sign-out from a locked session still revokes its binding over the transport (1.261333ms)
+✔ a request begun during an account switch sends nothing: never the next session's token under the first session (R86) (1.1035ms)
+✔ offline token reads neither lock the session nor close the diary (S4 resolver) (7.594875ms)
+(node:15462) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/gate/apps/app/src/api/v1Contracts.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/gate/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15462) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p2-t33/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p2-t33/packages/contracts/package.json.
+✔ money parses as exact satang and never accepts JS numbers (0.629709ms)
+✔ totals beyond the safe-integer range stay exact (0.09275ms)
+✔ Bangkok day boundary and occurred-on window (1.576417ms)
+✔ command normalization is order-independent and matches the server form (0.226ms)
+✔ unknown request fields and malformed client headers are rejected (0.50925ms)
+ℹ tests 34
+ℹ suites 0
+ℹ pass 34
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 686.605625

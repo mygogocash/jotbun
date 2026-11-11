@@ -1,0 +1,29 @@
+--- a/apps/edge/test/workers/support/v1-client.ts
++++ b/apps/edge/test/workers/support/v1-client.ts
+@@ -13,7 +13,7 @@
+ import type { V1Deps } from '../../../src/v1/handler'
+ import { createTokenVerifier } from '../../../src/v1/tokens'
+ import type { UserVault } from '../../../src/vault/user-vault'
+-import type { SendMessage } from '../../../src/server/ai/model'
++import type { ModelTransport } from '../../../src/v1/ai/transport'
+ 
+ export const BASE = 'http://vault.test'
+ export const ISSUER = 'https://issuer.test/'
+@@ -127,7 +127,7 @@
+  */
+ export async function startV1(
+   config: EdgeConfigJson | 'absent' | 'malformed' = DEFAULT_CONFIG,
+-  options?: { env?: Partial<V1Env>; fetchCatalogue?: typeof fetch; startWork?: 'auto' | 'manual'; send?: SendMessage | null },
++  options?: { env?: Partial<V1Env>; fetchCatalogue?: typeof fetch; startWork?: 'auto' | 'manual'; transport?: ModelTransport | null },
+ ): Promise<V1Client> {
+   if (config === 'absent') await env.CONFIG.delete(EDGE_CONFIG_KEY)
+   else if (config === 'malformed') await env.CONFIG.put(EDGE_CONFIG_KEY, JSON.stringify({ gates: 'nope' }))
+@@ -138,7 +138,7 @@
+   const deps: V1Deps = {
+     verifier,
+     fetchCatalogue: options?.fetchCatalogue,
+-    send: options?.send,
++    transport: options?.transport,
+     waitUntil: (promise) => {
+       pending.push(promise)
+     },

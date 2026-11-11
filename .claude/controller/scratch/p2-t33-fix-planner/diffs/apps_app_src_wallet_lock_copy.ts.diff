@@ -1,0 +1,29 @@
+diff --git a/apps/app/src/wallet/lock/copy.ts b/apps/app/src/wallet/lock/copy.ts
+index 077cbd8389ac1477176acca3e0025fa5d0ffcc43..7d40069fcb2f5eaafb49f119c11e22d3f4fed7c6 100644
+--- a/apps/app/src/wallet/lock/copy.ts
++++ b/apps/app/src/wallet/lock/copy.ts
+@@ -4,11 +4,11 @@ import type { DraftTable } from '../copy/draftText.ts';
+  * The Face ID lock's lines: sa-lock-setup's and sa-locked's words, the
+  * method's names, the Settings row, and the lines no board shows (the
+  * fingerprint and passcode forms, what the locked screen says after a scan
+- * that did not pass, the lock turning itself off, a phone with no passcode,
+- * and the preview card's name). `{method}` takes a method's name. Data only:
+- * read through `useDraftCopy` with COMMON_COPY. Default pending owner Q3:
+- * built as written; the English lines, and every Thai line no board shows,
+- * are drafts for E2-D.
++ * that did not pass, the lock turning itself off, a lock that could not be
++ * kept on, a phone with no passcode, and the preview card's name). `{method}`
++ * takes a method's name. Data only: read through `useDraftCopy` with
++ * COMMON_COPY. Default pending owner Q3: built as written; the English lines,
++ * and every Thai line no board shows, are drafts for E2-D.
+  */
+ export const COPY = {
+   'lock.step': { th: 'ตั้งค่า · ขั้นที่ 5 จาก 5', en: 'Setup · Step 5 of 5' },
+@@ -40,6 +40,7 @@ export const COPY = {
+   'lock.tryAgain': { th: 'ลองอีกครั้ง หรือใช้รหัสผ่าน', en: 'Try again, or use your passcode.' },
+   'lock.lockout': { th: 'สแกนไม่ผ่านหลายครั้ง ใช้รหัสผ่านของเครื่องแทน', en: "Too many scans didn't pass. Use your phone's passcode instead." },
+   'lock.turnedOff': { th: 'ปิดการล็อกแล้ว เพราะเครื่องนี้ไม่มีรหัสผ่านหรือ Face ID แล้ว', en: 'The lock is off, because this phone no longer has a passcode or Face ID.' },
++  'lock.notStored': { th: 'เปิดการล็อกไม่สำเร็จ ลองอีกครั้ง', en: "The lock couldn't be turned on. Try again." },
+   'lock.needsPasscode': { th: 'ตั้งรหัสผ่านหรือ Face ID ในการตั้งค่าเครื่องก่อน จึงจะล็อก Jotbun ได้', en: "Set a passcode or Face ID in your phone's settings first, then you can lock Jotbun." },
+   'lock.row': { th: 'ล็อกด้วย {method}', en: 'Lock with {method}' },
+   'lock.on': { th: 'เปิด', en: 'On' },

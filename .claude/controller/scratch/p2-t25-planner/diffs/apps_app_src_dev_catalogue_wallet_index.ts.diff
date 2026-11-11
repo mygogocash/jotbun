@@ -1,0 +1,16 @@
+diff --git a/orig/apps/app/src/dev/catalogue/wallet/index.ts b/real/apps/app/src/dev/catalogue/wallet/index.ts
+index 3514b35..0e11ec6 100644
+--- a/orig/apps/app/src/dev/catalogue/wallet/index.ts
++++ b/real/apps/app/src/dev/catalogue/wallet/index.ts
+@@ -6,9 +6,11 @@ import type { CatalogueSection } from '../registry';
+ import { WALLET_KIT_SECTIONS } from './kitSections';
+ import { WALLET_STACK_SECTIONS } from './stackSections';
+ import { WALLET_TRAY_SECTIONS } from './traySections';
++import { WALLET_RECORD_SECTIONS } from './recordSections';
+ 
+ export const WALLET_SECTIONS: readonly CatalogueSection[] = [
+   ...WALLET_KIT_SECTIONS,
+   ...WALLET_STACK_SECTIONS,
+   ...WALLET_TRAY_SECTIONS,
++  ...WALLET_RECORD_SECTIONS,
+ ];

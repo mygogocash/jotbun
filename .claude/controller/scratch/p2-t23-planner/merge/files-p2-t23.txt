@@ -1,0 +1,10 @@
+apps/app/src/screens/redesign/HomeScreen.tsx
+apps/app/src/screens/redesign/entry/entryHelpers.ts
+apps/app/src/screens/redesign/homeData.render.test.tsx
+apps/app/src/screens/redesign/homeData.ts
+apps/app/src/spend/v1/redesign/availableBalances.ts
+apps/app/src/wallet/home/budgetCardWords.test.ts
+apps/app/src/wallet/home/budgetCardWords.ts
+apps/app/src/wallet/home/copy.ts
+apps/app/src/wallet/home/homeWallets.test.ts
+apps/app/src/wallet/home/homeWallets.ts

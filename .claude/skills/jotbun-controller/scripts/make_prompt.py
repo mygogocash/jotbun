@@ -52,6 +52,21 @@ CLAUDE_CODE = {
     "confirm": ("claudeAgent", "claude-sonnet-5-5", {"effort": "high", "ultracode": False}, "Claude Sonnet 5.5"),
     "second": ("claudeAgent", "claude-opus-5-5", {"effort": "high", "ultracode": False}, "Claude Opus 5.5"),
 }
+# --spread: while Antigravity's Claude pool is empty (11 Nov to about 17 Nov), use what each provider still has (owner,
+# 11 Nov: "find the way to speed up development without my approval"; "Antigravity still have a lot of usages please
+# find the way to maximize"). Antigravity's Gemini pool has room (55% of the week, the 5-hour window full), but its
+# Gemini 4 Argon cap is nearly spent, so Gemini 3.8 Flash High builds, fixes, gives the second review (a different
+# family, as the routing asks) and plans the simpler lanes. Claude Code keeps the quality gates: first and confirming
+# reviews, and planners for hard or money/privacy work (pass --claude-code for those planners). Cursor and Grok are
+# nearly spent (2-3% left on 11 Nov) and are not used.
+SPREAD = {
+    "planner": ("antigravity", "gemini-3.8-flash-high", {}, "Gemini 3.8 Flash"),
+    "implementer": ("antigravity", "gemini-3.8-flash-high", {}, "Gemini 3.8 Flash"),
+    "fixer": ("antigravity", "gemini-3.8-flash-high", {}, "Gemini 3.8 Flash"),
+    "reviewer": ("claudeAgent", "claude-opus-5-5", {"effort": "xhigh", "ultracode": False}, "Claude Opus 5.5"),
+    "confirm": ("claudeAgent", "claude-opus-5-5", {"effort": "high", "ultracode": False}, "Claude Opus 5.5"),
+    "second": ("antigravity", "gemini-3.8-flash-high", {}, "Gemini 3.8 Flash"),
+}
 FINAL_IMPL = ("Your final message must follow the protocol's \"Your final message\" section exactly: the STATUS line first (`STATUS: DONE` or "
               "`STATUS: BLOCKED` with the exact blocker), the commit SHA, RED and GREEN counts, the mutants, each gate command with its result, "
               "SKIPPED items, and deviations.")
@@ -81,8 +96,9 @@ def main():
     p.add_argument("--installed", action="store_true")
     p.add_argument("--lock", action="store_true")
     p.add_argument("--claude-code", action="store_true")
+    p.add_argument("--spread", action="store_true")
     a = p.parse_args()
-    provider, model, options, label = (CLAUDE_CODE if a.claude_code else ROUTES)[a.role]
+    provider, model, options, label = (SPREAD if a.spread else CLAUDE_CODE if a.claude_code else ROUTES)[a.role]
     trailer = f"Co-Authored-By: {label} <noreply@{'google.com' if label.startswith('Gemini') else 'anthropic.com'}>"
     t = task(a.task, a); tl = a.task.lower()
     plan = t["spec"] if t.get("spec") else f"docs/superpowers/plans/{t['plan_file']}, \"### {t['heading']}\" (line {t['line']})"
@@ -119,13 +135,13 @@ def main():
         if a.lock: L += [LOCK, ""]
         L += [RULES, "",
               f"Write your review to {C}/reviews/{a.task}{suffix}.md: findings ranked blocker, major, minor and nit, each with evidence (file and line, a failing probe, or the plan clause), and \"Notes for later tasks\" if anything should carry. Scratch folder: {C}/scratch/{tl}-{suffix[1:] or 'review'}/ (mkdir -p).",
-              "End your final message with exactly `VERDICT: Approved` or `VERDICT: Needs fixes` (any blocker or major means Needs fixes)."]
+              "End the review file and your final message, each with a last line that is exactly `VERDICT: Approved` or `VERDICT: Needs fixes` (any blocker or major means Needs fixes). The controller watches the file for that line, so a heading such as `## Verdict` is not enough."]
     else:
         L += [f"You are the planning step ({label}) for Jotbun task {a.task} \"{t['title']}\". A controller session reads only your final message.", "",
               f"Read {proto} first; it is binding (durable paths under .claude/controller/, never /private/tmp; R87: the receipt is its own file). You are read-only in the repo. The integration code is at {W}/p1a-vault-core (origin/claude/p1a-vault-core is at {a.head}; run `git fetch`; read-only git; proofs in a scratch `git archive` copy).", "",
               f"The spec: {plan}, with the plan's Global Constraints and every ruling it cites, and the merged receipts it builds on. Grep {C}/followups.md for {a.task}.", "",
               "First decide readiness: are all its \"Starts after\" tasks merged; does it need a package, Cloudflare resource, owner decision or account setting not yet available? If not ready, report BLOCKED with the exact reason.", "",
-              f"If ready, write an implementation brief for a {ROUTES['implementer'][3]} implementer at {C}/briefs/{a.task}.md, in the shape of {C}/briefs/{a.shape or 'P2-T2'}.md. The orchestrator creates the worktree {W}/{a.wt} on branch {a.branch} from origin/claude/p1a-vault-core. The brief: ordered test-first steps with exact files, exported names and signatures; the RED tests; the code; the fast local gate of R100 (typecheck, the focused files RED to GREEN, test:app and test:unit or test:edge, build:edge, and export:web only when routes or the app entry change; whole suites run in CI, so prove no whole-suite totals and write none into the brief); the receipt at docs/implementation/receipts/{a.task}.md; the commit summary line; and a \"Planner rulings\" section (P1, P2, ...) with the reason for each.",
+              f"If ready, write an implementation brief for a {(SPREAD if a.spread else CLAUDE_CODE if a.claude_code else ROUTES)['implementer'][3]} implementer at {C}/briefs/{a.task}.md, in the shape of {C}/briefs/{a.shape or 'P2-T2'}.md. The orchestrator creates the worktree {W}/{a.wt} on branch {a.branch} from origin/claude/p1a-vault-core. The brief: ordered test-first steps with exact files, exported names and signatures; the RED tests; the code; the fast local gate of R100 (typecheck, the focused files RED to GREEN, test:app and test:unit or test:edge, build:edge, and export:web only when routes or the app entry change; whole suites run in CI, so prove no whole-suite totals and write none into the brief); the receipt at docs/implementation/receipts/{a.task}.md; the commit summary line; and a \"Planner rulings\" section (P1, P2, ...) with the reason for each.",
               f"Prove it in a scratch copy under {C}/scratch/{tl}-planner/ (RED on typed stubs, GREEN, every mutant killed, the fast local gate) with verified files (real/, stubs/, orig/ or base/, diffs/ with one <path with / as _>.diff per changed shared file) and SHA256SUMS. Keep *.log files out of that SHA256SUMS (they are gitignored and lost in state commits); list them in SHA256SUMS.logs.", ""]
         if a.lock: L += [LOCK, ""]
         L += [RULES, "", "Final message: first line READY or BLOCKED: <reason>; the brief path; \"Files:\" (mark shared); size S/M/L; up to 5 lines of summary."]

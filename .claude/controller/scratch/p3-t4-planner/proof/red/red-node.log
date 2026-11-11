@@ -1,0 +1,176 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t4-planner/red/apps/edge
+
+ × test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > every request goes to the gateway with logging and caching off 21ms
+   → expected null to be 'false' // Object.is equality
+ × test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > the gateway token is sent only when set 1ms
+   → expected null to be 'Bearer t0k' // Object.is equality
+ × test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > a call that outlives its time fails as a timeout and is recorded 5001ms
+   → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ × test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > a rate limit fails at once as rate_limited with its wait 3ms
+   → expected 'other' to be 'rate_limited' // Object.is equality
+ × test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > a request with less than 2 s left makes no call 1ms
+   → expected undefined to be an instance of DeadlinePassed
+ × test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > a child deadline ends at the earlier of its cap and its parent 1ms
+   → expected +0 to be 25000 // Object.is equality
+ × test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > callFailure names each failure 0ms
+   → expected 'other' to be 'timeout' // Object.is equality
+ × test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > the trace keeps the reply's model, status, stop reason and tokens 1ms
+   → expected [] to have a length of 1 but got +0
+ × test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > transportFromEnv is null unless AI is on and keyed 0ms
+   → expected null not to be null
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > every request goes to the gateway with logging and caching off
+AssertionError: expected null to be 'false' // Object.is equality
+
+- Expected:
+"false"
+
++ Received:
+null
+
+ ❯ test/ai-transport.test.ts:61:47
+     59|
+     60|     const headers = new Headers(capturedHeaders)
+     61|     expect(headers.get('cf-aig-collect-log')).toBe('false')
+       |                                               ^
+     62|     expect(headers.get('cf-aig-skip-cache')).toBe('true')
+     63|     expect(headers.get('cf-aig-authorization')).toBeNull()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+ FAIL  test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > the gateway token is sent only when set
+AssertionError: expected null to be 'Bearer t0k' // Object.is equality
+
+- Expected:
+"Bearer t0k"
+
++ Received:
+null
+
+ ❯ test/ai-transport.test.ts:87:79
+     85|     })
+     86|     await withToken.send(sampleParams, { timeoutMs: 5_000 })
+     87|     expect(new Headers(capturedHeadersWithToken).get('cf-aig-authoriza…
+       |                                                                               ^
+     88|
+     89|     const withoutToken = anthropicTransport({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯
+
+ FAIL  test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > a call that outlives its time fails as a timeout and is recorded
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ test/ai-transport.test.ts:97:3
+     95|   })
+     96|
+     97|   it('a call that outlives its time fails as a timeout and is recorded…
+       |   ^
+     98|     const hangingFetch = async (_url: unknown, init?: RequestInit): Pr…
+     99|       return new Promise<Response>((_resolve, reject) => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯
+
+ FAIL  test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > a rate limit fails at once as rate_limited with its wait
+AssertionError: expected 'other' to be 'rate_limited' // Object.is equality
+
+Expected: "rate_limited"
+Received: "other"
+
+ ❯ test/ai-transport.test.ts:178:33
+    176|     expect(fetchCount).toBe(1)
+    177|     expect(caught).toBeDefined()
+    178|     expect(callFailure(caught)).toBe('rate_limited')
+       |                                 ^
+    179|
+    180|     expect(trace.calls).toHaveLength(1)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯
+
+ FAIL  test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > a request with less than 2 s left makes no call
+AssertionError: expected undefined to be an instance of DeadlinePassed
+ ❯ test/ai-transport.test.ts:214:20
+    212|     }
+    213|
+    214|     expect(caught).toBeInstanceOf(DeadlinePassed)
+       |                    ^
+    215|     expect(fetchCalled).toBe(false)
+    216|     expect(trace.calls).toHaveLength(1)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯
+
+ FAIL  test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > a child deadline ends at the earlier of its cap and its parent
+AssertionError: expected +0 to be 25000 // Object.is equality
+
+- Expected
++ Received
+
+- 25000
++ 0
+
+ ❯ test/ai-transport.test.ts:227:34
+    225|     const parent1 = new AiDeadline(55_000, () => clock)
+    226|     const child1 = parent1.child(25_000)
+    227|     expect(child1.remainingMs()).toBe(25_000)
+       |                                  ^
+    228|
+    229|     let clock2 = 100_000
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/9]⎯
+
+ FAIL  test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > callFailure names each failure
+AssertionError: expected 'other' to be 'timeout' // Object.is equality
+
+Expected: "timeout"
+Received: "other"
+
+ ❯ test/ai-transport.test.ts:237:47
+    235|
+    236|   it('callFailure names each failure', () => {
+    237|     expect(callFailure(new DeadlinePassed())).toBe('timeout')
+       |                                               ^
+    238|     expect(callFailure(new Anthropic.APIUserAbortError())).toBe('timeo…
+    239|     expect(callFailure(new Anthropic.APIConnectionTimeoutError())).toB…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯
+
+ FAIL  test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > the trace keeps the reply's model, status, stop reason and tokens
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ test/ai-transport.test.ts:279:25
+    277|
+    278|     expect(reply.model).toBe('claude-haiku-5-5')
+    279|     expect(trace.calls).toHaveLength(1)
+       |                         ^
+    280|     const [call] = trace.calls
+    281|     expect(call.model).toBe('claude-haiku-5-5')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/9]⎯
+
+ FAIL  test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > transportFromEnv is null unless AI is on and keyed
+AssertionError: expected null not to be null
+ ❯ test/ai-transport.test.ts:297:25
+    295|
+    296|     const enabled = transportFromEnv({ AI_ENABLED: 'true', ANTHROPIC_A…
+    297|     expect(enabled).not.toBeNull()
+       |                         ^
+    298|     expect(typeof enabled?.send).toBe('function')
+    299|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/9]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  9 failed (9)
+   Start at  22:11:07
+   Duration  5.43s (transform 23ms, setup 0ms, import 216ms, tests 5.03s, environment 0ms)
+
