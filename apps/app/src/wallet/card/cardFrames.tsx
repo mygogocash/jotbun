@@ -11,10 +11,13 @@
 // the page has laid out).
 //
 // One view per wallet id: the last one registered. A view that leaves forgets
-// its wallet's frame, never another view's, and a measurement that lands after
-// its view has left is never given out. Outside a provider nothing is kept:
-// every frame is null and measure() does nothing, so a card anywhere (the
-// catalogue, a test) needs no provider. WalletShell mounts it (P2-T18).
+// its wallet's frame, never another view's, and its own frame too, and a
+// measurement that lands while its view is not registered is dropped, so a
+// view that comes back (React shows a hidden subtree again with the same
+// views) answers only what is measured after it is back. Outside a provider
+// nothing is kept: every frame is null and measure() does nothing, so a card
+// anywhere (the catalogue, a test) needs no provider. WalletShell mounts it
+// (P2-T18).
 import { createContext, useCallback, useContext, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { HostInstance } from 'react-native';
@@ -37,25 +40,27 @@ function createRegistry(): Registry {
   const views = new Map<string, HostInstance>();
   // Keyed by the view, so a frame measured for a view that has left never answers for its wallet.
   const frames = new WeakMap<HostInstance, CardFrame>();
-  const measureView = (view: HostInstance) => {
+  const measureView = (walletId: string, view: HostInstance) => {
     view.measureInWindow((x, y, width, height) => {
-      frames.set(view, { x, y, width, height });
+      // An answer that lands while its view is away is dropped.
+      if (views.get(walletId) === view) frames.set(view, { x, y, width, height });
     });
   };
   return {
     register(walletId, view) {
       views.set(walletId, view);
-      measureView(view);
+      measureView(walletId, view);
     },
     forget(walletId, view) {
       if (views.get(walletId) === view) views.delete(walletId);
+      frames.delete(view);
     },
     frameOf(walletId) {
       const view = views.get(walletId);
       return view === undefined ? null : (frames.get(view) ?? null);
     },
     measure() {
-      for (const view of views.values()) measureView(view);
+      for (const [walletId, view] of views) measureView(walletId, view);
     },
   };
 }
