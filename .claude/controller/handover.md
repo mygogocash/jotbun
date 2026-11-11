@@ -4,6 +4,15 @@ Durable folder: `/Users/kunanonjarat/Developer/jotbun/.claude/controller/` (prot
 
 Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vault-core`), head 0bd5659 (controller state after 1D-T8's dispatch). Nothing outside `.claude/` changed since 606e131. No PR is open into the integration branch; only #70 into main.
 
+## 11 Nov 12:05 Bangkok: #395 and #396 fix rounds pulled forward onto Cursor
+
+Fronk wants the Mac Studio used; it was nearly idle (load about 2 on 18 cores). Jot pulled part of the 13:17 batch forward:
+- **#395 fixer (P2-T12):** Cursor Auto (`cursor` / `default`), thread `mcp:launch:daac26a10154da8570c4fb1aa7559780d8de1c067aad7f2884961f0f916aa432`, WT p2-t12, prompt `scratch/dispatch/P2-T12-fixer.prompt.md`.
+- **#396 fixer (fix-download-aborts):** Cursor Auto, thread `mcp:launch:352d7abf218297cb7df80fcac22d8b34cb1b2daca14350de6a74de042059850d`, WT fix-download-aborts, prompt `scratch/dispatch/fix-download-aborts-fixer.prompt.md`. It takes the heavy lock.
+- Each first keeps the leftover uncommitted edits from the 08:16 run only if they match the brief's kit byte for byte, discards them otherwise, and says which in the receipt. Trailer: `Co-Authored-By: Cursor Auto <noreply@cursor.com>`. Local commits only.
+- **13:17 (scheduled wake-up):** P2-T14 and P2-T33 on Antigravity Sonnet 5.5 High; 1B-T13 on Antigravity Opus 5.5 High if READY and reviewed. #395 and #396 are skipped there while their Cursor runs are active.
+- **Merging is paused:** nothing merges, even under the low-risk rule, until Fronk confirms that rule in the controller's chat. #393 stays watched for Fronk's own merge.
+
 ## 11 Nov 12:00 Bangkok: 1B-T13's proofs passed; its planner stopped before finishing
 
 The 1B-T13 planner (Claude Code thread `mcp:launch:9ebaef6c…`) hit its Claude Code 5-hour limit, which resets at 12:50 ICT, before posting a verdict. No jotbun test process is alive and the heavy lock is free.
