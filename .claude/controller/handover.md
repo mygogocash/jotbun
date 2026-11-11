@@ -24,6 +24,15 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**22:35: P2-T25's Flash plan was sent back for a rework. P2-T32's Flash planner was steered before writing its tests.**
+- **P2-T25 READY, not accepted.**
+  - The kit checks at `d16bc1d0` (27 OK, 3 `orig/` identical), but its RED `logs/red.log` is 7 `TestingLibraryElementError` out of 8, against P14(d)'s rule.
+  - Its 9 mutants are thin.
+  - Sent back with `t3_thread_send` (run 2) to the same Flash thread `mcp:launch:b7caf9c09b556ad44fb73e8d705c7ee2dac680aebe6c48f4b7e50212f7ca86f8`: asserting lookups, one mutant per guard, re-prove, new sums, READY again. Its WT `p2-t25` is ready.
+- **P2-T32's planner** (`mcp:launch:9ff21d2cf9701cfc761338a5ce383b6978ad2f8c6a551f6ab31665478fbd357e`) was steered with the same two rules.
+- `planner-flash-notes-20261111.md` and lessons.md now state the rule ("check the RED failure types before accepting any plan").
+- `watch_agents.sh` gained `newer:<path>:<epoch>`, for a reworked brief that already exists.
+
 **22:25: P2-T23 READY (Claude Code Opus planner). P1 to P15 accepted; its Flash builder is running.**
 - **The brief:** `briefs/P2-T23.md`, 59 KB, size M. The kit `scratch/p2-t23-planner/` checks at `29aba3dd` with 34 OK, and its 2 `orig/` files are identical.
 - **The proofs:** RED 14 of 14 Node and 6 of 6 render cases, all assertions; 77 of 77 mutants killed.

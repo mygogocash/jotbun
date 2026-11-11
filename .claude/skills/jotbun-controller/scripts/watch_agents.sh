@@ -26,6 +26,12 @@ while :; do
       if [ -f "$f" ]; then echo "FILE $f"; exit 0; fi
       continue;;
     esac
+    # newer:<path>:<epoch>: fire once the file changes after <epoch> (a reworked brief that already existed).
+    case "$pair" in newer:*)
+      spec=${pair#newer:}; f=${spec%:*}; t=${spec##*:}
+      if [ -f "$f" ] && [ "$(stat -f %m "$f")" -gt "$t" ]; then echo "NEWER $f"; exit 0; fi
+      continue;;
+    esac
     case "$pair" in verdict:*)
       f=${pair#verdict:}
       # The exact last line the template asks for, or the older "## Verdict" / "**Verdict:**" forms reviewers also use.
