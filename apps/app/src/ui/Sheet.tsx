@@ -13,7 +13,9 @@
 // place of its backdrop and panel, and while the app is locked the cover
 // carries the lock screen: a Modal draws above the app, so this is where a
 // person whose sheet is open meets it. Nothing of the sheet is named, and
-// nothing asks to close it; its content is its host's, so nothing is lost.
+// nothing asks to close it. Its children unmount meanwhile: what the host
+// holds is kept, but a child that keeps its own state (a form's step, a typed
+// code) starts again when the cover lifts (P2-T33's second review, m1).
 //
 // ConfirmSheet states the consequence of an action before it happens. When the
 // action is destructive, the safe choice (cancel) keeps the ink fill and the
