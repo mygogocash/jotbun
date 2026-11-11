@@ -36,6 +36,10 @@
 - **Metro's printed module count on a warm cache.** A web export that ends in well under a second can print a short count, such as 4604 for 4788, while its bundles are byte-identical. Seen on P2-T10's gate, 9 Nov. Rule it a flake when a re-run prints the expected count and the bundle hashes match. Briefs that need an exact count can pass `--clear`.
 - **R-B flake.** `attachments.integration.spec.ts` "two records retaining one image at once keep one receipt, made by one copy" (expected 1 write, got 2) is a known race in frozen `apps/api` (migration 0017's two-statement check; owner decision R-B pending). Rerun the failed job once: `gh run rerun <run> --failed`.
 - **The retry_after edge.** The same file's case "copying is bounded › serializes reservations: five at once from one account reserve exactly four" can fail `expect(limited.retry_after).toBeLessThanOrEqual(180)` with 181. It was seen on #396's SQL job, 11 Nov, run 42992817954, and passed on a rerun. It is frozen `apps/api`, so rule it a flake for any PR that does not touch `apps/api`, and rerun the failed job once.
+- **Candidate flake, the shared write budget (12 Nov).** `shared-rate-limit.integration.spec.ts`, "two API replicas share one write budget per binding" (Expected false, Received true).
+  - It failed on #408's SQL job (run 43043193178, head `31c5c5ed`, 14:59 UTC), while the Mac was under heavy load.
+  - That head changes nothing in `apps/api` over its base, so the controller reran it once.
+  - If it fails again on a head that doesn't touch the rate limiter, record it as a known flake beside R-B.
 - **The Mac sleeps after one minute idle, which takes the local CI and the agents down (11 to 12 Nov, 23:08 to 00:31).**
   - **Signs:**
     - both runners are `offline` on GitHub while their containers say `Up`;
