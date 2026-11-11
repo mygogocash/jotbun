@@ -36,6 +36,18 @@
 - **Metro's printed module count on a warm cache.** A web export that ends in well under a second can print a short count, such as 4604 for 4788, while its bundles are byte-identical. Seen on P2-T10's gate, 9 Nov. Rule it a flake when a re-run prints the expected count and the bundle hashes match. Briefs that need an exact count can pass `--clear`.
 - **R-B flake.** `attachments.integration.spec.ts` "two records retaining one image at once keep one receipt, made by one copy" (expected 1 write, got 2) is a known race in frozen `apps/api` (migration 0017's two-statement check; owner decision R-B pending). Rerun the failed job once: `gh run rerun <run> --failed`.
 - **The retry_after edge.** The same file's case "copying is bounded › serializes reservations: five at once from one account reserve exactly four" can fail `expect(limited.retry_after).toBeLessThanOrEqual(180)` with 181. It was seen on #396's SQL job, 11 Nov, run 42992817954, and passed on a rerun. It is frozen `apps/api`, so rule it a flake for any PR that does not touch `apps/api`, and rerun the failed job once.
+- **Claude Code's 5-hour limit stops everything on it, the controller included (12 Nov, 01:15 to 03:10).**
+  - **What happened:** with about six Opus xhigh agents running at once plus the controller, the window ran out about three hours after it started.
+  - Every Claude Code thread paused with "Claude usage limit reached ... resets 3:10am", and the controller's own session ended.
+  - At the reset, T3 resumed every paused thread at once. That included threads that had already finished (a confirming review whose PR had merged, a DONE builder), and those reruns spend the new window on nothing.
+  - **On waking:**
+    1. List the threads.
+    2. Stop each resumed thread that has no work left, with `t3_thread_interrupt` and `stop: true`.
+    3. Check CI and merge whatever went green while you were down.
+  - **Routing when the Opus budget is the limit:**
+    - Keep Opus for first reviews, confirming reviews and the money and privacy planners.
+    - Plan UI tasks on Gemini 3.8 Flash, with the checklist in `scratch/dispatch/flash-ui-planner-checklist-20261112.md`, then give each brief an Opus brief review before any build. That costs less Opus than an Opus plan, and catches the gaps the 11 Nov Flash UI plans had.
+    - Builders go to Flash or Haiku, and second reviews to Flash.
 - **Candidate flake, the shared write budget (12 Nov).** `shared-rate-limit.integration.spec.ts`, "two API replicas share one write budget per binding" (Expected false, Received true).
   - It failed on #408's SQL job (run 43043193178, head `31c5c5ed`, 14:59 UTC), while the Mac was under heavy load.
   - That head changes nothing in `apps/api` over its base, so the controller reran it once.

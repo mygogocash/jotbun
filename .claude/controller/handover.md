@@ -24,6 +24,26 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**03:25 (12 Nov): Claude Code's 5-hour limit stopped everything from 01:15 to 03:10, the controller included. #406 (P2-T33) MERGED; the head is `a00fff7`.**
+- **The limit.** At 01:15 every Claude Code thread paused with "resets 3:10am", and the controller's session ended.
+  - At 03:10 T3 resumed them all, including the finished P2-T14 confirming review and the DONE P2-T20 builder. Both were stopped.
+  - The Mac stayed awake (caffeinate), and CI ran on.
+- **#406:** CI passed 9 of 9 at `c07be421`. Merged as `a00fff7` and promoted as **#417**. Stack #379 holds 21 PRs. The followups are marked merged.
+- **#416 (P2-T20):** the integration head was merged in as `f6a2b681`.
+  - `index.ts` is ADD, LIST and then LOCK, in plan order (sha256 e086e8a0).
+  - On the merged tree: tsc exit 0, and walletHarness, WalletsList, Lock and Tray pass 86 of 86.
+  - CI is restarting on it. The Opus reviewer (resumed) was told the head moved.
+  - The **Flash second review** is dispatched: `mcp:launch:ea82daf6f5087aab2ff4633f122542ab465c51e41f8ec00d1d201c04015de3d4`, writing `reviews/P2-T20-second.md`.
+- **Antigravity is back** (its quota reset at about 02:43). The P2-T29 and P2-T31 Flash planners were resumed with `scratch/dispatch/flash-ui-planner-checklist-20261112.md`.
+  - That file gives the new head and merge proofs with #416, and the ten things the 11 Nov Flash UI plans missed.
+  - **Each brief gets an Opus brief review before any build**, to save the Opus budget (lessons.md).
+- **Running on Opus** (resumed at 03:10):
+  - the P2-T25 fix planner;
+  - the P2-T32 fix planner (told `a00fff7`, and merge proofs with #416 and #412);
+  - the P3-T2 planner;
+  - the P3-T5 planner;
+  - the P2-T20 reviewer.
+
 **01:17 (12 Nov): P2-T20 is built and opened as #416, with its Opus review running.**
 - **The build:** the Haiku builder reported DONE at `4eb15b3e`.
   - RED was all assertions. GREEN: Node 8, render 16, neighbours 177, catalogue 32. All 84 mutants were killed, and the R100 gate passed (193 focused render tests and the web export).
