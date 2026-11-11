@@ -1,0 +1,299 @@
+
+> gogospend-app@0.1.0 test:unit
+> node scripts/test-unit.mjs src/wallet/lock/lockModel.test.ts
+
+(node:47853) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/apps/app/src/wallet/lock/lockModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ with the lock on, every app open locks: a cold start and every return from the background (0.958833ms)
+✖ inactive only covers, so the Face ID prompt cannot lock again (0.117625ms)
+✖ with the lock off nothing locks or covers (0.093125ms)
+✖ unlocked unlocks and keeps a cover until the app is in front; disabled clears both, with the lock on or off (0.078417ms)
+✖ AppState's active, inactive and background are lock events; anything else says nothing (0.129791ms)
+✖ an answer that does not unlock says why; unavailable reads the phone first, and only a phone that says it cannot lock turns the lock off (0.078042ms)
+✖ a screen names the phone's method, or the passcode while the phone has not said, and each method has its name, line and body (0.101834ms)
+✖ the setup switch waits for the phone, stays off on a phone that cannot lock and says why, and can always turn a lock off (0.073416ms)
+✔ the lock's Thai lines are the plan's, and only three more (0.115125ms)
+✖ the lock wraps private mode, so nothing that shows an amount renders above it (0.094375ms)
+✖ the wallet root's order: the gesture root, the motion answer, the lock with the app's own port while the wallet area is on, then private mode; with the area off, private mode inside the motion answer (0.141459ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 1
+ℹ fail 10
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 115.488916
+
+✖ failing tests:
+
+test at src/wallet/lock/lockModel.test.ts:16:1
+✖ with the lock on, every app open locks: a cold start and every return from the background (0.958833ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   covered: true,
+  -   covered: false,
+      locked: true
+    }
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/apps/app/src/wallet/lock/lockModel.test.ts:20:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { locked: true, covered: true },
+    expected: { locked: true, covered: false },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/wallet/lock/lockModel.test.ts:23:1
+✖ inactive only covers, so the Face ID prompt cannot lock again (0.117625ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+      covered: true,
+  +   locked: true
+  -   locked: false
+    }
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/apps/app/src/wallet/lock/lockModel.test.ts:24:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { locked: true, covered: true },
+    expected: { locked: false, covered: true },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/wallet/lock/lockModel.test.ts:30:1
+✖ with the lock off nothing locks or covers (0.093125ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   covered: true,
+  +   locked: true
+  -   covered: false,
+  -   locked: false
+    }
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/apps/app/src/wallet/lock/lockModel.test.ts:31:75)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { locked: true, covered: true },
+    expected: { locked: false, covered: false },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/wallet/lock/lockModel.test.ts:34:1
+✖ unlocked unlocks and keeps a cover until the app is in front; disabled clears both, with the lock on or off (0.078417ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+      covered: true,
+  +   locked: true
+  -   locked: false
+    }
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/apps/app/src/wallet/lock/lockModel.test.ts:35:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { locked: true, covered: true },
+    expected: { locked: false, covered: true },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/wallet/lock/lockModel.test.ts:47:1
+✖ AppState's active, inactive and background are lock events; anything else says nothing (0.129791ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+  +   null,
+  +   null,
+  +   null
+  -   {
+  -     type: 'active'
+  -   },
+  -   {
+  -     type: 'inactive'
+  -   },
+  -   {
+  -     type: 'background'
+  -   }
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/apps/app/src/wallet/lock/lockModel.test.ts:48:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ null, null, null ],
+    expected: [ { type: 'active' }, { type: 'inactive' }, { type: 'background' } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/wallet/lock/lockModel.test.ts:52:1
+✖ an answer that does not unlock says why; unavailable reads the phone first, and only a phone that says it cannot lock turns the lock off (0.078042ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   step: 'unlock'
+  -   note: 'lock.tryAgain',
+  -   step: 'stay'
+    }
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/apps/app/src/wallet/lock/lockModel.test.ts:54:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { step: 'unlock' },
+    expected: { step: 'stay', note: 'lock.tryAgain' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/wallet/lock/lockModel.test.ts:64:1
+✖ a screen names the phone's method, or the passcode while the phone has not said, and each method has its name, line and body (0.101834ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'face'
+  - 'fingerprint'
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/apps/app/src/wallet/lock/lockModel.test.ts:66:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'face',
+    expected: 'fingerprint',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/wallet/lock/lockModel.test.ts:78:1
+✖ the setup switch waits for the phone, stays off on a phone that cannot lock and says why, and can always turn a lock off (0.073416ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+      checked: false,
+  +   disabled: false,
+  -   disabled: true,
+      needsPasscode: false
+    }
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/apps/app/src/wallet/lock/lockModel.test.ts:83:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { checked: false, disabled: false, needsPasscode: false },
+    expected: { checked: false, disabled: true, needsPasscode: false },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/wallet/lock/lockModel.test.ts:123:1
+✖ the lock wraps private mode, so nothing that shows an amount renders above it (0.094375ms)
+  AssertionError [ERR_ASSERTION]: WalletRoot draws the lock
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/apps/app/src/wallet/lock/lockModel.test.ts:125:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at src/wallet/lock/lockModel.test.ts:130:1
+✖ the wallet root's order: the gesture root, the motion answer, the lock with the app's own port while the wallet area is on, then private mode; with the area off, private mode inside the motion answer (0.141459ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /<GestureHandlerRootView style=\{\{ flex: 1 \}\}> <WalletMotionProvider> \{isRedesignEnabled\('wallet'\) \? \( <LockGate port=\{getAppLocalAuth\(\)\}> <PrivateModeProvider>\{children\}<\/PrivateModeProvider> <\/LockGate> \) : \( <PrivateModeProvider>\{children\}<\/PrivateModeProvider> \)\} <\/WalletMotionProvider> <\/GestureHandlerRootView>/. Input:
+  
+  'export function WalletRoot({ children }: { children: ReactNode }) { return ( <GestureHandlerRootView style={{ flex: 1 }}> <WalletMotionProvider> <PrivateModeProvider>{children}</PrivateModeProvider> </WalletMotionProvider> </GestureHandlerRootView> ); } '
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/apps/app/src/wallet/lock/lockModel.test.ts:132:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'export function WalletRoot({ children }: { children: ReactNode }) { return ( <GestureHandlerRootView style={{ flex: 1 }}> <WalletMotionProvider> <PrivateModeProvider>{children}</PrivateModeProvider> </WalletMotionProvider> </GestureHandlerRootView> ); } ',
+    expected: /<GestureHandlerRootView style=\{\{ flex: 1 \}\}> <WalletMotionProvider> \{isRedesignEnabled\('wallet'\) \? \( <LockGate port=\{getAppLocalAuth\(\)\}> <PrivateModeProvider>\{children\}<\/PrivateModeProvider> <\/LockGate> \) : \( <PrivateModeProvider>\{children\}<\/PrivateModeProvider> \)\} <\/WalletMotionProvider> <\/GestureHandlerRootView>/,
+    operator: 'match',
+    diff: 'simple'
+  }
+npm error Lifecycle script `test:unit` failed with error:
+npm error code 1
+npm error path /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/apps/app
+npm error workspace gogospend-app@0.1.0
+npm error location /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/apps/app
+npm error command failed
+npm error command sh -c node scripts/test-unit.mjs src/wallet/lock/lockModel.test.ts

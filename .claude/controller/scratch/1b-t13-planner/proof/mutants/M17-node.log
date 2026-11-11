@@ -1,0 +1,34 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge
+
+ × test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container 3ms
+   → expected true to be false // Object.is equality
+ ✓ test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > the Workers-runtime tests load the vault module, never TanStack Start, on the one config (B15) 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ test/c1-shape.test.ts:41:42
+     39|     expect(config.queues.consumers.map((c: { queue: string }) => c.que…
+     40|     expect(config.containers.map((c: { class_name: string }) => c.clas…
+     41|     expect(config.dev.enable_containers).toBe(false)
+       |                                          ^
+     42|     // The 1B-T12 review's n7: the parity copy (B13, test/support/vaul…
+     43|     // consumers and containers only. A Cron Trigger added here would …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  09:54:50
+   Duration  148ms (transform 10ms, setup 0ms, import 15ms, tests 4ms, environment 0ms)
+

@@ -1,0 +1,9 @@
+
+> gogospend@0.0.0 typecheck:app
+> npm run typecheck -w gogospend-app
+
+
+> gogospend-app@0.1.0 typecheck
+> tsc --noEmit
+
+exit 0

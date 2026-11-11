@@ -1,0 +1,3 @@
+K1 KILLED: the lock's sections not in the wallet list [index.ts] -> Tests 1 failed | 23 passed (24); first failing: "the lock's sections come after the tray's, together, and each draws its screen on a setting it holds"; AssertionError x1; restored sha256 equal
+K2 KILLED: the lock's sections before the tray's [index.ts] -> Tests 1 failed | 23 passed (24); first failing: "the lock's sections come after the tray's, together, and each draws its screen on a setting it holds"; AssertionError x1; restored sha256 equal
+2 killed, 0 survived, 0 not as expected

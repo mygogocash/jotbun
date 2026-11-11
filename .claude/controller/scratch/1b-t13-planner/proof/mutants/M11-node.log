@@ -1,0 +1,40 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge
+
+ × test/ready.test.ts > /live and /ready (B15) > /live answers 200 with no-store 4ms
+   → expected null to be 'no-store' // Object.is equality
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready is 200 with every setting and a readable config:v1, also when config:v1 is absent 2ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready reads config:v1 by its key 1ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_ISSUER 1ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_AUDIENCE 0ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_JWKS_URL 0ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready is 503 without COMMAND_DIGEST_KEY 0ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready is 503 when config:v1 cannot be read, and the log names only the failure class 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/ready.test.ts > /live and /ready (B15) > /live answers 200 with no-store
+AssertionError: expected null to be 'no-store' // Object.is equality
+
+- Expected:
+"no-store"
+
++ Received:
+null
+
+ ❯ test/ready.test.ts:35:46
+     33|     const res = live()
+     34|     expect(res.status).toBe(200)
+     35|     expect(res.headers.get('cache-control')).toBe('no-store')
+       |                                              ^
+     36|     expect(await res.json()).toEqual({ status: 'live' })
+     37|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+   Start at  09:54:31
+   Duration  467ms (transform 275ms, setup 0ms, import 325ms, tests 10ms, environment 0ms)
+

@@ -1,11 +1,13 @@
+import { env } from 'cloudflare:workers'
 import { createFileRoute } from '@tanstack/react-router'
 
-import { handleV1 } from '../../server/worker'
+import { handleVaultV1 } from '../../v1/handler'
+import type { V1Env } from '../../v1/env'
 
-// Every /v1 request goes through one dispatcher, so every route's access class
-// and gates live in one table (server/app/routes.ts), as the API checks at
-// startup that no route is unclassified.
-const handle = ({ request }: { request: Request }) => handleV1(request)
+// Every /v1 request goes to the vault's front door (C1): the route table
+// (src/v1/routes.ts) holds each route's access class and gates, the token
+// names the caller's UserVault, and the vault answers.
+const handle = ({ request }: { request: Request }) => handleVaultV1(request, env as unknown as V1Env)
 
 export const Route = createFileRoute('/v1/$')({
   server: {

@@ -1,7 +1,8 @@
 # Controller briefs quote unified diffs, whose blank context lines are a single space.
 .claude/controller/briefs/*.md -whitespace
-# Planner kits hold unified diffs and patches, whose context lines may be a single space.
-.claude/controller/scratch/** -whitespace
+# Planner kits hold unified diffs and patches, whose context lines may be a single space, and merge demos with
+# conflict markers on purpose. git diff --check then flags only 32-character markers, which a real conflict gets.
+.claude/controller/scratch/** -whitespace conflict-marker-size=32
 # The build controller's state and skill (handover, briefs, reviews, kits). GitHub collapses generated files in
 # pull request diffs, so the owner's review of a promotion PR shows the task's product changes first.
 .claude/** linguist-generated=true

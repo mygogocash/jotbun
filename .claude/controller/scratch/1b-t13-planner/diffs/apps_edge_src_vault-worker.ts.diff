@@ -1,0 +1,43 @@
+--- a/apps/edge/src/roles/vault.ts
++++ b/apps/edge/src/vault-worker.ts
+@@ -1,24 +1,27 @@
+ // The vault Worker (the API's per-person ledger, moved to one Durable Object
+-// per person: src/vault). It runs as its own Worker until Phase 1B. Its /v1
+-// front door (src/v1) verifies the token and forwards each call to the caller's
+-// UserVault; anything else answers 404, and GET /live is the health check.
++// per person: src/vault). Since C1 it runs inside the HTTP Worker, whose entry
++// (src/server.ts) re-exports its classes and queue handler; the Workers-runtime
++// tests load this module as their `main`, so they never load TanStack Start
++// (B15). Its /v1 front door (src/v1) verifies the token and forwards each call
++// to the caller's UserVault; anything else answers 404, and GET /live is the
++// health check.
+ //
+-// The UserVault class is exported from this entry because the Durable Object
+-// binding (wrangler.vault.jsonc) names it.
++// The classes are exported from this entry because the Durable Object, Workflow
++// and container bindings (wrangler.jsonc) name them.
+ import { setLogSink } from '@api/common/safe-request-logger'
+ 
+-import { handleParseBatch } from '../background/parse-consumer'
+-import type { ParseMessage } from '../background/parse-consumer'
+-import { handleVaultV1 } from '../v1/handler'
+-import type { V1Env } from '../v1/env'
++import { handleParseBatch } from './background/parse-consumer'
++import type { ParseMessage } from './background/parse-consumer'
++import { handleVaultV1 } from './v1/handler'
++import type { V1Env } from './v1/env'
+ 
+-export { UserVault } from '../vault/user-vault'
++export { UserVault } from './vault/user-vault'
+ // The stateless parser's Durable Object, with its container (1B-T5).
+-export { StatementParser } from '../background/statement-parser'
++export { StatementParser } from './background/statement-parser'
+ // The export Workflow (1B-T6); the EXPORT_WORKFLOW binding names this class.
+-export { ExportWorkflow } from '../background/export-workflow'
++export { ExportWorkflow } from './background/export-workflow'
+ // The snapshot Workflow (1B-T8); the SNAPSHOT_WORKFLOW binding names this class.
+-export { SnapshotWorkflow } from '../background/snapshot-workflow'
++export { SnapshotWorkflow } from './background/snapshot-workflow'
+ 
+ // The API's logger writes JSON lines to a sink; the Worker's sink is console.
+ setLogSink((line) => console.log(line))

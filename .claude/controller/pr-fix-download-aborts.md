@@ -22,6 +22,11 @@
     - sixteen aborted uploads, then an upload answers 202.
 - **Residual (P9):** `waitUntil` keeps a request at most 30 s after its client goes away. A copy still running 30 s after its client left would be cut and keep its slot. This cannot be shown locally; the receipt names it.
 - **The test-only pins** from the reviews of 1B-T6 to 1B-T11 are a second brief, `download-pins`, sharing no file with this one. Its every item's home is in this brief's table.
+- **The fix round (the review's m1 and n2 to n4; commit `763edb3f`, test-only):** the review approved `d0cc479` and turned its minors into pins. `download-aborts.test.ts` goes from 5 cases to 7:
+  - a retain that waited on another request's copy hands `waitUntil` a promise on its later attempt too (m1);
+  - an upload turned away at the isolate's limit (503) hands nothing over (n2);
+  - each download case is refused with 404 after it took its slot, so all three `catch` paths are pinned (n3);
+  - each case takes its own slots inside its `try` and records the count, so a leaked slot shows in the case's lines (n4).
 - The controller accepted the planner's calls P1 to P11 (receipt, Deviations). No route, package, lockfile, app, API or database change. The receipt is its own file under R87: `docs/implementation/receipts/fix-download-aborts.md`.
 
 ## Test plan
@@ -34,8 +39,16 @@
   - `build:edge`, with every driver marker at 0;
   - `git diff --check`.
 - [x] The `wrangler dev` proof on this tree, under the heavy lock: 6 of 6.
-- [ ] CI on this pull request is green (the nine jobs: workers +1 file and +5 passed). GitHub Actions is paused for billing; CI runs once that is fixed.
-- [ ] Independent review (Opus: size M).
+- [x] CI on this pull request is green: 9 of 9 jobs at `763edb3f`, on the local runners.
+  - The SQL job's first attempt hit a flake in `apps/api`, which this PR does not touch: `retry_after` was 181 where at most 180 is expected. It passed on a rerun.
+  - The edge job: `test:edge` 176, `test:edge:workers` 774 passed and 1 todo, `test:edge:db` 68.
+- [x] Independent review (Opus): Approved on `d0cc479`; its minors went into a test-only fix round (`.claude/controller/reviews/fix-download-aborts.md`).
+- [x] Fix round (`763edb3f`, brief `.claude/controller/briefs/fix-download-aborts-fix.md`):
+  - RED: R11, R13, R13b, R13c and R14 each fail exactly their own case.
+  - GREEN 7 of 7, and 14 of 14 mutants killed.
+  - The test file is byte-identical to the planner's kit (sha256 `07dbb573…`).
+  - Gate: `typecheck:edge`, `test:edge` 176, `build:edge`, `git diff --check` and gitleaks are all clean.
+- [x] The fix is test-only, so the controller checked it instead of a second review. Only the test file and the receipt changed.
 - [ ] SKIPPED:
   - `test:edge:db` locally (Docker stopped; CI runs it);
   - hosted checks: the deployed runtime's cancellation (P3, P4) and the 30-second limit (P9). Nothing is deployed.

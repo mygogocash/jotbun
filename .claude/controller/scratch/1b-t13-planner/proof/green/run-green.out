@@ -1,0 +1,23 @@
+green node exit 0
+green build exit 0
+locked 09:53:47
+exit 0; unlocked 09:53:52
+green c1 exit 0
+locked 09:53:52
+exit 0; unlocked 09:54:02
+green workers exit 0
+locked 09:54:02
+exit 0; unlocked 09:54:05
+green money smoke exit 0
+locked 09:54:05
+exit 0; unlocked 09:54:09
+green files smoke exit 0
+locked 09:54:09
+exit 0; unlocked 09:54:13
+green live smoke exit 0
+green-node:       Tests  48 passed (48)
+green-c1:       Tests  6 passed (6)
+green-workers:       Tests  134 passed (134)
+green-smoke-money:       Tests  1 passed (1)
+green-smoke-files:       Tests  4 passed (4)
+green-smoke-live:       Tests  1 passed (1)

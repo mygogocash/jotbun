@@ -1,0 +1,15 @@
+P2-T33 planner proof, scratch copy of b8095b99 (code identical to 3fb6c195), npm ci 1416 packages.
+
+base:   typecheck:app 0; draftText 4/4; Sheet 13/13; neighbours (12 files) 174/174; catalogue bw- 18; registry 1.
+red:    typecheck:app 0; lockModel.test.ts 11: 10 fail (AssertionError x10), 1 pass (the copy pin); draftText 4/4;
+        render Lock + Sheet: 26 failed | 13 passed (39), AssertionError x26, no other error kind.
+green:  typecheck:app 0; Node 15/15 (11 + 4); render 39/39 (24 + 15), stderr 0; neighbours 174/174; catalogue bw- 28; registry 1.
+gate:   typecheck:routes 0; test:app fail 0; test:unit fail 0; export:web 0 (Web Bundled, Exported: dist);
+        whitespace: no problem in the 20 files, git diff --no-index --check clean on the 8 shared diffs.
+compat: P2-T14's eleven files over green (after-P2-T14 index.ts, merged draftText.test.ts): typecheck 0;
+        Node 21/21; render Lock, AmountStep, Tray, Sheet 78/78; catalogue bw- 32.
+merge:  index.ts with P2-T12 clean either order; with P2-T14 one-line conflict on the spread (expected);
+        after-P2-T14 form clean with P2-T12 either order; draftText.test.ts with P2-T14 clean either order.
+diffs:  all 9 apply to their base and give the expected file byte for byte (isolated git repo).
+mutants: round1 121: 120 killed, G6 survived (case reordered); final 121 killed, 0 survived, all restored;
+        K1, K2 rerun with the final runner (K2 anchors): killed.

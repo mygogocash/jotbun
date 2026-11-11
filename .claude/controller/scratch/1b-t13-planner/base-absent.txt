@@ -1,0 +1,7 @@
+apps/edge/src/vault-worker.ts
+apps/edge/src/v1/ai/tools.ts
+apps/edge/src/v1/ready.ts
+apps/edge/test/c1-shape.test.ts
+apps/edge/test/c1-worker.db.test.ts
+apps/edge/test/ready.test.ts
+docs/implementation/receipts/1B-T13.md

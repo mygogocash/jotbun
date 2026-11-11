@@ -4,6 +4,112 @@ Durable folder: `/Users/kunanonjarat/Developer/jotbun/.claude/controller/` (prot
 
 Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vault-core`), head 0bd5659 (controller state after 1D-T8's dispatch). Nothing outside `.claude/` changed since 606e131. No PR is open into the integration branch; only #70 into main.
 
+## 11 Nov 20:30 Bangkok: HOLD LIFTED (owner: "Resume the build"); three builders on Claude Code
+
+The owner answered the controller's question at about 20:20 with "Resume the build": three lanes, each to merge on green CI after review and then be promoted.
+
+**Antigravity is out of quota until about 18 Nov, 08:10 Bangkok** ("Usage Limit Reached ... reset in 6 days, 11 hours"; T3 snoozed the failed threads until 2026-11-18T01:11Z).
+- The first two launches failed before any tool call: P2-T14 `mcp:launch:461f0741…` and P2-T33 `mcp:launch:3e68ad43…`. Do not reuse them.
+- Under the owner's rule ("if run out of ai credit please use other"), every role runs with `make_prompt.py --claude-code` until then. Implementers are Claude Code Haiku 5.5 at max effort.
+
+**In flight** (launched threads don't wake the controller: use `t3_thread_read` or `t3_thread_wait`):
+
+| Task | Thread | Worktree and head | Notes |
+| --- | --- | --- | --- |
+| P2-T14 implementer | `mcp:launch:ed82a2d8ff3f16d67c03fe23fb284697aeab3460660cb368f946fae09413c391` | `p2-t14`, fast-forwarded to `96a52c2a`, installed | P1 to P17 accepted. P2-T12 merged first, which is the brief's P15 case: a 3-way apply of `index.ts` must equal `scratch/p2-t14-rebase/` (sha256 `f74fa284…`). |
+| P2-T33 implementer | `mcp:launch:ff142b9fea7604cb9452ecf629f7038a00093a215b4264199366d3779a40b20f` | `p2-t33`, fast-forwarded to `96a52c2a`, not installed (Step 1.1 installs) | P1 to P20 accepted. See the planner-rebase and `WalletCard.tsx` notes below. |
+| 1B-T13 implementer | `mcp:launch:45eecdab3fa9e75c94c5c040acf48efaa67ad965a4dab26050b3f29f1a70b462` | `p1-1b-t13`, new at `96a52c2a`, with `install-edge` | The controller reviewed the brief: P1 to P25 accepted. `--lock`. Step 0.5 was pre-checked (54 of 54 OK). #396 merged first, which is the brief's P21 case. |
+
+**P2-T33 notes:**
+- **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
+- **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
+
+**21:05: #405 (1B-T13) is ready for the owner's yes. #406 is rerunning a flaky job.**
+- **#405:** CI 9 of 9 on `7eeff709`, and both reviews approve.
+  - The first review (`reviews/1B-T13.md`): m1 (no CI test of the live socket through TanStack Start's `/v1/$`), m2 (the `/api/auth` dispatch is unpinned), m3 (`/ready`'s empty-setting rule is untested), and five nits.
+  - The second review (`reviews/1B-T13-second.md`): six nits. Its n3 and n5 are the first's m3 and m2.
+  - All are carried in followups.md: m1 and m2 to 1D-T12, m3 to 1C-T10b, the rest to a clean-up task. The code is right in every case.
+  - **The controller recommends merging.** The owner must say yes (auth and the vault). Then run `merge_task_pr.sh 405 7eeff709 1B-T13` and `promote_pr.sh 1B-T13 405`. P22's whole-1B read-only review comes after the merge.
+- **#406:** the SQL job failed on the documented R-B flake (`attachments.integration.spec.ts`, "two records retaining one image at once keep one receipt", expected 1, got 2). P2-T33 does not touch `apps/api`. `gh run rerun 43031794055 --failed` is running (attempt 2).
+
+**20:55: P2-T14 DONE → PR #407, both reviews running. Every builder is done; three PRs are in review.**
+- Commit `18876253`. The controller checked it: 12 files (10 A, 2 M), `git diff --check` clean, 10 of 11 `real/` files identical, and `index.ts` = the planner's merge proof (`aa2a47bf…`).
+- Reported: RED and GREEN as briefed, 92 of 92 mutants, `test:unit` 980, focused render 70 of 70.
+- PR **#407** (closes #160 by hand), body `pr-p2-t14.md`.
+- P2-T14 is treated as money and privacy work: the add flow enters money, and its P9 decides private-mode masking. So it gets a second review and needs the owner's yes.
+- Reviewers, with notes in `scratch/dispatch/P2-T14-{reviewer,second}-notes.md`:
+  - the first: `mcp:launch:793ee1ddb5d2396f86aa194e994e36bff66cf035f58b94ad80df93b6e77bf614`;
+  - the second: `mcp:launch:25bdc28467450436e429bd3f64e143183a69c385664fb7ea12d24b68e401fef7`.
+- **Merge order once approved, CI is green and the owner says yes:**
+  1. #407 (P2-T14);
+  2. #406 (P2-T33), after resolving `index.ts` and `draftText.test.ts` and rerunning CI;
+  3. #405 (1B-T13) is independent (edge only).
+  - Promote each after its merge.
+
+**20:50: P2-T33 DONE → PR #406, both reviews running.**
+- Commit `5844e4c1`. The controller checked it: 21 files (13 A, 8 M), `git diff --check` clean, 19 of 20 `real/` files byte-identical, and `index.ts` = `merge/index.t12-t33.ts` (`a3acf233…`).
+- Reported: RED and GREEN as briefed, 121 of 121 mutants (output identical to the planner's), `typecheck:routes` and `export:web` clean (4830 modules).
+- PR **#406** (closes #179 by hand), body `pr-p2-t33.md`.
+- Reviewers on Claude Code, with notes in `scratch/dispatch/P2-T33-{reviewer,second}-notes.md`:
+  - the first, Opus xhigh: `mcp:launch:ae4fcff346a05feb84db47f6b3dab6a687746786e7ce6ef07db241bedd6e7ad9`;
+  - the second (privacy), Opus high: `mcp:launch:10563bbdefd61c0c57d6f5fbfcf9eb3ace1078a116d0d8562c6f6724bb187679`.
+- Merge needs: green CI, both reviews approved, **the owner's yes** (privacy), and **P2-T14 merged first** (P17). Then resolve `index.ts` as `merge/index.t14-t12-t33.ts`, merge `draftText.test.ts` (`merge/draft.*`), and rerun CI.
+- Five agents are now running on Claude Code: the P2-T14 implementer and four Opus reviewers. Watch for a 429 (the "usage-limit cutoff" steps in SKILL.md). Cursor is the next provider.
+
+**20:45: 1B-T13 DONE → PR #405, both reviews running.**
+- Commit `7eeff709`. The controller checked it: 60 paths (25 M, 1 R, 6 A, 28 D), all 31 `real/` files byte-identical, `git diff --check` clean.
+- Reported: RED and GREEN as briefed, 28 of 28 mutants killed, `test:edge` 180, no PostgreSQL drivers in `dist/server`.
+- PR **#405** (closes #117 by hand), body `pr-1b-t13.md`.
+- Reviewers on Claude Code, with focus notes in `scratch/dispatch/1B-T13-{reviewer,second}-notes.md`:
+  - the first, Opus xhigh: `mcp:launch:74c1a575f433844ce72a14b6d2b9cb21a6423bb9f0a91ad01a17ca83f83a3873`;
+  - the second (auth, privacy and money), Opus high: `mcp:launch:5110865ae9b0f22bcacd33251d02f93f799f3a2175b04b1a2e58cf883688fb88`. It is told not to read the first review before writing its own.
+- Merge needs: green CI on `7eeff709`, both reviews approved, then **the owner's yes** (auth and the vault). Then promote.
+- Housekeeping: `promote_pr.sh` no longer doubles the task-id prefix in titles. #400's and #403's titles are fixed. #403 and #404 passed CI, 9 of 9.
+
+**20:40: P2-T14 was BLOCKED at Step 4.2, correctly.**
+- The controller's rebased `index.ts` (`f74fa284…`) put the add spread before the tray's. `check_kit.sh`'s patch fuzz misplaced the hunk.
+- The implementer's `git apply --3way` gave `aa2a47bf…`, which is right: P3f, the planner's `logs/merge/merged-*.ts` and the render test's section order all agree.
+- Ruling sent with `t3_thread_send`: keep its file and continue from Step 4.4. C = 22 is right (the note had said "above 22").
+- `scratch/p2-t14-rebase/` is corrected. `check_kit.sh` now patches with `-F0` and falls back to a 3-way `git merge-file` (lessons.md).
+- P2-T33's `a3acf233…` was checked with the fixed script and holds.
+
+**After each DONE:**
+1. Write `pr-<id>.md` and run `open_task_pr.sh`.
+2. Dispatch the reviewer with `make_prompt.py reviewer … --claude-code` (Opus xhigh).
+3. **P2-T33 (the app lock) is a privacy PR,** and 1B-T13 touches the auth dispatch and the vault. Each gets the second review too: `make_prompt.py second … --claude-code`. While Antigravity is out, that review is Claude Opus, the same family as the first review. Tell the owner that when asking for the merge yes.
+4. **Merge order:** P2-T14 before P2-T33 (P17). The second to merge needs `index.ts` resolved to `PL/merge/index.t14-t12-t33.ts` and `draftText.test.ts` merged (`PL/merge/draft.*`).
+5. P2-T20 waits on P2-T14's merge. P2-T16 still needs a planner.
+
+## 11 Nov 20:25 Bangkok: #395 and #396 promoted; held briefs checked against the new head
+
+- **Promotions, made with the live skill's `promote_pr.sh`:**
+  - **#403** `promote/p2-t12` at `ecc10df`, based on `promote/alarm-hardening`;
+  - **#404** `promote/fix-download-aborts` at `72cdd02`, based on `promote/p2-t12`.
+  - Stack #379 now holds 16 PRs. Their CI runs on the local runners.
+  - The earlier steps in this thread used a stale copy of the skill: the T3 worktree's, which matches main. Its `merge_task_pr.sh` is identical to the live one, but it had no `promote_pr.sh`. **A controller in a T3 worktree should load the main checkout's `.claude/skills/jotbun-controller/`.**
+- **`check_kit.sh` at `cb76c174`:**
+  - **P2-T14:** the kit is intact (29 OK). `apps/app/src/dev/catalogue/wallet/index.ts` differs, because P2-T12 added its import and spread there, but the kit's diff applies cleanly. Dispatch with `--rebase-out`, and tell the implementer that P2-T12's `bw-stack` sections are now on the head.
+  - **P2-T33:** the kit is intact (68 OK), but its `index.ts` diff does NOT apply after P2-T12. Send the brief back to its planner to rebase (P17's merge order still holds: P2-T14 first).
+  - **1B-T13:** the kit is intact (144 OK), and its 26 `orig/` files are identical at the head. The brief still needs the controller's review (P1 to P5) before dispatch.
+- At 20:15 the owner said "ok continue". The controller did not read that as lifting the hold and asked first. The hold was lifted at 20:20 (see the section above).
+
+## 11 Nov 20:10 Bangkok: #396 merged; the local runners are up again
+
+The owner said: "start the runners and rerun 396".
+
+- **Runners:** the Mac had rebooted at about 19:23, and Colima was stopped.
+  - `colima start --cpu 10 --memory 32 --disk 100` restarted the runner containers, but they crash-looped: their registration token had expired.
+  - `runners.sh down` then `up` recreated them. Both are online with the label `jotbun-local`, and they are **left running**.
+  - Starting Colima also brought back Supabase's `tbh-local` containers, which have restart policies.
+  - To free the Mac: `bash .claude/controller/local-ci/runners.sh down` (and `colima stop` if nothing else needs it).
+- **#396 fix-download-aborts: MERGED** as `72cdd02`, at `763edb3f`.
+  - `gh run rerun 42992817954 --failed` passed the SQL job, so all 9 checks are green.
+  - The controller checked the test-only fix instead of a second review. It changes only `download-aborts.test.ts` and the receipt, and the test's sha256 `07dbb573…` equals the planner's kit `real/` file.
+  - The edge job of #396's run is confirm-n6's read (#396 merged last of #394, #396 and #398): `test:edge:db` 68 of 68, workers 774 passed and 1 todo, `test:edge` 176.
+  - The PR body was updated and the PR marked ready. WT `fix-download-aborts` and branch `fix/download-aborts` are removed locally and on origin.
+  - The receipt's stale "Not pushed." is corrected in `60bc7413`. The flake is recorded in lessons.md and followups.md.
+- **No PR is open into the integration branch now.** Neither #395 nor #396 is promoted (no `promote/*` PR). The promotion stack into main and #70 are untouched.
+
 ## 11 Nov 19:50 Bangkok: #395 merged on the owner's word; #396 waits on a flake rerun
 
 In a new T3 thread, the owner said: "check for pending pr if ci pass merge it then cleanup worktree and branch". This was taken as the go-ahead for the parked integration PRs. The rest of the hold stands: no thread or lane was started, nothing was merged into main, and the CI runners were not touched.
@@ -47,7 +153,7 @@ Start no new threads or lanes on any provider. The 13:17 batch is disabled. The 
 | Task | State at the hold | Next step on resume |
 | --- | --- | --- |
 | **#395 P2-T12 fix round** (card stack) | **MERGED 11 Nov 19:50 as `ecc10df`; see the top section.** Earlier: DONE, committed locally, not pushed. Branch `p2/t12-card-stack` in WT `p2-t12`. Fix commit `af61e89a`, on top of merges `3e3f515f` and `37e366aa` (the second only brings in `.claude/` changes). Cursor Auto, thread `mcp:launch:daac26a1…`. Every RED, GREEN and mutant Expected line held, and the review's eight survivors are killed. The earlier run's test edits matched the kit and were kept. | Push to `p2/t12-card-stack`, update #395's body, run an Opus-High confirming review (the fix writes new logic), get green local CI, then merge into the integration branch only once Fronk confirms the low-risk merge rule. Promote, then clean up. |
-| **#396 fix-download-aborts fix round** | **DONE, committed locally, not pushed.** Branch `fix/download-aborts` in WT `fix-download-aborts`. Fix commit `763edb3f`, on top of merges `bbb63e18` and `75b450e1`. Cursor Auto, thread `mcp:launch:352d7abf…`. Test-only (`download-aborts.test.ts` and the receipt): GREEN 7 of 7, the five review mutants each fail their own case, 14 of 14 killed. The earlier run's test edit matched the kit's `real/` and was kept. | Push to `fix/download-aborts`, update #396's body, and get green local CI. It is test-only from its planner's kit, so the controller checks it instead of a second review. Then merge once Fronk confirms, promote, and clean up. |
+| **#396 fix-download-aborts fix round** | **MERGED 11 Nov 20:10 as `72cdd02`; see the top section.** Earlier: DONE, committed locally, not pushed. Branch `fix/download-aborts` in WT `fix-download-aborts`. Fix commit `763edb3f`, on top of merges `bbb63e18` and `75b450e1`. Cursor Auto, thread `mcp:launch:352d7abf…`. Test-only (`download-aborts.test.ts` and the receipt): GREEN 7 of 7, the five review mutants each fail their own case, 14 of 14 killed. The earlier run's test edit matched the kit's `real/` and was kept. | Push to `fix/download-aborts`, update #396's body, and get green local CI. It is test-only from its planner's kit, so the controller checks it instead of a second review. Then merge once Fronk confirms, promote, and clean up. |
 | **P2-T14 build** (add flow, keypad, amount step) | **Not started.** WT `p2-t14` on `p2/t14-add-flow`, clean at `f218796d`. Prompt `scratch/dispatch/P2-T14-implementer.prompt.md`, notes `P2-T14-implementer-notes.md`. P1 to P17 accepted. | Launch with `t3_thread_launch` in the jotbun project (`cc4b9cae-2d3c-4aeb-b98f-affe256dcb86`), `workspaceStrategy: {type: "root"}`, on Antigravity `claude-sonnet-5-5-high`, falling back to Claude Code then Cursor. After DONE: open the PR and run an Opus-High review. P2-T20 waits on its merge. |
 | **P2-T33 build** (Face ID lock) | **Not started.** The brief is READY on `b8095b99` (`briefs/P2-T33.md`, kit `scratch/p2-t33-planner/`). WT `p2-t33` on `p2/t33-face-id-lock` was made at `b8095b99`. Prompt `scratch/dispatch/P2-T33-implementer.prompt.md`, notes `P2-T33-implementer-notes.md`. | Launch as for P2-T14. **Merge order (ruling P17):** P2-T14 first. In `apps/app/src/dev/catalogue/wallet/index.ts` the lock's spread goes last (`...WALLET_ADD_SECTIONS,` then `...WALLET_LOCK_SECTIONS,`). The second PR to merge resolves the one-line conflict as `scratch/p2-t33-planner/merge/index.t33-t14-conflict.ts` shows, or applies the `after-p2-t14` diff if P2-T14 has merged first. If the head moved with code changes, regenerate the prompt (`make_prompt.py implementer P2-T33 --wt p2-t33 --branch p2/t33-face-id-lock --head <head> --notes …`) and recreate the WT. |
 | **1B-T13 build** (vault into the HTTP Worker) | **The planner posted READY at 12:55** (Claude Code Opus, thread `mcp:launch:9ebaef6c…`): `briefs/1B-T13.md`, no unfilled placeholders, kit `scratch/1b-t13-planner/` with 144 SHA256SUMS lines, check clean. Size L, 60 paths, rulings P1 to P5 (the plan is out of date on Better Auth and the PostHog proxy). Proofs: RED Node 12 of 18, `c1-worker` 2 of 6, both m-1 cases; GREEN Node 48, `c1-worker` 6, workers 134, the three smokes; 28 of 28 mutants killed. **The controller has not reviewed the brief yet.** No WT has been created. | Review the brief (rulings P1 to P5 first). If accepted: create WT `p1-1b-t13` on `p1/1b-t13-vault-http` from the integration head, then `make_prompt.py implementer 1B-T13 --wt p1-1b-t13 --branch p1/1b-t13-vault-http --head <head> --lock`, and launch on Antigravity `claude-opus-5-5-high` (a hard task) under the heavy lock. |

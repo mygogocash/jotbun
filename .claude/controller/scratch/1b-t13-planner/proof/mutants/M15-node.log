@@ -1,0 +1,43 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge
+
+ × test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container 6ms
+   → expected [ undefined, { …(2) } ] to deeply equal [ { …(2) }, { …(2) } ]
+ ✓ test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > the Workers-runtime tests load the vault module, never TanStack Start, on the one config (B15) 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container
+AssertionError: expected [ undefined, { …(2) } ] to deeply equal [ { …(2) }, { …(2) } ]
+
+- Expected
++ Received
+
+  [
+-   {
+-     "error_retention": "7 days",
+-     "success_retention": "1 day",
+-   },
++   undefined,
+    {
+      "error_retention": "7 days",
+      "success_retention": "1 day",
+    },
+  ]
+
+ ❯ test/c1-shape.test.ts:37:94
+     35|     // The 1B-T12 review's n1: without a retention, Paid's 30-day defa…
+     36|     // createOnce would count a resent request's id as started long af…
+     37|     expect(config.workflows.map((w: { default_retention: unknown }) =>…
+       |                                                                                              ^
+     38|     expect(config.queues.producers.map((p: { binding: string }) => p.b…
+     39|     expect(config.queues.consumers.map((c: { queue: string }) => c.que…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  09:54:49
+   Duration  177ms (transform 12ms, setup 0ms, import 19ms, tests 7ms, environment 0ms)
+

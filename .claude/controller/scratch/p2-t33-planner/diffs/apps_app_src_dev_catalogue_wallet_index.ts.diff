@@ -1,0 +1,17 @@
+diff --git a/apps/app/src/dev/catalogue/wallet/index.ts b/apps/app/src/dev/catalogue/wallet/index.ts
+index 85f75a2ebe331206d4742c84f1eacb7626588d46..5848bdbc75a2d79ce7d52409415af781d939de05 100644
+--- a/apps/app/src/dev/catalogue/wallet/index.ts
++++ b/apps/app/src/dev/catalogue/wallet/index.ts
+@@ -3,10 +3,12 @@
+ // spread of its own list here, in plan order. Ids start with `bw-` and titles
+ // with `Bun Wallet: ` (R72); walletHarness.render.test.tsx holds them to that.
+ import type { CatalogueSection } from '../registry';
++import { WALLET_LOCK_SECTIONS } from './lockSections';
+ import { WALLET_KIT_SECTIONS } from './kitSections';
+ import { WALLET_TRAY_SECTIONS } from './traySections';
+ 
+ export const WALLET_SECTIONS: readonly CatalogueSection[] = [
+   ...WALLET_KIT_SECTIONS,
+   ...WALLET_TRAY_SECTIONS,
++  ...WALLET_LOCK_SECTIONS,
+ ];

@@ -1,0 +1,83 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/apps/app
+
+ ✓ src/wallet/lock/Lock.render.test.tsx > with the lock on, the app opens locked and the app below is hidden from screen readers 84ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > a successful scan unlocks; a cancel stays locked and says try again 25ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > under the lock Android's back does nothing, so no screen, and no draft on it, leaves under the lock 26ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > a lockout says to use the passcode 21ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > an unavailable answer re-reads the phone and stays locked while it can still lock 11ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > when the phone can no longer lock, the lock turns off once and says why 42ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > an open tray, then a return from the background, shows no tray content 34ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > with a tray or a sheet open, the lock screen is drawn inside its own cover, and unlocking there brings it back 70ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > the cover shows no amount and no text 76ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > each opening asks once by itself: the prompt's own inactive asks nothing, a press while a prompt is up asks nothing, every return from the background asks again, and an answer to an earlier opening is dropped 101ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > until the setting is read the app is covered and nothing asks; a setting that cannot be read counts as on 41ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > a prompt that throws, or a phone that cannot be read after an unavailable answer, never opens the app 20ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > the locked screen names the method: Face ID with its passcode link, a fingerprint, or the passcode alone 68ms
+ × src/wallet/lock/Lock.render.test.tsx > turning the lock on asks to authenticate first and stays off when that fails 53ms
+   → expected undefined to be '1' // Object.is equality
+ × src/wallet/lock/Lock.render.test.tsx > turning it off asks too 95ms
+   → expected undefined to be '1' // Object.is equality
+ ✓ src/wallet/lock/Lock.render.test.tsx > a phone without a passcode cannot turn the lock on, and says why 81ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > the setup screen reads the phone again when it opens, and again each time the app is back in front 62ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > the switch asks one prompt at a time, from the gate itself 66ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > a prompt that finds the phone can no longer lock: turning the lock on leaves it off and says why; turning it off turns it off and says so 77ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > the setup step: the step line, the question and body by method, a masked card, and Next, which keeps the answer and goes back; from Settings, no step and no Next 197ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > Settings shows the lock row only in the wallet area 396ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > every button and the switch are at least 44 pt 40ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > the wallet root mounts the lock with the app's own port only while the wallet area is on 15ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > the lock's sections come after the tray's, together, and each draws its screen on a setting it holds 51ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 22 passed (24)
+   Start at  09:24:59
+   Duration  3.35s (transform 1.04s, setup 45ms, import 1.36s, tests 1.75s, environment 80ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:61476) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > turning the lock on asks to authenticate first and stays off when that fails
+AssertionError: expected undefined to be '1' // Object.is equality
+
+- Expected:
+"1"
+
++ Received:
+undefined
+
+ ❯ src/wallet/lock/Lock.render.test.tsx:600:37
+    598|   expect(named('switch', say('lock.switch', 'th', { method: FACE.th })…
+    599|   expect(view.stored.get(STORED)).toBe('1');
+    600|   expect(view.stored.get(ANSWERED)).toBe('1');
+       |                                     ^
+    601|   // Turning it on does not lock the app now: the next opening does.
+    602|   expect(screen.queryByTestId('locked-screen')).toBeNull();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > turning it off asks too
+AssertionError: expected undefined to be '1' // Object.is equality
+
+- Expected:
+"1"
+
++ Received:
+undefined
+
+ ❯ src/wallet/lock/Lock.render.test.tsx:625:37
+    623|   expect(named('switch', say('lock.switch', 'th', { method: FACE.th })…
+    624|   expect(view.stored.has(STORED)).toBe(false);
+    625|   expect(view.stored.get(ANSWERED)).toBe('1');
+       |                                     ^
+    626|   // Off: a return from the background neither locks nor covers.
+    627|   app('background');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

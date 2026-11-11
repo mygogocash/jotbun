@@ -1,0 +1,31 @@
+--- a/apps/edge/src/vault/ai.ts
++++ b/apps/edge/src/vault/ai.ts
+@@ -1,7 +1,7 @@
+ // The AI companion on vault SQL (1B-T7): consent and the daily uses
+ // (ai_preferences, ai_usage), what a draft may choose from, the day's facts (a
+-// port of dayFacts, src/server/ai/facts.ts) and Ask Bun's read-only tools (a
+-// port of runTool, src/server/ai/tools.ts). The AI routes call these as steps
++// port of the PostgreSQL edge's dayFacts) and Ask Bun's read-only tools (a
++// port of its runTool; both retired at C1). The AI routes call these as steps
+ // (src/v1/ai/service.ts), each under the route's session and policy checks.
+ // Nothing a person writes to Bun, and no slip image, reaches the vault: the
+ // only row an AI call writes is its use. Sums leave SQLite as CAST(... AS TEXT).
+@@ -12,7 +12,7 @@
+ 
+ import { categoryText, figureLabel, figureWord, leftOf, monthText, periodText } from '../server/ai/fact-text'
+ import { formatBaht } from '../server/ai/grounding'
+-import { ToolInputError } from '../server/ai/tools'
++import { ToolInputError } from '../v1/ai/tools'
+ import type { VaultContext } from './context'
+ import { listCategories } from './domain/categories'
+ import { listWallets } from './domain/wallets'
+@@ -282,6 +282,9 @@
+     case 'budget_status': {
+       const month = input.month
+       if (typeof month !== 'string' || !MONTH.test(month)) throw new ToolInputError('month must be YYYY-MM')
++      // The summary refuses a month before 1970-01 (parseMonth), where runTool read any YYYY-MM and found no
++      // budget; none can exist then, so the answer is runTool's (the 1B-T7 review's m-1).
++      if (month < '1970-01') return { result: null, figures: [] }
+       const totals = summary(c, { month })
+       if (!totals.budget) return { result: null, figures: [] }
+       const b = totals.budget

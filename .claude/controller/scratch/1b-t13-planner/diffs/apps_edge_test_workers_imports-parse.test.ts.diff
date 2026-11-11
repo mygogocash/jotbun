@@ -1,0 +1,11 @@
+--- a/apps/edge/test/workers/imports-parse.test.ts
++++ b/apps/edge/test/workers/imports-parse.test.ts
+@@ -22,7 +22,7 @@
+ import { PARSE_RETRY_SECONDS, handleParseBatch } from '../../src/background/parse-consumer'
+ import type { ParseMessage, ParserPort } from '../../src/background/parse-consumer'
+ import { isParseServiceReply } from '../../src/background/statement-parser'
+-import worker from '../../src/roles/vault'
++import worker from '../../src/vault-worker'
+ import type { EdgeConfigJson } from '../../src/v1/config'
+ import type { V1Env } from '../../src/v1/env'
+ import { deleteDueObjects, dueObjectKeys } from '../../src/vault/files/objects'

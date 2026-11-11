@@ -1,0 +1,13 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge
+
+ ✓ test/vault-files.smoke.db.test.ts > the vault Worker answers each compared step of the files session as NestJS does 369ms
+ ✓ test/vault-files.smoke.db.test.ts > the vault Worker runs without Workflows, queue consumers or containers (B13) 0ms
+ ✓ test/vault-files.smoke.db.test.ts > a never-accepted upload has no status and no preview (404), as in the API 45ms
+ ✓ test/vault-files.smoke.db.test.ts > the retired proof routes answer 404 on the vault Worker 10ms
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  09:54:06
+   Duration  3.22s (transform 147ms, setup 0ms, import 379ms, tests 2.71s, environment 0ms)
+

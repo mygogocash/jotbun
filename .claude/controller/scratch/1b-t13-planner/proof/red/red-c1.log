@@ -1,0 +1,58 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/red/apps/edge
+
+ ✓ test/c1-worker.db.test.ts > the one Worker in workerd > answers /live with no-store 7ms
+ × test/c1-worker.db.test.ts > the one Worker in workerd > /ready is 200 with its settings and KV 9ms
+   → expected 503 to be 200 // Object.is equality
+ ✓ test/c1-worker.db.test.ts > the one Worker in workerd > /ready is 503 without its settings 8ms
+ ✓ test/c1-worker.db.test.ts > the one Worker in workerd > serves the trust page with TanStack Start 14ms
+ × test/c1-worker.db.test.ts > the one Worker in workerd > serves /v1 from the vault: the policy list comes from KV 7ms
+   → expected 500 to be 200 // Object.is equality
+ ✓ test/c1-worker.db.test.ts > the one Worker in workerd > an unknown /v1 route is 404 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/c1-worker.db.test.ts > the one Worker in workerd > /ready is 200 with its settings and KV
+AssertionError: expected 503 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 503
+
+ ❯ test/c1-worker.db.test.ts:83:24
+     81|   it('/ready is 200 with its settings and KV', async () => {
+     82|     const res = await fetch(`${ready.url}/ready`)
+     83|     expect(res.status).toBe(200)
+       |                        ^
+     84|     expect(res.headers.get('cache-control')).toBe('no-store')
+     85|     expect(await res.json()).toEqual({ status: 'ready' })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/c1-worker.db.test.ts > the one Worker in workerd > serves /v1 from the vault: the policy list comes from KV
+AssertionError: expected 500 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 500
+
+ ❯ test/c1-worker.db.test.ts:105:24
+    103|   it('serves /v1 from the vault: the policy list comes from KV', async…
+    104|     const res = await fetch(`${ready.url}/v1/policies`)
+    105|     expect(res.status).toBe(200)
+       |                        ^
+    106|     expect(await res.json()).toEqual(POLICIES)
+    107|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 4 passed (6)
+   Start at  09:53:34
+   Duration  4.88s (transform 12ms, setup 0ms, import 18ms, tests 4.75s, environment 0ms)
+

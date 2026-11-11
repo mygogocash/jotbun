@@ -1,0 +1,30 @@
+--- a/apps/edge/src/server/env.ts
++++ b/apps/edge/src/server/env.ts
+@@ -5,16 +5,9 @@
+  * unchanged.
+  */
+ export type EdgeBindings = {
+-  HYPERDRIVE?: { connectionString: string }
+   OBJECTS?: unknown
+-  /** Wake-up queues of the background Workers (jobs, security, deletion). */
+-  JOBS?: QueueProducer
+-  SECURITY_JOBS?: QueueProducer
+-  DELETION_JOBS?: QueueProducer
+ }
+ 
+-export type QueueProducer = { send(body: unknown): Promise<void> }
+-
+ export type EdgeSettings = {
+   JOTBUN_ENV?: string
+   AUTH0_ISSUER?: string
+@@ -35,10 +28,6 @@
+   OPERATIONAL_PAUSE?: string
+   OPERATIONAL_PAUSE_RETRY_AFTER_SECONDS?: string
+   IMPORT_UPLOADS_ENABLED?: string
+-  /** Where routes the edge has not ported yet are forwarded (the NestJS v1 API). */
+-  LEGACY_V1_ORIGIN?: string
+-  /** Direct connection string for Node tests and tools; the Worker uses HYPERDRIVE. */
+-  DATABASE_URL?: string
+   AI_ENABLED?: string
+   AI_MODEL?: string
+   ANTHROPIC_API_KEY?: string

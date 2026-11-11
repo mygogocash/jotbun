@@ -4,6 +4,16 @@ import { describe, expect, it, vi } from 'vitest'
 import { POSTHOG_PROXY_BODY_LIMIT_BYTES, isPostHogProxyPath, proxyPostHog } from '../src/analytics/posthog-proxy'
 import worker from '../src/server'
 
+// src/server.ts re-exports the vault's classes (C1), whose base classes come
+// from the Workers runtime module. Node has no such module, so this file gives
+// it inert stand-ins: nothing here constructs a vault, a Workflow or a parser.
+vi.mock('cloudflare:workers', () => ({
+  DurableObject: class {},
+  WorkflowEntrypoint: class {},
+  env: {},
+  waitUntil: () => undefined,
+}))
+
 type Sent = { url: string; method: string; headers: Headers; body: string | undefined; redirect: RequestRedirect | undefined }
 
 const upstreamAnswer = () => new Response('{"status":1}', { status: 200, headers: { 'content-type': 'application/json', 'set-cookie': 'ph_session=1; Path=/' } })

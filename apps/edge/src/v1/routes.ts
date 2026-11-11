@@ -1,7 +1,7 @@
-// The vault Worker's route table. Every route the PostgreSQL edge declares sits
-// in exactly one place: ported here (VAULT_V1_ROUTES), pending for a later task
-// of Phase 1A, deferred to 1B, or retired by §6.4. vault-route-coverage.test.ts
-// checks that. Each task moves its routes from pending into VAULT_V1_ROUTES.
+// The vault's route table, served by the one Worker (C1). Every NestJS v1 route
+// sits in exactly one place: served here (VAULT_V1_ROUTES), deferred to 1C, or
+// retired by §6.4; the routes NestJS never had are the edge-only and the added
+// ones. route-coverage.test.ts checks that against the NestJS controllers.
 import type { GateScope } from '@api/common/feature-gates'
 
 import type { VaultRouteId, WorkerRouteId } from './protocol'
@@ -37,7 +37,7 @@ export function vaultStatus(r: VaultRoute): number {
 /** Writes to wallets are commands, and every mutating route carries the writes gate (C12). */
 const WRITES: readonly GateScope[] = ['writes']
 
-/** The routes ported so far (Tasks 2 to 7 and 8a, and the bridge): the front door, wallets, categories, transactions, budgets, history, the summary, command status, the sync delta feed and the cashback catalogue. */
+/** Every route the vault serves: each NestJS v1 route but the two 1C defers and the six §6.4 retires, the edge-only routes and the added ones. */
 export const VAULT_V1_ROUTES: readonly VaultRoute[] = [
   // policies/policy.controller.ts: the published text, answered from config:v1 by the Worker.
   { method: 'GET', path: '/v1/policies', access: 'public' },
@@ -189,7 +189,7 @@ export function vaultStatusOf(id: VaultRouteId): number {
 /** Routes for a later task of Phase 1A. None are left: Task 7 ported history and the summary. */
 export const VAULT_PENDING_ROUTES: readonly string[] = []
 
-/** Routes for later Phase 1B tasks: snapshots, exports, imports, attachments, deletion and the AI companion. */
+/** Routes for 1C: account deletion and its receipt, built on 1B-T2's erase (B16). Every other v1 route is served. */
 export const VAULT_DEFERRED_ROUTES: readonly string[] = [
   'POST /v1/me/deletion',
   'POST /v1/auth/deletion-receipt',
@@ -206,8 +206,23 @@ export const VAULT_RETIRED_ROUTES: readonly string[] = [
 ]
 
 /**
- * Routes the PostgreSQL edge never had (plan 1D): served here, absent from its
- * route table, and never shadowed by one of its routes
- * (vault-route-coverage.test.ts). 1D-T11 adds 'GET /v1/me/analytics'.
+ * Routes the PostgreSQL edge never had (plan 1D): served here, absent from the
+ * NestJS controllers and never shadowed by one of their routes
+ * (route-coverage.test.ts). 1D-T11 adds 'GET /v1/me/analytics'.
  */
 export const VAULT_ADDED_ROUTES: readonly string[] = ['GET /v1/sync/live']
+
+/**
+ * The PostgreSQL edge's own routes, which NestJS never had: the AI companion
+ * (1B-T7) and the GoGoCash bridge. Served here, and never shadowed by a NestJS
+ * route (route-coverage.test.ts).
+ */
+export const VAULT_EDGE_ONLY_ROUTES: readonly string[] = [
+  'GET /v1/me/ai-preferences',
+  'PUT /v1/me/ai-preferences',
+  'POST /v1/ai/parse',
+  'POST /v1/ai/slip',
+  'GET /v1/ai/note',
+  'POST /v1/ai/ask',
+  'GET /v1/bridge/gogocash/catalogue',
+]

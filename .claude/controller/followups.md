@@ -24,7 +24,7 @@ The review reports these came from were under /private/tmp and were lost on 8 No
 - 1A-T8b (issue #102, done): after #339 and 1A-T8b both merge, a follow-up (receipt in receipts/1A-T8b-followup.md per R87): history.test.ts line 441 `it.todo(` -> `it(` (comment to past tense), prove with a mutant (drop 'budgets.put' or empty syncChanges), +1 passed -1 todo; deal with the SQL-backdated restore-window cases arming a past alarm (minor 3); fix 1B plan line 1130 wording (8a -> 8b); pin X1 (S1 case second clock at t0 + 61 * DAY) and X3 (pruned_through never goes down on the failing-step path). For 1B-T11: port transactions_deleted_idx and entity_changes_entity_idx (nextDue scans on every write: 2.91 ms at 60k vs 0.02 ms), keep the one-minute floor in rearm, alarmAt to avoid repeated setAlarm. Nits X5/X6 (no audit row, derived purge id untested).
 - P4-T10 (#345, issue #218): fix-parser-regex task under R89 (THB_SUFFIX in amount.ts and explicitPlus in table.ts are quadratic; a 2.1 MB bank file or 3.2 MB generic CSV of `(` + spaces + `5` cells times out the shared parser) — brief being written; build after #345 merges. Ledger: P2-T6's receipt sits under `## P6B` (consolidation).
 - Flaky fix (#342): receipt intro says "no API source changed", Files line omits upload-intake.ts and its spec, Gate says test:api 955 (now 956), "Six failures" names seven, 20/19 RED order: fix in the ledger consolidation. request-context: assert each logged request_id is one of the responses' x-request-id headers (an amount padded into a UUID fools the shape check). renderSetup: once-only guard on the wrapper; the comment overstates two points. R88: the `|| Date.now() >= deadline` and `<=` boundary branches untested. ImportReview 1 ms poll race.
-- API database-suite concurrency flakes, to diagnose together (CI logs only; Docker stays stopped locally): command-executor.integration.spec.ts "authorization under the account lock › commit order is revision order" (PR #340, run 42471566135, job 128703314342); attachments.integration.spec.ts "shared references prevent premature deletion › two records retaining one image at once keep one receipt, made by one copy" expected 1 write, got 2 (PR #340 rerun of the same run); export.integration.spec.ts below.
+- API database-suite concurrency flakes, to diagnose together (CI logs only; Docker stays stopped locally): command-executor.integration.spec.ts "authorization under the account lock › commit order is revision order" (PR #340, run 42471566135, job 128703314342); attachments.integration.spec.ts "shared references prevent premature deletion › two records retaining one image at once keep one receipt, made by one copy" expected 1 write, got 2 (PR #340 rerun of the same run); attachments.integration.spec.ts "copying is bounded › serializes reservations: five at once from one account reserve exactly four", `retry_after` 181 where at most 180 is expected (PR #396, run 42992817954, job 130429559951; passed on a rerun); export.integration.spec.ts below.
 - More API flakes (frozen apps/api, need a ruling): export.integration.spec.ts "at most four export downloads run at once in a process; more are told to retry" hit the 30 s jest timeout (PR #333, run 42468718123, job 128694248812). upload-intake.spec.ts trickling-body fixed under R88 in #342.
 - Ledger: #341's merge left a duplicated `## 1D: live pokes, the pending choice, PostHog and the proof` heading directly above `### 1B Task 4` (ledger_union keeps both sides of a renamed heading); fix in the consolidation commit.
 - Flakes: render timeouts near 4 s (RemindersScreen, RecentlyDeletedScreen, QuickAddScreen), HistoryScreen fast "toolbar" failure, request-context.spec.ts `/6500/` vs random UUIDs, retention.integration.spec.ts import_uploads_check3 (clock skew), upload-intake.spec.ts under load. apps/api is frozen: fixes there need a controller ruling.
@@ -451,12 +451,43 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **Hosted check (n1):** once an aborted retain's copy slot is back, its promise has ended. The command step and the copy's release (`receipts.ts:147-149`, `186-188`) then run with nothing pending in `waitUntil`, so the deployed runtime may skip them (unverified).
     - Effect: the copy stays reserved for 180 s; a retry gets `wait`, then 503, and the reservation counts toward `COPIES_IN_FLIGHT`.
     - This is bounded and predates R97. The hosted check should verify that the release runs.
-  - **1B-T13:**
+  - **The first task after #396 that touches `src/v1/files`** (not 1B-T13: its brief's P20 keeps it clear of those files, and the controller accepted that on 11 Nov):
     - n5: `slots.ts:16-18` and the call sites say the request lives until its slot is back, without Cloudflare's 30-second `waitUntil` cap. Add one clause.
     - n6 (optional hardening): make `untilReturned`'s returned function idempotent and exception-safe, with a `given` flag and `try { release() } finally { returned() }`.
   - **alarm-hardening (#398), n7:**
     - lines 4, 97 and 108 of #398's receipt give download-pins' items (1B-T11's m3 and n6, and the X5 re-target) to fix-download-aborts. Correct them before #398 merges;
     - once #398 merges, download-pins' kit mutant V3 no longer applies: rerun it with A1's text.
+- **1B-T13's first review** (`reviews/1B-T13.md`, Approved on `7eeff709`, Claude Opus 5.5 xhigh; three minors, five nits). Both reviews independently found m2 and m3 (the second's n5 and n3). Carriers, as the reviewer suggests:
+  - **1D-T12:**
+    - m1: no CI test of the live socket's production path (TanStack Start's `/v1/$` passing a 101 with `webSocket`). Only P23's uncommitted smoke proves it, and the reviewer reran it: it passes.
+      - Add the smoke's case to `c1-worker.db.test.ts`. It needs no database, and `startVaultWorker` gives it an issuer.
+      - Also: 1D-T12's Step 5 RED ("stops at the socket's open") will not fail as written, because the socket already opens through `/v1/$`. Its planner needs another RED, for example a Node dispatch case answered before `handler.fetch`.
+    - m2: pin the `/api/auth/*` dispatch at `src/server.ts:21`. 1D-T12 is the next task to edit `src/server.ts`.
+  - **1C-T10b:** m3, an `''` row for each setting in `ready.test.ts:54`'s `it.each`. Do it when 10b extends `readyResponseOf` and drops `AUTH_JWKS_URL`; README n3 then resolves itself.
+  - **1C-T10a:** the 1C plan's shared files name `wrangler.vault.jsonc`, which is gone. `wrangler.jsonc` holds `AUTH_DB`, `ERASURE_DB` and the auth vars, and `vitest.workers.config.ts` declares only `AUTH_DB_REFERENCE`.
+  - **1C-T11:**
+    - the plan's `vault-route-coverage.test.ts` checks now live in `route-coverage.test.ts`;
+    - `DELETION_WORKFLOW` goes into `wrangler.jsonc`, `src/vault-worker.ts`, `src/server.ts`'s re-export (`c1-shape.test.ts:54-56`) and `c1-shape`'s Workflow list.
+  - **A later clean-up task:**
+    - n1: the receipt's `uploads.ts:50`/`:61` line is now `:51`/`:62`;
+    - n2: stale comments in `test/support/money-session.ts:2-4`, `files-session.ts:5-7`, `src/server/auth.ts:2-4` and `apps/api/.../parse-worker.spec.ts:9`;
+    - n4: pin `VAULT_ADDED_ROUTES` exactly, not with `toContain`;
+    - n5: pin the parse consumer's B6 settings in `c1-shape`;
+    - P16 to P18's leftovers.
+- 1B-T13's second review (`reviews/1B-T13-second.md`, Approved on `7eeff709`, Claude Opus 5.5 high as Gemini's fallback; no blocker, major or minor; six nits; probes and mutants in `scratch/1b-t13-second/`). The controller checked n1, n3 and n5 against the code. Its n3 and n5 are the first review's m3 and m2 (carried above). n1, n2 and n4 go to the same later clean-up task, or to 1C-T10b for `c1-shape`.
+  - n1: `route-coverage.test.ts:95` skips every route NestJS lacks. Pin the seven edge-only routes' `{ access, gates, status }` (mutants N1 and N2 survive it; `ai.test.ts` kills both today).
+  - n2: P14's "spends no extra use" is unpinned. Add a `remaining` check to the Ask Bun m-1 case (`ai.test.ts:461`); probe P7 kills mutant N5.
+  - n3: `ready.test.ts:54`'s `it.each` sets each setting only to `undefined`. Add `''` (mutant N3 survives).
+  - n4: nothing pins "no secret in `vars`". Add a `c1-shape` assertion that none of `COMMAND_DIGEST_KEY`, `BETTER_AUTH_SECRET`, `ERASURE_KEY` or `ANTHROPIC_API_KEY` is in `vars` (mutant N4).
+  - n5: no test sends `/api/auth/*` through the real entry. Mutant N6 deletes `src/server.ts:21`, and it survives `posthog-proxy` and `c1-shape`. Add a `posthog-proxy.test.ts` case expecting Better Auth's 503 with `env: {}` (probe P1).
+  - n6: the README's deploy steps omit `AUTH_JWKS_URL`, which is needed until 1C-T10b, and replacing the localhost `AUTH_ISSUER` and `AUTH_BASE_URL` (`README.md:90-101`, `wrangler.jsonc:26-27`).
+  - **For any deployment of the one Worker (the owner's call):**
+    - account deletion answers 404 until 1C-T11 (B16), so the Worker must not take real accounts before 1C-T11;
+    - `limits.cpu_ms` 120000 now covers the unauthenticated `/api/auth/*`, `/ingest/*` and the pages, which needs a rate-limit or WAF decision.
+  - **1C-T10a and 1C-T10b:** pin that `AUTH_ISSUER` and `AUTH_AUDIENCE` stay one setting for Better Auth and the vault.
+  - **Later tasks on the deployed path:**
+    - the workers suite runs `src/vault-worker.ts`'s fetch, not TanStack Start's. Anything that must hold on the deployed path (the `/api/auth` dispatch, method handling, CORS preflight) needs a built-Worker case. The template is `scratch/1b-t13-second/tree/apps/edge/test/zz-c1-probe.db.test.ts`.
+    - cleanup: `src/server/env.ts`'s `EdgeSettings` still lists `AUTH0_*`, `RATE_LIMIT_KEY` and `OPERATIONAL_PAUSE*`, which nothing reads now (with the receipt's P16 to P18 leftovers).
 - 1B-T12's confirming review (reviews/1B-T12-confirm.md, Approved on 317cf3a; no minor, six nits):
   - **The merge order (confirm-n6):** #398 (alarm-hardening) edits vault files the 42-step session reaches: `previews.ts`, `attachments.ts`, `jobs.ts`, `user-vault.ts`, `schema.ts` and migration 0004. #396 edits `src/v1/files` and `handler.ts`. Read the `edge` job's `test:edge:db` of whichever of #394, #396 and #398 merges last, on a head that holds all three.
   - confirm-n3: n6's order (`configFor` before `mkdtempSync`) is pinned only by the uncommitted probe (brief F4). No action.
