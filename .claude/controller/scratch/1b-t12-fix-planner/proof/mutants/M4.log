@@ -1,0 +1,48 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t12-fix-planner/tree/apps/edge
+
+ ✓ test/vault-files.smoke.db.test.ts > the vault Worker answers each compared step of the files session as NestJS does 156ms
+ × test/vault-files.smoke.db.test.ts > the vault Worker runs without Workflows, queue consumers or containers (B13) 2ms
+   → expected [ undefined, undefined, [ { …(5) } ] ] to deeply equal [ undefined, undefined, undefined ]
+ ✓ test/vault-files.smoke.db.test.ts > a never-accepted upload has no status and no preview (404), as in the API 24ms
+ ✓ test/vault-files.smoke.db.test.ts > the retired proof routes answer 404 on the vault Worker 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/vault-files.smoke.db.test.ts > the vault Worker runs without Workflows, queue consumers or containers (B13)
+AssertionError: expected [ undefined, undefined, [ { …(5) } ] ] to deeply equal [ undefined, undefined, undefined ]
+
+- Expected
++ Received
+
+  [
+    undefined,
+    undefined,
+-   undefined,
++   [
++     {
++       "max_batch_size": 1,
++       "max_concurrency": 1,
++       "max_retries": 100,
++       "queue": "jotbun-statement-parse",
++       "retry_delay": 30,
++     },
++   ],
+  ]
+
+ ❯ test/vault-files.smoke.db.test.ts:62:74
+     60| it('the vault Worker runs without Workflows, queue consumers or contai…
+     61|   const config = JSON.parse(readFileSync(vault.config, 'utf8')) as { w…
+     62|   expect([config.workflows, config.containers, config.queues.consumers…
+       |                                                                          ^
+     63|   expect(config.queues.producers.map((p) => p.binding)).toEqual(['PARS…
+     64| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  13:52:25
+   Duration  2.18s (transform 178ms, setup 0ms, import 401ms, tests 1.68s, environment 0ms)
+

@@ -1,0 +1,12 @@
+SB2-orig: pass (expected pass): HIDE-END with UIKit's end and the exit's last millisecond in two acts, over fc78376's Tray.tsx: the end commits alone, so the case no longer reaches c-m1's window
+   render 28 passed (28); restored=True
+SB2-real: pass (expected pass): the same two acts over the final Tray.tsx
+   render 28 passed (28); restored=True
+SB-real: fail (expected fail): m-1's case with the end and the tap in two acts, over the final Tray.tsx (the confirming review's SB): the end commits alone and rightly says closed, so the case fails on correct code
+   render 1 failed | 27 passed (28); restored=True
+   failing: on iOS a dismissal that ends in the commit that opens the tray again says nothing
+   AssertionError: onClosed while the tray is open: expected "vi.fn()" to not be called at all, but actually been called 1 times
+LE: pass (expected pass): `showing` refreshed in a layout effect: the Modal is the tray's descendant, so its setState callback still runs before the tray's layout effects (equivalent)
+   render 28 passed (28); restored=True
+M1: pass (expected pass): dismissed calls the render's onClosed, not the ref (equivalent except in the commit that carries the end, where F1 keeps the commit before's on purpose)
+   render 28 passed (28); restored=True

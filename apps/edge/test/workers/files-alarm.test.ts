@@ -3,7 +3,8 @@
 // when a start is due), and every call or background method that writes
 // rearms it. The plan's ten cases, two of them ported from
 // apps/api/src/privacy/retention.integration.spec.ts through the alarm, then
-// the planner's cases for the controller's notes and the brief's rulings.
+// the planner's cases for the controller's notes and the brief's rulings, then
+// alarm-hardening's cases for the 1B-T11 review (m1, m2, m4, n1 to n4).
 // Time is the vault's clock (UserVault#clock); alarms run through
 // runDurableObjectAlarm. A case that arms an alarm either sets the vault clock
 // a day ahead of the real clock first (ruling R6), or runs its alarm moments
@@ -13,25 +14,32 @@
 // to wait on.
 import { env } from 'cloudflare:workers'
 import { evictDurableObject, introspectWorkflowInstance, runDurableObjectAlarm, runInDurableObject } from 'cloudflare:test'
+import { drizzle } from 'drizzle-orm/durable-sqlite'
+import { migrate } from 'drizzle-orm/durable-sqlite/migrator'
 import { randomUUID } from 'node:crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { derivedUuid } from '@api/commands/derived-id'
 import { ObjectStoreError } from '@api/storage/object-store'
 
+import { attachmentsDueAt, pruneAttachments } from '../../src/vault/files/attachments'
 import { touch } from '../../src/vault/files/context'
+import type { FileContext } from '../../src/vault/files/context'
 import { EXPORT_PENDING_MS, EXPORT_PURGE_MS } from '../../src/vault/files/exports'
 import { FILE_PRUNES, runFileJobs } from '../../src/vault/files/jobs'
 import { vaultObjectKey } from '../../src/vault/files/keys'
 import type { VaultBucket } from '../../src/vault/files/keys'
 import { DELETE_RETRY_MS, RESERVATION_GRACE_MS, TOMBSTONE_MS, reserveObject } from '../../src/vault/files/objects'
+import { importsDueAt } from '../../src/vault/files/previews'
 import { START_RETRY_MS, WORK_STARTERS } from '../../src/vault/files/work'
 import type { WorkStarter } from '../../src/vault/files/work'
+import { VAULT_MIGRATIONS } from '../../src/vault/migrations'
 import { RETENTION_RETRY_MS } from '../../src/vault/retention'
 import { CALL_ALARM_DELAY_MS } from '../../src/vault/user-vault'
 import type { UserVault } from '../../src/vault/user-vault'
-import { DAY, MIN, csvRows, fileAt, gate, setVaultClock, spyBucket, upload, vaultExec, vaultIdOf, vaultRows } from './support/files'
-import { moneyFixtures } from './support/money-fixtures'
+import { DAY, HOUR, MIN, csvRows, fileAt, gate, setVaultClock, spyBucket, upload, vaultExec, vaultIdOf, vaultRows } from './support/files'
+import { migrateBefore } from './support/migrations'
+import { builtinId, moneyFixtures } from './support/money-fixtures'
 import { createLunch, member, startV1, vaultOf } from './support/v1-client'
 import type { TestUser, V1Client } from './support/v1-client'
 
@@ -78,6 +86,19 @@ const resetSeams = (user: TestUser) =>
     vault.fileJobOptions = {}
     delete (vault as { bucket?: VaultBucket }).bucket
   })
+
+/** The alarm the vault believes it set, and the one the runtime holds. */
+const both = (user: TestUser) => runInDurableObject(vaultOf(user), async (vault: UserVault, state) => [vault.alarmAt, await state.storage.getAlarm()])
+
+/** True when one of the console.error lines a spy caught is the event `event`. */
+const logged = (calls: unknown[][], event: string) => calls.some(([line]) => typeof line === 'string' && line.includes(`"event":"${event}"`))
+
+/** Lets a promise the storage rejected run its handlers. */
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0))
+
+/** An ISO time on the vault clock's scale, and a stand-in sha256 for rows written straight into the vault. */
+const isoOf = (ms: number) => new Date(ms).toISOString()
+const FILE_SHA = 'a'.repeat(64)
 
 describe('files on the vault alarm (the plan)', () => {
   it('a key whose writer never published it is deleted by the alarm at its deadline', async () => {
@@ -259,7 +280,8 @@ describe('files on the vault alarm (the plan)', () => {
   it('after any alarm, every scheduled time is later than now', async () => {
     // Ruling R37. A vault holding one of each kind of due work, far fewer than 10,000 keys. The first alarm runs at t0,
     // when all of it is due; each later one at the time the last one set. After every alarm each schedule.due_at is
-    // later than the vault clock, and getAlarm() is the smallest of them.
+    // later than the vault clock, and getAlarm() is the smallest of them. Changed form (alarm-hardening): the seed also
+    // holds a due import record and a ready snapshot that its purge makes stale (the 1B-T11 review's m1).
     const user = await member(client)
     const t0 = Date.now() + 40 * DAY
     // A deleted record past its 30 days, through the front door, deleted at t0 - 31 days.
@@ -285,6 +307,7 @@ describe('files on the vault alarm (the plan)', () => {
     expect(await vaultRows(user, 'SELECT id FROM attachments')).toEqual([])
     expect(await vaultRows(user, 'SELECT job_id FROM import_uploads')).toEqual([])
     expect(await vaultRows(user, 'SELECT state FROM entity_heads WHERE entity_id = ?', lunch)).toEqual([{ state: 'purged' }])
+    expect(await vaultRows(user, 'SELECT state FROM entity_heads WHERE entity_id = ?', seeded.review)).toEqual([{ state: 'purged' }])
   }, 60_000)
 })
 
@@ -292,9 +315,11 @@ describe('files on the vault alarm (the plan)', () => {
  * One of each kind of due work at `t0`, written straight into the vault: a key
  * past its reservation, an expired export file, a pending snapshot never
  * started (three days old), a released receipt (due at 0), an expired preview
- * with its sanitized image, and a failed upload that ended 31 days ago.
+ * with its sanitized image, a failed upload that ended 31 days ago, an import
+ * review record last changed 31 days ago, and a ready snapshot that only the
+ * purge of that record makes stale (the 1B-T11 review's m1).
  */
-async function seedDueWork(user: TestUser, t0: number): Promise<{ snapshot: string }> {
+async function seedDueWork(user: TestUser, t0: number): Promise<{ snapshot: string; review: string }> {
   const vault = vaultIdOf(user)
   const iso = (ms: number) => new Date(ms).toISOString()
   const sha = 'a'.repeat(64)
@@ -303,6 +328,8 @@ async function seedDueWork(user: TestUser, t0: number): Promise<{ snapshot: stri
   const attachment = randomUUID()
   const preview = randomUUID()
   const failed = randomUUID()
+  const review = randomUUID()
+  const ready = randomUUID()
   await runInDurableObject(vaultOf(user), (_vault, state) => {
     state.storage.transactionSync(() => {
       const sql = state.storage.sql
@@ -338,9 +365,28 @@ async function seedDueWork(user: TestUser, t0: number): Promise<{ snapshot: stri
         "INSERT INTO import_uploads (job_id, intake_token, status, outcome_code, declared_type, created_at, receive_deadline, finished_at) VALUES (?, ?, 'failed', 'stream_failed', 'text/csv', ?, ?, ?)",
         failed, randomUUID(), iso(t0 - 31 * DAY), iso(t0 - 31 * DAY + 10 * MIN), iso(t0 - 31 * DAY),
       )
+      // An import review record whose last change is 31 days old and whose preview is gone: pruneImports purges it at t0.
+      sql.exec('UPDATE sync_state SET revision = revision + 1 WHERE id = 1')
+      const { revision } = sql.exec<{ revision: number }>('SELECT revision FROM sync_state WHERE id = 1').one()
+      sql.exec(
+        "INSERT INTO entity_changes (revision, ordinal, command_id, entity, entity_id, version, state, snapshot, committed_at, group_bytes) VALUES (?, 0, ?, 'import_review', ?, 1, 'active', '{}', ?, 10)",
+        revision, randomUUID(), review, iso(t0 - 31 * DAY),
+      )
+      sql.exec("INSERT INTO entity_heads (entity, entity_id, version, state, revision) VALUES ('import_review', ?, 1, 'active', ?)", review, revision)
+      // A ready snapshot read at the revision the alarm's purge of the deleted record takes at t0 (the next one), as if
+      // built just after that purge: only the import purge later in the same alarm makes it stale. Another purge before
+      // pruneSnapshots in either order (a second purge group, an export past its 30 days) would make it stale sooner and
+      // hide m1. Its chunk is published until its expiry, an hour after t0.
+      const chunk = `sync_snapshot/${vault}/${ready}/${randomUUID()}/chunk-0000.json`
+      sql.exec(
+        "INSERT INTO snapshots (id, status, high_water, chunk_count, created_at, started_at, ready_at, expires_at) VALUES (?, 'ready', ?, 1, ?, ?, ?, ?)",
+        ready, revision + 1, iso(t0 - HOUR), iso(t0 - HOUR), iso(t0 - HOUR), iso(t0 + HOUR),
+      )
+      sql.exec('INSERT INTO snapshot_chunks (snapshot_id, chunk_index, object_key, bytes, sha256) VALUES (?, 0, ?, 3, ?)', ready, chunk, sha)
+      sql.exec("INSERT INTO vault_objects (key, purpose, status, delete_after, bytes, sha256, created_at) VALUES (?, 'sync_snapshot', 'published', ?, 3, ?, ?)", chunk, t0 + HOUR, sha, t0 - HOUR)
     })
   })
-  return { snapshot }
+  return { snapshot, review }
 }
 
 describe('ported from retention.integration.spec.ts, through the alarm', () => {
@@ -471,6 +517,7 @@ describe("the controller's notes", () => {
 
   it('only one file run at a time: a second run while the first waits on R2 deletes nothing', async () => {
     // The 1B-T4 follow-up: deleteDueObjects never overlaps itself (an overlap could keep a given-up reservation open).
+    // Changed form (alarm-hardening): the second run reports the delete it could not run as failed (the 1B-T11 review's n1).
     const user = await member(client)
     const t = ahead()
     await setVaultClock(user, t)
@@ -496,7 +543,7 @@ describe("the controller's notes", () => {
       return { firstFailed, secondFailed, deletes, rows: state.storage.sql.exec('SELECT status FROM vault_objects').toArray() }
     })
     await resetSeams(user)
-    expect(outcome).toEqual({ firstFailed: [], secondFailed: [], deletes: 1, rows: [{ status: 'tombstone' }] })
+    expect(outcome).toEqual({ firstFailed: [], secondFailed: ['delete_objects'], deletes: 1, rows: [{ status: 'tombstone' }] })
   })
 
   it('an unbound bucket is a failed delete, due again a minute later; the alarm never throws', async () => {
@@ -691,5 +738,418 @@ describe("the brief's rulings", () => {
     } finally {
       WORK_STARTERS.splice(WORK_STARTERS.indexOf(starter), 1)
     }
+  })
+})
+
+/** `n` records, each holding its own retained receipt, written straight into the vault (rows only, no objects). */
+async function seedReceipts(user: TestUser, n: number): Promise<{ records: string[]; receipts: string[] }> {
+  const wallet = await money.wallet(user)
+  const food = builtinId(user, 'food')
+  const vault = vaultIdOf(user)
+  const records = Array.from({ length: n }, () => randomUUID())
+  const receipts = Array.from({ length: n }, () => randomUUID())
+  await runInDurableObject(vaultOf(user), (_vault, state) => {
+    state.storage.transactionSync(() => {
+      const sql = state.storage.sql
+      records.forEach((record, i) => {
+        sql.exec("INSERT INTO transactions (id, type, amount_minor, occurred_on, wallet_id, category_id, version, created_at, updated_at) VALUES (?, 'expense', 100, '2026-02-01', ?, ?, 1, 'x', 'x')", record, wallet, food)
+        sql.exec(
+          "INSERT INTO attachments (id, source_job_id, status, object_key, content_type, bytes, sha256, width, height, retained_at) VALUES (?, ?, 'retained', ?, 'image/jpeg', 3, ?, 1, 1, 'x')",
+          receipts[i], randomUUID(), `receipt/${vault}/${receipts[i]}/${randomUUID()}/image.jpg`, FILE_SHA,
+        )
+        sql.exec("INSERT INTO transaction_attachments (transaction_id, attachment_id, attached_at) VALUES (?, ?, 'x')", record, receipts[i])
+      })
+    })
+  })
+  return { records, receipts }
+}
+
+/** Runs one statement with B20's trigger `name` dropped (as the 1B-T9 review's probe DU-2 does), then puts the trigger back. */
+const aroundTrigger = (user: TestUser, name: string, query: string, ...bindings: unknown[]) =>
+  runInDurableObject(vaultOf(user), (_vault, state) => {
+    state.storage.transactionSync(() => {
+      const sql = state.storage.sql
+      const trigger = sql.exec<{ sql: string }>("SELECT sql FROM sqlite_master WHERE type = 'trigger' AND name = ?", name).one().sql
+      sql.exec(`DROP TRIGGER ${name}`)
+      sql.exec(query, ...bindings)
+      sql.exec(trigger)
+    })
+  })
+
+/** Import records written straight into the vault: each a head and its change, the purged ones purged in a later group. */
+async function seedImportRecords(user: TestUser, records: { entity: string; committedMs: number; purged?: boolean }[]): Promise<string[]> {
+  const ids = records.map(() => randomUUID())
+  await runInDurableObject(vaultOf(user), (_vault, state) => {
+    state.storage.transactionSync(() => {
+      const sql = state.storage.sql
+      const next = () => {
+        sql.exec('UPDATE sync_state SET revision = revision + 1 WHERE id = 1')
+        return sql.exec<{ revision: number }>('SELECT revision FROM sync_state WHERE id = 1').one().revision
+      }
+      const change = (revision: number, ordinal: number, entity: string, id: string, version: number, at: number) =>
+        sql.exec(
+          "INSERT INTO entity_changes (revision, ordinal, command_id, entity, entity_id, version, state, snapshot, committed_at, group_bytes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          revision, ordinal, randomUUID(), entity, id, version, version === 1 ? 'active' : 'purged', version === 1 ? '{}' : null, isoOf(at), ordinal === 0 ? 10 : null,
+        )
+      const first = next()
+      records.forEach((record, i) => {
+        change(first, i, record.entity, ids[i], 1, record.committedMs)
+        sql.exec("INSERT INTO entity_heads (entity, entity_id, version, state, revision) VALUES (?, ?, 1, 'active', ?)", record.entity, ids[i], first)
+      })
+      const purged = records.flatMap((record, i) => (record.purged ? [i] : []))
+      if (purged.length === 0) return
+      const group = next()
+      purged.forEach((i, ordinal) => {
+        sql.exec('DELETE FROM entity_changes WHERE entity = ? AND entity_id = ?', records[i].entity, ids[i])
+        change(group, ordinal, records[i].entity, ids[i], 2, records[i].committedMs)
+        sql.exec("UPDATE entity_heads SET version = 2, state = 'purged', revision = ? WHERE entity = ? AND entity_id = ?", group, records[i].entity, ids[i])
+      })
+    })
+  })
+  return ids
+}
+
+describe("alarm-hardening: the 1B-T11 review's findings", () => {
+  it('an import purge in the same alarm releases a ready snapshot it makes stale, so no job is left due at the vault clock', async () => {
+    // m1 (R37): pruneImports purges an import record, which raises the purge watermark. pruneSnapshots now runs after it,
+    // so the snapshot that purge makes stale has its chunks released, and its key deleted, in this alarm. Run before it,
+    // pruneSnapshots left the stale chunk rows, snapshotsDueAt answered now, and the alarm fired again at once.
+    const user = await member(client)
+    const t = ahead()
+    await setVaultClock(user, t)
+    const res = await client.as(user).post('/v1/sync/snapshots', {}, { key: randomUUID() })
+    expect(res.status).toBe(202)
+    const id = (await json(res)).snapshot_id as string
+    expect(await vaultOf(user).buildSnapshot(id)).toEqual({ outcome: 'ready' })
+    const [chunk] = await registryOf(user, 'sync_snapshot')
+    const [review] = await seedImportRecords(user, [{ entity: 'import_review', committedMs: t - 31 * DAY }])
+    await runInDurableObject(vaultOf(user), (vault: UserVault) => vault.rearm(vault.fileContext()))
+    await fireAt(user, t)
+    expect(await vaultRows(user, 'SELECT state FROM entity_heads WHERE entity_id = ?', review)).toEqual([{ state: 'purged' }])
+    // The stale snapshot keeps its row (it reads expired); its chunk rows went and its key was deleted in this alarm.
+    expect(await vaultRows(user, 'SELECT status FROM snapshots WHERE id = ?', id)).toEqual([{ status: 'ready' }])
+    expect(await vaultRows(user, 'SELECT chunk_index FROM snapshot_chunks WHERE snapshot_id = ?', id)).toEqual([])
+    expect(await registryOf(user, 'sync_snapshot')).toEqual([{ key: chunk.key, status: 'tombstone', delete_after: t + TOMBSTONE_MS }])
+    const schedule = await scheduleOf(user)
+    for (const row of schedule) expect(row.due_at, row.job).toBeGreaterThan(t)
+    expect(await alarmOf(user)).toBe(Math.min(...schedule.map((row) => row.due_at)))
+  })
+
+  it('a delete whose own block throws is reported to the alarm, which comes back a minute later, not at once', async () => {
+    // m2 (the alarm lens's probe PA): R2 deletes the key, then the block that tombstones it fails, so the key is still
+    // due at t. runFileJobs reports the throw as delete_objects; unreported, the alarm would be set at t again and fire
+    // at once into the same failure (R37).
+    const user = await member(client)
+    const t = ahead()
+    await setVaultClock(user, t)
+    const key = await runInDurableObject(vaultOf(user), (vault: UserVault, state) => {
+      const key = exportKey(state)
+      reserveObject(fileAt(state, t - RESERVATION_GRACE_MS), key, 'export')
+      vault.rearm(vault.fileContext(), 0)
+      return key
+    })
+    expect(await alarmOf(user)).toBe(t)
+    await vaultExec(user, "CREATE TRIGGER fail_tombstone BEFORE UPDATE ON vault_objects BEGIN SELECT RAISE(ABORT, 'synthetic tombstone failure'); END")
+    const errors = vi.spyOn(console, 'error')
+    try {
+      expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
+      expect(logged(errors.mock.calls, 'file_delete_failed')).toBe(true)
+    } finally {
+      errors.mockRestore()
+      await vaultExec(user, 'DROP TRIGGER fail_tombstone')
+    }
+    expect(await vaultRows(user, 'SELECT status, delete_after FROM vault_objects WHERE key = ?', key)).toEqual([{ status: 'reserved', delete_after: t }])
+    expect(await alarmOf(user)).toBe(t + RETENTION_RETRY_MS)
+  })
+
+  it('an alarm that finds another file run in progress reports its delete as failed, so it comes back a minute later', async () => {
+    // n1 (probe PG): a run left waiting on R2 holds the one-run guard (P6), as an alarm cut off at its wall-clock limit
+    // could leave it. Reported as success, the held guard brought the alarm back at once while work was due.
+    const user = await member(client)
+    const t = ahead()
+    await setVaultClock(user, t)
+    const entered = gate()
+    const release = gate()
+    let stuck: Promise<unknown> = Promise.resolve()
+    await runInDurableObject(vaultOf(user), (vault: UserVault, state) => {
+      reserveObject(fileAt(state, t - RESERVATION_GRACE_MS), exportKey(state), 'export')
+      const waiting = {
+        delete: async () => {
+          entered.open()
+          await release.opened
+        },
+      } as unknown as VaultBucket
+      Object.defineProperty(vault, 'bucket', { configurable: true, get: () => waiting })
+      vault.rearm(vault.fileContext(), 0)
+      stuck = runFileJobs(vault)
+    })
+    await entered.opened
+    expect(await alarmOf(user)).toBe(t)
+    const errors = vi.spyOn(console, 'error')
+    let held = false
+    try {
+      expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
+      held = logged(errors.mock.calls, 'file_run_held')
+    } finally {
+      errors.mockRestore()
+    }
+    const after = await alarmOf(user)
+    release.open()
+    await stuck
+    await resetSeams(user)
+    expect({ held, after }).toEqual({ held: true, after: t + RETENTION_RETRY_MS })
+  })
+
+  it('a setAlarm the storage refuses is logged and forgotten, so the next rearm sets the alarm again', async () => {
+    // n2: rearm's setAlarm and deleteAlarm settle after it returns, outside its try. A refusal was an unhandled
+    // rejection, and alarmAt already named the alarm, so a rearm to the same time returned early and nothing set it.
+    const user = await member(client)
+    const t = ahead()
+    await setVaultClock(user, t)
+    const errors = vi.spyOn(console, 'error')
+    let refused: unknown
+    try {
+      refused = await runInDurableObject(vaultOf(user), async (vault: UserVault, state) => {
+        reserveObject(fileAt(state, t - RESERVATION_GRACE_MS), exportKey(state), 'export')
+        const refuse = vi.spyOn(state.storage, 'setAlarm').mockRejectedValueOnce(new Error('storage is down'))
+        try {
+          vault.rearm(vault.fileContext(), 0)
+          await settle()
+          return { asked: refuse.mock.calls.map(([at]) => at), alarmAt: vault.alarmAt, set: await state.storage.getAlarm(), logged: logged(errors.mock.calls, 'vault_alarm_unset') }
+        } finally {
+          refuse.mockRestore()
+        }
+      })
+    } finally {
+      errors.mockRestore()
+    }
+    expect(refused).toEqual({ asked: [t], alarmAt: null, set: null, logged: true })
+    // The same time again: the vault does not take the refused alarm for set.
+    await runInDurableObject(vaultOf(user), (vault: UserVault) => vault.rearm(vault.fileContext(), 0))
+    expect(await both(user)).toEqual([t, t])
+  })
+
+  it('a refusal that lands after a later rearm leaves that alarm alone, and a refused deleteAlarm is logged', async () => {
+    // n2: the refused alarm is forgotten only while alarmAt still names it.
+    const user = await member(client)
+    const t = ahead()
+    await setVaultClock(user, t)
+    const errors = vi.spyOn(console, 'error')
+    try {
+      const out = await runInDurableObject(vaultOf(user), async (vault: UserVault, state) => {
+        // The first rearm asks for t + 10 minutes; that setAlarm hangs, and is refused only after a second rearm set t + 1 minute.
+        reserveObject(fileAt(state, t + 10 * MIN - RESERVATION_GRACE_MS), exportKey(state), 'export')
+        let refuse: (error: Error) => void = () => undefined
+        const hang = vi.spyOn(state.storage, 'setAlarm').mockImplementationOnce(
+          () =>
+            new Promise<void>((_resolve, reject) => {
+              refuse = reject
+            }),
+        )
+        vault.rearm(vault.fileContext(), 0)
+        hang.mockRestore()
+        reserveObject(fileAt(state, t + MIN - RESERVATION_GRACE_MS), exportKey(state), 'export')
+        vault.rearm(vault.fileContext(), 0)
+        refuse(new Error('storage is down'))
+        await settle()
+        const kept = [vault.alarmAt, await state.storage.getAlarm()]
+        // Nothing is left to do, so the next rearm deletes the alarm, which the storage refuses.
+        state.storage.sql.exec('DELETE FROM vault_objects')
+        const refuseDelete = vi.spyOn(state.storage, 'deleteAlarm').mockRejectedValueOnce(new Error('storage is down'))
+        try {
+          vault.rearm(vault.fileContext(), 0)
+          await settle()
+          return { kept, deletes: refuseDelete.mock.calls.length, alarmAt: vault.alarmAt }
+        } finally {
+          refuseDelete.mockRestore()
+        }
+      })
+      expect(out).toEqual({ kept: [t + MIN, t + MIN], deletes: 1, alarmAt: null })
+      expect(errors.mock.calls.filter(([line]) => typeof line === 'string' && line.includes('"event":"vault_alarm_unset"'))).toHaveLength(2)
+    } finally {
+      errors.mockRestore()
+    }
+  })
+
+  it('a schedule write that fails after a call committed is logged, and the call still answers its success', async () => {
+    // n3 (probe PH): rearm runs after the call's block committed, so it logs vault_alarm_unset instead of throwing.
+    const user = await member(client)
+    const t = ahead()
+    await setVaultClock(user, t)
+    const cash = await money.wallet(user)
+    await vaultExec(user, "CREATE TRIGGER fail_schedule_i BEFORE INSERT ON schedule BEGIN SELECT RAISE(ABORT, 'synthetic schedule failure'); END")
+    await vaultExec(user, "CREATE TRIGGER fail_schedule_u BEFORE UPDATE ON schedule BEGIN SELECT RAISE(ABORT, 'synthetic schedule failure'); END")
+    const errors = vi.spyOn(console, 'error')
+    let status = 0
+    let wasLogged = false
+    try {
+      status = (await client.as(user).patch(`/v1/wallets/${cash}`, { name: 'Cash 2' }, { ifMatch: 1 })).status
+      wasLogged = logged(errors.mock.calls, 'vault_alarm_unset')
+    } finally {
+      errors.mockRestore()
+      await vaultExec(user, 'DROP TRIGGER fail_schedule_i')
+      await vaultExec(user, 'DROP TRIGGER fail_schedule_u')
+    }
+    const stored = await vaultRows(user, 'SELECT name FROM wallets WHERE id = ?', cash)
+    expect({ status, logged: wasLogged, stored }).toEqual({ status: 200, logged: true, stored: [{ name: 'Cash 2' }] })
+  })
+
+  it('a background write that makes work due at once still waits the write floor (R104 through background())', async () => {
+    // n4 (probe PE): failExport is a short-block background method; a key already due beside it is due at once.
+    const user = await member(client)
+    const requested = await requestExport(client, user)
+    expect(requested.status).toBe(202)
+    const t = ahead()
+    await setVaultClock(user, t)
+    await runInDurableObject(vaultOf(user), async (vault: UserVault, state) => {
+      reserveObject(fileAt(state, t - RESERVATION_GRACE_MS - MIN), exportKey(state), 'export')
+      vault.alarmAt = null
+      await state.storage.deleteAlarm()
+    })
+    await vaultOf(user).failExport(requested.id)
+    expect(await both(user)).toEqual([t + CALL_ALARM_DELAY_MS, t + CALL_ALARM_DELAY_MS])
+  })
+
+  it('a start through rearming() that makes work due at once still waits the write floor (R104 through rearming())', async () => {
+    // n4 (probe PF): the start gives a key up at once, as a release does.
+    const user = await member(client)
+    const t = ahead()
+    await setVaultClock(user, t)
+    const marked = new Set<string>()
+    const starter: WorkStarter = {
+      kind: 'export',
+      unstarted: () => (marked.has('work') ? [] : ['work']),
+      dueAt: () => (marked.has('work') ? null : t - MIN),
+      start: async () => 'started',
+      markStarted: (c, id) => {
+        marked.add(id)
+        reserveObject(c, vaultObjectKey('export', c.vaultId, randomUUID(), randomUUID(), 'export.csv'), 'export', -RESERVATION_GRACE_MS)
+        touch(c)
+      },
+    }
+    WORK_STARTERS.push(starter)
+    try {
+      expect(await vaultOf(user).startPendingWork()).toEqual({ started: 1, failed: 0, held: false })
+      expect(await both(user)).toEqual([t + CALL_ALARM_DELAY_MS, t + CALL_ALARM_DELAY_MS])
+    } finally {
+      WORK_STARTERS.splice(WORK_STARTERS.indexOf(starter), 1)
+    }
+  })
+
+  it('the due-time reads after a write read as many rows with a hundred held receipts and purged import records as with none', async () => {
+    // m4: attachmentsDueAt and importsDueAt run after every write (1B-T11's rearm). The safety net read every retained
+    // receipt and its holder, and the import read walked every import record the vault ever had, purged ones included.
+    // rowsRead is the storage's own count of the rows a statement read.
+    const user = await money.member()
+    const t = ahead()
+    const rowsRead = () =>
+      runInDurableObject(vaultOf(user), (_vault, state) => {
+        const cursors: SqlStorageCursor<Record<string, SqlStorageValue>>[] = []
+        const sql = {
+          exec: (query: string, ...bindings: unknown[]) => {
+            const cursor = state.storage.sql.exec(query, ...bindings)
+            cursors.push(cursor)
+            return cursor
+          },
+        } as unknown as SqlStorage
+        const c: FileContext = { sql, storage: state.storage, now: new Date(t), vaultId: state.id.toString() }
+        const total = () => cursors.splice(0).reduce((sum, cursor) => sum + cursor.rowsRead, 0)
+        attachmentsDueAt(c)
+        const receipts = total()
+        importsDueAt(c)
+        return { receipts, imports: total() }
+      })
+    const none = await rowsRead()
+    await seedReceipts(user, 100)
+    await seedImportRecords(user, Array.from({ length: 100 }, () => ({ entity: 'import_review', committedMs: t - 40 * DAY, purged: true })))
+    // pruneAttachments checks every receipt, as each alarm does.
+    await runInDurableObject(vaultOf(user), (_vault, state) => pruneAttachments(fileAt(state, t)))
+    expect(await rowsRead()).toEqual(none)
+  })
+
+  it('a receipt left with no holder is due at once however it lost its holder, and the prune that releases it empties the checks', async () => {
+    // m4: the safety net (a retained receipt no record holds) reads only attachment_checks, which 0004's triggers fill
+    // on each event that can leave a retained receipt with no holder. B20's triggers release a receipt whose last
+    // holder goes, so the two events through a holder are made with B20's trigger dropped, as probe DU-2 does; the
+    // release B20 makes is due at once through the stamp it waits for.
+    const user = await money.member()
+    const t = ahead()
+    const { records, receipts } = await seedReceipts(user, 4)
+    const vault = vaultIdOf(user)
+    const dueAt = () => runInDurableObject(vaultOf(user), (_vault, state) => attachmentsDueAt(fileAt(state, t)))
+    const checks = async () => (await vaultRows<{ attachment_id: string }>(user, 'SELECT attachment_id FROM attachment_checks')).map((row) => row.attachment_id)
+    const prune = () => runInDurableObject(vaultOf(user), (_vault, state) => pruneAttachments(fileAt(state, t)))
+    const statusOf = async (id: string) => (await vaultRows<{ status: string }>(user, 'SELECT status FROM attachments WHERE id = ?', id)).map((row) => row.status)
+    await prune()
+    expect([await dueAt(), await checks()]).toEqual([null, []])
+    // A receipt kept with no record holding it.
+    const kept = randomUUID()
+    await vaultExec(
+      user,
+      "INSERT INTO attachments (id, source_job_id, status, object_key, content_type, bytes, sha256, width, height, retained_at) VALUES (?, ?, 'retained', ?, 'image/jpeg', 3, ?, 1, 1, 'x')",
+      kept, randomUUID(), `receipt/${vault}/${kept}/${randomUUID()}/image.jpg`, FILE_SHA,
+    )
+    expect([await dueAt(), await checks()]).toEqual([t, [kept]])
+    await prune()
+    expect([await statusOf(kept), await checks()]).toEqual([['released'], []])
+    // A holder deleted with B20 in place: the receipt is released and waits for its stamp.
+    await vaultExec(user, 'DELETE FROM transaction_attachments WHERE transaction_id = ?', records[3])
+    expect([await statusOf(receipts[3]), await dueAt(), await checks()]).toEqual([['released'], t, [receipts[3]]])
+    await prune()
+    expect(await checks()).toEqual([])
+    // A holder deleted around B20's release.
+    await aroundTrigger(user, 'transaction_attachments_unheld_delete', 'DELETE FROM transaction_attachments WHERE transaction_id = ?', records[0])
+    expect([await dueAt(), await checks()]).toEqual([t, [receipts[0]]])
+    await prune()
+    expect([await statusOf(receipts[0]), await checks()]).toEqual([['released'], []])
+    // A holder moved to another receipt around B20's release.
+    await aroundTrigger(user, 'transaction_attachments_unheld_update', 'UPDATE transaction_attachments SET attachment_id = ? WHERE transaction_id = ?', receipts[2], records[1])
+    expect([await dueAt(), await checks()]).toEqual([t, [receipts[1]]])
+    await prune()
+    expect([await statusOf(receipts[1]), await checks()]).toEqual([['released'], []])
+    // A released receipt set back to retained, which nothing holds.
+    await vaultExec(user, "UPDATE attachments SET status = 'retained', released_at = NULL WHERE id = ?", kept)
+    expect([await dueAt(), await checks()]).toEqual([t, [kept]])
+    await prune()
+    expect([await statusOf(kept), await checks()]).toEqual([['released'], []])
+    // The receipt two records still hold was never due.
+    expect(await statusOf(receipts[2])).toEqual(['retained'])
+  })
+
+  it('a vault upgraded from 0003 starts its checks with the receipts that already have no holder', async () => {
+    // m4: 0004 lists the receipts already left with no holder, so the safety net still finds them after the upgrade.
+    const t = ahead()
+    const [wallet, category, record, held, alone] = Array.from({ length: 5 }, () => randomUUID())
+    const stub = env.VAULT.get(env.VAULT.idFromName(randomUUID()))
+    const out = await runInDurableObject(stub, async (_vault, state) => {
+      await migrateBefore(state, '_alarm_bounds')
+      const sql = state.storage.sql
+      const vault = state.id.toString()
+      sql.exec("INSERT INTO wallets (id, name, currency, opening_minor, tracking_start, archived, version, created_at, updated_at) VALUES (?, 'Cash', 'THB', 0, '2026-10-01', 0, 1, 'x', 'x')", wallet)
+      sql.exec("INSERT INTO categories (id, type, builtin_key, label, color, archived, version, created_at, updated_at) VALUES (?, 'expense', NULL, 'Snacks', NULL, 0, 1, 'x', 'x')", category)
+      sql.exec("INSERT INTO transactions (id, type, amount_minor, occurred_on, wallet_id, category_id, version, created_at, updated_at) VALUES (?, 'expense', 100, '2026-10-20', ?, ?, 1, 'x', 'x')", record, wallet, category)
+      for (const id of [held, alone]) {
+        sql.exec(
+          "INSERT INTO attachments (id, source_job_id, status, object_key, content_type, bytes, sha256, width, height, retained_at) VALUES (?, ?, 'retained', ?, 'image/jpeg', 3, ?, 1, 1, 'x')",
+          id, randomUUID(), `receipt/${vault}/${id}/${randomUUID()}/image.jpg`, FILE_SHA,
+        )
+      }
+      sql.exec("INSERT INTO transaction_attachments (transaction_id, attachment_id, attached_at) VALUES (?, ?, 'x')", record, held)
+      await migrate(drizzle(state.storage), VAULT_MIGRATIONS)
+      return { checks: sql.exec('SELECT attachment_id FROM attachment_checks').toArray(), due: attachmentsDueAt(fileAt(state, t)) }
+    })
+    expect(out).toEqual({ checks: [{ attachment_id: alone }], due: t })
+  })
+
+  it('importsDueAt counts the live import records only: a purged one is skipped, a live selection counts', async () => {
+    // m4: importsDueAt reads the live import heads through entity_heads_imports_idx (0004). This pins the two terms of
+    // its WHERE that the index matches: the purged state, and both entity names.
+    const user = await member(client)
+    const t = ahead()
+    await seedImportRecords(user, [
+      { entity: 'import_review', committedMs: t - 40 * DAY, purged: true },
+      { entity: 'import_selection', committedMs: t - 10 * DAY },
+    ])
+    expect(await runInDurableObject(vaultOf(user), (_vault, state) => importsDueAt(fileAt(state, t)))).toBe(t + 20 * DAY)
   })
 })

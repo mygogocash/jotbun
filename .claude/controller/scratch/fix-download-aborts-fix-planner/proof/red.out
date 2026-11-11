@@ -1,0 +1,10 @@
+R11 RED as expected (the upload hands its promise over before the isolate's 503 check) [workers 1 failed | 6 passed (7)] assertion errors 1, other errors 0, restored=True
+    failed: download-aborts.test.ts: an upload turned away at the isolate's limit (503) hands waitUntil nothing
+R13 RED as expected (the export download's catch gives back the slot without ending its promise) [workers 1 failed | 6 passed (7)] assertion errors 1, other errors 0, restored=True
+    failed: download-aborts.test.ts: an export download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled, answered to a HEAD or refused after it took its slot
+R13b RED as expected (the snapshot chunk download's catch, the same) [workers 1 failed | 6 passed (7)] assertion errors 1, other errors 0, restored=True
+    failed: download-aborts.test.ts: a snapshot chunk download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled, answered to a HEAD or refused after it took its slot
+R13c RED as expected (the receipt download's catch, the same) [workers 1 failed | 6 passed (7)] assertion errors 1, other errors 0, restored=True
+    failed: download-aborts.test.ts: a receipt download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled, answered to a HEAD or refused after it took its slot
+R14 RED as expected (prepare's later attempts (after a `wait`) take their copy slot without untilReturned) [workers 1 failed | 6 passed (7)] assertion errors 1, other errors 0, restored=True
+    failed: download-aborts.test.ts: a retain that waited on another request's copy hands waitUntil a promise on its later attempt too, pending while that attempt copies

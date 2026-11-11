@@ -1,0 +1,28 @@
+[09:37:03 load 6.77] base: 784667b's tray files on d1111f8 (#391 merged)
+[09:37:06 load 6.71] base typecheck:app exit=0
+[09:37:07 load 6.71] base trayGesture.test.ts exit=0 ℹ tests 4 ℹ pass 4 ℹ fail 0 
+[09:37:09 load 6.71] base Tray.render exit=0  Test Files 1 passed (1)  Tests 22 passed (22) 
+[09:37:15 load 6.76] base catalogue bw- exit=0  Test Files 2 passed (2)  Tests 18 passed | 572 skipped (590) 
+[09:37:22 load 6.54] base probes (the review's 19, the first planner's 15) exit=1  Test Files 2 failed | 1 passed (3)  Tests 6 failed | 28 passed (34)  failing: R-d P-J R-d2 R-d3 R-d5 R-d5b 
+[09:37:22 load 6.54] red: the final test file (real/) over 784667b's Tray.tsx (orig/)
+[09:37:26 load 7.21] red typecheck:app exit=0
+[09:37:28 load 7.21] red Tray.render exit=1  Test Files 1 failed (1)  Tests 1 failed | 25 passed (26)  assertion=1 load-errors=0
+[09:37:28 load 7.21] green: Tray.tsx and its test file (real/)
+[09:37:32 load 7.12] green typecheck:app exit=0
+[09:37:32 load 7.12] green trayGesture.test.ts exit=0 ℹ tests 4 ℹ pass 4 ℹ fail 0 
+[09:37:34 load 7.12] green Tray.render exit=0  Test Files 1 passed (1)  Tests 26 passed (26)  stderr-blocks=0
+[09:37:40 load 7.01] green catalogue bw- exit=0  Test Files 2 passed (2)  Tests 18 passed | 572 skipped (590) 
+[09:37:46 load 6.93] green probes (the review's 19, the first planner's 15) exit=1  Test Files 1 failed | 2 passed (3)  Tests 1 failed | 33 passed (34)  failing: P-J 
+[09:37:46 load 6.93] mutants --check exit=0 40 APPLIES
+[09:39:40 load 7.08] mutants exit=0 40 killed, 0 survived, 0 not as expected
+[09:41:37 load 8.18] mutants, a second run exit=0 40 killed, 0 survived, 0 not as expected
+[09:41:37 load 8.18] mutants: the two runs' lines DIFFER
+[09:41:37 load 8.18] mutants: after both runs, 0 of the three files differ from real/ or the base
+[09:41:37 load 8.18] gate: start
+[09:41:42 load 7.69] gate typecheck:app exit=0
+[09:41:42 load 7.69] gate focused Node exit=0 ℹ tests 4 ℹ pass 4 ℹ fail 0 
+[09:41:44 load 7.69] gate focused render exit=0  Test Files 1 passed (1)  Tests 26 passed (26) 
+[09:41:52 load 7.27] gate catalogue bw- exit=0  Test Files 2 passed (2)  Tests 18 passed | 572 skipped (590) 
+[09:41:53 load 7.27] gate test:app exit=0 ℹ tests 34 ℹ pass 34 ℹ fail 0 
+[09:41:55 load 8.13] gate test:unit exit=0 ℹ tests 970 ℹ pass 970 ℹ fail 0 
+[09:41:55 load 8.13] gate whitespace check: 0 lines of complaint

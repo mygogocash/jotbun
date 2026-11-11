@@ -1,0 +1,83 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/alarm-hardening-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/alarm-hardening-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/vault-schema.test.ts > a new vault has every core table, migrated once 15ms
+ ✓ test/workers/vault-schema.test.ts > a vault keeps its rows and does not migrate again after it sleeps 17ms
+ ✓ test/workers/vault-schema.test.ts > the Drizzle schema matches the migrated tables column for column 29ms
+ ✓ test/workers/vault-schema.test.ts > foreign keys hold: a transaction naming an unknown wallet is refused 11ms
+ ✓ test/workers/vault-schema.test.ts > command log rows must use the current revision, and entity heads only move forward 14ms
+ ✓ test/workers/vault-schema.test.ts > a primary key cannot be NULL 12ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a key whose writer never published it is deleted by the alarm at its deadline 36ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > an export file is deleted by the alarm when it expires, and its status reads expired 41ms
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a failed start is retried a minute later, not in a loop
+{"level":"error","event":"work_start_failed","failure":"Error"}
+
+ ✓ test/workers/vault-schema.test.ts > a category's type and built-in key never change 12ms
+ ✓ test/workers/vault-schema.test.ts > a category id never changes 12ms
+ ✓ test/workers/vault-schema.test.ts > a replace that reuses another category's built-in key is refused, and the other category survives 12ms
+ ✓ test/workers/vault-schema.test.ts > INSERT OR REPLACE cannot flip a category in use, but an identical ON CONFLICT DO NOTHING insert is allowed 13ms
+ ✓ test/workers/vault-schema.test.ts > a category is never deleted 12ms
+ ✓ test/workers/vault-schema.test.ts > a category has a label or a built-in key 12ms
+ ✓ test/workers/vault-schema.test.ts > a receipt can drop its digest pair, but never just one half 25ms
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a prune that throws is logged, the others still run, and the alarm is set again
+{"level":"error","event":"file_prune_failed","failure":"Error"}
+
+ ✓ test/workers/vault-schema.test.ts > a record can hold only a retained receipt, and letting go of the last holder releases it and makes its object due 21ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > work requested before the vault slept is started by its alarm after it wakes 34ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a failed start is retried a minute later, not in a loop 19ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a capped run leaves the alarm set, and the next alarm clears the rest 37ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a prune that throws is logged, the others still run, and the alarm is set again 24ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > the alarm follows the earliest of the core and file jobs 40ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > after any alarm, every scheduled time is later than now 62ms
+ ✓ test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > export requests are purged 30 days after the request; the receipt stays compact 29ms
+ ✓ test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > drops finished upload rows 30 days after they ended, never one still receiving or within the quota window 24ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > a resent snapshot request after its snapshot went stale reads expired and starts nothing; a new key builds a new one 62ms
+stderr | test/workers/files-alarm.test.ts > the controller's notes > only one file run at a time: a second run while the first waits on R2 deletes nothing
+{"level":"error","event":"file_run_held","failure":"Error"}
+
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > a vault that is not active runs no file job and keeps no alarm for them 20ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > an upload arms the alarm though it commits no command 22ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > only one file run at a time: a second run while the first waits on R2 deletes nothing 67ms
+stderr | test/workers/files-alarm.test.ts > the controller's notes > an unbound bucket is a failed delete, due again a minute later; the alarm never throws
+{"level":"error","event":"object_delete_failed","failure":"ObjectStoreError"}
+
+stderr | test/workers/files-alarm.test.ts > the brief's rulings > a prune that keeps throwing brings the alarm back a minute later, never in a loop
+{"level":"error","event":"file_prune_failed","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > the brief's rulings > after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner
+{"level":"error","event":"vault_retention_purge_failed","failure":"Error"}
+
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > an unbound bucket is a failed delete, due again a minute later; the alarm never throws 17ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > an erase that lands while the alarm waits on R2 leaves the vault erased, with no alarm and no schedule 29ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > the alarm's due-time read of deleted records and the purge's change lookup use their indexes 13ms
+ ✓ test/workers/files-alarm.test.ts > the brief's rulings > a prune that keeps throwing brings the alarm back a minute later, never in a loop 19ms
+ ✓ test/workers/files-alarm.test.ts > the brief's rulings > after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner 29ms
+stderr | test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a delete whose own block throws is reported to the alarm, which comes back a minute later, not at once
+{"level":"error","event":"file_delete_failed","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > an alarm that finds another file run in progress reports its delete as failed, so it comes back a minute later
+{"level":"error","event":"file_run_held","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a setAlarm the storage refuses is logged and forgotten, so the next rearm sets the alarm again
+{"level":"error","event":"vault_alarm_unset","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a refusal that lands after a later rearm leaves that alarm alone, and a refused deleteAlarm is logged
+{"level":"error","event":"vault_alarm_unset","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a refusal that lands after a later rearm leaves that alarm alone, and a refused deleteAlarm is logged
+{"level":"error","event":"vault_alarm_unset","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a schedule write that fails after a call committed is logged, and the call still answers its success
+{"level":"error","event":"vault_alarm_unset","failure":"Error"}
+
+ ✓ test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > the due-time reads after a write read as many rows with a hundred held receipts and purged import records as with none 32ms
+ ✓ test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a receipt left with no holder is due at once however it lost its holder, and the prune that releases it empties the checks 42ms
+ ✓ test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a vault upgraded from 0003 starts its checks with the receipts that already have no holder 21ms
+ ✓ test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > importsDueAt counts the live import records only: a purged one is skipped, a live selection counts 14ms
+
+ Test Files  2 passed (2)
+      Tests  49 passed (49)
+   Start at  09:54:05
+   Duration  3.43s (transform 1.79s, setup 3.60s, import 61ms, tests 1.24s, environment 0ms)
+

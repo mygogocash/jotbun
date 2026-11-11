@@ -1,0 +1,71 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t12-fix-planner/tree/apps/edge
+
+ × test/vault-parity-files.db.test.ts > the vault Worker stores, queues and serves files exactly like the NestJS v1 API 154ms
+   → answers that print alike differ in key order (R92): expected [ { step: '13. export', …(2) } ] to deeply equal []
+ ✓ test/vault-parity-files.db.test.ts > the vault Worker runs without Workflows, queue consumers or containers (B13) 0ms
+ ✓ test/vault-parity-files.db.test.ts > the retired proof routes answer 404 on the vault Worker 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/vault-parity-files.db.test.ts > the vault Worker stores, queues and serves files exactly like the NestJS v1 API
+AssertionError: answers that print alike differ in key order (R92): expected [ { step: '13. export', …(2) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "nest": {
++       "body": {
++         "command_id": "<id:2>",
++         "committed_revision": "1",
++         "entity_id": "<id:3>",
++         "entity_state": "active",
++         "outcome": "accepted",
++         "version": 1,
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 202,
++     },
++     "step": "13. export",
++     "vault": {
++       "body": {
++         "command_id": "<id:2>",
++         "committed_revision": "1",
++         "entity_id": "<id:3>",
++         "entity_state": "active",
++         "outcome": "accepted",
++         "version": 1,
++       },
++       "headers": {
++         "cache-control": "no-store",
++         "content-type": "application/json; charset=utf-8",
++         "retry-after": null,
++       },
++       "status": 202,
++     },
++   },
++ ]
+
+ ❯ test/vault-parity-files.db.test.ts:61:77
+     59|   })
+     60|   // vitest prints objects with sorted keys: a listed step whose two a…
+     61|   expect(differences, 'answers that print alike differ in key order (R…
+       |                                                                             ^
+     62|   expect(STEPS.length).toBe(42)
+     63|   expect(STEPS.filter((s) => s.signIn).map((s) => s.name)).toEqual(['e…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  10:18:53
+   Duration  2.16s (transform 182ms, setup 15ms, import 393ms, tests 1.65s, environment 0ms)
+

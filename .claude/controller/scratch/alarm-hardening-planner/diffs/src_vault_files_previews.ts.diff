@@ -1,0 +1,39 @@
+diff --git a/apps/edge/src/vault/files/previews.ts b/apps/edge/src/vault/files/previews.ts
+index 67be8cd..1b98ca0 100644
+--- a/apps/edge/src/vault/files/previews.ts
++++ b/apps/edge/src/vault/files/previews.ts
+@@ -326,11 +326,20 @@ export function pruneImports(c: FileContext): void {
+   }
+ }
+ 
++/**
++ * The import records that are not purged: the WHERE of 0004's entity_heads_imports_idx, term for term, so the
++ * planner can read that index. A purged head stays for good, so without it importsDueAt would walk every import
++ * record the vault ever had, after every write (alarm-hardening).
++ */
++const LIVE_IMPORT_HEADS = `h.entity IN ('${SELECTION_ENTITY}', '${REVIEW_ENTITY}') AND h.state <> 'purged'`
++
+ /**
+  * When pruneImports next has work, from the same rules: the earliest unexpired
+  * preview's expiry, the earliest selection's expiry, and each unpurged import
+  * record's last change plus 30 days, but not before its selection or preview
+- * expires; null when none will (ruling R37).
++ * expires; null when none will (ruling R37). The records are read from their
++ * live heads first (CROSS JOIN fixes that order; otherwise the planner walks
++ * every change of the two entities through entity_changes_entity_idx).
+  */
+ export function importsDueAt(c: FileContext): number | null {
+   const { preview, selection, record } = c.sql
+@@ -341,10 +350,9 @@ export function importsDueAt(c: FileContext): number | null {
+                               coalesce(CASE h.entity WHEN ?1 THEN (SELECT s.expires_at FROM import_selections s WHERE s.selection_id = h.entity_id)
+                                                      ELSE (SELECT p.expires_at FROM import_previews p WHERE p.job_id = h.entity_id) END, '')))
+                  FROM entity_heads h
+-                 JOIN entity_changes g ON g.revision = h.revision AND g.entity = h.entity AND g.entity_id = h.entity_id
+-                WHERE h.entity IN (?1, ?2) AND h.state <> 'purged') AS record`,
++                 CROSS JOIN entity_changes g ON g.revision = h.revision AND g.entity = h.entity AND g.entity_id = h.entity_id
++                WHERE ${LIVE_IMPORT_HEADS}) AS record`,
+       SELECTION_ENTITY,
+-      REVIEW_ENTITY,
+     )
+     .one()
+   const times = [preview, selection, record].filter((time): time is string => time !== null).map((time) => Date.parse(time))

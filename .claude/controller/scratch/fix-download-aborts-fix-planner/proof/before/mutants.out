@@ -1,0 +1,6 @@
+A8 KILLED (untilReturned ends its promise but never returns the slot) [workers 5 failed (5)] restored=True
+    failed: download-aborts.test.ts: a receipt download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled or answered to a HEAD
+    failed: download-aborts.test.ts: a retain hands waitUntil a promise that is pending while it holds a copy slot and ends once the slot is back; a retain turned away for want of a slot hands over nothing
+    failed: download-aborts.test.ts: a snapshot chunk download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled or answered to a HEAD
+    failed: download-aborts.test.ts: an export download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled or answered to a HEAD
+    failed: download-aborts.test.ts: an upload hands waitUntil a promise that is pending while it holds its place among the isolate's uploads and ends once it gives the place back

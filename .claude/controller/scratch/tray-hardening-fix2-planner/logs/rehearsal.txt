@@ -1,0 +1,69 @@
+rehearsal of briefs/tray-hardening-fix2.md, 2026-11-10 15:12:46, WT=/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix2-planner/rehearsal/wt, S=/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix2-planner/rehearsal/S
+Step 1.1 (the rest of Step 1 needs the real branch and remote)
+  OK   status --short: 
+Step 2
+  OK   2.1 exit: 0
+  OK   2.1 OK lines: 3
+  OK   2.2 exit: 0
+  OK   2.2 counts: ℹ tests 4|ℹ pass 4|ℹ fail 0
+  OK   2.3 exit: 0
+  OK   2.3 Tests:       Tests  26 passed (26)
+Step 3
+  OK   3.2 status:  M apps/app/src/wallet/tray/Tray.render.test.tsx
+  OK   3.3 exit: 0
+  OK   3.4 exit: 0
+  OK   3.5 exit: 1
+  OK   3.5 Tests:       Tests  1 failed | 27 passed (28)
+  OK   3.5 failing:  × src/wallet/tray/Tray.render.test.tsx > on iOS a dismissal that ends in the commit that hides the tray again says nothing; the next one says it closed
+  OK   3.5 assertion: AssertionError: the earlier end, in the commit that hides the Modal again: expected "vi.fn()" to not be called at all, but actually been called 1 times
+  OK   3.5 load errors: 0
+  OK   3.6 exit: 0
+  OK   3.7 exit: 0
+  OK   3.8 exit: 1
+  OK   3.8 Tests:       Tests  2 failed | 26 passed (28)
+  OK   3.8 failing:  × src/wallet/tray/Tray.render.test.tsx > on iOS a dismissal that ends in the commit that hides the tray again says nothing; the next one says it closed| × src/wallet/tray/Tray.render.test.tsx > on iOS an onClosed given while the dismissal is under way is the one called
+  OK   3.8 assertions: AssertionError: the earlier end, in the commit that hides the Modal again: expected "vi.fn()" to not be called at all, but actually been called 1 times|AssertionError: calls: the onClosed given first, the one given last: expected [ 1, +0 ] to deeply equal [ +0, 1 ]
+  OK   3.8 load errors: 0
+Step 4
+  OK   4.1 exit: 0
+  OK   4.2 exit: 0
+  OK   4.3 exit: 0
+  OK   4.3 counts: ℹ tests 4|ℹ pass 4|ℹ fail 0
+  OK   4.4 exit: 0
+  OK   4.4 Tests:       Tests  28 passed (28)
+  OK   4.4 stderr: 0
+  OK   4.5 exit: 0
+  OK   4.5 files:  Test Files  2 passed (2)
+  OK   4.5 Tests starts:       Tests  18 passed
+Step 5
+  OK   5 check exit: 0
+  OK   5 check APPLIES: 45
+  OK   5 exit: 0
+  OK   5 KILLED: 45
+  OK   5 restored: 45
+  OK   5 diff: 
+  OK   5 status:  M apps/app/src/wallet/tray/Tray.render.test.tsx| M apps/app/src/wallet/tray/Tray.tsx
+  OK   5 green sums: 0
+Step 6
+  OK   6.1 exit: 0
+  OK   6.2 Node exit: 0
+  OK   6.2 render exit: 0
+  OK   6.2 render Tests:       Tests  28 passed (28)
+  OK   6.2 catalogue exit: 0
+  OK   6.3 exit: 0
+  OK   6.3 fail: ℹ fail 0
+  OK   6.4 exit: 0
+  OK   6.4 fail: ℹ fail 0
+  OK   6.5 diff --check: 
+Step 7
+  OK   7.2 exit: 0
+  OK   7.3 one Deviations line to edit: 1
+Step 8
+  OK   8.2 status: M  apps/app/src/wallet/tray/Tray.render.test.tsx|M  apps/app/src/wallet/tray/Tray.tsx|M  docs/implementation/receipts/tray-hardening.md
+  OK   8.3 diff --cached --check: 
+  OK   8.4 commit exit: 0
+  OK   8.5 diff --check (stand-in base): 
+  OK   8.5 trailer: Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>
+  OK   8.5 files: apps/app/src/wallet/tray/Tray.render.test.tsx|apps/app/src/wallet/tray/Tray.tsx|docs/implementation/receipts/tray-hardening.md
+58 expectations held, 0 missed
+rehearsal/ deleted

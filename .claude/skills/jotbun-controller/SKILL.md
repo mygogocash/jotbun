@@ -1,26 +1,44 @@
 ---
 name: jotbun-controller
-description: Run, continue or take over the Jotbun v1 build controller. Use it to pick the next ready tasks, brief them with Opus planners, build them with Haiku implementers, review them, open and merge task PRs into claude/p1a-vault-core, triage red CI, and recover after a controller session dies. Triggers: "continue the build", "keep going, merge as they pass", "take over the controller", "resume the subagent controller", "what's ready next", a screenshot of a controller tab, or any PR into claude/p1a-vault-core.
+description: Run, continue or take over the Jotbun v1 build controller. Use it to pick the next ready tasks, brief them with Opus planners, plan, build and review them on Antigravity (Opus plans and reviews, Sonnet builds, Gemini gives money-path and privacy PRs a second review), open and merge task PRs into claude/p1a-vault-core, triage red CI, and recover after a controller session dies. Triggers: "continue the build", "keep going, merge as they pass", "take over the controller", "resume the subagent controller", "what's ready next", a screenshot of a controller tab, or any PR into claude/p1a-vault-core.
 ---
 
 # Jotbun build controller
 
 One session (the controller) runs the build. It dispatches agents, one worktree per task, and merges their PRs when CI is green and an independent review approves.
 
-- **Planners, and first reviews of M and L tasks:** Opus, effort xhigh.
-- **Confirming reviews, and reviews of S tasks:** Sonnet. This is the owner's change of 9 Nov, to speed up; `make_prompt.py --size S` picks it.
-- **Implementers and fixers:** Haiku, effort max.
-- **Every Agent call** sets `model` and `effort` explicitly. Orca's Agent tool has no `effort`, so there pass `model` only; agents then run at the session's effort.
-- **In T3 Code**, dispatch with `delegate_task` instead (its native Agent tool has no `effort` either): `target: {providerInstanceId: "claudeAgent", model: "claude-opus-5-5" | "claude-sonnet-5-5" | "claude-haiku-5-5", options: {effort: "xhigh" | "max", ultracode: false}}`. Keep `ultracode: false`, so children follow their briefs instead of starting workflows. A child's completion wakes the controller. `t3_thread_send` to a child's thread continues it with its context (this skill's SendMessage). Wait on PR checks with `watch_pull_request`, not a Monitor.
+## Model routing (owner's rule of 10 Nov: route each task to the cheapest model that does it well)
+
+Claude Code has a rolling 5-hour limit and Fable is scarcer still. Antigravity has credits that are already paid for (owner, 11 Nov: "maximize it"), including Claude Opus 5.5 and Sonnet 5.5 at High. So every delegated role runs on Antigravity, and Claude Code's limit goes to the controller alone. `make_prompt.py` prints the `delegate_task` target for each role.
+
+| Work | Route to |
+| --- | --- |
+| Controller: rulings, merges, pushes, state | Claude Code Opus 5.5; Cursor Auto takes over when Claude Code is at its limit |
+| Planners (briefs and proof kits) | `antigravity` `claude-opus-5-5-high` |
+| Implementers and fixers | `antigravity` `claude-sonnet-5-5-high` |
+| First reviews and confirming reviews | `antigravity` `claude-opus-5-5-high` |
+| Second review of a money-path or privacy PR (wallet, cashback, points, payments, auth, private mode, privacy migrations) | `antigravity` `gemini-4-argon-high`, a different model family from the first review (`make_prompt.py second`) |
+| Any role while Antigravity is down or out of credit | Claude Code: `make_prompt.py --claude-code` (Opus xhigh plans and reviews, Haiku max builds) |
+| Scouting: code search, log reading, red-CI triage, mapping code paths before a planner | `antigravity` `gemini-3.8-flash-high`, read-only |
+| One hard, high-stakes question (money correctness, a root cause other models missed, an architecture call) | `claudeAgent` `claude-fable-5-2` as an advisor with a short brief of verified facts; about once a day at most. A Fable lead session needs the owner's approval |
+| A lookup or one-line fix | whoever is already running; don't write a brief bigger than the task |
+
+- **Cheap first, expensive last.** Map with Flash, then hand the verified map to the planner, so its context stays small.
+- **Verify before relying.** The controller re-checks each review finding against the code before ruling on it. A delegated PASS or Approved is never a receipt on its own, and delegated line numbers are often off.
+- **If a build fails twice** on the same brief (BLOCKED on something the brief answers, or a wrong copy of the kit), send the brief back to its planner before trying a third time, and note it in `references/lessons.md`.
+- **Hand off before the limit.** Near Claude Code's limit, update `handover.md` (objective, decisions, branches, open questions) so Cursor Auto resumes without replaying the thread.
+- **Dispatch in T3 Code** with `delegate_task`, passing the `target` that `make_prompt.py` prints, plus `projectId: "cc4b9cae-2d3c-4aeb-b98f-affe256dcb86"` (T3's jotbun project, rooted at the main checkout). Without it, an Antigravity child is sandboxed to the controller's own T3 worktree and cannot read `C/` or the task worktrees (11 Nov: all five first dispatches stopped on it). Keep `ultracode: false` on Claude targets, so children follow their briefs instead of starting workflows. A child's completion wakes the controller. `t3_thread_send` to a child's thread continues it with its context (this skill's SendMessage). Wait on PR checks with `watch_pull_request`, not a Monitor. Orca's Agent tool can reach only Claude models: there pass `model` only, and planners keep Opus.
+- **Helpers never act.** Agents commit only in their own task worktree and never push, merge, deploy, touch production data or handle secrets. Reviews and scouting are read-only. Never two writers on the same files.
 
 The owner has authorised this to keep moving without pausing between tasks:
 - push task branches;
 - open PRs into `claude/p1a-vault-core`;
-- merge them on green CI;
+- merge them on green CI, except a money-path or privacy PR: when its CI is green and both reviews approve, give the owner a recommendation and ask before merging;
 - close their issues;
-- remove their worktrees and branches.
+- remove their worktrees and branches;
+- push the controller state with `sync_state.sh`.
 
-Merging anything into `main` stays the owner's call.
+Merging anything into `main`, deploys, production data, secrets, new paid services and scope changes stay the owner's call. When asking, lead with a recommendation: the options, the main tradeoff, and the exact yes or no needed. Report every check as PASS, FAIL or SKIPPED with its command and reason.
 
 ## State to read first (all durable, under `C = /Users/kunanonjarat/Developer/jotbun/.claude/controller`)
 
@@ -71,9 +89,9 @@ Their work is saved, but their background jobs and Monitors die.
    - Then accept or rule on its planner calls (P1, P2, ...).
    - Create the worktree with `scripts/new_task_worktree.sh <wt> <branch>`, using the names from the brief's WT line.
    - Dispatch the implementer.
-4. **Implementer DONE:** write `C/pr-<id>.md` in the house style: Summary bullets, Test plan checklist, "Closes #N once merged (closed by hand ...)", and the Claude Code footer. Then run `scripts/open_task_pr.sh <worktree> "<title>" C/pr-<id>.md` and dispatch the Opus reviewer.
+4. **Implementer DONE:** write `C/pr-<id>.md` in the house style: Summary bullets, Test plan checklist, "Closes #N once merged (closed by hand ...)", and the Claude Code footer. Then run `scripts/open_task_pr.sh <worktree> "<title>" C/pr-<id>.md` and dispatch the reviewer (`make_prompt.py reviewer`). For a money-path or privacy PR, dispatch the second reviewer (`make_prompt.py second`) at the same time.
 5. **Implementer BLOCKED:** read the exact blocker. For a known flake (`references/lessons.md`), rule it and SendMessage the same agent to continue. For a real question the plan cannot answer, ask the owner. If a task fails review three fix rounds running, tell the owner and suggest escalating it.
-6. **Review "Needs fixes":** write the fix brief (model: `C/briefs/1A-T9-fix.md`), give it a ruling number when it changes behaviour, dispatch Haiku, push, update the PR body, then run a confirming Opus review.
+6. **Review "Needs fixes":** write the fix brief (model: `C/briefs/1A-T9-fix.md`), give it a ruling number when it changes behaviour, dispatch the fixer, push, update the PR body, then run a confirming review. First check each finding against the code yourself; rule out the ones that don't hold rather than sending them to the fixer.
 7. **Merge** when CI is green on the reviewed head and the review approves: `scripts/merge_task_pr.sh <pr> <reviewed-sha> [task-id]`.
    - Record the review's minors in `followups.md`.
    - If the receipt has stale lines, fix them in a housekeeping commit on the integration branch.
@@ -83,7 +101,7 @@ Their work is saved, but their background jobs and Monitors die.
 9. **CI watching:**
    - Keep a Monitor running on `C/watch_prs.sh`; it re-arms every 30 minutes.
    - After a `gh run rerun <run> --failed`, wait with `C/wait_ci.sh <pr>` in background Bash instead.
-   - On red CI, run `scripts/ci_failures.sh <pr>` to get the failing step and test lines.
+   - On red CI, run `scripts/ci_failures.sh <pr>` to get the failing step and test lines. If the cause isn't plain from that, send the triage to a Flash scout rather than reading logs in the controller's context.
 
 ## Taking over from a dead controller
 

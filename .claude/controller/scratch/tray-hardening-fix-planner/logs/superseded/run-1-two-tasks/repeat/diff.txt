@@ -1,0 +1,4 @@
+3c3
+< H3 KILLED: the late onDismiss is guarded by visible, not by the Modal being shown (m2) [Tray.tsx] -> node 0 failed | 4 passed (4); render 2 failed | 24 passed (26) (first failing: "on iOS a dismissal that ends after the tray is shown again says nothing; the next one says it closed"); AssertionError x2; restored=True
+---
+> H3 KILLED: the late onDismiss is guarded by visible, not by the Modal being shown (m2) [Tray.tsx] -> node 0 failed | 4 passed (4); render 1 failed | 25 passed (26) (first failing: "on iOS a dismissal that ends after the tray is shown again says nothing; the next one says it closed"); AssertionError x1; restored=True

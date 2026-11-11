@@ -1,0 +1,28 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix2-planner/work/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/worktrees/tray-hardening/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/worktrees/tray-hardening/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:24850) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+stdout | src/wallet/tray/modelProbe.render.test.tsx > MODEL: every valid sequence of up to 7 steps agrees with the arrival-based reference
+MODEL: 125 valid sequences up to length 7; 7 full-length ones deviate; by the step that first deviates: [["hideEnd",7]]
+MODEL deviations (first 12):
+  close > open > close > hide > open > close > hideEnd: onClosed 1, reference 0
+  close > hide > open > close > open > close > hideEnd: onClosed 1, reference 0
+  close > hide > open > close > hideEnd: onClosed 1, reference 0
+  close > hide > open > close > hideEnd: onClosed 1, reference 0
+  close > hide > open > close > hideEnd: onClosed 1, reference 0
+  close > hide > open > close > hideEnd: onClosed 1, reference 0
+  close > hide > open > close > hideEnd: onClosed 1, reference 0
+
+ ✓ src/wallet/tray/modelProbe.render.test.tsx > MODEL: every valid sequence of up to 7 steps agrees with the arrival-based reference 709ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  15:08:20
+   Duration  1.90s (transform 714ms, setup 43ms, import 962ms, tests 710ms, environment 80ms)
+

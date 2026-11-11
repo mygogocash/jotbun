@@ -1,0 +1,36 @@
+[15:07:28 load 7.55] base: fc78376's files
+[15:07:32 load 7.18] base typecheck:app exit=0
+[15:07:33 load 7.18] base trayGesture.test.ts exit=0 ℹ tests 4 ℹ pass 4 ℹ fail 0 
+[15:07:35 load 6.85] base Tray.render exit=0  Test Files 1 passed (1)  Tests 26 passed (26) 
+[15:07:42 load 6.78] base catalogue bw- exit=0  Test Files 2 passed (2)  Tests 18 passed | 572 skipped (590) 
+[15:07:48 load 6.64] base probes (the first review's 19, the first planner's 15, the confirming review's 8, its seam copy and its model at length 6) exit=1  Test Files 2 failed | 4 passed (6)  Tests 2 failed | 68 passed (70)  failing: P-J HIDE-END (suggested case) 
+[15:07:49 load 6.64] red: the final test file (real/) over fc78376's Tray.tsx (orig/)
+[15:07:52 load 6.34] red typecheck:app exit=0
+[15:07:54 load 6.34] red Tray.render exit=1  Test Files 1 failed (1)  Tests 1 failed | 27 passed (28)  assertion=1 load-errors=0 failing: on iOS a dismissal that ends in the commit that hides the tray again says nothing; the next one says it closed|
+[15:07:54 load 6.34] red-m3: the final test file (real/) over fc78376's Tray.tsx with the review's M3 (red-m3/)
+[15:07:58 load 6.40] red-m3 typecheck:app exit=0
+[15:08:00 load 7.01] red-m3 Tray.render exit=1  Test Files 1 failed (1)  Tests 2 failed | 26 passed (28)  assertion=2 load-errors=0 failing: on iOS a dismissal that ends in the commit that hides the tray again says nothing; the next one says it closed|on iOS an onClosed given while the dismissal is under way is the one called|
+[15:08:00 load 7.01] green: the final files (real/)
+[15:08:04 load 7.01] green typecheck:app exit=0
+[15:08:05 load 7.01] green trayGesture.test.ts exit=0 ℹ tests 4 ℹ pass 4 ℹ fail 0 
+[15:08:07 load 6.76] green Tray.render exit=0  Test Files 1 passed (1)  Tests 28 passed (28)  stderr-blocks=0
+[15:08:13 load 6.62] green catalogue bw- exit=0  Test Files 2 passed (2)  Tests 18 passed | 572 skipped (590) 
+[15:08:20 load 6.45] green probes exit=1  Test Files 1 failed | 5 passed (6)  Tests 1 failed | 69 passed (70)  failing: P-J 
+[15:08:22 load 6.45] model length 7 on orig's Tray.tsx exit=0 MODEL: 125 valid sequences up to length 7; 7 full-length ones deviate; by the step that first deviates: [["hideEnd",7]]
+[15:08:25 load 6.25] model length 8 on orig's Tray.tsx exit=0 MODEL: 266 valid sequences up to length 8; 22 full-length ones deviate; by the step that first deviates: [["hideEnd",22]]
+[15:08:28 load 6.25] model length 7 on real's Tray.tsx exit=0 MODEL: 125 valid sequences up to length 7; 0 full-length ones deviate; by the step that first deviates: []
+[15:08:31 load 6.63] model length 8 on real's Tray.tsx exit=0 MODEL: 266 valid sequences up to length 8; 0 full-length ones deviate; by the step that first deviates: []
+[15:08:31 load 6.63] mutants --check exit=0 45 APPLIES
+[15:10:23 load 6.18] mutants exit=0 45 killed, 0 survived, 0 not as expected
+[15:12:11 load 7.34] mutants, a second run exit=0 45 killed, 0 survived, 0 not as expected
+[15:12:11 load 7.34] mutants: the two runs' lines are identical
+[15:12:11 load 7.34] mutants: after both runs, 0 of the three files differ from real/ or fc78376
+[15:12:11 load 7.34] gate: start
+[15:12:15 load 7.95] gate typecheck:app exit=0
+[15:12:16 load 7.95] gate focused Node exit=0 ℹ tests 4 ℹ pass 4 ℹ fail 0 
+[15:12:17 load 7.95] gate focused render exit=0  Test Files 1 passed (1)  Tests 28 passed (28) 
+[15:12:24 load 7.55] gate catalogue bw- exit=0  Test Files 2 passed (2)  Tests 18 passed | 572 skipped (590) 
+[15:12:24 load 7.55] gate test:app exit=0 ℹ tests 34 ℹ pass 34 ℹ fail 0 
+[15:12:27 load 8.71] gate test:unit exit=0 ℹ tests 970 ℹ pass 970 ℹ fail 0 
+[15:12:27 load 8.71] gate whitespace check: 0 lines of complaint
+[15:12:36] controls exit=0 5 lines, 0 not as expected

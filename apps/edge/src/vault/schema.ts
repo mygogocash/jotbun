@@ -323,6 +323,11 @@ export const transactionAttachments = sqliteTable('transaction_attachments', {
   attachedAt: text('attached_at').notNull(),
 })
 
+/** The receipts whose holders changed since pruneAttachments last checked every receipt (0004, alarm-hardening): kept by triggers, emptied by pruneAttachments. */
+export const attachmentChecks = sqliteTable('attachment_checks', {
+  attachmentId: text('attachment_id').primaryKey().notNull(),
+})
+
 export const aiPreferences = sqliteTable('ai_preferences', {
   id: integer('id').primaryKey().notNull(),
   companion: integer('companion').notNull(),
@@ -364,6 +369,7 @@ export const vaultSchema = {
   accountState,
   aiPreferences,
   aiUsage,
+  attachmentChecks,
   attachments,
   auditEvents,
   budgetCategoryLimits,

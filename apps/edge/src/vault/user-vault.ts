@@ -159,6 +159,10 @@ export class UserVault extends DurableObject<VaultEnv> {
    * rearms with CALL_ALARM_DELAY_MS; the alarm itself with 0, or with
    * RETENTION_RETRY_MS after a failed job. An erased vault never rearms. A
    * failure is logged, never thrown: the caller's work has already committed.
+   * So is a setAlarm or deleteAlarm that the storage refuses after this call
+   * returns, and alarmAt then forgets the alarm it meant (unless a later rearm
+   * has already replaced it), so the next rearm sets it again (the 1B-T11
+   * review's n2).
    */
   rearm(c: FileContext, delayMs: number = CALL_ALARM_DELAY_MS): void {
     if (this.erased) return
@@ -168,9 +172,12 @@ export class UserVault extends DurableObject<VaultEnv> {
       // Floored above its due time: an alarm already set sooner stays, so writes never starve the jobs.
       if (at !== null && due !== null && at > due && this.alarmAt !== null && this.alarmAt < at) at = this.alarmAt
       if (at === this.alarmAt) return
-      if (at === null) void this.ctx.storage.deleteAlarm()
-      else void this.ctx.storage.setAlarm(at)
+      const settled = at === null ? this.ctx.storage.deleteAlarm() : this.ctx.storage.setAlarm(at)
       this.alarmAt = at
+      void settled.catch((error: unknown) => {
+        logFailure('vault_alarm_unset', error)
+        if (this.alarmAt === at) this.alarmAt = null
+      })
     } catch (error) {
       logFailure('vault_alarm_unset', error)
     }

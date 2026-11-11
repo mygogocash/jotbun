@@ -1,0 +1,278 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/alarm-hardening-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/alarm-hardening-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a key whose writer never published it is deleted by the alarm at its deadline
+{"level":"error","event":"file_prune_failed","failure":"TypeError"}
+
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > an export file is deleted by the alarm when it expires, and its status reads expired
+{"level":"error","event":"file_prune_failed","failure":"TypeError"}
+
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > work requested before the vault slept is started by its alarm after it wakes
+{"level":"error","event":"file_prune_failed","failure":"TypeError"}
+
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a key whose writer never published it is deleted by the alarm at its deadline 34ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > an export file is deleted by the alarm when it expires, and its status reads expired 26ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > work requested before the vault slept is started by its alarm after it wakes 30ms
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a failed start is retried a minute later, not in a loop
+{"level":"error","event":"file_prune_failed","failure":"TypeError"}
+
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a failed start is retried a minute later, not in a loop
+{"level":"error","event":"work_start_failed","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a capped run leaves the alarm set, and the next alarm clears the rest
+{"level":"error","event":"file_prune_failed","failure":"TypeError"}
+
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a prune that throws is logged, the others still run, and the alarm is set again
+{"level":"error","event":"file_prune_failed","failure":"Error"}
+{"level":"error","event":"file_prune_failed","failure":"TypeError"}
+
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > the alarm follows the earliest of the core and file jobs
+{"level":"error","event":"file_prune_failed","failure":"TypeError"}
+
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > the alarm follows the earliest of the core and file jobs
+{"level":"error","event":"file_prune_failed","failure":"TypeError"}
+
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a failed start is retried a minute later, not in a loop 16ms
+ × test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a capped run leaves the alarm set, and the next alarm clears the rest 33ms
+   → expected 1794365153236 to be less than or equal to 1794365093236
+ × test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a prune that throws is logged, the others still run, and the alarm is set again 25ms
+   → expected { …(10) } to match object { status: 'failed', reason: 'error' }
+(9 matching properties omitted from actual)
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > the alarm follows the earliest of the core and file jobs 30ms
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > after any alarm, every scheduled time is later than now
+{"level":"error","event":"file_prune_failed","failure":"TypeError"}
+
+stderr | test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > export requests are purged 30 days after the request; the receipt stays compact
+{"level":"error","event":"file_prune_failed","failure":"TypeError"}
+
+stderr | test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > drops finished upload rows 30 days after they ended, never one still receiving or within the quota window
+{"level":"error","event":"file_prune_failed","failure":"TypeError"}
+
+stderr | test/workers/files-alarm.test.ts > the controller's notes > a resent snapshot request after its snapshot went stale reads expired and starts nothing; a new key builds a new one
+{"level":"error","event":"file_prune_failed","failure":"TypeError"}
+
+ × test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > after any alarm, every scheduled time is later than now 25ms
+   → prune_files: expected 1797734693324 to be greater than 1797734693324
+ × test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > export requests are purged 30 days after the request; the receipt stays compact 20ms
+   → expected [ { '1': 1 } ] to deeply equal []
+ ✓ test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > drops finished upload rows 30 days after they ended, never one still receiving or within the quota window 19ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > a resent snapshot request after its snapshot went stale reads expired and starts nothing; a new key builds a new one 48ms
+stderr | test/workers/files-alarm.test.ts > the controller's notes > only one file run at a time: a second run while the first waits on R2 deletes nothing
+{"level":"error","event":"file_prune_failed","failure":"TypeError"}
+
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > a vault that is not active runs no file job and keeps no alarm for them 17ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > an upload arms the alarm though it commits no command 22ms
+ × test/workers/files-alarm.test.ts > the controller's notes > only one file run at a time: a second run while the first waits on R2 deletes nothing 66ms
+   → expected { Object (firstFailed, secondFailed, ...) } to deeply equal { firstFailed: [], …(3) }
+stderr | test/workers/files-alarm.test.ts > the controller's notes > an unbound bucket is a failed delete, due again a minute later; the alarm never throws
+{"level":"error","event":"file_prune_failed","failure":"TypeError"}
+{"level":"error","event":"object_delete_failed","failure":"ObjectStoreError"}
+
+stderr | test/workers/files-alarm.test.ts > the controller's notes > an erase that lands while the alarm waits on R2 leaves the vault erased, with no alarm and no schedule
+{"level":"error","event":"file_prune_failed","failure":"TypeError"}
+
+stderr | test/workers/files-alarm.test.ts > the brief's rulings > a prune that keeps throwing brings the alarm back a minute later, never in a loop
+{"level":"error","event":"file_prune_failed","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > the brief's rulings > after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner
+{"level":"error","event":"vault_retention_purge_failed","failure":"Error"}
+{"level":"error","event":"file_prune_failed","failure":"TypeError"}
+
+stderr | test/workers/files-alarm.test.ts > the brief's rulings > a write never sets the alarm sooner than a minute ahead, even with work already due, and a later write never postpones it
+{"level":"error","event":"file_prune_failed","failure":"TypeError"}
+
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > an unbound bucket is a failed delete, due again a minute later; the alarm never throws 18ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > an erase that lands while the alarm waits on R2 leaves the vault erased, with no alarm and no schedule 27ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > the alarm's due-time read of deleted records and the purge's change lookup use their indexes 12ms
+ ✓ test/workers/files-alarm.test.ts > the brief's rulings > a prune that keeps throwing brings the alarm back a minute later, never in a loop 17ms
+ ✓ test/workers/files-alarm.test.ts > the brief's rulings > after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner 24ms
+stderr | test/workers/files-alarm.test.ts > the brief's rulings > the vault knows the alarm it set: alarmAt matches getAlarm() after a write, an alarm, a wake and an erase
+{"level":"error","event":"file_prune_failed","failure":"TypeError"}
+
+stderr | test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > an import purge in the same alarm releases a ready snapshot it makes stale, so no job is left due at the vault clock
+{"level":"error","event":"file_prune_failed","failure":"TypeError"}
+
+stderr | test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a delete whose own block throws is reported to the alarm, which comes back a minute later, not at once
+{"level":"error","event":"file_prune_failed","failure":"TypeError"}
+
+stderr | test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a delete whose own block throws is reported to the alarm, which comes back a minute later, not at once
+{"level":"error","event":"file_delete_failed","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > an alarm that finds another file run in progress reports its delete as failed, so it comes back a minute later
+{"level":"error","event":"file_prune_failed","failure":"TypeError"}
+
+stderr | test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a setAlarm the storage refuses is logged and forgotten, so the next rearm sets the alarm again
+{"level":"error","event":"vault_alarm_unset","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a refusal that lands after a later rearm leaves that alarm alone, and a refused deleteAlarm is logged
+{"level":"error","event":"vault_alarm_unset","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a refusal that lands after a later rearm leaves that alarm alone, and a refused deleteAlarm is logged
+{"level":"error","event":"vault_alarm_unset","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a schedule write that fails after a call committed is logged, and the call still answers its success
+{"level":"error","event":"vault_alarm_unset","failure":"Error"}
+
+ ✓ test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > the due-time reads after a write read as many rows with a hundred held receipts and purged import records as with none 29ms
+ ✓ test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a receipt left with no holder is due at once however it lost its holder, and the prune that releases it empties the checks 29ms
+ ✓ test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a vault upgraded from 0003 starts its checks with the receipts that already have no holder 20ms
+ ✓ test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > importsDueAt counts the live import records only: a purged one is skipped, a live selection counts 12ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a capped run leaves the alarm set, and the next alarm clears the rest
+AssertionError: expected 1794365153236 to be less than or equal to 1794365093236
+ ❯ test/workers/files-alarm.test.ts:227:30
+    225|       const next = await alarmOf(user)
+    226|       expect(next).not.toBeNull()
+    227|       expect(next as number).toBeLessThanOrEqual(t)
+       |                              ^
+    228|       expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
+    229|       expect(await tombstones()).toBe(1_001)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a prune that throws is logged, the others still run, and the alarm is set again
+AssertionError: expected { …(10) } to match object { status: 'failed', reason: 'error' }
+(9 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "reason": "error",
+-   "status": "failed",
++   "status": "ready",
+  }
+
+ ❯ test/workers/files-alarm.test.ts:259:82
+    257|       await resetSeams(user)
+    258|     }
+    259|     expect(await json(await client.as(user).get(`/v1/exports/${request…
+       |                                                                                  ^
+    260|     expect(await alarmOf(user)).toBe(requested.requestedAt + EXPORT_PU…
+    261|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > after any alarm, every scheduled time is later than now
+AssertionError: prune_files: expected 1797734693324 to be greater than 1797734693324
+ ❯ test/workers/files-alarm.test.ts:297:63
+    295|       await fireAt(user, at)
+    296|       const schedule = await scheduleOf(user)
+    297|       for (const row of schedule) expect(row.due_at, row.job).toBeGrea…
+       |                                                               ^
+    298|       const next = await alarmOf(user)
+    299|       expect(next).toBe(schedule.length === 0 ? null : Math.min(...sch…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > export requests are purged 30 days after the request; the receipt stays compact
+AssertionError: expected [ { '1': 1 } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "1": 1,
++   },
++ ]
+
+ ❯ test/workers/files-alarm.test.ts:399:87
+    397|     expect(requested.status).toBe(202)
+    398|     await fireAt(user, requested.requestedAt + 31 * DAY)
+    399|     expect(await vaultRows(user, 'SELECT 1 FROM exports WHERE id = ?',…
+       |                                                                                       ^
+    400|     expect(await vaultRows(user, 'SELECT state FROM entity_heads WHERE…
+    401|     expect(await vaultRows(user, 'SELECT state, snapshot FROM entity_c…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the controller's notes > only one file run at a time: a second run while the first waits on R2 deletes nothing
+AssertionError: expected { Object (firstFailed, secondFailed, ...) } to deeply equal { firstFailed: [], …(3) }
+
+- Expected
++ Received
+
+  {
+    "deletes": 1,
+-   "firstFailed": [],
++   "firstFailed": [
++     "prune_files",
++   ],
+    "rows": [
+      {
+        "status": "tombstone",
+      },
+-   ],
+-   "secondFailed": [
+-     "delete_objects",
+    ],
++   "secondFailed": [],
+  }
+
+ ❯ test/workers/files-alarm.test.ts:546:21
+    544|     })
+    545|     await resetSeams(user)
+    546|     expect(outcome).toEqual({ firstFailed: [], secondFailed: ['delete_…
+       |                     ^
+    547|   })
+    548|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > an import purge in the same alarm releases a ready snapshot it makes stale, so no job is left due at the vault clock
+AssertionError: expected [ { chunk_index: +0 } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "chunk_index": 0,
++   },
++ ]
+
+ ❯ test/workers/files-alarm.test.ts:831:104
+    829|     // The stale snapshot keeps its row (it reads expired); its chunk …
+    830|     expect(await vaultRows(user, 'SELECT status FROM snapshots WHERE i…
+    831|     expect(await vaultRows(user, 'SELECT chunk_index FROM snapshot_chu…
+       |                                                                                                        ^
+    832|     expect(await registryOf(user, 'sync_snapshot')).toEqual([{ key: ch…
+    833|     const schedule = await scheduleOf(user)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > an alarm that finds another file run in progress reports its delete as failed, so it comes back a minute later
+AssertionError: expected { held: false, after: 1794365093767 } to deeply equal { held: true, after: 1794365153767 }
+
+- Expected
++ Received
+
+  {
+-   "after": 1794365153767,
+-   "held": true,
++   "after": 1794365093767,
++   "held": false,
+  }
+
+ ❯ test/workers/files-alarm.test.ts:900:29
+    898|     await stuck
+    899|     await resetSeams(user)
+    900|     expect({ held, after }).toEqual({ held: true, after: t + RETENTION…
+       |                             ^
+    901|   })
+    902|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/7]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  7 failed | 28 passed (35)
+   Start at  09:44:51
+   Duration  2.68s (transform 691ms, setup 1.35s, import 40ms, tests 822ms, environment 0ms)
+

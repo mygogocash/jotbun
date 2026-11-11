@@ -1,0 +1,51 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-fix-planner/tree/apps/edge
+
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > an export download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled, answered to a HEAD or refused after it took its slot 260ms
+ × test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > a snapshot chunk download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled, answered to a HEAD or refused after it took its slot 5261ms
+   → expected [ …(13) ] to deeply equal [ …(13) ]
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > a receipt download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled, answered to a HEAD or refused after it took its slot 257ms
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > a retain hands waitUntil a promise that is pending while it holds a copy slot and ends once the slot is back; a retain turned away for want of a slot hands over nothing 165ms
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > an upload hands waitUntil a promise that is pending while it holds its place among the isolate's uploads and ends once it gives the place back 140ms
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > a retain that waited on another request's copy hands waitUntil a promise on its later attempt too, pending while that attempt copies 210ms
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > an upload turned away at the isolate's limit (503) hands waitUntil nothing 161ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  14:39:36
+   Duration  8.45s (transform 738ms, setup 1.45s, import 38ms, tests 6.46s, environment 0ms)
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-fix-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > a snapshot chunk download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled, answered to a HEAD or refused after it took its slot
+AssertionError: expected [ …(13) ] to deeply equal [ …(13) ]
+
+- Expected
++ Received
+
+@@ -45,11 +45,11 @@
+      true,
+    ],
+    [
+      "GET refused after it took its slot (its object is gone)",
+      404,
+-     true,
++     false,
+    ],
+    [
+      "GET of a grant the vault refuses",
+      404,
+      true,
+
+ ❯ test/workers/download-aborts.test.ts:310:19
+    308|       slots: 4,
+    309|     })
+    310|     expect(lines).toEqual(PINNED(4))
+       |                   ^
+    311|   }, 30_000)
+    312|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
