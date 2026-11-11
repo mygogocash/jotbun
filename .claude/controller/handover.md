@@ -10,6 +10,10 @@ Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vaul
 - **#395 P2-T12:** the fixer runs on Antigravity `claude-sonnet-5-5-high`, T3 task `p2-t12-fixer-20261111a`, in WT p2-t12. Its assignment is `scratch/dispatch/P2-T12-fixer.prompt.md`.
 - Both merge the head first (dry merges were clean). Totals may differ from the briefs; their own files' Expected lines must hold.
 - **P2-T14:** the implementer runs on Antigravity `claude-sonnet-5-5-high`, T3 task `p2-t14-implementer-20261111a`, in a new WT p2-t14 on p2/t14-add-flow from a1376d9f. P1 to P17 are accepted, and check_kit gave 29 OK with both orig/ files identical. Its assignment is `scratch/dispatch/P2-T14-implementer.prompt.md`. After DONE: open its PR and dispatch an Opus-High reviewer. P2-T20 waits on its merge.
+- **Planners on Antigravity `claude-opus-5-5-high`, from a1376d9f:**
+  - 1B-T13 (T3 task `1b-t13-planner-20261111a`; WT p1-1b-t13 on p1/1b-t13-vault-http; heavy lock);
+  - P2-T33 (T3 task `p2-t33-planner-20261111a`; WT p2-t33 on p2/t33-face-id-lock).
+  - Assignments are in `scratch/dispatch/*-planner.prompt.md`.
 - **Do not dispatch these again.** After DONE: push, update the PR body, and run an Opus-High confirming review (#395's fix writes new logic, so it gets one; #396's is test-only from its planner's kit). Then merge on green local CI and promote (owner: "if CI pass merge it"; the merge script cleans up the worktree and branches).
 
 ## Routing moved to Antigravity, 11 Nov 07:50 Bangkok (owner: Antigravity's credits are unused, "maximize it")
