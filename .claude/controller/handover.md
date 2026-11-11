@@ -8,6 +8,12 @@ Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vaul
 
 Start no new threads or lanes on any provider. The 13:17 batch is disabled. The held items, their state and their next steps are in `scratch/held-2026-11-11.md`. #395 and #396's fix rounds are DONE but not pushed, and the 1B-T13 brief is READY but unreviewed. Still allowed: watching main for real CI reds and reporting them.
 
+**Parked 16:10 Bangkok (Tee's ask; hold still on).**
+
+- **#395** https://github.com/mygogocash/jotbun/pull/395: fix commit pushed to `p2/t12-card-stack` as a plain fast-forward from `90b50793`. Head is now `af61e89a3413f32478f233179c04999d8e31cac6`. Marked **draft**.
+- **#396** https://github.com/mygogocash/jotbun/pull/396: fix commit pushed to `fix/download-aborts` as a plain fast-forward from `d0cc479c`. Head is now `763edb3f5c180171a89025c824b4ea54bb033acc`. Marked **draft**.
+- Nothing else was done: no PR body updates, no reviews, no CI follow-up, no merges. The pushes may trigger CI on the local runners; nobody is watching it. On resume, the "push" part of these two rows is done: start from updating the PR bodies and marking each PR ready for review.
+
 (A copy of `scratch/held-2026-11-11.md`, which `sync_state.sh` does not carry, so it can resume from GitHub alone.)
 
 ### Held items
