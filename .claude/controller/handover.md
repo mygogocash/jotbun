@@ -24,6 +24,20 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**20:55: P2-T14 DONE → PR #407, both reviews running. Every builder is done; three PRs are in review.**
+- Commit `18876253`. The controller checked it: 12 files (10 A, 2 M), `git diff --check` clean, 10 of 11 `real/` files identical, and `index.ts` = the planner's merge proof (`aa2a47bf…`).
+- Reported: RED and GREEN as briefed, 92 of 92 mutants, `test:unit` 980, focused render 70 of 70.
+- PR **#407** (closes #160 by hand), body `pr-p2-t14.md`.
+- P2-T14 is treated as money and privacy work: the add flow enters money, and its P9 decides private-mode masking. So it gets a second review and needs the owner's yes.
+- Reviewers, with notes in `scratch/dispatch/P2-T14-{reviewer,second}-notes.md`:
+  - the first: `mcp:launch:793ee1ddb5d2396f86aa194e994e36bff66cf035f58b94ad80df93b6e77bf614`;
+  - the second: `mcp:launch:25bdc28467450436e429bd3f64e143183a69c385664fb7ea12d24b68e401fef7`.
+- **Merge order once approved, CI is green and the owner says yes:**
+  1. #407 (P2-T14);
+  2. #406 (P2-T33), after resolving `index.ts` and `draftText.test.ts` and rerunning CI;
+  3. #405 (1B-T13) is independent (edge only).
+  - Promote each after its merge.
+
 **20:50: P2-T33 DONE → PR #406, both reviews running.**
 - Commit `5844e4c1`. The controller checked it: 21 files (13 A, 8 M), `git diff --check` clean, 19 of 20 `real/` files byte-identical, and `index.ts` = `merge/index.t12-t33.ts` (`a3acf233…`).
 - Reported: RED and GREEN as briefed, 121 of 121 mutants (output identical to the planner's), `typecheck:routes` and `export:web` clean (4830 modules).
