@@ -24,6 +24,12 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**23:25: two more Flash planner lanes, since the Mac's load is about 7 and planning doesn't use Claude Code.**
+- **P2-T29** (categories, the category tray and the Thai pack tray): `mcp:launch:11bf352998e7f62f46eef5950d167ee15f667c8eff10ac068d5b8efb523eb960`. WT `p2-t29` on `p2/t29-categories`, pre-made with `npm ci`.
+- **P2-T31** (insights): `mcp:launch:92c37c30c475ed6ce1e646a9d352a02fabb84d1e44f1c8e9c6fbf0ed8207ba8e`. WT `p2-t31` on `p2/t31-insights`, pre-made.
+- Both carry the Flash notes: asserting lookups, a mutant per guard, BLOCKED rather than guessing.
+- **Check their kits with all three checks before accepting:** the kit, the RED failure types, and RED typecheck proof against the brief's steps.
+
 **23:20: P2-T32 → PR #411 and P2-T25 → PR #412, both in review. #409's second review (Flash) approved.**
 - **P2-T32:** commit `71b2255e` (14 files, all 13 `real/` identical; message in `feat(wallet):` style because the Flash brief named no commit line; cosmetic, left). RED 15 assertions; 31 of 31 mutants (`scratch/p2-t32/mutants.out`).
   - PR **#411** (closes #178).
