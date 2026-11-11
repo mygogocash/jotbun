@@ -36,6 +36,10 @@
 - **Metro's printed module count on a warm cache.** A web export that ends in well under a second can print a short count, such as 4604 for 4788, while its bundles are byte-identical. Seen on P2-T10's gate, 9 Nov. Rule it a flake when a re-run prints the expected count and the bundle hashes match. Briefs that need an exact count can pass `--clear`.
 - **R-B flake.** `attachments.integration.spec.ts` "two records retaining one image at once keep one receipt, made by one copy" (expected 1 write, got 2) is a known race in frozen `apps/api` (migration 0017's two-statement check; owner decision R-B pending). Rerun the failed job once: `gh run rerun <run> --failed`.
 - **The retry_after edge.** The same file's case "copying is bounded › serializes reservations: five at once from one account reserve exactly four" can fail `expect(limited.retry_after).toBeLessThanOrEqual(180)` with 181. It was seen on #396's SQL job, 11 Nov, run 42992817954, and passed on a rerun. It is frozen `apps/api`, so rule it a flake for any PR that does not touch `apps/api`, and rerun the failed job once.
+- **Check that the planner proved its brief's own RED steps, typecheck included.**
+  - On 11 Nov, P3-T4's Flash planner ran RED with `vitest` only, in a tree that had the old `env.ts`. The brief's Step 1.3 ("typecheck rc 0" at RED) was never run, and the builder stopped BLOCKED: the stub needed `env.ts`'s new type.
+  - Before accepting a plan, check its `run-red.sh` (or proof script) against the brief's RED steps: the same files copied, and every command with an Expected line actually run.
+  - A RED timeout (`Test timed out in 5000ms`) is not an assertion. Rule it by case name, or ask for fake timers.
 - **Check a plan's RED failure types before accepting it, from any planner.**
   - The command: `grep -c -E 'TestingLibraryElementError|TypeError|Cannot find|Not implemented' <kit>/logs/*red*.log`, which must be 0, with every failure an `AssertionError`.
   - On 11 Nov, a Gemini 3.8 Flash planner's P2-T25 RED was 7 lookup errors out of 8. It went back to its planner with P14(d)'s rule ("every lookup asserts: named, found, shown"), and the Flash notes now state the rule.
