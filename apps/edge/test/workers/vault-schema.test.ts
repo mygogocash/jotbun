@@ -14,7 +14,7 @@ const USER_TABLES = "SELECT name FROM sqlite_master WHERE type = 'table' AND nam
 it('a new vault has every core table, migrated once', async () => {
   const stub = vault()
   expect((await sql(stub, USER_TABLES)).map((r) => r.name)).toEqual([...VAULT_CORE_TABLES])
-  expect(VAULT_CORE_TABLES).toEqual(['account_state', 'ai_preferences', 'ai_usage', 'attachments', 'audit_events', 'budget_category_limits', 'categories', 'command_receipts', 'consents', 'entity_changes', 'entity_heads', 'exports', 'import_candidates', 'import_parts', 'import_previews', 'import_row_progress', 'import_selection_rows', 'import_selections', 'import_uploads', 'monthly_budgets', 'revoked_sessions', 'schedule', 'settings', 'snapshot_chunks', 'snapshots', 'sync_state', 'transaction_attachments', 'transactions', 'trips', 'vault_objects', 'wallets'])
+  expect(VAULT_CORE_TABLES).toEqual(['account_state', 'ai_preferences', 'ai_usage', 'attachment_checks', 'attachments', 'audit_events', 'budget_category_limits', 'categories', 'command_receipts', 'consents', 'entity_changes', 'entity_heads', 'exports', 'import_candidates', 'import_parts', 'import_previews', 'import_row_progress', 'import_selection_rows', 'import_selections', 'import_uploads', 'monthly_budgets', 'revoked_sessions', 'schedule', 'settings', 'snapshot_chunks', 'snapshots', 'sync_state', 'transaction_attachments', 'transactions', 'trips', 'vault_objects', 'wallets'])
   // The journal runs in order: idx 0 to n - 1, one key each, and each `when` later than the last, so an upgrade applies every new entry.
   const entries = VAULT_MIGRATIONS.journal.entries
   expect(entries.map((entry) => entry.idx)).toEqual(entries.map((_entry, i) => i))
