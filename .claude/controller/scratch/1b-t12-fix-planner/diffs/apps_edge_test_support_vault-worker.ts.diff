@@ -1,0 +1,19 @@
+--- a/apps/edge/test/support/vault-worker.ts
++++ b/apps/edge/test/support/vault-worker.ts
+@@ -51,6 +51,8 @@
+  */
+ export async function startVaultWorker(o: { issuer: JwksFixture; policies: unknown; vars?: Record<string, string>; background?: 'on' | 'off' }): Promise<VaultWorker> {
+   if (!existsSync(join(EDGE_DIR, VAULT_CONFIG))) throw new Error('Build the edge first: npm run build (in apps/edge)')
++  // Before the store is made: a config that cannot be read or written throws with no directory left behind.
++  const config = configFor(o.background ?? 'on')
+   const persistTo = mkdtempSync(join(tmpdir(), 'jotbun-vault-'))
+   const env = { ...process.env, WRANGLER_SEND_METRICS: 'false' }
+   await promisify(execFile)(
+@@ -58,7 +60,6 @@
+     ['wrangler', 'kv', 'key', 'put', '--local', '--persist-to', persistTo, '-c', VAULT_CONFIG, '--binding', 'CONFIG', 'config:v1', JSON.stringify({ policies: o.policies })],
+     { cwd: EDGE_DIR, env },
+   )
+-  const config = configFor(o.background ?? 'on')
+   const worker = await startDevWorker({
+     config,
+     vars: {

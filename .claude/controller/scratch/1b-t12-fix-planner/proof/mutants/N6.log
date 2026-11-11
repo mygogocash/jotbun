@@ -1,0 +1,35 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t12-fix-planner/tree/apps/edge
+
+ × test/n6-leak.probe.db.test.ts > a parity config that cannot be written leaves no temporary store behind 668ms
+   → expected [ 'jotbun-vault-e1lGvj' ] to deeply equal []
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/n6-leak.probe.db.test.ts > a parity config that cannot be written leaves no temporary store behind
+AssertionError: expected [ 'jotbun-vault-e1lGvj' ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "jotbun-vault-e1lGvj",
++ ]
+
+ ❯ test/n6-leak.probe.db.test.ts:38:18
+     36|   const leaked = stores().filter((name) => !before.includes(name))
+     37|   for (const name of leaked) rmSync(join(tmpdir(), name), { recursive:…
+     38|   expect(leaked).toEqual([])
+       |                  ^
+     39| })
+     40|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  13:53:09
+   Duration  1.23s (transform 188ms, setup 16ms, import 414ms, tests 693ms, environment 0ms)
+

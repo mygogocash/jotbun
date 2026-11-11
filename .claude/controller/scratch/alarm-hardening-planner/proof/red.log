@@ -1,0 +1,279 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/alarm-hardening-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/alarm-hardening-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/vault-schema.test.ts > a new vault has every core table, migrated once 15ms
+ ✓ test/workers/vault-schema.test.ts > a vault keeps its rows and does not migrate again after it sleeps 21ms
+ ✓ test/workers/vault-schema.test.ts > the Drizzle schema matches the migrated tables column for column 37ms
+ ✓ test/workers/vault-schema.test.ts > foreign keys hold: a transaction naming an unknown wallet is refused 12ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a key whose writer never published it is deleted by the alarm at its deadline 41ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > an export file is deleted by the alarm when it expires, and its status reads expired 34ms
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a failed start is retried a minute later, not in a loop
+{"level":"error","event":"work_start_failed","failure":"Error"}
+
+ ✓ test/workers/vault-schema.test.ts > command log rows must use the current revision, and entity heads only move forward 26ms
+ ✓ test/workers/vault-schema.test.ts > a primary key cannot be NULL 12ms
+ ✓ test/workers/vault-schema.test.ts > a category's type and built-in key never change 14ms
+ ✓ test/workers/vault-schema.test.ts > a category id never changes 13ms
+ ✓ test/workers/vault-schema.test.ts > a replace that reuses another category's built-in key is refused, and the other category survives 14ms
+ ✓ test/workers/vault-schema.test.ts > INSERT OR REPLACE cannot flip a category in use, but an identical ON CONFLICT DO NOTHING insert is allowed 14ms
+ ✓ test/workers/vault-schema.test.ts > a category is never deleted 13ms
+ ✓ test/workers/vault-schema.test.ts > a category has a label or a built-in key 12ms
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a prune that throws is logged, the others still run, and the alarm is set again
+{"level":"error","event":"file_prune_failed","failure":"Error"}
+
+ ✓ test/workers/vault-schema.test.ts > a receipt can drop its digest pair, but never just one half 27ms
+ ✓ test/workers/vault-schema.test.ts > a record can hold only a retained receipt, and letting go of the last holder releases it and makes its object due 23ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > work requested before the vault slept is started by its alarm after it wakes 37ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a failed start is retried a minute later, not in a loop 21ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a capped run leaves the alarm set, and the next alarm clears the rest 39ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a prune that throws is logged, the others still run, and the alarm is set again 27ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > the alarm follows the earliest of the core and file jobs 42ms
+ × test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > after any alarm, every scheduled time is later than now 35ms
+   → prune_files: expected 1797735240039 to be greater than 1797735240039
+ ✓ test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > export requests are purged 30 days after the request; the receipt stays compact 31ms
+ ✓ test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > drops finished upload rows 30 days after they ended, never one still receiving or within the quota window 30ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > a resent snapshot request after its snapshot went stale reads expired and starts nothing; a new key builds a new one 73ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > a vault that is not active runs no file job and keeps no alarm for them 22ms
+stderr | test/workers/files-alarm.test.ts > the controller's notes > an unbound bucket is a failed delete, due again a minute later; the alarm never throws
+{"level":"error","event":"object_delete_failed","failure":"ObjectStoreError"}
+
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > an upload arms the alarm though it commits no command 24ms
+ × test/workers/files-alarm.test.ts > the controller's notes > only one file run at a time: a second run while the first waits on R2 deletes nothing 71ms
+   → expected { firstFailed: [], …(3) } to deeply equal { firstFailed: [], …(3) }
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > an unbound bucket is a failed delete, due again a minute later; the alarm never throws 21ms
+stderr | test/workers/files-alarm.test.ts > the brief's rulings > a prune that keeps throwing brings the alarm back a minute later, never in a loop
+{"level":"error","event":"file_prune_failed","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > the brief's rulings > after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner
+{"level":"error","event":"vault_retention_purge_failed","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a delete whose own block throws is reported to the alarm, which comes back a minute later, not at once
+{"level":"error","event":"file_delete_failed","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a schedule write that fails after a call committed is logged, and the call still answers its success
+{"level":"error","event":"vault_alarm_unset","failure":"Error"}
+
+ × test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > the due-time reads after a write read as many rows with a hundred held receipts and purged import records as with none 36ms
+   → expected { receipts: 201, imports: 206 } to deeply equal { receipts: 2, imports: 6 }
+ × test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > the due-time reads after a write read as many rows with a hundred held receipts and purged import records as with none 36ms
+   → expected { receipts: 201, imports: 206 } to deeply equal { receipts: 2, imports: 6 }
+ × test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a receipt left with no holder is due at once however it lost its holder, and the prune that releases it empties the checks 33ms
+   → expected [ 1794365640769, [] ] to deeply equal [ 1794365640769, …(1) ]
+ × test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a vault upgraded from 0003 starts its checks with the receipts that already have no holder 26ms
+   → expected { checks: [], due: 1794365640782 } to deeply equal { …(2) }
+ ✓ test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > importsDueAt counts the live import records only: a purged one is skipped, a live selection counts 16ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > after any alarm, every scheduled time is later than now
+AssertionError: prune_files: expected 1797735240039 to be greater than 1797735240039
+ ❯ test/workers/files-alarm.test.ts:297:63
+    295|       await fireAt(user, at)
+    296|       const schedule = await scheduleOf(user)
+    297|       for (const row of schedule) expect(row.due_at, row.job).toBeGrea…
+       |                                                               ^
+    298|       const next = await alarmOf(user)
+    299|       expect(next).toBe(schedule.length === 0 ? null : Math.min(...sch…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the controller's notes > only one file run at a time: a second run while the first waits on R2 deletes nothing
+AssertionError: expected { firstFailed: [], …(3) } to deeply equal { firstFailed: [], …(3) }
+
+- Expected
++ Received
+
+@@ -4,9 +4,7 @@
+    "rows": [
+      {
+        "status": "tombstone",
+      },
+    ],
+-   "secondFailed": [
+-     "delete_objects",
+-   ],
++   "secondFailed": [],
+  }
+
+ ❯ test/workers/files-alarm.test.ts:546:21
+    544|     })
+    545|     await resetSeams(user)
+    546|     expect(outcome).toEqual({ firstFailed: [], secondFailed: ['delete_…
+       |                     ^
+    547|   })
+    548|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > an import purge in the same alarm releases a ready snapshot it makes stale, so no job is left due at the vault clock
+AssertionError: expected [ { chunk_index: +0 } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "chunk_index": 0,
++   },
++ ]
+
+ ❯ test/workers/files-alarm.test.ts:831:104
+    829|     // The stale snapshot keeps its row (it reads expired); its chunk …
+    830|     expect(await vaultRows(user, 'SELECT status FROM snapshots WHERE i…
+    831|     expect(await vaultRows(user, 'SELECT chunk_index FROM snapshot_chu…
+       |                                                                                                        ^
+    832|     expect(await registryOf(user, 'sync_snapshot')).toEqual([{ key: ch…
+    833|     const schedule = await scheduleOf(user)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > an alarm that finds another file run in progress reports its delete as failed, so it comes back a minute later
+AssertionError: expected { held: false, after: 1794365640601 } to deeply equal { held: true, after: 1794365700601 }
+
+- Expected
++ Received
+
+  {
+-   "after": 1794365700601,
+-   "held": true,
++   "after": 1794365640601,
++   "held": false,
+  }
+
+ ❯ test/workers/files-alarm.test.ts:900:29
+    898|     await stuck
+    899|     await resetSeams(user)
+    900|     expect({ held, after }).toEqual({ held: true, after: t + RETENTION…
+       |                             ^
+    901|   })
+    902|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a setAlarm the storage refuses is logged and forgotten, so the next rearm sets the alarm again
+AssertionError: expected { asked: [ 1794365640623 ], …(3) } to deeply equal { asked: [ 1794365640623 ], …(3) }
+
+- Expected
++ Received
+
+  {
+-   "alarmAt": null,
++   "alarmAt": 1794365640623,
+    "asked": [
+      1794365640623,
+    ],
+-   "logged": true,
++   "logged": false,
+    "set": null,
+  }
+
+ ❯ test/workers/files-alarm.test.ts:926:21
+    924|       errors.mockRestore()
+    925|     }
+    926|     expect(refused).toEqual({ asked: [t], alarmAt: null, set: null, lo…
+       |                     ^
+    927|     // The same time again: the vault does not take the refused alarm …
+    928|     await runInDurableObject(vaultOf(user), (vault: UserVault) => vaul…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a refusal that lands after a later rearm leaves that alarm alone, and a refused deleteAlarm is logged
+AssertionError: expected [] to have a length of 2 but got +0
+
+- Expected
++ Received
+
+- 2
++ 0
+
+ ❯ test/workers/files-alarm.test.ts:968:126
+    966|       })
+    967|       expect(out).toEqual({ kept: [t + MIN, t + MIN], deletes: 1, alar…
+    968|       expect(errors.mock.calls.filter(([line]) => typeof line === 'str…
+       |                                                                                                                              ^
+    969|     } finally {
+    970|       errors.mockRestore()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/9]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > the due-time reads after a write read as many rows with a hundred held receipts and purged import records as with none
+AssertionError: expected { receipts: 201, imports: 206 } to deeply equal { receipts: 2, imports: 6 }
+
+- Expected
++ Received
+
+  {
+-   "imports": 6,
+-   "receipts": 2,
++   "imports": 206,
++   "receipts": 201,
+  }
+
+ ❯ test/workers/files-alarm.test.ts:1067:30
+    1065|     // pruneAttachments checks every receipt, as each alarm does.
+    1066|     await runInDurableObject(vaultOf(user), (_vault, state) => pruneAt…
+    1067|     expect(await rowsRead()).toEqual(none)
+       |                              ^
+    1068|   })
+    1069|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a receipt left with no holder is due at once however it lost its holder, and the prune that releases it empties the checks
+AssertionError: expected [ 1794365640769, [] ] to deeply equal [ 1794365640769, …(1) ]
+
+- Expected
++ Received
+
+  [
+    1794365640769,
+-   [
+-     "0e7a80de-3079-445e-be1e-8c86c951ae5e",
+-   ],
++   [],
+  ]
+
+ ❯ test/workers/files-alarm.test.ts:1092:45
+    1090|       kept, randomUUID(), `receipt/${vault}/${kept}/${randomUUID()}/im…
+    1091|     )
+    1092|     expect([await dueAt(), await checks()]).toEqual([t, [kept]])
+       |                                             ^
+    1093|     await prune()
+    1094|     expect([await statusOf(kept), await checks()]).toEqual([['released…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/9]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > alarm-hardening: the 1B-T11 review's findings > a vault upgraded from 0003 starts its checks with the receipts that already have no holder
+AssertionError: expected { checks: [], due: 1794365640782 } to deeply equal { …(2) }
+
+- Expected
++ Received
+
+  {
+-   "checks": [
+-     {
+-       "attachment_id": "8a695194-7052-45a3-8a27-acb39f28df0b",
+-     },
+-   ],
++   "checks": [],
+    "due": 1794365640782,
+  }
+
+ ❯ test/workers/files-alarm.test.ts:1141:17
+    1139|       return { checks: sql.exec('SELECT attachment_id FROM attachment_…
+    1140|     })
+    1141|     expect(out).toEqual({ checks: [{ attachment_id: alone }], due: t })
+       |                 ^
+    1142|   })
+    1143|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/9]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  9 failed | 40 passed (49)
+   Start at  09:53:57
+   Duration  3.65s (transform 1.97s, setup 3.86s, import 83ms, tests 1.29s, environment 1ms)
+

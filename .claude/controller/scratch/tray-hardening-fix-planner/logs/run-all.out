@@ -1,0 +1,28 @@
+[09:50:46 load 12.73] base: 784667b's tray files on d1111f8 (#391 merged)
+[09:50:51 load 12.35] base typecheck:app exit=0
+[09:50:51 load 12.35] base trayGesture.test.ts exit=0 ℹ tests 4 ℹ pass 4 ℹ fail 0 
+[09:50:54 load 12.35] base Tray.render exit=0  Test Files 1 passed (1)  Tests 22 passed (22) 
+[09:51:03 load 12.41] base catalogue bw- exit=0  Test Files 2 passed (2)  Tests 18 passed | 572 skipped (590) 
+[09:51:09 load 12.06] base probes (the review's 19, the first planner's 15) exit=1  Test Files 2 failed | 1 passed (3)  Tests 6 failed | 28 passed (34)  failing: R-d P-J R-d2 R-d3 R-d5 R-d5b 
+[09:51:09 load 12.06] red: the final test file (real/) over 784667b's Tray.tsx (orig/)
+[09:51:14 load 11.65] red typecheck:app exit=0
+[09:51:16 load 11.60] red Tray.render exit=1  Test Files 1 failed (1)  Tests 1 failed | 25 passed (26)  assertion=1 load-errors=0
+[09:51:16 load 11.60] green: Tray.tsx and its test file (real/)
+[09:51:21 load 11.39] green typecheck:app exit=0
+[09:51:21 load 11.39] green trayGesture.test.ts exit=0 ℹ tests 4 ℹ pass 4 ℹ fail 0 
+[09:51:24 load 11.39] green Tray.render exit=0  Test Files 1 passed (1)  Tests 26 passed (26)  stderr-blocks=0
+[09:51:32 load 11.15] green catalogue bw- exit=0  Test Files 2 passed (2)  Tests 18 passed | 572 skipped (590) 
+[09:51:38 load 11.46] green probes (the review's 19, the first planner's 15) exit=1  Test Files 1 failed | 2 passed (3)  Tests 1 failed | 33 passed (34)  failing: P-J 
+[09:51:38 load 11.46] mutants --check exit=0 40 APPLIES
+[09:53:46 load 13.26] mutants exit=0 40 killed, 0 survived, 0 not as expected
+[09:55:51 load 17.63] mutants, a second run exit=0 40 killed, 0 survived, 0 not as expected
+[09:55:51 load 17.63] mutants: the two runs' lines are identical
+[09:55:51 load 17.63] mutants: after both runs, 0 of the three files differ from real/ or the base
+[09:55:51 load 17.63] gate: start
+[09:55:57 load 17.50] gate typecheck:app exit=0
+[09:55:58 load 17.50] gate focused Node exit=0 ℹ tests 4 ℹ pass 4 ℹ fail 0 
+[09:56:01 load 18.02] gate focused render exit=0  Test Files 1 passed (1)  Tests 26 passed (26) 
+[09:56:14 load 18.14] gate catalogue bw- exit=0  Test Files 2 passed (2)  Tests 18 passed | 572 skipped (590) 
+[09:56:15 load 17.57] gate test:app exit=0 ℹ tests 34 ℹ pass 34 ℹ fail 0 
+[09:56:18 load 17.57] gate test:unit exit=0 ℹ tests 970 ℹ pass 970 ℹ fail 0 
+[09:56:18 load 17.57] gate whitespace check: 0 lines of complaint

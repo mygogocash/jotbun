@@ -1,0 +1,10 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t12-fix-planner/tree/apps/edge
+
+ ✓ test/n6-leak.probe.db.test.ts > a parity config that cannot be written leaves no temporary store behind 5ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  10:19:39
+   Duration  574ms (transform 192ms, setup 16ms, import 423ms, tests 33ms, environment 0ms)
+

@@ -1,0 +1,22 @@
+RED with V1, V2, V3, V4, V5, V6, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20 [workers 20 failed | 222 passed (242)] restored=True
+    failed 20, expected 20
+    failed as expected: ai.test.ts: a session signed out between the context step and the use is refused at the use: 401, no model call and no use spent
+    failed as expected: ai.test.ts: a signed-in person without consent who sends a malformed body gets 422, as the PostgreSQL route parsed before AiService checked consent, with no vault call
+    failed as expected: ai.test.ts: a signed-out session with a malformed body gets 422, with no vault call and no model call; a well-formed body is 401 at its first step
+    failed as expected: attachments.test.ts: a deleting account refuses retain, replace, remove, the grant and the download without reserving or copying, and the release step still runs
+    failed as expected: attachments.test.ts: a request waiting on another copy of the same image gives up at copyDeadlineMs with 503
+    failed as expected: attachments.test.ts: a retained receipt that nothing holds makes attachmentsDueAt now, so the safety net is scheduled
+    failed as expected: attachments.test.ts: a session without the current terms is refused at the prepare step of a retain and a replace, and at a removal, and nothing is reserved or copied
+    failed as expected: attachments.test.ts: a signed-out session is refused at the prepare step, and nothing is reserved or copied
+    failed as expected: attachments.test.ts: a stamped release whose object is still live is not due yet; once the object is gone, the row is due 30 days after its release
+    failed as expected: attachments.test.ts: an unknown body field is refused before anything is reserved or copied, as the API controller reads the body
+    failed as expected: attachments.test.ts: the image of a preview that is no longer ready is not copied, though its image is still published
+    failed as expected: imports-review.test.ts: a correction of 500 rows at once, the most a correction takes, binds its row ids as one parameter and is saved
+    failed as expected: imports-review.test.ts: an upload that was never accepted (still receiving, or refused at intake) has no preview: 404, as the API answers
+    failed as expected: snapshots.test.ts: a build of a snapshot that is no longer pending reads nothing and stores nothing
+    failed as expected: snapshots.test.ts: a chunk whose stored bytes no longer match its digest, at the same length, fails as it streams, and gives its slot back
+    failed as expected: snapshots.test.ts: a ready snapshot that is not stale is due only a week past its expiry, and an alarm with one leaves nothing due now
+    failed as expected: snapshots.test.ts: a snapshot read exactly at the purge revision, with nothing after the purge, is recorded, served and reused
+    failed as expected: snapshots.test.ts: pruneSnapshots leaves a stale snapshot's tombstones their own day: keys deleted at its expiry are not made due again at once
+    failed as expected: snapshots.test.ts: reads every row before the first R2 call
+    failed as expected: snapshots.test.ts: ten times the yearly ledger builds and exports inside the memory budget

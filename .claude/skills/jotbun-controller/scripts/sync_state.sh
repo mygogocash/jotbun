@@ -10,6 +10,14 @@ msg=$1; shift
 ROOT=/Users/kunanonjarat/Developer/jotbun
 C=$ROOT/.claude/controller
 I=$ROOT/.claude/worktrees/p1a-vault-core
+# Check each kit at its source before copying anything: a kit still being written (a planner's rerun)
+# would otherwise stop the script halfway and leave copies in the integration worktree.
+for kit in "$@"; do
+  src=$C/scratch/$kit
+  [ -f "$src/SHA256SUMS" ] || { echo "no SHA256SUMS in $src"; exit 1; }
+  bad=$(cd "$src" && shasum -a 256 -c SHA256SUMS 2>&1 | grep -vc ': OK$' || true)
+  [ "$bad" = 0 ] || { echo "$kit: $bad not OK at the source; nothing copied"; exit 1; }
+done
 cd "$I"
 [ -z "$(/usr/bin/git status --short --untracked-files=no)" ] || { echo "integration worktree has tracked changes; stopping"; exit 1; }
 /usr/bin/git fetch -q origin claude/p1a-vault-core

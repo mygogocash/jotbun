@@ -1,0 +1,31 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t12-planner/tree/apps/edge
+
+ × test/vault-files.smoke.db.test.ts > the vault Worker answers each compared step of the files session as NestJS does 67ms
+   → Cannot read properties of undefined (reading 'nonce')
+ ✓ test/vault-files.smoke.db.test.ts > the vault Worker runs without Workflows, queue consumers or containers (B13) 1ms
+ ✓ test/vault-files.smoke.db.test.ts > a never-accepted upload has no status and no preview (404), as in the API 36ms
+ ✓ test/vault-files.smoke.db.test.ts > the retired proof routes answer 404 on the vault Worker 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/vault-files.smoke.db.test.ts > the vault Worker answers each compared step of the files session as NestJS does
+TypeError: Cannot read properties of undefined (reading 'nonce')
+ ❯ Object.build test/support/files-session.ts:80:57
+     78|     signIn: true,
+     79|     build: async (st) => {
+     80|       const idToken = await proofToken(st, st.challenge.nonce)
+       |                                                         ^
+     81|       return json('POST', '/v1/auth/proofs', await headers(st), { chal…
+     82|     },
+ ❯ runFilesSession test/support/files-session.ts:139:53
+ ❯ test/vault-files.smoke.db.test.ts:46:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  08:51:23
+   Duration  2.54s (transform 245ms, setup 0ms, import 531ms, tests 1.89s, environment 0ms)
+

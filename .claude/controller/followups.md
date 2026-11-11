@@ -339,9 +339,134 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - n4: the write floor is untested through `background()` and `rearming()`; mutants R2 and R3 survive, and probes PE and PF kill them.
     - n5: P18 gives the wrong reason the import cycle is safe. `jobs.ts:28` and `:31` read imported functions at load time, which works only because they are hoisted declarations, and the build's circular check is vacuous. Say so in a comment, or break the cycle.
     - n9: P14's bound on `pruneImports` does not cover import selections.
-  - **fix-download-aborts:**
+  - **download-pins (#397; the test-only half of the fix-download-aborts entry, which took these):**
     - m3: no test pins `snapshotsDueAt`'s stale term (`snapshots.ts:358`, `EXISTS` over `STALE_CHUNKS`). Mutant R1 counts every chunk row and passes 58 of 58; under it any vault with a ready snapshot would loop the alarm. Take the ready pin in `zz-review-fixes.test.ts`, or give the ready snapshot at `snapshots.test.ts:748` a chunk row.
     - n6: pin `pruneSnapshots`' `status <> 'tombstone'` guard (`snapshots.ts:346`); data mutant R2 survives 58 of 58.
   - **1B-T12 (n8):** from about day 8 to day 30 after a build, NestJS answers 200 and 202 `expired`, because it keeps the job 30 days (`0015_privacy.sql:822-826`). The vault answers 404, and a resend then makes the stuck pending row. Either keep the vault row until `ready_at` plus 30 days, or list the difference.
   - **1B-T13 (n10):** with 0003's indexes, the ten-times 50,000,000-byte vault holds 32,000 records instead of 33,000, about 3% fewer. The proof's criterion still holds; size the hosted check against the new figure.
   - **1C-T11 (n7):** `markDeleting` (p1c plan line 1311) must set `alarmAt = null` next to its `deleteAlarm`, or call `this.rearm(this.fileContext())`, so that `alarmAt` keeps mirroring `getAlarm()`.
+- wallet-looks-unstored (#391, merged 76b329c on 10 Nov, no task issue; review in reviews/wallet-looks-unstored.md, a Sonnet workflow, Approved with one minor and five nits; probes in scratch/wallet-looks-unstored-review/). D8 stays unfixed by design (P6).
+  - **wallet-looks-pins (a test-only follow-up; no task waits on it):**
+    - m1: no committed case has two changes in flight while an earlier one is unstored. Hoisting `const earlier = unstored.current.get(accountId) ?? []` (`WalletLooksProvider.tsx:137`) out of the queued step therefore survives (mutant OM1).
+      - Add the reviewer's PE, PE2 and PF to `WalletLooks.render.test.tsx`, on that file's own helpers. They are in `scratch/wallet-looks-unstored-review/src/apps/app/src/wallet/looks/ReviewProbes.render.test.tsx`, lines 283, 298 and 314.
+      - PF needs `storeOver` to fail writes by attempt number.
+    - Optional, n2: brief P7's "if the first read has not landed yet, they show at once" is unpinned (OM9; the difference is transient only).
+  - **P2-T20 and P2-T21 (n3):** the memory holds the caller's look object and ids array by reference (`WalletLooksProvider.tsx:134`, `:147`, `:148`). A caller that mutates them after the call changes later reads (case PM). Pass a fresh object or array per call, or copy in the setter.
+  - **P2-T20 (n4):** call `setOrder` once per drop, not per drag tick. The memory is never trimmed; 400 changes took 27 to 57 ms in total, with no growth.
+  - **P2-T20, P2-T21 and P2-T29 (n5):**
+    - a setter resolves whether or not the change was stored;
+    - `order` is `[]` until the first read lands, so do not seed `setOrder` from an effect keyed on an empty `order`.
+  - **P2-T18 (n5):** where WalletShell mounts the provider sets how long an unstored change shows.
+  - **P5-T19 (n1, n5):**
+    - the upload reads the store, so an unstored change is never uploaded;
+    - if the provider reads server values, decide whether the memory is laid over them;
+    - carry the reviewer's PX, which pins that a session where every write lands keeps nothing (mutant OM3).
+- 1B-T12 planner notes (briefs/1B-T12.md; READY 10 Nov, test-only):
+  - **snapshot-parity-window (an optional follow-up, only after fix-download-aborts merges; P3 of 1B-T12):**
+    - From about day 8 to day 30 after a build, NestJS answers a snapshot's status, and a resend of its key, with `expired`. It keeps a finished job 30 days (`apps/api/drizzle/0015_privacy.sql:813-829`).
+    - The vault deletes a ready row a week past its 24-hour expiry (`pruneSnapshots`, `src/vault/files/snapshots.ts:348`), so it answers 404 and opens a new pending row for a resend.
+    - 1B-T12 lists the difference in `vault-parity-files.db.test.ts`'s header and its receipt.
+    - For parity: keep a ready row until `ready_at` plus 30 days, with a resend case. First check whether a Workflow instance can start under an id whose old instance is past its retention.
+    - This edits `pruneSnapshots`, `snapshotsDueAt` and the snapshot tests, which download-pins (#397) pins (1B-T11's m3 and n6). Start it only after #397 merges.
+- P2-T12 planner notes (briefs/P2-T12.md; READY 10 Nov):
+  - **P2-T21 (P11):** the new wallet's drop is P2-T21's bw-adding step, not the stack's.
+    - `walletAddedEntering(false)` drops a card from a full window height on the under-damped spring, which overshoots by about 22% of the travel (about 190 pt on an 874 pt phone).
+    - Shorten the drop to about one card height (`.withInitialValues({ originY })`; about 44 pt of overshoot), and test it in `useWalletMotion.render.test.tsx`.
+    - Check it on the simulator at E2-B. P2-T9's review also leaves E2 the board's "success on the first wallet" against the plan's success on every new wallet.
+  - **P2-T17 (P10):**
+    - a card behind the front one shows only its top `STACK_PEEK` (54 pt), so aim the flight at the frame's top;
+    - call `measure()` before a flight, since a frame measured after layout does not follow Home's scroll.
+  - **P2-T18:** `WalletShell` mounts `CardFramesProvider` (plan line 1075). Outside it `frameOf` is null and `measure()` does nothing.
+  - **P2-T23 and P2-T24 (P8):**
+    - showing a derived look before the account's looks are read is the caller's call (P2-T24's Home can keep its skeleton up until then);
+    - `order` is `[]` until the first read lands, so a first pass may be in default order;
+    - test ids `card-stack` and `card-stack-<walletId>` are for P2-T24's tests;
+    - P2-T24 decides Home's empty state; the stack draws nothing for no wallets.
+  - **E2-A (P14):**
+    - every stack card is the `stack` variant: bw-home's front-card face, its bottom amount and the mark are not drawn;
+    - no violet glow under the front card;
+    - no VoiceOver hint;
+    - the lift is the plan's 12 pt;
+    - a wrapped name is partly behind the next card at standard sizes (should the peek grow with the name?);
+    - the stack is 362 pt against the board's 364;
+    - `bw-stack-large` must be captured at AX5 by hand.
+- P2-T14 planner notes (briefs/P2-T14.md; READY 10 Nov, held until tray-hardening merges):
+  - **P2-T15 and P2-T16 (P3), the interface they build on:**
+    - `AmountFooter` (the keypad, its problem and Next) goes in the tray's pinned `footer`, and the plan's `problem` prop moved there. Both components take `StepProps`, so a host spreads one object into both.
+    - `AddStep` gains `transfer`: a transfer goes amount, transfer, confirm.
+    - `confirmRows` takes the app's `tc`, so built-in category names show in Thai.
+    - New helpers in `addFlow.ts`: `stepAfterAmount`, `amountProblem` and `stillGuessed` (P2-T16 calls it from `onDraft`). `useCanTellBun()` is in `AmountStep.tsx`.
+    - P2-T15 adds the confirm step's row labels (`labelKey`).
+  - **A tray slot under the header (P10; P2-T16 or a tray task):** at AX5 the board pins the amount under the title, but `Tray` pins only its footer, so the amount scrolls with the middle. Capture `bw-tray-amount` at AX5 by hand.
+  - **P2-T37 (P9):** the typed amount (`add-amount`) is the one amount private mode leaves on screen, by design. The sweep must exempt it.
+  - **E2-B (P17):** the differences from the boards, listed in the brief's P17. Among them: ถัดไป against the boards' ต่อไป, no วันนี้ chip, and ลบตัวเลข.
+- tray-hardening (#392, approved 10 Nov on 784667b; review in reviews/tray-hardening.md, a Sonnet workflow; probes in scratch/tray-hardening-review/; two minors and three nits). CI could not run (billing), so the controller folded m-1, m-2, n-1 and n-2 into a fix round on the same PR: `briefs/tray-hardening-fix.md`, written by the tray-hardening planner.
+  - **The fix round:**
+    - m-1: `dismissed` reads the rendered `shown`, not the `showing` ref refreshed in a passive effect. A batched native end plus reopen otherwise calls `onClosed` while the tray is open (R-d to R-d5b).
+    - m-2: pin "nothing moves during an exit" (mutant X1).
+    - n-1: pin the tick's `hidden` dependency (D2).
+    - n-2: an iOS case with no `onClosed` (X4).
+  - **P2-T16 (n-3), and any host tray (P2-T20's `ReorderTray`):**
+    - on iOS `onClosed` can come twice for two hides (probe R-c), so `whenClosed` treats a second call as a no-op;
+    - it may not come at all for a Modal that never presented (R-f), so do not assume one call per hide;
+    - the SKIPPED device check should ask whether UIKit sends a dismissal for a present refused while a dismissal is in flight.
+- P2-T20 planner notes (briefs/P2-T20.md; READY 10 Nov, held until tray-hardening and P2-T14 merge):
+  - **P2-T18:** `WalletShell` mounts `WalletLooksProvider` (plan line 1075). Until it does, the wallet area's list keeps no order on a device. The route keeps its own `SpendV1Provider`, which is harmless under the shell's.
+  - **P2-T21:**
+    - extend `wallets/copy.ts`;
+    - the add tile already opens `/spend/wallet/new`.
+  - **P2-T22:**
+    - a row already opens `/spend/wallet/<id>`;
+    - once both routes exist (P2-T21's and P2-T22's), drop the two `as Href` casts in `WalletsListScreen.tsx` (P9). Until then, a development build shows expo-router's unmatched route for them.
+  - **P2-T23:** build `homeWallets`' order with `frontFirst(wallets, order)` reversed (the front card last), so the list, the reorder tray and Home's stack agree.
+  - **P2-T24:** Home's จัดเรียง is `/spend/wallets?reorder=1`.
+  - **P2-T37:** every amount on the list is a `WalletAmount`, and each row's label says ซ่อนยอดเงินอยู่ in private mode.
+  - **E2-B:** P17's differences from wc-wallets. Capture `bw-wallets-reorder` from a fresh launch (P2-T13's n2).
+- alarm-hardening planner notes (briefs/alarm-hardening.md; READY 10 Nov; ruling R105):
+  - **Any task that adds a migration rebuilding `attachments` or its holders' table:** recreate 0004's four `attachment_checks` triggers (R105).
+  - **A later edge task (P12):**
+    - `recordsDue`, `pruneImports`' purge read, still walks every head of one import entity, once or twice per alarm. It could read `LIVE_IMPORT_HEADS`.
+    - 1A's `nextDue` counts every change and head in `hasSupersededChange`: 0.3 ms at 60,000. This is a note, not a defect.
+  - **1B-T13 (n10, already listed under 1B-T11):** size the hosted check with 0004's table and index too.
+- 1B-T12 (#394, approved 10 Nov on ef37c41; review in reviews/1B-T12.md, a two-lens Sonnet workflow; probes in scratch/1b-t12-review/). Lens A re-derived all 40 NestJS answers from `apps/api`; they hash identically to the planner's `expected-nest.json`. CI never ran (billing), so m1, n4, n5 and n6 are folded into a fix round on #394 (`briefs/1B-T12-fix.md`). **The merge waits for a green `edge` job:** read its `test:edge:db` section (vault-parity-files 3, parity-files 1, vault-parity 3, since the fix round's n5 case). A listed difference is fixed in the vault, never in the session or the normalizer. If #396 merges first, read the edge job on a head that holds both.
+  - **1B-T13:**
+    - n1: keep `default_retention` (1 day success, 7 days error) on both Workflows bindings (`wrangler.vault.jsonc:35-36`), and pin it in `c1-shape.test.ts`. Without it, Paid's 30-day default makes `createOnce` count a retained id as started.
+    - n7: B13 pins only `workflows`, `containers` and `queues.consumers`. Extend it and `configFor` if the merged config gains `triggers.crons` or another consumer. If any other producer stays, the producers check (`vault-parity-files.db.test.ts:71`) becomes a containment check. Move `VAULT_CONFIG` and `PARITY_CONFIG` together.
+    - n8: `files-session.ts:17-18` and `vault-worker.ts:15` import `BASE`, the `Edge` type and `testSettings` from `edge-harness.ts`, which 1B-T13 deletes with the PostgreSQL edge. Keep all three exported from a module that survives.
+    - confirm-n1 (1B-T12's confirming review): n5's case pins the built config's path, `dist/jotbun_vault` (`vault-parity.db.test.ts:77`), which 1B-T13 moves (plan :1106 and T13 Step 4 at :1182). It fails loudly at T13's gate. Loosen the pattern to `/\/wrangler\.json$/` there, or move it with `VAULT_CONFIG`.
+    - confirm-n4: the new test's header says a resend "starts afresh". That holds only while `default_retention` stays on the Workflows bindings, so keep n1 (above) on the list.
+  - **snapshot-parity-window:**
+    - n2: day 8 on the NestJS side comes from the manifest sweep `gogospend_prune_expired_manifests` (`0010_sync.sql:216-226`), not the 30-day job retention. Open question (d) is closed: a resend after day 8 starts a new build under the same id. "Stuck pending row" applies to the first day only.
+    - n3: pending snapshots and exports older than a day turn failed on the vault (R33), never on NestJS. Name it beside n8.
+- P2-T12 (#395, Needs fixes on 90b5079: one major, M1; review in reviews/P2-T12.md, a two-lens Opus workflow resumed after the fourth stop; probes in scratch/p2-t12-review/). The fix round (`briefs/P2-T12-fix.md`, by the P2-T12 planner) takes:
+  - M1: `onAccessibilityTap={onPress}` on `WalletCard`'s Pressable, with a Node pin. The controller granted leave to edit `WalletCard.tsx`.
+  - m3, m4, n2, n3 and n4.
+
+  The rest:
+  - **P2-T24 (m1, with E2-A's peek decision):** a card behind the front one that grows past the front card hangs below the stack, across what sits under it. For example, the 80-code-point name with the largest amount at xxxLarge makes a 413 pt card reaching 541 pt, across a today row at 394 to 454.
+  - **P2-T17 (m2):** frames go stale when cards move but the stack's box does not: a same-count reorder, a swapped wallet, or an ancestor that moves. On the web a pure move never fires `onLayout`. Call `measure()` before every flight, not only after a scroll.
+  - **P2-T24 (n1):** two quick presses open the wallet twice. That follows the plan's at-once rule, but Home's push needs a double-tap guard (1C-T8's RV4).
+- fix-download-aborts (#396, approved 10 Nov on d0cc479; review in reviews/fix-download-aborts.md, a two-lens Opus workflow resumed after the fourth stop; probes in scratch/fix-download-aborts-review/). CI never ran (billing), so m1, n2, n3 and n4 (the probes PB, PA and PC, and the slot cases' `take()`) are folded into a test-only fix round on #396 (`briefs/fix-download-aborts-fix.md`, by its planner). The rest:
+  - **Hosted check (n1):** once an aborted retain's copy slot is back, its promise has ended. The command step and the copy's release (`receipts.ts:147-149`, `186-188`) then run with nothing pending in `waitUntil`, so the deployed runtime may skip them (unverified).
+    - Effect: the copy stays reserved for 180 s; a retry gets `wait`, then 503, and the reservation counts toward `COPIES_IN_FLIGHT`.
+    - This is bounded and predates R97. The hosted check should verify that the release runs.
+  - **1B-T13:**
+    - n5: `slots.ts:16-18` and the call sites say the request lives until its slot is back, without Cloudflare's 30-second `waitUntil` cap. Add one clause.
+    - n6 (optional hardening): make `untilReturned`'s returned function idempotent and exception-safe, with a `given` flag and `try { release() } finally { returned() }`.
+  - **alarm-hardening (#398), n7:**
+    - lines 4, 97 and 108 of #398's receipt give download-pins' items (1B-T11's m3 and n6, and the X5 re-target) to fix-download-aborts. Correct them before #398 merges;
+    - once #398 merges, download-pins' kit mutant V3 no longer applies: rerun it with A1's text.
+- 1B-T12's confirming review (reviews/1B-T12-confirm.md, Approved on 317cf3a; no minor, six nits):
+  - **The merge order (confirm-n6):** #398 (alarm-hardening) edits vault files the 42-step session reaches: `previews.ts`, `attachments.ts`, `jobs.ts`, `user-vault.ts`, `schema.ts` and migration 0004. #396 edits `src/v1/files` and `handler.ts`. Read the `edge` job's `test:edge:db` of whichever of #394, #396 and #398 merges last, on a head that holds all three.
+  - confirm-n3: n6's order (`configFor` before `mkdtempSync`) is pinned only by the uncommitted probe (brief F4). No action.
+  - confirm-n5: the receipt's Files line was stale; the controller fixed it in d853122.
+- alarm-hardening (#398, approved 10 Nov on 14844b9; review in reviews/alarm-hardening.md, a two-lens Opus workflow; probes in scratch/alarm-hardening-review/). The controller already did n1 and n2 (in the wording of R105 and R104), n5 (the receipt, 3707c29) and n6 (the handover).
+  - **alarm-pins (a test-only follow-up, or a fix round on #398 once T3 is back; the code is right in each):**
+    - m1: R105's backstop has no test. Mutant O11 narrows `pruneAttachments`' full pass (`attachments.ts:353`) to the receipts in `attachment_checks`, and passes every committed receipt case. Add the probe K1 (`scratch/alarm-hardening-review/tests/zz-lens2-probes.test.ts`) to `files-alarm.test.ts`.
+    - n3: the imports case's comment (`files-alarm.test.ts:1145-1146`) claims it pins both entity names, but O12 (`REVIEW_ENTITY` dropped from `LIVE_IMPORT_HEADS`) passes 35 of 35. Add a live `import_review` record to the case, or correct the comment.
+    - n4: the rows case (`:1056`, `:1067`) would pass vacuously if `rowsRead` disappeared, since NaN equals NaN in vitest's `equals`. Assert the baseline counts are positive.
+- download-pins (#397, approved 10 Nov on 3894e58; review in reviews/download-pins.md, a two-lens Opus workflow; probes in scratch/download-pins-review/). The controller fixed n3 (the receipt's lock line, ac61350).
+  - **A follow-up (m1, mutant runs only; CI is not affected):** under V4 and `--red`, CP-1's designed 15-second timeout leaves `RECEIPT_LIMITS.copyDeadlineMs` at 400, and a copy held, for the rest of `attachments.test.ts`. Neither `withLimits`' `finally` (`:125-133`) nor the case's `finally` (`:1829-1832`) runs. RB-2 passes `--red` only by about a 2x margin.
+    - Fix: race CP-1's second retain against a timer of about 3 s inside `withLimits`, or restore the limits and open the hold from `onTestFinished`.
+  - **A follow-up (n1):** `watchedSql`'s doc comment (`snapshots.test.ts:136-140`) claims more than the spy enforces. A reader that copies each row as it reads (`Array.from` with a mapper) holds every row, yet passes. Narrow the comment to readers that keep the row objects past the next pull.
+  - **After #397 and #398 both merge (n2):** download-pins' kit mutant V3 no longer applies as text; a rerun uses alarm-hardening's A1 text, which DU-2 kills.

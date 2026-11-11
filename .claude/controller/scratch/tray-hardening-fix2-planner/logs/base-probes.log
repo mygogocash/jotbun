@@ -1,0 +1,236 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix2-planner/work/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/worktrees/tray-hardening/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/worktrees/tray-hardening/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:20795) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:20794) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+stdout | src/wallet/tray/reviewProbe.render.test.tsx > R-c: two reopen-and-close rounds before any late end (both ends arrive after the second hide)
+R-c: onClosed after the first late end 1, after the second 2
+
+stdout | src/wallet/tray/reviewProbe.render.test.tsx > R-d: the late end and the reopen land in one React batch
+R-d: tray open true, onClosed calls 0
+
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > R-a: one hide, one late end: onClosed once 41ms
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > R-b: hide, reopen, late end says nothing; the next hide and its end say it once 17ms
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > R-c: two reopen-and-close rounds before any late end (both ends arrive after the second hide) 15ms
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > R-d: the late end and the reopen land in one React batch 12ms
+ ✓ src/wallet/tray/behaviourProbe.render.test.tsx > P-A: opening the tray at another step in one render plays no tick 37ms
+ ✓ src/wallet/tray/behaviourProbe.render.test.tsx > P-B: close, open, close in quick succession: one hide, one onClosed, 220 ms after the last close 26ms
+ ✓ src/wallet/tray/behaviourProbe.render.test.tsx > P-C: an onClosed that reopens the tray at once leaves it open and fires once 11ms
+ ✓ src/wallet/tray/behaviourProbe.render.test.tsx > P-D: a drag cut off by the lock cover leaves the card pulled down once the cover lifts 11ms
+ ✓ src/wallet/tray/behaviourProbe.render.test.tsx > P-E: under the lock cover the system back still closes the tray 4ms
+ ✓ src/wallet/tray/behaviourProbe.render.test.tsx > P-F: opened before the answer, closed after it: the exit and the hide follow the answer at close 9ms
+ ✓ src/wallet/tray/behaviourProbe.render.test.tsx > P-G: a live change to Reduce Motion while open is followed by the swipe, the layout and the exit 9ms
+ ✓ src/wallet/tray/behaviourProbe.render.test.tsx > P-H: the swipe through Gesture Handler’s own handler closes a tray that was mounted closed 9ms
+ ✓ src/wallet/tray/behaviourProbe.render.test.tsx > P-I: a swipe the system cancels past the line still closes the tray 7ms
+ × src/wallet/tray/behaviourProbe.render.test.tsx > P-J: when the cover lifts the card enters again 12ms
+   → the card after the cover lifts: expected [ 'hidden', '' ] to deeply equal [ '', '' ]
+ ✓ src/wallet/tray/behaviourProbe.render.test.tsx > P-K: a step change under the lock cover ticks 3ms
+ ✓ src/wallet/tray/behaviourProbe.render.test.tsx > P-L: during the exit, the backdrop and Escape ask nothing 7ms
+(node:20838) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+stdout | src/wallet/tray/reviewProbe.render.test.tsx > R-e: the native end is delivered between the hide commit and its passive effects (real scheduler, no act)
+R-e: delivered true, ends 1, onClosed calls 1
+
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > R-e: the native end is delivered between the hide commit and its passive effects (real scheduler, no act) 681ms
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > T-a: open, close, reopen at another step in one render ticks nothing (visible must be a dependency) 12ms
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > T-b: cover, change under it, lift on the same step, then a change ticks once (hidden must be a dependency) 13ms
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > D-a: a swipe that closes leaves the card where the finger let go (nothing moves during the exit) 10ms
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > D-b: the cover arriving or lifting during an exit moves nothing either 8ms
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > N-a: a cancel under Reduce Motion jumps back, and a FAILED end never closes 7ms
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > C-a: a swipe whose end reaches JS after the cover came closes nothing 9ms
+stdout | src/wallet/tray/modelProbe.render.test.tsx > MODEL: every valid sequence of up to 6 steps agrees with the arrival-based reference
+MODEL: 60 valid sequences up to length 6; 3 full-length ones deviate; by the step that first deviates: [["hideEnd",3]]
+MODEL deviations (first 12):
+  close > hide > open > close > hideEnd: onClosed 1, reference 0
+  close > hide > open > close > hideEnd: onClosed 1, reference 0
+  close > hide > open > close > hideEnd: onClosed 1, reference 0
+
+ ✓ src/wallet/tray/modelProbe.render.test.tsx > MODEL: every valid sequence of up to 6 steps agrees with the arrival-based reference 367ms
+(node:20839) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+stdout | src/wallet/tray/reviewProbe.render.test.tsx > R-e2: the native end delivered by a microtask in the hide commit itself (the earliest possible), real scheduler
+R-e2: hide commits 1, ends 1, onClosed calls 1
+
+stdout | src/wallet/tray/reviewProbe.render.test.tsx > R-f: a Modal that never presented (no native end ever): onClosed stays silent, the tray still reopens, the next real end says closed once
+R-f: after the hide, no end: onClosed calls 0
+
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > the tray is a named dialog, 8 pt from the edges, radius 34 78ms
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > close and the backdrop close it, and the title takes focus when it opens 11ms
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > R-e2: the native end delivered by a microtask in the hide commit itself (the earliest possible), real scheduler 678ms
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > R-f: a Modal that never presented (no native end ever): onClosed stays silent, the tray still reopens, the next real end says closed once 13ms
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > while locked nothing closes it, and close says it is unavailable 13ms
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > at AX5 it opens full height 14ms
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > under reduced motion a new step shows at once 8ms
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > the card leaves before the Modal hides, then onClosed fires once 28ms
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > an onClosed given while the card leaves is the one called 8ms
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > a hidden lock cover replaces the tray's content 14ms
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > under the lock cover nothing asks to close the tray 5ms
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > a drag the lock cover cuts off is gone when the cover lifts 9ms
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > a card that leaves stays where the finger let it go, even when the lock cover comes and goes 8ms
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > the main button is 54 pt tall, radius 16, ink with white text in light and light with ink text in dark; busy says its busy label 11ms
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > every control in the header is at least 44 pt 34ms
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > the swipe follows the finger down, springs back short of the line, and closes past it 16ms
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > the wallet's answer decides the swipe's spring back, not Reanimated's own setting (W6) 7ms
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > a swipe the system cancels springs back, even past the line 7ms
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > at full motion the card springs up, and a step change morphs its height and ticks once; opening ticks nothing 12ms
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > opening at another step in one render, or a step change under the lock cover, ticks nothing 11ms
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > once the lock cover lifts a step change ticks, even when it lifted on the step it had under the cover 9ms
+stdout | src/wallet/tray/seamProbe.render.test.tsx > on iOS a dismissal that ends after the tray is shown again says nothing; the next one says it closed
+SEAM LOG (endDismissal):
+  seam end called (setState queued)
+  didUpdate visible true->true card in DOM true
+  seam callback: Modal visible true, card in DOM true
+SEAM LOG (endDismissal):
+  seam end called (setState queued)
+  didUpdate visible true->true card in DOM false
+  seam callback: Modal visible true, card in DOM false
+SEAM LOG (endDismissal):
+  seam end called (setState queued)
+  didUpdate visible false->false card in DOM false
+  seam callback: Modal visible false, card in DOM false
+
+stdout | src/wallet/tray/seamProbe.render.test.tsx > on iOS a dismissal that ends in the commit that opens the tray again says nothing
+SEAM LOG (m-1 case):
+  seam end called (setState queued)
+  didUpdate visible false->true card in DOM true
+  seam callback: Modal visible true, card in DOM true
+  didUpdate visible true->true card in DOM true
+
+stdout | src/wallet/tray/seamProbe.render.test.tsx > on iOS a tray with no onClosed closes, its dismissal ends, and it opens again
+SEAM LOG (endDismissal):
+  seam end called (setState queued)
+  didUpdate visible false->false card in DOM false
+  seam callback: Modal visible false, card in DOM false
+
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > on a phone the card is the named dialog and the title takes focus, with or without a header; on iOS onClosed waits for the Modal's own dismissal 16ms
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > on iOS a dismissal that ends after the tray is shown again says nothing; the next one says it closed 14ms
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > on iOS a dismissal that ends in the commit that opens the tray again says nothing 9ms
+ × src/wallet/tray/seamProbe.render.test.tsx > HIDE-END (suggested case): on iOS a dismissal that ends in the commit that hides the tray again says nothing; its own end says it closed 12ms
+   → the earlier end, in the commit that hides the Modal again: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array []
+
+
+Number of calls: 1
+
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > on iOS a tray with no onClosed closes, its dismissal ends, and it opens again 9ms
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > a text link is at least 44 pt, violet by default or ink, and says its words 6ms
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > a header takes the title's place, and screen readers meet the title first 7ms
+ ✓ src/wallet/tray/seamProbe.render.test.tsx > the catalogue's tray sections come after the kit's, and each tray opens at once 25ms
+stdout | src/wallet/tray/reviewProbe.render.test.tsx > R-d2: the same race with the real scheduler and no act: a timer reopens the tray in the task that delivers the native end
+R-d2: tray open true, onClosed calls 0
+
+stdout | src/wallet/tray/reviewProbe.render.test.tsx > R-d3: a tap (discrete event) that reopens the tray, in the same act as the native end, is safe: the sync lane renders alone
+R-d3: tray open true, onClosed calls 0
+
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > R-d2: the same race with the real scheduler and no act: a timer reopens the tray in the task that delivers the native end 632ms
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > R-d3: a tap (discrete event) that reopens the tray, in the same act as the native end, is safe: the sync lane renders alone 13ms
+(node:21125) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+stdout | src/wallet/tray/confirmProbe.render.test.tsx > C1: the shipped F3 body (end, then a tap, in one act) runs the end callback in the commit that opens the tray
+C1 log:
+  native end handled (setState queued)
+  commit 8: Modal visible false->true, card in DOM true
+  end callback in commit 8: Modal visible true, card in DOM true
+  commit 9: Modal visible true->true, card in DOM true
+
+stdout | src/wallet/tray/confirmProbe.render.test.tsx > H3d: the earlier end and the second hide land in one commit: the tray is hidden in it, so it says closed (and the second end says it again)
+H3d: after end 1 batched with the hide: onClosed 1
+H3d: after end 2: onClosed 2
+
+ ✓ src/wallet/tray/confirmProbe.render.test.tsx > C1: the shipped F3 body (end, then a tap, in one act) runs the end callback in the commit that opens the tray 45ms
+ ✓ src/wallet/tray/confirmProbe.render.test.tsx > H3a: a late end that comes while the card leaves says nothing; that hide's own end says it closed, once 13ms
+ ✓ src/wallet/tray/confirmProbe.render.test.tsx > H3b: two reopen-and-close rounds before the Modal hides once give one dismissal, so exactly one onClosed 14ms
+ ✓ src/wallet/tray/confirmProbe.render.test.tsx > H3c: two rounds that both reach the Modal, both ends late: one onClosed per end (n-3), and only once the tray is hidden 11ms
+ ✓ src/wallet/tray/confirmProbe.render.test.tsx > H3d: the earlier end and the second hide land in one commit: the tray is hidden in it, so it says closed (and the second end says it again) 11ms
+stdout | src/wallet/tray/confirmProbe.render.test.tsx > S1: end and reopen and close again, all in one act: the tray is closed in the committed state, so the end says closed
+S1: tray in DOM false, onClosed 1
+
+ ✓ src/wallet/tray/confirmProbe.render.test.tsx > S1: end and reopen and close again, all in one act: the tray is closed in the committed state, so the end says closed 8ms
+ ✓ src/wallet/tray/confirmProbe.render.test.tsx > N1: on iOS the end calls the onClosed the host passed last (a new one arrives after the Modal hid) 7ms
+ ✓ src/wallet/tray/confirmProbe.render.test.tsx > S2: a host with no onClosed under the batched reopen: nothing throws 7ms
+stdout | src/wallet/tray/reviewProbe.render.test.tsx > R-d4: tap reopen first, then the native end in a later task (real scheduler): safe
+R-d4: tray open true, onClosed calls 0
+
+(node:21154) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/wallet/tray/iosDismissProbe.render.test.tsx > P-M1: on iOS, onClosed waits for the Modal’s own onDismiss and fires once 37ms
+ ✓ src/wallet/tray/iosDismissProbe.render.test.tsx > P-M2: on iOS, a dismissal that completes after the tray was opened again does not say it closed 14ms
+ ✓ src/wallet/tray/iosDismissProbe.render.test.tsx > P-N: back is the host’s and still works while locked; close does not 14ms
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > R-d4: tap reopen first, then the native end in a later task (real scheduler): safe 636ms
+stdout | src/wallet/tray/reviewProbe.render.test.tsx > R-d5: the native end is queued first (default lane pending), then a tap reopens before React has rendered it (real scheduler)
+R-d5: tray open true, onClosed calls 0
+
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > R-d5: the native end is queued first (default lane pending), then a tap reopens before React has rendered it (real scheduler) 635ms
+stdout | src/wallet/tray/reviewProbe.render.test.tsx > R-d5b: the native end and a tap are two tasks, both queued before React runs the render the end scheduled (real scheduler)
+R-d5b: order end,tap, tray open true, onClosed calls 0
+
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > R-d5b: the native end and a tap are two tasks, both queued before React runs the render the end scheduled (real scheduler) 635ms
+stdout | src/wallet/tray/reviewProbe.render.test.tsx > R-d6: the same two tasks but the render the end scheduled gets to run first (a macrotask between them): safe
+R-d6: tray open true, onClosed calls 1 (the end ran first, so it legitimately said closed)
+
+ ✓ src/wallet/tray/reviewProbe.render.test.tsx > R-d6: the same two tasks but the render the end scheduled gets to run first (a macrotask between them): safe 669ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/tray/behaviourProbe.render.test.tsx > P-J: when the cover lifts the card enters again
+AssertionError: the card after the cover lifts: expected [ 'hidden', '' ] to deeply equal [ '', '' ]
+
+- Expected
++ Received
+
+  [
+-   "",
++   "hidden",
+    "",
+  ]
+
+ ❯ src/wallet/tray/behaviourProbe.render.test.tsx:251:95
+    249|   view.rerender(covered(false));
+    250|   const card = screen.getByTestId('tray');
+    251|   expect([card.style.visibility, card.style.animationName], 'the card …
+       |                                                                                               ^
+    252|   expect(vi.mocked(trayEntering).mock.calls.length).toBeGreaterThan(be…
+    253| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/wallet/tray/seamProbe.render.test.tsx > HIDE-END (suggested case): on iOS a dismissal that ends in the commit that hides the tray again says nothing; its own end says it closed
+AssertionError: the earlier end, in the commit that hides the Modal again: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array []
+
+
+Number of calls: 1
+
+ ❯ src/wallet/tray/seamProbe.render.test.tsx:786:85
+    784|   });
+    785|   expect(dismissals.held, 'dismissal 2 under way').toBe(1);
+    786|   expect(onClosed, 'the earlier end, in the commit that hides the Moda…
+       |                                                                                     ^
+    787|   // Dismissal 2's own end: closed, once.
+    788|   endDismissal();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  2 failed | 4 passed (6)
+      Tests  2 failed | 68 passed (70)
+   Start at  15:07:43
+   Duration  5.74s (transform 1.08s, setup 198ms, import 2.52s, tests 5.83s, environment 455ms)
+

@@ -1,0 +1,165 @@
+== the copy: 0d0fe70 784667b merged with d1111f8 (the merge's tree)
+== Step 1 (from 1.3)
+$ mkdir -p /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch
+-> exit=0
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree && shasum -a 256 -c /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/SHA256SUMS.base
+apps/app/src/wallet/tray/Tray.tsx: OK
+apps/app/src/wallet/tray/Tray.render.test.tsx: OK
+apps/app/src/wallet/tray/trayGesture.test.ts: OK
+-> exit=0
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree && npm ci --ignore-scripts --no-audit --no-fund > /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/npm-ci.log 2>&1
+-> exit=0
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree/apps/app && npm run test:unit -- src/wallet/tray/trayGesture.test.ts > /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/base-unit.log 2>&1
+-> exit=0
+$ grep -E '^ℹ (tests|pass|fail) ' /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/base-unit.log
+ℹ tests 4
+ℹ pass 4
+ℹ fail 0
+-> exit=0
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree/apps/app && npx vitest run --config vitest.render.config.ts --reporter=verbose src/wallet/tray/Tray.render.test.tsx > /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/base-render.log 2>&1
+-> exit=0
+$ grep -E '^ +Tests ' /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/base-render.log
+      Tests  22 passed (22)
+-> exit=0
+== Step 2
+$ cp /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/real/apps/app/src/wallet/tray/Tray.render.test.tsx /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree/apps/app/src/wallet/tray/Tray.render.test.tsx
+-> exit=0
+$ /usr/bin/git -C /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree status --short --untracked-files=all
+ M apps/app/src/wallet/tray/Tray.render.test.tsx
+-> exit=0
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree && shasum -a 256 -c /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/SHA256SUMS.red
+apps/app/src/wallet/tray/Tray.tsx: OK
+apps/app/src/wallet/tray/Tray.render.test.tsx: OK
+apps/app/src/wallet/tray/trayGesture.test.ts: OK
+-> exit=0
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree && npm run typecheck:app > /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/red-typecheck.log 2>&1
+-> exit=0
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree/apps/app && npx vitest run --config vitest.render.config.ts --reporter=verbose src/wallet/tray/Tray.render.test.tsx > /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/red-render.log 2>&1
+-> exit=1
+$ grep -E '^ +Tests ' /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/red-render.log
+      Tests  1 failed | 25 passed (26)
+-> exit=0
+$ grep '×' /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/red-render.log
+ × src/wallet/tray/Tray.render.test.tsx > on iOS a dismissal that ends in the commit that opens the tray again says nothing 11ms
+-> exit=0
+$ grep '^AssertionError' /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/red-render.log
+AssertionError: onClosed while the tray is open: expected "vi.fn()" to not be called at all, but actually been called 1 times
+-> exit=0
+$ grep -cE 'Cannot find module|Failed to resolve|SyntaxError|TypeError|ReferenceError' /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/red-render.log
+0
+-> exit=1
+== Step 3
+$ cp /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/real/apps/app/src/wallet/tray/Tray.tsx /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree/apps/app/src/wallet/tray/Tray.tsx
+-> exit=0
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree && shasum -a 256 -c /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/SHA256SUMS.real
+apps/app/src/wallet/tray/Tray.tsx: OK
+apps/app/src/wallet/tray/Tray.render.test.tsx: OK
+apps/app/src/wallet/tray/trayGesture.test.ts: OK
+-> exit=0
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree && npm run typecheck:app > /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/green-typecheck.log 2>&1
+-> exit=0
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree/apps/app && npm run test:unit -- src/wallet/tray/trayGesture.test.ts > /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/green-unit.log 2>&1
+-> exit=0
+$ grep -E '^ℹ (tests|pass|fail) ' /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/green-unit.log
+ℹ tests 4
+ℹ pass 4
+ℹ fail 0
+-> exit=0
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree/apps/app && npx vitest run --config vitest.render.config.ts --reporter=verbose src/wallet/tray/Tray.render.test.tsx > /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/green-render.log 2>&1
+-> exit=0
+$ grep -E '^ +Tests ' /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/green-render.log
+      Tests  26 passed (26)
+-> exit=0
+$ grep -c '^stderr |' /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/green-render.log
+0
+-> exit=1
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree/apps/app && npx vitest run --config vitest.render.config.ts src/dev/catalogue/CatalogueScreen.render.test.tsx src/dev/catalogue/screenReader.render.test.tsx -t bw- > /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/green-catalogue.log 2>&1
+-> exit=0
+$ grep -E '^ +(Test Files|Tests) ' /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/green-catalogue.log
+ Test Files  2 passed (2)
+      Tests  18 passed | 572 skipped (590)
+-> exit=0
+== Step 4
+$ python3 -I /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/tools/mutants.py /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree --check | grep -c ' APPLIES: '
+40
+-> exit=0
+$ MUTANT_LOGS=/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/mutant-logs python3 -I /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/tools/mutants.py /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree > /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/mutants.out 2> /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/mutants.err
+-> exit=0
+$ grep -c ' KILLED: ' /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/mutants.out
+40
+-> exit=0
+$ grep -c 'restored=True' /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/mutants.out
+40
+-> exit=0
+$ diff /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/mutants.out /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/logs/mutants.out
+-> exit=0
+$ /usr/bin/git -C /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree status --short --untracked-files=all
+ M apps/app/src/wallet/tray/Tray.render.test.tsx
+ M apps/app/src/wallet/tray/Tray.tsx
+-> exit=0
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree && shasum -a 256 -c /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/SHA256SUMS.real
+apps/app/src/wallet/tray/Tray.tsx: OK
+apps/app/src/wallet/tray/Tray.render.test.tsx: OK
+apps/app/src/wallet/tray/trayGesture.test.ts: OK
+-> exit=0
+== Step 5
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree && npm run typecheck:app > /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/gate-typecheck.log 2>&1
+-> exit=0
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree/apps/app && npm run test:unit -- src/wallet/tray/trayGesture.test.ts > /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/gate-unit.log 2>&1
+-> exit=0
+$ grep -E '^ℹ (tests|pass|fail) ' /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/gate-unit.log
+ℹ tests 4
+ℹ pass 4
+ℹ fail 0
+-> exit=0
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree/apps/app && npx vitest run --config vitest.render.config.ts --reporter=verbose src/wallet/tray/Tray.render.test.tsx > /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/gate-render.log 2>&1
+-> exit=0
+$ grep -E '^ +Tests ' /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/gate-render.log
+      Tests  26 passed (26)
+-> exit=0
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree/apps/app && npx vitest run --config vitest.render.config.ts src/dev/catalogue/CatalogueScreen.render.test.tsx src/dev/catalogue/screenReader.render.test.tsx -t bw- > /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/gate-catalogue.log 2>&1
+-> exit=0
+$ grep -E '^ +Tests ' /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/gate-catalogue.log
+      Tests  18 passed | 572 skipped (590)
+-> exit=0
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree && npm run test:app > /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/test-app.log 2>&1
+-> exit=0
+$ grep -E '^ℹ fail ' /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/test-app.log
+ℹ fail 0
+-> exit=0
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree && npm run test:unit > /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/test-unit.log 2>&1
+-> exit=0
+$ grep -E '^ℹ fail ' /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/test-unit.log
+ℹ fail 0
+-> exit=0
+$ /usr/bin/git -C /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree diff --check
+-> exit=0
+== Step 6 (the two receipt edits, by script)
+the m2 line found 1 time(s)
+section appended
+-> exit=0
+== Step 7
+$ /usr/bin/git -C /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree add apps/app/src/wallet/tray/Tray.tsx apps/app/src/wallet/tray/Tray.render.test.tsx docs/implementation/receipts/tray-hardening.md
+-> exit=0
+$ /usr/bin/git -C /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree status --short
+M  apps/app/src/wallet/tray/Tray.render.test.tsx
+M  apps/app/src/wallet/tray/Tray.tsx
+M  docs/implementation/receipts/tray-hardening.md
+-> exit=0
+$ /usr/bin/git -C /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree diff --cached --check
+-> exit=0
+$ cp /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/tools/commit-message.txt /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/commit-message.txt
+-> exit=0
+$ /usr/bin/git -C /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree -c user.name=rehearsal -c user.email=rehearsal@example.invalid commit -q -F /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-scratch/commit-message.txt
+-> exit=0
+$ /usr/bin/git -C /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree diff --check HEAD~1...HEAD
+-> exit=0
+$ /usr/bin/git -C /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/tray-hardening-fix-planner/rehearsal-tree show --stat --format=%s HEAD
+Read the render's shown in the tray's late iOS dismissal; pin three more rules
+
+ apps/app/src/wallet/tray/Tray.render.test.tsx  | 138 ++++++++++++++++++++++---
+ apps/app/src/wallet/tray/Tray.tsx              |  11 +-
+ docs/implementation/receipts/tray-hardening.md |  29 +++++-
+ 3 files changed, 155 insertions(+), 23 deletions(-)
+-> exit=0
+== the copy and its scratch folder are deleted

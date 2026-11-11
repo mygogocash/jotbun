@@ -1,0 +1,45 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/fix-download-aborts-planner/proof-runs/real3/root/apps/edge
+
+ledger {"records":12000}
+export (5394226 bytes): aborted GETs [200,200,200,200]; then GET 200 5394226 bytes, sha256 matches; 5 s later GET 200 5394226 bytes, sha256 matches
+snapshot chunks [7119885]
+snapshot chunk (7119885 bytes): aborted GETs [200,200,200,200]; then GET 200 7119885 bytes, sha256 matches; 5 s later GET 200 7119885 bytes, sha256 matches
+receipt (4194304 bytes): aborted GETs [200,200,200,200]; then GET 200 4194304 bytes, sha256 matches; 5 s later GET 200 4194304 bytes, sha256 matches
+retain (12582912-byte copies, one took 112 ms, each aborted after 56 ms): aborted retains ["AbortError","AbortError","AbortError","AbortError"]; then another member's retain 200 {"command_id":"bfc0735c-1f99-4e0a-abf7-d6cc184031a1","entity_id":"ecd3c2b2-1393-; 5 s later 200 {"command_id":"bb1a0137-50ce-475b-b24c-544d7ba087a9","entity_id":"f2da3af7-869f-
+upload: aborted uploads {"AbortError":16}; then another member's upload 202 {"job_id":"a75bdf6d-922a-80a6-88b7-0317ab140bf2","status":"queued","format":"csv; 5 s later 202 {"job_id":"114c8cfd-111c-810d-978e-e64ce5072ebf","status":"queued","format":"csv
+answers {"export":"200","snapshot":"200","receipt":"200","retain":"200","upload":"202"}
+[wrangler:info] GET /v1/export-files/AV-ncLvq4oIOnySk9VCNsN8AAAAAavJ9m03_LV0ra4SE09aKr3llxTg 200 OK (3ms)
+[wrangler:info] GET /v1/export-files/AV-ncLvq4oIOnySk9VCNsN8AAAAAavJ9m03_LV0ra4SE09aKr3llxTg 200 OK (3ms)
+[wrangler:info] GET /v1/export-files/AV-ncLvq4oIOnySk9VCNsN8AAAAAavJ9m03_LV0ra4SE09aKr3llxTg 200 OK (3ms)
+[wrangler:info] GET /v1/export-files/AV-ncLvq4oIOnySk9VCNsN8AAAAAavJ9m03_LV0ra4SE09aKr3llxTg 200 OK (4ms)
+[wrangler:info] GET /v1/export-files/AV-ncLvq4oIOnySk9VCNsN8AAAAAavJ9m03_LV0ra4SE09aKr3llxTg 200 OK (5ms)
+[wrangler:info] GET /v1/export-files/AV-ncLvq4oIOnySk9VCNsN8AAAAAavJ9m03_LV0ra4SE09aKr3llxTg 200 OK (4ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/ARvJ3IVLnUGDuUQ0R2e937YAAAAAavJ9ovjeGAxvFQBacx0-e6E9W1M 200 OK (6ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/ARvJ3IVLnUGDuUQ0R2e937YAAAAAavJ9ovjeGAxvFQBacx0-e6E9W1M 200 OK (8ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/ARvJ3IVLnUGDuUQ0R2e937YAAAAAavJ9ovjeGAxvFQBacx0-e6E9W1M 200 OK (8ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/ARvJ3IVLnUGDuUQ0R2e937YAAAAAavJ9ovjeGAxvFQBacx0-e6E9W1M 200 OK (8ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/ARvJ3IVLnUGDuUQ0R2e937YAAAAAavJ9ovjeGAxvFQBacx0-e6E9W1M 200 OK (7ms)
+[wrangler:info] GET /v1/sync/snapshot-chunks/ARvJ3IVLnUGDuUQ0R2e937YAAAAAavJ9ovjeGAxvFQBacx0-e6E9W1M 200 OK (6ms)
+[wrangler:info] POST /v1/transactions/c518b30c-aa49-4848-a501-f80aa67e1c1e/attachment 200 OK (48ms)
+[wrangler:info] GET /v1/attachment-files/AWma0s2-UUJ1oia0Z__luscAAAAAavJ9qpQkKPmMyqYZN7iVvybGXxY 200 OK (3ms)
+[wrangler:info] GET /v1/attachment-files/AWma0s2-UUJ1oia0Z__luscAAAAAavJ9qpQkKPmMyqYZN7iVvybGXxY 200 OK (2ms)
+[wrangler:info] GET /v1/attachment-files/AWma0s2-UUJ1oia0Z__luscAAAAAavJ9qpQkKPmMyqYZN7iVvybGXxY 200 OK (7ms)
+[wrangler:info] GET /v1/attachment-files/AWma0s2-UUJ1oia0Z__luscAAAAAavJ9qpQkKPmMyqYZN7iVvybGXxY 200 OK (3ms)
+[wrangler:info] GET /v1/attachment-files/AWma0s2-UUJ1oia0Z__luscAAAAAavJ9qpQkKPmMyqYZN7iVvybGXxY 200 OK (4ms)
+[wrangler:info] GET /v1/attachment-files/AWma0s2-UUJ1oia0Z__luscAAAAAavJ9qpQkKPmMyqYZN7iVvybGXxY 200 OK (4ms)
+[wrangler:info] POST /v1/transactions/a1a7da9a-90ba-4ac6-93a1-815c08819b7d/attachment 200 OK (110ms)
+[wrangler:info] POST /v1/transactions/c46e14e1-36a8-4545-896b-3b7060fc56d0/attachment 200 OK (120ms)
+[wrangler:info] POST /v1/transactions/ea86ce4c-91a2-4fab-8977-88a3746f46d6/attachment 200 OK (115ms)
+[wrangler:info] POST /v1/transactions/629b7e6a-924b-4d42-9691-52713e08383c/attachment 200 OK (145ms)
+[wrangler:info] POST /v1/transactions/c5aa69ec-a6a2-40fb-90ee-51a0c4dae944/attachment 200 OK (115ms)
+[wrangler:info] POST /v1/transactions/ecd3c2b2-1393-4b78-91be-7e842d28929d/attachment 200 OK (8ms)
+[wrangler:info] POST /v1/transactions/f2da3af7-869f-4071-8512-881f7d6e1b0f/attachment 200 OK (9ms)
+[wrangler:info] POST /v1/imports 202 Accepted (16ms)
+[wrangler:info] POST /v1/imports 202 Accepted (10ms)
+
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+   Start at  09:07:39
+   Duration  48.54s (transform 207ms, setup 0ms, import 463ms, tests 47.96s, environment 0ms)
+
