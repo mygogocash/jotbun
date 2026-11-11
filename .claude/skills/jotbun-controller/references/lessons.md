@@ -36,6 +36,31 @@
 - **Metro's printed module count on a warm cache.** A web export that ends in well under a second can print a short count, such as 4604 for 4788, while its bundles are byte-identical. Seen on P2-T10's gate, 9 Nov. Rule it a flake when a re-run prints the expected count and the bundle hashes match. Briefs that need an exact count can pass `--clear`.
 - **R-B flake.** `attachments.integration.spec.ts` "two records retaining one image at once keep one receipt, made by one copy" (expected 1 write, got 2) is a known race in frozen `apps/api` (migration 0017's two-statement check; owner decision R-B pending). Rerun the failed job once: `gh run rerun <run> --failed`.
 - **The retry_after edge.** The same file's case "copying is bounded › serializes reservations: five at once from one account reserve exactly four" can fail `expect(limited.retry_after).toBeLessThanOrEqual(180)` with 181. It was seen on #396's SQL job, 11 Nov, run 42992817954, and passed on a rerun. It is frozen `apps/api`, so rule it a flake for any PR that does not touch `apps/api`, and rerun the failed job once.
+- **Candidate flake, the shared write budget (12 Nov).** `shared-rate-limit.integration.spec.ts`, "two API replicas share one write budget per binding" (Expected false, Received true).
+  - It failed on #408's SQL job (run 43043193178, head `31c5c5ed`, 14:59 UTC), while the Mac was under heavy load.
+  - That head changes nothing in `apps/api` over its base, so the controller reran it once.
+  - If it fails again on a head that doesn't touch the rate limiter, record it as a known flake beside R-B.
+- **The Mac sleeps after one minute idle, which takes the local CI and the agents down (11 to 12 Nov, 23:08 to 00:31).**
+  - **Signs:**
+    - both runners are `offline` on GitHub while their containers say `Up`;
+    - jobs end `Canceled` or `Abandoned`, and a failed job's log says "The operation was canceled";
+    - Antigravity turns fail with "sent nothing for 15 minutes".
+  - **Check:** `pmset -g log | grep -E 'Entering Sleep|DarkWake' | tail`.
+  - **Fix:**
+    1. Hold the machine awake with `nohup caffeinate -i -s -t 28800 &`, and write its pid to `scratch/caffeinate.pid`. It works on AC power only, and the display still sleeps.
+    2. Recreate a hung runner: `docker rm -f jotbun-runner-N jotbun-runner-N-dind`, then `runners.sh up 2`.
+    3. Rerun the lost jobs with `rerun_then_wait.sh <pr> <run>`.
+    4. Send each failed agent thread "resume".
+  - **Caution:** don't treat a cancel caused by sleep as a test failure.
+- **Gemini 3.8 Flash plans well-specified logic, not UI screens (11 Nov evidence).**
+  - P3-T4 (an edge transport, plan-exact) passed both reviews clean.
+  - The two UI screens' Flash plans went to their Opus first reviews with real gaps: P2-T25 with 2 majors (a private-mode leak, a call added on a false premise), P2-T32 with 8 (reduced motion, share failure, an off switch, mock catalogue sections, an early-stopping reader, the wallet kit and dark-mode contrast, English copy, tests off the plan's list).
+  - Flash *builds* copied their kits faithfully every time; the gaps came from the plans.
+  - **Rule:** plan UI-heavy tasks with Opus (`--claude-code`). When a Flash plan exists for a UI task, have an Opus brief review check it against the plan's test list, the boards and the wallet kit before any build.
+- **A Flash brief's prose can drift from its own kit; the kit's `real/` is the truth** (P3-T4's review, n6, 11 Nov).
+  - Its "Interfaces" block described another API (an object-shaped `CallFailure`, `AiTrace.record()`), while `real/` and the commit followed the plan.
+  - Its opening named Sonnet as the implementer.
+  - When checking a Flash plan, compare the brief's interface claims with `real/`. Builders copy `real/`, so a stale prose block only misleads a reviewer.
 - **Check that the planner proved its brief's own RED steps, typecheck included.**
   - On 11 Nov, P3-T4's Flash planner ran RED with `vitest` only, in a tree that had the old `env.ts`. The brief's Step 1.3 ("typecheck rc 0" at RED) was never run, and the builder stopped BLOCKED: the stub needed `env.ts`'s new type.
   - Before accepting a plan, check its `run-red.sh` (or proof script) against the brief's RED steps: the same files copied, and every command with an Expected line actually run.
@@ -48,6 +73,7 @@
   - What happened: its `patch` used the default fuzz of 2. P2-T12 had added a line inside the context of P2-T14's `index.ts` hunk, so patch put the add spread before the tray's instead of after it, and still said it applied cleanly. The implementer's brief-mandated `git apply --3way` disagreed, and it stopped (BLOCKED), as the notes asked.
   - The fix: the script now patches with `-F0`. When the context has moved, it falls back to a 3-way `git merge-file` of the head (ours) and the kit's `real/` file (theirs) over the kit's base. That is what `git apply --3way` does.
   - Still read any rebased copy before quoting its sha256 in notes. Compare it with the planner's own merge proofs (`logs/merge/`, `merge/`) when they exist.
+- **Fixed in the script on 11 Nov:** `sync_state.sh` now leaves `*/merge/*conflict*` out of its `diff --check`, after P2-T25's kit hit the same wall. Older note:
 - **A kit with a conflict-demo file stops `sync_state.sh`.** P2-T33's `merge/index.t33-t14-conflict.ts` holds conflict markers on purpose, so the script's `git diff --cached --check` fails after staging and leaves the integration worktree staged. Check that the demo file is the only failure (`git diff --cached --check | cut -d: -f1 | sort -u`), then commit and push by hand with the script's message. Done once on 11 Nov (`43f438f0`); later syncs don't restage it.
 - **After a reboot, the local runners crash-loop.** `colima start` restarts the runner containers, but their registration token has expired: the logs show `404` from `runner-registration`, and GitHub shows both runners offline. Run `runners.sh down`, then `runners.sh up`; the image registers with `--replace`, so the old names are reused. Starting Colima also restarts other containers that have restart policies, such as Supabase's `tbh-local`.
 - **Render timeouts under load.** Load from several agents running app suites makes render tests time out at 5 s (for example `HistoryReturn` at 14.7 s). Rule it a load flake when the failing file doesn't import the task's files: rerun the file alone, then the full suite once. Briefs should tell implementers to do this before reporting BLOCKED. `HistoryReturn.render.test.tsx` is the usual one (P2-T19 and P2-T2 both hit it on 8 Nov). Running more than about three agents with app suites at once pushes the load average past 40 and makes this happen.

@@ -22,6 +22,9 @@ cd "$I"
 [ -z "$(/usr/bin/git status --short --untracked-files=no)" ] || { echo "integration worktree has tracked changes; stopping"; exit 1; }
 /usr/bin/git fetch -q origin claude/p1a-vault-core
 /usr/bin/git merge -q --ff-only origin/claude/p1a-vault-core
+# Agents' Markdown can end lines with two spaces (hard breaks; a Flash review, 12 Nov), which the whitespace check below
+# stops on. Strip them at the source, so each sync copies clean files.
+grep -lE '[[:space:]]+$' "$C"/reviews/*.md "$C"/briefs/*.md 2>/dev/null | while IFS= read -r f; do sed -i '' -E 's/[[:space:]]+$//' "$f"; done
 rsync -a --exclude scratch --exclude watch_prs.seen --exclude 'backlog/plans' "$C/" "$I/.claude/controller/"
 rsync -a --delete --exclude __pycache__ "$ROOT/.claude/skills/" "$I/.claude/skills/"
 for kit in "$@"; do
@@ -37,7 +40,8 @@ done
 # A kit's proof logs (*.log) are gitignored, so `add -A` skips them; force-add each kit so its SHA256SUMS still verifies elsewhere.
 for kit in "$@"; do /usr/bin/git add -f ".claude/controller/scratch/$kit"; done
 if /usr/bin/git diff --cached --quiet; then echo "nothing to sync"; exit 0; fi
-/usr/bin/git diff --cached --check
+# A planner kit can show a merge conflict on purpose (merge/*conflict*); its markers are not a whitespace error (11 Nov).
+/usr/bin/git diff --cached --check -- . ":(exclude)*/merge/*conflict*"
 /usr/bin/git commit -q -m "$msg" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 /usr/bin/git push -q origin claude/p1a-vault-core
 echo "pushed $(/usr/bin/git log --oneline -1 | cat)"

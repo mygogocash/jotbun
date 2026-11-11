@@ -550,11 +550,11 @@ index 0277fa3..01cd963 100644
 +import type { HostInstance } from 'react-native';
  import { ReduceMotion, withSpring } from 'react-native-reanimated';
  import { afterEach, expect, test, vi } from 'vitest';
- 
+
 @@ -43,6 +48,18 @@ vi.mock('react-native-reanimated', async (importOriginal) => {
    return { ...actual, withSpring: vi.fn(actual.withSpring) };
  });
- 
+
 +// Each Pressable's props, recorded, so the VoiceOver case can call what iOS calls (see the note at the top).
 +const pressables = vi.hoisted(() => ({ props: [] as Record<string, unknown>[] }));
 +vi.mock('react-native', async (importOriginal) => {
@@ -577,9 +577,9 @@ index 0277fa3..01cd963 100644
 +  pressables.props.length = 0;
    setCurrentHapticPreference('on');
  });
- 
+
 @@ -122,7 +140,7 @@ type Place = { left: number; top: number; width: number; height: number };
- 
+
  /** Gives elements a place in the window, as the page's layout would; anything else is at 0, 0 with no size, as happy-dom says. */
  function placeViews(places: Map<Element, Place>) {
 -  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function placed(this: HTMLElement) {
@@ -603,7 +603,7 @@ index 0277fa3..01cd963 100644
 +  // One open per press: the lift settling opens nothing more.
 +  expect(onOpen.mock.calls).toEqual([['w-main'], ['w-main']]);
  });
- 
+
  test('at full motion a pressed card lifts 12 pt on the gentle spring and settles back in its place; the others stay', async () => {
 @@ -336,6 +358,11 @@ test("screen readers meet the cards in the drawn order, each a button with its c
        cleanup();
@@ -615,10 +615,10 @@ index 0277fa3..01cd963 100644
 +  await settle();
 +  expect([labels()[2], drawn(buttons()[2])]).toEqual(['เงินสด, เหลือ 1,240 บาท, รวม 50 บาทที่กำลังบันทึก', ['เงินสด', '฿1,240', 'รวม ฿50 ที่กำลังบันทึก']]);
  });
- 
+
  test('a wallet added later joins the front of the stack at once: the stack plays no drop', async () => {
 @@ -367,10 +394,11 @@ test("a bank account below zero keeps its minus in the stack and in the list, in
- 
+
  test("each card's place in the window is known after layout, measured again when the stack lays out, and forgotten when the card leaves", async () => {
    const places = new Map<Element, Place>();
 -  placeViews(places);
@@ -641,7 +641,7 @@ index 0277fa3..01cd963 100644
 +  view.rerender(tree(HOME));
 +  await settle();
 +  expect([first, measured()]).toEqual([4, 4]);
- 
+
    // The stack moves 40 pt down the page (say the budget card above it grew): its layout measures every card again.
    placeAt(40);
    layOut(stack());
@@ -652,7 +652,7 @@ index 0277fa3..01cd963 100644
 +  layOut(stack());
 +  await settle();
 +  expect(HOME.map(({ id }) => frameOf(id))).toEqual(expected(80));
- 
+
    // measure() measures them again when asked (for P2-T17, before a flight).
    placeAt(-100);
 @@ -432,7 +471,8 @@ test('one view per wallet id: the last registered answers, and a view that leave

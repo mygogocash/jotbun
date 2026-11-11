@@ -9,8 +9,10 @@ import { translateCopy } from '@mobile/i18n/messages';
 import { bunDark, bunLight } from '@mobile/theme/bunPalette';
 import { bunText } from '@mobile/theme/bunType';
 import { ThemePreferenceOverride, ThemeProvider } from '@mobile/theme/ThemeProvider';
+import { walletLight } from '@mobile/theme/walletPalette';
 import { BunText } from './BunText';
 import { BUN_SPACE } from './layout';
+import { LockCoverContext } from './lockCover';
 import { ConfirmSheet, Sheet, SHEET_SLIDE_FROM } from './Sheet';
 
 vi.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ top: 47, right: 0, bottom: 34, left: 0 }) }));
@@ -217,4 +219,44 @@ test('while busy, confirm is marked busy and nothing closes the sheet', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Close' }));
   expect(onConfirm).not.toHaveBeenCalled();
   expect(onCancel).not.toHaveBeenCalled();
+});
+
+// R63 (P2-T33): under the Face ID lock's cover a sheet draws the cover in place of its backdrop and panel. Nothing of
+// it is drawn or named, and Android's back (Escape on the web) asks nothing; when the cover lifts it is as it was.
+test("a hidden lock cover replaces the sheet's content", () => {
+  const onClose = vi.fn();
+  const covered = (hidden: boolean) => (
+    <IntlProvider locale="en">
+      <ThemeProvider>
+        <ThemePreferenceOverride preference="light">
+          <LockCoverContext.Provider value={{ hidden }}>{sheet(onClose)}</LockCoverContext.Provider>
+        </ThemePreferenceOverride>
+      </ThemeProvider>
+    </IntlProvider>
+  );
+  const view = render(covered(true));
+  const cover = screen.queryByTestId('lock-cover');
+  expect(cover, 'the lock cover').not.toBeNull();
+  expect(cover?.getAttribute('aria-hidden')).toBe('true');
+  expect(cover?.style.backgroundColor).toBe(rgb(walletLight.ground));
+  expect(screen.queryByTestId('sheet-panel')).toBeNull();
+  expect(screen.queryByTestId('sheet-backdrop')).toBeNull();
+  expect(screen.queryByText('Cash')).toBeNull();
+  expect(screen.queryByText('Pick a wallet')).toBeNull();
+  expect(screen.queryByRole('dialog')?.getAttribute('aria-label')).toBeNull();
+  act(() => { document.dispatchEvent(new KeyboardEvent('keyup', { key: 'Escape' })); });
+  expect(onClose).not.toHaveBeenCalled();
+  view.rerender(covered(false));
+  expect(screen.queryByTestId('lock-cover')).toBeNull();
+  expect(screen.queryByRole('dialog', { name: 'Pick a wallet' })).not.toBeNull();
+  expect(screen.queryByText('Cash')).not.toBeNull();
+  act(() => { document.dispatchEvent(new KeyboardEvent('keyup', { key: 'Escape' })); });
+  expect(onClose).toHaveBeenCalledTimes(1);
+});
+
+// The backdrop is hidden from screen readers, so it is never a tab stop either: react-native-web's Pressable reads
+// tabIndex, not focusable (P2-T13's planner notes).
+test('the backdrop is never a tab stop', () => {
+  mount(sheet());
+  expect(screen.getByTestId('sheet-backdrop').getAttribute('tabindex')).toBe('-1');
 });

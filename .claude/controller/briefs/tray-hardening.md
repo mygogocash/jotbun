@@ -445,7 +445,7 @@ index e67a65c..147cfe6 100644
 @@ -141,9 +146,12 @@ export function Tray({ visible, onClose, onClosed, title, header, onBack, step,
    const [shown, setShown] = useState(visible);
    if (visible && !shown) setShown(true);
- 
+
 +  // The latest onClosed, and whether the Modal is shown, as the last commit left them.
    const closed = useRef(onClosed);
 +  const showing = useRef(shown);
@@ -465,7 +465,7 @@ index e67a65c..147cfe6 100644
 +  const dismissed = () => {
 +    if (!showing.current) closed.current?.();
 +  };
- 
+
 -  /** A close may be asked for: never while locked (a save in flight), nor once the tray is leaving. */
 -  const closable = visible && !locked;
 +  /** A close may be asked for: never while locked (a save in flight), once the tray is leaving, or under the lock's cover. */
@@ -474,7 +474,7 @@ index e67a65c..147cfe6 100644
    const requestClose = () => {
      if (closable) onClose();
    };
- 
+
 -  // A step change ticks once while the tray is open; opening it does not.
 +  // A step change ticks once while the tray is open and uncovered, and only if
 +  // it was so in the commit before: opening it at another step in one render,
@@ -494,7 +494,7 @@ index e67a65c..147cfe6 100644
      if (haptic) playHaptic(haptic);
 -  }, [step, visible, reduced]);
 +  }, [step, visible, hidden, reduced]);
- 
+
 -  // The swipe: the card follows the finger down only.
 +  // The swipe: the card follows the finger down only. It is back in its place
 +  // when the tray opens, and when the lock's cover comes or goes (`hidden` is a
@@ -562,10 +562,10 @@ index 78378ea..8343da8 100644
 +import { State } from 'react-native-gesture-handler';
  import { ReduceMotion, ReducedMotionConfig } from 'react-native-reanimated';
  import { afterEach, expect, test, vi } from 'vitest';
- 
+
  // The real safe-area package loads React Native itself, which vitest cannot run.
  vi.mock('react-native-safe-area-context', () => import('../../dev/catalogue/safeAreaTestStub'));
- 
+
 -// The swipe's callbacks, as the tray hands them to Gesture Handler.
 +// The Modal, which says it has gone at once unless a case holds its dismissals back (`late`): each one then waits
 +// for endDismissal(), which calls the Modal's latest onDismiss, as React Native's Modal does on iOS.
@@ -604,7 +604,7 @@ index 78378ea..8343da8 100644
    };
  });
 @@ -47,6 +75,7 @@ vi.mock('../motion/useWalletMotion', async (importOriginal) => {
- 
+
  import { rgba } from '@mobile/dev/catalogue/catalogueTestHarness';
  import { WALLET_SECTIONS } from '@mobile/dev/catalogue/wallet';
 +import { WALLET_KIT_SECTIONS } from '@mobile/dev/catalogue/wallet/kitSections';
@@ -619,12 +619,12 @@ index 78378ea..8343da8 100644
 +  Object.assign(dismissals, { late: false, held: 0, latest: null });
 +  delete (AccessibilityInfo as unknown as Record<string, unknown>).sendAccessibilityEvent;
  });
- 
+
  /** Lets the phone's answer, the stores and Bun's AI preferences arrive. */
 @@ -117,6 +149,38 @@ function pan(): PanConfig {
  const pull = (translationY: number) => act(() => { pan().onUpdate?.({ translationY, velocityY: 0 }); });
  const release = (translationY: number, velocityY = 0) => act(() => { pan().onDeactivate?.({ translationY, velocityY }); });
- 
+
 +/** One drag through Gesture Handler's own event handler, as the native side sends it: it begins, activates and moves
 + * to translationY, then ends (let go) or is cancelled (the system took the touch, as for a call). */
 +function dragThrough(translationY: number, end: typeof State.END | typeof State.CANCELLED) {
@@ -659,11 +659,11 @@ index 78378ea..8343da8 100644
 +
  /** The view that holds a step's words: what fades in when the step changes. */
  const stepOf = (words: string) => screen.queryByText(words)?.parentElement ?? null;
- 
+
 @@ -272,6 +336,20 @@ test('the card leaves before the Modal hides, then onClosed fires once', async (
    expect([dialog() !== null, screen.queryByTestId('tray') !== null, onClosed.mock.calls.length]).toEqual([true, true, 0]);
  });
- 
+
 +test('an onClosed given while the card leaves is the one called', async () => {
 +  const first = vi.fn();
 +  const latest = vi.fn();
@@ -684,7 +684,7 @@ index 78378ea..8343da8 100644
 @@ -308,6 +386,34 @@ test("a hidden lock cover replaces the tray's content", async () => {
    expect(found('lock-cover').style.backgroundColor).toBe(rgba(walletDark.ground));
  });
- 
+
 +test('under the lock cover nothing asks to close the tray', async () => {
 +  const onClose = vi.fn();
 +  const covered = (hidden: boolean) => <LockCoverContext.Provider value={{ hidden }}>{tray({ onClose })}</LockCoverContext.Provider>;
@@ -719,7 +719,7 @@ index 78378ea..8343da8 100644
 @@ -418,6 +524,27 @@ test("the wallet's answer decides the swipe's spring back, not Reanimated's own
    expect(warn.mock.calls.length).toBeLessThanOrEqual(1);
  });
- 
+
 +test('a swipe the system cancels springs back, even past the line', async () => {
 +  const onClose = vi.fn();
 +  const view = mountWallet(tray({ visible: false, onClose }));
@@ -747,7 +747,7 @@ index 78378ea..8343da8 100644
 @@ -439,35 +566,95 @@ test('at full motion the card springs up, and a step change morphs its height an
    expect(tick).toHaveBeenCalledTimes(2);
  });
- 
+
 -test("on a phone the title takes focus, and on iOS onClosed waits for the Modal's own dismissal", async () => {
 -  const focused: [unknown, string][] = [];
 -  // react-native-web has no sendAccessibilityEvent; a phone's screen reader moves focus with it.
@@ -858,10 +858,10 @@ index 78378ea..8343da8 100644
 +  endDismissal();
 +  expect(onClosed).toHaveBeenCalledTimes(1);
  });
- 
+
  test('a text link is at least 44 pt, violet by default or ink, and says its words', async () => {
 @@ -510,8 +697,12 @@ test("a header takes the title's place, and screen readers meet the title first"
- 
+
  test("the catalogue's tray sections come after the kit's, and each tray opens at once", async () => {
    const ids = WALLET_SECTIONS.map((section) => section.id);
 -  expect(ids.slice(0, 2)).toEqual(['bw-amounts', 'bw-private']);
@@ -887,7 +887,7 @@ index 33ec4a0..ef08afb 100644
 @@ -31,9 +31,13 @@ test('the swipe runs on the JS runtime', () => {
    assert.match(source, /runOnJS: true/);
  });
- 
+
 -test("what the web drops is wired for a phone: the screen reader's escape, the modal card, the Modal, the keyboard and the cover", () => {
 +test("what the web drops is wired for a phone: the screen reader's escape, the modal card, the title, the backdrop, the Modal, the keyboard and the cover", () => {
    assert.match(source, /^\s+onAccessibilityEscape=\{requestClose\}$/m);

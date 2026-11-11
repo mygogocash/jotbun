@@ -260,7 +260,7 @@ index 663a610..4fa719a 100644
 @@ -146,10 +146,13 @@ export function Tray({ visible, onClose, onClosed, title, header, onBack, step,
    const [shown, setShown] = useState(visible);
    if (visible && !shown) setShown(true);
- 
+
 -  // The latest onClosed, as the last commit left it, for the hide's timer and iOS's onDismiss.
 +  // The latest onClosed, and whether the Modal is shown, as the last commit
 +  // left them: the hide's timer reads the first, iOS's onDismiss both.
@@ -290,7 +290,7 @@ index 663a610..4fa719a 100644
 -    if (!shown) closed.current?.();
 +    if (!shown && !showing.current) closed.current?.();
    };
- 
+
    /** A close may be asked for: never while locked (a save in flight), once the tray is leaving, or under the lock's cover. */
 ```
 
@@ -304,7 +304,7 @@ index 29c98aa..a32c390 100644
 @@ -744,6 +744,62 @@ test('on iOS a dismissal that ends in the commit that opens the tray again says
    expect(onClosed, 'onClosed while the tray is open').not.toHaveBeenCalled();
  });
- 
+
 +test('on iOS a dismissal that ends in the commit that hides the tray again says nothing; the next one says it closed', async () => {
 +  phoneFocus();
 +  dismissals.late = true;
@@ -375,7 +375,7 @@ index 228a55e..64fa922 100644
 +++ b/docs/implementation/receipts/tray-hardening.md
 @@ -1,12 +1,12 @@
  # tray-hardening: Harden the Bun Wallet tray before its first hosts: the lock cover, a late dismissal, the drag reset and one tick
- 
+
 -- **Status:** built and verified locally on `fix/tray-hardening` (`.claude/worktrees/tray-hardening`), from `ecc00b7`. Not pushed. The independent review is the controller's, after this receipt. Under R87 this receipt is its own file; `premium-progress.md` is not edited.
 -- **Base:** `ecc00b7`. The dispatch named `58be2e2`. The sync fast-forwarded the branch to `ecc00b7`, which changes three controller files only, none under `apps/`, `packages/` or `scripts/`. `shasum -a 256 -c` against the planner's `SHA256SUMS.base` printed `OK` for the head's three files (`apps/app/src/wallet/tray/Tray.tsx`, `Tray.render.test.tsx` and `trayGesture.test.ts`). At the base: `trayGesture.test.ts` 4 of 4, `Tray.render.test.tsx` 16 of 16.
 +- **Status:** pushed, as PR #392 (`fix/tray-hardening`, `.claude/worktrees/tray-hardening`, into `claude/p1a-vault-core`), in three rounds. The Sonnet review approved round one at `784667b` (`.claude/controller/reviews/tray-hardening.md`), and the confirming review approved the fix round at `fc78376` (`.claude/controller/reviews/tray-hardening-confirm.md`). The head is the second fix round's commit (the last section). Under R87 this receipt is its own file; `premium-progress.md` is not edited.
@@ -400,7 +400,7 @@ index 228a55e..64fa922 100644
    - `typecheck:routes` and `export:web` (no route, app config or app entry changes). The edge, API and database suites (nothing outside `apps/app` changed; Docker is stopped). `test:ops` (no package or lockfile change).
 @@ -50,8 +50,8 @@
  ## Fix round: the review's m-1, m-2, n-1 and n-2
- 
+
  - **The review:** `.claude/controller/reviews/tray-hardening.md` (Sonnet; Approved, no blocker or major). The controller folded m-1, m-2, n-1 and n-2 into PR #392 before it merges; n-3 stays a note for P2-T16. Brief: `.claude/controller/briefs/tray-hardening-fix.md` (rulings F1 to F10).
 -- **Base:** `784667b` merged with `origin/claude/p1a-vault-core` at `6a727dc` as `33edab1`. It brings #391 (`apps/app/src/wallet/looks/WalletLooksProvider.tsx` and `WalletLooks.render.test.tsx`) and controller state under `.claude/`; nothing under `apps/app/src/wallet/tray/`, `apps/app/src/wallet/testing/` or `apps/app/src/ui/`. `shasum -a 256 -c` against the planner's `SHA256SUMS.base` printed 3 `OK` lines after the merge.
 -- **m-1 (code):** the late iOS dismissal's guard read a ref of `shown` that a passive effect refreshed. `Modal.js` calls `onDismiss` from a `setState` callback in the layout phase of the commit that renders UIKit's end, before that commit's effects run, so when a reopen was batched into that commit the ref still read the hide, and `onClosed` fired with the tray open (the review's R-d, R-d2, R-d3, R-d5 and R-d5b). `dismissed` now reads this render's `shown` (`if (!shown) closed.current?.()`), and the `showing` ref is gone. A new case runs the review's R-d5b order: UIKit's end, then a tap on add, both pending before React renders, so one commit holds both (queued inside one `act`, the brief's F3).

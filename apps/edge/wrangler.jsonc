@@ -17,7 +17,8 @@
   "vars": {
     // Non-secret settings. Secrets are set with `wrangler secret put`:
     // COMMAND_DIGEST_KEY, BETTER_AUTH_SECRET and ERASURE_KEY, and
-    // ANTHROPIC_API_KEY for AI (locally in `.dev.vars`, scripts/dev.mjs).
+    // ANTHROPIC_API_KEY and AI_GATEWAY_TOKEN for AI (locally in `.dev.vars`, scripts/dev.mjs);
+    // ANTHROPIC_BASE_URL is the gateway URL.
     "JOTBUN_ENV": "local",
     // AI stays off until it is switched on with an ANTHROPIC_API_KEY secret (1B-T7, B10).
     "AI_ENABLED": "false",

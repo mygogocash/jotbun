@@ -277,7 +277,7 @@ For reading only; Steps 2 and 3 copy the verified files. The full diffs are in `
 ```diff
 @@ -77,12 +77,17 @@
  const REJECTED: PreviewRecord = { preview: { status: 'rejected', layout: null, issues: ['parse_failed'], image: null, header_fingerprint: null }, candidates: [] }
- 
+
  /**
 - * A `parsed` reply checked again, as the API's worker does: an image comes
 - * exactly with an image format, its bytes are that format by their magic,
