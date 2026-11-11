@@ -1,0 +1,8 @@
+apps/app/src/screens/redesign/deleted/deletedData.ts
+apps/app/src/screens/redesign/RecentlyDeletedScreen.tsx
+apps/app/src/wallet/records/copy.ts
+apps/app/src/wallet/records/WalletDeletedScreen.tsx
+apps/app/src/wallet/records/WalletDeleted.render.test.tsx
+apps/app/app/spend/deleted.tsx
+apps/app/src/dev/catalogue/wallet/recordSections.tsx
+apps/app/src/dev/catalogue/wallet/index.ts

@@ -24,6 +24,19 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**23:10: the #407 fix is pushed and its confirming review is running. P2-T25's reworked plan is accepted, and its builder is running.**
+- **#407 (P2-T14).**
+  - The fix commit `28b9d5ac` was checked: 11 files on `18876253`, all 10 fix-kit files identical, 138 of 138 mutants killed (`scratch/p2-t14-fix/mutants.out`), `git diff --check` clean.
+  - Pushed as a fast-forward, so #407's head is `28b9d5ac` and CI reruns. The body (`pr-p2-t14.md`) has a fix-round section.
+  - The confirming review, on Claude Code Opus high, writes `reviews/P2-T14-confirm.md`: `mcp:launch:f2e760bb45aaac343b9114eeef25fabb58506f32a10fe9fad03da67d43ad7351`.
+  - **Merge when it approves and CI is green at `28b9d5ac`:** `merge_task_pr.sh 407 28b9d5ac P2-T14`, then `promote_pr.sh P2-T14 407`, then dispatch the P2-T20 build (check its kit with the 3-way fallback first) and update #406.
+- **P2-T25, reworked by its Flash planner.**
+  - The kit checks at `647cb4a0` with 27 OK.
+  - RED is 9 of 9, all `AssertionError` from asserting helpers, with 0 lookup errors.
+  - 19 of 19 mutants (was 9). Typechecks are at the gate, with 0 errors.
+  - P1 to P6 accepted.
+  - The builder, on Flash: `mcp:launch:ef2026572fc37bc0230281552abc5b919928679520452f0d9b462148810e348b`, in WT `p2-t25`.
+
 **23:05: P2-T32's Flash plan (steered) is READY and accepted. Its Flash builder is running.**
 - **The brief:** `briefs/P2-T32.md`, 13 files. The kit `scratch/p2-t32-planner/` checks at `8c6263a4` with 36 OK, and its 3 `orig/` files are identical.
 - **All three checks passed:**
