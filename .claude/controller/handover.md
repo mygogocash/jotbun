@@ -33,9 +33,17 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - The implementer (Haiku max, a4857037) was dispatched about 22:34 in a pre-installed p1-1b-t8 from db19056. Its workers runs hold the heavy lock.
     - **DONE at f416f24; PR #374 opened at 22:53 (issue #112).** RED 38 of 53, GREEN 52 plus 1 todo, 62 of 62 mutants, `test:edge` 15 files and 176 tests, and `build:edge` with no driver markers. In the ten-times case, `peakHeldBytes` was 20,644,119 against a bound of 20,644,976.
     - The controller checked the 16 files against the kit and the clean merge with the head.
-    - The Opus review (7a873da0, `reviews/1B-T8.md`) is under way.
-    - On approval and green CI: `merge_task_pr.sh 374 f416f24 1B-T8`, then `promote_pr.sh 1B-T8 374`. No iOS export is needed (edge only).
-    - 1B-T7 and fix-download-aborts follow in this lane.
+    - **Merged as 1c14dd1 (#374, at 23:18).** Issue #112 is closed, and the worktree and branches are removed.
+      - The Opus review approved with three minors and two nits; all seven focus items hold, including R101's retry ending `failed` on real repeated throws.
+      - m-1 (a resync can stall for a day after a stale snapshot is pruned) goes to 1B-T11, before pruning goes on the alarm.
+      - m-2 (the memory proof's spy can be bypassed with a spread), m-3, n-1 and n-2 go to fix-download-aborts, with the reviewer's ready cases in `scratch/1b-t8-review/`.
+      - Also from the review: 1B-T12 must expect a deleted snapshot's 404 against the API's `expired` (or 1B-T11's fix changes it); the 64 MiB snapshot cap is not proven against 128 MB (a hosted check).
+    - **Edge baseline now (CI):** workers 28 files, 675 passed and 1 todo; `test:edge` 15 files and 176 tests.
+    - **Promotion PR #380** is stacked on #378 (stack #379: #373, #378, #380).
+- **Server lane, dispatched at 23:20 from 1c14dd1 (Opus xhigh, in parallel; no shared file in their listings):**
+  - **1B-T7 planner** (fa58dddd), the AI routes: WT p1-1b-t7 on p1/1b-t7-ai-routes. It keeps its `handler.ts` edits minimal, for fix-download-aborts.
+  - **1B-T11 planner** (6407a432), files on the vault alarm: WT p1-1b-t11 on p1/1b-t11-files-alarm. It carries 1B-T8's m-1 and the alarm notes from 1B-T4, 1B-T5, 1B-T6, 1B-T9 and 1B-T10.
+  - **fix-download-aborts** is planned next, on top of 1B-T7's `real/` `handler.ts`. It must land before 1B-T13; its list in followups.md now includes 1B-T8's review cases.
   - **ci-parallel-jobs: brief READY at 857b9f2** (M), with the controller's amendment (the iOS export and `typecheck:routes` in CI).
     - Nine parallel jobs; the expected median wall time is about 4.4 minutes, against 10.4.
     - Shared files: `backend.yml`, `backend-workflow.test.mjs`, `docs/implementation/handover.md` (two Full gate lines), `apps/app/package.json` (the `export:ios` script) and `README.md` (the CI paragraph).
@@ -73,7 +81,13 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - CI on 9d38cbd: `test:unit` 945 on the merge ref, everything else unchanged. No iOS export was needed.
     - **Promotion PR #378** (`promote/p4-t13`, based on `promote/1d-t8`) is stacked on #373 with `gh stack` (stack #379), so native stacks work. The owner merges the stack bottom-up.
   - The old P2-T10 planner (a0363fb1, "waiting on its own background work") is obsolete: P2-T10 merged as #370.
-- **P2-T11 planner** (Opus xhigh, df615dc8), dispatched about 22:16 at 331c2b2 as the sixth agent: the deepest ready task (depth 18). WT p2-t11 on p2/t11-wallet-looks. It carries P2-T8's m-1 (the harness's E2, E3 and X2) and P2-T10's balance-sign note. P2-T13 (depth 18, tray and lock cover, no shared files) follows in the wallet lane.
+- **P2-T11: brief READY at 30fb26b** (L, depth 18). Wallet looks, Bun faces, materials, category icons and the wallet card. Shared files: `categoryIcons.tsx`, `walletHarness.tsx` and its test, and `kitSections.tsx`.
+  - P1 to P16 are accepted. P3 is the provider's one-queue rule: a change never drops another, and an unreadable name is never written over.
+  - For the owner at E2-A: the food and gift glyphs keep today's drawings (P4); private mode masks amounts in place (P7); and the board calls in P9.
+  - It folds in P2-T8's m-1 (harness cases H6 and H7, mutants HA2 to HA4) and m-2's harness sentence.
+  - Kit `scratch/p2-t11-planner/`: check_kit at 6e51a3d gives 41 OK, and the 4 `orig/` files are identical. The planner's proof: 119 of 119 mutants.
+  - The implementer (Haiku max, 3b2e8ff2) was dispatched at 23:24 in a pre-installed p2-t11 from 6e51a3d. No iOS export is needed (no route, entry or native change).
+  - Then: PR (issue #157) and an Opus review (L). P2-T13 (planner f362a7c3) follows in the wallet lane.
 
 ## PR #371: the integration branch into main. The owner merged it on 9 Nov, 21:30 Bangkok, as afcf884
 - It was merged with a merge commit, so history is kept. The controller then fast-forwarded claude/p1a-vault-core to afcf884, which adds main's README and CHANGELOG, so the two branches were level.
@@ -302,6 +316,11 @@ Merge each PR when its CI on the current head is green; close its issue by hand 
 - **NEW (9 Nov, 23:10): Actions minutes before ci-parallel-jobs merges.** The repo is private on the Free plan, which includes 2,000 Actions minutes a month.
   - Usage: 80 pull-request runs have happened since 1 Nov, about 1,400 billable minutes at today's roughly 18 per run, and each merged task now adds a promotion PR run. The controller cannot read the actual usage: GitHub's timing API reports 0, and the billing endpoint needs `admin:org`.
   - The parallel layout costs about 31 billable minutes a run (P11). If the minutes run out with no payment method, Actions stop, and every merge stops with them.
+  - **Measured on #377's own run (42652925056, all nine green):**
+    - wall time 285 s (4.75 minutes), against 10 to 12 minutes before (#372's longest job was 12 min 14 s);
+    - job times 158 to 283 s, plus 58 s for `image`; about 1,730 s of runner time, or about 33 billable minutes once each job is rounded up, against about 24 for #372's three-job run;
+    - the render total adds up (1289 + 162 + 196 + 218 = 1865);
+    - the iOS export passed on Linux (5760 modules).
   - Owner: check the org's billing page, and confirm the trade-off before the controller merges ci-parallel-jobs. Cheaper variants are in P11: fold `image` into `exports`, or split the section suites two ways.
 0. R-B (apps/api migration 0020_receipt_copy_once.sql, prepared in scratch/fix-api-db-flakes/files/): gogospend_reserve_receipt_copy (migration 0017) checks "receipt exists" and "copy in flight" in two statements, so two requests can each reserve a copy (one wasted copy, deleted at the next sweep). The fix is a new migration replacing the function with one combined check; it needs the API's migration step wherever the API runs. Until then attachments.integration.spec.ts "two records retaining one image ... one copy" stays a rare known flake.
 1. Sign-in lockout: no per-email lockout, only per code (about 1,440 guesses a day against one address at Task 2's 5 codes per 15 min). Needed before 1C-T2 sends real mail.

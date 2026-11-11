@@ -39,13 +39,24 @@ vi.mock('@mobile/auth/session', () => ({
     return () => { sessions.unsubscribed += 1; };
   },
 }));
-vi.mock('expo-secure-store', () => ({ getItemAsync: async () => null, setItemAsync: async () => undefined, deleteItemAsync: async () => undefined, WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'when-unlocked-this-device-only' }));
+// The keychain keeps what is set; a key in `refuse` cannot be deleted (a locked phone).
+const secure = vi.hoisted(() => ({ items: new Map<string, string>(), refuse: new Set<string>() }));
+vi.mock('expo-secure-store', () => ({
+  getItemAsync: async (key: string) => secure.items.get(key) ?? null,
+  setItemAsync: async (key: string, value: string) => void secure.items.set(key, value),
+  deleteItemAsync: async (key: string) => {
+    if (secure.refuse.has(key)) throw new Error('the keychain is locked');
+    secure.items.delete(key);
+  },
+  WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'when-unlocked-this-device-only',
+}));
 vi.mock('expo-crypto', () => ({ randomUUID: () => globalThis.crypto.randomUUID(), digestStringAsync: async () => '', CryptoDigestAlgorithm: { SHA256: 'SHA-256' } }));
 // History's kept view follows the route: a record is open over History here.
 vi.mock('expo-router', () => ({ usePathname: () => '/spend/record/r1' }));
 
 import { HistoryKeepProvider, useHistoryKeep } from '@mobile/screens/redesign/HistoryKeepProvider';
 import type { HistoryKeep } from '@mobile/screens/redesign/historyKeep';
+import { SALT_KEY_PREFIX } from '@mobile/slips/slipRefs';
 import { DeviceDiaryProvider } from './DeviceDiaryProvider';
 import { useSpendDiary } from './SpendDiaryContext';
 import { IMPORT_DRAFT_KEY_PREFIX } from './importDraftStore';
@@ -61,6 +72,8 @@ afterEach(async () => {
   await new Promise((resolve) => setTimeout(resolve, 0));
   Object.defineProperty(Platform, 'OS', { value: os, configurable: true, writable: true });
   plain.clear();
+  secure.items.clear();
+  secure.refuse.clear();
   captured.deps = null;
   captured.created = [];
   sessions.subscribed = 0;
@@ -142,4 +155,20 @@ test("the sign-out erase forgets the wallet's device settings and keeps the acco
   expect(plain.has('jotbun.wallet.private-mode')).toBe(false);
   expect(plain.has('jotbun.wallet.lock')).toBe(false);
   expect(plain.get(`jotbun.account.${B}.looks`)).toBe('warm');
+});
+
+test("the sign-out erase forgets this account's slip salt, and a keychain that refuses never stops the erase", async () => {
+  Object.defineProperty(Platform, 'OS', { value: 'ios', configurable: true, writable: true });
+  secure.items.set(`${SALT_KEY_PREFIX}${A}`, 'a'.repeat(64));
+  secure.items.set(`${SALT_KEY_PREFIX}${B}`, 'b'.repeat(64));
+  render(<DeviceDiaryProvider><Text>screens</Text></DeviceDiaryProvider>);
+  const deps = captured.deps as { eraseWithDiary?: (accountId: string) => Promise<void> };
+  await deps.eraseWithDiary?.(B);
+  expect([...secure.items.keys()]).toEqual([`${SALT_KEY_PREFIX}${A}`]);
+  // A salt the locked keychain keeps: the rest of the erase still runs.
+  secure.refuse.add(`${SALT_KEY_PREFIX}${A}`);
+  plain.set('jotbun.wallet.lock', 'on');
+  await expect(deps.eraseWithDiary?.(A)).resolves.toBeUndefined();
+  expect(plain.has('jotbun.wallet.lock')).toBe(false);
+  expect([...secure.items.keys()]).toEqual([`${SALT_KEY_PREFIX}${A}`]);
 });

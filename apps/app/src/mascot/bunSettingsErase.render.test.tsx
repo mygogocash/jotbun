@@ -10,6 +10,7 @@ import { CASHBACK_DECLINED_KEY } from '@mobile/screens/redesign/insights/cashbac
 import { HAPTIC_PREFERENCE_STORAGE_KEY } from '@mobile/lib/hapticPreferenceStorage';
 import { THEME_PREFERENCE_STORAGE_KEY } from '@mobile/theme/themePreferenceStorage';
 import { ANALYTICS_CONSENT_KEY } from '@mobile/analytics/consentStorage';
+import { SALT_KEY_PREFIX } from '@mobile/slips/slipRefs';
 import { BUN_INTENSITY_STORAGE_KEY, eraseStoredBunIntensity } from './bunIntensityStorage';
 import { installBrowserStorage } from './mascotTestHarness';
 
@@ -76,7 +77,8 @@ test('the sign-out erase hook forgets the bun settings after the import draft, a
   Object.defineProperty(Platform, 'OS', { value: 'ios', configurable: true, writable: true });
   store.deleteItemAsync.mockRejectedValue(new Error('keychain locked'));
   await expect(eraseWithDiary('a0000000-0000-4000-8000-000000000001')).resolves.toBeUndefined();
-  expect(store.deleteItemAsync.mock.calls.map((call) => (call as unknown[])[0])).toEqual([BUN_INTENSITY_STORAGE_KEY, HAPTIC_PREFERENCE_STORAGE_KEY, QUICK_ADD_CHEER_KEY, CELEBRATION_WEEK_KEY, CASHBACK_DECLINED_KEY, ANALYTICS_CONSENT_KEY]);
+  // With this account's slip salt (P4-T12), on native only: the web erase above deleted nothing here.
+  expect(store.deleteItemAsync.mock.calls.map((call) => (call as unknown[])[0])).toEqual([BUN_INTENSITY_STORAGE_KEY, HAPTIC_PREFERENCE_STORAGE_KEY, QUICK_ADD_CHEER_KEY, CELEBRATION_WEEK_KEY, CASHBACK_DECLINED_KEY, ANALYTICS_CONSENT_KEY, `${SALT_KEY_PREFIX}a0000000-0000-4000-8000-000000000001`]);
   store.deleteItemAsync.mockReset();
   store.deleteItemAsync.mockImplementation(async () => undefined);
 });

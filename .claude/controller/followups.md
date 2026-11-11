@@ -126,6 +126,12 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - **m-2:** the receipt HEAD test does not count bytes per HEAD (probe HD-1).
     - **m-3:** neither guard in `attachmentsDueAt` is pinned (`attachments.ts:368-369`); probes DU-1 and DU-2. Without "object gone", the alarm loops on a past due time (against R37); without the safety-net check, an unheld receipt is never scheduled.
     - **For the abort proof:** retain and replace hold a copy slot across awaits, so include four aborted retains, then a retain that answers 200. Receipt downloads allow two slots per account.
+  - **And from 1B-T8's review (reviews/1B-T8.md).** Its ready cases are in `scratch/1b-t8-review/` (`review-fixes.test.ts`, probes C2 and E); each passes on f416f24 and kills its mutant.
+    - **The fix is more urgent now:** four aborted snapshot-chunk downloads in one isolate block every chunk download there.
+    - m-2: the memory proof's cursor spy (`snapshots.test.ts:136-157`) refuses only `toArray`, `one` and `raw`, so reading every row into an array with a spread passes all 35 cases, the ten-times case included (mutant X1). The reviewer's spy revokes each row once the next is read; it catches X1.
+    - m-3: no case checks that the read skips a snapshot that is no longer pending (`snapshots.ts:226`, mutant X6). Without it, a retried step re-reads and re-uploads up to 64 MiB before skipping.
+    - n-1: nothing pins the digest check as a chunk streams (X2). Probe E pins it, and also shows that a download whose stream errors frees its slot.
+    - n-2: nothing pins reuse of a snapshot built exactly at the purge watermark (X3); probe C2 pins it.
   - **And from 1B-T10's review (reviews/1B-T10.md).** Ready probes are in `scratch/1b-t10-review/probes/zz-review-1b-t10.test.ts`.
     - m-1: R57 on corrections is untested. No case corrects more than 100 rows at once, so a mutant binding one `?` per row id in the correction's row check (`confirmation.ts:181`) passes all 638 cases; in production it would answer 500 for a large correction. The probe corrects 500 rows at once.
     - m-2: the preview's accepted-upload guard (`previews.ts:188`, `u.accepted_at IS NOT NULL`) is untested. Without it, an upload still receiving or refused reads 200 `cancelled` where the API answers 404.
