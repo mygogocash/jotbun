@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Bun Wallet reminders</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;700&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F3F9; color: #111014; font-family: 'Anuphan', 'DM Sans', sans-serif; line-height: 1.5; position: relative; overflow: hidden; padding: 54px 18px 32px; display: flex; flex-direction: column; gap: 12px">
+  <button type="button" aria-label="กลับ" style="width: 44px; height: 44px; border-radius: 14px; border: none; background: #E9E7F1; display: flex; align-items: center; justify-content: center; padding: 0; flex: none"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="#111014" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+  <h1 style="margin: 0; font-size: 28px; font-weight: 700; line-height: 1.4">การแจ้งเตือน</h1>
+
+  <figure style="margin: 4px 0 0; position: relative; height: 222px; border-radius: 26px; background: linear-gradient(160deg, #3A3842, #121116); overflow: hidden; flex: none">
+    <figcaption style="position: absolute; left: 14px; top: 14px; height: 28px; padding: 0 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.16); color: #FFFFFF; display: flex; align-items: center; font-size: 13px; font-weight: 500; line-height: 1.4">ตัวอย่าง</figcaption>
+    <div style="position: absolute; left: 0; right: 0; top: 22px; text-align: center; color: #FFFFFF">
+      <div style="font-size: 14px; font-weight: 500; line-height: 1.4; color: #E6E4EE">วันเสาร์ 24 ตุลาคม</div>
+      <div style="font-family: 'DM Sans', sans-serif; font-size: 56px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1">20:30</div>
+    </div>
+
+    <svg width="76" height="49" viewBox="4 6 56 36" aria-hidden="true" style="position: absolute; left: 256px; top: 87px; z-index: 1">
+      <path d="M6 44C6 22 18 8 32 8C46 8 58 22 58 44C58 51 52 54 44 54H20C12 54 6 51 6 44Z" fill="#FFF6E6" stroke="#111014" stroke-width="3"></path>
+      <circle cx="24" cy="30" r="3.4" fill="#111014"></circle>
+      <circle cx="40" cy="30" r="3.4" fill="#111014"></circle>
+      <ellipse cx="18.5" cy="36" rx="4" ry="2.4" fill="#F6B6CE"></ellipse>
+      <ellipse cx="45.5" cy="36" rx="4" ry="2.4" fill="#F6B6CE"></ellipse>
+    </svg>
+    <span aria-hidden="true" style="position: absolute; top: 127px; left: 266px; width: 14px; height: 11px; border-radius: 7px 7px 5px 5px; background: #FFF6E6; border: 2px solid #111014; box-sizing: border-box; z-index: 3"></span>
+    <span aria-hidden="true" style="position: absolute; top: 127px; left: 308px; width: 14px; height: 11px; border-radius: 7px 7px 5px 5px; background: #FFF6E6; border: 2px solid #111014; box-sizing: border-box; z-index: 3"></span>
+
+    <div style="position: absolute; left: 12px; right: 12px; top: 132px; z-index: 2; background: #FFFFFF; border-radius: 20px; padding: 12px 14px; display: flex; gap: 12px; align-items: flex-start; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25)">
+      <span style="width: 38px; height: 38px; border-radius: 10px; background: #6A4BD4; display: flex; align-items: center; justify-content: center; flex: none"><svg width="26" height="23" viewBox="4 6 56 50" aria-hidden="true"><path d="M6 44C6 22 18 8 32 8C46 8 58 22 58 44C58 51 52 54 44 54H20C12 54 6 51 6 44Z" fill="#FFF6E6" stroke="#111014" stroke-width="3.5"></path><circle cx="24" cy="30" r="3.6" fill="#111014"></circle><circle cx="40" cy="30" r="3.6" fill="#111014"></circle><ellipse cx="18.5" cy="37" rx="4" ry="2.4" fill="#F6B6CE"></ellipse><ellipse cx="45.5" cy="37" rx="4" ry="2.4" fill="#F6B6CE"></ellipse></svg></span>
+      <div style="flex: 1; min-width: 0">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; line-height: 1.4"><span style="font-weight: 700">Jotbun</span><span style="color: #6B6878">ตอนนี้</span></div>
+        <div style="font-size: 15px; font-weight: 700; line-height: 1.45">บันทึกรายจ่ายวันนี้</div>
+        <div style="font-size: 14px; line-height: 1.45">เพิ่มรายจ่ายของวันนี้ใน Jotbun</div>
+      </div>
+    </div>
+  </figure>
+
+  <div style="background: #FFFFFF; border-radius: 22px; overflow: hidden; flex: none">
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 8px 8px 16px; border-bottom: 1px solid #E6E4EE">
+      <span id="st-rem-switch-label" style="font-size: 16px; font-weight: 700; line-height: 1.4">เตือนให้บันทึก</span>
+      <button type="button" role="switch" aria-checked="true" aria-labelledby="st-rem-switch-label" style="width: 60px; height: 44px; border: none; background: transparent; padding: 0; display: flex; align-items: center; justify-content: center">
+        <span aria-hidden="true" style="position: relative; display: block; width: 52px; height: 32px; border-radius: 999px; background: #6A4BD4"><span style="position: absolute; top: 3px; left: 23px; width: 26px; height: 26px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 2px 4px rgba(17, 16, 20, 0.22)"></span></span>
+      </button>
+    </div>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 10px 16px; border-bottom: 1px solid #E6E4EE">
+      <span style="font-size: 16px; line-height: 1.4">เวลา</span>
+      <button type="button" aria-label="เวลาแจ้งเตือน 20:30 น. แตะเพื่อเปลี่ยน" style="height: 44px; padding: 0 12px; border-radius: 14px; border: 1px solid #E6E4EE; background: #F4F3F9; color: #111014; display: flex; align-items: center; gap: 8px; font-family: 'DM Sans', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -0.01em">
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="#111014" stroke-width="2"></circle><path d="M12 7.5V12l3 2" fill="none" stroke="#111014" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        20:30
+        <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="#6B6878" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </button>
+    </div>
+
+    <div role="group" aria-labelledby="st-rem-days-label" style="padding: 12px 12px 14px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 0 4px">
+        <span id="st-rem-days-label" style="font-size: 16px; line-height: 1.4">วัน</span>
+        <span style="font-size: 14px; color: #6B6878; line-height: 1.4">ทุกวัน</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-top: 10px">
+        <button type="button" aria-pressed="true" aria-label="วันจันทร์" style="width: 44px; height: 44px; border-radius: 50%; border: none; background: #111014; color: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 700; line-height: 1.4; padding: 0">จ</button>
+        <button type="button" aria-pressed="true" aria-label="วันอังคาร" style="width: 44px; height: 44px; border-radius: 50%; border: none; background: #111014; color: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 700; line-height: 1.4; padding: 0">อ</button>
+        <button type="button" aria-pressed="true" aria-label="วันพุธ" style="width: 44px; height: 44px; border-radius: 50%; border: none; background: #111014; color: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 700; line-height: 1.4; padding: 0">พ</button>
+        <button type="button" aria-pressed="true" aria-label="วันพฤหัสบดี" style="width: 44px; height: 44px; border-radius: 50%; border: none; background: #111014; color: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 700; line-height: 1.4; padding: 0">พฤ</button>
+        <button type="button" aria-pressed="true" aria-label="วันศุกร์" style="width: 44px; height: 44px; border-radius: 50%; border: none; background: #111014; color: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 700; line-height: 1.4; padding: 0">ศ</button>
+        <button type="button" aria-pressed="true" aria-label="วันเสาร์" style="width: 44px; height: 44px; border-radius: 50%; border: none; background: #111014; color: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 700; line-height: 1.4; padding: 0">ส</button>
+        <button type="button" aria-pressed="true" aria-label="วันอาทิตย์" style="width: 44px; height: 44px; border-radius: 50%; border: none; background: #111014; color: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 700; line-height: 1.4; padding: 0">อา</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 10px; align-items: center; padding: 0 4px; font-size: 14px; line-height: 1.5; color: #6B6878">
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="10" fill="#6A4BD4"></circle><path d="M12 11v6M12 7.4v.2" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"></path></svg>
+    <span>เตือนวันละครั้ง ถ้าวันนั้นยังไม่ได้จด</span>
+  </div>
+
+  <button type="button" style="margin-top: auto; height: 56px; border-radius: 16px; border: none; background: #111014; color: #FFFFFF; font-family: inherit; font-size: 17px; font-weight: 700; line-height: 1.4; flex: none">บันทึก</button>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

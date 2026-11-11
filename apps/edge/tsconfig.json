@@ -15,11 +15,11 @@
     // The v1 API's domain modules (imported as @api/*) are decorated classes.
     "experimentalDecorators": true,
     "useDefineForClassFields": false,
-    "types": ["node", "vite/client"],
+    "types": ["node", "vite/client", "@cloudflare/vitest-plugin/types"],
     "paths": {
       "@gogospend/contracts": ["../../packages/contracts/src/index.ts"],
       "@api/*": ["../api/src/*"]
     }
   },
-  "include": ["src", "test", "api-seams.ts", "vite.config.ts", "vitest.config.ts", "vitest.db.config.ts"]
+  "include": ["src", "test", "api-seams.ts", "vite.config.ts", "vitest.config.ts", "vitest.db.config.ts", "vitest.workers.config.ts"]
 }

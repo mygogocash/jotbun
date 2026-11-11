@@ -1,0 +1,23 @@
+--- a/apps/app/src/screens/redesign/signin/TermsScreen.tsx
++++ b/apps/app/src/screens/redesign/signin/TermsScreen.tsx
+@@ -2,8 +2,9 @@
+ // awaiting E2, shown by TermsGate in place of the screens while required
+ // policy versions are pending.
+ //
+-// - The board's title and line, and its three promises as a PromiseList,
+-//   each row the promise's title, a line break, then its line.
++// - The board's title (today's approved "Our promises") and line, and its
++//   three promises as a PromiseList, each row the promise's title, a line
++//   break, then its line.
+ // - Today's TermsCheckbox, unticked, with the board's sentence; under it the
+ //   two policy names, each opening today's Sheet with that kind's published
+ //   text in the active language (English for Vietnamese).
+@@ -114,7 +115,7 @@
+   return (
+     <View testID="terms-screen" style={{ flex: 1, backgroundColor: colors.background }}>
+       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: BUN_SPACE.lg }}>
+-        <StageHeader title={sc('Our promises')} subtitle={sc('Three things Jotbun always does for you')} />
++        <StageHeader title={tc('Our promises')} subtitle={sc('Three things Jotbun always does for you')} />
+         <View style={{ padding: BUN_SPACE.md, gap: BUN_SPACE.md }}>
+           <PromiseList items={promises} />
+           <TermsCheckbox label={sc('I accept the Jotbun Terms of Service and Privacy Policy')} checked={ticked} onToggle={() => setTicked((now) => !now)} />

@@ -21,6 +21,8 @@ import { bunText } from '@mobile/theme/bunType';
 import { THEME_PREFERENCE_STORAGE_KEY } from '@mobile/theme/themePreferenceStorage';
 import { createFakeResources } from '@mobile/spend/v1/testing/fakeResources';
 import { QuickAddScreen } from '@mobile/screens/redesign/QuickAddScreen';
+import { conflictText } from '@mobile/screens/redesign/conflict/conflictCopy.draft';
+import type { ConflictCopyKey } from '@mobile/screens/redesign/conflict/conflictCopy.draft';
 import { dayLabel, fullDateLabel } from '@mobile/ui/dateStep';
 import { LOCALES, mountInApp, paletteFor, rgba, settle, THEMES } from './catalogueTestHarness';
 import { CatalogueScreen } from './CatalogueScreen';
@@ -68,7 +70,11 @@ const RECORD = [
   'record-expense', 'record-income', 'record-move', 'record-draft', 'record-edit', 'record-conflict', 'record-deleted', 'record-unconfirmed',
 ] as const;
 const SCREENS = [...HOME, ...QUICK_ADD, ...HISTORY, ...RECENTLY_DELETED, ...RECORD] as const;
-const REQUIRED = [...KIT_AND_MASCOT, ...ENTRY, ...SCREENS] as const;
+/** 1D-T9's conflict choice (the `conflict` area, on for these sections only), each state reached the way its render test reaches it. */
+const CONFLICT = [
+  'record-choice', 'record-choice-server', 'record-choice-offline', 'record-choice-deleted', 'record-choice-cannot-keep', 'history-choice-waiting',
+] as const;
+const REQUIRED = [...KIT_AND_MASCOT, ...ENTRY, ...SCREENS, ...CONFLICT] as const;
 
 const LOCALE_NAME: Readonly<Record<Locale, string>> = { en: 'English', th: 'Thai', vi: 'Vietnamese' };
 const scriptOf = (locale: Locale) => (locale === 'th' ? 'thai' : 'latin');
@@ -83,6 +89,10 @@ const rowName = (locale: Locale, title: string, type: 'Expense' | 'Income' | 'Tr
 const checked = (radio: HTMLElement) => radio.getAttribute('aria-checked') === 'true';
 const MONTHS: Readonly<Record<Locale, string>> = { en: 'September 2026', th: 'กันยายน 2569', vi: 'Tháng 9 năm 2026' };
 const NOT_CONFIRMED = 'Not confirmed yet. Your entry is kept; try again.';
+/** The conflict choice's draft copy (Thai for Thai, English otherwise) until E2. */
+const draft = (key: ConflictCopyKey, locale: Locale, values?: Record<string, string>) => conflictText(key, locale, values);
+/** The choice panel's two radio cards, yours then the server's. */
+const choiceCards = (body: HTMLElement, locale: Locale) => within(within(body).getByRole('radiogroup', { name: draft('heading', locale) })).getAllByRole('radio');
 
 /** What each section must show, beyond rendering at all. */
 const SHOWS: Readonly<Record<(typeof REQUIRED)[number], (body: HTMLElement, locale: Locale) => void>> = {
@@ -479,6 +489,43 @@ const SHOWS: Readonly<Record<(typeof REQUIRED)[number], (body: HTMLElement, loca
     expect(within(body).getByText(t(NOT_CONFIRMED, locale))).toBeTruthy();
     expect(within(body).getByRole('button', { name: t('Try again', locale) })).toBeTruthy();
     expect(within(within(body).getByRole('group', { name: t('Keypad', locale) })).getByRole('button', { name: '1' }).getAttribute('aria-disabled')).toBe('true');
+  },
+
+  // The conflict choice (1D-T9), each state reached the way RecordScreen's and History's render tests reach it.
+  'record-choice': (body, locale) => {
+    const [yours, server] = choiceCards(body, locale);
+    expect([yours.getAttribute('aria-checked'), server.getAttribute('aria-checked')]).toEqual(['true', 'false']);
+    expect(yours.getAttribute('aria-label')).toContain('฿12,000.00');
+    expect(server.getAttribute('aria-label')).toContain('฿13,000.00');
+    expect(within(body).getAllByText(draft('differs', locale)).length).toBeGreaterThanOrEqual(2);
+    expect(within(body).getByRole('button', { name: draft('useYours', locale) })).toBeTruthy();
+    expect(within(body).getByRole('button', { name: draft('decideLater', locale) })).toBeTruthy();
+    expect(within(body).getByText(draft('keptHere', locale))).toBeTruthy();
+  },
+  'record-choice-server': (body, locale) => {
+    const [yours, server] = choiceCards(body, locale);
+    expect([yours.getAttribute('aria-checked'), server.getAttribute('aria-checked')]).toEqual(['false', 'true']);
+    expect(within(body).getByRole('button', { name: draft('useServer', locale) })).toBeTruthy();
+    expect(within(body).queryByRole('button', { name: draft('useYours', locale) })).toBeNull();
+  },
+  'record-choice-offline': (body, locale) => {
+    expect(choiceCards(body, locale)[1]!.getAttribute('aria-label')).toContain('฿13,000.00');
+    expect(within(body).getByRole('button', { name: draft('useYours', locale) }).getAttribute('aria-disabled')).toBe('true');
+    expect(within(body).getByText(draft('offline', locale))).toBeTruthy();
+  },
+  'record-choice-deleted': (body, locale) => {
+    expect(within(body).getByText(t('This entry was already deleted.', locale))).toBeTruthy();
+    expect(within(body).getByRole('button', { name: t('Restore', locale) })).toBeTruthy();
+    expect(within(body).getByRole('button', { name: draft('discardMine', locale) })).toBeTruthy();
+  },
+  'record-choice-cannot-keep': (body, locale) => {
+    expect(within(body).getByText(draft('cannotKeep', locale))).toBeTruthy();
+    expect(within(body).queryByRole('button', { name: draft('decideLater', locale) })).toBeNull();
+    expect(within(body).getByRole('button', { name: draft('useYours', locale) })).toBeTruthy();
+  },
+  'history-choice-waiting': (body, locale) => {
+    expect(rowsIn(body)).toHaveLength(4);
+    expect(within(body).getAllByText(draft('waiting', locale))).toHaveLength(1);
   },
 };
 

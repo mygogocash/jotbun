@@ -39,6 +39,7 @@ import { CONFIRM_KIND, FREEZE_KIND, PATCH_KIND, parseConfirmBody, parseFreezeBod
 import { SummaryQuery } from '@api/summary/summary-query'
 import { parseSyncRequest } from '@api/sync/sync-query'
 
+import { matchRoute } from '../../v1/match'
 import { bodyStream, fileResponse, verifiedChunks, within as withinIdle } from '../http/files'
 import type { HeaderBag } from '../http/request'
 import type { Container } from './container'
@@ -476,42 +477,8 @@ export const FORWARDED_V1_ROUTES: readonly string[] = []
 
 export type RouteMatch = { route: Route; params: Record<string, string> }
 
-function segments(path: string): string[] {
-  // Express is not strict about a trailing slash.
-  return path.replace(/\/+$/, '').split('/').slice(1)
-}
-
-/**
- * Matches like Express's default router: literal segments ignore case, a
- * `:name` segment takes one non-empty segment (URL-decoded), and a trailing
- * slash is optional. HEAD is served by the GET route.
- */
-export function matchRoute(routes: readonly Route[], method: string, pathname: string): RouteMatch | null {
-  const wanted = method === 'HEAD' ? 'GET' : method
-  const actual = segments(pathname)
-  for (const candidate of routes) {
-    if (candidate.method !== wanted) continue
-    const pattern = segments(candidate.path)
-    if (pattern.length !== actual.length) continue
-    const params: Record<string, string> = {}
-    let ok = true
-    for (let i = 0; i < pattern.length && ok; i += 1) {
-      const part = pattern[i]
-      if (part.startsWith(':')) {
-        if (actual[i] === '') ok = false
-        else {
-          try {
-            params[part.slice(1)] = decodeURIComponent(actual[i])
-          } catch {
-            ok = false
-          }
-        }
-      } else if (part.toLowerCase() !== actual[i].toLowerCase()) ok = false
-    }
-    if (ok) return { route: candidate, params }
-  }
-  return null
-}
+// Matching lives in src/v1/match.ts, shared with the vault Worker's table.
+export { matchRoute }
 
 export function defaultStatus(r: Route): number {
   return r.status ?? (r.method === 'POST' ? 201 : 200)

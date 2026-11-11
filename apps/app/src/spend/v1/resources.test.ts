@@ -67,7 +67,7 @@ test('reads send the access token, binding and client version, and no command he
   assert.equal(request.method, 'GET');
   assert.equal(request.url, '/v1/wallets');
   assert.equal(request.headers.authorization, 'Bearer access-token');
-  assert.equal(request.headers['x-gogospend-session'], 'b'.repeat(43));
+  assert.equal(request.headers['x-gogospend-session'], undefined);
   assert.equal(request.headers['x-gogospend-client'], 'ios/1.2.3');
   assert.equal(request.headers['idempotency-key'], undefined);
 });
@@ -197,7 +197,7 @@ test('recently deleted pages by cursor and accepts only deleted records in the r
   assert.deepEqual(Object.fromEntries(url.searchParams), { cursor: 'abc_-1', limit: '20' });
   // A read: no command headers. Without a cursor or limit there is no query at all.
   assert.equal(seen[0].headers['idempotency-key'], undefined);
-  assert.equal(seen[0].headers['x-gogospend-session'], 'b'.repeat(43));
+  assert.equal(seen[0].headers['x-gogospend-session'], undefined);
   assert.deepEqual((await resources().recentlyDeleted()).next_cursor, null);
   assert.equal(seen[1].url, '/v1/history/deleted');
   // Refused, never coerced: an active record, history's page, number money, an unknown field, a bad cursor or revision.

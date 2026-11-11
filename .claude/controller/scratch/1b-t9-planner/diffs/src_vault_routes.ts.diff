@@ -1,0 +1,36 @@
+--- a/src/vault/routes.ts
++++ b/src/vault/routes.ts
+@@ -19,6 +19,7 @@
+ import { revokeSession } from './session'
+ import { abortUpload, beginUpload, discardUploadParts, finishUpload, reserveUploadPart, uploadBytesRetry, uploadStatus } from './files/intake'
+ import { exportFile, exportGrant, exportStatus, requestExport } from './files/exports'
++import { prepareInput, prepareReceipt, receiptFile, receiptGrant, releaseReceiptCopy, removeReceipt, replaceReceipt, retainReceipt } from './files/attachments'
+ 
+ export type VaultHandler = (c: VaultContext, call: VaultCall) => VaultReply
+ 
+@@ -139,4 +140,25 @@
+     if (!file) throw new ProblemException(404, 'NOT_FOUND')
+     return okReply(call.route, file)
+   },
++  // 1B-T9: the receipt routes and the retain, replace and download steps (src/v1/files/receipts.ts, downloads.ts).
++  'attachments.remove': (c, call) => okReply(call.route, removeReceipt(c, call)),
++  'attachments.grant': (c, call) => {
++    const grant = receiptGrant(c, call.params.id ?? '')
++    if (!grant) throw new ProblemException(404, 'NOT_FOUND')
++    return okReply(call.route, grant)
++  },
++  'attachments.prepare': (c, call) => okReply(call.route, prepareReceipt(c, prepareInput(call.body))),
++  'attachments.release': (c, call) => {
++    const { key } = stepBody(call.body)
++    if (typeof key !== 'string') throw new Error('a release step names its key')
++    releaseReceiptCopy(c, key)
++    return okReply(call.route, {})
++  },
++  'attachments.retain': (c, call) => okReply(call.route, retainReceipt(c, call)),
++  'attachments.replace': (c, call) => okReply(call.route, replaceReceipt(c, call)),
++  'attachments.file': (c, call) => {
++    const file = receiptFile(c, String(call.params.grant ?? ''))
++    if (!file) throw new ProblemException(404, 'NOT_FOUND')
++    return okReply(call.route, file)
++  },
+ }

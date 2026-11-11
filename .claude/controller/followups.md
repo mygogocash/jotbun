@@ -1,0 +1,192 @@
+# Follow-ups from approved reviews (28 Oct, restored 8 Nov)
+
+The review reports these came from were under /private/tmp and were lost on 8 Nov; this list is the record.
+
+- P6B-T0 (#328, merged): add the reviewer's four-assertion alphabet test (`00443214-c700-4000-8000-000000000000` -> `DEL-0123-4567`, `4254b635-cf00-4000-8000-000000000000` -> `DEL-89AB-CDEF`, `84653a56-d700-4000-8000-000000000000` -> `DEL-GHJK-MNPQ`, `c675be77-df00-4000-8000-000000000000` -> `DEL-RSTV-WXYZ`); receipt: "695 passed, 0 failed (7 suites; the new file adds one test)"; out-of-contract wording.
+- P2-T1 (#329, merged): exact deepEqual per token table (W24 bars and dashed lines, primary, track, dark toast and hairline, material stops and silk offset, WALLET_MATERIALS order, light quiet text, dark calendar text, h2 18/700/2.4, label 15/500/3.12, body and caption weights); receipt line about #78/#79 pending; calendar-fill note should read "light 1 to 3, dark 1 and 2"; grouped doc comments in walletPalette.ts document only the first token.
+- Keyboard fix (#330, merged): ThemeProvider.tsx lines 79 and 107 need `.catch` like the sibling providers (then drop the test's theme stub); Android 16 edge-to-edge emulator check; Prefer Cross-Fade gives no padding; a sheet opened with the keyboard up does not rise.
+- P5-T1 (#331): one-line test for leading zeros in parseRate ('01', '00.5'), the 13-digit correction (`>=`), and rates >= 1e12: `crossRate('123456789012345','1')` -> '123456789012000', `rateFromAmounts('1','CLF','99999999999','VND')` -> '999999999990000', `rateFromAmounts('9','BHD','10000000000','VND')` -> '1111111111110', `crossRate('1.0000000000005','1')` -> '1'; ISO table comment says SIX 2026-09-17 but was derived from validator's list (record as deviation; diff against SIX with network, especially SLL).
+- P4-T1 (#332, merged): NFC assertion `normalizeSlipRef('004','K1') === '004:K1'`; album limit in code points (non-BMP case); base64 length multiple of 4 (`'SkJPVA'` refused); write U+00A0 and decomposed é as `\u` escapes.
+- P2-T5 (#333): hook-level test for the refused-amount rule (empty keypad -> settledKeypad.problem 'empty', status stays editing, nothing sent); SaveAttempt.openDetails for a refused note or merchant.
+- P2-T6 (#335): receipt Files bullet says "the plan's three tests" (now six); assert the notice is showing before Reload in the reload test.
+- P3-T1 (#336): one assertion for a 1-character short CRC (mutant at slipQr.ts:44); optional B14-only case `002000020101030010203P2P9104f5f1`; note for P3-T12/P3-T17/P4: a null from slipQrIn never proves "not a slip", so P4's watermark must not skip on null; a non-string payload ends the scan (P3-T12 adapter).
+- 1D-T10 (building): after a sign-in finishes, the app's live socket waits for the next foreground; restart the channel on a session change (1C-T5's merge or 1D-T12/T15). 1C-T10a must put its accountGate between authenticate(...) and the `const stub` line in handler.ts.
+- 1C-T5 (PR open, issue #122): approved after round 3. For Task 8's brief: a process death between the server accepting a sign-in and the record save leaves the app on the old account with the new cookie (reads stay not ready, nothing sent, "Sign in again" banner with no button); optional fix: with no sign-in running, a token naming another session is a leftover cookie, so drop it and lock (amends R86's "a mismatch never locks"). Untested: sessionOf's -/_ mapping, sign-out only after an outage not a 4xx, the awaited sign-out in accepted(). Task 12's device run must confirm atob exists on the device. Brief "Sign in again" flicker during a fresh sign-in's window.
+- 1C-T5 (history): round 3 under R86 (a token is handed out only when its sid matches the provider's session; the port signs out if finish() fails after an accepted sign-in). If round 3's confirming review fails, tell the owner and suggest escalating (memory rule: three failed rounds). Ledger at merge: one `## 1C:` heading at T1's place, T5's block under it after `### 1C Task 1`, intros merged, only the new 1D heading in the hunk; fold by hand in either merge order. Local auth URL defaults to 8091; the auth Worker runs on 8092 (Task 12).
+- 1C-T1 (#334): fold into 1C-T2's brief as its first step: pin codes stored hashed, set-auth-jwt off, the per-network sign-in limit (also cookie cache, freshAge, trustedOrigins); test the 503 on a missing setting; check UNIQUE constraints in the schema test. Task 2: hold Better Auth's logger to the logging rule. OWNER: no per-email lockout, only per code.
+- 1D-T1 (#337, merged): for 1D-T6's brief: call setAccount(null) at once on any session change, before awaiting fetchAccountId(); a named error class for "The account changed before the yes was sent"; callers catch setAccount and answer('no') rejections too; the in-flight no gap; same-account yes behaviour undocumented and untested.
+- P6A-T1 (#340, issue #268): for P6A-T6a/P6A-T11 briefs: copyIn with overwrite deletes the existing copy before reading the source on both platforms, so a failed copyIn loses the old copy; use a fresh name per hand-off (and fix the test fake's copy order to match native). Nits: guard-to-copy race comments say "never" (appGroup.ts:5-6, deviceAppGroup.ts:8); unawaited write in writeAccountFile untested; memory store writeText to a folder name differs from device; the lazy expo-constants load swallows errors silently (P6A-T7 should check with real ids); receipt Files counts and status head stale.
+- 1A-T7 (#339, issue #100): test ESCAPE '\' in history search (literal `50%`, `a_b`, `\` each match only their own record; one in merchant); pin the chain revision in history.ts:121 and deleted-history.ts:53, merchant search, and summary category order (summary.ts:43) (probes P2-P4 in controller/scratch/1a-t7-review/); order recently deleted by deleted_key; no deleted_at index (note for 8b's purge); share the 30-day cutoff helper; COLUMNS comment names only history.ts. After #339 merges: 1A-T8b turns the money journey on (`it.todo` -> `it` in history.test.ts).
+- 1B-T4 follow-up (#348, merged): carry into briefs: (1B-T6 writeExport, 1B-T8 buildSnapshot, every writer) build the publish context AFTER the PUT, since publishObject's deadline check trusts c.now; (controller call, documented) a failed R2 delete leaves a given-up reservation `reserved` with its deadline a minute on, so a writer publishing past its deadline can still publish for that minute (writers must not publish past their own deadline; tombstoning due reservations on the failure path would cost B19's day-later second delete); (1B-T11) run only one deleteDueObjects at a time, re-check `erased` after the R2 wait, evaluate this.bucket inside the alarm's try; (1B-T9) a retain past its copy's deadline throws (500): check first and answer 422 `expired`; (1B-T5) finishUpload's publish needs `delete_after > now`, overlapping runs may start an item twice. Nits: rename case 5 or assert its log (workerd prints "Uncaught (in promise)" for any exception leaving a DO RPC, even when caught); reserveObject doesn't call assertObjectKey (harmless).
+- 1B-T4 (#341, issue #108): FIX BEFORE 1B-T11 (own small task): publishObject accepts a reservation past its deadline and the success-path update lacks the delete_after guard, so a publish during the alarm's R2 delete loses the object (add `AND delete_after > now` to publishObject, `AND delete_after <= now` to the success-path DELETE and UPDATE, a test with an interleaving bucket; probes in controller/scratch/1b-t4-review/); reserveObject must check the key is under vaultPrefix(purpose, c.vaultId); tests for deviations 3, 4, 6 (mutants G1-G3); putConcatenated skips assertObjectKey and trusts totalBytes; deleteDueObjects doc says "deleted" but counts keys sent; document that overlapping runs may start an item twice (for 1B-T5). For 1B-T11: evaluate this.bucket inside the alarm's try (it throws when OBJECTS is unbound).
+- P5-T4 (#343?, issue #237): for P3-T2 and P4 vault-migration briefs: "every table that references wallets keeps its rows" must compare only tables that existed before and fail on an unseeded referencing table; the exact-row test must match only this migration's columns (P4 adds `source`); add an assertion that every FK to wallets is ON DELETE NO ACTION (the rebuild fires SET NULL/CASCADE); follow the review's 7-step checklist in controller/reviews/P5-T4.md when renumbering. Nits: receipt status head, schema.ts comments at lines 87 and 340, SQL header "must be dropped", STRICT on settings untested, one `## P5` heading with P5-T1, null home amounts note, migration failure logs only "Rollback".
+- 1A-T8b follow-up (#346, merged): nits: the money journey's summary check only looks for '6000' (history.test.ts:482-483; summary.test.ts catches a zeroed total); receipts/1A-T8b-followup.md Deviations line says the brief expected higher counts (the opposite); `clockAhead` is local to history.test.ts and transactions.test.ts copies it inline.
+- 1A-T8b (issue #102, done): after #339 and 1A-T8b both merge, a follow-up (receipt in receipts/1A-T8b-followup.md per R87): history.test.ts line 441 `it.todo(` -> `it(` (comment to past tense), prove with a mutant (drop 'budgets.put' or empty syncChanges), +1 passed -1 todo; deal with the SQL-backdated restore-window cases arming a past alarm (minor 3); fix 1B plan line 1130 wording (8a -> 8b); pin X1 (S1 case second clock at t0 + 61 * DAY) and X3 (pruned_through never goes down on the failing-step path). For 1B-T11: port transactions_deleted_idx and entity_changes_entity_idx (nextDue scans on every write: 2.91 ms at 60k vs 0.02 ms), keep the one-minute floor in rearm, alarmAt to avoid repeated setAlarm. Nits X5/X6 (no audit row, derived purge id untested).
+- P4-T10 (#345, issue #218): fix-parser-regex task under R89 (THB_SUFFIX in amount.ts and explicitPlus in table.ts are quadratic; a 2.1 MB bank file or 3.2 MB generic CSV of `(` + spaces + `5` cells times out the shared parser) — brief being written; build after #345 merges. Ledger: P2-T6's receipt sits under `## P6B` (consolidation).
+- Flaky fix (#342): receipt intro says "no API source changed", Files line omits upload-intake.ts and its spec, Gate says test:api 955 (now 956), "Six failures" names seven, 20/19 RED order: fix in the ledger consolidation. request-context: assert each logged request_id is one of the responses' x-request-id headers (an amount padded into a UUID fools the shape check). renderSetup: once-only guard on the wrapper; the comment overstates two points. R88: the `|| Date.now() >= deadline` and `<=` boundary branches untested. ImportReview 1 ms poll race.
+- API database-suite concurrency flakes, to diagnose together (CI logs only; Docker stays stopped locally): command-executor.integration.spec.ts "authorization under the account lock › commit order is revision order" (PR #340, run 42471566135, job 128703314342); attachments.integration.spec.ts "shared references prevent premature deletion › two records retaining one image at once keep one receipt, made by one copy" expected 1 write, got 2 (PR #340 rerun of the same run); export.integration.spec.ts below.
+- More API flakes (frozen apps/api, need a ruling): export.integration.spec.ts "at most four export downloads run at once in a process; more are told to retry" hit the 30 s jest timeout (PR #333, run 42468718123, job 128694248812). upload-intake.spec.ts trickling-body fixed under R88 in #342.
+- Ledger: #341's merge left a duplicated `## 1D: live pokes, the pending choice, PostHog and the proof` heading directly above `### 1B Task 4` (ledger_union keeps both sides of a renamed heading); fix in the consolidation commit.
+- Flakes: render timeouts near 4 s (RemindersScreen, RecentlyDeletedScreen, QuickAddScreen), HistoryScreen fast "toolbar" failure, request-context.spec.ts `/6500/` vs random UUIDs, retention.integration.spec.ts import_uploads_check3 (clock skew), upload-intake.spec.ts under load. apps/api is frozen: fixes there need a controller ruling.
+- Ledger: duplicate `## P2: Bun Wallet core` and `## 1D:` headings, and receipts appended out of phase order; consolidate in one housekeeping commit once the open PRs merge.
+- P5-T3 (#351, merged 84ee167, issue #236 closed; review in reviews/P5-T3.md, approved): two test gaps for a small follow-up (receipt in receipts/P5-T3-followup.md under R87), or fold into the next P5 brief that touches these files: (1) M46 is NOT equivalent: a `{ JPY: { per_base: null, ... } }` quote is accepted without the `typeof value.per_base === "string"` check at rates.ts:41; add it to test 9's bad inputs (probe: scratch/p5-t3-review/probes/review-m46.test.ts) and correct the receipt's mutation line; (2) C2 counts the trip length back from ends_on (trips.ts:136) and nothing tests why: add a trip starting and ending 9999-12-31 to test 6's accepted cases (a forward-counting mutant throws RangeError there, escaping unguarded at client.ts:416). For P5-T9's brief: its command must apply the contract's value rules itself (1970-9999, at most 366 days, ISO currency table, normalizeName), since the trips table's SQL checks are looser than isTripSnapshot and one bad snapshot makes a phone refuse a whole sync page. For P5-T6's brief: TodayRates carries an extra `etag` key that isRatesTodayDto refuses, so readTodayRates must check the rates without it.
+- 1A-T9 (#352, review in reviews/1A-T9.md): after the R92 fix round, follow-ups (none blocking): the normalizer numbers ids by first appearance and most idempotency keys are random per run, so a vault minting its own consistent `command_id` would pass (only the replay and lunch keys are checked literally; closing it changes the session, which the spec fixes at 49 steps); the comparison never checks category rename/archive/unarchive, wallet-by-id success, history page 2 or sync resume by cursor; the normalizer accepts any timestamp format; the vitest diff sorts keys, so key-order failures print identically (add a hint in the failure message); CI killed 32 leftover processes (12 workerd) at job end, unattributed. For 1B (R92): NestJS's full-resync snapshot and an import's `issues` also come out of jsonb, so the vault's reads of them go through `jsonbOrder`.
+- 1D-T10 (#353, merged 3ab4d0a, issue #141 closed; review in reviews/1D-T10.md, approved): for 1D-T11's brief: add a test that `afterCall` never throws (probe P6b's shape: a commit while the fan-out fails answers 201 and the revision moves; with the try/catch removed it answers 500 for a saved write, and live.test.ts still passes 21 of 21). Nits: four reviewer mutants survive (the principal charge on open, the 1000 fallback, the `not_before` boundary, keying the read budget per session); the comments on `closeSocket` and `call()` overstate (a close on a closing socket does not throw, so `closeEndedSessions` can over-count; 1D-T12 must not read that count as "newly closed"); the `VaultRoute` comments in routes.ts were not updated for the live route. 1D-T12: close open sockets in `erase()`. The app's live socket waits for the next foreground after a sign-in (restart on session change: 1D-T12/T15).
+- Flake (8 Nov): apps/app/src/screens/redesign/HistoryReturn.render.test.tsx fails under load in full render runs: "another account, or a sign-out and back in, starts History clean" times out at 5000 ms (file took 14.7 s), and "leaving for another screen forgets the view; ..." found no `Expense` radio at 518 ms. Hit by P2-T19 and P2-T2 on trees that do not touch it (load average 41 to 75 with several agents running app suites); passes 6 of 6 alone. Candidate small task: give the file's slow case a longer timeout or a findBy wait, or split the sign-out case; until then rerun once.
+- **private-mode-hardening (a follow-up task; must land before the `wallet` area is approved at E2).** From P2-T10's review (reviews/P2-T10.md; probes in scratch/p2-t10-review/).
+  - **m1 (privacy, fail-open):** if the stored setting cannot be read, amounts show even when the person hid them, which conflicts with W10 and R66. It is a one-line fix at `PrivateModeProvider.tsx:47`, and only the broken-store block of the "until the setting is read" test (lines 218-225) changes; mutant R10 shows it.
+  - **m2:** the tip shows after every hide and at every launch until the person taps close. The plan says "the first time only", the stored name is `private-tip-seen`, and the anti-goals say nothing nags. Also mark it seen when amounts are next shown.
+  - **n1:** while the setting is read, the eye is labelled "แสดงยอดเงิน" but does nothing; use `disabled={!ready}`.
+  - **n3:** pin "two taps before React renders" (mutant R4).
+- P2-T10 (#370, merged 51be132 on 9 Nov, issue #156 closed; review Approved; m1, m2, n1 and n3 are in private-mode-hardening).
+  - **Balances (P2-T11, T20, T22, T23, T24, T30):** pass `sign="balance"` for anything that can go negative. The default sign drops a negative's minus (P8, n2).
+  - **Amounts inside sentences:** an amount nested in text loses its own spoken label, so give the sentence its own.
+  - **P6A widget:** wait for `ready` before writing `hidden`.
+  - **P2-T33:** pin the full WalletRoot provider order (mutant R9).
+  - **P2-T37:** its "under/over" check must match tokens, not the word "over" in comments.
+- P2-T9 (#368, merged 860990f on 9 Nov, issue #155 closed; review in reviews/P2-T9.md, Approved with two minors). Probe cases and the mutant runner are in scratch/p2-t9-review/.
+  - **Whichever task next edits apps/app/src/wallet/motion/ (P2-T24 or P2-T30, whichever is planned first):**
+    - m-1: GrowBar's growing path is under-tested. Three mutants pass all 12 cases: no fill height (draws nothing at full motion), the clamp bypassed (an over-budget bar grows to 140%), and a reduced-motion change mid-way (snaps). The screen-reader check covers only the growing bar, and a value change is checked only at its end. The review has five ready cases.
+    - m-2: the "new animation per call" test covers 2 of the 6 builders, and misses `trayExiting`.
+    - Nit: `motionFor` returns the table's own objects, so a caller that mutates one changes every later answer.
+  - **P2-T24 and P2-T30:** GrowBar has no `style` or `testID` prop.
+  - **P2-T13:** a Sheet inside a tray mixes two animation systems on one screen, which the new motion.ts comment says never happens.
+  - **P2-T12 and P2-T21:** a new wallet's card drops from a full screen height on an underdamped spring and overshoots by about 200 pt.
+  - **E2:**
+    - the board says "success" for the first wallet and the recap, but the plan plays success for every new wallet and `celebration` for the recap;
+    - fades use Reanimated's default curve (ease-in-out on a phone), not the board's ease-out. The receipt does not carry this, so record it at E2-D.
+- 1C-T8 (#367, merged 6fbe9a8 on 9 Nov, issue #125 closed; first review Needs fixes; fix round R98 and R99 confirmed in reviews/1C-T8-confirm.md, Approved).
+  - **1C-T9 (or 1C-T7, whichever comes first), the confirming review's m1:** the PR's tests pin R98 only on email-only builds. A mutant that offers the other-address way only on email-only builds would bring back the dead end once Apple or Google goes live. The ready test `scratch/1c-t8-confirm/probes/ConfirmR98EveryBuild.render.test.tsx` passes at 4aa6cf1 and kills it.
+  - **Confirming review's nits:**
+    - the code's condition is `main === 'email'`, not R98's "own-address code" (the only difference is an unreachable state);
+    - the catalogue title carries "(R98)", the only ruling id among 270 titles;
+    - the receipt's first-round section still says 22 sections and keeps the stale cast note (the fix-round section corrects both).
+  - First review's probes are in scratch/1c-t8-review/probes/.
+  - **Nits, not in the round:**
+    - a new terms version keeps the earlier tick;
+    - the devices list is stale after a link or remove;
+    - `maxLength={6}` cuts a pasted code that contains a space before the digit filter runs;
+    - small copy points.
+  - **1C-T9:**
+    - pass AccountExistsScreen only the methods this build runs;
+    - give TermsGate a stable client and subscribe function, or it re-reads `/v1/me` on every render;
+    - add the route, the `from=onboarding` handling and the in-place step's removal in one change (R99);
+    - the stored session's "method" is the last sign-in's method, not the account's first.
+  - **E2 owner questions (in the receipt after the fix round):**
+    - P5: the extra tap before Apple's and Google's own sheets;
+    - m2: the account-unavailable variant shows lines that are false for a deleted account, and leads with a refused sign-in;
+    - m4: K24, the owner may drop today's sign-in terms box when approving.
+- P2-T8 (#365, merged 1502e65 on 9 Nov, issue #154 closed; review in reviews/P2-T8.md, Approved with two minors). Probes are in scratch/p2-t8-review/.
+  - **P2-T11 (next to edit the harness), m-1:** two of the planner's "equivalent" mutants are not equivalent, and X2 survives.
+    - E2: without `BunIntensityProvider`, `setIntensity` throws and a stored intensity is ignored.
+    - E3: without the inner `IntlProvider`, a stored or newly chosen language changes the language drawn.
+    - X2: `mockReturnValueOnce` lets kit parts (`Sheet`, `UndoBar`, `BunPeek`) take the reduced-motion answer first, so under `reducedMotion: true` the wallet reads false.
+
+    The review's two ready cases close all three.
+  - **P2-T35 (and one sentence in the harness header), m-2:** the inner `IntlProvider` locks the drawn language. Under `mountWallet`, `setPreference('en')` changes the stored preference but the screen stays in Thai. P2-T35's language tray and welcome language switch must choose how to test this.
+  - **Wallet screen tasks:**
+    - the reduced-motion spy's call count builds up across mounts within one case;
+    - `useWindowDimensions()` reads 0 × 0 under `mountWallet`;
+    - stored preferences need `installBrowserStorage()`;
+    - never import the harness from a catalogue section (it pulls in vitest).
+  - **P2-T10:** the catalogue suites draw sections without `WalletRoot`; its brief decides.
+  - **Nit (sent to the 1C-T8 planner, which edits that header):** the registry header's "comes next" skips the companion list.
+- 1C-T6 (#364, merged f544c28 on 9 Nov, issue #123 closed; review in reviews/1C-T6.md, Approved with one minor and two nits). Probes are in scratch/1c-t6-review/probes/.
+  - **1C-T7 brief, m1:** no test covers the app's real service wiring (`privacyServices.ts:45-54`, `accountServices.ts:18-24`). Five mutants pass all 104 account render tests:
+    - Privacy skips the fresh sign-in;
+    - the token and session id are read apart instead of through `requestCredentials()`;
+    - one fixed id for every request;
+    - sign out everywhere resolves with no provider, which would erase this phone;
+    - sign out others is called instead of sign out everywhere.
+
+    The ready test `scratch/1c-t6-review/probes/appServicesWiring.render.test.tsx` passes at caecf12 and kills all five. Carry it into 1C-T7, which wires these services for real.
+  - **Nits:**
+    - n1: Settings' `seen.sent` is never exercised (practically unreachable with the real port);
+    - n2: the second half of `sessionResume.test.ts` cannot fail (A's record has landed before B signs in); a probe in the other order passes.
+  - **OWNER, for Task 11 / Task 8:** an unconfirmed deletion stays unconfirmed on every Try again once its token is over 10 minutes old, because the resend and the receipt both get 401 with the expired token. The plan requires reusing those credentials. The person must leave and start over, and if the first request had landed, that new attempt says "Nothing was deleted".
+  - **Task 12 (m4 from 1D-T6):** the transport in `privacyServices.ts` lacks `allowLanHttp: __DEV__`, so a development build against `wrangler dev` on a LAN address crashes when Privacy opens. It also lacks the analytics opt-out header. m4 now covers three transports, not four.
+  - **Task 7 / 1D-T7:** each live fresh sign-in moves the epoch. That resets PostHog, drops held events for the same account, and briefly reopens the diary. Both are by design; check them in Task 7's device run.
+- 1A-T10 (#363, merged 4407025 on 9 Nov, issue #104 closed; review in reviews/1A-T10.md, Approved). The receipt's minor 2 and its nits were fixed in housekeeping commit 9cc31cb.
+  - **P6C-T7 (next to edit scripts/ci/backend-workflow.test.mjs), minor 1:** the case pins the order and job of the steps, but not that they run. `continue-on-error: true` or `if: false` on the workers step, or `if: false` on the database job, passes all 6 cases. Add `assert.doesNotMatch(workflow, /^\s*(?:-\s+)?(?:if|continue-on-error):/m)` at the end of the case; the reviewer proved it catches all three.
+  - **1C-T12:** the README's issuer line says that from 1C the vault uses `AUTH_JWKS_URL`, but the 1C plan (R50) drops that setting.
+  - **1B-T13:** the README's vault row leaves out the live socket and the cashback catalogue the Worker already serves.
+  - Other nits:
+    - `backend.yml:5` still says the workflow "has not run on GitHub yet";
+    - the new case's comment claims "the local gate's order", which nothing checks.
+  - **Epic #83:** the phase proof (offline on phone A, seen on phone B, and the conflict screen) needs 1C and 1D, so it belongs to 1D-T15. Do not close the epic before then.
+  - **The plan's Step 5**, a review of the whole 1A range, is the controller's to schedule (P11), and is waiting on the owner's choice.
+- **fix-download-aborts (a follow-up task, before 1B-T13; ruling R97).** In workerd, a GET whose client goes away mid-download keeps its download slot; four of them close a download kind for every member in the isolate.
+  - The fix, proven in scratch by 1B-T6's confirming reviewer (`scratch/1b-t6-confirm/`): `serve*File` hands `w.waitUntil` a promise that its `release` settles.
+  - Apply it to `serveExportFile`, 1B-T9's `serveReceiptFile` and 1B-T8's snapshot chunks, with a `wrangler dev` proof (four aborted GETs, then a GET answers 200) and a test that pins the waitUntil wiring.
+  - Also in it, from the same review:
+    - n-1: `handler.ts:129` and `:147` return `headOf(...)` inside a `try` without `await`, so a future rejection would skip the error handler;
+    - n-2: the HEAD case's byte counter is shared across its four HEADs, so per-HEAD regressions after the first go unseen.
+  - **And from 1B-T9's review (reviews/1B-T9.md).** Its ready probes are in `scratch/1b-t9-review/tree/apps/edge/test/workers/zz-review-probes.test.ts`: 16 cases, all passing on a3493f4, with the reviewer's mutants in `own-mutants/`.
+    - **m-1 (security, test only):** nothing pins that the prepare step checks session and policy (`src/v1/routes.ts:135`). Without that check, a signed-out, policy-pending or deleting account reserves and copies before it is refused, and a deleting account's copy could outlive the purge. Probes AC-1 to AC-3.
+    - **m-2:** the receipt HEAD test does not count bytes per HEAD (probe HD-1).
+    - **m-3:** neither guard in `attachmentsDueAt` is pinned (`attachments.ts:368-369`); probes DU-1 and DU-2. Without "object gone", the alarm loops on a past due time (against R37); without the safety-net check, an unheld receipt is never scheduled.
+    - **For the abort proof:** retain and replace hold a copy slot across awaits, so include four aborted retains, then a retain that answers 200. Receipt downloads allow two slots per account.
+  - **And from 1B-T10's review (reviews/1B-T10.md).** Ready probes are in `scratch/1b-t10-review/probes/zz-review-1b-t10.test.ts`.
+    - m-1: R57 on corrections is untested. No case corrects more than 100 rows at once, so a mutant binding one `?` per row id in the correction's row check (`confirmation.ts:181`) passes all 638 cases; in production it would answer 500 for a large correction. The probe corrects 500 rows at once.
+    - m-2: the preview's accepted-upload guard (`previews.ts:188`, `u.accepted_at IS NOT NULL`) is untested. Without it, an upload still receiving or refused reads 200 `cancelled` where the API answers 404.
+    - Nits:
+      - two changed-form cases lack their comment (`imports-review.test.ts:903` and `:1291`);
+      - `pruneImports` has no `MAX_PURGE_PASSES` cap, unlike `pruneExports`.
+    - **Nits:**
+      - the poll deadline, unknown body fields and the preview's `ready` status are untested;
+      - "two records at once" gates only the first request, so one mutant's kill depends on a 250 ms sleep;
+      - the receipt misfiles five ported cases as "as written";
+      - the 3 kB bundle gap is file-path length, not code.
+- 1B-T10 (#369, merged 2ffd195 on 9 Nov, issue #114 closed; review in reviews/1B-T10.md, Approved; its m-1 and m-2 are in fix-download-aborts, above).
+  - **1B-T11:** put `importsDueAt` and `pruneImports` under the same active-vault condition as 1A's `nextDue` and `runDue` (`retention.ts:75`), or the alarm loops for a deleting vault. Consider capping the purge loop.
+  - **1B-T12:** keep the API's key order, and 404 for the preview of a never-accepted upload.
+  - **1B-T13:** once the PostgreSQL edge retires, also count driver markers in the server bundle.
+- 1B-T6 (#362, merged de738f9 on 9 Nov, issue #110 closed; review in reviews/1B-T6.md, Needs fixes; fix round R96 confirmed in reviews/1B-T6-confirm.md; MA-1 ruled a follow-up under R97).
+  - **Nits, not in the round** (probes in scratch/1b-t6-review/):
+    - X4: the Workflow step's retry settings are not pinned;
+    - X5: no case sends a non-UUID `proof_id`;
+    - X6: the order of records that share a date is not pinned.
+  - **1B-T8:**
+    - its snapshot download is HEAD-able, so add a HEAD case (several HEADs on a multi-chunk file, then a GET answers 200, and each HEAD reads the whole file) and a failed-download slot case;
+    - check that the vault is active both when the build reads and when it publishes, with a test for each.
+  - **1B-T9:** the same HEAD and slot cases (its brief has them); the attachment registry entries go after the export ones.
+  - **1B-T11:** call `pruneExports` only for an active vault, since it does not check itself. A write that throws past its deadline leaves a reserved key that is already due, so arm the alarm from `objectsDueAt`.
+  - **1B-T13:** the PostgreSQL edge's dispatcher (`src/server/app/dispatch.ts:82-84`) cancels a HEAD's body too, with the same slot gap in workerd. It retires at 1B-T13; never port that pattern.
+  - **R95 note:** most driver-marker matches are bundler path comments. A string marker such as `SCRAM-SHA-256` would survive a minified build, if bundles are ever minified.
+- 1D-T6 (#361, merged 9a4a2f1 on 9 Nov, issue #137 closed). Review in reviews/1D-T6.md, Approved with four minors. Probes are in scratch/1d-t6-review/probes/.
+  - **OWNER, before Q5's PostHog key is set (m1).** With crash reports on before consent (Q4's default), the native SDK sends two things 1D-T1's `before_send` never sees:
+    - native crash reports, unscrubbed (on Android a fatal render error is re-reported natively with the JS error text);
+    - a feature-flags request at every launch, carrying the stored id (the analytics id after an earlier yes).
+
+    Also Q6: native requests carry no `$geoip_disable`, because `disableGeoip` is JS-only. Nothing is sent today (there is no key). Put this to the owner and counsel, then update the receipt's SKIPPED native item with the answer.
+  - **m2 (test gaps; the code is right, and the probes are ready to become tests):** the stale-account-read guard, the native client's link to the consent filter, the error handling on the immediate "no", one account read per session, and the off header while the answer is unknown.
+  - **1D-T7 (m3):**
+    - the screen on display when the answer turns yes is never sent, so the first screen of each launch and sign-in is missing;
+    - on native with a key, events tracked before the controller installs are dropped (onboarding events);
+    - `ai_enabled` is set only on a change after install, and only where the companion area is on.
+  - **1D-T8:** catch every rejection of `answer()`; `AccountChangedError` means "ask again".
+  - **1D-T11:** `/v1/me/analytics` answers exactly `analytics_id`, `weeks_since_signup` (an integer 0 to 1040, never null) and `consent`. An extra key is `invalid_response` on the phone. Never answer 404 `NOT_FOUND` except for a missing route, or the phone falls back to `/v1/me` and asks again (against Q13).
+  - **P4, and any route that gains a server event (m4):** the `X-GoGoSpend-Analytics: off` header is only on the shared transport; four other transports do not send it.
+  - **1D-T15:** in local development, `posthogHost` defaults to `${v1ApiUrl}/ingest` (localhost:8091, the PostgreSQL API, which has no proxy). Set `EXPO_PUBLIC_POSTHOG_HOST` against `wrangler dev`.
+  - **Nits:**
+    - `client.ts:345` reads `analyticsOff` once per request, so resends reuse it (a one-line move);
+    - `controller.ts:28`'s JSDoc says `setAccount` rejects on a server failure, but only the store can make it reject;
+    - `posthogOptions.ts:6-7` overclaims its type checks;
+    - `DeviceDiaryProvider.tsx:55-57` has a JSDoc line break;
+    - `analyticsServer.ts:39`'s `NOT_FOUND` half is unpinned;
+    - the brief named `PL/logs/run/`, which was not in the kit.
+  - **Still open from 1D-T1:** a no whose queued write fails still skips the server call.
+  - **1C-T6:** expect additive conflicts in `client.ts` and `client.test.ts`; keep both sides.
+- 1D-T9 (#354, merged 687e764 on 9 Nov, issue #140 closed; fix round confirmed in reviews/1D-T9-confirm.md, Approved). Confirming review's nits, for the m5 task (or another task before the `conflict` area is approved):
+  - **n1:** a refused "Discard my change" then Restore brings the discarded choice back on the same screen. This predates the round. The fix is one line: set `declined` in the discard path too.
+  - **n2:** an edit open when the diary first shows a stale choice offers that old change after the save, with "Use yours" as the default (m1's narrow case, accepted).
+  - **n3:** no test pins the re-read's record filter (mutant Y1 survives; it costs only an extra read).
+  - **n4:** the first review's related window is unchanged (only when the server answers a conflict without a usable record).
+  - **n5:** fixed in the receipt by a controller housekeeping commit.
+
+  Earlier: R94 (controller): a choice is kept only with a usable current record (the narrow reading); an edit refused because the record was deleted elsewhere keeps nothing and Restore brings back the server's version. OWNER at E2: should the person's change be kept in that case too (C16's broader reading)? m5, a task before the `conflict` area is approved: Settings' sign-out erases the diary, and its warning counts only unsent outbox entries (settingsModel.ts:63-66), so waiting choices are lost silently; the sign-out line must count waiting choices too. Receipt arithmetic: render base 1619 at 84ee167, 1D-T9 adds 32 cases.
+- P2-T19 (#355, merged daf8a63, issue #165 closed; review in reviews/P2-T19.md, approved): for P2-T20 and P2-T21 briefs: the hook can send `wallet_added` twice for one wallet (two presses before a re-render reuse the key and both answer done; the hook test at walletCommands.render.test.tsx:278 never counts events), so either the hook reports each wallet id once or each page guards presses with a ref (not React state); the receipt's note to hold presses "while `sending` is true" is not enough. Before 1D-T6's PostHog client lands: the event is sent inside the save's try/catch (walletCommands.ts:60 and :67), so a throwing capture shows a saved wallet as "could not be saved"; move it after. Untested: a create meeting its own wallet without a look drops its event; a made-up look passes; `sending` stuck true after a refusal; `resend()` choosing the older of two unconfirmed commands.
+- 1B-T5 (#356, merged 38361b1 on 9 Nov, issue #109 closed; review in reviews/1B-T5.md, Needs fixes; its fix round, confirmed in reviews/1B-T5-confirm.md, Approved: the image rejection reason, the P1 guard tests, the ocr gate test). Confirming review's nits, for a later 1B test task: the ocr gate test uploads only a JPEG (PNG and WebP are right by probe, but R17b and R17d survive); no test pins that a rejected record arriving with an image keeps its code and drops the image (that input cannot occur today; probes A1 and A2 in scratch/1b-t5-confirm/confirm-probes.test.ts can be added). Later: P5 and P9, retryParse's state filter, the 5-minute margin before a raw file expires, the starter's due time for unsent imports and two consumer image checks are untested (reviewer mutants survive); a finish failing on its parts is recorded `session_ended` where the API records `intake_error`; nits: CAST truncates a non-integer amount string, `discarded` could tombstone a published part, P17 wording, `vaultById` outside the consumer's try. 1B-T11: upload steps do not move the revision, so nothing schedules the alarm after an upload; 1B-T11 must schedule it whenever an upload step writes (raw files at 24 h, names at 8 days).
+- Flake (8 Nov): apps/api src/common/shared-rate-limit.integration.spec.ts "two API replicas share one write budget per binding" (expected false, received true) failed on #358 (P2-T2, no API change); rerun once.
+- 1C-T6 planner notes for later 1C tasks (briefs/1C-T6.md, Notes): Task 8 asks keep-or-erase only when unsent records exist (plus 1C-T5's leftover-cookie and Sign-in-again flicker notes); Task 7 gets Apple/Google fresh sign-in once native sign-in is wired; Task 9 needs the code sheet on Settings and Privacy for email accounts; Task 11's deletion route reads Accept-Language and answers the receipt to a token-only request; Task 12 confirms atob on a device; the transport's `proof` option has no app caller left (cleanup).
+- P2-T2 (#358, merged 7273ee9; review in reviews/P2-T2.md, approved): minor: reducedMotion.tsx:28's `if (!heard)` guard is untested (the review's 6-line test kills mutant X1); add it now or in the P2-T37 motion sweep. Builds made before 7273ee9 no longer launch on a device (Gesture Handler's native module); rebuild with expo run first. Export module counts grow as apps/app modules land; recheck them per brief.

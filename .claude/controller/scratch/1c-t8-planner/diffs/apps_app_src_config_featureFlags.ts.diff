@@ -1,0 +1,23 @@
+--- a/apps/app/src/config/featureFlags.ts	2026-11-09 19:12:56
++++ b/apps/app/src/config/featureFlags.ts	2026-11-09 19:13:33
+@@ -11,7 +11,7 @@
+ }
+ 
+ /** Areas of the "Bun diary" redesign, each switched on once its screenshots are approved (E2). */
+-export type RedesignArea = 'core' | 'catalogue' | 'planning' | 'insights' | 'account' | 'import' | 'companion' | 'conflict' | 'wallet';
++export type RedesignArea = 'core' | 'catalogue' | 'planning' | 'insights' | 'account' | 'import' | 'companion' | 'conflict' | 'wallet' | 'signin';
+ 
+ /**
+  * Approved areas, on by default. The core loop (Home, Quick add, History,
+@@ -36,6 +36,11 @@
+  * The Bun Wallet area (phase 2, W1) is not approved: it is on only when
+  * named (`wallet` or `all`) until the owner approves its E2 screenshots
+  * (P2-T38). While it is off, every wallet route shows today's screen.
++ *
++ * The signin area (1C-T8: the email code, account-exists, terms,
++ * session-ended, devices and reminder drafts, and the welcome link) waits for
++ * its E2 screenshots, so it is on only when named or with `all`; 1C-T9 routes
++ * its screens and approves it.
+  */
+ const APPROVED: readonly RedesignArea[] = ['core', 'planning', 'insights', 'account', 'import', 'companion'];
+ 

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Bun Wallet sync conflict</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;700&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F3F9; color: #111014; font-family: 'Anuphan', 'DM Sans', sans-serif; line-height: 1.4; position: relative; overflow: hidden">
+  <div style="padding: 52px 18px 0; display: flex; flex-direction: column">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <button type="button" aria-label="กลับ" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid #E6E4EE; background: rgba(255, 255, 255, 0.85); display: flex; align-items: center; justify-content: center; padding: 0; box-sizing: border-box; flex: none"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="#111014" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+      <span style="font-size: 17px; font-weight: 700">แก้ไขรายการ</span>
+      <span style="width: 44px; flex: none"></span>
+    </div>
+    <h1 style="margin: 14px 0 0; font-size: 24px; font-weight: 700; line-height: 1.4">รายการนี้ถูกแก้ในอีกเครื่อง</h1>
+    <p style="margin: 6px 0 0; font-size: 15px; line-height: 1.55; color: #6B6878">ยอดเงินไม่ตรงกัน เลือกว่าจะเก็บแบบไหน การแก้ไขของคุณยังเก็บอยู่ในเครื่องนี้จนกว่าคุณจะเลือก</p>
+    <fieldset style="border: none; margin: 16px 0 0; padding: 0; min-width: 0">
+      <legend style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap">เลือกแบบที่จะเก็บ</legend>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+      <label for="rh-pick-yours" style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 22px; background: #FFFFFF; box-shadow: 0 0 0 2px #111014; cursor: pointer">
+        <span style="display: flex; align-items: center; justify-content: space-between">
+          <span style="font-size: 16px; font-weight: 700; line-height: 1.4">ของคุณ</span>
+          <input id="rh-pick-yours" type="radio" name="rh-pick" aria-label="ของคุณ ยอด 50 บาท" checked="" style="width: 22px; height: 22px; margin: 0; accent-color: #111014">
+        </span>
+        <span style="font-size: 12px; line-height: 1.4; color: #6B6878; margin-top: -8px">เครื่องนี้ · แก้ 12:14</span>
+        <span style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 9px; background: #FFE3CC; box-sizing: border-box; display: flex; align-items: center; justify-content: center; flex: none"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11h16a8 8 0 0 1-16 0Z M9 7c0-1 1-2 1-3M14 7c0-1 1-2 1-3" fill="none" stroke="#111014" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span style="font-size: 15px; font-weight: 500">ข้าวมันไก่</span></span>
+        <span style="display: block; padding: 8px 10px; border-radius: 12px; background: #ECE7FC">
+          <span style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; line-height: 1.4; color: #6A4BD4; font-weight: 700"><span>ยอด</span><span>ไม่ตรงกัน</span></span>
+          <span style="display: block; font-family: 'DM Sans', sans-serif; font-size: 28px; font-weight: 700; line-height: 1.15; letter-spacing: -0.02em">฿50</span>
+        </span>
+        <span style="display: flex; flex-direction: column; font-size: 14px; line-height: 1.4"><span style="font-size: 12px; color: #6B6878">หมวด</span>อาหาร</span>
+        <span style="display: flex; flex-direction: column; font-size: 14px; line-height: 1.4"><span style="font-size: 12px; color: #6B6878">กระเป๋า</span>บัญชีหลัก</span>
+        <span style="display: flex; flex-direction: column; font-size: 14px; line-height: 1.4"><span style="font-size: 12px; color: #6B6878">วันที่</span>24 ต.ค. 12:10</span>
+      </label>
+      <label for="rh-pick-server" style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 22px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #E6E4EE; cursor: pointer">
+        <span style="display: flex; align-items: center; justify-content: space-between">
+          <span style="font-size: 16px; font-weight: 700; line-height: 1.4">ในเซิร์ฟเวอร์</span>
+          <input id="rh-pick-server" type="radio" name="rh-pick" aria-label="ในเซิร์ฟเวอร์ ยอด 55 บาท" style="width: 22px; height: 22px; margin: 0; accent-color: #111014">
+        </span>
+        <span style="font-size: 12px; line-height: 1.4; color: #6B6878; margin-top: -8px">อีกเครื่อง · แก้ 12:13</span>
+        <span style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 9px; background: #FFE3CC; box-sizing: border-box; display: flex; align-items: center; justify-content: center; flex: none"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11h16a8 8 0 0 1-16 0Z M9 7c0-1 1-2 1-3M14 7c0-1 1-2 1-3" fill="none" stroke="#111014" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span style="font-size: 15px; font-weight: 500">ข้าวมันไก่</span></span>
+        <span style="display: block; padding: 8px 10px; border-radius: 12px; background: #ECE7FC">
+          <span style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; line-height: 1.4; color: #6A4BD4; font-weight: 700"><span>ยอด</span><span>ไม่ตรงกัน</span></span>
+          <span style="display: block; font-family: 'DM Sans', sans-serif; font-size: 28px; font-weight: 700; line-height: 1.15; letter-spacing: -0.02em">฿55</span>
+        </span>
+        <span style="display: flex; flex-direction: column; font-size: 14px; line-height: 1.4"><span style="font-size: 12px; color: #6B6878">หมวด</span>อาหาร</span>
+        <span style="display: flex; flex-direction: column; font-size: 14px; line-height: 1.4"><span style="font-size: 12px; color: #6B6878">กระเป๋า</span>บัญชีหลัก</span>
+        <span style="display: flex; flex-direction: column; font-size: 14px; line-height: 1.4"><span style="font-size: 12px; color: #6B6878">วันที่</span>24 ต.ค. 12:10</span>
+      </label>
+      </div>
+    </fieldset>
+    <div style="display: flex; gap: 10px; align-items: flex-start; margin-top: 14px; padding: 12px 14px; border-radius: 16px; background: #E9E7F1; font-size: 13px; line-height: 1.55">
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 1px"><circle cx="12" cy="12" r="9" fill="none" stroke="#111014" stroke-width="1.9"></circle><path d="M12 11v6" fill="none" stroke="#111014" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="12" cy="7.6" r="1.3" fill="#111014"></circle></svg>
+      <span>ต่างกันแค่ยอดเงิน ถ้าใช้ของคุณ <span style="font-family: 'DM Sans', sans-serif; font-weight: 700">฿55</span> ในเซิร์ฟเวอร์จะถูกแทนที่ด้วย <span style="font-family: 'DM Sans', sans-serif; font-weight: 700">฿50</span></span>
+    </div>
+  </div>
+  <div style="position: absolute; left: 18px; right: 18px; bottom: 24px; display: flex; flex-direction: column; gap: 4px">
+    <button type="button" style="height: 56px; border-radius: 18px; border: none; background: #111014; color: #FFFFFF; font-family: inherit; font-size: 17px; font-weight: 700">ใช้ของคุณ <span style="font-family: 'DM Sans', sans-serif; font-weight: 700">฿50</span></button>
+    <button type="button" style="height: 44px; border: none; background: transparent; font-family: inherit; font-size: 15px; font-weight: 500; color: #6A4BD4">ตัดสินใจทีหลัง</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

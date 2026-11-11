@@ -12,7 +12,7 @@ export default defineConfig(
       cloudflare({
         viteEnvironment: { name: 'ssr' },
         // The background Workers, built through the same API seams.
-        auxiliaryWorkers: [{ configPath: './wrangler.jobs.jsonc' }, { configPath: './wrangler.security.jsonc' }, { configPath: './wrangler.deletion.jsonc' }],
+        auxiliaryWorkers: [{ configPath: './wrangler.jobs.jsonc' }, { configPath: './wrangler.security.jsonc' }, { configPath: './wrangler.deletion.jsonc' }, { configPath: './wrangler.vault.jsonc' }],
       }),
       tanstackStart({
         // The API's Auth0 Management clients are named `*.client.ts` (an

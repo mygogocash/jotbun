@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, expect, test, vi } from 'vitest';
 
 const nav = vi.hoisted(() => ({
@@ -44,6 +44,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
+  vi.unstubAllEnvs();
   window.localStorage.clear();
 });
 
@@ -343,6 +344,55 @@ test('a draft that resolves refreshes the list in place', async () => {
   diary.set({ outbox: [{ ...draft, state: 'acknowledged' }] });
   expect(await screen.findByRole('button', { name: 'Food, Expense ฿65.00, Cash' })).toBeTruthy();
   expect(fake.callsOf('history')).toHaveLength(2);
+});
+
+// C16 (1D-T9), in the `conflict` area: a record whose refused edit waits on this phone says so under its row.
+test('a record waiting for a choice says so under its row, and a tap opens the record as usual', async () => {
+  const seed = goldenSeed();
+  const rent = seed.records.find((record) => record.id === RENT) as TransactionDto;
+  const choice = {
+    recordId: RENT, original: rent, changes: { amount_minor: '1200000' }, server: { ...rent, amount_minor: '1300000', version: 2 } as TransactionDto,
+    editedAt: '2026-09-29T02:14:00.000Z', refusedAt: '2026-09-29T02:14:01.000Z',
+  };
+  vi.stubEnv('EXPO_PUBLIC_REDESIGN', 'conflict');
+  const diary = createFakeDiary({ ...DIARY_REFERENCES, pendingChoices: [choice] });
+  mountScreen(<HistoryScreen now={NOW} />, { resources: createFakeResources(seed).resources, diary: diary.diary });
+  const row = await screen.findByRole('button', { name: ROWS.rent });
+  // One caption, in words and bold, for the one record that waits; the row reads as before.
+  const caption = screen.getByText('Waiting for your choice');
+  expect(screen.getAllByText('Waiting for your choice')).toHaveLength(1);
+  expect(caption.style.fontWeight).toBe('700');
+  fireEvent.click(row);
+  expect(nav.router.push).toHaveBeenLastCalledWith({ pathname: '/spend/record/[id]', params: { id: RENT } });
+  // Once the choice is made (here or on another phone's diary refresh), the caption goes.
+  act(() => {
+    diary.set({ pendingChoices: [] });
+  });
+  await waitFor(() => expect(screen.queryByText('Waiting for your choice')).toBeNull());
+  cleanup();
+  // With the conflict area off, nothing is marked.
+  vi.stubEnv('EXPO_PUBLIC_REDESIGN', '');
+  mountScreen(<HistoryScreen now={NOW} />, { resources: createFakeResources(goldenSeed()).resources, diary: createFakeDiary({ ...DIARY_REFERENCES, pendingChoices: [choice] }).diary });
+  await screen.findByRole('button', { name: ROWS.rent });
+  expect(screen.queryByText('Waiting for your choice')).toBeNull();
+});
+
+test('a change pulled from another phone refreshes the list in place', async () => {
+  const fake = createFakeResources(goldenSeed());
+  const diary = createFakeDiary({ ...DIARY_REFERENCES, appliedRevision: '5' });
+  mountScreen(<HistoryScreen now={NOW} />, { resources: fake.resources, diary: diary.diary });
+  await screen.findByRole('button', { name: ROWS.rent });
+  const reads = fake.callsOf('history').length;
+  act(() => {
+    diary.set({ appliedRevision: '7' });
+  });
+  await waitFor(() => expect(fake.callsOf('history')).toHaveLength(reads + 1));
+  expect(await screen.findByRole('button', { name: ROWS.rent })).toBeTruthy();
+  // Another view update at the same revision reads nothing.
+  act(() => {
+    diary.set({ appliedRevision: '7', progress: { sent: 0, total: 1 } });
+  });
+  expect(fake.callsOf('history')).toHaveLength(reads + 1);
 });
 
 test('offline, the month still shows what this device holds, under an offline banner', async () => {

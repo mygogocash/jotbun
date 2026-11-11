@@ -12,6 +12,12 @@
 // - Then sign-in (`/login`), or with a session already, Quick add
 //   (`/spend/add`) to log that coffee. The first wallet and budget come later,
 //   through Home.
+// - With the `signin` area on (1C-T8, K16, C15): the first step also offers
+//   bw-welcome's sign-in link, and the story (Skip, or "Let's start!") ends
+//   at sign-in from onboarding (`afterStory`); the reminder question moves
+//   to right after sign-in (R55, ReminderQuestionScreen). With a session
+//   already, today's reminder step still follows the story here: nothing
+//   goes to `/onboarding/reminder` before 1C-T9 adds that route (R99).
 //
 // The bun: a pose on the stage at Full. Quiet and Off leave the stage plain,
 // as Home's stage does: Quiet keeps the bun for empty states only.
@@ -20,6 +26,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
 import { useAuthGuardSession } from '@mobile/auth/useAuthGuardSession';
+import { isRedesignEnabled } from '@mobile/config/featureFlags';
 import type { Locale } from '@mobile/i18n/locales';
 import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
 import { Bun } from '@mobile/mascot/Bun';
@@ -28,7 +35,7 @@ import type { BunPoseName } from '@mobile/mascot/poses';
 import { createAppReminderService } from '@mobile/notifications/useReminderUpkeep';
 import type { LocalReminderService } from '@mobile/notifications/reminders';
 import {
-  FIRST_REMINDER, FIRST_REMINDER_TIME, PRIVACY_PROMISES, SKIP_TO, STORY_STEPS, afterOnboarding, primingAnswer, stepAfter, storyProgress,
+  FIRST_REMINDER, FIRST_REMINDER_TIME, PRIVACY_PROMISES, SKIP_TO, STORY_STEPS, afterOnboarding, afterStory, primingAnswer, stepAfter, storyProgress,
 } from '@mobile/spend/v1/redesign/account/onboardingModel';
 import type { OnboardingStep, PrimingAnswer } from '@mobile/spend/v1/redesign/account/onboardingModel';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
@@ -39,6 +46,7 @@ import { PillButton } from '@mobile/ui/PillButton';
 import { PromiseList } from '@mobile/ui/PromiseList';
 import { StageHeader } from '@mobile/ui/StageHeader';
 import { ActionFooter, ActionRow } from '../ActionFooter';
+import { WelcomeSignInLink } from '../signin/WelcomeSignInLink';
 import { CoffeeMaths, PrimingOutcome, ReminderPreview, StoryDots } from './OnboardingParts';
 
 /** The reminder service's one call onboarding makes. */
@@ -47,6 +55,8 @@ export type OnboardingReminders = Pick<LocalReminderService, 'setPreference'>;
 export type OnboardingScreenProps = {
   /** Defaults to this device's reminder service, made when Turn on is pressed (on the web it has no reminders). */
   reminders?: OnboardingReminders;
+  /** The `signin` area (1C-T8): the welcome link, and the story ends at sign-in. Defaults to the flag; the catalogue turns it on. */
+  signinArea?: boolean;
 };
 
 /** The device's reminder, built as the root layout's upkeep and the Reminders screen build it, so upkeep sees nothing to redo. */
@@ -63,7 +73,8 @@ const POSES: Readonly<Record<OnboardingStep, BunPoseName>> = {
   reminder: 'sleepy',
 };
 
-export function OnboardingScreen({ reminders }: OnboardingScreenProps) {
+export function OnboardingScreen({ reminders, signinArea }: OnboardingScreenProps) {
+  const signin = signinArea ?? isRedesignEnabled('signin');
   const tc = useCopy();
   const locale = useActiveLocale();
   const router = useRouter();
@@ -94,6 +105,16 @@ export function OnboardingScreen({ reminders }: OnboardingScreenProps) {
   }, [step, title]);
 
   const finish = () => router.replace(afterOnboarding(isAuthed));
+
+  // The `signin` area: the story ends at sign-in from onboarding. With a
+  // session already, today's reminder step follows the story here until 1C-T9
+  // adds `/onboarding/reminder` and ends the story there (R99).
+  const endStory = () => {
+    if (isAuthed) setStep('reminder');
+    else router.replace(afterStory(false));
+  };
+  const skip = () => (signin ? endStory() : setStep(SKIP_TO));
+  const next = () => (signin && step === 'first-coffee' ? endStory() : setStep(stepAfter(step)));
 
   const turnOn = async () => {
     if (asked.current) return;
@@ -138,10 +159,13 @@ export function OnboardingScreen({ reminders }: OnboardingScreenProps) {
       <ActionFooter testID="onboarding-footer">
         {progress ? <StoryDots step={progress.step} total={progress.total} /> : null}
         {step !== 'reminder' ? (
-          <ActionRow
-            secondary={<PillButton kind="secondary" label={tc('Skip')} onPress={() => setStep(SKIP_TO)} />}
-            primary={<PillButton label={step === 'first-coffee' ? tc("Let's start!") : tc('Next')} onPress={() => setStep(stepAfter(step))} />}
-          />
+          <>
+            <ActionRow
+              secondary={<PillButton kind="secondary" label={tc('Skip')} onPress={skip} />}
+              primary={<PillButton label={step === 'first-coffee' ? tc("Let's start!") : tc('Next')} onPress={next} />}
+            />
+            {signin && step === 'coffee' ? <WelcomeSignInLink /> : null}
+          </>
         ) : priming.phase === 'answered' ? (
           <PillButton label={tc('Continue')} onPress={finish} />
         ) : (

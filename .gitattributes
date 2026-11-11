@@ -1,0 +1,4 @@
+# Controller briefs quote unified diffs, whose blank context lines are a single space.
+.claude/controller/briefs/*.md -whitespace
+# Planner kits hold unified diffs and patches, whose context lines may be a single space.
+.claude/controller/scratch/** -whitespace

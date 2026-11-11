@@ -28,15 +28,14 @@ function fakePort(permission: 'granted' | 'denied' | 'undetermined', answer: 'gr
       calls.cancelled.push(id);
       scheduled.delete(id);
     },
-    scheduleDaily: async (id, hour, minute, content) => void scheduled.set(id, { hour, minute, title: content.title }),
     scheduleWeekly: async (id, weekday, hour, minute, content) => void scheduled.set(id, { weekday, hour, minute, title: content.title }),
   };
   return { port, scheduled, calls };
 }
 
-function memoryPreferences(initial: StoredReminderPreference | null = null) {
+function memoryPreferences(initial: StoredReminderPreference | null = null, initialScheduledFor: string | null = null) {
   let saved: StoredReminderPreference | null = initial;
-  let scheduledFor: string | null = null;
+  let scheduledFor: string | null = initialScheduledFor;
   return {
     store: {
       load: async () => saved,
@@ -49,20 +48,25 @@ function memoryPreferences(initial: StoredReminderPreference | null = null) {
 }
 
 const ALL: readonly Weekday[] = [1, 2, 3, 4, 5, 6, 7];
+const EVERY_WEEKLY_ID = Object.values(WEEKLY_REMINDER_IDS).sort();
+const ids = (scheduled: Map<string, unknown>) => [...scheduled.keys()].sort();
 
-test('turning reminders on asks once, then schedules exactly one daily reminder at the local time', async () => {
+test("turning reminders on asks once, then schedules seven weekly reminders, each in its own day's words", async () => {
   const { port, scheduled, calls } = fakePort('undetermined');
   const prefs = memoryPreferences();
   let language = 'en';
-  const service = createLocalReminderService(port, prefs.store, () => ({ title: language === 'th' ? 'บันทึกรายจ่ายวันนี้' : "Log today's spending", body: '' }));
+  const service = createLocalReminderService(port, prefs.store, (day) => ({ title: `${language} ${day}`, body: '' }));
   assert.equal(await service.setPreference({ enabled: true, localTime: '20:30' }), 'scheduled');
   assert.equal(calls.requests, 1);
-  assert.deepEqual([...scheduled.entries()], [[DAILY_REMINDER_ID, { hour: 20, minute: 30, title: "Log today's spending" }]]);
-  // A new time replaces the reminder; a locale change re-schedules it in the new language, never duplicating.
+  // A daily trigger repeats one text, so every day is one weekly reminder per day.
+  assert.deepEqual(ids(scheduled), EVERY_WEEKLY_ID);
+  for (const day of ALL) assert.deepEqual(scheduled.get(WEEKLY_REMINDER_IDS[day]), { weekday: day, hour: 20, minute: 30, title: `en ${day}` });
+  // A new time replaces the reminders; a locale change re-schedules them in the new language, never duplicating.
   assert.equal(await service.setPreference({ enabled: true, localTime: '07:05' }), 'scheduled');
   language = 'th';
   assert.equal(await service.reschedule(), 'scheduled');
-  assert.deepEqual([...scheduled.entries()], [[DAILY_REMINDER_ID, { hour: 7, minute: 5, title: 'บันทึกรายจ่ายวันนี้' }]]);
+  assert.deepEqual(ids(scheduled), EVERY_WEEKLY_ID);
+  assert.deepEqual(scheduled.get(WEEKLY_REMINDER_IDS[3]), { weekday: 3, hour: 7, minute: 5, title: 'th 3' });
   assert.equal(calls.requests, 1);
   assert.equal(await service.setPreference({ enabled: false, localTime: '07:05' }), 'disabled');
   assert.equal(scheduled.size, 0);
@@ -92,24 +96,37 @@ test('unsupported platforms (web) say so; bad times are refused', async () => {
   for (const time of ['24:00', '7:00', '20:60', '']) await assert.rejects(ok.setPreference({ enabled: true, localTime: time }), RangeError);
 });
 
-test('a time zone or language change re-schedules the one reminder once; no change does nothing', async () => {
+test('a time zone or language change re-schedules the reminders once; no change does nothing', async () => {
   const { port, scheduled } = fakePort('granted');
   let schedules = 0;
-  const counting = { ...port, scheduleDaily: async (...args: Parameters<typeof port.scheduleDaily>) => ((schedules += 1), port.scheduleDaily(...args)) };
+  const counting = { ...port, scheduleWeekly: async (...args: Parameters<typeof port.scheduleWeekly>) => ((schedules += 1), port.scheduleWeekly(...args)) };
   let zone = 'Asia/Bangkok';
   let language = 'en';
   const service = createLocalReminderService(counting, memoryPreferences().store, () => ({ title: language, body: '' }), () => `${zone}|${language}`);
   assert.equal(await service.refresh(), 'disabled');
   await service.setPreference({ enabled: true, localTime: '20:00' });
   assert.equal(await service.refresh(), 'unchanged');
-  assert.equal(schedules, 1);
+  assert.equal(schedules, 7);
   language = 'th';
   assert.equal(await service.refresh(), 'scheduled');
   zone = 'Europe/London';
   assert.equal(await service.refresh(), 'scheduled');
   assert.equal(await service.refresh(), 'unchanged');
-  assert.equal(schedules, 3);
-  assert.deepEqual([...scheduled.values()], [{ hour: 20, minute: 0, title: 'th' }]);
+  assert.equal(schedules, 21);
+  assert.equal(scheduled.size, 7);
+  assert.ok([...scheduled.values()].every((reminder) => reminder.hour === 20 && reminder.minute === 0 && reminder.title === 'th'));
+});
+
+test("an install scheduled before the weekly wording re-schedules once at its next launch, so its daily reminder goes", async () => {
+  const { port, scheduled } = fakePort('granted');
+  // What S4 and R5 left on the phone: one daily reminder, scheduled for this very zone and language.
+  scheduled.set(DAILY_REMINDER_ID, { hour: 20, minute: 0, title: "Log today's spending" });
+  const prefs = memoryPreferences({ enabled: true, localTime: '20:00' }, 'Asia/Bangkok|th');
+  const service = createLocalReminderService(port, prefs.store, (day) => ({ title: `th ${day}`, body: '' }), () => 'Asia/Bangkok|th');
+  assert.equal(await service.refresh(), 'scheduled');
+  assert.deepEqual(ids(scheduled), EVERY_WEEKLY_ID);
+  assert.deepEqual(scheduled.get(WEEKLY_REMINDER_IDS[7]), { weekday: 7, hour: 20, minute: 0, title: 'th 7' });
+  assert.equal(await service.refresh(), 'unchanged');
 });
 
 test('provisional iOS delivery counts as granted; a denial the OS still allows is asked again only on opt-in', () => {
@@ -136,7 +153,7 @@ function fakeNotifications() {
 test('on Android the reminder has its own notification channel; on iOS quiet (provisional) delivery is asked for', async () => {
   const android = fakeNotifications();
   const androidPort = createNotificationsPort(android.api, 'android', () => 'Daily reminder');
-  await androidPort.scheduleDaily(DAILY_REMINDER_ID, 20, 0, { title: 't', body: 'b' });
+  await androidPort.scheduleWeekly(WEEKLY_REMINDER_IDS[1], 1, 20, 0, { title: 't', body: 'b' });
   assert.deepEqual(android.calls[0]?.slice(0, 2), ['channel', 'daily-reminder']);
   assert.equal(((android.calls[1]?.[1] as { trigger: { channelId?: string } }).trigger).channelId, 'daily-reminder');
   const ios = fakeNotifications();
@@ -150,16 +167,14 @@ test('on Android the reminder has its own notification channel; on iOS quiet (pr
 // ---------------------------------------------------------------------------
 // Weekdays (R5 Reminders): ISO weekdays, Monday = 1 … Sunday = 7.
 
-const ids = (scheduled: Map<string, unknown>) => [...scheduled.keys()].sort();
-
-test('a stored preference without weekdays (S4) reads as every day and keeps its one daily reminder', async () => {
+test('a stored preference without weekdays (S4) reads as every day: one weekly reminder per day', async () => {
   const { port, scheduled } = fakePort('granted');
   const prefs = memoryPreferences({ enabled: true, localTime: '20:00' });
   const service = createLocalReminderService(port, prefs.store, () => ({ title: 't', body: '' }), () => 'Asia/Bangkok|en');
   assert.deepEqual(EVERY_DAY, ALL);
   assert.deepEqual(await service.getPreference(), { enabled: true, localTime: '20:00', weekdays: ALL });
   assert.equal(await service.refresh(), 'scheduled');
-  assert.deepEqual([...scheduled.entries()], [[DAILY_REMINDER_ID, { hour: 20, minute: 0, title: 't' }]]);
+  assert.deepEqual(ids(scheduled), EVERY_WEEKLY_ID);
   // Damaged days read as every day too, never as none.
   for (const weekdays of [[], [0, 8], 'mon', null]) {
     const damaged = createLocalReminderService(port, memoryPreferences({ enabled: true, localTime: '20:00', weekdays } as StoredReminderPreference).store, () => ({ title: 't', body: '' }));
@@ -167,23 +182,23 @@ test('a stored preference without weekdays (S4) reads as every day and keeps its
   }
 });
 
-test('chosen days: one weekly reminder per day under its own fixed id; every day stays one daily reminder', async () => {
+test("chosen days: one weekly reminder per day under its own fixed id, in that day's own words", async () => {
   const { port, scheduled, calls } = fakePort('undetermined');
   const prefs = memoryPreferences();
-  const service = createLocalReminderService(port, prefs.store, () => ({ title: 't', body: '' }));
+  const service = createLocalReminderService(port, prefs.store, (day) => ({ title: `t${day}`, body: '' }));
   assert.equal(await service.setPreference({ enabled: true, localTime: '07:30', weekdays: [5, 1, 3, 3] }), 'scheduled');
   assert.deepEqual(ids(scheduled), [WEEKLY_REMINDER_IDS[5], WEEKLY_REMINDER_IDS[1], WEEKLY_REMINDER_IDS[3]].sort());
-  assert.deepEqual(scheduled.get(WEEKLY_REMINDER_IDS[1]), { weekday: 1, hour: 7, minute: 30, title: 't' });
-  assert.deepEqual(scheduled.get(WEEKLY_REMINDER_IDS[5]), { weekday: 5, hour: 7, minute: 30, title: 't' });
+  assert.deepEqual(scheduled.get(WEEKLY_REMINDER_IDS[1]), { weekday: 1, hour: 7, minute: 30, title: 't1' });
+  assert.deepEqual(scheduled.get(WEEKLY_REMINDER_IDS[5]), { weekday: 5, hour: 7, minute: 30, title: 't5' });
   // Stored sorted and without repeats, Monday first.
   assert.deepEqual(prefs.saved(), { enabled: true, localTime: '07:30', weekdays: [1, 3, 5] });
   assert.deepEqual(await service.getPreference(), { enabled: true, localTime: '07:30', weekdays: [1, 3, 5] });
 
-  // Every day: the daily reminder, and no weekly one is left behind.
+  // Every day: all seven weekly reminders, and never the daily one.
   assert.equal(await service.setPreference({ enabled: true, localTime: '07:30', weekdays: [7, 6, 5, 4, 3, 2, 1] }), 'scheduled');
-  assert.deepEqual(ids(scheduled), [DAILY_REMINDER_ID]);
+  assert.deepEqual(ids(scheduled), EVERY_WEEKLY_ID);
 
-  // The weekend only: the daily reminder goes, Saturday and Sunday come.
+  // The weekend only: the weekdays go, Saturday and Sunday stay.
   assert.equal(await service.setPreference({ enabled: true, localTime: '09:00', weekdays: [6, 7] }), 'scheduled');
   assert.deepEqual(ids(scheduled), [WEEKLY_REMINDER_IDS[6], WEEKLY_REMINDER_IDS[7]].sort());
   assert.equal(calls.requests, 1);
@@ -255,7 +270,7 @@ test('at least one day must stay chosen; only the days 1 (Monday) to 7 (Sunday) 
   assert.equal(scheduled.size, 0);
   // Left out, the days are every day (the S4 callers).
   assert.equal(await service.setPreference({ enabled: true, localTime: '20:00' }), 'scheduled');
-  assert.deepEqual(ids(scheduled), [DAILY_REMINDER_ID]);
+  assert.deepEqual(ids(scheduled), EVERY_WEEKLY_ID);
 });
 
 test('the service says whether the platform can remind at all', () => {

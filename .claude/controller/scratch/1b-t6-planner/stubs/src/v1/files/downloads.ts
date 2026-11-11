@@ -1,0 +1,56 @@
+import { DEFAULT_ATTACHMENT_LIMITS } from '@api/attachments/attachment-limits'
+import { ProblemException } from '@api/common/api-problem.filter'
+
+import { DownloadSlots, bodyStream, fileResponse, verifiedChunks } from '../../server/http/files'
+import { R2ObjectStore, UnavailableObjectStore } from '../../server/storage/r2-object-store'
+import { EXPORT_CONTENT_TYPE } from '../../vault/files/exports'
+import type { StoredExportFile } from '../../vault/files/exports'
+import type { V1Env } from '../env'
+import type { VaultReply } from '../protocol'
+import type { WorkerContext } from '../worker-routes'
+
+// File downloads the Worker streams from R2. Each download takes a slot first,
+// as the API counts downloads per process; here the count is per isolate.
+// A download asks the caller's vault, in one step, which stored file its grant
+// names (the vault's refusal is the answer when it names none), then streams
+// that object only while it matches what the vault recorded (matchingObject).
+// 1B-T6 (serveExportFile), 1B-T8 (serveSnapshotChunk) and 1B-T9
+// (serveReceiptFile) add their serve functions below, in that order, each
+// under its own `// 1B-Tn:` line.
+
+/** Export downloads one isolate streams at once (the API's EXPORT_DOWNLOADS_PER_PROCESS, 4). */
+export const EXPORT_SLOTS = new DownloadSlots(4)
+
+/** Receipt downloads one isolate streams at once, and per account (DEFAULT_ATTACHMENT_LIMITS: 8 and 2). */
+export const RECEIPT_SLOTS = new DownloadSlots(DEFAULT_ATTACHMENT_LIMITS.downloadsPerProcess, DEFAULT_ATTACHMENT_LIMITS.downloadsPerAccount)
+
+/** A file the vault recorded: its key, and the size and SHA-256 it was published with. */
+export type StoredFile = { key: string; bytes: number; sha256: string }
+
+/**
+ * The R2 object of a recorded file, as a stream, only while its size and its
+ * recorded digest still match the vault's record; otherwise 404 NOT_FOUND, so a
+ * missing or swapped object is never served. It never reads the body whole: the
+ * caller checks the digest as it streams (verifiedChunks).
+ */
+export async function matchingObject(env: Pick<V1Env, 'OBJECTS'>, file: StoredFile): Promise<AsyncIterable<Uint8Array>> {
+  const store = env.OBJECTS ? new R2ObjectStore(env.OBJECTS) : new UnavailableObjectStore()
+  const object = await store.getStream(file.key)
+  if (!object || object.bytes !== file.bytes || (object.sha256 !== '' && object.sha256 !== file.sha256)) throw new ProblemException(404, 'NOT_FOUND')
+  return object.body
+}
+
+// 1B-T6: exports.
+
+/**
+ * GET /v1/export-files/:grant (the edge's handler, on the vault). The
+ * `exports.file` step names the caller's own ready, unexpired file; a grant
+ * that is not current or not this person's is the vault's 404. Then the CSV
+ * streams from R2 with its recorded length and its download name, its digest
+ * checked as it goes. At most EXPORT_SLOTS downloads stream at once in an
+ * isolate; more are 503 with a retry. The slot is returned when the body ends.
+ */
+export async function serveExportFile(_w: WorkerContext): Promise<Response | VaultReply> {
+  // 1B-T6 typed stub (RED): the download answers 501.
+  return new Response(null, { status: 501 })
+}

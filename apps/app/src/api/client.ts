@@ -68,7 +68,7 @@ export function createMobileApiClient(options: {
 }
 
 // ---------------------------------------------------------------------------
-// v1 transport (PostgreSQL/Auth0 API). Separate from the legacy /spend client
+// v1 transport (the PostgreSQL API). Separate from the legacy /spend client
 // above, which stays only for unconverted development screens.
 
 /** What the session layer (F5) exposes to the transport. */
@@ -160,6 +160,8 @@ export type V1RequestOptions<T> = {
    * refreshed, and never reported as the session ending.
    */
   credentials?: { accessToken: string; binding?: string };
+  /** Sent as Accept-Language: the language of anything the server sends later about this request (deletion's email, K11). */
+  acceptLanguage?: 'th' | 'en';
   /** The command carries a purpose proof: REAUTH_REQUIRED refuses that proof, not the session. */
   proof?: boolean;
   /**
@@ -223,6 +225,16 @@ const sessionEnd = (status: number, code: string): V1SessionEnd['code'] | null =
 };
 const NETWORK_RETRIES = 2;
 
+/** A private IPv4 literal (10/8, 172.16/12, 192.168/16), read from the hostname the URL parser normalised. */
+function privateIpv4(hostname: string): boolean {
+  const match = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(hostname);
+  if (!match) return false;
+  const octets = match.slice(1).map(Number);
+  if (octets.some((octet) => octet > 255)) return false;
+  const [first, second] = octets;
+  return first === 10 || (first === 172 && second >= 16 && second <= 31) || (first === 192 && second === 168);
+}
+
 /**
  * The v1 transport: every private request carries the access token, the
  * opaque session binding and `X-GoGoSpend-Client`; every command carries its
@@ -246,6 +258,13 @@ export function createV1Transport(options: {
   client: V1ClientVersion | null;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
+  /**
+   * true: `http://` to a private IPv4 literal (10/8, 172.16/12, 192.168/16) is accepted, as loopback is.
+   * For a development build reaching `wrangler dev` on the LAN; release builds never set it (plan 1D, L8).
+   */
+  allowLanHttp?: boolean;
+  /** true adds `X-GoGoSpend-Analytics: off`, which stops server events for that request (plan 1D, L4). Read at each request. */
+  analyticsOff?: () => boolean;
 }): V1Transport {
   let base: URL;
   try {
@@ -254,7 +273,8 @@ export function createV1Transport(options: {
     throw new V1Error('invalid', 0, 'CONFIG_REQUIRED');
   }
   const loopback = ['localhost', '127.0.0.1', '[::1]'].includes(base.hostname);
-  if (base.username || base.password || !(base.protocol === 'https:' || (base.protocol === 'http:' && loopback))) {
+  const lan = options.allowLanHttp === true && privateIpv4(base.hostname);
+  if (base.username || base.password || !(base.protocol === 'https:' || (base.protocol === 'http:' && (loopback || lan)))) {
     throw new V1Error('invalid', 0, 'CONFIG_REQUIRED');
   }
   const baseUrl = options.baseUrl.replace(/\/+$/, '');
@@ -324,7 +344,8 @@ export function createV1Transport(options: {
         Authorization: `Bearer ${token}`,
         'X-GoGoSpend-Client': `${options.client.platform}/${options.client.version}`,
       };
-      if (binding) headers['X-GoGoSpend-Session'] = binding;
+      if (options.analyticsOff?.() === true) headers['X-GoGoSpend-Analytics'] = 'off';
+      // The vault reads the session from the JWT (the `sid` claim). The session id stays on the snapshot so a missing one still refuses the request before anything is sent.
       if (request.body !== undefined && request.raw) throw new V1Error('invalid', 0, 'INVALID_BODY');
       if (request.body !== undefined) headers['Content-Type'] = 'application/json';
       if (request.raw) {
@@ -336,6 +357,7 @@ export function createV1Transport(options: {
         headers['X-GoGoSpend-Command-Schema'] = String(request.command.schemaVersion);
         if (request.command.ifMatch !== undefined) headers['If-Match'] = `"${request.command.ifMatch}"`;
       }
+      if (request.acceptLanguage) headers['Accept-Language'] = request.acceptLanguage;
       // Serialized once, so every retry sends byte-identical content.
       const body: string | Uint8Array | undefined = request.raw ? request.raw.bytes : request.body === undefined ? undefined : JSON.stringify(request.body);
       const send = async (): Promise<Answer> => {

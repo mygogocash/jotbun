@@ -1,0 +1,29 @@
+--- a/apps/app/src/screens/redesign/signin/draftCopy.ts
++++ b/apps/app/src/screens/redesign/signin/draftCopy.ts
+@@ -57,7 +57,7 @@
+   'or because it was signed out from another phone': 'หรือมีการออกจากระบบจากอีกเครื่อง',
+   'Records still on this phone: {count}': 'ยังอยู่ในเครื่องนี้ {count} รายการ',
+   'Not sent yet. They send by themselves after you sign in.': 'ยังไม่ได้ส่ง จะส่งให้เองหลังเข้าสู่ระบบ',
+-  'Records waiting to send': 'รายการที่รอส่ง',
++  'Records waiting to send': 'รายการที่รอส่ง', // DRAFT
+   'Everything you already sent is in your account.': 'บันทึกที่ส่งแล้วอยู่ในบัญชีของคุณครบ',
+   'Use another way': 'ใช้วิธีอื่น',
+   // The session-ended screen: the board's "ใช้บัญชี Apple เดิมของกานต์" without a name, the account-unavailable variant
+@@ -65,6 +65,7 @@
+   'Use the same Google account, so the records go to the same place.': 'ใช้บัญชี Google เดิม รายการจึงจะส่งเข้าที่เดิม', // DRAFT
+   'Use the same email, so the records go to the same place.': 'ใช้อีเมลเดิม รายการจึงจะส่งเข้าที่เดิม', // DRAFT
+   'Sign in to the same account, so the records go to the same place.': 'เข้าสู่ระบบบัญชีเดิม รายการจึงจะส่งเข้าที่เดิม', // DRAFT
++  'Email a code to another address': 'ส่งรหัสไปที่อีเมลอื่น', // DRAFT
+   'This account is not available': 'บัญชีนี้ใช้งานไม่ได้', // DRAFT
+   "This account can't be used right now. If you asked to delete it, the deletion is under way.": 'บัญชีนี้ใช้งานไม่ได้ในตอนนี้ ถ้าคุณขอลบบัญชีไว้ ระบบกำลังลบอยู่', // DRAFT
+   "This account can't be used right now.": 'บัญชีนี้ใช้งานไม่ได้ในตอนนี้', // DRAFT
+@@ -120,8 +121,7 @@
+   "Couldn't confirm it's you. Try again, or use another way.": 'ยืนยันตัวตนไม่สำเร็จ ลองอีกครั้งหรือใช้วิธีอื่น', // DRAFT
+   // bw-welcome
+   'Already have an account? Sign in': 'มีบัญชีแล้ว เข้าสู่ระบบ',
+-  // sa-terms
+-  'Our promises': 'คำสัญญาของเรา',
++  // sa-terms (its title, "Our promises", is approved copy and stays on useCopy)
+   'Three things Jotbun always does for you': 'สามข้อที่ Jotbun ทำให้คุณเสมอ',
+   'No bank connection': 'ไม่ผูกบัญชีธนาคาร',
+   'Jotbun never connects to your bank. You write down every record yourself.': 'Jotbun ไม่เชื่อมต่อกับธนาคารของคุณ คุณเป็นคนจดเองทุกรายการ',

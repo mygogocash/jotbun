@@ -10,6 +10,7 @@ import { AppState, Platform } from 'react-native';
 import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
 
+import { eraseStoredConsent } from '@mobile/analytics/consentStorage';
 import { fetchAccountId } from '@mobile/api/sharedV1';
 import { getV1SessionSnapshot, subscribeSession } from '@mobile/auth/session';
 import { eraseStoredBunIntensity } from '@mobile/mascot/bunIntensityStorage';
@@ -21,6 +22,7 @@ import { eraseStoredHapticPreference } from '@mobile/lib/hapticPreferenceStorage
 import type { AccountDatabase } from '@mobile/storage/accountDatabase';
 import { createDeviceAccountDatabase } from '@mobile/storage/deviceDiary';
 import { createDeviceSync } from '@mobile/sync/deviceSync';
+import { eraseDeviceSettings } from '@mobile/wallet/store/deviceWalletStore';
 import { createDiarySessionResolver } from './diarySession';
 import { eraseAllLegacyImportDrafts, eraseLegacyImportDraft } from './deviceImportDraftStore';
 import { createKnownAccount } from './knownAccount';
@@ -49,14 +51,17 @@ const knownAccount = createKnownAccount(
  * The explicit sign-out erase, with the diary (which takes its own import
  * draft): a plain-text import draft an older build left for this account, the
  * bun's device settings (its intensity and the day the Quick add cheer last
- * showed), and History's view kept while a record is open (memory only), so
- * the next person starts from the defaults. A setting that cannot be erased
- * never stops the diary's erase. Exported for its test.
+ * showed), History's view kept while a record is open (memory only), and the
+ * wallet's device settings, and this phone's analytics answer (1D-T6), so the
+ * next person starts from the defaults. An
+ * account's looks stay. A setting that cannot be erased never stops the
+ * diary's erase. Exported for its test.
  */
 export async function eraseWithDiary(accountId: string): Promise<void> {
   forgetKeptHistory();
   await eraseLegacyImportDraft(accountId);
-  await Promise.all([eraseStoredBunIntensity().catch(() => undefined), eraseStoredHapticPreference().catch(() => undefined), eraseCheerDay(), eraseCelebratedWeek(), eraseCashbackDeclined()]);
+  await Promise.all([eraseStoredBunIntensity().catch(() => undefined), eraseStoredHapticPreference().catch(() => undefined), eraseCheerDay(), eraseCelebratedWeek(), eraseCashbackDeclined(), eraseStoredConsent().catch(() => undefined)]);
+  await eraseDeviceSettings().catch(() => undefined);
 }
 
 function createDeviceDiary(): { diary: SpendDiary; refresh: () => Promise<void>; dispose: () => Promise<void> } {

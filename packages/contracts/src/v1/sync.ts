@@ -20,7 +20,10 @@ import { isBudgetSnapshot } from "./budgets.ts";
 import { isCategorySnapshot } from "./categories.ts";
 import { isImportReviewSnapshot, isImportSelectionSnapshot } from "./imports.ts";
 import { isExportRequestSnapshot } from "./privacy.ts";
+import { isSettingsSnapshot } from "./settings.ts";
+import { isSlipInboxSnapshot } from "./slips.ts";
 import { isTransactionSnapshot } from "./transactions.ts";
+import { isTripSnapshot } from "./trips.ts";
 import { isUuid } from "./validation.ts";
 import { isWalletSnapshot } from "./wallets.ts";
 
@@ -91,6 +94,11 @@ export const SYNC_ENTITY_VALIDATORS: Readonly<Record<string, (snapshot: unknown)
   // (revisions and counts only; candidate fields are never synced).
   import_review: isImportReviewSnapshot,
   import_selection: isImportSelectionSnapshot,
+  // Phase 4 slips (A28): the inbox's open count only; drafts are read online and never synced.
+  slip_inbox: isSlipInboxSnapshot,
+  // Phase 5 travel (P5-T3): trips, and the one settings entity that holds the home currency (X5).
+  trip: isTripSnapshot,
+  settings: isSettingsSnapshot,
 };
 
 const REVISION = /^(0|[1-9][0-9]{0,18})$/;

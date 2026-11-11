@@ -1,0 +1,24 @@
+--- /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t5-fix-planner/orig/src/background/parse-consumer.ts	2026-11-08 20:03:28
++++ /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t5-fix-planner/real/src/background/parse-consumer.ts	2026-11-08 20:09:30
+@@ -77,12 +77,17 @@
+ const REJECTED: PreviewRecord = { preview: { status: 'rejected', layout: null, issues: ['parse_failed'], image: null, header_fingerprint: null }, candidates: [] }
+ 
+ /**
+- * A `parsed` reply checked again, as the API's worker does: an image comes
+- * exactly with an image format, its bytes are that format by their magic,
+- * at most the upload cap, and its own header gives the size the parser claimed
+- * with no metadata. Anything else is the rejected preview, with no image.
++ * A `parsed` reply checked again, as previewFromOutcome checks a parse
++ * (apps/api/src/imports/parse-outcome.ts): a rejected record is kept as it is,
++ * with its own issue (image_too_large, parse_timeout, ...), and never stores an
++ * image. A readable one has an image exactly for an image format, its bytes
++ * are that format by their magic, at most the upload cap, and its own header
++ * gives the size the parser claimed with no metadata. Anything else is the
++ * rejected preview parse_failed, with no image.
+  */
+ export function checkedParse(format: ParseFormat, reply: Extract<ParseServiceReply, { kind: 'parsed' }>): { record: PreviewRecord; image: { format: ImageFormat; bytes: Buffer; width: number; height: number } | null } {
++  // The API rejects before it looks for an image (parse-outcome.ts, recordFor), so a rejection keeps its code.
++  if (reply.record.preview.status === 'rejected') return { record: reply.record, image: null }
+   const expectsImage = (IMAGE_FORMATS as readonly string[]).includes(format)
+   const image = reply.image
+   if (expectsImage !== (image !== null)) return { record: REJECTED, image: null }

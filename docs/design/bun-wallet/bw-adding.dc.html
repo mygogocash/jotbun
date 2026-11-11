@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Bun Wallet adding a wallet</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;700&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0B0A0E; color: #FFFFFF; font-family: 'Anuphan', 'DM Sans', sans-serif; position: relative; overflow: hidden; padding: 54px 20px 32px; display: flex; flex-direction: column; gap: 16px">
+  <button type="button" aria-label="ปิด" style="width: 44px; height: 44px; border-radius: 50%; border: none; background: #24222B; display: flex; align-items: center; justify-content: center; padding: 0"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"></path></svg></button>
+
+  <div style="position: relative; height: 230px; margin-top: 4px">
+    <div style="position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(201, 184, 255, 0.55) 1px, transparent 1.6px); background-size: 7px 7px; opacity: 0.5; border-radius: 26px"></div>
+    <div style="position: absolute; left: 14px; right: 14px; top: 16px; height: 200px; border-radius: 22px; background: linear-gradient(135deg, #D9CCFF, #A891F7 55%, #EFE9FF); box-shadow: 0 24px 60px rgba(168, 145, 247, 0.35); padding: 18px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start">
+        <svg width="48" height="42" viewBox="4 6 56 50" aria-hidden="true"><path d="M6 44C6 22 18 8 32 8C46 8 58 22 58 44C58 51 52 54 44 54H20C12 54 6 51 6 44Z" fill="#FFF6E6" stroke="#111014" stroke-width="3"></path><circle cx="24" cy="30" r="3.4" fill="#111014"></circle><circle cx="40" cy="30" r="3.4" fill="#111014"></circle><ellipse cx="18.5" cy="36" rx="4" ry="2.4" fill="#F6B6CE"></ellipse><ellipse cx="45.5" cy="36" rx="4" ry="2.4" fill="#F6B6CE"></ellipse><path d="M29 36Q32 39 35 36" fill="none" stroke="#111014" stroke-width="2.6" stroke-linecap="round"></path></svg>
+        <span style="font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700; color: #111014">Jotbun</span>
+      </div>
+      <div style="color: #111014">
+        <div style="font-size: 15px; font-weight: 500">บัญชีหลัก</div>
+        <div style="font-family: 'DM Sans', sans-serif; font-size: 30px; font-weight: 700; letter-spacing: -0.02em">฿24,860</div>
+      </div>
+    </div>
+  </div>
+
+  <div role="status">
+    <div style="display: flex; align-items: center; gap: 8px; font-size: 26px; font-weight: 700">เพิ่มกระเป๋าแล้ว <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5L19.5 7" fill="none" stroke="#B9A3F9" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+    <div style="font-size: 16px; color: #A9A6B6; margin-top: 2px">บัญชีหลักพร้อมให้จดแล้ว</div>
+  </div>
+
+  <div style="background: #1C1B22; border-radius: 16px; overflow: hidden">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #2C2A33; font-size: 16px"><span style="color: #A9A6B6">ชื่อ</span><span>บัญชีหลัก</span></div>
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #2C2A33; font-size: 16px"><span style="color: #A9A6B6">ยอดเริ่มต้น</span><span style="font-family: 'DM Sans', sans-serif; font-weight: 700">฿24,860</span></div>
+    <div style="padding: 12px 16px; border-bottom: 1px solid #2C2A33">
+      <div style="font-size: 14px; color: #A9A6B6; margin-bottom: 8px">หน้าบัน</div>
+      <div style="display: flex; gap: 10px">
+        <span style="width: 44px; height: 44px; border-radius: 50%; background: #2C2A33; box-shadow: 0 0 0 2px #B9A3F9; display: flex; align-items: center; justify-content: center"><svg width="30" height="26" viewBox="4 6 56 50" aria-hidden="true"><path d="M6 44C6 22 18 8 32 8C46 8 58 22 58 44C58 51 52 54 44 54H20C12 54 6 51 6 44Z" fill="#FFF6E6"></path><circle cx="24" cy="30" r="3.6" fill="#111014"></circle><circle cx="40" cy="30" r="3.6" fill="#111014"></circle><path d="M29 36Q32 39 35 36" fill="none" stroke="#111014" stroke-width="2.6" stroke-linecap="round"></path></svg></span>
+        <span style="width: 44px; height: 44px; border-radius: 50%; background: #2C2A33; display: flex; align-items: center; justify-content: center"><svg width="30" height="26" viewBox="4 6 56 50" aria-hidden="true"><path d="M6 44C6 22 18 8 32 8C46 8 58 22 58 44C58 51 52 54 44 54H20C12 54 6 51 6 44Z" fill="#FFF6E6"></path><circle cx="24" cy="30" r="3.6" fill="#111014"></circle><path d="M37 30h7" stroke="#111014" stroke-width="3" stroke-linecap="round"></path><path d="M28 35Q32 41 36 35Z" fill="#111014"></path></svg></span>
+        <span style="width: 44px; height: 44px; border-radius: 50%; background: #2C2A33; display: flex; align-items: center; justify-content: center"><svg width="30" height="26" viewBox="4 6 56 50" aria-hidden="true"><path d="M6 44C6 22 18 8 32 8C46 8 58 22 58 44C58 51 52 54 44 54H20C12 54 6 51 6 44Z" fill="#FFF6E6"></path><path d="M20 30h7M37 30h7" stroke="#111014" stroke-width="3" stroke-linecap="round"></path><path d="M29 37Q32 39 35 37" fill="none" stroke="#111014" stroke-width="2.6" stroke-linecap="round"></path></svg></span>
+        <span style="width: 44px; height: 44px; border-radius: 50%; background: #2C2A33; display: flex; align-items: center; justify-content: center"><svg width="30" height="26" viewBox="4 6 56 50" aria-hidden="true"><path d="M6 44C6 22 18 8 32 8C46 8 58 22 58 44C58 51 52 54 44 54H20C12 54 6 51 6 44Z" fill="#FFF6E6"></path><path d="M20 30Q24 25 28 30M36 30Q40 25 44 30" fill="none" stroke="#111014" stroke-width="2.8" stroke-linecap="round"></path><path d="M28 35Q32 42 36 35Z" fill="#111014"></path></svg></span>
+        <span style="width: 44px; height: 44px; border-radius: 50%; background: #2C2A33; display: flex; align-items: center; justify-content: center"><svg width="30" height="26" viewBox="4 6 56 50" aria-hidden="true"><path d="M6 44C6 22 18 8 32 8C46 8 58 22 58 44C58 51 52 54 44 54H20C12 54 6 51 6 44Z" fill="#FFF6E6"></path><circle cx="24" cy="30" r="3.6" fill="#111014"></circle><circle cx="40" cy="30" r="3.6" fill="#111014"></circle><circle cx="32" cy="38" r="2.6" fill="#111014"></circle></svg></span>
+      </div>
+    </div>
+    <div style="padding: 12px 16px">
+      <div style="font-size: 14px; color: #A9A6B6; margin-bottom: 8px">วัสดุ</div>
+      <div style="display: flex; gap: 10px">
+        <span style="width: 44px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, #D9CCFF, #A891F7 55%, #EFE9FF); box-shadow: 0 0 0 2px #0B0A0E, 0 0 0 4px #B9A3F9"></span>
+        <span style="width: 44px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, #FFF4DC, #F3E2BE)"></span>
+        <span style="width: 44px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, #4A4852, #121116); border: 1px solid #3A3842"></span>
+        <span style="width: 44px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, #D6EEFF, #8CC8F5)"></span>
+        <span style="width: 44px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, #FFE2CF, #FFAE85)"></span>
+      </div>
+    </div>
+  </div>
+
+  <button type="button" style="margin-top: auto; height: 56px; border-radius: 16px; border: none; background: #FFFFFF; color: #111014; font-family: inherit; font-size: 17px; font-weight: 700">เสร็จ</button>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

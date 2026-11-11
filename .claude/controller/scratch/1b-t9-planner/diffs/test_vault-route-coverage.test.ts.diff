@@ -1,0 +1,31 @@
+--- a/test/vault-route-coverage.test.ts
++++ b/test/vault-route-coverage.test.ts
+@@ -32,9 +32,12 @@
+     expect(new Set(listed).size).toBe(listed.length)
+   })
+ 
+-  it('Tasks 2 to 7 and 8a, the bridge, 1B-T5 and 1B-T6 port the front door, wallets, categories, transactions, budgets, history, the summary, command status, the sync delta feed, the cashback catalogue, statement uploads and exports, and nothing else', () => {
++  it('Tasks 2 to 7 and 8a, the bridge, 1B-T5, 1B-T6 and 1B-T9 port the front door, wallets, categories, transactions, budgets, history, the summary, command status, the sync delta feed, the cashback catalogue, statement uploads, exports and receipts, and nothing else', () => {
+     expect(VAULT_V1_ROUTES.map((route) => keyOf(route.method, route.path)).filter((key) => !VAULT_ADDED_ROUTES.includes(key)).sort()).toEqual([
+       'DELETE /v1/transactions/:id',
++      'DELETE /v1/transactions/:id/attachment',
++      'GET /v1/attachment-files/:grant',
++      'GET /v1/attachments/:id/grant',
+       'GET /v1/bridge/gogocash/catalogue',
+       'GET /v1/budgets/:month',
+       'GET /v1/categories',
+@@ -64,12 +67,14 @@
+       'POST /v1/me/logout',
+       'POST /v1/me/policy-acceptances',
+       'POST /v1/transactions',
++      'POST /v1/transactions/:id/attachment',
+       'POST /v1/transactions/:id/restore',
+       'POST /v1/wallets',
+       'POST /v1/wallets/:id/archive',
+       'POST /v1/wallets/:id/unarchive',
+       'PUT /v1/budgets/:month',
+       'PUT /v1/me/privacy-preferences',
++      'PUT /v1/transactions/:id/attachment',
+     ])
+   })
+ 

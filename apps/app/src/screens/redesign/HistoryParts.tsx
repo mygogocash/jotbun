@@ -22,6 +22,7 @@ import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE } from '@mobile/ui/layout';
 import { PillButton } from '@mobile/ui/PillButton';
 import type { RecordRowState } from '@mobile/ui/RecordRow';
 import { SearchField as KitSearchField } from '@mobile/ui/SearchField';
+import { useConflictCopy } from './conflict/conflictCopy.draft';
 
 export { FilterChips } from '@mobile/ui/FilterChip';
 export type { ChipOption } from '@mobile/ui/FilterChip';
@@ -102,6 +103,16 @@ export function Notice({ message, tone = 'status', action }: { message: string; 
       {action ? <PillButton kind="secondary" label={action.label} busy={action.busy} onPress={action.onPress} /> : null}
     </View>
   );
+}
+
+/**
+ * C16 (1D-T9): under a record whose refused edit waits for the person's
+ * choice. In words, ink and bold, as a state that waits on the person; never
+ * a colour alone. Draft copy until E2.
+ */
+export function ChoiceWaitingCaption() {
+  const copy = useConflictCopy();
+  return <BunText testID="choice-waiting" variant="caption" style={{ fontWeight: '700', paddingBottom: BUN_SPACE.xs }}>{copy('waiting')}</BunText>;
 }
 
 export function LoadingBlock({ label }: { label: string }) {

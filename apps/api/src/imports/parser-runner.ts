@@ -420,6 +420,7 @@ const ROW_ID = /^row:[1-9][0-9]{0,7}$/;
 const AMOUNT = /^[1-9][0-9]{0,10}$/;
 const DATE = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/;
 const BASE64 = /^[A-Za-z0-9+/]*={0,2}$/;
+const FINGERPRINT = /^[0-9a-f]{64}$/;
 const LAYOUTS = ['meowjot', 'moneylover', 'spendee', 'generic', 'receipt'];
 const TYPES = ['expense', 'income', 'transfer'];
 const ROW_KEYS = ['source_row_id', 'occurred_on', 'type', 'amount_minor', 'wallet_label', 'category_label', 'merchant', 'note', 'issues'];
@@ -446,6 +447,8 @@ const RECEIPT_ROW = JSON.stringify({
 const isCount = (value: unknown) => Number.isSafeInteger(value) && (value as number) >= 0;
 const isUsage = (value: unknown) => isRecord(value) && keysAre(value, ['max_rss_kb', 'cpu_ms']) && isCount(value.max_rss_kb) && isCount(value.cpu_ms);
 const isText = (value: unknown) => value === null || (typeof value === 'string' && value.length > 0 && value.length <= LIMITS.cellChars);
+/** A table's header fingerprint (64 lowercase hex), or null. */
+const isFingerprint = (value: unknown) => value === null || (typeof value === 'string' && FINGERPRINT.test(value));
 
 function isDate(value: unknown): boolean {
   if (value === null) return true;
@@ -516,13 +519,13 @@ export function validateParseResult(value: unknown): ParseResult | null {
   if (value.ok === false) {
     return keysAre(value, ['ok', 'code', 'usage']) && typeof value.code === 'string' && CODE.test(value.code) && isUsage(value.usage) ? (value as ParseResult) : null;
   }
-  if (value.ok !== true || !keysAre(value, ['ok', 'layout', 'rows', 'file_issues', 'image', 'usage'])) return null;
-  if (!LAYOUTS.includes(value.layout as string) || !isUsage(value.usage)) return null;
+  if (value.ok !== true || !keysAre(value, ['ok', 'layout', 'rows', 'file_issues', 'image', 'header_fingerprint', 'usage'])) return null;
+  if (!LAYOUTS.includes(value.layout as string) || !isUsage(value.usage) || !isFingerprint(value.header_fingerprint)) return null;
   if (!Array.isArray(value.file_issues) || value.file_issues.length > 32 || !value.file_issues.every((code) => typeof code === 'string' && FILE_ISSUES.includes(code))) return null;
   if (!Array.isArray(value.rows)) return null;
   if (value.layout === 'receipt') {
-    // Exactly one image, one review-only row and the notice that nothing was read from it.
-    if (value.image === null || !isImageResult(value.image)) return null;
+    // Exactly one image, one review-only row and the notice that nothing was read from it; an image has no header.
+    if (value.image === null || !isImageResult(value.image) || value.header_fingerprint !== null) return null;
     if (value.rows.length !== 1 || !isReceiptRow(value.rows[0]) || JSON.stringify(value.file_issues) !== '["receipt_fields_unread"]') return null;
     return value as ParseResult;
   }

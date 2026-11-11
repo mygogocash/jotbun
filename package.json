@@ -29,6 +29,7 @@
     "install:edge": "npm ci --prefix apps/edge --no-audit --no-fund",
     "typecheck:edge": "npm run typecheck --prefix apps/edge",
     "test:edge": "npm test --prefix apps/edge",
+    "test:edge:workers": "npm run test:workers --prefix apps/edge",
     "build:edge": "npm run build --prefix apps/edge",
     "test:edge:db": "npm run test:db --prefix apps/edge"
   },

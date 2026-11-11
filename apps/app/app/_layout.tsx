@@ -13,6 +13,12 @@ import { useReminderUpkeep } from '@mobile/notifications/useReminderUpkeep';
 import { BunIntensityProvider } from '@mobile/mascot/BunIntensityProvider';
 import { HapticsProvider } from '@mobile/lib/HapticsProvider';
 import { useReducedMotion } from '@mobile/hooks/useReducedMotion';
+import { installAppAuth } from '@mobile/auth/appAuth';
+import { AnalyticsUpkeep } from '@mobile/analytics/AnalyticsUpkeep';
+import { WalletRoot } from '@mobile/wallet/WalletRoot';
+
+// Sign-in: the Better Auth provider, installed once before any screen reads the session.
+installAppAuth();
 
 // The app's language: the person's choice in Settings, else the device's
 // (Thai, English or Vietnamese). A new choice applies at once, through the
@@ -30,7 +36,23 @@ function RootStack() {
   const reducedMotion = useReducedMotion();
   useEffect(() => { if (fontError) console.warn('Bundled fonts could not load; using the system fallback.'); }, [fontError]);
   if ((!fontsLoaded && !fontError) || !ready) return <View style={{ flex: 1, justifyContent: 'center' }}><ActivityIndicator accessibilityLabel="Loading Jotbun" /></View>;
-  return <HapticsProvider><BunIntensityProvider><SafeAreaProvider><ThemeProvider><LocaleUpkeep /><ThemedStatusBar /><Stack screenOptions={{ headerShown: false, animation: reducedMotion ? 'fade' : 'default' }} /></ThemeProvider></SafeAreaProvider></BunIntensityProvider></HapticsProvider>;
+  // The wallet root (P2-T2): Gesture Handler's root view and the wallet's one reduced-motion answer, around every screen.
+  return (
+    <HapticsProvider>
+      <BunIntensityProvider>
+        <SafeAreaProvider>
+          <ThemeProvider>
+            <WalletRoot>
+              <LocaleUpkeep />
+              <AnalyticsUpkeep />
+              <ThemedStatusBar />
+              <Stack screenOptions={{ headerShown: false, animation: reducedMotion ? 'fade' : 'default' }} />
+            </WalletRoot>
+          </ThemeProvider>
+        </SafeAreaProvider>
+      </BunIntensityProvider>
+    </HapticsProvider>
+  );
 }
 
 /** What follows the language beyond the words: the UI font for its script, and the local reminders written in it. */

@@ -65,7 +65,6 @@ function harness({ stored = null, permission = 'granted', answer = 'granted', su
       return answer;
     },
     cancel: async (id) => void scheduled.delete(id),
-    scheduleDaily: async (id, hour, minute, content) => void scheduled.set(id, { hour, minute, title: content.title }),
     scheduleWeekly: async (id, weekday, hour, minute, content) => void scheduled.set(id, { weekday, hour, minute, title: content.title }),
   };
   const service = createLocalReminderService(
@@ -92,6 +91,9 @@ function heldService(base: LocalReminderService) {
   return { service, held, asked };
 }
 
+/** A Tuesday evening: every day chosen, the preview shows Tuesday's reminder. */
+const TUESDAY = new Date(2026, 9, 27, 18, 0);
+
 function mount(service: LocalReminderService | undefined, { locale = 'en', mode = 'light', intensity }: { locale?: Locale; mode?: Mode; intensity?: BunIntensity } = {}) {
   if (intensity) window.localStorage.setItem(BUN_INTENSITY_STORAGE_KEY, intensity);
   return render(
@@ -99,7 +101,7 @@ function mount(service: LocalReminderService | undefined, { locale = 'en', mode 
       <ThemeProvider>
         <ThemePreferenceOverride preference={mode}>
           <BunIntensityProvider>
-            <RemindersScreen service={service} />
+            <RemindersScreen service={service} now={TUESDAY} />
           </BunIntensityProvider>
         </ThemePreferenceOverride>
       </ThemeProvider>
@@ -198,7 +200,7 @@ test('on with every day: the time, seven chosen days Monday first, and the live 
   expect(within(screen.getByRole('group', { name: 'Days' })).getAllByRole('checkbox')).toHaveLength(7);
 
   const preview = screen.getByTestId('reminders-preview');
-  expect(within(preview).getByText("Log today's spending")).toBeTruthy();
+  expect(within(preview).getByText('Bun saved you a fresh page')).toBeTruthy();
   expect(within(preview).getByText('Add what you spent today in Jotbun.')).toBeTruthy();
   expect(within(preview).getByText('Jotbun')).toBeTruthy();
   expect(within(preview).getByText('20:00')).toBeTruthy();
@@ -206,7 +208,9 @@ test('on with every day: the time, seven chosen days Monday first, and the live 
 
   fireEvent.click(saveButton());
   expect(await screen.findByText('Saved. Your reminder is on.')).toBeTruthy();
-  expect([...h.scheduled.entries()]).toEqual([[DAILY_REMINDER_ID, { hour: 20, minute: 0, title: "Log today's spending" }]]);
+  expect([...h.scheduled.keys()].sort()).toEqual(Object.values(WEEKLY_REMINDER_IDS).sort());
+  expect(h.scheduled.get(WEEKLY_REMINDER_IDS[2])).toEqual({ weekday: 2, hour: 20, minute: 0, title: "Log today's spending" });
+  expect(h.scheduled.has(DAILY_REMINDER_ID)).toBe(false);
   expect(h.stored()).toEqual({ enabled: true, localTime: '20:00', weekdays: EVERY_DAY });
 });
 
@@ -404,7 +408,8 @@ test('Thai: Thai leading, the weekday names from Thai Intl data Monday first, an
   const monday = screen.getByText('จ');
   expect(monday.style.lineHeight).toBe(`${bunText('label', 'thai').lineHeight}px`);
   const preview = screen.getByTestId('reminders-preview');
-  expect(within(preview).getByText('บันทึกรายจ่ายวันนี้')).toBeTruthy();
+  // A Tuesday: Tuesday's reminder, in Thai (its body is the old daily line's).
+  expect(within(preview).getByText('บันเปิดหน้าใหม่รอไว้แล้ว')).toBeTruthy();
   expect(within(preview).getByText('เพิ่มรายจ่ายของวันนี้ใน Jotbun')).toBeTruthy();
   expect(screen.getByTestId('reminders-schedule').textContent).toBe(t('{days} at {time}', 'th', { days: t('Weekdays', 'th'), time: '20:00' }));
   expect(saveButton('th')).toBeTruthy();
@@ -449,7 +454,7 @@ test.each([
   mount(h.service, { intensity });
   await switchOf();
   const preview = screen.getByTestId('reminders-preview');
-  expect(within(preview).getByText("Log today's spending")).toBeTruthy();
+  expect(within(preview).getByText('Bun saved you a fresh page')).toBeTruthy();
   const bun = screen.queryByTestId('reminders-bun');
   expect(Boolean(bun)).toBe(shows);
   if (bun) {
@@ -488,7 +493,7 @@ test('the catalogue has one reminders section per state, each reaching its state
     'reminders-unsupported': 'Reminders work in the Jotbun app on your phone, not on the web.',
     'reminders-one-day': 'Keep at least one day. To stop reminders, turn them off.',
     'reminders-saving': 'Saving…',
-    'reminders-thai': 'บันทึกรายจ่ายวันนี้',
+    'reminders-thai': 'บันเปิดหน้าใหม่รอไว้แล้ว',
     'reminders-dark': 'Weekdays at 07:30',
   };
   for (const section of REMINDERS_SECTIONS) {

@@ -1,0 +1,12 @@
+--- a/test/workers/imports-intake.test.ts
++++ b/test/workers/imports-intake.test.ts
+@@ -720,6 +720,9 @@
+       ['imports.abort', true],
+       ['imports.discarded', true],
+       ['imports.bytesRetry', true],
++      // 1B-T10's confirmation steps: prepare reserves a receipt copy and confirm commits records, so both check the session.
++      ['imports.confirmPrepare', false],
++      ['imports.confirm', false],
+     ])
+   })
+ 

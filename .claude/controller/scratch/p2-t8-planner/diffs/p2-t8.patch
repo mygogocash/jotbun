@@ -1,0 +1,358 @@
+--- a/apps/app/src/dev/catalogue/registry.tsx
++++ b/apps/app/src/dev/catalogue/registry.tsx
+@@ -16,8 +16,10 @@
+ // The screens of each later area have their own list here, in the 'Screens'
+ // group, in plan order: Planning (R4), Insights (R5), Account (R6) and Import
+ // (R7), all approved at E2 checkpoints 2–5. The conflict choice (1D-T9, the
+-// `conflict` area, not yet approved) comes last, with the area on for its
+-// sections only.
++// `conflict` area, not yet approved) comes next, with the area on for its
++// sections only. The Bun Wallet (plan P2, the `wallet` area, not yet
++// approved) comes last: its own list is ./wallet/index.ts, where each wallet
++// task adds its sections.
+ import type { ReactNode } from 'react';
+ 
+ import { ENTRY_SECTIONS } from './entrySections';
+@@ -35,6 +37,7 @@
+ import { BUDGET_SECTIONS } from './planning/budgetSections';
+ import { CATEGORY_SECTIONS } from './planning/categorySections';
+ import { WALLET_SECTIONS } from './planning/walletSections';
++import { WALLET_SECTIONS as BUN_WALLET_SECTIONS } from './wallet';
+ import { QUICK_ADD_SECTIONS } from './quickAddSections';
+ import { RECENTLY_DELETED_SECTIONS } from './recentlyDeletedSections';
+ import { RECORD_SECTIONS } from './recordSections';
+@@ -101,4 +104,5 @@
+   ...IMPORT_SCREEN_SECTIONS,
+   ...COMPANION_SECTIONS,
+   ...CONFLICT_SECTIONS,
++  ...BUN_WALLET_SECTIONS,
+ ];
+--- /dev/null
++++ b/apps/app/src/dev/catalogue/wallet/index.ts
+@@ -0,0 +1,7 @@
++// The Bun Wallet's catalogue sections (plan P2, development only), last in the
++// catalogue's list (registry.tsx). Each wallet task with sections adds one
++// spread of its own list here, in plan order. Ids start with `bw-` and titles
++// with `Bun Wallet: ` (R72); walletHarness.render.test.tsx holds them to that.
++import type { CatalogueSection } from '../registry';
++
++export const WALLET_SECTIONS: readonly CatalogueSection[] = [];
+--- /dev/null
++++ b/apps/app/src/wallet/testing/walletHarness.tsx
+@@ -0,0 +1,154 @@
++// The Bun Wallet's render-test harness (P2-T8). Test use only: nothing in the
++// app imports it. `mountWallet` mounts an element inside the app's providers,
++// nested as the app nests them (R58): the language, the theme in the mode
++// asked for, the bun's intensity, a phone's safe area, the wallet root
++// (Gesture Handler's root view and the one reduced-motion answer), then the v1
++// resources, the device diary and Bun's AI help, each a fake unless the test
++// passes its own. It also keeps the wallet's two stores in memory, sets the
++// text size and gives the phone's reduced-motion answer, or holds it.
++//
++// Test files mock react-native-safe-area-context with
++// src/dev/catalogue/safeAreaTestStub (the real package cannot load in
++// vitest), call cleanup() and vi.restoreAllMocks() after each case, and drive
++// failures with the fake resources' fail, loseResponse and hold. The phone's
++// answer and Bun's AI preferences arrive after the first render, so settle
++// them inside act before asserting. A part that decides at mount, and must
++// see the answer, mounts after it through `rerender`, which keeps the
++// providers and what they hold. It installs no analytics: a test that counts
++// events awaits recordAnalytics() before mounting, so the companion's
++// `ai_enabled` property is set at mount (1D-T6).
++import { render, type RenderResult } from '@testing-library/react';
++import type { ReactElement, ReactNode } from 'react';
++import { IntlProvider } from 'react-intl';
++import { AccessibilityInfo, Dimensions } from 'react-native';
++import { SafeAreaProvider } from 'react-native-safe-area-context';
++import { vi } from 'vitest';
++
++import { PHONE } from '@mobile/dev/catalogue/catalogueTestHarness';
++import { LanguageProvider } from '@mobile/i18n/LanguageProvider';
++import { BunIntensityProvider } from '@mobile/mascot/BunIntensityProvider';
++import { AiCompanionProvider } from '@mobile/spend/v1/ai/AiCompanionProvider';
++import type { AiResources } from '@mobile/spend/v1/ai/aiResources';
++import { fakeAiResources } from '@mobile/spend/v1/ai/testing/fakeAiResources';
++import type { SpendV1Resources } from '@mobile/spend/v1/resources';
++import { SpendDiaryProvider } from '@mobile/spend/v1/SpendDiaryContext';
++import type { SpendDiary } from '@mobile/spend/v1/spendDiary';
++import { SpendV1Provider } from '@mobile/spend/v1/SpendV1Context';
++import { createFakeDiary } from '@mobile/spend/v1/testing/fakeDiary';
++import { createFakeResources } from '@mobile/spend/v1/testing/fakeResources';
++import { ThemePreferenceOverride, ThemeProvider } from '@mobile/theme/ThemeProvider';
++import { WalletRoot } from '../WalletRoot';
++import { installStoreBackend } from '../store/deviceWalletStore';
++import { ACCOUNT_PREFIX, DEVICE_PREFIX, type StoreBackend } from '../store/walletStore';
++
++/** iOS's largest accessibility text size (AX5), as a font scale (W30). */
++export const AX5 = 3.571;
++
++/** The fake diary's account, which the `account` seeds belong to. */
++export const TEST_ACCOUNT_ID = '00000000-0000-4000-8000-0000000000aa';
++
++export type MountWalletOptions = {
++  /** Default: `createFakeResources().resources`. */
++  resources?: SpendV1Resources;
++  /** Default: `createFakeDiary().diary`, open for TEST_ACCOUNT_ID. `null` mounts no diary (the web). */
++  diary?: SpendDiary | null;
++  /** Default: `fakeAiResources().resources`, with the companion off. */
++  ai?: AiResources;
++  /** Defaults: `th`, `light` and 1. */
++  locale?: 'th' | 'en';
++  mode?: 'light' | 'dark';
++  fontScale?: number;
++  /** Default: false. `'pending'` holds the phone's answer until `answerReducedMotion`. */
++  reducedMotion?: boolean | 'pending';
++  /** Seeds `jotbun.wallet.<name>`. */
++  device?: Readonly<Record<string, string>>;
++  /** Seeds `jotbun.account.<TEST_ACCOUNT_ID>.<name>`. */
++  account?: Readonly<Record<string, string>>;
++};
++
++export type MountedWallet = RenderResult & {
++  /** Everything in the wallet's two stores, by full key; writes show at once. */
++  stored: Map<string, string>;
++  /** Gives a `reducedMotion: 'pending'` mount its held answer, once (inside act); any other call throws. */
++  answerReducedMotion(value: boolean): void;
++};
++
++// react-native-web's own Dimensions.get, taken before any test spies on it.
++const realDimensionsGet = Dimensions.get.bind(Dimensions);
++
++/** The wallet's stores in memory, keyed as AsyncStorage keys them. */
++function memoryBackend(stored: Map<string, string>): StoreBackend {
++  return {
++    getItem: async (key) => stored.get(key) ?? null,
++    setItem: async (key, value) => { stored.set(key, value); },
++    removeItem: async (key) => { stored.delete(key); },
++    getAllKeys: async () => [...stored.keys()],
++    multiRemove: async (keys) => { for (const key of keys) stored.delete(key); },
++  };
++}
++
++export function mountWallet(element: ReactElement, options: MountWalletOptions = {}): MountedWallet {
++  const {
++    resources = createFakeResources().resources,
++    diary = createFakeDiary().diary,
++    ai = fakeAiResources().resources,
++    locale = 'th',
++    mode = 'light',
++    fontScale = 1,
++    reducedMotion = false,
++    device = {},
++    account = {},
++  } = options;
++
++  const stored = new Map<string, string>();
++  for (const [name, value] of Object.entries(device)) stored.set(`${DEVICE_PREFIX}${name}`, value);
++  for (const [name, value] of Object.entries(account)) stored.set(`${ACCOUNT_PREFIX}${TEST_ACCOUNT_ID}.${name}`, value);
++  installStoreBackend(memoryBackend(stored));
++
++  vi.spyOn(Dimensions, 'get').mockImplementation((dimension) => ({ ...realDimensionsGet(dimension), fontScale }));
++
++  // The phone's answer: given at once, or held until the test gives it.
++  let release: ((value: boolean) => void) | null = null;
++  const answer = reducedMotion === 'pending'
++    ? new Promise<boolean>((resolve) => { release = resolve; })
++    : Promise.resolve(reducedMotion);
++  vi.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockReturnValue(answer);
++
++  function Providers({ children }: { children: ReactNode }) {
++    return (
++      <LanguageProvider device={locale}>
++        <IntlProvider locale={locale}>
++          <ThemeProvider>
++            <ThemePreferenceOverride preference={mode}>
++              <BunIntensityProvider>
++                <SafeAreaProvider initialMetrics={PHONE}>
++                  <WalletRoot>
++                    <SpendV1Provider resources={resources}>
++                      <SpendDiaryProvider diary={diary}>
++                        <AiCompanionProvider resources={ai}>
++                          {children}
++                        </AiCompanionProvider>
++                      </SpendDiaryProvider>
++                    </SpendV1Provider>
++                  </WalletRoot>
++                </SafeAreaProvider>
++              </BunIntensityProvider>
++            </ThemePreferenceOverride>
++          </ThemeProvider>
++        </IntlProvider>
++      </LanguageProvider>
++    );
++  }
++
++  const view = render(element, { wrapper: Providers });
++  return {
++    ...view,
++    stored,
++    answerReducedMotion(value) {
++      const held = release;
++      if (held === null) throw new Error("answerReducedMotion gives a reducedMotion: 'pending' mount its answer, once.");
++      release = null;
++      held(value);
++    },
++  };
++}
+--- /dev/null
++++ b/apps/app/src/wallet/testing/walletHarness.render.test.tsx
+@@ -0,0 +1,159 @@
++// The wallet test harness (P2-T8). Every Bun Wallet render test mounts
++// through mountWallet: the app's providers, nested as the app nests them
++// (R58), around fakes, in Thai or English, light or dark, at any text size,
++// with the phone's reduced-motion answer given or held, and the wallet's two
++// stores in memory. The catalogue lists the Bun Wallet's sections last.
++import { act, cleanup, screen } from '@testing-library/react';
++import { readFileSync } from 'node:fs';
++import { dirname, join } from 'node:path';
++import { fileURLToPath } from 'node:url';
++import { useState } from 'react';
++import { AccessibilityInfo, Text, useWindowDimensions } from 'react-native';
++import { afterEach, expect, test, vi } from 'vitest';
++
++// The real safe-area package loads React Native itself, which vitest cannot run.
++vi.mock('react-native-safe-area-context', () => import('../../dev/catalogue/safeAreaTestStub'));
++
++import { WALLET_SECTIONS } from '@mobile/dev/catalogue/wallet';
++import { useLanguage } from '@mobile/i18n/LanguageProvider';
++import { useActiveLocale } from '@mobile/i18n/useCopy';
++import { useAiCompanion } from '@mobile/spend/v1/ai/AiCompanionProvider';
++import { fakeAiResources } from '@mobile/spend/v1/ai/testing/fakeAiResources';
++import { useDiaryView, useSpendDiary } from '@mobile/spend/v1/SpendDiaryContext';
++import { useSpendV1 } from '@mobile/spend/v1/SpendV1Context';
++import { createFakeDiary } from '@mobile/spend/v1/testing/fakeDiary';
++import { createFakeResources } from '@mobile/spend/v1/testing/fakeResources';
++import { useWalletColors } from '@mobile/theme/ThemeProvider';
++import { useReducedMotionKnown, useWalletReducedMotion } from '../motion/reducedMotion';
++import { eraseDeviceSettings, walletAccountStore, walletDeviceStore } from '../store/deviceWalletStore';
++import { AX5, mountWallet, TEST_ACCOUNT_ID } from './walletHarness';
++
++afterEach(() => {
++  cleanup();
++  vi.restoreAllMocks();
++});
++
++/** Lets the phone's answer and Bun's AI preferences arrive. */
++const settle = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
++
++/** A provider's value, or null when it is missing: a missing provider then fails an assertion, not the render. */
++function orNull<T>(read: () => T): T | null {
++  try {
++    return read();
++  } catch {
++    return null;
++  }
++}
++
++type Seen = {
++  v1: unknown; diary: unknown; accountId: string | null; ai: unknown; language: boolean;
++  locale: string | null; dark: boolean | null; fontScale: number; reduced: boolean; known: boolean;
++};
++let seen: Seen | null = null;
++
++/** Reads every provider the harness mounts. */
++function Probe() {
++  const v1 = orNull(useSpendV1);
++  const language = orNull(useLanguage) !== null;
++  const locale = orNull(useActiveLocale);
++  const colors = orNull(useWalletColors);
++  const diary = useSpendDiary();
++  const { accountId } = useDiaryView();
++  const { resources: ai } = useAiCompanion();
++  const { fontScale } = useWindowDimensions();
++  const reduced = useWalletReducedMotion();
++  const known = useReducedMotionKnown();
++  seen = { v1, diary, accountId, ai, language, locale, dark: colors?.isDark ?? null, fontScale, reduced, known };
++  return <Text testID="probe">{`reduced=${reduced} known=${known}`}</Text>;
++}
++
++const shown = () => screen.getByTestId('probe').textContent;
++
++const ONCE = "answerReducedMotion gives a reducedMotion: 'pending' mount its answer, once.";
++
++test('the harness nests the providers as the app does', async () => {
++  const errors = vi.spyOn(console, 'error');
++  const { stored } = mountWallet(<Probe />, { device: { 'private-mode': '1' } });
++  await settle();
++  expect(seen?.accountId).toBe(TEST_ACCOUNT_ID);
++  expect(seen?.ai).not.toBeNull();
++  expect(seen?.v1).not.toBeNull();
++  expect(seen?.language).toBe(true);
++  expect(shown()).toBe('reduced=false known=true');
++  expect(AccessibilityInfo.isReduceMotionEnabled).toHaveBeenCalledTimes(1);
++  expect(await walletDeviceStore().get('private-mode')).toBe('1');
++  await walletDeviceStore().set('private-tip-seen', '1');
++  expect(stored.get('jotbun.wallet.private-tip-seen')).toBe('1');
++  expect(errors).not.toHaveBeenCalled();
++});
++
++test("reducedMotion: 'pending' reads as reduced until answerReducedMotion(false)", async () => {
++  const { answerReducedMotion } = mountWallet(<Probe />, { reducedMotion: 'pending' });
++  await settle();
++  expect(shown()).toBe('reduced=true known=false');
++  await act(async () => { answerReducedMotion(false); });
++  expect(shown()).toBe('reduced=false known=true');
++  expect(() => answerReducedMotion(true)).toThrow(ONCE);
++});
++
++test('the harness mounts what it is given: the language, the mode, the text size, the answer and its own fakes', async () => {
++  mountWallet(<Probe />);
++  await settle();
++  expect(seen).toMatchObject({ locale: 'th', dark: false, fontScale: 1 });
++  cleanup();
++
++  const fake = createFakeResources();
++  const diary = createFakeDiary({ accountId: '00000000-0000-4000-8000-0000000000bb' }).diary;
++  const ai = fakeAiResources().resources;
++  const given = mountWallet(<Probe />, { locale: 'en', mode: 'dark', fontScale: AX5, reducedMotion: true, resources: fake.resources, diary, ai });
++  await settle();
++  expect(seen).toMatchObject({ locale: 'en', dark: true, fontScale: 3.571, reduced: true, known: true, accountId: '00000000-0000-4000-8000-0000000000bb' });
++  expect(seen?.v1).toBe(fake.resources);
++  expect(seen?.diary).toBe(diary);
++  expect(seen?.ai).toBe(ai);
++  expect(() => given.answerReducedMotion(false)).toThrow(ONCE);
++  cleanup();
++
++  mountWallet(<Probe />, { diary: null });
++  await settle();
++  expect(seen).toMatchObject({ diary: null, accountId: null });
++});
++
++test("the wallet's two stores live in memory: seeds by scope, every change in stored, and the sign-out erase keeps the account's", async () => {
++  const { stored } = mountWallet(<Text>stores</Text>, { device: { lock: 'on' }, account: { looks: '{}' } });
++  await settle();
++  const looks = 'jotbun.account.00000000-0000-4000-8000-0000000000aa.looks';
++  expect([...stored]).toEqual([['jotbun.wallet.lock', 'on'], [looks, '{}']]);
++  expect(await walletAccountStore(TEST_ACCOUNT_ID).get('looks')).toBe('{}');
++  await walletDeviceStore().remove('lock');
++  await walletDeviceStore().set('private-mode', '1');
++  expect([...stored.keys()]).toEqual([looks, 'jotbun.wallet.private-mode']);
++  await eraseDeviceSettings();
++  expect([...stored.keys()]).toEqual([looks]);
++});
++
++/** A wallet animation's rule (W6): it reads the answer once, at mount. */
++function DecidesAtMount() {
++  const reduced = useWalletReducedMotion();
++  const [atMount] = useState(reduced);
++  return <Text testID="at-mount">{`reduced at mount=${atMount}`}</Text>;
++}
++
++test('a part mounted after the answer reads it at mount, since rerender keeps the providers', async () => {
++  const view = mountWallet(<Text>before</Text>);
++  await settle();
++  view.rerender(<DecidesAtMount />);
++  expect(screen.getByTestId('at-mount').textContent).toBe('reduced at mount=false');
++  expect(AccessibilityInfo.isReduceMotionEnabled).toHaveBeenCalledTimes(1);
++});
++
++test("the catalogue lists the Bun Wallet's sections last, each with a bw- id and a 'Bun Wallet: ' title (R72)", () => {
++  const registry = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../../dev/catalogue/registry.tsx'), 'utf8');
++  expect(registry).toContain("import { WALLET_SECTIONS as BUN_WALLET_SECTIONS } from './wallet';");
++  // Whatever lists other areas add, the Bun Wallet's stay last (plan P2, P2-T8).
++  expect(registry.slice(registry.indexOf('export const CATALOGUE_SECTIONS'))).toMatch(/\.\.\.BUN_WALLET_SECTIONS,\s*\];/);
++  for (const section of WALLET_SECTIONS) {
++    expect(section.id).toMatch(/^bw(-[a-z0-9]+)+$/);
++    expect(section.title.startsWith('Bun Wallet: '), section.title).toBe(true);
++  }
++});

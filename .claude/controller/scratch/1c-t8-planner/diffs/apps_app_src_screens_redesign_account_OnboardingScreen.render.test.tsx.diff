@@ -1,0 +1,77 @@
+--- a/apps/app/src/screens/redesign/account/OnboardingScreen.render.test.tsx	2026-11-09 19:12:56
++++ b/apps/app/src/screens/redesign/account/OnboardingScreen.render.test.tsx	2026-11-09 19:13:33
+@@ -45,6 +45,7 @@
+   cleanup();
+   setSession(null);
+   vi.restoreAllMocks();
++  vi.unstubAllEnvs();
+   window.localStorage.clear();
+ });
+ 
+@@ -306,6 +307,66 @@
+ });
+ 
+ // ---------------------------------------------------------------------------
++// The signin area (1C-T8, K16, C15): the welcome link, and the story ends at
++// sign-in; the reminder question follows sign-in (R55), so it never shows here.
++
++const SIGN_IN_LINK = 'Already have an account? Sign in';
++
++test('the first story step offers the sign-in link', async () => {
++  vi.stubEnv('EXPO_PUBLIC_REDESIGN', 'signin');
++  mount(<OnboardingScreen reminders={reminders('scheduled')} />);
++  await settle();
++  press(SIGN_IN_LINK);
++  expect(nav.router.replace).toHaveBeenCalledTimes(1);
++  expect(nav.router.replace).toHaveBeenCalledWith('/login?from=onboarding');
++  // Only on the first step.
++  press(COPY.next);
++  expect(heading(COPY.private)).toBeTruthy();
++  expect(screen.queryByRole('button', { name: SIGN_IN_LINK })).toBeNull();
++});
++
++test('the story ends at sign-in with from=onboarding', async () => {
++  vi.stubEnv('EXPO_PUBLIC_REDESIGN', 'signin');
++  const service = reminders('scheduled');
++  const first = mount(<OnboardingScreen reminders={service} />);
++  await settle();
++  press(COPY.next);
++  press(COPY.next);
++  press(COPY.start);
++  expect(nav.router.replace).toHaveBeenLastCalledWith('/login?from=onboarding');
++  expect(screen.queryByRole('heading', { name: COPY.reminder })).toBeNull();
++  first.unmount();
++  // Skip leaves the story for sign-in too.
++  nav.router.replace.mockReset();
++  const skipped = mount(<OnboardingScreen reminders={service} />);
++  await settle();
++  press(COPY.skip);
++  expect(nav.router.replace).toHaveBeenCalledWith('/login?from=onboarding');
++  expect(screen.queryByRole('heading', { name: COPY.reminder })).toBeNull();
++  skipped.unmount();
++  // With a session already, the story ends at the reminder question, which now follows sign-in.
++  nav.router.replace.mockReset();
++  setSession({ access_token: 'session-token', userId: 'user-1' });
++  mount(<OnboardingScreen reminders={service} />);
++  await settle();
++  press(COPY.skip);
++  expect(nav.router.replace).toHaveBeenCalledWith('/onboarding/reminder');
++  expect(service.setPreference).not.toHaveBeenCalled();
++});
++
++test("with 'signin' off the order is today's", async () => {
++  vi.stubEnv('EXPO_PUBLIC_REDESIGN', '');
++  mount(<OnboardingScreen reminders={reminders('scheduled')} />);
++  await settle();
++  expect(screen.queryByRole('button', { name: SIGN_IN_LINK })).toBeNull();
++  press(COPY.next);
++  press(COPY.next);
++  press(COPY.start);
++  expect(heading(COPY.reminder)).toBeTruthy();
++  expect(nav.router.replace).not.toHaveBeenCalled();
++});
++
++// ---------------------------------------------------------------------------
+ // Motion
+ 
+ test('the coins pile up one by one', async () => {

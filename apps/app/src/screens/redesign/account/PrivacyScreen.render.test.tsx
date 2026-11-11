@@ -1,7 +1,7 @@
 // R6 Privacy and data (plan §6.4): the promises, the export through
 // privacy.ts and account deletion through deletion.ts, on the fakes in the
-// catalogue's settings sections. Re-authentication is the fake's; the app
-// build has none yet, and the screen says so.
+// catalogue's settings sections. The fresh sign-in is the fake's; the app
+// build has none yet for any method, and the screen says so.
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, expect, test, vi } from 'vitest';
 
@@ -15,7 +15,9 @@ vi.mock('@mobile/api/sharedV1', () => ({
   getSharedV1Resources: () => { throw new Error('Privacy never reads the real API in a test.'); },
 }));
 
-import { FAKE_EXPORT_ID, FAKE_REQUEST_ID, fakePrivacy } from '@mobile/dev/catalogue/account/settingsSections';
+import { FAKE_CREDENTIALS, FAKE_EXPORT_ID, FAKE_REQUEST_ID, fakePrivacy } from '@mobile/dev/catalogue/account/settingsSections';
+import { installStoreBackend } from '@mobile/wallet/store/deviceWalletStore';
+import type { StoreBackend } from '@mobile/wallet/store/walletStore';
 import type { FakePrivacyOptions } from '@mobile/dev/catalogue/account/settingsSections';
 import { router } from '@mobile/dev/catalogue/routerTestStub';
 import type { Locale } from '@mobile/i18n/locales';
@@ -80,7 +82,7 @@ test('export, idle: what it gives and that it asks for a fresh sign-in; nothing 
   expect(within(exportCard()).getByText('Get every entry in your diary as a spreadsheet file (CSV).')).toBeTruthy();
   expect(within(exportCard()).getByText("You'll sign in again to confirm it's you.")).toBeTruthy();
   expect(within(exportCard()).getByRole('button', { name: 'Request export' })).toBeTruthy();
-  expect(fake.calls.reauth).toEqual([]);
+  expect(fake.calls.fresh).toBe(0);
   expect(fake.calls.exportRequests).toEqual([]);
 });
 
@@ -88,8 +90,12 @@ test('export, ready: a fresh sign-in for export, everything up to today, then re
   const fake = mountPrivacy({ statuses: ['ready'] });
   press('Request export', exportCard());
   expect(await within(exportCard()).findByText('Your file is ready')).toBeTruthy();
-  expect(fake.calls.reauth).toEqual(['export']);
+  expect(fake.calls.fresh).toBe(1);
   expect(fake.calls.exportRequests.map((request) => request.filter)).toEqual([EVERYTHING]);
+  // On the fresh session's own credentials, with a command id and a proof id of its own.
+  const [sent] = fake.calls.exportRequests;
+  expect(sent.credentials).toEqual(FAKE_CREDENTIALS);
+  expect(sent.proofId).not.toBe(sent.commandId);
   expect(within(exportCard()).getByText('Ready until Wed 30 Sep, 10:00')).toBeTruthy();
   expect(within(exportCard()).getByText('4 entries')).toBeTruthy();
   press('Download', exportCard());
@@ -127,7 +133,7 @@ test('export, expired: says how long files are kept, and a new export needs a ne
   expect(await within(exportCard()).findByText("This file has expired. Files are kept for 24 hours after they're ready.")).toBeTruthy();
   press('Request a new export', exportCard());
   expect(await within(exportCard()).findByText('Your file is ready')).toBeTruthy();
-  expect(fake.calls.reauth).toEqual(['export', 'export']);
+  expect(fake.calls.fresh).toBe(2);
   expect(fake.calls.exportRequests[1].commandId).not.toBe(fake.calls.exportRequests[0].commandId);
 });
 
@@ -151,21 +157,44 @@ test('export, the answer was lost: Try again resends the very same request, with
   expect(await within(exportCard()).findByText("We couldn't tell if Jotbun got your request. Try again to send the same request.")).toBeTruthy();
   press('Try again', exportCard());
   expect(await within(exportCard()).findByText('Your file is ready')).toBeTruthy();
-  expect(fake.calls.reauth).toEqual(['export']);
+  expect(fake.calls.fresh).toBe(1);
   expect(fake.calls.exportRequests).toHaveLength(2);
   expect(fake.calls.exportRequests[1]).toEqual(fake.calls.exportRequests[0]);
 });
 
-test('export, a used proof or a cancelled sign-in: nothing was requested, and saying so', async () => {
+test('export, a rate limit after the request: the very same request is kept, and Try again resends it', async () => {
+  const fake = mountPrivacy({ exportRequests: ['refused', 'ack'], statuses: ['ready'] });
+  press('Request export', exportCard());
+  expect(await within(exportCard()).findByText("We couldn't tell if Jotbun got your request. Try again to send the same request.")).toBeTruthy();
+  press('Try again', exportCard());
+  expect(await within(exportCard()).findByText('Your file is ready')).toBeTruthy();
+  expect(fake.calls.fresh).toBe(1);
+  expect(fake.calls.exportRequests).toHaveLength(2);
+  expect(fake.calls.exportRequests[1]).toEqual(fake.calls.exportRequests[0]);
+});
+
+test('export, a sign-in too old for the server or a cancelled sign-in: nothing was requested, and saying so', async () => {
   mountPrivacy({ exportRequests: ['reauth'] });
   press('Request export', exportCard());
   expect(await within(exportCard()).findByText('Your sign-in check expired. Nothing was requested.')).toBeTruthy();
   expect(within(exportCard()).getByRole('button', { name: 'Request export' })).toBeTruthy();
   cleanup();
-  const fake = mountPrivacy({ reauth: 'cancel' });
+  const fake = mountPrivacy({ fresh: 'cancelled' });
   press('Request export', exportCard());
   expect(await within(exportCard()).findByText('Nothing was requested.')).toBeTruthy();
   expect(fake.calls.exportRequests).toEqual([]);
+});
+
+test('export, a fresh sign-in that does not go through, or cannot be reached: nothing was requested, and saying so', async () => {
+  const fake = mountPrivacy({ fresh: 'wrong_code' });
+  press('Request export', exportCard());
+  expect(await within(exportCard()).findByText('Your sign-in check expired. Nothing was requested.')).toBeTruthy();
+  expect(fake.calls.exportRequests).toEqual([]);
+  cleanup();
+  const unreachable = mountPrivacy({ fresh: 'unreachable' });
+  press('Request export', exportCard());
+  expect(await within(exportCard()).findByText("Couldn't reach the sign-in service. Nothing was requested. Try again.")).toBeTruthy();
+  expect(unreachable.calls.exportRequests).toEqual([]);
 });
 
 test('offline: a status check that cannot reach Jotbun says so, and Check again asks once more', async () => {
@@ -190,7 +219,7 @@ test('delete, the warning: calm, plain, "download your data first", and the butt
 });
 
 test('delete without a fresh sign-in in this build: it says so plainly; nothing is asked or deleted', () => {
-  const fake = mountPrivacy({ reauth: 'unavailable' });
+  const fake = mountPrivacy({ fresh: 'none' });
   expect(within(deleteCard()).getByText("Deleting your account needs a fresh sign-in, which this build can't do yet.")).toBeTruthy();
   expect(within(exportCard()).getByText("Exporting needs a fresh sign-in, which this build can't do yet.")).toBeTruthy();
   const button = within(deleteCard()).getByRole('button', { name: 'Delete my account' });
@@ -198,7 +227,7 @@ test('delete without a fresh sign-in in this build: it says so plainly; nothing 
   fireEvent.click(button);
   fireEvent.click(within(exportCard()).getByRole('button', { name: 'Request export' }));
   expect(screen.queryByRole('dialog')).toBeNull();
-  expect(fake.calls.reauth).toEqual([]);
+  expect(fake.calls.fresh).toBe(0);
   expect(fake.calls.deletions).toEqual([]);
 });
 
@@ -213,7 +242,7 @@ test('delete asks first, with the consequence; Keep my account is the safe defau
   expect(keep.style.backgroundColor).toEqual(rgb(bunLight.ink));
   fireEvent.click(keep);
   expect(screen.queryByRole('dialog')).toBeNull();
-  expect(fake.calls.reauth).toEqual([]);
+  expect(fake.calls.fresh).toBe(0);
 });
 
 test("delete, accepted: a fresh sign-in for deletion, the receipt, and this phone's copy erased; Done signs out", async () => {
@@ -222,7 +251,7 @@ test("delete, accepted: a fresh sign-in for deletion, the receipt, and this phon
   press('Delete my account', deleteCard());
   press('Delete my account', dialog('Delete your account?'));
   expect(await within(deleteCard()).findByText('Your account is being deleted')).toBeTruthy();
-  expect(fake.calls.reauth).toEqual(['deletion']);
+  expect(fake.calls.fresh).toBe(1);
   expect(within(deleteCard()).getByText(`Request number: ${FAKE_REQUEST_ID}`)).toBeTruthy();
   expect(within(deleteCard()).getByText("Jotbun finishes erasing your data within 24 hours. You don't need to do anything else.")).toBeTruthy();
   expect(within(deleteCard()).getByText("This phone's copy of your diary has been erased.")).toBeTruthy();
@@ -254,10 +283,107 @@ test('delete, the answer was lost: nothing on this phone is erased, and Try agai
   expect(diary.calls.eraseForSignOut).toBe(0);
   press('Try again', deleteCard());
   expect(await within(deleteCard()).findByText('Your account is being deleted')).toBeTruthy();
-  expect(fake.calls.reauth).toEqual(['deletion']);
+  expect(fake.calls.fresh).toBe(1);
   expect(fake.calls.deletions).toHaveLength(2);
   expect(fake.calls.deletions[1]).toEqual(fake.calls.deletions[0]);
   expect(diary.calls.eraseForSignOut).toBe(1);
+});
+
+test("delete, the request: on the fresh session's own credentials, in the app's language (Thai in Thai, English otherwise)", async () => {
+  const english = mountPrivacy();
+  press('Delete my account', deleteCard());
+  press('Delete my account', dialog('Delete your account?'));
+  expect(await within(deleteCard()).findByText('Your account is being deleted')).toBeTruthy();
+  const [sent] = english.calls.deletions;
+  expect(sent.language).toBe('en');
+  expect(sent.credentials).toEqual(FAKE_CREDENTIALS);
+  expect(sent.proofId).not.toBe(sent.commandId);
+  cleanup();
+  const thai = mountPrivacy({ locale: 'th' });
+  const remove = translateCopy('Delete my account', 'th');
+  press(remove, deleteCard());
+  press(remove, dialog(translateCopy('Delete your account?', 'th')));
+  await waitFor(() => expect(thai.calls.deletions).toHaveLength(1));
+  expect(thai.calls.deletions[0].language).toBe('th');
+});
+
+test("delete, a fresh sign-in that does not go through: nothing was deleted, and this phone's copy is neither erased nor locked", async () => {
+  const diary = createFakeDiary();
+  let locked = 0;
+  diary.diary.close = async () => { locked += 1; };
+  const fake = mountPrivacy({ diary, fresh: 'other_account' });
+  press('Delete my account', deleteCard());
+  press('Delete my account', dialog('Delete your account?'));
+  expect(await within(deleteCard()).findByText('Your sign-in check expired. Nothing was deleted.')).toBeTruthy();
+  expect(fake.calls.deletions).toEqual([]);
+  expect(diary.calls.eraseForSignOut).toBe(0);
+  expect(locked).toBe(0);
+  expect(within(deleteCard()).getByRole('button', { name: 'Delete my account' })).toBeTruthy();
+});
+
+test("delete, a sign-in that cannot be reached sends nothing; a failure after the request that is not Jotbun's answer keeps that request for Try again", async () => {
+  const unreachable = mountPrivacy({ fresh: 'unreachable' });
+  press('Delete my account', deleteCard());
+  press('Delete my account', dialog('Delete your account?'));
+  expect(await within(deleteCard()).findByText("Couldn't reach the sign-in service. Nothing was deleted. Try again.")).toBeTruthy();
+  expect(unreachable.calls.deletions).toEqual([]);
+  cleanup();
+  const diary = createFakeDiary();
+  const fake = mountPrivacy({ diary, deletions: ['broken', 'accepted'] });
+  press('Delete my account', deleteCard());
+  press('Delete my account', dialog('Delete your account?'));
+  expect(await within(deleteCard()).findByText("We couldn't confirm your request. Nothing on this phone was erased. Try again to send the same request.")).toBeTruthy();
+  expect(diary.calls.eraseForSignOut).toBe(0);
+  press('Try again', deleteCard());
+  expect(await within(deleteCard()).findByText('Your account is being deleted')).toBeTruthy();
+  expect(fake.calls.fresh).toBe(1);
+  expect(fake.calls.deletions[1]).toEqual(fake.calls.deletions[0]);
+});
+
+function memoryBackend(): { rows: Map<string, string>; backend: StoreBackend } {
+  const rows = new Map<string, string>();
+  const backend: StoreBackend = {
+    getItem: async (key) => rows.get(key) ?? null,
+    setItem: async (key, value) => void rows.set(key, value),
+    removeItem: async (key) => void rows.delete(key),
+    getAllKeys: async () => [...rows.keys()],
+    multiRemove: async (keys) => {
+      for (const key of keys) rows.delete(key);
+    },
+  };
+  return { rows, backend };
+}
+
+test("a confirmed deletion erases this account's kept looks; a refused one keeps them", async () => {
+  const { rows, backend } = memoryBackend();
+  installStoreBackend(backend);
+  try {
+    const accepted = createFakeDiary();
+    const accountId = accepted.diary.getView().accountId;
+    expect(accountId).toBe('00000000-0000-4000-8000-0000000000aa');
+    const looks = `jotbun.account.${accountId}.looks`;
+    rows.set(looks, 'warm');
+    rows.set('jotbun.wallet.private-mode', 'on');
+    mountPrivacy({ diary: accepted });
+    press('Delete my account', deleteCard());
+    press('Delete my account', dialog('Delete your account?'));
+    expect(await within(deleteCard()).findByText('Your account is being deleted')).toBeTruthy();
+    expect(rows.has(looks)).toBe(false);
+    expect(rows.get('jotbun.wallet.private-mode')).toBe('on');
+
+    cleanup();
+    rows.set(looks, 'warm');
+    const refused = createFakeDiary();
+    refused.diary.close = async () => undefined;
+    mountPrivacy({ diary: refused, deletions: ['refused'], receipt: 'none' });
+    press('Delete my account', deleteCard());
+    press('Delete my account', dialog('Delete your account?'));
+    expect(await within(deleteCard()).findByText("Jotbun didn't accept the request, so nothing was deleted.")).toBeTruthy();
+    expect(rows.get(looks)).toBe('warm');
+    expect(rows.get('jotbun.wallet.private-mode')).toBe('on');
+  } finally {
+    installStoreBackend(null);
+  }
 });
 
 test('delete, completed by the time the receipt is read: the account has been deleted', async () => {

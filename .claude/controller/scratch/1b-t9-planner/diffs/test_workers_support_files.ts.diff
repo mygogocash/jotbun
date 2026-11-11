@@ -1,0 +1,70 @@
+--- a/test/workers/support/files.ts
++++ b/test/workers/support/files.ts
+@@ -2,7 +2,7 @@
+ // seeding, fake-parser and ten-times-ledger helpers below TINY_JPEG.
+ import { env } from 'cloudflare:workers'
+ import { createExecutionContext, createMessageBatch, getQueueResult, runInDurableObject } from 'cloudflare:test'
+-import { randomUUID } from 'node:crypto'
++import { createHash, randomUUID } from 'node:crypto'
+ 
+ import { previewFromOutcome, toPreviewRecord } from '@api/imports/parse-outcome'
+ import type { ParseServiceReply } from '@api/imports/parse-server'
+@@ -377,3 +377,58 @@
+   note: `synthetic row ${i + 1}`,
+   issues: [],
+ }))
++
++// ---------------------------------------------------------------------------
++// 1B-T9: receipt attachments
++// ---------------------------------------------------------------------------
++
++/** A valid 1×1 greyscale PNG (67 bytes: the signature, IHDR, one IDAT and IEND). */
++export const TINY_PNG: Uint8Array = new Uint8Array([
++  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
++  0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x00, 0x00, 0x00, 0x00, 0x3a, 0x7e, 0x9b,
++  0x55, 0x00, 0x00, 0x00, 0x0a, 0x49, 0x44, 0x41, 0x54, 0x78, 0xda, 0x63, 0x68, 0x00, 0x00, 0x00,
++  0x82, 0x00, 0x81, 0xda, 0x45, 0x08, 0x3b, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae,
++  0x42, 0x60, 0x82,
++])
++
++/** A preview's sanitized image as seedImportImage left it: its ids, its import_image key, and its bytes and SHA-256. */
++export type SeededImage = { jobId: string; attachmentId: string; key: string; bytes: Uint8Array; sha256: string; contentType: 'image/jpeg' | 'image/png' }
++
++/**
++ * A receipt photo's import as the parse pipeline (1B-T5) leaves it, written
++ * straight into the vault: an accepted, parsed `import_uploads` row, a `ready`
++ * receipt preview naming its image by a fresh `image_attachment_id`, and the
++ * image (TINY_JPEG, or TINY_PNG, or `bytes` as given) stored at its
++ * `import_image` key with its SHA-256 and registered `published` for 24 hours
++ * (or `expiresInMs`). The preview claims `width` × `height` (1 × 1 by default),
++ * as a parser reply does; nothing on the receipt path decodes the image.
++ */
++export async function seedImportImage(user: TestUser, opts: { expiresInMs?: number; format?: 'jpeg' | 'png'; width?: number; height?: number; bytes?: Uint8Array } = {}): Promise<SeededImage> {
++  const png = opts.format === 'png'
++  const bytes = opts.bytes ?? (png ? TINY_PNG : TINY_JPEG)
++  const contentType = png ? 'image/png' : 'image/jpeg'
++  const jobId = randomUUID()
++  const attachmentId = randomUUID()
++  const key = `import_image/${vaultIdOf(user)}/${jobId}/${randomUUID()}/image.${png ? 'png' : 'jpg'}`
++  const sha256 = createHash('sha256').update(bytes).digest('hex')
++  const now = Date.now()
++  const at = (ms: number) => new Date(ms).toISOString()
++  await env.OBJECTS.put(key, bytes, { sha256, customMetadata: { sha256 }, httpMetadata: { contentType } })
++  await runInDurableObject(vaultOf(user), (_vault, state) => {
++    state.storage.transactionSync(() => {
++      const sql = state.storage.sql
++      sql.exec(
++        `INSERT INTO import_uploads (job_id, intake_token, status, file_name, declared_type, format, bytes, sha256, part_count, parse_state, parse_attempts, created_at, receive_deadline, accepted_at, expires_at)
++         VALUES (?, ?, 'accepted', ?, ?, ?, ?, ?, 1, 'parsed', 1, ?, ?, ?, ?)`,
++        jobId, randomUUID(), png ? 'receipt.png' : 'receipt.jpg', contentType, png ? 'png' : 'jpeg', bytes.byteLength, sha256, at(now - MIN), at(now + 9 * MIN), at(now - MIN), at(now - MIN + DAY),
++      )
++      sql.exec(
++        `INSERT INTO import_previews (job_id, status, layout, issues, candidate_count, review_required_count, image_key, image_width, image_height, image_attachment_id, review_revision, created_at, expires_at)
++         VALUES (?, 'ready', 'receipt', '["receipt_fields_unread"]', 0, 0, ?, ?, ?, ?, 1, ?, ?)`,
++        jobId, key, opts.width ?? 1, opts.height ?? 1, attachmentId, at(now), at(now + 7 * DAY),
++      )
++      sql.exec("INSERT INTO vault_objects (key, purpose, status, delete_after, bytes, sha256, created_at) VALUES (?, 'import_image', 'published', ?, ?, ?, ?)", key, now + (opts.expiresInMs ?? DAY), bytes.byteLength, sha256, now)
++    })
++  })
++  return { jobId, attachmentId, key, bytes, sha256, contentType }
++}

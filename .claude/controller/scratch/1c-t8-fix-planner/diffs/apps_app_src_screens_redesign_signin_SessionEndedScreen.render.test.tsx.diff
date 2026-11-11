@@ -1,0 +1,113 @@
+--- a/apps/app/src/screens/redesign/signin/SessionEndedScreen.render.test.tsx
++++ b/apps/app/src/screens/redesign/signin/SessionEndedScreen.render.test.tsx
+@@ -36,26 +36,26 @@
+ ];
+ const view = (unsent = 3): SessionEndedView => ({ kind: 'signed_out_elsewhere', accountId: ENDED.accountId, method: 'apple', unsent });
+ 
+-/** The ended account until a sign-in that goes through, then `signInAs`. */
+-function provider({ signInAs = ENDED, methods = ['apple', 'google', 'email'] }: { signInAs?: StoredSession; methods?: readonly SignInMethod[] } = {}) {
+-  let current: StoredSession = ENDED;
++/** `account` (the ended one) until a sign-in that goes through, then `signInAs`; every sign-in answers `answer`. */
++function provider({ account = ENDED, signInAs = ENDED, methods = ['apple', 'google', 'email'], answer = ACTIVE }: { account?: StoredSession; signInAs?: StoredSession; methods?: readonly SignInMethod[]; answer?: SignInResult } = {}) {
++  let current: StoredSession = account;
+   return {
+     account: vi.fn((): StoredSession | null => current),
+     methods: vi.fn((): readonly SignInMethod[] => methods),
+     signIn: vi.fn(async (_request: SignInRequest): Promise<SignInResult> => {
+-      current = signInAs;
+-      return ACTIVE;
++      if (answer.outcome === 'active') current = signInAs;
++      return answer;
+     }),
+     sendEmailCode: vi.fn(async (_email: string): Promise<CodeOutcome> => 'sent'),
+     freshSignIn: vi.fn(async (_request: SignInRequest): Promise<FreshOutcome> => 'fresh'),
+   } satisfies SessionEndedProvider;
+ }
+ 
+-async function open(options: { fake?: ReturnType<typeof provider>; unsent?: number; rows?: readonly UnsentRow[] } = {}) {
++async function open(options: { fake?: ReturnType<typeof provider>; unsent?: number; rows?: readonly UnsentRow[]; view?: SessionEndedView } = {}) {
+   const fake = options.fake ?? provider();
+   const eraseAccount = vi.fn(async (_accountId: string) => undefined);
+   const onResumed = vi.fn();
+-  const mounted = mountInApp(<SessionEndedScreen view={view(options.unsent ?? 3)} unsentRows={options.rows ?? ROWS} provider={fake} eraseAccount={eraseAccount} onResumed={onResumed} />);
++  const mounted = mountInApp(<SessionEndedScreen view={options.view ?? view(options.unsent ?? 3)} unsentRows={options.rows ?? ROWS} provider={fake} eraseAccount={eraseAccount} onResumed={onResumed} />);
+   await settle();
+   return { fake, eraseAccount, onResumed, mounted };
+ }
+@@ -83,6 +83,8 @@
+   press('Use another way');
+   expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeTruthy();
+   expect(screen.getByRole('button', { name: 'Continue with email' })).toBeTruthy();
++  // The main button is Apple's, so the email code here already goes to any address: no second email way (R98).
++  expect(screen.queryByRole('button', { name: 'Email a code to another address' })).toBeNull();
+   // The same account resumes at once: nothing is asked, nothing erased.
+   await signInAgain();
+   expect(fake.signIn).toHaveBeenCalledWith({ method: 'apple', signUp: false });
+@@ -137,3 +139,67 @@
+   expect(eraseAccount).not.toHaveBeenCalled();
+   expect(onResumed).toHaveBeenCalledTimes(1);
+ });
++
++// ---------------------------------------------------------------------------
++// The 1C-T8 fix round (R98, review M1 and m1's RV5): when the main button is
++// the email code to the account's own address, ใช้วิธีอื่น also offers an email
++// code to another address, so another account is within reach even on a build
++// that offers only the email code (today's), and a refused sign-in still has
++// another way (spec §5.2).
++
++const EMAIL_ENDED: StoredSession = { ...ENDED, email: 'kanya@gmail.com', method: 'email' };
++const EMAIL_VIEW: SessionEndedView = { kind: 'signed_out_elsewhere', accountId: EMAIL_ENDED.accountId, method: 'email', unsent: 3 };
++const UNAVAILABLE: SignInResult = { outcome: 'account_unavailable', methods: [], created: false };
++const typeInto = (name: string, value: string) => fireEvent.change(screen.getByRole('textbox', { name }), { target: { value } });
++
++test("the email button sends the code to the account's own address", async () => {
++  const fake = provider({ account: EMAIL_ENDED });
++  await open({ fake, view: EMAIL_VIEW });
++  press('Continue with email');
++  // No address field: the code goes to the account's own address, masked.
++  expect(screen.queryByRole('textbox', { name: 'Email address' })).toBeNull();
++  expect(screen.getByTestId('email-code-address').textContent).toBe('k•••@gmail.com');
++  press('Send the code');
++  await flush();
++  expect(fake.sendEmailCode).toHaveBeenCalledTimes(1);
++  expect(fake.sendEmailCode).toHaveBeenCalledWith('kanya@gmail.com');
++});
++
++test('an email account on a build with only the email code can sign in to another account, which asks keep or erase', async () => {
++  const fake = provider({ account: EMAIL_ENDED, signInAs: OTHER, methods: ['email'] });
++  const { eraseAccount, onResumed } = await open({ fake, view: EMAIL_VIEW });
++  expect(screen.getByRole('button', { name: 'Continue with email' })).toBeTruthy();
++  press('Use another way');
++  press('Email a code to another address');
++  // An empty address field: the code can go to any address.
++  typeInto('Email address', 'Ploy@Gmail.com');
++  press('Send the code');
++  await flush();
++  expect(fake.sendEmailCode).toHaveBeenCalledWith('ploy@gmail.com');
++  typeInto('6-digit code', '135790');
++  await flush();
++  expect(fake.signIn).toHaveBeenCalledWith({ method: 'email', email: 'ploy@gmail.com', code: '135790' });
++  // Another account with records waiting: D37's keep-or-erase choice.
++  expect(screen.getByRole('heading', { name: 'Records from your other account' })).toBeTruthy();
++  expect(onResumed).not.toHaveBeenCalled();
++  expect(eraseAccount).not.toHaveBeenCalled();
++});
++
++test("an Apple account on a build with only the email code: its own address first, and when the account is unavailable another way still shows", async () => {
++  const fake = provider({ methods: ['email'], answer: UNAVAILABLE });
++  await open({ fake, view: { ...view(), kind: 'account_unavailable' } });
++  expect(screen.getByRole('heading', { name: 'This account is not available' })).toBeTruthy();
++  press('Continue with email');
++  press('Send the code');
++  await flush();
++  expect(fake.sendEmailCode).toHaveBeenCalledWith('karn@icloud.com');
++  typeInto('6-digit code', '246810');
++  await flush();
++  // The server refuses the account: the screen says so, with the records-safe line, and offers another way.
++  expect(screen.getByText("This account can't be used right now.")).toBeTruthy();
++  expect(screen.getByText('Your records are still on this phone.')).toBeTruthy();
++  press('Use another way');
++  press('Email a code to another address');
++  expect(screen.getByRole('textbox', { name: 'Email address' })).toBeTruthy();
++  expect(fake.signIn).toHaveBeenCalledTimes(1);
++});

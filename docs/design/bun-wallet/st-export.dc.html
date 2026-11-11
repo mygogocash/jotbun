@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Bun Wallet export</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;700&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F3F9; color: #111014; font-family: 'Anuphan', 'DM Sans', sans-serif; line-height: 1.5; position: relative; overflow: hidden; padding: 54px 20px 30px; display: flex; flex-direction: column; gap: 12px">
+  <button type="button" aria-label="กลับ" style="width: 44px; height: 44px; border-radius: 14px; border: none; background: #E9E7F1; display: flex; align-items: center; justify-content: center; padding: 0; flex: none"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="#111014" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+  <h1 style="margin: 0; font-size: 28px; font-weight: 700; line-height: 1.4">ส่งออกข้อมูล</h1>
+  <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #6B6878">รับทุกรายการในบันทึกของคุณเป็นไฟล์สเปรดชีต (CSV)</p>
+
+  <section aria-labelledby="st-ex-ready" style="margin-top: 4px; background: #FFFFFF; border-radius: 24px; padding: 18px; box-shadow: 0 10px 28px rgba(17, 16, 20, 0.06); display: flex; flex-direction: column; gap: 14px; flex: none">
+    <div style="display: flex; align-items: center; gap: 14px">
+      <span style="width: 52px; height: 52px; border-radius: 16px; background: #ECE7FC; display: flex; align-items: center; justify-content: center; flex: none"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h6.5L18 8v12.5H7Z M13.5 3.5V8H18" fill="none" stroke="#6A4BD4" stroke-width="1.8" stroke-linejoin="round"></path><path d="M9.5 12.5h6M9.5 15.5h6M9.5 18h4" stroke="#6A4BD4" stroke-width="1.8" stroke-linecap="round"></path></svg></span>
+      <div style="flex: 1; min-width: 0">
+        <h2 id="st-ex-ready" style="margin: 0; font-size: 18px; font-weight: 700; line-height: 1.4">ไฟล์ของคุณพร้อมแล้ว</h2>
+        <div style="font-size: 14px; line-height: 1.45; color: #6B6878"><span style="font-family: 'DM Sans', sans-serif">1,284</span> รายการ · ขอเมื่อวันนี้ 14:10</div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px; background: #F4F3F9; border-radius: 14px; padding: 10px 12px; font-size: 15px; font-weight: 500; line-height: 1.45">
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="8.5" fill="none" stroke="#111014" stroke-width="2"></circle><path d="M12 7.5V12l3 2" fill="none" stroke="#111014" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      <span>พร้อมดาวน์โหลดถึง 25 ต.ค. 2569 14:10</span>
+    </div>
+    <button type="button" style="height: 56px; border-radius: 16px; border: none; background: #111014; color: #FFFFFF; font-family: inherit; font-size: 17px; font-weight: 700; line-height: 1.4; display: flex; align-items: center; justify-content: center; gap: 10px"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19.5h14" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>ดาวน์โหลด</button>
+  </section>
+
+  <div style="display: flex; flex-direction: column; gap: 6px; flex: none">
+    <button type="button" style="height: 52px; border-radius: 16px; border: 1.5px solid #111014; background: transparent; color: #111014; font-family: inherit; font-size: 16px; font-weight: 700; line-height: 1.4">ขอส่งออกใหม่</button>
+    <p style="margin: 0; text-align: center; font-size: 13px; line-height: 1.45; color: #6B6878">ไฟล์ใหม่จะมีทุกรายการจนถึงวันที่ขอ</p>
+  </div>
+
+  <section aria-labelledby="st-ex-other" style="margin-top: 8px; flex: none">
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px">
+      <h2 id="st-ex-other" style="margin: 0; font-size: 13px; font-weight: 500; line-height: 1.4; color: #6B6878">สถานะอื่นของไฟล์</h2>
+      <span aria-hidden="true" style="flex: 1; height: 1px; background: #E6E4EE"></span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+      <div style="background: #FFFFFF; border-radius: 18px; padding: 12px 12px 4px; display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; align-items: center; gap: 8px">
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="8" fill="none" stroke="#E6E4EE" stroke-width="3"></circle><path d="M12 4a8 8 0 0 1 8 8" fill="none" stroke="#6A4BD4" stroke-width="3" stroke-linecap="round"></path></svg>
+          <span style="font-size: 14px; font-weight: 700; line-height: 1.4">กำลังเตรียม…</span>
+        </div>
+        <div aria-hidden="true" style="display: flex; gap: 4px">
+          <span style="flex: 1; height: 4px; border-radius: 2px; background: #6A4BD4"></span>
+          <span style="flex: 1; height: 4px; border-radius: 2px; background: linear-gradient(90deg, #6A4BD4 50%, #E6E4EE 50%)"></span>
+          <span style="flex: 1; height: 4px; border-radius: 2px; background: #E6E4EE"></span>
+        </div>
+        <div style="font-size: 12px; line-height: 1.45; color: #6B6878">อาจใช้เวลา<span style="white-space: nowrap">ไม่กี่นาที</span></div>
+        <a href="#" style="display: flex; align-items: center; min-height: 44px; font-size: 13px; font-weight: 700; line-height: 1.4; color: #6A4BD4; text-decoration: none">ตรวจอีกครั้ง</a>
+      </div>
+      <div style="background: #FFFFFF; border-radius: 18px; padding: 12px 12px 4px; display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; align-items: center; gap: 8px">
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="8.5" fill="none" stroke="#6B6878" stroke-width="2"></circle><path d="M12 7.5V12l3 2" fill="none" stroke="#6B6878" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          <span style="font-size: 14px; font-weight: 700; line-height: 1.4">หมดอายุแล้ว</span>
+        </div>
+        <div aria-hidden="true" style="height: 4px; border-radius: 2px; background: #E6E4EE"></div>
+        <div style="font-size: 12px; line-height: 1.45; color: #6B6878">ไฟล์เก็บไว้ 24 ชั่วโมงหลังพร้อมดาวน์โหลด</div>
+        <a href="#" style="display: flex; align-items: center; min-height: 44px; font-size: 13px; font-weight: 700; line-height: 1.4; color: #6A4BD4; text-decoration: none">ขอใหม่</a>
+      </div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

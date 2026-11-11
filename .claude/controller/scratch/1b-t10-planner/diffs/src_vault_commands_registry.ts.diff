@@ -1,0 +1,25 @@
+--- a/src/vault/commands/registry.ts
++++ b/src/vault/commands/registry.ts
+@@ -1,8 +1,9 @@
+-import { isBudgetSnapshot, isCategorySnapshot, isExportRequestSnapshot, isTransactionSnapshot, isWalletSnapshot } from '@gogospend/contracts'
++import { isBudgetSnapshot, isCategorySnapshot, isExportRequestSnapshot, isImportReviewSnapshot, isImportSelectionSnapshot, isTransactionSnapshot, isWalletSnapshot } from '@gogospend/contracts'
+ import type { CommandOutcome } from '@gogospend/contracts'
+ 
+ import { ATTACHMENT_REMOVE_KIND, ATTACHMENT_REPLACE_KIND, ATTACHMENT_RETAIN_KIND } from '@api/attachments/attachments.service'
+ import { CommandRegistry } from '@api/commands/command-registry'
++import { CONFIRM_KIND, FREEZE_KIND, PATCH_KIND, REVIEW_ENTITY, SELECTION_ENTITY } from '@api/imports/confirmation.service'
+ 
+ import { EXPORT_ENTITY, EXPORT_REQUEST_KIND } from '../files/exports'
+ 
+@@ -54,5 +55,11 @@
+   registry.defineCommand({ kind: EXPORT_REQUEST_KIND, entity: EXPORT_ENTITY, outcome: 'accepted', schemaVersions: [1], policy: 'exempt' })
+   // 1B-T9: the receipt commands (AttachmentService) move the record to its next version, after ExportService as buildContainer constructs them.
+   for (const kind of [ATTACHMENT_RETAIN_KIND, ATTACHMENT_REPLACE_KIND, ATTACHMENT_REMOVE_KIND]) registry.defineCommand({ kind, entity: 'transaction', outcome: 'updated', schemaVersions: [1], policy: 'current' })
++  // 1B-T10: import review and confirmation (ConfirmationService), after AttachmentService as buildContainer constructs them.
++  registry.defineEntity({ entity: REVIEW_ENTITY, validate: isImportReviewSnapshot })
++  registry.defineEntity({ entity: SELECTION_ENTITY, validate: isImportSelectionSnapshot })
++  registry.defineCommand({ kind: PATCH_KIND, entity: REVIEW_ENTITY, outcome: 'updated', schemaVersions: [1], policy: 'current' })
++  registry.defineCommand({ kind: FREEZE_KIND, entity: SELECTION_ENTITY, outcome: 'created', schemaVersions: [1], policy: 'current' })
++  registry.defineCommand({ kind: CONFIRM_KIND, entity: SELECTION_ENTITY, outcome: 'updated', schemaVersions: [1], policy: 'current' })
+   return registry
+ }

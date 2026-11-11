@@ -1,0 +1,35 @@
+--- a/src/v1/routes.ts
++++ b/src/v1/routes.ts
+@@ -85,6 +85,12 @@
+   // imports/imports.controller.ts (1B-T5): the body streams into quarantine in Worker steps; once accepted, the vault's parse starts.
+   { method: 'POST', path: '/v1/imports', access: 'current_policy', worker: 'import.upload', body: 'stream', gates: ['uploads', 'imports'], status: 202, starts: true },
+   { method: 'GET', path: '/v1/imports/:id', access: 'bound_session', vault: 'imports.status' },
++  // exports/exports.controller.ts (1B-T6): a request needs a sign-in from the last five minutes; ExportWorkflow writes the file after the 202.
++  { method: 'POST', path: '/v1/exports', access: 'recent_proof', vault: 'exports.request', gates: ['jobs'], status: 202, starts: true },
++  { method: 'GET', path: '/v1/exports/:id', access: 'bound_session', vault: 'exports.status' },
++  { method: 'GET', path: '/v1/exports/:id/grant', access: 'bound_session', vault: 'exports.grant' },
++  // The CSV streams from R2 in the Worker, after the `exports.file` step names it.
++  { method: 'GET', path: '/v1/export-files/:grant', access: 'bound_session', worker: 'export.file.download' },
+ ]
+ 
+ const ROUTE_BY_ID = new Map<VaultRouteId, VaultRoute>(VAULT_V1_ROUTES.flatMap((route) => (route.vault ? [[route.vault, route] as const] : [])))
+@@ -114,6 +120,8 @@
+   'imports.abort': { anySession: true },
+   'imports.discarded': { anySession: true },
+   'imports.bytesRetry': { anySession: true },
++  // 1B-T6: the export download's step. It checks the session: a download needs the session that asked.
++  'exports.file': {},
+ }
+ 
+ /** The step-only entry a vault call names, or undefined when the id is not a step. */
+@@ -140,10 +148,6 @@
+   'POST /v1/sync/snapshots',
+   'GET /v1/sync/snapshots/:id',
+   'GET /v1/sync/snapshot-chunks/:grant',
+-  'POST /v1/exports',
+-  'GET /v1/exports/:id',
+-  'GET /v1/exports/:id/grant',
+-  'GET /v1/export-files/:grant',
+   'GET /v1/imports/:id/preview',
+   'PATCH /v1/imports/:id/rows',
+   'POST /v1/imports/:id/selections',

@@ -45,6 +45,7 @@ afterEach(() => {
   cleanup();
   setSession(null);
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
   window.localStorage.clear();
 });
 
@@ -303,6 +304,82 @@ test('with a session, the first run ends on Quick add to log that coffee', async
   press(COPY.turnOn);
   fireEvent.click(await screen.findByRole('button', { name: COPY.continue }));
   expect(nav.router.replace).toHaveBeenCalledWith('/spend/add');
+});
+
+// ---------------------------------------------------------------------------
+// The signin area (1C-T8, K16, C15): the welcome link, and the story ends at
+// sign-in; the reminder question follows sign-in (R55), so it never shows here.
+
+const SIGN_IN_LINK = 'Already have an account? Sign in';
+
+test('the first story step offers the sign-in link', async () => {
+  vi.stubEnv('EXPO_PUBLIC_REDESIGN', 'signin');
+  mount(<OnboardingScreen reminders={reminders('scheduled')} />);
+  await settle();
+  press(SIGN_IN_LINK);
+  expect(nav.router.replace).toHaveBeenCalledTimes(1);
+  expect(nav.router.replace).toHaveBeenCalledWith('/login?from=onboarding');
+  // Only on the first step.
+  press(COPY.next);
+  expect(heading(COPY.private)).toBeTruthy();
+  expect(screen.queryByRole('button', { name: SIGN_IN_LINK })).toBeNull();
+});
+
+test('the story ends at sign-in with from=onboarding', async () => {
+  vi.stubEnv('EXPO_PUBLIC_REDESIGN', 'signin');
+  const service = reminders('scheduled');
+  const first = mount(<OnboardingScreen reminders={service} />);
+  await settle();
+  press(COPY.next);
+  press(COPY.next);
+  press(COPY.start);
+  expect(nav.router.replace).toHaveBeenLastCalledWith('/login?from=onboarding');
+  expect(screen.queryByRole('heading', { name: COPY.reminder })).toBeNull();
+  first.unmount();
+  // Skip leaves the story for sign-in too.
+  nav.router.replace.mockReset();
+  mount(<OnboardingScreen reminders={service} />);
+  await settle();
+  press(COPY.skip);
+  expect(nav.router.replace).toHaveBeenCalledWith('/login?from=onboarding');
+  expect(screen.queryByRole('heading', { name: COPY.reminder })).toBeNull();
+  expect(service.setPreference).not.toHaveBeenCalled();
+});
+
+// The 1C-T8 fix round (R99): nothing goes to /onboarding/reminder before 1C-T9 adds that route.
+test("with a session, today's reminder step still follows the story until 1C-T9 adds its route", async () => {
+  vi.stubEnv('EXPO_PUBLIC_REDESIGN', 'signin');
+  setSession({ access_token: 'session-token', userId: 'user-1' });
+  const service = reminders('scheduled');
+  const skipped = mount(<OnboardingScreen reminders={service} />);
+  await settle();
+  press(COPY.skip);
+  expect(heading(COPY.reminder)).toBeTruthy();
+  skipped.unmount();
+  mount(<OnboardingScreen reminders={service} />);
+  await settle();
+  press(COPY.next);
+  press(COPY.next);
+  press(COPY.start);
+  expect(heading(COPY.reminder)).toBeTruthy();
+  expect(nav.router.replace).not.toHaveBeenCalled();
+  expect(service.setPreference).not.toHaveBeenCalled();
+  // Its answer then goes on to Quick add, as today.
+  press(COPY.notNow);
+  expect(nav.router.replace).toHaveBeenCalledTimes(1);
+  expect(nav.router.replace).toHaveBeenCalledWith('/spend/add');
+});
+
+test("with 'signin' off the order is today's", async () => {
+  vi.stubEnv('EXPO_PUBLIC_REDESIGN', '');
+  mount(<OnboardingScreen reminders={reminders('scheduled')} />);
+  await settle();
+  expect(screen.queryByRole('button', { name: SIGN_IN_LINK })).toBeNull();
+  press(COPY.next);
+  press(COPY.next);
+  press(COPY.start);
+  expect(heading(COPY.reminder)).toBeTruthy();
+  expect(nav.router.replace).not.toHaveBeenCalled();
 });
 
 // ---------------------------------------------------------------------------

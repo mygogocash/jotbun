@@ -5,6 +5,7 @@
 import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { AiPreferencesDto, AiPreferencesUpdate } from '@gogospend/contracts';
 
+import { getAnalytics } from '@mobile/analytics/bus';
 import type { AiResources } from './aiResources';
 
 export type AiCompanionValue = {
@@ -57,6 +58,10 @@ export function AiCompanionProvider({ resources, children }: PropsWithChildren<{
     refresh,
     update,
   }), [resources, preferences, refresh, update]);
+  // Every event says whether Bun's AI help is on (spec section 7, common properties).
+  useEffect(() => {
+    getAnalytics()?.setCommon({ ai_enabled: value.enabled });
+  }, [value.enabled]);
   return <AiCompanionContext.Provider value={value}>{children}</AiCompanionContext.Provider>;
 }
 

@@ -15,7 +15,13 @@
 //
 // The screens of each later area have their own list here, in the 'Screens'
 // group, in plan order: Planning (R4), Insights (R5), Account (R6) and Import
-// (R7), all approved at E2 checkpoints 2–5.
+// (R7), all approved at E2 checkpoints 2–5. Account's list ends with the
+// sign-in drafts (1C-T8, the `signin` area, not yet approved). The companion
+// area's screens follow Import. The conflict choice (1D-T9, the `conflict`
+// area, not yet approved) comes next, drawn with that area on for its
+// sections only. The Bun Wallet (plan P2, the `wallet` area, not yet
+// approved) comes last: its own list is ./wallet/index.ts, where each wallet
+// task adds its sections.
 import type { ReactNode } from 'react';
 
 import { ENTRY_SECTIONS } from './entrySections';
@@ -24,6 +30,7 @@ import { HOME_SECTIONS } from './homeSections';
 import { KIT_SECTIONS } from './kitSections';
 import { FIRST_RUN_SECTIONS } from './account/firstRunSections';
 import { SETTINGS_SECTIONS } from './account/settingsSections';
+import { SIGNIN_SECTIONS } from './account/signinSections';
 import { IMPORT_SECTIONS } from './import/importSections';
 import { RECEIPT_SECTIONS } from './import/receiptSections';
 import { INSIGHTS_SECTIONS } from './insights/insightsSections';
@@ -33,10 +40,12 @@ import { MASCOT_SECTIONS } from './mascotSections';
 import { BUDGET_SECTIONS } from './planning/budgetSections';
 import { CATEGORY_SECTIONS } from './planning/categorySections';
 import { WALLET_SECTIONS } from './planning/walletSections';
+import { WALLET_SECTIONS as BUN_WALLET_SECTIONS } from './wallet';
 import { QUICK_ADD_SECTIONS } from './quickAddSections';
 import { RECENTLY_DELETED_SECTIONS } from './recentlyDeletedSections';
 import { RECORD_SECTIONS } from './recordSections';
 import { COMPANION_SECTIONS } from './companion/companionSections';
+import { CONFLICT_SECTIONS } from './conflictSections';
 
 export type CatalogueGroup = 'Kit' | 'Mascot' | 'Screens';
 
@@ -75,10 +84,15 @@ export const INSIGHTS_SCREEN_SECTIONS: readonly CatalogueSection[] = [
   ...REMINDERS_SECTIONS,
 ];
 
-/** R6 Account (the `account` area, on since E2 checkpoint 4): first run, sign-in, Settings, privacy. */
+/**
+ * R6 Account (the `account` area, on since E2 checkpoint 4): first run,
+ * sign-in, Settings, privacy; then 1C-T8's sign-in drafts (the `signin`
+ * area, awaiting E2).
+ */
 export const ACCOUNT_SECTIONS: readonly CatalogueSection[] = [
   ...FIRST_RUN_SECTIONS,
   ...SETTINGS_SECTIONS,
+  ...SIGNIN_SECTIONS,
 ];
 
 /** R7 Import (the `import` area, on since E2 checkpoint 5): the import journey and a record's receipt. */
@@ -97,4 +111,6 @@ export const CATALOGUE_SECTIONS: readonly CatalogueSection[] = [
   ...ACCOUNT_SECTIONS,
   ...IMPORT_SCREEN_SECTIONS,
   ...COMPANION_SECTIONS,
+  ...CONFLICT_SECTIONS,
+  ...BUN_WALLET_SECTIONS,
 ];

@@ -124,10 +124,12 @@ export const motion = {
    * bezier easings above cannot drive a spring: a cubic-bezier has no
    * damping to give it.
    *
-   * GoGoSpend drives these through `Animated.spring`
-   * (`theme/animatedMotion.ts`'s `runSpringTransform`); the spend screens
-   * have no reanimated, and a second animation system in one screen is worse
-   * than a slightly less ergonomic API.
+   * The Bun diary screens drive these through `Animated.spring`
+   * (`theme/animatedMotion.ts`'s `runSpringTransform`). The Bun Wallet
+   * screens (`src/wallet/`, plan P2) drive them through Reanimated, whose
+   * springs read the same three fields (`wallet/motion/useWalletMotion.ts`).
+   * Never both in one screen: a second animation system in one screen is
+   * worse than a slightly less ergonomic API.
    *
    * `bouncy` is RATIONED to moments that are genuinely good news (a save
    * landing, cashback arriving). Overshoot on an ordinary control is the
@@ -193,6 +195,14 @@ export const motion = {
     celebration: "celebrate",
     aiSuggestionReady: "light",
     aiAccepted: "impact",
+    /*
+     * The Bun Wallet (plan P2, board ax-motion): a selection tick per tray
+     * step and on opening a wallet, and success when a new wallet joins the
+     * stack. Reduce Motion never changes them (`wallet/motion/walletMotion.ts`).
+     */
+    trayStep: "selection",
+    walletOpen: "selection",
+    walletAdded: "success",
   },
   scale: {
     hover: 1.01,

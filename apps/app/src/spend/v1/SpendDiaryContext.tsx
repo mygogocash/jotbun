@@ -5,7 +5,7 @@ import type { DiaryView, SpendDiary } from './spendDiary';
 
 const SpendDiaryContext = createContext<SpendDiary | null>(null);
 
-const NO_DIARY: DiaryView = { phase: 'unavailable', lockReason: null, outcome: null, progress: null, pending: [], outbox: [], wallets: [], categories: [] };
+const NO_DIARY: DiaryView = { phase: 'unavailable', lockReason: null, outcome: null, progress: null, pending: [], outbox: [], pendingChoices: [], wallets: [], categories: [], appliedRevision: '0', accountId: null };
 
 /** Supplies the device diary (S2/S3) to the money screens; absent on web and in online-only tests. */
 export function SpendDiaryProvider({ diary, children }: { diary: SpendDiary | null; children: ReactNode }) {
