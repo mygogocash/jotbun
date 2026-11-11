@@ -1,0 +1,15 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge
+
+ ✓ test/c1-worker.db.test.ts > the one Worker in workerd > answers /live with no-store 8ms
+ ✓ test/c1-worker.db.test.ts > the one Worker in workerd > /ready is 200 with its settings and KV 7ms
+ ✓ test/c1-worker.db.test.ts > the one Worker in workerd > /ready is 503 without its settings 5ms
+ ✓ test/c1-worker.db.test.ts > the one Worker in workerd > serves the trust page with TanStack Start 18ms
+ ✓ test/c1-worker.db.test.ts > the one Worker in workerd > serves /v1 from the vault: the policy list comes from KV 6ms
+ ✓ test/c1-worker.db.test.ts > the one Worker in workerd > an unknown /v1 route is 404 5ms
+
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+   Start at  09:53:47
+   Duration  4.23s (transform 16ms, setup 0ms, import 26ms, tests 4.08s, environment 0ms)
+

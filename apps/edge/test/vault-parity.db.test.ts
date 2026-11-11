@@ -72,7 +72,8 @@ it('isolates people in the runtime too: one person cannot read another person’
 })
 
 // startVaultWorker's default (the 1B-T12 review's n5): with no `background` named it starts the built config
-// itself, so this session runs with the Worker's background work, as it did before `background` existed.
+// itself, so this session runs with the Worker's background work, as it did before `background` existed. Since
+// C1 that config is the one Worker's (1B-T13; the 1B-T12 confirming review's n1).
 it('the vault Worker starts the built config when no background is named', () => {
-  expect(vault.config).toMatch(/\/dist\/jotbun_vault\/wrangler\.json$/)
+  expect(vault.config).toMatch(/\/dist\/server\/wrangler\.json$/)
 })

@@ -1,0 +1,34 @@
+--- a/apps/edge/src/v1/ai/routes.ts
++++ b/apps/edge/src/v1/ai/routes.ts
+@@ -1,9 +1,6 @@
+ import { assertKnownFields, parseAiAskRequest, parseAiDate, parseAiLocale, parseAiParseRequest, parseAiPreferencesUpdate, parseAiSlipRequest } from '@gogospend/contracts'
+ 
+-import { DEFAULT_AI_MODEL, anthropicSender } from '../../server/ai/model'
+-import type { SendMessage } from '../../server/ai/model'
+-import { flag } from '../../server/env'
+-import type { V1Env } from '../env'
++import { DEFAULT_AI_MODEL } from '../../server/ai/model'
+ import type { VaultReply } from '../protocol'
+ import type { VaultSession, WorkerContext } from '../worker-routes'
+ import { VaultAiService } from './service'
+@@ -13,19 +10,9 @@
+ // No gate is added (owner answer 3): the `ai` gate comes with AI Gateway in
+ // phase 3, and until then AI_ENABLED is the switch (B10).
+ 
+-/**
+- * The model call: the front door's when it gives one (tests give a fake, or
+- * null for AI that is not configured), else the env's, as the edge's
+- * container builds it. AI needs both AI_ENABLED and ANTHROPIC_API_KEY.
+- */
+-export function aiSender(env: V1Env, given: SendMessage | null | undefined): SendMessage | null {
+-  if (given !== undefined) return given
+-  return flag(env.AI_ENABLED) && env.ANTHROPIC_API_KEY ? anthropicSender(env.ANTHROPIC_API_KEY, env.ANTHROPIC_BASE_URL) : null
+-}
+-
+ function aiOf(w: WorkerContext): { service: VaultAiService; vault: VaultSession } {
+   if (!w.vault) throw new Error('an AI route needs a session')
+-  return { service: new VaultAiService({ send: aiSender(w.env, w.send), model: w.env.AI_MODEL || DEFAULT_AI_MODEL }), vault: w.vault }
++  return { service: new VaultAiService({ transport: w.transport ?? null, model: w.env.AI_MODEL || DEFAULT_AI_MODEL }), vault: w.vault }
+ }
+ 
+ /** Every AI route answers 200 (the PostgreSQL routes' statuses: GET and PUT by default, the three POSTs by their `status: 200`). */

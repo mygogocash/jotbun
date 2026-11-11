@@ -1,0 +1,11 @@
+apps/app/src/wallet/add/addFlow.ts
+apps/app/src/wallet/add/addFlow.test.ts
+apps/app/src/wallet/add/copy.ts
+apps/app/src/wallet/add/WalletKeypad.tsx
+apps/app/src/wallet/add/TypeSwitchHeader.tsx
+apps/app/src/wallet/add/QuickChips.tsx
+apps/app/src/wallet/add/AmountStep.tsx
+apps/app/src/wallet/add/AmountStep.render.test.tsx
+apps/app/src/dev/catalogue/wallet/addSections.tsx
+index.ts <- merge/index.mine-after-p2-t14.ts
+draftText.test.ts <- merge/draft.t33-t14.ts

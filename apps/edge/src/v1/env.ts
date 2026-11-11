@@ -3,8 +3,8 @@ import type { VaultBucket } from '../vault/files/keys'
 import type { UserVault } from '../vault/user-vault'
 
 /**
- * The vault Worker's bindings and settings. VAULT and CONFIG are bound in
- * wrangler.vault.jsonc; the rest are secrets or vars, read where they are used.
+ * The vault's bindings and settings on the one Worker. VAULT and CONFIG are
+ * bound in wrangler.jsonc; the rest are secrets or vars, read where they are used.
  */
 export type V1Env = {
   VAULT: DurableObjectNamespace<UserVault>

@@ -1,0 +1,37 @@
+start 09:07:48
+red node exit 1
+red build exit 0
+locked 09:53:33
+exit 1; unlocked 09:53:39
+red c1 exit 1
+locked 09:53:39
+exit 1; unlocked 09:53:43
+red ai exit 1
+red-node:       Tests  12 failed | 6 passed (18)
+red-c1:       Tests  2 failed | 4 passed (6)
+red-ai:       Tests  2 failed | 41 skipped (43)
+green node exit 0
+green build exit 0
+locked 09:53:47
+exit 0; unlocked 09:53:52
+green c1 exit 0
+locked 09:53:52
+exit 0; unlocked 09:54:02
+green workers exit 0
+locked 09:54:02
+exit 0; unlocked 09:54:05
+green money smoke exit 0
+locked 09:54:05
+exit 0; unlocked 09:54:09
+green files smoke exit 0
+locked 09:54:09
+exit 0; unlocked 09:54:13
+green live smoke exit 0
+green-node:       Tests  48 passed (48)
+green-c1:       Tests  6 passed (6)
+green-workers:       Tests  134 passed (134)
+green-smoke-money:       Tests  1 passed (1)
+green-smoke-files:       Tests  4 passed (4)
+green-smoke-live:       Tests  1 passed (1)
+mutants exit 0: 28 of 28 killed; survivors []; not restored []
+end 09:55:12

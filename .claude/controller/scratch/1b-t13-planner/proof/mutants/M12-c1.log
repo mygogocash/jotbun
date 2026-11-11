@@ -1,0 +1,38 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge
+
+ ✓ test/c1-worker.db.test.ts > the one Worker in workerd > answers /live with no-store 20ms
+ ✓ test/c1-worker.db.test.ts > the one Worker in workerd > /ready is 200 with its settings and KV 41ms
+ × test/c1-worker.db.test.ts > the one Worker in workerd > /ready is 503 without its settings 37ms
+   → expected 200 to be 503 // Object.is equality
+ ✓ test/c1-worker.db.test.ts > the one Worker in workerd > serves the trust page with TanStack Start 17ms
+ ✓ test/c1-worker.db.test.ts > the one Worker in workerd > serves /v1 from the vault: the policy list comes from KV 10ms
+ ✓ test/c1-worker.db.test.ts > the one Worker in workerd > an unknown /v1 route is 404 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/c1-worker.db.test.ts > the one Worker in workerd > /ready is 503 without its settings
+AssertionError: expected 200 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 200
+
+ ❯ test/c1-worker.db.test.ts:87:24
+     85|   it('/ready is 503 without its settings', async () => {
+     86|     const res = await fetch(`${notReady.url}/ready`)
+     87|     expect(res.status).toBe(503)
+       |                        ^
+     88|     expect(res.headers.get('retry-after')).toBe('30')
+     89|     expect(await res.json()).toMatchObject({ code: 'SERVICE_UNAVAILABL…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 passed (6)
+   Start at  09:54:34
+   Duration  4.33s (transform 36ms, setup 0ms, import 57ms, tests 4.14s, environment 0ms)
+

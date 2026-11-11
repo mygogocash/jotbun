@@ -451,12 +451,96 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **Hosted check (n1):** once an aborted retain's copy slot is back, its promise has ended. The command step and the copy's release (`receipts.ts:147-149`, `186-188`) then run with nothing pending in `waitUntil`, so the deployed runtime may skip them (unverified).
     - Effect: the copy stays reserved for 180 s; a retry gets `wait`, then 503, and the reservation counts toward `COPIES_IN_FLIGHT`.
     - This is bounded and predates R97. The hosted check should verify that the release runs.
-  - **1B-T13:**
+  - **The first task after #396 that touches `src/v1/files`** (not 1B-T13: its brief's P20 keeps it clear of those files, and the controller accepted that on 11 Nov):
     - n5: `slots.ts:16-18` and the call sites say the request lives until its slot is back, without Cloudflare's 30-second `waitUntil` cap. Add one clause.
     - n6 (optional hardening): make `untilReturned`'s returned function idempotent and exception-safe, with a `given` flag and `try { release() } finally { returned() }`.
   - **alarm-hardening (#398), n7:**
     - lines 4, 97 and 108 of #398's receipt give download-pins' items (1B-T11's m3 and n6, and the X5 re-target) to fix-download-aborts. Correct them before #398 merges;
     - once #398 merges, download-pins' kit mutant V3 no longer applies: rerun it with A1's text.
+- **P3-T4** (#410). Both reviews approved: Opus (`reviews/P3-T4.md`, minors m1 to m4, nits n1 to n6) and Flash (`reviews/P3-T4-second.md`). Carriers, as the reviewer gives them:
+  - **P3-T6:**
+    - the route-deadline tests kill the review's R1, R3 and R4 (the cap, calls through `tracedSend` with the request's trace, one deadline across Ask's turns), which also covers m2's untested wiring;
+    - every route's deadline starts at the same point (n2: `note` starts before `consume`);
+    - `hang()` waits real time, so pair it with short injected deadlines.
+  - **P3-T7:** m1. A reply whose body stalls past its time is recorded `failure: 'other'`, not `timeout`. Treat it as `timeout` before `shouldRefund` relies on it.
+  - **P3-T8:** m3. `capMs` has no test. Cover `HAIKU_SLIP_CAP_MS` reaching the call, and a cap under 2 s making no call (R9).
+  - **P3-T10:** `$ai_generation` copies `RecordedCall`, so m1's stalled-body label applies.
+  - **P3-T3:** it edits the same `handler.ts`, `worker-routes.ts` and `ai/routes.ts`. Brief it on P3-T4's versions.
+  - **P4-T6:** `WorkerContext.transport` is optional (P2). Read it as `w.transport ?? null`.
+  - **P6C (A20), deployment, the owner's:**
+    - every environment with `AI_ENABLED` sets `ANTHROPIC_BASE_URL` to its gateway;
+    - **set `AI_GATEWAY_TOKEN` only together with that URL.** With the URL unset, the transport would send `cf-aig-authorization` to `api.anthropic.com`. A hardening option for a later task: send the token only when the base URL is a gateway URL;
+    - the hosted smoke test confirms the `Authorization: Bearer` key form SDK 1.2.0 sends;
+    - m4: `dev:edge` passes neither gateway variable to the local Worker, and the README's local-run line is wrong.
+  - **Later clean-up:**
+    - n1 (`parseRetryAfter` accepts malformed values);
+    - n3 (the unused `send` helper in `fake-model.ts`);
+    - n4 (an Anthropic client built per Worker route while AI is on);
+    - n5 (receipt inaccuracies).
+- **P2-T23** (#409, merged as `f22c5a8` on 11 Nov; promoted as #413). Both reviews approved: Opus (`reviews/P2-T23.md`) and Flash (`reviews/P2-T23-second.md`).
+  - **m1, ruled R108 (the controller, 11 Nov), for P2-T24:** the front card's "today" counts today's confirmed expenses **plus today's waiting expense drafts, once**, using P2-T16's `todayOutMinor` definition ("the confirmed total plus open expense drafts dated today whose id is not confirmed").
+    - Why: the approved board (rh-offline: −฿97, "วันนี้ใช้ไป 97 บาท"), P2-T12's card spec (plan line 796) and P2-T16's toast all count the draft. Plan line 1240's "confirmed only" is the outlier, and the budget card already counts the ฿50.
+    - P2-T24 edits `homeWallets.ts` anyway (the `frontFirst` swap). It changes `spentByWallet`, flips `homeWallets.test.ts:91-108`'s case, and re-aims mutant H17. The reviewer's probe is `scratch/p2-t23-review/tree/apps/app/src/wallet/home/zzprobe/rhOffline.probe.test.ts`.
+  - m2 (the receipt's `TODAY_PAGES` 50, really 20) is fixed in `7c2682b5`.
+  - **Nits:**
+    - n1: the receipt's gate and mutant lines drift from the template;
+    - n2: the hook's test doesn't pin that a refused draft reads nothing (R14 survives); a later pins task;
+    - n3: the floating-point source scan no longer covers `availableBalances`; add the new path;
+    - n4: the English drafts read "Spent this month Amount hidden, Over budget"; for E2-B's copy pass.
+- **P2-T33's first review** (`reviews/P2-T33.md`, Approved on `5844e4c1`; four minors, six nits; probes in `scratch/p2-t33-review/`). None of it is reachable until P2-T34: `getAppLocalAuth()` answers `noLocalAuth`, so the lock cannot be turned on.
+  - **m1, for P2-T34, which needs a phone:**
+    - On Android, React Native sends `background` on every `onHostPause` and never `inactive`. So a credential screen that is an activity (Android 10 or earlier with the passcode fallback, or a passcode-only phone) makes a new opening. The gate then drops the prompt's answer and asks again (probe B).
+    - P2-T34's phone check must cover it. If it happens, the gate needs a ruled change before the lock ships.
+  - **m2** (P2-T34, unless fixed here): on a cold start the first automatic prompt can use the passcode's words on a Face ID or fingerprint phone, because the setting read beats the phone read (probe C). Fix: hold the first automatic ask until the first phone read settles.
+  - **m3:** if the app is back in front before an earlier prompt answers, the new opening never asks by itself. `asked.current` is set even when `unlock` returns early (`LockGate.tsx:235`, `:255-257`). It fails closed, with no prompt (probes A and F). Fix: add `busy` to the effect's condition and dependencies.
+  - **m4:** the turned-off notice's "no timeout" is unpinned (mutant M1 survives). Fix: a fake-timer case that advances 60 s.
+  - **Nits:**
+    - n1: "launched behind waits" has no case (M4);
+    - n2: `app/settings/lock.tsx` has no test (M6, M7);
+    - n3: `change()`'s same-state guard (M2);
+    - n4: `unlock` resets `asking` only on its normal path, so an answer outside `AuthResult` leaves a dead button. Use `try/finally`, and P2-T34's mapping must stay total;
+    - n5: a vacuous assertion at `Lock.render.test.tsx:210`;
+    - n6: an unreadable store gives a false "turned off" notice with `noLocalAuth`.
+  - **P2-T34 also:** keep `getAppLocalAuth()` one stable object. Otherwise `readPhone` changes identity on every render, and the mount effect re-reads the phone (`LockGate.tsx:187-201`).
+  - **P2-T35 and 1C's sign-out need a ruling, possibly the owner's.**
+    - The sign-out erase (`eraseWithDiary`) removes `jotbun.wallet.lock` and `lock-answered`, but the gate does not hear it.
+    - So the lock stays on in memory until the next launch, and then it is off with no notice.
+    - Should a privacy lock leave with the account's sign-out, and should the gate hear it?
+  - **Later Sheet hosts:** under the cover, a Sheet unmounts its children (P10), with the lock on even on `inactive`. A future sheet that keeps state in its children would lose it (probe G).
+  - **P19's device checks gain:**
+    - TalkBack repeats no unchanged live-region note, so two misses are heard once;
+    - VoiceOver may reach both the gate's lock screen and the Modal's copy.
+- **1B-T13's first review** (`reviews/1B-T13.md`, Approved on `7eeff709`, Claude Opus 5.5 xhigh; three minors, five nits). Both reviews independently found m2 and m3 (the second's n5 and n3). Carriers, as the reviewer suggests:
+  - **1D-T12:**
+    - m1: no CI test of the live socket's production path (TanStack Start's `/v1/$` passing a 101 with `webSocket`). Only P23's uncommitted smoke proves it, and the reviewer reran it: it passes.
+      - Add the smoke's case to `c1-worker.db.test.ts`. It needs no database, and `startVaultWorker` gives it an issuer.
+      - Also: 1D-T12's Step 5 RED ("stops at the socket's open") will not fail as written, because the socket already opens through `/v1/$`. Its planner needs another RED, for example a Node dispatch case answered before `handler.fetch`.
+    - m2: pin the `/api/auth/*` dispatch at `src/server.ts:21`. 1D-T12 is the next task to edit `src/server.ts`.
+  - **1C-T10b:** m3, an `''` row for each setting in `ready.test.ts:54`'s `it.each`. Do it when 10b extends `readyResponseOf` and drops `AUTH_JWKS_URL`; README n3 then resolves itself.
+  - **1C-T10a:** the 1C plan's shared files name `wrangler.vault.jsonc`, which is gone. `wrangler.jsonc` holds `AUTH_DB`, `ERASURE_DB` and the auth vars, and `vitest.workers.config.ts` declares only `AUTH_DB_REFERENCE`.
+  - **1C-T11:**
+    - the plan's `vault-route-coverage.test.ts` checks now live in `route-coverage.test.ts`;
+    - `DELETION_WORKFLOW` goes into `wrangler.jsonc`, `src/vault-worker.ts`, `src/server.ts`'s re-export (`c1-shape.test.ts:54-56`) and `c1-shape`'s Workflow list.
+  - **A later clean-up task:**
+    - n1: the receipt's `uploads.ts:50`/`:61` line is now `:51`/`:62`;
+    - n2: stale comments in `test/support/money-session.ts:2-4`, `files-session.ts:5-7`, `src/server/auth.ts:2-4` and `apps/api/.../parse-worker.spec.ts:9`;
+    - n4: pin `VAULT_ADDED_ROUTES` exactly, not with `toContain`;
+    - n5: pin the parse consumer's B6 settings in `c1-shape`;
+    - P16 to P18's leftovers.
+- 1B-T13's second review (`reviews/1B-T13-second.md`, Approved on `7eeff709`, Claude Opus 5.5 high as Gemini's fallback; no blocker, major or minor; six nits; probes and mutants in `scratch/1b-t13-second/`). The controller checked n1, n3 and n5 against the code. Its n3 and n5 are the first review's m3 and m2 (carried above). n1, n2 and n4 go to the same later clean-up task, or to 1C-T10b for `c1-shape`.
+  - n1: `route-coverage.test.ts:95` skips every route NestJS lacks. Pin the seven edge-only routes' `{ access, gates, status }` (mutants N1 and N2 survive it; `ai.test.ts` kills both today).
+  - n2: P14's "spends no extra use" is unpinned. Add a `remaining` check to the Ask Bun m-1 case (`ai.test.ts:461`); probe P7 kills mutant N5.
+  - n3: `ready.test.ts:54`'s `it.each` sets each setting only to `undefined`. Add `''` (mutant N3 survives).
+  - n4: nothing pins "no secret in `vars`". Add a `c1-shape` assertion that none of `COMMAND_DIGEST_KEY`, `BETTER_AUTH_SECRET`, `ERASURE_KEY` or `ANTHROPIC_API_KEY` is in `vars` (mutant N4).
+  - n5: no test sends `/api/auth/*` through the real entry. Mutant N6 deletes `src/server.ts:21`, and it survives `posthog-proxy` and `c1-shape`. Add a `posthog-proxy.test.ts` case expecting Better Auth's 503 with `env: {}` (probe P1).
+  - n6: the README's deploy steps omit `AUTH_JWKS_URL`, which is needed until 1C-T10b, and replacing the localhost `AUTH_ISSUER` and `AUTH_BASE_URL` (`README.md:90-101`, `wrangler.jsonc:26-27`).
+  - **For any deployment of the one Worker (the owner's call):**
+    - account deletion answers 404 until 1C-T11 (B16), so the Worker must not take real accounts before 1C-T11;
+    - `limits.cpu_ms` 120000 now covers the unauthenticated `/api/auth/*`, `/ingest/*` and the pages, which needs a rate-limit or WAF decision.
+  - **1C-T10a and 1C-T10b:** pin that `AUTH_ISSUER` and `AUTH_AUDIENCE` stay one setting for Better Auth and the vault.
+  - **Later tasks on the deployed path:**
+    - the workers suite runs `src/vault-worker.ts`'s fetch, not TanStack Start's. Anything that must hold on the deployed path (the `/api/auth` dispatch, method handling, CORS preflight) needs a built-Worker case. The template is `scratch/1b-t13-second/tree/apps/edge/test/zz-c1-probe.db.test.ts`.
+    - cleanup: `src/server/env.ts`'s `EdgeSettings` still lists `AUTH0_*`, `RATE_LIMIT_KEY` and `OPERATIONAL_PAUSE*`, which nothing reads now (with the receipt's P16 to P18 leftovers).
 - 1B-T12's confirming review (reviews/1B-T12-confirm.md, Approved on 317cf3a; no minor, six nits):
   - **The merge order (confirm-n6):** #398 (alarm-hardening) edits vault files the 42-step session reaches: `previews.ts`, `attachments.ts`, `jobs.ts`, `user-vault.ts`, `schema.ts` and migration 0004. #396 edits `src/v1/files` and `handler.ts`. Read the `edge` job's `test:edge:db` of whichever of #394, #396 and #398 merges last, on a head that holds all three.
   - confirm-n3: n6's order (`configFor` before `mkdtempSync`) is pinned only by the uncommitted probe (brief F4). No action.

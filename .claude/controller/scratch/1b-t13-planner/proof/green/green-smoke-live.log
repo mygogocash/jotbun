@@ -1,0 +1,10 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge
+
+ ✓ test/live.smoke.db.test.ts > a live socket opens through the /v1 route, answers ping, and hears the other session write 61ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  09:54:10
+   Duration  3.03s (transform 219ms, setup 0ms, import 474ms, tests 2.37s, environment 0ms)
+

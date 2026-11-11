@@ -437,7 +437,7 @@ What the reviewer should look at first:
 @@ -24,11 +24,34 @@ export const FILE_JOBS: readonly FileJob[] = ['prune_files', 'delete_objects', '
  /** One prune: it opens its own short blocks, so it is never called inside another (R21). */
  export type FilePrune = (c: FileContext) => void
- 
+
 -/** The five prunes, in their tasks' order: uploads (1B-T5), exports (1B-T6), snapshots (1B-T8), receipts (1B-T9), imports (1B-T10). */
 -export const FILE_PRUNES: readonly FilePrune[] = [pruneUploads, pruneExports, pruneSnapshots, pruneAttachments, pruneImports]
 +// Each entry below calls its function when it runs, never while this module loads. retention.ts imports this
@@ -459,7 +459,7 @@ What the reviewer should look at first:
 +  (c) => pruneImports(c),
 +  (c) => pruneSnapshots(c),
 +]
- 
+
  /** The due time of each prune, in the same order. */
 -const PRUNE_DUE_TIMES: readonly ((c: FileContext) => number | null)[] = [uploadsDueAt, exportsDueAt, snapshotsDueAt, attachmentsDueAt, importsDueAt]
 +const PRUNE_DUE_TIMES: readonly ((c: FileContext) => number | null)[] = [
@@ -469,7 +469,7 @@ What the reviewer should look at first:
 +  (c) => importsDueAt(c),
 +  (c) => snapshotsDueAt(c),
 +]
- 
+
 @@ -70,12 +93,18 @@ const running = new WeakSet<UserVault>()
   * One run at a time per vault: a run that finds another in progress returns at
 - * once, so deleteDueObjects never overlaps itself (the 1B-T4 follow-up). Each

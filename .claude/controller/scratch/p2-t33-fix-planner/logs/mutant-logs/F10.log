@@ -1,0 +1,79 @@
+
+> gogospend-app@0.1.0 test:unit
+> node scripts/test-unit.mjs src/wallet/lock/lockModel.test.ts src/wallet/copy/draftText.test.ts src/ui/lockCover.test.ts
+
+(node:13276) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/work/apps/app/src/ui/lockCover.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ every Modal a person can open with the lock on draws the lock's cover; the legacy screen's four are the only others (13.126333ms)
+✔ the legacy Modals are drawn only by the legacy /spend screen, which only the development switch shows (44.483958ms)
+(node:13277) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/work/apps/app/src/wallet/copy/draftText.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ every draft line has Thai and English, with the same placeholders (4.86725ms)
+✔ no draft line has an emoji or a dash used as punctuation (1.406333ms)
+✔ every key is unique across every table and has an area prefix (1.103167ms)
+✔ draftText picks Thai for th and English for en and vi, then fills placeholders (0.12175ms)
+(node:13279) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/work/apps/app/src/wallet/lock/lockModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ with the lock on, every app open locks: a cold start and every return from the background (0.679458ms)
+✔ inactive only covers, so the Face ID prompt cannot lock again (0.083208ms)
+✔ with the lock off nothing locks or covers (0.060208ms)
+✖ unlocked unlocks and keeps a cover until the app is in front; disabled clears both, with the lock on or off (0.637584ms)
+✔ AppState's active, inactive and background are lock events; anything else says nothing (0.099167ms)
+✔ an answer that does not unlock says why; unavailable reads the phone first, and only a phone that says it cannot lock turns the lock off (0.079625ms)
+✔ an answer or a reading outside the port's types counts as a failed scan, or as a phone that could not be read (0.154584ms)
+✔ a screen names the phone's method, or the passcode while the phone has not said, and each method has its name, line and body (0.117709ms)
+✔ the setup switch waits for the phone, stays off on a phone that cannot lock and says why, and can always turn a lock off (0.094791ms)
+✔ the lock's Thai lines are the plan's, and only four more (0.156834ms)
+✔ the lock wraps private mode, so nothing that shows an amount renders above it (0.055541ms)
+✔ the wallet root's order: the gesture root, the motion answer, the lock with the app's own port while the wallet area is on, then private mode; with the area off, private mode inside the motion answer (0.125959ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 17
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 203.393542
+
+✖ failing tests:
+
+test at src/wallet/lock/lockModel.test.ts:35:1
+✖ unlocked unlocks and keeps a cover until the app is in front; disabled clears both, with the lock on or off (0.637584ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   covered: true,
+  +   locked: true
+  -   covered: false,
+  -   locked: false
+    }
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/work/apps/app/src/wallet/lock/lockModel.test.ts:39:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { locked: true, covered: true },
+    expected: { locked: false, covered: false },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+npm error Lifecycle script `test:unit` failed with error:
+npm error code 1
+npm error path /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/work/apps/app
+npm error workspace gogospend-app@0.1.0
+npm error location /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/work/apps/app
+npm error command failed
+npm error command sh -c node scripts/test-unit.mjs src/wallet/lock/lockModel.test.ts src/wallet/copy/draftText.test.ts src/ui/lockCover.test.ts

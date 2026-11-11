@@ -1,0 +1,4 @@
+
+> gogospend-app@0.1.0 typecheck:routes
+> node scripts/typecheck-with-routes.mjs
+

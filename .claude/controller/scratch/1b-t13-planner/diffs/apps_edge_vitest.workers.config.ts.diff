@@ -1,0 +1,29 @@
+--- a/apps/edge/vitest.workers.config.ts
++++ b/apps/edge/vitest.workers.config.ts
+@@ -4,8 +4,10 @@
+ import { apiSeams, apiSeamsConfig } from './api-seams.ts'
+ 
+ // Workers-runtime tests: the vault's Durable Object and its SQLite storage run
+-// in workerd through Miniflare, as they run deployed. The bindings below are
+-// synthetic; no cloud resource is touched.
++// in workerd through Miniflare, as they run deployed. The bindings are the one
++// Worker's (wrangler.jsonc), with the vault's module as `main` so the tests
++// never load TanStack Start's entry (B15). The bindings below are synthetic;
++// no cloud resource is touched.
+ export default mergeConfig(
+   apiSeamsConfig,
+   defineConfig({
+@@ -17,9 +19,11 @@
+         const authMigrations = await readD1Migrations('./migrations/auth')
+         const erasureMigrations = await readD1Migrations('./migrations/erasure')
+         return {
+-          wrangler: { configPath: './wrangler.vault.jsonc' },
++          main: './src/vault-worker.ts',
++          wrangler: { configPath: './wrangler.jsonc' },
+           miniflare: {
+-            d1Databases: ['AUTH_DB', 'AUTH_DB_REFERENCE', 'ERASURE_DB'],
++            // AUTH_DB and ERASURE_DB come from wrangler.jsonc; the reference database is the tests' own.
++            d1Databases: ['AUTH_DB_REFERENCE'],
+             bindings: {
+               JOTBUN_ENV: 'test',
+               COMMAND_DIGEST_KEY: 'synthetic-command-digest-key-0123456789abcdef',

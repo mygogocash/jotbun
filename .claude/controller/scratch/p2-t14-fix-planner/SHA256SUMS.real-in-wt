@@ -1,0 +1,9 @@
+ab2fe24fd6fe60300a07aed465aa11987335b0d166b4d3dbb7ddeedb35c1fbd2  apps/app/src/wallet/add/addFlow.test.ts
+cdbc68f5685178b089bc23ecb928ee428edd70aeb8723a8060ac4f2341f5e4fa  apps/app/src/wallet/add/AmountStep.render.test.tsx
+b3a6a20f796ef900ae344baa480aff299c0393eaa24fa1b4c5ca2b2eda8c4cc4  apps/app/src/wallet/add/amountStepNative.test.ts
+ca149990c5c70258d6e7da9a5448306e7fb0ae17f49418f7b0b44f68a3fe11a1  apps/app/src/wallet/add/WalletKeypad.tsx
+9fcf196246b7f6b729266a1b43516cb271ecc6c527252843a5bbb3a6747e84a7  apps/app/src/wallet/add/QuickChips.tsx
+88f9a272ce61c4010866090bec1c6e468b45010d26d26e2b98d19c59c2f44157  apps/app/src/dev/catalogue/wallet/addSections.tsx
+2e80603e25aeb8327d27975d37831d33bdefc6bd2f536daa7c6d6b85ae2a38e2  apps/app/src/wallet/add/addFlow.ts
+a114d81c7de56ac1270c648859b90d7dc27cdeea8d97496e2cf659b7545bf55b  apps/app/src/wallet/add/AmountStep.tsx
+d15602cad049eaa7a92375cc6d2d064211b3ca1e86a17e487509efb52b06f03f  apps/app/src/wallet/add/TypeSwitchHeader.tsx

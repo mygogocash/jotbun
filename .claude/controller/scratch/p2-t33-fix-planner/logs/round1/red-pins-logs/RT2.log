@@ -1,0 +1,30 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/red/apps/app
+
+ ✓ src/wallet/lock/LockRoute.render.test.tsx > without the wallet area the route goes to Settings, whatever it is asked 13ms
+ × src/wallet/lock/LockRoute.render.test.tsx > under the wallet area it is the setup screen, as the setup step only with ?setup=1 5ms
+   → {"setup":"1"}: expected null not to be null
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  22:10:50
+   Duration  649ms (transform 34ms, setup 78ms, import 241ms, tests 19ms, environment 140ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/lock/LockRoute.render.test.tsx > under the wallet area it is the setup screen, as the setup step only with ?setup=1
+AssertionError: {"setup":"1"}: expected null not to be null
+ ❯ src/wallet/lock/LockRoute.render.test.tsx:57:66
+     55|     route.params = params;
+     56|     render(<LockRoute />);
+     57|     expect(screen.queryByText(form), JSON.stringify(params)).not.toBeN…
+       |                                                                  ^
+     58|     expect(screen.queryByText('redirect to /settings')).toBeNull();
+     59|     cleanup();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

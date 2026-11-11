@@ -1,0 +1,19 @@
+# dist/server/index.js, its last export line:
+export { ExportWorkflow, SnapshotWorkflow, StatementParser, UserVault, worker_entry_default as default };
+# dist/server/wrangler.json, the bindings:
+name "jotbun-edge"
+main "index.js"
+durable_objects {"bindings": [{"name": "VAULT", "class_name": "UserVault"}, {"name": "PARSER", "class_name": "StatementParser"}]}
+migrations [{"tag": "v1-user-vault", "new_sqlite_classes": ["UserVault"]}, {"tag": "v2-statement-parser", "new_sqlite_classes": ["StatementParser"]}]
+workflows [{"name": "jotbun-export", "binding": "EXPORT_WORKFLOW", "class_name": "ExportWorkflow", "default_retention": {"success_retention": "1 day", "error_retention": "7 days"}}, {"name": "jotbun-snapshot", "binding": "SNAPSHOT_WORKFLOW", "class_name": "SnapshotWorkflow", "default_retention": {"success_retention": "1 day", "error_retention": "7 days"}}]
+queues {"producers": [{"binding": "PARSE_QUEUE", "queue": "jotbun-statement-parse"}], "consumers": [{"queue": "jotbun-statement-parse", "max_batch_size": 1, "max_concurrency": 1, "max_retries": 100, "retry_delay": 30}]}
+containers [{"class_name": "StatementParser", "instance_type": "basic", "max_instances": 1, "name": "jotbun-edge-statementparser"}]
+kv_namespaces [{"binding": "CONFIG", "id": "00000000000000000000000000000000"}]
+r2_buckets [{"binding": "OBJECTS", "bucket_name": "jotbun-private-objects"}]
+d1_databases [{"binding": "AUTH_DB", "database_name": "jotbun-auth", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "../../migrations/auth"}, {"binding": "ERASURE_DB", "database_name": "jotbun-erasure", "database_id": "00000000-0000-0000-0000-000000000001", "migrations_dir": "../../migrations/erasure"}]
+send_email [{"name": "EMAIL"}]
+hyperdrive []
+limits {"cpu_ms": 120000}
+dev {"enable_containers": false}
+triggers {}
+assets {"directory": "../client"}

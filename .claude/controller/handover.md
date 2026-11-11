@@ -4,6 +4,347 @@ Durable folder: `/Users/kunanonjarat/Developer/jotbun/.claude/controller/` (prot
 
 Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vault-core`), head 0bd5659 (controller state after 1D-T8's dispatch). Nothing outside `.claude/` changed since 606e131. No PR is open into the integration branch; only #70 into main.
 
+## 11 Nov 20:30 Bangkok: HOLD LIFTED (owner: "Resume the build"); three builders on Claude Code
+
+The owner answered the controller's question at about 20:20 with "Resume the build": three lanes, each to merge on green CI after review and then be promoted.
+
+**Antigravity is out of quota until about 18 Nov, 08:10 Bangkok** ("Usage Limit Reached ... reset in 6 days, 11 hours"; T3 snoozed the failed threads until 2026-11-18T01:11Z).
+- The first two launches failed before any tool call: P2-T14 `mcp:launch:461f0741…` and P2-T33 `mcp:launch:3e68ad43…`. Do not reuse them.
+- Under the owner's rule ("if run out of ai credit please use other"), every role runs with `make_prompt.py --claude-code` until then. Implementers are Claude Code Haiku 5.5 at max effort.
+
+**In flight** (launched threads don't wake the controller: use `t3_thread_read` or `t3_thread_wait`):
+
+| Task | Thread | Worktree and head | Notes |
+| --- | --- | --- | --- |
+| P2-T14 implementer | `mcp:launch:ed82a2d8ff3f16d67c03fe23fb284697aeab3460660cb368f946fae09413c391` | `p2-t14`, fast-forwarded to `96a52c2a`, installed | P1 to P17 accepted. P2-T12 merged first, which is the brief's P15 case: a 3-way apply of `index.ts` must equal `scratch/p2-t14-rebase/` (sha256 `f74fa284…`). |
+| P2-T33 implementer | `mcp:launch:ff142b9fea7604cb9452ecf629f7038a00093a215b4264199366d3779a40b20f` | `p2-t33`, fast-forwarded to `96a52c2a`, not installed (Step 1.1 installs) | P1 to P20 accepted. See the planner-rebase and `WalletCard.tsx` notes below. |
+| 1B-T13 implementer | `mcp:launch:45eecdab3fa9e75c94c5c040acf48efaa67ad965a4dab26050b3f29f1a70b462` | `p1-1b-t13`, new at `96a52c2a`, with `install-edge` | The controller reviewed the brief: P1 to P25 accepted. `--lock`. Step 0.5 was pre-checked (54 of 54 OK). #396 merged first, which is the brief's P21 case. |
+
+**P2-T33 notes:**
+- **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
+- **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
+
+**00:45 (12 Nov): the Mac slept from 23:08 to 00:31, stalling CI and one agent. It is held awake now. #407 and #406 have their confirming reviews approved; #410 reruns its lost jobs.**
+- **The sleep.** `pmset` shows `sleep 1` (one minute). At 23:08 the Mac entered Idle Sleep, then fell back asleep at each dark wake with "Dark Wake Thermal Emergency".
+  - Both runners went offline. Jobs were cancelled or abandoned, and runner-1 hung, so it was recreated (`docker rm -f` plus `runners.sh up 2`; the image re-registers it with `--replace`).
+  - The P2-T25 second reviewer's turn stopped ("Antigravity sent nothing for 15 minutes"). It was resumed with a message.
+- **Held awake:** `caffeinate -i -s -t 28800` (pid in `scratch/caffeinate.pid`). It started at 00:37 and ends by itself at about 08:37; the display can still sleep. Stop it with `kill $(cat scratch/caffeinate.pid)`.
+  - **For the owner:** thermal pressure read 2 ("heavy") at 00:35. `hybridsearchd` (Spotlight's indexer) used about 3.2 cores, which the worktrees and scratch trees feed. Excluding `~/Developer` from Spotlight (System Settings, Spotlight, Search Privacy) would cut that heat. That is the owner's setting to change.
+- **CI cancelled** on heads that will change: #411 and #412 (fix rounds) and #406 (it must merge the integration head after #407). This keeps the two runners for #410 and #407.
+- **#407 (P2-T14):** the confirming review is Approved (`reviews/P2-T14-confirm.md`: m1, m2, n1, n2; carry them at merge). Waiting on CI at `28b9d5ac` (background `wait_ci.sh 407`).
+- **#406 (P2-T33):** the confirming review is Approved (`reviews/P2-T33-confirm.md`: m1, n1 to n3). After #407 merges, merge the integration head in (`index.ts` as `merge/index.t14-t12-t33.ts`, `draftText.test.ts` merged), push, then wait for CI and merge.
+- **#410 (P3-T4):** the SQL job was "The operation was canceled" at 17:31 UTC (the sleep), and 3n+1 was cancelled. The new `rerun_then_wait.sh 410 43051770978` reruns them once the run ends, then waits.
+- **#411 (P2-T32):** the Flash second review is Approved, with one nit, the first review's m1. The fix round goes ahead (R110).
+- **Watcher:** `verdict:P2-T25-second`, plus `file:` for the briefs of P2-T29, P2-T31, P2-T25-fix and P2-T32-fix.
+
+**23:45: #410 (P3-T4) has both reviews approved and waits on CI. #411 and #412 need fixes, with Opus fix planners running. UI-heavy planning goes back to Opus.**
+- **#410:** both reviews approved (Opus `reviews/P3-T4.md`, with m1 to m4 carried; Flash `reviews/P3-T4-second.md`). The carriers are in followups.md (P3-T6, P3-T7, P3-T8, P3-T10, P3-T3, P4-T6, P6C).
+  - **Deployment note:** set `AI_GATEWAY_TOKEN` only together with `ANTHROPIC_BASE_URL`.
+  - CI is at 6 of 9. A background `wait_ci.sh 410` is running; merge on green with `merge_task_pr.sh 410 a68fcd81 P3-T4`, then `promote_pr.sh P3-T4 410`.
+- **#412 (P2-T25):** the first review says Needs fixes, with 2 majors.
+  - **R109:** the wallet screen words a restore without the amount while private mode is on (the old screen keeps its words); the `trackRecordRestored` call is removed, since nothing was carried (1D-T7 #138 has not merged).
+  - Fix planner, on Opus: `mcp:launch:79936cd9fbcf6cb46b7f9d2e01dbae02206a44f460bb1162ee8d6dcad42710dc`, writing `briefs/P2-T25-fix.md` with the kit `scratch/p2-t25-fix-planner/`, on `b840c195`.
+- **#411 (P2-T32):** the first review says Needs fixes, with 8 majors (M1 to M8).
+  - **R110:** fix each as the review proposes, and stop BLOCKED on anything the plan can't settle.
+  - Fix planner, on Opus: `mcp:launch:3bc47b4b91a6048f51f2d075bef60ef6144af6c677e5f4e9bc9e8d53c240c60a`, writing `briefs/P2-T32-fix.md` with the kit `scratch/p2-t32-fix-planner/`, on `71b2255e`.
+- **Routing change (lessons.md):** Flash plans well-specified logic; UI-heavy tasks are planned on Opus. The running Flash planners for P2-T29 and P2-T31 (UI) finish, but each of their briefs gets an **Opus brief review** against the plan's test list, the boards and the wallet kit before any build.
+
+**23:30: #409 (P2-T23) MERGED, promoted as #413. The #406 fix is pushed, with its confirming review running.**
+- **#409 merged as `f22c5a8`,** with no owner yes (ruling of 21:25): CI 9 of 9, and both reviews approved (Opus, Flash). Issue #169 is closed, and WT `p2-t23` and its branches are removed. Promotion PR **#413**.
+  - Review m2 (the receipt's `TODAY_PAGES`) is fixed in `7c2682b5`.
+  - Review m1 is **ruled R108** for P2-T24: the front card's "today" counts today's waiting expense drafts once (P2-T16's definition), following rh-offline and P2-T12's spec. See followups.md.
+- **#406 (P2-T33).**
+  - The fix commit `8e270766` was checked: 12 files on `5844e4c1`, all 11 fix-kit files identical, 166 of 166 mutants killed, `git diff --check` clean.
+  - Pushed as a fast-forward, so #406's head is `8e270766` and CI reruns. The body has a fix-round section.
+  - The confirming review, on Claude Code Opus high, writes `reviews/P2-T33-confirm.md`: `mcp:launch:5c1c18c7a547ab3ae26469e0c628d2321262c50bd957fd180c256c52b25654db`.
+  - **Merge only after #407:**
+    1. Merge the integration head into `p2/t33-face-id-lock`, with `index.ts` as `merge/index.t14-t12-t33.ts` and `draftText.test.ts` merged.
+    2. Push, wait for CI, then `merge_task_pr.sh 406 <that head> P2-T33`. The head differs from the confirmed `8e270766` only by that planned merge.
+
+**23:25: two more Flash planner lanes, since the Mac's load is about 7 and planning doesn't use Claude Code.**
+- **P2-T29** (categories, the category tray and the Thai pack tray): `mcp:launch:11bf352998e7f62f46eef5950d167ee15f667c8eff10ac068d5b8efb523eb960`. WT `p2-t29` on `p2/t29-categories`, pre-made with `npm ci`.
+- **P2-T31** (insights): `mcp:launch:92c37c30c475ed6ce1e646a9d352a02fabb84d1e44f1c8e9c6fbf0ed8207ba8e`. WT `p2-t31` on `p2/t31-insights`, pre-made.
+- Both carry the Flash notes: asserting lookups, a mutant per guard, BLOCKED rather than guessing.
+- **Check their kits with all three checks before accepting:** the kit, the RED failure types, and RED typecheck proof against the brief's steps.
+
+**23:20: P2-T32 → PR #411 and P2-T25 → PR #412, both in review. #409's second review (Flash) approved.**
+- **P2-T32:** commit `71b2255e` (14 files, all 13 `real/` identical; message in `feat(wallet):` style because the Flash brief named no commit line; cosmetic, left). RED 15 assertions; 31 of 31 mutants (`scratch/p2-t32/mutants.out`).
+  - PR **#411** (closes #178).
+  - Reviews: Opus `mcp:launch:ac27ecb0493487a364a155a0994619f5a18fbf27bc936d8b38255fb4c0a4a070`, Flash `mcp:launch:f17bed097f0ba34de8d89e4491d1ec77b1d3d009e4af15bbd04aace72bce2a21`.
+- **P2-T25:** commit `b840c195` (9 files, all 8 `real/` identical). RED 9 assertions; 19 of 19 mutants.
+  - PR **#412** (closes #171).
+  - Reviews: Opus `mcp:launch:ea088c4bc10e24ec71537ff8456f74b50e9d86066a800c1e00df839dad5bee93`, Flash `mcp:launch:f9d3b090f96b34c8a69734048ff20870054cb835d38d2937c8d768b9ec07beaf`.
+- **#409's second review** (`reviews/P2-T23-second.md`): Approved. Its first review (Opus) is still running.
+- **Load:** five Opus reviews on Claude Code at once (#407 confirm, #409, #410, #411, #412), so no new lanes until some clear.
+- **Merge order on approvals:**
+  1. #407 first (its confirm, then the P2-T20 build, then the #406 update).
+  2. #409, #410, #411 and #412 are independent of each other, except `index.ts`: #411 and #412 both add a spread. The second to merge needs a 3-way update and a CI rerun.
+
+**23:10: the #407 fix is pushed and its confirming review is running. P2-T25's reworked plan is accepted, and its builder is running.**
+- **#407 (P2-T14).**
+  - The fix commit `28b9d5ac` was checked: 11 files on `18876253`, all 10 fix-kit files identical, 138 of 138 mutants killed (`scratch/p2-t14-fix/mutants.out`), `git diff --check` clean.
+  - Pushed as a fast-forward, so #407's head is `28b9d5ac` and CI reruns. The body (`pr-p2-t14.md`) has a fix-round section.
+  - The confirming review, on Claude Code Opus high, writes `reviews/P2-T14-confirm.md`: `mcp:launch:f2e760bb45aaac343b9114eeef25fabb58506f32a10fe9fad03da67d43ad7351`.
+  - **Merge when it approves and CI is green at `28b9d5ac`:** `merge_task_pr.sh 407 28b9d5ac P2-T14`, then `promote_pr.sh P2-T14 407`, then dispatch the P2-T20 build (check its kit with the 3-way fallback first) and update #406.
+- **P2-T25, reworked by its Flash planner.**
+  - The kit checks at `647cb4a0` with 27 OK.
+  - RED is 9 of 9, all `AssertionError` from asserting helpers, with 0 lookup errors.
+  - 19 of 19 mutants (was 9). Typechecks are at the gate, with 0 errors.
+  - P1 to P6 accepted.
+  - The builder, on Flash: `mcp:launch:ef2026572fc37bc0230281552abc5b919928679520452f0d9b462148810e348b`, in WT `p2-t25`.
+
+**23:05: P2-T32's Flash plan (steered) is READY and accepted. Its Flash builder is running.**
+- **The brief:** `briefs/P2-T32.md`, 13 files. The kit `scratch/p2-t32-planner/` checks at `8c6263a4` with 36 OK, and its 3 `orig/` files are identical.
+- **All three checks passed:**
+  - RED is all `AssertionError` (render 11, `recapShare` 2, `biggestDay` 2), with 0 lookup errors and 0 timeouts;
+  - the brief's RED typecheck has a proof log with 0 TS errors;
+  - 31 mutants, one per guard.
+- **The steer worked:** P2 is the asserting-lookup rule and P3 the mutant coverage. P1 to P8 accepted.
+- `index.ts` merge proofs with #407 and #406 are in `PL/merge/`.
+- **The builder,** on Flash: `mcp:launch:35f26db3b389fe300f117c36979e97ebfcab68954c88f6648f5e203bd2605ee2`, in WT `p2-t32` (pre-made).
+- **After DONE:** a first review (Opus) and a second review (Flash): P5's private mode applies to the share text.
+
+**23:00: P3-T4 DONE (planned and built on Flash) → PR #410, both reviews running.**
+- Commit `a68fcd81`. The controller checked it: 14 files (3 A, 11 M), `git diff --check` clean, 13 of 14 `real/` identical. The receipt differs only by its Deviations (P1 to P5, and the two RED rulings). Trailer: Gemini 3.8 Flash.
+- Reported:
+  - RED: 8 assertions and the one ruled timeout;
+  - GREEN: unit 38, `ai.test.ts` 43, `test:edge` 189;
+  - 8 of 8 mutants.
+- PR **#410** (closes #188 by hand), body `pr-p3-t4.md`.
+- Reviews:
+  - the first, on Claude Code Opus, adding mutants for the `service.ts`, `handler.ts` and `routes.ts` wiring: `mcp:launch:b72fdba54026ab286a2e8c2034ffadf2bfdfad744abe5f4b9d368aec77411fce`;
+  - the second, on Flash, on privacy and secrets (prompts go through a third party): `mcp:launch:4d601c4e04e5f7d552c81072732a06109adf1088b8dacf52711d706347d6c94f`.
+
+**22:55: P2-T23 DONE (the first Gemini 3.8 Flash build) → PR #409, both reviews running.**
+- Commit `0c3bbeb7`. The controller checked it: 11 files (9 A, 2 M), `git diff --check` clean, all 10 `real/` files byte-identical. The trailer is `Co-Authored-By: Gemini 3.8 Flash`.
+- Reported: RED all assertions (14 Node, 6 render), GREEN, 77 of 77 mutants, `test:unit` 988, focused render 158.
+- PR **#409** (closes #169 by hand), body `pr-p2-t23.md`.
+- Reviews, with focus notes in `scratch/dispatch/P2-T23-{reviewer,second}-notes.md`:
+  - the first, on Claude Code Opus: `mcp:launch:b18ce1bdf17f225f43c4649ef8b1345e479582a419cb3c83f77f10873bc9bab5`;
+  - the second, on Flash (a different family): `mcp:launch:560d32a0e4159d3fa5e9ba14a7bdfac5e4b7484f717e02279cf80183a022bd30`.
+- Merge when CI is green and both approve (no owner yes; ruling of 21:25). Then promote.
+
+**22:50: the P2-T33 fix brief is READY and accepted. Its Flash fixer is running. Both P2 fix rounds are now building.**
+- **The brief:** `briefs/P2-T33-fix.md`. The kit `scratch/p2-t33-fix-planner/` checks against `5844e4c1` with 55 OK, and its 9 `orig/` files are identical.
+- **RED:** Node 2 of 18 and render 9 of 40, all on assertions, plus 1 expected unhandled `TypeError` ("reading 'step'"), which is the n4 bug. 166 of 166 mutants killed, twice.
+- **What it does:**
+  - M1: `ReceiptViewer` draws the cover. `lockCover.test.ts` is a source test that keeps the Modal sweep. Three Modals are covered; the four legacy ones are shown only under the development-only `EXPO_PUBLIC_LEGACY_SPEND=1`, and are recorded.
+  - The gate's fixes: the first ask waits for the phone read; an opening counts only when its prompt starts; `try/finally`; port types are fail-closed; turning on is stored fail-closed (new copy `lock.notStored`); quiet on iOS under the cover (a flag in `ui/a11y.ts`); the keyboard is dismissed; n6 fixed.
+- **Calls accepted:** `sync/announce.ts` (one line, `announceStatus` quiet under the cover; R107's intent though unnamed) and `Sheet.tsx` (a comment only).
+- **The fixer,** on Flash: `mcp:launch:a413c405816e916a6f8b87a55cb29807ed99ec8c4aa4d89adefb8b2323e880fd`, in WT `p2-t33` on `5844e4c1`, with no merge.
+- **After DONE:**
+  1. Verify, push, update #406's body and run CI.
+  2. Run a confirming review on Claude Code Opus.
+  3. Merge after #407. That needs the `index.ts` resolution (`merge/index.t14-t12-t33.ts`) and `draftText.test.ts` merged, then CI rerun on the merge commit.
+
+**22:45: P3-T4's builder was BLOCKED at RED; ruling sent.**
+- At Step 1.3, `typecheck:edge` returned rc 2: the stub and the test need `env.ts`'s new optional `AI_GATEWAY_TOKEN` type, which the brief copies only at GREEN. The planner's `run-red.sh` ran `vitest` only, which never typechecks.
+- **Ruling, sent with `t3_thread_send` to `mcp:launch:bd268f71…`:**
+  - copy `real/…/v1/env.ts` at Step 1 (a type-only change);
+  - Step 2 expects 9 failed: 8 `AssertionError` and 1 `Test timed out in 5000ms` in exactly "a call that outlives its time fails as a timeout and is recorded" (the stub has no deadline). The planner's `proof/red/red-node.log` shows the same.
+- lessons.md now says to check the planner's proof script against the brief's RED steps.
+
+**22:40: the P2-T14 fix brief is READY and accepted. Its Flash fixer is running (#407 is the critical path).**
+- **The brief:** `briefs/P2-T14-fix.md`. The kit `scratch/p2-t14-fix-planner/` checks against `18876253` with 42 OK, and its 11 `orig/` files are identical. RED has no non-assertion failures (render 10, unit 2).
+- **The proofs:** 138 of 138 mutants killed; the reviews' 11 survivors survive on `18876253`'s own tests.
+- **R106 amended (the planner's P1, accepted):** at large text the type switch sits under the amount and its problem. At the top of the middle it would cover the whole amount at AX5 on a 667 pt phone; mutant L2 is that layout.
+- **The rest:**
+  - masking, and a fill restarting on the first key, so no `too_precise` and no bare `฿65.`;
+  - income's name above Tell Bun (rh-income), with a 72 pt name row;
+  - the name field blurs when the keyboard hides;
+  - the chip-label rule is a header line plus P2-T16's note.
+- **The fixer,** on Flash: `mcp:launch:2a6e6ee8c4c365544d454083494aee8e47667d8fa251421de1c6df59026bf980`, in WT `p2-t14` on `18876253`, with no sync merge.
+- **After DONE:**
+  1. Verify against `real/` and push to `p2/t14-add-flow`.
+  2. Update #407's body and rerun CI.
+  3. Run a **confirming review on Claude Code Opus** (new logic on money and privacy work).
+  4. Merge, promote, then start P2-T20 and update #406.
+- `watch_agents.sh` gained `moved:<wt>:<sha>`, for a fixer on a branch that already has its own commits.
+
+**22:35: P2-T25's Flash plan was sent back for a rework. P2-T32's Flash planner was steered before writing its tests.**
+- **P2-T25 READY, not accepted.**
+  - The kit checks at `d16bc1d0` (27 OK, 3 `orig/` identical), but its RED `logs/red.log` is 7 `TestingLibraryElementError` out of 8, against P14(d)'s rule.
+  - Its 9 mutants are thin.
+  - Sent back with `t3_thread_send` (run 2) to the same Flash thread `mcp:launch:b7caf9c09b556ad44fb73e8d705c7ee2dac680aebe6c48f4b7e50212f7ca86f8`: asserting lookups, one mutant per guard, re-prove, new sums, READY again. Its WT `p2-t25` is ready.
+- **P2-T32's planner** (`mcp:launch:9ff21d2cf9701cfc761338a5ce383b6978ad2f8c6a551f6ab31665478fbd357e`) was steered with the same two rules.
+- `planner-flash-notes-20261111.md` and lessons.md now state the rule ("check the RED failure types before accepting any plan").
+- `watch_agents.sh` gained `newer:<path>:<epoch>`, for a reworked brief that already exists.
+
+**22:25: P2-T23 READY (Claude Code Opus planner). P1 to P15 accepted; its Flash builder is running.**
+- **The brief:** `briefs/P2-T23.md`, 59 KB, size M. The kit `scratch/p2-t23-planner/` checks at `29aba3dd` with 34 OK, and its 2 `orig/` files are identical.
+- **The proofs:** RED 14 of 14 Node and 6 of 6 render cases, all assertions; 77 of 77 mutants killed.
+- **No files in common** with #407 and #406 (or their R106 and R107 scope), P2-T20 or P2-T25. `merge/README.txt` holds the sha256s with #407 and #406 laid over.
+- **Calls to keep in mind:**
+  - P3: `availableBalances` moves to a pure module, and `entryHelpers.ts` re-exports it;
+  - P4: a private copy of P2-T20's `frontFirst`, which P2-T24 swaps for an import;
+  - P8: `headline` is the month's spending estimate, and private mode says no number.
+- **The builder,** on Flash: `mcp:launch:8bd4778b30ac1c7143b668103927cad751e1fec60e84e554656fd86ec86d4a91`, in WT `p2-t23` (pre-made, installed). The brief was written for Haiku; Flash follows it unchanged.
+- **After DONE:** a first review (Opus) and a second review (Flash), since Home shows balances, budgets and private mode.
+
+**22:20: P3-T4's Flash plan is READY and the controller accepted it. Its Flash builder is running.**
+- **The brief:** `briefs/P3-T4.md`, 14.6 KB, size M, 14 files: 3 new, and 11 shared edge files that #406 and #407 do not touch. The kit `scratch/p3-t4-planner/` checks at `5e514bf0` with 48 OK, and its 11 `orig/` files are identical.
+- **The controller's review of the Flash plan:**
+  - RED is real: 9 of 9 fail, 8 of them on assertions.
+  - The 8 mutants all target `transport.ts` (gateway logging and caching off, the 2 s floor, 529 and rate limits, the gateway token, env gating) and are all killed.
+  - Weak spots for the reviewer: no mutant covers `service.ts`'s `tracedSend` and `AiDeadline(25_000)` wiring, or `handler.ts`'s `transportFromEnv` fallback; the 43 `ai.test.ts` cases cover them behaviourally. P1's auth-header test accepts either header, but the SDK 1.2.0 chooses it.
+  - P1 to P5 accepted.
+- **The builder,** on `antigravity` `gemini-3.8-flash-high`: `mcp:launch:bd268f71aa52ecb259c0e12f7106b76a8cd58f06ced7c5777063f210b7f1d4f6`, in WT `p3-t4` (pre-made, installed), with the lock.
+- **After DONE:**
+  1. Verify the commit against `real/`.
+  2. Run `open_task_pr.sh`.
+  3. Dispatch the first review on Claude Code Opus. Focus on the wiring above, and add mutants for `service.ts` and `handler.ts`.
+  4. Dispatch the **second review** (privacy: user prompts go to a third party through the gateway, with logging and caching off) on Flash.
+- **The watcher's planner signal is now the brief file, not the kit's `SHA256SUMS`.** The Flash planner wrote its sums mid-run, and the watcher fired early. SKILL.md and `watch_agents.sh` say so.
+
+**22:10: the four new lanes' worktrees are pre-made, so builders start without an install.** `new_task_worktree.sh` made them at `675569e2` (controller-state commits only since the planners' bases):
+- `p2-t23` (`p2/t23-home-data`), `p2-t25` (`p2/t25-recently-deleted`) and `p2-t32` (`p2/t32-month-recap`), each with `npm ci`;
+- `p3-t4` (`p3/t4-gateway-transport`), with `npm ci` and `install:edge`.
+- Dispatch their builders with `--installed`.
+- Notion setup is deferred by the owner ("let's do notion later"); its state is in the auto-memory `notion-setup-pending`.
+
+**21:50: Antigravity's Gemini pool is now used to the full (owner: "Antigravity still have a lot of usages please find the way to maximize").**
+- **The owner's usage screen, 21:34:**
+  - Antigravity Gemini: weekly 55% left, 5-hour 100%;
+  - Gemini 4 Argon: weekly 1%;
+  - Antigravity Claude and GPT: 0%, resetting in 6d 10h;
+  - Cursor models: 2%; Grok: 3%.
+- **`make_prompt.py --spread` now routes:**
+  - builders, fixers, second reviews and the simpler lanes' planners to `antigravity` `gemini-3.8-flash-high`;
+  - first and confirming reviews to Claude Code Opus (confirm on Opus high, no longer Sonnet);
+  - hard or money and privacy planners with `--claude-code`.
+  - Flash planners get `scratch/dispatch/planner-flash-notes-20261111.md`: fully mechanical briefs, and BLOCKED rather than guessing a design call.
+- **Planners moved:** the two Grok planners were stopped before writing anything (Cursor at 2%). They were relaunched on Flash, and one lane was added:
+  - **P3-T4:** `mcp:launch:f08a12db4a0746d271a6d5a447fc8efdbeb7035e6adb24b236ce1c513137e2b5`;
+  - **P2-T25:** `mcp:launch:b7caf9c09b556ad44fb73e8d705c7ee2dac680aebe6c48f4b7e50212f7ca86f8`;
+  - **P2-T32** (month recap, App, its own folder): `mcp:launch:9ff21d2cf9701cfc761338a5ce383b6978ad2f8c6a551f6ab31665478fbd357e`. WT `p2-t32`, branch `p2/t32-month-recap`.
+- **Still on Claude Code Opus:** P2-T23's planner and both fix-round planners.
+- **Flash is new in two roles, planner and builder.** The controller checks every Flash kit with `check_kit` and every Flash commit against its kit. If Flash planning proves weak, move those planners to `--claude-code`.
+
+**21:45: both P2 PRs need fix rounds. Rulings R106 and R107; two fix planners are running on Claude Code Opus.**
+- **#407 (P2-T14).**
+  - The first review (`reviews/P2-T14.md`) says **Needs fixes**: M1 (at AX5, and with the keyboard up, the pinned header and footer leave the scrolling middle no room), m1 to m5, n1 to n4.
+  - The second (`reviews/P2-T14-second.md`): no major; m1 (private mode shows filled amounts), m2 (a chip label carries the amount), m3 = first m4, m4 = first m2; n1 to n3.
+  - **R106:**
+    - follow the board: at large text the switch goes into the scroll area; the problem line leaves the pinned footer; the keys hide while the name field has focus; no `Tray.tsx` change;
+    - a filled amount (chip, Bun, copy, move all, edit) is masked in private mode until the first key, which narrows P9;
+    - a chip `label` holds the name only;
+    - plus the minors and pins.
+  - Fix planner: `mcp:launch:fb95e212d234c490f9f777d551bbb44fa814ef689d4781e553eb39fec3a59efb`, writing `briefs/P2-T14-fix.md` with the kit `scratch/p2-t14-fix-planner/`, on `18876253`.
+- **#406 (P2-T33).**
+  - The second review (`reviews/P2-T33-second.md`) says **Needs fixes**: M1, the receipt photo (`ReceiptViewer`, a Modal of its own) stays drawn over the locked app. The controller checked it: `ReceiptParts.tsx:230` has a `Modal` with no `useLockCover`.
+  - **R107:**
+    - `ReceiptViewer` draws the cover like `Sheet`, and every reachable `Modal` is swept (`CustomerSpendScreen`, `SpendMediaPermissionPrimer`, `SpendNewCategorySheet`, `SpendDatePicker`);
+    - the first review's m2, m3, m4 and n4;
+    - the second's m2 to m5 and n1 (fail-closed write, no iOS speech under the cover, keyboard dismissed, the port's types hardened);
+    - pins for the first's n1 to n3 and n5.
+  - Carried, not fixed:
+    - the first's m1 (Android) to P2-T34;
+    - the second's m1 (sheet children's state) under R63, to later sheet hosts and P2-T34;
+    - the second's m6 (native sheets) is owner Q1.
+  - Fix planner: `mcp:launch:adbc392633ee790391d70d51a197633159f9a9b43fb6d75066203400f2b027e7`, writing `briefs/P2-T33-fix.md` with the kit `scratch/p2-t33-fix-planner/`, on `5844e4c1`.
+- **After each fix brief is READY:**
+  1. Dispatch the fixer with `make_prompt.py fixer P2-T14 --wt p2-t14 --branch p2/t14-add-flow --spread` (Haiku).
+  2. Push, update the PR body, rerun CI.
+  3. Run a **confirming review on Claude Code Opus**, not the spread table's Sonnet, because both fixes write new logic on money and privacy work.
+  4. Merge #407, then promote it. Start P2-T20, then update #406 (`index.ts` as `merge/index.t14-t12-t33.ts`), and merge #406.
+- **Tooling:**
+  - The reviewer template now requires the review *file* to end with an exact `VERDICT:` line. These reviewers wrote `## Verdict`, which the watcher missed for about 20 minutes.
+  - The watcher is now `scripts/watch_agents.sh`, documented in SKILL.md's fast paths.
+
+**21:30: the owner said "find the way to speed up development without my approval". Recorded in SKILL.md.**
+- **Rulings:**
+  - Integration-branch merges no longer wait on the owner's yes, money-path and privacy PRs included, once CI is green and the reviews approve. The owner still reviews each task in its promotion PR into main.
+  - The build's own speed-ups (more lanes, spreading providers, script and process changes) go ahead without asking, recorded here.
+  - Main merges, deploys, secrets, production data, new paid services and scope changes stay the owner's.
+- **Pipeline:** 20 tasks were ready and only 2 in flight. Planners started for three lanes that share no files, with common notes in `scratch/dispatch/planner-common-notes-20261111.md` (retired-file translation, merge proofs for shared files, Haiku-shaped briefs):
+  - **P2-T23** (App, depth 12), on Claude Code Opus xhigh: `mcp:launch:8f1c451f13692d19dca5302a5293f08abd423eae341d53969f592c50c7cb946d`. WT `p2-t23`, branch `p2/t23-home-data`.
+  - **P3-T4** (Server, depth 11), on Cursor Grok 4.7 xhigh: `mcp:launch:a53aa556c034ab3b8abbcb9ecb151bdac593f8897fe097679632067ea0945c7a`. WT `p3-t4`, branch `p3/t4-gateway-transport`. It is the only server lane: server tasks share `handler.ts`, `env.ts`, `routes.ts` and the vault schema.
+  - **P2-T25** (App, depth 10), on Cursor Grok 4.7 xhigh: `mcp:launch:30ccfbc19eee12e1d6b7e82e7e8bcf1a340044e0dc1ad34afe592467c8d542fb`. WT `p2-t25`, branch `p2/t25-recently-deleted`.
+- **Providers while Antigravity is out:**
+  - Cursor's included usage covers Grok but **not Claude Opus 5.5** ("not included in your weekly usage ... buy credits or switch to a Grok model"). Buying credits is the owner's call, so it was not done. The first three Cursor Opus launches failed on it and are not to be reused.
+  - `make_prompt.py --spread` now gives: planners and the second review on `cursor` `grok-4.7` (xhigh, fastMode off; Grok is the different family the second review wants), builders on Claude Code Haiku, first reviews on Claude Code Opus, and the confirming review on Claude Code Sonnet.
+  - **Planners on Grok are a trial.** Judge them by `check_kit` and the first review before trusting the kits. If a Grok kit fails, fall back to `--claude-code` for planners.
+- **Next lanes, once P2-T14 (#407) merges:**
+  - P2-T20's brief is READY, waiting only on #407.
+  - App lanes with no shared files are still open: P2-T29, P2-T31, P2-T32, P3-T5, P6A-T2.
+  - Server lanes wait their turn after P3-T4.
+
+**21:20: the owner said "if ci pass merge it". #405 (1B-T13) is MERGED; the 1B plan's last task is in.**
+- **How the instruction was read:** the owner's yes for #405, #407 and #406, each merging once its CI is green *and* its reviews approve. Review approval stays the gate.
+- **#405 merged as `3d4f783`** at `7eeff709`. Issue #117 is closed, and WT `p1-1b-t13` and branch `p1/1b-t13-vault-http` are removed locally and on origin.
+  - It is promoted as **#408** (`promote/1b-t13`, based on `promote/fix-download-aborts`); stack #379 now holds 17 PRs.
+  - The receipt's stale `uploads.ts:50/:61` line (the first review's n1) is fixed in `b64993a5`.
+- **Next for 1B:** P22's read-only review of the whole 1B range, which the controller schedules. It is deferred until the three running reviews finish, to spare Claude Code's limit.
+- **#407:** merge when both reviews approve, then promote it.
+- **#406, after #407:**
+  1. merge the integration head into `p2/t33-face-id-lock`, resolving `index.ts` byte-identical to `PL/merge/index.t14-t12-t33.ts` (`draftText.test.ts` merges by itself);
+  2. push, rerun CI;
+  3. merge at that head when CI is green and the second review approves. The head then differs from the reviewed `5844e4c1` only by that planned merge.
+  - Its first review's m2, m3 and m4 go to P2-T34 with m1 (followups.md), unless the second review asks for a fix round.
+
+**21:16: CI is green on all three PRs (9 of 9): #405 on `7eeff709`, #406 on `5844e4c1` (R-B flake passed on rerun), #407 on `18876253`.**
+- #406's first review approved, with four minors (followups.md, P2-T33 entry). Its second review is still running.
+- #407's two reviews are still running.
+- For #406, the controller will put two options to the owner:
+  - fold m2, m3 and m4 (plus n4's `try/finally`) into a small fix round when #406 is updated after #407's merge, with a confirming review;
+  - or carry them to P2-T34 with m1.
+
+**21:05: #405 (1B-T13) is ready for the owner's yes. #406 is rerunning a flaky job.**
+- **#405:** CI 9 of 9 on `7eeff709`, and both reviews approve.
+  - The first review (`reviews/1B-T13.md`): m1 (no CI test of the live socket through TanStack Start's `/v1/$`), m2 (the `/api/auth` dispatch is unpinned), m3 (`/ready`'s empty-setting rule is untested), and five nits.
+  - The second review (`reviews/1B-T13-second.md`): six nits. Its n3 and n5 are the first's m3 and m2.
+  - All are carried in followups.md: m1 and m2 to 1D-T12, m3 to 1C-T10b, the rest to a clean-up task. The code is right in every case.
+  - **The controller recommends merging.** The owner must say yes (auth and the vault). Then run `merge_task_pr.sh 405 7eeff709 1B-T13` and `promote_pr.sh 1B-T13 405`. P22's whole-1B read-only review comes after the merge.
+- **#406:** the SQL job failed on the documented R-B flake (`attachments.integration.spec.ts`, "two records retaining one image at once keep one receipt", expected 1, got 2). P2-T33 does not touch `apps/api`. `gh run rerun 43031794055 --failed` is running (attempt 2).
+
+**20:55: P2-T14 DONE → PR #407, both reviews running. Every builder is done; three PRs are in review.**
+- Commit `18876253`. The controller checked it: 12 files (10 A, 2 M), `git diff --check` clean, 10 of 11 `real/` files identical, and `index.ts` = the planner's merge proof (`aa2a47bf…`).
+- Reported: RED and GREEN as briefed, 92 of 92 mutants, `test:unit` 980, focused render 70 of 70.
+- PR **#407** (closes #160 by hand), body `pr-p2-t14.md`.
+- P2-T14 is treated as money and privacy work: the add flow enters money, and its P9 decides private-mode masking. So it gets a second review and needs the owner's yes.
+- Reviewers, with notes in `scratch/dispatch/P2-T14-{reviewer,second}-notes.md`:
+  - the first: `mcp:launch:793ee1ddb5d2396f86aa194e994e36bff66cf035f58b94ad80df93b6e77bf614`;
+  - the second: `mcp:launch:25bdc28467450436e429bd3f64e143183a69c385664fb7ea12d24b68e401fef7`.
+- **Merge order once approved, CI is green and the owner says yes:**
+  1. #407 (P2-T14);
+  2. #406 (P2-T33), after resolving `index.ts` and `draftText.test.ts` and rerunning CI;
+  3. #405 (1B-T13) is independent (edge only).
+  - Promote each after its merge.
+
+**20:50: P2-T33 DONE → PR #406, both reviews running.**
+- Commit `5844e4c1`. The controller checked it: 21 files (13 A, 8 M), `git diff --check` clean, 19 of 20 `real/` files byte-identical, and `index.ts` = `merge/index.t12-t33.ts` (`a3acf233…`).
+- Reported: RED and GREEN as briefed, 121 of 121 mutants (output identical to the planner's), `typecheck:routes` and `export:web` clean (4830 modules).
+- PR **#406** (closes #179 by hand), body `pr-p2-t33.md`.
+- Reviewers on Claude Code, with notes in `scratch/dispatch/P2-T33-{reviewer,second}-notes.md`:
+  - the first, Opus xhigh: `mcp:launch:ae4fcff346a05feb84db47f6b3dab6a687746786e7ce6ef07db241bedd6e7ad9`;
+  - the second (privacy), Opus high: `mcp:launch:10563bbdefd61c0c57d6f5fbfcf9eb3ace1078a116d0d8562c6f6724bb187679`.
+- Merge needs: green CI, both reviews approved, **the owner's yes** (privacy), and **P2-T14 merged first** (P17). Then resolve `index.ts` as `merge/index.t14-t12-t33.ts`, merge `draftText.test.ts` (`merge/draft.*`), and rerun CI.
+- Five agents are now running on Claude Code: the P2-T14 implementer and four Opus reviewers. Watch for a 429 (the "usage-limit cutoff" steps in SKILL.md). Cursor is the next provider.
+
+**20:45: 1B-T13 DONE → PR #405, both reviews running.**
+- Commit `7eeff709`. The controller checked it: 60 paths (25 M, 1 R, 6 A, 28 D), all 31 `real/` files byte-identical, `git diff --check` clean.
+- Reported: RED and GREEN as briefed, 28 of 28 mutants killed, `test:edge` 180, no PostgreSQL drivers in `dist/server`.
+- PR **#405** (closes #117 by hand), body `pr-1b-t13.md`.
+- Reviewers on Claude Code, with focus notes in `scratch/dispatch/1B-T13-{reviewer,second}-notes.md`:
+  - the first, Opus xhigh: `mcp:launch:74c1a575f433844ce72a14b6d2b9cb21a6423bb9f0a91ad01a17ca83f83a3873`;
+  - the second (auth, privacy and money), Opus high: `mcp:launch:5110865ae9b0f22bcacd33251d02f93f799f3a2175b04b1a2e58cf883688fb88`. It is told not to read the first review before writing its own.
+- Merge needs: green CI on `7eeff709`, both reviews approved, then **the owner's yes** (auth and the vault). Then promote.
+- Housekeeping: `promote_pr.sh` no longer doubles the task-id prefix in titles. #400's and #403's titles are fixed. #403 and #404 passed CI, 9 of 9.
+
+**20:40: P2-T14 was BLOCKED at Step 4.2, correctly.**
+- The controller's rebased `index.ts` (`f74fa284…`) put the add spread before the tray's. `check_kit.sh`'s patch fuzz misplaced the hunk.
+- The implementer's `git apply --3way` gave `aa2a47bf…`, which is right: P3f, the planner's `logs/merge/merged-*.ts` and the render test's section order all agree.
+- Ruling sent with `t3_thread_send`: keep its file and continue from Step 4.4. C = 22 is right (the note had said "above 22").
+- `scratch/p2-t14-rebase/` is corrected. `check_kit.sh` now patches with `-F0` and falls back to a 3-way `git merge-file` (lessons.md).
+- P2-T33's `a3acf233…` was checked with the fixed script and holds.
+
+**After each DONE:**
+1. Write `pr-<id>.md` and run `open_task_pr.sh`.
+2. Dispatch the reviewer with `make_prompt.py reviewer … --claude-code` (Opus xhigh).
+3. **P2-T33 (the app lock) is a privacy PR,** and 1B-T13 touches the auth dispatch and the vault. Each gets the second review too: `make_prompt.py second … --claude-code`. While Antigravity is out, that review is Claude Opus, the same family as the first review. Tell the owner that when asking for the merge yes.
+4. **Merge order:** P2-T14 before P2-T33 (P17). The second to merge needs `index.ts` resolved to `PL/merge/index.t14-t12-t33.ts` and `draftText.test.ts` merged (`PL/merge/draft.*`).
+5. P2-T20 waits on P2-T14's merge. P2-T16 still needs a planner.
+
 ## 11 Nov 20:25 Bangkok: #395 and #396 promoted; held briefs checked against the new head
 
 - **Promotions, made with the live skill's `promote_pr.sh`:**
@@ -15,7 +356,7 @@ Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vaul
   - **P2-T14:** the kit is intact (29 OK). `apps/app/src/dev/catalogue/wallet/index.ts` differs, because P2-T12 added its import and spread there, but the kit's diff applies cleanly. Dispatch with `--rebase-out`, and tell the implementer that P2-T12's `bw-stack` sections are now on the head.
   - **P2-T33:** the kit is intact (68 OK), but its `index.ts` diff does NOT apply after P2-T12. Send the brief back to its planner to rebase (P17's merge order still holds: P2-T14 first).
   - **1B-T13:** the kit is intact (144 OK), and its 26 `orig/` files are identical at the head. The brief still needs the controller's review (P1 to P5) before dispatch.
-- **The hold still stands for new threads and lanes.** The owner said "ok continue" at 20:15. That was not read as lifting the hold; the controller asked first.
+- At 20:15 the owner said "ok continue". The controller did not read that as lifting the hold and asked first. The hold was lifted at 20:20 (see the section above).
 
 ## 11 Nov 20:10 Bangkok: #396 merged; the local runners are up again
 

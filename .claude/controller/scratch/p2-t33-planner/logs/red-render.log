@@ -1,0 +1,468 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:47937) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/ui/Sheet.render.test.tsx > a hidden sheet renders nothing 20ms
+ ✓ src/ui/Sheet.render.test.tsx > an open sheet is a named dialog with a heading, its content and a 44 pt close button 39ms
+ ✓ src/ui/Sheet.render.test.tsx > it closes from the close button, the backdrop and the system back (Escape on the web) 7ms
+ ✓ src/ui/Sheet.render.test.tsx > focus moves into the sheet when it opens 7ms
+ ✓ src/ui/Sheet.render.test.tsx > on the web there is exactly one dialog, and it carries the sheet's name 28ms
+ ✓ src/ui/Sheet.render.test.tsx > closing the sheet returns focus to the control that opened it 11ms
+ ✓ src/ui/Sheet.render.test.tsx > a cream sheet over a dimmed backdrop the screen reader skips 8ms
+ ✓ src/ui/Sheet.render.test.tsx > the sheet springs up from below, except under reduced motion 7ms
+ ✓ src/ui/Sheet.render.test.tsx > the slide starts the sheet below its resting place 3ms
+ ✓ src/ui/Sheet.render.test.tsx > a confirm sheet states the consequence and offers confirm and cancel 23ms
+ ✓ src/ui/Sheet.render.test.tsx > an ordinary confirm is the one primary; a destructive one leaves the safe choice primary 28ms
+ ✓ src/ui/Sheet.render.test.tsx > the art slot is decorative 4ms
+ ✓ src/ui/Sheet.render.test.tsx > while busy, confirm is marked busy and nothing closes the sheet 7ms
+ × src/ui/Sheet.render.test.tsx > a hidden lock cover replaces the sheet's content 4ms
+   → the lock cover: expected null not to be null
+ × src/ui/Sheet.render.test.tsx > the backdrop is never a tab stop 3ms
+   → expected '0' to be '-1' // Object.is equality
+(node:47936) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ × src/wallet/lock/Lock.render.test.tsx > with the lock on, the app opens locked and the app below is hidden from screen readers 33ms
+   → a heading named Jotbun ล็อกอยู่: expected null not to be null
+ × src/wallet/lock/Lock.render.test.tsx > a successful scan unlocks; a cancel stays locked and says try again 9ms
+   → ลองอีกครั้ง หรือใช้รหัสผ่าน: expected null not to be null
+ × src/wallet/lock/Lock.render.test.tsx > under the lock Android's back does nothing, so no screen, and no draft on it, leaves under the lock 13ms
+   → a heading named Jotbun ล็อกอยู่: expected null not to be null
+ × src/wallet/lock/Lock.render.test.tsx > a lockout says to use the passcode 6ms
+   → สแกนไม่ผ่านหลายครั้ง ใช้รหัสผ่านของเครื่องแทน: expected null not to be null
+ × src/wallet/lock/Lock.render.test.tsx > an unavailable answer re-reads the phone and stays locked while it can still lock 7ms
+   → expected "availability" to be called 2 times, but got 0 times
+ × src/wallet/lock/Lock.render.test.tsx > when the phone can no longer lock, the lock turns off once and says why 8ms
+   → expected true to be false // Object.is equality
+ × src/wallet/lock/Lock.render.test.tsx > an open tray, then a return from the background, shows no tray content 38ms
+   → expected +0 to be 2 // Object.is equality
+ × src/wallet/lock/Lock.render.test.tsx > with a tray or a sheet open, the lock screen is drawn inside its own cover, and unlocking there brings it back 24ms
+   → tray: expected +0 to be 2 // Object.is equality
+ × src/wallet/lock/Lock.render.test.tsx > the cover shows no amount and no text 21ms
+   → expected +0 to be 2 // Object.is equality
+ × src/wallet/lock/Lock.render.test.tsx > each opening asks once by itself: the prompt's own inactive asks nothing, a press while a prompt is up asks nothing, every return from the background asks again, and an answer to an earlier opening is dropped 7ms
+   → expected +0 to be 1 // Object.is equality
+ × src/wallet/lock/Lock.render.test.tsx > until the setting is read the app is covered and nothing asks; a setting that cannot be read counts as on 8ms
+   → lock-cover: expected null not to be null
+ × src/wallet/lock/Lock.render.test.tsx > a prompt that throws, or a phone that cannot be read after an unavailable answer, never opens the app 7ms
+   → a prompt that throws: expected null not to be null
+ × src/wallet/lock/Lock.render.test.tsx > the locked screen names the method: Face ID with its passcode link, a fingerprint, or the passcode alone 1ms
+   → a heading named Jotbun ล็อกอยู่: expected null not to be null
+ × src/wallet/lock/Lock.render.test.tsx > turning the lock on asks to authenticate first and stays off when that fails 7ms
+   → a switch named ล็อกด้วย Face ID: expected null not to be null
+ × src/wallet/lock/Lock.render.test.tsx > turning it off asks too 7ms
+   → a switch named ล็อกด้วย Face ID: expected null not to be null
+ × src/wallet/lock/Lock.render.test.tsx > a phone without a passcode cannot turn the lock on, and says why 8ms
+   → a heading named ล็อก Jotbun ด้วย รหัสผ่าน ไหม?: expected null not to be null
+ × src/wallet/lock/Lock.render.test.tsx > the setup screen reads the phone again when it opens, and again each time the app is back in front 12ms
+   → a switch named ล็อกด้วย Face ID: expected null not to be null
+ × src/wallet/lock/Lock.render.test.tsx > the switch asks one prompt at a time, from the gate itself 14ms
+   → expected +0 to be 1 // Object.is equality
+ × src/wallet/lock/Lock.render.test.tsx > a prompt that finds the phone can no longer lock: turning the lock on leaves it off and says why; turning it off turns it off and says so 7ms
+   → a switch named ล็อกด้วย Face ID: expected null not to be null
+ × src/wallet/lock/Lock.render.test.tsx > the setup step: the step line, the question and body by method, a masked card, and Next, which keeps the answer and goes back; from Settings, no step and no Next 7ms
+   → ตั้งค่า · ขั้นที่ 5 จาก 5: expected null not to be null
+ × src/wallet/lock/Lock.render.test.tsx > Settings shows the lock row only in the wallet area 84ms
+   → expected 'ตัวช่วย AI ของบัน' to be 'ล็อกด้วย Face ID' // Object.is equality
+ × src/wallet/lock/Lock.render.test.tsx > every button and the switch are at least 44 pt 7ms
+   → expected +0 to be 2 // Object.is equality
+ × src/wallet/lock/Lock.render.test.tsx > the wallet root mounts the lock with the app's own port only while the wallet area is on 13ms
+   → lock-turned-off: expected null not to be null
+ × src/wallet/lock/Lock.render.test.tsx > the lock's sections come after the tray's, together, and each draws its screen on a setting it holds 0ms
+   → expected -1 to be greater than 5
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 26 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/ui/Sheet.render.test.tsx > a hidden lock cover replaces the sheet's content
+AssertionError: the lock cover: expected null not to be null
+ ❯ src/ui/Sheet.render.test.tsx:239:39
+    237|   const view = render(covered(true));
+    238|   const cover = screen.queryByTestId('lock-cover');
+    239|   expect(cover, 'the lock cover').not.toBeNull();
+       |                                       ^
+    240|   expect(cover?.getAttribute('aria-hidden')).toBe('true');
+    241|   expect(cover?.style.backgroundColor).toBe(rgb(walletLight.ground));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/26]⎯
+
+ FAIL  src/ui/Sheet.render.test.tsx > the backdrop is never a tab stop
+AssertionError: expected '0' to be '-1' // Object.is equality
+
+Expected: "-1"
+Received: "0"
+
+ ❯ src/ui/Sheet.render.test.tsx:261:73
+    259| test('the backdrop is never a tab stop', () => {
+    260|   mount(sheet());
+    261|   expect(screen.getByTestId('sheet-backdrop').getAttribute('tabindex')…
+       |                                                                         ^
+    262| });
+    263|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/26]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > with the lock on, the app opens locked and the app below is hidden from screen readers
+AssertionError: a heading named Jotbun ล็อกอยู่: expected null not to be null
+ ❯ named src/wallet/lock/Lock.render.test.tsx:166:50
+    164| function named(role: string, name: string, inside: HTMLElement = docum…
+    165|   const element = within(inside).queryByRole(role, { name });
+    166|   expect(element, `a ${role} named ${name}`).not.toBeNull();
+       |                                                  ^
+    167|   return element as HTMLElement;
+    168| }
+ ❯ src/wallet/lock/Lock.render.test.tsx:200:21
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/26]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > a successful scan unlocks; a cancel stays locked and says try again
+AssertionError: ลองอีกครั้ง หรือใช้รหัสผ่าน: expected null not to be null
+ ❯ shown src/wallet/lock/Lock.render.test.tsx:180:30
+    178| function shown(words: string, inside: HTMLElement = document.body): HT…
+    179|   const element = within(inside).queryByText(words);
+    180|   expect(element, words).not.toBeNull();
+       |                              ^
+    181|   return element as HTMLElement;
+    182| }
+ ❯ src/wallet/lock/Lock.render.test.tsx:232:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/26]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > under the lock Android's back does nothing, so no screen, and no draft on it, leaves under the lock
+AssertionError: a heading named Jotbun ล็อกอยู่: expected null not to be null
+ ❯ named src/wallet/lock/Lock.render.test.tsx:166:50
+    164| function named(role: string, name: string, inside: HTMLElement = docum…
+    165|   const element = within(inside).queryByRole(role, { name });
+    166|   expect(element, `a ${role} named ${name}`).not.toBeNull();
+       |                                                  ^
+    167|   return element as HTMLElement;
+    168| }
+ ❯ src/wallet/lock/Lock.render.test.tsx:268:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/26]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > a lockout says to use the passcode
+AssertionError: สแกนไม่ผ่านหลายครั้ง ใช้รหัสผ่านของเครื่องแทน: expected null not to be null
+ ❯ shown src/wallet/lock/Lock.render.test.tsx:180:30
+    178| function shown(words: string, inside: HTMLElement = document.body): HT…
+    179|   const element = within(inside).queryByText(words);
+    180|   expect(element, words).not.toBeNull();
+       |                              ^
+    181|   return element as HTMLElement;
+    182| }
+ ❯ src/wallet/lock/Lock.render.test.tsx:281:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/26]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > an unavailable answer re-reads the phone and stays locked while it can still lock
+AssertionError: expected "availability" to be called 2 times, but got 0 times
+ ❯ src/wallet/lock/Lock.render.test.tsx:296:29
+    294|   await ready();
+    295|   // Once when the gate opened, and again after the unavailable answer…
+    296|   expect(fake.availability).toHaveBeenCalledTimes(2);
+       |                             ^
+    297|   named('heading', say('lock.lockedTitle'));
+    298|   shown(say('lock.tryAgain'));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/26]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > when the phone can no longer lock, the lock turns off once and says why
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/wallet/lock/Lock.render.test.tsx:316:37
+    314|     expect(screen.queryByTestId('locked-screen')).toBeNull();
+    315|     expect(unseen(found('app-below'))).toBe(false);
+    316|     expect(view.stored.has(STORED)).toBe(false);
+       |                                     ^
+    317|     const notice = found('lock-turned-off');
+    318|     expect(notice.getAttribute('role')).toBe('status');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/26]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > an open tray, then a return from the background, shows no tray content
+AssertionError: expected +0 to be 2 // Object.is equality
+
+- Expected
++ Received
+
+- 2
++ 0
+
+ ❯ src/wallet/lock/Lock.render.test.tsx:361:25
+    359|   // R63: the tray draws the cover, and nothing of its own.
+    360|   const covers = screen.queryAllByTestId('lock-cover');
+    361|   expect(covers.length).toBe(2);
+       |                         ^
+    362|   expect(screen.queryByRole('dialog', { name: TRAY_TITLE })).toBeNull(…
+    363|   expect(screen.queryByText(TRAY_TITLE)).toBeNull();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/26]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > with a tray or a sheet open, the lock screen is drawn inside its own cover, and unlocking there brings it back
+AssertionError: tray: expected +0 to be 2 // Object.is equality
+
+- Expected
++ Received
+
+- 2
++ 0
+
+ ❯ src/wallet/lock/Lock.render.test.tsx:386:68
+    384|     await ready();
+    385|     // Two lock screens: the gate's, over the app, and the one inside …
+    386|     expect(screen.queryAllByTestId('locked-screen').length, layer).toB…
+       |                                                                    ^
+    387|     const inLayer = screen.queryAllByTestId('lock-cover').find((cover)…
+    388|     expect(inLayer, `${layer}: a cover outside the app's root`).toBeDe…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/26]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > the cover shows no amount and no text
+AssertionError: expected +0 to be 2 // Object.is equality
+
+- Expected
++ Received
+
+- 2
++ 0
+
+ ❯ src/wallet/lock/Lock.render.test.tsx:428:25
+    426|   await ready();
+    427|   const covers = screen.queryAllByTestId('lock-cover');
+    428|   expect(covers.length).toBe(2);
+       |                         ^
+    429|   for (const cover of covers) {
+    430|     expect(cover.textContent).toBe('');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/26]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > each opening asks once by itself: the prompt's own inactive asks nothing, a press while a prompt is up asks nothing, every return from the background asks again, and an answer to an earlier opening is dropped
+AssertionError: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/wallet/lock/Lock.render.test.tsx:454:26
+    452|   mountWallet(gated(held), { device: { lock: '1' } });
+    453|   await ready();
+    454|   expect(answers.length).toBe(1);
+       |                          ^
+    455|   // The prompt makes the app inactive; it is cancelled, and the app i…
+    456|   // asks again, so the prompt cannot loop, and the note says to try a…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/26]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > until the setting is read the app is covered and nothing asks; a setting that cannot be read counts as on
+AssertionError: lock-cover: expected null not to be null
+ ❯ found src/wallet/lock/Lock.render.test.tsx:173:31
+    171| function found(testID: string): HTMLElement {
+    172|   const element = screen.queryByTestId(testID);
+    173|   expect(element, testID).not.toBeNull();
+       |                               ^
+    174|   return element as HTMLElement;
+    175| }
+ ❯ src/wallet/lock/Lock.render.test.tsx:503:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/26]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > a prompt that throws, or a phone that cannot be read after an unavailable answer, never opens the app
+AssertionError: a prompt that throws: expected null not to be null
+ ❯ src/wallet/lock/Lock.render.test.tsx:548:61
+    546|     const view = mountWallet(gated(fake), { device: { lock: '1' } });
+    547|     await ready();
+    548|     expect(screen.queryByTestId('locked-screen'), what).not.toBeNull();
+       |                                                             ^
+    549|     shown(say('lock.tryAgain'));
+    550|     expect(unseen(found('app-below'))).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/26]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > the locked screen names the method: Face ID with its passcode link, a fingerprint, or the passcode alone
+AssertionError: a heading named Jotbun ล็อกอยู่: expected null not to be null
+ ❯ named src/wallet/lock/Lock.render.test.tsx:166:50
+    164| function named(role: string, name: string, inside: HTMLElement = docum…
+    165|   const element = within(inside).queryByRole(role, { name });
+    166|   expect(element, `a ${role} named ${name}`).not.toBeNull();
+       |                                                  ^
+    167|   return element as HTMLElement;
+    168| }
+ ❯ src/wallet/lock/Lock.render.test.tsx:568:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/26]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > turning the lock on asks to authenticate first and stays off when that fails
+AssertionError: a switch named ล็อกด้วย Face ID: expected null not to be null
+ ❯ named src/wallet/lock/Lock.render.test.tsx:166:50
+    164| function named(role: string, name: string, inside: HTMLElement = docum…
+    165|   const element = within(inside).queryByRole(role, { name });
+    166|   expect(element, `a ${role} named ${name}`).not.toBeNull();
+       |                                                  ^
+    167|   return element as HTMLElement;
+    168| }
+ ❯ src/wallet/lock/Lock.render.test.tsx:588:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/26]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > turning it off asks too
+AssertionError: a switch named ล็อกด้วย Face ID: expected null not to be null
+ ❯ named src/wallet/lock/Lock.render.test.tsx:166:50
+    164| function named(role: string, name: string, inside: HTMLElement = docum…
+    165|   const element = within(inside).queryByRole(role, { name });
+    166|   expect(element, `a ${role} named ${name}`).not.toBeNull();
+       |                                                  ^
+    167|   return element as HTMLElement;
+    168| }
+ ❯ src/wallet/lock/Lock.render.test.tsx:615:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/26]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > a phone without a passcode cannot turn the lock on, and says why
+AssertionError: a heading named ล็อก Jotbun ด้วย รหัสผ่าน ไหม?: expected null not to be null
+ ❯ named src/wallet/lock/Lock.render.test.tsx:166:50
+    164| function named(role: string, name: string, inside: HTMLElement = docum…
+    165|   const element = within(inside).queryByRole(role, { name });
+    166|   expect(element, `a ${role} named ${name}`).not.toBeNull();
+       |                                                  ^
+    167|   return element as HTMLElement;
+    168| }
+ ❯ src/wallet/lock/Lock.render.test.tsx:642:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/26]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > the setup screen reads the phone again when it opens, and again each time the app is back in front
+AssertionError: a switch named ล็อกด้วย Face ID: expected null not to be null
+ ❯ named src/wallet/lock/Lock.render.test.tsx:166:50
+    164| function named(role: string, name: string, inside: HTMLElement = docum…
+    165|   const element = within(inside).queryByRole(role, { name });
+    166|   expect(element, `a ${role} named ${name}`).not.toBeNull();
+       |                                                  ^
+    167|   return element as HTMLElement;
+    168| }
+ ❯ src/wallet/lock/Lock.render.test.tsx:669:10
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/26]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > the switch asks one prompt at a time, from the gate itself
+AssertionError: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/wallet/lock/Lock.render.test.tsx:692:26
+    690|   await ready();
+    691|   await press(named('button', 'turn the lock on twice'));
+    692|   expect(answers.length).toBe(1);
+       |                          ^
+    693|   await act(async () => { answers[0]('success'); });
+    694|   await ready();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/26]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > a prompt that finds the phone can no longer lock: turning the lock on leaves it off and says why; turning it off turns it off and says so
+AssertionError: a switch named ล็อกด้วย Face ID: expected null not to be null
+ ❯ named src/wallet/lock/Lock.render.test.tsx:166:50
+    164| function named(role: string, name: string, inside: HTMLElement = docum…
+    165|   const element = within(inside).queryByRole(role, { name });
+    166|   expect(element, `a ${role} named ${name}`).not.toBeNull();
+       |                                                  ^
+    167|   return element as HTMLElement;
+    168| }
+ ❯ src/wallet/lock/Lock.render.test.tsx:718:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/26]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > the setup step: the step line, the question and body by method, a masked card, and Next, which keeps the answer and goes back; from Settings, no step and no Next
+AssertionError: ตั้งค่า · ขั้นที่ 5 จาก 5: expected null not to be null
+ ❯ shown src/wallet/lock/Lock.render.test.tsx:180:30
+    178| function shown(words: string, inside: HTMLElement = document.body): HT…
+    179|   const element = within(inside).queryByText(words);
+    180|   expect(element, words).not.toBeNull();
+       |                              ^
+    181|   return element as HTMLElement;
+    182| }
+ ❯ src/wallet/lock/Lock.render.test.tsx:745:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/26]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > Settings shows the lock row only in the wallet area
+AssertionError: expected 'ตัวช่วย AI ของบัน' to be 'ล็อกด้วย Face ID' // Object.is equality
+
+Expected: "ล็อกด้วย Face ID"
+Received: "ตัวช่วย AI ของบัน"
+
+ ❯ src/wallet/lock/Lock.render.test.tsx:810:37
+    808|       const haptics = headings.indexOf(translateCopy('Haptics', locale…
+    809|       expect(haptics).toBeGreaterThan(-1);
+    810|       expect(headings[haptics + 1]).toBe(say('lock.row', locale, { met…
+       |                                     ^
+    811|       const link = named('link', say(state, locale));
+    812|       expect(within(found('settings-lock')).queryAllByRole('link')).to…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/26]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > every button and the switch are at least 44 pt
+AssertionError: expected +0 to be 2 // Object.is equality
+
+- Expected
++ Received
+
+- 2
++ 0
+
+ ❯ src/wallet/lock/Lock.render.test.tsx:832:50
+    830|   await ready();
+    831|   for (const button of screen.queryAllByRole('button')) atLeast(button…
+    832|   expect(screen.queryAllByRole('button').length).toBe(2);
+       |                                                  ^
+    833|   cleanup();
+    834|   vi.restoreAllMocks();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/26]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > the wallet root mounts the lock with the app's own port only while the wallet area is on
+AssertionError: lock-turned-off: expected null not to be null
+ ❯ found src/wallet/lock/Lock.render.test.tsx:173:31
+    171| function found(testID: string): HTMLElement {
+    172|   const element = screen.queryByTestId(testID);
+    173|   expect(element, testID).not.toBeNull();
+       |                               ^
+    174|   return element as HTMLElement;
+    175| }
+ ❯ src/wallet/lock/Lock.render.test.tsx:870:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/26]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > the lock's sections come after the tray's, together, and each draws its screen on a setting it holds
+AssertionError: expected -1 to be greater than 5
+ ❯ src/wallet/lock/Lock.render.test.tsx:879:17
+    877|   const ids = WALLET_SECTIONS.map((section) => section.id);
+    878|   const first = ids.indexOf('bw-lock-setup');
+    879|   expect(first).toBeGreaterThan(ids.indexOf('bw-tray-short'));
+       |                 ^
+    880|   expect(ids.slice(first, first + 5)).toEqual(['bw-lock-setup', 'bw-lo…
+    881|   const section = (id: string) => WALLET_SECTIONS.find((each) => each.…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/26]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  26 failed | 13 passed (39)
+   Start at  09:20:21
+   Duration  2.11s (transform 1.24s, setup 91ms, import 1.81s, tests 547ms, environment 167ms)
+

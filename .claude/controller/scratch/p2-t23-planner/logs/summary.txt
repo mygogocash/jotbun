@@ -1,0 +1,16 @@
+base-typecheck exit 0
+base-draft exit 0
+base-neighbours exit 0
+base-catalogue exit 0
+red-typecheck exit 0
+red-unit exit 1
+red-draft exit 0
+red-render exit 1
+red-neighbours exit 0
+green-typecheck exit 0
+green-unit exit 0
+green-render exit 0
+green-neighbours exit 0
+green-catalogue exit 0
+mutants exit 0
+done

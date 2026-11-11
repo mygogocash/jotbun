@@ -1,0 +1,18 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t4-planner/tree/apps/edge
+
+ ✓ test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > every request goes to the gateway with logging and caching off 19ms
+ ✓ test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > the gateway token is sent only when set 2ms
+ ✓ test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > a call that outlives its time fails as a timeout and is recorded 2102ms
+ ✓ test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > a rate limit fails at once as rate_limited with its wait 1ms
+ ✓ test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > a request with less than 2 s left makes no call 1ms
+ ✓ test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > a child deadline ends at the earlier of its cap and its parent 0ms
+ ✓ test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > callFailure names each failure 0ms
+ ✓ test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > the trace keeps the reply's model, status, stop reason and tokens 1ms
+ ✓ test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > transportFromEnv is null unless AI is on and keyed 0ms
+
+ Test Files  1 passed (1)
+      Tests  9 passed (9)
+   Start at  22:11:14
+   Duration  2.41s (transform 21ms, setup 0ms, import 123ms, tests 2.13s, environment 0ms)
+

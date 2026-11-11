@@ -1,0 +1,906 @@
+// The Face ID lock (P2-T33, W18, R63, R67): the gate over the app, the locked
+// screen, the cover over trays and sheets, the setup screen and Settings' row.
+// Each case mounts through mountWallet with a LockGate on fakeLocalAuth (the
+// app's own port, noLocalAuth, cannot lock until P2-T34), in Thai by day
+// unless it says otherwise, and lets the stored setting, the phone and the
+// prompt answer inside act (ready()). The cases that draw colour run light and
+// dark in Thai and English; the cases about words run in Thai and English.
+//
+// - AppState: the gate listens through AppState.addEventListener, spied here,
+//   so a case sends `background`, `inactive` and `active` as a phone does.
+//   happy-dom's page is visible, so the app starts in front.
+// - A Modal is a portal outside the render's container on the web, so the
+//   lock screen inside an open tray's or sheet's cover is the one outside it.
+// - Reanimated keeps a tray's card unseen until an animationstart that
+//   happy-dom never fires, and queries by role skip what is unseen:
+//   startAnimations() fires it, as Tray.render.test.tsx does.
+// - iOS reads no live region, so the gate says each note through
+//   AccessibilityInfo.announceForAccessibility; the case that runs as iOS
+//   spies it.
+// - vi.stubEnv switches the `wallet` area on for the cases that need it
+//   (vi.unstubAllEnvs() after each).
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import { AccessibilityInfo, AppState, BackHandler, Platform, Pressable, View } from 'react-native';
+import { afterEach, expect, test, vi } from 'vitest';
+
+vi.mock('react-native-safe-area-context', () => import('../../dev/catalogue/safeAreaTestStub'));
+vi.mock('expo-router', () => import('../../dev/catalogue/routerTestStub'));
+vi.mock('expo-router/build/Route', () => import('../../dev/catalogue/routerTestStub'));
+vi.mock('expo-crypto', () => ({ randomUUID: () => globalThis.crypto.randomUUID(), digestStringAsync: async () => '', CryptoDigestAlgorithm: { SHA256: 'SHA-256' } }));
+
+import { rgba } from '@mobile/dev/catalogue/catalogueTestHarness';
+import { fakeAccount } from '@mobile/dev/catalogue/account/settingsSections';
+import { router } from '@mobile/dev/catalogue/routerTestStub';
+import { WALLET_SECTIONS } from '@mobile/dev/catalogue/wallet';
+import { translateCopy } from '@mobile/i18n/messages';
+import { SettingsScreen } from '@mobile/screens/redesign/account/SettingsScreen';
+import { walletDark, walletLight } from '@mobile/theme/walletPalette';
+import { Sheet } from '@mobile/ui/Sheet';
+import { COMMON_COPY } from '../common/copy';
+import { draftText } from '../copy/draftText';
+import type { CopyValues } from '../copy/draftText';
+import { installStoreBackend } from '../store/deviceWalletStore';
+import type { StoreBackend } from '../store/walletStore';
+import { mountWallet } from '../testing/walletHarness';
+import { Tray } from '../tray/Tray';
+import { WalletText } from '../WalletText';
+import { COPY } from './copy';
+import { fakeLocalAuth } from './localAuthPort';
+import type { LocalAuthPort } from './localAuthPort';
+import { LockedScreen } from './LockedScreen';
+import { LockGate, useLockSetting } from './LockGate';
+import type { AuthResult, LockAvailability } from './lockModel';
+import { LockSetupScreen } from './LockSetupScreen';
+
+const os = Platform.OS;
+const phone = vi.hoisted(() => ({ listeners: new Set<(status: string) => void>() }));
+
+afterEach(() => {
+  cleanup();
+  Object.defineProperty(Platform, 'OS', { value: os, configurable: true, writable: true });
+  vi.unstubAllEnvs();
+  vi.restoreAllMocks();
+  phone.listeners.clear();
+  for (const fn of [router.push, router.replace, router.back]) fn.mockReset();
+  router.canGoBack.mockReset().mockReturnValue(true);
+});
+
+const MODES = [['light', walletLight], ['dark', walletDark]] as const;
+const LOCALES = ['th', 'en'] as const;
+type Locale = (typeof LOCALES)[number];
+
+const LOCK_TEXT = { ...COMMON_COPY, ...COPY };
+/** A lock line in a language, as the draft table has it. */
+const say = (key: string, locale: Locale = 'th', values?: CopyValues) => draftText(LOCK_TEXT, key, locale, values);
+const FACE = { th: 'Face ID', en: 'Face ID' } as const;
+const STORED = 'jotbun.wallet.lock';
+const ANSWERED = 'jotbun.wallet.lock-answered';
+
+/** Lets the stored setting, the phone and the prompt answer, as each step waits on the one before. */
+async function ready() {
+  for (let step = 0; step < 4; step += 1) {
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+  }
+}
+
+/** The gate hears AppState through its listener, which the case drives. */
+function listenToAppState() {
+  vi.spyOn(AppState, 'addEventListener').mockImplementation(((type: string, handler: (status: string) => void) => {
+    if (type === 'change') phone.listeners.add(handler);
+    return { remove: () => { phone.listeners.delete(handler); } };
+  }) as never);
+}
+
+/** The phone moves the app: in front, inactive (a prompt, Control Centre) or into the background. */
+function app(status: 'active' | 'inactive' | 'background') {
+  act(() => {
+    for (const listener of [...phone.listeners]) listener(status);
+  });
+}
+
+/** A fake phone whose prompt and availability are watched. */
+function port(results: readonly AuthResult[], availability?: readonly LockAvailability[]) {
+  const fake = fakeLocalAuth(results, availability);
+  vi.spyOn(fake, 'authenticate');
+  vi.spyOn(fake, 'availability');
+  return fake;
+}
+
+/** The app below the lock: an amount it shows. */
+function Below() {
+  return (
+    <View testID="app-below">
+      <WalletText>฿12,480</WalletText>
+    </View>
+  );
+}
+
+function gated(fake: LocalAuthPort, children: ReactNode = <Below />) {
+  return <LockGate port={fake}>{children}</LockGate>;
+}
+
+const FACE_PHONE: LockAvailability = { canLock: true, method: 'face' };
+const NO_PASSCODE: LockAvailability = { canLock: false, method: null };
+
+/** Asks the gate to turn the lock on directly, as no screen can: once, or twice in one press. */
+function AskToTurnOn() {
+  const lock = useLockSetting();
+  return (
+    <>
+      <Pressable accessibilityRole="button" accessibilityLabel="turn the lock on" onPress={() => void lock.change(true)} />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="turn the lock on twice"
+        onPress={() => {
+          void lock.change(true);
+          void lock.change(true);
+        }}
+      />
+    </>
+  );
+}
+
+/** A phone whose prompts the case answers, one by one. */
+function heldPhone(availability: LockAvailability = FACE_PHONE) {
+  const answers: ((result: AuthResult) => void)[] = [];
+  const port: LocalAuthPort = {
+    availability: async () => availability,
+    authenticate: () => new Promise<AuthResult>((resolve) => { answers.push(resolve); }),
+  };
+  return { port, answers };
+}
+
+/** Starts the entering animations, as a browser does a frame after they mount. */
+function startAnimations() {
+  act(() => {
+    for (const node of document.querySelectorAll<HTMLElement>('[style*="visibility: hidden"]')) node.dispatchEvent(new Event('animationstart'));
+  });
+}
+
+/** The element with this role and name, which must be there. */
+function named(role: string, name: string, inside: HTMLElement = document.body): HTMLElement {
+  const element = within(inside).queryByRole(role, { name });
+  expect(element, `a ${role} named ${name}`).not.toBeNull();
+  return element as HTMLElement;
+}
+
+/** The element with this test id, which must be there. */
+function found(testID: string): HTMLElement {
+  const element = screen.queryByTestId(testID);
+  expect(element, testID).not.toBeNull();
+  return element as HTMLElement;
+}
+
+/** The element showing these words, which must be there. */
+function shown(words: string, inside: HTMLElement = document.body): HTMLElement {
+  const element = within(inside).queryByText(words);
+  expect(element, words).not.toBeNull();
+  return element as HTMLElement;
+}
+
+async function press(element: HTMLElement) {
+  fireEvent.click(element);
+  await ready();
+}
+
+/** Under an aria-hidden wrapper: no screen reader reaches it. */
+const unseen = (element: Element | null) => element?.closest('[aria-hidden="true"]') !== null && element !== null;
+
+test('with the lock on, the app opens locked and the app below is hidden from screen readers', async () => {
+  for (const [mode, colors] of MODES) {
+    for (const locale of LOCALES) {
+      listenToAppState();
+      const fake = port(['cancelled']);
+      mountWallet(gated(fake), { locale, mode, device: { lock: '1' } });
+      await ready();
+      // The locked screen, sa-locked's words.
+      const title = named('heading', say('lock.lockedTitle', locale));
+      shown(say('lock.lineFace', locale));
+      const unlock = named('button', say('lock.unlock', locale, { method: FACE[locale] }));
+      const passcode = named('button', say('lock.usePasscode', locale));
+      expect(shown(say('lock.usePasscode', locale), passcode).style.color).toBe(rgba(colors.ink));
+      // Becoming locked asked once by itself.
+      expect(fake.authenticate, `${mode} ${locale}`).toHaveBeenCalledTimes(1);
+      // The app stays mounted, under the opaque cover, and no screen reader reaches it.
+      const below = found('app-below');
+      expect(unseen(below)).toBe(true);
+      expect(screen.queryByRole('heading', { name: '฿12,480' })).toBeNull();
+      const cover = found('lock-cover');
+      expect(cover.style.backgroundColor).toBe(rgba(colors.ground));
+      expect(found('locked-screen').style.backgroundColor).toBe(rgba(colors.ground));
+      expect(title.style.color).toBe(rgba(colors.ink));
+      expect(unlock.style.backgroundColor).toBe(rgba(colors.primary));
+      cleanup();
+      vi.restoreAllMocks();
+      phone.listeners.clear();
+    }
+  }
+});
+
+test('a successful scan unlocks; a cancel stays locked and says try again', async () => {
+  listenToAppState();
+  const fake = port(['cancelled', 'failed', 'success']);
+  mountWallet(gated(fake), { device: { lock: '1' } });
+  // iOS reads no live region, so the gate says each note: once per answer, from the one gate.
+  const announce = vi.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => undefined);
+  Object.defineProperty(Platform, 'OS', { value: 'ios', configurable: true, writable: true });
+  await ready();
+  // The first ask was cancelled: still locked, and it says to try again, politely.
+  const note = shown(say('lock.tryAgain'));
+  expect(note.closest('[role="status"]')).not.toBeNull();
+  // A failure says the same.
+  await press(named('button', say('lock.unlock', 'th', { method: FACE.th })));
+  shown(say('lock.tryAgain'));
+  expect(fake.authenticate).toHaveBeenCalledTimes(2);
+  expect(announce.mock.calls).toEqual([[say('lock.tryAgain')], [say('lock.tryAgain')]]);
+  // The prompt's words: the method's line, today's Cancel, and the passcode as its fallback.
+  expect(vi.mocked(fake.authenticate).mock.calls[0]).toEqual([{ prompt: say('lock.lineFace'), cancel: translateCopy('Cancel', 'th'), fallback: say('lock.usePasscode') }]);
+  // ใช้รหัสผ่าน opens the same prompt, which unlocks.
+  await press(named('button', say('lock.usePasscode')));
+  expect(fake.authenticate).toHaveBeenCalledTimes(3);
+  expect(screen.queryByTestId('locked-screen')).toBeNull();
+  expect(screen.queryByTestId('lock-cover')).toBeNull();
+  expect(unseen(found('app-below'))).toBe(false);
+  expect(screen.queryByText(say('lock.tryAgain'))).toBeNull();
+  expect(announce).toHaveBeenCalledTimes(2);
+});
+
+test("under the lock Android's back does nothing, so no screen, and no draft on it, leaves under the lock", async () => {
+  listenToAppState();
+  // Android's back, as the gate hands it to BackHandler: true keeps the press from the screens below.
+  const back = { handlers: new Set<() => boolean | null | undefined>() };
+  vi.spyOn(BackHandler, 'addEventListener').mockImplementation(((type: string, handler: () => boolean) => {
+    if (type === 'hardwareBackPress') back.handlers.add(handler);
+    return { remove: () => { back.handlers.delete(handler); } };
+  }) as never);
+  // The cold start unlocks; the return from the background is cancelled, then a scan passes. The phone turns
+  // Android once the app's providers have read their settings on the web's path.
+  mountWallet(gated(port(['success', 'cancelled', 'success'])), { device: { lock: '1' } });
+  await ready();
+  Object.defineProperty(Platform, 'OS', { value: 'android', configurable: true, writable: true });
+  expect(back.handlers.size).toBe(0);
+  app('background');
+  app('active');
+  await ready();
+  named('heading', say('lock.lockedTitle'));
+  expect([...back.handlers].map((handler) => handler())).toEqual([true]);
+  // Unlocked, back is the app's again.
+  await press(named('button', say('lock.unlock', 'th', { method: FACE.th })));
+  expect(screen.queryByTestId('locked-screen')).toBeNull();
+  expect(back.handlers.size).toBe(0);
+});
+
+test('a lockout says to use the passcode', async () => {
+  for (const locale of LOCALES) {
+    listenToAppState();
+    mountWallet(gated(port(['lockout'])), { locale, device: { lock: '1' } });
+    await ready();
+    expect(shown(say('lock.lockout', locale)).closest('[role="status"]')).not.toBeNull();
+    expect(screen.queryByText(say('lock.tryAgain', locale))).toBeNull();
+    named('heading', say('lock.lockedTitle', locale));
+    cleanup();
+    vi.restoreAllMocks();
+    phone.listeners.clear();
+  }
+});
+
+test('an unavailable answer re-reads the phone and stays locked while it can still lock', async () => {
+  listenToAppState();
+  const fake = port(['unavailable'], [{ canLock: true, method: 'face' }]);
+  const view = mountWallet(gated(fake), { device: { lock: '1' } });
+  await ready();
+  // Once when the gate opened, and again after the unavailable answer, before anything else.
+  expect(fake.availability).toHaveBeenCalledTimes(2);
+  named('heading', say('lock.lockedTitle'));
+  shown(say('lock.tryAgain'));
+  expect(view.stored.get(STORED)).toBe('1');
+  expect(screen.queryByTestId('lock-turned-off')).toBeNull();
+});
+
+test('when the phone can no longer lock, the lock turns off once and says why', async () => {
+  for (const locale of LOCALES) {
+    listenToAppState();
+    // It could lock when the gate opened; by the prompt it cannot.
+    const fake = port(['unavailable'], [{ canLock: true, method: 'face' }, { canLock: false, method: null }]);
+    const view = mountWallet(gated(fake), { locale, device: { lock: '1' } });
+    const announce = vi.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => undefined);
+    Object.defineProperty(Platform, 'OS', { value: 'ios', configurable: true, writable: true });
+    await ready();
+    Object.defineProperty(Platform, 'OS', { value: os, configurable: true, writable: true });
+    // Unlocked, the setting gone, and why, politely; iOS hears it once.
+    expect(screen.queryByTestId('locked-screen')).toBeNull();
+    expect(unseen(found('app-below'))).toBe(false);
+    expect(view.stored.has(STORED)).toBe(false);
+    const notice = found('lock-turned-off');
+    expect(notice.getAttribute('role')).toBe('status');
+    shown(say('lock.turnedOff', locale), notice);
+    expect(announce.mock.calls).toEqual([[say('lock.turnedOff', locale)]]);
+    // Once: close it, and the next return from the background neither locks nor says it again.
+    await press(named('button', say('common.close', locale), notice));
+    expect(screen.queryByTestId('lock-turned-off')).toBeNull();
+    app('background');
+    app('active');
+    await ready();
+    expect(screen.queryByTestId('lock-cover')).toBeNull();
+    expect(screen.queryByTestId('lock-turned-off')).toBeNull();
+    expect(fake.authenticate).toHaveBeenCalledTimes(1);
+    cleanup();
+    vi.restoreAllMocks();
+    phone.listeners.clear();
+  }
+});
+
+const TRAY_TITLE = 'จดรายจ่าย';
+const SHEET_TITLE = 'เลือกกระเป๋า';
+
+test('an open tray, then a return from the background, shows no tray content', async () => {
+  listenToAppState();
+  // The cold start unlocks; the return from the background is cancelled.
+  const fake = port(['success', 'cancelled']);
+  mountWallet(
+    gated(
+      fake,
+      <Tray visible onClose={() => undefined} title={TRAY_TITLE}>
+        <WalletText>ข้าวมันไก่ ฿50</WalletText>
+      </Tray>,
+    ),
+    { device: { lock: '1' } },
+  );
+  await ready();
+  startAnimations();
+  named('dialog', TRAY_TITLE);
+  shown('ข้าวมันไก่ ฿50');
+  app('background');
+  app('active');
+  await ready();
+  // R63: the tray draws the cover, and nothing of its own.
+  const covers = screen.queryAllByTestId('lock-cover');
+  expect(covers.length).toBe(2);
+  expect(screen.queryByRole('dialog', { name: TRAY_TITLE })).toBeNull();
+  expect(screen.queryByText(TRAY_TITLE)).toBeNull();
+  expect(screen.queryByText('ข้าวมันไก่ ฿50')).toBeNull();
+  expect(fake.authenticate).toHaveBeenCalledTimes(2);
+});
+
+// P2-T13's review, m1: a Modal draws above the app's root, and iOS presents no Modal over one that is up, so a
+// person whose tray or sheet is open meets the lock screen inside that Modal's own cover, and unlocks from there.
+test('with a tray or a sheet open, the lock screen is drawn inside its own cover, and unlocking there brings it back', async () => {
+  const layers = [
+    ['tray', TRAY_TITLE, (body: ReactNode) => <Tray visible onClose={() => undefined} title={TRAY_TITLE}>{body}</Tray>],
+    ['sheet', SHEET_TITLE, (body: ReactNode) => <Sheet visible onClose={() => undefined} title={SHEET_TITLE}>{body}</Sheet>],
+  ] as const;
+  for (const [layer, title, open] of layers) {
+    listenToAppState();
+    const fake = port(['success', 'cancelled', 'success']);
+    const { container } = mountWallet(gated(fake, open(<WalletText>ข้าวมันไก่ ฿50</WalletText>)), { device: { lock: '1' } });
+    await ready();
+    startAnimations();
+    named('dialog', title);
+    app('background');
+    app('active');
+    await ready();
+    // Two lock screens: the gate's, over the app, and the one inside the open layer's cover, where a person can reach it.
+    expect(screen.queryAllByTestId('locked-screen').length, layer).toBe(2);
+    const inLayer = screen.queryAllByTestId('lock-cover').find((cover) => !container.contains(cover));
+    expect(inLayer, `${layer}: a cover outside the app's root`).toBeDefined();
+    const modal = inLayer?.parentElement as HTMLElement;
+    named('heading', say('lock.lockedTitle'), modal);
+    shown(say('lock.tryAgain'), modal);
+    // Nothing of the layer itself is drawn or named.
+    expect(screen.queryByText('ข้าวมันไก่ ฿50'), layer).toBeNull();
+    // Unlocking from inside the layer brings it back as it was.
+    await press(named('button', say('lock.unlock', 'th', { method: FACE.th }), modal));
+    startAnimations();
+    expect(screen.queryAllByTestId('locked-screen'), layer).toEqual([]);
+    named('dialog', title);
+    shown('ข้าวมันไก่ ฿50');
+    expect(fake.authenticate).toHaveBeenCalledTimes(3);
+    cleanup();
+    vi.restoreAllMocks();
+    phone.listeners.clear();
+  }
+});
+
+test('the cover shows no amount and no text', async () => {
+  listenToAppState();
+  const fake = port(['success']);
+  mountWallet(
+    gated(
+      fake,
+      <>
+        <Below />
+        <Tray visible onClose={() => undefined} title={TRAY_TITLE}>
+          <WalletText>ข้าวมันไก่ ฿50</WalletText>
+        </Tray>
+      </>,
+    ),
+    { device: { lock: '1' } },
+  );
+  await ready();
+  startAnimations();
+  // Only covered (Control Centre, the app switcher): the JavaScript cover, default pending owner Q1.
+  app('inactive');
+  await ready();
+  const covers = screen.queryAllByTestId('lock-cover');
+  expect(covers.length).toBe(2);
+  for (const cover of covers) {
+    expect(cover.textContent).toBe('');
+    // Beside each cover is only what it covers, drawn before it (so under it) and out of every screen reader's reach.
+    for (const beside of [...(cover.parentElement?.children ?? [])].filter((node) => node !== cover)) {
+      expect(unseen(beside)).toBe(true);
+      expect(beside.compareDocumentPosition(cover) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+  }
+  expect(screen.queryAllByTestId('locked-screen')).toEqual([]);
+  expect(unseen(found('app-below'))).toBe(true);
+  expect(screen.queryByText('ข้าวมันไก่ ฿50')).toBeNull();
+  // In front again, it uncovers and asks nothing: inactive never locks.
+  app('active');
+  await ready();
+  startAnimations();
+  expect(screen.queryAllByTestId('lock-cover')).toEqual([]);
+  shown('ข้าวมันไก่ ฿50');
+  expect(fake.authenticate).toHaveBeenCalledTimes(1);
+});
+
+test("each opening asks once by itself: the prompt's own inactive asks nothing, a press while a prompt is up asks nothing, every return from the background asks again, and an answer to an earlier opening is dropped", async () => {
+  listenToAppState();
+  const { port: held, answers } = heldPhone();
+  mountWallet(gated(held), { device: { lock: '1' } });
+  await ready();
+  expect(answers.length).toBe(1);
+  // The prompt makes the app inactive; it is cancelled, and the app is back in front, as a phone orders them: nothing
+  // asks again, so the prompt cannot loop, and the note says to try again.
+  app('inactive');
+  await act(async () => { answers[0]('cancelled'); });
+  app('active');
+  await ready();
+  expect(answers.length).toBe(1);
+  shown(say('lock.tryAgain'));
+  // The button asks again; pressed again while that prompt is up, it asks nothing more.
+  const unlock = say('lock.unlock', 'th', { method: FACE.th });
+  await press(named('button', unlock));
+  expect(answers.length).toBe(2);
+  await press(named('button', unlock));
+  expect(answers.length).toBe(2);
+  // The app goes to the background before the answer: it belongs to the earlier opening, and the new one starts
+  // with no note.
+  app('background');
+  await act(async () => { answers[1]('success'); });
+  await ready();
+  named('heading', say('lock.lockedTitle'));
+  expect(screen.queryByText(say('lock.tryAgain'))).toBeNull();
+  // Back in front, the new opening asks once.
+  app('active');
+  await ready();
+  expect(answers.length).toBe(3);
+  await act(async () => { answers[2]('success'); });
+  await ready();
+  expect(screen.queryByTestId('locked-screen')).toBeNull();
+});
+
+test('until the setting is read the app is covered and nothing asks; a setting that cannot be read counts as on', async () => {
+  for (const reading of ['off', 'unreadable'] as const) {
+    listenToAppState();
+    const fake = port(['cancelled']);
+    const view = mountWallet(<Below />);
+    let answer: (value: string | null) => void = () => undefined;
+    let fail: (error: Error) => void = () => undefined;
+    const held: StoreBackend = {
+      getItem: () => new Promise<string | null>((resolve, reject) => { answer = resolve; fail = reject; }),
+      setItem: async () => undefined,
+      removeItem: async () => undefined,
+      getAllKeys: async () => [],
+      multiRemove: async () => undefined,
+    };
+    installStoreBackend(held);
+    view.rerender(gated(fake));
+    await ready();
+    // Not read yet: covered, unseen by screen readers, no lock screen and no prompt.
+    found('lock-cover');
+    expect(unseen(found('app-below'))).toBe(true);
+    expect(screen.queryByTestId('locked-screen')).toBeNull();
+    expect(fake.authenticate).not.toHaveBeenCalled();
+    await act(async () => {
+      if (reading === 'off') answer(null);
+      else fail(new Error('storage is gone'));
+    });
+    await ready();
+    if (reading === 'off') {
+      expect(screen.queryByTestId('lock-cover')).toBeNull();
+      expect(unseen(found('app-below'))).toBe(false);
+      expect(fake.authenticate).not.toHaveBeenCalled();
+    } else {
+      named('heading', say('lock.lockedTitle'));
+      expect(fake.authenticate).toHaveBeenCalledTimes(1);
+    }
+    cleanup();
+    vi.restoreAllMocks();
+    phone.listeners.clear();
+  }
+});
+
+test('a prompt that throws, or a phone that cannot be read after an unavailable answer, never opens the app', async () => {
+  const broken: readonly [string, LocalAuthPort][] = [
+    ['a prompt that throws', { availability: async () => ({ canLock: true, method: 'face' }), authenticate: async () => { throw new Error('no prompt'); } }],
+    [
+      'a phone that cannot be read',
+      (() => {
+        let reads = 0;
+        return {
+          availability: async () => {
+            reads += 1;
+            if (reads > 1) throw new Error('no answer');
+            return { canLock: true, method: 'face' as const };
+          },
+          authenticate: async () => 'unavailable' as const,
+        };
+      })(),
+    ],
+  ];
+  for (const [what, fake] of broken) {
+    listenToAppState();
+    const view = mountWallet(gated(fake), { device: { lock: '1' } });
+    await ready();
+    expect(screen.queryByTestId('locked-screen'), what).not.toBeNull();
+    shown(say('lock.tryAgain'));
+    expect(unseen(found('app-below'))).toBe(true);
+    expect(view.stored.get(STORED), what).toBe('1');
+    cleanup();
+    vi.restoreAllMocks();
+    phone.listeners.clear();
+  }
+});
+
+test('the locked screen names the method: Face ID with its passcode link, a fingerprint, or the passcode alone', () => {
+  for (const locale of LOCALES) {
+    const methods = [
+      ['face', 'lock.methodFace', 'lock.lineFace', true],
+      ['fingerprint', 'lock.methodFingerprint', 'lock.lineFingerprint', true],
+      ['passcode', 'lock.methodPasscode', 'lock.linePasscode', false],
+    ] as const;
+    for (const [method, nameKey, lineKey, link] of methods) {
+      const onUnlock = vi.fn();
+      mountWallet(<LockedScreen method={method} note={null} onUnlock={onUnlock} />, { locale });
+      named('heading', say('lock.lockedTitle', locale));
+      shown(say(lineKey, locale));
+      fireEvent.click(named('button', say('lock.unlock', locale, { method: say(nameKey, locale) })));
+      const passcode = screen.queryByRole('button', { name: say('lock.usePasscode', locale) });
+      expect(passcode !== null, `${method} ${locale}`).toBe(link);
+      if (passcode) fireEvent.click(passcode);
+      expect(onUnlock).toHaveBeenCalledTimes(link ? 2 : 1);
+      // No note until a scan did not pass.
+      expect(screen.queryByRole('status')).toBeNull();
+      cleanup();
+      vi.restoreAllMocks();
+    }
+  }
+});
+
+test('turning the lock on asks to authenticate first and stays off when that fails', async () => {
+  listenToAppState();
+  const fake = port(['cancelled', 'success']);
+  const view = mountWallet(gated(fake, <LockSetupScreen setup={false} />));
+  await ready();
+  const toggle = named('switch', say('lock.switch', 'th', { method: FACE.th }));
+  expect(toggle.getAttribute('aria-checked')).toBe('false');
+  await press(toggle);
+  expect(fake.authenticate).toHaveBeenCalledTimes(1);
+  expect(vi.mocked(fake.authenticate).mock.calls[0]).toEqual([{ prompt: say('lock.switch', 'th', { method: FACE.th }), cancel: translateCopy('Cancel', 'th'), fallback: say('lock.usePasscode') }]);
+  expect(toggle.getAttribute('aria-checked')).toBe('false');
+  expect(view.stored.has(STORED)).toBe(false);
+  expect(view.stored.has(ANSWERED)).toBe(false);
+  await press(toggle);
+  expect(fake.authenticate).toHaveBeenCalledTimes(2);
+  expect(named('switch', say('lock.switch', 'th', { method: FACE.th })).getAttribute('aria-checked')).toBe('true');
+  expect(view.stored.get(STORED)).toBe('1');
+  expect(view.stored.get(ANSWERED)).toBe('1');
+  // Turning it on does not lock the app now: the next opening does.
+  expect(screen.queryByTestId('locked-screen')).toBeNull();
+  app('background');
+  app('active');
+  await ready();
+  expect(fake.authenticate).toHaveBeenCalledTimes(3);
+});
+
+test('turning it off asks too', async () => {
+  listenToAppState();
+  // The cold start unlocks; then a cancel, then a scan that passes.
+  const fake = port(['success', 'cancelled', 'success']);
+  const view = mountWallet(gated(fake, <LockSetupScreen setup={false} />), { device: { lock: '1' } });
+  await ready();
+  const toggle = named('switch', say('lock.switch', 'th', { method: FACE.th }));
+  expect(toggle.getAttribute('aria-checked')).toBe('true');
+  await press(toggle);
+  expect(fake.authenticate).toHaveBeenCalledTimes(2);
+  expect(toggle.getAttribute('aria-checked')).toBe('true');
+  expect(view.stored.get(STORED)).toBe('1');
+  await press(toggle);
+  expect(fake.authenticate).toHaveBeenCalledTimes(3);
+  expect(named('switch', say('lock.switch', 'th', { method: FACE.th })).getAttribute('aria-checked')).toBe('false');
+  expect(view.stored.has(STORED)).toBe(false);
+  expect(view.stored.get(ANSWERED)).toBe('1');
+  // Off: a return from the background neither locks nor covers.
+  app('background');
+  app('active');
+  await ready();
+  expect(screen.queryByTestId('lock-cover')).toBeNull();
+  expect(fake.authenticate).toHaveBeenCalledTimes(3);
+});
+
+test('a phone without a passcode cannot turn the lock on, and says why', async () => {
+  for (const locale of LOCALES) {
+    listenToAppState();
+    const fake = port(['success'], [NO_PASSCODE]);
+    const view = mountWallet(gated(fake, <><LockSetupScreen setup={false} /><AskToTurnOn /></>), { locale });
+    await ready();
+    // Named by the passcode, the floor every phone that can lock has.
+    const method = say('lock.methodPasscode', locale);
+    named('heading', say('lock.question', locale, { method }));
+    shown(say('lock.bodyPasscode', locale));
+    const toggle = named('switch', say('lock.switch', locale, { method }));
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    expect(toggle.getAttribute('aria-disabled')).toBe('true');
+    shown(say('lock.needsPasscode', locale));
+    // A passcode has nothing to fall back from.
+    expect(screen.queryByText(say('lock.fallbackLine', locale))).toBeNull();
+    await press(toggle);
+    // The gate refuses too: the lock goes on only on a phone that has said it can lock.
+    await press(named('button', 'turn the lock on'));
+    expect(fake.authenticate).not.toHaveBeenCalled();
+    expect(view.stored.has(STORED)).toBe(false);
+    cleanup();
+    vi.restoreAllMocks();
+    phone.listeners.clear();
+  }
+});
+
+test('the setup screen reads the phone again when it opens, and again each time the app is back in front', async () => {
+  // The gate read the phone before the screen opened; a passcode was set since.
+  listenToAppState();
+  const fake = port(['success'], [NO_PASSCODE, FACE_PHONE]);
+  const view = mountWallet(gated(fake));
+  await ready();
+  view.rerender(gated(fake, <LockSetupScreen setup={false} />));
+  await ready();
+  expect(named('switch', say('lock.switch', 'th', { method: FACE.th })).getAttribute('aria-disabled')).not.toBe('true');
+  expect(screen.queryByText(say('lock.needsPasscode'))).toBeNull();
+  cleanup();
+  vi.restoreAllMocks();
+  phone.listeners.clear();
+  // No passcode when it opened; one is set while the app is away.
+  listenToAppState();
+  mountWallet(gated(port(['success'], [NO_PASSCODE, NO_PASSCODE, FACE_PHONE]), <LockSetupScreen setup={false} />));
+  await ready();
+  shown(say('lock.needsPasscode'));
+  app('background');
+  app('active');
+  await ready();
+  expect(named('switch', say('lock.switch', 'th', { method: FACE.th })).getAttribute('aria-disabled')).not.toBe('true');
+  expect(screen.queryByText(say('lock.needsPasscode'))).toBeNull();
+});
+
+test('the switch asks one prompt at a time, from the gate itself', async () => {
+  listenToAppState();
+  const { port: held, answers } = heldPhone();
+  const view = mountWallet(gated(held, <AskToTurnOn />));
+  await ready();
+  await press(named('button', 'turn the lock on twice'));
+  expect(answers.length).toBe(1);
+  await act(async () => { answers[0]('success'); });
+  await ready();
+  expect(view.stored.get(STORED)).toBe('1');
+  cleanup();
+  vi.restoreAllMocks();
+  phone.listeners.clear();
+  // The switch says it is busy while its prompt is up, and is itself again once the phone answers.
+  listenToAppState();
+  const again = heldPhone();
+  mountWallet(gated(again.port, <LockSetupScreen setup={false} />));
+  await ready();
+  await press(named('switch', say('lock.switch', 'th', { method: FACE.th })));
+  expect(again.answers.length).toBe(1);
+  expect(named('switch', say('lock.switch', 'th', { method: FACE.th })).getAttribute('aria-busy')).toBe('true');
+  await act(async () => { again.answers[0]('cancelled'); });
+  await ready();
+  expect(named('switch', say('lock.switch', 'th', { method: FACE.th })).getAttribute('aria-busy')).not.toBe('true');
+});
+
+test('a prompt that finds the phone can no longer lock: turning the lock on leaves it off and says why; turning it off turns it off and says so', async () => {
+  // On: the phone could lock when the screen opened; the prompt answers unavailable, and the phone read again cannot.
+  listenToAppState();
+  const turningOn = port(['unavailable'], [FACE_PHONE, FACE_PHONE, NO_PASSCODE]);
+  const on = mountWallet(gated(turningOn, <LockSetupScreen setup={false} />));
+  await ready();
+  await press(named('switch', say('lock.switch', 'th', { method: FACE.th })));
+  expect(turningOn.availability).toHaveBeenCalledTimes(3);
+  shown(say('lock.needsPasscode'));
+  expect(named('switch', say('lock.switch', 'th', { method: say('lock.methodPasscode') })).getAttribute('aria-checked')).toBe('false');
+  expect(on.stored.has(STORED)).toBe(false);
+  expect(screen.queryByTestId('lock-turned-off')).toBeNull();
+  cleanup();
+  vi.restoreAllMocks();
+  phone.listeners.clear();
+  // Off: the cold start unlocks; turning off answers unavailable, and the phone read again cannot lock (R67).
+  listenToAppState();
+  const turningOff = port(['success', 'unavailable'], [FACE_PHONE, FACE_PHONE, NO_PASSCODE]);
+  const off = mountWallet(gated(turningOff, <LockSetupScreen setup={false} />), { device: { lock: '1' } });
+  await ready();
+  await press(named('switch', say('lock.switch', 'th', { method: FACE.th })));
+  expect(off.stored.has(STORED)).toBe(false);
+  shown(say('lock.turnedOff'), found('lock-turned-off'));
+  expect(named('switch', say('lock.switch', 'th', { method: say('lock.methodPasscode') })).getAttribute('aria-checked')).toBe('false');
+});
+
+test('the setup step: the step line, the question and body by method, a masked card, and Next, which keeps the answer and goes back; from Settings, no step and no Next', async () => {
+  for (const [mode, colors] of MODES) {
+    for (const locale of LOCALES) {
+      listenToAppState();
+      const view = mountWallet(gated(port(['success'], [{ canLock: true, method: 'fingerprint' }]), <LockSetupScreen setup />), { locale, mode });
+      await ready();
+      const method = say('lock.methodFingerprint', locale);
+      shown(say('lock.step', locale));
+      expect(shown(say('lock.step', locale)).style.color).toBe(rgba(colors.violet));
+      named('heading', say('lock.question', locale, { method }));
+      shown(say('lock.bodyFingerprint', locale));
+      shown(say('lock.fallbackLine', locale));
+      shown(say('lock.changeLater', locale));
+      expect(found('lock-setup').style.backgroundColor).toBe(rgba(colors.ground));
+      expect(named('switch', say('lock.switch', locale, { method })).style.backgroundColor).toBe(rgba(colors.card));
+      expect(found('lock-switch-track').style.backgroundColor).toBe(rgba(colors.quiet));
+      // The preview is a wallet card in private mode: ฿••••, no digit, and nothing a screen reader stops on.
+      const preview = found('lock-preview');
+      shown('฿••••', preview);
+      expect(preview.textContent ?? '').not.toMatch(/\d/);
+      shown(say('lock.previewName', locale), preview);
+      expect(unseen(preview)).toBe(true);
+      // Next keeps the answer, with the lock left off, and goes back to the checklist.
+      await press(named('button', say('common.next', locale)));
+      expect(view.stored.get(ANSWERED)).toBe('1');
+      expect(view.stored.has(STORED)).toBe(false);
+      expect(router.back).toHaveBeenCalledTimes(1);
+      cleanup();
+      vi.restoreAllMocks();
+      phone.listeners.clear();
+      router.back.mockReset();
+    }
+  }
+  // Opened on its own, Next goes to the spend area; from Settings there is no step and no Next, and back goes to Settings.
+  listenToAppState();
+  router.canGoBack.mockReturnValue(false);
+  mountWallet(gated(port(['success']), <LockSetupScreen setup />));
+  await ready();
+  await press(named('button', say('common.next')));
+  expect(router.replace).toHaveBeenCalledWith('/spend');
+  cleanup();
+  listenToAppState();
+  mountWallet(gated(port(['success']), <LockSetupScreen setup={false} />));
+  await ready();
+  expect(screen.queryByText(say('lock.step'))).toBeNull();
+  expect(screen.queryByRole('button', { name: say('common.next') })).toBeNull();
+  await press(named('button', say('common.back')));
+  expect(router.replace).toHaveBeenLastCalledWith('/settings');
+});
+
+test('Settings shows the lock row only in the wallet area', async () => {
+  const services = fakeAccount().services;
+  const lockRow = (locale: Locale) => screen.queryByRole('heading', { name: say('lock.row', locale, { method: FACE[locale] }) });
+  for (const locale of LOCALES) {
+    vi.stubEnv('EXPO_PUBLIC_REDESIGN', 'account');
+    listenToAppState();
+    mountWallet(gated(port(['success']), <SettingsScreen services={services} />), { locale });
+    await ready();
+    expect(lockRow(locale)).toBeNull();
+    expect(screen.queryByTestId('settings-lock')).toBeNull();
+    cleanup();
+    vi.restoreAllMocks();
+    phone.listeners.clear();
+    vi.stubEnv('EXPO_PUBLIC_REDESIGN', 'account,wallet');
+    for (const [stored, state] of [[{}, 'lock.off'], [{ lock: '1' }, 'lock.on']] as const) {
+      listenToAppState();
+      mountWallet(gated(port(['success']), <SettingsScreen services={services} />), { locale, device: stored });
+      await ready();
+      // One card, right after Haptics', headed by the phone's method, with a row that says on or off.
+      const headings = screen.queryAllByRole('heading').map((heading) => heading.textContent);
+      const haptics = headings.indexOf(translateCopy('Haptics', locale));
+      expect(haptics).toBeGreaterThan(-1);
+      expect(headings[haptics + 1]).toBe(say('lock.row', locale, { method: FACE[locale] }));
+      const link = named('link', say(state, locale));
+      expect(within(found('settings-lock')).queryAllByRole('link')).toEqual([link]);
+      await press(link);
+      expect(router.push).toHaveBeenLastCalledWith('/settings/lock');
+      cleanup();
+      vi.restoreAllMocks();
+      phone.listeners.clear();
+    }
+  }
+});
+
+test('every button and the switch are at least 44 pt', async () => {
+  const atLeast = (element: HTMLElement, what: string) => {
+    const height = Number.parseFloat(element.style.minHeight || element.style.height);
+    expect(height, `${what} height`).toBeGreaterThanOrEqual(44);
+    if (element.style.width || element.style.minWidth) expect(Number.parseFloat(element.style.minWidth || element.style.width), `${what} width`).toBeGreaterThanOrEqual(44);
+  };
+  listenToAppState();
+  mountWallet(gated(port(['cancelled'])), { device: { lock: '1' } });
+  await ready();
+  for (const button of screen.queryAllByRole('button')) atLeast(button, button.getAttribute('aria-label') ?? 'a button');
+  expect(screen.queryAllByRole('button').length).toBe(2);
+  cleanup();
+  vi.restoreAllMocks();
+  phone.listeners.clear();
+  listenToAppState();
+  mountWallet(gated(port(['success']), <LockSetupScreen setup />));
+  await ready();
+  const controls = [...screen.queryAllByRole('button'), named('switch', say('lock.switch', 'th', { method: FACE.th }))];
+  expect(controls.map((control) => control.getAttribute('aria-label'))).toEqual([say('common.back'), say('common.next'), say('lock.switch', 'th', { method: FACE.th })]);
+  for (const control of controls) atLeast(control, control.getAttribute('aria-label') ?? 'a control');
+  const next = named('button', say('common.next'));
+  expect([next.style.width, next.style.height]).toEqual(['56px', '56px']);
+  cleanup();
+  vi.restoreAllMocks();
+  phone.listeners.clear();
+  // The notice's close, after the lock turned itself off.
+  listenToAppState();
+  mountWallet(gated(port(['unavailable'], [{ canLock: true, method: 'face' }, { canLock: false, method: null }])), { device: { lock: '1' } });
+  await ready();
+  atLeast(named('button', say('common.close'), found('lock-turned-off')), 'close');
+});
+
+test("the wallet root mounts the lock with the app's own port only while the wallet area is on", async () => {
+  // Off: the stored lock is left alone, and nothing covers or speaks.
+  listenToAppState();
+  const off = mountWallet(<Below />, { device: { lock: '1' } });
+  await ready();
+  expect(screen.queryByTestId('lock-cover')).toBeNull();
+  expect(screen.queryByTestId('lock-turned-off')).toBeNull();
+  expect(off.stored.get(STORED)).toBe('1');
+  cleanup();
+  vi.restoreAllMocks();
+  phone.listeners.clear();
+  // On: the app's port (noLocalAuth, until P2-T34) cannot lock, so the stored lock turns itself off and says why.
+  vi.stubEnv('EXPO_PUBLIC_REDESIGN', 'wallet');
+  listenToAppState();
+  const on = mountWallet(<Below />, { device: { lock: '1' } });
+  await ready();
+  found('lock-turned-off');
+  expect(on.stored.has(STORED)).toBe(false);
+  expect(screen.queryByTestId('lock-cover')).toBeNull();
+  expect(unseen(found('app-below'))).toBe(false);
+});
+
+test("the lock's sections come after the tray's, together, and each draws its screen on a setting it holds", async () => {
+  const ids = WALLET_SECTIONS.map((section) => section.id);
+  const first = ids.indexOf('bw-lock-setup');
+  expect(first).toBeGreaterThan(ids.indexOf('bw-tray-short'));
+  expect(ids.slice(first, first + 5)).toEqual(['bw-lock-setup', 'bw-lock-setup-unavailable', 'bw-locked', 'bw-locked-fingerprint', 'bw-lock-cover']);
+  const section = (id: string) => WALLET_SECTIONS.find((each) => each.id === id)?.render();
+  mountWallet(<>{section('bw-lock-setup')}</>);
+  await ready();
+  shown(say('lock.step'));
+  const toggle = named('switch', say('lock.switch', 'th', { method: FACE.th }));
+  await press(toggle);
+  expect(named('switch', say('lock.switch', 'th', { method: FACE.th })).getAttribute('aria-checked')).toBe('true');
+  cleanup();
+  mountWallet(<>{section('bw-lock-setup-unavailable')}</>);
+  await ready();
+  shown(say('lock.needsPasscode'));
+  await press(named('switch', say('lock.switch', 'th', { method: say('lock.methodPasscode') })));
+  expect(named('switch', say('lock.switch', 'th', { method: say('lock.methodPasscode') })).getAttribute('aria-checked')).toBe('false');
+  expect(screen.queryByText(say('lock.step'))).toBeNull();
+  cleanup();
+  mountWallet(<>{section('bw-locked')}</>);
+  named('button', say('lock.unlock', 'th', { method: FACE.th }));
+  cleanup();
+  mountWallet(<>{section('bw-locked-fingerprint')}</>);
+  named('button', say('lock.unlock', 'th', { method: say('lock.methodFingerprint') }));
+  shown(say('lock.tryAgain'));
+  cleanup();
+  mountWallet(<>{section('bw-lock-cover')}</>);
+  expect(found('lock-cover').textContent).toBe('');
+  expect(screen.queryByTestId('locked-screen')).toBeNull();
+});

@@ -1,0 +1,62 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge
+
+ ✓ test/ready.test.ts > /live and /ready (B15) > /live answers 200 with no-store 4ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready is 200 with every setting and a readable config:v1, also when config:v1 is absent 1ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready reads config:v1 by its key 1ms
+ × test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_ISSUER 2ms
+   → expected '5' to be '30' // Object.is equality
+ × test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_AUDIENCE 0ms
+   → expected '5' to be '30' // Object.is equality
+ × test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_JWKS_URL 0ms
+   → expected '5' to be '30' // Object.is equality
+ × test/ready.test.ts > /live and /ready (B15) > /ready is 503 without COMMAND_DIGEST_KEY 0ms
+   → expected '5' to be '30' // Object.is equality
+ × test/ready.test.ts > /live and /ready (B15) > /ready is 503 when config:v1 cannot be read, and the log names only the failure class 1ms
+   → expected '5' to be '30' // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_ISSUER
+ FAIL  test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_AUDIENCE
+ FAIL  test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_JWKS_URL
+ FAIL  test/ready.test.ts > /live and /ready (B15) > /ready is 503 without COMMAND_DIGEST_KEY
+AssertionError: expected '5' to be '30' // Object.is equality
+
+Expected: "30"
+Received: "5"
+
+ ❯ expectNotReady test/ready.test.ts:27:42
+     25|   expect(res.status).toBe(503)
+     26|   expect(res.headers.get('cache-control')).toBe('no-store')
+     27|   expect(res.headers.get('retry-after')).toBe('30')
+       |                                          ^
+     28|   expect(await res.json()).toMatchObject({ code: 'SERVICE_UNAVAILABLE'…
+     29| }
+ ❯ test/ready.test.ts:55:11
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  test/ready.test.ts > /live and /ready (B15) > /ready is 503 when config:v1 cannot be read, and the log names only the failure class
+AssertionError: expected '5' to be '30' // Object.is equality
+
+Expected: "30"
+Received: "5"
+
+ ❯ expectNotReady test/ready.test.ts:27:42
+     25|   expect(res.status).toBe(503)
+     26|   expect(res.headers.get('cache-control')).toBe('no-store')
+     27|   expect(res.headers.get('retry-after')).toBe('30')
+       |                                          ^
+     28|   expect(await res.json()).toMatchObject({ code: 'SERVICE_UNAVAILABLE'…
+     29| }
+ ❯ test/ready.test.ts:66:11
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 3 passed (8)
+   Start at  09:54:30
+   Duration  439ms (transform 254ms, setup 0ms, import 300ms, tests 10ms, environment 0ms)
+

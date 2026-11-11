@@ -1,0 +1,40 @@
+
+> gogospend@0.0.0 test:edge
+> npm test --prefix apps/edge
+
+
+> gogospend-edge@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t4-planner/tree/apps/edge
+
+ ✓ test/c1-shape.test.ts (2 tests) 4ms
+ ✓ test/fetch.test.ts (3 tests) 17ms
+ ✓ test/request.test.ts (21 tests) 18ms
+ ✓ test/contracts/trips.test.ts (9 tests) 6ms
+ ✓ test/contracts/currency.test.ts (6 tests) 6ms
+ ✓ test/quick-text.test.ts (28 tests) 8ms
+ ✓ test/slip-contracts.test.ts (11 tests) 14ms
+{"level":"warn","event":"cashback_catalogue_rejected","status":200}
+{"level":"warn","event":"cashback_catalogue_rejected","status":200}
+{"level":"warn","event":"cashback_catalogue_rejected","status":200}
+{"level":"warn","event":"cashback_catalogue_rejected","status":503}
+{"level":"warn","event":"cashback_catalogue_unavailable","error":"TypeError"}
+ ✓ test/ai-grounding.test.ts (33 tests) 11ms
+ ✓ test/bridge.test.ts (10 tests) 8ms
+ ✓ test/rate-limits.test.ts (1 test) 3ms
+ ✓ test/ready.test.ts (8 tests) 8ms
+ ✓ test/server-analytics.test.ts (14 tests) 26ms
+ ✓ test/exports-port.test.ts (2 tests) 3ms
+ ✓ test/route-coverage.test.ts (8 tests) 6ms
+ ✓ test/r2-object-store.test.ts (15 tests) 554ms
+ ✓ test/posthog-proxy.test.ts (9 tests) 8ms
+ ✓ test/ai-transport.test.ts (9 tests) 2126ms
+     ✓ a call that outlives its time fails as a timeout and is recorded  2103ms
+
+ Test Files  17 passed (17)
+      Tests  189 passed (189)
+   Start at  22:11:31
+   Duration  2.51s (transform 2.56s, setup 0ms, import 5.11s, tests 2.83s, environment 1ms)
+

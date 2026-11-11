@@ -1,0 +1,94 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/imports-parse.test.ts > a parsed upload becomes a reviewable preview and nothing else > parsing_has_no_financial_side_effect 44ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a workbook with a formula is rejected as a whole: no candidate, image or transaction 21ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a valid workbook parses through the same path 20ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a child killed at its 30-second deadline fails visibly as a rejected preview, never with guessed fields 18ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a crashed child fails visibly as a rejected preview, never with guessed fields 23ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > output that is not the protocol fails visibly as a rejected preview, never with guessed fields 18ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > output over its cap fails visibly as a rejected preview, never with guessed fields 18ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a parse that exceeded the 512 MiB budget fails visibly as a rejected preview, never with guessed fields 19ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a quarantined part that does not match its registered digest is never parsed 22ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a part whose registered digest disagrees with the stored object is never parsed 21ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a raw file past its 24-hour expiry is not read, even if its parse job is still queued 21ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a parse job cancelled while its child runs (expiry, deletion, maintenance) records nothing 25ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a lease lost after the image PUT publishes nothing; the sweep deletes the object 28ms
+ ✓ test/workers/imports-parse.test.ts > receipt images are sanitized and expire unattached > publishes a metadata-free re-encoding for 24 hours and a review-only candidate 32ms
+ ✓ test/workers/imports-parse.test.ts > the job worker never claims a parse it cannot sandbox (B1) > a worker started on a runtime without network permission leaves import_parse queued, without spending an attempt 26ms
+ ✓ test/workers/imports-parse.test.ts > the job worker never claims a parse it cannot sandbox (B1) > a runner that refuses an unsandboxed runtime fails the job retryably and records no preview 30ms
+ ✓ test/workers/imports-parse.test.ts > the job worker never claims a parse it cannot sandbox (B1) > a child that could not be started fails the job retryably and records no preview 25ms
+ ✓ test/workers/imports-parse.test.ts > the job worker never claims a parse it cannot sandbox (B1) > a child stopped past its memory budget gives a rejected preview, never a retry 19ms
+ ✓ test/workers/imports-parse.test.ts > the job worker never claims a parse it cannot sandbox (B1) > an image whose own header disagrees with what the child said is never published 25ms
+ ✓ test/workers/imports-parse.test.ts > a paused OCR gate parks queued image parses attempt-neutrally (P2b) > releases a claimed image job (no attempt spent, nothing read or recorded) and still parses a spreadsheet 24ms
+ ✓ test/workers/imports-parse.test.ts > a paused OCR gate parks queued image parses attempt-neutrally (P2b) > parses the same job after the gate reopens, as its first attempt 22ms
+ ✓ test/workers/imports-parse.test.ts > a paused OCR gate parks queued image parses attempt-neutrally (P2b) > does not park a raw file past its expiry: it still fails visibly 17ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a parsed CSV becomes a ready preview with its candidates, and the import reads parsed 19ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a parsed receipt image is stored under the vault's import_image prefix for 24 hours and gets an attachment id 22ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > an image whose bytes are not the format it claims is a rejected preview, and nothing is stored 24ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a parse that keeps failing is retried and fails after three attempts 27ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a parse that has not started spends no attempt 20ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a parse that finishes after the import expired records nothing 25ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > while ocr is paused an image parse is held without spending an attempt, and a CSV still parses 42ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > while jobs is paused every parse is held without spending an attempt 32ms
+stderr | test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > an attempt that throws is retried, and a job out of attempts fails without another parse
+{"level":"error","event":"parse_consumer_failed","failure":"Error"}
+
+stderr | test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > an attempt that throws is retried, and a job out of attempts fails without another parse
+{"level":"error","event":"parse_consumer_failed","failure":"Error"}
+
+stderr | test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > an attempt that throws is retried, and a job out of attempts fails without another parse
+{"level":"error","event":"parse_consumer_failed","failure":"Error"}
+
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > while imports is paused every parse is held without spending an attempt 28ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a missing quarantine part fails the import as quarantine_missing 25ms
+ × test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > the Worker's queue handler sends a message through the container parser, which asks to retry while no container runs 20ms
+   → expected { acked: false, retried: false, …(1) } to deeply equal { acked: false, retried: true, …(1) }
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > an image reservation past its own deadline is never published, even when a failed delete moved it on 24ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > an attempt that throws is retried, and a job out of attempts fails without another parse 26ms
+stderr | test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a message that names no vault or import is dropped, and a parse server reply is checked for its shape
+{"level":"error","event":"parse_message_malformed","failure":"Error"}
+
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a failed parse makes its unpublished image due at once 17ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a message that names no vault or import is dropped, and a parse server reply is checked for its shape 0ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > an import sent twice by overlapping starts is parsed once; the second message records nothing and spends no attempt 19ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5 fix round: a rejected receipt photo keeps its own issue, as the API records it > a photo over 20 MP is stored with its own issue, never parse_failed 19ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5 fix round: a rejected receipt photo keeps its own issue, as the API records it > a photo that is not the format it claims is stored with its own issue, never parse_failed 19ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5 fix round: a rejected receipt photo keeps its own issue, as the API records it > a photo the image child cannot decode is stored with its own issue, never parse_failed 29ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5 fix round: a rejected receipt photo keeps its own issue, as the API records it > a photo whose child was killed at its deadline is stored with its own issue, never parse_failed 23ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5 fix round: a rejected receipt photo keeps its own issue, as the API records it > a photo whose child went past its memory budget is stored with its own issue, never parse_failed 27ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5 fix round: a rejected receipt photo keeps its own issue, as the API records it > a readable photo reply without its image is still the rejected preview parse_failed 30ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > the Worker's queue handler sends a message through the container parser, which asks to retry while no container runs
+AssertionError: expected { acked: false, retried: false, …(1) } to deeply equal { acked: false, retried: true, …(1) }
+
+- Expected
++ Received
+
+  {
+    "acked": false,
+-   "delaySeconds": 30,
+-   "retried": true,
++   "delaySeconds": null,
++   "retried": false,
+  }
+
+ ❯ test/workers/imports-parse.test.ts:524:36
+    522|     const batch = parseBatch(user, jobId)
+    523|     await worker.queue(batch, env)
+    524|     expect(await outcomeOf(batch)).toEqual({ acked: false, retried: tr…
+       |                                    ^
+    525|     expect(await jobOf(user, jobId)).toMatchObject({ parse_state: 'que…
+    526|     expect(await statusOf(v1, user, jobId)).toBe('queued')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 43 passed (44)
+   Start at  09:55:08
+   Duration  3.53s (transform 896ms, setup 1.71s, import 55ms, tests 1.04s, environment 0ms)
+

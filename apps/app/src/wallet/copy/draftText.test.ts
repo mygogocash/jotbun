@@ -10,8 +10,12 @@ import { COMMON_COPY } from '../common/copy.ts';
 import type { DraftTable } from './draftText.ts';
 import { draftText, tableT } from './draftText.ts';
 
-/** Lines the boards write in Latin letters in Thai too, such as card.kindTransit ("BTS / MRT"). */
-const LATIN_LINES = new Set<string>(['card.kindTransit']);
+/**
+ * Lines with no Thai letters of their own in Thai: what the boards write in
+ * Latin letters in Thai too, such as card.kindTransit ("BTS / MRT"), and a
+ * line made only of placeholders, such as add.chip ("{label} {amount}").
+ */
+const LATIN_LINES = new Set<string>(['card.kindTransit', 'add.chip']);
 
 const THAI = /[\u0E00-\u0E7F]/;
 const EMOJI = /\p{Extended_Pictographic}/u;

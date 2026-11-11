@@ -25,6 +25,7 @@ open_prs=$(gh pr list --repo $repo --state open --limit 100 --json number,headRe
 base=main; below=""
 if [ -n "$open_prs" ]; then base=$(echo "$open_prs" | tail -1 | cut -d' ' -f2); below=$(echo "$open_prs" | cut -d' ' -f1 | tr '\n' ' '); fi
 title=$(gh pr view "$pr" --repo $repo --json title --jq .title)
+title=${title#"$task: "}   # task PR titles already start with "<task>: " (#400 and #403 were doubled)
 summary=$(gh pr view "$pr" --repo $repo --json body --jq .body | awk '/^## Summary/{f=1;next} /^## /{f=0} f')
 review=$(ls "$root/.claude/controller/reviews/$task"*.md 2>/dev/null | sed "s|$root/||" | tr '\n' ' ')
 body=$(mktemp "$root/.claude/controller/scratch/.promote.XXXX"); trap 'rm -f "$body"' EXIT

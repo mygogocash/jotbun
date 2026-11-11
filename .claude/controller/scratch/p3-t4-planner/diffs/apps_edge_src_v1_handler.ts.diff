@@ -1,0 +1,32 @@
+--- a/apps/edge/src/v1/handler.ts
++++ b/apps/edge/src/v1/handler.ts
+@@ -5,7 +5,8 @@
+ 
+ import { ProblemException } from '@api/common/api-problem.filter'
+ 
+-import type { SendMessage } from '../server/ai/model'
++import type { ModelTransport } from './ai/transport'
++import { transportFromEnv } from './ai/transport'
+ import { BASE_HEADERS, errorResponse, jsonResponse, problemResponse } from '../server/http/problem'
+ import { queryOf, readJsonBody, reqLike } from '../server/http/request'
+ import { bindCatalogueFetch } from './bridge'
+@@ -33,8 +34,8 @@
+   fetchCatalogue?: typeof fetch
+   /** Starts the vault's pending work after a `starts` route answers 2xx (B5). The default is `stub.startPendingWork()`. */
+   startWork?: (stub: DurableObjectStub<UserVault>) => Promise<unknown>
+-  /** The AI routes' model call (1B-T7). Tests give a fake, or null for AI that is not configured; absent, AI_ENABLED and ANTHROPIC_API_KEY decide. */
+-  send?: SendMessage | null
++  /** The AI routes' model transport (P3-T4). Tests give a fake, or null for AI that is not configured; absent, AI_ENABLED and ANTHROPIC_API_KEY decide. */
++  transport?: ModelTransport | null
+ }
+ 
+ /** A route marked `starts` hands its vault to startWork only after a 2xx answer. */
+@@ -126,7 +127,7 @@
+         body,
+         stream,
+         vault,
+-        send: deps.send,
++        transport: deps.transport !== undefined ? deps.transport : transportFromEnv(env),
+         waitUntil: deps.waitUntil ?? waitUntil,
+       })
+     }

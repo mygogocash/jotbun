@@ -1,0 +1,20 @@
+--- a/apps/edge/src/cloudflare-workers.d.ts
++++ b/apps/edge/src/cloudflare-workers.d.ts
+@@ -1,5 +1,5 @@
+ // The Workers runtime module the Cloudflare Vite plugin provides. Typed here
+-// with the bindings the edge reads (see src/server/env.ts and wrangler.jsonc).
++// with the bindings the edge reads (see src/v1/env.ts and wrangler.jsonc).
+ // The Durable Object and KV names below are the global ones drizzle-orm's
+ // durable-sqlite types and @cloudflare/vitest-plugin's types refer to. They
+ // are declared here, not taken from @cloudflare/workers-types, which clashes
+@@ -174,8 +174,8 @@
+   readonly webSocket: WebSocket | null
+ }
+ 
+-// The bindings `env` is typed with. The vault Worker's configuration is
+-// wrangler.vault.jsonc; the test harness reads VAULT through `cloudflare:workers`.
++// The bindings `env` is typed with. The one Worker's configuration is
++// wrangler.jsonc (C1); the test harness reads VAULT through `cloudflare:workers`.
+ declare namespace Cloudflare {
+   interface Env extends Record<string, unknown> {
+     VAULT: DurableObjectNamespace<import('./vault/user-vault').UserVault>

@@ -1,0 +1,40 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app
+
+ ✓ src/screens/redesign/homeData.render.test.tsx > useHomeData reads what Home reads: today's records page by page, one page of earlier days, and the month's figures 20ms
+ ✓ src/screens/redesign/homeData.render.test.tsx > a draft it was waiting on resolves: it reads again in place; a new draft reads nothing 10ms
+ ✓ src/screens/redesign/homeData.render.test.tsx > a change pulled from another phone reads again in place; the same revision reads nothing 6ms
+ × src/screens/redesign/homeData.render.test.tsx > the hook hands back the load's controls: refresh reads again in place, reload from loading 14ms
+   → expected 'ready' to be 'loading' // Object.is equality
+ ✓ src/screens/redesign/homeData.render.test.tsx > a new day reads that day, and a new month that month 7ms
+ ✓ src/screens/redesign/homeData.render.test.tsx > the threshold haptic plays once as spending crosses 80% and then 100%, never on a first reading or a new month, across a remount 1ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 passed (6)
+   Start at  22:09:12
+   Duration  706ms (transform 184ms, setup 50ms, import 339ms, tests 59ms, environment 108ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/homeData.render.test.tsx > the hook hands back the load's controls: refresh reads again in place, reload from loading
+AssertionError: expected 'ready' to be 'loading' // Object.is equality
+
+Expected: "loading"
+Received: "ready"
+
+ ❯ src/screens/redesign/homeData.render.test.tsx:180:19
+    178|   fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
+    179|   expect(fake.callsOf('summary')).toHaveLength(3);
+    180|   expect(state()).toBe('loading');
+       |                   ^
+    181|   await act(async () => {
+    182|     again();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

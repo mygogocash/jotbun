@@ -1,0 +1,38 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t4-planner/tree/apps/edge
+
+ ✓ test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > every request goes to the gateway with logging and caching off 14ms
+ ✓ test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > the gateway token is sent only when set 1ms
+ ✓ test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > a call that outlives its time fails as a timeout and is recorded 2105ms
+ ✓ test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > a rate limit fails at once as rate_limited with its wait 1ms
+ ✓ test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > a request with less than 2 s left makes no call 0ms
+ ✓ test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > a child deadline ends at the earlier of its cap and its parent 0ms
+ × test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > callFailure names each failure 3ms
+   → expected 'rejected' to be 'server_error' // Object.is equality
+ ✓ test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > the trace keeps the reply's model, status, stop reason and tokens 0ms
+ ✓ test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > transportFromEnv is null unless AI is on and keyed 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > callFailure names each failure
+AssertionError: expected 'rejected' to be 'server_error' // Object.is equality
+
+Expected: "server_error"
+Received: "rejected"
+
+ ❯ test/ai-transport.test.ts:242:126
+    240|     expect(callFailure(new Anthropic.APIConnectionError({ message: 'co…
+    241|     expect(callFailure(Anthropic.APIError.generate(429, { error: { mes…
+    242|     expect(callFailure(Anthropic.APIError.generate(529, { error: { mes…
+       |                                                                                                                              ^
+    243|     expect(callFailure(Anthropic.APIError.generate(500, { error: { mes…
+    244|     expect(callFailure(Anthropic.APIError.generate(400, { error: { mes…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 8 passed (9)
+   Start at  22:11:39
+   Duration  2.34s (transform 19ms, setup 0ms, import 75ms, tests 2.13s, environment 0ms)
+

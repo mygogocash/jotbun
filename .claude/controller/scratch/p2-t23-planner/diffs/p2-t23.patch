@@ -1,0 +1,1033 @@
+diff --git a/apps/app/src/screens/redesign/HomeScreen.tsx b/apps/app/src/screens/redesign/HomeScreen.tsx
+index f1633a56a50a435b2fcfad26fdbea3ed53343718..a04af6ee35eb68c77b8a281bbe57bbe633908630 100644
+--- a/apps/app/src/screens/redesign/HomeScreen.tsx
++++ b/apps/app/src/screens/redesign/HomeScreen.tsx
+@@ -18,20 +18,17 @@
+ // The bun appears only at moments (first run, the stage peek, over budget)
+ // and follows the bun intensity: Quiet keeps it on the first-run empty state
+ // only, Off removes it everywhere.
+-import type { HistoryFilter, Minor } from '@gogospend/contracts';
+-import { HISTORY_MAX_LIMIT, TRACKING_START_MIN, validateTrackingStart } from '@gogospend/contracts';
++import type { Minor } from '@gogospend/contracts';
++import { validateTrackingStart } from '@gogospend/contracts';
+ import { useRouter } from 'expo-router';
+-import { useEffect, useMemo, useRef, useState } from 'react';
++import { useMemo, useState } from 'react';
+ import type { ReactNode } from 'react';
+ import { ActivityIndicator, ScrollView, View } from 'react-native';
+ 
+ import { V1Error } from '@mobile/api/client';
+ import { isRedesignEnabled } from '@mobile/config/featureFlags';
+ import { BunNote } from './ai/BunNote';
+-import { useRefreshOnRevision } from './useRefreshOnRevision';
+-import { playHaptic } from '@mobile/lib/hapticMoment';
+-import { budgetLevel, crossedLevel } from '@mobile/spend/v1/redesign/milestones';
+-import type { LevelSeen } from '@mobile/spend/v1/redesign/milestones';
++import { useBudgetThresholdHaptic, useHomeData } from './homeData';
+ import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
+ import { Bun } from '@mobile/mascot/Bun';
+ import { useBunIntensity } from '@mobile/mascot/BunIntensityProvider';
+@@ -40,11 +37,10 @@ import { BUN_POSES, BUN_SIZES, bunHeight } from '@mobile/mascot/poses';
+ import type { BunPoseName } from '@mobile/mascot/poses';
+ import { AmountInputError, formatMinor, parseAmountInput } from '@mobile/spend/v1/money';
+ import type { BudgetPace as LogicPace } from '@mobile/spend/v1/redesign/budgetPace';
+-import { earlierWholeDays, homeModel, readWholeDay } from '@mobile/spend/v1/redesign/homeModel';
+-import type { HomeData, LoadProblem, LoadProblemKind } from '@mobile/spend/v1/redesign/homeModel';
+-import { addDays, moneyGroupOf } from '@mobile/spend/v1/redesign/shared';
++import { homeModel } from '@mobile/spend/v1/redesign/homeModel';
++import type { LoadProblem, LoadProblemKind } from '@mobile/spend/v1/redesign/homeModel';
++import { moneyGroupOf } from '@mobile/spend/v1/redesign/shared';
+ import type { DayGroup, DiaryRow, MoneyPair, RowState } from '@mobile/spend/v1/redesign/shared';
+-import type { SpendV1Resources } from '@mobile/spend/v1/resources';
+ import type { DiaryView } from '@mobile/spend/v1/spendDiary';
+ import { useDiaryView, useSpendDiary } from '@mobile/spend/v1/SpendDiaryContext';
+ import { useSpendV1 } from '@mobile/spend/v1/SpendV1Context';
+@@ -74,7 +70,7 @@ import { ConfirmSheet, Sheet } from '@mobile/ui/Sheet';
+ import { StageHeader } from '@mobile/ui/StageHeader';
+ import { SyncBanner, syncBannerLine } from '@mobile/ui/SyncBanner';
+ import type { SyncBannerProps } from '@mobile/ui/SyncBanner';
+-import { isOwnCreate, newId, refusedBeforeProcessing, saveProblem, useCommandKeys, useLoad, useMoneyLocale } from '../v1/parts';
++import { isOwnCreate, newId, refusedBeforeProcessing, saveProblem, useCommandKeys, useMoneyLocale } from '../v1/parts';
+ import { recordHref } from './HistoryParts';
+ import { SettingsLink } from './account/SettingsLink';
+ import { PlanningLink } from './planning/PlanningLinks';
+@@ -83,30 +79,6 @@ type Tc = ReturnType<typeof useCopy>;
+ 
+ /** At most this many earlier days under today's receipt; History has the rest. */
+ const EARLIER_DAYS = 5;
+-/** Earlier records read for those days (one page, cut back to whole days). */
+-const EARLIER_RECORDS = 50;
+-/** Pages of today's records read (each up to HISTORY_MAX_LIMIT); a busier day is shown as partial, never as an error. */
+-const TODAY_PAGES = 20;
+-
+-// ---------------------------------------------------------------------------
+-// Loading
+-
+-/** Every record of today, page by page (`readWholeDay`): the receipt's day total is never a partial sum without saying so. */
+-function readToday(resources: SpendV1Resources, day: string) {
+-  const filter: HistoryFilter = { from: day, through: day, sort: 'date_desc' };
+-  return readWholeDay((cursor) => resources.history(filter, cursor, HISTORY_MAX_LIMIT), TODAY_PAGES);
+-}
+-
+-/** Reloads confirmed money in place whenever a draft it was waiting on resolves (as the current Home does). */
+-function useRefreshOnResolve(outbox: readonly OutboxCommand[], refresh: () => void): void {
+-  const open = useRef(new Set<string>());
+-  useEffect(() => {
+-    const now = new Set(outbox.filter((command) => command.state !== 'acknowledged').map((command) => command.commandId));
+-    const resolved = [...open.current].some((id) => !now.has(id));
+-    open.current = now;
+-    if (resolved) refresh();
+-  }, [outbox, refresh]);
+-}
+ 
+ // ---------------------------------------------------------------------------
+ // Pace: the logic's shape to the kit's
+@@ -587,22 +559,7 @@ function FirstRun({ headline, body, today, onCreated }: { headline: string; body
+ // ---------------------------------------------------------------------------
+ // The screen
+ 
+-// The month's budget level last seen in this app session. Module state, not a
+-// ref: Home unmounts while Quick add is open, and the crossing happens there.
+-let lastBudgetLevel: LevelSeen | null = null;
+-
+-/** Plays `thresholdCrossed` once when spending moves past 80% or 100% of the limit (milestones.ts). */
+-function useBudgetThresholdHaptic(month: string, spentMinor: string | null, limitMinor: string | null): void {
+-  useEffect(() => {
+-    if (spentMinor === null) return;
+-    const next: LevelSeen = { month, level: budgetLevel(spentMinor, limitMinor) };
+-    if (crossedLevel(lastBudgetLevel, next) !== null) playHaptic('thresholdCrossed');
+-    lastBudgetLevel = next;
+-  }, [month, spentMinor, limitMinor]);
+-}
+-
+ export function HomeScreen({ now }: { now?: Date }) {
+-  const resources = useSpendV1();
+   const router = useRouter();
+   const tc = useCopy();
+   const locale = useMoneyLocale();
+@@ -614,27 +571,8 @@ export function HomeScreen({ now }: { now?: Date }) {
+   const diary = useSpendDiary();
+   const diaryView = useDiaryView();
+ 
+-  const loaded = useLoad<HomeData>(async () => {
+-    const [categories, wallets, summary, budget, todays, earlier] = await Promise.all([
+-      resources.ensureBuiltinCategories(),
+-      resources.wallets(),
+-      resources.summary(month),
+-      resources.budget(month),
+-      readToday(resources, today),
+-      resources.history({ from: TRACKING_START_MIN, through: addDays(today, -1), sort: 'date_desc' }, undefined, EARLIER_RECORDS),
+-    ]);
+-    // Earlier records cut back to whole days; the model keeps drafts on a cut day out too.
+-    const whole = earlierWholeDays(earlier);
+-    return {
+-      categories, wallets, summary, budget,
+-      records: [...todays.records, ...whole.records],
+-      oldestWholeDay: whole.oldestWholeDay,
+-      todayComplete: todays.complete,
+-    };
+-  }, [resources, month, today]);
+-  useRefreshOnResolve(diaryView.outbox, loaded.refresh);
+-  // A change another phone made was pulled into the diary: reload the money in place.
+-  useRefreshOnRevision(diaryView.appliedRevision, loaded.refresh);
++  // Today's load and its refreshes live in homeData.ts (P2-T23), shared with the Bun Wallet Home.
++  const loaded = useHomeData(today);
+ 
+   const view = diary ? diaryView : null;
+   const model = homeModel({ today, tc, locale, load: loaded, diary: view, earlierDays: EARLIER_DAYS });
+diff --git a/apps/app/src/screens/redesign/entry/entryHelpers.ts b/apps/app/src/screens/redesign/entry/entryHelpers.ts
+index 5be203a0585f2ae2ff25ad041971cc468d022bb1..f7b30039b3313e9a9eb811dd4bdb690d79c3251e 100644
+--- a/apps/app/src/screens/redesign/entry/entryHelpers.ts
++++ b/apps/app/src/screens/redesign/entry/entryHelpers.ts
+@@ -8,11 +8,10 @@ import type { QuickAddDraft } from '@mobile/spend/v1/redesign/quickAddModel';
+ import { rankRecentCategories } from '@mobile/spend/v1/redesign/recentCategories';
+ import type { RecentCategories } from '@mobile/spend/v1/redesign/recentCategories';
+ import { duplicateDraft } from '@mobile/spend/v1/redesign/recordModel';
+-import { WAITING_STATES, openDrafts } from '@mobile/spend/v1/redesign/shared';
+ import type { Translate } from '@mobile/spend/v1/redesign/shared';
+ import type { CreateEntryInput, CreateTransferInput } from '@mobile/spend/v1/resources';
+ import { DiaryLocked, DraftReferenceUnavailable } from '@mobile/storage/types';
+-import type { OutboxCommand, PendingEntry } from '@mobile/storage/types';
++import type { PendingEntry } from '@mobile/storage/types';
+ import { EMPTY_KEYPAD, keypadFromMinor } from '@mobile/ui/keypadExpression';
+ import type { KeypadProblem, KeypadState } from '@mobile/ui/keypadExpression';
+ import type { WalletChoice } from '@mobile/ui/WalletPicker';
+@@ -101,32 +100,9 @@ export function earliestFor(draft: QuickAddDraft, wallets: readonly WalletSnapsh
+   return latest;
+ }
+ 
+-/**
+- * What each wallet holds as far as this device knows: the server's balance,
+- * less what drafts waiting on this device take out of it and plus what they
+- * bring in. Drafts being checked may already be in the server's balance, so
+- * they are left out, as the budget pace leaves them out. "Move all" offers
+- * this, so it never offers money a waiting draft already spent.
+- */
+-export function availableBalances(wallets: readonly { id: string; balance_minor: Minor }[], outbox: readonly OutboxCommand[]): Map<string, Minor> {
+-  const held = new Map(wallets.map((wallet) => [wallet.id, BigInt(wallet.balance_minor)]));
+-  const move = (id: string, delta: bigint) => {
+-    const balance = held.get(id);
+-    if (balance !== undefined) held.set(id, balance + delta);
+-  };
+-  for (const command of openDrafts(outbox)) {
+-    if (!WAITING_STATES.includes(command.state)) continue;
+-    const entry = command.payload;
+-    const amount = BigInt(entry.amount_minor);
+-    if (entry.type === 'transfer') {
+-      move(entry.source_wallet_id, -amount);
+-      move(entry.destination_wallet_id, amount);
+-    } else {
+-      move(entry.wallet_id, entry.type === 'expense' ? -amount : amount);
+-    }
+-  }
+-  return new Map([...held].map(([id, balance]) => [id, balance.toString()]));
+-}
++// Moved unchanged to a pure module, so the Bun Wallet Home's cards read the
++// same rule (P2-T23): `spend/v1/redesign/availableBalances.ts`.
++export { availableBalances } from '@mobile/spend/v1/redesign/availableBalances';
+ 
+ /**
+  * Wallets for WalletPicker, each with its balance when the server's list gave
+diff --git a/apps/app/src/screens/redesign/homeData.render.test.tsx b/apps/app/src/screens/redesign/homeData.render.test.tsx
+new file mode 100644
+index 0000000000000000000000000000000000000000..406d65963da9bb206d1502af24976e6c7575d6cc
+--- /dev/null
++++ b/apps/app/src/screens/redesign/homeData.render.test.tsx
+@@ -0,0 +1,229 @@
++// Home's data (P2-T23): the redesigned Home's load, moved into useHomeData
++// unchanged so that the Bun Wallet Home (P2-T24) reads the same thing. A probe
++// draws the hook's state; the fake resources record every read. Home's own
++// suite (HomeScreen.render.test.tsx) runs unchanged on top of the hook; these
++// cases pin what it does not: a draft that resolves reads again in place, the
++// controls the hook hands back, a new day, and the budget threshold haptic.
++//
++// - playHaptic is mocked, so the threshold case reads the moments by name.
++// - The threshold haptic keeps its reading in module state for the app
++//   session (Home unmounts while Quick add is open), so its case is one
++//   sequence in one file, remounting where the screen would.
++// - Each change runs inside act, and `settle` lets the fake's reads land
++//   inside act too, so no update lands outside it. The fake answers in
++//   microtasks only, so one settle (a zero timeout) is enough, and a case
++//   asserts at once rather than polling.
++import { TRACKING_START_MIN } from '@gogospend/contracts';
++import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
++import type { ReactNode } from 'react';
++import { Pressable, Text, View } from 'react-native';
++import { afterEach, expect, test, vi } from 'vitest';
++
++import type { SpendV1Resources } from '@mobile/spend/v1/resources';
++import { SpendDiaryProvider } from '@mobile/spend/v1/SpendDiaryContext';
++import type { SpendDiary } from '@mobile/spend/v1/spendDiary';
++import { SpendV1Provider } from '@mobile/spend/v1/SpendV1Context';
++import { createFakeDiary } from '@mobile/spend/v1/testing/fakeDiary';
++import { BUILTINS, createFakeResources, goldenSeed } from '@mobile/spend/v1/testing/fakeResources';
++import type { OutboxCommand, PendingEntry } from '@mobile/storage/types';
++import { useBudgetThresholdHaptic, useHomeData } from './homeData';
++
++const played = vi.hoisted(() => [] as string[]);
++vi.mock('@mobile/lib/hapticMoment', async (importOriginal) => ({
++  ...(await importOriginal<typeof import('@mobile/lib/hapticMoment')>()),
++  playHaptic: (moment: string) => {
++    played.push(moment);
++  },
++}));
++vi.mock('expo-crypto', () => ({ randomUUID: () => globalThis.crypto.randomUUID() }));
++
++afterEach(() => {
++  cleanup();
++});
++
++/** The golden month's today (NOW in screens/v1/renderHarness). */
++const TODAY = '2026-09-29';
++const seed = goldenSeed();
++const [CASH] = seed.wallets;
++const [FOOD] = BUILTINS;
++
++type HomeData = ReturnType<typeof useHomeData>;
++const seen: { home: HomeData | null } = { home: null };
++
++function HomeDataProbe({ today }: { today: string }) {
++  const home = useHomeData(today);
++  seen.home = home;
++  return (
++    <View>
++      <Text testID="state">{home.state}</Text>
++      <Pressable accessibilityRole="button" accessibilityLabel="Reload" onPress={home.reload} />
++      <Pressable accessibilityRole="button" accessibilityLabel="Refresh" onPress={home.refresh} />
++    </View>
++  );
++}
++
++function Providers({ resources, diary, children }: { resources: SpendV1Resources; diary: SpendDiary | null; children: ReactNode }) {
++  return (
++    <SpendV1Provider resources={resources}>
++      <SpendDiaryProvider diary={diary}>{children}</SpendDiaryProvider>
++    </SpendV1Provider>
++  );
++}
++
++function mount(resources: SpendV1Resources, diary: SpendDiary | null = null) {
++  const view = render(<Providers resources={resources} diary={diary}><HomeDataProbe today={TODAY} /></Providers>);
++  return { ...view, showDay: (today: string) => view.rerender(<Providers resources={resources} diary={diary}><HomeDataProbe today={today} /></Providers>) };
++}
++
++const state = () => screen.getByTestId('state').textContent;
++/** Lets the fake's reads land, inside act. */
++const settle = () => act(async () => {
++  await new Promise((resolve) => setTimeout(resolve, 0));
++});
++const draft = (amount: string): PendingEntry =>
++  ({ id: crypto.randomUUID(), type: 'expense', amount_minor: amount, occurred_on: TODAY, wallet_id: CASH.id, category_id: FOOD.id, note: null, merchant: null }) as PendingEntry;
++const queued = (payload: PendingEntry, commandState: OutboxCommand['state']): OutboxCommand => ({
++  commandId: crypto.randomUUID(), accountId: 'a0000000-0000-4000-8000-000000000001', schemaVersion: 1, kind: 'transaction.create', payload, state: commandState,
++  firstTransmissionAt: commandState === 'unsent' ? null : '2026-09-29T03:00:00.000Z', createdAt: '2026-09-29T03:00:00.000Z', ackedRevision: commandState === 'acknowledged' ? '99' : null,
++});
++
++test("useHomeData reads what Home reads: today's records page by page, one page of earlier days, and the month's figures", async () => {
++  const fake = createFakeResources(goldenSeed());
++  mount(fake.resources);
++  expect(state()).toBe('loading');
++  await settle();
++  expect(state()).toBe('ready');
++  expect(fake.callsOf('ensureBuiltinCategories')).toHaveLength(1);
++  expect(fake.callsOf('wallets')).toHaveLength(1);
++  expect(fake.callsOf('summary').map((call) => call.args)).toEqual([['2026-09']]);
++  expect(fake.callsOf('budget').map((call) => call.args)).toEqual([['2026-09']]);
++  expect(fake.callsOf('history').map((call) => call.args)).toEqual([
++    [{ from: TODAY, through: TODAY, sort: 'date_desc' }, undefined, 200],
++    [{ from: TRACKING_START_MIN, through: '2026-09-28', sort: 'date_desc' }, undefined, 50],
++  ]);
++  const home = seen.home;
++  expect(home?.state).toBe('ready');
++  if (home?.state !== 'ready') return;
++  expect(Object.keys(home.data).sort()).toEqual(['budget', 'categories', 'oldestWholeDay', 'records', 'summary', 'todayComplete', 'wallets']);
++  expect(home.data.records.map((record) => record.occurred_on)).toEqual(['2026-09-28', '2026-09-27', '2026-09-26', '2026-09-25']);
++  expect([home.data.todayComplete, home.data.oldestWholeDay, home.data.summary.month, home.data.budget]).toEqual([true, null, '2026-09', null]);
++  expect(home.data.wallets.map((wallet) => wallet.id)).toEqual(seed.wallets.map((wallet) => wallet.id));
++});
++
++test('a draft it was waiting on resolves: it reads again in place; a new draft reads nothing', async () => {
++  const fake = createFakeResources(goldenSeed());
++  const waiting = queued(draft('6500'), 'unsent');
++  const diary = createFakeDiary({ wallets: seed.wallets, categories: BUILTINS, outbox: [waiting] });
++  mount(fake.resources, diary.diary);
++  await settle();
++  expect(state()).toBe('ready');
++  const reads = fake.callsOf('summary').length;
++  // Another draft joins, and one is being sent: nothing resolved, so nothing is read.
++  const second = queued(draft('1200'), 'unsent');
++  act(() => {
++    diary.set({ outbox: [{ ...waiting, state: 'sending', firstTransmissionAt: '2026-09-29T03:00:00.000Z' }, second] });
++  });
++  await settle();
++  expect(fake.callsOf('summary')).toHaveLength(reads);
++  // The first is acknowledged: it reads again, and what is on screen stays while it does.
++  act(() => {
++    diary.set({ outbox: [{ ...waiting, state: 'acknowledged', ackedRevision: '99' }, second] });
++  });
++  expect(fake.callsOf('summary')).toHaveLength(reads + 1);
++  expect(state()).toBe('ready');
++  await settle();
++  // A draft removed from the phone is resolved too.
++  act(() => {
++    diary.set({ outbox: [{ ...waiting, state: 'acknowledged', ackedRevision: '99' }] });
++  });
++  expect(fake.callsOf('summary')).toHaveLength(reads + 2);
++  await settle();
++  expect(state()).toBe('ready');
++});
++
++test('a change pulled from another phone reads again in place; the same revision reads nothing', async () => {
++  const fake = createFakeResources(goldenSeed());
++  const diary = createFakeDiary({ wallets: seed.wallets, categories: BUILTINS, appliedRevision: '5' });
++  mount(fake.resources, diary.diary);
++  await settle();
++  expect(state()).toBe('ready');
++  const reads = fake.callsOf('summary').length;
++  act(() => {
++    diary.set({ appliedRevision: '7' });
++  });
++  expect(fake.callsOf('summary')).toHaveLength(reads + 1);
++  expect(state()).toBe('ready');
++  await settle();
++  act(() => {
++    diary.set({ appliedRevision: '7', progress: { sent: 0, total: 1 } });
++  });
++  await settle();
++  expect(fake.callsOf('summary')).toHaveLength(reads + 1);
++});
++
++test('the hook hands back the load\'s controls: refresh reads again in place, reload from loading', async () => {
++  const fake = createFakeResources(goldenSeed());
++  mount(fake.resources);
++  await settle();
++  expect(state()).toBe('ready');
++  const held = fake.hold('summary');
++  fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
++  expect(fake.callsOf('summary')).toHaveLength(2);
++  expect(state()).toBe('ready');
++  await act(async () => {
++    held();
++    await new Promise((resolve) => setTimeout(resolve, 0));
++  });
++  const again = fake.hold('summary');
++  fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
++  expect(fake.callsOf('summary')).toHaveLength(3);
++  expect(state()).toBe('loading');
++  await act(async () => {
++    again();
++    await new Promise((resolve) => setTimeout(resolve, 0));
++  });
++  expect(state()).toBe('ready');
++});
++
++test('a new day reads that day, and a new month that month', async () => {
++  const fake = createFakeResources(goldenSeed());
++  const view = mount(fake.resources);
++  await settle();
++  expect(state()).toBe('ready');
++  view.showDay('2026-09-30');
++  await settle();
++  expect(fake.callsOf('history').map((call) => (call.args[0] as { through: string }).through)).toEqual([TODAY, '2026-09-28', '2026-09-30', TODAY]);
++  expect(fake.callsOf('summary').map((call) => call.args)).toEqual([['2026-09'], ['2026-09']]);
++  view.showDay('2026-10-01');
++  await settle();
++  expect(fake.callsOf('summary').map((call) => call.args)).toEqual([['2026-09'], ['2026-09'], ['2026-10']]);
++  expect(fake.callsOf('budget').map((call) => call.args)).toEqual([['2026-09'], ['2026-09'], ['2026-10']]);
++});
++
++function ThresholdProbe({ month, spent, limit }: { month: string; spent: string | null; limit: string | null }) {
++  useBudgetThresholdHaptic(month, spent, limit);
++  return null;
++}
++
++test('the threshold haptic plays once as spending crosses 80% and then 100%, never on a first reading or a new month, across a remount', () => {
++  played.length = 0;
++  // The first reading (55% of ฿18,000) is never a crossing.
++  const view = render(<ThresholdProbe month="2026-10" spent="1000000" limit="1800000" />);
++  expect(played).toEqual([]);
++  // 83%: past 80%, once.
++  view.rerender(<ThresholdProbe month="2026-10" spent="1500000" limit="1800000" />);
++  expect(played).toEqual(['thresholdCrossed']);
++  // 89%: still past 80% only. While Home loads again nothing is read or forgotten, so the reload landing at 89% plays nothing.
++  view.rerender(<ThresholdProbe month="2026-10" spent="1600000" limit="1800000" />);
++  view.rerender(<ThresholdProbe month="2026-10" spent={null} limit={null} />);
++  view.rerender(<ThresholdProbe month="2026-10" spent="1600000" limit="1800000" />);
++  expect(played).toEqual(['thresholdCrossed']);
++  // Home unmounts while Quick add is open, where the crossing happens: the next Home still plays it.
++  view.unmount();
++  const next = render(<ThresholdProbe month="2026-10" spent="1800000" limit="1800000" />);
++  expect(played).toEqual(['thresholdCrossed', 'thresholdCrossed']);
++  // Falling back (a record deleted) is never a crossing, and nor is a new month, even past 80% at once.
++  next.rerender(<ThresholdProbe month="2026-10" spent="900000" limit="1800000" />);
++  next.rerender(<ThresholdProbe month="2026-11" spent="1500000" limit="1800000" />);
++  expect(played).toEqual(['thresholdCrossed', 'thresholdCrossed']);
++});
+diff --git a/apps/app/src/screens/redesign/homeData.ts b/apps/app/src/screens/redesign/homeData.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..a57a89ed3d67b0af4162cd330bb8752bdc5c2da0
+--- /dev/null
++++ b/apps/app/src/screens/redesign/homeData.ts
+@@ -0,0 +1,91 @@
++// Home's data (P2-T23, W2): the redesigned Home's load, moved out of
++// HomeScreen.tsx unchanged so that the Bun Wallet Home (P2-T24) reads the same
++// thing: the built-in categories, the wallets, the month's summary and budget,
++// every record of today (page by page) and one page of earlier records cut
++// back to whole days. It reads again in place when a draft it was waiting on
++// resolves, and when a change another phone made is pulled into the diary
++// (1D-T5's useRefreshOnRevision, which moved here with the load under the
++// carry rule). The budget threshold haptic moved with it, module state and
++// all, so both Homes share one app session's reading.
++import type { HistoryFilter } from '@gogospend/contracts';
++import { HISTORY_MAX_LIMIT, TRACKING_START_MIN } from '@gogospend/contracts';
++import { useEffect, useRef } from 'react';
++
++import { playHaptic } from '@mobile/lib/hapticMoment';
++import { earlierWholeDays, readWholeDay } from '@mobile/spend/v1/redesign/homeModel';
++import type { HomeData, HomeLoad } from '@mobile/spend/v1/redesign/homeModel';
++import { budgetLevel, crossedLevel } from '@mobile/spend/v1/redesign/milestones';
++import type { LevelSeen } from '@mobile/spend/v1/redesign/milestones';
++import { addDays } from '@mobile/spend/v1/redesign/shared';
++import type { SpendV1Resources } from '@mobile/spend/v1/resources';
++import { useDiaryView } from '@mobile/spend/v1/SpendDiaryContext';
++import { useSpendV1 } from '@mobile/spend/v1/SpendV1Context';
++import { monthOf } from '@mobile/spend/v1/viewModels';
++import type { OutboxCommand } from '@mobile/storage/types';
++import { useLoad } from '../v1/parts';
++import { useRefreshOnRevision } from './useRefreshOnRevision';
++
++/** Earlier records read for those days (one page, cut back to whole days). */
++const EARLIER_RECORDS = 50;
++/** Pages of today's records read (each up to HISTORY_MAX_LIMIT); a busier day is shown as partial, never as an error. */
++const TODAY_PAGES = 20;
++
++/** Every record of today, page by page (`readWholeDay`): the receipt's day total is never a partial sum without saying so. */
++export function readToday(resources: SpendV1Resources, day: string) {
++  const filter: HistoryFilter = { from: day, through: day, sort: 'date_desc' };
++  return readWholeDay((cursor) => resources.history(filter, cursor, HISTORY_MAX_LIMIT), TODAY_PAGES);
++}
++
++/** Reloads confirmed money in place whenever a draft it was waiting on resolves (as the current Home does). */
++function useRefreshOnResolve(outbox: readonly OutboxCommand[], refresh: () => void): void {
++  const open = useRef(new Set<string>());
++  useEffect(() => {
++    const now = new Set(outbox.filter((command) => command.state !== 'acknowledged').map((command) => command.commandId));
++    const resolved = [...open.current].some((id) => !now.has(id));
++    open.current = now;
++    if (resolved) refresh();
++  }, [outbox, refresh]);
++}
++
++/** Home's load for `today` (a Bangkok date), as `useLoad` gives it: `reload` reads again from loading, `refresh` in place. */
++export function useHomeData(today: string): HomeLoad & { reload(): void; refresh(): void } {
++  const resources = useSpendV1();
++  const diaryView = useDiaryView();
++  const month = monthOf(today);
++  const loaded = useLoad<HomeData>(async () => {
++    const [categories, wallets, summary, budget, todays, earlier] = await Promise.all([
++      resources.ensureBuiltinCategories(),
++      resources.wallets(),
++      resources.summary(month),
++      resources.budget(month),
++      readToday(resources, today),
++      resources.history({ from: TRACKING_START_MIN, through: addDays(today, -1), sort: 'date_desc' }, undefined, EARLIER_RECORDS),
++    ]);
++    // Earlier records cut back to whole days; the model keeps drafts on a cut day out too.
++    const whole = earlierWholeDays(earlier);
++    return {
++      categories, wallets, summary, budget,
++      records: [...todays.records, ...whole.records],
++      oldestWholeDay: whole.oldestWholeDay,
++      todayComplete: todays.complete,
++    };
++  }, [resources, month, today]);
++  useRefreshOnResolve(diaryView.outbox, loaded.refresh);
++  // A change another phone made was pulled into the diary: reload the money in place.
++  useRefreshOnRevision(diaryView.appliedRevision, loaded.refresh);
++  return loaded;
++}
++
++// The month's budget level last seen in this app session. Module state, not a
++// ref: Home unmounts while Quick add is open, and the crossing happens there.
++let lastBudgetLevel: LevelSeen | null = null;
++
++/** Plays `thresholdCrossed` once when spending moves past 80% or 100% of the limit (milestones.ts). */
++export function useBudgetThresholdHaptic(month: string, spentMinor: string | null, limitMinor: string | null): void {
++  useEffect(() => {
++    if (spentMinor === null) return;
++    const next: LevelSeen = { month, level: budgetLevel(spentMinor, limitMinor) };
++    if (crossedLevel(lastBudgetLevel, next) !== null) playHaptic('thresholdCrossed');
++    lastBudgetLevel = next;
++  }, [month, spentMinor, limitMinor]);
++}
+diff --git a/apps/app/src/spend/v1/redesign/availableBalances.ts b/apps/app/src/spend/v1/redesign/availableBalances.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..316b5b648c24cfc12e6550c1e7447b7ff3383415
+--- /dev/null
++++ b/apps/app/src/spend/v1/redesign/availableBalances.ts
+@@ -0,0 +1,37 @@
++// What each wallet holds as far as this device knows (P2-T5's rule). P2-T23
++// moved it here unchanged from `screens/redesign/entry/entryHelpers.ts`,
++// which re-exports it, so a pure model can read it too: Quick add's "move
++// all" and the Bun Wallet Home's cards (`wallet/home/homeWallets.ts`) share
++// one rule. Pure: a Node test reads it, through homeWallets.test.ts. Money
++// stays exact (BigInt over canonical satang strings).
++import type { Minor } from '@gogospend/contracts';
++
++import type { OutboxCommand } from '../../../storage/types.ts';
++import { WAITING_STATES, openDrafts } from './shared.ts';
++
++/**
++ * What each wallet holds as far as this device knows: the server's balance,
++ * less what drafts waiting on this device take out of it and plus what they
++ * bring in. Drafts being checked may already be in the server's balance, so
++ * they are left out, as the budget pace leaves them out. "Move all" offers
++ * this, so it never offers money a waiting draft already spent.
++ */
++export function availableBalances(wallets: readonly { id: string; balance_minor: Minor }[], outbox: readonly OutboxCommand[]): Map<string, Minor> {
++  const held = new Map(wallets.map((wallet) => [wallet.id, BigInt(wallet.balance_minor)]));
++  const move = (id: string, delta: bigint) => {
++    const balance = held.get(id);
++    if (balance !== undefined) held.set(id, balance + delta);
++  };
++  for (const command of openDrafts(outbox)) {
++    if (!WAITING_STATES.includes(command.state)) continue;
++    const entry = command.payload;
++    const amount = BigInt(entry.amount_minor);
++    if (entry.type === 'transfer') {
++      move(entry.source_wallet_id, -amount);
++      move(entry.destination_wallet_id, amount);
++    } else {
++      move(entry.wallet_id, entry.type === 'expense' ? -amount : amount);
++    }
++  }
++  return new Map([...held].map(([id, balance]) => [id, balance.toString()]));
++}
+diff --git a/apps/app/src/wallet/home/budgetCardWords.test.ts b/apps/app/src/wallet/home/budgetCardWords.test.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..1bdc126066f9da1871271cdbeed8bad3d7595a1d
+--- /dev/null
++++ b/apps/app/src/wallet/home/budgetCardWords.test.ts
+@@ -0,0 +1,134 @@
++// The Bun Wallet Home's budget card words (P2-T23; bw-home, bw-private,
++// ax-voiceover, rh-offline; C4, W9, W10): the month's spending, the line
++// beside it in its budget state's colour, and what the card says to a screen
++// reader, in Thai and English, from paces built with budgetPace.
++import assert from 'node:assert/strict';
++import { test } from 'node:test';
++
++import { budgetPace } from '../../spend/v1/redesign/budgetPace.ts';
++import type { BudgetPace } from '../../spend/v1/redesign/budgetPace.ts';
++import { budget, command, pending, spentSummary } from '../../spend/v1/redesign/testing/fixtures.ts';
++import type { OutboxCommand } from '../../storage/types.ts';
++import { COMMON_COPY } from '../common/copy.ts';
++import { tableT } from '../copy/draftText.ts';
++import { budgetCardWords } from './budgetCardWords.ts';
++import { COPY } from './copy.ts';
++
++const TABLE = { ...COMMON_COPY, ...COPY };
++const th = tableT(TABLE, 'th');
++const en = tableT(TABLE, 'en');
++const OCT = '2026-10';
++/** bw-home's budget: ฿18,000 for October. */
++const LIMIT = '1800000';
++const DIGIT = /[0-9๐-๙]/;
++
++function pace(today: string, spent: string, options: { limit?: string | null; outbox?: OutboxCommand[] } = {}): BudgetPace {
++  const limit = options.limit === undefined ? LIMIT : options.limit;
++  return budgetPace({ budget: limit === null ? null : budget(OCT, limit), summary: spentSummary(OCT, spent), today, outbox: options.outbox });
++}
++
++test('on track says เหลือวันละ ฿690 in the under colour', () => {
++  // bw-home: ฿12,480 of ฿18,000 on 24 October, so ฿5,520 is left for 8 days, today included.
++  const onTrack = pace('2026-10-24', '1248000');
++  assert.deepEqual([onTrack.state, onTrack.daysLeft, onTrack.perDayMinor], ['on_track', 8, '69000']);
++  assert.deepEqual(budgetCardWords(onTrack, false, th), {
++    headline: '฿12,480',
++    side: { text: 'เหลือวันละ ฿690', tone: 'under' },
++    spoken: 'ใช้ไปเดือนนี้ 12,480 บาท จากงบ 18,000 บาท, เหลือวันละ 690 บาท',
++  });
++  assert.deepEqual(budgetCardWords(onTrack, false, en), {
++    headline: '฿12,480',
++    side: { text: '฿690 a day left', tone: 'under' },
++    spoken: 'Spent this month 12,480 baht of 18,000 baht, 690 baht a day left',
++  });
++});
++
++test('over says เกินงบไป ฿420 in the over colour', () => {
++  const over = pace('2026-10-24', '1842000');
++  assert.deepEqual([over.state, over.overByMinor, over.perDayMinor], ['over', '42000', null]);
++  assert.deepEqual(budgetCardWords(over, false, th), {
++    headline: '฿18,420',
++    side: { text: 'เกินงบไป ฿420', tone: 'over' },
++    spoken: 'ใช้ไปเดือนนี้ 18,420 บาท จากงบ 18,000 บาท, เกินงบไป 420 บาท',
++  });
++  assert.deepEqual(budgetCardWords(over, false, en).side, { text: '฿420 over budget', tone: 'over' });
++  // Satang show and are said, on the figure and on the line.
++  const satang = budgetCardWords(pace('2026-10-24', '1842050'), false, th);
++  assert.deepEqual([satang.headline, satang.side?.text], ['฿18,420.50', 'เกินงบไป ฿420.50']);
++  assert.equal(satang.spoken, 'ใช้ไปเดือนนี้ 18,420 บาท 50 สตางค์ จากงบ 18,000 บาท, เกินงบไป 420 บาท 50 สตางค์');
++});
++
++test('private mode says ตามแผน or เกินงบ and no amount', () => {
++  const cases = [
++    { pace: pace('2026-10-24', '1248000'), side: { text: 'ตามแผน', tone: 'under' }, spoken: 'ใช้ไปเดือนนี้ ซ่อนยอดเงินอยู่, ตามแผน' },
++    { pace: pace('2026-10-10', '1000000'), side: { text: 'ตามแผน', tone: 'ink' }, spoken: 'ใช้ไปเดือนนี้ ซ่อนยอดเงินอยู่, ตามแผน' },
++    { pace: pace('2026-10-24', '1842000'), side: { text: 'เกินงบ', tone: 'over' }, spoken: 'ใช้ไปเดือนนี้ ซ่อนยอดเงินอยู่, เกินงบ' },
++    { pace: pace('2026-10-24', '1248000', { limit: null }), side: null, spoken: 'ใช้ไปเดือนนี้ ซ่อนยอดเงินอยู่' },
++  ] as const;
++  for (const { pace: hiddenPace, side, spoken } of cases) {
++    const words = budgetCardWords(hiddenPace, true, th);
++    // bw-private: the figure is ฿•••• at its own size, and the line keeps its place and colour.
++    assert.deepEqual(words, { headline: '฿••••', side, spoken }, hiddenPace.state);
++    // Review Focus 2: no digit of an amount reaches the card, in either language.
++    for (const said of [words, budgetCardWords(hiddenPace, true, en)]) assert.equal(DIGIT.test(JSON.stringify(said)), false, JSON.stringify(said));
++  }
++  assert.deepEqual(budgetCardWords(cases[2].pace, true, en), { headline: '฿••••', side: { text: 'Over budget', tone: 'over' }, spoken: 'Spent this month Amount hidden, Over budget' });
++  assert.equal(budgetCardWords(cases[0].pace, true, en).side?.text, 'On track');
++});
++
++test("on the month's last day the per-day hint is all that is left", () => {
++  // Review Focus 5: on 31 October one day is left, today, so it divides by 1.
++  const lastDay = pace('2026-10-31', '1248000');
++  assert.deepEqual([lastDay.daysLeft, lastDay.leftMinor], [1, '552000']);
++  const words = budgetCardWords(lastDay, false, th);
++  assert.deepEqual(words.side, { text: 'เหลือวันละ ฿5,520', tone: 'under' });
++  assert.equal(words.spoken, 'ใช้ไปเดือนนี้ 12,480 บาท จากงบ 18,000 บาท, เหลือวันละ 5,520 บาท');
++});
++
++test('tight says the same words in ink, in whole baht rounded down, shown and said', () => {
++  // 10 October: ฿10,000 spent is ahead of the even pace. ฿8,000 left over 22 days is ฿363.63 a day.
++  const tight = pace('2026-10-10', '1000000');
++  assert.deepEqual([tight.state, tight.perDayMinor], ['tight', '36363']);
++  assert.deepEqual(budgetCardWords(tight, false, th), {
++    headline: '฿10,000',
++    side: { text: 'เหลือวันละ ฿363', tone: 'ink' },
++    spoken: 'ใช้ไปเดือนนี้ 10,000 บาท จากงบ 18,000 บาท, เหลือวันละ 363 บาท',
++  });
++  // Right at the limit is never over: ฿0 a day, in ink.
++  const atLimit = pace('2026-10-24', LIMIT);
++  assert.deepEqual([atLimit.state, atLimit.perDayMinor], ['tight', '0']);
++  assert.deepEqual(budgetCardWords(atLimit, false, th).side, { text: 'เหลือวันละ ฿0', tone: 'ink' });
++});
++
++test("the figure and the hint are the estimate's: waiting drafts count, drafts being checked do not", () => {
++  // rh-offline: ฿12,415 confirmed and a ฿115 expense waiting on this phone read ฿12,530, so ฿5,470 is left: ฿683.75 a day.
++  const outbox = [
++    command(pending({ amount_minor: '11500', occurred_on: '2026-10-24' }), 'unsent'),
++    command(pending({ amount_minor: '9900', occurred_on: '2026-10-24' }), 'sending'),
++  ];
++  const offline = pace('2026-10-24', '1241500', { outbox });
++  assert.deepEqual([offline.spent.estimatedMinor, offline.perDayMinor], ['1253000', '68375']);
++  assert.deepEqual(budgetCardWords(offline, false, th), {
++    headline: '฿12,530',
++    side: { text: 'เหลือวันละ ฿683', tone: 'under' },
++    spoken: 'ใช้ไปเดือนนี้ 12,530 บาท จากงบ 18,000 บาท, เหลือวันละ 683 บาท',
++  });
++});
++
++test('with no budget there is no line, and the card says only what was spent', () => {
++  const none = pace('2026-10-24', '1248000', { limit: null });
++  assert.equal(none.state, 'no_budget');
++  assert.deepEqual(budgetCardWords(none, false, th), { headline: '฿12,480', side: null, spoken: 'ใช้ไปเดือนนี้ 12,480 บาท' });
++  assert.deepEqual(budgetCardWords(none, false, en), { headline: '฿12,480', side: null, spoken: 'Spent this month 12,480 baht' });
++});
++
++test('after the month there is no per-day figure, so the line says ตามแผน', () => {
++  // budgetPace has no per-day figure once the month is over (Home always shows today's month).
++  const after = pace('2026-11-02', '1248000');
++  assert.deepEqual([after.phase, after.state, after.perDayMinor], ['after', 'on_track', null]);
++  assert.deepEqual(budgetCardWords(after, false, th), {
++    headline: '฿12,480',
++    side: { text: 'ตามแผน', tone: 'under' },
++    spoken: 'ใช้ไปเดือนนี้ 12,480 บาท จากงบ 18,000 บาท, ตามแผน',
++  });
++});
+diff --git a/apps/app/src/wallet/home/budgetCardWords.ts b/apps/app/src/wallet/home/budgetCardWords.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..21b6b62efafac6a7eec3d5114af275e690345351
+--- /dev/null
++++ b/apps/app/src/wallet/home/budgetCardWords.ts
+@@ -0,0 +1,64 @@
++// The words on the Bun Wallet Home's budget card (P2-T23; bw-home, bw-private,
++// ax-voiceover, rh-offline; C4, W9, W10). `headline` is the month's spending,
++// the card's 28 pt figure; `side` is the line beside it; `spoken` is what the
++// card says to a screen reader. On track the line is the per-day hint (left
++// ÷ days left, today included, whole baht rounded down) in the under colour;
++// tight, the same words in ink; over, how far over in the over colour. With
++// no budget there is no line (the screen offers to set one). Private mode
++// keeps the line's place and colour with ตามแผน or เกินงบ and no amount, and
++// the card says the amount is hidden (W10). Every figure is budgetPace's: the
++// spending is its estimate (money confirmed plus money waiting on this phone),
++// the one the hint is worked out from. Pure: a Node test reads it.
++import type { Minor } from '@gogospend/contracts';
++
++import type { BudgetPace } from '../../spend/v1/redesign/budgetPace.ts';
++import type { WalletT } from '../copy/draftText.ts';
++import { HIDDEN_AMOUNT, perDayText, spokenMoney, walletMoneyText } from '../money/walletMoney.ts';
++
++export type BudgetCardTone = 'under' | 'over' | 'ink';
++
++export type BudgetCardWords = {
++  /** The month's spending: ฿12,480, or ฿•••• in private mode. */
++  headline: string;
++  /** The line beside it; null with no budget. */
++  side: { text: string; tone: BudgetCardTone } | null;
++  /** What a screen reader says for the card: ใช้ไปเดือนนี้ 12,480 บาท จากงบ 18,000 บาท, เหลือวันละ 690 บาท. */
++  spoken: string;
++};
++
++type SideLine = { text: string; spoken: string; tone: BudgetCardTone };
++
++/** The per-day figure in whole baht, rounded down, as perDayText shows it (W9). */
++const wholeBaht = (minor: Minor): Minor => ((BigInt(minor) / 100n) * 100n).toString();
++
++/** The line beside the figure, as shown and as said; null with no budget. */
++function sideLine(pace: BudgetPace, hidden: boolean, t: WalletT): SideLine | null {
++  // No budget: budgetPace gives no figure for how far over.
++  if (pace.overByMinor === null) return null;
++  if (pace.state === 'over') {
++    if (hidden) return { text: t('home.overWord'), spoken: t('home.overWord'), tone: 'over' };
++    const over = pace.overByMinor;
++    return { text: t('home.over', { amount: walletMoneyText(over) }), spoken: t('home.over', { amount: spokenMoney(over, t) }), tone: 'over' };
++  }
++  const tone = pace.state === 'tight' ? 'ink' : 'under';
++  const perDay = pace.perDayMinor;
++  // After the month there is no per-day figure (budgetPace); Home always shows today's month.
++  if (hidden || perDay === null) return { text: t('home.onTrack'), spoken: t('home.onTrack'), tone };
++  return { text: t('home.perDay', { amount: perDayText(perDay) }), spoken: t('home.perDay', { amount: spokenMoney(wholeBaht(perDay), t) }), tone };
++}
++
++/** The card's words. `t` reads COMMON_COPY and the Home's COPY. */
++export function budgetCardWords(pace: BudgetPace, hidden: boolean, t: WalletT): BudgetCardWords {
++  const spent = pace.spent.estimatedMinor;
++  const line = sideLine(pace, hidden, t);
++  const total = hidden
++    ? t('home.spokenSpent', { amount: t('common.amountHidden') })
++    : pace.limitMinor === null
++      ? t('home.spokenSpent', { amount: spokenMoney(spent, t) })
++      : t('home.spokenBudget', { spent: spokenMoney(spent, t), limit: spokenMoney(pace.limitMinor, t) });
++  return {
++    headline: hidden ? HIDDEN_AMOUNT : walletMoneyText(spent),
++    side: line === null ? null : { text: line.text, tone: line.tone },
++    spoken: line === null ? total : `${total}, ${line.spoken}`,
++  };
++}
+diff --git a/apps/app/src/wallet/home/copy.ts b/apps/app/src/wallet/home/copy.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..db863dcc145da0333a6ad1e37f8a363864ffc9bb
+--- /dev/null
++++ b/apps/app/src/wallet/home/copy.ts
+@@ -0,0 +1,18 @@
++import type { DraftTable } from '../copy/draftText.ts';
++
++/**
++ * The Bun Wallet Home's lines. P2-T23 adds the budget card's words: the
++ * per-day hint and how far over (bw-home), the two words private mode says in
++ * their place (bw-private, §5.1's voice table), and what the card says to a
++ * screen reader (ax-voiceover). P2-T24 adds the screen's own lines. Data only:
++ * read through `useDraftCopy` with COMMON_COPY. Default pending owner Q3:
++ * built as written; the English lines are drafts for E2-B.
++ */
++export const COPY = {
++  'home.perDay': { th: 'เหลือวันละ {amount}', en: '{amount} a day left' },
++  'home.over': { th: 'เกินงบไป {amount}', en: '{amount} over budget' },
++  'home.onTrack': { th: 'ตามแผน', en: 'On track' },
++  'home.overWord': { th: 'เกินงบ', en: 'Over budget' },
++  'home.spokenSpent': { th: 'ใช้ไปเดือนนี้ {amount}', en: 'Spent this month {amount}' },
++  'home.spokenBudget': { th: 'ใช้ไปเดือนนี้ {spent} จากงบ {limit}', en: 'Spent this month {spent} of {limit}' },
++} as const satisfies DraftTable;
+diff --git a/apps/app/src/wallet/home/homeWallets.test.ts b/apps/app/src/wallet/home/homeWallets.test.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..daea4be2b0cd5403f76f7382e376e378cf496fe8
+--- /dev/null
++++ b/apps/app/src/wallet/home/homeWallets.test.ts
+@@ -0,0 +1,128 @@
++// The Bun Wallet Home's card stack (P2-T23; bw-home, rh-offline, W7, W28):
++// the kept order drawn back to front, with archived wallets out; each card's
++// balance less what waiting drafts take, the waiting drafts that touch it
++// still saving, and today's confirmed money out of it, exact.
++import assert from 'node:assert/strict';
++import { test } from 'node:test';
++
++import type { WalletDto } from '@gogospend/contracts';
++
++import { command, entry, pending, transfer, walletDto } from '../../spend/v1/redesign/testing/fixtures.ts';
++import { derivedLook } from '../looks/walletLooks.ts';
++import type { WalletLook } from '../looks/walletLooks.ts';
++import { homeWallets } from './homeWallets.ts';
++
++const TODAY = '2026-10-24';
++const wallet = (id: string, balanceMinor: string, name = id, archived = false): WalletDto => walletDto(id, name, balanceMinor, archived);
++
++// bw-home's four wallets, front card first: บัญชีหลัก, เงินสด, บัตรเดินทาง, บัตรเครดิต.
++const MAIN = wallet('main', '2486000', 'บัญชีหลัก');
++const CASH = wallet('cash', '124000', 'เงินสด');
++const TRANSIT = wallet('transit', '18600', 'บัตรเดินทาง');
++const CARD = wallet('card', '-392000', 'บัตรเครดิต');
++const ARCHIVED = wallet('old', '7000', 'กระเป๋าเก่า', true);
++const BW_HOME = [CARD, ARCHIVED, MAIN, TRANSIT, CASH];
++const KEPT = ['main', 'old', 'cash', 'transit', 'card'];
++
++type Input = Parameters<typeof homeWallets>[0];
++const stack = (input: Partial<Input> & Pick<Input, 'wallets'>) => homeWallets({ todayRecords: [], outbox: [], order: [], lookOf: derivedLook, ...input });
++/** Each card's figures, by wallet id. */
++const figures = (cards: ReturnType<typeof homeWallets>) =>
++  Object.fromEntries(cards.map((card) => [card.id, { balance: card.balanceMinor, pending: card.pendingMinor, todayOut: card.todayOutMinor }]));
++
++test('the stack draws the kept order with the front card last, archived wallets out', () => {
++  const cards = stack({ wallets: BW_HOME, order: KEPT });
++  // CardStack draws its cards in the order given: the back card first, the front card (the kept order's first) last.
++  assert.deepEqual(cards.map((card) => card.id), ['card', 'transit', 'cash', 'main']);
++  assert.deepEqual(cards.map((card) => card.name), ['บัตรเครดิต', 'บัตรเดินทาง', 'เงินสด', 'บัญชีหลัก']);
++  // With no wallets in use, there are no cards.
++  assert.deepEqual(stack({ wallets: [ARCHIVED], order: KEPT }), []);
++  assert.deepEqual(stack({ wallets: [] }), []);
++});
++
++test("front first is the wallets list's order: the kept ids, then the rest by name and then id, drawn back to front", () => {
++  // P2-T20's frontFirst cases (walletsList.test.ts), each read back to front.
++  const wallets = [
++    wallet('w-cash', '0', 'Cash'),
++    wallet('w-main', '0', 'Main'),
++    wallet('w-card', '0', 'Card'),
++    wallet('w-old', '0', 'Old', true),
++    wallet('w-b', '0', 'Alpha'),
++    wallet('w-a', '0', 'Alpha'),
++  ];
++  const drawn = (order: readonly string[]) => stack({ wallets, order }).map((card) => card.id);
++  // An unknown id, an archived one and one named twice are passed over.
++  assert.deepEqual(drawn(['w-card', 'gone', 'w-old', 'w-main', 'w-card']), ['w-cash', 'w-b', 'w-a', 'w-main', 'w-card']);
++  // Nothing kept: by name, and the same name by id.
++  assert.deepEqual(drawn([]), ['w-main', 'w-cash', 'w-card', 'w-b', 'w-a']);
++  assert.deepEqual(drawn(['w-main', 'w-cash', 'w-card', 'w-b', 'w-a']), ['w-a', 'w-b', 'w-card', 'w-cash', 'w-main']);
++});
++
++test('a card\'s balance takes off what waiting drafts spend and says how much is still saving', () => {
++  // rh-offline: บัญชีหลัก holds ฿24,860 on the server, and a ฿50 expense waits on this phone.
++  const outbox = [command(pending({ wallet_id: 'main', amount_minor: '5000', occurred_on: TODAY }), 'unsent')];
++  const cards = figures(stack({ wallets: [MAIN, CASH], order: KEPT, outbox }));
++  assert.deepEqual(cards.main, { balance: '2481000', pending: '5000', todayOut: '0' });
++  assert.deepEqual(cards.cash, { balance: '124000', pending: '0', todayOut: '0' });
++});
++
++test('income adds and a transfer moves money between its wallets, each still saving; drafts being checked, refused or acknowledged count nowhere', () => {
++  const outbox = [
++    command(pending({ type: 'income', wallet_id: 'cash', amount_minor: '20000' }), 'unsent'),
++    // Waiting for an app update is still waiting: never sent, so not yet in the server's balance.
++    command(pending({ type: 'transfer', source_wallet_id: 'main', destination_wallet_id: 'transit', amount_minor: '30000' }), 'paused_upgrade'),
++    // Being checked may already be in the server's balance; refused is not money; acknowledged is in it.
++    command(pending({ wallet_id: 'main', amount_minor: '1000' }), 'sending'),
++    command(pending({ wallet_id: 'cash', amount_minor: '2000' }), 'uncertain'),
++    command(pending({ wallet_id: 'transit', amount_minor: '4000' }), 'needs_review'),
++    command(pending({ wallet_id: 'card', amount_minor: '8000' }), 'acknowledged'),
++    // A draft for a wallet the list does not hold moves nothing.
++    command(pending({ wallet_id: 'gone', amount_minor: '9000' }), 'unsent'),
++  ];
++  const cards = figures(stack({ wallets: BW_HOME, order: KEPT, outbox }));
++  assert.deepEqual(cards, {
++    main: { balance: '2456000', pending: '30000', todayOut: '0' },
++    cash: { balance: '144000', pending: '20000', todayOut: '0' },
++    transit: { balance: '48600', pending: '30000', todayOut: '0' },
++    card: { balance: '-392000', pending: '0', todayOut: '0' },
++  });
++});
++
++test("today's spending counts confirmed expenses only", () => {
++  const todayRecords = [
++    entry({ wallet_id: 'main', amount_minor: '4700', occurred_on: TODAY }),
++    entry({ wallet_id: 'main', amount_minor: '1250', occurred_on: TODAY }),
++    entry({ type: 'income', wallet_id: 'main', amount_minor: '500000', occurred_on: TODAY }),
++    transfer({ source_wallet_id: 'main', destination_wallet_id: 'cash', amount_minor: '30000', occurred_on: TODAY }),
++    entry({ wallet_id: 'cash', amount_minor: '8500', occurred_on: TODAY }),
++  ];
++  // A waiting draft today is still saving, not spent.
++  const outbox = [command(pending({ wallet_id: 'main', amount_minor: '900', occurred_on: TODAY }), 'unsent')];
++  // The server's balances already hold today's records; only the draft comes off.
++  assert.deepEqual(figures(stack({ wallets: BW_HOME, order: KEPT, todayRecords, outbox })), {
++    main: { balance: '2485100', pending: '900', todayOut: '5950' },
++    cash: { balance: '124000', pending: '0', todayOut: '8500' },
++    transit: { balance: '18600', pending: '0', todayOut: '0' },
++    card: { balance: '-392000', pending: '0', todayOut: '0' },
++  });
++});
++
++test('each card wears its wallet\'s look, and money stays exact past 2^53', () => {
++  const kept: Readonly<Record<string, WalletLook>> = { big: { kind: 'bank', material: 'sky', face: 'wink' } };
++  const asked: string[] = [];
++  const lookOf = (id: string): WalletLook => {
++    asked.push(id);
++    return kept[id] ?? derivedLook(id);
++  };
++  // A JS number would round each of these.
++  const big = wallet('big', '9007199254740993', 'ออมทรัพย์');
++  const outbox = [
++    command(pending({ wallet_id: 'big', amount_minor: '1' }), 'unsent'),
++    command(pending({ type: 'income', wallet_id: 'big', amount_minor: '9007199254740993' }), 'unsent'),
++  ];
++  const todayRecords = [entry({ wallet_id: 'big', amount_minor: '9007199254740993', occurred_on: TODAY }), entry({ wallet_id: 'big', amount_minor: '2', occurred_on: TODAY })];
++  const cards = stack({ wallets: [big, CASH], order: ['big'], outbox, todayRecords, lookOf });
++  assert.deepEqual(figures(cards).big, { balance: '18014398509481985', pending: '9007199254740994', todayOut: '9007199254740995' });
++  assert.deepEqual(cards.map((card) => card.look), [derivedLook('cash'), kept.big]);
++  assert.deepEqual(asked, ['cash', 'big']);
++});
+diff --git a/apps/app/src/wallet/home/homeWallets.ts b/apps/app/src/wallet/home/homeWallets.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f912590dab114391376d689f4d9f3ba41358a7d1
+--- /dev/null
++++ b/apps/app/src/wallet/home/homeWallets.ts
+@@ -0,0 +1,94 @@
++// The Bun Wallet Home's card stack (P2-T23; bw-home, rh-offline, W7, W28):
++// the wallets in use, in the kept order, as CardStack draws them, the front
++// card last. Each card's balance is what the wallet holds as far as this
++// phone knows (availableBalances: the server's balance less what waiting
++// drafts take out, plus what they bring in), with the waiting drafts that
++// touch it added up (still saving) and today's confirmed money out of it,
++// which the stack shows on its front card only. Drafts being checked may
++// already be in the server's balance, so neither figure counts them. Pure: a
++// Node test reads it. Money stays exact (BigInt over canonical satang strings).
++import type { TransactionDto, WalletDto } from '@gogospend/contracts';
++
++import { availableBalances } from '../../spend/v1/redesign/availableBalances.ts';
++import { WAITING_STATES } from '../../spend/v1/redesign/shared.ts';
++import type { OutboxCommand } from '../../storage/types.ts';
++import type { StackWallet } from '../card/CardStack.tsx';
++import type { WalletLook } from '../looks/walletLooks.ts';
++
++/**
++ * The wallets in use, front first: the kept order first (W28), then every
++ * wallet it does not name, by name, as the device diary lists wallets. An id
++ * the order names that is not in use here (archived, or unknown) is passed
++ * over. This is P2-T20's `frontFirst` (`wallet/wallets/walletsList.ts`, which
++ * the wallets list and the reorder tray use), copied while that task is not
++ * on the integration branch; P2-T24, which starts after both, imports that
++ * one here instead and deletes this copy.
++ */
++function frontFirst<T extends Pick<WalletDto, 'id' | 'name' | 'archived'>>(wallets: readonly T[], order: readonly string[]): T[] {
++  const left = new Map(wallets.filter((wallet) => !wallet.archived).map((wallet) => [wallet.id, wallet]));
++  const kept: T[] = [];
++  for (const id of order) {
++    const wallet = left.get(id);
++    if (wallet === undefined) continue;
++    kept.push(wallet);
++    left.delete(id);
++  }
++  const rest = [...left.values()].sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
++  return [...kept, ...rest];
++}
++
++/**
++ * The waiting drafts that touch each wallet, added up: what its card says is
++ * still saving. They are the drafts availableBalances moves (never sent, so
++ * not yet in the server's balance). A transfer touches both of its wallets.
++ */
++function savingByWallet(outbox: readonly OutboxCommand[]): Map<string, bigint> {
++  const saving = new Map<string, bigint>();
++  const add = (id: string, amount: bigint) => {
++    saving.set(id, (saving.get(id) ?? 0n) + amount);
++  };
++  for (const command of outbox) {
++    if (!WAITING_STATES.includes(command.state)) continue;
++    const entry = command.payload;
++    const amount = BigInt(entry.amount_minor);
++    if (entry.type === 'transfer') {
++      add(entry.source_wallet_id, amount);
++      add(entry.destination_wallet_id, amount);
++    } else {
++      add(entry.wallet_id, amount);
++    }
++  }
++  return saving;
++}
++
++/** Each wallet's confirmed expenses among today's records. Income and transfers are not spending. */
++function spentByWallet(todayRecords: readonly TransactionDto[]): Map<string, bigint> {
++  const spent = new Map<string, bigint>();
++  for (const record of todayRecords) {
++    if (record.type !== 'expense') continue;
++    spent.set(record.wallet_id, (spent.get(record.wallet_id) ?? 0n) + BigInt(record.amount_minor));
++  }
++  return spent;
++}
++
++export function homeWallets(input: {
++  wallets: readonly WalletDto[];
++  todayRecords: readonly TransactionDto[];
++  outbox: readonly OutboxCommand[];
++  order: readonly string[];
++  lookOf: (id: string) => WalletLook;
++}): StackWallet[] {
++  const balances = availableBalances(input.wallets, input.outbox);
++  const saving = savingByWallet(input.outbox);
++  const spent = spentByWallet(input.todayRecords);
++  // CardStack draws the cards in the order given, the front card last.
++  return frontFirst(input.wallets, input.order).reverse().map((wallet) => ({
++    id: wallet.id,
++    name: wallet.name,
++    // availableBalances answers for every wallet it is given: the fallback only narrows the type.
++    balanceMinor: balances.get(wallet.id) ?? wallet.balance_minor,
++    pendingMinor: (saving.get(wallet.id) ?? 0n).toString(),
++    todayOutMinor: (spent.get(wallet.id) ?? 0n).toString(),
++    look: input.lookOf(wallet.id),
++  }));
++}

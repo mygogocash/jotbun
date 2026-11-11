@@ -1,0 +1,74 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge
+
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > reads a plausible number of routes from the controllers 1ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > places every NestJS route in exactly one of the served, deferred and retired sets 0ms
+ × test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > lists each route once, and nothing NestJS lacks but the edge-only and the added routes 3ms
+   → expected [ 'GET /v1/ai/note', …(7) ] to deeply equal [ 'GET /v1/ai/note', …(6) ]
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > keeps each served NestJS route’s access class, gates and status 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > defers exactly the two deletion routes to 1C (B16), and retires exactly the six routes §6.4 retires 0ms
+ × test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > serves the seven AI and bridge routes and the added ones, and no NestJS route shadows them 0ms
+   → expected [ 'GET /v1/ai/note', …(5) ] to deeply equal [ 'GET /v1/ai/note', …(6) ]
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > each served route is one vault call or one Worker route with its handler, and a step id is only a vault call 1ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > a live route has neither a vault call nor a Worker handler, and is an added route 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > lists each route once, and nothing NestJS lacks but the edge-only and the added routes
+AssertionError: expected [ 'GET /v1/ai/note', …(7) ] to deeply equal [ 'GET /v1/ai/note', …(6) ]
+
+- Expected
++ Received
+
+@@ -1,7 +1,8 @@
+  [
+    "GET /v1/ai/note",
++   "GET /v1/bridge/gogocash/catalogue",
+    "GET /v1/me/ai-preferences",
+    "GET /v1/sync/live",
+    "POST /v1/ai/ask",
+    "POST /v1/ai/parse",
+    "POST /v1/ai/slip",
+
+ ❯ test/route-coverage.test.ts:88:64
+     86|     const listed = [...served, ...VAULT_DEFERRED_ROUTES, ...VAULT_RETI…
+     87|     expect(new Set(listed).size).toBe(listed.length)
+     88|     expect(listed.filter((key) => !nestByKey.has(key)).sort()).toEqual…
+       |                                                                ^
+     89|     expect(VAULT_EDGE_ONLY_ROUTES.filter((key) => VAULT_ADDED_ROUTES.i…
+     90|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > serves the seven AI and bridge routes and the added ones, and no NestJS route shadows them
+AssertionError: expected [ 'GET /v1/ai/note', …(5) ] to deeply equal [ 'GET /v1/ai/note', …(6) ]
+
+- Expected
++ Received
+
+@@ -1,8 +1,7 @@
+  [
+    "GET /v1/ai/note",
+-   "GET /v1/bridge/gogocash/catalogue",
+    "GET /v1/me/ai-preferences",
+    "POST /v1/ai/ask",
+    "POST /v1/ai/parse",
+    "POST /v1/ai/slip",
+    "PUT /v1/me/ai-preferences",
+
+ ❯ test/route-coverage.test.ts:109:48
+    107|
+    108|   it('serves the seven AI and bridge routes and the added ones, and no…
+    109|     expect([...VAULT_EDGE_ONLY_ROUTES].sort()).toEqual([
+       |                                                ^
+    110|       'GET /v1/ai/note',
+    111|       'GET /v1/bridge/gogocash/catalogue',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 6 passed (8)
+   Start at  09:54:53
+   Duration  537ms (transform 273ms, setup 0ms, import 406ms, tests 6ms, environment 0ms)
+

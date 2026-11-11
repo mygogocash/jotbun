@@ -593,9 +593,9 @@ export function useCategoryIcons(): CategoryIcons {
  import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
  import type { ReactNode } from 'react';
 @@ -56,6 +61,12 @@
- 
+
  const nothingKept = (accountId: string | null): Kept => ({ accountId, looks: {}, order: [], icons: {} });
- 
+
 +/** One change, as it acts on everything kept: its own name, changed. */
 +type Edit = (kept: Kept) => Kept;
 +
@@ -624,7 +624,7 @@ export function useCategoryIcons(): CategoryIcons {
 +      setState((now) => (now.accountId === accountId ? shown : now));
      });
    }, [accountId, enqueue]);
- 
+
    const keep = useCallback(<T,>(slot: Slot<T>, change: (value: T) => T): Promise<void> => {
      if (accountId === null) return Promise.resolve();
      const store = walletAccountStore(accountId);
@@ -643,7 +643,7 @@ export function useCategoryIcons(): CategoryIcons {
 +      if (!written || earlier.length > 0) unstored.current.set(accountId, edits);
      });
    }, [accountId, enqueue]);
- 
+
 ```
 
 ### The test file's change (`PL/diffs/apps_app_src_wallet_looks_WalletLooks.render.test.tsx.diff`)
@@ -668,9 +668,9 @@ export function useCategoryIcons(): CategoryIcons {
 +import { useEffect } from 'react';
  import { Text } from 'react-native';
  import { afterEach, expect, test, vi } from 'vitest';
- 
+
 @@ -15,7 +17,7 @@
- 
+
  import { WALLET_SECTIONS } from '@mobile/dev/catalogue/wallet';
  import { rgba } from '@mobile/dev/catalogue/catalogueTestHarness';
 -import { useDiaryView } from '@mobile/spend/v1/SpendDiaryContext';
@@ -685,12 +685,12 @@ export function useCategoryIcons(): CategoryIcons {
 -import { useCategoryIcons, useWalletLooks } from './WalletLooksProvider';
 +import { useCategoryIcons, useWalletLooks, WalletLooksProvider } from './WalletLooksProvider';
  import type { CategoryIcons, WalletLooks } from './WalletLooksProvider';
- 
+
  afterEach(() => {
 @@ -124,6 +126,25 @@
    };
  }
- 
+
 +/** The harness's store, read and written in place; while a fault is set, every read or every write fails. */
 +function storeOver(stored: Map<string, string>) {
 +  const faults = { reads: false, writes: false };
@@ -715,7 +715,7 @@ export function useCategoryIcons(): CategoryIcons {
    await settle();
 @@ -193,7 +214,8 @@
  });
- 
+
  test('a name the store cannot read is never written over, and what fails to store still shows until the app closes', async () => {
 -  const { stored } = mountWallet(<Keeper />, { account: { looks: JSON.stringify({ [W2]: SKY }) } });
 +  const fake = createFakeDiary();
@@ -749,7 +749,7 @@ export function useCategoryIcons(): CategoryIcons {
 +  expect(shown(), 'this account again').toEqual({ w1: PEACH, w2: SKY, w3: CASH, order: [], c1: 'book' });
 +  expect(stored.get(keyOf(TEST_ACCOUNT_ID, 'looks')), 'never written').toBe(JSON.stringify({ [W2]: SKY }));
    cleanup();
- 
+
 -  // An account whose first read fails shows derived looks.
 -  const fake = createFakeDiary({ accountId: null });
 -  mountWallet(<Keeper />, { diary: fake.diary });
@@ -786,7 +786,7 @@ export function useCategoryIcons(): CategoryIcons {
 +  expect(JSON.parse(stored.get(keyOf(TEST_ACCOUNT_ID, 'looks')) ?? 'null'), 'what the store holds').toEqual({ [W2]: SKY, [W3]: CASH });
 +  expect(shown(), 'after a later change to the same name').toMatchObject({ w1: PEACH, w2: SKY, w3: CASH });
  });
- 
+
 +// The review's ready case D2 (P2-T11 m1).
 +test('a change made while its name could not be read still shows after the store reads again and a later change to it is stored', async () => {
 +  const { stored } = mountWallet(<Keeper />, { account: { looks: JSON.stringify({ [W2]: SKY }) } });

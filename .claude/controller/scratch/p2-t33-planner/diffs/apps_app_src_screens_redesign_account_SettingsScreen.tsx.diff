@@ -1,0 +1,29 @@
+diff --git a/apps/app/src/screens/redesign/account/SettingsScreen.tsx b/apps/app/src/screens/redesign/account/SettingsScreen.tsx
+index 9c7b4cfa9a5de975a920725f14f7804606046717..a2af2800697fa39a24f8ab3e0924649f98e2e87d 100644
+--- a/apps/app/src/screens/redesign/account/SettingsScreen.tsx
++++ b/apps/app/src/screens/redesign/account/SettingsScreen.tsx
+@@ -10,6 +10,8 @@
+ // - The bun (Full, Quiet, Off, decision D9) through the bun intensity.
+ // - Haptics (On, Subtle, Off; premium plan A1): Subtle keeps only saves,
+ //   warnings and errors; the phone's own vibration switch still applies.
++// - The Face ID lock (P2-T33, W26): its row, only while the `wallet` area is
++//   on (LockSettingsRow), opens the lock's setup.
+ // - The diary's links: Wallets, Categories and Budget under the planning
+ //   area, Reminders under insights, Import only with its flag. Each area
+ //   waits for its own approval.
+@@ -55,6 +57,7 @@ import { PillButton } from '@mobile/ui/PillButton';
+ import { ConfirmSheet } from '@mobile/ui/Sheet';
+ import { StageHeader } from '@mobile/ui/StageHeader';
+ import { SyncBanner } from '@mobile/ui/SyncBanner';
++import { LockSettingsRow } from '@mobile/wallet/lock/LockSettingsRow';
+ import { Notice } from '../HistoryParts';
+ import { isRedesignEnabled } from '@mobile/config/featureFlags';
+ import { CompanionSettings } from './CompanionSettings';
+@@ -271,6 +274,7 @@ export function SettingsScreen({ services, areas: givenAreas }: SettingsScreenPr
+           <Language />
+           <BunChoice />
+           <HapticsChoice />
++          <LockSettingsRow />
+           {isRedesignEnabled('companion') ? <CompanionSettings /> : null}
+           <DiaryLinks links={diaryLinks(areas)} />
+           <Section title={tc('Account')} testID="settings-account">

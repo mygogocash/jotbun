@@ -1,0 +1,17 @@
+diff --git a/apps/app/src/sync/announce.ts b/apps/app/src/sync/announce.ts
+index ef1935263d3816f3e9ce8d51c31c00ee4fef178f..532c46638a7fddf5219e0e98b0391a6ffdcd35f8 100644
+--- a/apps/app/src/sync/announce.ts
++++ b/apps/app/src/sync/announce.ts
+@@ -1,8 +1,9 @@
+ // Spoken status updates. iOS VoiceOver ignores live regions, so a changed
+ // sync status is announced explicitly there; Android and the web use the
+-// banner's polite live region.
+-import { AccessibilityInfo, Platform } from 'react-native';
++// banner's polite live region. It is said through announcePolitely, so
++// nothing is said while the Face ID lock's cover is up (P2-T33).
++import { announcePolitely } from '@mobile/ui/a11y';
+ 
+ export function announceStatus(text: string): void {
+-  if (Platform.OS === 'ios' && text) AccessibilityInfo.announceForAccessibility(text);
++  announcePolitely(text);
+ }

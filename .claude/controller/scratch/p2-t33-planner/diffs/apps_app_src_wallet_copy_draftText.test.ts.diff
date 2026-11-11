@@ -1,0 +1,13 @@
+diff --git a/apps/app/src/wallet/copy/draftText.test.ts b/apps/app/src/wallet/copy/draftText.test.ts
+index 0576583008ad82a603dd4b28accd2e410721e9f7..66b3702dddb99366b34eeb04434835e0604be189 100644
+--- a/apps/app/src/wallet/copy/draftText.test.ts
++++ b/apps/app/src/wallet/copy/draftText.test.ts
+@@ -17,6 +17,8 @@ const THAI = /[\u0E00-\u0E7F]/;
+ const EMOJI = /\p{Extended_Pictographic}/u;
+ const PUNCTUATION_DASH = /[\u2013\u2014]/;
+ const AREA_KEY = /^[a-z]+\.[A-Za-z0-9_.]+$/;
++// The lock's method is named Face ID in Thai too (sa-lock-setup, sa-locked).
++LATIN_LINES.add('lock.methodFace');
+ 
+ const walletRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
+ 

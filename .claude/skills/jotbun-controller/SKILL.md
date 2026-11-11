@@ -20,7 +20,7 @@ Claude Code has a rolling 5-hour limit and Fable is scarcer still. Antigravity h
 | Implementers and fixers | `antigravity` `claude-sonnet-5-5-high` |
 | First reviews and confirming reviews | `antigravity` `claude-opus-5-5-high` |
 | Second review of a money-path or privacy PR (wallet, cashback, points, payments, auth, private mode, privacy migrations) | `antigravity` `gemini-4-argon-high`, a different model family from the first review (`make_prompt.py second`) |
-| Any role while Antigravity is down or out of credit | Claude Code: `make_prompt.py --claude-code` (Opus xhigh plans and reviews, Haiku max builds) |
+| Any role while Antigravity's Claude pool is empty | **`make_prompt.py --spread`** (11 Nov, until about 17 Nov; owner: "Antigravity still have a lot of usages please find the way to maximize"):<br>• builders, fixers, second reviews and the simpler lanes' planners run on `antigravity` `gemini-3.8-flash-high`, which draws Antigravity's Gemini pool (55% of the week left, and the 5-hour window);<br>• first and confirming reviews run on Claude Code Opus;<br>• hard or money and privacy planners use `--claude-code`;<br>• Gemini 4 Argon has its own weekly cap, nearly spent, and Cursor and Grok were at 2 to 3% on 11 Nov, so neither is used.<br>Read the provider usage screen before routing. |
 | Scouting: code search, log reading, red-CI triage, mapping code paths before a planner | `antigravity` `gemini-3.8-flash-high`, read-only |
 | One hard, high-stakes question (money correctness, a root cause other models missed, an architecture call) | `claudeAgent` `claude-fable-5-2` as an advisor with a short brief of verified facts; about once a day at most. A Fable lead session needs the owner's approval |
 | A lookup or one-line fix | whoever is already running; don't write a brief bigger than the task |
@@ -35,12 +35,12 @@ Claude Code has a rolling 5-hour limit and Fable is scarcer still. Antigravity h
 The owner has authorised this to keep moving without pausing between tasks:
 - push task branches;
 - open PRs into `claude/p1a-vault-core`;
-- merge them on green CI, except a money-path or privacy PR: when its CI is green and both reviews approve, give the owner a recommendation and ask before merging;
+- merge them when CI is green and the reviews approve. That includes a money-path or privacy PR once both of its reviews approve: no owner yes is needed (owner, 11 Nov 21:25: "find the way to speed up development without my approval"; the owner still reviews every task in its promotion PR into `main`);
 - close their issues;
 - remove their worktrees and branches;
 - push the controller state with `sync_state.sh`.
 
-Merging anything into `main`, deploys, production data, secrets, new paid services and scope changes stay the owner's call. When asking, lead with a recommendation: the options, the main tradeoff, and the exact yes or no needed. Report every check as PASS, FAIL or SKIPPED with its command and reason.
+The same ruling covers the build's own speed-ups without asking: dispatching more lanes, spreading roles over the providers that have credit, and changing the controller's scripts and process. Record each one in `handover.md`. Merging anything into `main`, deploys, production data, secrets, new paid services and scope changes stay the owner's call. When asking, lead with a recommendation: the options, the main tradeoff, and the exact yes or no needed. Report every check as PASS, FAIL or SKIPPED with its command and reason.
 
 ## State to read first (all durable, under `C = /Users/kunanonjarat/Developer/jotbun/.claude/controller`)
 
@@ -71,7 +71,12 @@ The skill and `C/` are committed in the repo; the scratch proof trees are not, a
   - the load.
 - **Does a brief's base hold:** `bash scripts/check_kit.sh <kit> [--rebase-out <dir>]`. It checks the kit's sums (skipping lost `*.log` lines), its `SHA256SUMS.base`, and its `orig/` or `base/` files at the head. It dry-runs per-file diffs for the files that changed. `--rebase-out` writes patched copies, with SHA256SUMS, for the implementer to copy.
 - **Whole-suite counts:** rarely needed under R100. When a question needs them, `bash scripts/baseline.sh <worktree> app|edge|all [--exports]` measures them; never hand-adjust.
-- **Dispatch:** `python3 -I scripts/make_prompt.py <implementer|fixer|reviewer|confirm|planner> <TASK> --wt --branch --head [--accepted] [--pr --sha] [--lock] [--installed] [--notes <file>]`.
+- **Dispatch:** `python3 -I scripts/make_prompt.py <implementer|fixer|reviewer|confirm|planner> <TASK> --wt --branch --head [--accepted] [--pr --sha] [--lock] [--installed] [--notes <file>] [--spread|--claude-code]`.
+- **Waiting on agents:** `bash scripts/watch_agents.sh unused <idle-min> <cap-min> <wt>:<scratch> verdict:<review file> file:<kit>/SHA256SUMS ...`, run as background Bash, then `t3_background_wait` on its task id.
+  - It exits at the first event: a builder's own commit, a builder gone quiet, a review's `VERDICT:` line, or a planner's brief file (`file:$C/briefs/<ID>.md`).
+  - A planner can write its kit's `SHA256SUMS` mid-run, so on any planner event `t3_thread_wait` its thread to completion before reading READY or BLOCKED.
+  - Re-arm it without the entry that fired.
+  - Launched threads never wake the controller. A builder ends a T3 run at each background job, so `t3_thread_wait` on it returns early.
   - It writes the assignment file from the role templates and prints a one-line Agent prompt and its model.
   - Write only the task's own notes (what moved, totals, rulings, review focus) in `--notes`.
 

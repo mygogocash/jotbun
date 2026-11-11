@@ -1,0 +1,36 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge
+
+ × test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container 4ms
+   → expected [ 'PARSE_QUEUE', 'JOBS' ] to deeply equal [ 'PARSE_QUEUE' ]
+ ✓ test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > the Workers-runtime tests load the vault module, never TanStack Start, on the one config (B15) 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container
+AssertionError: expected [ 'PARSE_QUEUE', 'JOBS' ] to deeply equal [ 'PARSE_QUEUE' ]
+
+- Expected
++ Received
+
+  [
+    "PARSE_QUEUE",
++   "JOBS",
+  ]
+
+ ❯ test/c1-shape.test.ts:38:80
+     36|     // createOnce would count a resent request's id as started long af…
+     37|     expect(config.workflows.map((w: { default_retention: unknown }) =>…
+     38|     expect(config.queues.producers.map((p: { binding: string }) => p.b…
+       |                                                                                ^
+     39|     expect(config.queues.consumers.map((c: { queue: string }) => c.que…
+     40|     expect(config.containers.map((c: { class_name: string }) => c.clas…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  09:54:51
+   Duration  151ms (transform 10ms, setup 0ms, import 16ms, tests 4ms, environment 0ms)
+

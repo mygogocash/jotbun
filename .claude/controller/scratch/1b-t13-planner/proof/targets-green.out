@@ -1,0 +1,48 @@
+OK   every response is no-store with its own request id and helmet-style headers  -> test/workers/front-door.test.ts
+OK   a client-sent request id is ignored  -> test/workers/front-door.test.ts
+OK   an unknown route is 404 NOT_FOUND as an ApiProblem when nothing is forwarded  -> test/workers/front-door.test.ts
+OK   no client header is 426 before any token check  -> test/workers/front-door.test.ts
+OK   an outdated client is 426  -> test/workers/front-door.test.ts
+OK   no bearer token is 401 UNAUTHENTICATED  -> test/workers/front-door.test.ts
+OK   a token from an unpublished key is 401  -> test/workers/front-door.test.ts
+OK   privacy preferences are saved and read back  -> test/workers/front-door.test.ts
+OK   a token without a session id is 401 SESSION_REQUIRED  -> test/workers/front-door.test.ts
+OK   signing out ends this session only  -> test/workers/front-door.test.ts
+OK   a call naming another person is refused by the vault, which writes nothing  -> test/workers/front-door.test.ts
+OK   writes wait for the current terms; accepting them opens writes  -> test/workers/commands.test.ts
+OK   the policy check runs in the guard, before the body is validated  -> test/workers/commands.test.ts
+OK   creates a wallet whose balance starts at its opening balance  -> test/workers/wallets.test.ts
+OK   a resent command replays its acknowledgement; the same key with other content is 409  -> test/workers/commands.test.ts
+OK   an unsupported command schema is 422 before anything is written  -> test/workers/commands.test.ts
+OK   a stale If-Match is 409 VERSION_CONFLICT with the current wallet  -> test/workers/commands.test.ts
+OK   validation problems name the field  -> test/workers/commands.test.ts
+OK   malformed JSON is 400 VALIDATION_FAILED; a JSON primitive is refused as strict JSON  -> test/workers/commands.test.ts
+OK   a body over 2 MB is 413 COMMAND_TOO_LARGE  -> test/workers/commands.test.ts
+OK   a paused writes gate answers 503 WRITES_PAUSED with Retry-After before authentication; reads stay open  -> test/workers/commands.test.ts
+OK   isolates people in the runtime too: one person cannot read another person’s wallet  -> test/vault-parity.db.test.ts
+OK   the vault Worker answers the money session exactly like the NestJS v1 API  -> test/vault-parity.db.test.ts
+OK   the vault Worker stores, queues and serves files exactly like the NestJS v1 API  -> test/vault-parity-files.db.test.ts
+OK   AI is off until the user agrees to the current notice  -> test/workers/ai.test.ts
+OK   turning AI on needs the current notice version; tips can be set alone  -> test/workers/ai.test.ts
+OK   preferences are the person's own  -> test/workers/ai.test.ts
+OK   turns a sentence into a grounded draft, asking Claude through the shared settings  -> test/workers/ai.test.ts
+OK   never passes on an amount the person did not write  -> test/workers/ai.test.ts
+OK   falls back to the offline rules when Claude refuses, fails or has nothing  -> test/workers/ai.test.ts
+OK   without AI configured, answers from the rules and spends no uses  -> test/workers/ai.test.ts
+OK   stops at the daily limit until the next Bangkok day  -> test/workers/ai.test.ts
+OK   validates the sentence  -> test/workers/ai.test.ts
+OK   reads a slip image into drafts and keeps nothing  -> test/workers/ai.test.ts
+OK   refuses other files and broken base64 before any model call  -> test/workers/ai.test.ts
+OK   without consent: the plain facts, and no model call  -> test/workers/ai.test.ts
+OK   uses Claude’s words only when every number is one of the facts  -> test/workers/ai.test.ts
+OK   out of note uses, the facts still come  -> test/workers/ai.test.ts
+OK   answers through a read-only tool and returns the figures it used  -> test/workers/ai.test.ts
+OK   an answer with a number no tool read becomes the plain figures  -> test/workers/ai.test.ts
+OK   a bad tool input is reported back to Claude, not run  -> test/workers/ai.test.ts
+OK   seeds built-ins, records spending, and reads it back through history, summary, budgets, status and sync  -> test/workers/history.test.ts
+OK   builds a requested snapshot, whose chunks the edge then serves  -> test/workers/snapshots.test.ts
+OK   writes a requested export, streamed back with its length, and never serves a tampered file  -> test/workers/exports.test.ts
+OK   parses an upload the edge accepted, which the edge then reviews and confirms  -> test/workers/imports-review.test.ts
+OK   after any alarm, every scheduled time is later than now  -> test/workers/files-alarm.test.ts
+OK   a snapshot runs on SnapshotWorkflow, and its cursor continues with /v1/sync/changes  -> test/workers/snapshots.test.ts
+0 missing

@@ -1,0 +1,41 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge
+
+ ✓ test/ready.test.ts > /live and /ready (B15) > /live answers 200 with no-store 4ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready is 200 with every setting and a readable config:v1, also when config:v1 is absent 1ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready reads config:v1 by its key 1ms
+ × test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_ISSUER 3ms
+   → expected 200 to be 503 // Object.is equality
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_AUDIENCE 1ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_JWKS_URL 0ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready is 503 without COMMAND_DIGEST_KEY 0ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready is 503 when config:v1 cannot be read, and the log names only the failure class 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_ISSUER
+AssertionError: expected 200 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 200
+
+ ❯ expectNotReady test/ready.test.ts:25:22
+     23|
+     24| async function expectNotReady(res: Response) {
+     25|   expect(res.status).toBe(503)
+       |                      ^
+     26|   expect(res.headers.get('cache-control')).toBe('no-store')
+     27|   expect(res.headers.get('retry-after')).toBe('30')
+ ❯ test/ready.test.ts:55:11
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+   Start at  09:54:24
+   Duration  556ms (transform 361ms, setup 0ms, import 419ms, tests 10ms, environment 0ms)
+

@@ -1,0 +1,26 @@
+--- a/apps/edge/src/server/ai/model.ts
++++ b/apps/edge/src/server/ai/model.ts
+@@ -3,9 +3,6 @@
+ export type MessageParams = Anthropic.Beta.Messages.MessageCreateParamsNonStreaming
+ export type ModelMessage = Anthropic.Beta.Messages.BetaMessage
+ 
+-/** The one call the AI service makes; tests pass a fake. */
+-export type SendMessage = (params: MessageParams) => Promise<ModelMessage>
+-
+ /** D19: the default model; AI_MODEL can choose another after measuring. */
+ export const DEFAULT_AI_MODEL = 'claude-opus-5-5'
+ 
+@@ -27,13 +24,6 @@
+   }
+ }
+ 
+-export function anthropicSender(apiKey: string, baseURL?: string): SendMessage {
+-  // Fetch-based, so it runs on Workers. One retry; a request that cannot
+-  // finish in 25 s falls back to the plain facts.
+-  const client = new Anthropic({ apiKey, baseURL: baseURL || undefined, timeout: 25_000, maxRetries: 1 })
+-  return (params) => client.beta.messages.create(params)
+-}
+-
+ export class ModelUnavailable extends Error {
+   constructor(readonly reason: 'refusal' | 'truncated' | 'malformed' | 'failed') {
+     super(`The model did not produce a usable answer (${reason}).`)

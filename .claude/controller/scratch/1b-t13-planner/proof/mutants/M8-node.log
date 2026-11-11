@@ -1,0 +1,35 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge
+
+ ✓ test/ready.test.ts > /live and /ready (B15) > /live answers 200 with no-store 4ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready is 200 with every setting and a readable config:v1, also when config:v1 is absent 1ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready reads config:v1 by its key 1ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_ISSUER 1ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_AUDIENCE 0ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_JWKS_URL 0ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready is 503 without COMMAND_DIGEST_KEY 0ms
+ × test/ready.test.ts > /live and /ready (B15) > /ready is 503 when config:v1 cannot be read, and the log names only the failure class 2ms
+   → KV is down at 10.0.0.1
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/ready.test.ts > /live and /ready (B15) > /ready is 503 when config:v1 cannot be read, and the log names only the failure class
+TypeError: KV is down at 10.0.0.1
+ ❯ Object.get test/ready.test.ts:64:13
+     62|     })
+     63|     const unreadable = kvWith(async () => {
+     64|       throw new TypeError('KV is down at 10.0.0.1')
+       |             ^
+     65|     })
+     66|     await expectNotReady(await readyResponseOf({ ...READY, CONFIG: unr…
+ ❯ readyResponseOf src/v1/ready.ts:30:20
+ ❯ test/ready.test.ts:66:32
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+   Start at  09:54:28
+   Duration  467ms (transform 275ms, setup 0ms, import 330ms, tests 9ms, environment 0ms)
+

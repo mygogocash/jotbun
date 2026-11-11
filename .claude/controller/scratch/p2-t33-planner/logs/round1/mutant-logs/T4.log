@@ -1,0 +1,59 @@
+
+> gogospend-app@0.1.0 test:unit
+> node scripts/test-unit.mjs src/wallet/lock/lockModel.test.ts src/wallet/copy/draftText.test.ts
+
+(node:45854) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/apps/app/src/wallet/copy/draftText.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ every draft line has Thai and English, with the same placeholders (3.365917ms)
+✔ no draft line has an emoji or a dash used as punctuation (0.9755ms)
+✔ every key is unique across every table and has an area prefix (0.744542ms)
+✔ draftText picks Thai for th and English for en and vi, then fills placeholders (0.113833ms)
+(node:45855) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/apps/app/src/wallet/lock/lockModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ with the lock on, every app open locks: a cold start and every return from the background (0.52625ms)
+✔ inactive only covers, so the Face ID prompt cannot lock again (0.061959ms)
+✔ with the lock off nothing locks or covers (0.042709ms)
+✔ unlocked unlocks and keeps a cover until the app is in front; disabled clears both, with the lock on or off (0.064208ms)
+✔ AppState's active, inactive and background are lock events; anything else says nothing (0.061166ms)
+✔ an answer that does not unlock says why; unavailable reads the phone first, and only a phone that says it cannot lock turns the lock off (0.07ms)
+✔ a screen names the phone's method, or the passcode while the phone has not said, and each method has its name, line and body (0.092041ms)
+✔ the setup switch waits for the phone, stays off on a phone that cannot lock and says why, and can always turn a lock off (0.053584ms)
+✔ the lock's Thai lines are the plan's, and only three more (0.097083ms)
+✔ the lock wraps private mode, so nothing that shows an amount renders above it (0.071458ms)
+✔ the wallet root's order: the gesture root, the motion answer, the lock with the app's own port while the wallet area is on, then private mode; with the area off, private mode inside the motion answer (0.122584ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 14
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 115.579041
+
+✖ failing tests:
+
+test at src/wallet/copy/draftText.test.ts:64:1
+✖ every draft line has Thai and English, with the same placeholders (3.365917ms)
+  AssertionError [ERR_ASSERTION]: lock.methodFace
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/apps/app/src/wallet/copy/draftText.test.ts:70:44)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'Face ID',
+    expected: /[\u0E00-\u0E7F]/,
+    operator: 'match',
+    diff: 'simple'
+  }
+npm error Lifecycle script `test:unit` failed with error:
+npm error code 1
+npm error path /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/apps/app
+npm error workspace gogospend-app@0.1.0
+npm error location /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/apps/app
+npm error command failed
+npm error command sh -c node scripts/test-unit.mjs src/wallet/lock/lockModel.test.ts src/wallet/copy/draftText.test.ts

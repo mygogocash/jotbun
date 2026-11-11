@@ -1,0 +1,14 @@
+M apps/edge/README.md
+M apps/edge/wrangler.jsonc
+M apps/edge/src/v1/env.ts
+M apps/edge/src/v1/handler.ts
+M apps/edge/src/v1/worker-routes.ts
+M apps/edge/src/server/ai/model.ts
+M apps/edge/src/v1/ai/routes.ts
+M apps/edge/src/v1/ai/service.ts
+A apps/edge/src/v1/ai/transport.ts
+M apps/edge/test/support/fake-model.ts
+M apps/edge/test/workers/support/v1-client.ts
+A apps/edge/test/ai-transport.test.ts
+M apps/edge/test/workers/ai.test.ts
+A docs/implementation/receipts/P3-T4.md
