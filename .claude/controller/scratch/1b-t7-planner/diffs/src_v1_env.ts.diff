@@ -1,0 +1,15 @@
+--- a/src/v1/env.ts
++++ b/src/v1/env.ts
+@@ -27,4 +27,12 @@
+   GOGOCASH_CATALOGUE_URL?: string
+   /** The stateless parser's Durable Object, with its container (1B-T5). Without it, every parse asks to be retried. */
+   PARSER?: DurableObjectNamespace<StatementParser>
++  /** The AI companion (1B-T7, B10): on only when this is `1` or `true` and ANTHROPIC_API_KEY is set; otherwise drafts come from the rules and slips and questions are 503 AI_PAUSED. */
++  AI_ENABLED?: string
++  /** The model, when it is not DEFAULT_AI_MODEL. */
++  AI_MODEL?: string
++  /** A secret. */
++  ANTHROPIC_API_KEY?: string
++  /** Optional proxy for the Anthropic API, for example a Cloudflare AI Gateway URL. */
++  ANTHROPIC_BASE_URL?: string
+ }

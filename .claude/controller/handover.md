@@ -23,9 +23,19 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - **Promotion PR #373** (`promote/1d-t8`, base main) is the first of the stack; the next promotion stacks on it. The owner merges into main.
     - The P2-T11 planner was told 1D-T8's files are now on the head.
   - **App baseline at 30fb26b** (CI): render 108 files and 1865 cases, `test:unit` 927, `test:app` 34, web 4794, iOS 5760.
-- **P2-T13 planner** (Opus xhigh, f362a7c3), dispatched at 22:51 at b4a0811 (depth 18; the tray, main button, text link and lock cover). WT p2-t13 on p2/t13-tray.
-  - It carries P2-T9's note on a Sheet inside a tray (two animation systems) and P2-T9's m-2 if it touches `motion/`.
-  - It is planned in parallel with P2-T11. Any shared edit (`walletHarness.tsx`, wallet sections in `registry.tsx`) must sit at an anchor of its own and apply in either merge order.
+- **P2-T13: brief READY at 712574d** (L, depth 18): the tray, main button, text link and lock cover.
+  - Files: 9 new. Shared: `dev/catalogue/wallet/index.ts` (one spread; its sections are in its own `traySections.tsx`, to stay clear of P2-T11's `kitSections.tsx`), a comment in `theme/motion.ts`, and one extended case in `useWalletMotion.render.test.tsx`.
+  - P1 to P19 are accepted. P5 keeps the two animation systems one per surface. P6 pins P2-T9's m-2 (drop it from followups.md once merged; m-1 stays). In P17, P10 is equivalent (Pressable reports `disabled` itself).
+  - The planner proved it also laid over P2-T11's final files, so it works in either merge order. Kit `scratch/p2-t13-planner/`: check_kit at ee12d43 gives 27 OK, and the 3 `orig/` files are identical. 98 of 99 mutants are killed and one is equivalent.
+  - The implementer (Haiku max, 094336d2) was dispatched at about 06:20 in a pre-installed p2-t13 from ee12d43. No iOS export is needed.
+  - For E2-A, see P19 (button sizes, the title's alignment, the backdrop without a fade).
+  - **DONE at 2f0e40e; PR #383 opened at 06:35 (issue #159).**
+    - RED: Node 4 of 4, render 16 of 16. GREEN: 4 and 22, neighbours 42. 98 of 99 mutants killed, with P10 equivalent; the output matches the planner's.
+    - A server restart cut off the first mutation run at R31. The implementer restored `Tray.tsx` from `real/` and reran all 99.
+    - The controller checked the 11 files against the kit and the clean merge with the head.
+    - **The review runs as a workflow** (run wf_74d1e17e-476): two Opus lenses (closing, the lock, the exit and motion; names, focus, buttons, the test traps, shared edits and CI), a skeptic for each blocker or major, and a synthesizer writing `reviews/P2-T13.md`.
+    - On approval and green CI: `merge_task_pr.sh 383 2f0e40e P2-T13`, then `promote_pr.sh P2-T13 383`. No iOS export is needed.
+    - #382 (P2-T11) and #383 share no file. Whichever merges second, CI tests the merge ref; read the PR through the API first (lessons.md: a stale merge ref).
   - **1B-T8: brief READY at 0bd5659** (L, 16 files under apps/edge). P1 to P17 are accepted, with P4 recorded as R101.
     - Kit `scratch/1b-t8-planner/`: check_kit at db19056 gives 47 OK, and the 13 `orig/` files are identical.
     - The planner's proof: RED 38 of 53 failing, GREEN 52 plus 1 todo, 62 of 62 mutants. In the ten-times memory case, `peakHeldBytes` was at most 20,644,143 against a bound of 20,644,976.
@@ -41,7 +51,13 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
     - **Edge baseline now (CI):** workers 28 files, 675 passed and 1 todo; `test:edge` 15 files and 176 tests.
     - **Promotion PR #380** is stacked on #378 (stack #379: #373, #378, #380).
 - **Server lane, dispatched at 23:20 from 1c14dd1 (Opus xhigh, in parallel; no shared file in their listings):**
-  - **1B-T7 planner** (fa58dddd), the AI routes: WT p1-1b-t7 on p1/1b-t7-ai-routes. It keeps its `handler.ts` edits minimal, for fix-download-aborts.
+  - **1B-T7: brief READY at 712574d** (M), the AI routes. New: `vault/ai.ts`, `v1/ai/service.ts`, `v1/ai/routes.ts`, `test/workers/ai.test.ts`. It also edits nine shared files, including three minimal `handler.ts` edits, none on a `headOf` line.
+    - P1 to P18 are accepted. P2: a signed-out session with a malformed body gets 422 where the PostgreSQL edge gave 401; the token is still verified first, and these routes are edge-only. P5: every step rechecks the session, the policy and that the account is active.
+    - The vault bundle grows to about 1,645 kB (gzip 377 kB), mostly the Anthropic SDK, by the plan's design.
+    - Kit `scratch/1b-t7-planner/`: check_kit at d340ffe gives 44 OK, and the 9 `orig/` files are identical. The planner's proof: 99 of 99 mutants. For CI: workers +1 file and +38 tests.
+    - The implementer (Haiku max, 603c183d) was dispatched at 06:38 in a pre-installed p1-1b-t7 from d340ffe, under the heavy lock for workers runs.
+    - Then: PR (issue from backlog-map.json) and an Opus review (M).
+  - **fix-download-aborts: not yet planned.** It is held until a review workflow finishes, to keep about six local agents (the thermal lesson). Plan it on top of `scratch/1b-t7-planner/real/src/v1/handler.ts`, carrying the full list in followups.md (R97, plus the review cases from 1B-T6, 1B-T8, 1B-T9 and 1B-T10).
   - **1B-T11 planner** (6407a432), files on the vault alarm: WT p1-1b-t11 on p1/1b-t11-files-alarm. It carries 1B-T8's m-1 and the alarm notes from 1B-T4, 1B-T5, 1B-T6, 1B-T9 and 1B-T10.
   - **fix-download-aborts** is planned next, on top of 1B-T7's `real/` `handler.ts`. It must land before 1B-T13; its list in followups.md now includes 1B-T8's review cases.
   - **ci-parallel-jobs: brief READY at 857b9f2** (M), with the controller's amendment (the iOS export and `typecheck:routes` in CI).
@@ -55,7 +71,14 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
       - The controller checked the 5 shared files against the kit and the clean merge with the head.
     - **The review runs as a workflow** (run wf_1346c5d6-527): two Opus lenses (the split and the test's pins; the workflow and CI evidence), a skeptic for each blocker or major, and a synthesizer writing `reviews/ci-parallel-jobs.md`.
     - #377's own CI is the first nine-job run, including the iOS export's first Linux build. Its measured times go in the receipt's "After, measured" line.
-    - Merge it with `merge_task_pr.sh 377 46b30a0` (no task id) **only after the owner's Actions-minutes answer**. Then run `promote_pr.sh ci-parallel-jobs 377`.
+    - **The review approved** (`reviews/ci-parallel-jobs.md`, two-lens workflow, resumed after the stop): no blocker or major, three minors and seven nits (followups.md; m2 and m3 go to P6C-T7). The render split is whole, every old step still runs once, and the iOS export passes on Linux.
+    - **Before merging (review m1):** #377's only CI run was on the old base 4850463. Once the owner answers, close and reopen #377 for a fresh nine-job run on the current base and check its totals. Only then run `merge_task_pr.sh 377 46b30a0` (no task id). Each extra run costs about 33 billable minutes, which is why it waits for the answer.
+    - **The owner answered on 10 Nov at 06:2x: "keep the nine-job CI, merge".**
+      - The controller closed and reopened #377 at 06:24, but that run (42720201154, green, 256 s wall) checked out the stale merge commit `c56e0e4` (into 4850463), so it proved nothing new (lessons.md).
+      - An API read then rebuilt the merge ref as 97f299c (base b272f0c, which holds P4-T13, 1B-T8 and P4-T12). The PR was reopened again at 06:32, for run 42721236288.
+      - **Confirm its checkout line says "Merge 46b30a0 into b272f0c" or later** (render 107 files with P4-T12's, plus 162, 196 and 218 of 576) before merging.
+    - When that run is green, with its totals checked: `merge_task_pr.sh 377 46b30a0` (no task id). Then `promote_pr.sh ci-parallel-jobs 377`, and add the measured times to the receipt's "After, measured" line in a housekeeping commit (with review nits n1 and n6).
+    - Then lift protocol.md's iOS-export correction (CI now runs it), and drop 1A-T10's minor 1 from P6C-T7 in followups.md.
     - **Its merge waits on the owner's Actions-minutes answer** (Owner decisions waiting).
     - After the merge: P6C-T7 no longer carries 1A-T10's minor 1, briefs that say "CI's database job runs `test:edge:db`" now mean the `edge` job, and the protocol's iOS-export correction can be lifted.
   - **P4-T12: brief READY on 606e131's code** (M; 18 new files in `src/slips/` and ten placeholder routes under `app/spend/slips/`).
@@ -70,7 +93,18 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
       - Three Opus xhigh lenses: the contract, privacy, and integration (which includes a scratch merge with 1D-T8).
       - An Opus skeptic tries to refute each blocker or major.
       - A synthesizer writes `reviews/P4-T12.md` with the verdict.
-    - On approval and green CI: `merge_task_pr.sh 376 8b9e16e P4-T12`, then `promote_pr.sh P4-T12 376`.
+    - **Merged as 712574d (#376, at 23:27).** Issue #220 is closed, and the worktree and branches are removed.
+      - The review workflow approved: no lens raised a blocker or major, with six minors and eleven nits.
+      - CI on the merge ref: `test:unit` 938, render 109 files and 1867 cases, web 4806. The synthesizer's scratch merge with a915f95 (P4-T13) was clean.
+      - The minors go to P4-T14 (followups.md). Two of them are privacy rules for the first hasher: m1, a salt fetch in flight during the sign-out erase writes the salt back; m2, the hasher must belong to the open diary's account.
+    - **Promotion PR #381** (`promote/p4-t12`, based on `promote/1b-t8`). Stack #379 is now #373 → #378 → #380 → #381.
+- **App baseline at 712574d** (CI on #376's merge ref plus P4-T13): `test:unit` 956 (927 + 18 + 11), render 109 files and 1867 cases, web 4806; iOS not measured at the head (computed 5772: 5760 with 1D-T8 plus P4-T12's 12 modules).
+
+## Usage-limit stop, 9 Nov 23:28 to 10 Nov 03:10
+- The controller's own session and every agent hit the 5-hour limit at about 23:28: the P2-T11 implementer, the P2-T13, 1B-T7 and 1B-T11 planners, and the ci-parallel-jobs review workflow.
+- At 03:10, T3 restarted each delegated thread itself, on the same thread with its context (run 2, task ids starting `limit-resume`). **Do not respawn them.** The controller steered each with the cutoff note: background runs are dead, rerun any check not seen to finish, restore any mutated file from `real/`, the lock is free, and P4-T12 merged as 712574d, sharing no file with them.
+- The ci-parallel-jobs review workflow does not restart itself; it was resumed with `resumeFromRunId` wf_1346c5d6-527 (task wrhzd95p0). All three of its agents run again.
+- Checks at 03:11: the heavy lock was free; no test process was alive; the load came from macOS indexing; and the Orca controller's transcript had not been written since 22:04 on 9 Nov (it did not resume at 01:50).
   - **P4-T13: brief READY at 0bd5659** (S, 7 new files in `src/slips/`, none shared; no package or lockfile change).
     - P1 to P18 are accepted. The Q1 and Q2 adapters wait on the owner (P18).
     - Kit `scratch/p4-t13-planner/`: check_kit at d579f94 gives 31 OK, SHA256SUMS.base 2 OK, and both `base/` files identical.
@@ -87,7 +121,13 @@ New controller: a T3 Code thread (Claude Code session 22c24cd3). Its own checkou
   - It folds in P2-T8's m-1 (harness cases H6 and H7, mutants HA2 to HA4) and m-2's harness sentence.
   - Kit `scratch/p2-t11-planner/`: check_kit at 6e51a3d gives 41 OK, and the 4 `orig/` files are identical. The planner's proof: 119 of 119 mutants.
   - The implementer (Haiku max, 3b2e8ff2) was dispatched at 23:24 in a pre-installed p2-t11 from 6e51a3d. No iOS export is needed (no route, entry or native change).
-  - Then: PR (issue #157) and an Opus review (L). P2-T13 (planner f362a7c3) follows in the wallet lane.
+  - **DONE at 31d9d59 (base e7fad50); PR #382 opened at 06:29 (issue #157).**
+    - RED: Node 10 of 10, render 19 of 27. GREEN: 14 and 27. 119 of 119 mutants. `test:unit` 955, `test:app` 34.
+    - It was BLOCKED once, on the whole-file `CatalogueScreen` run, by the Mac's thermal sleeps. Under ruling R103 that run went to CI, on the per-case evidence (298 and 300 of 301, then 4 of 4 targeted).
+    - The controller checked the 18 files against the kit and the clean merge with the head.
+    - **The review runs as a workflow** (run wf_4e503333-e15): two Opus lenses (the data rules and card words; the drawings, harness, catalogue and CI), a skeptic for each blocker or major, and a synthesizer writing `reviews/P2-T11.md`.
+    - **CI on #382 is R103's record** for the whole `CatalogueScreen` file.
+    - On approval and green CI: `merge_task_pr.sh 382 31d9d59 P2-T11`, then `promote_pr.sh P2-T11 382`. No iOS export is needed. P2-T13 (implementer 094336d2) follows in the wallet lane.
 
 ## PR #371: the integration branch into main. The owner merged it on 9 Nov, 21:30 Bangkok, as afcf884
 - It was merged with a merge commit, so history is kept. The controller then fast-forwarded claude/p1a-vault-core to afcf884, which adds main's README and CHANGELOG, so the two branches were level.
@@ -287,6 +327,10 @@ To stop a chat session in the app: `sc chat stop <thread_id>` cancels its turn o
 - Held: P2-T2 and 1D-T6 wait for #347 (lockfile, _layout). P3-T12 waits on owner Q1. 1C-T2 waits on the owner's lockout answer, and its brief must first pin 1C-T1's six untested security options (followups.md).
 
 ## Rulings this session
+R103 (10 Nov, P2-T11's gate): when a local whole-file run cannot finish because the machine sleeps (`pmset -g log`: "Dark Wake Thermal Emergency"), and every case has a passing run, the whole-file run goes to CI under R100.
+  - "Every case has a passing run" means the failures are timeouts across recorded sleeps, and a targeted rerun of the failing cases passes.
+  - The receipt records each run, the targeted rerun and the sleep times.
+  - First used for `CatalogueScreen.render.test.tsx` (301 cases): runs of 298 and 300, then 4 of 4 targeted.
 R102 (9 Nov, P4-T12's P2; binds P4-T6): the phone sends a slip batch as the UTF-8 bytes of its JSON, typed `application/octet-stream`, as the import upload sends its file.
   - P4-T6's handler reads at most 8 MiB of `w.stream`, accepts `application/octet-stream`, and parses the text with the contract's `parseSlipBatchRequest`.
   - A body typed `application/json` cannot work: the dispatcher's `readRouteBody` parses it (`readJsonBody`, capped at 2 MiB, 413 `COMMAND_TOO_LARGE` above that), and a stream route is then left with no stream. P4-T13's batches are up to 8 MiB.
@@ -313,7 +357,8 @@ R84 (P4-T10 fixtures), R85 (two API test-only fixes), R86 (token sid must match 
 Merge each PR when its CI on the current head is green; close its issue by hand (backlog-map.json); remove worktree and branch (local and remote). Open PRs that conflict only in docs/implementation/premium-progress.md: merge the head and run ledger_union.py (keeps both sides), except 1C (hand-merge: one `## 1C:` heading) and P4 (one `## P4` heading). New tasks write receipts under R87, which avoids those conflicts.
 
 ## Owner decisions waiting
-- **NEW (9 Nov, 23:10): Actions minutes before ci-parallel-jobs merges.** The repo is private on the Free plan, which includes 2,000 Actions minutes a month.
+- **ANSWERED (10 Nov, 06:2x): keep the nine-job CI, merge.** Below is the question as it was asked. The owner accepted about 33 billable minutes a run.
+- **(was) Actions minutes before ci-parallel-jobs merges.** The repo is private on the Free plan, which includes 2,000 Actions minutes a month.
   - Usage: 80 pull-request runs have happened since 1 Nov, about 1,400 billable minutes at today's roughly 18 per run, and each merged task now adds a promotion PR run. The controller cannot read the actual usage: GitHub's timing API reports 0, and the billing endpoint needs `admin:org`.
   - The parallel layout costs about 31 billable minutes a run (P11). If the minutes run out with no payment method, Actions stop, and every merge stops with them.
   - **Measured on #377's own run (42652925056, all nine green):**

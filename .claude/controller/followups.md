@@ -50,7 +50,10 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - m-2: the "new animation per call" test covers 2 of the 6 builders, and misses `trayExiting`.
     - Nit: `motionFor` returns the table's own objects, so a caller that mutates one changes every later answer.
   - **P2-T24 and P2-T30:** GrowBar has no `style` or `testID` prop.
-  - **P2-T13:** a Sheet inside a tray mixes two animation systems on one screen, which the new motion.ts comment says never happens.
+  - **P2-T13:** a Sheet inside a tray mixes two animation systems on one screen, which the new motion.ts comment says never happens. (P2-T13's brief, P5: kept apart, one system per surface. The Sheet is its own Modal over the tray, and `motion.ts`'s comment now says so. P2-T13 also pins m-2: all six builders, mutants M1 to M4. Drop m-2 here once P2-T13 merges; m-1 stays.)
+  - **From P2-T13's planner (briefs/P2-T13.md, notes):**
+    - **P2-T33:** on the web, Sheet's backdrop is a keyboard stop, because react-native-web's Pressable ignores `focusable={false}`. Use `tabIndex={-1}`, as the tray's backdrop does.
+    - **P2-T16:** on the web, the planned check "the sheet's dialog is inside the tray's dialog" cannot be read from the page structure, since each Modal sits directly under the page body. P2-T13's brief notes give a working check.
   - **P2-T12 and P2-T21:** a new wallet's card drops from a full screen height on an underdamped spring and overshoots by about 200 pt.
   - **E2:**
     - the board says "success" for the first wallet and the recap, but the plan plays success for every new wallet and `celebration` for the recap;
@@ -178,7 +181,7 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - `client.ts:345` reads `analyticsOff` once per request, so resends reuse it (a one-line move);
     - `controller.ts:28`'s JSDoc says `setAccount` rejects on a server failure, but only the store can make it reject;
     - `posthogOptions.ts:6-7` overclaims its type checks;
-    - `DeviceDiaryProvider.tsx:55-57` has a JSDoc line break;
+    - ~~`DeviceDiaryProvider.tsx:55-57` has a JSDoc line break~~ (closed by P4-T12, #376, which reflowed that paragraph);
     - `analyticsServer.ts:39`'s `NOT_FOUND` half is unpinned;
     - the brief named `PL/logs/run/`, which was not in the kit.
   - **Still open from 1D-T1:** a no whose queued write fails still skips the server call.
@@ -233,3 +236,30 @@ The review reports these came from were under /private/tmp and were lost on 8 No
 - P4-T12 planner notes (briefs/P4-T12.md, "For the controller"; the brief was READY on 9 Nov):
   - **P4-T6, under R102 (handover):** the slip batch arrives as its JSON's UTF-8 bytes, typed `application/octet-stream`. Read at most 8 MiB of `w.stream`, accept that type, and parse with `parseSlipBatchRequest`. A body typed `application/json` is parsed by the dispatcher (2 MiB cap) and leaves a stream route no stream (`apps/edge/src/v1/handler.ts`, `readRouteBody`). Decide and pin what a JSON-typed body answers.
   - **1D-T6's m4, still open:** the import screens' two transports (`import/ReceiptParts.tsx`, `import/ImportDeviceParts.tsx`) still lack `allowLanHttp` and the analytics-off header. They are not slip clients, so P4-T12 leaves them; a later import or P4 task must close them.
+- P4-T12 (#376, merged 712574d on 9 Nov, issue #220 closed; review in reviews/P4-T12.md, a three-lens Opus workflow, Approved with six minors and eleven nits; probes in scratch/p4-t12-review/):
+  - **P4-T14 (the first task to make and use a hasher) carries m1 to m6.** The code is right today, because nothing makes a hasher yet; each is a rule or a missing test for the engine. The first two are privacy rules:
+    - **m1 (privacy):** a salt fetch in flight during the sign-out erase writes the salt back after the erase deleted it (`slipRefs.ts:97-103`). The erase runs before `services.signOut` moves the epoch (`SettingsScreen.tsx:200-211`). `beforeErase`/`dropSlipEngines` must wait for in-flight hashes, or give the hasher a drop that skips its write. P4-T16b's hasher needs the same.
+    - **m2 (privacy):** the hasher stores whatever salt the shared transport answers with, under the account id it was built with, and keeps it for its life (`slipRefs.ts:95-112`). `appSlipDeps`, `slipEngineFor` and `SlipsProvider` must build the hasher for the open diary's account, never call an old one after a session or diary change, and test that.
+    - **m3:** `read` checks only `isSlipBatchResult` (`slipResources.ts:87`), so for the batch [A, B] it accepts [], [A], [A, C], [A, B, C] and [B, A]. Match each result by `ref_hash` and treat a missing one as paused, or check the length and order in `read`'s validate.
+    - **m4:** the fake runs none of the contract parsers (`parseSlipConfirmRequest`, `parseSlipBatchRequest`, `parseSlipAccountUpdate`, `parseSlipRefRequest`, `parseDeviceRegistration`), so it accepts requests the server answers 422 (`UNKNOWN_FIELD`, a limit of 0 or 201), and a limit of 0 pages forever. P4-T14's brief must list `testing/fakeSlipResources.ts` among its files.
+    - **m5:** the erase's Android branch is unpinned (`DeviceDiaryProvider.tsx:54`): every native case runs as `ios`, so mutant X6 (`=== 'ios'`) survives. Add one Android run of the salt case (the probe `androidSaltErase.render.test.tsx` kills it).
+    - **m6:** no test pins `read`'s exact bytes (`slipResources.ts:85`). Pretty-printed JSON survives all 5 cases and would break R102's link to `slipBatchBytes` (413 on nearly full batches). Assert `raw.bytes` equals the UTF-8 of `JSON.stringify(batch)`.
+    - n1: the fake has no replayed acknowledgements, duplicates or server wait; script them in its `read` closures for Review Focus 4 and "the server's wait holds the next batch back".
+  - **P4-T15:** n8, a refused keychain write is not held (add a refusing write on `SaltStore`); n10, `unlocked()` should not rest on the salt read alone (check a locked iPhone with no salt stored, and Android's unparseable entry, on a device).
+  - **P4-T16a:** n2, the fake's 404 for non-UUID ids, objects shared by reference, and a NaN cursor; n3, `drafts()` sends any limit unchecked (refuse anything outside 1 to 200 with `INVALID_PAGING`).
+  - **P4-T17 and P4-T18:** n11, the `Href` constants are only checked to exist; assert the literal pathnames, and `run=manual` in the navigation cases.
+  - **P4-T20:** n4, the fake's exactly-full last page and `drafts(undefined, n)` are unpinned; n5, pin that `dismiss` rejects and never throws synchronously.
+  - **P6A:** n9, test that the delete passes `accessGroup`, and device-check that the erase without a group removes the extension's copy.
+  - **Whoever next edits `slipRefs.test.ts`** (fold into P4-T14): n6, a base64url salt with `-` and `_` decodes to the exact bytes; n7, the `HEX_SALT` end anchor (add a 66-character damaged value).
+- ci-parallel-jobs (#377, not merged: held for the owner's Actions-minutes answer; review in reviews/ci-parallel-jobs.md, a two-lens Opus workflow, Approved with three minors and seven nits; probes in scratch/ci-parallel-review/):
+  - **The controller, before merging (m1):** #377's only CI run was against the old base 4850463. Close and reopen #377 for a fresh nine-job run on the current base, and check it: render 107 files with the two split files, and sections 162, 196 and 218 of 576, unless more render files have merged since.
+  - **P6C-T7, m2:** the ban on `if:` and `continue-on-error:` (`backend-workflow.test.mjs:281`) misses other YAML spellings of the same keys (`"if":`, `'continue-on-error':`, `if :`, `- 'if':`, `? if`). Six mutants pass while js-yaml reads them as the key. The review's widened regex catches all six with no false positive (`synth/ban-spot-check.out`).
+  - **P6C-T7, m3:** `renderSplitProblems` checks for doubled tests only on `sampleNames()`. A top-level `|` alternative in part 1 or 2 keeps the construction, and only the layout list kills it; on the real names 4 or 10 tests would run twice. Reject a top-level `|` in every pattern but the last, and add real-shaped samples.
+  - Nits, for a follow-up or the controller's "After, measured" housekeeping commit:
+    - n1: the `render` job is the critical path, at 283 s against an estimate of 179 to 246 s; the receipt's scaling note covers only the sections jobs.
+    - n2: a describe wrapper in either per-section file would silently move all its tests to `sections-3`, because vitest's `-t` matches the full name. Add a comment to keep the `test.each` calls top-level.
+    - n3: the switched-off case misses `shell: 'true {0}'`, a `defaults: run: shell:`, and `pull_request: paths:`.
+    - n4: `appFileExists` checks the case of the file name but not of its folders (macOS only; Linux CI still catches it).
+    - n5: README's full-gate block (lines 244 to 259) lacks `typecheck:routes` and `export:ios`.
+    - n6: receipt line 3 names 857b9f2 as the head at implementation time; it was 4850463.
+    - n7: every job logs a Node 20 deprecation warning for the pinned checkout and setup-node commits. Bump both pins, by commit, to releases that run on Node 24.

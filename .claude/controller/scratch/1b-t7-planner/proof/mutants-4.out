@@ -1,0 +1,26 @@
+R1 KILLED (the env ignores AI_ENABLED) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: with no model given, the env decides: AI needs AI_ENABLED and an API key, and AI_MODEL names the model
+R2 KILLED (the env ignores the API key) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: with no model given, the env decides: AI needs AI_ENABLED and an API key, and AI_MODEL names the model
+R3 KILLED (a null model from the front door falls back to the env) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: with no model given, the env decides: AI needs AI_ENABLED and an API key, and AI_MODEL names the model
+R4 KILLED (AI_MODEL is ignored) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: with no model given, the env decides: AI needs AI_ENABLED and an API key, and AI_MODEL names the model
+R5 KILLED (the note reads any query field) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the note and Ask Bun read their input before any step, and a HEAD on an AI read answers its GET with no body
+R6 KILLED (the note's date error names `today`) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: the note and Ask Bun read their input before any step, and a HEAD on an AI read answers its GET with no body
+T1 KILLED (Tell Bun does not need the current policy) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: each AI route is refused at its first step when a newer policy is pending, the session ended or the account stopped being active, before any model call
+T2 KILLED (the note needs the current policy) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: each AI route is refused at its first step when a newer policy is pending, the session ended or the account stopped being active, before any model call
+T3 KILLED (the context step runs after the session ended) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: each AI route is refused at its first step when a newer policy is pending, the session ended or the account stopped being active, before any model call
+T4 KILLED (the facts step runs after the session ended) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: each AI route is refused at its first step when a newer policy is pending, the session ended or the account stopped being active, before any model call
+T5 KILLED (the tool step runs after the session ended) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: a session signed out while Ask Bun runs is refused at its next tool step, and no tool reads the records
+T6 KILLED (the preferences step runs after the session ended) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: each AI route is refused at its first step when a newer policy is pending, the session ended or the account stopped being active, before any model call
+T7 KILLED (the preferences update runs after the session ended) [workers 1 failed | 37 passed (38)] restored=True
+    failed: ai.test.ts: each AI route is refused at its first step when a newer policy is pending, the session ended or the account stopped being active, before any model call

@@ -1,0 +1,33 @@
+--- a/src/vault/routes.ts
++++ b/src/vault/routes.ts
+@@ -24,6 +24,9 @@
+ import { confirmImportBatch, confirmPrepare, freezeImportSelection, patchImportRows, selectionProgress } from './files/confirmation'
+ import { previewOf } from './files/previews'
+ import { requestSnapshot, snapshotChunk, snapshotStatus } from './files/snapshots'
++import { AI_FEATURES, parseAiDate, parseAiLocale, parseAiPreferencesUpdate } from '@gogospend/contracts'
++import type { AiFeature } from '@gogospend/contracts'
++import { aiContext, aiDayFacts, aiPreferences, aiTool, consumeAi, setAiPreferences } from './ai'
+ 
+ export type VaultHandler = (c: VaultContext, call: VaultCall) => VaultReply
+ 
+@@ -196,4 +199,20 @@
+     if (!chunk) throw new ProblemException(404, 'NOT_FOUND')
+     return okReply(call.route, chunk)
+   },
++  // 1B-T7: the AI routes' steps (src/v1/ai/service.ts). The Worker reads each route's input before its first
++  // step; what it sends a step is read again here, before anything is read or written.
++  'ai.preferences': (c, call) => okReply(call.route, aiPreferences(c)),
++  'ai.setPreferences': (c, call) => okReply(call.route, setAiPreferences(c, parseAiPreferencesUpdate(call.body))),
++  'ai.context': (c, call) => okReply(call.route, aiContext(c)),
++  'ai.consume': (c, call) => {
++    const { feature } = stepBody(call.body)
++    if (!(AI_FEATURES as readonly unknown[]).includes(feature)) throw new Error('an AI step names its feature')
++    consumeAi(c, feature as AiFeature)
++    return okReply(call.route, {})
++  },
++  'ai.facts': (c, call) => okReply(call.route, aiDayFacts(c, parseAiDate(call.query.date, 'date'))),
++  'ai.tool': (c, call) => {
++    const { name, input, locale } = stepBody(call.body)
++    return okReply(call.route, aiTool(c, String(name), (input ?? {}) as Record<string, unknown>, parseAiLocale(locale)))
++  },
+ }

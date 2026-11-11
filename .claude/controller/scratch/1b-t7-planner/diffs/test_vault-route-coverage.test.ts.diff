@@ -1,0 +1,41 @@
+--- a/test/vault-route-coverage.test.ts
++++ b/test/vault-route-coverage.test.ts
+@@ -32,10 +32,11 @@
+     expect(new Set(listed).size).toBe(listed.length)
+   })
+ 
+-  it('Tasks 2 to 7 and 8a, the bridge, 1B-T5, 1B-T6, 1B-T8, 1B-T9 and 1B-T10 port the front door, wallets, categories, transactions, budgets, history, the summary, command status, the sync delta feed, the cashback catalogue, statement uploads, exports, resync snapshots, receipts and import review, and nothing else', () => {
++  it('Tasks 2 to 7 and 8a, the bridge, 1B-T5, 1B-T6, 1B-T7, 1B-T8, 1B-T9 and 1B-T10 port the front door, wallets, categories, transactions, budgets, history, the summary, command status, the sync delta feed, the cashback catalogue, statement uploads, exports, the AI companion, resync snapshots, receipts and import review, and nothing else', () => {
+     expect(VAULT_V1_ROUTES.map((route) => keyOf(route.method, route.path)).filter((key) => !VAULT_ADDED_ROUTES.includes(key)).sort()).toEqual([
+       'DELETE /v1/transactions/:id',
+       'DELETE /v1/transactions/:id/attachment',
++      'GET /v1/ai/note',
+       'GET /v1/attachment-files/:grant',
+       'GET /v1/attachments/:id/grant',
+       'GET /v1/bridge/gogocash/catalogue',
+@@ -50,6 +51,7 @@
+       'GET /v1/imports/:id/preview',
+       'GET /v1/imports/:id/selections/:selectionId',
+       'GET /v1/me',
++      'GET /v1/me/ai-preferences',
+       'GET /v1/policies',
+       'GET /v1/summary',
+       'GET /v1/sync/changes',
+@@ -62,6 +64,9 @@
+       'PATCH /v1/imports/:id/rows',
+       'PATCH /v1/transactions/:id',
+       'PATCH /v1/wallets/:id',
++      'POST /v1/ai/ask',
++      'POST /v1/ai/parse',
++      'POST /v1/ai/slip',
+       'POST /v1/categories',
+       'POST /v1/categories/:id/archive',
+       'POST /v1/categories/:id/unarchive',
+@@ -81,6 +86,7 @@
+       'POST /v1/wallets/:id/archive',
+       'POST /v1/wallets/:id/unarchive',
+       'PUT /v1/budgets/:month',
++      'PUT /v1/me/ai-preferences',
+       'PUT /v1/me/privacy-preferences',
+       'PUT /v1/transactions/:id/attachment',
+     ])

@@ -1,0 +1,5 @@
+S1 KILLED (the preferences answer without `available`) [workers 4 failed | 34 passed (38)] restored=True
+    failed: ai.test.ts: AI is off until the user agrees to the current notice
+    failed: ai.test.ts: consent to another notice version does not count: the companion reads off, the routes that need consent refuse, and the note is the plain facts
+    failed: ai.test.ts: with no model given, the env decides: AI needs AI_ENABLED and an API key, and AI_MODEL names the model
+    failed: ai.test.ts: without AI configured, answers from the rules and spends no uses
