@@ -14,7 +14,7 @@ Usage: python3 -I make_prompt.py <role> <TASK-ID> [options]
   --shape BRIEF      planner: the recent brief to copy the shape of, e.g. 1B-T6
   --notes FILE       the task's own controller notes (markdown), appended verbatim
   --out PATH         default .claude/controller/scratch/dispatch/<TASK>-<role>.prompt.md
-  --claude-limited   Claude Code is at its usage limit: the planner runs on Antigravity's Opus instead
+  --claude-code      Antigravity is down or out of credit: run the role on Claude Code instead
 Prints the file path, the `delegate_task` target the owner's routing gives the role (ROUTES), and
 the one-line prompt.
 Title, plan file and plan line come from .claude/controller/backlog/tasks.json.
@@ -32,18 +32,26 @@ RULES = ("Never keep anything under /private/tmp. Docker is stopped and stays st
          "Each shell call starts fresh, so type full paths. Use /usr/bin/git, one plain command per call. "
          "The machine is shared: a test that times out under load in a file your work does not touch is a load flake; rerun that file alone once and record both runs. "
          "R100: whole suites (the full render suite, the full workers suite, export:web unless routes or the app entry change, the iOS export, database suites, test:ops) run in CI on the PR, not locally; skip any such step a brief lists and record it as CI in the receipt.")
-# Owner's routing (10 Nov, knowledge/practice/model-routing.md): Claude Code keeps judgment (planning);
-# Antigravity takes builds and reviews, which are bounded by a verified brief or a diff.
-# Each role: (providerInstanceId, model, options, label for the commit trailer).
+# Owner's routing (11 Nov): every delegated role runs on Antigravity's credits, so Claude Code's 5-hour limit
+# is left to the controller. Opus plans and reviews; Sonnet builds; Gemini gives the second, different-family
+# look at money-path and privacy PRs. Each role: (providerInstanceId, model, options, label for the trailer).
 ROUTES = {
-    "planner": ("claudeAgent", "claude-opus-5-5", {"effort": "xhigh", "ultracode": False}, "Claude Opus 5.5"),
-    "implementer": ("antigravity", "gemini-4-argon-high", {}, "Gemini 4 Argon"),
-    "fixer": ("antigravity", "gemini-4-argon-high", {}, "Gemini 4 Argon"),
-    "reviewer": ("antigravity", "gemini-4-argon-high", {}, "Gemini 4 Argon"),
-    "confirm": ("antigravity", "gemini-4-argon-high", {}, "Gemini 4 Argon"),
-    "second": ("antigravity", "claude-opus-5-5-medium", {}, "Claude Opus 5.5"),
+    "planner": ("antigravity", "claude-opus-5-5-high", {}, "Claude Opus 5.5"),
+    "implementer": ("antigravity", "claude-sonnet-5-5-high", {}, "Claude Sonnet 5.5"),
+    "fixer": ("antigravity", "claude-sonnet-5-5-high", {}, "Claude Sonnet 5.5"),
+    "reviewer": ("antigravity", "claude-opus-5-5-high", {}, "Claude Opus 5.5"),
+    "confirm": ("antigravity", "claude-opus-5-5-high", {}, "Claude Opus 5.5"),
+    "second": ("antigravity", "gemini-4-argon-high", {}, "Gemini 4 Argon"),
 }
-CLAUDE_LIMITED_PLANNER = ("antigravity", "claude-opus-5-5-high", {}, "Claude Opus 5.5")
+# Only when Antigravity is down or out of credit: the same roles on Claude Code.
+CLAUDE_CODE = {
+    "planner": ("claudeAgent", "claude-opus-5-5", {"effort": "xhigh", "ultracode": False}, "Claude Opus 5.5"),
+    "implementer": ("claudeAgent", "claude-haiku-5-5", {"effort": "max", "ultracode": False}, "Claude Haiku 5.5"),
+    "fixer": ("claudeAgent", "claude-haiku-5-5", {"effort": "max", "ultracode": False}, "Claude Haiku 5.5"),
+    "reviewer": ("claudeAgent", "claude-opus-5-5", {"effort": "xhigh", "ultracode": False}, "Claude Opus 5.5"),
+    "confirm": ("claudeAgent", "claude-sonnet-5-5", {"effort": "high", "ultracode": False}, "Claude Sonnet 5.5"),
+    "second": ("claudeAgent", "claude-opus-5-5", {"effort": "high", "ultracode": False}, "Claude Opus 5.5"),
+}
 FINAL_IMPL = ("Your final message must follow the protocol's \"Your final message\" section exactly: the STATUS line first (`STATUS: DONE` or "
               "`STATUS: BLOCKED` with the exact blocker), the commit SHA, RED and GREEN counts, the mutants, each gate command with its result, "
               "SKIPPED items, and deviations.")
@@ -72,9 +80,9 @@ def main():
         p.add_argument(f"--{o}")
     p.add_argument("--installed", action="store_true")
     p.add_argument("--lock", action="store_true")
-    p.add_argument("--claude-limited", action="store_true")
+    p.add_argument("--claude-code", action="store_true")
     a = p.parse_args()
-    provider, model, options, label = CLAUDE_LIMITED_PLANNER if a.role == "planner" and a.claude_limited else ROUTES[a.role]
+    provider, model, options, label = (CLAUDE_CODE if a.claude_code else ROUTES)[a.role]
     trailer = f"Co-Authored-By: {label} <noreply@{'google.com' if label.startswith('Gemini') else 'anthropic.com'}>"
     t = task(a.task, a); tl = a.task.lower()
     plan = t["spec"] if t.get("spec") else f"docs/superpowers/plans/{t['plan_file']}, \"### {t['heading']}\" (line {t['line']})"
@@ -106,7 +114,7 @@ def main():
               + (f" (head {a.sha})" if conf else f" (range origin/claude/p1a-vault-core...{a.sha})") + "; run `git fetch` first.",
               f"The spec: {plan}, with the plan's Global Constraints and every ruling it cites. The brief: {C}/briefs/{a.task}{'-fix' if conf else ''}.md and its planner's kit. The implementer's logs: {C}/scratch/{tl}{'-fix' if conf else ''}/. The receipt: docs/implementation/receipts/{a.task}.md."
               + (f" The first review: {C}/reviews/{a.task}.md." if conf else "")
-              + (" Do not read the other reviews of this task until your own findings are written: your value is an independent second look at money, wallet, points, payment, auth and privacy behaviour." if second else ""), "",
+              + (" Do not read the other reviews of this task until your own findings are written: your value is an independent second look, from a different model family, at money, wallet, points, payment, auth and privacy behaviour." if second else ""), "",
               f"R100: do not re-run whole suites; CI on PR #{a.pr} is the gate for them. Read it (`gh pr checks {a.pr} --repo mygogocash/jotbun`, and job logs for counts) and include it. Spend the time on the focused files, probes and your own mutants; rerun at most about 10 of the planner's mutants.", ""]
         if a.lock: L += [LOCK, ""]
         L += [RULES, "",

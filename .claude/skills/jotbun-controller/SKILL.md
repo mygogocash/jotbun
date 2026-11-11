@@ -1,6 +1,6 @@
 ---
 name: jotbun-controller
-description: Run, continue or take over the Jotbun v1 build controller. Use it to pick the next ready tasks, brief them with Opus planners, build and review them on Antigravity (Gemini Argon, plus an Opus second review for money-path and privacy PRs), open and merge task PRs into claude/p1a-vault-core, triage red CI, and recover after a controller session dies. Triggers: "continue the build", "keep going, merge as they pass", "take over the controller", "resume the subagent controller", "what's ready next", a screenshot of a controller tab, or any PR into claude/p1a-vault-core.
+description: Run, continue or take over the Jotbun v1 build controller. Use it to pick the next ready tasks, brief them with Opus planners, plan, build and review them on Antigravity (Opus plans and reviews, Sonnet builds, Gemini gives money-path and privacy PRs a second review), open and merge task PRs into claude/p1a-vault-core, triage red CI, and recover after a controller session dies. Triggers: "continue the build", "keep going, merge as they pass", "take over the controller", "resume the subagent controller", "what's ready next", a screenshot of a controller tab, or any PR into claude/p1a-vault-core.
 ---
 
 # Jotbun build controller
@@ -9,24 +9,27 @@ One session (the controller) runs the build. It dispatches agents, one worktree 
 
 ## Model routing (owner's rule of 10 Nov: route each task to the cheapest model that does it well)
 
-Claude Code has a rolling 5-hour limit and Fable is scarcer still, so keep them for judgment. Antigravity is cheap: give it work a verified brief or a diff bounds. `make_prompt.py` prints the `delegate_task` target for each role.
+Claude Code has a rolling 5-hour limit and Fable is scarcer still. Antigravity has credits that are already paid for (owner, 11 Nov: "maximize it"), including Claude Opus 5.5 and Sonnet 5.5 at High. So every delegated role runs on Antigravity, and Claude Code's limit goes to the controller alone. `make_prompt.py` prints the `delegate_task` target for each role.
+
+**When a provider runs out of credit, switch to the next one without asking** (owner, 11 Nov: "if run out of ai credit please use other"). The order is Antigravity, then Claude Code (`make_prompt.py --claude-code`), then Cursor. Signs of an empty provider: a quota, credit, rate-limit or billing error, or a run that fails before its first tool call. Relaunch the same assignment on the next provider, note the switch in `handover.md`, and go back to Antigravity once its credit returns. Model tiers stay as close as the fallback allows. The owner's approval gates don't change.
 
 | Work | Route to |
 | --- | --- |
-| Controller: planning, rulings, merges, pushes, state | Claude Code Opus 5.5; Cursor Auto takes over when Claude Code is at its limit |
-| Planners (briefs and proof kits) | `claudeAgent` `claude-opus-5-5`, effort xhigh; at the limit, `make_prompt.py --claude-limited` (Antigravity `claude-opus-5-5-high`) |
-| Implementers and fixers | `antigravity` `gemini-4-argon-high` |
-| First reviews and confirming reviews | `antigravity` `gemini-4-argon-high` |
-| Second review of a money-path or privacy PR (wallet, cashback, points, payments, auth, private mode, privacy migrations) | `antigravity` `claude-opus-5-5-medium` (`make_prompt.py second`) |
+| Controller: rulings, merges, pushes, state | Claude Code Opus 5.5; Cursor Auto takes over when Claude Code is at its limit |
+| Planners (briefs and proof kits) | `antigravity` `claude-opus-5-5-high` |
+| Implementers and fixers | `antigravity` `claude-sonnet-5-5-high` |
+| First reviews and confirming reviews | `antigravity` `claude-opus-5-5-high` |
+| Second review of a money-path or privacy PR (wallet, cashback, points, payments, auth, private mode, privacy migrations) | `antigravity` `gemini-4-argon-high`, a different model family from the first review (`make_prompt.py second`) |
+| Any role while Antigravity is down or out of credit | Claude Code: `make_prompt.py --claude-code` (Opus xhigh plans and reviews, Haiku max builds) |
 | Scouting: code search, log reading, red-CI triage, mapping code paths before a planner | `antigravity` `gemini-3.8-flash-high`, read-only |
 | One hard, high-stakes question (money correctness, a root cause other models missed, an architecture call) | `claudeAgent` `claude-fable-5-2` as an advisor with a short brief of verified facts; about once a day at most. A Fable lead session needs the owner's approval |
 | A lookup or one-line fix | whoever is already running; don't write a brief bigger than the task |
 
 - **Cheap first, expensive last.** Map with Flash, then hand the verified map to the planner, so its context stays small.
 - **Verify before relying.** The controller re-checks each review finding against the code before ruling on it. A delegated PASS or Approved is never a receipt on its own, and delegated line numbers are often off.
-- **If Argon fails a build twice** on the same brief (BLOCKED on something the brief answers, or a wrong copy of the kit), rerun that one task on `claudeAgent` `claude-haiku-5-5` effort max and note it in `references/lessons.md`.
+- **If a build fails twice** on the same brief (BLOCKED on something the brief answers, or a wrong copy of the kit), send the brief back to its planner before trying a third time, and note it in `references/lessons.md`.
 - **Hand off before the limit.** Near Claude Code's limit, update `handover.md` (objective, decisions, branches, open questions) so Cursor Auto resumes without replaying the thread.
-- **Dispatch in T3 Code** with `delegate_task`, passing the `target` that `make_prompt.py` prints. Keep `ultracode: false` on Claude targets, so children follow their briefs instead of starting workflows. A child's completion wakes the controller. `t3_thread_send` to a child's thread continues it with its context (this skill's SendMessage). Wait on PR checks with `watch_pull_request`, not a Monitor. Orca's Agent tool can reach only Claude models: there pass `model` only, and planners keep Opus.
+- **Dispatch in T3 Code** with `t3_thread_launch`, not `delegate_task`, whenever the controller runs from a T3 worktree outside the main checkout. Pass `projectId: "cc4b9cae-2d3c-4aeb-b98f-affe256dcb86"` (T3's jotbun project), `workspaceStrategy: {type: "root"}`, and `modelSelection: {instanceId, model}` from the `target` that `make_prompt.py` prints. A `delegate_task` child always runs in the parent's checkout whatever `projectId` says, and Antigravity sandboxes it there, so it cannot read `C/` or the task worktrees (11 Nov: ten dispatches stopped on it). Launched threads don't wake the controller: check them with `t3_thread_read`.
 - **Helpers never act.** Agents commit only in their own task worktree and never push, merge, deploy, touch production data or handle secrets. Reviews and scouting are read-only. Never two writers on the same files.
 
 The owner has authorised this to keep moving without pausing between tasks:
@@ -88,9 +91,9 @@ Their work is saved, but their background jobs and Monitors die.
    - Then accept or rule on its planner calls (P1, P2, ...).
    - Create the worktree with `scripts/new_task_worktree.sh <wt> <branch>`, using the names from the brief's WT line.
    - Dispatch the implementer.
-4. **Implementer DONE:** write `C/pr-<id>.md` in the house style: Summary bullets, Test plan checklist, "Closes #N once merged (closed by hand ...)", and the Claude Code footer. Then run `scripts/open_task_pr.sh <worktree> "<title>" C/pr-<id>.md` and dispatch the Argon reviewer (`make_prompt.py reviewer`). For a money-path or privacy PR, dispatch the second reviewer (`make_prompt.py second`) at the same time.
+4. **Implementer DONE:** write `C/pr-<id>.md` in the house style: Summary bullets, Test plan checklist, "Closes #N once merged (closed by hand ...)", and the Claude Code footer. Then run `scripts/open_task_pr.sh <worktree> "<title>" C/pr-<id>.md` and dispatch the reviewer (`make_prompt.py reviewer`). For a money-path or privacy PR, dispatch the second reviewer (`make_prompt.py second`) at the same time.
 5. **Implementer BLOCKED:** read the exact blocker. For a known flake (`references/lessons.md`), rule it and SendMessage the same agent to continue. For a real question the plan cannot answer, ask the owner. If a task fails review three fix rounds running, tell the owner and suggest escalating it.
-6. **Review "Needs fixes":** write the fix brief (model: `C/briefs/1A-T9-fix.md`), give it a ruling number when it changes behaviour, dispatch the Argon fixer, push, update the PR body, then run a confirming Argon review. First check each finding against the code yourself; rule out the ones that don't hold rather than sending them to the fixer.
+6. **Review "Needs fixes":** write the fix brief (model: `C/briefs/1A-T9-fix.md`), give it a ruling number when it changes behaviour, dispatch the fixer, push, update the PR body, then run a confirming review. First check each finding against the code yourself; rule out the ones that don't hold rather than sending them to the fixer.
 7. **Merge** when CI is green on the reviewed head and the review approves: `scripts/merge_task_pr.sh <pr> <reviewed-sha> [task-id]`.
    - Record the review's minors in `followups.md`.
    - If the receipt has stale lines, fix them in a housekeeping commit on the integration branch.
