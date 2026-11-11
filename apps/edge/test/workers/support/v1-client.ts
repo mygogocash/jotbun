@@ -13,6 +13,7 @@ import { handleVaultV1 } from '../../../src/v1/handler'
 import type { V1Deps } from '../../../src/v1/handler'
 import { createTokenVerifier } from '../../../src/v1/tokens'
 import type { UserVault } from '../../../src/vault/user-vault'
+import type { SendMessage } from '../../../src/server/ai/model'
 
 export const BASE = 'http://vault.test'
 export const ISSUER = 'https://issuer.test/'
@@ -120,11 +121,13 @@ function clientFor(raw: (request: Request) => Promise<Response>, user: TestUser,
  * Each call rewrites the KV entry, so every test starts from the config it names.
  * Promises the Worker hands to waitUntil are kept for `settle()`. With
  * `startWork: 'manual'` a `starts` route starts nothing; the default, 'auto',
- * calls the vault's startPendingWork as the deployed Worker does.
+ * calls the vault's startPendingWork as the deployed Worker does. `send` is
+ * the AI routes' model call (1B-T7): a fake, or null for AI that is not
+ * configured; without it the env decides, and the vault Worker's AI is off.
  */
 export async function startV1(
   config: EdgeConfigJson | 'absent' | 'malformed' = DEFAULT_CONFIG,
-  options?: { env?: Partial<V1Env>; fetchCatalogue?: typeof fetch; startWork?: 'auto' | 'manual' },
+  options?: { env?: Partial<V1Env>; fetchCatalogue?: typeof fetch; startWork?: 'auto' | 'manual'; send?: SendMessage | null },
 ): Promise<V1Client> {
   if (config === 'absent') await env.CONFIG.delete(EDGE_CONFIG_KEY)
   else if (config === 'malformed') await env.CONFIG.put(EDGE_CONFIG_KEY, JSON.stringify({ gates: 'nope' }))
@@ -135,6 +138,7 @@ export async function startV1(
   const deps: V1Deps = {
     verifier,
     fetchCatalogue: options?.fetchCatalogue,
+    send: options?.send,
     waitUntil: (promise) => {
       pending.push(promise)
     },

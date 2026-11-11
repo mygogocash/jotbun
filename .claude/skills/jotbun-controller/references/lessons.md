@@ -31,6 +31,10 @@
   - Read the PR through the API first: `gh api repos/mygogocash/jotbun/pulls/<n>`, and check that `merge_commit_sha` and `base.sha` are fresh. That read makes GitHub recompute them. Then close and reopen.
   - Before trusting the run, confirm the base in a job log: `HEAD is now at <sha> Merge <head> into <base>`.
   - The same applies to any PR whose old green run predates merges into its base.
+  - **When even an API read leaves the ref stale** (#383 on 10 Nov: still `Merge 2f0e40e into d49ba4c` after P2-T11 merged), update the PR branch instead:
+    - `gh api -X PUT repos/mygogocash/jotbun/pulls/<n>/update-branch -f expected_head_sha=<the reviewed full SHA>`. GitHub merges the base into the branch, which gives a new head and a fresh run on a true merge.
+    - Then confirm that `git diff <reviewed> <new head> -- <the task's files>` is empty, and that the PR's diff against the base lists the same files with the same counts.
+    - Merge with `merge_task_pr.sh <n> <new head>`. `expected_head_sha` refuses to act if the branch moved since the review.
 
 ## Parity and data
 
