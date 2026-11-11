@@ -49,5 +49,7 @@ url=$(gh pr create --repo $repo --base "$base" --head "$br" --title "$task: $tit
 echo "$url (base $base)"
 new=${url##*/}
 # Link the open promotion PRs, bottom to top, into one stack; the chained bases already make a manual stack if this fails.
-if out=$(gh stack link --base main $below $new 2>&1); then echo "$out" | tail -3
+# gh stack link needs at least two PRs: the first open promotion PR has nothing to stack on yet.
+if [ -z "$below" ]; then echo "the only open promotion PR: nothing to stack yet (the next promotion stacks on it)"
+elif out=$(gh stack link --base main $below $new 2>&1); then echo "$out" | tail -3
 else echo "$out" | tail -3; echo "warning: gh stack link failed; the PR's base still chains it on $base (a manual stack)"; fi

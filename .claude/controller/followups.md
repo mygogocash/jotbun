@@ -195,6 +195,25 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **P4-T14 or P6A:** `sendOneSlip`'s `too_large` also covers any null shrink, including a shared file that is not a JPEG, PNG or WebP (unreadable). Word the person's message so it is true for both.
   - **Q2's default** (no `expo-image-manipulator`) leaves a large picked photo unread on the phone. This is the plan's own risk; the likely case is a camera photo of a paper slip, since bank-app slips are screenshots. Raise it with the owner's Q2.
   - P3-T1's note (a null from `slipQrIn` never proves "not a slip") stays with P4-T14.
+- 1D-T8 (#372, review in reviews/1D-T8.md, Approved with one minor and five nits; probes in scratch/1d-t8-review/probes/):
+  - **analytics-consent-hardening (a follow-up task; must land before the `analytics` area is approved at E2, or in 1D-T8's E2 approval commit):**
+    - **m1:** three fail-closed states are right today but pinned by no test; reviewer mutants survive all 57 focused cases. The probes are ready to become cases.
+      - R1: the layout would also show the question while signed out (`_layout.tsx:19`), so a person with nothing installed would be stuck on it.
+      - R2: Privacy's transport would send the off header only with nothing installed or a no (`privacyServices.ts:34`), so server events would be on while the answer loads, is unanswered, or a yes is on its way.
+      - R3: the switch would read on unless the answer is no (`PrivacyScreen.tsx:163`), so it would look pre-ticked while loading.
+    - **The caption "Jotbun will be told when you're online" is untrue in four known cases:**
+      - a no whose store write fails (1D-T1's open item);
+      - another account signs in before the no is delivered: the store holds one answer, the first account reads yes again, and the server is never told (reviewer's probe);
+      - the sign-out erase;
+      - on the web nothing is stored, so a pending no is lost at a reload.
+
+      Fix the behaviour or the words before approval.
+    - n2: both refusal cases install twice, so `afterEach` leaves a fake controller on the bus. Later owners (P6B-T7, 1C-T7, 1C-T9) append to `PrivacyScreen.render.test.tsx` after this case.
+    - n3: pin `pendingNo()` across an account change (mutant R9).
+    - n4: the layout case's comment says the question sits inside `CompanionBoundary`, but the case checks only the diary (mutant R10).
+    - n1: S8 and P10 die only by Vitest's unhandled-rejection failure; the house assertion pattern (review m9) would make each a named failing case.
+  - **P2-T18:** write the Bun Wallet branch's swap with the layout's existing `ask` (the P2 plan calls it `askConsent`; one condition is enough), with its two consent cases and the plan's seventh mutant.
+  - **n5, CI:** `backend.yml` has no iOS export and no `typecheck:routes`, so since R100 the iOS export ran nowhere. Folded into ci-parallel-jobs (the controller's amendment, 9 Nov). Until it merges, the controller runs the iOS export before merging a task that changes routes, the app entry or native code.
 - P4-T12 planner notes (briefs/P4-T12.md, "For the controller"; the brief was READY on 9 Nov):
   - **P4-T6, under R102 (handover):** the slip batch arrives as its JSON's UTF-8 bytes, typed `application/octet-stream`. Read at most 8 MiB of `w.stream`, accept that type, and parse with `parseSlipBatchRequest`. A body typed `application/json` is parsed by the dispatcher (2 MiB cap) and leaves a stream route no stream (`apps/edge/src/v1/handler.ts`, `readRouteBody`). Decide and pin what a JSON-typed body answers.
   - **1D-T6's m4, still open:** the import screens' two transports (`import/ReceiptParts.tsx`, `import/ImportDeviceParts.tsx`) still lack `allowLanHttp` and the analytics-off header. They are not slip clients, so P4-T12 leaves them; a later import or P4 task must close them.

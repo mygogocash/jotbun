@@ -1,0 +1,20 @@
+--- a/README.md
++++ b/README.md
+@@ -270,10 +270,13 @@
+ 
+ These counts are the same in the last recorded local gate (Node 26.10.0) and in hosted CI on `1107731` (Node 24.22.0).
+ 
+-CI (`.github/workflows/backend.yml`) runs three jobs on Ubuntu with Node 24.22.0:
+-1. typecheck, unit, render, build and web export;
+-2. SQL integration and ops against a PostgreSQL 17 container;
+-3. a release-image build with a smoke test. The image is never pushed.
++CI (`.github/workflows/backend.yml`) runs nine jobs in parallel on Ubuntu, with the release image's Node, so a pull request waits for the slowest job rather than for all of them:
++- typecheck (also with Expo Router's typed routes), unit and API tests, and the API build;
++- the web and iOS exports;
++- the render suite in four jobs: every render file but the two per-section suites, and those two suites in three parts by test name;
++- SQL integration and ops against a PostgreSQL 17 container;
++- the edge Worker: types, unit tests, the workerd suites and the build, then its PostgreSQL suites;
++- a release-image build with a smoke test. The image is never pushed.
+ 
+ Tests are written first. Each task records:
+ - a behavioural RED (assertions failing against compile-safe seams, never import errors);
