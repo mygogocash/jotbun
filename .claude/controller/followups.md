@@ -129,7 +129,11 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - **m-2:** the receipt HEAD test does not count bytes per HEAD (probe HD-1).
     - **m-3:** neither guard in `attachmentsDueAt` is pinned (`attachments.ts:368-369`); probes DU-1 and DU-2. Without "object gone", the alarm loops on a past due time (against R37); without the safety-net check, an unheld receipt is never scheduled.
     - **For the abort proof:** retain and replace hold a copy slot across awaits, so include four aborted retains, then a retain that answers 200. Receipt downloads allow two slots per account.
-  - **Plan it on top of 1B-T7 and 1B-T11 once both merge.** 1B-T7 edits `handler.ts` (three edits, none on a `headOf` line). 1B-T11 edits `snapshots.ts` (at its end: `STALE_CHUNKS`, `pruneSnapshots`, `snapshotsDueAt`) and `snapshots.test.ts` (inside three existing cases; its brief's P1 names them).
+  - **Plan it on top of 1B-T7 and 1B-T11 once both merge.** 1B-T7 merged as 365ec2e, editing `handler.ts` (three edits, none on a `headOf` line). 1B-T11 edits `snapshots.ts` (at its end: `STALE_CHUNKS`, `pruneSnapshots`, `snapshotsDueAt`) and `snapshots.test.ts` (inside three existing cases; its brief's P1 names them).
+  - **And from 1B-T7's review (reviews/1B-T7.md).** Its probes are in `scratch/1b-t7-review/wiring/` and `scratch/1b-t7-review/service/r2/`.
+    - m-2: nothing pins the session and policy check on `ai.consume` (`src/v1/routes.ts:170`), the last vault check before every model call. Mutant W7 (`anySession: true`) passes all 38 cases, and under it a session signed out between `ai.context` and `ai.consume` spends a use and reaches the model. Add the wiring probe at `zz-wiring-probe.test.ts:218` unchanged, with its `recordingVault` helper; it kills W7.
+    - n-1: the P2 probes "P2 (accepted)" (`:99`) and "P2 parity" (`:120`) pin that input is read first (they kill W5); 1B-T13 could take them instead.
+    - n-8, update this entry's line references: `handler.ts:129` and `:147` are now `:133` and `:151`, and 1B-T9's m-1 is `attachments.prepare` at `routes.ts:155`.
   - **And from 1B-T8's review (reviews/1B-T8.md).** Its ready cases are in `scratch/1b-t8-review/` (`review-fixes.test.ts`, probes C2 and E); each passes on f416f24 and kills its mutant.
     - **The fix is more urgent now:** four aborted snapshot-chunk downloads in one isolate block every chunk download there.
     - m-2: the memory proof's cursor spy (`snapshots.test.ts:136-157`) refuses only `toArray`, `one` and `raw`, so reading every row into an array with a spread passes all 35 cases, the ten-times case included (mutant X1). The reviewer's spy revokes each row once the next is read; it catches X1.
@@ -283,3 +287,19 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **P2-T21 and P2-T29:** with no account open (the web, opening, locked, signed out), `setLook` and `setIcon` keep nothing and change nothing on screen (plan line 794). Decide whether the look fields and the icon picker show there at all.
   - **n6, the 40 pt tile:** a follow-up, or whichever of P2-T22 and P2-T28 draws a 40 pt tile first. Expect a 12 pt corner and a 20 pt glyph. E2-A decides whether its initial is 17 (the formula) or 16 (the merchant tiles).
   - **E2-A:** n1 (private mode keeps ใช้ไป, the pending line and the today line, which bw-private drops; each reveals a fact without an amount); n4 (on the full card, a credit card paid ahead shows ฿500 above the kind line ยอดที่ใช้ไป); and the receipt's board calls (P4, P7, P9).
+- 1B-T7 (#385, merged 365ec2e on 10 Nov, issue #111 closed; review in reviews/1B-T7.md, a two-lens Opus workflow, Approved with five minors and nine nits; probes in scratch/1b-t7-review/):
+  - **1B-T13:**
+    - **m-1, the one behaviour that differs from AiService.** Ask Bun answers 422 after `ai.consume` has counted the use, when the model asks `budget_status` for a month before 1970-01. `summary()`'s `parseMonth` throws, and the throw goes up to the client. Fix after the month check in `src/vault/ai.ts:282-286`: `if (month < '1970-01') return { result: null, figures: [] }`, as AiService answered. It is proven in scratch (50 of 50, `service/r2/try-fix.log`); add PROBE-1 as a case.
+    - n-5: record the whole P2 deviation in the PostgreSQL edge's retirement table. A malformed body now gets 422 where that edge answered 401, 403 or 429, and the vault no longer charges it.
+    - n-7: `VAULT_DEFERRED_ROUTES`' doc comment (`routes.ts:192`) is stale; only 1C's two deletion routes remain.
+    - The receipt's notes: move `ASK_TOOLS` and `ToolInputError` into `src/v1/ai/tools.ts`, list the six AI keys in `VAULT_EDGE_ONLY_ROUTES`, map `ai.db`'s 17 cases to `ai.test.ts`, and carry `ANTHROPIC_API_KEY` as the HTTP Worker's secret.
+  - **ai-service-pins (a test-only follow-up).** It adds the review's ready probes from `service/r2/copy/apps/edge/test/workers/zz-service-probes.test.ts` to `ai.test.ts`; each passes on 6223843 with the existing helpers:
+    - m-3: PROBE-2 and PROBE-5 kill X7 (the figures fallback above `logFailure`'s rethrow) and X5 (the vault's internal error text sent to the model);
+    - m-4: PROBE-5 pins P7's log rule, class names only, and kills X2;
+    - m-5: PROBE-7 and PROBE-8 pin P6's date checks on the note and Ask Bun, and kill X3, X6 and X4;
+    - n-2: PROBE-6 pins consent before the switch for Tell Bun with AI off, and kills X1c.
+
+    Also in it: n-4, an impossible date such as 2026-04-31 within a day of the Worker's date reaches `ai.facts`, giving 500 when the month has a budget, as AiService did. And n-9: the receipt and brief say CI's database job runs `test:edge:db`; in the nine-job layout the edge job runs it.
+  - **Phase 3's `ai` gate:** n-3, `ANTHROPIC_BASE_URL` in `aiSender` (`ai/routes.ts:23`) has no pin (mutant W1). Wiring probe P3 (`:244`) is ready, with fetch stubbed.
+  - **P5-T4:** n-6, when the summary reads `home_amount_minor`, `aiDayFacts` and the four tools in `src/vault/ai.ts` must follow it (P17).
+  - **Hosted check (P18):** a real Claude reply through the vault Worker, and its latency against the app's 25-second timeout.
