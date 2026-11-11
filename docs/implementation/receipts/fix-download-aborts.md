@@ -55,3 +55,26 @@
   - Reviewer's first look: P3 and P4 rest on Cloudflare's documented cancellation, not on a local repro; P5's `settle()` race; P7's seeding entry, which lives only in the planner's kit.
   - `untilReturned` calls `release()` and then `returned()`. If a `release` threw, its promise would stay pending until the 30-second limit. Every release only updates a counter: the four pools are `DownloadSlots`, whose give-back is guarded by its `given` flag, and the upload's release is `uploading -= 1`. None is expected to throw.
   - A hosted environment: repeat the proof against the deployed Worker, including an aborted retain and upload (P3, P4, P9).
+
+## Fix round (review m1, n2 to n4): the copy's later attempts, a turned-away upload and each download's catch path
+
+- **Status:** test-only, on `fix/download-aborts` after the merges `bbb63e18` and `75b450e1`, in this commit. The head moved to da2886cc and beyond: `bbb63e18` merges `f218796d` (it brings #392, #394, #397, #398 and the workflow's CI_RUNNER line, as the controller's note says), and `75b450e1` merges `8f55396f` (controller files under `.claude/` only). Both merges were clean. `bbb63e18` was left by an earlier run of this round that stopped at a usage limit; its tree equals a fresh `git merge-tree` of `d0cc479` and `f218796d`, so it was kept. The review (`reviews/fix-download-aborts.md`) approved `d0cc479` with one minor and seven nits. The controller folded m1 and n2 to n4 into this PR, since CI cannot run before billing is fixed; n1 (a hosted check), n5 and n6 (1B-T13) and n7 (the controller's housekeeping) stay with their carriers.
+- **Files:** `apps/edge/test/workers/download-aborts.test.ts` only, installed from the planner's kit (`PL/real/`, sha256 `07dbb573bb57ce5fd3858816f3eb8939f730d4fab3e5d93d9f34d225e22c9db4`, as in the brief's Appendix B). The earlier run had already copied it; it matched `real/` byte for byte, so it was kept. The committed file before it matched `orig/` (`e43cb9ab...`). No source file changes.
+- **What changed:**
+  - PB as a case (m1): a retain that waited on another request's copy hands `waitUntil` a promise on its later attempt too. It is made deterministic through `preparesSeen`, which records every prepare reply so the case waits until the second client has been told `wait`, and `reachedFirst`, which races each gate against its request's answer.
+  - PA as a case (n2): an upload turned away at the isolate's limit (503), sent from a second client, hands `waitUntil` nothing.
+  - PC as a line in each download case (n3): `heldBodies` gains `lose(gone)`, so a download is refused with 404 after it took its slot. All three `catch` paths are pinned, and the three download cases are renamed.
+  - `takeUpTo` (n4): each case takes its own slots inside the `try` and records the count as a line, so a leaked slot shows in the case's lines.
+- **RED** (`mutants.py --red`, each mutant alone): R11, R13, R13b, R13c and R14 each `[1 failed | 6 passed (7)]`, exactly its own case, one `AssertionError`, source restored.
+- **GREEN:** `[7 passed (7)]`.
+- **Mutation check:** 14 of 14 killed, each file restored, no `REQUIRED BUT PASSED` line.
+  - A1, A2 and A3: the export, chunk and receipt case, in turn.
+  - A4: the retain case and PB.
+  - A5: the upload case.
+  - A6 and A7: every case but PA (six).
+  - A8: all seven.
+  - A9: the export case.
+  - R11, R13, R13b, R13c and R14: exactly their own case, as in the RED.
+  - Under A8, all 7 cases fail on an `AssertionError` and none throws `ProblemException` (n4; on `d0cc479`'s file, 4 cases threw from the test's own take).
+- **Gate:** `typecheck:edge` exit 0; FOCUSED `Test Files 1 passed (1)`, `Tests 7 passed (7)`; `test:edge` under the heavy lock `Test Files 15 passed (15)`, `Tests 176 passed (176)` (head moved to da2886cc; the same totals as before); `build:edge` exit 0, driver markers 0; `test:edge:workers` **CI**; `test:edge:db` **SKIPPED** (Docker stopped); `git diff --check` clean. No `wrangler dev` rerun: no source changes.
+- **CI delta for the PR, now:** `test:edge:workers` +1 file and +7 passed (this round adds 2); `test:edge` +0; `test:edge:db` +0.

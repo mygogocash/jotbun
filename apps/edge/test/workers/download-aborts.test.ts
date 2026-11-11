@@ -8,7 +8,11 @@
 // served). These cases pin the wiring that fix rests on: the promise each
 // download, copy and upload hands to waitUntil stays pending while its slot is
 // held, and ends once the slot is back, however its body ends; a request that
-// takes no slot hands over nothing.
+// takes no slot hands over nothing. The review's fix round (m1, n2 to n4) adds
+// three paths: every attempt of a copy (one that waited on another's copy
+// included), an upload turned away at the isolate's limit, and a download
+// refused after it took its slot; and each case takes its own slots as a line,
+// so a leaked slot shows in the lines rather than as the test's own 503.
 import { env } from 'cloudflare:workers'
 import { createHash, randomUUID } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
@@ -20,9 +24,12 @@ import { derivedUuid } from '@api/commands/derived-id'
 
 import { EXPORT_SLOTS, RECEIPT_SLOTS, SNAPSHOT_SLOTS } from '../../src/v1/files/downloads'
 import { COPY_SLOTS } from '../../src/v1/files/receipts'
-import { uploadsInFlight } from '../../src/v1/files/uploads'
+import { MAX_UPLOADS_PER_ISOLATE, uploadsInFlight } from '../../src/v1/files/uploads'
+import type { VaultCall } from '../../src/v1/protocol'
 import type { VaultBucket } from '../../src/vault/files/keys'
+import type { UserVault } from '../../src/vault/user-vault'
 import { csvText, eventually, gate, seedImportImage, spyBucket, stalledBody, upload } from './support/files'
+import type { Reply } from './support/files'
 import { builtinId, moneyFixtures } from './support/money-fixtures'
 import { member, startV1, vaultOf } from './support/v1-client'
 import type { TestUser, V1Client } from './support/v1-client'
@@ -58,15 +65,18 @@ function watch(v1: V1Client): (ms: number) => Promise<boolean> {
  * The R2 binding as the Worker sees it, with the stored bodies of keys under
  * `prefix` held: each is served in PIECE-byte pieces, and its last piece waits
  * until the case opens the gate. A download of such a key answers its headers
- * and keeps its slot until the case lets its body end, or cancels it. Every
- * other key is served as stored.
+ * and keeps its slot until the case lets its body end, or cancels it. While the
+ * case has the objects lost, such a key reads as gone: its download is refused
+ * (404) after it took its slot. Every other key is served as stored.
  */
 function heldBodies(prefix: string) {
   let open = false
+  let lost = false
   const waiting: (() => void)[] = []
   const bucket: VaultBucket = {
     ...spyBucket({}),
     get: async (key) => {
+      if (lost && key.startsWith(prefix)) return null
       const found = await env.OBJECTS.get(key)
       if (!found || !key.startsWith(prefix)) return found
       const bytes = new Uint8Array(await found.arrayBuffer())
@@ -98,7 +108,29 @@ function heldBodies(prefix: string) {
     hold: () => {
       open = false
     },
+    /** Makes every later read of a key under `prefix` find nothing (true), or the stored object again (false). */
+    lose: (gone: boolean) => {
+      lost = gone
+    },
   }
+}
+
+/**
+ * Takes up to `count` slots for the case itself into `own`, and answers how
+ * many it got. A pool already short (a slot one of the case's requests kept)
+ * answers fewer, so a leak shows in the case's lines rather than as the test's
+ * own 503 (the review's n4). The case gives `own` back in its `finally`,
+ * however far the takes got.
+ */
+function takeUpTo(take: () => () => void, count: number, own: (() => void)[]): number {
+  for (let i = 0; i < count; i += 1) {
+    try {
+      own.push(take())
+    } catch {
+      break
+    }
+  }
+  return own.length
 }
 
 type Download = {
@@ -120,10 +152,12 @@ type Download = {
  * One download kind, through the front door: a GET read to its end, a GET
  * cancelled, a HEAD, then `slots` more GETs read to the end (one more
  * download than the person's slots, so a slot that is never returned would
- * refuse one), then a GET the vault refuses and a GET with every slot taken.
- * Each line names the request, its status, and whether every promise handed
- * to waitUntil had ended: not while a body is unread, and at once when it is
- * read, cancelled or answered to a HEAD, or when no slot was taken.
+ * refuse one), a GET whose object is gone (refused with 404 after it took its
+ * slot: the `catch` path, the review's n3), a GET the vault refuses, and a GET
+ * with every slot taken (the case takes them itself, as a line). Each line
+ * names the request, its status, and whether every promise handed to
+ * waitUntil had ended: not while a body is unread, and at once when it is
+ * read, cancelled, answered to a HEAD or refused, or when no slot was taken.
  */
 async function pinnedDownload(d: Download): Promise<unknown[]> {
   const lines: unknown[] = []
@@ -154,19 +188,27 @@ async function pinnedDownload(d: Download): Promise<unknown[]> {
     lines.push(['GET', again.status, sha256Of(new Uint8Array(await again.arrayBuffer())) === d.sha256])
   }
 
+  d.bodies.lose(true)
+  const gone = await get()
+  ended = watch(d.v1)
+  lines.push(['GET refused after it took its slot (its object is gone)', gone.status, await ended(ENDED_MS)])
+  await gone.arrayBuffer()
+  d.bodies.lose(false)
+
   const refused = await d.v1.as(d.user).get(d.refusedUrl)
   ended = watch(d.v1)
   lines.push(['GET of a grant the vault refuses', refused.status, await ended(ENDED_MS)])
   await refused.arrayBuffer()
 
-  const taken = Array.from({ length: d.slots }, () => d.take())
+  const own: (() => void)[] = []
   try {
+    lines.push(['slots the case takes for itself', takeUpTo(d.take, d.slots, own)])
     const busy = await get()
     ended = watch(d.v1)
     lines.push(['GET with every slot taken', busy.status, await ended(ENDED_MS)])
     await busy.arrayBuffer()
   } finally {
-    for (const slot of taken) slot()
+    for (const slot of own) slot()
   }
   return lines
 }
@@ -179,7 +221,9 @@ const PINNED = (slots: number): unknown[] => [
   ['GET, body cancelled', true],
   ['HEAD', 200, 0, true],
   ...Array.from({ length: slots }, () => ['GET', 200, true]),
+  ['GET refused after it took its slot (its object is gone)', 404, true],
   ['GET of a grant the vault refuses', 404, true],
+  ['slots the case takes for itself', slots],
   ['GET with every slot taken', 503, true],
 ]
 
@@ -194,8 +238,41 @@ async function memberWithRecord(v1: V1Client): Promise<{ user: TestUser; record:
 const retain = (v1: V1Client, user: TestUser, record: string, attachmentId: string) =>
   v1.as(user).post(`/v1/transactions/${record}/attachment`, { attachment_id: attachmentId, consent: RECEIPT_RETENTION_CONSENT }, { ifMatch: 1 })
 
+/** Whether `step` is reached before `answered` settles: a request refused before it gets there answers first. */
+const reachedFirst = (step: Promise<void>, answered: Promise<unknown>): Promise<boolean> =>
+  Promise.race([step.then(() => true), answered.then(() => false, () => false)])
+
+/** The VAULT binding, with the kind of every prepare step's reply recorded in `kinds`. */
+function preparesSeen(kinds: string[]): DurableObjectNamespace<UserVault> {
+  const real = env.VAULT
+  return new Proxy(real, {
+    get(target, prop) {
+      if (prop === 'get') {
+        return (id: DurableObjectId, options?: unknown) => {
+          const stub = (target.get as (...args: unknown[]) => DurableObjectStub<UserVault>)(id, options)
+          return new Proxy(stub, {
+            get(s, p) {
+              if (p === 'call') {
+                return async (call: VaultCall) => {
+                  const reply = await s.call(call)
+                  if (call.route === 'attachments.prepare') kinds.push(reply.ok ? (reply.body as { kind: string }).kind : String(reply.status))
+                  return reply
+                }
+              }
+              const value = Reflect.get(s, p)
+              return typeof value === 'function' ? value.bind(s) : value
+            },
+          })
+        }
+      }
+      const value = Reflect.get(target, prop)
+      return typeof value === 'function' ? value.bind(target) : value
+    },
+  }) as DurableObjectNamespace<UserVault>
+}
+
 describe('R97: a slot keeps its request alive until it is back (fix-download-aborts)', () => {
-  it('an export download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled or answered to a HEAD', async () => {
+  it('an export download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled, answered to a HEAD or refused after it took its slot', async () => {
     const bodies = heldBodies('export/')
     const v1 = await startV1(undefined, { startWork: 'manual', env: { OBJECTS: bodies.bucket } })
     const { user } = await memberWithRecord(v1)
@@ -210,7 +287,7 @@ describe('R97: a slot keeps its request alive until it is back (fix-download-abo
     expect(lines).toEqual(PINNED(4))
   }, 30_000)
 
-  it('a snapshot chunk download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled or answered to a HEAD', async () => {
+  it('a snapshot chunk download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled, answered to a HEAD or refused after it took its slot', async () => {
     const bodies = heldBodies('sync_snapshot/')
     const v1 = await startV1(undefined, { startWork: 'manual', env: { OBJECTS: bodies.bucket } })
     const { user } = await memberWithRecord(v1)
@@ -233,7 +310,7 @@ describe('R97: a slot keeps its request alive until it is back (fix-download-abo
     expect(lines).toEqual(PINNED(4))
   }, 30_000)
 
-  it('a receipt download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled or answered to a HEAD', async () => {
+  it('a receipt download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled, answered to a HEAD or refused after it took its slot', async () => {
     const bodies = heldBodies('receipt/')
     const v1 = await startV1(undefined, { env: { OBJECTS: bodies.bucket } })
     const { user, record } = await memberWithRecord(v1)
@@ -286,14 +363,15 @@ describe('R97: a slot keeps its request alive until it is back (fix-download-abo
       await res.arrayBuffer()
     }
     const last = await recordAndImage()
-    const taken = Array.from({ length: 4 }, () => COPY_SLOTS.take())
+    const own: (() => void)[] = []
     try {
+      lines.push(['copy slots the case takes for itself', takeUpTo(() => COPY_SLOTS.take(), 4, own)])
       const busy = await retain(v1, user, last.record, last.image.attachmentId)
       ended = watch(v1)
       lines.push(['retain with every copy slot taken', busy.status, await ended(ENDED_MS)])
       await busy.arrayBuffer()
     } finally {
-      for (const slot of taken) slot()
+      for (const slot of own) slot()
     }
     expect(lines).toEqual([
       ['retain, copy held', false],
@@ -302,6 +380,7 @@ describe('R97: a slot keeps its request alive until it is back (fix-download-abo
       ['retain', 200],
       ['retain', 200],
       ['retain', 200],
+      ['copy slots the case takes for itself', 4],
       ['retain with every copy slot taken', 503, true],
     ])
   }, 30_000)
@@ -322,6 +401,104 @@ describe('R97: a slot keeps its request alive until it is back (fix-download-abo
     expect(lines).toEqual([
       ['upload, body stalled', false],
       ['upload', 202, true, 0],
+    ])
+  }, 30_000)
+
+  it("a retain that waited on another request's copy hands waitUntil a promise on its later attempt too, pending while that attempt copies", async () => {
+    // The review's m1 (its R14), probe PB: prepare takes every attempt's COPY_SLOTS slot through untilReturned, not
+    // only the first. Request A copies the image and fails; request B, from a second client, is told `wait`
+    // meanwhile, then copies the image itself on a later attempt. The race helper keeps a refused request from
+    // leaving the case waiting at a gate it never reaches.
+    const reachedA = gate()
+    const failA = gate()
+    const reachedB = gate()
+    const goB = gate()
+    const bucketA: VaultBucket = {
+      ...spyBucket({}),
+      get: async (key) => {
+        if (key.startsWith('import_image/')) {
+          reachedA.open()
+          await failA.opened
+          throw new Error('the first copy fails')
+        }
+        return env.OBJECTS.get(key)
+      },
+    }
+    let holdB = true
+    const bucketB: VaultBucket = {
+      ...spyBucket({}),
+      get: async (key) => {
+        if (key.startsWith('import_image/') && holdB) {
+          holdB = false
+          reachedB.open()
+          await goB.opened
+        }
+        return env.OBJECTS.get(key)
+      },
+    }
+    const kinds: string[] = []
+    const a = await startV1(undefined, { env: { OBJECTS: bucketA } })
+    const b = await startV1(undefined, { env: { OBJECTS: bucketB, VAULT: preparesSeen(kinds) } })
+    const money = moneyFixtures(a)
+    const user = await money.member()
+    const wallet = await money.wallet(user)
+    const record = () => money.record(user, { type: 'expense', amount_minor: '6500', occurred_on: '2026-03-05', wallet_id: wallet, category_id: builtinId(user, 'food') })
+    const first = await record()
+    const second = await record()
+    const image = await seedImportImage(user)
+    const lines: unknown[] = []
+    const retainedA = retain(a, user, first, image.attachmentId)
+    lines.push(['A copies', await reachedFirst(reachedA.opened, retainedA)])
+    const retainedB = retain(b, user, second, image.attachmentId)
+    for (let i = 0; i < 200 && !kinds.includes('wait'); i += 1) await delay(10)
+    lines.push(['B is told to wait', kinds.includes('wait')])
+    failA.open()
+    const answerA = await retainedA
+    lines.push(["A's copy fails", answerA.status])
+    await answerA.arrayBuffer()
+    const copying = await reachedFirst(reachedB.opened, retainedB)
+    const ended = watch(b)
+    lines.push(['B copies on a later attempt', copying, await ended(PENDING_MS)])
+    goB.open()
+    const answerB = await retainedB
+    lines.push(['B retains', answerB.status, await ended(ENDED_MS)])
+    await answerB.arrayBuffer()
+    expect(lines).toEqual([
+      ['A copies', true],
+      ['B is told to wait', true],
+      ["A's copy fails", 503],
+      ['B copies on a later attempt', true, false],
+      ['B retains', 200, true],
+    ])
+  }, 30_000)
+
+  it("an upload turned away at the isolate's limit (503) hands waitUntil nothing", async () => {
+    // The review's n2 (its R11), probe PA: sixteen uploads hold every place (MAX_UPLOADS_PER_ISOLATE), on one
+    // client; a seventeenth, from a second client, is turned away before it takes a place, so that client is
+    // handed nothing to wait for. Then the sixteen end and give their places back.
+    const holder = await startV1(undefined, { env: { IMPORT_UPLOADS_ENABLED: 'true' }, startWork: 'manual' })
+    const turned = await startV1(undefined, { env: { IMPORT_UPLOADS_ENABLED: 'true' }, startWork: 'manual' })
+    const rest = gate()
+    const held: Promise<Reply>[] = []
+    const lines: unknown[] = []
+    try {
+      for (let pair = 0; pair < MAX_UPLOADS_PER_ISOLATE / 2; pair += 1) {
+        const user = await member(holder)
+        for (let i = 0; i < 2; i += 1) held.push(upload(holder, user, stalledBody(csvText(200), csvText(200), rest.opened), { chunked: true }))
+      }
+      lines.push(['uploads holding a place', await eventually(async () => uploadsInFlight(), (n) => n === MAX_UPLOADS_PER_ISOLATE)])
+      const user = await member(turned)
+      const next = await upload(turned, user, csvText(200))
+      const ended = watch(turned)
+      lines.push(['an upload with every place taken', next.status, await ended(ENDED_MS)])
+    } finally {
+      rest.open()
+    }
+    lines.push(['the sixteen, once their bodies end', (await Promise.all(held)).map((reply) => reply.status).filter((status) => status !== 202), uploadsInFlight()])
+    expect(lines).toEqual([
+      ['uploads holding a place', MAX_UPLOADS_PER_ISOLATE],
+      ['an upload with every place taken', 503, true],
+      ['the sixteen, once their bodies end', [], 0],
     ])
   }, 30_000)
 })
