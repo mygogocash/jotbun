@@ -17,6 +17,8 @@ export { UserVault } from '../vault/user-vault'
 export { StatementParser } from '../background/statement-parser'
 // The export Workflow (1B-T6); the EXPORT_WORKFLOW binding names this class.
 export { ExportWorkflow } from '../background/export-workflow'
+// The snapshot Workflow (1B-T8); the SNAPSHOT_WORKFLOW binding names this class.
+export { SnapshotWorkflow } from '../background/snapshot-workflow'
 
 // The API's logger writes JSON lines to a sink; the Worker's sink is console.
 setLogSink((line) => console.log(line))

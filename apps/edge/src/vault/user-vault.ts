@@ -33,6 +33,8 @@ import type { ParseSource, ParsedPreview } from './files/parse'
 import type { BuildOutcome } from './files/work'
 import type { ExportParams } from '../background/export-workflow'
 import { failExport as failExportIn, writeExport as writeExportIn } from './files/exports'
+import type { SnapshotParams } from '../background/snapshot-workflow'
+import { buildSnapshot as buildSnapshotIn, failSnapshot as failSnapshotIn } from './files/snapshots'
 
 /** The bindings the vault reads: the command digest keys, the environment name, the private object bucket and config:v1's KV (for the gates of background work). */
 export type VaultEnv = {
@@ -43,6 +45,7 @@ export type VaultEnv = {
   CONFIG?: KVNamespace
   PARSE_QUEUE?: Queue<ParseMessage>
   EXPORT_WORKFLOW?: Workflow<ExportParams>
+  SNAPSHOT_WORKFLOW?: Workflow<SnapshotParams>
 }
 
 export type VaultDb = DrizzleSqliteDODatabase<typeof vaultSchema>
@@ -318,6 +321,25 @@ export class UserVault extends DurableObject<VaultEnv> {
   /** Records that the export's write failed after its retries. */
   failExport(id: string): void {
     this.background(undefined, (c) => failExportIn(c, id))
+  }
+
+  // Snapshots (1B-T8): SnapshotWorkflow's steps call these by the vault id (B11).
+
+  /**
+   * Builds the snapshot's chunks in R2 and records them (snapshots.ts). The read
+   * and the record are separate short blocks, each with the vault clock read
+   * when it starts, so the record is checked at the time after the PUTs. An
+   * erased vault answers `skipped`.
+   */
+  async buildSnapshot(id: string): Promise<BuildOutcome> {
+    if (this.erased) return { outcome: 'skipped' }
+    const { outcome } = await buildSnapshotIn({ context: () => this.fileContext(), bucket: this.bucket, active: (c) => this.isActive(c) }, id)
+    return { outcome }
+  }
+
+  /** Records that the snapshot's build failed after its retries. */
+  failSnapshot(id: string): void {
+    this.background(undefined, (c) => failSnapshotIn(c, id))
   }
 
   /** Runs `work` in its own short block with a fresh vault clock, or answers `skipped` when the vault is erased or not active. */

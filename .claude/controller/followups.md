@@ -195,6 +195,16 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **P4-T14 or P6A:** `sendOneSlip`'s `too_large` also covers any null shrink, including a shared file that is not a JPEG, PNG or WebP (unreadable). Word the person's message so it is true for both.
   - **Q2's default** (no `expo-image-manipulator`) leaves a large picked photo unread on the phone. This is the plan's own risk; the likely case is a camera photo of a paper slip, since bank-app slips are screenshots. Raise it with the owner's Q2.
   - P3-T1's note (a null from `slipQrIn` never proves "not a slip") stays with P4-T14.
+- P4-T13 (#375, merged a915f95 on 9 Nov, issue #221 closed; review in reviews/P4-T13.md (Sonnet), Approved with two minors and four nits; probes and mutants in scratch/p4-t13-review/):
+  - **P4-T14 (the next task to touch `src/slips/`), m1:** the type and base64 guards are right but not pinned byte for byte. Reviewer mutants survive all 18 tests: a JPEG read as `FF D8` only, a PNG read as 4 bytes, a 3-character WebP tag, and `=` allowed anywhere. The review lists seven small cases that kill them all.
+  - **P4-T14, m2:** pin that the album is NFC-normalized before the 60-character cut (one case).
+  - **P4-T14:**
+    - batch a page of photos at a time, since each `ReadySlip` holds up to 1.6 million base64 characters;
+    - build the batch header with exactly its four keys, because `slipBatchRequest` spreads its header and an extra runtime key is refused by the server (`UNKNOWN_FIELD`);
+    - the same photo picked twice can reuse an `assetId` with a new copy uri, so check that `addPending`'s upsert handles that.
+  - **P4-T14 or P4-T18:** `pick()` can reject, so the engine or screen must catch it. `pick(0)` opens an unlimited picker, so never pass 0.
+  - **P4-T18:** do not gate the picker on `access()`: under Q1's default the picker needs no library permission.
+  - Nits for whoever next edits the fakes: the fake's `request()` cannot change state, and no committed test checks that `fakeShrunkImage` passes the contract parser (the reviewer's probe shows it does).
 - 1D-T8 (#372, review in reviews/1D-T8.md, Approved with one minor and five nits; probes in scratch/1d-t8-review/probes/):
   - **analytics-consent-hardening (a follow-up task; must land before the `analytics` area is approved at E2, or in 1D-T8's E2 approval commit):**
     - **m1:** three fail-closed states are right today but pinned by no test; reviewer mutants survive all 57 focused cases. The probes are ready to become cases.

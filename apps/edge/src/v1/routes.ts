@@ -106,6 +106,11 @@ export const VAULT_V1_ROUTES: readonly VaultRoute[] = [
   { method: 'POST', path: '/v1/imports/:id/selections', access: 'current_policy', vault: 'imports.freeze', gates: ['imports'], status: 201 },
   { method: 'POST', path: '/v1/imports/:id/confirmations', access: 'current_policy', worker: 'import.confirm', gates: ['imports', 'writes'], status: 200 },
   { method: 'GET', path: '/v1/imports/:id/selections/:selectionId', access: 'bound_session', vault: 'imports.progress' },
+  // sync/sync.controller.ts (1B-T8): SnapshotWorkflow builds a requested snapshot after the reply, which the vault
+  // sets to 200 (ready) or 202; each chunk streams from R2 in the Worker, after the `snapshots.chunk` step names it.
+  { method: 'POST', path: '/v1/sync/snapshots', access: 'bound_session', vault: 'snapshots.request', gates: ['jobs'], starts: true },
+  { method: 'GET', path: '/v1/sync/snapshots/:id', access: 'bound_session', vault: 'snapshots.status' },
+  { method: 'GET', path: '/v1/sync/snapshot-chunks/:grant', access: 'bound_session', worker: 'snapshot.chunk.download' },
 ]
 
 const ROUTE_BY_ID = new Map<VaultRouteId, VaultRoute>(VAULT_V1_ROUTES.flatMap((route) => (route.vault ? [[route.vault, route] as const] : [])))
@@ -147,6 +152,8 @@ export const VAULT_STEP_ROUTES: Partial<Record<VaultRouteId, VaultStepRoute>> = 
   // 1B-T10: the confirmation's steps. Both check the session: prepare reserves a receipt copy and confirm commits records.
   'imports.confirmPrepare': {},
   'imports.confirm': {},
+  // 1B-T8: the snapshot chunk download's step. It checks the session: a download needs the session that asked.
+  'snapshots.chunk': {},
 }
 
 /** The step-only entry a vault call names, or undefined when the id is not a step. */
@@ -170,9 +177,6 @@ export const VAULT_PENDING_ROUTES: readonly string[] = []
 export const VAULT_DEFERRED_ROUTES: readonly string[] = [
   'POST /v1/me/deletion',
   'POST /v1/auth/deletion-receipt',
-  'POST /v1/sync/snapshots',
-  'GET /v1/sync/snapshots/:id',
-  'GET /v1/sync/snapshot-chunks/:grant',
   'GET /v1/me/ai-preferences',
   'PUT /v1/me/ai-preferences',
   'POST /v1/ai/parse',

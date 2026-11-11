@@ -182,6 +182,7 @@ declare namespace Cloudflare {
     PARSER: DurableObjectNamespace<import('./background/statement-parser').StatementParser>
     PARSE_QUEUE: Queue<import('./background/parse-consumer').ParseMessage>
     EXPORT_WORKFLOW: Workflow<import('./background/export-workflow').ExportParams>
+    SNAPSHOT_WORKFLOW: Workflow<import('./background/snapshot-workflow').SnapshotParams>
     AUTH_DB: D1Database
     AUTH_DB_REFERENCE: D1Database
     ERASURE_DB: D1Database
