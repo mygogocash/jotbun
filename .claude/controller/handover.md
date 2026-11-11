@@ -24,6 +24,21 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**22:20: P3-T4's Flash plan is READY and the controller accepted it. Its Flash builder is running.**
+- **The brief:** `briefs/P3-T4.md`, 14.6 KB, size M, 14 files: 3 new, and 11 shared edge files that #406 and #407 do not touch. The kit `scratch/p3-t4-planner/` checks at `5e514bf0` with 48 OK, and its 11 `orig/` files are identical.
+- **The controller's review of the Flash plan:**
+  - RED is real: 9 of 9 fail, 8 of them on assertions.
+  - The 8 mutants all target `transport.ts` (gateway logging and caching off, the 2 s floor, 529 and rate limits, the gateway token, env gating) and are all killed.
+  - Weak spots for the reviewer: no mutant covers `service.ts`'s `tracedSend` and `AiDeadline(25_000)` wiring, or `handler.ts`'s `transportFromEnv` fallback; the 43 `ai.test.ts` cases cover them behaviourally. P1's auth-header test accepts either header, but the SDK 1.2.0 chooses it.
+  - P1 to P5 accepted.
+- **The builder,** on `antigravity` `gemini-3.8-flash-high`: `mcp:launch:bd268f71aa52ecb259c0e12f7106b76a8cd58f06ced7c5777063f210b7f1d4f6`, in WT `p3-t4` (pre-made, installed), with the lock.
+- **After DONE:**
+  1. Verify the commit against `real/`.
+  2. Run `open_task_pr.sh`.
+  3. Dispatch the first review on Claude Code Opus. Focus on the wiring above, and add mutants for `service.ts` and `handler.ts`.
+  4. Dispatch the **second review** (privacy: user prompts go to a third party through the gateway, with logging and caching off) on Flash.
+- **The watcher's planner signal is now the brief file, not the kit's `SHA256SUMS`.** The Flash planner wrote its sums mid-run, and the watcher fired early. SKILL.md and `watch_agents.sh` say so.
+
 **22:10: the four new lanes' worktrees are pre-made, so builders start without an install.** `new_task_worktree.sh` made them at `675569e2` (controller-state commits only since the planners' bases):
 - `p2-t23` (`p2/t23-home-data`), `p2-t25` (`p2/t25-recently-deleted`) and `p2-t32` (`p2/t32-month-recap`), each with `npm ci`;
 - `p3-t4` (`p3/t4-gateway-transport`), with `npm ci` and `install:edge`.

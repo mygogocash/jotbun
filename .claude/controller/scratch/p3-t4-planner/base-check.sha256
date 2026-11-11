@@ -1,0 +1,11 @@
+fc687f63600a0b5cacbe7787a940fd05234d85364395518f15b223413e69d2b8  apps/edge/README.md
+1e7ccecfc4d275ba66604156023ff7593aa1c11d5ca9f123134c6fd1d9dde552  apps/edge/wrangler.jsonc
+2cf63b89ee85d170d5005d20c73a09c5ffb9d9db978681778fb37b785535dd21  apps/edge/src/v1/env.ts
+1417fe49c35f7afcd79fb1110796a0aa3227ad986e56519f106ac5047431ec3d  apps/edge/src/v1/handler.ts
+d054b3ed618801d42ecfc792af3d4a900f2cd26ca88fdb6b48af44e892c4d061  apps/edge/src/v1/worker-routes.ts
+64c85af0dda8ad9047d822efcdbe531b0682f83d941ec14672c7bbe8bc64f2d1  apps/edge/src/server/ai/model.ts
+7971dd7ddb8eea08392826b3e4b2a49c25b550c351098897f4fe66fe8089769d  apps/edge/src/v1/ai/routes.ts
+701e8cefc7d84e919cabd18a26d08756255d9bec5ec8de42634ffc2b2e3eb3c2  apps/edge/src/v1/ai/service.ts
+5120f3446d7f6c34c501099f58ee414873005a01fef71a0770488aa06f163033  apps/edge/test/support/fake-model.ts
+a5671e9006b562b6b5bb06e2955bd41ad37ce1a5faf1ee890035e378bdffde07  apps/edge/test/workers/support/v1-client.ts
+9cf13ac79ecb07b7795fc6e26714c07e6ac1f44e003ec5f67a41e74923903c42  apps/edge/test/workers/ai.test.ts

@@ -1,0 +1,129 @@
+--- a/apps/edge/test/workers/ai.test.ts
++++ b/apps/edge/test/workers/ai.test.ts
+@@ -9,7 +9,8 @@
+ import type { AiLocale, BunFact } from '@gogospend/contracts'
+ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+ 
+-import type { MessageParams, ModelMessage, SendMessage } from '../../src/server/ai/model'
++import type { MessageParams, ModelMessage } from '../../src/server/ai/model'
++import type { ModelTransport } from '../../src/v1/ai/transport'
+ import type { VaultCall, VaultClaims, VaultRouteId } from '../../src/v1/protocol'
+ import { vaultSession } from '../../src/v1/worker-routes'
+ import type { AiToolReply } from '../../src/vault/ai'
+@@ -29,7 +30,7 @@
+ 
+ beforeEach(async () => {
+   model = fakeModel()
+-  client = await startV1(undefined, { send: (params) => model.send(params) })
++  client = await startV1(undefined, { transport: model.transport })
+   money = moneyFixtures(client)
+ })
+ 
+@@ -229,7 +230,7 @@
+ 
+   it('without AI configured, answers from the rules and spends no uses', async () => {
+     const user = await consenting()
+-    const offline = await startV1(undefined, { send: null })
++    const offline = await startV1(undefined, { transport: null })
+     const res = await offline.as(user).post('/v1/ai/parse', { text: 'grab 120', today, locale: 'en' })
+     expect(await body(res)).toMatchObject({ source: 'rules', drafts: [{ amount_minor: '12000' }] })
+     const prefs = await body(await offline.as(user).get('/v1/me/ai-preferences'))
+@@ -491,13 +492,15 @@
+   it('a session signed out while Ask Bun runs is refused at its next tool step, and no tool reads the records', async () => {
+     const user = await consenting()
+     const calls: MessageParams[] = []
+-    const send: SendMessage = async (params) => {
+-      calls.push(structuredClone(params))
+-      if (calls.length > 1) return text('Bun read nothing.')
+-      expect((await client.as(user).post('/v1/me/logout')).status).toBe(204)
+-      return toolUse('spending_total', { from: monthStart, through: today, type: 'expense', category_id: null })
++    const transport: ModelTransport = {
++      send: async (params) => {
++        calls.push(structuredClone(params))
++        if (calls.length > 1) return text('Bun read nothing.')
++        expect((await client.as(user).post('/v1/me/logout')).status).toBe(204)
++        return toolUse('spending_total', { from: monthStart, through: today, type: 'expense', category_id: null })
++      },
+     }
+-    const asking = await startV1(undefined, { send })
++    const asking = await startV1(undefined, { transport })
+     const res = await asking.as(user).post('/v1/ai/ask', { question: 'how much?', today, locale: 'en' })
+     expect(res.status).toBe(401)
+     expect((await body(res)).code).toBe('SESSION_REQUIRED')
+@@ -576,11 +579,11 @@
+     expect(await available({ env: { AI_ENABLED: 'true', ANTHROPIC_API_KEY: 'synthetic-key' } })).toBe(true)
+     expect(await available({ env: { AI_ENABLED: '1', ANTHROPIC_API_KEY: 'synthetic-key' } })).toBe(true)
+     // A model the front door gives wins over the env, even null.
+-    expect(await available({ send: null, env: { AI_ENABLED: 'true', ANTHROPIC_API_KEY: 'synthetic-key' } })).toBe(false)
++    expect(await available({ transport: null, env: { AI_ENABLED: 'true', ANTHROPIC_API_KEY: 'synthetic-key' } })).toBe(false)
+     const configured = await startV1(undefined, { env: { AI_ENABLED: 'true', ANTHROPIC_API_KEY: 'synthetic-key' } })
+     expect(await body(await configured.as(user).put('/v1/me/ai-preferences', { companion: true, notice_version: 1 }))).toMatchObject({ companion: true, available: true })
+     // AI_MODEL names the model; without it, DEFAULT_AI_MODEL (`turns a sentence into a grounded draft ...`).
+-    const named = await startV1(undefined, { send: (params) => model.send(params), env: { AI_MODEL: 'synthetic-model' } })
++    const named = await startV1(undefined, { transport: model.transport, env: { AI_MODEL: 'synthetic-model' } })
+     model.push(json({ drafts: [] }))
+     expect((await named.as(user).post('/v1/ai/parse', { text: 'กาแฟ 65', today, locale: 'th' })).status).toBe(200)
+     expect(model.calls[0].model).toBe('synthetic-model')
+@@ -614,7 +617,7 @@
+ 
+   it('without AI, a slip and a question are 503 AI_PAUSED and spend no use, and the note is the plain facts', async () => {
+     const user = await consenting()
+-    const offline = await startV1(undefined, { send: null })
++    const offline = await startV1(undefined, { transport: null })
+     const refused = [
+       await offline.as(user).post('/v1/ai/slip', { image_base64: tinyPng, media_type: 'image/png', today, locale: 'th' }),
+       await offline.as(user).post('/v1/ai/ask', { question: 'how much?', today, locale: 'en' }),
+@@ -633,11 +636,11 @@
+     const yesterday = new Date(Date.now() - 86_400_000).toISOString()
+     const pending = await startV1(
+       { policies: [...TEST_POLICIES, { kind: 'terms', version: 2, required: true, published_at: yesterday, text: { th: 'ข้อกำหนด 2', en: 'Terms 2' } }], client_versions: { ios: '1.0.0', android: '1.0.0' } },
+-      { send: (params) => model.send(params) },
++      { transport: model.transport },
+     )
+     const offline = await startV1(
+       { policies: [...TEST_POLICIES, { kind: 'terms', version: 2, required: true, published_at: yesterday, text: { th: 'ข้อกำหนด 2', en: 'Terms 2' } }], client_versions: { ios: '1.0.0', android: '1.0.0' } },
+-      { send: null },
++      { transport: null },
+     )
+     const outcomes = async (who: TestUser, through: V1Client = pending): Promise<string[]> => {
+       const as = through.as(who)
+@@ -685,7 +688,7 @@
+     expect(model.calls).toHaveLength(0)
+     expect((await body(await client.as(user).get('/v1/me/ai-preferences'))).remaining).toEqual(AI_DAILY_LIMITS)
+     // R96: a HEAD on either AI read answers its GET's status and headers, with no body (offline, so no model is asked).
+-    const offline = await startV1(undefined, { send: null })
++    const offline = await startV1(undefined, { transport: null })
+     for (const path of ['/v1/me/ai-preferences', `/v1/ai/note?date=${today}&locale=en`]) {
+       const get = await offline.as(user).get(path)
+       const head = await offline.as(user).request('HEAD', path)
+@@ -945,7 +948,7 @@
+     // The 1B-T7 review's n-1 (its W5), wiring probe "P2 (accepted)": the input is read before any step (P2).
+     const log: VaultCall[] = []
+     const own = fakeModel()
+-    const c = await startV1(undefined, { send: own.send, env: { VAULT: recordingVault(log) } })
++    const c = await startV1(undefined, { transport: own.transport, env: { VAULT: recordingVault(log) } })
+     const user = await member(c)
+     expect((await c.as(user).put('/v1/me/ai-preferences', { companion: true, notice_version: 1 })).status).toBe(200)
+     expect((await c.as(user).post('/v1/me/logout')).status).toBe(204)
+@@ -967,7 +970,7 @@
+     // The 1B-T7 review's n-1 (its W5), wiring probe "P2 parity".
+     const log: VaultCall[] = []
+     const own = fakeModel()
+-    const c = await startV1(undefined, { send: own.send, env: { VAULT: recordingVault(log) } })
++    const c = await startV1(undefined, { transport: own.transport, env: { VAULT: recordingVault(log) } })
+     const user = await member(c)
+     log.length = 0
+     const out: string[] = []
+@@ -987,10 +990,10 @@
+     // every model call, and it checks the session and the policy.
+     const log: VaultCall[] = []
+     const own = fakeModel()
+-    const plain = await startV1(undefined, { send: null })
++    const plain = await startV1(undefined, { transport: null })
+     let signOut: TestUser | null = null
+     const c = await startV1(undefined, {
+-      send: own.send,
++      transport: own.transport,
+       env: {
+         VAULT: recordingVault(log, async (call) => {
+           if (call.route !== 'ai.context' || !signOut) return

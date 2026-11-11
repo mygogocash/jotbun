@@ -1,0 +1,9 @@
+KILLED: M1_drop_collect_log (expected failure 'every request goes to the gateway with logging and caching off')
+KILLED: M2_ignore_deadline (expected failure 'a request with less than 2 s left makes no call')
+KILLED: M3_529_as_rejected (expected failure 'callFailure names each failure')
+KILLED: M4_max_retries_1 (expected failure 'a rate limit fails at once as rate_limited with its wait')
+KILLED: M5_drop_skip_cache (expected failure 'every request goes to the gateway with logging and caching off')
+KILLED: M6_drop_gateway_auth (expected failure 'the gateway token is sent only when set')
+KILLED: M7_child_deadline_no_min (expected failure 'a child deadline ends at the earlier of its cap and its parent')
+KILLED: M8_env_ignores_ai_enabled (expected failure 'transportFromEnv is null unless AI is on and keyed')
+Summary: 8/8 mutants killed.

@@ -4,7 +4,8 @@
 #   COMMIT <wt>: <sha subject>   a builder committed (its own commit, not a sync of the integration head): DONE
 #   IDLE <wt>: N min since <log> its scratch logs went quiet for <idle-minutes>: possibly BLOCKED, read its thread
 #   VERDICT <review>: <line>     a review file got its verdict line (template: last line `VERDICT: ...`)
-#   FILE <path>                  a file exists, e.g. a planner kit's SHA256SUMS, which is written last
+#   FILE <path>                  a file exists, e.g. a planner's brief. A kit's SHA256SUMS can come before the brief (a
+#                                Flash planner wrote it mid-run, 11 Nov), so check the planner's thread has finished first
 #   CAP: N min                   nothing happened before <cap-minutes>; re-arm
 # Usage: bash watch_agents.sh unused <idle-minutes> <cap-minutes> [<worktree>:<scratch-folder>] [verdict:<file>] [file:<path>] ...
 #   e.g. bash watch_agents.sh unused 15 120 p2-t14:p2-t14 verdict:$C/reviews/P2-T14.md file:$C/scratch/p3-t4-planner/SHA256SUMS
