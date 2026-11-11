@@ -24,6 +24,24 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**21:30: the owner said "find the way to speed up development without my approval". Recorded in SKILL.md.**
+- **Rulings:**
+  - Integration-branch merges no longer wait on the owner's yes, money-path and privacy PRs included, once CI is green and the reviews approve. The owner still reviews each task in its promotion PR into main.
+  - The build's own speed-ups (more lanes, spreading providers, script and process changes) go ahead without asking, recorded here.
+  - Main merges, deploys, secrets, production data, new paid services and scope changes stay the owner's.
+- **Pipeline:** 20 tasks were ready and only 2 in flight. Planners started for three lanes that share no files, with common notes in `scratch/dispatch/planner-common-notes-20261111.md` (retired-file translation, merge proofs for shared files, Haiku-shaped briefs):
+  - **P2-T23** (App, depth 12), on Claude Code Opus xhigh: `mcp:launch:8f1c451f13692d19dca5302a5293f08abd423eae341d53969f592c50c7cb946d`. WT `p2-t23`, branch `p2/t23-home-data`.
+  - **P3-T4** (Server, depth 11), on Cursor Grok 4.7 xhigh: `mcp:launch:a53aa556c034ab3b8abbcb9ecb151bdac593f8897fe097679632067ea0945c7a`. WT `p3-t4`, branch `p3/t4-gateway-transport`. It is the only server lane: server tasks share `handler.ts`, `env.ts`, `routes.ts` and the vault schema.
+  - **P2-T25** (App, depth 10), on Cursor Grok 4.7 xhigh: `mcp:launch:30ccfbc19eee12e1d6b7e82e7e8bcf1a340044e0dc1ad34afe592467c8d542fb`. WT `p2-t25`, branch `p2/t25-recently-deleted`.
+- **Providers while Antigravity is out:**
+  - Cursor's included usage covers Grok but **not Claude Opus 5.5** ("not included in your weekly usage ... buy credits or switch to a Grok model"). Buying credits is the owner's call, so it was not done. The first three Cursor Opus launches failed on it and are not to be reused.
+  - `make_prompt.py --spread` now gives: planners and the second review on `cursor` `grok-4.7` (xhigh, fastMode off; Grok is the different family the second review wants), builders on Claude Code Haiku, first reviews on Claude Code Opus, and the confirming review on Claude Code Sonnet.
+  - **Planners on Grok are a trial.** Judge them by `check_kit` and the first review before trusting the kits. If a Grok kit fails, fall back to `--claude-code` for planners.
+- **Next lanes, once P2-T14 (#407) merges:**
+  - P2-T20's brief is READY, waiting only on #407.
+  - App lanes with no shared files are still open: P2-T29, P2-T31, P2-T32, P3-T5, P6A-T2.
+  - Server lanes wait their turn after P3-T4.
+
 **21:20: the owner said "if ci pass merge it". #405 (1B-T13) is MERGED; the 1B plan's last task is in.**
 - **How the instruction was read:** the owner's yes for #405, #407 and #406, each merging once its CI is green *and* its reviews approve. Review approval stays the gate.
 - **#405 merged as `3d4f783`** at `7eeff709`. Issue #117 is closed, and WT `p1-1b-t13` and branch `p1/1b-t13-vault-http` are removed locally and on origin.

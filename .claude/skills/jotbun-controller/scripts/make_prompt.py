@@ -52,6 +52,20 @@ CLAUDE_CODE = {
     "confirm": ("claudeAgent", "claude-sonnet-5-5", {"effort": "high", "ultracode": False}, "Claude Sonnet 5.5"),
     "second": ("claudeAgent", "claude-opus-5-5", {"effort": "high", "ultracode": False}, "Claude Opus 5.5"),
 }
+# --spread: while Antigravity is out (11 Nov to about 18 Nov), spread the roles over the providers that have credit,
+# so Claude Code's 5-hour limit is left mostly to the controller, the reviews and the cheap Haiku builders (owner,
+# 11 Nov: "find the way to speed up development without my approval"). Cursor's included usage covers Grok but not
+# Claude Opus 5.5 ("not included in your weekly usage"; buying credits is the owner's call), so planners and the
+# second review run on Grok 4.7 through Cursor. Grok is also the different model family the second review wants.
+# Planners on Grok are a trial (11 Nov): check_kit and the first review catch a weak kit before a build runs on it.
+SPREAD = {
+    "planner": ("cursor", "grok-4.7", {"reasoning_effort": "xhigh", "fastMode": False}, "Grok 4.7"),
+    "implementer": ("claudeAgent", "claude-haiku-5-5", {"effort": "max", "ultracode": False}, "Claude Haiku 5.5"),
+    "fixer": ("claudeAgent", "claude-haiku-5-5", {"effort": "max", "ultracode": False}, "Claude Haiku 5.5"),
+    "reviewer": ("claudeAgent", "claude-opus-5-5", {"effort": "xhigh", "ultracode": False}, "Claude Opus 5.5"),
+    "confirm": ("claudeAgent", "claude-sonnet-5-5", {"effort": "high", "ultracode": False}, "Claude Sonnet 5.5"),
+    "second": ("cursor", "grok-4.7", {"reasoning_effort": "xhigh", "fastMode": False}, "Grok 4.7"),
+}
 FINAL_IMPL = ("Your final message must follow the protocol's \"Your final message\" section exactly: the STATUS line first (`STATUS: DONE` or "
               "`STATUS: BLOCKED` with the exact blocker), the commit SHA, RED and GREEN counts, the mutants, each gate command with its result, "
               "SKIPPED items, and deviations.")
@@ -81,8 +95,9 @@ def main():
     p.add_argument("--installed", action="store_true")
     p.add_argument("--lock", action="store_true")
     p.add_argument("--claude-code", action="store_true")
+    p.add_argument("--spread", action="store_true")
     a = p.parse_args()
-    provider, model, options, label = (CLAUDE_CODE if a.claude_code else ROUTES)[a.role]
+    provider, model, options, label = (SPREAD if a.spread else CLAUDE_CODE if a.claude_code else ROUTES)[a.role]
     trailer = f"Co-Authored-By: {label} <noreply@{'google.com' if label.startswith('Gemini') else 'anthropic.com'}>"
     t = task(a.task, a); tl = a.task.lower()
     plan = t["spec"] if t.get("spec") else f"docs/superpowers/plans/{t['plan_file']}, \"### {t['heading']}\" (line {t['line']})"
@@ -125,7 +140,7 @@ def main():
               f"Read {proto} first; it is binding (durable paths under .claude/controller/, never /private/tmp; R87: the receipt is its own file). You are read-only in the repo. The integration code is at {W}/p1a-vault-core (origin/claude/p1a-vault-core is at {a.head}; run `git fetch`; read-only git; proofs in a scratch `git archive` copy).", "",
               f"The spec: {plan}, with the plan's Global Constraints and every ruling it cites, and the merged receipts it builds on. Grep {C}/followups.md for {a.task}.", "",
               "First decide readiness: are all its \"Starts after\" tasks merged; does it need a package, Cloudflare resource, owner decision or account setting not yet available? If not ready, report BLOCKED with the exact reason.", "",
-              f"If ready, write an implementation brief for a {ROUTES['implementer'][3]} implementer at {C}/briefs/{a.task}.md, in the shape of {C}/briefs/{a.shape or 'P2-T2'}.md. The orchestrator creates the worktree {W}/{a.wt} on branch {a.branch} from origin/claude/p1a-vault-core. The brief: ordered test-first steps with exact files, exported names and signatures; the RED tests; the code; the fast local gate of R100 (typecheck, the focused files RED to GREEN, test:app and test:unit or test:edge, build:edge, and export:web only when routes or the app entry change; whole suites run in CI, so prove no whole-suite totals and write none into the brief); the receipt at docs/implementation/receipts/{a.task}.md; the commit summary line; and a \"Planner rulings\" section (P1, P2, ...) with the reason for each.",
+              f"If ready, write an implementation brief for a {(SPREAD if a.spread else CLAUDE_CODE if a.claude_code else ROUTES)['implementer'][3]} implementer at {C}/briefs/{a.task}.md, in the shape of {C}/briefs/{a.shape or 'P2-T2'}.md. The orchestrator creates the worktree {W}/{a.wt} on branch {a.branch} from origin/claude/p1a-vault-core. The brief: ordered test-first steps with exact files, exported names and signatures; the RED tests; the code; the fast local gate of R100 (typecheck, the focused files RED to GREEN, test:app and test:unit or test:edge, build:edge, and export:web only when routes or the app entry change; whole suites run in CI, so prove no whole-suite totals and write none into the brief); the receipt at docs/implementation/receipts/{a.task}.md; the commit summary line; and a \"Planner rulings\" section (P1, P2, ...) with the reason for each.",
               f"Prove it in a scratch copy under {C}/scratch/{tl}-planner/ (RED on typed stubs, GREEN, every mutant killed, the fast local gate) with verified files (real/, stubs/, orig/ or base/, diffs/ with one <path with / as _>.diff per changed shared file) and SHA256SUMS. Keep *.log files out of that SHA256SUMS (they are gitignored and lost in state commits); list them in SHA256SUMS.logs.", ""]
         if a.lock: L += [LOCK, ""]
         L += [RULES, "", "Final message: first line READY or BLOCKED: <reason>; the brief path; \"Files:\" (mark shared); size S/M/L; up to 5 lines of summary."]

@@ -20,7 +20,7 @@ Claude Code has a rolling 5-hour limit and Fable is scarcer still. Antigravity h
 | Implementers and fixers | `antigravity` `claude-sonnet-5-5-high` |
 | First reviews and confirming reviews | `antigravity` `claude-opus-5-5-high` |
 | Second review of a money-path or privacy PR (wallet, cashback, points, payments, auth, private mode, privacy migrations) | `antigravity` `gemini-4-argon-high`, a different model family from the first review (`make_prompt.py second`) |
-| Any role while Antigravity is down or out of credit | Claude Code: `make_prompt.py --claude-code` (Opus xhigh plans and reviews, Haiku max builds) |
+| Any role while Antigravity is down or out of credit | **`make_prompt.py --spread`** (11 Nov, until Antigravity's quota returns about 18 Nov): planners and reviews on `cursor` `claude-opus-5-5` (Cursor's own credits), the second review on `cursor` `gemini-4-carbon` (a different family again), builders on Claude Code Haiku max. `--claude-code` puts every role on Claude Code, which only helps while Cursor is out too. |
 | Scouting: code search, log reading, red-CI triage, mapping code paths before a planner | `antigravity` `gemini-3.8-flash-high`, read-only |
 | One hard, high-stakes question (money correctness, a root cause other models missed, an architecture call) | `claudeAgent` `claude-fable-5-2` as an advisor with a short brief of verified facts; about once a day at most. A Fable lead session needs the owner's approval |
 | A lookup or one-line fix | whoever is already running; don't write a brief bigger than the task |
@@ -35,12 +35,12 @@ Claude Code has a rolling 5-hour limit and Fable is scarcer still. Antigravity h
 The owner has authorised this to keep moving without pausing between tasks:
 - push task branches;
 - open PRs into `claude/p1a-vault-core`;
-- merge them on green CI, except a money-path or privacy PR: when its CI is green and both reviews approve, give the owner a recommendation and ask before merging;
+- merge them when CI is green and the reviews approve. That includes a money-path or privacy PR once both of its reviews approve: no owner yes is needed (owner, 11 Nov 21:25: "find the way to speed up development without my approval"; the owner still reviews every task in its promotion PR into `main`);
 - close their issues;
 - remove their worktrees and branches;
 - push the controller state with `sync_state.sh`.
 
-Merging anything into `main`, deploys, production data, secrets, new paid services and scope changes stay the owner's call. When asking, lead with a recommendation: the options, the main tradeoff, and the exact yes or no needed. Report every check as PASS, FAIL or SKIPPED with its command and reason.
+The same ruling covers the build's own speed-ups without asking: dispatching more lanes, spreading roles over the providers that have credit, and changing the controller's scripts and process. Record each one in `handover.md`. Merging anything into `main`, deploys, production data, secrets, new paid services and scope changes stay the owner's call. When asking, lead with a recommendation: the options, the main tradeoff, and the exact yes or no needed. Report every check as PASS, FAIL or SKIPPED with its command and reason.
 
 ## State to read first (all durable, under `C = /Users/kunanonjarat/Developer/jotbun/.claude/controller`)
 
