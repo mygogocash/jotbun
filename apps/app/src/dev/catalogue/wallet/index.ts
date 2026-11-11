@@ -4,9 +4,11 @@
 // with `Bun Wallet: ` (R72); walletHarness.render.test.tsx holds them to that.
 import type { CatalogueSection } from '../registry';
 import { WALLET_KIT_SECTIONS } from './kitSections';
+import { WALLET_STACK_SECTIONS } from './stackSections';
 import { WALLET_TRAY_SECTIONS } from './traySections';
 
 export const WALLET_SECTIONS: readonly CatalogueSection[] = [
   ...WALLET_KIT_SECTIONS,
+  ...WALLET_STACK_SECTIONS,
   ...WALLET_TRAY_SECTIONS,
 ];
