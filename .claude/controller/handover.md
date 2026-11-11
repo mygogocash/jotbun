@@ -24,6 +24,15 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**22:55: P2-T23 DONE (the first Gemini 3.8 Flash build) → PR #409, both reviews running.**
+- Commit `0c3bbeb7`. The controller checked it: 11 files (9 A, 2 M), `git diff --check` clean, all 10 `real/` files byte-identical. The trailer is `Co-Authored-By: Gemini 3.8 Flash`.
+- Reported: RED all assertions (14 Node, 6 render), GREEN, 77 of 77 mutants, `test:unit` 988, focused render 158.
+- PR **#409** (closes #169 by hand), body `pr-p2-t23.md`.
+- Reviews, with focus notes in `scratch/dispatch/P2-T23-{reviewer,second}-notes.md`:
+  - the first, on Claude Code Opus: `mcp:launch:b18ce1bdf17f225f43c4649ef8b1345e479582a419cb3c83f77f10873bc9bab5`;
+  - the second, on Flash (a different family): `mcp:launch:560d32a0e4159d3fa5e9ba14a7bdfac5e4b7484f717e02279cf80183a022bd30`.
+- Merge when CI is green and both approve (no owner yes; ruling of 21:25). Then promote.
+
 **22:50: the P2-T33 fix brief is READY and accepted. Its Flash fixer is running. Both P2 fix rounds are now building.**
 - **The brief:** `briefs/P2-T33-fix.md`. The kit `scratch/p2-t33-fix-planner/` checks against `5844e4c1` with 55 OK, and its 9 `orig/` files are identical.
 - **RED:** Node 2 of 18 and render 9 of 40, all on assertions, plus 1 expected unhandled `TypeError` ("reading 'step'"), which is the n4 bug. 166 of 166 mutants killed, twice.
