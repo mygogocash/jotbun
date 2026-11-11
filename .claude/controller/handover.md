@@ -4,6 +4,13 @@ Durable folder: `/Users/kunanonjarat/Developer/jotbun/.claude/controller/` (prot
 
 Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vault-core`), head 0bd5659 (controller state after 1D-T8's dispatch). Nothing outside `.claude/` changed since 606e131. No PR is open into the integration branch; only #70 into main.
 
+## Fixers dispatched, 11 Nov 08:15 Bangkok (Cursor Auto controlling; owner: "continue")
+
+- **#396 fix-download-aborts:** the fixer runs on Antigravity `claude-sonnet-5-5-high`, T3 task `fix-download-aborts-fixer-20261111a`, in WT fix-download-aborts. Its assignment is `scratch/dispatch/fix-download-aborts-fixer.prompt.md`, with notes on the moved head.
+- **#395 P2-T12:** the fixer runs on Antigravity `claude-sonnet-5-5-high`, T3 task `p2-t12-fixer-20261111a`, in WT p2-t12. Its assignment is `scratch/dispatch/P2-T12-fixer.prompt.md`.
+- Both merge the head first (dry merges were clean). Totals may differ from the briefs; their own files' Expected lines must hold.
+- **Do not dispatch these again.** After DONE: push, update the PR body, and run an Opus-High confirming review (#395's fix writes new logic, so it gets one; #396's is test-only from its planner's kit). Then merge on green local CI and promote (owner: "if CI pass merge it"; the merge script cleans up the worktree and branches).
+
 ## Routing moved to Antigravity, 11 Nov 07:50 Bangkok (owner: Antigravity's credits are unused, "maximize it")
 
 - Every delegated role now runs on Antigravity, and Claude Code's limit is for the controller only. This replaces the 10 Nov routing below. `make_prompt.py` prints the targets:
