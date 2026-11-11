@@ -4,6 +4,10 @@ Durable folder: `/Users/kunanonjarat/Developer/jotbun/.claude/controller/` (prot
 
 Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vault-core`), head 0bd5659 (controller state after 1D-T8's dispatch). Nothing outside `.claude/` changed since 606e131. No PR is open into the integration branch; only #70 into main.
 
+## 11 Nov 13:07 Bangkok: HOLD (Fronk). Build capacity moved to GoGoCash
+
+Start no new threads or lanes on any provider. The 13:17 batch is disabled. The held items, their state and their next steps are in `scratch/held-2026-11-11.md`. #395 and #396's fix rounds are DONE but not pushed, and the 1B-T13 brief is READY but unreviewed. Still allowed: watching main for real CI reds and reporting them.
+
 ## 11 Nov 12:05 Bangkok: #395 and #396 fix rounds pulled forward onto Cursor
 
 Fronk wants the Mac Studio used; it was nearly idle (load about 2 on 18 cores). Jot pulled part of the 13:17 batch forward:
