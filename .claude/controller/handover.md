@@ -24,6 +24,28 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**01:10 (12 Nov): #407 (P2-T14) and #410 (P3-T4) MERGED; the head is `431ea63`. Antigravity's Gemini quota ran out at 00:48 (it resets at about 02:43), so work runs on Claude Code.**
+- **#407:** merged as `7cf4927` at `28b9d5ac` and promoted as **#414**. Its carried notes are in followups.md (P2-T16, P2-T27, P2-T37, P2-T15, E2-B).
+- **#410:** the rerun was green, 9 of 9. Merged as `431ea63` at `a68fcd81` and promoted as **#415**. Stack #379 holds 20 PRs.
+- **#406 (P2-T33):** the integration head was merged in as `c07be421`.
+  - `index.ts` came from the kit's `merge/index.t14-t12-t33.ts` (sha256 6b9dda7e).
+  - `draftText.test.ts` auto-merged to exactly `merge/draft.t14-t33.ts` (80eba034).
+  - On the merged tree: app typecheck clean, walletHarness 9 of 9, draftText 4 of 4.
+  - CI is running (background `wait_ci.sh 406`). **Merge on green with `merge_task_pr.sh 406 c07be421 P2-T33`, then `promote_pr.sh P2-T33 406`.** Its carried notes are already in followups.md.
+- **#408 (promote/1b-t13):** its SQL job failed on `shared-rate-limit` "two API replicas share one write budget" while the head changed nothing in `apps/api`. Rerun once; it is a candidate flake in lessons.md.
+- **Antigravity out:** the P2-T29 and P2-T31 Flash planners stopped at "Usage Limit Reached" with no brief.
+  - Both threads are stopped. Their partial scratch folders are unused.
+  - **Replan both on Opus** (`--claude-code`; they are UI tasks) once the two fix planners finish. Before the new planner starts, move `scratch/p2-t29-planner` and `scratch/p2-t31-planner` aside as `*-flash-partial`.
+- **Dispatched on Claude Code:**
+  - **P2-T20 build**, on Haiku 5.5 max: `mcp:launch:27ea997159a686c7a55050530618263d9e26b05f5a6019b8ede6563e5d506331`. WT `p2-t20` (installed), branch `p2/t20-wallets-list`, from `7cf4927`.
+    - Its kit held at `7cf4927`. The `index.ts` 3-way copy is in `scratch/p2-t20-rebased/`. P1 to P15 are accepted.
+    - The builder must not merge the head in; the controller does that at PR time, because #406's LOCK spread lands first.
+  - **P3-T2 planner** (record source; depth 10), on Opus xhigh: `mcp:launch:8ab58bd4ae7bbfaac790e5ea057b76bc965bda96f7316d266eaa1e121f85f3f3`. Notes `scratch/dispatch/P3-T2-planner-notes-full.md`; it carries P5-T4's vault-migration followups.
+  - **P3-T5 planner** (the Bun AI emitters and the draft review; depth 10), on Opus xhigh: `mcp:launch:38f3e35386a8880a778c846fb661b0491232bd80247bdb478a03fa82ae8546fd`.
+  - P3-T2 and P3-T5 share `apps/app/src/analytics/events.ts`. Each keeps its edit to one additive block, and the second to merge takes a base merge from the controller.
+- **Still running:** the P2-T25 fix planner (Opus; told that the second review adds nothing beyond R109) and the P2-T32 fix planner (Opus; told to rebase `index.ts` onto `7cf4927`).
+  - Their fixers go to Haiku (`--claude-code`) while Antigravity is out, or to Flash after about 02:43.
+
 **00:45 (12 Nov): the Mac slept from 23:08 to 00:31, stalling CI and one agent. It is held awake now. #407 and #406 have their confirming reviews approved; #410 reruns its lost jobs.**
 - **The sleep.** `pmset` shows `sleep 1` (one minute). At 23:08 the Mac entered Idle Sleep, then fell back asleep at each dark wake with "Dark Wake Thermal Emergency".
   - Both runners went offline. Jobs were cancelled or abandoned, and runner-1 hung, so it was recreated (`docker rm -f` plus `runners.sh up 2`; the image re-registers it with `--replace`).

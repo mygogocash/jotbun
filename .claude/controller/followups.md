@@ -457,7 +457,7 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **alarm-hardening (#398), n7:**
     - lines 4, 97 and 108 of #398's receipt give download-pins' items (1B-T11's m3 and n6, and the X5 re-target) to fix-download-aborts. Correct them before #398 merges;
     - once #398 merges, download-pins' kit mutant V3 no longer applies: rerun it with A1's text.
-- **P3-T4** (#410). Both reviews approved: Opus (`reviews/P3-T4.md`, minors m1 to m4, nits n1 to n6) and Flash (`reviews/P3-T4-second.md`). Carriers, as the reviewer gives them:
+- **P3-T4** (#410, merged 12 Nov as 431ea63 at a68fcd81; promotion #415). Both reviews approved: Opus (`reviews/P3-T4.md`, minors m1 to m4, nits n1 to n6) and Flash (`reviews/P3-T4-second.md`). Carriers, as the reviewer gives them:
   - **P3-T6:**
     - the route-deadline tests kill the review's R1, R3 and R4 (the cap, calls through `tracedSend` with the request's trace, one deadline across Ask's turns), which also covers m2's untested wiring;
     - every route's deadline starts at the same point (n2: `note` starts before `consume`);
@@ -558,3 +558,26 @@ The review reports these came from were under /private/tmp and were lost on 8 No
 - tray-hardening (#392, merged 11 Nov as 37a0d2f at 99ce506, the confirming review's COMBO guard; promotion #399). Carried:
   - **P2-T16 (c-n1):** pin which `onClosed` iOS's end calls. Add the case: iOS, late; hide, pass a new `onClosed` while the dismissal is under way, end; the new one is called once and the old not (the review's mutant M3 survives every case today). Keep `whenClosed`'s queue in a ref; n-3 stands (a second call is nothing).
   - **E2-A:** the device checks in `reviews/tray-hardening-confirm.md`'s notes (a quick reopen on iOS while UIKit's dismissal ends, Fabric's lane for a press, Android's back under the cover).
+- P2-T14 (#407, merged 12 Nov as 7cf4927 at 28b9d5ac, after the R106 fix round; promotion #414). The confirming review is `reviews/P2-T14-confirm.md` (m1, m2, n1, n2). Carried:
+  - **P2-T16, or the tray follow-up:**
+    - At AX5 the type switch sits under the amount (P1). On an SE in Thai the middle scrolls about 110 pt to reach รายรับ, and it keeps that offset after the type changes, so the next amount typed can be out of view.
+    - Two cures: scroll the middle to its top on a type change, or build the pinned place under the header (which also settles m1).
+  - **P2-T16:**
+    - At AX5 only `AmountStep` draws the switch. W14 and plan line 991 make it the tray's header on every step, so decide where it goes on confirm and the pickers, or record it among E2-B's differences.
+    - A change to transfer always goes to the transfer step.
+  - **P2-T16 and P2-T27:** keep `onNaming` stable, or pin the inline case (m2's OM2). Pass `filledKeypad` for every fill. The satang net (m2's OM1) is only a net.
+  - **m1:** at AX5, an amount of ฿1,000,000 or more takes two lines on a 375 pt phone, but the budget counted one, so two SE cases fall short. The pinned place above settles it.
+  - **P2-T37:** the sweep's exemptions must know two digit strings that are not stored amounts: the keypad's keys, and the cap's words (จำนวนเงินสูงสุด ฿999,999,999.99).
+  - **P2-T15:** when move all is refused in private mode, the cap's words over a masked line show that the hidden balance is above the cap. Low risk; decide it with P2-T15's private-mode rules.
+  - **E2-B captures:**
+    - `bw-tray-amount` at AX5 on a 375×667 phone, in English with ฿1,000,000 or more typed, and in Thai with a tenth digit refused;
+    - `bw-tray-income` with the Thai keyboard up on a 667 pt phone (n1);
+    - the name field on an iPad with the keyboard floated (n2);
+    - "Add spending" wrapping at AX5 on a 375 pt phone.
+- P2-T33 (#406): the confirming review is Approved (`reviews/P2-T33-confirm.md`: m1, n1 to n3). Carried, whenever #406 merges:
+  - **P2-T34:**
+    - `availability()` must answer at a cold start, or no opening asks by itself for the whole session (n2).
+    - Return `method: null` explicitly for a phone that cannot lock, and count a reading with no `method` as unreadable.
+  - **P19's device checks:** a VoiceOver cold start with the lock off (n1).
+  - **Any later change to the quiet flag** must keep the setting read and `inactive` inside its window (m1). Add the confirm's probe G1 as a case, since it kills mutant QX1, which all 38 lock cases miss.
+  - **n6's other side (P12):** an assumed lock on a phone whose passcode was removed turns off without the notice. That needs a failed store read too. Noted only.
