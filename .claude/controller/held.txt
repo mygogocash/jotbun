@@ -5,3 +5,4 @@ P3-T12 owner: Q1, the QR decoder package
 P2-T20 controller: the wallet-looks-unstored follow-up (P2-T11 review m1) must land before setOrder has a caller
 P2-T21 controller: the wallet-looks-unstored follow-up (P2-T11 review m1) must land before setLook has a caller
 P2-T29 controller: the wallet-looks-unstored follow-up (P2-T11 review m1) must land before setIcon has a caller
+P2-T16 controller: the tray-hardening follow-up (P2-T13 review m1 to m4) must land before the first host trays

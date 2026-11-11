@@ -1,0 +1,1609 @@
+
+> gogospend@0.0.0 test:unit
+> npm run test:unit -w gogospend-app
+
+
+> gogospend-app@0.1.0 test:unit
+> node scripts/test-unit.mjs
+
+(node:70534) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/analytics/analyticsServer.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ read answers the consent, the analytics id and the weeks (22.872791ms)
+✔ a null analytics id is accepted, a malformed one is invalid_response (9.837875ms)
+✔ a server without the route falls back to /v1/me (4.154417ms)
+✔ setConsent sends exactly { analytics } and checks the answer (2.90525ms)
+(node:70535) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/analytics/catalog.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70535) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ the allow-list holds exactly the 40 events of the spec's table (0.663958ms)
+✔ no rule can carry free text (5.7645ms)
+✔ cleanEvent drops unknown events, unknown properties and values outside their rule (0.297625ms)
+✔ a category is a built-in key, a pack key or custom (0.111791ms)
+✔ phase 2's wallet types, materials and faces are accepted (0.075875ms)
+✔ screen names are route patterns, never values (0.19725ms)
+(node:70536) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/analytics/controller.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70536) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ signed out, events are held and never sent (0.657167ms)
+✔ events tracked before sign-in are held across the sign-in and sent after a yes (0.464042ms)
+✔ held events are dropped when another account signs in, and on no (0.17175ms)
+✔ the server's yes sends at once, identifies with the analytics id and starts replay (0.16525ms)
+✔ replay never starts when it is not allowed (0.11075ms)
+✔ never asked: the question is open, events wait in memory, and the identity is reset (0.07475ms)
+✔ a no read at launch after an earlier yes resets the identity (0.075542ms)
+✔ a no given on another phone stops this phone at its next foreground (0.0685ms)
+✔ a pending no is kept until the server has it (0.1285ms)
+✔ saying no stops replay and resets the identity (0.0995ms)
+✔ a no from another phone is not asked again on this one (0.06775ms)
+✔ a yes the server could not save rejects and changes nothing (0.127875ms)
+✔ offline with nothing known waits, then asks (0.068458ms)
+✔ the held events stop at 50, oldest first out (0.081792ms)
+✔ screens are sent only as patterns and only after yes (0.228417ms)
+✔ without an analytics id the person stays anonymous, and a later refresh identifies them (0.099458ms)
+✔ a stored yes with the server unreachable enters yes without an identity (0.778834ms)
+✔ without a client, nothing is sent and consent still resolves (0.101917ms)
+✔ recordAnalytics installs a consented recorder and restores the previous one (0.312459ms)
+✔ a no from the server stops capture before this phone stores it (0.12975ms)
+✔ an answer gone from the server stops capture before this phone erases its own (0.081583ms)
+✔ a yes still on its way cannot outlast a later no at the server (24.482791ms)
+✔ a yes being stored when the person says no cannot replace the no (5.591125ms)
+✔ a foreground refresh waiting behind a yes cannot undo a later no (7.121958ms)
+✔ a yes waiting behind another call is refused once another account has signed in (5.099625ms)
+✔ a yes on its way when another account signs in is never stored or applied for the next one (5.243792ms)
+✔ a yes still waiting when the person says no is never sent (4.426917ms)
+✔ a refresh after a yes does not keep the yes from the server (4.669792ms)
+✔ a no given while a refresh is on its way is stored at once (6.427542ms)
+✔ the no stored at the call lands before the queue writes and sends it (1.709792ms)
+✔ a yes waiting while the same account signs out and in again is still sent for it (4.825209ms)
+✔ a no is pending from the call until the server takes it, and listeners hear when it lands (0.195291ms)
+✔ a no the server takes at once is pending only while its call is on its way (4.392208ms)
+✔ at a load, only a stored no this phone has not delivered is pending (0.246958ms)
+✔ a yes, or a sign-out, ends a pending no (0.106ms)
+(node:70537) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/analytics/events.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70537) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ the typed emitters send §7's names and nothing else (0.902166ms)
+(node:70538) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/analytics/gate.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70538) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ before yes, only scrubbed exceptions leave, without a person profile (0.851209ms)
+✔ with the switch off, exceptions also wait for yes (0.081ms)
+✔ after yes, allow-listed events, screens, identify and replay pass; anything else is dropped (0.113958ms)
+✔ the device name, $set and $set_once never leave (0.067667ms)
+(node:70539) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/analytics/neverSent.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70539) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ nothing a person typed leaves through an event, a screen or an exception (1.610459ms)
+(node:70540) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/analytics/posthogOptions.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the client is built with replay masked, logs and network capture off, no lifecycle, flag, push or GeoIP traffic, and console errors not captured (13.330917ms)
+✔ replay can start after a yes: the installed SDK lets native replay keep tap positions out (0.084ms)
+(node:70541) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/api/client.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ signed-out reads fail before any network request (1.236875ms)
+✔ JSON writes send the active bearer credential and preserve integer satang (31.464042ms)
+✔ multipart uploads let the runtime generate a matching boundary (3.46275ms)
+✔ server failures stay failures with their actionable code (1.763458ms)
+✔ absolute URLs cannot receive session credentials (0.172833ms)
+✔ a development build may reach wrangler dev on the LAN; a release build may not (0.577125ms)
+✔ a v1 request with no session id is refused before anything is sent (0.397166ms)
+✔ a bound v1 request sends no X-GoGoSpend-Session header (1.896875ms)
+✔ acceptLanguage sends Accept-Language and nothing else changes (1.171334ms)
+✔ a response from the previous account cannot become the current diary (1.08475ms)
+✔ requests carry X-GoGoSpend-Analytics: off unless this phone's answer is yes (4.264625ms)
+(node:70542) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/api/sessionEpoch.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70542) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ a token renewed while a request is in flight keeps its response (same identity) (37.853542ms)
+✔ a sign-out, account switch or A -> B -> A during a request drops its response (47.595583ms)
+✔ one 401 allows one refresh and one resend of the same body and key; a second 401 signs out (10.695625ms)
+✔ 426 never triggers a refresh or a sign-out; other auth refusals are not refreshed either (3.802583ms)
+✔ token-only routes need no binding and send none, even from a bound session (2.242792ms)
+✔ a session change while the token is read sends nothing (never one identity's binding with another's token) (0.137375ms)
+✔ a 401 that arrives after the session changed is neither refreshed nor resent (22.292ms)
+✔ a session change while the token is re-read or refreshed stops the resend (never sent under another identity) (2.438291ms)
+✔ a lost command is not resent once the session changed (255.054958ms)
+✔ a 401 for a token another request already renewed is resent with the new token, without a second refresh (45.019625ms)
+✔ credentials that cannot be read right now are a network outcome, never a sign-out (0.907459ms)
+✔ a request with its own credentials uses them, is never refreshed and never ends the session (1.283208ms)
+✔ a server-ended session is reported with the epoch the request started under; proof and token-only refusals are not (4.667917ms)
+✔ return_to_a_does_not_accept_old_a_response (4.125583ms)
+✔ a server-ended session leaves active through the seam; a stale report from an earlier session changes nothing (3.573791ms)
+✔ sign-out from a locked session still revokes its binding over the transport (1.086542ms)
+✔ a request begun during an account switch sends nothing: never the next session's token under the first session (R86) (1.136375ms)
+✔ offline token reads neither lock the session nor close the diary (S4 resolver) (7.874125ms)
+(node:70543) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/api/v1Contracts.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70543) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ money parses as exact satang and never accepts JS numbers (0.626ms)
+✔ totals beyond the safe-integer range stay exact (0.069541ms)
+✔ Bangkok day boundary and occurred-on window (4.616ms)
+✔ command normalization is order-independent and matches the server form (0.270375ms)
+✔ unknown request fields and malformed client headers are rejected (0.392625ms)
+(node:70544) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/auth/betterAuthPort.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ email: a code is asked for sign-in only (0.793958ms)
+✔ the right code signs in and names the account and the session (0.768667ms)
+✔ the first code for an address says it created the account; the next code does not (0.144209ms)
+✔ createdOf reads only a created that is exactly true (0.048542ms)
+✔ a wrong code is WRONG_CODE, and nothing is stored (0.233708ms)
+✔ the server's cap is CODE_LIMIT (0.073625ms)
+✔ offline, a timeout or a 5xx is AuthUnavailable, never a refusal (0.136791ms)
+✔ a cancelled Apple sheet is AuthCancelled and the server is never called (0.233292ms)
+✔ the sign-in screen asks to sign up; a fresh sign-in never does (0.59225ms)
+✔ ACCOUNT_EXISTS carries the methods the server named (0.231083ms)
+✔ AuthRefused keeps its code and methods as fields (0.073083ms)
+✔ a fresh sign-in by email uses only the account's own address (0.376583ms)
+✔ a fresh sign-in by Google checks the token's subject against the linked account first; another subject is OTHER_ACCOUNT and nothing is sent (0.268625ms)
+✔ a fresh sign-in that still lands in another account signs that session out and is OTHER_ACCOUNT (0.570959ms)
+✔ the JWT is reused until a minute before it expires, then renewed (0.670208ms)
+✔ a sign-in drops the cached JWT: the next token is the new account's (0.405583ms)
+✔ a token read in flight across a sign-in is never kept for the new account (email and Google) (7.867542ms)
+✔ a refresh in flight across a fresh sign-in is never kept for the new session (0.318125ms)
+✔ a token read in flight across a sign-out is not kept for after it (0.127042ms)
+✔ signing out a device or everywhere answers 204 with no body, which is success (0.18825ms)
+✔ a sign-in whose session read fails after the server accepted it drops that session (email and Google, R86) (0.55925ms)
+✔ refresh always renews (0.210541ms)
+✔ a session the server deleted reads as no token, not as an outage (0.119292ms)
+✔ linking from a stale sign-in is REAUTH_REQUIRED (0.194333ms)
+✔ unlinking calls unlink with the provider (0.105125ms)
+✔ the device calls use the jotbun routes, and REAUTH_REQUIRED and SIGNED_OUT stay apart (4.461541ms)
+✔ linked methods are Apple and Google when the account has them, then always email (0.309ms)
+✔ the web build reports sign-in unsupported (0.119666ms)
+(node:70545) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/auth/credentialProvider.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70545) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ sign-in by email code stores the session only after the server signed in, then moves the epoch (3.5365ms)
+✔ a cancelled, refused or unreachable sign-in changes nothing stored and returns to where it was (0.683583ms)
+✔ an ACCOUNT_EXISTS sign-in returns the methods to use (0.213834ms)
+✔ a sign-in result says whether it created the account (0.5385ms)
+✔ hydration: a stored session with its cookie is active; without the cookie it is locked; nothing stored is signed out (0.351208ms)
+✔ token reads and refreshes are serialized: one token call each, however many callers (0.871417ms)
+✔ a token read after a refresh never returns the pre-refresh token (4.782041ms)
+✔ offline is not a denial: the session stays active; a deleted session locks, and the lock lifts once a token works again (0.366209ms)
+✔ sign-out tells the vault first with the session's own token, then Better Auth, then clears the record and moves the epoch (0.27025ms)
+✔ sign-out during a sign-in wins: the late session is signed out at the server and never stored (0.176042ms)
+✔ sign-out during a fresh sign-in wins: the new session is signed out at the server and never stored (0.262792ms)
+✔ a sign-out while a fresh sign-in saves its record waits for the save, then leaves no record (0.377958ms)
+✔ the server ending the session keeps the account and says why (0.132458ms)
+✔ requestCredentials reads one token and the session id together, and is null unless active (0.107875ms)
+✔ requestCredentials never pairs a token with the id of a session that replaced it (0.09775ms)
+✔ after an account switch, a token read that began before it never reaches the new account (0.157083ms)
+✔ requestCredentials never pairs the old session's token, read before a fresh sign-in, with the new session's id (0.088833ms)
+✔ during an account switch, requestCredentials is not ready: never the new session's token with the old session id (R86) (0.136916ms)
+✔ during a fresh sign-in, the new session's token never goes out with the old session id (R86) (0.093208ms)
+✔ during an account switch, a token read under the old session never gets the new session's token, and nothing locks (R86) (0.099541ms)
+✔ an account switch whose session read fails drops the new cookie: the first account locks, also after a relaunch (R86) (0.100625ms)
+✔ a sign-in from a locked session whose session read fails leaves it locked, never unlocked on the other account's cookie (R86) (0.0715ms)
+✔ a token whose session cannot be read is never handed out, and nothing locks (R86) (0.142834ms)
+✔ a sign-out during an account switch never gives the vault one session's token with another session's id (R86) (0.090375ms)
+✔ a fresh sign-in into the same account swaps the session, signs the old one out and moves the epoch (0.0645ms)
+✔ an OTHER_ACCOUNT fresh sign-in changes nothing (0.057208ms)
+✔ if the new session cannot be stored, it is signed out at the server and the device ends signed out (0.1125ms)
+✔ a method this build cannot offer is not_configured and calls nothing (0.08325ms)
+✔ the installation epoch never goes backwards across launches (0.132916ms)
+✔ the secure session store keeps the record on this device only, refuses malformed values, and removes the old Auth0 binding item (0.296ms)
+✔ the secure session store removes the old Auth0 binding item on its first load only (0.0375ms)
+✔ sign-in during hydrate waits for it: the session record and the session agree (1.293ms)
+✔ a second sign-in while one runs joins it (one server sign-in) (0.488791ms)
+✔ refused transitions change nothing and do nothing (0.295625ms)
+✔ a token read while a forced refresh runs waits for it (1.242292ms)
+✔ sign-out waits for an in-flight forced refresh, and tells the vault before Better Auth (0.562041ms)
+✔ sign-out ends the session even when the record cannot be cleared, then reports it (0.118333ms)
+✔ an installed provider drives the shared session seam: the token, the session id as the binding, and the epoch (0.136334ms)
+(node:70546) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/auth/globalLogout.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ accepted: one fresh sign-in, then one sign-out-everywhere call; every session is now gone (1.778542ms)
+✔ the person cancels the fresh sign-in: nothing is sent (0.092667ms)
+✔ a fresh sign-in that fails sends nothing (0.161917ms)
+✔ a lost answer resent meets SIGNED_OUT because the first one landed: that is signed out (0.118708ms)
+✔ Jotbun cannot be reached: still signed in here, and Try again resends with no new sign-in (0.085833ms)
+✔ a stale sign-in is reauth_required and changes nothing (0.061291ms)
+✔ any other refusal changes nothing and says which (0.224583ms)
+(node:70547) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/auth/jotbunAccountClient.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the jotbun sign-out routes are sent as JSON, with an empty object when there is nothing to send (17.843542ms)
+✔ a 204 from a jotbun sign-out route, read by Better Auth's own client, is success at the port (0.744167ms)
+(node:70548) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/auth/sessionEnded.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a locked or server-ended session shows the session-ended view with the unsent count and the account's method (0.525917ms)
+✔ active and signed-out sessions show no session-ended view (0.076583ms)
+✔ signing in again to the same account resumes (0.055417ms)
+✔ another account with unsent records asks keep or erase (0.05025ms)
+✔ erasing another account's records needs the explicit confirmation (0.052625ms)
+✔ keep never erases (0.036291ms)
+(node:70549) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/auth/sessionMachine.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the epoch moves only when the identity (account or binding) changes, never on a token refresh (0.611375ms)
+✔ sign-out always starts a new epoch, even while a sign-in is still establishing an identity (0.06325ms)
+✔ hydration never shows a previous account, and impossible events change nothing (0.0595ms)
+(node:70550) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/config/env.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ PostHog stays off until its project key is set, and goes through the Worker proxy unless told otherwise (0.651959ms)
+✔ scrubbed crash reports are sent without consent unless the switch says 0 (0.127375ms)
+(node:70551) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/config/featureFlags.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ an approved area is on by default (0.853792ms)
+✔ off (or 0) switches every area off, and -area switches one off (0.291459ms)
+✔ an area not yet approved is on only by name, or all at once (0.080041ms)
+✔ planning is on by default since its approval, and -planning or off switches it off (0.063292ms)
+✔ insights is on by default since its approval, and -insights or off switches it off (0.046583ms)
+✔ account is on by default since its approval, and -account or off switches it off (0.041792ms)
+✔ import is on by default since its approval, and -import or off switches it off (0.0365ms)
+✔ companion is on by default, and -companion or off switches it off (0.055791ms)
+✔ the catalogue is still opt-in (0.055667ms)
+✔ conflict is off by default, on when named, and on with all (0.085041ms)
+✔ the wallet area is off unless named (0.067458ms)
+✔ the signin area is off unless named (0.050375ms)
+✔ analytics is off by default, on when named, and on with all (0.04775ms)
+(node:70552) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/dev/catalogue/params.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a deep link names the section, theme and locale (0.524334ms)
+✔ missing or empty params leave the catalogue on its defaults (0.055375ms)
+✔ values the app does not ship are ignored, not guessed (0.050625ms)
+✔ case and surrounding spaces do not matter, so hand-typed links work (0.473667ms)
+✔ a repeated param takes its first value (0.078125ms)
+✔ a tour steps every N milliseconds, between 1 and 10 seconds (0.152959ms)
+✔ chrome=off hides the catalogue header, so a screen shows as it does on a phone (0.069292ms)
+(node:70553) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/i18n/catalogs.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ th.json translates every key in en.json (7.847208ms)
+✔ th.json has only en.json's keys, each keeping its placeholders (1.458958ms)
+✔ vi.json has only en.json's keys, each keeping its placeholders (0.454834ms)
+✔ every literal the redesign passes to tc() is copy in en.json (19.342291ms)
+✔ every literal the signin folder passes to its copy hook has a Thai draft (15.443833ms)
+✔ every literal the signin folder passes to tc() is approved copy already in en.json (0.715666ms)
+(node:70554) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/i18n/languagePreference.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the choices: System (the phone), Thai and English; Vietnamese is not offered while it waits for its translation (0.603958ms)
+✔ a stored choice is read back only when it is one of the choices (0.083333ms)
+✔ System follows the phone, Vietnamese included; a choice wins over the phone (0.056084ms)
+(node:70555) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/lib/hapticPreference.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ haptics are on until the person chooses otherwise; only the three words parse (0.641208ms)
+✔ On plays every moment as the table says, silence included (0.107792ms)
+✔ Subtle keeps only outcomes; a celebration plays as one success (0.058625ms)
+✔ Off is silence for every moment (0.048125ms)
+✔ saved offline never feels like saved: queued is light, landed is success (0.045041ms)
+✔ the current preference is shared module state (0.044792ms)
+(node:70556) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/lib/haptics.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ each verb plays its own native feedback (0.785542ms)
+✔ a celebration is three beats with a pause between them (0.1355ms)
+✔ the web plays nothing and loads no native module (0.086667ms)
+✔ a failing native module never throws to the caller (0.70375ms)
+(node:70557) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/mascot/bunIntensity.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the bun is at full intensity until the person chooses otherwise (0.491208ms)
+✔ only the three stored words parse (0.078458ms)
+✔ a missing or damaged stored value falls back to full (0.050709ms)
+✔ off hides every bun, quiet keeps the bun but drops the bubble (0.0545ms)
+(node:70558) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/mascot/poses.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the twelve poses, holding a receipt by default (0.663833ms)
+✔ sizes are 32, 56, 96 and 160 pt and the outline is 2.5 at 64 pt (0.179209ms)
+✔ every pose is plain geometry: known paints and finite numbers (0.442708ms)
+✔ every pose has the body and eyes, with cheeks on all but peek and quiet (0.108042ms)
+✔ the default pose holds the blue receipt, with two lines, in front of the body (0.081875ms)
+✔ peek shows only the eyes and the top of the bun (0.0835ms)
+✔ arms go up for cheer, one arm waves for hello and wave-bye (0.068375ms)
+✔ sleepy closes its eyes, oops-kind stays kind, quiet stays small and neutral (0.144375ms)
+✔ each moment carries its prop (0.06725ms)
+✔ mascot colours come from the palette, and the face reads in light and dark (0.307417ms)
+✔ height follows the pose box (0.0655ms)
+(node:70559) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/notifications/localReminders.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ turning reminders on asks once, then schedules seven weekly reminders, each in its own day's words (1.276333ms)
+✔ a denied permission is a settled, usable state: off, nothing scheduled, no retry loop (0.192834ms)
+✔ unsupported platforms (web) say so; bad times are refused (0.29025ms)
+✔ a time zone or language change re-schedules the reminders once; no change does nothing (0.672209ms)
+✔ an install scheduled before the weekly wording re-schedules once at its next launch, so its daily reminder goes (0.144125ms)
+✔ provisional iOS delivery counts as granted; a denial the OS still allows is asked again only on opt-in (0.059459ms)
+✔ on Android the reminder has its own notification channel; on iOS quiet (provisional) delivery is asked for (0.184458ms)
+✔ a stored preference without weekdays (S4) reads as every day: one weekly reminder per day (0.124625ms)
+✔ chosen days: one weekly reminder per day under its own fixed id, in that day's own words (3.062625ms)
+✔ a new time, days, time zone or language replaces the weekly reminders and never adds a second (0.334084ms)
+✔ turning reminders off or a denial cancels every reminder, daily and weekly, and keeps the chosen days (0.281125ms)
+✔ at least one day must stay chosen; only the days 1 (Monday) to 7 (Sunday) are accepted (0.224ms)
+✔ the service says whether the platform can remind at all (0.04975ms)
+✔ the web stub has no reminders: unsupported, with every day by default (0.12075ms)
+✔ a weekly reminder is an expo-notifications weekly trigger, counted from Sunday = 1, on the Android channel (0.134792ms)
+(node:70560) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/notifications/reminderWording.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ each weekday has its own reminder wording, as the owner approved it (0.659708ms)
+✔ every reminder wording is copy in en.json, in the Thai the owner approved (2.676625ms)
+(node:70561) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/slips/imageShrink.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70561) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ a picked image or a shared file within 1,200,000 bytes is used as it is, its type read from its first bytes, and a larger one, such as a 1.5 MB PNG screenshot, is not sent (4.946708ms)
+✔ only a JPEG, a PNG or a WebP is sent: a HEIC photo, another RIFF file, text, or text that is not whole base64 is not (0.300709ms)
+✔ a copy that is gone throws, so the scan can tell it from a photo it cannot send (0.265417ms)
+✔ the limit holds on the bytes read, also where the phone gives no size (2.691708ms)
+✔ an image's byte count is its decoded length, whatever its padding (0.172791ms)
+✔ the fake shrink answers null for a photo too large, throws for a copy that is gone, and records each image removed (0.45225ms)
+(node:70562) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/slips/photoLibrary.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70562) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ the picker path picks up to the limit at quality 0.7 in the compatible representation, without base64, and has no albums and no lookup by id (0.739458ms)
+✔ a picked image without an asset id is known by its uri (0.135417ms)
+✔ releasing a picked photo deletes its cache copy (0.138792ms)
+✔ photo access reads all, limited, none and undetermined from the picker's permission (0.21825ms)
+✔ the phone's settings open through expo-linking, and a phone that cannot open them does nothing (0.153542ms)
+✔ the fake library lists photos oldest first, strictly after the watermark, ties broken by id, and finds one again only by its id (0.725ms)
+✔ the fake library answers its access, picks up to the limit and records each call (0.615792ms)
+(node:70563) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/slips/qrDecoder.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ noQrDecoder is unavailable and finds nothing (0.471208ms)
+✔ fakeQrDecoder is available and answers only the uris it was given (0.110458ms)
+✔ slipQrIn returns the first payload that is a bank slip (0.276167ms)
+✔ a decoder that throws finds no slip (0.433459ms)
+✔ installQrDecoder replaces the app's decoder and null restores noQrDecoder (0.050625ms)
+(node:70564) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/slips/slipBatches.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70564) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ batches hold at most 5 slips and 8 MiB of JSON, in order (31.016583ms)
+✔ the byte count is the JSON body's UTF-8 length (0.325667ms)
+✔ a batch is cut at exactly 8 MiB, counting the commas between slips, and is measured with last false (54.936375ms)
+✔ a slip that fills a batch alone is sent alone, and one larger than a batch throws (114.807584ms)
+✔ each slip's album is sent as the server keeps it: NFC, trimmed, at most 60 characters, and null when nothing is left (0.247083ms)
+(node:70565) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/slips/slipQr.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a Thai bank slip QR gives its sending bank and reference (1.4ms)
+✔ the CRC covers everything up to 9104 and is read in either case (0.288834ms)
+✔ a CRC whose leading zero was dropped is padded back (0.107708ms)
+✔ TrueMoney and payment QR codes are not bank slips (0.089292ms)
+✔ a slip-shaped QR whose root is not 000001 is not a bank slip (B14) (0.076333ms)
+✔ anything malformed is null (0.113292ms)
+✔ the CRC is CRC-16/CCITT-FALSE over the UTF-8 bytes (0.048333ms)
+✔ a slip QR may be 512 characters long, skip other fields and leave out 51 (0.092584ms)
+✔ a reference may be 64 letters and digits in either case, not 65 (0.08625ms)
+✔ one root, and one CRC field of length 04 that comes last (0.107542ms)
+✔ every field header is four digits and every root field fits the root (0.063333ms)
+✔ the bank code is three digits and each root field appears once (0.061792ms)
+✔ only printable ASCII counts (0.08475ms)
+(node:70566) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/slips/slipRefs.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70566) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ the salt is fetched once per account and kept with WHEN_UNLOCKED_THIS_DEVICE_ONLY, and in the given accessGroup (1.879ms)
+✔ forgetting deletes only that account's salt, and a kept value that is not a salt is fetched again (0.468708ms)
+✔ the phone's hash of P3's slip QR is the contract's vector (0.283583ms)
+✔ the app's SHA-256 is expo-crypto's digest, and gives the same vector (0.243917ms)
+✔ a reference that cannot be normalized gives no hash, and asks for no salt (0.247666ms)
+✔ a salt that could not be fetched is asked for again, and a locked keychain fetches none (0.502959ms)
+(node:70567) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/slips/slipResources.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70567) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ each slip call sends its route, its body and its headers, and refuses an answer of any other shape (46.761334ms)
+✔ the slip read waits 90 seconds and a lost answer is not resent by the transport (6.978583ms)
+✔ a stale account update throws VERSION_CONFLICT with the current account (1.427166ms)
+✔ the fake slip server answers in the contract shapes, keeps what was confirmed, dismissed and mapped, and refuses a draft that is gone (0.733667ms)
+✔ with slip import closed the fake answers only the salt, slip refs, bank albums and devices, and every other slip call is 404 (0.225834ms)
+(node:70568) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/ai/cashbackModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70568) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ counts the month’s purchases at cashback shops, by merchant or note, busiest first (0.635542ms)
+✔ nothing shows before 7 logged days, without purchases, or while preferences are unknown (0.065125ms)
+✔ asks once, then shows tips only when the person said yes (0.038333ms)
+(node:70569) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/ai/oftenLogged.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ an entry repeated at least twice becomes a draft dated today, with nothing guessed (0.809667ms)
+✔ the most repeated come first, then the most recent, and only a few are shown (0.182333ms)
+✔ the same place at another amount, category or wallet is another entry (0.63975ms)
+✔ places differing only in letter case or spaces count together, named as last written (0.154959ms)
+✔ transfers, deleted records, records without a place and archived wallets never count (0.07225ms)
+✔ amounts read the way people type them (0.0405ms)
+(node:70570) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/ai/tellBun.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70570) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ the phone answers a sentence on its own, offline (17.785166ms)
+✔ a draft fills the fields it knows and keeps the rest (0.11375ms)
+✔ an income draft switches the type and keeps the other type’s category (0.066375ms)
+✔ what Bun could not tell is said plainly, in order (0.101ms)
+(node:70571) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/attachments.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70571) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ retain posts the receipt with the retention consent, its own key and the record's If-Match (61.332084ms)
+✔ replace puts the new receipt with the consent; remove deletes with no body (2.763875ms)
+✔ a lost response is resent as the same command: same key, same If-Match, same body (257.008667ms)
+✔ an acknowledgement must be this command's, for this record, an update past the version sent (8.977375ms)
+✔ malformed ids, keys and versions are refused before anything is sent, as rejections (0.939ms)
+✔ refusals keep their outcome: a stale version carries the current record, a passed window names the field (4.597875ms)
+✔ a grant is read for the receipt (no command headers) and must be exactly the grant shape (4.751334ms)
+✔ the file comes through the grant with the session's headers, byte for byte, checked against its size and digest (3.779916ms)
+✔ a download whose access token expired is refreshed once and sent again, as every v1 read is (2.504292ms)
+✔ an expired or foreign grant is not found; a busy server is unavailable; nothing is sent for a malformed grant (1.617667ms)
+✔ downloads need a session: signed out, unbound, another platform and a session that changed meanwhile (3.338334ms)
+✔ retain and replace wait past the server's 60 s copy, where an ordinary call would have given up (1.370875ms)
+✔ a retain that does give up is resent as the same command: same key, same If-Match, same body (1.093833ms)
+✔ a retain or replace ends by 100 s in all: a resend gets only what is left, never a fresh 90 s (2.160625ms)
+✔ a retain refreshed after a 401 stays within the same 100 s: its resend gets only what is left (0.826792ms)
+✔ remove and the grant keep the transport's own limit (0.986375ms)
+(node:70572) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/deletion.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70572) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ a fresh sign-in, then today's body with a random proof id, the command id as the key, the new session's own token and the app's language (30.399792ms)
+✔ cancelling the fresh sign-in requests nothing (0.247ms)
+✔ a fresh sign-in that does not go through, or a new session that cannot be read, requests nothing (0.208334ms)
+✔ REAUTH_REQUIRED requests nothing more (1.614542ms)
+✔ a lost answer asks for the receipt with the same token: found is accepted; not found keeps it unconfirmed (262.135209ms)
+✔ a resend after a lost answer repeats the same key, proof id and token (762.114667ms)
+✔ only a confirmed acceptance lets the device erase its copy; a refusal locks it and keeps the drafts (9.750583ms)
+✔ a receipt reports completion once the server data is purged; a malformed receipt is not trusted (1.696292ms)
+(node:70573) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/diarySession.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70573) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ offline on a fresh install, no account is assumed (0.692916ms)
+✔ the verified account is remembered across resolvers for the same binding, never for another (0.768333ms)
+✔ a token refresh for the same identity does not ask the server again (0.085916ms)
+✔ an account recalled offline is verified again on the next refresh (0.136959ms)
+✔ an older answer that arrives after a newer one is ignored (1.546292ms)
+✔ after dispose nothing reopens (0.497666ms)
+(node:70574) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/importDraftStore.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70574) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+▶ the import draft store over a key-value port
+  ✔ is empty until something is saved (1.18825ms)
+  ✔ saves the whole journey and loads it back exactly (1.138833ms)
+  ✔ survives a restart: a new store over the same storage resumes and resolves the pending batch first (22.536625ms)
+  ✔ a journey that is discarded, or finished, leaves nothing on the device (0.244125ms)
+  ✔ an account's draft is its own: another account loads nothing, and clearing one leaves the other (0.157916ms)
+  ✔ sign-out erase removes the account draft only; erasing every draft keeps unrelated keys (0.329666ms)
+  ✔ a draft that cannot be trusted is no draft: corrupt text and a wrong shape are dropped (0.114042ms)
+  ✔ a newer app's draft is left in place, not read and not deleted (0.060917ms)
+  ✔ a device that cannot store rejects the save, so the journey never claims a draft it does not have (0.093375ms)
+  ✔ refuses a store for anything but an account id (0.101041ms)
+✔ the import draft store over a key-value port (26.61475ms)
+▶ the import draft store inside the encrypted diary
+  ✔ keeps the whole journey in the diary, and a restart resumes it (7.038125ms)
+  ✔ a draft naming another account is never returned, and is removed (2.759875ms)
+  ✔ a corrupt draft is removed (3.030416ms)
+  ✔ a newer app's draft is left alone (2.030375ms)
+  ✔ a locked or superseded diary refuses, so the journey never claims a draft it does not have (1.957709ms)
+  ✔ the sign-out and device-reset erases work over the diary rows too (3.454875ms)
+  ✔ its first use removes the account's leftover plain-text (AsyncStorage) draft, and only that account's (2.225667ms)
+  ✔ a leftover draft that cannot be removed yet never blocks the diary draft, and is tried again (2.211709ms)
+✔ the import draft store inside the encrypted diary (24.946125ms)
+(node:70575) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/importReview.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70575) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+▶ upload, parsing and review
+  ✔ parsing succeeded never means saved: the journey waits in review with nothing committed (1.32125ms)
+  ✔ a lost upload response resends the same file under the same key (0.362625ms)
+  ✔ freezing needs explicit row, direction, date, category and wallet review, and every label mapped (0.755125ms)
+  ✔ a transfer row cannot be selected for saving; changing its direction is an explicit correction (0.297542ms)
+✔ upload, parsing and review (3.28325ms)
+▶ corrections
+  ✔ are saved in commands of at most 500 rows against the current revision, and a lost response resends the same command (318.073667ms)
+  ✔ a correction against a revision another device moved keeps the edits and asks for a reload (0.361959ms)
+✔ corrections (318.541792ms)
+▶ confirmation
+  ✔ freezes the full selection once, and later batches confirm against the same selection (33.841459ms)
+  ✔ a lost confirmation response keeps the review and resends the same key and body (31.511334ms)
+  ✔ a proven COMMAND_TOO_LARGE splits the batch, with new command ids, and saves every row once (21.116291ms)
+  ✔ an unknown outcome is resolved with the original key and body before any split (23.26775ms)
+  ✔ overlapping retries acknowledge rows another attempt committed and continue the untouched ones (17.61875ms)
+  ✔ conflicted rows are reported and never resent; the rest are saved (16.998667ms)
+  ✔ after a restart, the saved draft resumes and resolves the pending batch first (16.524375ms)
+  ✔ a corrected preview needs a new selection: the review is kept and committed rows are acknowledged (22.53875ms)
+  ✔ discarding clears the kept draft (0.175083ms)
+✔ confirmation (183.94975ms)
+▶ a receipt photo (P2c)
+  ✔ the image is kept with its record only when the user chose to keep it (0.384292ms)
+  ✔ without the choice no receipt is sent (0.228125ms)
+  ✔ a receipt that can no longer be kept saves nothing; the record can then be saved without it, as a new command (0.319292ms)
+✔ a receipt photo (P2c) (0.99075ms)
+▶ the import port on the wire
+  ✔ an upload sends the raw file with its type, encoded name and command key (26.840542ms)
+  ✔ corrections carry the review revision as If-Match; confirmation results are checked exactly (12.289292ms)
+✔ the import port on the wire (45.543542ms)
+(node:70576) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/importsPaging.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70576) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ without paging the request is today's whole-preview GET, and a page object in the answer is refused (14.349917ms)
+✔ a paged read names offset and limit and must come back as exactly that page (4.815875ms)
+✔ paging that the server would refuse is never sent (0.343167ms)
+✔ fetchWholePreview joins the pages into the same preview a whole read gives (2.355916ms)
+✔ fetchWholePreview returns a preview that has no page (not ready) as it is, after one read (1.133417ms)
+✔ fetchWholePreview starts over when the review revision moved between pages, and gives up after repeated moves (5.811459ms)
+(node:70577) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/knownAccount.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70577) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ the verified account is recalled only for the binding it was verified for (1.044208ms)
+✔ a malformed or foreign stored value recalls nothing (0.203375ms)
+(node:70578) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/money.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70578) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ large_minor_amount_is_formatted_exactly (0.566583ms)
+✔ formats satang exactly with grouping, two decimals and a sign, never through floats (0.10825ms)
+✔ refuses to format anything but a canonical integer string (0.194708ms)
+✔ parses typed amounts exactly (0.215542ms)
+✔ rejects ambiguous or invalid input instead of guessing (0.276042ms)
+✔ edit fields show the exact amount without grouping (0.072459ms)
+(node:70579) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/pendingTotals.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ pending_expense_is_distinct_from_confirmed_total (1.126458ms)
+✔ income, expenses and transfers adjust exactly, per wallet, beyond safe integers (0.384833ms)
+✔ no drafts means a zero adjustment and estimates equal to the confirmed totals (0.073125ms)
+(node:70580) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/policies.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70580) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ accept posts exactly { kind, version } and takes the empty 204 (23.402959ms)
+✔ acceptPending accepts each pending version once, in order, and stops at the first refusal (5.93775ms)
+✔ pending reads only pending_policies, whatever else /v1/me carries (12.306ms)
+✔ a malformed pending list is invalid_response (16.516958ms)
+✔ watchPolicyRequired reports each policy_required answer and rethrows it (4.0725ms)
+✔ a malformed published list is invalid_response (5.796125ms)
+(node:70583) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/privacy.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70583) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ a fresh sign-in, then today's export body with a random proof id and the new session's own token (20.557083ms)
+✔ statuses and grants must be exactly the shared shapes (11.406125ms)
+✔ a download is checked against the ready export size and digest, byte order mark included (2.955666ms)
+✔ cancelling the fresh sign-in requests nothing (0.233833ms)
+✔ ready after polling: the journey returns the ready export and paces its polls (2.979333ms)
+✔ a stale sign-in is reauth_required (1.162375ms)
+✔ a lost answer resends the same request with the same token, key and proof id (763.952625ms)
+✔ polling reports queued after its budget, and failed, expired or unknown exports as such (4.576917ms)
+✔ downloading a ready export asks for a fresh grant; an expired one asks for nothing (3.343416ms)
+(node:70584) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/redesign/account/onboardingModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the story is three steps, then the reminder question; Skip goes straight to the question (1.806625ms)
+✔ the dots count the story only: 1, 2, 3 of 3, and none on the reminder question (0.143667ms)
+✔ the coffee maths is today's intro maths: ฿60 a day is ฿21,900 a year (0.159958ms)
+✔ turning the reminder on asks for 20:00, enabled, and nothing else (0.075083ms)
+✔ each answer from the reminder service has its own words; anything unexpected is a calm failure (0.063958ms)
+✔ after onboarding: sign in, or with a session log the first coffee (0.049625ms)
+✔ the three promises are plain, distinct sentences (0.212167ms)
+✔ each promise is copy in en.json, with Thai (2.014208ms)
+✔ Apple, Google and email, in that order, and none of them first among equals (0.0805ms)
+✔ a provider can be chosen only with the terms ticked, and not while one is running or sign-in is not configured (0.086875ms)
+✔ only a session the seam reports active leaves the screen; nothing pretends to sign in (0.075459ms)
+✔ the story ends at sign-in from onboarding, or with a session at the reminder question (0.036417ms)
+✔ an active sign-in from onboarding goes on to the reminder question; anywhere else, to the diary (0.042792ms)
+(node:70585) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/redesign/account/privacyModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70585) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ the export period: everything up to today, or this year when everything is too large for one file (0.630417ms)
+✔ a ready file's expiry on Bangkok's clock (UTC+7, no daylight saving) (0.932333ms)
+✔ privacy.ts's journey states as the screen shows them (0.139208ms)
+✔ after a download: a file that expired or failed meanwhile says so; one still being made is preparing (0.094292ms)
+✔ deletion: what the screen shows for each of deletion.ts's outcomes, with this device's copy (0.107458ms)
+(node:70586) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/redesign/account/settingsModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the choices: System, Light and Dark; System, TH and EN by their own names; Full, Quiet and Off (0.573791ms)
+✔ the diary links: planning brings Wallets, Categories and Budget; insights brings Reminders; import only with its flag (0.130459ms)
+✔ every link goes to its own route (0.052916ms)
+✔ unsynced entries: every draft Jotbun has not confirmed, which an erase would lose (0.148209ms)
+✔ offline: sync is backing off with entries waiting, as Home says it (0.095833ms)
+(node:70587) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/redesign/budgetPace.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70587) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ the first day of the month: the whole month left, today included (1.686542ms)
+✔ left per day rounds down to whole satang, never up (0.1705ms)
+✔ the tight threshold is more than 10% ahead of the even pace, exactly (0.14925ms)
+✔ the last day: one day left, and exactly at the limit is on track (0.07125ms)
+✔ exactly zero left mid-month is not over, but ahead of pace (0.059041ms)
+✔ over by one satang is over, stated plainly with the days to go (0.058084ms)
+✔ after the month ends: no days left, no per day, never tight (4.089625ms)
+✔ before the month starts, the whole month is ahead (0.119334ms)
+✔ no budget: spent only, and a prompt to set one (0.107416ms)
+✔ money stays exact beyond JavaScript numbers (0.1235ms)
+✔ drafts waiting to sync count as pending; sending and uncertain drafts are checked apart; refused ones never count (0.244959ms)
+✔ Home-3: a draft whose record is already confirmed is never counted again, waiting or checking (0.163083ms)
+✔ each category limit gets its own left and state (0.14275ms)
+✔ a budget for another month than the summary is refused (0.17125ms)
+✔ pace copy is kind and factual in every state (0.288083ms)
+(node:70588) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/redesign/historyModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70588) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ a month reads by day, newest first, with each day's total (11.028042ms)
+✔ drafts join their days with their state; other months and acknowledged commands stay out (0.925417ms)
+✔ a record waiting for a choice is marked (1.018458ms)
+✔ filters: type, wallet (either side of a move) and category, for drafts too (0.831459ms)
+✔ search covers the category name, merchant and note, ignoring case and width (3.02325ms)
+✔ Thai search is mark-safe: canonical order and sara am match, and marks are never dropped (3.737166ms)
+✔ a search says how many entries and how much, drafts counted apart (0.811209ms)
+✔ History-1: while more pages exist, the oldest loaded day (and any older one) is marked partial (0.99675ms)
+✔ an empty month says so (0.077625ms)
+✔ recently deleted: restorable for 30 days by the server's rule, newest first (0.367584ms)
+✔ recently deleted rows carry what a record row draws: type, exact amount, category, merchant and note (0.097208ms)
+✔ a restore says what happened in plain words (0.150459ms)
+✔ every summary line is copy in en.json, with Thai (24.756292ms)
+(node:70589) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/redesign/homeModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70589) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ loading (0.796042ms)
+✔ load problems keep the current screens' messages and retry rule (0.204042ms)
+✔ a load problem without a diary shows only the problem (0.08025ms)
+✔ offline, the device still shows its drafts by day, its waiting money, and Add (1.499208ms)
+✔ a locked diary shows no drafts and says why (12.496125ms)
+✔ first run: no wallet asks for the first one (0.090708ms)
+✔ ready: the budget pace, today's receipt with drafts kept apart, and earlier days (8.965791ms)
+✔ an empty today still has its receipt, and drafts show only from an open diary (0.332875ms)
+✔ no budget prompts for one; over budget is kind and plain (0.178791ms)
+✔ waiting money for the month: waiting and checking apart, sending with checking (0.193167ms)
+✔ Home-3: a sending draft whose record the server already confirmed is counted once, in confirmed money only (0.309792ms)
+✔ Home-1: every open draft is listed with its row, whatever its date, for Review and the draft actions (6.615667ms)
+✔ Home-2: a draft dated before the oldest whole day loaded does not bring back a day without its confirmed money (0.511833ms)
+✔ earlier records are cut back to whole days, naming the oldest whole day (0.122291ms)
+✔ a day with more records than Home reads is marked partial instead of failing (0.901916ms)
+(node:70590) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/redesign/import/importModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70590) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ a picked file must be a CSV, XLSX, JPEG, PNG or WebP under 12 MB whose name and type agree (2.973042ms)
+✔ the phase follows the journey and what the screen is doing, never claiming more than the server said (0.309541ms)
+✔ upload refusals: uploads off (404) is its own answer; a lost answer is not a refusal (0.086167ms)
+✔ rows carry flags for what the file left unclear; the values stay unknown, never filled in (0.553959ms)
+✔ a missing value without its own issue is still flagged, a saved row says so, and a fixed value drops its flag (0.220792ms)
+✔ filters: rows that need a look, probable duplicates, and the selection, in file order (0.197833ms)
+✔ select all keeps probable duplicates; leaving rows out is the person’s explicit choice (0.181583ms)
+✔ the selected total is exact satang, split by money out and in, and counts rows it cannot add (0.145417ms)
+✔ bulk type edits the chosen rows and counts as checking their type (0.107916ms)
+✔ bulk category applies to the chosen rows of its type and maps a label of its own, never taking over another row’s label (0.270792ms)
+✔ bulk wallet maps a wallet label of its own for the chosen rows (0.140834ms)
+✔ marking rows as checked marks all four fields of exactly those rows (0.064375ms)
+✔ the label step lists each wallet and category label in the file with its row count and its match (0.133375ms)
+✔ blockers are counted in words, and Continue waits for every chosen row (0.19975ms)
+✔ blocker lines name each reason with its count, the way forward first (0.139375ms)
+✔ freezing saves nothing: the frozen summary is ready to save, and going back is allowed until a batch is sent (0.724125ms)
+✔ progress stages and the result use the server’s counts: committed, remaining and conflicted (0.603375ms)
+✔ parse stages: uploaded, reading, rows found (0.927042ms)
+✔ a kept draft resumes when it has something to pick up, and says what (0.143292ms)
+✔ each problem says what happened, what was kept, and the one way forward (0.100667ms)
+✔ a rejected file lists why, in plain words, once per reason (0.071459ms)
+✔ saving corrections then freezing sends the patch before the freeze, and the freeze before any batch (0.385417ms)
+✔ every flag, blocker, stage, summary, notice and file reason is copy in en.json, with Thai (1.694917ms)
+✔ a diary draft that locks mid-visit falls back to this visit's memory, from the latest journey, and says so once (0.460667ms)
+✔ offline, the notice says where the import is kept: on this phone, or only while the screen is open (1.185458ms)
+(node:70591) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/redesign/import/receiptModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70591) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ a picked photo becomes an upload of a plain name and its own type, inside the size cap (0.577334ms)
+✔ only a ready preview with a photo still inside its window gives an attachment id (0.12525ms)
+✔ a grant is used only while it has more than the margin left (0.158375ms)
+✔ an upload: unknown outcomes freeze, a switched-off server says so, the photo's own refusals start over (0.472166ms)
+✔ a receipt command: the record moved on, went away, or the photo can no longer be kept (0.118042ms)
+✔ only the outcomes that may have committed, or that wait for room, keep the command frozen (0.048916ms)
+✔ a frozen command and each refusal say so in words that are copy in en.json, with Thai (1.109167ms)
+✔ verified bytes become a base64 data URI in memory (0.177458ms)
+(node:70592) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/redesign/insights/insightsModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70592) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ a day's facts: confirmed money out is expenses only, and any entry logs the day (0.877333ms)
+✔ a deleted entry counts nowhere: neither money nor a logged day (0.127125ms)
+✔ drafts on this device log their day, with their money kept apart from confirmed money (0.262958ms)
+✔ heat steps: none without money out, then four steps of the busiest day, exact (0.104125ms)
+✔ weekdays are Bangkok calendar dates: Sunday is 0 (9.77325ms)
+✔ a month calendar: Sunday-first weeks, blanks outside the month, each day with its money out (0.823667ms)
+✔ today is marked and named; days after today are future and say nothing (0.209958ms)
+✔ a day's drafts are said after its confirmed money, never added to it (0.273ms)
+✔ an empty month: every day says nothing logged, at heat 0 (0.165666ms)
+✔ a past month has no today and no future: every day can be opened (0.213834ms)
+✔ the days logged line counts days, never money, and leaves a month with none unsaid (0.098875ms)
+✔ the rhythm is the last seven days up to today, oldest first, across a month end (0.240417ms)
+✔ a skipped day never breaks anything: every logged day in the week still counts (9.996708ms)
+✔ a good week is five logged days or more; one day and none read kindly (0.210333ms)
+✔ the rhythm skips deleted entries and counts drafts on this device (0.093458ms)
+✔ the rhythm needs its own read only when its week is not inside the month shown (0.079ms)
+✔ reads every page of a range, in order, with the whole range totals (0.110542ms)
+✔ a page saying the diary changed meanwhile is passed on, and a cursor that repeats is refused (0.178833ms)
+(node:70593) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/redesign/insights/recapModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70593) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ a month is past, current or future against Bangkok today (10.389791ms)
+✔ the bars compare the last six months up to this month, and never a month after it (1.567ms)
+✔ days logged counts each day with any entry once, across every page (1.403958ms)
+✔ days logged leaves out deleted entries and dates outside the month (0.178083ms)
+✔ days logged stops at its page limit and says it may be more; it stops early once every day is counted (0.291959ms)
+✔ days logged in words: one day, several, or at least that many (1.345417ms)
+✔ top categories: money out only, largest first, at most five, each with its exact amount (0.553625ms)
+✔ top categories compare exact satang, past where floating point can tell them apart, and break ties by name (3.929042ms)
+✔ kept is earned minus spent when positive, and kind words when it is not (0.095541ms)
+✔ the budget line: spent of the limit, and over said kindly with the exact amount (0.130375ms)
+✔ each bar names its month and its exact money out; the month shown is chosen and this month is marked so far (0.260542ms)
+✔ entries still on this device for the month are mentioned, since the recap holds only confirmed money (0.116875ms)
+✔ load problems: offline says the records are safe and offers a retry; the others say what to do (0.126959ms)
+✔ a past month: the receipt facts, the hero, the bars and the exact share text (0.353208ms)
+✔ the share text: over budget kindly, money in only, more out than in, and every word through the translator (0.359167ms)
+✔ this month so far: the hero, the subtitle and the share heading say so (0.110209ms)
+✔ loading, a problem, an empty month and a month not started yet (0.213333ms)
+✔ the waiting note rides along on a recap and an empty month alike (0.105833ms)
+(node:70594) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/redesign/insights/remindersModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the time is HH:MM, chosen as an hour 00-23 and a minute in 5-minute steps (0.959042ms)
+✔ the week runs Monday first (0.080166ms)
+✔ weekday names come from the locale's Intl data, Monday first (21.81975ms)
+✔ a day turns on or off, kept Monday first; the last chosen day stays chosen (0.154041ms)
+✔ the days in words: every day, weekdays, weekends, or the short names in order (0.864709ms)
+✔ a date's ISO weekday is read on the phone's own calendar, Monday = 1 to Sunday = 7 (0.098958ms)
+✔ the preview shows the next reminder the person gets: today's when chosen, else the next chosen day (0.088583ms)
+(node:70595) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/redesign/loggedDays.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70595) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ the streak counts every logged day; a skipped day pauses it and never lowers it (7.936833ms)
+✔ a day dated in the future does not count yet, and repeats count once (0.121667ms)
+✔ loggedOn finds a day (0.072917ms)
+(node:70596) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/redesign/milestones.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ budget levels: under 80%, from 80%, from 100%, none without a limit (0.317084ms)
+✔ a crossing is only upward, within one month, and never the first reading (0.062208ms)
+✔ ISO weeks start on Monday and roll over the year correctly (0.830708ms)
+✔ a good week is celebrated once per week (0.076208ms)
+(node:70597) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/redesign/pendingChoice.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70597) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ the draft shows the person's change over the record they opened (0.692834ms)
+✔ use yours resends the same changes on the server's current version (0.222208ms)
+✔ a fresh server record wins over the stored one (0.08675ms)
+✔ a choice the server already holds is settled (0.08025ms)
+(node:70598) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/redesign/planning/budgetModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70598) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ the switcher reaches every earlier month and one month ahead, to plan the next (0.556167ms)
+✔ spending by day: confirmed expenses of the month, and waiting drafts once (0.538417ms)
+✔ the burn-down: cumulative spending through today against the even pace, exact (1.714708ms)
+✔ the even pace rounds down to the satang, and the top grows when spending passes the limit (0.087625ms)
+✔ before the month nothing is drawn; after it, the whole month is (0.115375ms)
+✔ the chart is in thousandths: x along the month, y up from the bottom, scaled to the top (0.189666ms)
+✔ the burn-down in words: spent and even pace by today, then how far ahead or under, kindly (0.83425ms)
+✔ category rows: the server’s spending plus waiting drafts, against each limit, in the categories’ order (0.825ms)
+✔ a category ahead of the even pace is tight; after the month nothing is tight; an unknown category comes last (0.329333ms)
+✔ prefill months: up to three earlier months that have ended and were tracked from their first day (0.250958ms)
+✔ the average: months with spending only, rounded down to the satang; none, no prefill (0.213041ms)
+✔ a budget needs a total; limits are optional and must not add up to more than it (4.777209ms)
+✔ limits are for expense categories in use, and for archived ones the budget already limits (0.089709ms)
+✔ the editor starts from the budget being changed, else from the average, else empty (0.071292ms)
+✔ a budget Jotbun already holds is the same as yours only when every figure is (0.084833ms)
+✔ a conflict, figure by figure: the total, then each category either side limits (0.133708ms)
+✔ every line the Budget screen is given is copy in en.json, with Thai (1.541084ms)
+(node:70599) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/redesign/planning/categoriesModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70599) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ every palette colour has its own English name, in the palette order (3.817084ms)
+✔ a new category is offered the first colour its type does not use yet (0.1105ms)
+✔ the grid shows one type: built-ins in their own order, then your categories by name, and the archived apart (4.672875ms)
+✔ a renamed built-in shows its label; names go through tc; no budget means no limits (0.150083ms)
+✔ a label is trimmed and NFC-normalized, and counted the way the API counts it (0.525625ms)
+✔ a custom category needs a visible name of one line and at most 80 characters (0.153334ms)
+✔ a built-in with no label of its own uses its default name (null) (0.072708ms)
+✔ a limit is exact satang, typed like any amount; empty means no limit (0.375375ms)
+✔ the category limits must fit inside the month's overall budget (equal is fine) (0.195833ms)
+✔ a budget holds at most 100 category limits; changing one already there is fine (0.237083ms)
+✔ setting a limit replaces the whole month budget at its version: the overall limit unchanged, limits sorted by category id (0.170584ms)
+✔ the edit draft starts from the category and this month's limit as read (0.183875ms)
+✔ creating sends one create command with a trimmed label; a limit follows only when the month has a budget (0.191208ms)
+✔ nothing is sent while the label or the limit is wrong, and each problem is said in words (0.354542ms)
+✔ editing sends only what changed, at the version read, and a limit change replaces the budget (0.159167ms)
+✔ a built-in goes back to its default name with label null; a custom category cannot lose its name (0.068333ms)
+✔ after the category command is acknowledged, saving again sends only the budget command, exactly as before (0.111125ms)
+✔ archive and unarchive carry the version read; each command has its own key slot (0.067791ms)
+✔ a conflict's server copy is used only when it is this category, or this month's budget (0.196458ms)
+✔ a changed category shows yours and the server's name and colour; an archived one says so (0.123708ms)
+✔ a changed budget shows yours and the server's limit for this category and the month's total (0.448167ms)
+✔ every colour name and every problem word is copy in en.json, with Thai (1.478625ms)
+(node:70602) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/redesign/planning/thaiPack.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70602) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ every pack colour is one of the category hues, and every key is unique (0.353709ms)
+✔ a fresh account gets the whole pack, named in Thai for Thai and in English otherwise (0.387084ms)
+✔ items the person already has, in either language or archived, are skipped; types are kept apart (0.081625ms)
+✔ the pack is C3: eight expense categories and one income, in order (0.076959ms)
+✔ a person who added the earlier pack gets no second delivery or top-up category (0.056958ms)
+✔ packKeyOf names a pack category by any of its names, never a built-in or another type (0.067041ms)
+✔ analyticsCategoryKey sends a built-in key, a pack key or custom, never a label (0.068708ms)
+✔ packCommands creates only the picked items, in the person's language (0.058042ms)
+✔ the routed screen keeps today's seven until the switch (0.064125ms)
+(node:70603) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/redesign/planning/walletsModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70603) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ the total adds up the active wallets exactly, and leaves archived ones out (0.814834ms)
+✔ the total never passes through a float: balances past 2^53 and below zero stay exact (0.094708ms)
+✔ wallets keep the order Jotbun lists them in (the order they were added), each section on its own (0.117458ms)
+✔ first run is no wallet at all; only archived wallets is not first run, and its total is zero (0.08075ms)
+✔ a wallet can be archived only at exactly ฿0.00, and never twice (0.110792ms)
+✔ why a wallet cannot be archived yet is said in words, with the exact balance and the way forward (0.20375ms)
+✔ a correction is a changed opening balance or tracking start; a new name is not (0.071583ms)
+✔ a correction needs its reason once the wallet has entries, and also while that is not known yet (0.051916ms)
+✔ a new wallet starts empty: no name, ฿0.00 opening and tracking from today (0.059375ms)
+✔ the live preview follows what is typed: the trimmed name (or none yet), the exact opening and the start (0.48475ms)
+✔ an edit's preview moves the balance by exactly the change to the opening balance (0.091708ms)
+✔ the form refuses a missing, invisible or over-long name, an amount past the cap and a future start, in its own words (0.315875ms)
+✔ create builds one exact command: the id, the trimmed NFC name, the exact satang and the start (0.110666ms)
+✔ an edit sends only what changed, with the version that was read; nothing changed sends nothing (0.102417ms)
+✔ with entries in the wallet, a correction is refused until its reason is chosen, and then carries it (0.087292ms)
+✔ a reason never travels without a correction (Jotbun refuses that), and an empty wallet needs none (0.045916ms)
+✔ an edit is checked like a new wallet before anything is sent (0.04675ms)
+✔ Jotbun's field problems land on their own field, in the screen's words (0.125708ms)
+✔ a correction Jotbun refuses for want of a reason asks for the reason (0.044916ms)
+✔ an archive refused for its balance, and a wallet archived elsewhere, are told apart from field problems (0.065792ms)
+✔ a conflict carries Jotbun's copy only when it is this wallet in the exact shape (0.160834ms)
+✔ the conflict shows theirs beside yours, field by field, and marks what differs (0.132375ms)
+✔ every line the Wallets screen is given, and each of Jotbun's field words, is copy in en.json, with Thai (1.969417ms)
+(node:70604) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/redesign/quickAddModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70604) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ quick add parity table: the same errors, keys, messages and inputs as the current form (8.581625ms)
+✔ keypad amounts: canonical satang above zero and within the cap (0.128084ms)
+✔ errors go through tc (0.109417ms)
+✔ a new draft starts like the current form (0.112083ms)
+✔ a missing wallet asks the user to choose one, with the keys the form renders (0.065458ms)
+✔ the move-wallets rule: two different wallets, in either order (0.061541ms)
+✔ one record id per draft: building again names the same record, and a device draft gains its type (0.066292ms)
+✔ "add another" starts a new draft with new ids, keeping the choices (0.127459ms)
+✔ the date chip steps by days, never into the future or before 1970 (3.12075ms)
+(node:70605) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/redesign/recentCategories.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70605) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ with nothing logged, the built-in order fills the top and the rest keeps the default order (5.359125ms)
+✔ frequency and recency both count (11.049084ms)
+✔ the window is the last 60 days counting today (0.094625ms)
+✔ ties fall back to the built-in order, then the label; custom categories after built-ins (0.060958ms)
+✔ archived categories and other types are left out, even when used (0.085417ms)
+✔ drafts count, a confirmed draft counts once, and deleted records do not count (0.081125ms)
+✔ top N is configurable and never repeats a category in the rest (0.0585ms)
+(node:70606) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/redesign/recordModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70606) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ the receipt of a confirmed expense: amount, type, category, wallet, date, merchant and note (48.235458ms)
+✔ a move shows From → To and no category; empty merchant and note are left out (0.403666ms)
+✔ a draft's receipt says its sync state and offers only what the device allows (0.539834ms)
+✔ the edit draft keeps the record's fields and its version (0.126666ms)
+✔ an edit sends only what changed, with the version as If-Match (0.462375ms)
+✔ an edit runs the quick-add checks (0.274833ms)
+✔ "Apply my change" after a conflict sends the same changes on the server's version (0.10575ms)
+✔ the conflict view puts yours beside what is on the server (0.547542ms)
+✔ Copy makes a new draft dated today with new ids, never the source's (0.29425ms)
+✔ Copy leaves a closed wallet or category unchosen, and copies drafts and moves too (0.183167ms)
+(node:70607) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/redesign/shared.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70607) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ Bangkok calendar maths crosses months, years and leap days (1.942208ms)
+✔ day labels: today, yesterday, then the short date the current list shows (8.620042ms)
+✔ every outbox state maps to a draft state; a sending draft may be committed, so it is being checked (0.365083ms)
+✔ a draft's label, its money group and every total it joins agree in each state (1.172458ms)
+✔ a draft whose record is already confirmed is left out of the open drafts that count (0.0945ms)
+✔ undo only for a draft never transmitted; discard only for one that needs review (0.11175ms)
+✔ a confirmed row reads exactly as the current record view (0.232833ms)
+✔ a draft row says its state in words and never looks confirmed (0.179959ms)
+✔ rows merge drafts first, newest first, and a draft already confirmed shows once (0.185709ms)
+✔ day totals: out and in apart, transfers neither, drafts never in confirmed money (0.273417ms)
+✔ days group newest first with their totals and kept-apart draft money (0.361875ms)
+✔ a transfer row in the day is shown but unsigned (0.087334ms)
+(node:70608) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/resources.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70608) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ reads send the access token, binding and client version, and no command headers (14.002833ms)
+✔ signed out, unbound or unsupported clients fail before any request (0.354875ms)
+✔ commands send their key, the command schema and If-Match with the exact body (5.529209ms)
+✔ a lost response is retried as the same immutable command (256.227958ms)
+✔ DTOs with number money or unknown fields are refused, not coerced (4.635875ms)
+✔ problems map to outcomes a screen can act on (15.226042ms)
+✔ a response that arrives after a sign-out or account switch is dropped (0.233625ms)
+✔ history builds its query from the filter; a month without a budget is null (6.033417ms)
+✔ recently deleted pages by cursor and accepts only deleted records in the record shape (48.492584ms)
+✔ only https, or loopback http, API addresses are accepted (0.691542ms)
+✔ a gateway error page is "unavailable" (maybe committed), never a definite refusal (1.668416ms)
+✔ a sign-out during a command retry stops resending (252.21975ms)
+✔ an acknowledgement for another command or entity is refused (1.011125ms)
+✔ FORBIDDEN and RESYNC_REQUIRED are not field errors (1.441292ms)
+✔ an outbox command is sent as itself: its own key, its own schema version and its exact body (1.211ms)
+✔ delta pages are fetched by opaque cursor and checked group by group (1.730709ms)
+✔ delta pages and snapshot chunks may carry entity types this build does not know; a malformed one is still refused (1.693584ms)
+✔ snapshots: requested with a key, polled, and each chunk verified by size and SHA-256 (2.796833ms)
+✔ planning commands: budget set, wallet and category changes, each with its key, If-Match and exact body (3.453125ms)
+✔ planning commands refuse an acknowledgement for another command or entity, and a malformed month or id before sending (0.8855ms)
+(node:70609) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/sessionResume.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70609) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ after a session ended, the same account sends the unsent records once; another account never sees them (28.984042ms)
+(node:70610) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/spendDiary.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70610) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ opens the signed-in account's diary, syncs it, and saves a draft before resolving (28.936416ms)
+✔ a remote sign-in refusal locks the diary and keeps its drafts (8.7115ms)
+✔ switching accounts never shows or sends another account's drafts (14.618334ms)
+✔ signed out means no diary: saving is refused rather than kept somewhere unencrypted (5.788292ms)
+✔ a diary whose key is gone is locked with its reason, never replaced (4.747917ms)
+✔ a failed local save is reported and nothing is shown as saved (8.421416ms)
+✔ a session notification for the same identity keeps the open diary and its sync (22.551417ms)
+✔ a diary opens and flushes only for the session epoch it belongs to (3.55775ms)
+✔ a superseded session change never overwrites the newer view (32.553416ms)
+✔ a superseded open of another account's diary is closed (2.897333ms)
+✔ a diary written by a newer app version is locked with that reason (0.317875ms)
+✔ synced wallets and categories are in the view, for forms that work offline (7.673667ms)
+✔ a wallet created online moments ago is pulled once before a device save (15.15625ms)
+✔ saving the same draft twice under one command id saves it once (9.411083ms)
+✔ an unsent draft can be undone on the device; a needs-review draft can be discarded (30.958041ms)
+✔ a locked diary can be discarded and starts over from the synced diary (13.796958ms)
+✔ an explicit sign-out erases only this account's diary on the device (32.498958ms)
+✔ an explicit sign-out also erases the account's other on-device copies (the import draft); a diary discard does not (12.568333ms)
+✔ a sync run reports live n-of-m progress, then clears it (52.829708ms)
+✔ after launch a foreground timer is armed even when the first flush waits (4.468ms)
+✔ the import draft store is the open account's, inside its diary, and follows the session (17.06025ms)
+✔ no import draft store while no diary is open: opening, locked, signed out, or no local diary (web) (8.496375ms)
+✔ the view names the open diary's account, and nobody without one (18.240833ms)
+✔ the explicit sign-out erase takes the diary's import draft with it (8.665209ms)
+✔ logged days come from the open diary, and null without one (7.990292ms)
+✔ a kept choice appears in the view and leaves when dropped (6.331334ms)
+(node:70611) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/spend/v1/viewModels.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70611) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ category names use the custom label, else the translated built-in name (0.368625ms)
+✔ the golden wallets total exactly, beyond JavaScript numbers too (0.094625ms)
+✔ records read as signed amounts with their wallet and category (0.465667ms)
+✔ months and Bangkok dates (1.1215ms)
+✔ rows group by day in order (0.133583ms)
+(node:70612) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/storage/accountDatabase.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70612) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ a new account gets its own keyed, migrated diary that survives a restart (6.063917ms)
+✔ two accounts with the same entity ids never see each other (5.444292ms)
+✔ concurrent opens of one account share one store and one key, so nothing saved is lost (4.516125ms)
+✔ a missing key locks the diary instead of creating an empty replacement, until an explicit discard (3.950083ms)
+✔ a rejected or malformed key locks the diary; a failing key store is only temporarily unavailable (2.088ms)
+✔ a diary recorded for another account is refused before any migration (2.139334ms)
+✔ a failing migration rolls back, leaving the diary usable at its previous version (2.482125ms)
+✔ a diary from a newer app version is refused, not downgraded (2.94075ms)
+✔ a version-1 diary upgrades to version 2 and keeps its data; the import drafts table starts empty (3.20775ms)
+✔ a locked store refuses every operation; data stays for the next unlock (3.183833ms)
+✔ erase drops only that account's diary and key (6.348625ms)
+✔ discard deletes the key first and can always be retried (2.25525ms)
+✔ a write from an older session epoch is refused, including A -> B -> A (5.496084ms)
+✔ a store from an older session can never erase the account (3.301292ms)
+✔ a write in flight when the epoch moves is rolled back (4.105208ms)
+✔ a read is one consistent view, and one racing a session change returns nothing (4.128458ms)
+✔ a session change while a diary is opening leaves no store and no open connection (2.11775ms)
+✔ on the web there is no local diary, before any key is read (0.1315ms)
+(node:70613) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/storage/diaryRepository.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70613) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ a saved draft and its outbox command persist together, or not at all (29.256208ms)
+✔ saving the same draft again (a retry after an unknown outcome) is a no-op; a different body under the same ids is refused (3.069875ms)
+✔ a draft must match its command and account, be a valid create, and use synced, open references (9.15075ms)
+✔ delta records, totals and cursor commit together: a failure at any statement keeps the previous state (35.657125ms)
+✔ a page fetched before the cursor moved is refused, never written back (6.399958ms)
+✔ applies versions forward only, keeps tombstones, drops purged data, and recomputes exact totals (4.680542ms)
+✔ refuses out-of-order or already-applied groups and invalid changes, applying nothing (3.612542ms)
+✔ failed_snapshot_swap_preserves_cursor_and_outbox (58.21725ms)
+✔ a confirmed replacement swaps the confirmed state but never removes unresolved outbox commands or drafts (6.506417ms)
+✔ stores exact integer strings and no credentials (3.504708ms)
+✔ a build without the import validators skips import changes, applies the rest and advances the cursor (4.4365ms)
+✔ a snapshot with import entities replaces the confirmed state without them for a build that does not know them (4.632667ms)
+✔ a known entity that does not match its validator, and an unknown entity that is not an entity change at all, still refuse the page (3.169916ms)
+✔ a build that knows the import entities stores them (3.900833ms)
+✔ import draft rows are written, replaced, listed and removed, kept across a restart, and leave with the diary (13.796333ms)
+✔ import draft rows follow the store: refused once it is locked or from an earlier session, and a write racing a session change rolls back (4.366917ms)
+✔ logged days are the distinct dates of live records and drafts (5.621041ms)
+✔ the applied revision is read without loading the diary (5.339916ms)
+✔ a pending choice is kept, replaced per record and dropped (19.369584ms)
+✔ a choice for a mismatched record, or one that is not a valid choice, is refused (2.408625ms)
+✔ a choice written after the session moved is refused, and a write racing the move rolls back (4.822833ms)
+✔ choices survive a lock and reopen, and go with the erase (8.520375ms)
+✔ a stored choice that no longer validates is left out of the list and not deleted (12.570125ms)
+✔ migration 3 adds the table and keeps a version 2 diary's drafts (8.882083ms)
+(node:70614) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/storage/keyStore.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70614) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ creates a random 256-bit key per account, kept on this device only (0.59075ms)
+✔ refuses a malformed stored key or account id instead of using it (0.160125ms)
+✔ never overwrites an existing key, and reports a malformed one as such (0.15225ms)
+(node:70615) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/storage/serialDatabase.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a transaction runs every statement on the one keyed connection, between BEGIN IMMEDIATE and COMMIT (10.031ms)
+✔ concurrent transactions and plain statements never interleave (16.9555ms)
+✔ a failure rolls back and reports the original error, even if the rollback fails too (5.975458ms)
+✔ a failed COMMIT rolls back (4.802959ms)
+✔ a transaction handle cannot be used after it ended, and a closed database refuses work (3.348959ms)
+(node:70616) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/sync/engineHardening.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70616) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ an edit made before a draft is transmitted is exactly what gets sent and committed (21.117333ms)
+✔ a draft removed before its turn is skipped; the flush still finishes and nothing is sent after it (54.235625ms)
+✔ a failure in one worker is not erased by a success in the other (13.678125ms)
+✔ outbox sends make exactly one attempt per request (no hidden transport resend) (0.842542ms)
+✔ a command that committed resolves whatever its local state (refused, unsent or needs review) (17.99825ms)
+✔ "id already used" refusals (409/410) are uncertain, not needs-review, and resolve (14.418208ms)
+✔ after a server restore, an acknowledged command missing from the confirmed state is resent, never deleted (11.820167ms)
+✔ a resent uncertain command that is paced keeps its uncertain mark (22.855666ms)
+✔ 426 on a send pauses the unsent commands and stops sending (22.460292ms)
+✔ a known command status acknowledges the command even if the next pull fails (16.287ms)
+✔ a status answer that does not match the command is refused (8.635959ms)
+✔ stale uncertain commands are reviewed, not resent (10.636459ms)
+✔ a write during a running flush is sent by one follow-up run (52.478ms)
+✔ pending adjustment counts unconfirmed expenses only (10.249333ms)
+✔ 410 without a problem body, and a refused cursor, both lead to a full resync (13.789834ms)
+✔ a chunk from another snapshot is refused and the diary is left as it was (5.097459ms)
+✔ an expired chunk grant is renewed before the download (8.814209ms)
+✔ the scheduler survives a failing flush, re-arms its timer, and marks launch as foreground (22.521125ms)
+✔ every run reports its outcome, including a flush that failed outright (0.157708ms)
+(node:70617) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/sync/liveChannel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ it connects with the token and the client header to the live URL (2.591459ms)
+✔ without a token or a client version it stays quiet (0.405709ms)
+✔ the open runs a live flush, and a newer revision runs another (1.546084ms)
+✔ anything but an exact poke is ignored and the socket stays open (0.716333ms)
+✔ parsePoke reads only an exact revision poke of at most 64 characters (0.16475ms)
+✔ no pong within 10 seconds closes and reconnects; the open runs a live flush (0.733666ms)
+✔ a pong keeps the socket open (2.064708ms)
+✔ the channel sends nothing but ping (1.055792ms)
+✔ each reconnect reads the token again (0.48725ms)
+✔ a token that cannot be read yet is tried again after the backoff (0.517083ms)
+✔ a late close from a replaced socket changes nothing (0.775083ms)
+✔ an ended session stops reconnecting and flushes once (0.405292ms)
+✔ a replaced socket does not come back (0.370958ms)
+✔ other closes back off from 1 second to 15 seconds, and an open resets it (0.993916ms)
+✔ stop closes the socket, cancels a pending connect, and ignores late events (0.963209ms)
+✔ start replaces an open socket, and the old socket's close changes nothing (0.334625ms)
+(node:70618) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/sync/outbox.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70618) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ each send result has one verdict: committed-maybe is uncertain, refusals need review, pacing and auth restore the previous state (0.754084ms)
+✔ drafts older than 30 days need review (14.971416ms)
+✔ a transmission freezes the command; state changes are compare-and-set; resolving removes command and draft together (10.691875ms)
+✔ a never-sent draft can be edited (its command follows) or removed (6.092834ms)
+(node:70619) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/sync/reconcile.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70619) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ an acknowledgement alone never becomes confirmed state; every delta page is pulled, then the command resolves (31.317875ms)
+✔ a cursor behind retention gets a full snapshot, then deltas; unresolved commands survive the swap (25.492208ms)
+✔ a snapshot that is not ready in time leaves the diary as it was (6.677417ms)
+✔ purged_ack_does_not_resurrect_original_draft (13.973958ms)
+✔ a committed draft deleted elsewhere drops its pending effect and is never re-inserted (13.133417ms)
+✔ pending expenses not yet confirmed are an exact separate adjustment (6.124833ms)
+✔ if the cursor moves while a page is in flight, the pull continues from the new cursor (12.49625ms)
+(node:70620) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/sync/syncEngine.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70620) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ sends drafts once, in order, and resolves them only from the confirmed state (28.799334ms)
+✔ airplane mode: an unreachable server leaves the command uncertain and frozen; the retry checks status, then resends the same command (28.112333ms)
+✔ a timeout after the commit resolves through command status, without a resend (26.599542ms)
+✔ an app killed after the commit but before the local acknowledgement recovers on the next launch (19.36575ms)
+✔ a response that arrives after a session change is dropped; the next session resolves the command (22.319542ms)
+✔ an expired token is refreshed once and the same command resent; a second refusal stops with drafts kept (45.006375ms)
+✔ a denied account stops the flush without losing drafts (17.881583ms)
+✔ 429 is pacing (Retry-After, no failure count); a 5xx may have committed, so it is uncertain and counts (38.3995ms)
+✔ five transport failures in a row pause the engine until the app comes to the foreground or the user retries (18.720083ms)
+✔ validation refusals need review instead of retrying forever; others still go (15.028792ms)
+✔ 426 pauses unsent commands for an upgrade, keeps uncertain ones uncertain, and stops all sending (8.856666ms)
+✔ an unsupported command schema needs review and keeps its draft; the rest are sent (10.724083ms)
+✔ a 200-draft backlog drains at the write limit with progress, never pausing and never sending twice at once (332.342ms)
+✔ one flush at a time per account: a call during a run waits and runs once after it (13.809959ms)
+✔ archived or deleted references, and drafts older than 30 days, need review without data loss (5.1925ms)
+✔ a flush for another account or session does nothing (2.237584ms)
+✔ retry delays start at 1 s, double with jitter to 60 s, honour Retry-After, and pause after five failures (0.106125ms)
+✔ the scheduler keeps at most one 60-second foreground timer and tears it down on background or switch (0.198292ms)
+✔ a live flush lifts the failure pause but waits out the server's pacing (18.101792ms)
+✔ a poke that joins a queued follow-up still lifts the pause (15.144792ms)
+✔ a follow-up keeps the strongest trigger asked for, whatever order the calls came in (13.467417ms)
+✔ twenty pokes during a flush run one follow-up (5.378333ms)
+✔ the scheduler starts the live channel with the foreground, stops it in the background, and runs a live flush for a poke (0.152ms)
+✔ a pending choice is never sent by the sync engine (8.302125ms)
+(node:70621) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/testing/hermesGlobals.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ no app code reaches for the Web Crypto global, which Hermes lacks (34.241417ms)
+(node:70622) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/testing/svgAssetRegistryStub.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the stub registers no assets (0.287833ms)
+✔ only the render config reaches the stub: no app, harness or test file imports it (45.121834ms)
+(node:70623) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/theme/bunPalette.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70623) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ contrast follows WCAG 2.x (0.553125ms)
+✔ both modes define every colour as #RRGGBB (0.402708ms)
+✔ every text pair the kit uses meets WCAG AA (4.5:1) in both modes (0.178167ms)
+✔ the lavender stage carries ink text only (0.090375ms)
+✔ outlines are visible (3:1) and budget states are distinct (0.113667ms)
+✔ category tiles: the tile ink meets AA on every category pastel in both modes (0.101792ms)
+(node:70624) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/theme/bunType.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the scale steps down from hero to micro, never below 11 (0.519334ms)
+✔ Thai text gets more leading than Latin at every size (0.22075ms)
+✔ Thai uses Anuphan, Latin and Vietnamese use DM Sans (0.071041ms)
+✔ receipt amounts use the platform serif with tabular figures (0.307875ms)
+✔ every role follows the person’s text size through all the standard sizes, uncapped (0.072084ms)
+✔ at the largest accessibility size, reading text grows the most and display text the least, so words stay whole (0.231875ms)
+(node:70625) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/theme/walletPalette.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70625) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ the §5.1 tokens, exactly (0.699542ms)
+✔ text pairs clear 4.5:1 and graphic pairs 3:1 in both modes; the board bar did not (§5.3) (0.356542ms)
+✔ material text and quiet text clear 4.5:1 on every stop, light and dark (0.226584ms)
+✔ the calendar ramp is wc-calendar, and each day number clears 4.5:1 on its fill (0.175292ms)
+✔ category tiles: the mode ink clears 4.5:1 on every hue tint (0.515084ms)
+(node:70626) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/theme/walletType.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ AX5 sizes follow ax-large-home: body 53, title 58, footnote 44 (0.34475ms)
+✔ an amount never passes 64 pt nor grows more than body text (0.100417ms)
+✔ Thai leading is 1.5 times the size and Latin 1.3, rounded up (0.281959ms)
+(node:70627) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/ui/budgetWords.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70627) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ on track leads with the daily pace and says so in words (0.918542ms)
+✔ tight is still under budget, and the word says it is tight (0.116666ms)
+✔ over budget is kind and factual, never colour alone (0.175833ms)
+✔ no budget says so and still shows what was spent (0.100208ms)
+✔ the last day and the end of the month read naturally (0.101167ms)
+✔ a finished month reads as a plain result, never a pace (0.221958ms)
+✔ amounts stay exact and the fill never passes the limit (0.076542ms)
+(node:70628) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/ui/dateStep.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70628) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ steps one day across month and year ends (0.525667ms)
+✔ leap days follow the Gregorian rules (0.099333ms)
+✔ only real YYYY-MM-DD dates are accepted (0.199375ms)
+✔ never steps into the future (0.102458ms)
+✔ never steps before the earliest date (the wallet tracking start, or 1970) (0.084416ms)
+✔ Today and Yesterday in English, Thai and Vietnamese (0.318584ms)
+✔ other days are written out, with the year only when it is not this year (0.460666ms)
+✔ Thai dates show Buddhist-era years (0.132708ms)
+✔ full dates and month names in English and Vietnamese keep the Gregorian year (0.078958ms)
+✔ weekday initials run Sunday first in each language (0.096667ms)
+(node:70630) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/ui/dynamicType.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the scan reads a whole tag, through arrows, comparisons and strings, and skips type arguments (0.868583ms)
+✔ every text field and raw Text in the redesign sets a ceiling on how far its text grows (7.627459ms)
+(node:70631) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/ui/keypadExpression.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70631) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ digits build an amount; the display groups thousands; the minor is exact satang (0.887584ms)
+✔ an empty keypad shows 0 and saving it says the amount is empty (0.339666ms)
+✔ leading zeros collapse (0.199209ms)
+✔ 000 on an empty amount is a single 0, and after digits it multiplies by a thousand (3.158375ms)
+✔ zero is refused for a record unless the caller allows it (0.364083ms)
+✔ a decimal point starts 0. on an empty amount and is typed at most once (0.8695ms)
+✔ at most two decimals per operand; a third is refused and says why (0.606709ms)
+✔ decimals after an operator start a new operand (0.863667ms)
+✔ 0.1 + 0.2 is exactly 0.30 (0.200458ms)
+✔ sums of exact decimals never drift (no floating point) (1.411375ms)
+✔ 999999999.99 is the largest amount; + 0.01 is refused as too large (0.102875ms)
+✔ an operand can never be typed above the cap (0.056959ms)
+✔ backspace removes a character, then crosses back over an operator (0.085166ms)
+✔ an operator replaces a dangling one and cannot start an amount (0.054791ms)
+✔ division by zero is refused, at = and on save (0.160125ms)
+✔ ÷ is exact until the end, then rounds half-up to the satang (0.05675ms)
+✔ half-up holds exactly on the half satang, where rounded floats go the wrong way (0.033709ms)
+✔ × and ÷ bind tighter than + and − (0.031708ms)
+✔ a negative result is refused; a negative step on the way is fine (0.0345ms)
+✔ = shows the result; a digit then starts afresh and an operator carries on (0.053458ms)
+✔ clear empties the keypad (0.018125ms)
+✔ saving applies = for the user (0.078417ms)
+✔ an existing amount opens on the keypad exactly (0.149708ms)
+(node:70632) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/ui/largeTextScale.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ large text starts at the accessibility sizes, not at the standard ones (0.712708ms)
+✔ a missing or odd scale is ordinary text (0.087917ms)
+(node:70633) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/ui/paceAdapter.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70633) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ mid-month on track: the state and every amount carry over exactly (7.419291ms)
+✔ ahead of pace stays tight, not over (0.177084ms)
+✔ pending money: confirmed spending plus waiting drafts; sending, checking and refused drafts are left out (0.227084ms)
+✔ zero: nothing spent on the first day, and exactly nothing left (0.175458ms)
+✔ over by one satang: over, left is minus the over amount, no per day (0.165208ms)
+✔ over with a left figure of zero: the over amount comes from overByMinor (0.121041ms)
+✔ no budget: no limit, left or per day, and spent still counts waiting drafts (0.11475ms)
+✔ the last day: one day left, read as "Last day", over or not (0.177833ms)
+✔ phases: before the month reads like its first day; after it, a plain result with no pace words (0.406125ms)
+✔ every state the logic gives is one the kit takes, word for word (0.895125ms)
+(node:70634) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/wallet/copy/draftText.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ every draft line has Thai and English, with the same placeholders (3.311625ms)
+✔ no draft line has an emoji or a dash used as punctuation (1.566959ms)
+✔ every key is unique across every table and has an area prefix (1.031541ms)
+✔ draftText picks Thai for th and English for en and vi, then fills placeholders (0.110542ms)
+(node:70635) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/wallet/looks/categoryIcons.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70635) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ a kept icon wins, then the pack glyph, then the built-in drawing, else the initial (0.7155ms)
+✔ damaged kept icons are dropped (0.149083ms)
+✔ C3's nine each have the picker's glyph for them (0.13575ms)
+✔ every picker glyph has shapes copied from the board (2.441792ms)
+✔ every built-in key and a transfer draw today's drawings, moved unchanged (0.576125ms)
+(node:70636) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/wallet/looks/walletLooks.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a derived look is stable and always valid (3.850041ms)
+✔ a derived look is the plan's: FNV-1a over the id's UTF-16 code units, the material from the hash, the face from the hash shifted by 8 (0.13225ms)
+✔ damaged kept looks are dropped, not thrown (0.253958ms)
+✔ the kept order is wallet ids in order, each once; anything else reads as no order (0.133833ms)
+✔ the kinds are §5.2's four and the faces wc-wallet-edit's five, in the boards' order (0.056ms)
+(node:70650) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/wallet/money/walletMoney.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70650) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ the compact form drops .00 only when the satang are zero; the exact form keeps two decimals (0.581875ms)
+✔ an expense takes the true minus, income a plus, a balance a minus only below zero, and zero no sign (0.095292ms)
+✔ only a canonical satang string is money (0.178792ms)
+✔ the per-day hint is whole baht, rounded down (0.056541ms)
+✔ spoken money says baht, and satang only when there are some, inside minus below zero (0.170541ms)
+✔ a hidden amount is ฿ and four dots (0.031083ms)
+(node:70651) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/wallet/motion/walletMotion.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the reduced-motion table is ax-motion, moment by moment (1.121667ms)
+✔ with reduced motion nothing travels, springs or zooms, and haptics do not change (0.1595ms)
+✔ a selection tick per tray step and on opening a wallet; success for a new wallet (0.065416ms)
+✔ every moment, at full motion and under Reduce Motion, with its haptic (0.133416ms)
+(node:70652) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/wallet/outside/accountFile.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the marker is the first 16 hex characters of SHA-256 over the labelled account id (1.041709ms)
+✔ two accounts get different markers (0.127167ms)
+✔ the file has exactly v, marker, locale and hidden and never the account id (0.321333ms)
+✔ writing refuses what reading refuses, so an account id is never written as the marker (0.251ms)
+(node:70653) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/wallet/outside/appGroup.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the memory store reads what it wrote, lists a folder and removes (0.794375ms)
+✔ unsafe names are refused (0.295541ms)
+✔ noAppGroup reads nothing and accepts writes (0.151125ms)
+✔ the memory store, like the device one, never copies onto a folder's name (0.082208ms)
+(node:70656) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/wallet/outside/deviceAppGroup.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ on iOS the app group container is the root (1.290042ms)
+✔ on iOS without the group nothing is available and nothing is written (0.187791ms)
+✔ on Android the documents folder is the root (0.114708ms)
+✔ on the web nothing is available (0.072208ms)
+✔ a missing folder is created before a write (0.125875ms)
+✔ a copy that fails answers false (0.209583ms)
+✔ an unsafe name is refused before any file call (0.286667ms)
+✔ a native failure answers null or false, and a failed write or remove still resolves (0.258833ms)
+✔ removing a folder's name leaves the folder and its files (0.154709ms)
+✔ a copy onto a folder's name answers false and leaves the folder (0.2275ms)
+(node:70657) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/wallet/outside/outsideIds.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ with no extra the temporary ids apply (0.644167ms)
+✔ each valid field overrides its default and a malformed one keeps it (0.1945ms)
+✔ a keychain group needs a ten-character team id (0.118916ms)
+✔ the Android package allows _ and refuses - (0.115666ms)
+✔ outsideLink('gogospend', 'record') is 'gogospend://outside/record' (0.079875ms)
+(node:70658) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/wallet/settings/deletionCode.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:70658) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/packages/contracts/package.json.
+✔ the short code is DEL and eight Crockford digits of the request id (0.373ms)
+(node:70659) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/src/wallet/store/walletStore.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the device erase removes every jotbun.wallet. key and nothing else (0.477375ms)
+✔ an account erase removes only that account's keys (0.118292ms)
+✔ names are prefixed by their scope (0.120167ms)
+ℹ tests 966
+ℹ suites 7
+ℹ pass 966
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2017.282416

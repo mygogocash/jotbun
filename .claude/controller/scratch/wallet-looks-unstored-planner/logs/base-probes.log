@@ -1,0 +1,131 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:15723) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ × src/wallet/looks/DataLensProbes.render.test.tsx > D1: a change whose write failed still shows after a later change to the same name 26ms
+   → after a later change to the same name: expected { kind: null, …(2) } to deeply equal { kind: 'credit_card', …(2) }
+ × src/wallet/looks/DataLensProbes.render.test.tsx > D2: a change to an unreadable name still shows after the store reads again and another change lands 4ms
+   → the earlier change, after the store reads again: expected { kind: null, …(2) } to deeply equal { kind: 'credit_card', …(2) }
+ ✓ src/wallet/looks/DataLensProbes.render.test.tsx > D3: away and back with reads held and a change made during the first read: kept for its account, never shown under the other 11ms
+ ✓ src/wallet/looks/DataLensProbes.render.test.tsx > D4: two accounts' changes queued: each kept for its own account, and B never shows A's 11ms
+ ✓ src/wallet/looks/DataLensProbes.render.test.tsx > D5: setOrder keeps each id once, read or unreadable; a damaged kept order reads as none and is replaced 3ms
+ ✓ src/wallet/looks/DataLensProbes.render.test.tsx > D6: under StrictMode the first read lands once the queue moves and two changes keep each other 2ms
+ ✓ src/wallet/looks/DataLensProbes.render.test.tsx > D7: when the account closes, every look is derived at once and a new setter keeps nothing 3ms
+ × src/wallet/looks/DataLensProbes.render.test.tsx > D8: a change from a child's mount effect waits for the account's first read (order of the store's reads and writes) 4ms
+   → the store's calls in order: get looks, set looks, get looks, get wallet-order, get category-icons: expected [ 'get looks', 'get looks', …(1) ] to deeply equal [ 'get category-icons', …(2) ]
+ × src/wallet/looks/DataLensProbes.render.test.tsx > D8b: a change from a child's mount effect whose write fails still shows once the first read lands 3ms
+   → a write that fails shows until the app closes: expected { kind: null, …(2) } to deeply equal { kind: 'credit_card', …(2) }
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/looks/DataLensProbes.render.test.tsx > D1: a change whose write failed still shows after a later change to the same name
+AssertionError: after a later change to the same name: expected { kind: null, …(2) } to deeply equal { kind: 'credit_card', …(2) }
+
+- Expected
++ Received
+
+  {
+-   "face": "wow",
+-   "kind": "credit_card",
+-   "material": "peach",
++   "face": "smile",
++   "kind": null,
++   "material": "titanium",
+  }
+
+ ❯ src/wallet/looks/DataLensProbes.render.test.tsx:112:63
+    110|   expect(JSON.parse(stored.get(keyOf(A, 'looks')) ?? 'null'), 'what th…
+    111|   // The brief's P3: "a write that fails, shows until the app closes".
+    112|   expect(shown().w1, 'after a later change to the same name').toEqual(…
+       |                                                               ^
+    113| });
+    114|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/wallet/looks/DataLensProbes.render.test.tsx > D2: a change to an unreadable name still shows after the store reads again and another change lands
+AssertionError: the earlier change, after the store reads again: expected { kind: null, …(2) } to deeply equal { kind: 'credit_card', …(2) }
+
+- Expected
++ Received
+
+  {
+-   "face": "wow",
+-   "kind": "credit_card",
+-   "material": "peach",
++   "face": "smile",
++   "kind": null,
++   "material": "titanium",
+  }
+
+ ❯ src/wallet/looks/DataLensProbes.render.test.tsx:133:73
+    131|   await act(async () => { await api?.looks.setLook(W3, CASH); });
+    132|   expect(shown().w3).toEqual(CASH);
+    133|   expect(shown().w1, 'the earlier change, after the store reads again'…
+       |                                                                         ^
+    134| });
+    135|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/wallet/looks/DataLensProbes.render.test.tsx > D8: a change from a child's mount effect waits for the account's first read (order of the store's reads and writes)
+AssertionError: the store's calls in order: get looks, set looks, get looks, get wallet-order, get category-icons: expected [ 'get looks', 'get looks', …(1) ] to deeply equal [ 'get category-icons', …(2) ]
+
+- Expected
++ Received
+
+  [
+-   "get category-icons",
+    "get looks",
+-   "get wallet-order",
++   "get looks",
++   "set looks",
+  ]
+
+ ❯ src/wallet/looks/DataLensProbes.render.test.tsx:264:83
+    262|   await settle();
+    263|   // The brief: each change runs after the account's first read (three…
+    264|   expect(log.slice(0, 3).sort(), `the store's calls in order: ${log.jo…
+       |                                                                                   ^
+    265|   expect(shown()).toMatchObject({ w1: PEACH, w2: SKY });
+    266| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/wallet/looks/DataLensProbes.render.test.tsx > D8b: a change from a child's mount effect whose write fails still shows once the first read lands
+AssertionError: a write that fails shows until the app closes: expected { kind: null, …(2) } to deeply equal { kind: 'credit_card', …(2) }
+
+- Expected
++ Received
+
+  {
+-   "face": "wow",
+-   "kind": "credit_card",
+-   "material": "peach",
++   "face": "smile",
++   "kind": null,
++   "material": "titanium",
+  }
+
+ ❯ src/wallet/looks/DataLensProbes.render.test.tsx:288:71
+    286|   await settle();
+    287|   expect(shown().w2).toEqual(SKY);
+    288|   expect(shown().w1, 'a write that fails shows until the app closes').…
+       |                                                                       ^
+    289| });
+    290|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 5 passed (9)
+   Start at  07:36:28
+   Duration  791ms (transform 348ms, setup 41ms, import 498ms, tests 68ms, environment 80ms)
+

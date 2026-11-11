@@ -1,0 +1,109 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/apps/app
+
+ × src/wallet/looks/WalletLooks.render.test.tsx > a kept look, the wallet order and a category's icon go to this account's store, and two quick changes keep each other 25ms
+   → expected null to deeply equal { c1: 'book' }
+ ✓ src/wallet/looks/WalletLooks.render.test.tsx > a change waits for the account's first read, so the read never hides it 5ms
+ ✓ src/wallet/looks/WalletLooks.render.test.tsx > when the account changes, nothing of the last one shows, its late read is dropped, and a change stays with the account it was made in 12ms
+ × src/wallet/looks/WalletLooks.render.test.tsx > a name the store cannot read is never written over, and what fails to store still shows until the app closes 4ms
+   → expected { …(5) } to match object { …(3) }
+(5 matching properties omitted from actual)
+ ✓ src/wallet/looks/WalletLooks.render.test.tsx > a change whose write failed still shows after a later change to the same name is stored, and the store holds only what was stored 3ms
+ ✓ src/wallet/looks/WalletLooks.render.test.tsx > a change made while its name could not be read still shows after the store reads again and a later change to it is stored 3ms
+ ✓ src/wallet/looks/WalletLooks.render.test.tsx > a later change wins over one that was never stored, at every later read of the account's names 6ms
+ ✓ src/wallet/looks/WalletLooks.render.test.tsx > a change made from a child's mount effect, whose write fails, still shows once the account's first read lands 4ms
+ ✓ src/wallet/looks/WalletLooks.render.test.tsx > outside the provider looks are derived, no order or icon is kept, and the setters keep nothing 0ms
+ ✓ src/wallet/looks/WalletLooks.render.test.tsx > Bun's five faces are wc-wallet-edit's: cream with an ink outline in both modes, and hidden from screen readers 28ms
+ ✓ src/wallet/looks/WalletLooks.render.test.tsx > each material is materialPaint's gradient from corner to corner, its own in each mode, and only dark titanium has an edge 25ms
+ ✓ src/wallet/looks/WalletLooks.render.test.tsx > a category's tile is its glyph in ink on its hue tinted, or on raised, else its initial; 36 pt with an 11 pt corner, in proportion at 52 11ms
+ ✓ src/wallet/looks/WalletLooks.render.test.tsx > the kit's catalogue sections draw the materials, the cards and the category icons, and the card section's private card never touches the phone's setting 31ms
+ ✓ src/wallet/card/WalletCard.render.test.tsx > a credit card shows what was spent, others show what is left 85ms
+ ✓ src/wallet/card/WalletCard.render.test.tsx > each card says itself as ax-voiceover and rh-offline write it 36ms
+ ✓ src/wallet/card/WalletCard.render.test.tsx > the pending line shows on stack cards too 43ms
+ ✓ src/wallet/card/WalletCard.render.test.tsx > the full card adds the kind line; today's money out shows when it is passed; private mode masks each line in place 58ms
+ ✓ src/wallet/card/WalletCard.render.test.tsx > titanium carries white text, silk ink; dark titanium has a 1 pt edge of #5C5968 21ms
+ ✓ src/wallet/card/WalletCard.render.test.tsx > at AX5 a ฿999,999,999.99 balance and an 80-code-point Thai name wrap and never truncate 15ms
+ ✓ src/wallet/card/WalletCard.render.test.tsx > a card is at least 44 pt tall in every variant 23ms
+ ✓ src/wallet/card/WalletCard.render.test.tsx > looks come from the open diary's account, and a look kept for another wallet is ignored 16ms
+ ✓ src/wallet/card/WalletCard.render.test.tsx > with no diary open the derived look shows and setLook stores nothing 6ms
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > the harness nests the providers as the app does 22ms
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > reducedMotion: 'pending' reads as reduced until answerReducedMotion(false) 5ms
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > the harness mounts what it is given: the language, the mode, the text size, the answer and its own fakes 8ms
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > the wallet's two stores live in memory: seeds by scope, every change in stored, and the sign-out erase keeps the account's 2ms
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > a part mounted after the answer reads it at mount, since rerender keeps the providers 3ms
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > the bun intensity can change inside the harness, and a language chosen there leaves the mount in its own locale 3ms
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > a part that asks the phone itself gets the answer the root gets 2ms
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > the harness mounts the wallet's looks innermost, kept for the diary's account 4ms
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > the catalogue lists the Bun Wallet's sections last, each with a bw- id and a 'Bun Wallet: ' title (R72) 0ms
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  2 failed | 29 passed (31)
+   Start at  08:07:31
+   Duration  2.27s (transform 536ms, setup 105ms, import 1.07s, tests 513ms, environment 263ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/wallet-looks-unstored-planner/work/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:96523) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:96586) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:96587) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+stderr | src/wallet/testing/walletHarness.render.test.tsx > the bun intensity can change inside the harness, and a language chosen there leaves the mount in its own locale
+Bun setting could not be saved.
+Language choice could not be saved.
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/looks/WalletLooks.render.test.tsx > a kept look, the wallet order and a category's icon go to this account's store, and two quick changes keep each other
+AssertionError: expected null to deeply equal { c1: 'book' }
+
+- Expected:
+{
+  "c1": "book",
+}
+
++ Received:
+null
+
+ ❯ src/wallet/looks/WalletLooks.render.test.tsx:157:86
+    155|   expect(JSON.parse(stored.get(keyOf(TEST_ACCOUNT_ID, 'looks')) ?? 'nu…
+    156|   expect(JSON.parse(stored.get(keyOf(TEST_ACCOUNT_ID, 'wallet-order'))…
+    157|   expect(JSON.parse(stored.get(keyOf(TEST_ACCOUNT_ID, 'category-icons'…
+       |                                                                                      ^
+    158|   expect(shown()).toEqual({ w1: PEACH, w2: SKY, w3: CASH, order: [W2, …
+    159| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/wallet/looks/WalletLooks.render.test.tsx > a name the store cannot read is never written over, and what fails to store still shows until the app closes
+AssertionError: expected { …(5) } to match object { …(3) }
+(5 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -1,7 +1,7 @@
+  {
+-   "c1": "book",
++   "c1": "lotus",
+    "w1": {
+      "face": "wow",
+      "kind": "credit_card",
+      "material": "peach",
+    },
+
+ ❯ src/wallet/looks/WalletLooks.render.test.tsx:235:19
+    233|   expect(written).toEqual([]);
+    234|   // The changes show on top of what was read, and what the store hold…
+    235|   expect(shown()).toMatchObject({ w1: PEACH, w2: SKY, c1: 'book' });
+       |                   ^
+    236|   expect(stored.get(keyOf(TEST_ACCOUNT_ID, 'looks'))).toBe(JSON.string…
+    237|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -5,7 +5,7 @@ You are the implementer for the follow-up task wallet-looks-unstored: P2-T11's r
 - `apps/app/src/wallet/looks/WalletLooksProvider.tsx`: the provider keeps, per account, each change that was not stored and every change made after it, and lays them over every later read of that account's names. No exported name changes.
 - `apps/app/src/wallet/looks/WalletLooks.render.test.tsx`: V4 is extended so it pins what its title says, and four cases are added after it: the review's ready cases D1, D2 and D8b, and one that pins that a later change still wins.
 
-The planner wrote both files and proved them in a scratch copy of the integration head `8194e7f`: RED (the head's own provider against the new tests: 4 of 13 cases fail, each on an assertion), GREEN (13 of 13), 36 mutants killed (none survive) and R100's fast local gate. Do exactly what this brief says.
+The planner wrote both files and proved them in a scratch copy of the integration head `8194e7f`: RED (the head's own provider against the new tests: 4 of 13 cases fail, each on an assertion), GREEN (13 of 13), 37 mutants killed (none survive) and R100's fast local gate. Do exactly what this brief says.
 
 Read first, in this order:
 
@@ -31,7 +31,8 @@ Read first, in this order:
   - `orig/`: both files as they are at `8194e7f`;
   - `diffs/`: one diff per changed file (`apps_app_src_wallet_looks_WalletLooksProvider.tsx.diff`, `apps_app_src_wallet_looks_WalletLooks.render.test.tsx.diff`), for reading only (each turns `orig/` into `real/`);
   - `probes/`: the review's `DataLensProbes.render.test.tsx`, as the review left it, for the reviewer. It is not part of this task: never copy it into WT;
-  - `tools/`: `mutants.py` (the mutant runner), `prove.sh` and `run-all.sh` (the planner's stages), `killers.py` (every case each mutant fails), `sums.sh`, and `brief.template.md` with `fill_brief.py` (how this brief was built: every code block in the appendix is the kit's file, byte for byte);
+  - `ref/plan-p2-head.md`: the P2 plan as `8194e7f` has it, which the line numbers in this brief cite;
+  - `tools/`: `mutants.py` (the mutant runner), `prove.sh` and `run-all.sh` (the planner's stages), `killers.py` (every case each mutant fails), `rehearse.sh` with `commit_message.py` (this brief's steps, rehearsed), `sums.sh`, and `brief.template.md` with `fill_brief.py` (how this brief was built: every code block in the appendix is the kit's file, byte for byte);
   - `logs/`: see "For the controller";
   - checksums with paths relative to WT, for `shasum -a 256 -c` run from WT: `SHA256SUMS.base` (both files at the head), `SHA256SUMS.red` (the RED state: the final test file and the head's provider) and `SHA256SUMS.real` (both final files); and `SHA256SUMS`, the folder's own (paths under PL; the planner's `*.log` files are listed in `SHA256SUMS.logs`, not in it);
   - `work/`: the planner's proof tree, outside the sums.
@@ -49,8 +50,8 @@ Read first, in this order:
 
 | File | Change |
 | --- | --- |
-| `apps/app/src/wallet/looks/WalletLooksProvider.tsx` | P2-T11's; P2-T20, P2-T21, P2-T29 and P5-T19 build on it. The header's second paragraph; a `Step` type and `layOver` after `nothingKept`; in the provider, the `unstored` ref, the first read's `layOver`, and `keep`'s body (P2 to P8). 153 lines before, 173 after. |
-| `apps/app/src/wallet/looks/WalletLooks.render.test.tsx` | P2-T11's. The header; three imports (`useEffect`, `SpendDiaryProvider`, `WalletLooksProvider`); a `storeOver` helper after `heldReads`; V4 extended; four cases after V4 (P9). 418 lines before, 535 after; 9 cases before, 13 after. |
+| `apps/app/src/wallet/looks/WalletLooksProvider.tsx` | P2-T11's; P2-T20, P2-T21, P2-T29 and P5-T19 build on it. The header's second paragraph; an `Edit` type and `layOver` after `nothingKept`; in the provider, the `unstored` ref, the first read's `layOver`, and `keep`'s body (P2 to P8). 153 lines before, 173 after. |
+| `apps/app/src/wallet/looks/WalletLooks.render.test.tsx` | P2-T11's. The header; three imports (`useEffect`, `SpendDiaryProvider`, `WalletLooksProvider`); a `storeOver` helper after `heldReads`; V4 extended; four cases after V4 (P9). 418 lines before, 542 after; 9 cases before, 13 after. |
 | `docs/implementation/receipts/wallet-looks-unstored.md` (repo root) | **new.** Your receipt (R87). |
 
 Not in this task:
@@ -65,13 +66,13 @@ No exported name, type or signature changes: `WalletLooksProvider`, `useWalletLo
 
 ```ts
 /** One change, as it acts on everything kept: its own name, changed. */
-type Step = (kept: Kept) => Kept;
+type Edit = (kept: Kept) => Kept;
 
 /** Lays changes over what was read, in the order they were made. */
-const layOver = (kept: Kept, steps: readonly Step[]): Kept => steps.reduce((now, step) => step(now), kept);
+const layOver = (kept: Kept, edits: readonly Edit[]): Kept => edits.reduce((now, edit) => edit(now), kept);
 
 // In WalletLooksProvider: by account id, while the provider is mounted.
-const unstored = useRef(new Map<string, readonly Step[]>());
+const unstored = useRef(new Map<string, readonly Edit[]>());
 ```
 
 The test file adds one helper:
@@ -95,10 +96,10 @@ function storeOver(stored: Map<string, string>): { faults: { reads: boolean; wri
   - At the head, the focused file passes 9 of 9, and the review's probe file fails D1, D2, D8 and D8b exactly as the review recorded, while D3 to D7 pass (`PL/logs/base-looks.log`, `PL/logs/base-probes.log`).
 - **P2. The fix is the review's: unstored changes per account, in a ref, laid over each read.**
   - A change is *not stored* when its name could not be read (P3: a name the store cannot read is never written over) or when its write failed.
-  - Each change is kept as a `Step`: the change itself, as it acts on everything kept (one wallet's look set, one category's icon set, or the whole order replaced). A step is replayed, not a value merged, so the module needs no per-name merge rule.
-  - The steps are laid, in the order made, over every read of the account's names:
+  - Each change is kept as an `Edit`: the change itself, as it acts on everything kept (one wallet's look set, one category's icon set, or the whole order replaced). An edit is replayed, not a value merged, so the module needs no per-name merge rule. (`enqueue`'s own parameter keeps its name `step`: a queued task, not an edit.)
+  - The edits are laid, in the order made, over every read of the account's names:
     - the account's first read: `layOver(read, memory)`;
-    - each change's own read: the name replaced by what the store holds, then every step in memory, then this change.
+    - each change's own read: the name replaced by what the store holds, then every edit in memory, then this change.
   - With nothing in memory, every read and every change shows and writes exactly what it did before: the first read publishes `read`, and a change publishes `slot.put(now, change(read))` (`change` over what is shown, when its name cannot be read) and writes `change(read)`.
 - **P3. A later change still wins.** Once an account has a change in memory, every later change for it goes into memory too, stored or not, in the order made.
   - Without that, a stored later look for the same wallet would be read back and then covered again by the earlier, unstored one (mutants WU16 and WU17).
@@ -109,8 +110,8 @@ function storeOver(stored: Map<string, string>): { faults: { reads: boolean; wri
   - P3 asks that such a change *shows* until the app closes, not that a later write stores it;
   - the Global Constraints' anti-goal "nothing is saved without the person's tap" (plan line 91) reads most simply as each write holding what its own tap asked for. A fold would store an earlier look at a later tap on another wallet (mutant WU11).
 - **P5. The memory lives in a ref per provider (`useRef`), not in module scope.**
-  - The review and the controller ask for a ref. "Until the app closes" then holds while the provider stays mounted, as P2-T10's private mode keeps a choice it could not store in its own provider's state (`PrivateModeProvider.tsx:83`).
-  - `WalletShell` will mount the one provider inside the spend layout (P2-T18, plan lines 1073 to 1075). When that unmounts (sign-out, or 1C's terms step or 1D-T8's consent question taking the shell's place), the memory goes with it, and the account's next first read shows what the store holds.
+  - The review and the controller ask for a ref. "Until the app closes" then holds while the provider stays mounted, as P2-T10's private mode keeps a choice it could not store in its own provider's state (`apps/app/src/wallet/privacy/PrivateModeProvider.tsx:83`).
+  - `WalletShell` will mount the one provider inside the spend layout (P2-T18, plan lines 1073 to 1075). When the shell unmounts (the app leaves the spend area, or 1C's terms step or 1D-T8's consent question takes the shell's place, plan lines 19 and 71), the memory goes with it, and the account's next first read shows what the store holds. Nothing else clears it: a diary that locks or closes only sets the account id to null, and the memory waits for the account to open again (V4 pins it; mutant WU20).
   - A module-scope map would outlive that, but every render test opens `TEST_ACCOUNT_ID`, so a change left unstored in one case would show in the next unless the shared harness reset it, and `walletHarness.tsx` is outside this task. The header says "(while this provider stays mounted)". Note for P2-T18.
 - **P6. The review's D8 is not taken.** The review: "Take D8 only if the fix also queues the first read ahead of every change."
   - React runs a child's effects before its parent's, so a change made from a child's mount effect is queued before the provider's first read.
@@ -120,21 +121,22 @@ function storeOver(stored: Map<string, string>): { faults: { reads: boolean; wri
 - **P7. What each read shows.**
   - The first read: what it read, with the account's memory laid over it.
   - A change to a name the store can read: the name replaced by what was read, with the memory and this change laid over it. What was read is the base, so a first read that failed is made good at the next change to that name (V4's last part; mutant WU7).
-  - A change to a name the store cannot read: what is shown, with the memory and this change laid over it. What is shown already holds every step in memory, and laying them again changes nothing; if the account's first read has not landed yet, they show at once.
+  - A change to a name the store cannot read: what is shown, with the memory and this change laid over it. What is shown already holds every edit in memory, and laying them again changes nothing; if the account's first read has not landed yet, they show at once.
   - Every publish keeps its guard: it lands only while the account it was made for is open (P2-T11's PR10, on the new line).
-- **P8. The memory is not trimmed.** It grows by one step per change made after the account's first unstored change, until the provider unmounts. Changes are taps, and each step holds one id and a look or an icon, or one order.
+- **P8. The memory is not trimmed.** It grows by one edit per change made after the account's first unstored change, until the provider unmounts. Changes are taps, and each edit holds one id and a look or an icon, or one order.
 - **P9. The tests, all in `WalletLooks.render.test.tsx`.**
   - Why this file: it already holds the provider's cases and their helpers (`Keeper`, `shown`, the held stores). P5-T19's plan names a later `looks/WalletLooksProvider.render.test.tsx`, so that name is left to it. A new file would add a render file to CI for four cases.
   - **V4** ("a name the store cannot read is never written over, and what fails to store still shows until the app closes") now pins its whole title. After its two failures (W1's look and c1's icon changed while unreadable, W3's look whose write failed), the store works again:
+    - while the diary is locked, every look is derived; when it opens again, the account's next first read shows them over what the store holds;
     - the other account's first read, and a change made under it, never show them;
-    - this account's next first read shows them over what the store holds;
+    - back on this account, its next first read shows them again;
     - the store still holds only `{ W2: SKY }`.
 
     Its last part also pins that, after a first read that failed, a change shows what the store holds (WU7). V4 now mounts with `createFakeDiary()` (the same account) so it can switch accounts.
   - **D1, D2 and D8b** are the review's ready cases. They keep their steps and assertions, with the file's names (`TEST_ACCOUNT_ID` for the review's `A`) and the new `storeOver` helper in place of each case's own store (the same reads, writes and failures). D2 also checks that the store then holds only what was stored, as D1 does, and D8b that the store was never written. D8b's effect lists `setLook` as its dependency.
   - **A new case:** "a later change wins over one that was never stored, at every later read of the account's names". A look and an order each fail to store once, and are then set again and stored. The next change and the account's next first read must show the later ones. It passes at RED by design (the head keeps nothing unstored, so nothing can cover a later change). It pins the order the fix must keep (WU5, WU16, WU17).
-  - RED: 4 of 13 fail, each on an assertion: V4 (at "this account again"), D1, D2 and D8b. GREEN: 13 of 13.
-- **P10. The mutants.** WU1 to WU19 cover every new line. PR1 to PR10 and PR14 to PR20 are P2-T11's provider mutants, on the lines where they moved, so every rule of P3 that held still holds. P2-T11's PR11, PR12 and PR13 are WU12, WU8 and WU14 here. Each runs against the three render files that mount the provider (`WalletLooks`, `WalletCard`, `walletHarness`: 31 cases). The planner's run killed all 36, and a second run printed the same lines byte for byte.
+  - RED: 4 of 13 fail, each on an assertion: V4 (at "opened again"), D1, D2 and D8b. GREEN: 13 of 13.
+- **P10. The mutants.** WU1 to WU20 cover every new line. PR1 to PR10 and PR14 to PR20 are P2-T11's provider mutants, on the lines where they moved, so every rule of P3 that held still holds. P2-T11's PR11, PR12 and PR13 are WU12, WU8 and WU14 here. Each runs against the three render files that mount the provider (`WalletLooks`, `WalletCard`, `walletHarness`: 31 cases). The planner's run killed all 37, and a second run printed the same lines byte for byte.
 - **P11. The gate (R100).**
   - Run: `typecheck:app`; the focused file RED to GREEN; the five other render files that mount the provider through `mountWallet` (`WalletCard` 9, `walletHarness` 9, `PrivateMode` 9, `WalletAmount` 5, `GrowBar` 6); `test:app`; `test:unit`; `git diff --check`.
   - Not run: `typecheck:routes` and `export:web` (no route, app config or app entry changes, and no app file imports the provider yet); the edge, API and database suites; `test:ops` (no package or lockfile change).
@@ -183,7 +185,7 @@ function storeOver(stored: Map<string, string>): { faults: { reads: boolean; wri
     × src/wallet/looks/WalletLooks.render.test.tsx > a change made from a child's mount effect, whose write fails, still shows once the account's first read lands
    ```
 3. Every failure is an assertion:
-   - `grep -c '^AssertionError' S/red-render.log` prints `4`; the first three name `this account again`, `after a later change to the same name` and `the earlier change, after the store reads again`;
+   - `grep -c '^AssertionError' S/red-render.log` prints `4`; the first three name `opened again`, `after a later change to the same name` and `the earlier change, after the store reads again`;
    - `grep -cE 'Cannot find module|Failed to resolve|TypeError|ReferenceError' S/red-render.log` prints `0`.
 
 ## Step 3: GREEN (plan Steps 3 and 4)
@@ -207,10 +209,10 @@ Run the planner's runner once. It applies each mutant alone to `WalletLooksProvi
 MUTANT_LOGS=S/mutant-logs python3 -I PL/tools/mutants.py WT > S/mutants.out 2> S/mutants.err; echo exit=$?
 ```
 
-Type the full paths. To check first that every pattern matches once, run `python3 -I PL/tools/mutants.py WT --check` (36 `APPLIES` lines, exit 0).
+Type the full paths. To check first that every pattern matches once, run `python3 -I PL/tools/mutants.py WT --check` (37 `APPLIES` lines, exit 0).
 
 Expected: `exit=0`, and:
-- `grep -c " KILLED: " S/mutants.out` prints `36`, and `grep -c "restored=True" S/mutants.out` prints `36`;
+- `grep -c " KILLED: " S/mutants.out` prints `37`, and `grep -c "restored=True" S/mutants.out` prints `37`;
 - `diff S/mutants.out PL/logs/mutants.out` prints nothing: each mutant fails the same cases as in the planner's run.
 
 It takes about two minutes. Then `/usr/bin/git -C WT status --short --untracked-files=all` shows exactly ` M` for the two files, and `cd WT && shasum -a 256 -c PL/SHA256SUMS.real` still prints 2 `OK` lines.
@@ -219,7 +221,7 @@ In the table, V1 to V5 are the file's first five cases (V4 is the extended one);
 
 | Mutant | Change | Killed by |
 | --- | --- | --- |
-| WU1 | the first read lays nothing over what it reads | V4 (`this account again`), D8b |
+| WU1 | the first read lays nothing over what it reads | V4 (`opened again`), D8b |
 | WU2 | the first read lays every account's unstored changes | V4 (`the other account's first read`) |
 | WU3 | a change lays every account's unstored changes | V4 (`the other account's change`) |
 | WU4 | a change keeps and lays only itself | V4, D1, D2 |
@@ -237,7 +239,8 @@ In the table, V1 to V5 are the file's first five cases (V4 is the extended one);
 | WU16 | a stored change after an unstored one is not kept in memory | later wins |
 | WU17 | changes are kept in memory only after two unstored ones | later wins |
 | WU18 | nothing is kept in memory | V4, D1, D2, D8b |
-| WU19 | the memory is forgotten when the account changes | V4 (`this account again`) |
+| WU19 | the memory is forgotten when the account changes | V4 (`opened again`) |
+| WU20 | the memory is forgotten when the diary locks or closes | V4 (`opened again`) |
 | PR1 | the store is never read | V1, V3, V4, later wins, D8b, the tile case; WalletCard's account case; the harness's looks case |
 | PR2 to PR4 | a setter keeps nothing | V1 (and the cases that use that setter) |
 | PR5 | changes run at once, not one after another | V1, V2, D8b |
@@ -280,13 +283,13 @@ Create `WT/docs/implementation/receipts/wallet-looks-unstored.md` with the Write
   - `WalletLooksProvider.tsx`: per account, in a ref, the provider keeps each change that was not stored and every change made after it, in the order made, and lays them over every later read of that account's names: the account's first read and each change's own read. So such a change shows until the app closes (while the provider stays mounted), and a later change still wins over it.
   - Unchanged: a write holds only what the change's own read found plus that change; a name the store cannot read is never written over; reads for an account no longer open are dropped; nothing of the last account shows after a switch; with no account open the setters keep nothing.
   - The header says what holds now. Its claim that each change runs "after the account's first read" is gone: a change made from a child's mount effect runs before it (the review's D8, not taken), and the first read lays it over what it reads when it was not stored.
-  - `WalletLooks.render.test.tsx`: V4 pins its whole title (after the store works again, another account never shows what this one could not store, and this account's next first read shows it over what is stored); the review's ready cases D1, D2 and D8b; and a case that pins that a later change wins at every later read. 9 cases before, 13 after.
-- **Files:** modified `apps/app/src/wallet/looks/WalletLooksProvider.tsx` (153 lines before, 173 after) and `apps/app/src/wallet/looks/WalletLooks.render.test.tsx` (418 before, 535 after); created this receipt.
+  - `WalletLooks.render.test.tsx`: V4 pins its whole title (after the store works again, the account's next first read, when the diary opens again or the account comes back, shows what was never stored over what is stored, and another account never shows it); the review's ready cases D1, D2 and D8b; and a case that pins that a later change wins at every later read. 9 cases before, 13 after.
+- **Files:** modified `apps/app/src/wallet/looks/WalletLooksProvider.tsx` (153 lines before, 173 after) and `apps/app/src/wallet/looks/WalletLooks.render.test.tsx` (418 before, 542 after); created this receipt.
 - **RED to GREEN** (the head's provider is the RED form: the fix adds no export):
   - RED: `typecheck:app` `<result>`; `WalletLooks.render.test.tsx` `<counts>`; the four failing cases V4, D1, D2 and D8b, `<n>` `AssertionError`s, no module or type error.
   - GREEN: `typecheck:app` `<result>`; `WalletLooks.render.test.tsx` `<counts>`; the other five render files that mount the provider `<counts>` (WalletCard 9, walletHarness 9, PrivateMode 9, WalletAmount 5, GrowBar 6).
-- **Mutation check:** the planner's runner (`.claude/controller/scratch/wallet-looks-unstored-planner/tools/mutants.py`), 36 mutants on `WalletLooksProvider.tsx`, each applied alone, run against `WalletLooks`, `WalletCard` and `walletHarness` and restored (SHA-256 checked): `<killed> killed, <survived> survived`. `S/mutants.out` `<is identical to / differs from>` the planner's `logs/mutants.out`.
-  - WU1 to WU19: the new lines (what the first read and each change lay, the memory's keying per account, its order, when a change goes into it, and that nothing unstored is written).
+- **Mutation check:** the planner's runner (`.claude/controller/scratch/wallet-looks-unstored-planner/tools/mutants.py`), 37 mutants on `WalletLooksProvider.tsx`, each applied alone, run against `WalletLooks`, `WalletCard` and `walletHarness` and restored (SHA-256 checked): `<killed> killed, <survived> survived`. `S/mutants.out` `<is identical to / differs from>` the planner's `logs/mutants.out`.
+  - WU1 to WU20: the new lines (what the first read and each change lay, the memory's keying per account, its order, when a change goes into it, that nothing unstored is written, and that neither an account switch nor a locked diary clears it).
   - PR1 to PR10 and PR14 to PR20: P2-T11's provider mutants, on the lines where they moved.
 - **Gate** (worktree root; R100's fast local gate):
   - `typecheck:app`: `<result>`.
@@ -304,11 +307,11 @@ Create `WT/docs/implementation/receipts/wallet-looks-unstored.md` with the Write
   3. The memory lives while the provider is mounted, as P2-T10's private mode keeps a choice it could not store (P5).
   <your own, if any>
 - **Risks and notes for later tasks:**
-  - P2-T18: an unstored change shows while `WalletShell`'s provider stays mounted; when the spend layout unmounts (sign-out, 1C's terms step or 1D-T8's consent question in the shell's place), the account's next first read shows what the store holds.
+  - P2-T18: an unstored change shows while `WalletShell`'s provider stays mounted; when the shell unmounts (the app leaves the spend area, or 1C's terms step or 1D-T8's consent question takes its place), the account's next first read shows what the store holds.
   - P2-T20, P2-T21 and P2-T29: a setter's promise resolves whether or not the change was stored, and the change shows either way; a screen cannot tell the person it was not saved.
   - P5-T19: the upload reads kept values from the store, so an unstored change is never uploaded. If the provider later reads looks from the server, decide whether the memory is laid over the server's values too.
   - The review's D8 still fails on the store's call order only: a change made from a child's mount effect reads and writes its name before the account's first read. Nothing is lost, and what shows is right (D8b).
-  - The memory grows by one step per change made after an account's first unstored change, until the provider unmounts.
+  - The memory grows by one edit per change made after an account's first unstored change, until the provider unmounts.
 ```
 
 ## Step 7: Commit
@@ -345,7 +348,7 @@ Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>
 As the protocol says:
 - `STATUS: DONE` or `STATUS: BLOCKED` first;
 - the commit SHA and branch, and the files;
-- the RED and GREEN counts, and the mutants (36 killed, and whether `S/mutants.out` equals the planner's);
+- the RED and GREEN counts, and the mutants (37 killed, and whether `S/mutants.out` equals the planner's);
 - each gate command with its counts;
 - SKIPPED: the phone check, `typecheck:routes`, `export:web`, the edge, API and database suites and `test:ops`; CI: the full render suite and the iOS export;
 - deviations: the three above, and any of your own.
@@ -355,16 +358,20 @@ As the protocol says:
 ## For the controller (not the implementer's)
 
 - **Readiness.** READY. P2-T11 is merged; no package, lockfile, Cloudflare resource, account setting or owner answer is needed. No in-flight task shares a file (P12). Once this merges, the `held.txt` lines for P2-T20, P2-T21 and P2-T29 can go.
-- **Size:** S. One code file (+20 lines net) and its test file (+117).
+- **Size:** S. One code file (+20 lines net) and its test file (+124).
 - **Kit checks.**
   - The folder's own sums: `shasum -a 256 -c SHA256SUMS` from PL. The `*.log` files are in `SHA256SUMS.logs`, not in it.
   - `SHA256SUMS.base`, `.red` and `.real` (paths relative to WT): the head's two files, the RED state and the final state.
   - `PL/work/` is the planner's proof tree (`8194e7f`'s code plus `node_modules` and the final files), outside the sums.
 - **The planner's logs** (in `PL/logs/`):
-  - `summary.txt`: every stage of `tools/run-all.sh`, timed, with the load average: base 47 of 47 (the focused file 9 and its five neighbours 38); RED 4 failed and 9 passed of 13 with four assertions and no load error; GREEN 13 of 13 and the neighbours 38 of 38; the mutants 36 killed; and the gate (`typecheck:app` exit 0, the six render files 51 of 51, `test:app` and `test:unit` exit 0 with `ℹ fail 0`, no whitespace error).
+  - `summary.txt`: every stage of `tools/run-all.sh`, timed, with the load average: base 47 of 47 (the focused file 9 and its five neighbours 38); RED 4 failed and 9 passed of 13 with four assertions and no load error; GREEN 13 of 13 and the neighbours 38 of 38; the mutants 37 killed; and the gate (`typecheck:app` exit 0, the six render files 51 of 51, `test:app` and `test:unit` exit 0 with `ℹ fail 0`, no whitespace error).
   - `base-*`, `red-*`, `green-*` and `gate-*`: each stage's own logs.
   - `mutants.out` and `mutant-logs/`: the run; `repeat/`: a second run, whose `mutants.out` is byte for byte the first's; `killers.txt`: every case each mutant fails.
   - `probes.log`: the review's probe file on the final provider. D1 to D7 and D8b pass; D8 fails on the store's call order only (P6). `base-probes.log`: the same file at the head, where D1, D2, D8 and D8b fail as the review recorded. `base-looks.log`: the focused file at the head, 9 of 9.
+  - `mutants-check.out`: the runner's `--check`, 37 `APPLIES`.
+  - `rehearsal.txt`: this brief's Steps 0.2 to 7, typed as written (`tools/rehearse.sh`) in a throwaway git copy of `8194e7f`, deleted afterwards; the commit message came from this brief. Every Expected line held, and its `mutants.out` was identical to `logs/mutants.out`. Step 0.1 needs the real remote, and the receipt was a stand-in.
+  - `superseded/run-1/`: the first full run, before V4 gained the diary's lock and open, with 36 mutants. Every mutant failed the same cases as in the final run; WU20 came with the lock and open, which pin that a locked diary keeps the memory (P5).
+  - `superseded/run-2/`: the final files before the provider's new type was renamed from `Step` to `Edit`, so that it no longer shares a word with `enqueue`'s `step`. The same results, case for case.
   - `iter-*`: checks run while the files were written, kept as history.
 - **The CI deltas:** render +0 files and +4 cases (`WalletLooks.render.test.tsx` 9 to 13); `test:unit`, `test:app`, web and iOS +0.
 - **For the reviewer:** the review's D8 (not taken, P6) and the fold it offered (not taken, P4); the memory's lifetime (P5); and that a stored change joins the memory once an unstored one is there (P3). `PL/probes/` holds the review's probe file, to run against the commit.
@@ -445,10 +452,10 @@ const ICONS: Slot<KeptIcons> = { name: CATEGORY_ICONS_NAME, parse: parseIcons, o
 const nothingKept = (accountId: string | null): Kept => ({ accountId, looks: {}, order: [], icons: {} });
 
 /** One change, as it acts on everything kept: its own name, changed. */
-type Step = (kept: Kept) => Kept;
+type Edit = (kept: Kept) => Kept;
 
 /** Lays changes over what was read, in the order they were made. */
-const layOver = (kept: Kept, steps: readonly Step[]): Kept => steps.reduce((now, step) => step(now), kept);
+const layOver = (kept: Kept, edits: readonly Edit[]): Kept => edits.reduce((now, edit) => edit(now), kept);
 
 export type WalletLooks = {
   /** The kept look, else the one derived from the id. */
@@ -492,7 +499,7 @@ export function WalletLooksProvider({ children }: { children: ReactNode }) {
   const queue = useRef<Promise<void>>(Promise.resolve());
   // By account, while this provider is mounted: each change that was not stored and every change made
   // after it, in the order made. Each read lays them over what it reads.
-  const unstored = useRef(new Map<string, readonly Step[]>());
+  const unstored = useRef(new Map<string, readonly Edit[]>());
   const enqueue = useCallback((step: () => Promise<void>) => {
     const run = queue.current.then(step);
     queue.current = run.catch(() => undefined);
@@ -514,16 +521,16 @@ export function WalletLooksProvider({ children }: { children: ReactNode }) {
   const keep = useCallback(<T,>(slot: Slot<T>, change: (value: T) => T): Promise<void> => {
     if (accountId === null) return Promise.resolve();
     const store = walletAccountStore(accountId);
-    const step: Step = (kept) => slot.put(kept, change(slot.of(kept)));
+    const edit: Edit = (kept) => slot.put(kept, change(slot.of(kept)));
     return enqueue(async () => {
       const stored = await readName(store, slot.name);
       const earlier = unstored.current.get(accountId) ?? [];
-      const steps = [...earlier, step];
+      const edits = [...earlier, edit];
       // What the store holds (what is shown, when it cannot be read), with each change not stored and this one over it.
-      setState((now) => (now.accountId === accountId ? layOver(stored === null ? now : slot.put(now, slot.parse(stored.raw)), steps) : now));
+      setState((now) => (now.accountId === accountId ? layOver(stored === null ? now : slot.put(now, slot.parse(stored.raw)), edits) : now));
       // A name the store cannot read is never written over, and a write that fails is caught.
       const written = stored !== null && (await store.set(slot.name, JSON.stringify(change(slot.parse(stored.raw)))).then(() => true, () => false));
-      if (!written || earlier.length > 0) unstored.current.set(accountId, steps);
+      if (!written || earlier.length > 0) unstored.current.set(accountId, edits);
     });
   }, [accountId, enqueue]);
 
@@ -590,10 +597,10 @@ export function useCategoryIcons(): CategoryIcons {
  const nothingKept = (accountId: string | null): Kept => ({ accountId, looks: {}, order: [], icons: {} });
  
 +/** One change, as it acts on everything kept: its own name, changed. */
-+type Step = (kept: Kept) => Kept;
++type Edit = (kept: Kept) => Kept;
 +
 +/** Lays changes over what was read, in the order they were made. */
-+const layOver = (kept: Kept, steps: readonly Step[]): Kept => steps.reduce((now, step) => step(now), kept);
++const layOver = (kept: Kept, edits: readonly Edit[]): Kept => edits.reduce((now, edit) => edit(now), kept);
 +
  export type WalletLooks = {
    /** The kept look, else the one derived from the id. */
@@ -604,7 +611,7 @@ export function useCategoryIcons(): CategoryIcons {
    const queue = useRef<Promise<void>>(Promise.resolve());
 +  // By account, while this provider is mounted: each change that was not stored and every change made
 +  // after it, in the order made. Each read lays them over what it reads.
-+  const unstored = useRef(new Map<string, readonly Step[]>());
++  const unstored = useRef(new Map<string, readonly Edit[]>());
    const enqueue = useCallback((step: () => Promise<void>) => {
      const run = queue.current.then(step);
      queue.current = run.catch(() => undefined);
@@ -621,19 +628,19 @@ export function useCategoryIcons(): CategoryIcons {
    const keep = useCallback(<T,>(slot: Slot<T>, change: (value: T) => T): Promise<void> => {
      if (accountId === null) return Promise.resolve();
      const store = walletAccountStore(accountId);
-+    const step: Step = (kept) => slot.put(kept, change(slot.of(kept)));
++    const edit: Edit = (kept) => slot.put(kept, change(slot.of(kept)));
      return enqueue(async () => {
        const stored = await readName(store, slot.name);
 -      const value = stored === null ? null : change(slot.parse(stored.raw));
 -      setState((now) => (now.accountId === accountId ? slot.put(now, value ?? change(slot.of(now))) : now));
 -      if (value !== null) await store.set(slot.name, JSON.stringify(value)).catch(() => undefined);
 +      const earlier = unstored.current.get(accountId) ?? [];
-+      const steps = [...earlier, step];
++      const edits = [...earlier, edit];
 +      // What the store holds (what is shown, when it cannot be read), with each change not stored and this one over it.
-+      setState((now) => (now.accountId === accountId ? layOver(stored === null ? now : slot.put(now, slot.parse(stored.raw)), steps) : now));
++      setState((now) => (now.accountId === accountId ? layOver(stored === null ? now : slot.put(now, slot.parse(stored.raw)), edits) : now));
 +      // A name the store cannot read is never written over, and a write that fails is caught.
 +      const written = stored !== null && (await store.set(slot.name, JSON.stringify(change(slot.parse(stored.raw)))).then(() => true, () => false));
-+      if (!written || earlier.length > 0) unstored.current.set(accountId, steps);
++      if (!written || earlier.length > 0) unstored.current.set(accountId, edits);
      });
    }, [accountId, enqueue]);
  
@@ -716,14 +723,21 @@ export function useCategoryIcons(): CategoryIcons {
    await settle();
    const written: string[] = [];
    const locked = new Error('the keychain is locked');
-@@ -223,11 +245,25 @@
+@@ -223,11 +245,32 @@
    });
    await act(async () => { await api?.looks.setLook(W3, CASH); });
    expect(shown().w3).toEqual(CASH);
 +
-+  // Until the app closes. The store works again: another account never shows what this one could not
-+  // store, at its first read or at a change, and this account's next first read lays it over what is stored.
++  // Until the app closes. The store works again. When the diary locks and opens, the account's next first
++  // read lays what was never stored over what the store holds; another account never shows it, at its
++  // first read or at a change.
 +  installStoreBackend(storeOver(stored).backend);
++  await act(async () => { fake.set({ accountId: null, phase: 'locked' }); });
++  await settle();
++  expect(shown(), 'locked').toEqual({ w1: derivedLook(W1), w2: derivedLook(W2), w3: derivedLook(W3), order: [], c1: 'lotus' });
++  await act(async () => { fake.set({ accountId: TEST_ACCOUNT_ID, phase: 'ready' }); });
++  await settle();
++  expect(shown(), 'opened again').toEqual({ w1: PEACH, w2: SKY, w3: CASH, order: [], c1: 'book' });
 +  stored.set(keyOf(OTHER_ACCOUNT, 'looks'), JSON.stringify({ [W1]: CASH }));
 +  await act(async () => { fake.set({ accountId: OTHER_ACCOUNT }); });
 +  await settle();
@@ -745,7 +759,7 @@ export function useCategoryIcons(): CategoryIcons {
    await settle();
    installStoreBackend({
      getItem: async () => { throw locked; },
-@@ -236,11 +272,92 @@
+@@ -236,11 +279,92 @@
      getAllKeys: async () => [],
      multiRemove: async () => undefined,
    });
@@ -756,8 +770,8 @@ export function useCategoryIcons(): CategoryIcons {
 +  installStoreBackend(storeOver(again.stored).backend);
 +  await act(async () => { await api?.looks.setLook(W1, PEACH); });
 +  expect(shown(), 'what the store holds, with the change over it').toMatchObject({ w1: PEACH, w2: SKY });
- });
- 
++});
++
 +// The review's ready case D1 (P2-T11 m1).
 +test('a change whose write failed still shows after a later change to the same name is stored, and the store holds only what was stored', async () => {
 +  const { stored } = mountWallet(<Keeper />, { account: { looks: JSON.stringify({ [W2]: SKY }) } });
@@ -771,8 +785,8 @@ export function useCategoryIcons(): CategoryIcons {
 +  await act(async () => { await api?.looks.setLook(W3, CASH); });
 +  expect(JSON.parse(stored.get(keyOf(TEST_ACCOUNT_ID, 'looks')) ?? 'null'), 'what the store holds').toEqual({ [W2]: SKY, [W3]: CASH });
 +  expect(shown(), 'after a later change to the same name').toMatchObject({ w1: PEACH, w2: SKY, w3: CASH });
-+});
-+
+ });
+ 
 +// The review's ready case D2 (P2-T11 m1).
 +test('a change made while its name could not be read still shows after the store reads again and a later change to it is stored', async () => {
 +  const { stored } = mountWallet(<Keeper />, { account: { looks: JSON.stringify({ [W2]: SKY }) } });

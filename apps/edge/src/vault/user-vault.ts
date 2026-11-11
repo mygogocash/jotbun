@@ -8,6 +8,7 @@ import type { CommandRegistry } from '@api/commands/command-registry'
 import { commandDigesterFromEnv } from '@api/commands/command-digest'
 import type { CommandDigester } from '@api/commands/command-digest'
 
+import { logFailure } from '../v1/log'
 import type { VaultCall, VaultReply } from '../v1/protocol'
 import { stepRouteOf, vaultRouteOf } from '../v1/routes'
 import { buildVaultRegistry } from './commands/registry'
@@ -17,7 +18,7 @@ import { VAULT_MIGRATIONS } from './migrations'
 import { assertPolicyAccepted } from './policies'
 import { RateBuckets } from './rate-limits'
 import { toProblemReply } from './replies'
-import { armAlarm, committedRevision, runDue } from './retention'
+import { RETENTION_RETRY_MS, reschedule, runDue } from './retention'
 import { VAULT_HANDLERS } from './routes'
 import { assertSession, ensureAccount } from './session'
 import { vaultSchema } from './schema'
@@ -35,6 +36,16 @@ import type { ExportParams } from '../background/export-workflow'
 import { failExport as failExportIn, writeExport as writeExportIn } from './files/exports'
 import type { SnapshotParams } from '../background/snapshot-workflow'
 import { buildSnapshot as buildSnapshotIn, failSnapshot as failSnapshotIn } from './files/snapshots'
+import { runFileJobs } from './files/jobs'
+import type { FileJobOptions } from './files/jobs'
+
+/**
+ * A call or a background method never sets the alarm sooner than this after
+ * its clock (1B-T11): work a write makes due at once (a released receipt, a
+ * given-back copy) waits a minute, so a burst of writes is one alarm. The
+ * alarm itself rearms with no delay, so a capped run continues at once.
+ */
+export const CALL_ALARM_DELAY_MS = 60_000
 
 /** The bindings the vault reads: the command digest keys, the environment name, the private object bucket and config:v1's KV (for the gates of background work). */
 export type VaultEnv = {
@@ -63,13 +74,25 @@ export class UserVault extends DurableObject<VaultEnv> {
   erased = false
   /** When startPendingWork last ran (epoch ms on the vault clock), or null. Memory only: a vault that wakes starts again at once. */
   lastStartAttemptMs: number | null = null
+  /** What alarm() passes to runFileJobs (1B-T11). Empty by default; tests set it, as they set `clock`. */
+  fileJobOptions: FileJobOptions = {}
+  /**
+   * The alarm this instance has set (epoch ms), or null when none is set (1B-T11).
+   * Memory only, because the synchronous call() cannot await getAlarm(): the
+   * constructor reads it, rearm() and erase() keep it, and alarm() clears it when
+   * it starts, because the runtime deletes an alarm once it fires.
+   */
+  alarmAt: number | null = null
   private readonly rates = new RateBuckets(() => this.clock().getTime())
   private services: { registry: CommandRegistry; digester: CommandDigester } | undefined
 
   constructor(ctx: DurableObjectStateLike, env: VaultEnv) {
     super(ctx, env)
     this.db = drizzle(ctx.storage, { schema: vaultSchema })
-    void ctx.blockConcurrencyWhile(() => migrate(this.db, VAULT_MIGRATIONS))
+    void ctx.blockConcurrencyWhile(async () => {
+      await migrate(this.db, VAULT_MIGRATIONS)
+      this.alarmAt = await ctx.storage.getAlarm()
+    })
     // Keepalive (1D-T10): the runtime answers `ping` with `pong` and never wakes the vault for it.
     ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping', 'pong'))
   }
@@ -83,6 +106,7 @@ export class UserVault extends DurableObject<VaultEnv> {
    */
   async erase(): Promise<void> {
     this.erased = true
+    this.alarmAt = null
     await this.ctx.storage.deleteAlarm()
     await this.ctx.storage.deleteAll()
     await this.ctx.blockConcurrencyWhile(async () => {
@@ -95,20 +119,60 @@ export class UserVault extends DurableObject<VaultEnv> {
   }
 
   /**
-   * The vault's alarm (§6.2 "Alarms", 1A-T8b): runs the retention jobs that are
-   * due, then sets the alarm to the earliest job left, or deletes it. A failed job
-   * brings the alarm back a minute later, never in a loop. An erased vault does
-   * nothing: erase() already cancelled the alarm.
+   * The vault's alarm (§6.2 "Alarms", 1A-T8b and 1B-T11): runs the retention
+   * jobs that are due, then the file jobs (runFileJobs), then rearms with a fresh
+   * context, which sets the alarm to the earliest job left or deletes it. It
+   * first forgets the alarm that fired (the runtime deleted it), so a due time
+   * equal to it is set again. A job that failed brings the alarm back a minute
+   * later at the earliest (RETENTION_RETRY_MS), never in a loop; a write in
+   * between keeps that, since a write never sets the alarm sooner than a minute
+   * ahead or postpones one already set. Nothing is thrown, so the platform never
+   * retries the alarm. An erased vault does nothing: erase() already cancelled
+   * the alarm, and one that landed during the awaits is never rearmed.
    */
   async alarm(): Promise<void> {
     if (this.erased) return
+    this.alarmAt = null
     // A purge pokes every phone (1D-T10): no session is the caller.
     const before = currentRevision(this.ctx.storage.sql)
-    const c = { sql: this.ctx.storage.sql, storage: this.ctx.storage, now: this.clock() }
+    let failed = false
     try {
-      armAlarm(c, runDue(c))
+      failed = runDue(this.fileContext()).length > 0
+      failed = (await runFileJobs(this, this.fileJobOptions)).length > 0 || failed
+    } catch (error) {
+      failed = true
+      logFailure('vault_alarm_failed', error)
     } finally {
+      if (!this.erased) this.rearm(this.fileContext(), failed ? RETENTION_RETRY_MS : 0)
       this.afterCall(before, null)
+    }
+  }
+
+  /**
+   * Writes the schedule and moves the alarm to the earliest due job, or deletes
+   * it (1B-T11): reschedule in a short block of its own, then setAlarm or
+   * deleteAlarm outside every block, and only when the time differs from
+   * alarmAt. Never sooner than `delayMs` after the context's clock (a job
+   * already due, such as a released key due at 0, waits that long; workerd
+   * refuses setAlarm at 0), and an alarm already set sooner than that is kept,
+   * so a stream of writes never postpones it. A call or a background method
+   * rearms with CALL_ALARM_DELAY_MS; the alarm itself with 0, or with
+   * RETENTION_RETRY_MS after a failed job. An erased vault never rearms. A
+   * failure is logged, never thrown: the caller's work has already committed.
+   */
+  rearm(c: FileContext, delayMs: number = CALL_ALARM_DELAY_MS): void {
+    if (this.erased) return
+    try {
+      const due = c.storage.transactionSync(() => reschedule(c, this.lastStartAttemptMs))
+      let at = due === null ? null : Math.max(due, c.now.getTime() + delayMs)
+      // Floored above its due time: an alarm already set sooner stays, so writes never starve the jobs.
+      if (at !== null && due !== null && at > due && this.alarmAt !== null && this.alarmAt < at) at = this.alarmAt
+      if (at === this.alarmAt) return
+      if (at === null) void this.ctx.storage.deleteAlarm()
+      else void this.ctx.storage.setAlarm(at)
+      this.alarmAt = at
+    } catch (error) {
+      logFailure('vault_alarm_unset', error)
     }
   }
 
@@ -132,7 +196,7 @@ export class UserVault extends DurableObject<VaultEnv> {
       // A step marked anySession runs after its request's session ended or its policy changed (1B-T5).
       const anySession = stepRouteOf(call.route)?.anySession === true
       const services = this.built()
-      const { reply, committed } = this.ctx.storage.transactionSync(() => {
+      const { reply, touched } = this.ctx.storage.transactionSync(() => {
         const c: VaultContext = {
           db: this.db,
           sql: this.ctx.storage.sql,
@@ -149,12 +213,12 @@ export class UserVault extends DurableObject<VaultEnv> {
         if (!anySession) assertSession(c)
         if (call.charge !== 'step') this.rates.charge(call.charge, call.claims.sessionId)
         if (call.access === 'current_policy' && !anySession) assertPolicyAccepted(c)
-        const before = committedRevision(c)
         const result = handler(c, call)
-        return { reply: result, committed: committedRevision(c) === before ? undefined : c }
+        return { reply: result, touched: c.touched === true ? c : undefined }
       })
-      // A call that committed a command moves the alarm, outside the block (1A-T8b).
-      if (committed) armAlarm(committed)
+      // A call that wrote moves the alarm, outside the block (1B-T11): a command touches when it commits (1A-T8b's
+      // "after each call that committed a command"), and so does every file write, an upload step's included.
+      if (touched) this.rearm(touched)
       return reply
     } catch (error) {
       return toProblemReply(error)
@@ -261,18 +325,21 @@ export class UserVault extends DurableObject<VaultEnv> {
    * Starts the exports, snapshot builds and parses this vault recorded but has
    * not started (B5). The Worker calls it after a `starts` route answers, and
    * the alarm calls it when a start did not happen (1B-T11). Every run records
-   * its time, so the next start waits at least a minute (startDueAt).
+   * its time, so the next start waits at least a minute (startDueAt), and a run
+   * that marked a start rearms.
    */
   async startPendingWork(): Promise<{ started: number; failed: number; held: boolean }> {
     this.lastStartAttemptMs = this.clock().getTime()
-    return startPending({
-      env: this.env,
-      erased: this.erased,
-      context: () => this.fileContext(),
-      active: (c) => this.isActive(c),
-      // A missing CONFIG binding fails closed: readEdgeConfig pauses every gate.
-      gates: () => readGates(this.env.CONFIG as KVNamespace),
-    })
+    return this.rearming((context) =>
+      startPending({
+        env: this.env,
+        erased: this.erased,
+        context,
+        active: (c) => this.isActive(c),
+        // A missing CONFIG binding fails closed: readEdgeConfig pauses every gate.
+        gates: () => readGates(this.env.CONFIG as KVNamespace),
+      }),
+    )
   }
 
   // The parse pipeline (1B-T5): background methods the parse consumer calls by
@@ -314,8 +381,10 @@ export class UserVault extends DurableObject<VaultEnv> {
    */
   async writeExport(id: string): Promise<BuildOutcome> {
     if (this.erased) return { outcome: 'skipped' }
-    const { outcome } = await writeExportIn({ context: () => this.fileContext(), bucket: this.bucket, active: (c) => this.isActive(c) }, id)
-    return { outcome }
+    return this.rearming(async (context) => {
+      const { outcome } = await writeExportIn({ context, bucket: this.bucket, active: (c) => this.isActive(c) }, id)
+      return { outcome }
+    })
   }
 
   /** Records that the export's write failed after its retries. */
@@ -333,8 +402,10 @@ export class UserVault extends DurableObject<VaultEnv> {
    */
   async buildSnapshot(id: string): Promise<BuildOutcome> {
     if (this.erased) return { outcome: 'skipped' }
-    const { outcome } = await buildSnapshotIn({ context: () => this.fileContext(), bucket: this.bucket, active: (c) => this.isActive(c) }, id)
-    return { outcome }
+    return this.rearming(async (context) => {
+      const { outcome } = await buildSnapshotIn({ context, bucket: this.bucket, active: (c) => this.isActive(c) }, id)
+      return { outcome }
+    })
   }
 
   /** Records that the snapshot's build failed after its retries. */
@@ -342,12 +413,31 @@ export class UserVault extends DurableObject<VaultEnv> {
     this.background(undefined, (c) => failSnapshotIn(c, id))
   }
 
-  /** Runs `work` in its own short block with a fresh vault clock, or answers `skipped` when the vault is erased or not active. */
+  /** Runs `work` in its own short block with a fresh vault clock, or answers `skipped` when the vault is erased or not active. Rearms when it wrote (1B-T11). */
   private background<T>(skipped: T, work: (c: FileContext) => T): T {
     if (this.erased) return skipped
-    return this.ctx.storage.transactionSync(() => {
-      const c = this.fileContext()
-      return this.isActive(c) ? work(c) : skipped
-    })
+    const c = this.fileContext()
+    const result = this.ctx.storage.transactionSync(() => (this.isActive(c) ? work(c) : skipped))
+    if (c.touched === true) this.rearm(c)
+    return result
+  }
+
+  /**
+   * Runs background work that reads the vault through `context()`, then rearms
+   * with a fresh context when any of those contexts wrote (1B-T11), even when the
+   * work threw: a write that throws after its reservation leaves a reserved key,
+   * which the alarm deletes at its deadline.
+   */
+  private async rearming<T>(work: (context: () => FileContext) => Promise<T>): Promise<T> {
+    const seen: FileContext[] = []
+    try {
+      return await work(() => {
+        const c = this.fileContext()
+        seen.push(c)
+        return c
+      })
+    } finally {
+      if (seen.some((c) => c.touched === true)) this.rearm(this.fileContext())
+    }
   }
 }
