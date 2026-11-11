@@ -1,0 +1,3 @@
+#!/bin/bash
+echo "npx $* (cwd $(pwd))" >> "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/proof/devmjs/npx-calls.out"
+exit 0

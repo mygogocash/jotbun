@@ -1,0 +1,9 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge
+
+
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+   Start at  08:43:18
+   Duration  240ms (transform 83ms, setup 0ms, import 113ms, tests 5ms, environment 0ms)
+

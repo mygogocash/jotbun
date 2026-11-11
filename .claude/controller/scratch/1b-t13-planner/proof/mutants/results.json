@@ -1,0 +1,569 @@
+[
+  {
+    "id": "M1",
+    "what": "plan: the hyperdrive block stays in wrangler.jsonc",
+    "file": "wrangler.jsonc",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "node:test/c1-shape.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container 3ms",
+          "FAIL  test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container",
+          "Tests  1 failed | 1 passed (2)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M2",
+    "what": "plan: src/server.ts drops the queue export",
+    "file": "src/server.ts",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "node:test/c1-shape.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container 4ms",
+          "FAIL  test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container",
+          "Tests  1 failed | 1 passed (2)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M3",
+    "what": "plan: /ready skips the COMMAND_DIGEST_KEY check",
+    "file": "src/v1/ready.ts",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "c1",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/c1-worker.db.test.ts > the one Worker in workerd > /ready is 503 without its settings 9ms",
+          "FAIL  test/c1-worker.db.test.ts > the one Worker in workerd > /ready is 503 without its settings",
+          "Tests  1 failed | 5 passed (6)"
+        ]
+      },
+      {
+        "runner": "node:test/ready.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/ready.test.ts > /live and /ready (B15) > /ready is 503 without COMMAND_DIGEST_KEY 3ms",
+          "FAIL  test/ready.test.ts > /live and /ready (B15) > /ready is 503 without COMMAND_DIGEST_KEY",
+          "Tests  1 failed | 7 passed (8)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M4",
+    "what": "/ready skips AUTH_ISSUER",
+    "file": "src/v1/ready.ts",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "node:test/ready.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_ISSUER 3ms",
+          "FAIL  test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_ISSUER",
+          "Tests  1 failed | 7 passed (8)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M5",
+    "what": "/ready skips AUTH_AUDIENCE",
+    "file": "src/v1/ready.ts",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "node:test/ready.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_AUDIENCE 2ms",
+          "FAIL  test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_AUDIENCE",
+          "Tests  1 failed | 7 passed (8)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M6",
+    "what": "/ready skips AUTH_JWKS_URL",
+    "file": "src/v1/ready.ts",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "node:test/ready.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_JWKS_URL 2ms",
+          "FAIL  test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_JWKS_URL",
+          "Tests  1 failed | 7 passed (8)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M7",
+    "what": "/ready never reads config:v1",
+    "file": "src/v1/ready.ts",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "node:test/ready.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/ready.test.ts > /live and /ready (B15) > /ready reads config:v1 by its key 2ms",
+          "× test/ready.test.ts > /live and /ready (B15) > /ready is 503 when config:v1 cannot be read, and the log names only the failure class 2ms",
+          "FAIL  test/ready.test.ts > /live and /ready (B15) > /ready reads config:v1 by its key",
+          "FAIL  test/ready.test.ts > /live and /ready (B15) > /ready is 503 when config:v1 cannot be read, and the log names only the failure class",
+          "Tests  2 failed | 6 passed (8)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M8",
+    "what": "/ready lets a KV failure throw",
+    "file": "src/v1/ready.ts",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "node:test/ready.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/ready.test.ts > /live and /ready (B15) > /ready is 503 when config:v1 cannot be read, and the log names only the failure class 2ms",
+          "FAIL  test/ready.test.ts > /live and /ready (B15) > /ready is 503 when config:v1 cannot be read, and the log names only the failure class",
+          "Tests  1 failed | 7 passed (8)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M9",
+    "what": "/ready reads another key",
+    "file": "src/v1/ready.ts",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "node:test/ready.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/ready.test.ts > /live and /ready (B15) > /ready reads config:v1 by its key 3ms",
+          "FAIL  test/ready.test.ts > /live and /ready (B15) > /ready reads config:v1 by its key",
+          "Tests  1 failed | 7 passed (8)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M10",
+    "what": "/ready asks for a 5-second retry",
+    "file": "src/v1/ready.ts",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "node:test/ready.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_ISSUER 2ms",
+          "× test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_AUDIENCE 0ms",
+          "× test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_JWKS_URL 0ms",
+          "× test/ready.test.ts > /live and /ready (B15) > /ready is 503 without COMMAND_DIGEST_KEY 0ms",
+          "× test/ready.test.ts > /live and /ready (B15) > /ready is 503 when config:v1 cannot be read, and the log names only the failure class 1ms",
+          "FAIL  test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_ISSUER",
+          "FAIL  test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_AUDIENCE",
+          "FAIL  test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_JWKS_URL",
+          "FAIL  test/ready.test.ts > /live and /ready (B15) > /ready is 503 without COMMAND_DIGEST_KEY",
+          "FAIL  test/ready.test.ts > /live and /ready (B15) > /ready is 503 when config:v1 cannot be read, and the log names only the failure class",
+          "Tests  5 failed | 3 passed (8)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M11",
+    "what": "/live answers without no-store",
+    "file": "src/v1/ready.ts",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "node:test/ready.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/ready.test.ts > /live and /ready (B15) > /live answers 200 with no-store 4ms",
+          "FAIL  test/ready.test.ts > /live and /ready (B15) > /live answers 200 with no-store",
+          "Tests  1 failed | 7 passed (8)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M12",
+    "what": "the /ready route answers 200 whatever the settings",
+    "file": "src/routes/ready.ts",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "c1",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/c1-worker.db.test.ts > the one Worker in workerd > /ready is 503 without its settings 37ms",
+          "FAIL  test/c1-worker.db.test.ts > the one Worker in workerd > /ready is 503 without its settings",
+          "Tests  1 failed | 5 passed (6)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M13",
+    "what": "the /v1 route never reaches the vault",
+    "file": "src/routes/v1/$.ts",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "c1",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/c1-worker.db.test.ts > the one Worker in workerd > serves /v1 from the vault: the policy list comes from KV 5ms",
+          "× test/c1-worker.db.test.ts > the one Worker in workerd > an unknown /v1 route is 404 4ms",
+          "FAIL  test/c1-worker.db.test.ts > the one Worker in workerd > serves /v1 from the vault: the policy list comes from KV",
+          "FAIL  test/c1-worker.db.test.ts > the one Worker in workerd > an unknown /v1 route is 404",
+          "Tests  2 failed | 4 passed (6)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M14",
+    "what": "src/server.ts does not re-export SnapshotWorkflow",
+    "file": "src/server.ts",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "node:test/c1-shape.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container 4ms",
+          "FAIL  test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container",
+          "Tests  1 failed | 1 passed (2)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M15",
+    "what": "carry-in n1: the export Workflow loses its retention",
+    "file": "wrangler.jsonc",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "node:test/c1-shape.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container 6ms",
+          "FAIL  test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container",
+          "Tests  1 failed | 1 passed (2)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M16",
+    "what": "carry-in n7: a Cron Trigger the parity copy would keep",
+    "file": "wrangler.jsonc",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "node:test/c1-shape.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container 4ms",
+          "FAIL  test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container",
+          "Tests  1 failed | 1 passed (2)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M17",
+    "what": "local runs start containers",
+    "file": "wrangler.jsonc",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "node:test/c1-shape.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container 3ms",
+          "FAIL  test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container",
+          "Tests  1 failed | 1 passed (2)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M18",
+    "what": "a wake-up producer of the retired Workers stays",
+    "file": "wrangler.jsonc",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "node:test/c1-shape.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container 4ms",
+          "FAIL  test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container",
+          "Tests  1 failed | 1 passed (2)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M19",
+    "what": "the workers tests lose their main (B15)",
+    "file": "vitest.workers.config.ts",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "node:test/c1-shape.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > the Workers-runtime tests load the vault module, never TanStack Start, on the one config (B15) 2ms",
+          "FAIL  test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > the Workers-runtime tests load the vault module, never TanStack Start, on the one config (B15)",
+          "Tests  1 failed | 1 passed (2)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M20",
+    "what": "vite.config.ts keeps auxiliaryWorkers",
+    "file": "vite.config.ts",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "node:test/c1-shape.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container 4ms",
+          "FAIL  test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container",
+          "Tests  1 failed | 1 passed (2)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M21",
+    "what": "the edge-only list loses the bridge",
+    "file": "src/v1/routes.ts",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "node:test/route-coverage.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > lists each route once, and nothing NestJS lacks but the edge-only and the added routes 3ms",
+          "× test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > serves the seven AI and bridge routes and the added ones, and no NestJS route shadows them 0ms",
+          "FAIL  test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > lists each route once, and nothing NestJS lacks but the edge-only and the added routes",
+          "FAIL  test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > serves the seven AI and bridge routes and the added ones, and no NestJS route shadows them",
+          "Tests  2 failed | 6 passed (8)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M22",
+    "what": "the live socket is edge-only and added at once",
+    "file": "src/v1/routes.ts",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "node:test/route-coverage.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > lists each route once, and nothing NestJS lacks but the edge-only and the added routes 3ms",
+          "× test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > serves the seven AI and bridge routes and the added ones, and no NestJS route shadows them 0ms",
+          "FAIL  test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > lists each route once, and nothing NestJS lacks but the edge-only and the added routes",
+          "FAIL  test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > serves the seven AI and bridge routes and the added ones, and no NestJS route shadows them",
+          "Tests  2 failed | 6 passed (8)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M23",
+    "what": "a served route drifts from its NestJS gates",
+    "file": "src/v1/routes.ts",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "node:test/route-coverage.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > keeps each served NestJS route’s access class, gates and status 3ms",
+          "FAIL  test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > keeps each served NestJS route’s access class, gates and status",
+          "Tests  1 failed | 7 passed (8)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M24",
+    "what": "a retired route is deferred too",
+    "file": "src/v1/routes.ts",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "node:test/route-coverage.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > places every NestJS route in exactly one of the served, deferred and retired sets 3ms",
+          "× test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > lists each route once, and nothing NestJS lacks but the edge-only and the added routes 0ms",
+          "× test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > defers exactly the two deletion routes to 1C (B16), and retires exactly the six routes §6.4 retires 0ms",
+          "FAIL  test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > places every NestJS route in exactly one of the served, deferred and retired sets",
+          "FAIL  test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > lists each route once, and nothing NestJS lacks but the edge-only and the added routes",
+          "FAIL  test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > defers exactly the two deletion routes to 1C (B16), and retires exactly the six routes §6.4 retires",
+          "Tests  3 failed | 5 passed (8)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M25",
+    "what": "carry-in m-1: no guard before the summary's month check",
+    "file": "src/vault/ai.ts",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "workers:test/workers/ai.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/workers/ai.test.ts > Ask Bun > a budget_status question about a month before 1970 is answered as no budget, never refused after its use is spent 19ms",
+          "× test/workers/ai.test.ts > the vault's facts and tools > budget_status answers no budget for a month before 1970, as runTool did, and reads 1970-01 like any other month 17ms",
+          "FAIL  test/workers/ai.test.ts > Ask Bun > a budget_status question about a month before 1970 is answered as no budget, never refused after its use is spent",
+          "FAIL  test/workers/ai.test.ts > Ask Bun > a budget_status question about a month before 1970 is answered as no budget, never refused after its use is spent",
+          "FAIL  test/workers/ai.test.ts > the vault's facts and tools > budget_status answers no budget for a month before 1970, as runTool did, and reads 1970-01 like any other month",
+          "Tests  2 failed | 41 passed (43)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M26",
+    "what": "carry-in m-1: 1970-01 reads as no budget",
+    "file": "src/vault/ai.ts",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "workers:test/workers/ai.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/workers/ai.test.ts > the vault's facts and tools > budget_status answers no budget for a month before 1970, as runTool did, and reads 1970-01 like any other month 20ms",
+          "FAIL  test/workers/ai.test.ts > the vault's facts and tools > budget_status answers no budget for a month before 1970, as runTool did, and reads 1970-01 like any other month",
+          "Tests  1 failed | 42 passed (43)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M27",
+    "what": "carry-in m-1: a tool error instead of no budget",
+    "file": "src/vault/ai.ts",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "workers:test/workers/ai.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/workers/ai.test.ts > Ask Bun > a budget_status question about a month before 1970 is answered as no budget, never refused after its use is spent 23ms",
+          "× test/workers/ai.test.ts > the vault's facts and tools > budget_status answers no budget for a month before 1970, as runTool did, and reads 1970-01 like any other month 15ms",
+          "FAIL  test/workers/ai.test.ts > Ask Bun > a budget_status question about a month before 1970 is answered as no budget, never refused after its use is spent",
+          "FAIL  test/workers/ai.test.ts > the vault's facts and tools > budget_status answers no budget for a month before 1970, as runTool did, and reads 1970-01 like any other month",
+          "Tests  2 failed | 41 passed (43)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "M28",
+    "what": "the vault module's queue handler drops the batch",
+    "file": "src/vault-worker.ts",
+    "killed": true,
+    "restored": true,
+    "runs": [
+      {
+        "runner": "workers:test/workers/imports-parse.test.ts",
+        "exit": 1,
+        "failed": true,
+        "summary": [
+          "× test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > the Worker's queue handler sends a message through the container parser, which asks to retry while no container runs 20ms",
+          "FAIL  test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > the Worker's queue handler sends a message through the container parser, which asks to retry while no container runs",
+          "Tests  1 failed | 43 passed (44)"
+        ]
+      }
+    ]
+  }
+]

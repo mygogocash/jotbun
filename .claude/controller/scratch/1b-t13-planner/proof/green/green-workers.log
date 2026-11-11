@@ -1,0 +1,201 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/config.test.ts > an unreadable or malformed config pauses every gate scope, with a retry
+{"level":"error","event":"config_unreadable","failure":"Error"}
+
+stderr | test/workers/config.test.ts > an unreadable or malformed config pauses every gate scope, with a retry
+{"level":"error","event":"config_malformed","failure":"Error"}
+
+stderr | test/workers/config.test.ts > a config whose published_at is not a date is malformed
+{"level":"error","event":"config_malformed","failure":"Error"}
+
+stderr | test/workers/config.test.ts > uploads stay unexposed unless IMPORT_UPLOADS_ENABLED is 1 or true, on the fail-closed path too
+{"level":"error","event":"config_unreadable","failure":"Error"}
+
+stderr | test/workers/config.test.ts > uploads stay unexposed unless IMPORT_UPLOADS_ENABLED is 1 or true, on the fail-closed path too
+{"level":"error","event":"config_unreadable","failure":"Error"}
+
+ ✓ test/workers/config.test.ts > an unreadable or malformed config pauses every gate scope, with a retry 3ms
+ ✓ test/workers/config.test.ts > an absent config leaves gates open and policies unpublished 0ms
+ ✓ test/workers/config.test.ts > client minimums missing from both config and env answer 503 with a retry, never 426 0ms
+ ✓ test/workers/config.test.ts > a config whose published_at is not a date is malformed 1ms
+ ✓ test/workers/config.test.ts > uploads stay unexposed unless IMPORT_UPLOADS_ENABLED is 1 or true, on the fail-closed path too 0ms
+ ✓ test/workers/config.test.ts > GET /v1/policies answers the published policies from KV 6ms
+ ✓ test/workers/vault-schema.test.ts > a new vault has every core table, migrated once 20ms
+ ✓ test/workers/vault-schema.test.ts > a vault keeps its rows and does not migrate again after it sleeps 32ms
+ ✓ test/workers/ai.test.ts > consent > AI is off until the user agrees to the current notice 32ms
+ ✓ test/workers/ai.test.ts > consent > turning AI on needs the current notice version; tips can be set alone 35ms
+ ✓ test/workers/vault-schema.test.ts > the Drizzle schema matches the migrated tables column for column 91ms
+ ✓ test/workers/vault-schema.test.ts > foreign keys hold: a transaction naming an unknown wallet is refused 16ms
+ ✓ test/workers/vault-schema.test.ts > command log rows must use the current revision, and entity heads only move forward 28ms
+ ✓ test/workers/vault-schema.test.ts > a primary key cannot be NULL 14ms
+ ✓ test/workers/vault-schema.test.ts > a category's type and built-in key never change 20ms
+ ✓ test/workers/imports-parse.test.ts > a parsed upload becomes a reviewable preview and nothing else > parsing_has_no_financial_side_effect 106ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a workbook with a formula is rejected as a whole: no candidate, image or transaction 56ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a valid workbook parses through the same path 40ms
+ ✓ test/workers/ai.test.ts > consent > preferences are the person's own 51ms
+ ✓ test/workers/ai.test.ts > consent > consent to another notice version does not count: the companion reads off, the routes that need consent refuse, and the note is the plain facts 38ms
+ ✓ test/workers/ai.test.ts > Tell Bun > turns a sentence into a grounded draft, asking Claude through the shared settings 37ms
+stderr | test/workers/ai.test.ts > Tell Bun > falls back to the offline rules when Claude refuses, fails or has nothing
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"ModelUnavailable:refusal"}
+
+stderr | test/workers/ai.test.ts > Tell Bun > falls back to the offline rules when Claude refuses, fails or has nothing
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+ ✓ test/workers/vault-schema.test.ts > a category id never changes 20ms
+ ✓ test/workers/vault-schema.test.ts > a replace that reuses another category's built-in key is refused, and the other category survives 19ms
+ ✓ test/workers/vault-schema.test.ts > INSERT OR REPLACE cannot flip a category in use, but an identical ON CONFLICT DO NOTHING insert is allowed 23ms
+ ✓ test/workers/vault-schema.test.ts > a category is never deleted 19ms
+ ✓ test/workers/vault-schema.test.ts > a category has a label or a built-in key 15ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a child killed at its 30-second deadline fails visibly as a rejected preview, never with guessed fields 45ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a crashed child fails visibly as a rejected preview, never with guessed fields 37ms
+ ✓ test/workers/ai.test.ts > Tell Bun > never passes on an amount the person did not write 38ms
+ ✓ test/workers/ai.test.ts > Tell Bun > falls back to the offline rules when Claude refuses, fails or has nothing 38ms
+ ✓ test/workers/ai.test.ts > Tell Bun > without AI configured, answers from the rules and spends no uses 27ms
+ ✓ test/workers/vault-schema.test.ts > a receipt can drop its digest pair, but never just one half 36ms
+ ✓ test/workers/vault-schema.test.ts > a record can hold only a retained receipt, and letting go of the last holder releases it and makes its object due 61ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > output that is not the protocol fails visibly as a rejected preview, never with guessed fields 42ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > output over its cap fails visibly as a rejected preview, never with guessed fields 55ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a parse that exceeded the 512 MiB budget fails visibly as a rejected preview, never with guessed fields 36ms
+ ✓ test/workers/ai.test.ts > Tell Bun > stops at the daily limit until the next Bangkok day 33ms
+ ✓ test/workers/ai.test.ts > Tell Bun > validates the sentence 28ms
+ ✓ test/workers/ai.test.ts > Tell Bun > the model sees only the active wallets' and categories' ids and names, and a date more than a day from the server's is replaced 58ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a quarantined part that does not match its registered digest is never parsed 69ms
+ ✓ test/workers/ai.test.ts > Tell Bun > the day's uses follow the vault clock in Bangkok: the last use is allowed, the next waits for midnight, and counts older than 35 days are forgotten 86ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a part whose registered digest disagrees with the stored object is never parsed 41ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a raw file past its 24-hour expiry is not read, even if its parse job is still queued 51ms
+ ✓ test/workers/ai.test.ts > slips > reads a slip image into drafts and keeps nothing 44ms
+ ✓ test/workers/ai.test.ts > slips > refuses other files and broken base64 before any model call 27ms
+ ✓ test/workers/ai.test.ts > slips > a slip read stores nothing: no object, no upload and no row but today's use 60ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a parse job cancelled while its child runs (expiry, deletion, maintenance) records nothing 60ms
+ ✓ test/workers/imports-parse.test.ts > rejected files leave nothing to confirm > a lease lost after the image PUT publishes nothing; the sweep deletes the object 51ms
+ ✓ test/workers/ai.test.ts > slips > a slip's bank name is trimmed and cut to 60 characters, and anything else reads null 40ms
+ ✓ test/workers/imports-parse.test.ts > receipt images are sanitized and expire unattached > publishes a metadata-free re-encoding for 24 hours and a review-only candidate 145ms
+ ✓ test/workers/imports-parse.test.ts > the job worker never claims a parse it cannot sandbox (B1) > a worker started on a runtime without network permission leaves import_parse queued, without spending an attempt 47ms
+ ✓ test/workers/ai.test.ts > Bun’s daily note > without consent: the plain facts, and no model call 128ms
+ ✓ test/workers/ai.test.ts > Bun’s daily note > uses Claude’s words only when every number is one of the facts 53ms
+ ✓ test/workers/imports-parse.test.ts > the job worker never claims a parse it cannot sandbox (B1) > a runner that refuses an unsandboxed runtime fails the job retryably and records no preview 55ms
+ ✓ test/workers/imports-parse.test.ts > the job worker never claims a parse it cannot sandbox (B1) > a child that could not be started fails the job retryably and records no preview 46ms
+ ✓ test/workers/ai.test.ts > Bun’s daily note > out of note uses, the facts still come 24ms
+ ✓ test/workers/ai.test.ts > Bun’s daily note > the note's words may use the day's date and every number of its facts, and nothing else, in at most 200 characters 79ms
+ ✓ test/workers/imports-parse.test.ts > the job worker never claims a parse it cannot sandbox (B1) > a child stopped past its memory budget gives a rejected preview, never a retry 68ms
+ ✓ test/workers/ai.test.ts > Ask Bun > answers through a read-only tool and returns the figures it used 77ms
+ ✓ test/workers/ai.test.ts > Ask Bun > an answer with a number no tool read becomes the plain figures 46ms
+ ✓ test/workers/ai.test.ts > Ask Bun > a bad tool input is reported back to Claude, not run 97ms
+ ✓ test/workers/imports-parse.test.ts > the job worker never claims a parse it cannot sandbox (B1) > an image whose own header disagrees with what the child said is never published 119ms
+ ✓ test/workers/imports-parse.test.ts > a paused OCR gate parks queued image parses attempt-neutrally (P2b) > releases a claimed image job (no attempt spent, nothing read or recorded) and still parses a spreadsheet 93ms
+ ✓ test/workers/ai.test.ts > Ask Bun > a budget_status question about a month before 1970 is answered as no budget, never refused after its use is spent 54ms
+ ✓ test/workers/ai.test.ts > Ask Bun > a tool's allowance reaches the grounding check 45ms
+ ✓ test/workers/ai.test.ts > Ask Bun > a session signed out while Ask Bun runs is refused at its next tool step, and no tool reads the records 32ms
+ ✓ test/workers/imports-parse.test.ts > a paused OCR gate parks queued image parses attempt-neutrally (P2b) > parses the same job after the gate reopens, as its first attempt 60ms
+ ✓ test/workers/ai.test.ts > Ask Bun > Ask Bun stops after five tool turns and answers from the figures it read 36ms
+ ✓ test/workers/imports-parse.test.ts > a paused OCR gate parks queued image parses attempt-neutrally (P2b) > does not park a raw file past its expiry: it still fails visibly 123ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a parsed CSV becomes a ready preview with its candidates, and the import reads parsed 41ms
+stderr | test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"ProblemException"}
+
+ ✓ test/workers/ai.test.ts > Ask Bun > two tools in one turn both run, and their results go back to Claude together 129ms
+ ✓ test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none 63ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a parsed receipt image is stored under the vault's import_image prefix for 24 hours and gets an attachment id 54ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > an image whose bytes are not the format it claims is a rejected preview, and nothing is stored 32ms
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"note","failure":"Error"}
+
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > with no model given, the env decides: AI needs AI_ENABLED and an API key, and AI_MODEL names the model 45ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked 66ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a parse that keeps failing is retried and fails after three attempts 49ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a parse that has not started spends no attempt 35ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a parse that finishes after the import expired records nothing 52ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > without AI, a slip and a question are 503 AI_PAUSED and spend no use, and the note is the plain facts 38ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > while ocr is paused an image parse is held without spending an attempt, and a CSV still parses 81ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > each AI route is refused at its first step when a newer policy is pending, the session ended or the account stopped being active, before any model call 107ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > the note and Ask Bun read their input before any step, and a HEAD on an AI read answers its GET with no body 56ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > while jobs is paused every parse is held without spending an attempt 52ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > while imports is paused every parse is held without spending an attempt 82ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > the day's facts come from the vault's records in dayFacts' order: over budget first, then today, the pace, the week, the top category and the month 50ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > spending_total and category_totals read the records runTool read, and allow each number they return 42ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > top_merchants and budget_status read the records runTool read, and allow each number they return 33ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a missing quarantine part fails the import as quarantine_missing 36ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > the Worker's queue handler sends a message through the container parser, which asks to retry while no container runs 41ms
+stderr | test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > an attempt that throws is retried, and a job out of attempts fails without another parse
+{"level":"error","event":"parse_consumer_failed","failure":"Error"}
+
+stderr | test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > an attempt that throws is retried, and a job out of attempts fails without another parse
+{"level":"error","event":"parse_consumer_failed","failure":"Error"}
+
+stderr | test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > an attempt that throws is retried, and a job out of attempts fails without another parse
+{"level":"error","event":"parse_consumer_failed","failure":"Error"}
+
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > category_totals answers at most 12 categories and top_merchants at most 8 places, largest first 34ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > a tool input the tool refuses comes back as its error, and an unknown tool is refused by name 41ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > budget_status answers no budget for a month before 1970, as runTool did, and reads 1970-01 like any other month 28ms
+stderr | test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a message that names no vault or import is dropped, and a parse server reply is checked for its shape
+{"level":"error","event":"parse_message_malformed","failure":"Error"}
+
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > an image reservation past its own deadline is never published, even when a failed delete moved it on 48ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > an attempt that throws is retried, and a job out of attempts fails without another parse 48ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a failed parse makes its unpublished image due at once 28ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > a message that names no vault or import is dropped, and a parse server reply is checked for its shape 1ms
+ ✓ test/workers/ai.test.ts > the 1B-T7 review's pins: what each AI route checks, and in what order > a signed-out session with a malformed body gets 422, with no vault call and no model call; a well-formed body is 401 at its first step 25ms
+ ✓ test/workers/ai.test.ts > the 1B-T7 review's pins: what each AI route checks, and in what order > a signed-in person without consent who sends a malformed body gets 422, as the PostgreSQL route parsed before AiService checked consent, with no vault call 19ms
+ ✓ test/workers/ai.test.ts > the 1B-T7 review's pins: what each AI route checks, and in what order > a session signed out between the context step and the use is refused at the use: 401, no model call and no use spent 29ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5: the consumer and the vault > an import sent twice by overlapping starts is parsed once; the second message records nothing and spends no attempt 40ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5 fix round: a rejected receipt photo keeps its own issue, as the API records it > a photo over 20 MP is stored with its own issue, never parse_failed 34ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5 fix round: a rejected receipt photo keeps its own issue, as the API records it > a photo that is not the format it claims is stored with its own issue, never parse_failed 130ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5 fix round: a rejected receipt photo keeps its own issue, as the API records it > a photo the image child cannot decode is stored with its own issue, never parse_failed 83ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5 fix round: a rejected receipt photo keeps its own issue, as the API records it > a photo whose child was killed at its deadline is stored with its own issue, never parse_failed 83ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5 fix round: a rejected receipt photo keeps its own issue, as the API records it > a photo whose child went past its memory budget is stored with its own issue, never parse_failed 64ms
+ ✓ test/workers/imports-parse.test.ts > 1B-T5 fix round: a rejected receipt photo keeps its own issue, as the API records it > a readable photo reply without its image is still the rejected preview parse_failed 35ms
+ ✓ test/workers/auth/schema.test.ts > Better Auth finds nothing to create or add on the migrated AUTH_DB 16ms
+ ✓ test/workers/auth/schema.test.ts > our Better Auth tables equal what its own migrator creates: columns, indexes and foreign keys 26ms
+ ✓ test/workers/auth/schema.test.ts > AUTH_DB holds Better Auth and our account tables; the erasure registry is alone in ERASURE_DB 1ms
+ ✓ test/workers/auth/schema.test.ts > account_status accepts only active, deleting and deleted 2ms
+ ✓ test/workers/auth/email-code.test.ts > the first code signs a person up with a UUID user id 64ms
+ ✓ test/workers/auth/email-code.test.ts > the next code signs into the same user with a new session 24ms
+ ✓ test/workers/auth/email-code.test.ts > the first code's answer says it created the account; the next code's answer does not 20ms
+ ✓ test/workers/auth/jwt.test.ts > a signed-in device gets a ten-minute EdDSA JWT naming only the user, the session and the sign-in time 49ms
+ ✓ test/workers/auth/jwt.test.ts > a renewed token keeps the sign-in time 21ms
+ ✓ test/workers/auth/jwt.test.ts > without a session /token is 401 6ms
+ ✓ test/workers/auth/jwt.test.ts > auth answers are no-store 3ms
+ ✓ test/workers/auth/jwt.test.ts > an unknown auth path is 404 2ms
+ ✓ test/workers/auth/jwt.test.ts > passkeys are mounted on D1 14ms
+ ✓ test/workers/auth/jwt.test.ts > Better Auth refuses to start without its secret 0ms
+ ✓ test/workers/auth/jwt.test.ts > Better Auth refuses a secret under 32 characters, and a missing base URL, issuer or audience 1ms
+ ✓ test/workers/auth/jwt.test.ts > the HTTP Worker sends /api/auth and its subpaths to Better Auth, and nothing else 2ms
+ ✓ test/workers/auth/email-code.test.ts > an answer without a readable creation time never says created 0ms
+ ✓ test/workers/auth/email-code.test.ts > a code is six digits 3ms
+ ✓ test/workers/auth/email-code.test.ts > a code expires after ten minutes 14ms
+ ✓ test/workers/auth/email-code.test.ts > three wrong codes use a code up 25ms
+ ✓ test/workers/auth/email-code.test.ts > an address typed with capitals and spaces reaches the same account 19ms
+ ✓ test/workers/auth/email-code.test.ts > only sign-in codes are sent, for a known address and an unknown one 13ms
+ ✓ test/workers/auth/email-code.test.ts > the password, verification and change-email code routes are off 2ms
+ ✓ test/workers/auth/email-code.test.ts > the eleventh code request from one network in a minute is 429 29ms
+ ✓ test/workers/auth/email-code.test.ts > a body over 64 KiB is refused before Better Auth reads it 1ms
+ ✓ test/workers/auth/email-code.test.ts > a body that is not JSON is 415 before Better Auth reads it 0ms
+ ✓ test/workers/auth/email-code.test.ts > a body that is not valid JSON is 400 VALIDATION_FAILED before Better Auth reads it 0ms
+
+ Test Files  7 passed (7)
+      Tests  134 passed (134)
+   Start at  09:53:52
+   Duration  9.40s (transform 20.80s, setup 25.63s, import 13.85s, tests 5.53s, environment 0ms)
+

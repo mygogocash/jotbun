@@ -1,0 +1,43 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge
+
+ ✓ test/c1-worker.db.test.ts > the one Worker in workerd > answers /live with no-store 6ms
+ ✓ test/c1-worker.db.test.ts > the one Worker in workerd > /ready is 200 with its settings and KV 6ms
+ ✓ test/c1-worker.db.test.ts > the one Worker in workerd > /ready is 503 without its settings 5ms
+ ✓ test/c1-worker.db.test.ts > the one Worker in workerd > serves the trust page with TanStack Start 12ms
+ × test/c1-worker.db.test.ts > the one Worker in workerd > serves /v1 from the vault: the policy list comes from KV 5ms
+   → expected 404 to be 200 // Object.is equality
+ × test/c1-worker.db.test.ts > the one Worker in workerd > an unknown /v1 route is 404 4ms
+   → Unexpected end of JSON input
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/c1-worker.db.test.ts > the one Worker in workerd > serves /v1 from the vault: the policy list comes from KV
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ test/c1-worker.db.test.ts:102:24
+    100|   it('serves /v1 from the vault: the policy list comes from KV', async…
+    101|     const res = await fetch(`${ready.url}/v1/policies`)
+    102|     expect(res.status).toBe(200)
+       |                        ^
+    103|     expect(await res.json()).toEqual(POLICIES)
+    104|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/c1-worker.db.test.ts > the one Worker in workerd > an unknown /v1 route is 404
+SyntaxError: Unexpected end of JSON input
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 4 passed (6)
+   Start at  09:54:42
+   Duration  3.90s (transform 18ms, setup 0ms, import 28ms, tests 3.73s, environment 0ms)
+

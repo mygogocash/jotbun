@@ -1,0 +1,50 @@
+--- a/apps/edge/test/request.test.ts
++++ b/apps/edge/test/request.test.ts
+@@ -1,7 +1,8 @@
+ import { describe, expect, it } from 'vitest'
+ 
+-import { V1_ROUTES, matchRoute } from '../src/server/app/routes'
+ import { BodyError, JSON_BODY_LIMIT_BYTES, RAW_JSON_BODY_LIMIT_BYTES, queryOf, readJsonBody, readRawJsonBody, reqLike } from '../src/server/http/request'
++import { matchRoute } from '../src/v1/match'
++import { VAULT_V1_ROUTES } from '../src/v1/routes'
+ 
+ const post = (body: string | undefined, type = 'application/json', extra: Record<string, string> = {}) =>
+   new Request('http://edge.test/v1/x', { method: 'POST', headers: { 'content-type': type, ...extra }, body })
+@@ -91,27 +92,27 @@
+   const id = '3b1d0c6e-4f7a-4c55-9d1e-2a6f8b9c0d1e'
+ 
+   it('matches literals case-insensitively and an optional trailing slash', () => {
+-    expect(matchRoute(V1_ROUTES, 'GET', '/V1/Wallets/')?.route.path).toBe('/v1/wallets')
++    expect(matchRoute(VAULT_V1_ROUTES, 'GET', '/V1/Wallets/')?.route.path).toBe('/v1/wallets')
+   })
+ 
+   it('decodes params and keeps their case', () => {
+-    expect(matchRoute(V1_ROUTES, 'GET', `/v1/wallets/${id.toUpperCase()}`)?.params).toEqual({ id: id.toUpperCase() })
+-    expect(matchRoute(V1_ROUTES, 'GET', '/v1/budgets/2026%2D10')?.params).toEqual({ month: '2026-10' })
++    expect(matchRoute(VAULT_V1_ROUTES, 'GET', `/v1/wallets/${id.toUpperCase()}`)?.params).toEqual({ id: id.toUpperCase() })
++    expect(matchRoute(VAULT_V1_ROUTES, 'GET', '/v1/budgets/2026%2D10')?.params).toEqual({ month: '2026-10' })
+   })
+ 
+   it('prefers the literal route over a parameter and keeps methods apart', () => {
+-    expect(matchRoute(V1_ROUTES, 'GET', '/v1/history/deleted')?.route.path).toBe('/v1/history/deleted')
+-    expect(matchRoute(V1_ROUTES, 'POST', '/v1/categories/builtins')?.route.path).toBe('/v1/categories/builtins')
+-    expect(matchRoute(V1_ROUTES, 'DELETE', '/v1/wallets/x')).toBeNull()
++    expect(matchRoute(VAULT_V1_ROUTES, 'GET', '/v1/history/deleted')?.route.path).toBe('/v1/history/deleted')
++    expect(matchRoute(VAULT_V1_ROUTES, 'POST', '/v1/categories/builtins')?.route.path).toBe('/v1/categories/builtins')
++    expect(matchRoute(VAULT_V1_ROUTES, 'DELETE', '/v1/wallets/x')).toBeNull()
+   })
+ 
+   it('serves HEAD from the GET route and refuses malformed escapes', () => {
+-    expect(matchRoute(V1_ROUTES, 'HEAD', '/v1/wallets')?.route.method).toBe('GET')
+-    expect(matchRoute(V1_ROUTES, 'GET', '/v1/wallets/%E0%A4%A')).toBeNull()
++    expect(matchRoute(VAULT_V1_ROUTES, 'HEAD', '/v1/wallets')?.route.method).toBe('GET')
++    expect(matchRoute(VAULT_V1_ROUTES, 'GET', '/v1/wallets/%E0%A4%A')).toBeNull()
+   })
+ 
+   it('does not match a deeper path or an empty segment', () => {
+-    expect(matchRoute(V1_ROUTES, 'GET', '/v1/wallets/a/b')).toBeNull()
+-    expect(matchRoute(V1_ROUTES, 'GET', '/v1/transactions//')).toBeNull()
++    expect(matchRoute(VAULT_V1_ROUTES, 'GET', '/v1/wallets/a/b')).toBeNull()
++    expect(matchRoute(VAULT_V1_ROUTES, 'GET', '/v1/transactions//')).toBeNull()
+   })
+ })

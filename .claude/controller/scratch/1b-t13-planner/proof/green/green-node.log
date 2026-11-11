@@ -1,0 +1,57 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge
+
+ ✓ test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container 2ms
+ ✓ test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > the Workers-runtime tests load the vault module, never TanStack Start, on the one config (B15) 0ms
+ ✓ test/request.test.ts > readJsonBody, like express.json({ strict: true }) > parses objects and arrays 15ms
+ ✓ test/request.test.ts > readJsonBody, like express.json({ strict: true }) > an empty JSON body is {}; no body is undefined 0ms
+ ✓ test/request.test.ts > readJsonBody, like express.json({ strict: true }) > other content types are not parsed 0ms
+ ✓ test/request.test.ts > readJsonBody, like express.json({ strict: true }) > refuses "text" as invalid 1ms
+ ✓ test/request.test.ts > readJsonBody, like express.json({ strict: true }) > refuses 42 as invalid 0ms
+ ✓ test/request.test.ts > readJsonBody, like express.json({ strict: true }) > refuses true as invalid 0ms
+ ✓ test/request.test.ts > readJsonBody, like express.json({ strict: true }) > refuses null as invalid 0ms
+ ✓ test/request.test.ts > readJsonBody, like express.json({ strict: true }) > refuses {"a": as invalid 0ms
+ ✓ test/request.test.ts > readJsonBody, like express.json({ strict: true }) > refuses {bad} as invalid 0ms
+ ✓ test/request.test.ts > readJsonBody, like express.json({ strict: true }) > refuses a body over the limit, by header or by size 0ms
+ ✓ test/request.test.ts > readJsonBody, like express.json({ strict: true }) > stops reading a chunked body without a length as soon as it passes the limit 1ms
+ ✓ test/request.test.ts > readRawJsonBody, like jsonBody('8kb', { keepRaw: true }) > keeps the exact bytes it parsed 0ms
+ ✓ test/request.test.ts > readRawJsonBody, like jsonBody('8kb', { keepRaw: true }) > reads nothing that is not JSON, so there are no bytes to verify 0ms
+ ✓ test/request.test.ts > readRawJsonBody, like jsonBody('8kb', { keepRaw: true }) > refuses more than 8 KiB 0ms
+ ✓ test/request.test.ts > queryOf, like Express 5’s simple query parser > keeps single values as strings and repeats as arrays 0ms
+ ✓ test/request.test.ts > reqLike > lowercases headers and takes the address from CF-Connecting-IP only 0ms
+ ✓ test/request.test.ts > matchRoute, like Express’s default router > matches literals case-insensitively and an optional trailing slash 0ms
+ ✓ test/request.test.ts > matchRoute, like Express’s default router > decodes params and keeps their case 0ms
+ ✓ test/request.test.ts > matchRoute, like Express’s default router > prefers the literal route over a parameter and keeps methods apart 0ms
+ ✓ test/request.test.ts > matchRoute, like Express’s default router > serves HEAD from the GET route and refuses malformed escapes 0ms
+ ✓ test/request.test.ts > matchRoute, like Express’s default router > does not match a deeper path or an empty segment 0ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /live answers 200 with no-store 3ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready is 200 with every setting and a readable config:v1, also when config:v1 is absent 1ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready reads config:v1 by its key 1ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_ISSUER 1ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_AUDIENCE 0ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_JWKS_URL 0ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready is 503 without COMMAND_DIGEST_KEY 0ms
+ ✓ test/ready.test.ts > /live and /ready (B15) > /ready is 503 when config:v1 cannot be read, and the log names only the failure class 1ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > reads a plausible number of routes from the controllers 1ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > places every NestJS route in exactly one of the served, deferred and retired sets 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > lists each route once, and nothing NestJS lacks but the edge-only and the added routes 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > keeps each served NestJS route’s access class, gates and status 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > defers exactly the two deletion routes to 1C (B16), and retires exactly the six routes §6.4 retires 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > serves the seven AI and bridge routes and the added ones, and no NestJS route shadows them 1ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > each served route is one vault call or one Worker route with its handler, and a step id is only a vault call 1ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > a live route has neither a vault call nor a Worker handler, and is an added route 0ms
+ ✓ test/posthog-proxy.test.ts > the PostHog proxy on the Worker > a batch is forwarded to PostHog EU with the same bytes, without cookies, auth, client addresses or app headers 4ms
+ ✓ test/posthog-proxy.test.ts > the PostHog proxy on the Worker > assets and remote config go to the asset host, with the query kept 0ms
+ ✓ test/posthog-proxy.test.ts > the PostHog proxy on the Worker > the target host never comes from the request 0ms
+ ✓ test/posthog-proxy.test.ts > the PostHog proxy on the Worker > a body over 5 MiB is 413 before anything is sent, by content-length or as it streams 1ms
+ ✓ test/posthog-proxy.test.ts > the PostHog proxy on the Worker > a request body that cannot be read is 400, and nothing is sent 0ms
+ ✓ test/posthog-proxy.test.ts > the PostHog proxy on the Worker > no other client-address header is forwarded either 0ms
+ ✓ test/posthog-proxy.test.ts > the PostHog proxy on the Worker > only GET, HEAD and POST under /ingest/ are proxied 0ms
+ ✓ test/posthog-proxy.test.ts > the PostHog proxy on the Worker > an unreachable PostHog is 502 with no body, and the log names only the failure class 1ms
+ ✓ test/posthog-proxy.test.ts > the HTTP Worker dispatch > sends /ingest/* to the proxy before TanStack Start, and every other path to TanStack Start with its arguments 1ms
+
+ Test Files  5 passed (5)
+      Tests  48 passed (48)
+   Start at  09:53:43
+   Duration  1.28s (transform 836ms, setup 0ms, import 2.09s, tests 45ms, environment 0ms)
+

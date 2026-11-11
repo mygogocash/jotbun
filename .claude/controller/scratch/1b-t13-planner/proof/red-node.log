@@ -1,0 +1,284 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/red/apps/edge
+
+ × test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container 4ms
+   → expected [ { binding: 'HYPERDRIVE', …(1) } ] to be undefined
+ × test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > the Workers-runtime tests load the vault module, never TanStack Start, on the one config (B15) 0ms
+   → expected 'import { cloudflareTest, readD1Migrat…' to match /main: '\.\/src\/vault-worker\.ts'/src\
+ × test/ready.test.ts > /live and /ready (B15) > /live answers 200 with no-store 15ms
+   → expected 501 to be 200 // Object.is equality
+ × test/ready.test.ts > /live and /ready (B15) > /ready is 200 with every setting and a readable config:v1, also when config:v1 is absent 1ms
+   → expected 501 to be 200 // Object.is equality
+ × test/ready.test.ts > /live and /ready (B15) > /ready reads config:v1 by its key 1ms
+   → expected "vi.fn()" to be called with arguments: [ 'config:v1', 'text' ]
+
+Number of calls: 0
+
+ × test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_ISSUER 0ms
+   → expected 501 to be 503 // Object.is equality
+ × test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_AUDIENCE 0ms
+   → expected 501 to be 503 // Object.is equality
+ × test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_JWKS_URL 0ms
+   → expected 501 to be 503 // Object.is equality
+ × test/ready.test.ts > /live and /ready (B15) > /ready is 503 without COMMAND_DIGEST_KEY 0ms
+   → expected 501 to be 503 // Object.is equality
+ × test/ready.test.ts > /live and /ready (B15) > /ready is 503 when config:v1 cannot be read, and the log names only the failure class 0ms
+   → expected 501 to be 503 // Object.is equality
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > reads a plausible number of routes from the controllers 1ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > places every NestJS route in exactly one of the served, deferred and retired sets 0ms
+ × test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > lists each route once, and nothing NestJS lacks but the edge-only and the added routes 3ms
+   → expected [ 'GET /v1/ai/note', …(7) ] to deeply equal [ 'GET /v1/sync/live' ]
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > keeps each served NestJS route’s access class, gates and status 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > defers exactly the two deletion routes to 1C (B16), and retires exactly the six routes §6.4 retires 0ms
+ × test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > serves the seven AI and bridge routes and the added ones, and no NestJS route shadows them 0ms
+   → expected [] to deeply equal [ 'GET /v1/ai/note', …(6) ]
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > each served route is one vault call or one Worker route with its handler, and a step id is only a vault call 1ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > a live route has neither a vault call nor a Worker handler, and is an added route 0ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 12 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container
+AssertionError: expected [ { binding: 'HYPERDRIVE', …(1) } ] to be undefined
+
+- Expected:
+undefined
+
++ Received:
+[
+  {
+    "binding": "HYPERDRIVE",
+    "id": "00000000000000000000000000000000",
+  },
+]
+
+ ❯ test/c1-shape.test.ts:27:31
+     25|     const config = readJsonc('wrangler.jsonc')
+     26|     expect([config.name, config.main]).toEqual(['jotbun-edge', 'src/se…
+     27|     expect(config.hyperdrive).toBeUndefined()
+       |                               ^
+     28|     expect(config.limits.cpu_ms).toBe(120000)
+     29|     expect(config.durable_objects.bindings.map((b: { name: string }) =…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/12]⎯
+
+ FAIL  test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > the Workers-runtime tests load the vault module, never TanStack Start, on the one config (B15)
+AssertionError: expected 'import { cloudflareTest, readD1Migrat…' to match /main: '\.\/src\/vault-worker\.ts'/src\
+
+- Expected:
+/main: '\.\/src\/vault-worker\.ts'/
+
++ Received:
+"import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-plugin'
+import { defineConfig, mergeConfig } from 'vitest/config'
+
+import { apiSeams, apiSeamsConfig } from './api-seams.ts'
+
+// Workers-runtime tests: the vault's Durable Object and its SQLite storage run
+// in workerd through Miniflare, as they run deployed. The bindings below are
+// synthetic; no cloud resource is touched.
+export default mergeConfig(
+  apiSeamsConfig,
+  defineConfig({
+    plugins: [
+      apiSeams(),
+      cloudflareTest(async () => {
+        // readD1Migrations is a Node helper (the same package's main export).
+        // The paths are relative to apps/edge, which is the workers test cwd.
+        const authMigrations = await readD1Migrations('./migrations/auth')
+        const erasureMigrations = await readD1Migrations('./migrations/erasure')
+        return {
+          wrangler: { configPath: './wrangler.vault.jsonc' },
+          miniflare: {
+            d1Databases: ['AUTH_DB', 'AUTH_DB_REFERENCE', 'ERASURE_DB'],
+            bindings: {
+              JOTBUN_ENV: 'test',
+              COMMAND_DIGEST_KEY: 'synthetic-command-digest-key-0123456789abcdef',
+              MIN_CLIENT_VERSION_IOS: '1.0.0',
+              MIN_CLIENT_VERSION_ANDROID: '1.0.0',
+              AUTH_BASE_URL: 'http://auth.test',
+              AUTH_ISSUER: 'http://auth.test',
+              AUTH_AUDIENCE: 'jotbun-v1',
+              AUTH_TRUSTED_ORIGINS: 'gogospend://',
+              BETTER_AUTH_SECRET: 'synthetic-better-auth-secret-0123456789abcdef',
+              ERASURE_KEY: 'synthetic-erasure-key-0123456789abcdef0123',
+              TEST_AUTH_MIGRATIONS: authMigrations,
+              TEST_ERASURE_MIGRATIONS: erasureMigrations,
+            },
+          },
+        }
+      }),
+    ],
+    test: {
+      include: ['test/workers/**/*.test.ts'],
+      setupFiles: ['test/workers/auth/support/apply-auth-migrations.ts'],
+    },
+  }),
+)
+"
+
+ ❯ test/c1-shape.test.ts:62:21
+     60|   it('the Workers-runtime tests load the vault module, never TanStack …
+     61|     const workers = read('vitest.workers.config.ts')
+     62|     expect(workers).toMatch(/main: '\.\/src\/vault-worker\.ts'/)
+       |                     ^
+     63|     expect(workers).toMatch(/configPath: '\.\/wrangler\.jsonc'/)
+     64|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/12]⎯
+
+ FAIL  test/ready.test.ts > /live and /ready (B15) > /live answers 200 with no-store
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ test/ready.test.ts:34:24
+     32|   it('/live answers 200 with no-store', async () => {
+     33|     const res = live()
+     34|     expect(res.status).toBe(200)
+       |                        ^
+     35|     expect(res.headers.get('cache-control')).toBe('no-store')
+     36|     expect(await res.json()).toEqual({ status: 'live' })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/12]⎯
+
+ FAIL  test/ready.test.ts > /live and /ready (B15) > /ready is 200 with every setting and a readable config:v1, also when config:v1 is absent
+AssertionError: expected 501 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 501
+
+ ❯ test/ready.test.ts:42:26
+     40|     for (const config of [READY.CONFIG, kvWith(async () => null)]) {
+     41|       const res = await readyResponseOf({ ...READY, CONFIG: config })
+     42|       expect(res.status).toBe(200)
+       |                          ^
+     43|       expect(res.headers.get('cache-control')).toBe('no-store')
+     44|       expect(await res.json()).toEqual({ status: 'ready' })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/12]⎯
+
+ FAIL  test/ready.test.ts > /live and /ready (B15) > /ready reads config:v1 by its key
+AssertionError: expected "vi.fn()" to be called with arguments: [ 'config:v1', 'text' ]
+
+Number of calls: 0
+
+ ❯ test/ready.test.ts:51:17
+     49|     const get = vi.fn(async (_key: string, _type: 'text') => null)
+     50|     await readyResponseOf({ ...READY, CONFIG: kvWith(get) })
+     51|     expect(get).toHaveBeenCalledWith('config:v1', 'text')
+       |                 ^
+     52|   })
+     53|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/12]⎯
+
+ FAIL  test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_ISSUER
+ FAIL  test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_AUDIENCE
+ FAIL  test/ready.test.ts > /live and /ready (B15) > /ready is 503 without AUTH_JWKS_URL
+ FAIL  test/ready.test.ts > /live and /ready (B15) > /ready is 503 without COMMAND_DIGEST_KEY
+AssertionError: expected 501 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 501
+
+ ❯ expectNotReady test/ready.test.ts:25:22
+     23|
+     24| async function expectNotReady(res: Response) {
+     25|   expect(res.status).toBe(503)
+       |                      ^
+     26|   expect(res.headers.get('cache-control')).toBe('no-store')
+     27|   expect(res.headers.get('retry-after')).toBe('30')
+ ❯ test/ready.test.ts:55:11
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/12]⎯
+
+ FAIL  test/ready.test.ts > /live and /ready (B15) > /ready is 503 when config:v1 cannot be read, and the log names only the failure class
+AssertionError: expected 501 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 501
+
+ ❯ expectNotReady test/ready.test.ts:25:22
+     23|
+     24| async function expectNotReady(res: Response) {
+     25|   expect(res.status).toBe(503)
+       |                      ^
+     26|   expect(res.headers.get('cache-control')).toBe('no-store')
+     27|   expect(res.headers.get('retry-after')).toBe('30')
+ ❯ test/ready.test.ts:66:11
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/12]⎯
+
+ FAIL  test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > lists each route once, and nothing NestJS lacks but the edge-only and the added routes
+AssertionError: expected [ 'GET /v1/ai/note', …(7) ] to deeply equal [ 'GET /v1/sync/live' ]
+
+- Expected
++ Received
+
+  [
++   "GET /v1/ai/note",
++   "GET /v1/bridge/gogocash/catalogue",
++   "GET /v1/me/ai-preferences",
+    "GET /v1/sync/live",
++   "POST /v1/ai/ask",
++   "POST /v1/ai/parse",
++   "POST /v1/ai/slip",
++   "PUT /v1/me/ai-preferences",
+  ]
+
+ ❯ test/route-coverage.test.ts:88:64
+     86|     const listed = [...served, ...VAULT_DEFERRED_ROUTES, ...VAULT_RETI…
+     87|     expect(new Set(listed).size).toBe(listed.length)
+     88|     expect(listed.filter((key) => !nestByKey.has(key)).sort()).toEqual…
+       |                                                                ^
+     89|     expect(VAULT_EDGE_ONLY_ROUTES.filter((key) => VAULT_ADDED_ROUTES.i…
+     90|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/12]⎯
+
+ FAIL  test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > serves the seven AI and bridge routes and the added ones, and no NestJS route shadows them
+AssertionError: expected [] to deeply equal [ 'GET /v1/ai/note', …(6) ]
+
+- Expected
++ Received
+
+- [
+-   "GET /v1/ai/note",
+-   "GET /v1/bridge/gogocash/catalogue",
+-   "GET /v1/me/ai-preferences",
+-   "POST /v1/ai/ask",
+-   "POST /v1/ai/parse",
+-   "POST /v1/ai/slip",
+-   "PUT /v1/me/ai-preferences",
+- ]
++ []
+
+ ❯ test/route-coverage.test.ts:109:48
+    107|
+    108|   it('serves the seven AI and bridge routes and the added ones, and no…
+    109|     expect([...VAULT_EDGE_ONLY_ROUTES].sort()).toEqual([
+       |                                                ^
+    110|       'GET /v1/ai/note',
+    111|       'GET /v1/bridge/gogocash/catalogue',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/12]⎯
+
+
+ Test Files  3 failed (3)
+      Tests  12 failed | 6 passed (18)
+   Start at  08:50:18
+   Duration  609ms (transform 299ms, setup 0ms, import 501ms, tests 30ms, environment 0ms)
+

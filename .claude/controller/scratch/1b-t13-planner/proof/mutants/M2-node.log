@@ -1,0 +1,59 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge
+
+ × test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container 4ms
+   → expected 'import handler from \'@tanstack/react…' to match /queue: vaultWorker\.queue/
+ ✓ test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > the Workers-runtime tests load the vault module, never TanStack Start, on the one config (B15) 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container
+AssertionError: expected 'import handler from \'@tanstack/react…' to match /queue: vaultWorker\.queue/
+
+- Expected:
+/queue: vaultWorker\.queue/
+
++ Received:
+"import handler from '@tanstack/react-start/server-entry'
+
+import { isPostHogProxyPath, proxyPostHog } from './analytics/posthog-proxy'
+import { handleAuth, isAuthPath } from './server/auth'
+import vaultWorker from './vault-worker'
+
+// The one Worker (C1): TanStack Start pages and the /v1 server route, which
+// answers every v1 call from the caller's UserVault (src/routes/v1/$.ts).
+// PostHog's proxy takes `/ingest/*` and Better Auth takes `/api/auth/*` before
+// TanStack Start sees the request. The vault's Durable Objects, Workflows and
+// parse queue consumer live in src/vault-worker.ts; their bindings in
+// wrangler.jsonc name the classes re-exported here, as TanStack Start's
+// server entry allows.
+export { ExportWorkflow, SnapshotWorkflow, StatementParser, UserVault } from './vault-worker'
+
+export default {
+  fetch(...args: Parameters<typeof handler.fetch>) {
+    const [request] = args
+    const { pathname } = new URL(request.url)
+    if (isPostHogProxyPath(pathname)) return proxyPostHog(request)
+    if (isAuthPath(pathname)) return handleAuth(request)
+    return handler.fetch(...args)
+  },
+  // The statement parse queue's consumer (1B-T5, B6).
+}
+"
+
+ ❯ test/c1-shape.test.ts:57:20
+     55|       expect(server, name).toMatch(new RegExp(`export \\{[^}]*\\b${nam…
+     56|     }
+     57|     expect(server).toMatch(/queue: vaultWorker\.queue/)
+       |                    ^
+     58|   })
+     59|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  09:54:14
+   Duration  152ms (transform 11ms, setup 0ms, import 18ms, tests 5ms, environment 0ms)
+

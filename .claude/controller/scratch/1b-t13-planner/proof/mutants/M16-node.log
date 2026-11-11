@@ -1,0 +1,38 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge
+
+ × test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container 4ms
+   → expected { crons: [ '0 * * * *' ] } to be undefined
+ ✓ test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > the Workers-runtime tests load the vault module, never TanStack Start, on the one config (B15) 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container
+AssertionError: expected { crons: [ '0 * * * *' ] } to be undefined
+
+- Expected:
+undefined
+
++ Received:
+{
+  "crons": [
+    "0 * * * *",
+  ],
+}
+
+ ❯ test/c1-shape.test.ts:44:29
+     42|     // The 1B-T12 review's n7: the parity copy (B13, test/support/vaul…
+     43|     // consumers and containers only. A Cron Trigger added here would …
+     44|     expect(config.triggers).toBeUndefined()
+       |                             ^
+     45|     expect([config.r2_buckets[0].binding, config.kv_namespaces[0].bind…
+     46|     // Better Auth's databases and the email binding (1C-T1) stay with…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  09:54:50
+   Duration  179ms (transform 13ms, setup 0ms, import 19ms, tests 5ms, environment 0ms)
+

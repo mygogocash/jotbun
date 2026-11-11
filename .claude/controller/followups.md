@@ -451,7 +451,7 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **Hosted check (n1):** once an aborted retain's copy slot is back, its promise has ended. The command step and the copy's release (`receipts.ts:147-149`, `186-188`) then run with nothing pending in `waitUntil`, so the deployed runtime may skip them (unverified).
     - Effect: the copy stays reserved for 180 s; a retry gets `wait`, then 503, and the reservation counts toward `COPIES_IN_FLIGHT`.
     - This is bounded and predates R97. The hosted check should verify that the release runs.
-  - **1B-T13:**
+  - **The first task after #396 that touches `src/v1/files`** (not 1B-T13: its brief's P20 keeps it clear of those files, and the controller accepted that on 11 Nov):
     - n5: `slots.ts:16-18` and the call sites say the request lives until its slot is back, without Cloudflare's 30-second `waitUntil` cap. Add one clause.
     - n6 (optional hardening): make `untilReturned`'s returned function idempotent and exception-safe, with a `given` flag and `try { release() } finally { returned() }`.
   - **alarm-hardening (#398), n7:**

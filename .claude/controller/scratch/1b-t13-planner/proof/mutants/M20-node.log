@@ -1,0 +1,58 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge
+
+ × test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container 4ms
+   → expected 'import { cloudflare } from \'@cloudfl…' not to match /auxiliaryWorkers/
+ ✓ test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > the Workers-runtime tests load the vault module, never TanStack Start, on the one config (B15) 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container
+AssertionError: expected 'import { cloudflare } from \'@cloudfl…' not to match /auxiliaryWorkers/
+
+- Expected:
+/auxiliaryWorkers/
+
++ Received:
+"import { cloudflare } from '@cloudflare/vite-plugin'
+import { tanstackStart } from '@tanstack/react-start/plugin/vite'
+import viteReact from '@vitejs/plugin-react'
+import { defineConfig, mergeConfig } from 'vite'
+
+import { apiSeams, apiSeamsConfig } from './api-seams.ts'
+
+export default defineConfig(
+  mergeConfig(apiSeamsConfig, {
+    plugins: [
+      apiSeams(),
+      // One Worker (C1): wrangler.jsonc, with the vault, its Workflows, its queue consumer and its container.
+      cloudflare({ viteEnvironment: { name: 'ssr' }, auxiliaryWorkers: [] }),
+      tanstackStart({
+        // The API's Auth0 Management clients are named `*.client.ts` (an
+        // Auth0 client, not browser code), so they are let through the
+        // server's client-only file rule by exact path; the rule stays for
+        // everything else.
+        importProtection: { server: { excludeFiles: [/\\/apps\\/api\\/src\\/auth\\/auth0-(profile|management)\\.client\\.ts$/] } },
+      }),
+      viteReact(),
+    ],
+  }),
+)
+"
+
+ ❯ test/c1-shape.test.ts:51:40
+     49|       expect(existsSync(join(EDGE, gone)), gone).toBe(false)
+     50|     }
+     51|     expect(read('vite.config.ts')).not.toMatch(/auxiliaryWorkers/)
+       |                                        ^
+     52|     const server = read('src/server.ts')
+     53|     expect(server).toMatch(/export \{[^}]*UserVault[^}]*\}/)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  09:54:52
+   Duration  145ms (transform 11ms, setup 0ms, import 17ms, tests 4ms, environment 0ms)
+

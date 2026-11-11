@@ -1,0 +1,119 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/apps/app
+
+ ✓ src/wallet/lock/Lock.render.test.tsx > with the lock on, the app opens locked and the app below is hidden from screen readers 82ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > a successful scan unlocks; a cancel stays locked and says try again 29ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > under the lock Android's back does nothing, so no screen, and no draft on it, leaves under the lock 27ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > a lockout says to use the passcode 25ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > an unavailable answer re-reads the phone and stays locked while it can still lock 11ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > when the phone can no longer lock, the lock turns off once and says why 43ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > an open tray, then a return from the background, shows no tray content 35ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > with a tray or a sheet open, the lock screen is drawn inside its own cover, and unlocking there brings it back 72ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > the cover shows no amount and no text 28ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > each opening asks once by itself: the prompt's own inactive asks nothing, a press while a prompt is up asks nothing, every return from the background asks again, and an answer to an earlier opening is dropped 51ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > until the setting is read the app is covered and nothing asks; a setting that cannot be read counts as on 31ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > a prompt that throws, or a phone that cannot be read after an unavailable answer, never opens the app 20ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > the locked screen names the method: Face ID with its passcode link, a fingerprint, or the passcode alone 26ms
+ × src/wallet/lock/Lock.render.test.tsx > turning the lock on asks to authenticate first and stays off when that fails 27ms
+   → expected "authenticate" to be called 1 times, but got 0 times
+ × src/wallet/lock/Lock.render.test.tsx > turning it off asks too 28ms
+   → expected "authenticate" to be called 2 times, but got 1 times
+ ✓ src/wallet/lock/Lock.render.test.tsx > a phone without a passcode cannot turn the lock on, and says why 54ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > the setup screen reads the phone again when it opens, and again each time the app is back in front 44ms
+ × src/wallet/lock/Lock.render.test.tsx > the switch asks one prompt at a time, from the gate itself 39ms
+   → expected +0 to be 1 // Object.is equality
+ × src/wallet/lock/Lock.render.test.tsx > a prompt that finds the phone can no longer lock: turning the lock on leaves it off and says why; turning it off turns it off and says so 18ms
+   → expected "availability" to be called 3 times, but got 2 times
+ ✓ src/wallet/lock/Lock.render.test.tsx > the setup step: the step line, the question and body by method, a masked card, and Next, which keeps the answer and goes back; from Settings, no step and no Next 116ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > Settings shows the lock row only in the wallet area 199ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > every button and the switch are at least 44 pt 30ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > the wallet root mounts the lock with the app's own port only while the wallet area is on 14ms
+ × src/wallet/lock/Lock.render.test.tsx > the lock's sections come after the tray's, together, and each draws its screen on a setting it holds 18ms
+   → expected 'false' to be 'true' // Object.is equality
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 19 passed (24)
+   Start at  09:17:06
+   Duration  2.38s (transform 826ms, setup 47ms, import 1.09s, tests 1.07s, environment 77ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:37203) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > turning the lock on asks to authenticate first and stays off when that fails
+AssertionError: expected "authenticate" to be called 1 times, but got 0 times
+ ❯ src/wallet/lock/Lock.render.test.tsx:591:29
+    589|   expect(toggle.getAttribute('aria-checked')).toBe('false');
+    590|   await press(toggle);
+    591|   expect(fake.authenticate).toHaveBeenCalledTimes(1);
+       |                             ^
+    592|   expect(vi.mocked(fake.authenticate).mock.calls[0]).toEqual([{ prompt…
+    593|   expect(toggle.getAttribute('aria-checked')).toBe('false');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > turning it off asks too
+AssertionError: expected "authenticate" to be called 2 times, but got 1 times
+ ❯ src/wallet/lock/Lock.render.test.tsx:618:29
+    616|   expect(toggle.getAttribute('aria-checked')).toBe('true');
+    617|   await press(toggle);
+    618|   expect(fake.authenticate).toHaveBeenCalledTimes(2);
+       |                             ^
+    619|   expect(toggle.getAttribute('aria-checked')).toBe('true');
+    620|   expect(view.stored.get(STORED)).toBe('1');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > the switch asks one prompt at a time, from the gate itself
+AssertionError: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/wallet/lock/Lock.render.test.tsx:705:32
+    703|   await ready();
+    704|   await press(named('switch', say('lock.switch', 'th', { method: FACE.…
+    705|   expect(again.answers.length).toBe(1);
+       |                                ^
+    706|   expect(named('switch', say('lock.switch', 'th', { method: FACE.th })…
+    707|   await act(async () => { again.answers[0]('cancelled'); });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > a prompt that finds the phone can no longer lock: turning the lock on leaves it off and says why; turning it off turns it off and says so
+AssertionError: expected "availability" to be called 3 times, but got 2 times
+ ❯ src/wallet/lock/Lock.render.test.tsx:719:34
+    717|   await ready();
+    718|   await press(named('switch', say('lock.switch', 'th', { method: FACE.…
+    719|   expect(turningOn.availability).toHaveBeenCalledTimes(3);
+       |                                  ^
+    720|   shown(say('lock.needsPasscode'));
+    721|   expect(named('switch', say('lock.switch', 'th', { method: say('lock.…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > the lock's sections come after the tray's, together, and each draws its screen on a setting it holds
+AssertionError: expected 'false' to be 'true' // Object.is equality
+
+Expected: "true"
+Received: "false"
+
+ ❯ src/wallet/lock/Lock.render.test.tsx:887:103
+    885|   const toggle = named('switch', say('lock.switch', 'th', { method: FA…
+    886|   await press(toggle);
+    887|   expect(named('switch', say('lock.switch', 'th', { method: FACE.th })…
+       |                                                                                                       ^
+    888|   cleanup();
+    889|   mountWallet(<>{section('bw-lock-setup-unavailable')}</>);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+

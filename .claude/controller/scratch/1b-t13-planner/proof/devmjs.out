@@ -1,0 +1,9 @@
+dev.mjs exit 0
+npx vite dev --port 8092 --strictPort --host 127.0.0.1 (cwd <tree>/apps/edge)
+JOTBUN_ENV="local"
+COMMAND_DIGEST_KEY="<masked>"
+MIN_CLIENT_VERSION_IOS="0.0.0"
+MIN_CLIENT_VERSION_ANDROID="0.0.0"
+GOGOCASH_BRIDGE_ENABLED="1"
+COMMAND_DIGEST_KEY length 43
+mode -rw-------

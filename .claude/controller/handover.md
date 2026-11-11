@@ -4,6 +4,33 @@ Durable folder: `/Users/kunanonjarat/Developer/jotbun/.claude/controller/` (prot
 
 Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vault-core`), head 0bd5659 (controller state after 1D-T8's dispatch). Nothing outside `.claude/` changed since 606e131. No PR is open into the integration branch; only #70 into main.
 
+## 11 Nov 20:30 Bangkok: HOLD LIFTED (owner: "Resume the build"); three builders on Claude Code
+
+The owner answered the controller's question at about 20:20 with "Resume the build": three lanes, each to merge on green CI after review and then be promoted.
+
+**Antigravity is out of quota until about 18 Nov, 08:10 Bangkok** ("Usage Limit Reached ... reset in 6 days, 11 hours"; T3 snoozed the failed threads until 2026-11-18T01:11Z).
+- The first two launches failed before any tool call: P2-T14 `mcp:launch:461f0741…` and P2-T33 `mcp:launch:3e68ad43…`. Do not reuse them.
+- Under the owner's rule ("if run out of ai credit please use other"), every role runs with `make_prompt.py --claude-code` until then. Implementers are Claude Code Haiku 5.5 at max effort.
+
+**In flight** (launched threads don't wake the controller: use `t3_thread_read` or `t3_thread_wait`):
+
+| Task | Thread | Worktree and head | Notes |
+| --- | --- | --- | --- |
+| P2-T14 implementer | `mcp:launch:ed82a2d8ff3f16d67c03fe23fb284697aeab3460660cb368f946fae09413c391` | `p2-t14`, fast-forwarded to `96a52c2a`, installed | P1 to P17 accepted. P2-T12 merged first, which is the brief's P15 case: a 3-way apply of `index.ts` must equal `scratch/p2-t14-rebase/` (sha256 `f74fa284…`). |
+| P2-T33 implementer | `mcp:launch:ff142b9fea7604cb9452ecf629f7038a00093a215b4264199366d3779a40b20f` | `p2-t33`, fast-forwarded to `96a52c2a`, not installed (Step 1.1 installs) | P1 to P20 accepted. See the planner-rebase and `WalletCard.tsx` notes below. |
+| 1B-T13 implementer | `mcp:launch:45eecdab3fa9e75c94c5c040acf48efaa67ad965a4dab26050b3f29f1a70b462` | `p1-1b-t13`, new at `96a52c2a`, with `install-edge` | The controller reviewed the brief: P1 to P25 accepted. `--lock`. Step 0.5 was pre-checked (54 of 54 OK). #396 merged first, which is the brief's P21 case. |
+
+**P2-T33 notes:**
+- **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
+- **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
+
+**After each DONE:**
+1. Write `pr-<id>.md` and run `open_task_pr.sh`.
+2. Dispatch the reviewer with `make_prompt.py reviewer … --claude-code` (Opus xhigh).
+3. **P2-T33 (the app lock) is a privacy PR,** and 1B-T13 touches the auth dispatch and the vault. Each gets the second review too: `make_prompt.py second … --claude-code`. While Antigravity is out, that review is Claude Opus, the same family as the first review. Tell the owner that when asking for the merge yes.
+4. **Merge order:** P2-T14 before P2-T33 (P17). The second to merge needs `index.ts` resolved to `PL/merge/index.t14-t12-t33.ts` and `draftText.test.ts` merged (`PL/merge/draft.*`).
+5. P2-T20 waits on P2-T14's merge. P2-T16 still needs a planner.
+
 ## 11 Nov 20:25 Bangkok: #395 and #396 promoted; held briefs checked against the new head
 
 - **Promotions, made with the live skill's `promote_pr.sh`:**
@@ -15,7 +42,7 @@ Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vaul
   - **P2-T14:** the kit is intact (29 OK). `apps/app/src/dev/catalogue/wallet/index.ts` differs, because P2-T12 added its import and spread there, but the kit's diff applies cleanly. Dispatch with `--rebase-out`, and tell the implementer that P2-T12's `bw-stack` sections are now on the head.
   - **P2-T33:** the kit is intact (68 OK), but its `index.ts` diff does NOT apply after P2-T12. Send the brief back to its planner to rebase (P17's merge order still holds: P2-T14 first).
   - **1B-T13:** the kit is intact (144 OK), and its 26 `orig/` files are identical at the head. The brief still needs the controller's review (P1 to P5) before dispatch.
-- **The hold still stands for new threads and lanes.** The owner said "ok continue" at 20:15. That was not read as lifting the hold; the controller asked first.
+- At 20:15 the owner said "ok continue". The controller did not read that as lifting the hold and asked first. The hold was lifted at 20:20 (see the section above).
 
 ## 11 Nov 20:10 Bangkok: #396 merged; the local runners are up again
 

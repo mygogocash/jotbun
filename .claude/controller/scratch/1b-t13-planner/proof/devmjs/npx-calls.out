@@ -1,0 +1,1 @@
+npx vite dev --port 8092 --strictPort --host 127.0.0.1 (cwd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge)

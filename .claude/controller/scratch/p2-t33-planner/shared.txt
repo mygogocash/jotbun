@@ -1,0 +1,8 @@
+apps/app/src/ui/lockCover.tsx
+apps/app/src/ui/Sheet.tsx
+apps/app/src/ui/Sheet.render.test.tsx
+apps/app/src/wallet/WalletRoot.tsx
+apps/app/src/wallet/WalletRoot.render.test.tsx
+apps/app/src/screens/redesign/account/SettingsScreen.tsx
+apps/app/src/dev/catalogue/wallet/index.ts
+apps/app/src/wallet/copy/draftText.test.ts
