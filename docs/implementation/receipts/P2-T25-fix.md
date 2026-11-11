@@ -1,0 +1,76 @@
+# P2-T25-fix: a private-mode restore without its amount, nothing carried, bw-deleted on its own fakes, and the reviews' minors
+
+- **Status:** built and verified locally on `p2/t25-recently-deleted` (`.claude/worktrees/p2-t25`): a merge of `a00fff7c` into PR #412's reviewed head `b840c195`, then one commit. Not pushed. This is the fix round on PR #412 after two reviews:
+  - the first (`.claude/controller/reviews/P2-T25.md`) said Needs fixes: one blocker (B1), two majors (M1, M2), six minors and five nits;
+  - the second (`P2-T25-second.md`, money and privacy) said Needs fixes. Its major is the first review's M1. Its minor is the case R109 asks for (a restore with private mode on). Its nit is one way to do R109's item 1, `usePrivateMode()` read at the screen level, which this round does.
+
+  The controller ruled R109, and the planner's brief is `.claude/controller/briefs/P2-T25-fix.md`. Under R87 this receipt is its own file; `P2-T25.md` is corrected (m6) and points here.
+- **Base:** the merge of `a00fff7c` (P2-T33's PR #406, merged into `claude/p1a-vault-core`) into `b840c195`.
+  - Since #412's base (`c7e39bf4`), P2-T14's #407 and P2-T33's #406 each added a spread to the catalogue's `index.ts` where #412 added its own, so #412 no longer merged cleanly, and GitHub runs no CI on a pull request that conflicts.
+  - The merge keeps every spread in plan order: P2-T14's `WALLET_ADD_SECTIONS`, P2-T25's `WALLET_RECORD_SECTIONS`, then P2-T33's `WALLET_LOCK_SECTIONS` (the planner's `merge/index.ts`, from a three-way merge of `c7e39bf4`, `b840c195` and `a00fff7c`). No other file changed on both sides. The merge also brings P2-T23's Home data, P3-T4's gateway transport and P2-T33's lock, with its route `app/settings/lock.tsx`.
+  - The planner's `merge/orders/` proves `index.ts` for every order of #412, #416 (P2-T20, `WALLET_LIST_SECTIONS`) and #411 (P2-T32, `WALLET_RECAP_SECTIONS`) onto `a00fff7c`. Each conflict is two insertions at one place, resolved in plan order (ADD, LIST, RECORD, RECAP, LOCK), and all six orders end in the same file.
+- **Files:**
+  - Modified:
+    - `apps/app/src/screens/redesign/deleted/deletedData.ts`: no `trackRecordRestored` (M2); a confirmed restore's notice carries `restored`, the row (M1);
+    - `apps/app/src/wallet/records/WalletDeletedScreen.tsx`;
+    - `apps/app/src/wallet/records/copy.ts`: 7 keys before, 9 after;
+    - `apps/app/src/wallet/records/WalletDeleted.render.test.tsx`: 9 cases before, 15 after;
+    - `apps/app/src/dev/catalogue/wallet/recordSections.tsx`: it loads the section's stage lazily, with a fallback the catalogue suites wait on (B1);
+    - `docs/implementation/receipts/P2-T25.md`: m6's corrections and a line pointing here.
+  - Created: `apps/app/src/dev/catalogue/wallet/deletedSection.tsx` (B1) and this receipt.
+  - No shared file changes in this commit. `index.ts` is the merge's.
+- **B1, the catalogue section on its own fakes:**
+  - `bw-deleted` drew `WalletDeletedScreen` with no `SpendV1Provider`, so both catalogue suites failed on it (CI's "Render, per-section suites (ids of length 3n+1)" job), and on a phone the section threw `useSpendV1 needs a SpendV1Provider.`
+  - `deletedSection.tsx` stages the real screen with `screenSection`, as `recentlyDeletedSections.tsx` stages the old one, on fakes and the fixtures' clock: rent deleted yesterday, the salary four days ago, lunch nine days ago, and a taxi on its last day. Its script waits until the list is drawn.
+  - `recordSections.tsx` loads that module with `lazy()`, since it and the screen import expo-router, which the kit's suites cannot load (the first review's P5). The `Suspense` fallback reads `catalogue-screen-running`, which both catalogue suites wait on.
+  - `WalletDeleted.render.test.tsx` now renders the section, in Thai and English, and finds its own rows.
+- **M1, private mode after a restore (R109.1):**
+  - The hook's notice for a confirmed restore carries the restored row (`RestoreNotice.restored`). Its `message` is unchanged, so `RecentlyDeletedScreen` says the words its suite pins.
+  - `WalletDeletedScreen` reads `usePrivateMode()` itself and, while private mode is on, words a restore with `records.restoredHidden` (ค่าบิล กลับมาอยู่ในประวัติแล้ว). A `Notice` speaks what it shows (`useAnnouncement`) and is a live region, so no amount is drawn, announced or read out.
+  - A refusal keeps its own words in private mode.
+  - The case R109 names: a restore with private mode on, then no `฿` followed by a digit and no `12,268`, in the screen and in every live region, in Thai and English, light and dark.
+- **M2, nothing carried (R109.2):**
+  - `deletedData.ts` no longer calls `trackRecordRestored`, nor imports it. The test's `vi.mock` of the events module and its assertion are gone, and M14 from the first round's mutant record.
+  - Nothing was carried: no app code at the base calls `trackRecordRestored`, and 1D-T7 (#138) has not merged. 1D-T7 puts the call into `useRecentlyDeleted`, with its own `recordAnalytics()` case (R61).
+- **The minors (R109.3):**
+  - m1: the title is never clamped, so it wraps at the largest text sizes. Each Restore pill is at least 44 pt (`minHeight`) with no fixed height, so it grows with its words.
+  - m2: a deleted income draws as income: `+฿28,000` in violet, through `WalletAmount`'s `sign="income"` and no tone. An expense or a move stays its size alone, in ink.
+  - m3: the first review's six survivors are pinned: two taps in one frame send one restore (R1, R2), the last day is the final 24 hours only and is drawn in ink (R3, R4), and each row names its wallet (R15) above the footer line (R17). Before this round all six survive `b840c195`'s own tests (the planner's `logs/before-pins.out`); each now fails a case on an assertion.
+  - m4: the row's day is `dateStep`'s `dayLabel` on the screen's clock: วันนี้ or เมื่อวาน, else the weekday and the date, with the year when it is not this year (พุธ 24 ธ.ค. 2568). The screen's own month table is gone.
+  - m5: the page starts 8 pt below the status bar, from the safe-area inset (`insets.top + 8`), as rh-deleted's 52 pt sits below a 44 pt bar.
+  - m6: `P2-T25.md` is corrected: the carry rule, the old screen's behaviour, the seven keys, `useGoBack()`, the mutant record without M14, ruling P2 withdrawn, and the section's notes.
+- **The nits:**
+  - n1: Back is named as rh-deleted names it, กลับไปประวัติ (`records.backToHistory`).
+  - n2: Step 1's four cases, and the new private-mode and income cases, run in light and dark, with colours checked against each mode.
+  - n3: the expired salary is looked for by its title in each language (เงินเดือน, Salary).
+  - n4: each line takes WalletText's leading for its language. The heading is the `h1` role and the 13 pt lines the `caption` role, with no leading of their own. The board's 16 pt title and 14 pt policy have no role, so they take `walletLineHeight` for the active script, never Thai's in every language.
+  - n5: the copy table is merged once, at module level.
+- **RED to GREEN:**
+  - RED, on `b840c195`'s code (as merged) with the round's test file:
+    - `typecheck:app` exit 0.
+    - `WalletDeleted.render.test.tsx`: 8 of 15 fail, each on an `AssertionError`, with no load or lookup error: R109, m1, m2, m4, m5, n1, n4 and B1. The other 7 guard what the first round already did right.
+    - The catalogue's two `section bw-deleted` cases fail on assertions (B1).
+    - The six survivors on that code, the eight RED cases left out: 6 killed, each on an assertion.
+  - GREEN: `WalletDeleted.render.test.tsx` 15 of 15 and `RecentlyDeletedScreen.render.test.tsx` 17 of 17, unchanged; `draftText.test.ts` 4 of 4; the six kit suites that list `WALLET_SECTIONS` 88 of 88; the catalogue's `section bw-` cases 38 of 38.
+- **Mutation check:** 48, all killed, each file restored with its SHA-256 checked:
+  - the first round's 18 (M14 is gone with its call) and the plan's own mutant, a 31-day window (P1);
+  - this round's 29: M1's four (MP1 to MP3, MH), m1's two, m2's two, the six pins, m4's two, m5's two, n1's one, n4's six and B1's four.
+  - Every kill is an assertion but B1e's: a static import of the section's stage, which `walletHarness` and `Tray` fail to load (`SyntaxError`), which is why the section is lazy.
+  - Left out as equivalent, as the first review found: a restore key kept after a confirmed restore (a restore bumps the version, so the key is never reused), and Load more while it loads (`PillButton` ignores presses while busy).
+- **Gate (R100):**
+  - `npm run typecheck:app`: exit 0.
+  - `npm run typecheck:routes -w gogospend-app`: exit 0 (the merge brings P2-T33's route).
+  - `npm run test:unit`: exit 0, 0 failed.
+  - `npm run test:app`: exit 0, 0 failed.
+  - The focused files and the six kit suites: 8 files, 120 of 120.
+  - The catalogue's `section bw-deleted` cases: 2 of 2.
+  - `git diff --check`: clean, before and after the commit.
+- **SKIPPED and CI:**
+  - In CI on the PR (R100): the full render suite (its per-section jobs run `bw-deleted` in both catalogue suites), `export:web`, the iOS export, `test:ops` and the database suites. This round's commit changes no route, config, app entry, package or lockfile; the merge's route is P2-T33's, which CI checked on #406.
+  - Not needed: the API and edge suites; nothing outside `apps/app` and the receipts changes.
+  - SKIPPED until run: the E2 screenshots of `bw-deleted`, and a VoiceOver pass over a restore in private mode on a phone.
+- **Notes for later tasks:**
+  - 1D-T7 (#138): add `trackRecordRestored({ kind: row.type })` to `useRecentlyDeleted`'s `restore`, after the acknowledgement, with its own `recordAnalytics()` case (R61). Nothing calls it today, so its `RecentlyDeletedScreen` case starts RED.
+  - P2-T26: a wallet line built from the shared restore or undo words that carries an amount needs this round's treatment in private mode: name the entry and drop the amount (`records.deletedBar` is the next). `records/copy.ts` is the table P2-T26 extends.
+  - P2-T28 and every later screen section: draw the real screen through `screenSection` on fakes, behind `lazy()` when the kit suites list its section, with a fallback that reads `catalogue-screen-running`, and run both catalogue suites with `-t 'section <id>'` before committing.
+  - E2-B: `records.restoredHidden`, and the English of `records.backToHistory`, are drafts. A row's day now reads as History's day headers do (a weekday, วันนี้ or เมื่อวาน), where the board shows only the date.

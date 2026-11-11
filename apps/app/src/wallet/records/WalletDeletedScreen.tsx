@@ -1,27 +1,33 @@
 // The Bun Wallet's Recently deleted screen (plan P2-T25, rh-deleted):
 // entries deleted in the last 30 days, most recently deleted first, with
 // their retention policy first. Each row has the category icon, title,
-// amount, wallet and date, days left to restore (or last day), and a 44 pt
-// Restore button.
+// amount, wallet and day, days left to restore (or last day), and a Restore
+// pill at least 44 pt tall that grows with its words. The rules are the old
+// screen's, through useRecentlyDeleted; in private mode a restore's notice
+// names the entry without its amount (R109).
 import type { CategoryDto } from '@gogospend/contracts';
 import { Pressable, ScrollView, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
 import { Bun } from '@mobile/mascot/Bun';
 import { LoadingBlock, Notice, useGoBack } from '@mobile/screens/redesign/HistoryParts';
 import { useRecentlyDeleted } from '@mobile/screens/redesign/deleted/deletedData';
+import type { RestoreNotice } from '@mobile/screens/redesign/deleted/deletedData';
 import type { DeletedRow } from '@mobile/spend/v1/redesign/historyModel';
-import type { Lookups } from '@mobile/spend/v1/redesign/shared';
+import { todayInBangkok } from '@mobile/spend/v1/viewModels';
 import { useWalletColors } from '@mobile/theme/ThemeProvider';
 import { walletLineHeight } from '@mobile/theme/walletType';
 import { DECORATIVE } from '@mobile/ui/a11y';
 import { categoryInitial } from '@mobile/ui/categoryIcons';
+import { dayLabel } from '@mobile/ui/dateStep';
 import { EmptyState } from '@mobile/ui/EmptyState';
 import { PillButton } from '@mobile/ui/PillButton';
 import { SyncBanner } from '@mobile/ui/SyncBanner';
 import { COMMON_COPY } from '../common/copy';
 import { IconButton } from '../controls/IconButton';
+import type { WalletT } from '../copy/draftText';
 import { useDraftCopy } from '../copy/useDraftCopy';
 import { WalletCategoryIcon } from '../looks/WalletCategoryIcon';
 import { WalletAmount } from '../money/WalletAmount';
@@ -32,20 +38,20 @@ import { COPY } from './copy';
 
 export type WalletDeletedScreenProps = { now?: Date };
 
-const SHORT_MONTHS: Readonly<Record<string, readonly string[]>> = {
-  th: ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'],
-  en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-  vi: ['thg 1', 'thg 2', 'thg 3', 'thg 4', 'thg 5', 'thg 6', 'thg 7', 'thg 8', 'thg 9', 'thg 10', 'thg 11', 'thg 12'],
-};
+/** The screen's lines and the shared ones, merged once, so `t` keeps one identity across renders. */
+const DELETED_COPY = { ...COMMON_COPY, ...COPY };
 
-export function formatDeletedDate(date: string, locale: string): string {
-  const parts = date.split('-');
-  if (parts.length !== 3) return date;
-  const day = parseInt(parts[2], 10);
-  const monthIndex = parseInt(parts[1], 10) - 1;
-  const months = SHORT_MONTHS[locale] ?? SHORT_MONTHS.th;
-  const month = months[monthIndex] ?? '';
-  return `${day} ${month}`;
+/** WalletText's leading for a size no type role has (the board's 16 and 14 pt lines), in this language. */
+const leadingFor = (size: number, locale: string) => walletLineHeight(size, locale === 'th' ? 'thai' : 'latin');
+
+/**
+ * The notice's words: the hook's, except a confirmed restore while private
+ * mode is on, which names the entry alone. A Notice says aloud what it
+ * shows, so this keeps the amount off the screen and out of the screen
+ * reader (R109, Review Focus 2).
+ */
+function noticeWords(notice: RestoreNotice, hidden: boolean, t: WalletT): string {
+  return hidden && notice.restored !== undefined ? t('records.restoredHidden', { title: notice.restored.title }) : notice.message;
 }
 
 function ClockIcon({ size = 12, color }: { size?: number; color: string }) {
@@ -82,6 +88,7 @@ function BackChevron({ size = 16, color }: { size?: number; color: string }) {
 function DeletedRowView({
   row,
   category,
+  today,
   restoring,
   frozen,
   disabled,
@@ -90,6 +97,8 @@ function DeletedRowView({
 }: {
   row: DeletedRow;
   category: CategoryDto | undefined;
+  /** Bangkok's date on the screen's clock: the row's day is said from it (src/ui/dateStep.ts). */
+  today: string;
   restoring: boolean;
   frozen: boolean;
   disabled: boolean;
@@ -97,7 +106,7 @@ function DeletedRowView({
   isFirst: boolean;
 }) {
   const colors = useWalletColors();
-  const t = useDraftCopy({ ...COMMON_COPY, ...COPY });
+  const t = useDraftCopy(DELETED_COPY);
   const tc = useCopy();
   const locale = useActiveLocale();
   const { hidden } = usePrivateMode();
@@ -141,25 +150,18 @@ function DeletedRowView({
       )}
 
       <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-        <WalletText style={{ fontSize: 16, fontWeight: '500', lineHeight: walletLineHeight(16, 'thai'), color: colors.ink }} numberOfLines={1}>
-          {row.title}
-        </WalletText>
+        {/* Never clamped: at the largest text sizes the title wraps. */}
+        <WalletText style={{ fontSize: 16, fontWeight: '500', lineHeight: leadingFor(16, locale) }}>{row.title}</WalletText>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-          <WalletAmount minor={row.amountMinor} size={13} tone="ink" />
-          <WalletText style={{ fontSize: 13, lineHeight: walletLineHeight(13, 'thai'), color: colors.quiet }}>
-            {` · ${row.detail} · ${formatDeletedDate(row.occurredOn, locale)}`}
+          {/* Income is violet with its plus; an expense or a move is the size alone, in ink. */}
+          <WalletAmount minor={row.amountMinor} size={13} sign={row.type === 'income' ? 'income' : 'none'} />
+          <WalletText role="caption" tone="quiet">
+            {` · ${row.detail} · ${dayLabel(row.occurredOn, today, locale).text}`}
           </WalletText>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
           <ClockIcon size={12} color={daysColor} />
-          <WalletText
-            style={{
-              fontSize: 13,
-              lineHeight: walletLineHeight(13, 'thai'),
-              fontWeight: isLastDay ? '700' : '400',
-              color: daysColor,
-            }}
-          >
+          <WalletText role="caption" style={{ fontWeight: isLastDay ? '700' : '400', color: daysColor }}>
             {isLastDay ? t('records.lastDay') : t('records.daysLeft', { n: row.daysLeft })}
           </WalletText>
         </View>
@@ -173,8 +175,8 @@ function DeletedRowView({
         disabled={disabled || restoring}
         onPress={onRestore}
         style={{
+          // At least 44 pt, and taller when its words grow.
           minHeight: 44,
-          height: 44,
           paddingLeft: 12,
           paddingRight: 14,
           borderRadius: 999,
@@ -206,9 +208,13 @@ function DeletedRowView({
 
 export function WalletDeletedScreen({ now }: WalletDeletedScreenProps) {
   const colors = useWalletColors();
-  const t = useDraftCopy({ ...COMMON_COPY, ...COPY });
+  const t = useDraftCopy(DELETED_COPY);
   const tc = useCopy();
+  const locale = useActiveLocale();
   const goBack = useGoBack();
+  const insets = useSafeAreaInsets();
+  const { hidden: amountsHidden } = usePrivateMode();
+  const today = todayInBangkok(now ?? new Date());
 
   const {
     lists,
@@ -233,43 +239,29 @@ export function WalletDeletedScreen({ now }: WalletDeletedScreenProps) {
         style={{ flex: 1 }}
         contentContainerStyle={{
           paddingHorizontal: 18,
-          paddingTop: 52,
+          // The spend layout pads nothing: start below the status bar, 8 pt clear of it, as rh-deleted's 52 pt does.
+          paddingTop: insets.top + 8,
           paddingBottom: 40,
           gap: 16,
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <IconButton label={t('common.back')} onPress={goBack}>
+          <IconButton label={t('records.backToHistory')} onPress={goBack}>
             <BackChevron size={16} color={colors.ink} />
           </IconButton>
         </View>
 
         <View style={{ gap: 4 }}>
-          <WalletText
-            role="h1"
-            accessibilityRole="header"
-            style={{
-              fontSize: 28,
-              fontWeight: '700',
-              lineHeight: walletLineHeight(28, 'thai'),
-              color: colors.ink,
-            }}
-          >
+          <WalletText role="h1" accessibilityRole="header">
             {t('records.deletedTitle')}
           </WalletText>
-          <WalletText
-            style={{
-              fontSize: 14,
-              lineHeight: walletLineHeight(14, 'thai'),
-              color: colors.quiet,
-            }}
-          >
+          <WalletText tone="quiet" style={{ fontSize: 14, lineHeight: leadingFor(14, locale) }}>
             {t('records.deletedPolicy')}
           </WalletText>
         </View>
 
         {banner ? <SyncBanner {...banner} /> : null}
-        {shownNotice ? <Notice tone={shownNotice.tone} message={shownNotice.message} /> : null}
+        {shownNotice ? <Notice tone={shownNotice.tone} message={noticeWords(shownNotice, amountsHidden, t)} /> : null}
         {lists?.page.refresh_suggested && !error ? (
           <Notice
             message={tc('Entries changed since you opened this list.')}
@@ -294,12 +286,13 @@ export function WalletDeletedScreen({ now }: WalletDeletedScreenProps) {
             />
           ) : (
             <View style={{ gap: 12 }}>
-              <View style={{ backgroundColor: colors.card, borderRadius: 20, overflow: 'hidden' }}>
+              <View testID="wallet-deleted-list" style={{ backgroundColor: colors.card, borderRadius: 20, overflow: 'hidden' }}>
                 {model.rows.map((row, index) => (
                   <DeletedRowView
                     key={row.recordId}
                     row={row}
                     category={row.categoryId ? lookups.categories.get(row.categoryId) : undefined}
+                    today={today}
                     restoring={restoring === row.recordId}
                     frozen={held?.id === row.recordId}
                     disabled={(busy && restoring !== row.recordId) || (held !== null && held.id !== row.recordId)}
@@ -308,14 +301,7 @@ export function WalletDeletedScreen({ now }: WalletDeletedScreenProps) {
                   />
                 ))}
               </View>
-              <WalletText
-                style={{
-                  marginHorizontal: 4,
-                  fontSize: 13,
-                  lineHeight: walletLineHeight(13, 'thai'),
-                  color: colors.quiet,
-                }}
-              >
+              <WalletText role="caption" tone="quiet" style={{ marginHorizontal: 4 }}>
                 {t('records.deletedFooter')}
               </WalletText>
             </View>

@@ -3,7 +3,6 @@ import type { CategoryDto, DeletedHistoryPage, DeletedTransactionDto, WalletSnap
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { V1Error } from '@mobile/api/client';
-import { trackRecordRestored } from '@mobile/analytics/events';
 import { useCopy } from '@mobile/i18n/useCopy';
 import { playHaptic } from '@mobile/lib/hapticMoment';
 import { saveProblem, useCommandKeys, useMoneyLocale } from '@mobile/screens/v1/parts';
@@ -21,7 +20,16 @@ export const RESTORE_PAGE_LIMIT = 50;
 export type DeletedLists = { page: DeletedHistoryPage; items: DeletedTransactionDto[] };
 export type DeletedReferences = { wallets: readonly Pick<WalletSnapshot, 'id' | 'name'>[]; categories: readonly CategoryDto[] };
 export type RestoreTarget = { id: string; version: number };
-export type RestoreNotice = { tone: 'alert' | 'status'; message: string; about?: string };
+export type RestoreNotice = {
+  tone: 'alert' | 'status';
+  message: string;
+  about?: string;
+  /**
+   * After a confirmed restore: the entry that came back. `message` says it with its amount (History's words, which
+   * the old screen shows); the wallet screen words it without the amount while private mode is on (R109).
+   */
+  restored?: DeletedRow;
+};
 
 /** Each entry's restore keeps its own command key. */
 export const restoreSlot = (id: string) => `restore:${id}`;
@@ -123,12 +131,11 @@ export function useRecentlyDeleted(now?: Date): RecentlyDeletedState {
     setRestoring(row.recordId);
     try {
       await resources.restoreTransaction(row.recordId, row.version, key);
-      trackRecordRestored({ kind: row.type });
       keys.settle(slot);
       setPending(null);
       // Off this list at once; the list is read again in place below.
       setLists((current) => (current ? { ...current, items: current.items.filter((item) => item.id !== row.recordId) } : current));
-      setNotice({ tone: 'status', message: restoredText(row, locale, tc) });
+      setNotice({ tone: 'status', message: restoredText(row, locale, tc), restored: row });
       playHaptic('saveLanded');
     } catch (problem) {
       playHaptic('saveFailed');
