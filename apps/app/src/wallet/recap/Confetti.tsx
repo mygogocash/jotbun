@@ -1,66 +1,61 @@
-// Confetti animation for the month recap (P2-T32).
-// 24 pieces, palette colours only, 1.2 s duration.
+// The month recap's confetti (W20, bw-recap): 24 pieces in four materials'
+// colours (palette values only, so P2-T37's sweep finds no colour literal
+// here), over the top of the screen for 1.2 s, then gone. Decorative and
+// untouchable. The recap draws it only at full motion (the `recap` moment of
+// motionFor); under Reduce Motion the moment is its haptic alone.
 import { useEffect, useState, type ReactElement } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { materialPaint } from '@mobile/theme/walletPalette';
+import type { WalletMaterial } from '@mobile/theme/walletPalette';
+import { DECORATIVE } from '@mobile/ui/a11y';
+
+/** The device store's mark of a month celebrated on this phone. */
 export const CONFETTI_NAME = (month: string) => `recap-confetti-${month}`;
 
-const PALETTE = ['#A891F7', '#F3E2BE', '#FFAE85', '#8CC8F5', '#F6B6CE'] as const;
+/** How long the pieces stay (W20). */
+const SHOWN_MS = 1200;
 
-// Deterministic layout for 24 pieces
-const PIECES = Array.from({ length: 24 }, (_, i) => {
-  const color = PALETTE[i % PALETTE.length];
-  const isCircle = i % 2 === 0;
-  const top = 60 + ((i * 27) % 200);
-  const left = 20 + ((i * 37) % 320);
-  const size = 6 + (i % 5);
-  const rotation = `${((i * 35) % 90) - 45}deg`;
+/** bw-recap's colours: silk's middle and peach's, sky's and paper's ends. */
+const MATERIALS: readonly WalletMaterial[] = ['silk', 'peach', 'sky', 'paper'];
+const COLOURS = MATERIALS.map((material) => materialPaint(material, false).stops[1].color);
 
-  return { id: i, color, isCircle, top, left, size, rotation };
-});
+/** A fixed scatter over the hero, so every opening looks the same. */
+const PIECES = Array.from({ length: 24 }, (_, index) => ({
+  key: index,
+  color: COLOURS[index % COLOURS.length],
+  round: index % 2 === 0,
+  top: 60 + ((index * 27) % 200),
+  left: 20 + ((index * 37) % 320),
+  size: 6 + (index % 5),
+  rotate: `${((index * 35) % 90) - 45}deg`,
+}));
 
-export function Confetti({ durationMs = 1200, testID = 'recap-confetti' }: { durationMs?: number; testID?: string }): ReactElement | null {
-  const [visible, setVisible] = useState(true);
-
+export function Confetti(): ReactElement | null {
+  const [shown, setShown] = useState(true);
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setVisible(false);
-    }, durationMs);
+    const timer = setTimeout(() => setShown(false), SHOWN_MS);
     return () => clearTimeout(timer);
-  }, [durationMs]);
-
-  if (!visible) return null;
-
+  }, []);
+  if (!shown) return null;
   return (
-    <View pointerEvents="none" testID={testID} style={styles.container} aria-hidden={true}>
+    <View {...DECORATIVE} pointerEvents="none" testID="recap-confetti" style={StyleSheet.absoluteFill}>
       {PIECES.map((piece) => (
         <View
-          key={piece.id}
+          key={piece.key}
           testID="confetti-piece"
-          style={[
-            styles.piece,
-            {
-              top: piece.top,
-              left: piece.left,
-              width: piece.size,
-              height: piece.isCircle ? piece.size : piece.size * 1.5,
-              borderRadius: piece.isCircle ? piece.size / 2 : 2,
-              backgroundColor: piece.color,
-              transform: [{ rotate: piece.rotation }],
-            },
-          ]}
+          style={{
+            position: 'absolute',
+            top: piece.top,
+            left: piece.left,
+            width: piece.size,
+            height: piece.round ? piece.size : piece.size * 1.5,
+            borderRadius: piece.round ? piece.size / 2 : 2,
+            backgroundColor: piece.color,
+            transform: [{ rotate: piece.rotate }],
+          }}
         />
       ))}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    ...StyleSheet.absoluteFill,
-    zIndex: 999,
-  },
-  piece: {
-    position: 'absolute',
-  },
-});

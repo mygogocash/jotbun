@@ -1,8 +1,11 @@
-// Data loading and sharing for the month recap (insights redesign R5, moved in P2-T32).
+// The month recap's load and share (insights redesign R5, moved out of
+// RecapScreen.tsx in P2-T32): the Bun diary recap and the Bun Wallet recap
+// read the same month the same way.
 import { HISTORY_MAX_LIMIT } from '@gogospend/contracts';
 import type { TransactionDto } from '@gogospend/contracts';
 import { trackRecapOpened, trackRecapShared } from '@mobile/analytics/events';
-import type { MonthDays, RecapData, RecapLoad } from '@mobile/spend/v1/redesign/insights/recapModel';
+import { readAllPages } from '@mobile/spend/v1/redesign/insights/insightsModel';
+import type { MonthDays, RecapData } from '@mobile/spend/v1/redesign/insights/recapModel';
 import { compareWindow, monthPhase, readMonthDays } from '@mobile/spend/v1/redesign/insights/recapModel';
 import { useSpendV1 } from '@mobile/spend/v1/SpendV1Context';
 import { monthRange, todayInBangkok } from '@mobile/spend/v1/viewModels';
@@ -10,7 +13,9 @@ import { Share } from 'react-native';
 import { useLoad } from '../../v1/parts';
 
 const NOTHING_READ: MonthDays = { days: [], complete: true };
+const NO_RECORDS: readonly TransactionDto[] = [];
 
+/** The recap's data, with the month's records when the caller asks for them (none otherwise). */
 export type RecapDataWithRecords = RecapData & {
   records: readonly TransactionDto[];
 };
@@ -22,30 +27,28 @@ export type RecapLoadWithRecords =
 
 /**
  * Loads the recap's month totals, categories, days logged and compare bars.
- * Keeps the records read during history paging for wallet recap's biggest day.
- * Calls `trackRecapOpened()` once when it first shows a month (R61).
+ * With `withRecords`, it also reads every history page of the month for its
+ * records (the wallet recap's biggest day and cashback count): the days read
+ * stops once every day is seen, so its pages can leave records out.
+ * Calls `trackRecapOpened()` once the month is read (R61).
  */
-export function useRecapData(month: string, now?: Date): RecapLoadWithRecords & { reload: () => void; refresh: () => void } {
+export function useRecapData(month: string, now?: Date, options: { withRecords?: boolean } = {}): RecapLoadWithRecords & { reload: () => void; refresh: () => void } {
   const resources = useSpendV1();
   const today = todayInBangkok(now ?? new Date());
+  const withRecords = options.withRecords === true;
 
-  const loaded = useLoad<RecapDataWithRecords>(async () => {
+  return useLoad<RecapDataWithRecords>(async () => {
     const months = compareWindow(month, today);
     // A month that has not started has nothing to read.
     const started = monthPhase(month, today) !== 'future';
-    const monthRecords: TransactionDto[] = [];
-    const historyReader = async (cursor: string | undefined) => {
-      const page = await resources.history({ ...monthRange(month), sort: 'date_desc' }, cursor, HISTORY_MAX_LIMIT);
-      monthRecords.push(...page.items);
-      return page;
-    };
-
-    const [summary, categories, days, others] = await Promise.all([
+    const page = (cursor: string | undefined) => resources.history({ ...monthRange(month), sort: 'date_desc' }, cursor, HISTORY_MAX_LIMIT);
+    const [summary, categories, days, others, records] = await Promise.all([
       started ? resources.summary(month) : null,
       resources.categories(),
-      started ? readMonthDays(month, historyReader) : NOTHING_READ,
+      started ? readMonthDays(month, page) : NOTHING_READ,
       // The month shown shares its own summary with its bar.
       Promise.all(months.filter((other) => other !== month).map(async (other) => [other, (await resources.summary(other)).expense_minor] as const)),
+      started && withRecords ? readAllPages(page).then((read) => read.records) : NO_RECORDS,
     ]);
     const spentIn = new Map(others);
     trackRecapOpened();
@@ -53,12 +56,10 @@ export function useRecapData(month: string, now?: Date): RecapLoadWithRecords & 
       summary,
       categories,
       days,
-      records: monthRecords,
+      records,
       compare: months.map((shown) => ({ month: shown, expenseMinor: shown === month && summary ? summary.expense_minor : spentIn.get(shown) ?? '0' })),
     };
-  }, [resources, month, today]);
-
-  return loaded;
+  }, [resources, month, today, withRecords]);
 }
 
 /**

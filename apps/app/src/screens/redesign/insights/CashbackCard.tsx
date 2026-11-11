@@ -23,8 +23,8 @@ import { readCashbackDeclined, writeCashbackDeclined } from './cashbackDecline';
 
 const BUILTIN: CashbackCatalogue = { source: 'builtin', updated_at: null, home_href: GOGOCASH_HOME, brands: [...BUILTIN_CASHBACK_BRANDS] };
 
-/** The catalogue, or null while the bridge is switched off on the server (404). */
-function useCatalogue(): CashbackCatalogue | null {
+/** The catalogue, or null while the bridge is switched off on the server (404). The wallet recap reads it too (P2-T32). */
+export function useCashbackCatalogue(): CashbackCatalogue | null {
   const { resources } = useAiCompanion();
   const [catalogue, setCatalogue] = useState<CashbackCatalogue | null>(null);
   useEffect(() => {
@@ -47,7 +47,7 @@ export function CashbackCard({ records, daysLogged, open = (url: string) => void
 }) {
   const tc = useCopy();
   const { preferences, update } = useAiCompanion();
-  const catalogue = useCatalogue();
+  const catalogue = useCashbackCatalogue();
   const [declined, setDeclined] = useState<boolean | null>(null);
   const [why, setWhy] = useState(false);
   useEffect(() => {

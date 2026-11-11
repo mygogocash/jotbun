@@ -1,62 +1,32 @@
+// The month recap's biggest day (bw-recap, P2-T32). Pure.
+//
+// - The day of `month` with the most confirmed money out: live expenses only.
+//   A move between the person's own wallets is never money out, nor is income.
+// - A tie goes to the earlier day, whatever order the records come in
+//   (history lists them newest first).
+// - `payday` when that day also holds a live income in the built-in salary
+//   category (the category whose `builtin_key` is `salary`); with no such
+//   category, no day is a payday.
+// - Dates stay `YYYY-MM-DD` strings, so no time zone moves a record across a
+//   day or a month edge, and amounts are satang strings through BigInt only.
 import type { CategoryDto, Minor, TransactionDto } from '@gogospend/contracts';
 
-/**
- * Finds the day with the most confirmed money out in the given month (YYYY-MM).
- * - Only confirmed records (deleted_at === null).
- * - Occurred in the month (occurred_on.startsWith(month + '-')).
- * - Money out: record.type === 'expense'.
- * - Ties in total expense amount choose the earlier day.
- * - Returns null if no money out occurred in the month.
- * - payday is true when that day also holds a live income in the built-in salary category.
- */
-export function biggestDay(
-  records: readonly TransactionDto[],
-  month: string,
-  salaryCategory?: string | readonly CategoryDto[],
-): { date: string; outMinor: Minor; payday: boolean } | null {
-  const salaryId =
-    typeof salaryCategory === 'string'
-      ? salaryCategory
-      : Array.isArray(salaryCategory)
-        ? salaryCategory.find((c) => c.builtin_key === 'salary')?.id ?? 'salary'
-        : 'salary';
+export type BiggestDay = { date: string; outMinor: Minor; payday: boolean };
 
-  const dayTotals = new Map<string, bigint>();
-  const dayHasSalary = new Set<string>();
-
+export function biggestDay(records: readonly TransactionDto[], month: string, categories: readonly CategoryDto[]): BiggestDay | null {
+  const salaryId = categories.find((category) => category.builtin_key === 'salary')?.id ?? null;
+  const outByDay = new Map<string, bigint>();
+  const paydays = new Set<string>();
   for (const record of records) {
-    if (record.deleted_at !== null) continue;
-    if (!record.occurred_on.startsWith(month + '-')) continue;
-
-    if (record.type === 'expense') {
-      const current = dayTotals.get(record.occurred_on) ?? 0n;
-      dayTotals.set(record.occurred_on, current + BigInt(record.amount_minor));
-    } else if (record.type === 'income') {
-      if (record.category_id === salaryId || record.category_id === 'salary') {
-        dayHasSalary.add(record.occurred_on);
-      }
-    }
+    if (record.deleted_at !== null || !record.occurred_on.startsWith(`${month}-`)) continue;
+    if (record.type === 'expense') outByDay.set(record.occurred_on, (outByDay.get(record.occurred_on) ?? 0n) + BigInt(record.amount_minor));
+    else if (record.type === 'income' && record.category_id === salaryId) paydays.add(record.occurred_on);
   }
-
-  if (dayTotals.size === 0) return null;
-
-  const sortedDates = Array.from(dayTotals.keys()).sort();
-  let maxDate: string | null = null;
-  let maxOut = 0n;
-
-  for (const date of sortedDates) {
-    const total = dayTotals.get(date)!;
-    if (total > maxOut) {
-      maxOut = total;
-      maxDate = date;
-    }
+  let best: { date: string; out: bigint } | null = null;
+  // Earliest first, so a later day wins only with strictly more.
+  for (const date of [...outByDay.keys()].sort()) {
+    const out = outByDay.get(date) ?? 0n;
+    if (best === null || out > best.out) best = { date, out };
   }
-
-  if (maxDate === null || maxOut <= 0n) return null;
-
-  return {
-    date: maxDate,
-    outMinor: String(maxOut) as Minor,
-    payday: dayHasSalary.has(maxDate),
-  };
+  return best === null ? null : { date: best.date, outMinor: best.out.toString(), payday: paydays.has(best.date) };
 }
