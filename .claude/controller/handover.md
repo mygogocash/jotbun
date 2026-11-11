@@ -4,6 +4,33 @@ Durable folder: `/Users/kunanonjarat/Developer/jotbun/.claude/controller/` (prot
 
 Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vault-core`), head 0bd5659 (controller state after 1D-T8's dispatch). Nothing outside `.claude/` changed since 606e131. No PR is open into the integration branch; only #70 into main.
 
+## 11 Nov 10:00 Bangkok: the 13:15 relaunch batch, open PRs, the lock
+
+**Relaunch at or after 13:15 ICT, on Antigravity `claude-sonnet-5-5-high`.** Each is a `t3_thread_launch` in the jotbun project (`cc4b9cae-2d3c-4aeb-b98f-affe256dcb86`) with `workspaceStrategy: {type: "root"}`, so it runs in `/Users/kunanonjarat/Developer/jotbun`, not a T3 worktree. The message for each is the `prompt:` line its prompt file was made with.
+1. The #395 fixer (P2-T12): `scratch/dispatch/P2-T12-fixer.prompt.md`, WT p2-t12. See the leftovers note below.
+2. The #396 fixer (fix-download-aborts): `scratch/dispatch/fix-download-aborts-fixer.prompt.md`, WT fix-download-aborts. See the leftovers note below.
+3. The P2-T14 implementer: `scratch/dispatch/P2-T14-implementer.prompt.md`, WT p2-t14 (clean).
+4. **The P2-T33 implementer (the Face ID lock):** `scratch/dispatch/P2-T33-implementer.prompt.md`. Its notes are in `P2-T33-implementer-notes.md`. The brief is READY on b8095b99 (Claude Code planner thread `mcp:launch:08bd63e5…`), with the kit at `scratch/p2-t33-planner/`. WT p2-t33 on `p2/t33-face-id-lock` was made at 10:00 from b8095b99, which was still the head.
+   - **Merge order against P2-T14 (ruling P17):** merge P2-T14 first. Both add their spread last in `apps/app/src/dev/catalogue/wallet/index.ts`, and the lock's goes last: `...WALLET_ADD_SECTIONS,` then `...WALLET_LOCK_SECTIONS,`. The second PR meets a one-line conflict; resolve it as `scratch/p2-t33-planner/merge/index.t33-t14-conflict.ts` shows. If P2-T14 merges before P2-T33 reaches Step 4.1, the implementer applies the `after-p2-t14` diff instead.
+5. **The 1B-T13 implementer:** pending the planner's READY or BLOCKED (Claude Code thread `mcp:launch:9ebaef6c…`). When it lands, review the brief, make the prompt with `make_prompt.py implementer 1B-T13 --wt p1-1b-t13 --branch p1/1b-t13-vault-http --head <head> --lock`, and add it to this batch. It needs the heavy lock, so it runs its database suites one at a time behind the other agents.
+
+**Heavy lock, 09:55:** `/private/tmp/claude-501/jotbun-heavy.lock` had been held since 08:14 by the fix-download-aborts fixer, which died at the 08:20 quota cutoff. `ps` showed no jotbun test process, only the 1B-T13 planner's `locked.sh` waiting in its loop; the running Postgres and Supabase containers are unrelated (system postgresql@16, and `tbh-local`). Cleared under lessons.md ("A killed run can leave the heavy lock held"). The planner's chained proof run took the lock at once.
+
+**Open PRs, 10:00:**
+
+| PR | Base | CI | Waiting on |
+| --- | --- | --- | --- |
+| #373 1D-T8 (privacy) | main | green, 3 of 3 | Owner's merge (bottom of the promotion stack) |
+| #378 P4-T13, #380 1B-T8, #381 P4-T12 | stacked | green, 3 of 3 | The PR below, then the owner (#378 and #381 are slip and privacy work: read closely) |
+| #384, #386, #388, #389, #390 | stacked | green, 9 of 9 | The PR below, then the owner |
+| #393 wallet-looks-unstored | stacked | red, billing refusal only | Owner's decision (see 08:20 below) |
+| #399 tray-hardening, #400 1B-T12 | stacked | green, 9 of 9 | #393, then the owner |
+| #401 download-pins | stacked | **green, 9 of 9** at 7b336d80 (local runners) | The stack below, then the owner |
+| #402 alarm-hardening | stacked | **green, 9 of 9** at 8e9b9823 (local runners) | The stack below, then the owner |
+| #395 P2-T12 | integration | red (old billing runs) | The 13:15 fix round, a confirming review, a fresh CI run |
+| #396 fix-download-aborts | integration | red (old billing runs) | The 13:15 fix round, a fresh CI run |
+| #70 Jotbun redesign plan | main | red (typecheck, unit, render) | Owner: fix, rebase or close (untouched since 26 Oct) |
+
 ## Fixers dispatched, 11 Nov 08:15 Bangkok (Cursor Auto controlling; owner: "continue")
 
 - **#396 fix-download-aborts:** the fixer runs on Antigravity `claude-sonnet-5-5-high`, T3 task `fix-download-aborts-fixer-20261111b`, in WT fix-download-aborts. Its assignment is `scratch/dispatch/fix-download-aborts-fixer.prompt.md`, with notes on the moved head.
