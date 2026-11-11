@@ -1,6 +1,6 @@
 # fix-download-aborts: An aborted download gives back its slot (ruling R97)
 
-- **Status:** built and verified locally on `fix/download-aborts`, from `e7b61d7`. That is `origin/claude/p1a-vault-core` as the implementer started: its `apps/edge`, `apps/api`, `packages` and root package files are `d1111f8`'s (1B-T6 to 1B-T11 are in them), and `e7b61d7` adds only controller files under `.claude/`. Not pushed. Under ruling R87 this receipt is its own file; `premium-progress.md` is not edited. Under ruling R100 the whole workers suite is CI's. The independent review is the controller's, after this receipt.
+- **Status:** built and verified locally on `fix/download-aborts`, from `e7b61d7`. That is `origin/claude/p1a-vault-core` as the implementer started: its `apps/edge`, `apps/api`, `packages` and root package files are `d1111f8`'s (1B-T6 to 1B-T11 are in them), and `e7b61d7` adds only controller files under `.claude/`. The controller pushed it, a review approved it, and after a test-only fix round it merged as `72cdd02` (#396). Under ruling R87 this receipt is its own file; `premium-progress.md` is not edited. Under ruling R100 the whole workers suite is CI's. The independent review is the controller's, after this receipt.
 - **Files:**
   - New, under `apps/edge`: `src/v1/files/slots.ts` (`untilReturned`) and `test/workers/download-aborts.test.ts` (5 cases).
   - Shared, four files, each a wiring edit:
