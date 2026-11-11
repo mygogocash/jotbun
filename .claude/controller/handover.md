@@ -4,6 +4,15 @@ Durable folder: `/Users/kunanonjarat/Developer/jotbun/.claude/controller/` (prot
 
 Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vault-core`), head 0bd5659 (controller state after 1D-T8's dispatch). Nothing outside `.claude/` changed since 606e131. No PR is open into the integration branch; only #70 into main.
 
+## Routing moved to Antigravity, 11 Nov 07:50 Bangkok (owner: Antigravity's credits are unused, "maximize it")
+
+- Every delegated role now runs on Antigravity, and Claude Code's limit is for the controller only. This replaces the 10 Nov routing below. `make_prompt.py` prints the targets:
+  - planners, first reviews and confirming reviews: `claude-opus-5-5-high`;
+  - implementers and fixers: `claude-sonnet-5-5-high`;
+  - the second review of money-path or privacy PRs: `gemini-4-argon-high`, a different model family;
+  - scouting: `gemini-3.8-flash-high`.
+- `--claude-code` runs a role on Claude Code if Antigravity is down or out of credit. `--claude-limited` is gone.
+
 ## Merged 11 Nov 07:45 Bangkok (owner: "if CI pass merge it")
 
 - On green local CI and approved reviews, at their exact heads (each head is the reviewed commit plus receipt corrections; #392's is the reviewer's own COMBO patch):
