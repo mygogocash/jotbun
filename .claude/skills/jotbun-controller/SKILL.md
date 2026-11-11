@@ -11,6 +11,8 @@ One session (the controller) runs the build. It dispatches agents, one worktree 
 
 Claude Code has a rolling 5-hour limit and Fable is scarcer still. Antigravity has credits that are already paid for (owner, 11 Nov: "maximize it"), including Claude Opus 5.5 and Sonnet 5.5 at High. So every delegated role runs on Antigravity, and Claude Code's limit goes to the controller alone. `make_prompt.py` prints the `delegate_task` target for each role.
 
+**When a provider runs out of credit, switch to the next one without asking** (owner, 11 Nov: "if run out of ai credit please use other"). The order is Antigravity, then Claude Code (`make_prompt.py --claude-code`), then Cursor. Signs of an empty provider: a quota, credit, rate-limit or billing error, or a run that fails before its first tool call. Relaunch the same assignment on the next provider, note the switch in `handover.md`, and go back to Antigravity once its credit returns. Model tiers stay as close as the fallback allows. The owner's approval gates don't change.
+
 | Work | Route to |
 | --- | --- |
 | Controller: rulings, merges, pushes, state | Claude Code Opus 5.5; Cursor Auto takes over when Claude Code is at its limit |
