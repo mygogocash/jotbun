@@ -24,6 +24,15 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**01:17 (12 Nov): P2-T20 is built and opened as #416, with its Opus review running.**
+- **The build:** the Haiku builder reported DONE at `4eb15b3e`.
+  - RED was all assertions. GREEN: Node 8, render 16, neighbours 177, catalogue 32. All 84 mutants were killed, and the R100 gate passed (193 focused render tests and the web export).
+  - The controller checked all 10 `real/` files: byte-identical, with `index.ts` matching the 3-way copy.
+- **PR #416** (body `pr-p2-t20.md`, issue #166).
+- **First review**, on Opus xhigh: `mcp:launch:c782b7d9ee6e9c21d706235b3b7e799bfcf60fc89cc1ea25052d3721f4ad437f`. It writes `reviews/P2-T20.md`.
+- **Second review** (the list shows balances and private mode): Gemini 3.8 Flash after about 02:43, when Antigravity's quota resets (`make_prompt.py second P2-T20 --spread`).
+- **When #406 merges first:** merge the head into `p2/t20-wallets-list`, with `index.ts` giving ADD, LIST and then LOCK. Push, then merge on green and approved.
+
 **01:10 (12 Nov): #407 (P2-T14) and #410 (P3-T4) MERGED; the head is `431ea63`. Antigravity's Gemini quota ran out at 00:48 (it resets at about 02:43), so work runs on Claude Code.**
 - **#407:** merged as `7cf4927` at `28b9d5ac` and promoted as **#414**. Its carried notes are in followups.md (P2-T16, P2-T27, P2-T37, P2-T15, E2-B).
 - **#410:** the rerun was green, 9 of 9. Merged as `431ea63` at `a68fcd81` and promoted as **#415**. Stack #379 holds 20 PRs.
