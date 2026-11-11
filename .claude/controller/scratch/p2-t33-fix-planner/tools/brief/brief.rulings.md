@@ -1,0 +1,108 @@
+
+## Planner rulings (the calls this brief makes, with the reason for each)
+
+- **P1. Ready, on `5844e4c1`, with no merge.**
+  - This is a fix round on #406, not a new task. Its base `96a52c2a` holds every task P2-T33 starts after (P2-T2, P2-T10, P2-T11, P2-T13 and tray-hardening).
+  - The integration head (`3dc81b4d` when this was planned) differs from `96a52c2a` outside `.claude/` only in 1B-T13's edge and docs files (#405): `git diff --stat 96a52c2a origin/claude/p1a-vault-core -- apps/app packages package.json package-lock.json` prints nothing.
+  - No package, lockfile, Cloudflare resource, account setting or owner decision is needed. R107 rules every finding. Owner Q1 (the JavaScript cover) and Q3 (drafts as written) keep their defaults.
+  - The fix commit goes straight on top of `5844e4c1`, as the controller's notes say. The controller merges #406 after P2-T14's #407, with the first round's `scratch/p2-t33-planner/merge/` files. This round touches neither `index.ts` nor `draftText.test.ts`, so those proofs still hold.
+- **P2. M1: the receipt photo draws the cover (R107.1).**
+  - `ReceiptViewer` reads `useLockCover()`. While `hidden` it draws `<LockCoverArt />` in place of its `Animated.View`, so while the app is locked the lock screen shows inside the viewer's own Modal (P2-T33's ruling P2: the topmost cover is the one a person sees and presses).
+  - As in `Sheet`, `onRequestClose` asks nothing while hidden (Android's back; Escape on the web), and the web layer's `aria-label` is dropped. The photo, its title and its Close are unmounted, so nothing of them is drawn, named or pressable.
+  - When the cover lifts the photo is back as it was. The fade's `Animated.Value` holds 1, so it does not fade in again, and `onShow` does not fire again (so focus is not moved, as for a tray, P2-T33's P3).
+  - The case is the second review's probe 1, as R107 asks: lock on, the photo open, `background` then `active`. Expected: a cover outside the app's root, holding the lock screen and the try-again note, and nothing of the photo. It adds the guarded back and the unnamed layer, and that unlocking from inside the viewer brings the photo back, after which back closes it.
+- **P3. The Modal sweep (R107.1).**
+  - Seven source files draw a `<Modal`. Three draw the cover: `Sheet.tsx`, `Tray.tsx` and now `ReceiptParts.tsx`.
+  - Four are left: `CustomerSpendScreen.tsx` and the three parts only it imports (`SpendDatePicker.tsx`, `SpendNewCategorySheet.tsx`, `SpendMediaPermissionPrimer.tsx`). Why they cannot be open while the lock is on:
+    - only `app/spend/index.tsx` draws `CustomerSpendScreen`, and only behind `isLegacySpendEnabled()`;
+    - that is `process.env.EXPO_PUBLIC_LEGACY_SPEND === '1'`, "Development only ... never a runtime fallback" (`featureFlags.ts:5-11`; `README.md:421`), and the plan's store profiles (P6C) set it to `0`. No build a person gets draws them, whatever areas are on.
+  - `DateChip.tsx` names `SpendDatePicker` only in a comment; it draws a `Sheet`. No route is presented natively (the second review checked), and the app has no other overlay package.
+  - New `src/ui/lockCover.test.ts` (Node) keeps the sweep. It reads every source file under `src/` and `app/` (tests left out) and asserts three things:
+    - exactly these seven draw a `<Modal`;
+    - each covered one reads `useLockCover()` and draws `LockCoverArt` under `hidden`;
+    - each legacy part is imported only by `CustomerSpendScreen.tsx`, which is imported only by `app/spend/index.tsx`, behind the switch.
+  - So a new Modal fails until it draws the cover or is ruled out here (mutants MS1 and MS2).
+  - The native sheets the app presents (the export's share sheet, the pickers) are the second review's m6, owner Q1's class. They are noted only (R107.5).
+- **P4. The first review's m2: the first ask waits for the phone.**
+  - The gate keeps `settled`, true once the phone's first reading has answered or failed. The automatic ask waits for it, so the first prompt uses the phone's words (`lock.lineFace` on a Face ID phone). A reading that fails still settles, so the gate still asks, in the passcode's words (`lock.linePasscode`), as R107 says.
+  - Only the automatic ask waits. The locked screen still draws at once, naming the passcode until the phone answers; a press in those milliseconds asks in the passcode's words. A reading that never answers leaves the ask to the button rather than showing nothing (P2-T34's adapter must answer).
+  - The case is the first review's probe C, for a Face ID phone and for a phone that cannot be read (mutants FP1 and FP2).
+- **P5. The first review's m3: an opening counts as asked only once its prompt starts.**
+  - `unlock` marks the opening as asked (`asked.current = at`) right after its in-flight check passes, that is, when a prompt actually starts. The effect no longer marks it.
+  - `busy` is in the effect's dependencies, so when a prompt answers the effect looks again. An opening that came while that prompt was up then asks by itself. This is the first review's probe A, and probe F for the switch's prompt.
+  - `busy` is not in the effect's condition. `unlock` already asks nothing while a prompt is up, and leaves the opening unasked, so a `busy` test there could never change the outcome: its mutant would be equivalent. The comment above the effect says so.
+  - A scan from before a trip away still opens nothing: the switch's `change` never unlocks, and `unlock` drops an answer to an earlier opening.
+  - The mutants: AO1 (`busy` out of the dependencies) and AO2 (the opening marked in the effect again).
+- **P6. The first review's n4: `unlock` resets `asking` in a `finally`, and `change` does too.**
+  - The `try` covers the whole answer, including the early return that drops an answer to an earlier opening. So the `finally` is what lets the next opening ask after a dropped answer, and its mutant FIN1 (the reset at the end of the `try`) is killed by the first round's "each opening asks once by itself" case.
+  - `change` needs the same, now that it awaits the store (P9): FIN2 is killed by a cancelled scan's early return.
+- **P7. The first review's m4: the turned-off notice has no timeout.**
+  - The case holds the prompt (`heldPhone`-style), takes over the clock with `vi.useFakeTimers()` before the answer that turns the lock off, flushes the answer with microtask-only `act` calls (`ready()` needs real timers), and advances 60 s. The notice is still there; it goes only when closed.
+  - The first review's mutant M1 (a 3 s `setTimeout` in `turnOff`) is TM1, killed on GREEN and, on `5844e4c1`'s code, by the pin.
+- **P8. The second review's n1: the port's types.**
+  - `lockModel.ts` gains `authResultOf(answer: unknown): AuthResult` (anything but the five answers is `'failed'`) and `availabilityOf(reading: unknown): LockAvailability | null` (`null`, as for a read that failed, unless `canLock` is a boolean and `method` is `null` or one of the three methods). It checks the method against a list, not with `in`, which would let `'toString'` through (mutant AV3).
+  - The gate's `prompt` and `readPhone` use them. So an answer outside the types counts as a failed scan (try again; the button asks again), and a reading outside them counts as a phone that could not be read: still able to lock, never able to turn the lock on, and named by the passcode.
+  - `afterRecheck` also turns the lock off only on `canLock === false` (mutant RC1), a second guard in the pure rule.
+  - The render cases are the reviews' probes 3 and 7 (and the first review's H); the Node case pins both functions.
+- **P9. The second review's m3: turning the lock on is stored fail-closed.**
+  - After a passing scan, `change(true)` awaits `store.set(LOCK_NAME, '1')`. Only if the write succeeds does the lock go on (the switch, `lock-answered`).
+  - If the write fails, the switch stays off, nothing is kept, and the gate shows a notice, `lock.notStored` ("The lock couldn't be turned on. Try again."). It uses the same notice as `lock.turnedOff`: at the top, on the toast colours, polite, a 44 pt close, no timeout, and said once on iOS. Its test id is `lock-not-stored`.
+  - A new turn clears the notice (mutant WS5), and `asking` stays set until the write settles, so a second press cannot start a second prompt.
+  - Turning the lock off stays fire-and-forget: a setting that cannot be removed locks again at the next launch, which fails closed. The comment says so.
+  - The case is the second review's probe 8: a store that cannot write, then one that can.
+- **P10. The second review's m4: while the cover is up the app below says nothing on iOS. R107 lets this round edit `ui/a11y.ts` or the announcement hook: this round edits `ui/a11y.ts`.**
+  - **Why `a11y.ts`, not the hook:** `announcePolitely` is called directly as well as through `useAnnouncement` and `useSettledAnnouncement` (Home, private mode, the conflict panel and others). A module flag in `a11y.ts` quiets every one of them; a context in the hook would quiet only the hook's callers.
+  - **The helpers:**
+    - `setQuietUnderLockCover(quiet)` sets the flag;
+    - `announcePolitely` says nothing while it is set;
+    - `announceOverLockCover(text)` is what `announcePolitely` was, the lock's own way past the flag.
+  - **The gate:**
+    - it calls `setQuietUnderLockCover(hidden)` in a `useLayoutEffect`, and resets the flag when it goes;
+    - its three notes (`then.note`, `lock.turnedOff`, `lock.notStored`) use `announceOverLockCover`.
+  - **Why a layout effect:** React runs every layout effect of a commit before any passive one, and passive effects child-first. So the flag is set before any part below runs its own `useAnnouncement` in the commit that raises the cover. The case's `AwayStatus` changes its line in that same commit; mutant QT6 (a plain `useEffect`) lets it be heard.
+  - **`sync/announce.ts`, a file R107 did not name, changes by one line:** `announceStatus` now calls `announcePolitely`. It is the app's other announcement helper (v1's `SyncStatus`, drawn on `/spend` when the `core` area is off), and it made the same `AccessibilityInfo` call itself, so without this one line it would still speak under the cover. Behaviour outside a gate is unchanged, and `SyncStatus.render.test.tsx` mocks `./announce` (11 of 11 pass). If the controller would rather leave the file alone, the kit needs a revision, not a skipped step: the m4 case calls `announceStatus` under the cover (mutant QT5).
+  - On Android and the web, the app below's live regions sit under `no-hide-descendants` and `aria-hidden`, which should already keep them quiet. That stays a device check (the second review's note, P19).
+  - The case is the second review's probe 2, plus a line that changes as the cover goes up, `announceStatus`, the app speaking again once unlocked, and a gate that goes while its cover is up (mutants QT1 to QT6).
+- **P11. The second review's m5: becoming hidden dismisses the keyboard.**
+  - An effect calls `Keyboard.dismiss()` whenever `hidden` becomes true: `background`, and `inactive` too (with the lock on, `inactive` covers the app, and a sheet's input unmounts anyway).
+  - On the web, react-native-web's `dismiss` blurs the focused input, so the case asserts both the call and the blur, for `inactive` and for `background` (mutants KB1, and KB2: only when locked).
+  - The keyboard on a phone stays a device check (P19).
+- **P12. The first review's n6: fixed, since it is cheap.**
+  - The gate keeps `assumed`: true when the setting could not be read and so counts as on. `turnOff` then still turns the lock off and unlocks, but shows and says no notice: the person never turned that lock on.
+  - Any change the person makes (`change` passing) clears it, so a lock they turn on later is theirs, and is said when it turns itself off.
+  - The case covers both: a blocked store with `noLocalAuth`, and a blocked store, a Face ID phone, a turn off and on, and the passcode then removed (mutants N6A to N6C).
+- **P13. The pins (R107.4), each RED through its review survivor on `5844e4c1`'s code (Step 2.5):**
+  - the first review's n1, "an app launched behind waits": `AppState.currentState` is spied to `background` before the mount (LB1, the review's M4);
+  - n2, the route: new `LockRoute.render.test.tsx`, with its own `expo-router` stand-in (a `Redirect` drawn as words, `useLocalSearchParams` from the case) and a stand-in `LockSetupScreen` that says which form it was given (RT1 and RT2, the review's M6 and M7; RT3, any `setup` value). The catalogue's router stub is left alone;
+  - n3, `change()`'s same-state guard (SG1, the review's M2);
+  - n5, the vacuous assertion made real: `Below` draws its amount as a heading, and the first case checks it is drawn (`hidden: true`) but not reachable. Its line comes before `unseen(below)`, so on `5844e4c1`'s code G21 now fails there first;
+  - the second review's m2: its two ready cases, as it wrote them (SW1 and SW2, its A2 and A3).
+- **P14. The second review's m1 is carried (R107.5), but `Sheet.tsx`'s comment is corrected.** It said "its content is its host's, so nothing is lost", which the review showed is not true of every sheet. It now says that the children unmount, so a child's own state starts again, and names the review. This is a comment only: no test and no mutant.
+- **P15. RED (R107.6).**
+  - Node: the model's new case fails on the stub's pass-through (`AssertionError ... not_interactive`), and the sweep's first case fails on `ReceiptParts.tsx`. The other 16 pass, the copy pin among them, since the copy goes in with the tests as data, as in the first round.
+  - Render: nine cases fail, each on an assertion. The other seven new cases (five in `Lock.render.test.tsx`, and `LockRoute.render.test.tsx`'s two) pin code that is already right, and so does the first case's real n5 line; Step 2.5 gives their RED.
+  - One "Unhandled Rejection" is expected at RED: `TypeError: Cannot read properties of undefined (reading 'step')`, which vitest attributes to the case "an answer outside the port's types ...". That is the first review's n4 itself: `afterAnswer` returns nothing for an odd answer, and the throw leaves `asking` set. The case still fails on an assertion. At GREEN there is none.
+- **P16. 166 mutants, all killed (Step 4), and the 9 pins (Step 2.5).**
+  - The first round's 121 are re-aimed where this round moved their text: F20, F21, G3 to G6, G9, G11, G12, G14 to G18, G28, G31, G32, G36 and G40. G31 now replaces the awaited write with `const stored = true;`.
+  - 45 are new: RV1 to RV3, MS1, MS2, QT1 to QT6, KB1, KB2, FP1, FP2, AO1, AO2, FIN1, FIN2, N1A, N1B, AR1, AR2, AV1 to AV3, RC1, WS1 to WS6, T5, N6A to N6C, and eight of the nine review survivors again, on the final code (TM1, SG1, LB1, RT1 to RT3, SW1, SW2; the ninth, G21, is the first round's).
+  - MS1 and MS2 edit `DateChip.tsx`, a file outside the round, and the runner restores it by SHA-256 like every other file.
+  - Every kill fails an assertion (each mutant's log holds an `AssertionError`). N1A also leaves an `Unhandled Rejection` in its log: the odd answer reaches `afterAnswer`, whose `undefined` throws inside the `try`, and the `finally` still resets `asking`.
+- **P17. Clear of the work in flight.**
+  - P2-T14's fix round (`scratch/p2-t14-fix-planner/`) changes `src/wallet/add/` and `addSections.tsx`. P2-T23 changes `HomeScreen.tsx`, `homeData.*` and `src/wallet/home/`. P2-T25 changes `app/spend/deleted.tsx`, `index.ts`, `recordSections.tsx` and its own files. P3-T4 changes `apps/edge`.
+  - None of them touches this round's eleven files. The planner read each kit's `real/`; P2-T32's had no files yet.
+  - P2-T23's `HomeScreen.tsx` keeps calling `useAnnouncement`, which is now quiet under the cover: nothing to merge.
+- **P18. The gate (R100).**
+  - No route, config or app entry changes. The route test imports `app/settings/lock.tsx`, but the route is unchanged. So no `typecheck:routes` and no `export:web`, and no API, edge or database suite.
+  - Run: `typecheck:app`, the focused files RED to GREEN, the round's other focused render files and the twelve neighbours, and the catalogue's wallet and receipt sections (`-t "bw-|receipt-"`, since `receipt-full-screen` draws the viewer). Then `test:app`, `test:unit` and `git diff --check`.
+  - CI runs the full render suite, both exports and the rest.
+- **P19. Carried (R107.5), and the device checks, SKIPPED with their risk.**
+  - Carried:
+    - the first review's m1 (Android's activity-based credential screen sends `background`, so the gate drops the passing answer and asks again) goes to P2-T34's phone check;
+    - the second review's m1 (a Sheet's children lose their own state under the cover; the email code step) stays with R63's unmount, for later sheet hosts (1C-T9, P6B-T8) and P2-T34;
+    - the second review's m6 (native sheets above the cover) is owner Q1's class, noted only.
+  - Device checks, added to P2-T33's P19:
+    - the keyboard on a phone when the lock engages (m5);
+    - VoiceOver over the receipt photo's cover, and that unlocking there brings the photo back;
+    - that nothing below speaks under the cover on an iPhone;
+    - TalkBack's live regions under the cover (the second review's note on m4).
+- **P20. For E2-D: one new draft line**, `lock.notStored`: th `เปิดการล็อกไม่สำเร็จ ลองอีกครั้ง`, en `The lock couldn't be turned on. Try again.` No board shows it. The Node case pins its Thai and counts four lines beyond the plan's.

@@ -24,6 +24,19 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**22:50: the P2-T33 fix brief is READY and accepted. Its Flash fixer is running. Both P2 fix rounds are now building.**
+- **The brief:** `briefs/P2-T33-fix.md`. The kit `scratch/p2-t33-fix-planner/` checks against `5844e4c1` with 55 OK, and its 9 `orig/` files are identical.
+- **RED:** Node 2 of 18 and render 9 of 40, all on assertions, plus 1 expected unhandled `TypeError` ("reading 'step'"), which is the n4 bug. 166 of 166 mutants killed, twice.
+- **What it does:**
+  - M1: `ReceiptViewer` draws the cover. `lockCover.test.ts` is a source test that keeps the Modal sweep. Three Modals are covered; the four legacy ones are shown only under the development-only `EXPO_PUBLIC_LEGACY_SPEND=1`, and are recorded.
+  - The gate's fixes: the first ask waits for the phone read; an opening counts only when its prompt starts; `try/finally`; port types are fail-closed; turning on is stored fail-closed (new copy `lock.notStored`); quiet on iOS under the cover (a flag in `ui/a11y.ts`); the keyboard is dismissed; n6 fixed.
+- **Calls accepted:** `sync/announce.ts` (one line, `announceStatus` quiet under the cover; R107's intent though unnamed) and `Sheet.tsx` (a comment only).
+- **The fixer,** on Flash: `mcp:launch:a413c405816e916a6f8b87a55cb29807ed99ec8c4aa4d89adefb8b2323e880fd`, in WT `p2-t33` on `5844e4c1`, with no merge.
+- **After DONE:**
+  1. Verify, push, update #406's body and run CI.
+  2. Run a confirming review on Claude Code Opus.
+  3. Merge after #407. That needs the `index.ts` resolution (`merge/index.t14-t12-t33.ts`) and `draftText.test.ts` merged, then CI rerun on the merge commit.
+
 **22:45: P3-T4's builder was BLOCKED at RED; ruling sent.**
 - At Step 1.3, `typecheck:edge` returned rc 2: the stub and the test need `env.ts`'s new optional `AI_GATEWAY_TOKEN` type, which the brief copies only at GREEN. The planner's `run-red.sh` ran `vitest` only, which never typechecks.
 - **Ruling, sent with `t3_thread_send` to `mcp:launch:bd268f71…`:**

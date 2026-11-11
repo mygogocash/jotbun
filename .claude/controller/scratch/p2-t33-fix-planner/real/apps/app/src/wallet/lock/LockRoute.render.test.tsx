@@ -1,0 +1,61 @@
+// The lock's route, /settings/lock (P2-T33's ruling P13; its first review,
+// n2): the setup screen only under the `wallet` area, else a redirect to
+// Settings; `?setup=1` is the setup checklist's step. The router is a stand-in
+// that draws a Redirect as words and reads the route's params from the case,
+// and the setup screen is a stand-in that says which form it was given, so
+// this file holds the route's own two rules and nothing of the screen's.
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, expect, test, vi } from 'vitest';
+
+const route = vi.hoisted(() => ({ params: {} as Record<string, string> }));
+vi.mock('expo-router', async () => {
+  const { createElement } = await import('react');
+  const { Text } = await import('react-native');
+  return {
+    Redirect: ({ href }: { href: string }) => createElement(Text, null, `redirect to ${href}`),
+    useLocalSearchParams: () => route.params,
+  };
+});
+vi.mock('@mobile/wallet/lock/LockSetupScreen', async () => {
+  const { createElement } = await import('react');
+  const { Text } = await import('react-native');
+  return { LockSetupScreen: ({ setup }: { setup: boolean }) => createElement(Text, null, setup ? 'the setup step' : 'the lock from Settings') };
+});
+
+import LockRoute from '../../../app/settings/lock';
+
+afterEach(() => {
+  cleanup();
+  vi.unstubAllEnvs();
+  route.params = {};
+});
+
+test('without the wallet area the route goes to Settings, whatever it is asked', () => {
+  const asked: readonly Record<string, string>[] = [{}, { setup: '1' }];
+  for (const params of asked) {
+    route.params = params;
+    vi.stubEnv('EXPO_PUBLIC_REDESIGN', 'account');
+    render(<LockRoute />);
+    expect(screen.queryByText('redirect to /settings'), JSON.stringify(params)).not.toBeNull();
+    expect(screen.queryByText('the setup step')).toBeNull();
+    expect(screen.queryByText('the lock from Settings')).toBeNull();
+    cleanup();
+  }
+});
+
+test('under the wallet area it is the setup screen, as the setup step only with ?setup=1', () => {
+  vi.stubEnv('EXPO_PUBLIC_REDESIGN', 'wallet');
+  const forms: readonly (readonly [Record<string, string>, string])[] = [
+    [{}, 'the lock from Settings'],
+    [{ setup: '1' }, 'the setup step'],
+    [{ setup: '0' }, 'the lock from Settings'],
+    [{ setup: 'true' }, 'the lock from Settings'],
+  ];
+  for (const [params, form] of forms) {
+    route.params = params;
+    render(<LockRoute />);
+    expect(screen.queryByText(form), JSON.stringify(params)).not.toBeNull();
+    expect(screen.queryByText('redirect to /settings')).toBeNull();
+    cleanup();
+  }
+});

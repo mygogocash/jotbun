@@ -1,0 +1,60 @@
+diff --git a/apps/app/src/wallet/lock/lockModel.ts b/apps/app/src/wallet/lock/lockModel.ts
+index 32cb08e8b3603c943aac01a145fa20a516da1ad2..dda9b6d51a5527fb3e453d30288d38c2d8b67a58 100644
+--- a/apps/app/src/wallet/lock/lockModel.ts
++++ b/apps/app/src/wallet/lock/lockModel.ts
+@@ -1,8 +1,10 @@
+ // The Face ID lock's rules (P2-T33, W18, R67): how the phone proves its owner,
+ // what its system prompt answered, the lock's view as the app comes and goes,
+-// and what the locked app does with each answer. LockGate runs them; the setup
+-// screen and the Settings row read them. Pure: a Node test reads it, so it
+-// imports nothing.
++// and what the locked app does with each answer. An answer or a reading
++// outside the port's types counts as a failed scan or a phone that could not
++// be read, so a slip in the port never opens the app. LockGate runs them; the
++// setup screen and the Settings row read them. Pure: a Node test reads it, so
++// it imports nothing.
+ 
+ /** How the phone proves its owner. P2-T34 reads it from the phone's enrolment. */
+ export type LockMethod = 'face' | 'fingerprint' | 'passcode';
+@@ -13,6 +15,27 @@ export type AuthResult = 'success' | 'cancelled' | 'failed' | 'lockout' | 'unava
+ /** What the phone can do: whether it can lock at all (a passcode or biometrics), and how. */
+ export type LockAvailability = { canLock: boolean; method: LockMethod | null };
+ 
++const AUTH_RESULTS: readonly AuthResult[] = ['success', 'cancelled', 'failed', 'lockout', 'unavailable'];
++const LOCK_METHODS: readonly LockMethod[] = ['face', 'fingerprint', 'passcode'];
++
++/** The port's answer as one the gate knows: anything else (an adapter's slip) counts as failed, so it never unlocks. */
++export function authResultOf(answer: unknown): AuthResult {
++  return AUTH_RESULTS.find((result) => result === answer) ?? 'failed';
++}
++
++/**
++ * The port's reading as one the gate knows, or null, as for a read that
++ * failed, when it is outside the port's types: a phone that could not be read
++ * counts as still able to lock, and as not yet able to turn the lock on.
++ */
++export function availabilityOf(reading: unknown): LockAvailability | null {
++  if (typeof reading !== 'object' || reading === null) return null;
++  const { canLock, method } = reading as { canLock?: unknown; method?: unknown };
++  if (typeof canLock !== 'boolean') return null;
++  if (method !== null && !LOCK_METHODS.some((known) => known === method)) return null;
++  return { canLock, method: method as LockMethod | null };
++}
++
+ /**
+  * `locked`: the locked screen is up until the phone recognises its owner.
+  * `covered`: the app is not in front, so nothing of it shows (W18).
+@@ -88,10 +111,11 @@ export function afterAnswer(result: AuthResult): AfterAnswer {
+  * After an unavailable answer, the phone read again (R67): still able to lock,
+  * the app stays locked and says to try again; no longer able, the lock turns
+  * itself off. A phone that could not be read counts as still able, so a read
+- * that fails never opens the app.
++ * that fails never opens the app, and so does a reading that does not say
++ * `canLock: false` in so many words.
+  */
+ export function afterRecheck(phone: LockAvailability | null): { readonly step: 'stay'; readonly note: 'lock.tryAgain' } | { readonly step: 'turnOff' } {
+-  return phone !== null && !phone.canLock ? { step: 'turnOff' } : { step: 'stay', note: 'lock.tryAgain' };
++  return phone !== null && phone.canLock === false ? { step: 'turnOff' } : { step: 'stay', note: 'lock.tryAgain' };
+ }
+ 
+ /** The method a screen names: the phone's, or the passcode while the phone has not said (every phone that can lock has one). */

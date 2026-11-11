@@ -1,0 +1,457 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/work/apps/app
+
+ × src/wallet/lock/Lock.render.test.tsx > with the lock on, the app opens locked and the app below is hidden from screen readers 54ms
+   → สแกนหน้าเพื่อเปิดบันทึกของคุณ: expected null not to be null
+ × src/wallet/lock/Lock.render.test.tsx > a successful scan unlocks; a cancel stays locked and says try again 15ms
+   → a button named ปลดล็อกด้วย Face ID: expected null not to be null
+ ✓ src/wallet/lock/Lock.render.test.tsx > under the lock Android's back does nothing, so no screen, and no draft on it, leaves under the lock 38ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > a lockout says to use the passcode 38ms
+ × src/wallet/lock/Lock.render.test.tsx > an unavailable answer re-reads the phone and stays locked while it can still lock 14ms
+   → expected "availability" to be called 2 times, but got 1 times
+ × src/wallet/lock/Lock.render.test.tsx > when the phone can no longer lock, the lock turns off once and says why 29ms
+   → expected <div class="css-view-g5y9jx" …(2)>…(1)</div> to be null
+ ✓ src/wallet/lock/Lock.render.test.tsx > an open tray, then a return from the background, shows no tray content 59ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > with a tray or a sheet open, the lock screen is drawn inside its own cover, and unlocking there brings it back 116ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > the cover shows no amount and no text 48ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > each opening asks once by itself: the prompt's own inactive asks nothing, a press while a prompt is up asks nothing, every return from the background asks again, and an answer to an earlier opening is dropped 58ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > until the setting is read the app is covered and nothing asks; a setting that cannot be read counts as on 39ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > a prompt that throws, or a phone that cannot be read after an unavailable answer, never opens the app 27ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > the locked screen names the method: Face ID with its passcode link, a fingerprint, or the passcode alone 36ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > turning the lock on asks to authenticate first and stays off when that fails 64ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > turning it off asks too 59ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > a phone without a passcode cannot turn the lock on, and says why 60ms
+ × src/wallet/lock/Lock.render.test.tsx > the setup screen reads the phone again when it opens, and again each time the app is back in front 23ms
+   → a switch named ล็อกด้วย Face ID: expected null not to be null
+ × src/wallet/lock/Lock.render.test.tsx > the switch asks one prompt at a time, from the gate itself 14ms
+   → expected +0 to be 1 // Object.is equality
+ × src/wallet/lock/Lock.render.test.tsx > a prompt that finds the phone can no longer lock: turning the lock on leaves it off and says why; turning it off turns it off and says so 27ms
+   → expected "availability" to be called 3 times, but got 2 times
+ ✓ src/wallet/lock/Lock.render.test.tsx > the setup step: the step line, the question and body by method, a masked card, and Next, which keeps the answer and goes back; from Settings, no step and no Next 187ms
+ × src/wallet/lock/Lock.render.test.tsx > Settings shows the lock row only in the wallet area 105ms
+   → expected 'ล็อกด้วย รหัสผ่าน' to be 'ล็อกด้วย Face ID' // Object.is equality
+ × src/wallet/lock/Lock.render.test.tsx > every button and the switch are at least 44 pt 14ms
+   → expected 1 to be 2 // Object.is equality
+ ✓ src/wallet/lock/Lock.render.test.tsx > the wallet root mounts the lock with the app's own port only while the wallet area is on 18ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > the lock's sections come after the tray's, together, and each draws its screen on a setting it holds 55ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > with the receipt photo open, a return from the background shows the lock screen inside its own cover, and nothing of the photo 49ms
+ × src/wallet/lock/Lock.render.test.tsx > the first prompt waits until the phone has said how it locks, so it asks in its words; a phone that cannot be read is asked in the passcode's 15ms
+   → face: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      Object {
+        "cancel": "ยกเลิก",
+        "fallback": "ใช้รหัสผ่าน",
+        "prompt": "ใส่รหัสผ่านของเครื่องเพื่อเปิดบันทึกของคุณ",
+      },
+    ]
+
+
+Number of calls: 1
+
+ ✓ src/wallet/lock/Lock.render.test.tsx > back in front while an earlier prompt is up, the new opening asks by itself once that prompt answers 78ms
+ × src/wallet/lock/Lock.render.test.tsx > the turned-off notice stays until it is closed, however long it is up 14ms
+   → lock-turned-off: expected null not to be null
+ × src/wallet/lock/Lock.render.test.tsx > an answer outside the port's types counts as a failed scan: the note says try again, and the button asks again 16ms
+   → a button named ปลดล็อกด้วย Face ID: expected null not to be null
+ ✓ src/wallet/lock/Lock.render.test.tsx > a reading outside the port's types counts as a phone that could not be read: the lock stays on, and the screen names the passcode 50ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > the switch leaves the lock as it was after a scan that fails or locks out, turning it on or off 145ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > turning the lock off, an unavailable answer on a phone that can still lock keeps the lock on and says nothing 42ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > asking to turn the lock on while it is on, or off while it is off, asks nothing 51ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > turning the lock on holds only once it is stored: a store that cannot keep it leaves the switch off and says so 62ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > while the cover is up the app below says nothing on iOS; the lock's own notes are said, and the app speaks again once unlocked 68ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > becoming hidden puts the keyboard away, so no typing reaches the screen under the cover 56ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > an app launched behind asks only once it is in front 22ms
+ × src/wallet/lock/Lock.render.test.tsx > a setting that cannot be read, on a phone that cannot lock, opens the app with no notice; a lock turned on since is said 37ms
+   → expected "authenticate" to be called 3 times, but got 2 times
+
+ Test Files  1 failed (1)
+      Tests  13 failed | 25 passed (38)
+   Start at  22:27:51
+   Duration  6.92s (transform 3.86s, setup 123ms, import 4.52s, tests 1.91s, environment 203ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p2-t33/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p2-t33/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:24577) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 13 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > with the lock on, the app opens locked and the app below is hidden from screen readers
+AssertionError: สแกนหน้าเพื่อเปิดบันทึกของคุณ: expected null not to be null
+ ❯ shown src/wallet/lock/Lock.render.test.tsx:219:30
+    217| function shown(words: string, inside: HTMLElement = document.body): HT…
+    218|   const element = within(inside).queryByText(words);
+    219|   expect(element, words).not.toBeNull();
+       |                              ^
+    220|   return element as HTMLElement;
+    221| }
+ ❯ src/wallet/lock/Lock.render.test.tsx:240:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/13]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > a successful scan unlocks; a cancel stays locked and says try again
+AssertionError: a button named ปลดล็อกด้วย Face ID: expected null not to be null
+ ❯ named src/wallet/lock/Lock.render.test.tsx:205:50
+    203| function named(role: string, name: string, inside: HTMLElement = docum…
+    204|   const element = within(inside).queryByRole(role, { name });
+    205|   expect(element, `a ${role} named ${name}`).not.toBeNull();
+       |                                                  ^
+    206|   return element as HTMLElement;
+    207| }
+ ❯ src/wallet/lock/Lock.render.test.tsx:276:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/13]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > an unavailable answer re-reads the phone and stays locked while it can still lock
+AssertionError: expected "availability" to be called 2 times, but got 1 times
+ ❯ src/wallet/lock/Lock.render.test.tsx:337:29
+    335|   await ready();
+    336|   // Once when the gate opened, and again after the unavailable answer…
+    337|   expect(fake.availability).toHaveBeenCalledTimes(2);
+       |                             ^
+    338|   named('heading', say('lock.lockedTitle'));
+    339|   shown(say('lock.tryAgain'));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/13]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > when the phone can no longer lock, the lock turns off once and says why
+AssertionError: expected <div class="css-view-g5y9jx" …(2)>…(1)</div> to be null
+
+- Expected:
+null
+
++ Received:
+<div
+  class="css-view-g5y9jx"
+  data-testid="locked-screen"
+  style="background-color: rgba(244, 243, 249, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+>
+  <div
+    class="css-view-g5y9jx r-WebkitOverflowScrolling-150rngu r-flexDirection-eqz5dr r-flexGrow-16y2uox r-flexShrink-1wbh5a2 r-overflowX-11yh6sk r-overflowY-1rnoaur r-transform-agouwx"
+    style="flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+  >
+    <div
+      class="css-view-g5y9jx"
+      style="flex-grow: 1; gap: 24px; padding: 86px 20px 50px;"
+    >
+      <div
+        class="css-view-g5y9jx"
+        style="flex-grow: 1; align-items: center; justify-content: center; gap: 4px;"
+      >
+        <div
+          aria-hidden="true"
+          class="css-view-g5y9jx"
+        >
+          <svg
+            height="111"
+            viewBox="4 6 62 52"
+            width="132"
+          >
+            <path
+              d="M6 44C6 22 18 8 32 8C46 8 58 22 58 44C58 51 52 54 44 54H20C12 54 6 51 6 44Z"
+              fill="#FFF6E6"
+              stroke="#111014"
+              stroke-width="3"
+            />
+            <path
+              d="M20 30Q24 33.5 28 30M36 30Q40 33.5 44 30"
+              fill="none"
+              stroke="#111014"
+              stroke-linecap="round"
+              stroke-width="2.6"
+            />
+            <ellipse
+              cx="18.5"
+              cy="36.5"
+              fill="#F6B6CE"
+              rx="4"
+              ry="2.4"
+            />
+            <ellipse
+              cx="45.5"
+              cy="36.5"
+              fill="#F6B6CE"
+              rx="4"
+              ry="2.4"
+            />
+            <path
+              d="M29 37Q32 39.4 35 37"
+              fill="none"
+              stroke="#111014"
+              stroke-linecap="round"
+              stroke-width="2.4"
+            />
+            <path
+              d="M51.5 42v-3.5a4 4 0 0 1 8 0V42"
+              fill="none"
+              stroke="#111014"
+              stroke-linecap="round"
+              stroke-width="2.8"
+            />
+            <rect
+              fill="#111014"
+              height="13"
+              rx="3.5"
+              width="15"
+              x="48"
+              y="41.5"
+            />
+            <circle
+              cx="55.5"
+              cy="46.8"
+              fill="#FFF6E6"
+              r="1.7"
+            />
+            <path
+              d="M55.5 48.2v2.6"
+              stroke="#FFF6E6"
+              stroke-linecap="round"
+              stroke-width="1.8"
+            />
+            <ellipse
+              cx="48.5"
+              cy="50"
+              fill="#FFF6E6"
+              rx="4.2"
+              ry="3.6"
+              stroke="#111014"
+              stroke-width="2.6"
+            />
+          </svg>
+        </div>
+        <h1
+          class="css-text-146c3p1"
+          dir="auto"
+          role="heading"
+          style="font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 28px; font-weight: 700; line-height: 42px; color: rgba(17, 16, 20, 1.00); margin-top: 10px; text-align: center;"
+        >
+          Jotbun ล็อกอยู่
+        </h1>
+        <div
+          class="css-text-146c3p1"
+          dir="auto"
+          style="font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 17px; font-weight: 400; line-height: 26px; color: rgba(74, 71, 86, 1.00); text-align: center;"
+        >
+          สแกนหน้าเพื่อเปิดบันทึกของคุณ
+        </div>
+        <div
+          aria-live="polite"
+          class="css-view-g5y9jx"
+          data-testid="lock-note"
+          role="status"
+          style="margin-top: 8px;"
+        >
+          <div
+            class="css-text-146c3p1"
+            dir="auto"
+            style="font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 17px; font-weight: 500; line-height: 26px; color: rgba(17, 16, 20, 1.00); text-align: center;"
+          >
+            ลองอีกครั้ง หรือใช้รหัสผ่าน
+          </div>
+        </div>
+      </div>
+      <div
+        class="css-view-g5y9jx"
+        style="gap: 6px;"
+      >
+        <button
+          aria-busy="false"
+          aria-label="ปลดล็อกด้วย Face ID"
+          class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
+          role="button"
+          style="min-height: 54px; background-color: rgba(17, 16, 20, 1.00); align-items: center; justify-content: center; opacity: 1; padding: 12px 18px; border-radius: 16px;"
+          tabindex="0"
+          type="button"
+        >
+          <div
+            class="css-text-146c3p1"
+            dir="auto"
+            style="font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 17px; font-weight: 700; line-height: 26px; color: rgba(255, 255, 255, 1.00); text-align: center;"
+          >
+            ปลดล็อกด้วย Face ID
+          </div>
+        </button>
+        <button
+          aria-label="ใช้รหัสผ่าน"
+          class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
+          role="button"
+          style="min-height: 44px; min-width: 44px; padding-right: 8px; padding-left: 8px; align-items: center; justify-content: center; opacity: 1;"
+          tabindex="0"
+          type="button"
+        >
+          <div
+            class="css-text-146c3p1"
+            dir="auto"
+            style="font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 15px; font-weight: 500; line-height: 23px; color: rgba(17, 16, 20, 1.00); text-align: center;"
+          >
+            ใช้รหัสผ่าน
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+ ❯ src/wallet/lock/Lock.render.test.tsx:355:51
+    353|     Object.defineProperty(Platform, 'OS', { value: os, configurable: t…
+    354|     // Unlocked, the setting gone, and why, politely; iOS hears it onc…
+    355|     expect(screen.queryByTestId('locked-screen')).toBeNull();
+       |                                                   ^
+    356|     expect(unseen(found('app-below'))).toBe(false);
+    357|     expect(view.stored.has(STORED)).toBe(false);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/13]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > the setup screen reads the phone again when it opens, and again each time the app is back in front
+AssertionError: a switch named ล็อกด้วย Face ID: expected null not to be null
+ ❯ named src/wallet/lock/Lock.render.test.tsx:205:50
+    203| function named(role: string, name: string, inside: HTMLElement = docum…
+    204|   const element = within(inside).queryByRole(role, { name });
+    205|   expect(element, `a ${role} named ${name}`).not.toBeNull();
+       |                                                  ^
+    206|   return element as HTMLElement;
+    207| }
+ ❯ src/wallet/lock/Lock.render.test.tsx:710:10
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/13]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > the switch asks one prompt at a time, from the gate itself
+AssertionError: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/wallet/lock/Lock.render.test.tsx:733:26
+    731|   await ready();
+    732|   await press(named('button', 'turn the lock on twice'));
+    733|   expect(answers.length).toBe(1);
+       |                          ^
+    734|   await act(async () => { answers[0]('success'); });
+    735|   await ready();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/13]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > a prompt that finds the phone can no longer lock: turning the lock on leaves it off and says why; turning it off turns it off and says so
+AssertionError: expected "availability" to be called 3 times, but got 2 times
+ ❯ src/wallet/lock/Lock.render.test.tsx:760:34
+    758|   await ready();
+    759|   await press(named('switch', say('lock.switch', 'th', { method: FACE.…
+    760|   expect(turningOn.availability).toHaveBeenCalledTimes(3);
+       |                                  ^
+    761|   shown(say('lock.needsPasscode'));
+    762|   expect(named('switch', say('lock.switch', 'th', { method: say('lock.…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/13]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > Settings shows the lock row only in the wallet area
+AssertionError: expected 'ล็อกด้วย รหัสผ่าน' to be 'ล็อกด้วย Face ID' // Object.is equality
+
+Expected: "ล็อกด้วย Face ID"
+Received: "ล็อกด้วย รหัสผ่าน"
+
+ ❯ src/wallet/lock/Lock.render.test.tsx:851:37
+    849|       const haptics = headings.indexOf(translateCopy('Haptics', locale…
+    850|       expect(haptics).toBeGreaterThan(-1);
+    851|       expect(headings[haptics + 1]).toBe(say('lock.row', locale, { met…
+       |                                     ^
+    852|       const link = named('link', say(state, locale));
+    853|       expect(within(found('settings-lock')).queryAllByRole('link')).to…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/13]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > every button and the switch are at least 44 pt
+AssertionError: expected 1 to be 2 // Object.is equality
+
+- Expected
++ Received
+
+- 2
++ 1
+
+ ❯ src/wallet/lock/Lock.render.test.tsx:873:50
+    871|   await ready();
+    872|   for (const button of screen.queryAllByRole('button')) atLeast(button…
+    873|   expect(screen.queryAllByRole('button').length).toBe(2);
+       |                                                  ^
+    874|   cleanup();
+    875|   vi.restoreAllMocks();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/13]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > the first prompt waits until the phone has said how it locks, so it asks in its words; a phone that cannot be read is asked in the passcode's
+AssertionError: face: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      Object {
+        "cancel": "ยกเลิก",
+        "fallback": "ใช้รหัสผ่าน",
+        "prompt": "ใส่รหัสผ่านของเครื่องเพื่อเปิดบันทึกของคุณ",
+      },
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/wallet/lock/Lock.render.test.tsx:1016:44
+    1014|     // Locked, the setting read, and the phone not yet heard from: not…
+    1015|     named('heading', say('lock.lockedTitle'));
+    1016|     expect(slow.authenticate, reading).not.toHaveBeenCalled();
+       |                                            ^
+    1017|     await act(async () => { release(); });
+    1018|     await ready();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/13]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > the turned-off notice stays until it is closed, however long it is up
+AssertionError: lock-turned-off: expected null not to be null
+ ❯ found src/wallet/lock/Lock.render.test.tsx:212:31
+    210| function found(testID: string): HTMLElement {
+    211|   const element = screen.queryByTestId(testID);
+    212|   expect(element, testID).not.toBeNull();
+       |                               ^
+    213|   return element as HTMLElement;
+    214| }
+ ❯ src/wallet/lock/Lock.render.test.tsx:1088:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/13]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > an answer outside the port's types counts as a failed scan: the note says try again, and the button asks again
+AssertionError: a button named ปลดล็อกด้วย Face ID: expected null not to be null
+ ❯ named src/wallet/lock/Lock.render.test.tsx:205:50
+    203| function named(role: string, name: string, inside: HTMLElement = docum…
+    204|   const element = within(inside).queryByRole(role, { name });
+    205|   expect(element, `a ${role} named ${name}`).not.toBeNull();
+       |                                                  ^
+    206|   return element as HTMLElement;
+    207| }
+ ❯ src/wallet/lock/Lock.render.test.tsx:1113:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/13]⎯
+
+ FAIL  src/wallet/lock/Lock.render.test.tsx > a setting that cannot be read, on a phone that cannot lock, opens the app with no notice; a lock turned on since is said
+AssertionError: expected "authenticate" to be called 3 times, but got 2 times
+ ❯ src/wallet/lock/Lock.render.test.tsx:1361:29
+    1359|   await press(named('button', 'turn the lock off'));
+    1360|   await press(named('button', 'turn the lock on'));
+    1361|   expect(fake.authenticate).toHaveBeenCalledTimes(3);
+       |                             ^
+    1362|   app('background');
+    1363|   app('active');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/13]⎯
+

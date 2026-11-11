@@ -1,0 +1,16 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/red/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p2-t33/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p2-t33/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:35350) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+ Test Files  2 passed (2)
+      Tests  31 passed | 9 skipped (40)
+   Start at  22:10:17
+   Duration  5.39s (transform 2.13s, setup 254ms, import 2.94s, tests 2.17s, environment 579ms)
+

@@ -1,0 +1,92 @@
+
+> gogospend-app@0.1.0 test:unit
+> node scripts/test-unit.mjs src/wallet/lock/lockModel.test.ts src/ui/lockCover.test.ts src/wallet/copy/draftText.test.ts
+
+(node:2160) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/red/apps/app/src/ui/lockCover.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/red/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ every Modal a person can open with the lock on draws the lock's cover; the legacy screen's four are the only others (13.004791ms)
+✔ the legacy Modals are drawn only by the legacy /spend screen, which only the development switch shows (38.086083ms)
+(node:2161) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/red/apps/app/src/wallet/copy/draftText.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/red/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ every draft line has Thai and English, with the same placeholders (3.564708ms)
+✔ no draft line has an emoji or a dash used as punctuation (1.4595ms)
+✔ every key is unique across every table and has an area prefix (1.370042ms)
+✔ draftText picks Thai for th and English for en and vi, then fills placeholders (0.153333ms)
+(node:2162) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/red/apps/app/src/wallet/lock/lockModel.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/red/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ with the lock on, every app open locks: a cold start and every return from the background (0.596125ms)
+✔ inactive only covers, so the Face ID prompt cannot lock again (0.060875ms)
+✔ with the lock off nothing locks or covers (0.043208ms)
+✔ unlocked unlocks and keeps a cover until the app is in front; disabled clears both, with the lock on or off (0.1165ms)
+✔ AppState's active, inactive and background are lock events; anything else says nothing (0.107459ms)
+✔ an answer that does not unlock says why; unavailable reads the phone first, and only a phone that says it cannot lock turns the lock off (0.070666ms)
+✖ an answer or a reading outside the port's types counts as a failed scan, or as a phone that could not be read (0.433959ms)
+✔ a screen names the phone's method, or the passcode while the phone has not said, and each method has its name, line and body (0.093125ms)
+✔ the setup switch waits for the phone, stays off on a phone that cannot lock and says why, and can always turn a lock off (0.078292ms)
+✔ the lock's Thai lines are the plan's, and only four more (0.116875ms)
+✔ the lock wraps private mode, so nothing that shows an amount renders above it (0.041666ms)
+✔ the wallet root's order: the gesture root, the motion answer, the lock with the app's own port while the wallet area is on, then private mode; with the area off, private mode inside the motion answer (0.102667ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 16
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 177.328625
+
+✖ failing tests:
+
+test at src/ui/lockCover.test.ts:33:1
+✖ every Modal a person can open with the lock on draws the lock's cover; the legacy screen's four are the only others (13.004791ms)
+  AssertionError [ERR_ASSERTION]: src/screens/redesign/import/ReceiptParts.tsx
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/red/apps/app/src/ui/lockCover.test.ts:38:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '// R7: the parts of a record\'s receipt photo (plan §6.5) and the ports it\n// works through. The panel (RecordReceipt.tsx) gets only the record\'s id,\n// version and receipt id, so everything else comes from here: the attachment\n// and upload ports, the photo picker, ids and the clock. Tests and the\n// catalogue give their fakes through `ReceiptPortsProvider` (or props); the app\n// falls back to `appReceiptPorts()`, which reaches the real API over the\n// session seam and loads the native picker only when someone picks a photo.\n//\n// A receipt is shown from bytes the adapter downloaded and checked against\n// its grant, as an in-memory data URI: never a storage URL, never a file on\n// the phone. Nothing is drawn until those bytes are there, so a failed or\n// expired download shows words and Try again, never a broken image.\nimport { RESTORE_WINDOW_DAYS } from \'@gogospend/contracts\';\nimport * as Crypto from \'expo-crypto\';\nimport { createContext, useContext, useEffect, useMemo, useRef } from \'react\';\nimport type { ReactNode } from \'react\';\nimport { ActivityIndicator, Animated, Image, Modal, Platform, Pressable, View } from \'react-native\';\nimport type { HostInstance } from \'react-native\';\nimport { useSafeAreaInsets } from \'react-native-safe-area-context\';\n\nimport { createV1Transport } from \'@mobile/api/client\';\nimport { v1SessionCredentials } from \'@mobile/auth/session\';\nimport { getMobileEnv } from \'@mobile/config/env\';\nimport { useReducedMotion } from \'@mobile/hooks/useReducedMotion\';\nimport { useCopy } from \'@mobile/i18n/useCopy\';\nimport { createAttachmentResources } from \'@mobile/spend/v1/attachments\';\nimport type { AttachmentResources } from \'@mobile/spend/v1/attachments\';\nimport { createImportResources } from \'@mobile/spend/v1/imports\';\nimport type { ImportResources } from \'@mobile/spend/v1/imports\';\nimport type { PickResult, ReceiptMode, ReceiptPicker } from \'@mobile/spend/v1/redesign/import/receiptModel\';\nimport { runOpacityTiming } from \'@mobile/theme/animatedMotion\';\nimport { useBunColors } from \'@mobile/theme/ThemeProvider\';\nimport { DECORATIVE, POLITE_LIVE_REGION, moveAccessibilityFocus, useAnnouncement } from \'@mobile/ui/a11y\';\nimport { BunText } from \'@mobile/ui/BunText\';\nimport { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE, BUN_TOUCH } from \'@mobile/ui/layout\';\nimport { PillButton } from \'@mobile/ui/PillButton\';\nimport { PromiseList } from \'@mobile/ui/PromiseList\';\nimport { Sheet } from \'@mobile/ui/Sheet\';\nimport { newId } from \'../../v1/parts\';\n\nexport type ReceiptUploads = Pick<ImportResources, \'upload\' | \'preview\'>;\n\nexport type ReceiptPorts = {\n  attachments: AttachmentResources;\n  /** The image import a new photo goes through to get its attachment id. */\n  uploads: ReceiptUploads;\n  picker: ReceiptPicker;\n  newId: () => string;\n  now: () => Date;\n  sleep: (ms: number) => Promise<void>;\n  /** The wait between checks while the server prepares a photo, and how many checks before "Check again". */\n  pollMs: number;\n  maxPolls: number;\n};\n\nconst ReceiptPortsContext = createContext<Partial<ReceiptPorts> | null>(null);\n\n/** Hands the receipt panel its ports (fakes in tests and the catalogue). */\nexport function ReceiptPortsProvider({ ports, children }: { ports: Partial<ReceiptPorts>; children: ReactNode }) {\n  return <ReceiptPortsContext.Provider value={ports}>{children}</ReceiptPortsContext.Provider>;\n}\n\n/** Props first, then the provider\'s, then the app\'s own. */\nexport function useReceiptPorts(injected?: Partial<ReceiptPorts>): ReceiptPorts {\n  const provided = useContext(ReceiptPortsContext);\n  return useMemo(() => ({ ...appReceiptPorts(), ...provided, ...injected }), [provided, injected]);\n}\n\nconst sleep = (ms: number) => new Promise<void>((resolve) => { setTimeout(resolve, ms); });\nconst hex = (buffer: ArrayBuffer) => [...new Uint8Array(buffer)].map((byte) => byte.toString(16).padStart(2, \'0\')).join(\'\');\n\nlet services: Promise<{ attachments: AttachmentResources; uploads: ReceiptUploads }> | null = null;\n/**\n * The real API over the app\'s session, made on first use. The integrator may\n * move this into `api/sharedV1.ts` beside the other shared resources (one\n * transport); `v1ClientVersion` is loaded on demand because it reads native\n * application details.\n */\nfunction appServices() {\n  services ??= (async () => {\n    const { v1ClientVersion } = await import(\'@mobile/api/sharedV1\');\n    const baseUrl = getMobileEnv().v1ApiUrl;\n    const client = v1ClientVersion();\n    const transport = createV1Transport({ baseUrl, client, credentials: v1SessionCredentials });\n    const attachments = createAttachmentResources(transport, {\n      // The download\'s bytes sit on a plain ArrayBuffer (never shared).\n      sha256Hex: async (bytes) => hex(await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256, bytes as Uint8Array<ArrayBuffer>)),\n    });\n    return { attachments, uploads: createImportResources(transport) };\n  })().catch((error: unknown) => {\n    // Not kept: the next call tries again.\n    services = null;\n    throw error;\n  });\n  return services;\n}\n\n/**\n * The photo library, loaded on demand (a build without the native module\n * says so instead of failing). No crop, no EXIF; iOS hands over its most\n * compatible form (JPEG rather than HEIC). Picking sends nothing anywhere.\n */\nasync function pickFromLibrary(): Promise<PickResult> {\n  let ImagePicker: typeof import(\'expo-image-picker\');\n  try {\n    ImagePicker = await import(\'expo-image-picker\');\n  } catch {\n    return { kind: \'unavailable\' };\n  }\n  try {\n    const result = await ImagePicker.launchImageLibraryAsync({\n      mediaTypes: [\'images\'],\n      allowsMultipleSelection: false,\n      allowsEditing: false,\n      exif: false,\n      quality: 0.85,\n      preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,\n    });\n    const asset = result.canceled ? undefined : result.assets?.[0];\n    if (!asset) return { kind: \'cancelled\' };\n    const bytes = new Uint8Array(await (await fetch(asset.uri)).arrayBuffer());\n    return { kind: \'picked\', photo: { bytes, contentType: asset.mimeType ?? \'image/jpeg\', uri: asset.uri } };\n  } catch (error) {\n    const message = error instanceof Error ? error.message : \'\';\n    return /permission/i.test(message) ? { kind: \'denied\' } : { kind: \'unavailable\' };\n  }\n}\n\nlet appPorts: ReceiptPorts | null = null;\n/** The app\'s own ports: nothing is loaded or created until a method is called. */\nexport function appReceiptPorts(): ReceiptPorts {\n  appPorts ??= {\n    attachments: {\n      retain: async (...args) => (await appServices()).attachments.retain(...args),\n      replace: async (...args) => (await appServices()).attachments.replace(...args),\n      remove: async (...args) => (await appServices()).attachments.remove(...args),\n      grant: async (...args) => (await appServices()).attachments.grant(...args),\n      file: async (...args) => (await appServices()).attachments.file(...args),\n    },\n    uploads: {\n      upload: async (...args) => (await appServices()).uploads.upload(...args),\n      preview: async (...args) => (await appServices()).uploads.preview(...args),\n    },\n    picker: { pick: pickFromLibrary },\n    newId,\n    now: () => new Date(),\n    sleep,\n    pollMs: 2_000,\n    maxPolls: 30,\n  };\n  return appPorts;\n}\n\n/** A quiet working line: a spinner and what is happening, read politely. */\nexport function ReceiptWorking({ label }: { label: string }) {\n  const colors = useBunColors();\n  useAnnouncement(label);\n  return (\n    <View testID="receipt-working" {...POLITE_LIVE_REGION} style={{ flexDirection: \'row\', alignItems: \'center\', gap: BUN_SPACE.xs, minHeight: BUN_TOUCH }}>\n      <View {...DECORATIVE}>\n        <ActivityIndicator color={colors.ink} />\n      </View>\n      <BunText style={{ flexShrink: 1 }}>{label}</BunText>\n    </View>\n  );\n}\n\n/** The photo, small, as the button that opens it full screen. */\nexport function ReceiptThumbnail({ uri, onPress }: { uri: string; onPress: () => void }) {\n  const tc = useCopy();\n  const colors = useBunColors();\n  return (\n    <Pressable\n      testID="receipt-thumbnail"\n      accessibilityRole="button"\n      accessibilityLabel={tc(\'Open the receipt photo\')}\n      onPress={onPress}\n      style={({ pressed }) => ({\n        width: 96,\n        height: 128,\n        minHeight: BUN_TOUCH,\n        minWidth: BUN_TOUCH,\n        borderRadius: BUN_RADIUS.chip,\n        borderWidth: BUN_OUTLINE.control,\n        borderColor: colors.ink,\n        backgroundColor: colors.paper,\n        overflow: \'hidden\',\n        opacity: pressed ? 0.85 : 1,\n      })}\n    >\n      <View {...DECORATIVE} style={{ flex: 1 }}>\n        <Image testID="receipt-thumbnail-image" source={{ uri }} resizeMode="cover" style={{ width: \'100%\', height: \'100%\' }} />\n      </View>\n    </Pressable>\n  );\n}\n\nexport type ViewerState = { state: \'loading\' } | { state: \'ready\'; uri: string } | { state: \'problem\'; message: string };\n\n/**\n * The photo full screen, as one named modal dialog (the Sheet\'s rule): Close,\n * the platform\'s back, and VoiceOver\'s escape all close it, and focus moves to\n * its title when it opens. It fades in; under reduced motion it simply\n * appears. The fade is the kit\'s own opacity timing, like the Sheet\'s spring,\n * so the modal itself never animates and is active (a dialog) at once.\n */\nexport function ReceiptViewer({ visible, view, onClose, onRetry }: { visible: boolean; view: ViewerState; onClose: () => void; onRetry: () => void }) {\n  const tc = useCopy();\n  const colors = useBunColors();\n  const insets = useSafeAreaInsets();\n  const reducedMotion = useReducedMotion();\n  const viewerRef = useRef<HostInstance>(null);\n  const titleRef = useRef<HostInstance>(null);\n  const opacity = useRef(new Animated.Value(reducedMotion ? 1 : 0)).current;\n  useEffect(() => {\n    if (!visible || reducedMotion) {\n      opacity.setValue(reducedMotion ? 1 : 0);\n      return undefined;\n    }\n    const fade = runOpacityTiming(opacity, { toValue: 1 });\n    fade.start();\n    return () => fade.stop();\n  }, '... 4601 more characters,
+    expected: /const \{ hidden \} = useLockCover\(\);/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at src/wallet/lock/lockModel.test.ts:66:1
+✖ an answer or a reading outside the port's types counts as a failed scan, or as a phone that could not be read (0.433959ms)
+  AssertionError [ERR_ASSERTION]: not_interactive
+  + actual - expected
+  
+  + 'not_interactive'
+  - 'failed'
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/red/apps/app/src/wallet/lock/lockModel.test.ts:68:94)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'not_interactive',
+    expected: 'failed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+npm error Lifecycle script `test:unit` failed with error:
+npm error code 1
+npm error path /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/red/apps/app
+npm error workspace gogospend-app@0.1.0
+npm error location /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t33-fix-planner/red/apps/app
+npm error command failed
+npm error command sh -c node scripts/test-unit.mjs src/wallet/lock/lockModel.test.ts src/ui/lockCover.test.ts src/wallet/copy/draftText.test.ts
