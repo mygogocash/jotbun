@@ -1,0 +1,54 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t11-planner/tree/apps/edge
+
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a failed start is retried a minute later, not in a loop
+{"level":"error","event":"work_start_failed","failure":"Error"}
+
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a key whose writer never published it is deleted by the alarm at its deadline 30ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > an export file is deleted by the alarm when it expires, and its status reads expired 28ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > work requested before the vault slept is started by its alarm after it wakes 25ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a failed start is retried a minute later, not in a loop 15ms
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a prune that throws is logged, the others still run, and the alarm is set again
+{"level":"error","event":"file_prune_failed","failure":"Error"}
+
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a capped run leaves the alarm set, and the next alarm clears the rest 28ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a prune that throws is logged, the others still run, and the alarm is set again 17ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > the alarm follows the earliest of the core and file jobs 25ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > after any alarm, every scheduled time is later than now 29ms
+ ✓ test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > export requests are purged 30 days after the request; the receipt stays compact 15ms
+ ✓ test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > drops finished upload rows 30 days after they ended, never one still receiving or within the quota window 13ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > a resent snapshot request after its snapshot went stale reads expired and starts nothing; a new key builds a new one 42ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > a vault that is not active runs no file job and keeps no alarm for them 15ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > an upload arms the alarm though it commits no command 17ms
+stderr | test/workers/files-alarm.test.ts > the controller's notes > an unbound bucket is a failed delete, due again a minute later; the alarm never throws
+{"level":"error","event":"object_delete_failed","failure":"ObjectStoreError"}
+
+ × test/workers/files-alarm.test.ts > the controller's notes > the alarm's due-time read of deleted records and the purge's change lookup use their indexes 13ms
+   → expected 'SEARCH entity_changes USING INDEX sql…' to contain 'entity_changes_entity_idx'
+stderr | test/workers/files-alarm.test.ts > the brief's rulings > a prune that keeps throwing brings the alarm back a minute later, never in a loop
+{"level":"error","event":"file_prune_failed","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > the brief's rulings > after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner
+{"level":"error","event":"vault_retention_purge_failed","failure":"Error"}
+
+ ✓ test/workers/files-alarm.test.ts > the brief's rulings > a start moves the alarm on, from the alarm or from the Worker 12ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the controller's notes > the alarm's due-time read of deleted records and the purge's change lookup use their indexes
+AssertionError: expected 'SEARCH entity_changes USING INDEX sql…' to contain 'entity_changes_entity_idx'
+
+Expected: "entity_changes_entity_idx"
+Received: "SEARCH entity_changes USING INDEX sqlite_autoindex_entity_changes_1 (revision<?) | LIST SUBQUERY 1 | SCAN json_each VIRTUAL TABLE INDEX 1: | CREATE BLOOM FILTER"
+
+ ❯ test/workers/files-alarm.test.ts:568:181
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  06:58:47
+   Duration  1.66s (transform 361ms, setup 656ms, import 33ms, tests 526ms, environment 0ms)
+

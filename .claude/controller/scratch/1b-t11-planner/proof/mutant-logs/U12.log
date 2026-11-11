@@ -1,0 +1,502 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t11-planner/tree/apps/edge
+
+ × test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a key whose writer never published it is deleted by the alarm at its deadline 36ms
+   → expected HeadResult{ …(12) } to be null
+ × test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > an export file is deleted by the alarm when it expires, and its status reads expired 20ms
+   → expected HeadResult{ …(12) } to be null
+ × test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > work requested before the vault slept is started by its alarm after it wakes 30004ms
+   → Test timed out in 30000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ × test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a failed start is retried a minute later, not in a loop 22ms
+   → expected +0 to be 1 // Object.is equality
+ × test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a capped run leaves the alarm set, and the next alarm clears the rest 23ms
+   → expected +0 to be 1000 // Object.is equality
+ × test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a prune that throws is logged, the others still run, and the alarm is set again 16ms
+   → expected false to be true // Object.is equality
+ × test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > the alarm follows the earliest of the core and file jobs 23ms
+   → expected 1794355093303 to be 1794441493303 // Object.is equality
+ × test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > after any alarm, every scheduled time is later than now 20ms
+   → delete_objects: expected 0 to be greater than 1797724693327
+ × test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > export requests are purged 30 days after the request; the receipt stays compact 14ms
+   → expected [ { '1': 1 } ] to deeply equal []
+ × test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > drops finished upload rows 30 days after they ended, never one still receiving or within the quota window 14ms
+   → expected [ …(5) ] to deeply equal [ …(2) ]
+ × test/workers/files-alarm.test.ts > the controller's notes > a resent snapshot request after its snapshot went stale reads expired and starts nothing; a new key builds a new one 37ms
+   → expected [ { '1': 1 } ] to deeply equal []
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > a vault that is not active runs no file job and keeps no alarm for them 16ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > an upload arms the alarm though it commits no command 18ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > only one file run at a time: a second run while the first waits on R2 deletes nothing 64ms
+ × test/workers/files-alarm.test.ts > the controller's notes > an unbound bucket is a failed delete, due again a minute later; the alarm never throws 24ms
+   → expected false to be true // Object.is equality
+stderr | test/workers/files-alarm.test.ts > the brief's rulings > after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner
+{"level":"error","event":"vault_retention_purge_failed","failure":"Error"}
+
+ × test/workers/files-alarm.test.ts > the controller's notes > an erase that lands while the alarm waits on R2 leaves the vault erased, with no alarm and no schedule 5002ms
+   → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > the alarm's due-time read of deleted records and the purge's change lookup use their indexes 11ms
+ × test/workers/files-alarm.test.ts > the brief's rulings > a prune that keeps throwing brings the alarm back a minute later, never in a loop 16ms
+   → expected 1794355098549 to be 1794355158549 // Object.is equality
+ ✓ test/workers/files-alarm.test.ts > the brief's rulings > after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner 22ms
+ × test/workers/files-alarm.test.ts > the brief's rulings > a write never sets the alarm sooner than a minute ahead, even with work already due, and a later write never postpones it 17ms
+   → expected [ { status: 'reserved' } ] to deeply equal [ { status: 'tombstone' } ]
+ ✓ test/workers/files-alarm.test.ts > the brief's rulings > the vault knows the alarm it set: alarmAt matches getAlarm() after a write, an alarm, a wake and an erase 31ms
+ ✓ test/workers/files-alarm.test.ts > the brief's rulings > a background step that writes moves the alarm: a failed export is due only at its purge 13ms
+ ✓ test/workers/files-alarm.test.ts > the brief's rulings > a start moves the alarm on, from the alarm or from the Worker 12ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 15 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a key whose writer never published it is deleted by the alarm at its deadline
+AssertionError: expected HeadResult{ …(12) } to be null
+
+- Expected:
+null
+
++ Received:
+HeadResult {
+  "checksums": Checksums {
+    "md5": ArrayBuffer [
+      110,
+      91,
+      40,
+      83,
+      -36,
+      49,
+      40,
+      -40,
+      -121,
+      7,
+      -33,
+      2,
+      -60,
+      7,
+      -89,
+      -12,
+    ],
+    "sha1": undefined,
+    "sha256": ArrayBuffer [
+      -110,
+      -53,
+      -61,
+      -24,
+      60,
+      119,
+      2,
+      108,
+      124,
+      -117,
+      -114,
+      89,
+      -58,
+      23,
+      -100,
+      34,
+      -94,
+      47,
+      -116,
+      116,
+      -30,
+      -47,
+      78,
+      22,
+      -46,
+      14,
+      11,
+      -73,
+      -100,
+      -86,
+      34,
+      -72,
+    ],
+    "sha384": undefined,
+    "sha512": undefined,
+  },
+  "customMetadata": {
+    "sha256": "92cbc3e83c77026c7c8b8e59c6179c22a22f8c74e2d14e16d20e0bb79caa22b8",
+  },
+  "etag": "6e5b2853dc3128d88707df02c407a7f4",
+  "httpEtag": "\"6e5b2853dc3128d88707df02c407a7f4\"",
+  "httpMetadata": {
+    "cacheControl": undefined,
+    "cacheExpiry": undefined,
+    "contentDisposition": undefined,
+    "contentEncoding": undefined,
+    "contentLanguage": undefined,
+    "contentType": "application/json",
+  },
+  "key": "sync_snapshot/87e79a066313f917cc2fd3545acdb8de969be8f1947be15afcbb39305e56fb2a/86ddd4cc-36e4-8ac7-9b3d-acff5228762f/d4b95168-1517-4b84-b592-0ef7e7f7d114/chunk-0000.json",
+  "range": {
+    "length": 114,
+    "offset": 0,
+    "suffix": undefined,
+  },
+  "size": 114,
+  "ssecKeyMd5": undefined,
+  "storageClass": "",
+  "uploaded": 2026-11-09T23:57:43.196Z,
+  "version": "fe328a4dba4e3c9b9082b1ad3f2d6b3d",
+}
+
+ ❯ test/workers/files-alarm.test.ts:116:45
+    114|     expect(await alarmOf(user)).toBe(t + RESERVATION_GRACE_MS)
+    115|     await fireAt(user, t + RESERVATION_GRACE_MS)
+    116|     expect(await env.OBJECTS.head(row.key)).toBeNull()
+       |                                             ^
+    117|     expect(await registryOf(user, 'sync_snapshot')).toEqual([{ key: ro…
+    118|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/15]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > an export file is deleted by the alarm when it expires, and its status reads expired
+AssertionError: expected HeadResult{ …(12) } to be null
+
+- Expected:
+null
+
++ Received:
+HeadResult {
+  "checksums": Checksums {
+    "md5": ArrayBuffer [
+      50,
+      -55,
+      -103,
+      25,
+      -86,
+      96,
+      77,
+      72,
+      -110,
+      -100,
+      -105,
+      -122,
+      89,
+      103,
+      123,
+      32,
+    ],
+    "sha1": undefined,
+    "sha256": ArrayBuffer [
+      32,
+      -18,
+      -69,
+      -41,
+      58,
+      -65,
+      53,
+      -88,
+      82,
+      32,
+      71,
+      51,
+      -96,
+      -74,
+      -114,
+      -85,
+      -95,
+      -95,
+      -97,
+      94,
+      46,
+      36,
+      -32,
+      -75,
+      -51,
+      -90,
+      95,
+      -6,
+      -9,
+      -109,
+      -106,
+      82,
+    ],
+    "sha384": undefined,
+    "sha512": undefined,
+  },
+  "customMetadata": {
+    "sha256": "20eebbd73abf35a852204733a0b68eaba1a19f5e2e24e0b5cda65ffaf7939652",
+  },
+  "etag": "32c99919aa604d48929c978659677b20",
+  "httpEtag": "\"32c99919aa604d48929c978659677b20\"",
+  "httpMetadata": {
+    "cacheControl": undefined,
+    "cacheExpiry": undefined,
+    "contentDisposition": undefined,
+    "contentEncoding": undefined,
+    "contentLanguage": undefined,
+    "contentType": "text/csv; charset=utf-8",
+  },
+  "key": "export/97fb9dc9d0e9c85cb7da774ff85bf966be4ac26f0c958025de103e4445da8d6f/9607db3f-c0cf-8f39-8a35-0d5efc2b853d/0481dd5e-b52e-42a8-bb40-2c568ad26228/export.csv",
+  "range": {
+    "length": 226,
+    "offset": 0,
+    "suffix": undefined,
+  },
+  "size": 226,
+  "ssecKeyMd5": undefined,
+  "storageClass": "",
+  "uploaded": 2026-11-09T23:57:43.224Z,
+  "version": "0fd1f74b1aed498308a9b768b5155ef1",
+}
+
+ ❯ test/workers/files-alarm.test.ts:133:46
+    131|     expect(await alarmOf(user)).toBe(expiresAt)
+    132|     await fireAt(user, expiresAt)
+    133|     expect(await env.OBJECTS.head(file.key)).toBeNull()
+       |                                              ^
+    134|     expect(await registryOf(user, 'export')).toEqual([expect.objectCon…
+    135|     expect((await json(await client.as(user).get(`/v1/exports/${reques…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/15]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > work requested before the vault slept is started by its alarm after it wakes
+Error: Test timed out in 30000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ test/workers/files-alarm.test.ts:139:3
+    137|   })
+    138|
+    139|   it('work requested before the vault slept is started by its alarm af…
+       |   ^
+    140|     // Review Focus 3. The front door handed nothing over (startWork '…
+    141|     // Worker's waitUntil ran: the alarm a minute after the request st…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/15]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a failed start is retried a minute later, not in a loop
+AssertionError: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ test/workers/files-alarm.test.ts:179:22
+    177|       await runInDurableObject(vaultOf(user), (vault: UserVault) => va…
+    178|       await fireAt(user, t)
+    179|       expect(starts).toBe(1)
+       |                      ^
+    180|       expect(await alarmOf(user)).toBe(t + START_RETRY_MS)
+    181|     } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/15]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a capped run leaves the alarm set, and the next alarm clears the rest
+AssertionError: expected +0 to be 1000 // Object.is equality
+
+- Expected
++ Received
+
+- 1000
++ 0
+
+ ❯ test/workers/files-alarm.test.ts:203:34
+    201|       expect(await alarmOf(user)).toBe(t)
+    202|       expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
+    203|       expect(await tombstones()).toBe(1_000)
+       |                                  ^
+    204|       const next = await alarmOf(user)
+    205|       expect(next).not.toBeNull()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/15]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a prune that throws is logged, the others still run, and the alarm is set again
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ test/workers/files-alarm.test.ts:233:124
+    231|       // Left pending for a day: pruneExports, after the prune that th…
+    232|       await fireAt(user, requested.requestedAt + EXPORT_PENDING_MS)
+    233|       expect(errors.mock.calls.some(([line]) => typeof line === 'strin…
+       |                                                                                                                            ^
+    234|     } finally {
+    235|       errors.mockRestore()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/15]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > the alarm follows the earliest of the core and file jobs
+AssertionError: expected 1794355093303 to be 1794441493303 // Object.is equality
+
+- Expected
++ Received
+
+- 1794441493303
++ 1794355093303
+
+ ❯ test/workers/files-alarm.test.ts:254:33
+    252|     await fireAt(user, t + DAY)
+    253|     // Changed form: the deleted file stays a day as a tombstone and i…
+    254|     expect(await alarmOf(user)).toBe(t + 2 * DAY)
+       |                                 ^
+    255|     await fireAt(user, t + 2 * DAY)
+    256|     expect(await alarmOf(user)).toBe(t + 30 * DAY)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/15]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > after any alarm, every scheduled time is later than now
+AssertionError: delete_objects: expected 0 to be greater than 1797724693327
+ ❯ test/workers/files-alarm.test.ts:275:63
+    273|       await fireAt(user, at)
+    274|       const schedule = await scheduleOf(user)
+    275|       for (const row of schedule) expect(row.due_at, row.job).toBeGrea…
+       |                                                               ^
+    276|       const next = await alarmOf(user)
+    277|       expect(next).toBe(schedule.length === 0 ? null : Math.min(...sch…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/15]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > export requests are purged 30 days after the request; the receipt stays compact
+AssertionError: expected [ { '1': 1 } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "1": 1,
++   },
++ ]
+
+ ❯ test/workers/files-alarm.test.ts:353:87
+    351|     expect(requested.status).toBe(202)
+    352|     await fireAt(user, requested.requestedAt + 31 * DAY)
+    353|     expect(await vaultRows(user, 'SELECT 1 FROM exports WHERE id = ?',…
+       |                                                                                       ^
+    354|     expect(await vaultRows(user, 'SELECT state FROM entity_heads WHERE…
+    355|     expect(await vaultRows(user, 'SELECT state, snapshot FROM entity_c…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/15]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > drops finished upload rows 30 days after they ended, never one still receiving or within the quota window
+AssertionError: expected [ …(5) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    "1c57d7cf-31e3-419f-aaf5-e012cfa71f24",
++   "4701faba-73d0-4d73-8447-f08ffcaa4007",
++   "59e7bad6-e209-441b-a642-87b63acbc101",
++   "cee92689-c043-44d7-9726-c04c6a2e9b39",
+    "fc95004f-207a-4027-90a6-534b0930655e",
+  ]
+
+ ❯ test/workers/files-alarm.test.ts:391:18
+    389|     await fireAt(user, t)
+    390|     const left = (await vaultRows<{ job_id: string }>(user, 'SELECT jo…
+    391|     expect(left).toEqual([freshFailed, receiving].sort())
+       |                  ^
+    392|     expect([oldFailed, oldExpired, oldAccepted].some((id) => left.incl…
+    393|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/15]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the controller's notes > a resent snapshot request after its snapshot went stale reads expired and starts nothing; a new key builds a new one
+AssertionError: expected [ { '1': 1 } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "1": 1,
++   },
++ ]
+
+ ❯ test/workers/files-alarm.test.ts:421:94
+    419|     await vaultExec(user, 'UPDATE transactions SET deleted_at = ? WHER…
+    420|     expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
+    421|     expect(await vaultRows(user, 'SELECT 1 FROM snapshot_chunks WHERE …
+       |                                                                                              ^
+    422|
+    423|     const resent = await auto.as(user).post('/v1/sync/snapshots', {}, …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/15]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the controller's notes > an unbound bucket is a failed delete, due again a minute later; the alarm never throws
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ test/workers/files-alarm.test.ts:522:127
+    520|     try {
+    521|       expect(await runDurableObjectAlarm(vaultOf(user))).toBe(true)
+    522|       expect(errors.mock.calls.some(([line]) => typeof line === 'strin…
+       |                                                                                                                               ^
+    523|     } finally {
+    524|       errors.mockRestore()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/15]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the controller's notes > an erase that lands while the alarm waits on R2 leaves the vault erased, with no alarm and no schedule
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ test/workers/files-alarm.test.ts:531:3
+    529|   })
+    530|
+    531|   it('an erase that lands while the alarm waits on R2 leaves the vault…
+       |   ^
+    532|     // The 1B-T4 follow-up: the alarm checks `erased` again after its …
+    533|     const user = await member(client)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/15]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the brief's rulings > a prune that keeps throwing brings the alarm back a minute later, never in a loop
+AssertionError: expected 1794355098549 to be 1794355158549 // Object.is equality
+
+- Expected
++ Received
+
+- 1794355158549
++ 1794355098549
+
+ ❯ test/workers/files-alarm.test.ts:593:35
+    591|       await fireAt(user, at)
+    592|       expect(await vaultRows(user, 'SELECT status FROM exports WHERE i…
+    593|       expect(await alarmOf(user)).toBe(at + RETENTION_RETRY_MS)
+       |                                   ^
+    594|     } finally {
+    595|       await resetSeams(user)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/15]⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the brief's rulings > a write never sets the alarm sooner than a minute ahead, even with work already due, and a later write never postpones it
+AssertionError: expected [ { status: 'reserved' } ] to deeply equal [ { status: 'tombstone' } ]
+
+- Expected
++ Received
+
+  [
+    {
+-     "status": "tombstone",
++     "status": "reserved",
+    },
+  ]
+
+ ❯ test/workers/files-alarm.test.ts:635:90
+    633|     expect(await alarmOf(user)).toBe(t + CALL_ALARM_DELAY_MS)
+    634|     await fireAt(user, t + CALL_ALARM_DELAY_MS)
+    635|     expect(await vaultRows(user, 'SELECT status FROM vault_objects WHE…
+       |                                                                                          ^
+    636|   })
+    637|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/15]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  15 failed | 8 passed (23)
+   Start at  06:57:42
+   Duration  36.65s (transform 364ms, setup 665ms, import 32ms, tests 35.48s, environment 0ms)
+

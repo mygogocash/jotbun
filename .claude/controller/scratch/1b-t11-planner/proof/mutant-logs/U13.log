@@ -1,0 +1,57 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t11-planner/tree/apps/edge
+
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a failed start is retried a minute later, not in a loop
+{"level":"error","event":"work_start_failed","failure":"Error"}
+
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a key whose writer never published it is deleted by the alarm at its deadline 31ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > an export file is deleted by the alarm when it expires, and its status reads expired 27ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > work requested before the vault slept is started by its alarm after it wakes 25ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a failed start is retried a minute later, not in a loop 13ms
+stderr | test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a prune that throws is logged, the others still run, and the alarm is set again
+{"level":"error","event":"file_prune_failed","failure":"Error"}
+
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a capped run leaves the alarm set, and the next alarm clears the rest 29ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > a prune that throws is logged, the others still run, and the alarm is set again 16ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > the alarm follows the earliest of the core and file jobs 25ms
+ ✓ test/workers/files-alarm.test.ts > files on the vault alarm (the plan) > after any alarm, every scheduled time is later than now 29ms
+ ✓ test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > export requests are purged 30 days after the request; the receipt stays compact 16ms
+ ✓ test/workers/files-alarm.test.ts > ported from retention.integration.spec.ts, through the alarm > drops finished upload rows 30 days after they ended, never one still receiving or within the quota window 14ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > a resent snapshot request after its snapshot went stale reads expired and starts nothing; a new key builds a new one 39ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > a vault that is not active runs no file job and keeps no alarm for them 14ms
+ ✓ test/workers/files-alarm.test.ts > the controller's notes > an upload arms the alarm though it commits no command 16ms
+stderr | test/workers/files-alarm.test.ts > the brief's rulings > a prune that keeps throwing brings the alarm back a minute later, never in a loop
+{"level":"error","event":"file_prune_failed","failure":"Error"}
+
+stderr | test/workers/files-alarm.test.ts > the brief's rulings > after a failed job the alarm comes back a minute later, and a write in between does not bring it sooner
+{"level":"error","event":"vault_retention_purge_failed","failure":"Error"}
+
+ ✓ test/workers/files-alarm.test.ts > the brief's rulings > a background step that writes moves the alarm: a failed export is due only at its purge 30ms
+ ✓ test/workers/files-alarm.test.ts > the brief's rulings > a start moves the alarm on, from the alarm or from the Worker 15ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/files-alarm.test.ts > the controller's notes > an unbound bucket is a failed delete, due again a minute later; the alarm never throws
+ObjectStoreError: Object store: unavailable
+ ❯ UserVault.get test/workers/files-alarm.test.ts:513:17
+    511|         configurable: true,
+    512|         get: () => {
+    513|           throw new ObjectStoreError('unavailable')
+       |                 ^
+    514|         },
+    515|       })
+ ❯ UserVault.alarm src/vault/user-vault.ts:135:15
+ ❯ runAlarm Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t11-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:124:24
+ ❯ maybeHandleRunRequest Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t11-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:157:18
+ ❯ DurableObject.Wrapper.fetch Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t11-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:552:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'unavailable' }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  06:58:19
+   Duration  1.69s (transform 351ms, setup 638ms, import 30ms, tests 564ms, environment 0ms)
+
