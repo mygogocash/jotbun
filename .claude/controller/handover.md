@@ -27,6 +27,8 @@ The 1B-T13 planner (Claude Code thread `mcp:launch:9ebaef6c…`) hit its Claude 
 - There is no `SHA256SUMS` or `SHA256SUMS.logs`: `make-sums.sh` has not run.
 - There is no READY or BLOCKED verdict.
 
+**12:53:** T3 resumed the planner at 12:50 (run 3, limit cleared). It confirmed the proofs and that no code changed since b8095b99. The controller's finishing message (fill the values, assemble, make the sums, post a verdict, no reruns) was steered into that run. Waiting for READY or BLOCKED.
+
 **After 12:50:** send the planner one message to finish without rerunning any proof. It should fill `brief-values.json` from `proof/run-all.out` and `proof/mutants.out`, rerun `assemble-brief.py` (expecting no unfilled placeholders), run `make-sums.sh`, and post READY or BLOCKED. Then the controller reviews the brief and, if READY, adds the 1B-T13 build to the 13:15 batch with `--lock`.
 
 ## 11 Nov 10:15 Bangkok: Fronk's decisions on #393 and #70
