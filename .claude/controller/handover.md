@@ -12,6 +12,9 @@ Start no new threads or lanes on any provider. The 13:17 batch is disabled. The 
 
 - **#395** https://github.com/mygogocash/jotbun/pull/395: fix commit pushed to `p2/t12-card-stack` as a plain fast-forward from `90b50793`. Head is now `af61e89a3413f32478f233179c04999d8e31cac6`. Marked **draft**.
 - **#396** https://github.com/mygogocash/jotbun/pull/396: fix commit pushed to `fix/download-aborts` as a plain fast-forward from `d0cc479c`. Head is now `763edb3f5c180171a89025c824b4ea54bb033acc`. Marked **draft**.
+**Post-restart gate, 16:11 to 16:12 (Tee's standard after the 16:05 T3 restart).** The addendum arrived after the 16:09 pushes, so the gate ran right after them, on the pushed heads. Both pass. Scripts and logs are in `scratch/park-gate/` (`gate-395.sh`, `gate-396.sh`, `395/`, `396/`). jotbun has no lint script, so lint was not run. Secrets: `gitleaks git` over each PR's commits (`origin/claude/p1a-vault-core..HEAD`).
+- #395 at `af61e89a` (app): `typecheck:app` exit 0; `test:app` 34 of 34; `test:unit` 974 of 974; render, focused on `src/wallet/card/`, 24 of 24 in 2 files; `git diff --check` clean; gitleaks "no leaks found". No app build applies: no route, config or entry change, so no `export:web`; CI runs the full render suite and the exports.
+- #396 at `763edb3f` (edge): `typecheck:edge` exit 0; `build:edge` exit 0; `test:edge` 176 of 176 in 15 files and the focused workers file `download-aborts.test.ts` 7 of 7, both under the heavy lock (16:11:33 to 16:11:47, released); `git diff --check` clean; gitleaks "no leaks found".
 - Nothing else was done: no PR body updates, no reviews, no CI follow-up, no merges. The pushes may trigger CI on the local runners; nobody is watching it. On resume, the "push" part of these two rows is done: start from updating the PR bodies and marking each PR ready for review.
 
 (A copy of `scratch/held-2026-11-11.md`, which `sync_state.sh` does not carry, so it can resume from GitHub alone.)
