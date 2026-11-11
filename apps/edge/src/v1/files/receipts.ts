@@ -15,6 +15,7 @@ import type { ConfirmPrepared, ConfirmReceipt } from '../../vault/files/confirma
 import type { V1Env } from '../env'
 import type { VaultReply, VaultRouteId } from '../protocol'
 import type { VaultSession, WorkerContext } from '../worker-routes'
+import { untilReturned } from './slots'
 
 // Retaining and replacing a receipt on the vault (1B-T9): ports of
 // AttachmentService.withReceipt and prepare. The copy runs here, in the Worker,
@@ -97,15 +98,17 @@ async function copyOf(vault: VaultSession, env: Pick<V1Env, 'OBJECTS'>, prepared
  * `imports.confirmPrepare`; the request's first, charged call) and, when it
  * answers `copy`, the copy. Each attempt holds a COPY_SLOTS slot from before
  * the step until the copy ends, so a busy isolate answers 503 before anything
- * is reserved. While another request is copying the same image (`wait`) it
- * looks again every 75 ms, up to copyDeadlineMs, then answers 503. A 429 from
- * the step is the answer. `refused` (a confirmation's read-only checks would
- * refuse its batch) reserves and copies nothing.
+ * is reserved, and the request lives until the slot is back, even when its
+ * client goes away mid-copy (untilReturned, R97). While another request is
+ * copying the same image (`wait`) it looks again every 75 ms, up to
+ * copyDeadlineMs, then answers 503. A 429 from the step is the answer.
+ * `refused` (a confirmation's read-only checks would refuse its batch)
+ * reserves and copies nothing.
  */
 async function prepare(w: WorkerContext, vault: VaultSession, route: 'attachments.prepare' | 'imports.confirmPrepare', input: unknown, params: Record<string, string> = {}): Promise<StoredCopy | null | 'refused'> {
   const deadline = Date.now() + RECEIPT_LIMITS.copyDeadlineMs
   for (;;) {
-    const slot = COPY_SLOTS.take()
+    const slot = untilReturned(w, COPY_SLOTS.take())
     try {
       const prepared = await step<ConfirmPrepared>(vault, route, { params, body: input })
       if (prepared.kind === 'refused') return 'refused'
