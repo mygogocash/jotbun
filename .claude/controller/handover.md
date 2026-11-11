@@ -4,6 +4,15 @@ Durable folder: `/Users/kunanonjarat/Developer/jotbun/.claude/controller/` (prot
 
 Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vault-core`), head 0bd5659 (controller state after 1D-T8's dispatch). Nothing outside `.claude/` changed since 606e131. No PR is open into the integration branch; only #70 into main.
 
+## 11 Nov 10:15 Bangkok: Fronk's decisions on #393 and #70
+
+- **#393:** Fronk merges it himself, on the task PR's green CI. Do not rerun or change it. After it merges, check that #399 and the PRs stacked above it rebase cleanly and still show green CI. The controller watches #393.
+- **#70 (redesign plan, base main): fixed, not to be merged.**
+  - Root cause: its red run is from 26 Oct. Two render tests timed out under load: HistoryReturn's record-and-back case hit the 5 s test timeout, and QuickAdd's "already saved" text lookup gave up early.
+  - #70's content is already on main: its head tree equalled main's bf1215c4, so a fresh run tests main's own tree. main has since given HistoryReturn a 20 s budget (2876fc91), and main's afcf8846 passed CI on 9 Nov.
+  - Fix, in WT `redesign-plan-ci`: a merge of origin/main (27accdb9, no diff against main), then 8cf44d34, which applies the integration branch's `runs-on: ${{ vars.CI_RUNNER || 'ubuntu-24.04' }}` switch to main's three jobs. `backend-workflow.test.mjs` passes 6 of 6. Pushed to `claude/jotbun-redesign-plan` as a fast-forward. The PR's diff is now that one workflow file. The controller watches #70.
+  - If #70 ever merges before the promotion stack, main's backend.yml meets the stack's nine-job version in one conflict. Fronk's call is not to merge it.
+
 ## 11 Nov 10:00 Bangkok: the 13:15 relaunch batch, open PRs, the lock
 
 **Relaunch at or after 13:15 ICT, on Antigravity `claude-sonnet-5-5-high`.** Each is a `t3_thread_launch` in the jotbun project (`cc4b9cae-2d3c-4aeb-b98f-affe256dcb86`) with `workspaceStrategy: {type: "root"}`, so it runs in `/Users/kunanonjarat/Developer/jotbun`, not a T3 worktree. The message for each is the `prompt:` line its prompt file was made with.
