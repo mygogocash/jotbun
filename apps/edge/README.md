@@ -12,7 +12,7 @@ The Jotbun v1 backend on Cloudflare: one Worker serves every v1 route from the *
 
 | Worker | Config | What it runs | Secrets |
 | --- | --- | --- | --- |
-| `jotbun-edge` | `wrangler.jsonc` | The TanStack Start pages; every `/v1` route on the UserVault, the live socket (`GET /v1/sync/live`) and the cashback catalogue included; Better Auth at `/api/auth/*`; the PostHog proxy at `/ingest/*`; `ExportWorkflow` and `SnapshotWorkflow`; the statement-parse queue's consumer; the parser container (`StatementParser`) | `COMMAND_DIGEST_KEY`, `BETTER_AUTH_SECRET`, `ERASURE_KEY`, and for AI `ANTHROPIC_API_KEY` |
+| `jotbun-edge` | `wrangler.jsonc` | The TanStack Start pages; every `/v1` route on the UserVault, the live socket (`GET /v1/sync/live`) and the cashback catalogue included; Better Auth at `/api/auth/*`; the PostHog proxy at `/ingest/*`; `ExportWorkflow` and `SnapshotWorkflow`; the statement-parse queue's consumer; the parser container (`StatementParser`) | `COMMAND_DIGEST_KEY`, `BETTER_AUTH_SECRET`, `ERASURE_KEY`, and for AI `ANTHROPIC_API_KEY`, `AI_GATEWAY_TOKEN` |
 
 The vault's classes and the queue handler live in `src/vault-worker.ts`, and `src/server.ts` re-exports them beside TanStack Start's entry (C1). `/live` answers without reading anything. `/ready` answers 200 once the token settings and `COMMAND_DIGEST_KEY` are set and `config:v1` can be read from KV (`src/v1/ready.ts`).
 
@@ -68,7 +68,7 @@ npm run dev:edge
 No database runs. Until a token issuer is configured (`AUTH_JWKS_URL`, or Better Auth's own keys from 1C), token-checked routes fail closed with 503.
 
 Optional environment:
-- `ANTHROPIC_API_KEY` turns on Bun's AI help.
+- `ANTHROPIC_API_KEY` and `AI_GATEWAY_TOKEN` turn on Bun's AI help; `ANTHROPIC_BASE_URL` points to Cloudflare AI Gateway.
 - `COMMAND_DIGEST_KEY` keeps one digest key between runs.
 
 Point the app at the edge with `EXPO_PUBLIC_V1_API_URL=http://127.0.0.1:8092`.
@@ -95,7 +95,7 @@ Hosted Cloudflare resources are recorded as SKIPPED until the owner asks for a d
 2. Set the secrets with `npx wrangler secret put <NAME>`:
    - `COMMAND_DIGEST_KEY` (the API's value, so replays stay valid);
    - `BETTER_AUTH_SECRET` and `ERASURE_KEY`;
-   - optionally `ANTHROPIC_API_KEY`, with `AI_ENABLED=true`.
+   - optionally `ANTHROPIC_API_KEY` and `AI_GATEWAY_TOKEN`, with `AI_ENABLED=true` and `ANTHROPIC_BASE_URL` set to the gateway URL.
 
    Set `IMPORT_UPLOADS_ENABLED` once the hosted R2 gate has passed, and `GOGOCASH_BRIDGE_ENABLED` with `GOGOCASH_CATALOGUE_URL` for the bridge.
 3. Run `npm run deploy --prefix apps/edge`. It builds, then deploys the one Worker; the parser image is built from `apps/api/Dockerfile` (Docker needed).
