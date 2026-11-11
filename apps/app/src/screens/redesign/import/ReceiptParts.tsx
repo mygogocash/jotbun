@@ -33,6 +33,7 @@ import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { DECORATIVE, POLITE_LIVE_REGION, moveAccessibilityFocus, useAnnouncement } from '@mobile/ui/a11y';
 import { BunText } from '@mobile/ui/BunText';
 import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE, BUN_TOUCH } from '@mobile/ui/layout';
+import { LockCoverArt, useLockCover } from '@mobile/ui/lockCover';
 import { PillButton } from '@mobile/ui/PillButton';
 import { PromiseList } from '@mobile/ui/PromiseList';
 import { Sheet } from '@mobile/ui/Sheet';
@@ -203,12 +204,20 @@ export type ViewerState = { state: 'loading' } | { state: 'ready'; uri: string }
  * its title when it opens. It fades in; under reduced motion it simply
  * appears. The fade is the kit's own opacity timing, like the Sheet's spring,
  * so the modal itself never animates and is active (a dialog) at once.
+ *
+ * Under the Face ID lock's cover (R63, P2-T33) it draws LockCoverArt in place
+ * of the photo, as the Sheet does: a Modal draws above the app, so the lock's
+ * own cover lies under it, and while the app is locked this cover carries the
+ * lock screen. Nothing of the photo is drawn or named, and Android's back
+ * (Escape on the web) asks nothing. When the cover lifts the photo is back as
+ * it was, without fading in again.
  */
 export function ReceiptViewer({ visible, view, onClose, onRetry }: { visible: boolean; view: ViewerState; onClose: () => void; onRetry: () => void }) {
   const tc = useCopy();
   const colors = useBunColors();
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
+  const { hidden } = useLockCover();
   const viewerRef = useRef<HostInstance>(null);
   const titleRef = useRef<HostInstance>(null);
   const opacity = useRef(new Animated.Value(reducedMotion ? 1 : 0)).current;
@@ -223,57 +232,64 @@ export function ReceiptViewer({ visible, view, onClose, onRetry }: { visible: bo
   }, [opacity, reducedMotion, visible]);
   const title = tc('Receipt photo');
   const web = Platform.OS === 'web';
-  const webDialog = web ? { 'aria-label': title } : null;
+  // Under the lock nothing is named.
+  const webDialog = web ? { 'aria-label': hidden ? undefined : title } : null;
   const panelDialog = web ? null : { role: 'dialog' as const, 'aria-modal': true, 'aria-label': title };
   const nativeTitle = web ? null : { accessible: true, accessibilityRole: 'header' as const, accessibilityLabel: title };
+  // Android's back (Escape on the web) asks nothing under the lock's cover.
+  const requestClose = () => {
+    if (!hidden) onClose();
+  };
   return (
     <Modal
       visible={visible}
       animationType="none"
-      onRequestClose={onClose}
+      onRequestClose={requestClose}
       onShow={() => moveAccessibilityFocus(web ? viewerRef.current : titleRef.current)}
       statusBarTranslucent
       {...webDialog}
     >
-      <Animated.View
-        ref={viewerRef}
-        testID="receipt-viewer"
-        {...panelDialog}
-        accessibilityViewIsModal
-        onAccessibilityEscape={onClose}
-        tabIndex={-1}
-        style={{ flex: 1, opacity, backgroundColor: colors.background, paddingTop: insets.top + BUN_SPACE.sm, paddingBottom: insets.bottom + BUN_SPACE.md, paddingHorizontal: BUN_SPACE.md, gap: BUN_SPACE.md }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: BUN_SPACE.sm }}>
-          <View ref={titleRef} {...nativeTitle} style={{ flex: 1 }}>
-            <BunText variant="heading" role="heading" accessibilityRole="header">{title}</BunText>
+      {hidden ? <LockCoverArt /> : (
+        <Animated.View
+          ref={viewerRef}
+          testID="receipt-viewer"
+          {...panelDialog}
+          accessibilityViewIsModal
+          onAccessibilityEscape={onClose}
+          tabIndex={-1}
+          style={{ flex: 1, opacity, backgroundColor: colors.background, paddingTop: insets.top + BUN_SPACE.sm, paddingBottom: insets.bottom + BUN_SPACE.md, paddingHorizontal: BUN_SPACE.md, gap: BUN_SPACE.md }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: BUN_SPACE.sm }}>
+            <View ref={titleRef} {...nativeTitle} style={{ flex: 1 }}>
+              <BunText variant="heading" role="heading" accessibilityRole="header">{title}</BunText>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={tc('Close')}
+              onPress={onClose}
+              style={{ minHeight: BUN_TOUCH, minWidth: BUN_TOUCH, borderRadius: BUN_RADIUS.pill, borderWidth: BUN_OUTLINE.control, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <View {...DECORATIVE}>
+                <BunText variant="heading">×</BunText>
+              </View>
+            </Pressable>
           </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={tc('Close')}
-            onPress={onClose}
-            style={{ minHeight: BUN_TOUCH, minWidth: BUN_TOUCH, borderRadius: BUN_RADIUS.pill, borderWidth: BUN_OUTLINE.control, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' }}
-          >
-            <View {...DECORATIVE}>
-              <BunText variant="heading">×</BunText>
-            </View>
-          </Pressable>
-        </View>
-        <View style={{ flex: 1, justifyContent: 'center', borderRadius: BUN_RADIUS.card, borderWidth: BUN_OUTLINE.card, borderColor: colors.ink, backgroundColor: colors.paper, overflow: 'hidden' }}>
-          {view.state === 'ready' ? (
-            <Image testID="receipt-full-image" accessible accessibilityRole="image" accessibilityLabel={title} source={{ uri: view.uri }} resizeMode="contain" style={{ flex: 1 }} />
-          ) : view.state === 'loading' ? (
-            <View style={{ padding: BUN_SPACE.md }}>
-              <ReceiptWorking label={tc('Loading the receipt photo…')} />
-            </View>
-          ) : (
-            <View accessibilityRole="alert" style={{ padding: BUN_SPACE.md, gap: BUN_SPACE.sm }}>
-              <BunText style={{ fontWeight: '700' }}>{view.message}</BunText>
-              <PillButton kind="secondary" label={tc('Try again')} onPress={onRetry} />
-            </View>
-          )}
-        </View>
-      </Animated.View>
+          <View style={{ flex: 1, justifyContent: 'center', borderRadius: BUN_RADIUS.card, borderWidth: BUN_OUTLINE.card, borderColor: colors.ink, backgroundColor: colors.paper, overflow: 'hidden' }}>
+            {view.state === 'ready' ? (
+              <Image testID="receipt-full-image" accessible accessibilityRole="image" accessibilityLabel={title} source={{ uri: view.uri }} resizeMode="contain" style={{ flex: 1 }} />
+            ) : view.state === 'loading' ? (
+              <View style={{ padding: BUN_SPACE.md }}>
+                <ReceiptWorking label={tc('Loading the receipt photo…')} />
+              </View>
+            ) : (
+              <View accessibilityRole="alert" style={{ padding: BUN_SPACE.md, gap: BUN_SPACE.sm }}>
+                <BunText style={{ fontWeight: '700' }}>{view.message}</BunText>
+                <PillButton kind="secondary" label={tc('Try again')} onPress={onRetry} />
+              </View>
+            )}
+          </View>
+        </Animated.View>
+      )}
     </Modal>
   );
 }

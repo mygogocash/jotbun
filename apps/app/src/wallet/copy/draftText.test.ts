@@ -21,6 +21,8 @@ const THAI = /[\u0E00-\u0E7F]/;
 const EMOJI = /\p{Extended_Pictographic}/u;
 const PUNCTUATION_DASH = /[\u2013\u2014]/;
 const AREA_KEY = /^[a-z]+\.[A-Za-z0-9_.]+$/;
+// The lock's method is named Face ID in Thai too (sa-lock-setup, sa-locked).
+LATIN_LINES.add('lock.methodFace');
 
 const walletRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 
