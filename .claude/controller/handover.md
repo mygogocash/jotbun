@@ -24,6 +24,17 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**22:25: P2-T23 READY (Claude Code Opus planner). P1 to P15 accepted; its Flash builder is running.**
+- **The brief:** `briefs/P2-T23.md`, 59 KB, size M. The kit `scratch/p2-t23-planner/` checks at `29aba3dd` with 34 OK, and its 2 `orig/` files are identical.
+- **The proofs:** RED 14 of 14 Node and 6 of 6 render cases, all assertions; 77 of 77 mutants killed.
+- **No files in common** with #407 and #406 (or their R106 and R107 scope), P2-T20 or P2-T25. `merge/README.txt` holds the sha256s with #407 and #406 laid over.
+- **Calls to keep in mind:**
+  - P3: `availableBalances` moves to a pure module, and `entryHelpers.ts` re-exports it;
+  - P4: a private copy of P2-T20's `frontFirst`, which P2-T24 swaps for an import;
+  - P8: `headline` is the month's spending estimate, and private mode says no number.
+- **The builder,** on Flash: `mcp:launch:8bd4778b30ac1c7143b668103927cad751e1fec60e84e554656fd86ec86d4a91`, in WT `p2-t23` (pre-made, installed). The brief was written for Haiku; Flash follows it unchanged.
+- **After DONE:** a first review (Opus) and a second review (Flash), since Home shows balances, budgets and private mode.
+
 **22:20: P3-T4's Flash plan is READY and the controller accepted it. Its Flash builder is running.**
 - **The brief:** `briefs/P3-T4.md`, 14.6 KB, size M, 14 files: 3 new, and 11 shared edge files that #406 and #407 do not touch. The kit `scratch/p3-t4-planner/` checks at `5e514bf0` with 48 OK, and its 11 `orig/` files are identical.
 - **The controller's review of the Flash plan:**

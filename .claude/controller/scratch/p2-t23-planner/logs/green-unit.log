@@ -1,0 +1,48 @@
+
+> gogospend-app@0.1.0 test:unit
+> node scripts/test-unit.mjs src/wallet/home/homeWallets.test.ts src/wallet/home/budgetCardWords.test.ts src/wallet/copy/draftText.test.ts
+
+(node:15649) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app/src/wallet/copy/draftText.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ every draft line has Thai and English, with the same placeholders (7.553375ms)
+✔ no draft line has an emoji or a dash used as punctuation (2.016708ms)
+✔ every key is unique across every table and has an area prefix (1.514333ms)
+✔ draftText picks Thai for th and English for en and vi, then fills placeholders (0.142666ms)
+(node:15650) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app/src/wallet/home/budgetCardWords.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15650) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/packages/contracts/package.json.
+✔ on track says เหลือวันละ ฿690 in the under colour (2.435958ms)
+✔ over says เกินงบไป ฿420 in the over colour (0.300458ms)
+✔ private mode says ตามแผน or เกินงบ and no amount (0.292791ms)
+✔ on the month's last day the per-day hint is all that is left (0.115791ms)
+✔ tight says the same words in ink, in whole baht rounded down, shown and said (0.168875ms)
+✔ the figure and the hint are the estimate's: waiting drafts count, drafts being checked do not (0.18ms)
+✔ with no budget there is no line, and the card says only what was spent (0.080459ms)
+✔ after the month there is no per-day figure, so the line says ตามแผน (0.079791ms)
+(node:15651) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app/src/wallet/home/homeWallets.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15651) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/packages/contracts/package.json.
+✔ the stack draws the kept order with the front card last, archived wallets out (0.898375ms)
+✔ front first is the wallets list's order: the kept ids, then the rest by name and then id, drawn back to front (4.923416ms)
+✔ a card's balance takes off what waiting drafts spend and says how much is still saving (0.22725ms)
+✔ income adds and a transfer moves money between its wallets, each still saving; drafts being checked, refused or acknowledged count nowhere (0.145041ms)
+✔ today's spending counts confirmed expenses only (0.1495ms)
+✔ each card wears its wallet's look, and money stays exact past 2^53 (0.133666ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 248.44775

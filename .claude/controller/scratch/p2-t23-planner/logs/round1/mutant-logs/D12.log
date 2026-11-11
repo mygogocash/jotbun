@@ -1,0 +1,360 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app
+
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > loading, then the golden month: exact figures, an empty today receipt and earlier days 78ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > the stage says the month's confirmed money in and out 32ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > a change pulled from another phone refreshes Home in place 66ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > the sync banners share one live region 35ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > today's records sit on a receipt with the day's confirmed totals; rows open the record 30ms
+ × src/screens/redesign/HomeScreen.render.test.tsx > today's total is exact even when today's records take more than one page 254ms
+   → Unable to find a label with the text of: Money out, Expense ฿203.01
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+  [33mdata-testid[39m=[32m"receipt-slip"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 253, 248, 1.00); gap: 12px; padding: 16px; border-width: 1.5px; border-style: dashed; border-color: rgba(35, 27, 58, 1.00); border-radius: 12px;"[39m
+[36m>[39m
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: Georgia, \"Times New Roman\", serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m>[39m
+    [0mToday's receipt[0m
+  [36m</h1>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-direction: row; align-items: center;"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33maria-label[39m=[32m"Food, Expense ฿1.01, Cash"[39m
+          [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+          [33mrole[39m=[32m"button"[39m
+          [33mstyle[39m=[32m"min-height: 44px; flex-direction: row; align-items: center; gap: 12px; padding-top: 8px; padding-bottom: 8px; opacity: 1; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+          [33mtabindex[39m=[32m"0"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mstyle[39m=[32m"width: 40px; height: 40px; background-color: rgba(240, 168, 104, 1.00); align-items: center; justify-content: center; border-width: 1.5px; border-color: rgba(35, 27, 58, 1.00); border-radius: 12px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mheight[39m=[32m"24"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"24"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M4 12h16a8 8 0 0 1-16 0z"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mstroke[39m=[32m"#231B3A"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M13 9l3-6"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mstroke[39m=[32m"#231B3A"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M16 9l4-5"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mstroke[39m=[32m"#231B3A"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mstyle[39m=[32m"gap: 2px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-text-146c3p1"[39m
+              [33mdir[39m=[32m"auto"[39m
+              [33mstyle[39m=[32m"font-size: 17px; line-height: 23px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+            [36m>[39m
+              [0mFood[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mstyle[39m=[32m"flex-direction: row; flex-wrap: wrap; column-gap: 8px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-text-146c3p1"[39m
+                [33mdir[39m=[32m"auto"[39m
+                [33mstyle[39m=[32m"font-size: 13px; line-height: 17px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(91, 79, 128, 1.00);"[39m
+              [36m>[39m
+                [0mCash[0m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-text-146c3p1"[39m
+            [33mdir[39m=[32m"auto"[39m
+            [33mstyle[39m=[32m"font-size: 17px; line-height: 23px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+          [36m>[39m
+            [0m−฿1.01[0m
+          [36m</div>[39m
+        [36m</button>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-direction: row; align-items: center;"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33maria-label[39m=[32m"Food, Expense ฿1.01, Cash"[39m
+          [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+          [33mrole[39m=[32m"button"[39m
+          [33mstyle[39m=[32m"min-height: 44px; flex-direction: row; align-items: center; gap: 12px; padding-top: 8px; padding-bottom: 8px; opacity: 1; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+          [33mtabindex[39m=[32m"0"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mstyle[39m=[32m"width: 40px; height: 40px; background-color: rgba(240, 168, 104, 1.00); align-items: center; justify-content: center; border-width: 1.5px; border-color: rgba(35, 27, 58, 1.00); border-radius: 12px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mheight[39m=[32m"24"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"24"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M4 12h16a8 8 0 0 1-16 0z"[39m
+   ...
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > an earlier day the page may have split is left out rather than shown with a partial total 57ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > an empty today offers to add an entry 15ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > a budget: the confirmed month against the limit, and the pace ring in words 16ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > over budget (light): the kind bun and plain facts, never colour alone 14ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > over budget (dark): the kind bun and plain facts, never colour alone 16ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > the bun respects its intensity: quiet keeps only the first-run bun, off shows none 32ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > drafts show their state; an unsent one can be removed and one that needs review discarded 58ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > waiting and checking money stay apart from confirmed money 18ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > the sync banner says saving, checking, needs review and update, and the review sheet discards 54ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > a sending draft is counted as checking in the banner, never as saving 18ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > drafts older than the days on Home can still be reviewed, discarded and removed 63ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > a draft on a day the earlier page cut does not bring that day back without its confirmed money 77ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > a sending draft whose record is already confirmed is not counted twice in the pace 17ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > a paused sync reads as offline and can be retried; other sync news is said in words 34ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > offline with device data: the problem, the drafts by day, waiting money and Add 34ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > offline without wallets on the device offers no Add; without a diary there is no offline claim 22ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > upgrade_required has its own presentation, not a generic error 8ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > policy_required has its own presentation, not a generic error 5ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > signed_out has its own presentation, not a generic error 6ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > session_changed has its own presentation, not a generic error 5ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > unsupported_platform has its own presentation, not a generic error 5ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > a locked diary says why, hides its drafts, and starts over only after confirming 39ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > a diary that cannot open right now is never offered a start over; a locked diary offline shows no device data 7ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > first run: the hello bun, then a first wallet with an exact opening balance and a tracking start 47ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > an unconfirmed first wallet is frozen and resent as the same command 33ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > an unconfirmed first wallet stays frozen with its key when the retry is refused before processing 44ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > server field problems land on their fields, and a wallet that already committed counts as created 45ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > Thai digits are understood in the first-wallet form 39ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > 'en' 'light': the stage, the receipt and the days read in the language, on approved colours 33ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > 'en' 'dark': the stage, the receipt and the days read in the language, on approved colours 27ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > 'th' 'light': the stage, the receipt and the days read in the language, on approved colours 26ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > 'th' 'dark': the stage, the receipt and the days read in the language, on approved colours 28ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > 'vi' 'light': the stage, the receipt and the days read in the language, on approved colours 27ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > 'vi' 'dark': the stage, the receipt and the days read in the language, on approved colours 25ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > light: first run, problems, offline, over budget and the sheets use approved text pairs only 80ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > dark: first run, problems, offline, over budget and the sheets use approved text pairs only 80ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > with Planning on, Home opens Budget and Wallets 65ms
+ ✓ src/screens/redesign/HomeScreen.render.test.tsx > with Account on, Home has Settings in its header; switched off, it has none 39ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 43 passed (44)
+   Start at  22:02:01
+   Duration  2.66s (transform 403ms, setup 61ms, import 583ms, tests 1.75s, environment 121ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/HomeScreen.render.test.tsx > today's total is exact even when today's records take more than one page
+TestingLibraryElementError: Unable to find a label with the text of: Money out, Expense ฿203.01
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+  [33mdata-testid[39m=[32m"receipt-slip"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 253, 248, 1.00); gap: 12px; padding: 16px; border-width: 1.5px; border-style: dashed; border-color: rgba(35, 27, 58, 1.00); border-radius: 12px;"[39m
+[36m>[39m
+  [36m<h1[39m
+    [33mclass[39m=[32m"css-text-146c3p1"[39m
+    [33mdir[39m=[32m"auto"[39m
+    [33mrole[39m=[32m"heading"[39m
+    [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: Georgia, \"Times New Roman\", serif; color: rgba(35, 27, 58, 1.00);"[39m
+  [36m>[39m
+    [0mToday's receipt[0m
+  [36m</h1>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-direction: row; align-items: center;"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33maria-label[39m=[32m"Food, Expense ฿1.01, Cash"[39m
+          [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+          [33mrole[39m=[32m"button"[39m
+          [33mstyle[39m=[32m"min-height: 44px; flex-direction: row; align-items: center; gap: 12px; padding-top: 8px; padding-bottom: 8px; opacity: 1; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+          [33mtabindex[39m=[32m"0"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mstyle[39m=[32m"width: 40px; height: 40px; background-color: rgba(240, 168, 104, 1.00); align-items: center; justify-content: center; border-width: 1.5px; border-color: rgba(35, 27, 58, 1.00); border-radius: 12px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mheight[39m=[32m"24"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"24"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M4 12h16a8 8 0 0 1-16 0z"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mstroke[39m=[32m"#231B3A"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M13 9l3-6"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mstroke[39m=[32m"#231B3A"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M16 9l4-5"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mstroke[39m=[32m"#231B3A"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mstyle[39m=[32m"gap: 2px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-text-146c3p1"[39m
+              [33mdir[39m=[32m"auto"[39m
+              [33mstyle[39m=[32m"font-size: 17px; line-height: 23px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+            [36m>[39m
+              [0mFood[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mstyle[39m=[32m"flex-direction: row; flex-wrap: wrap; column-gap: 8px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-text-146c3p1"[39m
+                [33mdir[39m=[32m"auto"[39m
+                [33mstyle[39m=[32m"font-size: 13px; line-height: 17px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(91, 79, 128, 1.00);"[39m
+              [36m>[39m
+                [0mCash[0m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-text-146c3p1"[39m
+            [33mdir[39m=[32m"auto"[39m
+            [33mstyle[39m=[32m"font-size: 17px; line-height: 23px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+          [36m>[39m
+            [0m−฿1.01[0m
+          [36m</div>[39m
+        [36m</button>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-direction: row; align-items: center;"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33maria-label[39m=[32m"Food, Expense ฿1.01, Cash"[39m
+          [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+          [33mrole[39m=[32m"button"[39m
+          [33mstyle[39m=[32m"min-height: 44px; flex-direction: row; align-items: center; gap: 12px; padding-top: 8px; padding-bottom: 8px; opacity: 1; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+          [33mtabindex[39m=[32m"0"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mstyle[39m=[32m"width: 40px; height: 40px; background-color: rgba(240, 168, 104, 1.00); align-items: center; justify-content: center; border-width: 1.5px; border-color: rgba(35, 27, 58, 1.00); border-radius: 12px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mheight[39m=[32m"24"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"24"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M4 12h16a8 8 0 0 1-16 0z"[39m
+   ...
+ ❯ Object.getElementError ../../node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getAllByLabelText ../../node_modules/@testing-library/dom/dist/queries/label-text.js:111:38
+ ❯ ../../node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/screens/redesign/HomeScreen.render.test.tsx:269:26
+    267|   mountHome(fake.resources);
+    268|   const receipt = await screen.findByTestId('receipt-slip', {}, { time…
+    269|   expect(within(receipt).getByLabelText('Money out, Expense ฿203.01'))…
+       |                          ^
+    270|   const todayCalls = fake.callsOf('history').filter((call) => (call.ar…
+    271|   expect(todayCalls.map((call) => call.args[1])).toEqual([undefined, '…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

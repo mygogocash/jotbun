@@ -1,0 +1,20 @@
+
+> gogospend-app@0.1.0 test:unit
+> node scripts/test-unit.mjs src/wallet/copy/draftText.test.ts
+
+(node:14201) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app/src/wallet/copy/draftText.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ every draft line has Thai and English, with the same placeholders (5.598958ms)
+✔ no draft line has an emoji or a dash used as punctuation (1.551166ms)
+✔ every key is unique across every table and has an area prefix (0.926083ms)
+✔ draftText picks Thai for th and English for en and vi, then fills placeholders (0.143583ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 152.478167

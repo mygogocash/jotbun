@@ -1,0 +1,71 @@
+
+> gogospend-app@0.1.0 test:unit
+> node scripts/test-unit.mjs src/wallet/home/homeWallets.test.ts
+
+(node:94806) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app/src/wallet/home/homeWallets.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:94806) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/packages/contracts/package.json.
+✔ the stack draws the kept order with the front card last, archived wallets out (0.632208ms)
+✔ front first is the wallets list's order: the kept ids, then the rest by name and then id, drawn back to front (4.084ms)
+✔ a card's balance takes off what waiting drafts spend and says how much is still saving (0.1435ms)
+✔ income adds and a transfer moves money between its wallets, each still saving; drafts being checked, refused or acknowledged count nowhere (0.100166ms)
+✔ today's spending counts confirmed expenses only (0.099084ms)
+✖ each card wears its wallet's look, and money stays exact past 2^53 (0.667208ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 5
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 159.81025
+
+✖ failing tests:
+
+test at src/wallet/home/homeWallets.test.ts:110:1
+✖ each card wears its wallet's look, and money stays exact past 2^53 (0.667208ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      {
+        face: 'smile',
+        kind: null,
+        material: 'silk'
+      },
+      {
+  +     face: 'smile',
+  +     kind: null,
+  +     material: 'silk'
+  -     face: 'wink',
+  -     kind: 'bank',
+  -     material: 'sky'
+      }
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app/src/wallet/home/homeWallets.test.ts:126:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { kind: null, material: 'silk', face: 'smile' }, { kind: null, material: 'silk', face: 'smile' } ],
+    expected: [ { kind: null, material: 'silk', face: 'smile' }, { kind: 'bank', material: 'sky', face: 'wink' } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+npm error Lifecycle script `test:unit` failed with error:
+npm error code 1
+npm error path /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app
+npm error workspace gogospend-app@0.1.0
+npm error location /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app
+npm error command failed
+npm error command sh -c node scripts/test-unit.mjs src/wallet/home/homeWallets.test.ts

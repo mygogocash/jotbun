@@ -1,0 +1,213 @@
+
+> gogospend-app@0.1.0 test:unit
+> node scripts/test-unit.mjs src/wallet/home/budgetCardWords.test.ts
+
+(node:95482) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app/src/wallet/home/budgetCardWords.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:95482) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/packages/contracts/package.json.
+✖ on track says เหลือวันละ ฿690 in the under colour (2.630417ms)
+✖ over says เกินงบไป ฿420 in the over colour (0.2715ms)
+✔ private mode says ตามแผน or เกินงบ and no amount (0.438ms)
+✖ on the month's last day the per-day hint is all that is left (0.183917ms)
+✖ tight says the same words in ink, in whole baht rounded down, shown and said (0.170625ms)
+✖ the figure and the hint are the estimate's: waiting drafts count, drafts being checked do not (0.207ms)
+✔ with no budget there is no line, and the card says only what was spent (0.166917ms)
+✖ after the month there is no per-day figure, so the line says ตามแผน (0.13875ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 2
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 168.454
+
+✖ failing tests:
+
+test at src/wallet/home/budgetCardWords.test.ts:30:1
+✖ on track says เหลือวันละ ฿690 in the under colour (2.630417ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+      headline: '฿12,480',
+      side: {
+        text: 'เหลือวันละ ฿690',
+        tone: 'under'
+      },
+  +   spoken: 'ใช้ไปเดือนนี้ 12,480 บาท, เหลือวันละ 690 บาท'
+  -   spoken: 'ใช้ไปเดือนนี้ 12,480 บาท จากงบ 18,000 บาท, เหลือวันละ 690 บาท'
+    }
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app/src/wallet/home/budgetCardWords.test.ts:34:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { headline: '฿12,480', side: { text: 'เหลือวันละ ฿690', tone: 'under' }, spoken: 'ใช้ไปเดือนนี้ 12,480 บาท, เหลือวันละ 690 บาท' },
+    expected: { headline: '฿12,480', side: { text: 'เหลือวันละ ฿690', tone: 'under' }, spoken: 'ใช้ไปเดือนนี้ 12,480 บาท จากงบ 18,000 บาท, เหลือวันละ 690 บาท' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/wallet/home/budgetCardWords.test.ts:46:1
+✖ over says เกินงบไป ฿420 in the over colour (0.2715ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+      headline: '฿18,420',
+      side: {
+        text: 'เกินงบไป ฿420',
+        tone: 'over'
+      },
+  +   spoken: 'ใช้ไปเดือนนี้ 18,420 บาท, เกินงบไป 420 บาท'
+  -   spoken: 'ใช้ไปเดือนนี้ 18,420 บาท จากงบ 18,000 บาท, เกินงบไป 420 บาท'
+    }
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app/src/wallet/home/budgetCardWords.test.ts:49:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { headline: '฿18,420', side: { text: 'เกินงบไป ฿420', tone: 'over' }, spoken: 'ใช้ไปเดือนนี้ 18,420 บาท, เกินงบไป 420 บาท' },
+    expected: { headline: '฿18,420', side: { text: 'เกินงบไป ฿420', tone: 'over' }, spoken: 'ใช้ไปเดือนนี้ 18,420 บาท จากงบ 18,000 บาท, เกินงบไป 420 บาท' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/wallet/home/budgetCardWords.test.ts:79:1
+✖ on the month's last day the per-day hint is all that is left (0.183917ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'ใช้ไปเดือนนี้ 12,480 บาท, เหลือวันละ 5,520 บาท'
+  - 'ใช้ไปเดือนนี้ 12,480 บาท จากงบ 18,000 บาท, เหลือวันละ 5,520 บาท'
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app/src/wallet/home/budgetCardWords.test.ts:85:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'ใช้ไปเดือนนี้ 12,480 บาท, เหลือวันละ 5,520 บาท',
+    expected: 'ใช้ไปเดือนนี้ 12,480 บาท จากงบ 18,000 บาท, เหลือวันละ 5,520 บาท',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/wallet/home/budgetCardWords.test.ts:88:1
+✖ tight says the same words in ink, in whole baht rounded down, shown and said (0.170625ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+      headline: '฿10,000',
+      side: {
+        text: 'เหลือวันละ ฿363',
+        tone: 'ink'
+      },
+  +   spoken: 'ใช้ไปเดือนนี้ 10,000 บาท, เหลือวันละ 363 บาท'
+  -   spoken: 'ใช้ไปเดือนนี้ 10,000 บาท จากงบ 18,000 บาท, เหลือวันละ 363 บาท'
+    }
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app/src/wallet/home/budgetCardWords.test.ts:92:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { headline: '฿10,000', side: { text: 'เหลือวันละ ฿363', tone: 'ink' }, spoken: 'ใช้ไปเดือนนี้ 10,000 บาท, เหลือวันละ 363 บาท' },
+    expected: { headline: '฿10,000', side: { text: 'เหลือวันละ ฿363', tone: 'ink' }, spoken: 'ใช้ไปเดือนนี้ 10,000 บาท จากงบ 18,000 บาท, เหลือวันละ 363 บาท' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/wallet/home/budgetCardWords.test.ts:103:1
+✖ the figure and the hint are the estimate's: waiting drafts count, drafts being checked do not (0.207ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+      headline: '฿12,530',
+      side: {
+        text: 'เหลือวันละ ฿683',
+        tone: 'under'
+      },
+  +   spoken: 'ใช้ไปเดือนนี้ 12,530 บาท, เหลือวันละ 683 บาท'
+  -   spoken: 'ใช้ไปเดือนนี้ 12,530 บาท จากงบ 18,000 บาท, เหลือวันละ 683 บาท'
+    }
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app/src/wallet/home/budgetCardWords.test.ts:111:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { headline: '฿12,530', side: { text: 'เหลือวันละ ฿683', tone: 'under' }, spoken: 'ใช้ไปเดือนนี้ 12,530 บาท, เหลือวันละ 683 บาท' },
+    expected: { headline: '฿12,530', side: { text: 'เหลือวันละ ฿683', tone: 'under' }, spoken: 'ใช้ไปเดือนนี้ 12,530 บาท จากงบ 18,000 บาท, เหลือวันละ 683 บาท' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/wallet/home/budgetCardWords.test.ts:125:1
+✖ after the month there is no per-day figure, so the line says ตามแผน (0.13875ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+      headline: '฿12,480',
+      side: {
+        text: 'ตามแผน',
+        tone: 'under'
+      },
+  +   spoken: 'ใช้ไปเดือนนี้ 12,480 บาท, ตามแผน'
+  -   spoken: 'ใช้ไปเดือนนี้ 12,480 บาท จากงบ 18,000 บาท, ตามแผน'
+    }
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app/src/wallet/home/budgetCardWords.test.ts:129:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { headline: '฿12,480', side: { text: 'ตามแผน', tone: 'under' }, spoken: 'ใช้ไปเดือนนี้ 12,480 บาท, ตามแผน' },
+    expected: { headline: '฿12,480', side: { text: 'ตามแผน', tone: 'under' }, spoken: 'ใช้ไปเดือนนี้ 12,480 บาท จากงบ 18,000 บาท, ตามแผน' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+npm error Lifecycle script `test:unit` failed with error:
+npm error code 1
+npm error path /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app
+npm error workspace gogospend-app@0.1.0
+npm error location /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t23-planner/work/tree/apps/app
+npm error command failed
+npm error command sh -c node scripts/test-unit.mjs src/wallet/home/budgetCardWords.test.ts
