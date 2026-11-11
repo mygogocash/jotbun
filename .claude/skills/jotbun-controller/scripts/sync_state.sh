@@ -37,7 +37,8 @@ done
 # A kit's proof logs (*.log) are gitignored, so `add -A` skips them; force-add each kit so its SHA256SUMS still verifies elsewhere.
 for kit in "$@"; do /usr/bin/git add -f ".claude/controller/scratch/$kit"; done
 if /usr/bin/git diff --cached --quiet; then echo "nothing to sync"; exit 0; fi
-/usr/bin/git diff --cached --check
+# A planner kit can show a merge conflict on purpose (merge/*conflict*); its markers are not a whitespace error (11 Nov).
+/usr/bin/git diff --cached --check -- . ":(exclude)*/merge/*conflict*"
 /usr/bin/git commit -q -m "$msg" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 /usr/bin/git push -q origin claude/p1a-vault-core
 echo "pushed $(/usr/bin/git log --oneline -1 | cat)"

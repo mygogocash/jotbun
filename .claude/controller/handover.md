@@ -24,6 +24,19 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**23:20: P2-T32 → PR #411 and P2-T25 → PR #412, both in review. #409's second review (Flash) approved.**
+- **P2-T32:** commit `71b2255e` (14 files, all 13 `real/` identical; message in `feat(wallet):` style because the Flash brief named no commit line; cosmetic, left). RED 15 assertions; 31 of 31 mutants (`scratch/p2-t32/mutants.out`).
+  - PR **#411** (closes #178).
+  - Reviews: Opus `mcp:launch:ac27ecb0493487a364a155a0994619f5a18fbf27bc936d8b38255fb4c0a4a070`, Flash `mcp:launch:f17bed097f0ba34de8d89e4491d1ec77b1d3d009e4af15bbd04aace72bce2a21`.
+- **P2-T25:** commit `b840c195` (9 files, all 8 `real/` identical). RED 9 assertions; 19 of 19 mutants.
+  - PR **#412** (closes #171).
+  - Reviews: Opus `mcp:launch:ea088c4bc10e24ec71537ff8456f74b50e9d86066a800c1e00df839dad5bee93`, Flash `mcp:launch:f9d3b090f96b34c8a69734048ff20870054cb835d38d2937c8d768b9ec07beaf`.
+- **#409's second review** (`reviews/P2-T23-second.md`): Approved. Its first review (Opus) is still running.
+- **Load:** five Opus reviews on Claude Code at once (#407 confirm, #409, #410, #411, #412), so no new lanes until some clear.
+- **Merge order on approvals:**
+  1. #407 first (its confirm, then the P2-T20 build, then the #406 update).
+  2. #409, #410, #411 and #412 are independent of each other, except `index.ts`: #411 and #412 both add a spread. The second to merge needs a 3-way update and a CI rerun.
+
 **23:10: the #407 fix is pushed and its confirming review is running. P2-T25's reworked plan is accepted, and its builder is running.**
 - **#407 (P2-T14).**
   - The fix commit `28b9d5ac` was checked: 11 files on `18876253`, all 10 fix-kit files identical, 138 of 138 mutants killed (`scratch/p2-t14-fix/mutants.out`), `git diff --check` clean.
