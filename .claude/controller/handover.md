@@ -24,6 +24,26 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**21:20: the owner said "if ci pass merge it". #405 (1B-T13) is MERGED; the 1B plan's last task is in.**
+- **How the instruction was read:** the owner's yes for #405, #407 and #406, each merging once its CI is green *and* its reviews approve. Review approval stays the gate.
+- **#405 merged as `3d4f783`** at `7eeff709`. Issue #117 is closed, and WT `p1-1b-t13` and branch `p1/1b-t13-vault-http` are removed locally and on origin.
+  - It is promoted as **#408** (`promote/1b-t13`, based on `promote/fix-download-aborts`); stack #379 now holds 17 PRs.
+  - The receipt's stale `uploads.ts:50/:61` line (the first review's n1) is fixed in `b64993a5`.
+- **Next for 1B:** P22's read-only review of the whole 1B range, which the controller schedules. It is deferred until the three running reviews finish, to spare Claude Code's limit.
+- **#407:** merge when both reviews approve, then promote it.
+- **#406, after #407:**
+  1. merge the integration head into `p2/t33-face-id-lock`, resolving `index.ts` byte-identical to `PL/merge/index.t14-t12-t33.ts` (`draftText.test.ts` merges by itself);
+  2. push, rerun CI;
+  3. merge at that head when CI is green and the second review approves. The head then differs from the reviewed `5844e4c1` only by that planned merge.
+  - Its first review's m2, m3 and m4 go to P2-T34 with m1 (followups.md), unless the second review asks for a fix round.
+
+**21:16: CI is green on all three PRs (9 of 9): #405 on `7eeff709`, #406 on `5844e4c1` (R-B flake passed on rerun), #407 on `18876253`.**
+- #406's first review approved, with four minors (followups.md, P2-T33 entry). Its second review is still running.
+- #407's two reviews are still running.
+- For #406, the controller will put two options to the owner:
+  - fold m2, m3 and m4 (plus n4's `try/finally`) into a small fix round when #406 is updated after #407's merge, with a confirming review;
+  - or carry them to P2-T34 with m1.
+
 **21:05: #405 (1B-T13) is ready for the owner's yes. #406 is rerunning a flaky job.**
 - **#405:** CI 9 of 9 on `7eeff709`, and both reviews approve.
   - The first review (`reviews/1B-T13.md`): m1 (no CI test of the live socket through TanStack Start's `/v1/$`), m2 (the `/api/auth` dispatch is unpinned), m3 (`/ready`'s empty-setting rule is untested), and five nits.
