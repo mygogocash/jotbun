@@ -52,6 +52,9 @@
   - It failed on #408's SQL job (run 43043193178, head `31c5c5ed`, 14:59 UTC), while the Mac was under heavy load.
   - That head changes nothing in `apps/api` over its base, so the controller reran it once.
   - If it fails again on a head that doesn't touch the rate limiter, record it as a known flake beside R-B.
+- **Candidate flake, hermesc SIGSEGV in the iOS export (12 Nov).** "Exports (web and iOS bundles)" failed on #416 at `f6a2b681`: `hermesc -emit-binary ... exited with signal: SIGSEGV` (run 43094481395, 03:37 Bangkok, Mac under thermal load).
+  - The same job had passed at `4eb15b3e`, and the only change between them was the catalogue's `index.ts`. One `gh run rerun --failed` (`C/rerun_then_wait.sh`) passed.
+  - If it happens again on a head whose bundle input is unchanged, record it as a known flake (memory pressure in the Colima VM, which runs two runners and dind).
 - **The Mac sleeps after one minute idle, which takes the local CI and the agents down (11 to 12 Nov, 23:08 to 00:31).**
   - **Signs:**
     - both runners are `offline` on GitHub while their containers say `Up`;
@@ -127,6 +130,11 @@
   - A planner's proof tree heals itself when its run script copies `real/` over the tree first, as 1B-T8's `run-final.sh` does.
 - **A failure on a usage limit is a cutoff, not a finish.** Its last notice is `failed` with "error type rate_limit, HTTP 429". `inflight_agents.py` now lists such agents; before the 9 Nov fix it missed the P4-T12 and P4-T13 planners.
 - **A killed run can leave the heavy lock held.** Once `ps` shows no test process, `rmdir` it at takeover.
+- **Claude Code's weekly limit stops every Claude thread for days (12 Nov, 03:24 until 14 Nov 03:00).** The notice reads "You've hit your weekly limit · resets <date>"; T3 marks each thread `failed` and snoozes it until the reset, and it will resume their paused turns then, as it did at the 5-hour reset.
+  - Move nearly finished work to Antigravity with the resume template (one `<task>-resume-<date>.md` per agent: the assignment, `tail_transcript.py` on the old jsonl, its scratch kit, what it was doing).
+  - `t3_thread_interrupt stop:true` on such a thread returns `no_active_run`, so archive the old thread (`t3_thread_organize archive`), and at the reset check that none resumed. A resumed duplicate would overwrite the new agent's brief.
+  - Find an old agent's jsonl by grepping `~/.claude/projects/-Users-kunanonjarat-Developer-jotbun/*.jsonl` for a line from its last message.
+  - Money and privacy PRs still wait for their Opus review (owner's 10 Nov routing); Gemini plans, builds and gives the first look meanwhile.
 - **When agents look stalled, check for thermal sleep first.** On 10 Nov, from 03:11 to 06:05, the owner's Mac slept about 15 minutes in every 20 (`pmset -g log`: "Entering Sleep state due to 'Dark Wake Thermal Emergency'"), with the display off and five or six agents running.
   - Everything slowed down: a two-lens review took about 3 hours, and a six-minute whole-file render run never finished cleanly (R103).
   - `pmset -g log | grep -i thermal` shows it at once.

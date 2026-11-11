@@ -24,6 +24,33 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**06:25 (12 Nov): CLAUDE CODE'S WEEKLY LIMIT IS SPENT until 14 Nov 03:00 Bangkok. All planning, building and reviewing moved to Antigravity Gemini.**
+- **The limit.** At 03:24 every Claude Code thread failed with "You've hit your weekly limit · resets Nov 14 at 3am (Asia/Bangkok)", and T3 snoozed them until 2026-11-13T20:00Z.
+  - Antigravity's Claude pool is empty until about 17 Nov.
+  - Gemini 4 Argon was nearly spent on 11 Nov but accepts runs.
+  - Gemini 3.8 Flash has room in each 5-hour window.
+  - Cursor and Grok are nearly spent.
+- **#416 (P2-T20).** CI passed 10 of 10 at `f6a2b681` after one rerun; the iOS export's hermesc crashed with SIGSEGV, and the same job had passed at `4eb15b3e` (lessons.md). The Flash second review approves.
+  - **It waits for its Opus first review**, `mcp:launch:c782b7d9…`, which paused mid-probe and should resume at the reset.
+  - The owner's 10 Nov routing gives money and privacy PRs an Opus review, so it does not merge on Gemini reviews alone.
+- **Handed to Antigravity**, each with a resume note `scratch/dispatch/<task>-resume-20261112.md` that points at the Opus transcript and kit:
+
+| Task | New thread | Model | Old Opus thread (archived) | Writes |
+| --- | --- | --- | --- | --- |
+| P3-T2 planner | `mcp:launch:8cb4f47f44c01b8510bc491c4486e3e5e2a5ef513362fa05bc05a4f0810d794a` | Argon High | `8ab58bd4…` | `briefs/P3-T2.md` |
+| P3-T5 planner | `mcp:launch:84eaaf1cd7050581391d4970335f3f9b46b517b1d2a3a1b88fb9f90ca666bef3` | Argon High | `38f3e353…` | `briefs/P3-T5.md` |
+| P2-T25 fix planner | `mcp:launch:a1379136a12b30ce073d8ddf8f5b909010a7d5eeef95dbd4ea857406da57084a` | Flash High | `79936cd9…` | `briefs/P2-T25-fix.md` |
+| P2-T32 fix planner | `mcp:launch:ea440e4957db9462feb9a9bfa33c89ea06f523b15a19318d7f6a8725176e342e` | Flash High | `3bc47b4b…` | `briefs/P2-T32-fix.md` |
+| P2-T29 brief review | `mcp:launch:ace87dce42421318826d8890e57ae2508b26992f7d04509a85b471baffa8e523` | Argon High | (none) | `reviews/P2-T29-brief.md` |
+| P2-T31 brief review | `mcp:launch:a569ea765b0df6c9b03b8e2b0a6f229e7afcf5329d146fa878f016c06eefa795` | Argon High | (none) | `reviews/P2-T31-brief.md` |
+
+- **The old Opus planner threads.** `t3_thread_interrupt` gave `no_active_run`, so they were archived instead. **At 03:00 on 14 Nov, check that none resumed, and stop any that did**; otherwise they would overwrite the Gemini briefs.
+- **Next steps:**
+  - **A brief lands:** run check_kit, rule on its P-calls, create the worktree, then dispatch a Flash implementer (`make_prompt.py implementer <task> --spread`).
+  - **A brief review says Needs fixes:** send it to the same Flash planner thread (P2-T29 `11bf3529…`, P2-T31 `92c37c30…`).
+  - **A fix brief lands:** dispatch a Flash fixer, push, and update the PR body. The confirming review waits for Opus on 14 Nov.
+- **This controller session still answers** during the weekly limit, so it may be drawing paid extra usage. The owner was told at 06:25.
+
 **03:25 (12 Nov): Claude Code's 5-hour limit stopped everything from 01:15 to 03:10, the controller included. #406 (P2-T33) MERGED; the head is `a00fff7`.**
 - **The limit.** At 01:15 every Claude Code thread paused with "resets 3:10am", and the controller's session ended.
   - At 03:10 T3 resumed them all, including the finished P2-T14 confirming review and the DONE P2-T20 builder. Both were stopped.
