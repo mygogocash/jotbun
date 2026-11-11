@@ -4,6 +4,19 @@ Durable folder: `/Users/kunanonjarat/Developer/jotbun/.claude/controller/` (prot
 
 Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vault-core`), head 0bd5659 (controller state after 1D-T8's dispatch). Nothing outside `.claude/` changed since 606e131. No PR is open into the integration branch; only #70 into main.
 
+## 11 Nov 20:25 Bangkok: #395 and #396 promoted; held briefs checked against the new head
+
+- **Promotions, made with the live skill's `promote_pr.sh`:**
+  - **#403** `promote/p2-t12` at `ecc10df`, based on `promote/alarm-hardening`;
+  - **#404** `promote/fix-download-aborts` at `72cdd02`, based on `promote/p2-t12`.
+  - Stack #379 now holds 16 PRs. Their CI runs on the local runners.
+  - The earlier steps in this thread used a stale copy of the skill: the T3 worktree's, which matches main. Its `merge_task_pr.sh` is identical to the live one, but it had no `promote_pr.sh`. **A controller in a T3 worktree should load the main checkout's `.claude/skills/jotbun-controller/`.**
+- **`check_kit.sh` at `cb76c174`:**
+  - **P2-T14:** the kit is intact (29 OK). `apps/app/src/dev/catalogue/wallet/index.ts` differs, because P2-T12 added its import and spread there, but the kit's diff applies cleanly. Dispatch with `--rebase-out`, and tell the implementer that P2-T12's `bw-stack` sections are now on the head.
+  - **P2-T33:** the kit is intact (68 OK), but its `index.ts` diff does NOT apply after P2-T12. Send the brief back to its planner to rebase (P17's merge order still holds: P2-T14 first).
+  - **1B-T13:** the kit is intact (144 OK), and its 26 `orig/` files are identical at the head. The brief still needs the controller's review (P1 to P5) before dispatch.
+- **The hold still stands for new threads and lanes.** The owner said "ok continue" at 20:15. That was not read as lifting the hold; the controller asked first.
+
 ## 11 Nov 20:10 Bangkok: #396 merged; the local runners are up again
 
 The owner said: "start the runners and rerun 396".
