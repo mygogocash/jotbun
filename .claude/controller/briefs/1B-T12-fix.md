@@ -180,7 +180,7 @@ As the protocol says: `STATUS: DONE` or `STATUS: BLOCKED: <reason>` first, and r
 +// it a week past its 24-hour expiry: the status is 404, and a resend opens a
 +// new pending row under the same id, whose build starts afresh.
  import { readFileSync } from 'node:fs'
- 
+
  import { afterAll, beforeAll, expect, it } from 'vitest'
 @@ -55,10 +57,19 @@
      if (step.signIn) return []

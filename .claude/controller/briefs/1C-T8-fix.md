@@ -253,15 +253,15 @@ For reading only; Step 3 copies the verified files.
 @@ -62,6 +65,9 @@
    | { readonly kind: 'email'; readonly fixedEmail: string | undefined }
    | { readonly kind: 'other_account'; readonly previousAccountId: string; readonly unsent: number };
- 
+
 +/** One of ใช้วิธีอื่น's ways: a method this build offers, to any account (an email code to any address). */
 +type OtherWay = { readonly key: string; readonly method: SignInMethod; readonly label: string };
 +
  const FAILED: SignInResult = { outcome: 'failed', methods: [], created: false };
- 
+
  export function SessionEndedScreen({ view, unsentRows, provider, eraseAccount, onResumed }: SessionEndedScreenProps) {
 @@ -85,7 +91,13 @@
- 
+
    const offered = provider.methods();
    const main: SignInMethod | null = view.method !== null && offered.includes(view.method) ? view.method : offered.includes('email') ? 'email' : null;
 -  const others = offered.filter((method) => method !== main);
@@ -272,7 +272,7 @@ For reading only; Step 3 copies the verified files.
 +    ...offered.filter((method) => method !== main).map((method) => ({ key: method, method, label: labels[method] })),
 +    ...(main === 'email' ? [{ key: 'email-other', method: 'email' as const, label: sc('Email a code to another address') }] : []),
 +  ];
- 
+
    const settle = (result: SignInResult) => {
      if (result.outcome === 'active') {
 @@ -209,18 +221,19 @@
@@ -325,11 +325,11 @@ For reading only; Step 3 copies the verified files.
 -import type { Href } from 'expo-router';
  import { useEffect, useRef, useState } from 'react';
  import { ScrollView, View } from 'react-native';
- 
+
 @@ -106,12 +106,12 @@
- 
+
    const finish = () => router.replace(afterOnboarding(isAuthed));
- 
+
 -  // The `signin` area: the story ends at sign-in from onboarding, or with a
 -  // session already at the reminder question (1C-T9 routes it; until then
 -  // typed routes do not know it, and the area is off).
@@ -437,7 +437,7 @@ For reading only; Step 3 copies the verified files.
 +  /** The methods this build offers; every method unless named. */
 +  readonly methods?: readonly SignInMethod[];
  };
- 
+
  /** A credential provider that only answers as scripted: it never signs anyone in. */
 @@ -54,7 +57,7 @@
    let current: StoredSession | null = script.account ?? APPLE_ACCOUNT;
@@ -450,11 +450,11 @@ For reading only; Step 3 copies the verified files.
        const outcome = script.signIn ?? 'active';
 @@ -133,11 +136,11 @@
  const withTerms = (accept: 'ok' | 'never' | 'fails' = 'ok') => (): TermsFixture => ({ resources: createFakeResources().resources, diary: null, policies: fakePolicies(accept) });
- 
+
  const nothing = () => undefined;
 -const ended = (kind: SessionEndedView['kind'] = 'signed_out_elsewhere'): SessionEndedView => ({ kind, accountId: APPLE_ACCOUNT.accountId, method: 'apple', unsent: 3 });
 +const ended = (kind: SessionEndedView['kind'] = 'signed_out_elsewhere', account: StoredSession = APPLE_ACCOUNT): SessionEndedView => ({ kind, accountId: account.accountId, method: account.method, unsent: 3 });
- 
+
  const emailCode = ({ provider }: DraftFixture) => <EmailCodeScreen provider={provider} mode="sign_in" onDone={nothing} onBack={nothing} />;
 -const sessionEnded = (kind?: SessionEndedView['kind']) => ({ provider }: DraftFixture) => (
 -  <SessionEndedScreen view={ended(kind)} unsentRows={UNSENT} provider={provider} eraseAccount={async () => undefined} onResumed={nothing} />
@@ -491,7 +491,7 @@ For reading only; Step 2 copies the verified files.
 @@ -36,26 +36,26 @@
  ];
  const view = (unsent = 3): SessionEndedView => ({ kind: 'signed_out_elsewhere', accountId: ENDED.accountId, method: 'apple', unsent });
- 
+
 -/** The ended account until a sign-in that goes through, then `signInAs`. */
 -function provider({ signInAs = ENDED, methods = ['apple', 'google', 'email'] }: { signInAs?: StoredSession; methods?: readonly SignInMethod[] } = {}) {
 -  let current: StoredSession = ENDED;
@@ -511,7 +511,7 @@ For reading only; Step 2 copies the verified files.
      freshSignIn: vi.fn(async (_request: SignInRequest): Promise<FreshOutcome> => 'fresh'),
    } satisfies SessionEndedProvider;
  }
- 
+
 -async function open(options: { fake?: ReturnType<typeof provider>; unsent?: number; rows?: readonly UnsentRow[] } = {}) {
 +async function open(options: { fake?: ReturnType<typeof provider>; unsent?: number; rows?: readonly UnsentRow[]; view?: SessionEndedView } = {}) {
    const fake = options.fake ?? provider();
@@ -761,7 +761,7 @@ For reading only; Step 2 copies the verified files.
 +  expect(nav.router.replace).toHaveBeenCalledTimes(1);
 +  expect(nav.router.replace).toHaveBeenCalledWith('/spend/add');
  });
- 
+
  test("with 'signin' off the order is today's", async () => {
 ```
 

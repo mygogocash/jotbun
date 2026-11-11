@@ -250,7 +250,7 @@ For reading only; Steps 2 and 3 copy the verified files. The full diffs are in `
 @@ -198,9 +198,18 @@
    return new Response(response.body, { status: response.status, headers })
  }
- 
+
 -/** A HEAD request gets the status and headers of its GET, and no body. */
 -function headOf(response: Response, method: string): Response {
 -  return method === 'HEAD' ? new Response(null, { status: response.status, headers: response.headers }) : response
@@ -267,7 +267,7 @@ For reading only; Steps 2 and 3 copy the verified files. The full diffs are in `
 +  await response.body?.pipeTo(new WritableStream()).catch(() => undefined)
 +  return new Response(null, { status: response.status, headers: response.headers })
  }
- 
+
  /** The latest published version of each kind, ordered by kind: what GET /v1/policies answers. */
 ```
 

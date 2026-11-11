@@ -24,6 +24,43 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**00:45 (12 Nov): the Mac slept from 23:08 to 00:31, stalling CI and one agent. It is held awake now. #407 and #406 have their confirming reviews approved; #410 reruns its lost jobs.**
+- **The sleep.** `pmset` shows `sleep 1` (one minute). At 23:08 the Mac entered Idle Sleep, then fell back asleep at each dark wake with "Dark Wake Thermal Emergency".
+  - Both runners went offline. Jobs were cancelled or abandoned, and runner-1 hung, so it was recreated (`docker rm -f` plus `runners.sh up 2`; the image re-registers it with `--replace`).
+  - The P2-T25 second reviewer's turn stopped ("Antigravity sent nothing for 15 minutes"). It was resumed with a message.
+- **Held awake:** `caffeinate -i -s -t 28800` (pid in `scratch/caffeinate.pid`). It started at 00:37 and ends by itself at about 08:37; the display can still sleep. Stop it with `kill $(cat scratch/caffeinate.pid)`.
+  - **For the owner:** thermal pressure read 2 ("heavy") at 00:35. `hybridsearchd` (Spotlight's indexer) used about 3.2 cores, which the worktrees and scratch trees feed. Excluding `~/Developer` from Spotlight (System Settings, Spotlight, Search Privacy) would cut that heat. That is the owner's setting to change.
+- **CI cancelled** on heads that will change: #411 and #412 (fix rounds) and #406 (it must merge the integration head after #407). This keeps the two runners for #410 and #407.
+- **#407 (P2-T14):** the confirming review is Approved (`reviews/P2-T14-confirm.md`: m1, m2, n1, n2; carry them at merge). Waiting on CI at `28b9d5ac` (background `wait_ci.sh 407`).
+- **#406 (P2-T33):** the confirming review is Approved (`reviews/P2-T33-confirm.md`: m1, n1 to n3). After #407 merges, merge the integration head in (`index.ts` as `merge/index.t14-t12-t33.ts`, `draftText.test.ts` merged), push, then wait for CI and merge.
+- **#410 (P3-T4):** the SQL job was "The operation was canceled" at 17:31 UTC (the sleep), and 3n+1 was cancelled. The new `rerun_then_wait.sh 410 43051770978` reruns them once the run ends, then waits.
+- **#411 (P2-T32):** the Flash second review is Approved, with one nit, the first review's m1. The fix round goes ahead (R110).
+- **Watcher:** `verdict:P2-T25-second`, plus `file:` for the briefs of P2-T29, P2-T31, P2-T25-fix and P2-T32-fix.
+
+**23:45: #410 (P3-T4) has both reviews approved and waits on CI. #411 and #412 need fixes, with Opus fix planners running. UI-heavy planning goes back to Opus.**
+- **#410:** both reviews approved (Opus `reviews/P3-T4.md`, with m1 to m4 carried; Flash `reviews/P3-T4-second.md`). The carriers are in followups.md (P3-T6, P3-T7, P3-T8, P3-T10, P3-T3, P4-T6, P6C).
+  - **Deployment note:** set `AI_GATEWAY_TOKEN` only together with `ANTHROPIC_BASE_URL`.
+  - CI is at 6 of 9. A background `wait_ci.sh 410` is running; merge on green with `merge_task_pr.sh 410 a68fcd81 P3-T4`, then `promote_pr.sh P3-T4 410`.
+- **#412 (P2-T25):** the first review says Needs fixes, with 2 majors.
+  - **R109:** the wallet screen words a restore without the amount while private mode is on (the old screen keeps its words); the `trackRecordRestored` call is removed, since nothing was carried (1D-T7 #138 has not merged).
+  - Fix planner, on Opus: `mcp:launch:79936cd9fbcf6cb46b7f9d2e01dbae02206a44f460bb1162ee8d6dcad42710dc`, writing `briefs/P2-T25-fix.md` with the kit `scratch/p2-t25-fix-planner/`, on `b840c195`.
+- **#411 (P2-T32):** the first review says Needs fixes, with 8 majors (M1 to M8).
+  - **R110:** fix each as the review proposes, and stop BLOCKED on anything the plan can't settle.
+  - Fix planner, on Opus: `mcp:launch:3bc47b4b91a6048f51f2d075bef60ef6144af6c677e5f4e9bc9e8d53c240c60a`, writing `briefs/P2-T32-fix.md` with the kit `scratch/p2-t32-fix-planner/`, on `71b2255e`.
+- **Routing change (lessons.md):** Flash plans well-specified logic; UI-heavy tasks are planned on Opus. The running Flash planners for P2-T29 and P2-T31 (UI) finish, but each of their briefs gets an **Opus brief review** against the plan's test list, the boards and the wallet kit before any build.
+
+**23:30: #409 (P2-T23) MERGED, promoted as #413. The #406 fix is pushed, with its confirming review running.**
+- **#409 merged as `f22c5a8`,** with no owner yes (ruling of 21:25): CI 9 of 9, and both reviews approved (Opus, Flash). Issue #169 is closed, and WT `p2-t23` and its branches are removed. Promotion PR **#413**.
+  - Review m2 (the receipt's `TODAY_PAGES`) is fixed in `7c2682b5`.
+  - Review m1 is **ruled R108** for P2-T24: the front card's "today" counts today's waiting expense drafts once (P2-T16's definition), following rh-offline and P2-T12's spec. See followups.md.
+- **#406 (P2-T33).**
+  - The fix commit `8e270766` was checked: 12 files on `5844e4c1`, all 11 fix-kit files identical, 166 of 166 mutants killed, `git diff --check` clean.
+  - Pushed as a fast-forward, so #406's head is `8e270766` and CI reruns. The body has a fix-round section.
+  - The confirming review, on Claude Code Opus high, writes `reviews/P2-T33-confirm.md`: `mcp:launch:5c1c18c7a547ab3ae26469e0c628d2321262c50bd957fd180c256c52b25654db`.
+  - **Merge only after #407:**
+    1. Merge the integration head into `p2/t33-face-id-lock`, with `index.ts` as `merge/index.t14-t12-t33.ts` and `draftText.test.ts` merged.
+    2. Push, wait for CI, then `merge_task_pr.sh 406 <that head> P2-T33`. The head differs from the confirmed `8e270766` only by that planned merge.
+
 **23:25: two more Flash planner lanes, since the Mac's load is about 7 and planning doesn't use Claude Code.**
 - **P2-T29** (categories, the category tray and the Thai pack tray): `mcp:launch:11bf352998e7f62f46eef5950d167ee15f667c8eff10ac068d5b8efb523eb960`. WT `p2-t29` on `p2/t29-categories`, pre-made with `npm ci`.
 - **P2-T31** (insights): `mcp:launch:92c37c30c475ed6ce1e646a9d352a02fabb84d1e44f1c8e9c6fbf0ed8207ba8e`. WT `p2-t31` on `p2/t31-insights`, pre-made.

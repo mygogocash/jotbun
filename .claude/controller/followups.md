@@ -457,6 +457,36 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **alarm-hardening (#398), n7:**
     - lines 4, 97 and 108 of #398's receipt give download-pins' items (1B-T11's m3 and n6, and the X5 re-target) to fix-download-aborts. Correct them before #398 merges;
     - once #398 merges, download-pins' kit mutant V3 no longer applies: rerun it with A1's text.
+- **P3-T4** (#410). Both reviews approved: Opus (`reviews/P3-T4.md`, minors m1 to m4, nits n1 to n6) and Flash (`reviews/P3-T4-second.md`). Carriers, as the reviewer gives them:
+  - **P3-T6:**
+    - the route-deadline tests kill the review's R1, R3 and R4 (the cap, calls through `tracedSend` with the request's trace, one deadline across Ask's turns), which also covers m2's untested wiring;
+    - every route's deadline starts at the same point (n2: `note` starts before `consume`);
+    - `hang()` waits real time, so pair it with short injected deadlines.
+  - **P3-T7:** m1. A reply whose body stalls past its time is recorded `failure: 'other'`, not `timeout`. Treat it as `timeout` before `shouldRefund` relies on it.
+  - **P3-T8:** m3. `capMs` has no test. Cover `HAIKU_SLIP_CAP_MS` reaching the call, and a cap under 2 s making no call (R9).
+  - **P3-T10:** `$ai_generation` copies `RecordedCall`, so m1's stalled-body label applies.
+  - **P3-T3:** it edits the same `handler.ts`, `worker-routes.ts` and `ai/routes.ts`. Brief it on P3-T4's versions.
+  - **P4-T6:** `WorkerContext.transport` is optional (P2). Read it as `w.transport ?? null`.
+  - **P6C (A20), deployment, the owner's:**
+    - every environment with `AI_ENABLED` sets `ANTHROPIC_BASE_URL` to its gateway;
+    - **set `AI_GATEWAY_TOKEN` only together with that URL.** With the URL unset, the transport would send `cf-aig-authorization` to `api.anthropic.com`. A hardening option for a later task: send the token only when the base URL is a gateway URL;
+    - the hosted smoke test confirms the `Authorization: Bearer` key form SDK 1.2.0 sends;
+    - m4: `dev:edge` passes neither gateway variable to the local Worker, and the README's local-run line is wrong.
+  - **Later clean-up:**
+    - n1 (`parseRetryAfter` accepts malformed values);
+    - n3 (the unused `send` helper in `fake-model.ts`);
+    - n4 (an Anthropic client built per Worker route while AI is on);
+    - n5 (receipt inaccuracies).
+- **P2-T23** (#409, merged as `f22c5a8` on 11 Nov; promoted as #413). Both reviews approved: Opus (`reviews/P2-T23.md`) and Flash (`reviews/P2-T23-second.md`).
+  - **m1, ruled R108 (the controller, 11 Nov), for P2-T24:** the front card's "today" counts today's confirmed expenses **plus today's waiting expense drafts, once**, using P2-T16's `todayOutMinor` definition ("the confirmed total plus open expense drafts dated today whose id is not confirmed").
+    - Why: the approved board (rh-offline: −฿97, "วันนี้ใช้ไป 97 บาท"), P2-T12's card spec (plan line 796) and P2-T16's toast all count the draft. Plan line 1240's "confirmed only" is the outlier, and the budget card already counts the ฿50.
+    - P2-T24 edits `homeWallets.ts` anyway (the `frontFirst` swap). It changes `spentByWallet`, flips `homeWallets.test.ts:91-108`'s case, and re-aims mutant H17. The reviewer's probe is `scratch/p2-t23-review/tree/apps/app/src/wallet/home/zzprobe/rhOffline.probe.test.ts`.
+  - m2 (the receipt's `TODAY_PAGES` 50, really 20) is fixed in `7c2682b5`.
+  - **Nits:**
+    - n1: the receipt's gate and mutant lines drift from the template;
+    - n2: the hook's test doesn't pin that a refused draft reads nothing (R14 survives); a later pins task;
+    - n3: the floating-point source scan no longer covers `availableBalances`; add the new path;
+    - n4: the English drafts read "Spent this month Amount hidden, Over budget"; for E2-B's copy pass.
 - **P2-T33's first review** (`reviews/P2-T33.md`, Approved on `5844e4c1`; four minors, six nits; probes in `scratch/p2-t33-review/`). None of it is reachable until P2-T34: `getAppLocalAuth()` answers `noLocalAuth`, so the lock cannot be turned on.
   - **m1, for P2-T34, which needs a phone:**
     - On Android, React Native sends `background` on every `onHostPause` and never `inactive`. So a credential screen that is an activity (Android 10 or earlier with the passcode fallback, or a passcode-only phone) makes a new opening. The gate then drops the prompt's answer and asks again (probe B).

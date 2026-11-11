@@ -282,7 +282,7 @@ index 147cfe6..663a610 100644
 @@ -146,12 +146,10 @@ export function Tray({ visible, onClose, onClosed, title, header, onBack, step,
    const [shown, setShown] = useState(visible);
    if (visible && !shown) setShown(true);
- 
+
 -  // The latest onClosed, and whether the Modal is shown, as the last commit left them.
 +  // The latest onClosed, as the last commit left it, for the hide's timer and iOS's onDismiss.
    const closed = useRef(onClosed);
@@ -306,7 +306,7 @@ index 147cfe6..663a610 100644
 -    if (!showing.current) closed.current?.();
 +    if (!shown) closed.current?.();
    };
- 
+
    /** A close may be asked for: never while locked (a save in flight), once the tray is leaving, or under the lock's cover. */
 ```
 
@@ -332,7 +332,7 @@ index 8343da8..29c98aa 100644
 @@ -27,20 +27,31 @@ import { afterEach, expect, test, vi } from 'vitest';
  // The real safe-area package loads React Native itself, which vitest cannot run.
  vi.mock('react-native-safe-area-context', () => import('../../dev/catalogue/safeAreaTestStub'));
- 
+
 -// The Modal, which says it has gone at once unless a case holds its dismissals back (`late`): each one then waits
 -// for endDismissal(), which calls the Modal's latest onDismiss, as React Native's Modal does on iOS.
 -const dismissals = vi.hoisted(() => ({ late: false, held: 0, latest: null as (() => void) | null }));
@@ -372,7 +372,7 @@ index 8343da8..29c98aa 100644
 +  const Modal = forwardRef<unknown, ModalProps>((props, ref) => createElement(IosModal, { ...props, forwarded: ref }));
    return { ...actual, Modal };
  });
- 
+
 @@ -96,7 +107,7 @@ afterEach(() => {
    vi.clearAllMocks();
    swipe.config = null;
@@ -381,11 +381,11 @@ index 8343da8..29c98aa 100644
 +  Object.assign(dismissals, { late: false, held: 0, end: null });
    delete (AccessibilityInfo as unknown as Record<string, unknown>).sendAccessibilityEvent;
  });
- 
+
 @@ -162,13 +173,16 @@ function dragThrough(translationY: number, end: typeof State.END | typeof State.
    send({ state: end, oldState: State.ACTIVE, ...at(translationY) });
  }
- 
+
 -/** Ends the dismissal held back longest: React Native's Modal then calls its latest onDismiss, as on iOS. */
 +/** Ends the dismissal held back longest, as UIKit's end reaches Modal.js on iOS: alone, in its own commit. */
  function endDismissal() {
@@ -394,7 +394,7 @@ index 8343da8..29c98aa 100644
 -  act(() => { dismissals.latest?.(); });
 +  act(() => { dismissals.end?.(); });
  }
- 
+
 +/** The card's frame while the card leaves: the card is gone, so it is found beside the backdrop. */
 +const leavingFrame = () => found('tray-backdrop').nextElementSibling as HTMLElement;
 +
@@ -404,7 +404,7 @@ index 8343da8..29c98aa 100644
 @@ -414,6 +428,28 @@ test('a drag the lock cover cuts off is gone when the cover lifts', async () =>
    expect(frame().style.transform, 'the card once the cover lifts').toBe('translateY(0px)');
  });
- 
+
 +test('a card that leaves stays where the finger let it go, even when the lock cover comes and goes', async () => {
 +  const onClose = vi.fn();
 +  const covered = (hidden: boolean, visible = true) => (
@@ -433,7 +433,7 @@ index 8343da8..29c98aa 100644
 @@ -588,6 +624,20 @@ test('opening at another step in one render, or a step change under the lock cov
    expect(tick).toHaveBeenCalledTimes(1);
  });
- 
+
 +test('once the lock cover lifts a step change ticks, even when it lifted on the step it had under the cover', async () => {
 +  const tick = vi.spyOn(haptics, 'selection').mockResolvedValue(undefined);
 +  const at = (step: string, hidden = false) => <LockCoverContext.Provider value={{ hidden }}>{tray({ step })}</LockCoverContext.Provider>;
@@ -454,7 +454,7 @@ index 8343da8..29c98aa 100644
 @@ -657,6 +707,60 @@ test('on iOS a dismissal that ends after the tray is shown again says nothing; t
    expect(onClosed).toHaveBeenCalledTimes(1);
  });
- 
+
 +test('on iOS a dismissal that ends in the commit that opens the tray again says nothing', async () => {
 +  phoneFocus();
 +  dismissals.late = true;
