@@ -6,7 +6,7 @@ import { uploadRoute } from './files/uploads'
 import { serveExportFile, serveReceiptFile, serveSnapshotChunk } from './files/downloads'
 import { confirmRoute, replaceRoute, retainRoute } from './files/receipts'
 import { aiAskRoute, aiNoteRoute, aiParseRoute, aiPreferencesRoute, aiSetPreferencesRoute, aiSlipRoute } from './ai/routes'
-import type { SendMessage } from '../server/ai/model'
+import type { ModelTransport } from './ai/transport'
 import { livePolicies } from './config'
 import type { EdgeConfig } from './config'
 import type { V1Env } from './env'
@@ -38,8 +38,8 @@ export type WorkerContext = {
   stream?: AsyncIterable<Uint8Array>
   vault: VaultSession | null
   waitUntil(promise: Promise<unknown>): void
-  /** The AI routes' model call (1B-T7), from the front door's deps: a fake in tests, null for AI that is not configured; absent, the env decides. */
-  send?: SendMessage | null
+  /** The AI routes' model transport (P3-T4), from the front door's deps or built from the env; null when AI is not configured. */
+  transport?: ModelTransport | null
 }
 
 export type WorkerHandler = (w: WorkerContext) => Promise<Response | VaultReply>

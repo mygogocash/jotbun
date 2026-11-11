@@ -24,12 +24,14 @@ import type { DraftContext } from '../../server/ai/drafts'
 import { factsText, figuresText } from '../../server/ai/fact-text'
 import { AllowedNumbers, formatBaht, isGrounded } from '../../server/ai/grounding'
 import { ModelUnavailable, finishedJson, finishedText, requestBase } from '../../server/ai/model'
-import type { MessageParams, SendMessage } from '../../server/ai/model'
+import type { MessageParams } from '../../server/ai/model'
 import { ASK_SYSTEM, NOTE_SCHEMA, NOTE_SYSTEM, PARSE_SCHEMA, PARSE_SYSTEM, SLIP_SCHEMA, SLIP_SYSTEM } from '../../server/ai/prompts'
 import type { AiContext, AiStoredPreferences, AiToolReply, Allowance } from '../../vault/ai'
 import type { VaultRouteId } from '../protocol'
 import type { VaultSession } from '../worker-routes'
 import { ASK_TOOLS } from './tools'
+import { AiDeadline, newTrace, tracedSend } from './transport'
+import type { ModelTransport } from './transport'
 
 // The AI companion on the vault (1B-T7): the PostgreSQL edge's AiService (retired at C1)
 // with its reads and writes moved into the caller's vault as steps. The order
@@ -63,7 +65,7 @@ function allowAll(allowed: AllowedNumbers, allow: Allowance): void {
 
 export type VaultAiServiceDeps = {
   /** Null when AI is not configured or switched off (AI_ENABLED, ANTHROPIC_API_KEY). */
-  send: SendMessage | null
+  transport: ModelTransport | null
   model: string
   now?: () => Date
 }
@@ -76,7 +78,7 @@ export class VaultAiService {
   }
 
   get available(): boolean {
-    return this.deps.send !== null
+    return this.deps.transport !== null
   }
 
   async preferences(s: VaultSession): Promise<AiPreferencesDto> {
@@ -94,14 +96,20 @@ export class VaultAiService {
       const draft = draftFromRules(request.text, ctx)
       return { drafts: draft ? [draft] : [], source: 'rules' }
     }
-    if (!this.deps.send) return rules()
+    if (!this.deps.transport) return rules()
     await this.consume(s, 'parse')
+    const trace = newTrace()
+    const deadline = new AiDeadline(25_000)
     try {
-      const message = await this.deps.send({
-        ...requestBase(this.deps.model, 'low', 8_000),
-        output_config: { effort: 'low', format: { type: 'json_schema', schema: PARSE_SCHEMA } },
-        system: PARSE_SYSTEM,
-        messages: [{ role: 'user', content: JSON.stringify({ sentence: request.text, today: ctx.today, locale: request.locale, ...this.choices(ctx) }) }],
+      const message = await tracedSend(this.deps.transport, trace, deadline, {
+        feature: 'parse',
+        escalated: false,
+        params: {
+          ...requestBase(this.deps.model, 'low', 8_000),
+          output_config: { effort: 'low', format: { type: 'json_schema', schema: PARSE_SCHEMA } },
+          system: PARSE_SYSTEM,
+          messages: [{ role: 'user', content: JSON.stringify({ sentence: request.text, today: ctx.today, locale: request.locale, ...this.choices(ctx) }) }],
+        },
       })
       const drafts = sanitizeDrafts(finishedJson(message), ctx, request.text)
       return drafts.length > 0 ? { drafts, source: 'ai' } : rules()
@@ -114,22 +122,28 @@ export class VaultAiService {
   /** A bank slip or receipt image into drafts. The image is never stored: it goes to the model and nowhere else. */
   async slip(s: VaultSession, request: AiSlipRequest): Promise<AiSlipResult> {
     const ctx = await this.draftContext(s, request.today)
-    if (!this.deps.send) throw this.paused()
+    if (!this.deps.transport) throw this.paused()
     await this.consume(s, 'slip')
+    const trace = newTrace()
+    const deadline = new AiDeadline(25_000)
     try {
-      const message = await this.deps.send({
-        ...requestBase(this.deps.model, 'medium', 8_000),
-        output_config: { effort: 'medium', format: { type: 'json_schema', schema: SLIP_SCHEMA } },
-        system: SLIP_SYSTEM,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'image', source: { type: 'base64', media_type: request.media_type, data: request.image_base64 } },
-              { type: 'text', text: JSON.stringify({ today: ctx.today, locale: request.locale, ...this.choices(ctx) }) },
-            ],
-          },
-        ],
+      const message = await tracedSend(this.deps.transport, trace, deadline, {
+        feature: 'slip',
+        escalated: false,
+        params: {
+          ...requestBase(this.deps.model, 'medium', 8_000),
+          output_config: { effort: 'medium', format: { type: 'json_schema', schema: SLIP_SCHEMA } },
+          system: SLIP_SYSTEM,
+          messages: [
+            {
+              role: 'user',
+              content: [
+                { type: 'image', source: { type: 'base64', media_type: request.media_type, data: request.image_base64 } },
+                { type: 'text', text: JSON.stringify({ today: ctx.today, locale: request.locale, ...this.choices(ctx) }) },
+              ],
+            },
+          ],
+        },
       })
       const raw = finishedJson(message) as { bank?: unknown }
       const bank = typeof raw?.bank === 'string' && raw.bank.trim() ? raw.bank.trim().slice(0, 60) : null
@@ -149,19 +163,25 @@ export class VaultAiService {
     const today = trustedToday(date, bangkokDate(this.now()))
     const facts = await step<BunFact[]>(s, 'ai.facts', { query: { date: today } })
     const plain: AiNoteResult = { date: today, facts, text: factsText(facts, locale), source: 'facts' }
-    if (!this.deps.send || !(await this.hasConsent(s))) return plain
+    if (!this.deps.transport || !(await this.hasConsent(s))) return plain
     const allowed = new AllowedNumbers().addDate(today)
     for (const fact of facts) {
       if (fact.amount_minor) allowed.addSatang(fact.amount_minor)
       for (const n of [fact.count, fact.days, fact.percent]) if (n !== undefined) allowed.addCount(n)
     }
+    const trace = newTrace()
+    const deadline = new AiDeadline(25_000)
     try {
       await this.consume(s, 'note')
-      const message = await this.deps.send({
-        ...requestBase(this.deps.model, 'low', 4_000),
-        output_config: { effort: 'low', format: { type: 'json_schema', schema: NOTE_SCHEMA } },
-        system: NOTE_SYSTEM,
-        messages: [{ role: 'user', content: JSON.stringify({ locale, date: today, facts: facts.map((f) => ({ ...f, say: f.amount_minor ? formatBaht(f.amount_minor) : undefined })) }) }],
+      const message = await tracedSend(this.deps.transport, trace, deadline, {
+        feature: 'note',
+        escalated: false,
+        params: {
+          ...requestBase(this.deps.model, 'low', 4_000),
+          output_config: { effort: 'low', format: { type: 'json_schema', schema: NOTE_SCHEMA } },
+          system: NOTE_SYSTEM,
+          messages: [{ role: 'user', content: JSON.stringify({ locale, date: today, facts: facts.map((f) => ({ ...f, say: f.amount_minor ? formatBaht(f.amount_minor) : undefined })) }) }],
+        },
       })
       const text = String((finishedJson(message) as { text?: unknown })?.text ?? '').trim()
       if (!text || [...text].length > 200 || !isGrounded(text, allowed)) return plain
@@ -177,7 +197,7 @@ export class VaultAiService {
   async ask(s: VaultSession, request: AiAskRequest): Promise<AiAskResult> {
     const ctx = await step<AiContext>(s, 'ai.context')
     if (!ctx.consent) throw new ProblemException(403, 'AI_CONSENT_REQUIRED')
-    if (!this.deps.send) throw this.paused()
+    if (!this.deps.transport) throw this.paused()
     await this.consume(s, 'ask')
     const today = trustedToday(request.today, bangkokDate(this.now()))
     const categories = ctx.categories.map((category) => ({ id: category.id, name: category.label ?? category.builtin_key }))
@@ -186,10 +206,16 @@ export class VaultAiService {
     const messages: Anthropic.Beta.Messages.BetaMessageParam[] = [
       { role: 'user', content: JSON.stringify({ question: request.question, today, locale: request.locale, categories }) },
     ]
+    const trace = newTrace()
+    const deadline = new AiDeadline(25_000)
     try {
       for (let turn = 0; turn < ASK_MAX_TURNS; turn += 1) {
         const params: MessageParams = { ...requestBase(this.deps.model, 'medium', 12_000), system: ASK_SYSTEM, tools: ASK_TOOLS, messages }
-        const message = await this.deps.send(params)
+        const message = await tracedSend(this.deps.transport, trace, deadline, {
+          feature: 'ask',
+          escalated: false,
+          params,
+        })
         if (message.stop_reason === 'tool_use') {
           messages.push({ role: 'assistant', content: message.content as Anthropic.Beta.Messages.BetaContentBlockParam[] })
           const results: Anthropic.Beta.Messages.BetaToolResultBlockParam[] = []
