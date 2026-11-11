@@ -1,7 +1,7 @@
-// The built vault Worker (dist/jotbun_vault) in the real Workers runtime:
-// `wrangler dev` (workerd) with config:v1 seeded into its local KV first, and
-// the synthetic JWKS issuer as its token issuer. No database. Needs
-// `npm run build` in apps/edge first. Test use only.
+// The vault on the built one Worker (dist/server, C1) in the real Workers
+// runtime: `wrangler dev` (workerd) with config:v1 seeded into its local KV
+// first, and the synthetic JWKS issuer as its token issuer. No database.
+// Needs `npm run build` in apps/edge first. Test use only.
 import { execFile } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -18,9 +18,9 @@ import { startDevWorker } from './wrangler-dev'
 import type { DevWorker } from './wrangler-dev'
 
 const EDGE_DIR = fileURLToPath(new URL('../../', import.meta.url))
-const VAULT_CONFIG = 'dist/jotbun_vault/wrangler.json'
+const VAULT_CONFIG = 'dist/server/wrangler.json'
 /** B13: the built config without background work, next to it so that its `main` still resolves. */
-const PARITY_CONFIG = 'dist/jotbun_vault/wrangler.parity.json'
+const PARITY_CONFIG = 'dist/server/wrangler.parity.json'
 
 /** `config`: the config file `wrangler dev` started (the built one, or the parity copy). */
 export type VaultWorker = DevWorker & { send: Send; config: string }

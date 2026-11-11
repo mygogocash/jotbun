@@ -36,7 +36,7 @@ let vault: VaultWorker
 
 beforeAll(async () => {
   const settings = { IMPORT_UPLOADS_ENABLED: 'true' }
-  edge = await startEdge(settings) // the database and the JWKS issuer; no PostgreSQL edge route runs here
+  edge = await startEdge() // the database and the JWKS issuer
   nest = await startNest(edge, settings)
   const policies = await (await nest.send(new Request(`${BASE}/v1/policies`))).json()
   vault = await startVaultWorker({ issuer: edge.issuer, policies, vars: settings, background: 'off' })

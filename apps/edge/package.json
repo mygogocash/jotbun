@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Jotbun v1 API, AI companion and web pages on TanStack Start, running on Cloudflare Workers with Hyperdrive (PostgreSQL), R2 and Queues.",
+  "description": "Jotbun v1 API on the UserVault (SQLite Durable Objects), AI companion and web pages on TanStack Start, running on one Cloudflare Worker with D1, R2, Queues, Workflows and Containers.",
   "license": "UNLICENSED",
   "engines": {
     "node": ">=24"
@@ -12,7 +12,7 @@
     "dev": "vite dev --port 8092 --strictPort",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "npm run build && wrangler deploy && wrangler deploy -c dist/jotbun_jobs/wrangler.json && wrangler deploy -c dist/jotbun_security/wrangler.json && wrangler deploy -c dist/jotbun_deletion/wrangler.json",
+    "deploy": "npm run build && wrangler deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings src/worker-configuration.d.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

@@ -9,11 +9,8 @@ export default defineConfig(
   mergeConfig(apiSeamsConfig, {
     plugins: [
       apiSeams(),
-      cloudflare({
-        viteEnvironment: { name: 'ssr' },
-        // The background Workers, built through the same API seams.
-        auxiliaryWorkers: [{ configPath: './wrangler.jobs.jsonc' }, { configPath: './wrangler.security.jsonc' }, { configPath: './wrangler.deletion.jsonc' }, { configPath: './wrangler.vault.jsonc' }],
-      }),
+      // One Worker (C1): wrangler.jsonc, with the vault, its Workflows, its queue consumer and its container.
+      cloudflare({ viteEnvironment: { name: 'ssr' } }),
       tanstackStart({
         // The API's Auth0 Management clients are named `*.client.ts` (an
         // Auth0 client, not browser code), so they are let through the

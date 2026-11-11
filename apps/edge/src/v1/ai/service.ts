@@ -26,12 +26,12 @@ import { AllowedNumbers, formatBaht, isGrounded } from '../../server/ai/groundin
 import { ModelUnavailable, finishedJson, finishedText, requestBase } from '../../server/ai/model'
 import type { MessageParams, SendMessage } from '../../server/ai/model'
 import { ASK_SYSTEM, NOTE_SCHEMA, NOTE_SYSTEM, PARSE_SCHEMA, PARSE_SYSTEM, SLIP_SCHEMA, SLIP_SYSTEM } from '../../server/ai/prompts'
-import { ASK_TOOLS } from '../../server/ai/tools'
 import type { AiContext, AiStoredPreferences, AiToolReply, Allowance } from '../../vault/ai'
 import type { VaultRouteId } from '../protocol'
 import type { VaultSession } from '../worker-routes'
+import { ASK_TOOLS } from './tools'
 
-// The AI companion on the vault (1B-T7): AiService (src/server/ai/service.ts)
+// The AI companion on the vault (1B-T7): the PostgreSQL edge's AiService (retired at C1)
 // with its reads and writes moved into the caller's vault as steps. The order
 // and the refusals are AiService's: consent, then the switch, then the day's
 // use (counted before the model runs), then the model. Every step carries the
