@@ -4,6 +4,35 @@ Durable folder: `/Users/kunanonjarat/Developer/jotbun/.claude/controller/` (prot
 
 Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vault-core`), head 0bd5659 (controller state after 1D-T8's dispatch). Nothing outside `.claude/` changed since 606e131. No PR is open into the integration branch; only #70 into main.
 
+## Merged 11 Nov 07:45 Bangkok (owner: "if CI pass merge it")
+
+- On green local CI and approved reviews, at their exact heads (each head is the reviewed commit plus receipt corrections; #392's is the reviewer's own COMBO patch):
+  - #392 tray-hardening at 99ce506, merged as 37a0d2f; promotion #399. c-n1 goes to P2-T16 (followups.md). **P2-T16 is off held.txt.**
+  - #394 1B-T12 at d853122, merged; issue #116 closed; promotion #400.
+  - #397 download-pins at ac61350, merged as 7b336d8; promotion #401.
+  - #398 alarm-hardening at 3707c29, merged as 8e9b982; promotion #402. Download-pins' kit mutant V3 no longer applies after #398: rerun it with A1's text (followups.md).
+- The round-two tray brief (`briefs/tray-hardening-fix2.md`) is no longer needed; its c-n1 is P2-T16's.
+- Still open: #395 (P2-T12) and #396 (fix-download-aborts), each with a READY fix brief and no fixer yet. Next by the plan: dispatch P2-T14, then P2-T20 once P2-T14 merges.
+
+## CI runs on this Mac now, 11 Nov 06:05 Bangkok (owner's approval)
+
+- GitHub-hosted runners still refuse every job (billing). The workflow's nine jobs now run on the runner the repo variable `CI_RUNNER` names (2945a783 on the integration branch). It is set to `jotbun-local`: two self-hosted Linux arm64 runners in Colima, each with its own Docker daemon on a private socket.
+- **Manage them:** `bash .claude/controller/local-ci/runners.sh up|down|status`. Colima must be running (`colima start --cpu 10 --memory 32 --disk 100`). To go back to GitHub's runners, delete the variable: `gh variable delete CI_RUNNER --repo mygogocash/jotbun`.
+- **A PR picks the change up on its next run:** a push, or close and reopen, because pull-request runs read the workflow from the merge with the base. A `gh run rerun` of an old run still targets ubuntu-24.04 and is refused.
+- **The owner approved starting Docker for CI.** Agents' local gates still skip database suites; CI runs them on these runners.
+- **The first run, #392 at 99ce506, passed all nine jobs** (23:05 to 23:38 UTC, 33 minutes with two runners). #392 is not merged: the plan above still has a fixer bring it to the fix2 kit.
+- #394, #397 and #398 were reopened at 06:40 for local runs. #395 and #396 run on their fixers' pushes.
+
+## Cursor Auto stepped back, 11 Nov 05:57 Bangkok: two things it left for this controller
+
+- **#392 has a commit the round-two planner does not know about: 99ce506** (pushed 10 Nov about 14:40). It is the confirming review's validated COMBO guard (`if (!shown && !showing.current) closed.current?.()`, the `showing` ref restored), the HIDE-END case and c-n2's receipt lines.
+  - RED: 1 failed | 26 passed on fc78376's code. GREEN: 27 of 27. `tsc` exit 0, `test:app` 34, `test:unit` 970.
+  - Its five guard mutants G1 to G5 are killed, and 35 of the planner's 37 that still apply are killed (`scratch/tray-hardening-fix2/`).
+  - c-n1 is not in it. Either keep 99ce506 and narrow the round-two brief (`wf_41e3ff21-3b6`) to c-n1, or revert it with a new commit.
+  - Its CI run 42777094800 was refused for billing.
+- **The model routing below** is the owner's rule for new dispatches, so the #395 and #396 fixers go to Antigravity Argon. The owner has not yet answered whether money-path and privacy PRs need their approval to merge into the integration branch.
+- This thread no longer watches #392 to #398.
+
 ## Model routing changed, 10 Nov 14:40 Bangkok (owner's ask: "maximize AI resources")
 
 - The skill's new "Model routing" section and `make_prompt.py` (which now prints a `delegate_task` target) apply to every dispatch from now on:

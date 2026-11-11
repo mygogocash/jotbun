@@ -470,3 +470,6 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - Fix: race CP-1's second retain against a timer of about 3 s inside `withLimits`, or restore the limits and open the hold from `onTestFinished`.
   - **A follow-up (n1):** `watchedSql`'s doc comment (`snapshots.test.ts:136-140`) claims more than the spy enforces. A reader that copies each row as it reads (`Array.from` with a mapper) holds every row, yet passes. Narrow the comment to readers that keep the row objects past the next pull.
   - **After #397 and #398 both merge (n2):** download-pins' kit mutant V3 no longer applies as text; a rerun uses alarm-hardening's A1 text, which DU-2 kills.
+- tray-hardening (#392, merged 11 Nov as 37a0d2f at 99ce506, the confirming review's COMBO guard; promotion #399). Carried:
+  - **P2-T16 (c-n1):** pin which `onClosed` iOS's end calls. Add the case: iOS, late; hide, pass a new `onClosed` while the dismissal is under way, end; the new one is called once and the old not (the review's mutant M3 survives every case today). Keep `whenClosed`'s queue in a ref; n-3 stands (a second call is nothing).
+  - **E2-A:** the device checks in `reviews/tray-hardening-confirm.md`'s notes (a quick reopen on iOS while UIKit's dismissal ends, Fabric's lane for a press, Android's back under the cover).
