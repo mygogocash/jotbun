@@ -18,20 +18,17 @@
 // The bun appears only at moments (first run, the stage peek, over budget)
 // and follows the bun intensity: Quiet keeps it on the first-run empty state
 // only, Off removes it everywhere.
-import type { HistoryFilter, Minor } from '@gogospend/contracts';
-import { HISTORY_MAX_LIMIT, TRACKING_START_MIN, validateTrackingStart } from '@gogospend/contracts';
+import type { Minor } from '@gogospend/contracts';
+import { validateTrackingStart } from '@gogospend/contracts';
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 import { V1Error } from '@mobile/api/client';
 import { isRedesignEnabled } from '@mobile/config/featureFlags';
 import { BunNote } from './ai/BunNote';
-import { useRefreshOnRevision } from './useRefreshOnRevision';
-import { playHaptic } from '@mobile/lib/hapticMoment';
-import { budgetLevel, crossedLevel } from '@mobile/spend/v1/redesign/milestones';
-import type { LevelSeen } from '@mobile/spend/v1/redesign/milestones';
+import { useBudgetThresholdHaptic, useHomeData } from './homeData';
 import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
 import { Bun } from '@mobile/mascot/Bun';
 import { useBunIntensity } from '@mobile/mascot/BunIntensityProvider';
@@ -40,11 +37,10 @@ import { BUN_POSES, BUN_SIZES, bunHeight } from '@mobile/mascot/poses';
 import type { BunPoseName } from '@mobile/mascot/poses';
 import { AmountInputError, formatMinor, parseAmountInput } from '@mobile/spend/v1/money';
 import type { BudgetPace as LogicPace } from '@mobile/spend/v1/redesign/budgetPace';
-import { earlierWholeDays, homeModel, readWholeDay } from '@mobile/spend/v1/redesign/homeModel';
-import type { HomeData, LoadProblem, LoadProblemKind } from '@mobile/spend/v1/redesign/homeModel';
-import { addDays, moneyGroupOf } from '@mobile/spend/v1/redesign/shared';
+import { homeModel } from '@mobile/spend/v1/redesign/homeModel';
+import type { LoadProblem, LoadProblemKind } from '@mobile/spend/v1/redesign/homeModel';
+import { moneyGroupOf } from '@mobile/spend/v1/redesign/shared';
 import type { DayGroup, DiaryRow, MoneyPair, RowState } from '@mobile/spend/v1/redesign/shared';
-import type { SpendV1Resources } from '@mobile/spend/v1/resources';
 import type { DiaryView } from '@mobile/spend/v1/spendDiary';
 import { useDiaryView, useSpendDiary } from '@mobile/spend/v1/SpendDiaryContext';
 import { useSpendV1 } from '@mobile/spend/v1/SpendV1Context';
@@ -74,7 +70,7 @@ import { ConfirmSheet, Sheet } from '@mobile/ui/Sheet';
 import { StageHeader } from '@mobile/ui/StageHeader';
 import { SyncBanner, syncBannerLine } from '@mobile/ui/SyncBanner';
 import type { SyncBannerProps } from '@mobile/ui/SyncBanner';
-import { isOwnCreate, newId, refusedBeforeProcessing, saveProblem, useCommandKeys, useLoad, useMoneyLocale } from '../v1/parts';
+import { isOwnCreate, newId, refusedBeforeProcessing, saveProblem, useCommandKeys, useMoneyLocale } from '../v1/parts';
 import { recordHref } from './HistoryParts';
 import { SettingsLink } from './account/SettingsLink';
 import { PlanningLink } from './planning/PlanningLinks';
@@ -83,30 +79,6 @@ type Tc = ReturnType<typeof useCopy>;
 
 /** At most this many earlier days under today's receipt; History has the rest. */
 const EARLIER_DAYS = 5;
-/** Earlier records read for those days (one page, cut back to whole days). */
-const EARLIER_RECORDS = 50;
-/** Pages of today's records read (each up to HISTORY_MAX_LIMIT); a busier day is shown as partial, never as an error. */
-const TODAY_PAGES = 20;
-
-// ---------------------------------------------------------------------------
-// Loading
-
-/** Every record of today, page by page (`readWholeDay`): the receipt's day total is never a partial sum without saying so. */
-function readToday(resources: SpendV1Resources, day: string) {
-  const filter: HistoryFilter = { from: day, through: day, sort: 'date_desc' };
-  return readWholeDay((cursor) => resources.history(filter, cursor, HISTORY_MAX_LIMIT), TODAY_PAGES);
-}
-
-/** Reloads confirmed money in place whenever a draft it was waiting on resolves (as the current Home does). */
-function useRefreshOnResolve(outbox: readonly OutboxCommand[], refresh: () => void): void {
-  const open = useRef(new Set<string>());
-  useEffect(() => {
-    const now = new Set(outbox.filter((command) => command.state !== 'acknowledged').map((command) => command.commandId));
-    const resolved = [...open.current].some((id) => !now.has(id));
-    open.current = now;
-    if (resolved) refresh();
-  }, [outbox, refresh]);
-}
 
 // ---------------------------------------------------------------------------
 // Pace: the logic's shape to the kit's
@@ -587,22 +559,7 @@ function FirstRun({ headline, body, today, onCreated }: { headline: string; body
 // ---------------------------------------------------------------------------
 // The screen
 
-// The month's budget level last seen in this app session. Module state, not a
-// ref: Home unmounts while Quick add is open, and the crossing happens there.
-let lastBudgetLevel: LevelSeen | null = null;
-
-/** Plays `thresholdCrossed` once when spending moves past 80% or 100% of the limit (milestones.ts). */
-function useBudgetThresholdHaptic(month: string, spentMinor: string | null, limitMinor: string | null): void {
-  useEffect(() => {
-    if (spentMinor === null) return;
-    const next: LevelSeen = { month, level: budgetLevel(spentMinor, limitMinor) };
-    if (crossedLevel(lastBudgetLevel, next) !== null) playHaptic('thresholdCrossed');
-    lastBudgetLevel = next;
-  }, [month, spentMinor, limitMinor]);
-}
-
 export function HomeScreen({ now }: { now?: Date }) {
-  const resources = useSpendV1();
   const router = useRouter();
   const tc = useCopy();
   const locale = useMoneyLocale();
@@ -614,27 +571,8 @@ export function HomeScreen({ now }: { now?: Date }) {
   const diary = useSpendDiary();
   const diaryView = useDiaryView();
 
-  const loaded = useLoad<HomeData>(async () => {
-    const [categories, wallets, summary, budget, todays, earlier] = await Promise.all([
-      resources.ensureBuiltinCategories(),
-      resources.wallets(),
-      resources.summary(month),
-      resources.budget(month),
-      readToday(resources, today),
-      resources.history({ from: TRACKING_START_MIN, through: addDays(today, -1), sort: 'date_desc' }, undefined, EARLIER_RECORDS),
-    ]);
-    // Earlier records cut back to whole days; the model keeps drafts on a cut day out too.
-    const whole = earlierWholeDays(earlier);
-    return {
-      categories, wallets, summary, budget,
-      records: [...todays.records, ...whole.records],
-      oldestWholeDay: whole.oldestWholeDay,
-      todayComplete: todays.complete,
-    };
-  }, [resources, month, today]);
-  useRefreshOnResolve(diaryView.outbox, loaded.refresh);
-  // A change another phone made was pulled into the diary: reload the money in place.
-  useRefreshOnRevision(diaryView.appliedRevision, loaded.refresh);
+  // Today's load and its refreshes live in homeData.ts (P2-T23), shared with the Bun Wallet Home.
+  const loaded = useHomeData(today);
 
   const view = diary ? diaryView : null;
   const model = homeModel({ today, tc, locale, load: loaded, diary: view, earlierDays: EARLIER_DAYS });
