@@ -24,6 +24,24 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**21:50: Antigravity's Gemini pool is now used to the full (owner: "Antigravity still have a lot of usages please find the way to maximize").**
+- **The owner's usage screen, 21:34:**
+  - Antigravity Gemini: weekly 55% left, 5-hour 100%;
+  - Gemini 4 Argon: weekly 1%;
+  - Antigravity Claude and GPT: 0%, resetting in 6d 10h;
+  - Cursor models: 2%; Grok: 3%.
+- **`make_prompt.py --spread` now routes:**
+  - builders, fixers, second reviews and the simpler lanes' planners to `antigravity` `gemini-3.8-flash-high`;
+  - first and confirming reviews to Claude Code Opus (confirm on Opus high, no longer Sonnet);
+  - hard or money and privacy planners with `--claude-code`.
+  - Flash planners get `scratch/dispatch/planner-flash-notes-20261111.md`: fully mechanical briefs, and BLOCKED rather than guessing a design call.
+- **Planners moved:** the two Grok planners were stopped before writing anything (Cursor at 2%). They were relaunched on Flash, and one lane was added:
+  - **P3-T4:** `mcp:launch:f08a12db4a0746d271a6d5a447fc8efdbeb7035e6adb24b236ce1c513137e2b5`;
+  - **P2-T25:** `mcp:launch:b7caf9c09b556ad44fb73e8d705c7ee2dac680aebe6c48f4b7e50212f7ca86f8`;
+  - **P2-T32** (month recap, App, its own folder): `mcp:launch:9ff21d2cf9701cfc761338a5ce383b6978ad2f8c6a551f6ab31665478fbd357e`. WT `p2-t32`, branch `p2/t32-month-recap`.
+- **Still on Claude Code Opus:** P2-T23's planner and both fix-round planners.
+- **Flash is new in two roles, planner and builder.** The controller checks every Flash kit with `check_kit` and every Flash commit against its kit. If Flash planning proves weak, move those planners to `--claude-code`.
+
 **21:45: both P2 PRs need fix rounds. Rulings R106 and R107; two fix planners are running on Claude Code Opus.**
 - **#407 (P2-T14).**
   - The first review (`reviews/P2-T14.md`) says **Needs fixes**: M1 (at AX5, and with the keyboard up, the pinned header and footer leave the scrolling middle no room), m1 to m5, n1 to n4.

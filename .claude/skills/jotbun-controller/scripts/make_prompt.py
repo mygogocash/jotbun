@@ -52,19 +52,20 @@ CLAUDE_CODE = {
     "confirm": ("claudeAgent", "claude-sonnet-5-5", {"effort": "high", "ultracode": False}, "Claude Sonnet 5.5"),
     "second": ("claudeAgent", "claude-opus-5-5", {"effort": "high", "ultracode": False}, "Claude Opus 5.5"),
 }
-# --spread: while Antigravity is out (11 Nov to about 18 Nov), spread the roles over the providers that have credit,
-# so Claude Code's 5-hour limit is left mostly to the controller, the reviews and the cheap Haiku builders (owner,
-# 11 Nov: "find the way to speed up development without my approval"). Cursor's included usage covers Grok but not
-# Claude Opus 5.5 ("not included in your weekly usage"; buying credits is the owner's call), so planners and the
-# second review run on Grok 4.7 through Cursor. Grok is also the different model family the second review wants.
-# Planners on Grok are a trial (11 Nov): check_kit and the first review catch a weak kit before a build runs on it.
+# --spread: while Antigravity's Claude pool is empty (11 Nov to about 17 Nov), use what each provider still has (owner,
+# 11 Nov: "find the way to speed up development without my approval"; "Antigravity still have a lot of usages please
+# find the way to maximize"). Antigravity's Gemini pool has room (55% of the week, the 5-hour window full), but its
+# Gemini 4 Argon cap is nearly spent, so Gemini 3.8 Flash High builds, fixes, gives the second review (a different
+# family, as the routing asks) and plans the simpler lanes. Claude Code keeps the quality gates: first and confirming
+# reviews, and planners for hard or money/privacy work (pass --claude-code for those planners). Cursor and Grok are
+# nearly spent (2-3% left on 11 Nov) and are not used.
 SPREAD = {
-    "planner": ("cursor", "grok-4.7", {"reasoning_effort": "xhigh", "fastMode": False}, "Grok 4.7"),
-    "implementer": ("claudeAgent", "claude-haiku-5-5", {"effort": "max", "ultracode": False}, "Claude Haiku 5.5"),
-    "fixer": ("claudeAgent", "claude-haiku-5-5", {"effort": "max", "ultracode": False}, "Claude Haiku 5.5"),
+    "planner": ("antigravity", "gemini-3.8-flash-high", {}, "Gemini 3.8 Flash"),
+    "implementer": ("antigravity", "gemini-3.8-flash-high", {}, "Gemini 3.8 Flash"),
+    "fixer": ("antigravity", "gemini-3.8-flash-high", {}, "Gemini 3.8 Flash"),
     "reviewer": ("claudeAgent", "claude-opus-5-5", {"effort": "xhigh", "ultracode": False}, "Claude Opus 5.5"),
-    "confirm": ("claudeAgent", "claude-sonnet-5-5", {"effort": "high", "ultracode": False}, "Claude Sonnet 5.5"),
-    "second": ("cursor", "grok-4.7", {"reasoning_effort": "xhigh", "fastMode": False}, "Grok 4.7"),
+    "confirm": ("claudeAgent", "claude-opus-5-5", {"effort": "high", "ultracode": False}, "Claude Opus 5.5"),
+    "second": ("antigravity", "gemini-3.8-flash-high", {}, "Gemini 3.8 Flash"),
 }
 FINAL_IMPL = ("Your final message must follow the protocol's \"Your final message\" section exactly: the STATUS line first (`STATUS: DONE` or "
               "`STATUS: BLOCKED` with the exact blocker), the commit SHA, RED and GREEN counts, the mutants, each gate command with its result, "
