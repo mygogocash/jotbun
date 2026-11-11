@@ -26,6 +26,14 @@ while :; do
       if [ -f "$f" ]; then echo "FILE $f"; exit 0; fi
       continue;;
     esac
+    # moved:<worktree>:<sha>: fire once the worktree's HEAD leaves <sha> (a fixer's commit on a PR branch that
+    # already has its own commits, where the plain <wt>:<scratch> rule would fire at once).
+    case "$pair" in moved:*)
+      spec=${pair#moved:}; wt=${spec%%:*}; sha=${spec##*:}
+      h=$(/usr/bin/git -C "$W/$wt" rev-parse HEAD 2>/dev/null)
+      case "$h" in "$sha"*) ;; *) [ -n "$h" ] && { echo "MOVED $wt: $(/usr/bin/git -C "$W/$wt" log --oneline -1 | cat)"; exit 0; };; esac
+      continue;;
+    esac
     # newer:<path>:<epoch>: fire once the file changes after <epoch> (a reworked brief that already existed).
     case "$pair" in newer:*)
       spec=${pair#newer:}; f=${spec%:*}; t=${spec##*:}

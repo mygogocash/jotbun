@@ -1,0 +1,233 @@
+diff --git a/apps/app/src/wallet/add/AmountStep.tsx b/apps/app/src/wallet/add/AmountStep.tsx
+index 3001e8a..4e73886 100644
+--- a/apps/app/src/wallet/add/AmountStep.tsx
++++ b/apps/app/src/wallet/add/AmountStep.tsx
+@@ -1,26 +1,34 @@
+ // The add tray's amount step (P2-T14; W14, W15, W29; bw-tray-amount,
+ // rh-income, ax-large-tray). AmountStep is the step's middle: the amount at
+-// 58 pt from what the keypad holds; the wallet the money comes from (spending)
+-// or goes into (income), which opens the wallet step; บอกบัน when Bun can help
+-// (P2-T16 opens today's Tell Bun sheet from it); income's name and that income
+-// is not counted in the budget; and up to three quick chips. AmountFooter is
+-// its footer, which the host passes to the tray's pinned `footer`: the keypad,
+-// the keypad's problem in today's words, and Next, which waits for an amount
+-// the keypad can save. Both are controlled (StepProps), so the edit tray
+-// (P2-T27) reuses them.
++// 58 pt from what the keypad holds, with the keypad's problem in today's words
++// right under it; the wallet the money comes from (spending) or goes into
++// (income), which opens the wallet step; income's name and that income is not
++// counted in the budget; บอกบัน when Bun can help (P2-T16 opens today's Tell
++// Bun sheet from it); and up to three quick chips, never for a transfer.
++// AmountFooter is its footer, which the host passes to the tray's pinned
++// `footer`: the keys and Next, which waits for an amount the keypad can save.
++// Both are controlled (StepProps), so the edit tray (P2-T27) reuses them.
+ //
+-// - What the person types is never masked: private mode hides stored amounts,
+-//   such as the chips', not the amount being typed (the controller's P2-T14
+-//   ruling).
++// - The pinned parts leave the scrolling middle room (the fix round's R106):
++//   the problem is the middle's at every size; while income's name field has
++//   focus (the system keyboard is up) the footer is Next alone; and at the
++//   largest text sizes the type switch leaves the header for the middle,
++//   right under the amount and its problem (`typeSwitch`), so the amount
++//   being typed stays in view.
++// - Private mode hides stored amounts, such as the chips', and an amount the
++//   person did not type (a fill, isFilled) until a key is pressed; what the
++//   person types is never masked (P9 as R106 narrows it).
+ // - At the largest text sizes (ax-large-tray) the tray is full height, the
+-//   keypad and Next stay pinned in its footer and only the middle scrolls; the
++//   keys and Next stay pinned in its footer and only the middle scrolls; the
+ //   amount opens at the middle's top, grows to 64 pt and wraps; the wallet
+ //   chip and the chips become full-width rows.
+ // - Tell Bun is for spending and income, as Quick add offers it; a transfer's
+ //   amount stands alone, and its Next goes on to choose the two wallets.
+ // - No photo row (W15): the receipt stays the record's.
+ import { MERCHANT_MAX_CHARS } from '@gogospend/contracts';
+-import { Pressable, View } from 'react-native';
++import { useEffect, useRef } from 'react';
++import type { ComponentRef, ReactNode } from 'react';
++import { Keyboard, Pressable, View } from 'react-native';
+ import Svg, { Circle, Path } from 'react-native-svg';
+ 
+ import { isRedesignEnabled } from '@mobile/config/featureFlags';
+@@ -33,14 +41,16 @@ import { amountMaxScale, WALLET_TYPE, walletLineHeight } from '@mobile/theme/wal
+ import { DECORATIVE, POLITE_LIVE_REGION, useAnnouncement } from '@mobile/ui/a11y';
+ import { evaluateKeypad, keypadDisplay } from '@mobile/ui/keypadExpression';
+ import { useLargeText } from '@mobile/ui/largeText';
++import { BUN_TOUCH } from '@mobile/ui/layout';
+ import { COMMON_COPY } from '../common/copy';
+ import { useDraftCopy } from '../copy/useDraftCopy';
+ import { MaterialFill } from '../looks/MaterialFill';
+ import { useWalletLooks } from '../looks/WalletLooksProvider';
+-import { spokenMoney } from '../money/walletMoney';
++import { HIDDEN_AMOUNT, spokenMoney } from '../money/walletMoney';
++import { usePrivateMode } from '../privacy/PrivateModeProvider';
+ import { PrimaryButton } from '../tray/PrimaryButton';
+ import { WalletText } from '../WalletText';
+-import { stepAfterAmount } from './addFlow';
++import { isFilled, stepAfterAmount } from './addFlow';
+ import type { AddType, StepProps } from './addFlow';
+ import { COPY } from './copy';
+ import { QuickChips } from './QuickChips';
+@@ -58,16 +68,28 @@ export function useCanTellBun(): boolean {
+   return isRedesignEnabled('companion') && enabled;
+ }
+ 
+-export function AmountStep({ draft, keypad, onDraft, onStep, type, lookups, chips, canTellBun, onTellBun }: StepProps & {
++export function AmountStep({ draft, keypad, onDraft, onStep, type, lookups, chips, canTellBun, onTellBun, problem, typeSwitch, onNaming }: StepProps & {
+   type: AddType;
+   lookups: Lookups;
+   chips: readonly QuickChip[];
+   canTellBun: boolean;
+   onTellBun(): void;
++  /** The keypad's problem in today's words (amountProblem, then KEYPAD_PROBLEM_TEXT through tc), or null. */
++  problem: string | null;
++  /** The type switch, when the host gives it to the step (the largest text sizes, useSwitchInHeader); otherwise null. */
++  typeSwitch: ReactNode;
++  /** Whether income's name field has focus, for AmountFooter's `naming`. */
++  onNaming(naming: boolean): void;
+ }) {
+   const colors = useWalletColors();
+   const t = useDraftCopy(LINES);
++  const { hidden } = usePrivateMode();
++  // iOS reads no live region, so a new problem is also said once.
++  useAnnouncement(problem);
+   const typed = evaluateKeypad(keypad, { allowZero: true });
++  // An amount the person did not type is masked as a stored one is, until a key is pressed (R106).
++  const masked = hidden && isFilled(keypad);
++  const wallet = type === 'transfer' ? null : <WalletChip type={type} walletId={draft.walletId} lookups={lookups} onPress={() => onStep('wallet')} />;
+   return (
+     <View style={{ gap: 12 }}>
+       <View style={{ alignItems: 'center', gap: 8 }}>
+@@ -75,46 +97,49 @@ export function AmountStep({ draft, keypad, onDraft, onStep, type, lookups, chip
+         <View {...POLITE_LIVE_REGION} style={{ alignSelf: 'stretch' }}>
+           <Text
+             testID="add-amount"
+-            accessibilityLabel={spokenMoney(typed.ok ? typed.minor : '0', t)}
++            accessibilityLabel={masked ? t('common.amountHidden') : spokenMoney(typed.ok ? typed.minor : '0', t)}
+             maxFontSizeMultiplier={amountMaxScale(AMOUNT)}
+             style={{
+               fontFamily: LATIN_UI_FONT_FAMILY,
+               fontWeight: '700',
+               fontSize: AMOUNT,
+               lineHeight: walletLineHeight(AMOUNT, 'latin'),
+-              letterSpacing: (AMOUNT * -2) / 100,
++              // The mask is spaced 0.12 em, as WalletAmount spaces it (bw-private).
++              letterSpacing: masked ? (AMOUNT * 12) / 100 : (AMOUNT * -2) / 100,
+               color: colors.ink,
+               textAlign: 'center',
+             }}
+           >
+-            {`฿${keypadDisplay(keypad)}`}
++            {masked ? HIDDEN_AMOUNT : `฿${keypadDisplay(keypad)}`}
+           </Text>
+         </View>
+-        {type === 'transfer' ? null : <WalletChip type={type} walletId={draft.walletId} lookups={lookups} onPress={() => onStep('wallet')} />}
++        {problem === null ? null : (
++          <WalletText testID="add-problem" role="label" accessibilityRole="alert" aria-live="polite" style={{ textAlign: 'center' }}>
++            {problem}
++          </WalletText>
++        )}
++        {typeSwitch ? null : wallet}
+       </View>
++      {typeSwitch ? (
++        <>
++          {typeSwitch}
++          {wallet}
++        </>
++      ) : null}
++      {type === 'income' ? <NameField value={draft.merchant} onChange={(merchant) => onDraft({ ...draft, merchant })} onNaming={onNaming} /> : null}
+       {canTellBun && type !== 'transfer' ? <TellBunRow onPress={onTellBun} /> : null}
+-      {type === 'income' ? <NameField value={draft.merchant} onChange={(merchant) => onDraft({ ...draft, merchant })} /> : null}
+-      <QuickChips chips={chips} />
++      {type === 'transfer' ? null : <QuickChips chips={chips} />}
+     </View>
+   );
+ }
+ 
+-/** The step's footer, for the tray's pinned `footer`: the keypad, then the keypad's problem right above Next. */
+-export function AmountFooter({ keypad, onKeypad, onStep, type, problem }: StepProps & { type: AddType; problem: string | null }) {
++/** The step's footer, for the tray's pinned `footer`: the keys and Next; while income's name field has focus, Next alone (R106). */
++export function AmountFooter({ keypad, onKeypad, onStep, type, naming }: StepProps & { type: AddType; naming: boolean }) {
+   const t = useDraftCopy(COMMON_COPY);
+-  // iOS reads no live region, so a new problem is also said once.
+-  useAnnouncement(problem);
+   return (
+     <View style={{ gap: 12 }}>
+-      <WalletKeypad keypad={keypad} onKeypad={onKeypad} />
+-      <View style={{ gap: 8 }}>
+-        {problem === null ? null : (
+-          <WalletText testID="add-problem" role="label" accessibilityRole="alert" aria-live="polite" style={{ textAlign: 'center' }}>
+-            {problem}
+-          </WalletText>
+-        )}
+-        <PrimaryButton testID="add-next" label={t('common.next')} disabled={!evaluateKeypad(keypad).ok} onPress={() => onStep(stepAfterAmount(type))} />
+-      </View>
++      {naming ? null : <WalletKeypad keypad={keypad} onKeypad={onKeypad} />}
++      <PrimaryButton testID="add-next" label={t('common.next')} disabled={!evaluateKeypad(keypad).ok} onPress={() => onStep(stepAfterAmount(type))} />
+     </View>
+   );
+ }
+@@ -197,11 +222,30 @@ function TellBunRow({ onPress }: { onPress(): void }) {
+   );
+ }
+ 
+-/** Income's name (rh-income): one line of up to 120 characters, and the note that income is not counted in the budget. */
+-function NameField({ value, onChange }: { value: string; onChange(next: string): void }) {
++/**
++ * Income's name (rh-income), right under the wallet chip as the board draws
++ * it: one line of up to 120 characters in a field at least 44 pt tall (§4),
++ * and the note that income is not counted in the budget. Its focus is the
++ * host's `naming` (R106). Android's back hides the keyboard but leaves the
++ * field focused, so the field lets go of focus when the keyboard hides, and
++ * when it leaves (the type or the step changed), so the keys always come back.
++ */
++function NameField({ value, onChange, onNaming }: { value: string; onChange(next: string): void; onNaming(naming: boolean): void }) {
+   const colors = useWalletColors();
+   const t = useDraftCopy(COPY);
+   const large = useLargeText();
++  const input = useRef<ComponentRef<typeof TextInput>>(null);
++  const naming = useRef(onNaming);
++  useEffect(() => {
++    naming.current = onNaming;
++  });
++  useEffect(() => {
++    const hidden = Keyboard.addListener('keyboardDidHide', () => input.current?.blur());
++    return () => {
++      hidden.remove();
++      naming.current(false);
++    };
++  }, []);
+   return (
+     <View
+       testID="add-name"
+@@ -212,7 +256,7 @@ function NameField({ value, onChange }: { value: string; onChange(next: string):
+         gap: large ? 4 : 12,
+         paddingLeft: large ? 14 : 9,
+         paddingRight: 14,
+-        paddingVertical: 8,
++        paddingVertical: 4,
+         borderRadius: 16,
+         backgroundColor: colors.raised,
+       }}
+@@ -226,14 +270,18 @@ function NameField({ value, onChange }: { value: string; onChange(next: string):
+         </View>
+       )}
+       <View style={{ flex: large ? undefined : 1, minWidth: 0 }}>
+-        <WalletText role="caption" tone="quiet">{t('add.merchantLabel')}</WalletText>
++        {/* The field says its own name, so screen readers skip the caption above it. */}
++        <WalletText role="caption" tone="quiet" {...DECORATIVE}>{t('add.merchantLabel')}</WalletText>
+         <TextInput
++          ref={input}
+           accessibilityLabel={t('add.merchantLabel')}
+           value={value}
+           onChangeText={onChange}
++          onFocus={() => onNaming(true)}
++          onBlur={() => onNaming(false)}
+           maxLength={MERCHANT_MAX_CHARS}
+           maxFontSizeMultiplier={WALLET_TYPE.body.maxScale}
+-          style={{ fontFamily: THAI_UI_FONT_FAMILY, fontSize: WALLET_TYPE.body.size, fontWeight: '500', color: colors.ink, padding: 0 }}
++          style={{ fontFamily: THAI_UI_FONT_FAMILY, fontSize: WALLET_TYPE.body.size, fontWeight: '500', color: colors.ink, minHeight: BUN_TOUCH, padding: 0 }}
+         />
+       </View>
+       <WalletText role="caption" tone="quiet">{t('add.notInBudget')}</WalletText>

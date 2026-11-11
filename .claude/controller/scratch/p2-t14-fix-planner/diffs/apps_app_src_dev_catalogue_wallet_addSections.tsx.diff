@@ -1,0 +1,102 @@
+diff --git a/apps/app/src/dev/catalogue/wallet/addSections.tsx b/apps/app/src/dev/catalogue/wallet/addSections.tsx
+index 835de08..a43954b 100644
+--- a/apps/app/src/dev/catalogue/wallet/addSections.tsx
++++ b/apps/app/src/dev/catalogue/wallet/addSections.tsx
+@@ -1,15 +1,18 @@
+ // The add tray's catalogue sections (P2-T14, development only): the amount
+ // step for spending (bw-tray-amount) and for income (rh-income), each inside a
+-// Tray with the type switch as its header and the keypad and Next pinned in
+-// its footer, starting from fixed sample props as the boards draw them. Each
+-// tray opens at once, so a screenshot of its section shows it over the page;
+-// the keys, the switch, the chips and the name field work, the keypad's
+-// problem shows in today's words (as the host shows it, P2-T16), and Open the
+-// tray brings it back as it started. Next, the wallet chip and บอกบัน go
+-// nowhere here: the steps after the amount and Tell Bun's sheet are P2-T15's
+-// and P2-T16's. Their own list, spread after the tray's in ./index.ts. The
+-// sample words are catalogue samples, not app copy. A section never imports
+-// the wallet test harness, which loads vitest.
++// Tray with the type switch as its header (at the largest text sizes, in the
++// step under the amount, R106) and the keys and Next pinned in its footer,
++// starting from fixed sample props as the boards draw them. Each tray opens at
++// once, so a screenshot of its section shows it over the page; the keys, the
++// switch, the chips and the name field work (a chip fills the amount as a
++// fill, which private mode masks until a key is pressed), the keypad's problem
++// shows in today's words under the amount (as the host shows it, P2-T16), the
++// name field's focus leaves Next alone in the footer, and Open the tray brings
++// it back as it started. Next, the wallet chip and บอกบัน go nowhere here: the
++// steps after the amount and Tell Bun's sheet are P2-T15's and P2-T16's. Their
++// own list, spread after the tray's in ./index.ts. The sample words are
++// catalogue samples, not app copy. A section never imports the wallet test
++// harness, which loads vitest.
+ import { useState } from 'react';
+ import { View } from 'react-native';
+ 
+@@ -19,12 +22,12 @@ import type { Lookups } from '@mobile/spend/v1/redesign/shared';
+ import { keypadFromMinor } from '@mobile/ui/keypadExpression';
+ import type { KeypadProblem, KeypadState } from '@mobile/ui/keypadExpression';
+ import { BUN_SPACE } from '@mobile/ui/layout';
+-import { amountProblem, trayTitleKey } from '@mobile/wallet/add/addFlow';
++import { amountProblem, filledKeypad, trayTitleKey } from '@mobile/wallet/add/addFlow';
+ import type { AddType } from '@mobile/wallet/add/addFlow';
+ import { AmountFooter, AmountStep } from '@mobile/wallet/add/AmountStep';
+ import { COPY } from '@mobile/wallet/add/copy';
+ import type { QuickChip } from '@mobile/wallet/add/QuickChips';
+-import { TypeSwitchHeader } from '@mobile/wallet/add/TypeSwitchHeader';
++import { TypeSwitchHeader, useSwitchInHeader } from '@mobile/wallet/add/TypeSwitchHeader';
+ import type { DraftTable } from '@mobile/wallet/copy/draftText';
+ import { useDraftCopy } from '@mobile/wallet/copy/useDraftCopy';
+ import { TextLink } from '@mobile/wallet/tray/TextLink';
+@@ -43,7 +46,8 @@ const SAMPLES = {
+ } as const satisfies DraftTable;
+ 
+ /**
+- * Today's words for the two problems this keypad can meet, read through tc as
++ * Today's words for the two problems this keypad can meet (a fill starts over
++ * at the first key, so no key is refused as too precise), read through tc as
+  * the host reads KEYPAD_PROBLEM_TEXT (screens/redesign/entry/entryHelpers.ts,
+  * P2-T16). That module loads the device's id maker (expo-crypto), which no
+  * catalogue list may load: every test that reads the wallet's list would.
+@@ -73,8 +77,10 @@ function AmountTray({ label, start }: { label: string; start: Start }) {
+   const [open, setOpen] = useState(true);
+   const [draft, setDraft] = useState(begin);
+   const [keypad, setKeypad] = useState<KeypadState>(() => keypadFromMinor(start.amountMinor));
++  const [naming, setNaming] = useState(false);
++  const inHeader = useSwitchInHeader();
+   const lookups: Lookups = { wallets: new Map([[WALLET_ID, { id: WALLET_ID, name: t('sample.wallet') }]]), categories: new Map() };
+-  const fill = (minor: string) => () => setKeypad(keypadFromMinor(minor));
++  const fill = (minor: string) => () => setKeypad(filledKeypad(minor));
+   const chips: QuickChip[] = start.chips
+     ? [
+       { label: t('sample.coffee'), amountMinor: '6500', apply: fill('6500') },
+@@ -85,6 +91,7 @@ function AmountTray({ label, start }: { label: string; start: Start }) {
+   const problem = amountProblem(keypad);
+   const problemWords = problem === null ? undefined : PROBLEM_WORDS[problem];
+   const step = { draft, keypad, onDraft: setDraft, onKeypad: setKeypad, onStep: () => undefined };
++  const typeSwitch = <TypeSwitchHeader type={draft.type} onType={(type) => setDraft((now) => ({ ...now, type }))} />;
+   return (
+     <View style={{ gap: BUN_SPACE.xs, alignItems: 'flex-start' }}>
+       <SpecimenLabel>{label}</SpecimenLabel>
+@@ -97,10 +104,20 @@ function AmountTray({ label, start }: { label: string; start: Start }) {
+           setKeypad(keypadFromMinor(start.amountMinor));
+         }}
+         title={t(trayTitleKey(draft.type))}
+-        header={<TypeSwitchHeader type={draft.type} onType={(type) => setDraft((now) => ({ ...now, type }))} />}
+-        footer={<AmountFooter {...step} type={draft.type} problem={problemWords === undefined ? null : tc(problemWords)} />}
++        header={inHeader ? typeSwitch : undefined}
++        footer={<AmountFooter {...step} type={draft.type} naming={naming} />}
+       >
+-        <AmountStep {...step} type={draft.type} lookups={lookups} chips={chips} canTellBun={start.tellBun} onTellBun={() => undefined} />
++        <AmountStep
++          {...step}
++          type={draft.type}
++          lookups={lookups}
++          chips={chips}
++          canTellBun={start.tellBun}
++          onTellBun={() => undefined}
++          problem={problemWords === undefined ? null : tc(problemWords)}
++          typeSwitch={inHeader ? null : typeSwitch}
++          onNaming={setNaming}
++        />
+       </Tray>
+     </View>
+   );

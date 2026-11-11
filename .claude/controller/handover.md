@@ -24,6 +24,23 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**22:40: the P2-T14 fix brief is READY and accepted. Its Flash fixer is running (#407 is the critical path).**
+- **The brief:** `briefs/P2-T14-fix.md`. The kit `scratch/p2-t14-fix-planner/` checks against `18876253` with 42 OK, and its 11 `orig/` files are identical. RED has no non-assertion failures (render 10, unit 2).
+- **The proofs:** 138 of 138 mutants killed; the reviews' 11 survivors survive on `18876253`'s own tests.
+- **R106 amended (the planner's P1, accepted):** at large text the type switch sits under the amount and its problem. At the top of the middle it would cover the whole amount at AX5 on a 667 pt phone; mutant L2 is that layout.
+- **The rest:**
+  - masking, and a fill restarting on the first key, so no `too_precise` and no bare `฿65.`;
+  - income's name above Tell Bun (rh-income), with a 72 pt name row;
+  - the name field blurs when the keyboard hides;
+  - the chip-label rule is a header line plus P2-T16's note.
+- **The fixer,** on Flash: `mcp:launch:2a6e6ee8c4c365544d454083494aee8e47667d8fa251421de1c6df59026bf980`, in WT `p2-t14` on `18876253`, with no sync merge.
+- **After DONE:**
+  1. Verify against `real/` and push to `p2/t14-add-flow`.
+  2. Update #407's body and rerun CI.
+  3. Run a **confirming review on Claude Code Opus** (new logic on money and privacy work).
+  4. Merge, promote, then start P2-T20 and update #406.
+- `watch_agents.sh` gained `moved:<wt>:<sha>`, for a fixer on a branch that already has its own commits.
+
 **22:35: P2-T25's Flash plan was sent back for a rework. P2-T32's Flash planner was steered before writing its tests.**
 - **P2-T25 READY, not accepted.**
   - The kit checks at `d16bc1d0` (27 OK, 3 `orig/` identical), but its RED `logs/red.log` is 7 `TestingLibraryElementError` out of 8, against P14(d)'s rule.
