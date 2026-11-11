@@ -6,14 +6,15 @@ Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vaul
 
 ## Fixers dispatched, 11 Nov 08:15 Bangkok (Cursor Auto controlling; owner: "continue")
 
-- **#396 fix-download-aborts:** the fixer runs on Antigravity `claude-sonnet-5-5-high`, T3 task `fix-download-aborts-fixer-20261111a`, in WT fix-download-aborts. Its assignment is `scratch/dispatch/fix-download-aborts-fixer.prompt.md`, with notes on the moved head.
-- **#395 P2-T12:** the fixer runs on Antigravity `claude-sonnet-5-5-high`, T3 task `p2-t12-fixer-20261111a`, in WT p2-t12. Its assignment is `scratch/dispatch/P2-T12-fixer.prompt.md`.
+- **#396 fix-download-aborts:** the fixer runs on Antigravity `claude-sonnet-5-5-high`, T3 task `fix-download-aborts-fixer-20261111b`, in WT fix-download-aborts. Its assignment is `scratch/dispatch/fix-download-aborts-fixer.prompt.md`, with notes on the moved head.
+- **#395 P2-T12:** the fixer runs on Antigravity `claude-sonnet-5-5-high`, T3 task `p2-t12-fixer-20261111b`, in WT p2-t12. Its assignment is `scratch/dispatch/P2-T12-fixer.prompt.md`.
 - Both merge the head first (dry merges were clean). Totals may differ from the briefs; their own files' Expected lines must hold.
-- **P2-T14:** the implementer runs on Antigravity `claude-sonnet-5-5-high`, T3 task `p2-t14-implementer-20261111a`, in a new WT p2-t14 on p2/t14-add-flow from a1376d9f. P1 to P17 are accepted, and check_kit gave 29 OK with both orig/ files identical. Its assignment is `scratch/dispatch/P2-T14-implementer.prompt.md`. After DONE: open its PR and dispatch an Opus-High reviewer. P2-T20 waits on its merge.
+- **P2-T14:** the implementer runs on Antigravity `claude-sonnet-5-5-high`, T3 task `p2-t14-implementer-20261111b`, in a new WT p2-t14 on p2/t14-add-flow from a1376d9f. P1 to P17 are accepted, and check_kit gave 29 OK with both orig/ files identical. Its assignment is `scratch/dispatch/P2-T14-implementer.prompt.md`. After DONE: open its PR and dispatch an Opus-High reviewer. P2-T20 waits on its merge.
 - **Planners on Antigravity `claude-opus-5-5-high`, from a1376d9f:**
-  - 1B-T13 (T3 task `1b-t13-planner-20261111a`; WT p1-1b-t13 on p1/1b-t13-vault-http; heavy lock);
-  - P2-T33 (T3 task `p2-t33-planner-20261111a`; WT p2-t33 on p2/t33-face-id-lock).
+  - 1B-T13 (T3 task `1b-t13-planner-20261111b`; WT p1-1b-t13 on p1/1b-t13-vault-http; heavy lock);
+  - P2-T33 (T3 task `p2-t33-planner-20261111b`; WT p2-t33 on p2/t33-face-id-lock).
   - Assignments are in `scratch/dispatch/*-planner.prompt.md`.
+- The first dispatches (ids ending `a`) stopped unread: Antigravity children were sandboxed to the controller's T3 worktree. All five were redispatched at 08:20 with the jotbun projectId (ids ending `b`).
 - **Do not dispatch these again.** After DONE: push, update the PR body, and run an Opus-High confirming review (#395's fix writes new logic, so it gets one; #396's is test-only from its planner's kit). Then merge on green local CI and promote (owner: "if CI pass merge it"; the merge script cleans up the worktree and branches).
 
 ## Routing moved to Antigravity, 11 Nov 07:50 Bangkok (owner: Antigravity's credits are unused, "maximize it")
