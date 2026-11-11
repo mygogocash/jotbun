@@ -457,6 +457,16 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **alarm-hardening (#398), n7:**
     - lines 4, 97 and 108 of #398's receipt give download-pins' items (1B-T11's m3 and n6, and the X5 re-target) to fix-download-aborts. Correct them before #398 merges;
     - once #398 merges, download-pins' kit mutant V3 no longer applies: rerun it with A1's text.
+- **P2-T23** (#409, merged as `f22c5a8` on 11 Nov; promoted as #413). Both reviews approved: Opus (`reviews/P2-T23.md`) and Flash (`reviews/P2-T23-second.md`).
+  - **m1, ruled R108 (the controller, 11 Nov), for P2-T24:** the front card's "today" counts today's confirmed expenses **plus today's waiting expense drafts, once**, using P2-T16's `todayOutMinor` definition ("the confirmed total plus open expense drafts dated today whose id is not confirmed").
+    - Why: the approved board (rh-offline: −฿97, "วันนี้ใช้ไป 97 บาท"), P2-T12's card spec (plan line 796) and P2-T16's toast all count the draft. Plan line 1240's "confirmed only" is the outlier, and the budget card already counts the ฿50.
+    - P2-T24 edits `homeWallets.ts` anyway (the `frontFirst` swap). It changes `spentByWallet`, flips `homeWallets.test.ts:91-108`'s case, and re-aims mutant H17. The reviewer's probe is `scratch/p2-t23-review/tree/apps/app/src/wallet/home/zzprobe/rhOffline.probe.test.ts`.
+  - m2 (the receipt's `TODAY_PAGES` 50, really 20) is fixed in `7c2682b5`.
+  - **Nits:**
+    - n1: the receipt's gate and mutant lines drift from the template;
+    - n2: the hook's test doesn't pin that a refused draft reads nothing (R14 survives); a later pins task;
+    - n3: the floating-point source scan no longer covers `availableBalances`; add the new path;
+    - n4: the English drafts read "Spent this month Amount hidden, Over budget"; for E2-B's copy pass.
 - **P2-T33's first review** (`reviews/P2-T33.md`, Approved on `5844e4c1`; four minors, six nits; probes in `scratch/p2-t33-review/`). None of it is reachable until P2-T34: `getAppLocalAuth()` answers `noLocalAuth`, so the lock cannot be turned on.
   - **m1, for P2-T34, which needs a phone:**
     - On Android, React Native sends `background` on every `onHostPause` and never `inactive`. So a credential screen that is an activity (Android 10 or earlier with the passcode fallback, or a passcode-only phone) makes a new opening. The gate then drops the prompt's answer and asks again (probe B).
