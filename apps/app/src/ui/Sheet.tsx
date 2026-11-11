@@ -9,6 +9,12 @@
 // window instead of resizing it; Android is left as it was (whether its window
 // resizes under edge-to-edge is not checked yet).
 //
+// Under the Face ID lock's cover (R63, P2-T33) the sheet draws LockCoverArt in
+// place of its backdrop and panel, and while the app is locked the cover
+// carries the lock screen: a Modal draws above the app, so this is where a
+// person whose sheet is open meets it. Nothing of the sheet is named, and
+// nothing asks to close it; its content is its host's, so nothing is lost.
+//
 // ConfirmSheet states the consequence of an action before it happens. When the
 // action is destructive, the safe choice (cancel) keeps the ink fill and the
 // destructive confirm is outlined: red is reserved for over-budget, so weight,
@@ -27,6 +33,7 @@ import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { DECORATIVE, moveAccessibilityFocus } from './a11y';
 import { BunText } from './BunText';
 import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE, BUN_TOUCH } from './layout';
+import { LockCoverArt, useLockCover } from './lockCover';
 import { PillButton } from './PillButton';
 import { sheetBackdrop } from './sheetBackdrop';
 
@@ -68,6 +75,7 @@ export function Sheet({ visible, onClose, title, children, closeLabel }: SheetPr
   const colors = useBunColors();
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
+  const { hidden } = useLockCover();
   const sheetRef = useRef<HostInstance>(null);
   const titleRef = useRef<HostInstance>(null);
   const offset = useRef(new Animated.Value(reducedMotion ? 0 : SHEET_SLIDE_FROM)).current;
@@ -92,62 +100,71 @@ export function Sheet({ visible, onClose, title, children, closeLabel }: SheetPr
   // makes its full-screen layer a `role="dialog"` with `aria-modal` (and it
   // cannot be told otherwise), so that layer takes the sheet's name and the
   // panel inside it is not a second dialog. Native Modal draws no role of its
-  // own, so there the panel is the modal dialog.
-  const webDialog = web ? { 'aria-label': title } : null;
+  // own, so there the panel is the modal dialog. Under the lock nothing is named.
+  const webDialog = web ? { 'aria-label': hidden ? undefined : title } : null;
   const panelDialog = web ? null : { role: 'dialog' as const, 'aria-modal': true, 'aria-label': title };
+  // Android's back (Escape on the web) asks nothing under the lock's cover.
+  const requestClose = () => {
+    if (!hidden) onClose();
+  };
 
   return (
-    <Modal visible={visible} transparent animationType="none" statusBarTranslucent onRequestClose={onClose} onShow={focusSheet} {...webDialog}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, justifyContent: 'flex-end' }}>
-        <Pressable
-          {...DECORATIVE}
-          testID="sheet-backdrop"
-          focusable={false}
-          onPress={onClose}
-          style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, ...sheetBackdrop(colors) }}
-        />
-        <Animated.View
-          ref={sheetRef}
-          testID="sheet-panel"
-          {...panelDialog}
-          accessibilityViewIsModal
-          onAccessibilityEscape={onClose}
-          tabIndex={-1}
-          style={{
-            maxHeight: '92%',
-            backgroundColor: colors.card,
-            borderTopLeftRadius: BUN_RADIUS.sheet,
-            borderTopRightRadius: BUN_RADIUS.sheet,
-            borderWidth: BUN_OUTLINE.card,
-            borderBottomWidth: 0,
-            borderColor: colors.ink,
-            paddingTop: BUN_SPACE.md,
-            paddingHorizontal: BUN_SPACE.lg,
-            paddingBottom: insets.bottom + BUN_SPACE.lg,
-            gap: BUN_SPACE.md,
-            transform: [{ translateY: offset }],
-          }}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: BUN_SPACE.sm }}>
-            <View ref={titleRef} {...nativeTitle} style={{ flex: 1, paddingTop: BUN_SPACE.xs }}>
-              <BunText variant="heading" role="heading" accessibilityRole="header">{title}</BunText>
-            </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={closeLabel ?? tc('Close')}
-              onPress={onClose}
-              style={{ minHeight: BUN_TOUCH, minWidth: BUN_TOUCH, borderRadius: BUN_RADIUS.pill, borderWidth: BUN_OUTLINE.control, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' }}
-            >
-              <View {...DECORATIVE}>
-                <BunText variant="heading">×</BunText>
+    <Modal visible={visible} transparent animationType="none" statusBarTranslucent onRequestClose={requestClose} onShow={focusSheet} {...webDialog}>
+      {hidden ? <LockCoverArt /> : (
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, justifyContent: 'flex-end' }}>
+          <Pressable
+            {...DECORATIVE}
+            testID="sheet-backdrop"
+            // Hidden from screen readers, so never a tab stop either: react-native-web's
+            // Pressable reads tabIndex, not focusable.
+            focusable={false}
+            tabIndex={-1}
+            onPress={onClose}
+            style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, ...sheetBackdrop(colors) }}
+          />
+          <Animated.View
+            ref={sheetRef}
+            testID="sheet-panel"
+            {...panelDialog}
+            accessibilityViewIsModal
+            onAccessibilityEscape={onClose}
+            tabIndex={-1}
+            style={{
+              maxHeight: '92%',
+              backgroundColor: colors.card,
+              borderTopLeftRadius: BUN_RADIUS.sheet,
+              borderTopRightRadius: BUN_RADIUS.sheet,
+              borderWidth: BUN_OUTLINE.card,
+              borderBottomWidth: 0,
+              borderColor: colors.ink,
+              paddingTop: BUN_SPACE.md,
+              paddingHorizontal: BUN_SPACE.lg,
+              paddingBottom: insets.bottom + BUN_SPACE.lg,
+              gap: BUN_SPACE.md,
+              transform: [{ translateY: offset }],
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: BUN_SPACE.sm }}>
+              <View ref={titleRef} {...nativeTitle} style={{ flex: 1, paddingTop: BUN_SPACE.xs }}>
+                <BunText variant="heading" role="heading" accessibilityRole="header">{title}</BunText>
               </View>
-            </Pressable>
-          </View>
-          <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ gap: BUN_SPACE.md }} keyboardShouldPersistTaps="handled">
-            {children}
-          </ScrollView>
-        </Animated.View>
-      </KeyboardAvoidingView>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={closeLabel ?? tc('Close')}
+                onPress={onClose}
+                style={{ minHeight: BUN_TOUCH, minWidth: BUN_TOUCH, borderRadius: BUN_RADIUS.pill, borderWidth: BUN_OUTLINE.control, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <View {...DECORATIVE}>
+                  <BunText variant="heading">×</BunText>
+                </View>
+              </Pressable>
+            </View>
+            <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ gap: BUN_SPACE.md }} keyboardShouldPersistTaps="handled">
+              {children}
+            </ScrollView>
+          </Animated.View>
+        </KeyboardAvoidingView>
+      )}
     </Modal>
   );
 }
