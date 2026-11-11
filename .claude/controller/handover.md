@@ -24,6 +24,17 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**23:05: P2-T32's Flash plan (steered) is READY and accepted. Its Flash builder is running.**
+- **The brief:** `briefs/P2-T32.md`, 13 files. The kit `scratch/p2-t32-planner/` checks at `8c6263a4` with 36 OK, and its 3 `orig/` files are identical.
+- **All three checks passed:**
+  - RED is all `AssertionError` (render 11, `recapShare` 2, `biggestDay` 2), with 0 lookup errors and 0 timeouts;
+  - the brief's RED typecheck has a proof log with 0 TS errors;
+  - 31 mutants, one per guard.
+- **The steer worked:** P2 is the asserting-lookup rule and P3 the mutant coverage. P1 to P8 accepted.
+- `index.ts` merge proofs with #407 and #406 are in `PL/merge/`.
+- **The builder,** on Flash: `mcp:launch:35f26db3b389fe300f117c36979e97ebfcab68954c88f6648f5e203bd2605ee2`, in WT `p2-t32` (pre-made).
+- **After DONE:** a first review (Opus) and a second review (Flash): P5's private mode applies to the share text.
+
 **23:00: P3-T4 DONE (planned and built on Flash) → PR #410, both reviews running.**
 - Commit `a68fcd81`. The controller checked it: 14 files (3 A, 11 M), `git diff --check` clean, 13 of 14 `real/` identical. The receipt differs only by its Deviations (P1 to P5, and the two RED rulings). Trailer: Gemini 3.8 Flash.
 - Reported:

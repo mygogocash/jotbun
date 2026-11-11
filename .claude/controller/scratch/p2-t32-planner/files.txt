@@ -1,0 +1,13 @@
+apps/app/src/screens/redesign/insights/recapData.ts
+apps/app/src/screens/redesign/insights/RecapScreen.tsx
+apps/app/src/wallet/recap/copy.ts
+apps/app/src/wallet/recap/biggestDay.ts
+apps/app/src/wallet/recap/biggestDay.test.ts
+apps/app/src/wallet/recap/recapShare.ts
+apps/app/src/wallet/recap/recapShare.test.ts
+apps/app/src/wallet/recap/Confetti.tsx
+apps/app/src/wallet/recap/WalletRecapScreen.tsx
+apps/app/src/wallet/recap/WalletRecap.render.test.tsx
+apps/app/src/dev/catalogue/wallet/recapSections.tsx
+apps/app/src/dev/catalogue/wallet/index.ts
+apps/app/app/spend/recap/[month].tsx
