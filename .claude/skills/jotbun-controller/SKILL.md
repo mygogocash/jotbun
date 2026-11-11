@@ -71,7 +71,11 @@ The skill and `C/` are committed in the repo; the scratch proof trees are not, a
   - the load.
 - **Does a brief's base hold:** `bash scripts/check_kit.sh <kit> [--rebase-out <dir>]`. It checks the kit's sums (skipping lost `*.log` lines), its `SHA256SUMS.base`, and its `orig/` or `base/` files at the head. It dry-runs per-file diffs for the files that changed. `--rebase-out` writes patched copies, with SHA256SUMS, for the implementer to copy.
 - **Whole-suite counts:** rarely needed under R100. When a question needs them, `bash scripts/baseline.sh <worktree> app|edge|all [--exports]` measures them; never hand-adjust.
-- **Dispatch:** `python3 -I scripts/make_prompt.py <implementer|fixer|reviewer|confirm|planner> <TASK> --wt --branch --head [--accepted] [--pr --sha] [--lock] [--installed] [--notes <file>]`.
+- **Dispatch:** `python3 -I scripts/make_prompt.py <implementer|fixer|reviewer|confirm|planner> <TASK> --wt --branch --head [--accepted] [--pr --sha] [--lock] [--installed] [--notes <file>] [--spread|--claude-code]`.
+- **Waiting on agents:** `bash scripts/watch_agents.sh unused <idle-min> <cap-min> <wt>:<scratch> verdict:<review file> file:<kit>/SHA256SUMS ...`, run as background Bash, then `t3_background_wait` on its task id.
+  - It exits at the first event: a builder's own commit, a builder gone quiet, a review's `VERDICT:` line, or a planner kit's `SHA256SUMS`.
+  - Re-arm it without the entry that fired.
+  - Launched threads never wake the controller. A builder ends a T3 run at each background job, so `t3_thread_wait` on it returns early.
   - It writes the assignment file from the role templates and prints a one-line Agent prompt and its model.
   - Write only the task's own notes (what moved, totals, rulings, review focus) in `--notes`.
 

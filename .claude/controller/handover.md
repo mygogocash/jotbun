@@ -24,6 +24,37 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**21:45: both P2 PRs need fix rounds. Rulings R106 and R107; two fix planners are running on Claude Code Opus.**
+- **#407 (P2-T14).**
+  - The first review (`reviews/P2-T14.md`) says **Needs fixes**: M1 (at AX5, and with the keyboard up, the pinned header and footer leave the scrolling middle no room), m1 to m5, n1 to n4.
+  - The second (`reviews/P2-T14-second.md`): no major; m1 (private mode shows filled amounts), m2 (a chip label carries the amount), m3 = first m4, m4 = first m2; n1 to n3.
+  - **R106:**
+    - follow the board: at large text the switch goes into the scroll area; the problem line leaves the pinned footer; the keys hide while the name field has focus; no `Tray.tsx` change;
+    - a filled amount (chip, Bun, copy, move all, edit) is masked in private mode until the first key, which narrows P9;
+    - a chip `label` holds the name only;
+    - plus the minors and pins.
+  - Fix planner: `mcp:launch:fb95e212d234c490f9f777d551bbb44fa814ef689d4781e553eb39fec3a59efb`, writing `briefs/P2-T14-fix.md` with the kit `scratch/p2-t14-fix-planner/`, on `18876253`.
+- **#406 (P2-T33).**
+  - The second review (`reviews/P2-T33-second.md`) says **Needs fixes**: M1, the receipt photo (`ReceiptViewer`, a Modal of its own) stays drawn over the locked app. The controller checked it: `ReceiptParts.tsx:230` has a `Modal` with no `useLockCover`.
+  - **R107:**
+    - `ReceiptViewer` draws the cover like `Sheet`, and every reachable `Modal` is swept (`CustomerSpendScreen`, `SpendMediaPermissionPrimer`, `SpendNewCategorySheet`, `SpendDatePicker`);
+    - the first review's m2, m3, m4 and n4;
+    - the second's m2 to m5 and n1 (fail-closed write, no iOS speech under the cover, keyboard dismissed, the port's types hardened);
+    - pins for the first's n1 to n3 and n5.
+  - Carried, not fixed:
+    - the first's m1 (Android) to P2-T34;
+    - the second's m1 (sheet children's state) under R63, to later sheet hosts and P2-T34;
+    - the second's m6 (native sheets) is owner Q1.
+  - Fix planner: `mcp:launch:adbc392633ee790391d70d51a197633159f9a9b43fb6d75066203400f2b027e7`, writing `briefs/P2-T33-fix.md` with the kit `scratch/p2-t33-fix-planner/`, on `5844e4c1`.
+- **After each fix brief is READY:**
+  1. Dispatch the fixer with `make_prompt.py fixer P2-T14 --wt p2-t14 --branch p2/t14-add-flow --spread` (Haiku).
+  2. Push, update the PR body, rerun CI.
+  3. Run a **confirming review on Claude Code Opus**, not the spread table's Sonnet, because both fixes write new logic on money and privacy work.
+  4. Merge #407, then promote it. Start P2-T20, then update #406 (`index.ts` as `merge/index.t14-t12-t33.ts`), and merge #406.
+- **Tooling:**
+  - The reviewer template now requires the review *file* to end with an exact `VERDICT:` line. These reviewers wrote `## Verdict`, which the watcher missed for about 20 minutes.
+  - The watcher is now `scripts/watch_agents.sh`, documented in SKILL.md's fast paths.
+
 **21:30: the owner said "find the way to speed up development without my approval". Recorded in SKILL.md.**
 - **Rulings:**
   - Integration-branch merges no longer wait on the owner's yes, money-path and privacy PRs included, once CI is green and the reviews approve. The owner still reviews each task in its promotion PR into main.

@@ -134,7 +134,7 @@ def main():
         if a.lock: L += [LOCK, ""]
         L += [RULES, "",
               f"Write your review to {C}/reviews/{a.task}{suffix}.md: findings ranked blocker, major, minor and nit, each with evidence (file and line, a failing probe, or the plan clause), and \"Notes for later tasks\" if anything should carry. Scratch folder: {C}/scratch/{tl}-{suffix[1:] or 'review'}/ (mkdir -p).",
-              "End your final message with exactly `VERDICT: Approved` or `VERDICT: Needs fixes` (any blocker or major means Needs fixes)."]
+              "End the review file and your final message, each with a last line that is exactly `VERDICT: Approved` or `VERDICT: Needs fixes` (any blocker or major means Needs fixes). The controller watches the file for that line, so a heading such as `## Verdict` is not enough."]
     else:
         L += [f"You are the planning step ({label}) for Jotbun task {a.task} \"{t['title']}\". A controller session reads only your final message.", "",
               f"Read {proto} first; it is binding (durable paths under .claude/controller/, never /private/tmp; R87: the receipt is its own file). You are read-only in the repo. The integration code is at {W}/p1a-vault-core (origin/claude/p1a-vault-core is at {a.head}; run `git fetch`; read-only git; proofs in a scratch `git archive` copy).", "",
