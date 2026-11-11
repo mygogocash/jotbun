@@ -8,6 +8,31 @@ Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vaul
 
 Start no new threads or lanes on any provider. The 13:17 batch is disabled. The held items, their state and their next steps are in `scratch/held-2026-11-11.md`. #395 and #396's fix rounds are DONE but not pushed, and the 1B-T13 brief is READY but unreviewed. Still allowed: watching main for real CI reds and reporting them.
 
+(A copy of `scratch/held-2026-11-11.md`, which `sync_state.sh` does not carry, so it can resume from GitHub alone.)
+
+### Held items
+
+| Task | State at the hold | Next step on resume |
+| --- | --- | --- |
+| **#395 P2-T12 fix round** (card stack) | **DONE, committed locally, not pushed.** Branch `p2/t12-card-stack` in WT `p2-t12`. Fix commit `af61e89a`, on top of merges `3e3f515f` and `37e366aa` (the second only brings in `.claude/` changes). Cursor Auto, thread `mcp:launch:daac26a1…`. Every RED, GREEN and mutant Expected line held, and the review's eight survivors are killed. The earlier run's test edits matched the kit and were kept. | Push to `p2/t12-card-stack`, update #395's body, run an Opus-High confirming review (the fix writes new logic), get green local CI, then merge into the integration branch only once Fronk confirms the low-risk merge rule. Promote, then clean up. |
+| **#396 fix-download-aborts fix round** | **DONE, committed locally, not pushed.** Branch `fix/download-aborts` in WT `fix-download-aborts`. Fix commit `763edb3f`, on top of merges `bbb63e18` and `75b450e1`. Cursor Auto, thread `mcp:launch:352d7abf…`. Test-only (`download-aborts.test.ts` and the receipt): GREEN 7 of 7, the five review mutants each fail their own case, 14 of 14 killed. The earlier run's test edit matched the kit's `real/` and was kept. | Push to `fix/download-aborts`, update #396's body, and get green local CI. It is test-only from its planner's kit, so the controller checks it instead of a second review. Then merge once Fronk confirms, promote, and clean up. |
+| **P2-T14 build** (add flow, keypad, amount step) | **Not started.** WT `p2-t14` on `p2/t14-add-flow`, clean at `f218796d`. Prompt `scratch/dispatch/P2-T14-implementer.prompt.md`, notes `P2-T14-implementer-notes.md`. P1 to P17 accepted. | Launch with `t3_thread_launch` in the jotbun project (`cc4b9cae-2d3c-4aeb-b98f-affe256dcb86`), `workspaceStrategy: {type: "root"}`, on Antigravity `claude-sonnet-5-5-high`, falling back to Claude Code then Cursor. After DONE: open the PR and run an Opus-High review. P2-T20 waits on its merge. |
+| **P2-T33 build** (Face ID lock) | **Not started.** The brief is READY on `b8095b99` (`briefs/P2-T33.md`, kit `scratch/p2-t33-planner/`). WT `p2-t33` on `p2/t33-face-id-lock` was made at `b8095b99`. Prompt `scratch/dispatch/P2-T33-implementer.prompt.md`, notes `P2-T33-implementer-notes.md`. | Launch as for P2-T14. **Merge order (ruling P17):** P2-T14 first. In `apps/app/src/dev/catalogue/wallet/index.ts` the lock's spread goes last (`...WALLET_ADD_SECTIONS,` then `...WALLET_LOCK_SECTIONS,`). The second PR to merge resolves the one-line conflict as `scratch/p2-t33-planner/merge/index.t33-t14-conflict.ts` shows, or applies the `after-p2-t14` diff if P2-T14 has merged first. If the head moved with code changes, regenerate the prompt (`make_prompt.py implementer P2-T33 --wt p2-t33 --branch p2/t33-face-id-lock --head <head> --notes …`) and recreate the WT. |
+| **1B-T13 build** (vault into the HTTP Worker) | **The planner posted READY at 12:55** (Claude Code Opus, thread `mcp:launch:9ebaef6c…`): `briefs/1B-T13.md`, no unfilled placeholders, kit `scratch/1b-t13-planner/` with 144 SHA256SUMS lines, check clean. Size L, 60 paths, rulings P1 to P5 (the plan is out of date on Better Auth and the PostHog proxy). Proofs: RED Node 12 of 18, `c1-worker` 2 of 6, both m-1 cases; GREEN Node 48, `c1-worker` 6, workers 134, the three smokes; 28 of 28 mutants killed. **The controller has not reviewed the brief yet.** No WT has been created. | Review the brief (rulings P1 to P5 first). If accepted: create WT `p1-1b-t13` on `p1/1b-t13-vault-http` from the integration head, then `make_prompt.py implementer 1B-T13 --wt p1-1b-t13 --branch p1/1b-t13-vault-http --head <head> --lock`, and launch on Antigravity `claude-opus-5-5-high` (a hard task) under the heavy lock. |
+| P2-T20 | Waits on P2-T14's merge. | Plan it after P2-T14 merges. |
+| P2-T16 | Unheld but not planned. Carries tray-hardening's c-n1 (`followups.md`). | Dispatch a planner. |
+
+### PRs (no merges by the controller)
+
+- **#393** (promotion of wallet-looks-unstored): Fronk merges it himself, on the task PR's green CI. The thread still watches it passively. After it merges: check that #399 and the PRs above it rebase cleanly and stay green.
+- **#70** (redesign plan, base main): green on the local runners at `8cf44d34`. Not to be merged; its plan content is already on main. Fronk may close it.
+- **The promotion stack (#373 up to #402):** all green except #393 (a billing refusal). Each waits on Fronk's merge into main, bottom-up from #373.
+
+### Infrastructure left running
+
+- Two local CI runners (`jotbun-runner-1` and `-2`, label `jotbun-local`) and the repo variable `CI_RUNNER=jotbun-local`. main's own workflow still says `ubuntu-24.04` until the promotion stack lands, so a push to main runs on GitHub-hosted runners, and while billing refuses it fails in about 3 seconds. That is a billing refusal, not a real red.
+- To free the Mac fully: `bash .claude/controller/local-ci/runners.sh down`. PR CI then stops until billing is fixed or the runners come back.
+
 ## 11 Nov 12:05 Bangkok: #395 and #396 fix rounds pulled forward onto Cursor
 
 Fronk wants the Mac Studio used; it was nearly idle (load about 2 on 18 cores). Jot pulled part of the 13:17 batch forward:
