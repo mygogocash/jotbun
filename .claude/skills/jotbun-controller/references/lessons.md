@@ -36,6 +36,18 @@
 - **Metro's printed module count on a warm cache.** A web export that ends in well under a second can print a short count, such as 4604 for 4788, while its bundles are byte-identical. Seen on P2-T10's gate, 9 Nov. Rule it a flake when a re-run prints the expected count and the bundle hashes match. Briefs that need an exact count can pass `--clear`.
 - **R-B flake.** `attachments.integration.spec.ts` "two records retaining one image at once keep one receipt, made by one copy" (expected 1 write, got 2) is a known race in frozen `apps/api` (migration 0017's two-statement check; owner decision R-B pending). Rerun the failed job once: `gh run rerun <run> --failed`.
 - **The retry_after edge.** The same file's case "copying is bounded › serializes reservations: five at once from one account reserve exactly four" can fail `expect(limited.retry_after).toBeLessThanOrEqual(180)` with 181. It was seen on #396's SQL job, 11 Nov, run 42992817954, and passed on a rerun. It is frozen `apps/api`, so rule it a flake for any PR that does not touch `apps/api`, and rerun the failed job once.
+- **The Mac sleeps after one minute idle, which takes the local CI and the agents down (11 to 12 Nov, 23:08 to 00:31).**
+  - **Signs:**
+    - both runners are `offline` on GitHub while their containers say `Up`;
+    - jobs end `Canceled` or `Abandoned`, and a failed job's log says "The operation was canceled";
+    - Antigravity turns fail with "sent nothing for 15 minutes".
+  - **Check:** `pmset -g log | grep -E 'Entering Sleep|DarkWake' | tail`.
+  - **Fix:**
+    1. Hold the machine awake with `nohup caffeinate -i -s -t 28800 &`, and write its pid to `scratch/caffeinate.pid`. It works on AC power only, and the display still sleeps.
+    2. Recreate a hung runner: `docker rm -f jotbun-runner-N jotbun-runner-N-dind`, then `runners.sh up 2`.
+    3. Rerun the lost jobs with `rerun_then_wait.sh <pr> <run>`.
+    4. Send each failed agent thread "resume".
+  - **Caution:** don't treat a cancel caused by sleep as a test failure.
 - **Gemini 3.8 Flash plans well-specified logic, not UI screens (11 Nov evidence).**
   - P3-T4 (an edge transport, plan-exact) passed both reviews clean.
   - The two UI screens' Flash plans went to their Opus first reviews with real gaps: P2-T25 with 2 majors (a private-mode leak, a call added on a false premise), P2-T32 with 8 (reduced motion, share failure, an off switch, mock catalogue sections, an early-stopping reader, the wallet kit and dark-mode contrast, English copy, tests off the plan's list).

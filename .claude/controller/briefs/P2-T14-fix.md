@@ -526,13 +526,13 @@ index b59d522..d566a3a 100644
 -import type { KeypadProblem, KeypadState } from '../../ui/keypadExpression.ts';
 +import { applyKey, EMPTY_KEYPAD, evaluateKeypad, keypadFromMinor } from '../../ui/keypadExpression.ts';
 +import type { KeypadDigit, KeypadProblem, KeypadState } from '../../ui/keypadExpression.ts';
- 
+
  /** What the tray adds: spending, income, or money moved between the person's own wallets (W14). */
  export type AddType = 'expense' | 'income' | 'transfer';
 @@ -59,6 +59,41 @@ export function amountProblem(keypad: KeypadState): KeypadProblem | null {
    return outcome.ok || outcome.problem === 'empty' ? null : outcome.problem;
  }
- 
+
 +/**
 + * The keypad for an amount the person did not type: a chip's, Bun's reading,
 + * a copy, move all, or the edit tray's opening amount (R106). It shows as
@@ -570,11 +570,11 @@ index b59d522..d566a3a 100644
 +
  export type ConfirmRow = { key: 'category' | 'wallet' | 'from' | 'to' | 'date' | 'note'; labelKey: string; value: string; guessed: boolean };
  type RowKey = ConfirmRow['key'];
- 
+
 @@ -96,14 +131,14 @@ export function confirmRows(
    return [row('category', category ? categoryName(category, tc) : ''), row('wallet', walletName(draft.walletId)), date, note];
  }
- 
+
 -/** What each row shows of the draft, to tell whether the person changed it. */
 +/** What each row shows of the draft, to tell whether the person changed it: the note as its row shows it, trimmed. */
  const ROW_FIELDS = new Map<string, (draft: QuickAddDraft) => string | null>([
@@ -586,7 +586,7 @@ index b59d522..d566a3a 100644
 -  ['note', (draft) => draft.note],
 +  ['note', (draft) => draft.note.trim()],
  ]);
- 
+
  /**
 ```
 
@@ -643,7 +643,7 @@ index 3001e8a..4e73886 100644
 +import type { ComponentRef, ReactNode } from 'react';
 +import { Keyboard, Pressable, View } from 'react-native';
  import Svg, { Circle, Path } from 'react-native-svg';
- 
+
  import { isRedesignEnabled } from '@mobile/config/featureFlags';
 @@ -33,14 +41,16 @@ import { amountMaxScale, WALLET_TYPE, walletLineHeight } from '@mobile/theme/wal
  import { DECORATIVE, POLITE_LIVE_REGION, useAnnouncement } from '@mobile/ui/a11y';
@@ -667,7 +667,7 @@ index 3001e8a..4e73886 100644
 @@ -58,16 +68,28 @@ export function useCanTellBun(): boolean {
    return isRedesignEnabled('companion') && enabled;
  }
- 
+
 -export function AmountStep({ draft, keypad, onDraft, onStep, type, lookups, chips, canTellBun, onTellBun }: StepProps & {
 +export function AmountStep({ draft, keypad, onDraft, onStep, type, lookups, chips, canTellBun, onTellBun, problem, typeSwitch, onNaming }: StepProps & {
    type: AddType;
@@ -739,7 +739,7 @@ index 3001e8a..4e73886 100644
      </View>
    );
  }
- 
+
 -/** The step's footer, for the tray's pinned `footer`: the keypad, then the keypad's problem right above Next. */
 -export function AmountFooter({ keypad, onKeypad, onStep, type, problem }: StepProps & { type: AddType; problem: string | null }) {
 +/** The step's footer, for the tray's pinned `footer`: the keys and Next; while income's name field has focus, Next alone (R106). */
@@ -766,7 +766,7 @@ index 3001e8a..4e73886 100644
 @@ -197,11 +222,30 @@ function TellBunRow({ onPress }: { onPress(): void }) {
    );
  }
- 
+
 -/** Income's name (rh-income): one line of up to 120 characters, and the note that income is not counted in the budget. */
 -function NameField({ value, onChange }: { value: string; onChange(next: string): void }) {
 +/**
@@ -864,12 +864,12 @@ index d628d85..77ccfc8 100644
 +// change, and said to be unavailable (Pressable derives that from `disabled`
 +// on a phone and on the web).
  import { Pressable, View } from 'react-native';
- 
+
  import { playHaptic } from '@mobile/lib/hapticMoment';
 @@ -25,7 +32,16 @@ const LABELS = { expense: 'add.typeExpense', income: 'add.typeIncome', transfer:
  const SEGMENT = 44;
  const LIFT = '0px 1px 4px rgba(17, 16, 20, 0.14)';
- 
+
 -export function TypeSwitchHeader({ type, onType }: { type: AddType; onType(type: AddType): void }) {
 +/**
 + * Where the switch goes (R106): the tray's header at the standard text sizes;
@@ -931,7 +931,7 @@ index 0e9473e..06420c0 100644
 +// host pins the keypad in the tray's footer, so it never scrolls). Each press
 +// ticks once (keyTap).
  import { Pressable, View } from 'react-native';
- 
+
  import { playHaptic } from '@mobile/lib/hapticMoment';
 @@ -16,13 +18,14 @@ import { useWalletColors } from '@mobile/theme/ThemeProvider';
  import { LATIN_UI_FONT_FAMILY } from '@mobile/theme/uiFontFamily';
@@ -945,7 +945,7 @@ index 0e9473e..06420c0 100644
 +import { walletKey } from './addFlow';
 +import type { WalletKey } from './addFlow';
  import { COPY } from './copy';
- 
+
 -const ROWS: readonly (readonly KeypadKey[])[] = [
 +const ROWS: readonly (readonly WalletKey[])[] = [
    ['1', '2', '3'],
@@ -983,11 +983,11 @@ index d15d19b..40fd926 100644
 +// ends with the amount in digits.
  import type { Minor } from '@gogospend/contracts';
  import { Pressable, View } from 'react-native';
- 
+
 @@ -21,7 +24,12 @@ import { usePrivateMode } from '../privacy/PrivateModeProvider';
  import { WalletText } from '../WalletText';
  import { COPY } from './copy';
- 
+
 -export type QuickChip = { label: string; amountMinor: Minor; apply(): void };
 +export type QuickChip = {
 +  /** The name only, never an amount: private mode masks only `amountMinor`. */
@@ -995,9 +995,9 @@ index d15d19b..40fd926 100644
 +  amountMinor: Minor;
 +  apply(): void;
 +};
- 
+
  const LINES = { ...COMMON_COPY, ...COPY } as const;
- 
+
 ```
 
 `apps/app/src/dev/catalogue/wallet/addSections.tsx`:
@@ -1035,7 +1035,7 @@ index 835de08..a43954b 100644
 +// harness, which loads vitest.
  import { useState } from 'react';
  import { View } from 'react-native';
- 
+
 @@ -19,12 +22,12 @@ import type { Lookups } from '@mobile/spend/v1/redesign/shared';
  import { keypadFromMinor } from '@mobile/ui/keypadExpression';
  import type { KeypadProblem, KeypadState } from '@mobile/ui/keypadExpression';
@@ -1053,7 +1053,7 @@ index 835de08..a43954b 100644
  import { TextLink } from '@mobile/wallet/tray/TextLink';
 @@ -43,7 +46,8 @@ const SAMPLES = {
  } as const satisfies DraftTable;
- 
+
  /**
 - * Today's words for the two problems this keypad can meet, read through tc as
 + * Today's words for the two problems this keypad can meet (a fill starts over

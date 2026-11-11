@@ -24,6 +24,19 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 - **No planner rebase was needed after all.** `check_kit` flagged `index.ts` because its plain patch fails, but the head's `index.ts` is byte-identical to the planner's `PL/merge/index.p2-t12.ts`. Step 4.1's `git apply --3way` must give `PL/merge/index.t12-t33.ts` (sha256 `a3acf233…`).
 - **Controller ruling for P2-T33:** Step 0.2 will list `WalletCard.tsx`, which is on its BLOCKED list. The implementer goes on. P2-T12's fix round only added `onAccessibilityTap={onPress}` to the `Pressable` branch, plus comments, and the lock preview (`LockSetupView.tsx:105`) passes no `onPress`.
 
+**00:45 (12 Nov): the Mac slept from 23:08 to 00:31, stalling CI and one agent. It is held awake now. #407 and #406 have their confirming reviews approved; #410 reruns its lost jobs.**
+- **The sleep.** `pmset` shows `sleep 1` (one minute). At 23:08 the Mac entered Idle Sleep, then fell back asleep at each dark wake with "Dark Wake Thermal Emergency".
+  - Both runners went offline. Jobs were cancelled or abandoned, and runner-1 hung, so it was recreated (`docker rm -f` plus `runners.sh up 2`; the image re-registers it with `--replace`).
+  - The P2-T25 second reviewer's turn stopped ("Antigravity sent nothing for 15 minutes"). It was resumed with a message.
+- **Held awake:** `caffeinate -i -s -t 28800` (pid in `scratch/caffeinate.pid`). It started at 00:37 and ends by itself at about 08:37; the display can still sleep. Stop it with `kill $(cat scratch/caffeinate.pid)`.
+  - **For the owner:** thermal pressure read 2 ("heavy") at 00:35. `hybridsearchd` (Spotlight's indexer) used about 3.2 cores, which the worktrees and scratch trees feed. Excluding `~/Developer` from Spotlight (System Settings, Spotlight, Search Privacy) would cut that heat. That is the owner's setting to change.
+- **CI cancelled** on heads that will change: #411 and #412 (fix rounds) and #406 (it must merge the integration head after #407). This keeps the two runners for #410 and #407.
+- **#407 (P2-T14):** the confirming review is Approved (`reviews/P2-T14-confirm.md`: m1, m2, n1, n2; carry them at merge). Waiting on CI at `28b9d5ac` (background `wait_ci.sh 407`).
+- **#406 (P2-T33):** the confirming review is Approved (`reviews/P2-T33-confirm.md`: m1, n1 to n3). After #407 merges, merge the integration head in (`index.ts` as `merge/index.t14-t12-t33.ts`, `draftText.test.ts` merged), push, then wait for CI and merge.
+- **#410 (P3-T4):** the SQL job was "The operation was canceled" at 17:31 UTC (the sleep), and 3n+1 was cancelled. The new `rerun_then_wait.sh 410 43051770978` reruns them once the run ends, then waits.
+- **#411 (P2-T32):** the Flash second review is Approved, with one nit, the first review's m1. The fix round goes ahead (R110).
+- **Watcher:** `verdict:P2-T25-second`, plus `file:` for the briefs of P2-T29, P2-T31, P2-T25-fix and P2-T32-fix.
+
 **23:45: #410 (P3-T4) has both reviews approved and waits on CI. #411 and #412 need fixes, with Opus fix planners running. UI-heavy planning goes back to Opus.**
 - **#410:** both reviews approved (Opus `reviews/P3-T4.md`, with m1 to m4 carried; Flash `reviews/P3-T4-second.md`). The carriers are in followups.md (P3-T6, P3-T7, P3-T8, P3-T10, P3-T3, P4-T6, P6C).
   - **Deployment note:** set `AI_GATEWAY_TOKEN` only together with `ANTHROPIC_BASE_URL`.

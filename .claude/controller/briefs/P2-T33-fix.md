@@ -708,7 +708,7 @@ index a962795a21b0ebc9df29618ad3ee539660457836..d2f95d5a22bba59f90fa5a42f969e261
 @@ -24,8 +24,26 @@ export const POLITE_LIVE_REGION = {
    'aria-live': 'polite',
  } as const;
- 
+
 -/** Speaks `text` on iOS, where live regions are not read. Never moves focus. */
 +/**
 + * While the Face ID lock's cover is up (P2-T33), the app below it says nothing:
@@ -732,7 +732,7 @@ index a962795a21b0ebc9df29618ad3ee539660457836..d2f95d5a22bba59f90fa5a42f969e261
 +export function announceOverLockCover(text: string): void {
    if (Platform.OS === 'ios' && text) AccessibilityInfo.announceForAccessibility(text);
  }
- 
+
 ```
 
 `apps/app/src/sync/announce.ts`:
@@ -750,7 +750,7 @@ index ef1935263d3816f3e9ce8d51c31c00ee4fef178f..532c46638a7fddf5219e0e98b0391a6f
 +// banner's polite live region. It is said through announcePolitely, so
 +// nothing is said while the Face ID lock's cover is up (P2-T33).
 +import { announcePolitely } from '@mobile/ui/a11y';
- 
+
  export function announceStatus(text: string): void {
 -  if (Platform.OS === 'ios' && text) AccessibilityInfo.announceForAccessibility(text);
 +  announcePolitely(text);
@@ -838,7 +838,7 @@ index 3c28ddc58320d3caa32eab00b083b8b4ad57b9e2..fe974523ac2b53f215ef9f00b8c65d94
 +import { AppState, BackHandler, Keyboard, Platform, Pressable, View } from 'react-native';
  import { IntlContext } from 'react-intl';
  import { useSafeAreaInsets } from 'react-native-safe-area-context';
- 
+
  import { isSupportedLocale } from '@mobile/i18n/locales';
  import { translateCopy } from '@mobile/i18n/messages';
  import { useWalletColors } from '@mobile/theme/ThemeProvider';
@@ -853,7 +853,7 @@ index 3c28ddc58320d3caa32eab00b083b8b4ad57b9e2..fe974523ac2b53f215ef9f00b8c65d94
  import type { AuthResult, LockAvailability, LockEvent, LockNote, LockView } from './lockModel';
 -import { afterAnswer, afterRecheck, appStateEvent, LOCK_ANSWERED_NAME, LOCK_NAME, lockReducer, METHOD_KEYS, namedMethod, UNLOCKED } from './lockModel';
 +import { afterAnswer, afterRecheck, appStateEvent, authResultOf, availabilityOf, LOCK_ANSWERED_NAME, LOCK_NAME, lockReducer, METHOD_KEYS, namedMethod, UNLOCKED } from './lockModel';
- 
+
  /** What the setup screen and the Settings row read, and ask. */
  export type LockSetting = {
 @@ -63,7 +74,7 @@ export type LockSetting = {
@@ -866,9 +866,9 @@ index 3c28ddc58320d3caa32eab00b083b8b4ad57b9e2..fe974523ac2b53f215ef9f00b8c65d94
    /** Keeps lock-answered, the lock left as it is (the setup step's next). */
    readonly answer: () => void;
 @@ -98,13 +109,17 @@ const UNREAD: Setting = { ready: false, enabled: false };
- 
+
  const LOCK_COPY = { ...COMMON_COPY, ...COPY };
- 
+
 -/** Says once, over the app, that the lock turned itself off (R67), until the person closes it. */
 -function TurnedOffNotice({ text, close, onClose }: { text: string; close: string; onClose: () => void }) {
 +/** The gate's notices: the lock turned itself off (R67), or could not be kept on. */
@@ -896,7 +896,7 @@ index 3c28ddc58320d3caa32eab00b083b8b4ad57b9e2..fe974523ac2b53f215ef9f00b8c65d94
    const [front, setFront] = useState(() => AppState.currentState === 'active');
 +  // The phone's first reading has answered, or failed: the first ask waits for it, so it asks in the phone's words.
 +  const [settled, setSettled] = useState(false);
- 
+
    // What the rules read between renders.
    const enabled = useRef(false);
 +  // On only because the setting could not be read: the person never turned it on.
@@ -932,7 +932,7 @@ index 3c28ddc58320d3caa32eab00b083b8b4ad57b9e2..fe974523ac2b53f215ef9f00b8c65d94
        return answer;
 @@ -197,7 +218,13 @@ export function LockGate({ port, children }: { port: LocalAuthPort; children: Re
    }, [port]);
- 
+
    useEffect(() => {
 -    void readPhone();
 +    let live = true;
@@ -943,10 +943,10 @@ index 3c28ddc58320d3caa32eab00b083b8b4ad57b9e2..fe974523ac2b53f215ef9f00b8c65d94
 +      live = false;
 +    };
    }, [readPhone]);
- 
+
    useEffect(() => {
 @@ -214,7 +241,8 @@ export function LockGate({ port, children }: { port: LocalAuthPort; children: Re
- 
+
    const prompt = useCallback(async (words: string): Promise<AuthResult> => {
      try {
 -      return await port.authenticate({ prompt: words, cancel, fallback: t('lock.usePasscode') });
@@ -966,7 +966,7 @@ index 3c28ddc58320d3caa32eab00b083b8b4ad57b9e2..fe974523ac2b53f215ef9f00b8c65d94
 +    setNotice('lock.turnedOff');
 +    announceOverLockCover(t('lock.turnedOff'));
    }, [dispatch, t]);
- 
+
    /** Asks the phone to unlock: once by itself for each opening, and again from the locked screen. */
    const unlock = useCallback(async () => {
      if (asking.current) return;
@@ -1006,7 +1006,7 @@ index 3c28ddc58320d3caa32eab00b083b8b4ad57b9e2..fe974523ac2b53f215ef9f00b8c65d94
 +      setBusy(false);
      }
    }, [prompt, readPhone, turnOff, dispatch, t]);
- 
+
 +  // Each opening asks once by itself: in front, and once the phone has said how it locks. While a prompt is up unlock
 +  // asks nothing and leaves the opening unasked, so `busy` is a dependency: the opening asks once that prompt answers.
    useEffect(() => {
@@ -1016,7 +1016,7 @@ index 3c28ddc58320d3caa32eab00b083b8b4ad57b9e2..fe974523ac2b53f215ef9f00b8c65d94
      void unlock();
 -  }, [view.locked, front, unlock]);
 +  }, [view.locked, front, settled, busy, unlock]);
- 
+
    const change = useCallback(async (on: boolean) => {
      if (asking.current || on === enabled.current) return;
 @@ -263,22 +300,38 @@ export function LockGate({ port, children }: { port: LocalAuthPort; children: Re
@@ -1071,11 +1071,11 @@ index 3c28ddc58320d3caa32eab00b083b8b4ad57b9e2..fe974523ac2b53f215ef9f00b8c65d94
 -    void (on ? store.set(LOCK_NAME, '1') : store.remove(LOCK_NAME)).catch(() => undefined);
 -    void store.set(LOCK_ANSWERED_NAME, '1').catch(() => undefined);
    }, [prompt, readPhone, turnOff, t]);
- 
+
    const answer = useCallback(() => {
 @@ -295,6 +348,16 @@ export function LockGate({ port, children }: { port: LocalAuthPort; children: Re
    );
- 
+
    const hidden = !setting.ready || view.locked || view.covered;
 +  // While the cover is up the app below says nothing on iOS. A layout effect, so it is quiet before any part below
 +  // runs its own effects: a line that changes as the cover goes up is not said either.
@@ -1119,13 +1119,13 @@ index 32cb08e8b3603c943aac01a145fa20a516da1ad2..dda9b6d51a5527fb3e453d30288d38c2
 +// be read, so a slip in the port never opens the app. LockGate runs them; the
 +// setup screen and the Settings row read them. Pure: a Node test reads it, so
 +// it imports nothing.
- 
+
  /** How the phone proves its owner. P2-T34 reads it from the phone's enrolment. */
  export type LockMethod = 'face' | 'fingerprint' | 'passcode';
 @@ -13,6 +15,27 @@ export type AuthResult = 'success' | 'cancelled' | 'failed' | 'lockout' | 'unava
  /** What the phone can do: whether it can lock at all (a passcode or biometrics), and how. */
  export type LockAvailability = { canLock: boolean; method: LockMethod | null };
- 
+
 +const AUTH_RESULTS: readonly AuthResult[] = ['success', 'cancelled', 'failed', 'lockout', 'unavailable'];
 +const LOCK_METHODS: readonly LockMethod[] = ['face', 'fingerprint', 'passcode'];
 +
@@ -1162,7 +1162,7 @@ index 32cb08e8b3603c943aac01a145fa20a516da1ad2..dda9b6d51a5527fb3e453d30288d38c2
 -  return phone !== null && !phone.canLock ? { step: 'turnOff' } : { step: 'stay', note: 'lock.tryAgain' };
 +  return phone !== null && phone.canLock === false ? { step: 'turnOff' } : { step: 'stay', note: 'lock.tryAgain' };
  }
- 
+
  /** The method a screen names: the phone's, or the passcode while the phone has not said (every phone that can lock has one). */
 ```
 
