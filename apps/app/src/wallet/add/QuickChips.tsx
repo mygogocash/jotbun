@@ -6,7 +6,10 @@
 // list of full-width rows of at least 64 pt, where a long name pushes the
 // amount onto the next line. The amount is WalletAmount's, so private mode
 // masks it (W10), and each chip says its name and its amount (add.chip), or
-// that the amount is hidden.
+// that the amount is hidden. A chip's `label` is its name only and never holds
+// an amount, since private mode masks only `amountMinor` (R106): P2-T16 builds
+// it from the often-logged item's `draft.merchant`, never its `label`, which
+// ends with the amount in digits.
 import type { Minor } from '@gogospend/contracts';
 import { Pressable, View } from 'react-native';
 
@@ -21,7 +24,12 @@ import { usePrivateMode } from '../privacy/PrivateModeProvider';
 import { WalletText } from '../WalletText';
 import { COPY } from './copy';
 
-export type QuickChip = { label: string; amountMinor: Minor; apply(): void };
+export type QuickChip = {
+  /** The name only, never an amount: private mode masks only `amountMinor`. */
+  label: string;
+  amountMinor: Minor;
+  apply(): void;
+};
 
 const LINES = { ...COMMON_COPY, ...COPY } as const;
 
