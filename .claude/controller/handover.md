@@ -14,7 +14,12 @@ Integration branch `claude/p1a-vault-core` (worktree `.claude/worktrees/p1a-vaul
   - 1B-T13 (T3 task `1b-t13-planner-20261111b`; WT p1-1b-t13 on p1/1b-t13-vault-http; heavy lock);
   - P2-T33 (T3 task `p2-t33-planner-20261111b`; WT p2-t33 on p2/t33-face-id-lock).
   - Assignments are in `scratch/dispatch/*-planner.prompt.md`.
-- The first dispatches (ids ending `a`) stopped unread: Antigravity children were sandboxed to the controller's T3 worktree. All five were redispatched at 08:20 with the jotbun projectId (ids ending `b`).
+- Both delegate_task rounds (ids ending `a`, then `b` with the projectId) stopped unread: a delegated child runs in the parent's checkout, and Antigravity sandboxed it there. At 08:17 all five were relaunched as top-level threads in the jotbun project root (no completion wake; check with `t3_thread_read`):
+  - #395 fixer `mcp:launch:d7e0a83e0ef6e4bd7688b3a1cccadfcceda5c6b07c99188530bad3efe07c0334`
+  - #396 fixer `mcp:launch:3a4fd6fcc70a9915e49e6982ba2ce277534e955440cc88a7345089734bab66b3`
+  - P2-T14 implementer `mcp:launch:84b315171b6c1aa0757c7cbb846efd7cd2a074d5402ab2bc8d19ba4226be8a66`
+  - 1B-T13 planner `mcp:launch:b688b714ca91ab804d633e3f355f40b768964574c7780ce3664d1b217b0a96a4`
+  - P2-T33 planner `mcp:launch:f9e1ed3c9454b26791079fc057e8792506672bf1d78527c4f13c7ec4d225d8c7`
 - **Do not dispatch these again.** After DONE: push, update the PR body, and run an Opus-High confirming review (#395's fix writes new logic, so it gets one; #396's is test-only from its planner's kit). Then merge on green local CI and promote (owner: "if CI pass merge it"; the merge script cleans up the worktree and branches).
 
 ## Routing moved to Antigravity, 11 Nov 07:50 Bangkok (owner: Antigravity's credits are unused, "maximize it")
