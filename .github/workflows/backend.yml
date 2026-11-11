@@ -3,6 +3,12 @@
 # commands"), plus the release image build and its smoke. It holds no secret,
 # writes nothing (contents: read), pushes no image and deploys nothing.
 # Written and reviewed locally only: it has not run on GitHub yet (E4).
+#
+# Every job runs on GitHub's ubuntu-24.04 unless the repository variable
+# CI_RUNNER names another runner label. While GitHub-hosted runners are
+# refused (billing), it is jotbun-local: self-hosted Linux runners on the
+# owner's Mac (.claude/controller/local-ci/runners.sh). Delete the variable to
+# go back.
 name: backend
 
 on:
@@ -25,7 +31,7 @@ env:
 jobs:
   gate:
     name: Typecheck, unit, render, build, export
-    runs-on: ubuntu-24.04
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -57,7 +63,7 @@ jobs:
 
   database:
     name: SQL integration and ops (local PostgreSQL 17 container)
-    runs-on: ubuntu-24.04
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -91,7 +97,7 @@ jobs:
 
   image:
     name: Release image and smoke (never pushed)
-    runs-on: ubuntu-24.04
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
