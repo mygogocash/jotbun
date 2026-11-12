@@ -1,0 +1,192 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/vault-schema.test.ts > a new vault has every core table, migrated once 22ms
+ ✓ test/workers/vault-schema.test.ts > a vault keeps its rows and does not migrate again after it sleeps 26ms
+ ✓ test/workers/vault-schema.test.ts > the Drizzle schema matches the migrated tables column for column 47ms
+ ✓ test/workers/vault-schema.test.ts > foreign keys hold: a transaction naming an unknown wallet is refused 16ms
+ ✓ test/workers/currency-migration.test.ts > the rebuilt wallets keep every row and every reference to them 43ms
+ ✓ test/workers/currency-migration.test.ts > every table that references wallets keeps its rows 36ms
+ ✓ test/workers/currency-migration.test.ts > older records gain THB money fields 37ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it 69ms
+ ✓ test/workers/history.test.ts > keyset history > all_451_records_are_pageable 79ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > pagination_never_splits_a_command_group 71ms
+ ✓ test/workers/transactions.test.ts > recording expenses and income > records an expense and an income, and wallet balances follow 55ms
+ ✓ test/workers/transactions.test.ts > recording expenses and income > two identical coffees with different ids and keys are both kept 36ms
+ ✓ test/workers/vault-schema.test.ts > command log rows must use the current revision, and entity heads only move forward 25ms
+ ✓ test/workers/vault-schema.test.ts > a primary key cannot be NULL 17ms
+ ✓ test/workers/vault-schema.test.ts > a category's type and built-in key never change 20ms
+ ✓ test/workers/vault-schema.test.ts > a category id never changes 17ms
+ ✓ test/workers/vault-schema.test.ts > a replace that reuses another category's built-in key is refused, and the other category survives 15ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a record made without a source, or with null, reads without the key 55ms
+ ✓ test/workers/transaction-source.test.ts > a record source > an unknown source is 422 VALIDATION_FAILED on source, and nothing is written 41ms
+ ✓ test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH 41ms
+ ✓ test/workers/history.test.ts > keyset history > ascending order and the maximum limit page the same records the other way round 49ms
+ ✓ test/workers/history.test.ts > keyset history > refuses limit=0 26ms
+ ✓ test/workers/history.test.ts > keyset history > refuses limit=201 24ms
+ ✓ test/workers/history.test.ts > keyset history > refuses limit=abc 27ms
+ ✓ test/workers/attachments.test.ts > ownership: another account can neither use nor learn of a receipt > foreign_attachment_grant_is_denied 106ms
+ ✓ test/workers/attachments.test.ts > ownership: another account can neither use nor learn of a receipt > cross-owner association is denied with 404 and no existence leak, and copies nothing 100ms
+ ✓ test/workers/currency-migration.test.ts > a wallet takes any ISO-shaped currency and never changes it 43ms
+ ✓ test/workers/currency-migration.test.ts > the new columns keep their rules 35ms
+ ✓ test/workers/currency-migration.test.ts > the triggers and views naming wallets are the same after the rebuild 38ms
+ ✓ test/workers/transactions.test.ts > recording expenses and income > refuses the amount %p (0) 36ms
+ ✓ test/workers/transactions.test.ts > recording expenses and income > refuses the amount %p (-6500) 33ms
+ ✓ test/workers/transactions.test.ts > recording expenses and income > refuses the amount %p (100000000000) 29ms
+ ✓ test/workers/transactions.test.ts > recording expenses and income > refuses the amount %p (65.00) 29ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > pages whole groups in revision order within the 2 MiB budget, with no gaps 99ms
+ ✓ test/workers/vault-schema.test.ts > INSERT OR REPLACE cannot flip a category in use, but an identical ON CONFLICT DO NOTHING insert is allowed 21ms
+ ✓ test/workers/vault-schema.test.ts > a category is never deleted 18ms
+ ✓ test/workers/vault-schema.test.ts > a category has a label or a built-in key 17ms
+ ✓ test/workers/vault-schema.test.ts > a receipt can drop its digest pair, but never just one half 46ms
+ ✓ test/workers/vault-schema.test.ts > a record can hold only a retained receipt, and letting go of the last holder releases it and makes its object due 24ms
+ ✓ test/workers/history.test.ts > keyset history > refuses limit=1.5 24ms
+ ✓ test/workers/history.test.ts > keyset history > refuses malformed cursors and cursors from another filter 46ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a create without a source is digested as the release before gave it, so a command queued then still replays 31ms
+ ✓ test/workers/transaction-source.test.ts > a record source > an edit cannot set the source 42ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a row without a source reads as before, with its receipt link 33ms
+ ✓ test/workers/attachments.test.ts > ownership: another account can neither use nor learn of a receipt > a preview image nobody retained, a quarantined upload and an import id never get a grant 33ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > needs explicit consent and the record version, and makes the receipt part of the record 55ms
+ ✓ test/workers/currency-migration.test.ts > the new columns take what phase 5 writes and refuse every shape outside their rules 38ms
+ ✓ test/workers/currency-migration.test.ts > the trip indexes cover live tagged records and live trips 38ms
+ ✓ test/workers/currency-migration.test.ts > a record, wallet or category the previous release writes after the migration is in baht with no look, icon or pack key 33ms
+ ✓ test/workers/transactions.test.ts > recording expenses and income > refuses the amount %p (6500) 28ms
+ ✓ test/workers/transactions.test.ts > recording expenses and income > accepts the largest amount and lets balances go negative 34ms
+ ✓ test/workers/transactions.test.ts > recording expenses and income > refuses the date 2026-02-30 (INVALID_DATE) 29ms
+ ✓ test/workers/currency-migration.test.ts > an upgrade that fails part way leaves the vault as it was, and the next wake applies it 41ms
+ ✓ test/workers/transaction-source.test.ts > the source column > takes each of the seven sources or NULL, and refuses anything else 34ms
+ ✓ test/workers/transaction-source.test.ts > the source column > a vault the previous release wrote gains the column in place: every record, receipt link and import link keeps its row 34ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > copies inside the store, registered before the copy, and the receipt outlives the import image and the preview 56ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > is versioned and idempotent: a stale version keeps nothing, a resend replays, a second receipt needs replace 63ms
+ ✓ test/workers/history.test.ts > keyset history > signals a refresh when the account changed between pages, without skipping unchanged rows 41ms
+ ✓ test/workers/history.test.ts > filters and their totals > filters by wallet (both sides of transfers), category, type, text and inclusive dates, and totals agree with the rows 56ms
+ ✓ test/workers/transactions.test.ts > recording expenses and income > refuses the date 2026-08-31 (DATE_BEFORE_TRACKING_START) 26ms
+ ✓ test/workers/transactions.test.ts > recording expenses and income > accepts today's Bangkok date but not tomorrow 27ms
+ ✓ test/workers/transactions.test.ts > recording expenses and income > an expense needs an owned, active expense category and an owned, active wallet 62ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > defaults to 200 groups a page and refuses more than 1,000 280ms
+ ✓ test/workers/history.test.ts > filters and their totals > leaves out deleted records and other accounts, and keeps the category id after a rename 66ms
+ ✓ test/workers/history.test.ts > filters and their totals > refuses an invalid from 19ms
+ ✓ test/workers/history.test.ts > filters and their totals > refuses an invalid from 19ms
+ ✓ test/workers/history.test.ts > filters and their totals > refuses an invalid through 20ms
+ ✓ test/workers/history.test.ts > filters and their totals > refuses an invalid type 18ms
+ ✓ test/workers/history.test.ts > filters and their totals > refuses an invalid sort 19ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > never publishes a copy that differs from the import image 37ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > the retain routine publishes only this account's own unexpired copy at its generation, matching the image 45ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > an account has at most four copies in flight; a fifth retain is told when to retry 49ms
+ ✓ test/workers/transactions.test.ts > recording expenses and income > refuses an invalid union branch or field: source_wallet_id 24ms
+ ✓ test/workers/transactions.test.ts > recording expenses and income > refuses an invalid union branch or field: owner_id 23ms
+ ✓ test/workers/transactions.test.ts > recording expenses and income > refuses an invalid union branch or field: account_id 25ms
+ ✓ test/workers/transactions.test.ts > recording expenses and income > refuses an invalid union branch or field: type 20ms
+ ✓ test/workers/transactions.test.ts > recording expenses and income > refuses an invalid union branch or field: wallet_id 22ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > rejects malformed, foreign and future cursors, and needs a resync below retention 64ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > 30-day retention drops superseded changes, keeps every head, and expires older cursors 33ms
+stderr | test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > refuses to serve a stored change that no longer matches its entity DTO
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+ ✓ test/workers/history.test.ts > filters and their totals > refuses an invalid wallet_id 26ms
+ ✓ test/workers/history.test.ts > filters and their totals > refuses an invalid query 21ms
+ ✓ test/workers/history.test.ts > filters and their totals > refuses an invalid owner_id 19ms
+ ✓ test/workers/history.test.ts > budget and read-model edges (m4-hardening) > a cursor carrying an impossible date is a 422, never a 500 33ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > refuses an image past its window, and a deleted record 39ms
+ ✓ test/workers/attachments.test.ts > replace and remove are versioned against the record > replace moves the record to its next version and queues the image it dropped 67ms
+ ✓ test/workers/transactions.test.ts > recording expenses and income > refuses an invalid union branch or field: id 25ms
+ ✓ test/workers/transactions.test.ts > recording expenses and income > normalizes optional note and merchant; empty means none 54ms
+ ✓ test/workers/transactions.test.ts > transfers > moves money between two owned wallets in one record 30ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > refuses to serve a stored change that no longer matches its entity DTO 22ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > a cursor is bound to its account and names a revision, nothing else 2ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > a cursor from an earlier lifecycle generation needs a resync 21ms
+ ✓ test/workers/history.test.ts > budget and read-model edges (m4-hardening) > a history date before 1970 is INVALID_DATE, and the summary refuses unknown parameters 23ms
+ ✓ test/workers/attachments.test.ts > replace and remove are versioned against the record > remove is versioned, deletes the image with no undo, and cannot be repeated 54ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > a page reads about its byte budget, not every group the limit allows 167ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > the retention line can never pass the account revision 18ms
+ ✓ test/workers/transactions.test.ts > transfers > refuses the same wallet, foreign or archived wallets, categories, and dates before either tracking start 64ms
+ ✓ test/workers/transactions.test.ts > edit, delete and restore > edits need the current version; a stale edit is VERSION_CONFLICT with the current record 37ms
+ ✓ test/workers/transactions.test.ts > edit, delete and restore > delete hides the record from balances at once; restore within 30 days brings it back 45ms
+ ✓ test/workers/history.test.ts > Recently deleted: what is listed > only this account's deleted records, newest deletion first, each exactly as GET /v1/transactions/:id reads it 104ms
+ ✓ test/workers/history.test.ts > Recently deleted: what is listed > another account’s cursor grants nothing: rows are still read under the owner’s RLS 62ms
+ ✓ test/workers/attachments.test.ts > shared references prevent premature deletion > a receipt two records hold is one object, deleted only after both let go 62ms
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > snapshots validate exactly the entities the API registers 1ms
+ □ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > snapshots validate exactly the entities the API registers: every key of SYNC_ENTITY_VALIDATORS, once 1B and phase 4 register theirs
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > requests, builds, and downloads a snapshot through short-lived grants, then continues with deltas 79ms
+ ✓ test/workers/transactions.test.ts > edit, delete and restore > restore fails after 30 days, and while a referenced wallet or category is archived 43ms
+ ✓ test/workers/transactions.test.ts > edit, delete and restore > renaming_category_preserves_historical_reference 34ms
+ ✓ test/workers/history.test.ts > Recently deleted: the restore window > just inside 30 days is listed and restorable; just outside is neither, before any purge 44ms
+ ✓ test/workers/history.test.ts > Recently deleted: the restore window > a purged record is never listed, and the retention purge leaves the window alone 47ms
+ ✓ test/workers/history.test.ts > Recently deleted: the restore window > exactly 30 days after its deletion a record is still listed and restorable, as the restore command decides; a millisecond more is neither 55ms
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > asking again while a snapshot is ready answers 200 with it 46ms
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > serves whole, valid change groups and refuses bad parameters 29ms
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > orders keys as jsonb does: shorter first, equal lengths bytewise, nested objects too, arrays kept in order 1ms
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > serves each snapshot with its keys in the API's order: PostgreSQL jsonb, shortest key first, then bytewise 32ms
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > a client behind retention recovers: 410, then a snapshot, then deltas from its cursor 37ms
+ ✓ test/workers/transactions.test.ts > edit, delete and restore > of two edits from the same version one wins, with no extra receipt or revision for the loser 36ms
+ ✓ test/workers/transactions.test.ts > edit, delete and restore > another account's record is NOT_FOUND 50ms
+ ✓ test/workers/transactions.test.ts > wallet rules once records exist > an opening correction needs a reason, and tracking cannot start after an existing record 29ms
+ ✓ test/workers/history.test.ts > Recently deleted: ordering and paging > newest deletion first, ties by id, a page at a time with nothing lost or repeated 47ms
+ ✓ test/workers/history.test.ts > Recently deleted: ordering and paging > suggests a refresh when the account changed between pages, without skipping unchanged rows 30ms
+ ✓ test/workers/history.test.ts > Recently deleted: ordering and paging > a cursor with microseconds pages as PostgreSQL compares instants: a deletion in its millisecond comes after it, whatever its id 22ms
+ ✓ test/workers/transactions.test.ts > wallet rules once records exist > archiving needs the derived balance, records included, to be zero 39ms
+ ✓ test/workers/transactions.test.ts > database guards > refuses a row whose category has the other type, and an update that changes a record against its category 25ms
+ ✓ test/workers/transactions.test.ts > the delta feed > serves each record change, and every change passes the persisted-DTO check the feed applies 22ms
+ ✓ test/workers/attachments.test.ts > shared references prevent premature deletion > two records retaining one image at once keep one receipt, made by one copy 345ms
+ ✓ test/workers/history.test.ts > Recently deleted: ordering and paging > refuses an invalid limit (limit=0) with a 422 naming it 20ms
+ ✓ test/workers/history.test.ts > Recently deleted: ordering and paging > refuses an invalid limit (limit=201) with a 422 naming it 15ms
+ ✓ test/workers/history.test.ts > Recently deleted: ordering and paging > refuses an invalid limit (limit=abc) with a 422 naming it 16ms
+ ✓ test/workers/history.test.ts > Recently deleted: ordering and paging > refuses an invalid cursor (cursor=not-a-cursor) with a 422 naming it 18ms
+ ✓ test/workers/history.test.ts > Recently deleted: ordering and paging > refuses an invalid from (from=2026-01-01&through=2026-12-31) with a 422 naming it 15ms
+ ✓ test/workers/history.test.ts > Recently deleted: ordering and paging > refuses an invalid owner_id (owner_id=371222ff-a91d-4c27-af08-247fac9c6de7) with a 422 naming it 17ms
+ ✓ test/workers/attachments.test.ts > shared references prevent premature deletion > the 30-day purge of a deleted record releases its receipt only when no other record holds it 58ms
+ ✓ test/workers/attachments.test.ts > a deleted record keeps its receipt for the undo window > grants wait until the record is restored; the object is never queued meanwhile 44ms
+ ✓ test/workers/history.test.ts > Recently deleted: ordering and paging > refuses history's own cursor 23ms
+ ✓ test/workers/history.test.ts > the money journey > seeds built-ins, records spending, and reads it back through history, summary, budgets, status and sync 36ms
+ ✓ test/workers/attachments.test.ts > a deleted record keeps its receipt for the undo window > a grant issued before the record was deleted no longer downloads 37ms
+ ✓ test/workers/attachments.test.ts > retention and erasure (P5) > account erasure deletes every retained receipt object 49ms
+ ✓ test/workers/attachments.test.ts > retention and erasure (P5) > the retention step releases a receipt nothing holds and drops released rows 30 days on, once their object is gone 39ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > serializes reservations: five at once from one account reserve exactly four 22ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > a busy process answers 503 with when to retry, before it reserves anything 33ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > a process never has more copies running than its limit 203ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > refused retains, replaces and removals copy nothing 54ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > a receipt that already exists is attached without another copy 30ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > an account has a copy budget; past it, retaining is told when the oldest copy leaves the window 51ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > gives one deadline to the whole copy: the HEAD that checks it runs on the same signal 429ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > a copy the store cannot make is a 503 with no reservation left live, and never leaks the failure 36ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > the copy is checked as stored by the database too: a copy that is not the registered image is not published 35ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > serves the image whole, with its length, as it always did 34ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > one account cannot take every download slot: its third waits while another account is served 60ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > the process-wide cap still holds across accounts 56ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > cuts off a download that stops making progress, and frees its slot 239ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > cuts off a download still running at the total limit even though it keeps trickling 495ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > a download that never starts is a 503 problem, not an image-typed body 236ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > unavailable storage is a 503 with when to retry, and never sends the failure text 29ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > a body that fails before its first byte is a 503 problem, with no error text 29ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > a HEAD on a receipt download answers its headers, reads its image to the end and gives its slot back (ruling R96) 270ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > downloads refused after they took a slot give the slot back 39ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > a corrupted object is never served as a complete download 37ms
+ ✓ test/workers/attachments.test.ts > grants are bound to the session (P2c review fix, minor 2) > a grant verifies only for the session it was issued to 52ms
+ ✓ test/workers/attachments.test.ts > ownership holds for replace and remove too (P2c review fix, minor 6) > another account gets the same 404 as for an unknown record, and nothing changes 100ms
+ ✓ test/workers/attachments.test.ts > privileges and schema > only the routines write receipts or the registry; logins see only what they should 20ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > a receipt grant is bound to the session that asked 35ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > a retained receipt shows as attachment_id wherever the record is read 41ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > purging a deleted record releases its receipt, stamps the release from the vault clock, and deletes its object 38ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > a copy that is never published is due three minutes after its reservation 23ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > copying is bounded: four in flight and a hundred a day per vault, each answered with when to retry 30ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > after pruneAttachments at attachmentsDueAt, the next attachmentsDueAt is later or null 38ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the planner > a second prepare waits for a copy in flight, and needs none once the receipt exists: both checks run in one block 26ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the planner > a retain whose session ends during its copy commits nothing, and its copy is given back at once 25ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the planner > a copy whose import image is gone by then keeps nothing and is refused as expired 24ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the planner > a retain whose copy outlived its own reservation is refused as expired, even when a failed delete moved its deadline on 24ms
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: prepare checks the session, the policy and the account before it reserves or copies (m-1) > a signed-out session is refused at the prepare step, and nothing is reserved or copied 22ms
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: prepare checks the session, the policy and the account before it reserves or copies (m-1) > a session without the current terms is refused at the prepare step of a retain and a replace, and at a removal, and nothing is reserved or copied 25ms
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: prepare checks the session, the policy and the account before it reserves or copies (m-1) > a deleting account refuses retain, replace, remove, the grant and the download without reserving or copying, and the release step still runs 46ms
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: attachmentsDueAt keeps both of its guards (m-3, R37) > a stamped release whose object is still live is not due yet; once the object is gone, the row is due 30 days after its release 37ms
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: attachmentsDueAt keeps both of its guards (m-3, R37) > a retained receipt that nothing holds makes attachmentsDueAt now, so the safety net is scheduled 30ms
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: the copy path (n-1 to n-4) > a request waiting on another copy of the same image gives up at copyDeadlineMs with 503 504ms
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: the copy path (n-1 to n-4) > an unknown body field is refused before anything is reserved or copied, as the API controller reads the body 21ms
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: the copy path (n-1 to n-4) > the image of a preview that is no longer ready is not copied, though its image is still published 20ms
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: the copy path (n-1 to n-4) > a second request for an image whose copy is held only waits, until the first attaches the receipt both then hold 182ms
+
+ Test Files  7 passed (7)
+      Tests  178 passed | 1 todo (179)
+   Start at  01:14:17
+   Duration  9.25s (transform 10.04s, setup 22.68s, import 522ms, tests 9.53s, environment 0ms)
+

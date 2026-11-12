@@ -574,10 +574,27 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - `bw-tray-income` with the Thai keyboard up on a 667 pt phone (n1);
     - the name field on an iPad with the keyboard floated (n2);
     - "Add spending" wrapping at AX5 on a 375 pt phone.
-- P2-T33 (#406): the confirming review is Approved (`reviews/P2-T33-confirm.md`: m1, n1 to n3). Carried, whenever #406 merges:
+- P2-T33 (#406, merged 12 Nov as a00fff7 at c07be421, after the R107 fix round; promotion #417). The confirming review is `reviews/P2-T33-confirm.md` (m1, n1 to n3). Carried:
   - **P2-T34:**
     - `availability()` must answer at a cold start, or no opening asks by itself for the whole session (n2).
     - Return `method: null` explicitly for a phone that cannot lock, and count a reading with no `method` as unreadable.
   - **P19's device checks:** a VoiceOver cold start with the lock off (n1).
   - **Any later change to the quiet flag** must keep the setting read and `inactive` inside its window (m1). Add the confirm's probe G1 as a case, since it kills mutant QX1, which all 38 lock cases miss.
   - **n6's other side (P12):** an assumed lock on a phone whose passcode was removed turns off without the notice. That needs a failed store read too. Noted only.
+- P2-T20 (#416, merged 12 Nov as 0bfd58a at f6a2b681, reviewed at 4eb15b3e; promotion #419). The first review is `reviews/P2-T20.md` (Opus, approved: m1 to m3, n1) and the second is `reviews/P2-T20-second.md` (Flash, approved). Carried:
+  - **R111 (controller ruling, 12 Nov) for m1, carried by P2-T24.** The held line (`เงินที่มี … · หักบัตรเครดิตที่ใช้ไป …`) shows only when it reconciles: `BigInt(heldMinor) - BigInt(creditUsedMinor) === BigInt(totalMinor)`.
+    - So a non-card wallet below zero beside a card that has spent hides the line, for P7's own reason: a line must not say more than the total without saying why.
+    - Add the review's probe PC as a case. The owner can overrule at E2-B.
+  - **P2-T24 (or the next task that edits `WalletsList.render.test.tsx`): add the review's pins.** The ready-made cases are in `scratch/p2-t20-review/tree/apps/app/src/zzreview/P2T20Review.render.test.tsx`:
+    - PA: no effect seeds `setOrder`, and one write per press (n4, n5). It kills X1 and X2.
+    - PB: the route mounts no second looks provider. It kills X3.
+    - PF: Thai names sort by `localeCompare`. It kills X7.
+  - **P2-T21:**
+    - Add `returnTo` to `NEW_WALLET_HREF` if a wallet added from the list should come back to it.
+    - Read the list again on return from a pushed flow; it reads once per mount.
+  - **P2-T22:** the same stale-list note for edit and archive. Drop the two casts once both routes exist (P9).
+  - **P2-T24:**
+    - Import `frontFirst` into `homeWallets.ts` and delete its copy (n2).
+    - `?reorder=1` is read once at mount, so push a new list instance from Home's จัดเรียง.
+    - With no account open, `?reorder=1` opens the tray once the account opens (probe PD). It is not pinned.
+  - **E2-B:** a paid-ahead card reads ยอดที่ใช้ไป above a positive balance. A card's row says spending twice; that row is drawn as on the board.

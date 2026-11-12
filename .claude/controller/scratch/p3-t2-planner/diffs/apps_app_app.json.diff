@@ -1,0 +1,13 @@
+diff --git a/apps/app/app.json b/apps/app/app.json
+index f445bd0c7c64ebd6da5cd9d5a949c11e561af5f3..89c4039e20f78e3b9fed0e7ac48d6d9af9f53d55 100644
+--- a/apps/app/app.json
++++ b/apps/app/app.json
+@@ -2,7 +2,7 @@
+   "expo": {
+     "name": "Jotbun",
+     "slug": "gogospend",
+-    "version": "0.1.0",
++    "version": "0.2.0",
+     "orientation": "portrait",
+     "icon": "./assets/icon.png",
+     "scheme": "gogospend",

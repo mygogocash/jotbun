@@ -1,0 +1,53 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/currency-migration.test.ts > the rebuilt wallets keep every row and every reference to them 26ms
+ × test/workers/currency-migration.test.ts > every table that references wallets keeps its rows 24ms
+   → expected [ { …(4) } ] to deeply equal []
+ ✓ test/workers/currency-migration.test.ts > older records gain THB money fields 22ms
+ ✓ test/workers/currency-migration.test.ts > a wallet takes any ISO-shaped currency and never changes it 22ms
+ ✓ test/workers/currency-migration.test.ts > the new columns keep their rules 21ms
+ ✓ test/workers/currency-migration.test.ts > the triggers and views naming wallets are the same after the rebuild 22ms
+ ✓ test/workers/currency-migration.test.ts > the new columns take what phase 5 writes and refuse every shape outside their rules 25ms
+ ✓ test/workers/currency-migration.test.ts > the trip indexes cover live tagged records and live trips 20ms
+ ✓ test/workers/currency-migration.test.ts > a record, wallet or category the previous release writes after the migration is in baht with no look, icon or pack key 23ms
+ ✓ test/workers/currency-migration.test.ts > an upgrade that fails part way leaves the vault as it was, and the next wake applies it 33ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/currency-migration.test.ts > every table that references wallets keeps its rows
+AssertionError: expected [ { …(4) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "column": "wallet_id",
++     "on_delete": "CASCADE",
++     "table": "wallet_links_probe",
++     "to": "id",
++   },
++ ]
+
+ ❯ test/workers/currency-migration.test.ts:133:73
+    131|     expect(held(before)).toEqual(was)
+    132|     // Every key to wallets, a later migration's too, stays NO ACTION,…
+    133|     expect(references().filter((key) => key.on_delete !== 'NO ACTION')…
+       |                                                                         ^
+    134|   }))
+    135|
+ ❯ test/workers/currency-migration.test.ts:79:5
+ ❯ maybeHandleRunRequest Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:157:18
+ ❯ DurableObject.Wrapper.fetch Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:552:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+   Start at  03:20:24
+   Duration  2.52s (transform 845ms, setup 1.73s, import 13ms, tests 238ms, environment 0ms)
+

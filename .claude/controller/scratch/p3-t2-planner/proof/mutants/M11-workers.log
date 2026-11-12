@@ -1,0 +1,94 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ × test/workers/vault-schema.test.ts > a new vault has every core table, migrated once 20ms
+   → expected false to be true // Object.is equality
+ ✓ test/workers/vault-schema.test.ts > a vault keeps its rows and does not migrate again after it sleeps 20ms
+ ✓ test/workers/vault-schema.test.ts > the Drizzle schema matches the migrated tables column for column 42ms
+ ✓ test/workers/vault-schema.test.ts > foreign keys hold: a transaction naming an unknown wallet is refused 16ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it 59ms
+ ✓ test/workers/currency-migration.test.ts > the rebuilt wallets keep every row and every reference to them 34ms
+ ✓ test/workers/currency-migration.test.ts > every table that references wallets keeps its rows 29ms
+ ✓ test/workers/currency-migration.test.ts > older records gain THB money fields 27ms
+ ✓ test/workers/currency-migration.test.ts > a wallet takes any ISO-shaped currency and never changes it 29ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a record made without a source, or with null, reads without the key 42ms
+ ✓ test/workers/transaction-source.test.ts > a record source > an unknown source is 422 VALIDATION_FAILED on source, and nothing is written 36ms
+ ✓ test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH 39ms
+ ✓ test/workers/vault-schema.test.ts > command log rows must use the current revision, and entity heads only move forward 18ms
+ ✓ test/workers/vault-schema.test.ts > a primary key cannot be NULL 13ms
+ ✓ test/workers/vault-schema.test.ts > a category's type and built-in key never change 17ms
+ ✓ test/workers/vault-schema.test.ts > a category id never changes 16ms
+ ✓ test/workers/vault-schema.test.ts > a replace that reuses another category's built-in key is refused, and the other category survives 16ms
+ ✓ test/workers/vault-schema.test.ts > INSERT OR REPLACE cannot flip a category in use, but an identical ON CONFLICT DO NOTHING insert is allowed 19ms
+ ✓ test/workers/vault-schema.test.ts > a category is never deleted 15ms
+ ✓ test/workers/vault-schema.test.ts > a category has a label or a built-in key 14ms
+ ✓ test/workers/currency-migration.test.ts > the new columns keep their rules 27ms
+ ✓ test/workers/currency-migration.test.ts > the triggers and views naming wallets are the same after the rebuild 28ms
+ ✓ test/workers/currency-migration.test.ts > the new columns take what phase 5 writes and refuse every shape outside their rules 33ms
+ ✓ test/workers/currency-migration.test.ts > the trip indexes cover live tagged records and live trips 26ms
+ ✓ test/workers/vault-schema.test.ts > a receipt can drop its digest pair, but never just one half 31ms
+ ✓ test/workers/vault-schema.test.ts > a record can hold only a retained receipt, and letting go of the last holder releases it and makes its object due 22ms
+ ✓ test/workers/currency-migration.test.ts > a record, wallet or category the previous release writes after the migration is in baht with no look, icon or pack key 26ms
+ ✓ test/workers/currency-migration.test.ts > an upgrade that fails part way leaves the vault as it was, and the next wake applies it 39ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a create without a source is digested as the release before gave it, so a command queued then still replays 27ms
+ ✓ test/workers/transaction-source.test.ts > a record source > an edit cannot set the source 29ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a row without a source reads as before, with its receipt link 29ms
+ ✓ test/workers/transaction-source.test.ts > the source column > takes each of the seven sources or NULL, and refuses anything else 36ms
+ × test/workers/transaction-source.test.ts > the source column > a vault the previous release wrote gains the column in place: every record, receipt link and import link keeps its row 29ms
+   → expected [ 'id', 'type', 'amount_minor', …(19) ] to deeply equal [ 'id', 'type', 'amount_minor', …(20) ]
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/transaction-source.test.ts > the source column > a vault the previous release wrote gains the column in place: every record, receipt link and import link keeps its row
+AssertionError: expected [ 'id', 'type', 'amount_minor', …(19) ] to deeply equal [ 'id', 'type', 'amount_minor', …(20) ]
+
+- Expected
++ Received
+
+@@ -19,7 +19,6 @@
+    "rate_date",
+    "home_amount_minor",
+    "wallet_amount_minor",
+    "to_amount_minor",
+    "trip_id",
+-   "source",
+  ]
+
+ ❯ test/workers/transaction-source.test.ts:205:25
+    203|       expect(before.columns).not.toContain('source')
+    204|       await upgrade()
+    205|       expect(columns()).toEqual([...before.columns, 'source'])
+       |                         ^
+    206|       expect(rows(records)).toEqual(before.records.map((row) => ({ ...…
+    207|       expect(rows(links)).toEqual(before.links)
+ ❯ maybeHandleRunRequest Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:157:18
+ ❯ DurableObject.Wrapper.fetch Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:552:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/vault-schema.test.ts > a new vault has every core table, migrated once
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ test/workers/vault-schema.test.ts:24:84
+     22|   expect(entries.map((entry) => entry.idx)).toEqual(entries.map((_entr…
+     23|   expect(Object.keys(VAULT_MIGRATIONS.migrations).sort()).toEqual(entr…
+     24|   expect(entries.every((entry, i) => i === 0 || entry.when > entries[i…
+       |                                                                                    ^
+     25|   expect((await sql(stub, 'SELECT created_at FROM __drizzle_migrations…
+     26| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  2 failed | 1 passed (3)
+      Tests  2 failed | 31 passed (33)
+   Start at  03:19:39
+   Duration  3.47s (transform 3.48s, setup 7.42s, import 83ms, tests 907ms, environment 0ms)
+

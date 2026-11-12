@@ -1,0 +1,19 @@
+diff --git a/packages/contracts/src/v1/ai.ts b/packages/contracts/src/v1/ai.ts
+index c1260392325adc63abf46746326e1e2eeb6d7c2d..cda5045d6bbeffd9d6a40806fd28103509c8568e 100644
+--- a/packages/contracts/src/v1/ai.ts
++++ b/packages/contracts/src/v1/ai.ts
+@@ -16,6 +16,14 @@ import { assertKnownFields } from "./validation.ts";
+ /** Bump when the AI notice text changes; consent to an older notice no longer counts. */
+ export const AI_NOTICE_VERSION = 1;
+ 
++/**
++ * The oldest app build that reads phase 3's contract changes (C5), starting
++ * with a record's `source` (P3-T2). A release carrying them raises the
++ * server's minimum client versions to at least this, and the app's own
++ * version (app.json `expo.version`) is never below it.
++ */
++export const AI_MIN_CLIENT_VERSION = "0.2.0";
++
+ export const AI_FEATURES = ["parse", "slip", "note", "ask"] as const;
+ export type AiFeature = (typeof AI_FEATURES)[number];
+ 
