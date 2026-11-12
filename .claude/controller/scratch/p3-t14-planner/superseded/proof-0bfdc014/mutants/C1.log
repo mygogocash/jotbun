@@ -1,0 +1,49 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:85429) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ src/wallet/bunai/AiConsent.render.test.tsx (10 tests | 1 failed | 9 skipped) 90ms
+   × a turn-on that fails says so and stays off 90ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/bunai/AiConsent.render.test.tsx > a turn-on that fails says so and stays off
+AssertionError: expected [ { kind: 'capture', …(2) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "kind": "capture",
++     "name": "ai_consent_changed",
++     "properties": {
++       "ai_enabled": true,
++       "origin": "app",
++     },
++   },
++ ]
+
+ ❯ src/wallet/bunai/AiConsent.render.test.tsx:214:42
+    212|     expect(alert.textContent).toBe('เปิดตัวช่วย AI ไม่ได้ตอนนี้ ลองอีก…
+    213|     expect(ai.preferences().companion).toBe(false);
+    214|     expect(consentEvents(recorded.sent)).toEqual([]);
+       |                                          ^
+    215|     expect(agreed).not.toHaveBeenCalled();
+    216|     expect(closes).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 skipped (10)
+   Start at  20:02:22
+   Duration  2.06s (transform 1.29s, setup 56ms, import 1.70s, tests 90ms, environment 100ms)
+

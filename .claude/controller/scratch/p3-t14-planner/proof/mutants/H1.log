@@ -1,0 +1,45 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:22992) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ src/wallet/bunai/AiConsent.render.test.tsx (10 tests | 1 failed | 9 skipped) 84ms
+   × the old settings and sheet send the event too 83ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/bunai/AiConsent.render.test.tsx > the old settings and sheet send the event too
+AssertionError: expected last "vi.fn()" call to have been called with [ { companion: true, …(1) } ]
+
+- Expected:
+[
+  {
+    "companion": true,
+    "notice_version": 1,
+  },
+]
+
++ Received:
+undefined
+
+ ❯ src/wallet/bunai/AiConsent.render.test.tsx:256:41
+    254|     await settle();
+    255|     await press(named('button', "Turn on Bun's help"));
+    256|     expect(ai.resources.setPreferences).toHaveBeenLastCalledWith({ com…
+       |                                         ^
+    257|     expect(consentEvents(recorded.sent).map((event) => event.propertie…
+    258|     await waitFor(() => expect(within(group()).getByRole('radio', { na…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 skipped (10)
+   Start at  20:16:50
+   Duration  1.45s (transform 844ms, setup 41ms, import 1.13s, tests 84ms, environment 87ms)
+

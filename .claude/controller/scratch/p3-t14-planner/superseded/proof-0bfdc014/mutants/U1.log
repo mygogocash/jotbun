@@ -1,0 +1,33 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app
+
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx (15 tests | 1 failed | 14 skipped) 7ms
+   × bunAiText reads Thai for th and English for en and vi, filling tokens in one pass 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/bunai/WalletAiSettings.render.test.tsx > bunAiText reads Thai for th and English for en and vi, filling tokens in one pass
+AssertionError: expected 'เหลือ 3 จาก 10' to be '3 of 10 left' // Object.is equality
+
+Expected: "3 of 10 left"
+Received: "เหลือ 3 จาก 10"
+
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx:403:74
+    401|   expect(bunAiText(table, 'bunai.sample', 'th', { left: 3, limit: 10 }…
+    402|   expect(bunAiText(table, 'bunai.sample', 'en', { left: 3, limit: 10 }…
+    403|   expect(bunAiText(table, 'bunai.sample', 'vi', { left: 3, limit: 10 }…
+       |                                                                          ^
+    404|   // One pass: a value that looks like a token is inserted, not filled…
+    405|   expect(bunAiText(table, 'bunai.sample', 'en', { left: '{limit}' })).…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 skipped (15)
+   Start at  20:02:12
+   Duration  2.06s (transform 1.35s, setup 57ms, import 1.77s, tests 7ms, environment 102ms)
+

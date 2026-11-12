@@ -1,0 +1,27 @@
+# P3-T14's files. Column 1: M (modified) or A (added). Column 2: what RED holds
+# (stub = stubs/, real = real/, base = left as the base has it: a modified file
+# unchanged, an added file not there yet; later = the receipt, placed at the
+# end). GREEN holds real/ for every line but the receipt. Shared files are
+# marked in the brief's Scope table.
+M real apps/app/src/config/featureFlags.ts
+M real apps/app/src/config/featureFlags.test.ts
+A stub apps/app/src/wallet/bunai/drafts.ts
+A real apps/app/src/wallet/bunai/drafts.test.ts
+A stub apps/app/src/wallet/bunai/useBunAiCopy.ts
+A stub apps/app/src/wallet/bunai/aiArea.ts
+A stub apps/app/src/wallet/bunai/aiConsent.ts
+A stub apps/app/src/wallet/bunai/AiConsentContent.tsx
+A stub apps/app/src/wallet/bunai/AiConsentTray.tsx
+A stub apps/app/src/wallet/bunai/WalletAiSettingsScreen.tsx
+A real apps/app/src/wallet/bunai/AiConsent.render.test.tsx
+A real apps/app/src/wallet/bunai/WalletAiSettings.render.test.tsx
+A stub apps/app/app/settings/ai.tsx
+A base apps/app/src/dev/catalogue/wallet/bunaiSections.tsx
+A base apps/app/src/dev/catalogue/wallet/bunaiScreens.tsx
+M base apps/app/src/dev/catalogue/wallet/index.ts
+M base apps/app/src/screens/redesign/account/SettingsScreen.tsx
+M real apps/app/src/screens/redesign/account/SettingsScreen.render.test.tsx
+M base apps/app/src/screens/redesign/account/CompanionSettings.tsx
+M base apps/app/src/screens/redesign/ai/AiConsentSheet.tsx
+M real apps/app/src/screens/redesign/account/AccountRoutes.render.test.tsx
+A later docs/implementation/receipts/P3-T14.md

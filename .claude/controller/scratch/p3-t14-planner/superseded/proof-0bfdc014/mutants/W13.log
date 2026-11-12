@@ -1,0 +1,33 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app
+
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx (15 tests | 1 failed | 14 skipped) 119ms
+   × controls are 44 pt, and AX5 truncates nothing 116ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/bunai/WalletAiSettings.render.test.tsx > controls are 44 pt, and AX5 truncates nothing
+AssertionError: 3.571: expected 'row' to be 'column' // Object.is equality
+
+Expected: "column"
+Received: "row"
+
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx:454:88
+    452|     for (const control of controls) atLeast(control, `${fontScale} ${c…
+    453|     // At the largest sizes the choice cards, the uses and the segment…
+    454|     expect(named('radiogroup', 'บันโผล่มาแค่ไหน').style.flexDirection,…
+       |                                                                                        ^
+    455|     expect(found('ai-settings-uses-parse').parentElement?.style.flexDi…
+    456|     expect(named('radiogroup', 'การสั่น').style.flexDirection, `${font…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 skipped (15)
+   Start at  20:04:35
+   Duration  2.94s (transform 1.82s, setup 81ms, import 2.39s, tests 119ms, environment 199ms)
+

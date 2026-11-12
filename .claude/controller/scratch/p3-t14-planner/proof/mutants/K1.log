@@ -1,0 +1,44 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:11758) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ src/wallet/bunai/AiConsent.render.test.tsx (10 tests | 1 failed | 9 skipped) 69ms
+   × read-only shows the same lines without buttons 68ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/bunai/AiConsent.render.test.tsx > read-only shows the same lines without buttons
+AssertionError: th: expected [ 'ปิด', 'อ่านรายละเอียด', …(2) ] to deeply equal [ 'ปิด', 'อ่านรายละเอียด' ]
+
+- Expected
++ Received
+
+  [
+    "ปิด",
+    "อ่านรายละเอียด",
++   "เปิดใช้",
++   "ไม่ใช่ตอนนี้",
+  ]
+
+ ❯ src/wallet/bunai/AiConsent.render.test.tsx:237:29
+    235|     // No answer to give: only the tray's close and the link to Privac…
+    236|     const buttons = within(dialog).queryAllByRole('button').map((butto…
+    237|     expect(buttons, locale).toEqual([common('common.close', locale), s…
+       |                             ^
+    238|     cleanup();
+    239|   }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 skipped (10)
+   Start at  20:15:30
+   Duration  1.40s (transform 810ms, setup 42ms, import 1.09s, tests 69ms, environment 84ms)
+

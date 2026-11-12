@@ -1,0 +1,30 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app
+
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx (15 tests | 1 failed | 14 skipped) 81ms
+   × a turn-off the server never took leaves AI help on and says so 79ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/bunai/WalletAiSettings.render.test.tsx > a turn-off the server never took leaves AI help on and says so
+AssertionError: ai-settings-problem: expected 0 to be greater than 0
+ ❯ found src/wallet/bunai/WalletAiSettings.render.test.tsx:111:30
+    109| function found(testID: string, inside?: HTMLElement): HTMLElement {
+    110|   const all = (inside ? within(inside) : screen).queryAllByTestId(test…
+    111|   expect(all.length, testID).toBeGreaterThan(0);
+       |                              ^
+    112|   return all[0];
+    113| }
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx:272:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 skipped (15)
+   Start at  20:16:07
+   Duration  2.73s (transform 1.99s, setup 57ms, import 2.33s, tests 81ms, environment 139ms)
+

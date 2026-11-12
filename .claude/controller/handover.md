@@ -49,6 +49,12 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **20:25: P3-T14 brief READY (Opus); its implementer is building (Haiku).**
+  - Size L: 14 new files under `apps/app/src/wallet/bunai/`, the route `app/settings/ai.tsx`, `bunaiSections.tsx` and `bunaiScreens.tsx`, and edits to `featureFlags.ts`, the catalogue `index.ts`, `SettingsScreen.tsx`, `CompanionSettings.tsx`, `AiConsentSheet.tsx` and `AccountRoutes.render.test.tsx`. Re-proved at `afab7fd5` after #436 and #435 (the controller first told it wrongly that it need not; corrected within the minute, lessons.md). RED 2 of 16 Node and 27 of 104 render on assertions, GREEN, 74 of 74 mutants.
+  - `check_kit.sh` at `afab7fd5`: 81 of 81 sums, `orig/` 8 of 8 identical. **P1 to P19 accepted** (P3 `onDetails`; P5 `ai_enabled` = `companion && available`; P12 `bunaiScreens.tsx`; P13 the route's case in `AccountRoutes`).
+  - The controller's pre-flight on the new worktree: the kit eight plus `AiConsent`, `WalletAiSettings` and `SettingsScreen` 242, routes 16, `test:unit` 1052, `typecheck:app` and `typecheck:routes`; then reset clean.
+  - Worktree `p3-t14` on `p3/t14-ai-consent-settings` at `afab7fd5`, installed. Implementer `mcp:launch:b5a94c5a83095e919947f7387aec6c59fb5ea4f0e17cc416f9d51ac90c254955`. The planner thread is archived.
+  - **Reviews when it is done:** Opus (xhigh) and a Sonnet second review (consent, a privacy path).
 - **20:10: P2-T16 brief READY (Opus); its implementer is building (Haiku).**
   - Size L: `AddTrayHost.tsx` and `AddTray.render.test.tsx` (new), `addHostSection.tsx` (new), and one-line or one-case edits to `copy.ts`, `addSections.tsx`, `WalletsList.render.test.tsx`, `AddSteps.render.test.tsx` and `Tray.render.test.tsx`. No route, `index.ts`, package or catalog change. RED 17 of 17 on assertions, GREEN, 86 of 86 mutants.
   - `check_kit.sh` at `7a29bc70`: 28 of 28 sums, `orig/` 5 of 5 identical. **P1 to P21 accepted.**

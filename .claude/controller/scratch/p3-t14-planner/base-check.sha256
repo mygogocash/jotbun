@@ -1,0 +1,8 @@
+352cf90f4978b2a5b462badfd5d3d9377fc207dd3d178d5c64c6afd820dd0ae1  apps/app/src/config/featureFlags.ts
+19ab58d39eb2e3d26cc43cfa412f612ec5a1531b6d3ae364920aecdd73ba1db1  apps/app/src/config/featureFlags.test.ts
+475236de8e14b8f2ee6ffebb5240fbbddd2938fccd614f66da2b7dd1f99d0f31  apps/app/src/dev/catalogue/wallet/index.ts
+b58a1a44aeb2ca24c87018addf507d9711c8c2ebe202224cb11f04b28638c8d6  apps/app/src/screens/redesign/account/SettingsScreen.tsx
+709f5127aec2736922956acb09ff0e280dfd372a22bec5b595c408970dbd95cc  apps/app/src/screens/redesign/account/SettingsScreen.render.test.tsx
+554e8817911705ed7d05582b2766a2d8a891d40ae003e5e5395ac83d7c8f910c  apps/app/src/screens/redesign/account/CompanionSettings.tsx
+7ed5e70df0eefb446582e4067a3a950365f5eded94285edc66c08a508240588b  apps/app/src/screens/redesign/ai/AiConsentSheet.tsx
+cbfed65c7b6bd6d842e458af44120d2e9a4dfae9f3a77d458594606bb35e262f  apps/app/src/screens/redesign/account/AccountRoutes.render.test.tsx

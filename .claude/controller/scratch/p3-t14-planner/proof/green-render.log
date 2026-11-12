@@ -1,0 +1,122 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > appearance system: the saved preference is the checked choice 75ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > appearance light: the saved preference is the checked choice 44ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > appearance dark: the saved preference is the checked choice 42ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > choosing Dark saves it through the theme preference and the screen turns dark 59ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > language: System, ไทย and English, each language named in itself; System until a choice is made; no Vietnamese 37ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > choosing ไทย saves it under its own key and the screen reads in Thai at once; System goes back to the phone 67ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > language th saved: the checked choice, whatever the phone speaks 27ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > language en saved: the checked choice, whatever the phone speaks 29ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > a phone in Vietnamese: System is checked, and Vietnamese is still not offered 28ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > bun full: the saved intensity is checked, and each choice says what it does in one line 24ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > bun quiet: the saved intensity is checked, and each choice says what it does in one line 25ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > bun off: the saved intensity is checked, and each choice says what it does in one line 21ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > choosing Quiet saves the bun intensity for the whole app 25ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > Haptics offers On, Subtle and Off, each saying what it plays 23ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > planning rows only under the planning area, Reminders only under insights; Privacy and data always 79ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > each link opens its route 22ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > Import stays hidden while its flag is off, and shows only with it 40ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > the account card: "Signed in" when the session does not say how, the method when it does; no linking 48ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > Sign out asks first and says what is lost; Stay signed in keeps everything, and is the safe default 46ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > confirming Sign out erases this phone's diary first, then signs out 59ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > a diary that cannot be erased keeps the person signed in, and says so 58ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > offline with entries waiting: the banner says so, and Sign out counts what would be lost 42ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > Sign out everywhere: a confirm; Stay signed in changes nothing; confirming signs in again, sends the request, then erases this phone and signs out here 83ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > cancelling the fresh sign-in: nothing is sent or erased, and the person stays signed in 60ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > a sign-in that cannot be reached: nothing is sent or erased, still signed in, and saying so 65ms
+(node:2296) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > a fresh sign-in that does not go through (a wrong code, another account, the service down): nothing is sent or erased, still signed in, and saying so 177ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > the server finds the sign-in too old: nothing changed, still signed in 49ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > a resend after a lost answer meets SIGNED_OUT: the first one landed, so this phone is signed out too 43ms
+ ✓ src/wallet/bunai/AiConsent.render.test.tsx > the consent names what is sent, to whom and what is kept 195ms
+ ✓ src/wallet/bunai/AiConsent.render.test.tsx > เปิดใช้ turns AI on with the current notice and sends one ai_consent_changed carrying ai_enabled true 46ms
+ ✓ src/wallet/bunai/AiConsent.render.test.tsx > ไม่ใช่ตอนนี้ changes nothing and sends nothing 39ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > Jotbun cannot be reached: still signed in, and saying so; Try again resends the request with no new sign-in, and its SIGNED_OUT signs out here 64ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > Jotbun cannot be reached on Try again either: still signed in, and Try again stays 78ms
+ ✓ src/wallet/bunai/AiConsent.render.test.tsx > a turn-on that fails says so and stays off 69ms
+ ✓ src/wallet/bunai/AiConsent.render.test.tsx > read-only shows the same lines without buttons 55ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > refused for another reason: nothing changed, try later 51ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > signed out everywhere, but this phone's diary can't be erased: it says so, and this phone stays signed in to try again 48ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > the app's own wiring has no fresh sign-in yet: Sign out everywhere shows, disabled, says why, and can't be started 26ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > the app's wiring offers a fresh sign-in only for a method this build can run: Apple or Google with their native sign-in, never email yet 2ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > Back returns to the screen below, or Home when there is none 20ms
+ ✓ src/wallet/bunai/AiConsent.render.test.tsx > the old settings and sheet send the event too 79ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > Thai: the screen reads in Thai with Thai leading 29ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > dark mode: the night ground, with the checked choice in ink 28ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > every control is at least 44 pt tall 28ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > the catalogue has one section per state, with settings- / privacy- ids and Settings: / Privacy: titles 1ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue in en: the language card shows the catalogue's language as chosen (Vietnamese, offered only through the phone, as System) 27ms
+ ✓ src/wallet/bunai/AiConsent.render.test.tsx > while turning on waits for the server, nothing leaves the tray 72ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue in th: the language card shows the catalogue's language as chosen (Vietnamese, offered only through the phone, as System) 25ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue in vi: the language card shows the catalogue's language as chosen (Vietnamese, offered only through the phone, as System) 21ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section settings-main reaches its state 19ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section settings-all-areas reaches its state 22ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section settings-import reaches its state 23ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section settings-sign-in-method reaches its state 18ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section settings-offline reaches its state 20ms
+ ✓ src/wallet/bunai/AiConsent.render.test.tsx > อ่านรายละเอียด closes the tray, then opens Privacy and data once it has gone 252ms
+ ✓ src/wallet/bunai/AiConsent.render.test.tsx > while Bun's AI help rests, agreeing keeps the answer, and ai_enabled says it is not on 32ms
+ ✓ src/wallet/bunai/AiConsent.render.test.tsx > controls are 44 pt, and AX5 truncates nothing 49ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section settings-sign-out reaches its state 333ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section settings-sign-out-unsynced reaches its state 336ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section settings-erase-failed reaches its state 357ms
+ ✓ src/wallet/bunai/WalletAiSettings.render.test.tsx > the screen shows presence, AI help with uses left, the note switch and haptics 196ms
+ ✓ src/wallet/bunai/WalletAiSettings.render.test.tsx > turning AI off is immediate and sends one ai_consent_changed with ai_enabled false 44ms
+ ✓ src/wallet/bunai/WalletAiSettings.render.test.tsx > turning AI on opens the consent first 90ms
+ ✓ src/wallet/bunai/WalletAiSettings.render.test.tsx > the note switch is kept on this phone 107ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section settings-everywhere reaches its state 343ms
+ ✓ src/wallet/bunai/WalletAiSettings.render.test.tsx > presence is the app's bun intensity, and haptics the app's haptics setting 64ms
+ ✓ src/wallet/bunai/WalletAiSettings.render.test.tsx > สิ่งที่ AI เห็น opens the consent read-only 55ms
+ ✓ src/wallet/bunai/WalletAiSettings.render.test.tsx > a turn-off the server never took leaves AI help on and says so 40ms
+ ✓ src/wallet/bunai/WalletAiSettings.render.test.tsx > while turning off waits for the server, the switch says so and takes no second press 55ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section settings-everywhere-working reaches its state 360ms
+ ✓ src/wallet/bunai/WalletAiSettings.render.test.tsx > a turn-on that failed is not still said when the consent opens again 333ms
+ ✓ src/wallet/bunai/WalletAiSettings.render.test.tsx > while Bun's AI help rests, the switch keeps the answer and says so, with no uses 51ms
+ ✓ src/wallet/bunai/WalletAiSettings.render.test.tsx > back goes to the screen below, or to Settings when there is none 39ms
+ ✓ src/wallet/bunai/WalletAiSettings.render.test.tsx > the note setting: a choice made before the stored one is read wins, and a store that can't be read or written keeps going 47ms
+ ✓ src/wallet/bunai/WalletAiSettings.render.test.tsx > bunAiText reads Thai for th and English for en and vi, filling tokens in one pass 0ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section settings-everywhere-cancelled reaches its state 370ms
+ ✓ src/wallet/bunai/WalletAiSettings.render.test.tsx > the catalogue lists bw-ai-consent, bw-ai-settings and bw-ai-settings-off after the lock's, and each reaches its state 375ms
+ ✓ src/wallet/bunai/WalletAiSettings.render.test.tsx > controls are 44 pt, and AX5 truncates nothing 59ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section settings-everywhere-signin-unreachable reaches its state 355ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section settings-everywhere-reauth reaches its state 356ms
+(node:2967) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/screens/redesign/account/AccountRoutes.render.test.tsx > the first run and sign-in: redesigned under the account area (on since E2 checkpoint 4), today's screens with it off 31ms
+ ✓ src/screens/redesign/account/AccountRoutes.render.test.tsx > settings and privacy: only under the account area (on by default), and only signed in 5ms
+ ✓ src/screens/redesign/account/AccountRoutes.render.test.tsx > /settings/ai: Bun and AI settings only with the wallet and bunai areas, else Settings 4ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section settings-everywhere-offline reaches its state 357ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section settings-everywhere-refused reaches its state 358ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section settings-everywhere-erase-failed reaches its state 380ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section settings-everywhere-unavailable reaches its state 22ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section privacy-main reaches its state 12ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section privacy-no-reauth reaches its state 9ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section privacy-export-preparing reaches its state 325ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section privacy-export-ready reaches its state 325ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section privacy-export-downloaded reaches its state 347ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section privacy-export-expired reaches its state 326ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section privacy-export-failed reaches its state 324ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section privacy-export-too-large reaches its state 322ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section privacy-export-lost reaches its state 321ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section privacy-export-offline reaches its state 323ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section privacy-export-reauth reaches its state 321ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section privacy-delete-confirm reaches its state 321ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section privacy-delete-working reaches its state 344ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section privacy-delete-receipt reaches its state 343ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section privacy-delete-refused reaches its state 345ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > catalogue section privacy-delete-unconfirmed reaches its state 346ms
+ ✓ src/screens/redesign/account/SettingsScreen.render.test.tsx > with wallet and bunai on, Settings opens AI settings from its บันและ AI row and still offers the cashback tips switch 128ms
+
+ Test Files  4 passed (4)
+      Tests  104 passed (104)
+   Start at  20:14:25
+   Duration  11.75s (transform 2.18s, setup 263ms, import 3.17s, tests 13.15s, environment 658ms)
+

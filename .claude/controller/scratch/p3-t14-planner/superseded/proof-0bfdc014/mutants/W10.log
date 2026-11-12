@@ -1,0 +1,42 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app
+
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx (15 tests | 1 failed | 14 skipped) 139ms
+   × presence is the app's bun intensity, and haptics the app's haptics setting 136ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/bunai/WalletAiSettings.render.test.tsx > presence is the app's bun intensity, and haptics the app's haptics setting
+AssertionError: expected [ [ 'saveLanded' ], [ 'saveLanded' ] ] to deeply equal [ [ 'saveLanded' ] ]
+
+- Expected
++ Received
+
+  [
+    [
+      "saveLanded",
+    ],
++   [
++     "saveLanded",
++   ],
+  ]
+
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx:252:41
+    250|   expect(haptics.playHaptic.mock.calls).toEqual([['saveLanded']]);
+    251|   await press(named('radio', 'เบา'));
+    252|   expect(haptics.playHaptic.mock.calls).toEqual([['saveLanded']]);
+       |                                         ^
+    253| });
+    254|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 skipped (15)
+   Start at  20:04:23
+   Duration  2.78s (transform 1.76s, setup 60ms, import 2.31s, tests 139ms, environment 128ms)
+

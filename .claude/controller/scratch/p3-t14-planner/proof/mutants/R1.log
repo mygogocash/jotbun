@@ -1,0 +1,33 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:23240) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ src/screens/redesign/account/AccountRoutes.render.test.tsx (3 tests | 1 failed | 2 skipped) 19ms
+   × /settings/ai: Bun and AI settings only with the wallet and bunai areas, else Settings 18ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/account/AccountRoutes.render.test.tsx > /settings/ai: Bun and AI settings only with the wallet and bunai areas, else Settings
+AssertionError: undefined: expected null not to be null
+ ❯ src/screens/redesign/account/AccountRoutes.render.test.tsx:122:76
+    120|     flag(value);
+    121|     render(<AiSettingsRoute />);
+    122|     expect(screen.queryByText('redirect to /settings'), String(value))…
+       |                                                                            ^
+    123|     expect(screen.queryByText('bun and ai settings'), String(value)).t…
+    124|     cleanup();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 skipped (3)
+   Start at  20:16:52
+   Duration  496ms (transform 144ms, setup 40ms, import 256ms, tests 19ms, environment 78ms)
+
