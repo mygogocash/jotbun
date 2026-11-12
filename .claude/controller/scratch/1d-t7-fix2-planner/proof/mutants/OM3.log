@@ -1,0 +1,45 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix2-planner/tree/apps/app
+
+ ❯ src/screens/redesign/RecordScreen.render.test.tsx (65 tests | 1 failed | 64 skipped) 235ms
+   × an acknowledged "use yours" reports the category of the server's copy when another phone moved the entry 231ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/RecordScreen.render.test.tsx > an acknowledged "use yours" reports the category of the server's copy when another phone moved the entry
+AssertionError: expected [ { name: 'record_edited', …(1) } ] to deeply equal [ { name: 'record_edited', …(1) } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "name": "record_edited",
+      "properties": {
+-       "category_key": "food",
++       "category_key": "bills",
+        "kind": "expense",
+        "origin": "app",
+      },
+    },
+  ]
+
+ ❯ src/screens/redesign/RecordScreen.render.test.tsx:1058:20
+    1056|     expect(fake.records.get(RENT)).toMatchObject({ category_id: BUILTI…
+    1057|     const edited = captures(recorded.sent).filter((event) => event.nam…
+    1058|     expect(edited).toEqual([{ name: 'record_edited', properties: { kin…
+       |                    ^
+    1059|   } finally {
+    1060|     recorded.restore();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 64 skipped (65)
+   Start at  02:16:49
+   Duration  1.61s (transform 678ms, setup 69ms, import 978ms, tests 235ms, environment 175ms)
+

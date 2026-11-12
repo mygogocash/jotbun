@@ -1,0 +1,45 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix2-planner/tree/apps/app
+
+ ❯ src/sync/deviceSync.render.test.tsx (2 tests | 1 failed) 7ms
+   × the diary hears each outcome before that outcome's events go out 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/sync/deviceSync.render.test.tsx > the diary hears each outcome before that outcome's events go out
+AssertionError: expected [ [ 'waiting', 1 ], …(1) ] to deeply equal [ [ 'waiting', +0 ], …(1) ]
+
+- Expected
++ Received
+
+@@ -1,9 +1,9 @@
+  [
+    [
+      "waiting",
+-     0,
++     1,
+    ],
+    [
+      "signed_out",
+      1,
+    ],
+
+ ❯ src/sync/deviceSync.render.test.tsx:52:19
+     50|     await scheduler.manual();
+     51|     scheduler.stop();
+     52|     expect(heard).toEqual([['waiting', 0], ['signed_out', 1]]);
+       |                   ^
+     53|     expect(recorded.sent.map(({ name }) => name)).toEqual(['sync_faile…
+     54|   } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  02:16:46
+   Duration  562ms (transform 160ms, setup 92ms, import 179ms, tests 7ms, environment 142ms)
+

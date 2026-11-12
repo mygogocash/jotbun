@@ -20,6 +20,7 @@ vi.mock('expo-crypto', () => ({ randomUUID: () => globalThis.crypto.randomUUID()
 
 import { AccessibilityInfo, Animated } from 'react-native';
 
+import { recordAnalytics } from '@mobile/analytics/testing/recordAnalytics';
 import { setSession } from '@mobile/auth/session';
 import { FIRST_RUN_SECTIONS } from '@mobile/dev/catalogue/account/firstRunSections';
 import { mountInApp } from '@mobile/dev/catalogue/catalogueTestHarness';
@@ -539,3 +540,28 @@ test.each(ONBOARDING_SECTIONS.map((section) => [section.id, section] as const))(
   expect(nav.router.replace).not.toHaveBeenCalled();
   expect(network).not.toHaveBeenCalled();
 }, 20_000);
+
+// ---------------------------------------------------------------------------
+// Analytics (1D-T7)
+
+test('each story step records onboarding_step_viewed, in the order coffee, private, first_coffee, reminder', async () => {
+  const recorded = await recordAnalytics();
+  try {
+    const held = heldReminders();
+    await toReminder({}, <OnboardingScreen reminders={held.service} />);
+    expect(heading(COPY.reminder)).toBeTruthy();
+    // The reminder step draws again while the phone answers: still one step viewed.
+    press(COPY.turnOn);
+    await held.answer('scheduled');
+    expect(screen.getByRole('button', { name: COPY.continue })).toBeTruthy();
+    const steps = recorded.sent.filter((event) => event.kind === 'capture').map(({ name, properties }) => [name, properties.step]);
+    expect(steps).toEqual([
+      ['onboarding_step_viewed', 'coffee'],
+      ['onboarding_step_viewed', 'private'],
+      ['onboarding_step_viewed', 'first_coffee'],
+      ['onboarding_step_viewed', 'reminder'],
+    ]);
+  } finally {
+    recorded.restore();
+  }
+});

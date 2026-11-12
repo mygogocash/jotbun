@@ -1,9 +1,13 @@
 // Quick add's save rules, cut from the form: finish, the online send, save,
 // and the cheer-day read. A caller may pass the track of this attempt; a
-// resend keeps the first attempt's track. This hook sends no analytics event.
+// resend keeps the first attempt's track. `finish` is the rule that saves, so
+// it sends the one record_saved for a save that carries a track (1D-T7, R61):
+// after the device commit or the server's acknowledgement, never for a
+// conflict, and never the amount, the note or a name.
 import { useEffect, useRef, useState } from 'react';
 
 import type { WalletSnapshot } from '@gogospend/contracts';
+import { trackRecordSaved } from '@mobile/analytics/events';
 import { V1Error } from '@mobile/api/client';
 import { useCopy } from '@mobile/i18n/useCopy';
 import { playHaptic } from '@mobile/lib/hapticMoment';
@@ -98,6 +102,11 @@ export function useEntrySave(options: { today: string; onSaved?: (saved: SavedEn
     setSaved(savedEntry);
     setStatus('saved');
     onSaved?.(savedEntry);
+    if (track) {
+      // Offline: kept on this phone while the diary's last sync did not end synced.
+      const offline = via === 'device' && diaryView.outcome?.status !== 'synced';
+      trackRecordSaved({ kind: fields.type, source: track.source, categoryKey: track.categoryKey, offline, secondsToSave: (Date.now() - track.openedAt) / 1000 });
+    }
   }
 
   async function sendOnline(input: CreateInput, fields: QuickAddDraft, track: EntryTrack | null): Promise<boolean> {

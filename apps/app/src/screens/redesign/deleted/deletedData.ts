@@ -2,6 +2,7 @@ import { HISTORY_MAX_LIMIT } from '@gogospend/contracts';
 import type { CategoryDto, DeletedHistoryPage, DeletedTransactionDto, WalletSnapshot } from '@gogospend/contracts';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { trackRecordRestored } from '@mobile/analytics/events';
 import { V1Error } from '@mobile/api/client';
 import { useCopy } from '@mobile/i18n/useCopy';
 import { playHaptic } from '@mobile/lib/hapticMoment';
@@ -132,6 +133,8 @@ export function useRecentlyDeleted(now?: Date): RecentlyDeletedState {
     try {
       await resources.restoreTransaction(row.recordId, row.version, key);
       keys.settle(slot);
+      // Restore is this rule (1D-T7, R61): one record_restored, with the record's kind only.
+      trackRecordRestored({ kind: row.type });
       setPending(null);
       // Off this list at once; the list is read again in place below.
       setLists((current) => (current ? { ...current, items: current.items.filter((item) => item.id !== row.recordId) } : current));

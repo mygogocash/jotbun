@@ -1,0 +1,7 @@
+rc: typecheck:app 0; routes 0; controller.test.ts 0; analytics render 0; test:app 0; test:unit 0 (each run's exit code, from the run that wrote its log)
+gate-typecheck: 
+gate-routes:  Test Files 4 passed (4); Tests 17 passed (17);
+gate-analytics-unit: ℹ tests 40;ℹ pass 40;ℹ fail 0;
+gate-analytics-render:  Test Files 2 passed (2); Tests 13 passed (13);
+gate-test-app: ℹ tests 36;ℹ pass 36;ℹ fail 0;
+gate-test-unit: ℹ tests 1087;ℹ pass 1087;ℹ fail 0;

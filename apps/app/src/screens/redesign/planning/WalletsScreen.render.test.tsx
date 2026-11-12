@@ -24,6 +24,7 @@ const motion = vi.hoisted(() => ({ reduced: false }));
 vi.mock('@mobile/hooks/useReducedMotion', () => ({ useReducedMotion: () => motion.reduced }));
 
 import type { CreateWalletRequest, TransactionDto, WalletSnapshot } from '@gogospend/contracts';
+import { recordAnalytics } from '@mobile/analytics/testing/recordAnalytics';
 import { V1Error } from '@mobile/api/client';
 import { mountInApp } from '@mobile/dev/catalogue/catalogueTestHarness';
 import { router } from '@mobile/dev/catalogue/routerTestStub';
@@ -868,3 +869,24 @@ function expectApprovedTextPairs(root: ParentNode, colors: BunColors) {
   }
   expect(checked).toBeGreaterThan(0);
 }
+
+// ---------------------------------------------------------------------------
+// Analytics (1D-T7, R61): the create's one wallet_added comes from useWalletCommand's send (P2-T19).
+
+test('creating a wallet records one wallet_added, without its name or opening balance', async () => {
+  const recorded = await recordAnalytics();
+  try {
+    const fake = await openCreate();
+    typeName('Piggy bank');
+    press('1', '2', '3', '4', 'Decimal point', '5');
+    click('Create wallet');
+    expect(await screen.findByRole('button', { name: 'Piggy bank, balance ฿1,234.50' })).toBeTruthy();
+    expect(creates(fake)).toHaveLength(1);
+    const captured = recorded.sent.filter((event) => event.kind === 'capture').map(({ name, properties }) => ({ name, properties }));
+    expect(captured).toEqual([{ name: 'wallet_added', properties: { origin: 'app' } }]);
+    const json = JSON.stringify(recorded.sent);
+    for (const secret of ['Piggy bank', '123450', '1,234.50', '1234.5']) expect(json).not.toContain(secret);
+  } finally {
+    recorded.restore();
+  }
+});

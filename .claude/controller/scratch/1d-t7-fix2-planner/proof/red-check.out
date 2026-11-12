@@ -1,0 +1,5 @@
+apps/app/src/analytics/controller.ts: OK
+apps/app/src/analytics/AnalyticsUpkeep.tsx: OK
+apps/app/src/analytics/controller.test.ts: OK
+apps/app/src/analytics/appAnalytics.render.test.tsx: OK
+apps/app/src/screens/redesign/QuickAddScreen.render.test.tsx: OK

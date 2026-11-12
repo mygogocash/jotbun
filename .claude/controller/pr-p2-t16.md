@@ -28,7 +28,18 @@
   - the routes tests: 18;
   - `git diff --check`.
 - [x] CI at `81f66c0e`: 9 of 9, including the full render suite and the iOS export.
-- [ ] Independent review (Opus), and a second review: the save, the money and private mode.
+- [x] Independent review (Opus): **Needs fixes** on `81f66c0e`, with one major (`.claude/controller/reviews/P2-T16.md`). M1: in private mode, a conflict drew and announced the stored amount in digits. Also the iOS wedge (m1), the lock's cover losing Tell Bun's text (m2) and "above Save" unpinned (n1).
+- [x] Second review (Sonnet): **approved** on `81f66c0e` (`reviews/P2-T16-second.md`), with the same M1 (its m2), Bun's filled merchant or note drawn verbatim at confirm in private mode (m3), and six unpinned guards (m4).
+- [x] **Fix round** (`a78fb589`, brief `.claude/controller/briefs/P2-T16-fix.md`; ruling R117 with the planner's P22 to P35):
+  - in private mode a conflict's line is today's line with the amount masked (฿••••, spoken ซ่อนยอดเงินอยู่); every other save message holds only fixed constants; `entrySave.ts` is unchanged;
+  - in private mode, a merchant or note that Bun filled is not drawn at confirm: the tray's own title instead, and ซ่อนอยู่ for a guessed note (typed text stays);
+  - a hidden tray closes when its Modal says so or after 1.5 s, whichever is first; a late dismissal changes nothing (the refused present stays a tray follow-up with the device check before P2-T18);
+  - "above Save" and the six guards are pinned; the receipts' Risks name the lock's cover losing Tell Bun's text.
+  - The proofs: RED 3 of 22, all assertions; GREEN 22; **126 of 126 mutants killed**; the kit eight 142, routes 15, neighbours 110, `test:unit` 1049. All 5 fix-kit files are byte-identical.
+  - Planned on Claude Opus, built on Claude Haiku 5.5.
+- [x] The controller merged the integration head (with #440 and #441) as `530ac033`, with no conflicts. On the merged tree: `typecheck:app` 0; `test:unit` 1072; `AddTray`, `AddSteps` and the eight kit files 181; the routes 16; catalogue `bw-` 102; P3-T14's consent and settings suites 101; `git diff --check` on the range.
+- [x] CI at `530ac033`: 9 of 9.
+- [ ] Confirming review (Opus) of the fix round.
 - [ ] SKIPPED: device checks (Tell Bun's sheet over the tray on iOS and its keyboard; a swipe during a save and Android's back on a phone; a quick reopen while UIKit's dismissal ends; whether UIKit sends a dismissal for a refused present; VoiceOver on the save's problem).
 
 Closes #162 once merged (closed by hand, since the base is not the default branch).

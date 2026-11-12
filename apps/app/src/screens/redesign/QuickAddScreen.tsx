@@ -24,17 +24,24 @@
 // The bun appears only in the empty state and, at full intensity, as the
 // `cheer` pose in the saved moment at most once a day (quickAddCheer.ts).
 //
+// Analytics (1D-T7, R61): the form opening, and Add another, each start one
+// entry (record_started); Save passes the entry's track (Tell Bun's source once
+// a Tell Bun draft filled it, the category's key, and when the entry started)
+// to useEntrySave, whose finish sends the one record_saved.
+//
 // The form opens on the type switch with Close beside it, as plan §6.1 lays it
 // out (no title row; the title stays a heading for screen readers), and Save,
 // with any save problem above it, is pinned under the scrolling form
 // (ActionFooter.tsx), so on a 402 × 874 pt phone the keypad and Save both show.
 import type { AiDraft, CategoryDto, Minor, TransactionDto, WalletSnapshot } from '@gogospend/contracts';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { trackRecordStarted } from '@mobile/analytics/events';
+import { categoryKeyOf } from '@mobile/analytics/recordProps';
 import { isRedesignEnabled } from '@mobile/config/featureFlags';
 import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
 import { Bun } from '@mobile/mascot/Bun';
@@ -72,7 +79,7 @@ import { earliestFor, firstDraft, keypadFor, KEYPAD_PROBLEM_TEXT, ordered, rank,
 import type { CopySource, Ranking } from './entry/entryHelpers';
 import { useEntryReferences } from './entry/entryReferences';
 import { keypadShownOnSave, useEntrySave } from './entry/entrySave';
-import type { SavedEntry } from './entry/entrySave';
+import type { EntryTrack, SavedEntry } from './entry/entrySave';
 import { Notice } from './HistoryParts';
 
 export type QuickAddScreenProps = {
@@ -165,6 +172,13 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
   const { status, message, errors, serverErrors, resendBlocked, saved, locked } = entrySave;
   const pop = useSpringPop(savedCount);
   const type: EntryType = current.type;
+  // This entry's track: when it started, and whether a Tell Bun draft filled it.
+  const [openedAt, setOpenedAt] = useState(() => Date.now());
+  const [fromBun, setFromBun] = useState(false);
+  // Opening the form starts an entry.
+  useEffect(() => {
+    trackRecordStarted({ source: 'typed' });
+  }, []);
 
   /** The first touch fixes the category order and the draft's defaults. */
   const touch = () => {
@@ -192,7 +206,12 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
       const shown = keypadShownOnSave(keypad);
       if (shown) setKeypad(shown);
     }
-    const attempt = await entrySave.save({ draft: current, keypad, wallets });
+    const track: EntryTrack = {
+      source: fromBun ? 'tell_bun' : 'typed',
+      categoryKey: categoryKeyOf(current.type === 'transfer' ? null : current.categoryByType[current.type], categories),
+      openedAt,
+    };
+    const attempt = await entrySave.save({ draft: current, keypad, wallets, track });
     if (attempt.openDetails) setDetails(true);
   }
 
@@ -204,6 +223,10 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
     setSheet(null);
     entrySave.another();
     onAnother?.();
+    // Another entry starts here, with its own clock.
+    setOpenedAt(Date.now());
+    setFromBun(false);
+    trackRecordStarted({ source: 'typed' });
   }
 
   if (status === 'saved' && saved) {
@@ -234,6 +257,7 @@ function EntryForm({ wallets, categories, balances, today, records, drafts, sour
   // Tell Bun (premium plan A3): a draft fills the sheet as if typed; Save stays the person's.
   const useBunDraft = (bunDraft: AiDraft) => {
     if (locked) return;
+    setFromBun(true);
     edit((previous) => ({ ...previous, ...applyDraft(previous, bunDraft).fields }));
     if (bunDraft.amount_minor) setKeypad(keypadFromMinor(bunDraft.amount_minor));
   };

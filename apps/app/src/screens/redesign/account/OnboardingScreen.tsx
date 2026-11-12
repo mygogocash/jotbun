@@ -21,10 +21,15 @@
 //
 // The bun: a pose on the stage at Full. Quiet and Off leave the stage plain,
 // as Home's stage does: Quiet keeps the bun for empty states only.
+//
+// Analytics (1D-T7): each step shown sends one onboarding_step_viewed with the
+// step's name (`first-coffee` as `first_coffee`). Before the analytics answer
+// the controller holds them (1D-T1); it sends them on yes, never on no.
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
+import { trackOnboardingStepViewed } from '@mobile/analytics/events';
 import { useAuthGuardSession } from '@mobile/auth/useAuthGuardSession';
 import { isRedesignEnabled } from '@mobile/config/featureFlags';
 import type { Locale } from '@mobile/i18n/locales';
@@ -103,6 +108,11 @@ export function OnboardingScreen({ reminders, signinArea }: OnboardingScreenProp
     shown.current = step;
     announcePolitely(title);
   }, [step, title]);
+
+  // Each step shown is counted once, the first one with the screen.
+  useEffect(() => {
+    trackOnboardingStepViewed({ step: step === 'first-coffee' ? 'first_coffee' : step });
+  }, [step]);
 
   const finish = () => router.replace(afterOnboarding(isAuthed));
 

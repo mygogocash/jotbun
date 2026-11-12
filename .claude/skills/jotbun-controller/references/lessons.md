@@ -188,3 +188,9 @@
 - The fix: delete the `node_modules` folders in finished tasks' scratch folders (sources, probes and logs stay; followups cite probe files). That freed 47 GB of installs and 20 GB of disk.
 - `merge_task_pr.sh` now prunes `node_modules` under `scratch/<task>*` after each merge. Planner prompts should ask for the same once a kit is READY.
 - Check `df -h /System/Volumes/Data` when an agent reports ENOSPC, and tell live agents to redo any step that failed on it.
+
+## A second fix round needs its prompt paths fixed by hand (13 Nov)
+- `make_prompt.py fixer <T>` always names `briefs/<T>-fix.md`, `reviews/<T>.md` and `scratch/<t>-fix/`. For a second round (`briefs/<T>-fix2.md`, answering `reviews/<T>-confirm.md`), sed those three paths in the generated prompt before dispatch, and grep the prompt for `-fix` to check.
+
+## Never start a watcher with `&` inside a foreground Bash call (13 Nov)
+- A watcher started as `cmd &` inside a normal Bash call is detached: the harness never reports its exit, so the controller is not woken. Twice tonight the controller did this and had to kill it. Always start `watch_agents.sh` and `ci_watch.sh` with the tool's `run_in_background` (and `timeout: 7200000`), then `t3_background_wait`.

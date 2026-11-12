@@ -1,0 +1,6 @@
+green: real/apps/app/src/analytics/controller.ts
+green: real/apps/app/src/analytics/AnalyticsUpkeep.tsx
+green: real/apps/app/src/analytics/controller.test.ts
+green: real/apps/app/src/analytics/appAnalytics.render.test.tsx
+green: real/apps/app/src/screens/redesign/QuickAddScreen.render.test.tsx
+green: 5 files placed

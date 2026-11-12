@@ -1,0 +1,44 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix2-planner/tree/apps/app
+
+ ❯ src/screens/redesign/RecentlyDeletedScreen.render.test.tsx (19 tests | 1 failed | 18 skipped) 76ms
+   × a restore records record_restored once Jotbun has it, with the kind only 74ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/RecentlyDeletedScreen.render.test.tsx > a restore records record_restored once Jotbun has it, with the kind only
+AssertionError: expected [ { name: 'record_restored', …(1) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "name": "record_restored",
++     "properties": {
++       "kind": "expense",
++       "origin": "app",
++     },
++   },
++ ]
+
+ ❯ src/screens/redesign/RecentlyDeletedScreen.render.test.tsx:273:24
+    271|     expect(await screen.findByText(NOT_CONFIRMED)).toBeTruthy();
+    272|     const captures = () => recorded.sent.filter((event) => event.kind …
+    273|     expect(captures()).toEqual([]);
+       |                        ^
+    274|     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    275|     expect(await screen.findByText('Bills ฿12,268.00 is back in Histor…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 skipped (19)
+   Start at  02:16:19
+   Duration  1.13s (transform 455ms, setup 77ms, import 716ms, tests 76ms, environment 119ms)
+

@@ -6,10 +6,11 @@ import type { DraftTable } from '../copy/draftText.ts';
  * ประเภทรายการ), the wallet chip, Tell Bun, income's name field and its budget
  * note, a quick chip's spoken words and the keypad's delete key (P2-T14); the
  * transfer step, the confirm step's rows and Bun's marks, and the pick steps
- * (P2-T15). Data only: read through `useDraftCopy`, with COMMON_COPY where a
+ * (P2-T15); Save's busy words (P2-T16), and a hidden note's (its fix round,
+ * R117). Data only: read through `useDraftCopy`, with COMMON_COPY where a
  * part also says an amount. Default pending owner Q3: built as written; the
  * English lines, and the Thai lines marked draft (no board shows them), are
- * drafts for E2-B. P2-T16 adds its lines here.
+ * drafts for E2-B.
  */
 export const COPY = {
   'add.titleExpense': { th: 'จดรายจ่าย', en: 'Add spending' },
@@ -47,4 +48,8 @@ export const COPY = {
   'add.today': { th: 'วันนี้', en: 'Today' },
   // bw-tray-confirm's note row with nothing written.
   'add.addNote': { th: 'เพิ่มโน้ต', en: 'Add a note' },
+  // Draft (R117): in private mode a note Bun filled is not drawn, as its sentence is not (R114); one the person wrote shows.
+  'add.noteHidden': { th: 'ซ่อนอยู่', en: 'Hidden' },
+  // P2-T16: Save while the save is in flight.
+  'add.saving': { th: 'กำลังบันทึก…', en: 'Saving…' },
 } as const satisfies DraftTable;

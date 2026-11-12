@@ -172,6 +172,63 @@ test('held events are dropped when another account signs in, and on no', async (
   assert.equal(h.captures().length, 0);
 });
 
+// R119 (1D-T7's fix round, from both reviews' M1): the launch's first answer keeps what is held, whatever it says.
+test("what was held before the launch's first answer survives it, also when no one is signed in, and is sent after a sign-in and a yes", async () => {
+  const h = harness({ consent: 'yes' });
+  h.analytics.track('onboarding_step_viewed', { step: 'coffee' });
+  await h.analytics.setAccount(null);
+  assert.equal(h.analytics.status(), 'signed_out');
+  h.analytics.track('onboarding_step_viewed', { step: 'private' });
+  assert.equal(h.captures().length, 0);
+  await h.analytics.setAccount(ACCOUNT_A);
+  assert.deepEqual(h.captures().map((event) => event.properties.step), ['coffee', 'private']);
+});
+
+test('signing out still drops what was held, so the next sign-in starts with nothing (P14, L4)', async () => {
+  const h = harness({ consent: 'unasked' });
+  await h.analytics.setAccount(ACCOUNT_A);
+  h.analytics.track('onboarding_step_viewed', { step: 'coffee' });
+  await h.analytics.setAccount(null);
+  await h.analytics.setAccount(ACCOUNT_A);
+  await h.analytics.answer('yes');
+  assert.equal(h.captures().length, 0);
+});
+
+// R120 (1D-T7's second fix round, from the confirming review's CM1): a sign-out drops what is
+// held whether or not its account was named. AnalyticsUpkeep names an account from /v1/me, so
+// offline A's session can end before the controller ever hears of A. A said no on this phone
+// earlier; B, who signs in next, has said yes on the server.
+const SAVED_OFFLINE = { kind: 'expense', source: 'typed', category_key: 'food', has_photo: false, offline: true, seconds_to_save: 12 };
+
+test("L1: a sign-out drops what was held while the account was never named, so the next account's yes sends none of it", async () => {
+  const h = harness({ consent: 'yes', stored: { accountId: ACCOUNT_A, answer: 'no', pendingServer: false } });
+  // A's session was restored, but A's account read failed offline: the launch has said nothing yet.
+  h.analytics.track('record_saved', SAVED_OFFLINE);
+  assert.equal(h.analytics.status(), 'loading');
+  await h.analytics.setAccount(null, { signedOut: true });
+  assert.equal(h.analytics.status(), 'signed_out');
+  await h.analytics.setAccount(ACCOUNT_B);
+  assert.equal(h.analytics.status(), 'yes');
+  assert.deepEqual(h.captures(), []);
+});
+
+test("L2: a sign-out drops what was held and resets also when no one was named since the launch's null, so the next account's yes sends none of it", async () => {
+  const h = harness({ consent: 'yes', stored: { accountId: ACCOUNT_A, answer: 'no', pendingServer: false } });
+  // The launch's first answer: no one is signed in yet.
+  await h.analytics.setAccount(null);
+  // A signs in, but A's account read fails offline: the controller still holds no one.
+  h.analytics.track('record_saved', SAVED_OFFLINE);
+  assert.equal(h.analytics.status(), 'signed_out');
+  const resetsBefore = h.resets().length;
+  await h.analytics.setAccount(null, { signedOut: true });
+  const resetsAtSignOut = h.resets().length - resetsBefore;
+  assert.equal(h.analytics.status(), 'signed_out');
+  await h.analytics.setAccount(ACCOUNT_B);
+  assert.equal(h.analytics.status(), 'yes');
+  assert.deepEqual(h.captures(), []);
+  assert.equal(resetsAtSignOut, 1);
+});
+
 test('the server\'s yes sends at once, identifies with the analytics id and starts replay', async () => {
   const h = harness({ consent: 'yes', weeks: 3 });
   h.analytics.setCommon({ app_version: '1.2.3', platform: 'ios', language: 'th', home_currency: 'THB' });
@@ -353,8 +410,8 @@ test('screens are sent only as patterns and only after yes', async () => {
   h.analytics.setCommon({ app_version: '1.2.3', platform: 'ios', language: 'en', home_currency: 'THB', ai_enabled: false });
   h.analytics.screen(['spend', 'record', '[id]']);
   assert.equal(h.screens().length, 0);
+  // The screen on display when the answer turns yes is sent then (1D-T6's review, m3).
   await h.analytics.setAccount(ACCOUNT_A);
-  h.analytics.screen(['spend', 'record', '[id]']);
   assert.equal(h.screens().length, 1);
   assert.equal(h.screens()[0]?.name, '/spend/record/[id]');
   assert.deepEqual(h.screens()[0]?.properties, {
@@ -375,6 +432,28 @@ test('screens are sent only as patterns and only after yes', async () => {
   h.analytics.screen(['spend', 'recap', '2026-10']);
   h.analytics.screen(['ค่าเช่า']);
   assert.equal(h.screens().length, before);
+});
+
+test('the screen on display when the answer turns yes is sent then, once, and only when it has a pattern', async () => {
+  const h = harness({ consent: 'unasked' });
+  h.analytics.screen(['(tabs)', 'settings', 'privacy']);
+  await h.analytics.setAccount(ACCOUNT_A);
+  assert.equal(h.analytics.status(), 'unanswered');
+  assert.equal(h.screens().length, 0);
+  await h.analytics.answer('yes');
+  assert.deepEqual(h.screens().map((event) => event.name), ['/settings/privacy']);
+  // Already yes: a refresh is not a new screen.
+  await h.analytics.refresh();
+  assert.equal(h.screens().length, 1);
+  // A screen whose route holds a real value has no pattern, so turning yes again sends nothing for it.
+  h.analytics.screen(['spend', 'record', '0b3f2c1e-6a4d-4f6e-9a51-2f3c4d5e6f70']);
+  await h.analytics.answer('no');
+  await h.analytics.answer('yes');
+  assert.equal(h.screens().length, 1);
+  h.analytics.screen(['(tabs)', 'home']);
+  await h.analytics.answer('no');
+  await h.analytics.answer('yes');
+  assert.deepEqual(h.screens().map((event) => event.name), ['/settings/privacy', '/home', '/home']);
 });
 
 test('without an analytics id the person stays anonymous, and a later refresh identifies them', async () => {
