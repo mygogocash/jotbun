@@ -4,11 +4,14 @@
 //
 // AI POSTs are never resent after a lost response: each one spends a daily
 // use, and a draft that never arrived is simply asked for again by the person.
-import { AI_CONFIDENCE, AI_DRAFT_FLAGS, AI_FEATURES, BUN_FACT_KINDS, isCashbackCatalogue, isUuid } from '@gogospend/contracts';
+// Each AI route waits its own AI_PHONE_TIMEOUT_MS, longer than the route's
+// deadline on the server, so the phone hears the route's answer (H3).
+import { AI_CONFIDENCE, AI_DRAFT_FLAGS, AI_FEATURES, AI_MODELS, AI_PHONE_TIMEOUT_MS, BUN_FACT_KINDS, isCashbackCatalogue, isUuid } from '@gogospend/contracts';
 import type {
   AiAskRequest,
   AiAskResult,
   AiDraft,
+  AiFeature,
   AiLocale,
   AiNoteResult,
   AiParseRequest,
@@ -50,13 +53,15 @@ export function isAiDraft(value: unknown): value is AiDraft {
 }
 
 const isDrafts = (value: unknown) => Array.isArray(value) && value.length <= 5 && value.every(isAiDraft);
+/** Every AI result names the model whose words it shows, and whether an Opus call ran (H4). */
+const namesItsModel = (value: Json) => (AI_MODELS as readonly unknown[]).includes(value.model) && typeof value.escalated === 'boolean';
 
 export function isAiParseResult(value: unknown): value is AiParseResult {
-  return isObject(value) && hasExactly(value, ['drafts', 'source']) && isDrafts(value.drafts) && (value.source === 'ai' || value.source === 'rules');
+  return isObject(value) && hasExactly(value, ['drafts', 'source', 'model', 'escalated']) && isDrafts(value.drafts) && (value.source === 'ai' || value.source === 'rules') && namesItsModel(value);
 }
 
 export function isAiSlipResult(value: unknown): value is AiSlipResult {
-  return isObject(value) && hasExactly(value, ['drafts', 'bank', 'source']) && isDrafts(value.drafts) && isTextOrNull(value.bank, 60) && value.source === 'ai';
+  return isObject(value) && hasExactly(value, ['drafts', 'bank', 'source', 'model', 'escalated']) && isDrafts(value.drafts) && isTextOrNull(value.bank, 60) && value.source === 'ai' && namesItsModel(value);
 }
 
 const FACT_KEYS = ['kind', 'amount_minor', 'count', 'days', 'percent', 'category_key', 'category_label'];
@@ -71,16 +76,19 @@ export function isBunFact(value: unknown): value is BunFact {
 }
 
 export function isAiNoteResult(value: unknown): value is AiNoteResult {
-  return isObject(value) && hasExactly(value, ['date', 'facts', 'text', 'source']) && typeof value.date === 'string' && DATE.test(value.date) &&
+  return isObject(value) && hasExactly(value, ['date', 'facts', 'text', 'source', 'model', 'escalated']) && typeof value.date === 'string' && DATE.test(value.date) &&
     Array.isArray(value.facts) && value.facts.every(isBunFact) && typeof value.text === 'string' && value.text.length <= 600 &&
-    (value.source === 'ai' || value.source === 'facts');
+    (value.source === 'ai' || value.source === 'facts') && namesItsModel(value);
 }
 
 export function isAiAskResult(value: unknown): value is AiAskResult {
-  return isObject(value) && hasExactly(value, ['answer', 'figures', 'source']) && typeof value.answer === 'string' && value.answer.length <= 2000 &&
+  return isObject(value) && hasExactly(value, ['answer', 'figures', 'source', 'model', 'escalated']) && typeof value.answer === 'string' && value.answer.length <= 2000 &&
     Array.isArray(value.figures) && value.figures.every((f) => isObject(f) && hasExactly(f, ['label', 'amount_minor']) && typeof f.label === 'string' && typeof f.amount_minor === 'string' && /^-?(?:0|[1-9][0-9]{0,11})$/.test(f.amount_minor)) &&
-    (value.source === 'ai' || value.source === 'facts');
+    (value.source === 'ai' || value.source === 'facts') && namesItsModel(value);
 }
+
+/** A route's phone wait, for each attempt and for the whole request (a refreshed resend included). */
+const phoneWait = (feature: AiFeature) => ({ timeoutMs: AI_PHONE_TIMEOUT_MS[feature], deadlineMs: AI_PHONE_TIMEOUT_MS[feature] });
 
 export type AiResources = {
   preferences(): Promise<AiPreferencesDto>;
@@ -96,10 +104,10 @@ export function createAiResources(transport: V1Transport): AiResources {
   return {
     preferences: () => transport.request('GET', '/v1/me/ai-preferences', { validate: isAiPreferencesDto }),
     setPreferences: (update) => transport.request('PUT', '/v1/me/ai-preferences', { body: update, validate: isAiPreferencesDto }),
-    parse: (request) => transport.request('POST', '/v1/ai/parse', { body: request, resendLost: false, validate: isAiParseResult }),
-    slip: (request) => transport.request('POST', '/v1/ai/slip', { body: request, resendLost: false, validate: isAiSlipResult }),
-    note: (date, locale) => transport.request('GET', `/v1/ai/note?date=${encodeURIComponent(date)}&locale=${encodeURIComponent(locale)}`, { validate: isAiNoteResult }),
-    ask: (request) => transport.request('POST', '/v1/ai/ask', { body: request, resendLost: false, validate: isAiAskResult }),
+    parse: (request) => transport.request('POST', '/v1/ai/parse', { body: request, resendLost: false, ...phoneWait('parse'), validate: isAiParseResult }),
+    slip: (request) => transport.request('POST', '/v1/ai/slip', { body: request, resendLost: false, ...phoneWait('slip'), validate: isAiSlipResult }),
+    note: (date, locale) => transport.request('GET', `/v1/ai/note?date=${encodeURIComponent(date)}&locale=${encodeURIComponent(locale)}`, { ...phoneWait('note'), validate: isAiNoteResult }),
+    ask: (request) => transport.request('POST', '/v1/ai/ask', { body: request, resendLost: false, ...phoneWait('ask'), validate: isAiAskResult }),
     cashbackCatalogue: () => transport.request('GET', '/v1/bridge/gogocash/catalogue', { validate: isCashbackCatalogue }),
   };
 }

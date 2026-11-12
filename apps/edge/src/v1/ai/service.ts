@@ -1,11 +1,12 @@
 import type Anthropic from '@anthropic-ai/sdk'
-import { bangkokDate } from '@gogospend/contracts'
+import { AI_ROUTE_DEADLINE_MS, bangkokDate } from '@gogospend/contracts'
 import type {
   AiAskRequest,
   AiAskResult,
   AiFeature,
   AiFigure,
   AiLocale,
+  AiModel,
   AiNoteResult,
   AiParseRequest,
   AiParseResult,
@@ -23,15 +24,16 @@ import { draftFromRules, sanitizeDrafts } from '../../server/ai/drafts'
 import type { DraftContext } from '../../server/ai/drafts'
 import { factsText, figuresText } from '../../server/ai/fact-text'
 import { AllowedNumbers, formatBaht, isGrounded } from '../../server/ai/grounding'
-import { ModelUnavailable, finishedJson, finishedText, requestBase } from '../../server/ai/model'
+import { ModelUnavailable, finishedJson, finishedText } from '../../server/ai/model'
 import type { MessageParams } from '../../server/ai/model'
 import { ASK_SYSTEM, NOTE_SCHEMA, NOTE_SYSTEM, PARSE_SCHEMA, PARSE_SYSTEM, SLIP_SCHEMA, SLIP_SYSTEM } from '../../server/ai/prompts'
 import type { AiContext, AiStoredPreferences, AiToolReply, Allowance } from '../../vault/ai'
 import type { VaultRouteId } from '../protocol'
 import type { VaultSession } from '../worker-routes'
+import { HAIKU, HAIKU_ASK_CAP_MS, haikuRequest } from './models'
 import { ASK_TOOLS } from './tools'
 import { AiDeadline, newTrace, tracedSend } from './transport'
-import type { ModelTransport } from './transport'
+import type { AiTrace, ModelTransport } from './transport'
 
 // The AI companion on the vault (1B-T7): the PostgreSQL edge's AiService (retired at C1)
 // with its reads and writes moved into the caller's vault as steps. The order
@@ -39,9 +41,16 @@ import type { ModelTransport } from './transport'
 // use (counted before the model runs), then the model. Every step carries the
 // route's access, so the vault checks the session (and the current policy on
 // a current_policy route) before anything is read and before any model call.
+// Since P3-T6 every call is Haiku 5.5's (models.ts), each request runs under
+// one deadline (AI_ROUTE_DEADLINE_MS), and every result names its model (H4).
 
 /** Ask Bun's turns before it answers from the figures it read (AiService's ASK_MAX_TURNS). */
 const ASK_MAX_TURNS = 5
+
+/** Haiku wrote the words (H4). Every call here is Haiku's; escalation comes with P3-T8 and P3-T9. */
+const BY_HAIKU: { model: AiModel; escalated: boolean } = { model: HAIKU, escalated: false }
+/** The offline rules or the plain facts wrote them. */
+const BY_RULES: { model: AiModel; escalated: boolean } = { model: 'rules', escalated: false }
 
 /** The client's "today", unless it is more than a day from the server's Bangkok date (AiService's trustedToday). */
 function trustedToday(clientToday: string, serverToday: string): string {
@@ -66,8 +75,10 @@ function allowAll(allowed: AllowedNumbers, allow: Allowance): void {
 export type VaultAiServiceDeps = {
   /** Null when AI is not configured or switched off (AI_ENABLED, ANTHROPIC_API_KEY). */
   transport: ModelTransport | null
-  model: string
+  /** The service's clock: the Bangkok day, and every route's deadline. */
   now?: () => Date
+  /** Each route's deadline in ms, in place of AI_ROUTE_DEADLINE_MS's (tests give short ones). */
+  deadlines?: Partial<Record<AiFeature, number>>
 }
 
 export class VaultAiService {
@@ -91,28 +102,27 @@ export class VaultAiService {
 
   /** "Tell Bun": a sentence into drafts. Rules answer when AI is unavailable or unsure. */
   async parse(s: VaultSession, request: AiParseRequest): Promise<AiParseResult> {
+    const { trace, deadline } = this.start('parse')
     const ctx = await this.draftContext(s, request.today)
     const rules = (): AiParseResult => {
       const draft = draftFromRules(request.text, ctx)
-      return { drafts: draft ? [draft] : [], source: 'rules' }
+      return { drafts: draft ? [draft] : [], source: 'rules', ...BY_RULES }
     }
     if (!this.deps.transport) return rules()
     await this.consume(s, 'parse')
-    const trace = newTrace()
-    const deadline = new AiDeadline(25_000)
     try {
       const message = await tracedSend(this.deps.transport, trace, deadline, {
         feature: 'parse',
         escalated: false,
         params: {
-          ...requestBase(this.deps.model, 'low', 8_000),
+          ...haikuRequest('low', 8_000),
           output_config: { effort: 'low', format: { type: 'json_schema', schema: PARSE_SCHEMA } },
           system: PARSE_SYSTEM,
           messages: [{ role: 'user', content: JSON.stringify({ sentence: request.text, today: ctx.today, locale: request.locale, ...this.choices(ctx) }) }],
         },
       })
       const drafts = sanitizeDrafts(finishedJson(message), ctx, request.text)
-      return drafts.length > 0 ? { drafts, source: 'ai' } : rules()
+      return drafts.length > 0 ? { drafts, source: 'ai', ...BY_HAIKU } : rules()
     } catch (error) {
       this.logFailure('parse', error)
       return rules()
@@ -121,17 +131,16 @@ export class VaultAiService {
 
   /** A bank slip or receipt image into drafts. The image is never stored: it goes to the model and nowhere else. */
   async slip(s: VaultSession, request: AiSlipRequest): Promise<AiSlipResult> {
+    const { trace, deadline } = this.start('slip')
     const ctx = await this.draftContext(s, request.today)
     if (!this.deps.transport) throw this.paused()
     await this.consume(s, 'slip')
-    const trace = newTrace()
-    const deadline = new AiDeadline(25_000)
     try {
       const message = await tracedSend(this.deps.transport, trace, deadline, {
         feature: 'slip',
         escalated: false,
         params: {
-          ...requestBase(this.deps.model, 'medium', 8_000),
+          ...haikuRequest('medium', 8_000),
           output_config: { effort: 'medium', format: { type: 'json_schema', schema: SLIP_SCHEMA } },
           system: SLIP_SYSTEM,
           messages: [
@@ -147,7 +156,7 @@ export class VaultAiService {
       })
       const raw = finishedJson(message) as { bank?: unknown }
       const bank = typeof raw?.bank === 'string' && raw.bank.trim() ? raw.bank.trim().slice(0, 60) : null
-      return { drafts: sanitizeDrafts(raw, ctx), bank, source: 'ai' }
+      return { drafts: sanitizeDrafts(raw, ctx), bank, source: 'ai', ...BY_HAIKU }
     } catch (error) {
       this.logFailure('slip', error)
       throw this.paused()
@@ -160,24 +169,23 @@ export class VaultAiService {
    * wording strays, the note is the plain facts.
    */
   async note(s: VaultSession, date: string, locale: AiLocale): Promise<AiNoteResult> {
+    const { trace, deadline } = this.start('note')
     const today = trustedToday(date, bangkokDate(this.now()))
     const facts = await step<BunFact[]>(s, 'ai.facts', { query: { date: today } })
-    const plain: AiNoteResult = { date: today, facts, text: factsText(facts, locale), source: 'facts' }
+    const plain: AiNoteResult = { date: today, facts, text: factsText(facts, locale), source: 'facts', ...BY_RULES }
     if (!this.deps.transport || !(await this.hasConsent(s))) return plain
     const allowed = new AllowedNumbers().addDate(today)
     for (const fact of facts) {
       if (fact.amount_minor) allowed.addSatang(fact.amount_minor)
       for (const n of [fact.count, fact.days, fact.percent]) if (n !== undefined) allowed.addCount(n)
     }
-    const trace = newTrace()
-    const deadline = new AiDeadline(25_000)
     try {
       await this.consume(s, 'note')
       const message = await tracedSend(this.deps.transport, trace, deadline, {
         feature: 'note',
         escalated: false,
         params: {
-          ...requestBase(this.deps.model, 'low', 4_000),
+          ...haikuRequest('low', 4_000),
           output_config: { effort: 'low', format: { type: 'json_schema', schema: NOTE_SCHEMA } },
           system: NOTE_SYSTEM,
           messages: [{ role: 'user', content: JSON.stringify({ locale, date: today, facts: facts.map((f) => ({ ...f, say: f.amount_minor ? formatBaht(f.amount_minor) : undefined })) }) }],
@@ -185,7 +193,7 @@ export class VaultAiService {
       })
       const text = String((finishedJson(message) as { text?: unknown })?.text ?? '').trim()
       if (!text || [...text].length > 200 || !isGrounded(text, allowed)) return plain
-      return { date: today, facts, text, source: 'ai' }
+      return { date: today, facts, text, source: 'ai', ...BY_HAIKU }
     } catch (error) {
       if (error instanceof ProblemException) return plain
       this.logFailure('note', error)
@@ -195,6 +203,7 @@ export class VaultAiService {
 
   /** Ask Bun: a question answered with read-only tools over the person's records, each run in the vault. */
   async ask(s: VaultSession, request: AiAskRequest): Promise<AiAskResult> {
+    const { trace, deadline } = this.start('ask')
     const ctx = await step<AiContext>(s, 'ai.context')
     if (!ctx.consent) throw new ProblemException(403, 'AI_CONSENT_REQUIRED')
     if (!this.deps.transport) throw this.paused()
@@ -203,15 +212,16 @@ export class VaultAiService {
     const categories = ctx.categories.map((category) => ({ id: category.id, name: category.label ?? category.builtin_key }))
     const allowed = new AllowedNumbers().addDate(today)
     const figures: AiFigure[] = []
+    const fromFigures = (): AiAskResult => ({ answer: figuresText(figures, request.locale), figures, source: 'facts', ...BY_RULES })
     const messages: Anthropic.Beta.Messages.BetaMessageParam[] = [
       { role: 'user', content: JSON.stringify({ question: request.question, today, locale: request.locale, categories }) },
     ]
-    const trace = newTrace()
-    const deadline = new AiDeadline(25_000)
+    // Every Haiku turn shares one child deadline (H3): at most HAIKU_ASK_CAP_MS of the route's, so Opus keeps the rest (P3-T9).
+    const haiku = deadline.child(HAIKU_ASK_CAP_MS)
     try {
       for (let turn = 0; turn < ASK_MAX_TURNS; turn += 1) {
-        const params: MessageParams = { ...requestBase(this.deps.model, 'medium', 12_000), system: ASK_SYSTEM, tools: ASK_TOOLS, messages }
-        const message = await tracedSend(this.deps.transport, trace, deadline, {
+        const params: MessageParams = { ...haikuRequest('medium', 12_000), system: ASK_SYSTEM, tools: ASK_TOOLS, messages }
+        const message = await tracedSend(this.deps.transport, trace, haiku, {
           feature: 'ask',
           escalated: false,
           params,
@@ -234,15 +244,25 @@ export class VaultAiService {
           continue
         }
         const answer = finishedText(message).trim()
-        if (answer && isGrounded(answer, allowed)) return { answer, figures, source: 'ai' }
-        return { answer: figuresText(figures, request.locale), figures, source: 'facts' }
+        if (answer && isGrounded(answer, allowed)) return { answer, figures, source: 'ai', ...BY_HAIKU }
+        return fromFigures()
       }
-      return { answer: figuresText(figures, request.locale), figures, source: 'facts' }
+      return fromFigures()
     } catch (error) {
       this.logFailure('ask', error)
-      if (figures.length > 0) return { answer: figuresText(figures, request.locale), figures, source: 'facts' }
+      if (figures.length > 0) return fromFigures()
       throw this.paused()
     }
+  }
+
+  /**
+   * One trace and one deadline per request (H3). The deadline starts before
+   * the route's first vault step, the same point on every route, so its steps
+   * count against it too, and it reads the service's clock.
+   */
+  private start(feature: AiFeature): { trace: AiTrace; deadline: AiDeadline } {
+    const totalMs = this.deps.deadlines?.[feature] ?? AI_ROUTE_DEADLINE_MS[feature]
+    return { trace: newTrace(), deadline: new AiDeadline(totalMs, () => this.now().getTime()) }
   }
 
   private paused(): ProblemException {
