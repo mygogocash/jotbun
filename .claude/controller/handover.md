@@ -49,6 +49,15 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **08:05: #423 (P2-T29) opened, and three Opus planners started.**
+  - **#423 (P2-T29):** head `cee7eff5`. The controller checked 9 of 10 `real/` files byte-identical, and `index.ts` equals the proven `911e4ce0…`.
+    - Opus reviewer `mcp:launch:951238c9df0e081ca25bf00475e6972b6668ed55dfa3b4629c55c1e187ca6d4d` writes `reviews/P2-T29.md`.
+    - Flash second reviewer `mcp:launch:d895f4ff7d236dd310b34a7fdeabe9795753f784f38ab6b5fdcd11f44f2c8f1b` writes `reviews/P2-T29-second.md`.
+  - **#421 (P2-T31):** Flash's second review APPROVED. The Opus review is running.
+  - **Planners (Opus, `--claude-code`, notes `scratch/dispatch/planner-common-notes-20261112b.md` plus each task's own):**
+    - P2-T15, transfer, confirm and pick (critical path, depth 16): `mcp:launch:f193feb1faa3da6812da774bd19f8122914f790daec19c9b6cc1b9ecf483d6f4`, WT `p2-t15` on `p2/t15-transfer-confirm-pick`.
+    - P2-T21, new wallet, edit and correction (depth 13): `mcp:launch:a35bacd79458b3a708da5497d4601a20d85ec522f8962d523e0d752b77823853`, WT `p2-t21` on `p2/t21-wallet-edit`.
+    - P3-T6, Haiku first (depth 10): `mcp:launch:a0660c57000d5b119f09062b69f6e70ffd61008c30f6be47b759e78fe374a45a`, WT `p3-t6` on `p3/t6-haiku-first`. It plans on P3-T2's `real/` for `ai.ts` and `index.ts`, and starts after #420 merges.
 - **07:55: #411 (P2-T32): the confirming review APPROVED at `9add4415`** (m1 to m3, n1 to n3 in followups.md; n3 must land before E2-C).
   - The controller merged the head as `764ea0ac`. `index.ts` is the kit's proven `merge/index.t20-t32.ts` (`ddd2e6a0…`): ADD, LIST, RECAP, LOCK.
   - On the merged tree: tsc 0, and 98 of 98. CI is running.
