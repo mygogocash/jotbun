@@ -29,7 +29,7 @@
   - `build:edge`;
   - the four routes tests;
   - `git diff --check`.
-- [ ] CI on this pull request is green: the nine jobs, including the full render suite and the database suites.
+- [x] CI at `f4041406`: 9 of 9, including the full render suite and the database suites.
 - [ ] Independent review (Opus), and a second review: the money fields, their bounds and the older shapes.
 - [ ] SKIPPED: none beyond R100's whole suites, which CI runs.
 
