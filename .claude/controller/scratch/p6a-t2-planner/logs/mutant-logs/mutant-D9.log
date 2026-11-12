@@ -1,0 +1,151 @@
+(node:16170) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/ui/dateStep.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:16170) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/packages/contracts/package.json.
+✔ steps one day across month and year ends (0.542333ms)
+✔ leap days follow the Gregorian rules (0.088291ms)
+✔ only real YYYY-MM-DD dates are accepted (0.180042ms)
+✔ never steps into the future (0.081208ms)
+✔ never steps before the earliest date (the wallet tracking start, or 1970) (0.048583ms)
+✔ Today and Yesterday in English, Thai and Vietnamese (0.275ms)
+✔ other days are written out, with the year only when it is not this year (0.087291ms)
+✔ Thai dates show Buddhist-era years (0.120042ms)
+✔ full dates and month names in English and Vietnamese keep the Gregorian year (0.073042ms)
+✔ weekday initials run Sunday first in each language (0.088208ms)
+✔ a month's short name has no year, in each language (0.121959ms)
+✔ a short date is written out for today and yesterday too, with the year only when it is not this year (0.063167ms)
+✔ monthName gives short and long names in Thai and English (0.11925ms)
+✖ shortDayName gives ส. 24 and Sat 24 (0.764667ms)
+(node:16183) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/wallet/outside/outsideCopy.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ every outside line has Thai and English with the same placeholders, no emoji and no dash punctuation, under an outside. key (1.226959ms)
+(node:16184) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/wallet/outside/widgetSnapshot.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:16184) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/packages/contracts/package.json.
+✔ the home face reads as ox-widget-home (2.2655ms)
+✔ with the Face ID lock on, the lock face holds no amount, private mode or not (0.380166ms)
+✔ private mode masks both faces and keeps the count (0.204042ms)
+✔ over budget says เกินงบไป ฿420 and, masked, keeps the words (0.236208ms)
+✔ no budget has no side line and no gauge figure (0.357708ms)
+✔ after midnight the widget shows a new day with nothing logged (0.203792ms)
+✖ each face names its day (0.887458ms)
+✔ on the month's last evening the next entry drops the budget figures (0.218958ms)
+✔ a pace for another month draws no budget figures, so the 1st never shows last month's (0.104875ms)
+✔ the second midnight asks to open Jotbun (0.209292ms)
+✔ nextBangkokMidnight is the next 00:00 in Bangkok, strictly after now (0.073042ms)
+✔ entryAt picks the newest started entry, else the first (0.107ms)
+✔ faceFor gives system families the home face and accessory families the lock face (0.1565ms)
+✖ Vietnamese reads the English lines (0.287209ms)
+✔ a signed-out snapshot has no figures (0.079625ms)
+✔ sameSnapshot ignores only the first entry's time (0.743167ms)
+✔ both snapshots carry the link words in the person's language (0.401333ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 29
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 189.623625
+
+✖ failing tests:
+
+test at src/ui/dateStep.test.ts:145:1
+✖ shortDayName gives ส. 24 and Sat 24 (0.764667ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+  +   'S 24',
+  +   'S 25',
+  +   'S 1'
+  -   'Sat 24',
+  -   'Sun 25',
+  -   'Sun 1'
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/ui/dateStep.test.ts:147:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'S 24', 'S 25', 'S 1' ],
+    expected: [ 'Sat 24', 'Sun 25', 'Sun 1' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/wallet/outside/widgetSnapshot.test.ts:168:1
+✖ each face names its day (0.887458ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+  +   'S 24',
+  +   'S 24',
+  +   'S 25'
+  -   'Sat 24',
+  -   'Sat 24',
+  -   'Sun 25'
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/wallet/outside/widgetSnapshot.test.ts:172:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'S 24', 'S 24', 'S 25' ],
+    expected: [ 'Sat 24', 'Sat 24', 'Sun 25' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/wallet/outside/widgetSnapshot.test.ts:233:1
+✖ Vietnamese reads the English lines (0.287209ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      'Spent today',
+      'Oct budget',
+      '3 records',
+      'Today · 3 records',
+      'Left today',
+  +   'S 24'
+  -   'Sat 24'
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/wallet/outside/widgetSnapshot.test.ts:235:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'Spent today', 'Oct budget', '3 records', 'Today · 3 records', 'Left today', 'S 24' ],
+    expected: [ 'Spent today', 'Oct budget', '3 records', 'Today · 3 records', 'Left today', 'Sat 24' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

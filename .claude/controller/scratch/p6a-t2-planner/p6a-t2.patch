@@ -1,0 +1,759 @@
+--- a/apps/app/src/ui/dateStep.ts
++++ b/apps/app/src/ui/dateStep.ts
+@@ -219,3 +219,35 @@
+   const day = partsOf(date);
+   return shortDate(day, locale, day.year !== partsOf(today).year);
+ }
++
++/** A month's place in the year, 0 to 11. Anything but a `YYYY-MM` month from year 1 throws a TypeError. */
++function monthIndex(month: string): number {
++  const match = ISO_MONTH.exec(month);
++  const number = match ? Number(match[2]) : 0;
++  if (!match || Number(match[1]) < 1 || number < 1 || number > 12) throw new TypeError(`Expected a YYYY-MM month, got ${month}.`);
++  return number - 1;
++}
++
++/**
++ * A month's name without its year, short or long: "ต.ค." or "ตุลาคม", "Oct"
++ * or "October", "thg 10" or "tháng 10". The widget's gauge (P6A-T2) says
++ * "งบ ต.ค." and VoiceOver "งบเดือนตุลาคม".
++ */
++export function monthName(month: string, locale: DateLocale, form: 'short' | 'long'): string {
++  const words = WORDS[locale];
++  return (form === 'long' ? words.monthsLong : words.monthsShort)[monthIndex(month)];
++}
++
++/**
++ * The day on a widget face (ox-widget-lock): a short weekday, then the day
++ * of the month: "ส. 24", "Sat 24", "T7, 24". Thai shortens the weekday as
++ * Thai calendars do, with a full stop.
++ */
++export function shortDayName(date: string, locale: DateLocale): string {
++  const day = partsOf(date);
++  const words = WORDS[locale];
++  const index = weekday(day);
++  if (locale === 'th') return `${words.weekdaysNarrow[index]}. ${day.day}`;
++  if (locale === 'vi') return `${words.weekdaysNarrow[index]}, ${day.day}`;
++  return `${words.weekdaysShort[index]} ${day.day}`;
++}
+--- a/apps/app/src/ui/dateStep.test.ts
++++ b/apps/app/src/ui/dateStep.test.ts
+@@ -1,7 +1,7 @@
+ import assert from 'node:assert/strict';
+ import { test } from 'node:test';
+ 
+-import { canStepBack, canStepForward, dayLabel, displayYear, fullDateLabel, isCalendarDate, monthLabel, monthShortLabel, shortDateLabel, stepDate, stepDay, weekdayInitials } from './dateStep.ts';
++import { canStepBack, canStepForward, dayLabel, displayYear, fullDateLabel, isCalendarDate, monthLabel, monthName, monthShortLabel, shortDateLabel, shortDayName, stepDate, stepDay, weekdayInitials } from './dateStep.ts';
+ 
+ test('steps one day across month and year ends', () => {
+   assert.equal(stepDate('2026-10-17', 1), '2026-10-18');
+@@ -131,3 +131,20 @@
+   assert.equal(shortDateLabel('2025-12-31', today, 'en'), 'Wed 31 Dec 2025');
+   assert.throws(() => shortDateLabel('2026-02-30', today, 'en'), TypeError);
+ });
++
++test('monthName gives short and long names in Thai and English', () => {
++  assert.deepEqual([monthName('2026-10', 'th', 'short'), monthName('2026-10', 'th', 'long')], ['ต.ค.', 'ตุลาคม']);
++  assert.deepEqual([monthName('2026-10', 'en', 'short'), monthName('2026-10', 'en', 'long')], ['Oct', 'October']);
++  assert.deepEqual([monthName('2026-11', 'th', 'short'), monthName('2027-01', 'th', 'long'), monthName('2026-12', 'en', 'short')], ['พ.ย.', 'มกราคม', 'Dec']);
++  assert.deepEqual([monthName('2026-10', 'vi', 'short'), monthName('2026-10', 'vi', 'long')], ['thg 10', 'tháng 10']);
++  for (const bad of ['2026-13', '2026-00', '0000-10', '2026-10-01']) {
++    assert.throws(() => monthName(bad, 'en', 'long'), { name: 'TypeError', message: `Expected a YYYY-MM month, got ${bad}.` }, bad);
++  }
++});
++
++test('shortDayName gives ส. 24 and Sat 24', () => {
++  assert.deepEqual(['2026-10-24', '2026-10-25', '2026-10-29', '2026-11-01'].map((date) => shortDayName(date, 'th')), ['ส. 24', 'อา. 25', 'พฤ. 29', 'อา. 1']);
++  assert.deepEqual(['2026-10-24', '2026-10-25', '2026-11-01'].map((date) => shortDayName(date, 'en')), ['Sat 24', 'Sun 25', 'Sun 1']);
++  assert.deepEqual(['2026-10-24', '2026-10-25'].map((date) => shortDayName(date, 'vi')), ['T7, 24', 'CN, 25']);
++  assert.throws(() => shortDayName('2026-02-30', 'th'), TypeError);
++});
+--- /dev/null
++++ b/apps/app/src/wallet/outside/outsideCopy.draft.ts
+@@ -0,0 +1,37 @@
++// Every P6A line until its E2 approval (P6A-T2; the plan's Global Constraints,
++// Copy). The Thai is the boards' (ox-widget-home, ox-widget-lock) or the
++// plan's; the lines marked draft have no board. Every English line is a draft
++// for E2. P6A-T13 moves the approved lines to the catalogs and keeps this
++// table for the rest; later P6A tasks add their lines here. Data only: read
++// it through useOutsideCopy() or outsideT().
++import type { DraftTable } from '../copy/draftText.ts';
++
++export const OUTSIDE_DRAFT = {
++  // The faces.
++  'outside.spentToday': { th: 'ใช้วันนี้', en: 'Spent today' },
++  'outside.count': { th: '{count} รายการ', en: '{count} records' },
++  'outside.today': { th: 'วันนี้ · {count} รายการ', en: 'Today · {count} records' },
++  'outside.leftToday': { th: 'เหลือวันนี้', en: 'Left today' },
++  'outside.about': { th: '≈ {amount}', en: '≈ {amount}' },
++  'outside.overBy': { th: 'เกินงบไป', en: 'Over budget by' },
++  'outside.budgetMonth': { th: 'งบ {month}', en: '{month} budget' },
++  'outside.percent': { th: '{percent}%', en: '{percent}%' },
++  // What VoiceOver says. The English today line ends with a full stop, since
++  // the left or over line follows it in the same label.
++  'outside.spokenToday': { th: 'วันนี้ใช้ {amount} {count} รายการ', en: 'Spent {amount} today, {count} records.' },
++  'outside.spokenLeft': { th: 'เหลือวันนี้ประมาณ {amount}', en: 'About {amount} left today' },
++  'outside.spokenOver': { th: 'เกินงบไป {amount}', en: 'Over budget by {amount}' },
++  'outside.spokenGauge': { th: 'งบเดือน{month} ใช้ไป {percent} เปอร์เซ็นต์', en: '{percent} percent of the {month} budget used' },
++  'outside.spokenGaugeHidden': { th: 'งบเดือนนี้ ซ่อนอยู่', en: "This month's budget is hidden" },
++  'outside.spokenHidden': { th: 'วันนี้ {count} รายการ ยอดเงินซ่อนอยู่', en: 'Today, {count} records, amounts hidden' },
++  // Draft.
++  'outside.noBudget': { th: 'ยังไม่ได้ตั้งงบ', en: 'No budget set yet' },
++  // The link words: a widget layout cannot read copy (P6A-T8).
++  'outside.record': { th: 'จดรายจ่าย', en: 'Add spending' },
++  'outside.scan': { th: 'สแกนสลิป', en: 'Scan a slip' },
++  'outside.log': { th: 'จด', en: 'Add' },
++  // Draft: the prompts and the widget's name.
++  'outside.stale': { th: 'เปิด Jotbun เพื่อดูยอดวันนี้', en: "Open Jotbun to see today's spending" },
++  'outside.signedOut': { th: 'เปิด Jotbun เพื่อเริ่มจด', en: 'Open Jotbun to start tracking' },
++  'outside.widgetName': { th: 'Jotbun วันนี้', en: 'Jotbun today' },
++} as const satisfies DraftTable;
+--- /dev/null
++++ b/apps/app/src/wallet/outside/outsideCopy.test.ts
+@@ -0,0 +1,42 @@
++// The outside lines (P6A-T2): P2-T3's checks over OUTSIDE_DRAFT, which
++// draftText.test.ts does not reach (it reads only the files named copy.ts).
++import assert from 'node:assert/strict';
++import { test } from 'node:test';
++
++import type { DraftLine, DraftTable } from '../copy/draftText.ts';
++import { OUTSIDE_DRAFT } from './outsideCopy.draft.ts';
++
++/** Lines with no Thai letters of their own: a sign and a placeholder. */
++const LATIN_LINES = new Set<string>(['outside.about', 'outside.percent']);
++
++/** Every line P6A-T2 adds (the plan's copy list). Later P6A tasks add more. */
++const TASK_LINES = [
++  'outside.spentToday', 'outside.count', 'outside.today', 'outside.leftToday', 'outside.about', 'outside.overBy', 'outside.budgetMonth',
++  'outside.percent', 'outside.spokenToday', 'outside.spokenLeft', 'outside.spokenOver', 'outside.spokenGauge', 'outside.spokenGaugeHidden',
++  'outside.spokenHidden', 'outside.noBudget', 'outside.record', 'outside.scan', 'outside.log', 'outside.stale', 'outside.signedOut', 'outside.widgetName',
++];
++
++const THAI = /[\u0E00-\u0E7F]/;
++const EMOJI = /\p{Extended_Pictographic}/u;
++const PUNCTUATION_DASH = /[\u2013\u2014]/;
++const OUTSIDE_KEY = /^outside\.[A-Za-z0-9_.]+$/;
++
++function placeholders(text: string): string[] {
++  return [...text.matchAll(/\{([a-zA-Z0-9_]+)\}/g)].map((match) => match[1]).sort();
++}
++
++test('every outside line has Thai and English with the same placeholders, no emoji and no dash punctuation, under an outside. key', () => {
++  const lines: [string, DraftLine][] = Object.entries(OUTSIDE_DRAFT as DraftTable);
++  assert.deepEqual(TASK_LINES.filter((key) => !lines.some(([found]) => found === key)), []);
++  for (const [key, line] of lines) {
++    assert.match(key, OUTSIDE_KEY);
++    assert.ok(line.th.length > 0, key);
++    assert.ok(line.en.length > 0, key);
++    if (!LATIN_LINES.has(key)) assert.match(line.th, THAI, key);
++    assert.deepEqual(placeholders(line.th), placeholders(line.en), key);
++    for (const text of [line.th, line.en]) {
++      assert.equal(EMOJI.test(text), false, key);
++      assert.equal(PUNCTUATION_DASH.test(text), false, key);
++    }
++  }
++});
+--- /dev/null
++++ b/apps/app/src/wallet/outside/useOutsideCopy.ts
+@@ -0,0 +1,16 @@
++// The outside lines (P6A-T2): Thai for `th`, English for `en` and `vi`, from
++// the draft table until E2. P6A-T13 switches both readers to the catalogs.
++import { tableT } from '../copy/draftText.ts';
++import type { WalletT } from '../copy/draftText.ts';
++import { useDraftCopy } from '../copy/useDraftCopy.ts';
++import { OUTSIDE_DRAFT } from './outsideCopy.draft.ts';
++
++/** The lines in the app's language (`useActiveLocale`), for a component: the bridge, the catalogue. */
++export function useOutsideCopy(): WalletT {
++  return useDraftCopy(OUTSIDE_DRAFT);
++}
++
++/** The same lines for code outside React (P6A-T3b's eraseOutside). */
++export function outsideT(locale: 'th' | 'en' | 'vi'): WalletT {
++  return tableT(OUTSIDE_DRAFT, locale);
++}
+--- /dev/null
++++ b/apps/app/src/wallet/outside/widgetSnapshot.test.ts
+@@ -0,0 +1,272 @@
++// The widget snapshot (P6A-T2; X2, X3; ox-widget-home, ox-widget-lock; D41,
++// B21; Review Focus 1 and 2): display-ready faces, a lock face with no amount
++// while the Face ID lock or private mode is on, and entries that roll over at
++// Bangkok midnight. The month is ox-widget-home's: ฿18,000 for October 2026,
++// ฿13,360 spent by Saturday 24 October, so ฿4,640 is left for 8 days.
++import assert from 'node:assert/strict';
++import { test } from 'node:test';
++
++import type { Minor } from '@gogospend/contracts';
++
++import { budgetPace } from '../../spend/v1/redesign/budgetPace.ts';
++import type { BudgetPace } from '../../spend/v1/redesign/budgetPace.ts';
++import { budget, spentSummary } from '../../spend/v1/redesign/testing/fixtures.ts';
++import { tableT } from '../copy/draftText.ts';
++import { OUTSIDE_DRAFT } from './outsideCopy.draft.ts';
++import { buildWidgetSnapshot, entryAt, faceFor, nextBangkokMidnight, sameSnapshot, signedOutSnapshot } from './widgetSnapshot.ts';
++import type { WidgetEntry, WidgetFace, WidgetFacts, WidgetLinks, WidgetSnapshot } from './widgetSnapshot.ts';
++
++const LINKS: WidgetLinks = { record: 'gogospend://outside/record', today: 'gogospend://outside/today', scan: null };
++const OCT = '2026-10';
++const LIMIT = '1800000';
++/** 20:00 on Saturday 24 October in Bangkok. */
++const NOW = new Date('2026-10-24T13:00:00Z');
++const HIDDEN = '฿••••';
++/** Every amount the October month holds, as a face or its words would write it. */
++const AMOUNTS = ['132', '580', '662', '74', '13,360', '4,640', '18,000'];
++
++function pace(today: string, spent: string, limit: string | null = LIMIT): BudgetPace {
++  return budgetPace({ budget: limit === null ? null : budget(OCT, limit), summary: spentSummary(OCT, spent), today });
++}
++
++/** Records the amounts it is handed and says them in whole baht. */
++function spokenFake(unit = 'บาท') {
++  const handed: Minor[] = [];
++  const spoken = (minor: Minor) => {
++    handed.push(minor);
++    return `${BigInt(minor) / 100n} ${unit}`;
++  };
++  return { handed, spoken };
++}
++
++type Build = Partial<WidgetFacts> & { links?: WidgetLinks; spoken?: (minor: Minor) => string };
++
++/** ox-widget-home's evening: 3 records worth ฿132 today, on the October pace. */
++function build(input: Build = {}): WidgetSnapshot {
++  const { links = LINKS, spoken = spokenFake().spoken, ...given } = input;
++  const facts: WidgetFacts = { now: NOW, todayCount: 3, todayOutMinor: '13200', pace: pace('2026-10-24', '1336000'), hidden: false, lockOn: false, locale: 'th', ...given };
++  try {
++    return buildWidgetSnapshot(facts, links, tableT(OUTSIDE_DRAFT, facts.locale), spoken);
++  } catch (error) {
++    assert.fail(`buildWidgetSnapshot threw: ${String(error)}`);
++  }
++}
++
++function entry(snapshot: WidgetSnapshot, index: number): WidgetEntry {
++  const found = snapshot.entries[index];
++  assert.ok(found, `no entry ${index}`);
++  return found;
++}
++
++function home(snapshot: WidgetSnapshot, index = 0): WidgetFace {
++  const found = entry(snapshot, index).home;
++  assert.ok(found, `no home face in entry ${index}`);
++  return found;
++}
++
++function lock(snapshot: WidgetSnapshot, index = 0): WidgetFace {
++  const found = entry(snapshot, index).lock;
++  assert.ok(found, `no lock face in entry ${index}`);
++  return found;
++}
++
++/** What a face draws, apart from its day and its spoken words. */
++function drawn(face: WidgetFace) {
++  return [face.masked, face.outLabel, face.out, face.count, face.today, face.sideLabel, face.side, face.over, face.gaugeLabel, face.gaugeText, face.gaugeFraction];
++}
++
++test('the home face reads as ox-widget-home', () => {
++  const snapshot = build();
++  const face = home(snapshot);
++  assert.deepEqual(drawn(face), [false, 'ใช้วันนี้', '฿132', '3 รายการ', 'วันนี้ · 3 รายการ', 'เหลือวันนี้', '≈ ฿580', false, 'งบ ต.ค.', '74%', 0.742]);
++  assert.deepEqual(face.spoken, {
++    small: 'วันนี้ใช้ 132 บาท 3 รายการ เหลือวันนี้ประมาณ 580 บาท',
++    inline: 'เหลือวันนี้ประมาณ 580 บาท',
++    gauge: 'งบเดือนตุลาคม ใช้ไป 74 เปอร์เซ็นต์',
++    rectangular: 'วันนี้ใช้ 132 บาท 3 รายการ เหลือวันนี้ประมาณ 580 บาท',
++  });
++  // With neither the lock nor private mode, the lock face reads the same.
++  assert.deepEqual(lock(snapshot), face);
++  const english = home(build({ locale: 'en', spoken: spokenFake('baht').spoken }));
++  assert.deepEqual(drawn(english), [false, 'Spent today', '฿132', '3 records', 'Today · 3 records', 'Left today', '≈ ฿580', false, 'Oct budget', '74%', 0.742]);
++  assert.deepEqual(english.spoken, {
++    small: 'Spent 132 baht today, 3 records. About 580 baht left today',
++    inline: 'About 580 baht left today',
++    gauge: '74 percent of the October budget used',
++    rectangular: 'Spent 132 baht today, 3 records. About 580 baht left today',
++  });
++});
++
++test('with the Face ID lock on, the lock face holds no amount, private mode or not', () => {
++  for (const hidden of [false, true]) {
++    const snapshot = build({ lockOn: true, hidden });
++    const face = lock(snapshot);
++    assert.deepEqual(drawn(face), [true, 'ใช้วันนี้', HIDDEN, '3 รายการ', 'วันนี้ · 3 รายการ', 'เหลือวันนี้', HIDDEN, false, 'งบ ต.ค.', null, null], `hidden ${hidden}`);
++    assert.deepEqual(face.spoken, { small: 'วันนี้ 3 รายการ ยอดเงินซ่อนอยู่', inline: 'วันนี้ 3 รายการ ยอดเงินซ่อนอยู่', gauge: 'งบเดือนนี้ ซ่อนอยู่', rectangular: 'วันนี้ 3 รายการ ยอดเงินซ่อนอยู่' });
++    assert.equal(home(snapshot).out, hidden ? HIDDEN : '฿132');
++    const lockFaces = JSON.stringify(snapshot.entries.map((one) => one.lock));
++    for (const amount of AMOUNTS) assert.equal(lockFaces.includes(amount), false, `${amount} on a lock face, hidden ${hidden}`);
++  }
++});
++
++test('private mode masks both faces and keeps the count', () => {
++  const snapshot = build({ hidden: true });
++  for (const face of [home(snapshot), lock(snapshot), home(snapshot, 1), lock(snapshot, 1)]) {
++    assert.deepEqual([face.masked, face.out, face.side, face.gaugeText, face.gaugeFraction], [true, HIDDEN, HIDDEN, null, null]);
++  }
++  const face = home(snapshot);
++  assert.deepEqual([face.count, face.today, face.sideLabel], ['3 รายการ', 'วันนี้ · 3 รายการ', 'เหลือวันนี้']);
++  assert.equal(face.spoken.rectangular, 'วันนี้ 3 รายการ ยอดเงินซ่อนอยู่');
++  assert.equal(face.spoken.gauge, 'งบเดือนนี้ ซ่อนอยู่');
++  const faces = JSON.stringify(snapshot.entries.map((one) => [one.home, one.lock]));
++  for (const amount of AMOUNTS) assert.equal(faces.includes(amount), false, amount);
++});
++
++test('over budget says เกินงบไป ฿420 and, masked, keeps the words', () => {
++  const over = pace('2026-10-24', '1842000');
++  const snapshot = build({ pace: over });
++  const face = home(snapshot);
++  assert.deepEqual([face.sideLabel, face.side, face.over, face.gaugeText, face.gaugeFraction], ['เกินงบไป', '฿420', true, '102%', 1]);
++  assert.equal(face.spoken.rectangular, 'วันนี้ใช้ 132 บาท 3 รายการ เกินงบไป 420 บาท');
++  assert.equal(face.spoken.inline, 'เกินงบไป 420 บาท');
++  // Tomorrow is still over, by the same amount.
++  const tomorrow = home(snapshot, 1);
++  assert.deepEqual([tomorrow.sideLabel, tomorrow.side, tomorrow.over], ['เกินงบไป', '฿420', true]);
++  const masked = home(build({ pace: over, hidden: true }));
++  assert.deepEqual([masked.sideLabel, masked.side, masked.over], ['เกินงบไป', HIDDEN, true]);
++  // Spent to the satang of the limit is not over: nothing is left a day.
++  const level = home(build({ pace: pace('2026-10-24', LIMIT) }));
++  assert.deepEqual([level.sideLabel, level.side, level.over, level.gaugeText], ['เหลือวันนี้', '≈ ฿0', false, '100%']);
++});
++
++test('no budget has no side line and no gauge figure', () => {
++  for (const none of [null, pace('2026-10-24', '1336000', null)]) {
++    const face = home(build({ pace: none }));
++    assert.deepEqual([face.sideLabel, face.side, face.over, face.gaugeLabel, face.gaugeText, face.gaugeFraction], [null, null, false, 'งบ ต.ค.', null, null]);
++    assert.deepEqual(face.spoken, { small: 'วันนี้ใช้ 132 บาท 3 รายการ', inline: 'วันนี้ใช้ 132 บาท 3 รายการ', gauge: 'ยังไม่ได้ตั้งงบ', rectangular: 'วันนี้ใช้ 132 บาท 3 รายการ' });
++  }
++  // A limit of zero (budgets.ts never accepts one) draws no figures rather than dividing by zero.
++  const zero = home(build({ pace: pace('2026-10-24', '1336000', '0') }));
++  assert.deepEqual([zero.sideLabel, zero.side, zero.gaugeText, zero.gaugeFraction], [null, null, null, null]);
++});
++
++test('after midnight the widget shows a new day with nothing logged', () => {
++  const { handed, spoken } = spokenFake();
++  const snapshot = build({ spoken });
++  const next = entry(snapshot, 1);
++  assert.deepEqual([next.from, next.day, next.kind, next.prompt], [Date.parse('2026-10-24T17:00:00Z'), '2026-10-25', 'today', null]);
++  const face = home(snapshot, 1);
++  // ฿4,640 left for 7 days from Sunday: 66,285 satang a day, shown as ฿662.
++  assert.deepEqual(drawn(face), [false, 'ใช้วันนี้', '฿0', '0 รายการ', 'วันนี้ · 0 รายการ', 'เหลือวันนี้', '≈ ฿662', false, 'งบ ต.ค.', '74%', 0.742]);
++  assert.equal(face.spoken.rectangular, 'วันนี้ใช้ 0 บาท 0 รายการ เหลือวันนี้ประมาณ 662 บาท');
++  assert.deepEqual(lock(snapshot, 1), face);
++  // VoiceOver is handed the whole baht the face shows, never its satang.
++  assert.equal(handed.includes('66200'), true);
++  assert.equal(handed.includes('66285'), false);
++});
++
++test('each face names its day', () => {
++  const thai = build({ lockOn: true });
++  assert.deepEqual([home(thai).dayLabel, lock(thai).dayLabel, home(thai, 1).dayLabel, lock(thai, 1).dayLabel], ['ส. 24', 'ส. 24', 'อา. 25', 'อา. 25']);
++  const english = build({ locale: 'en' });
++  assert.deepEqual([home(english).dayLabel, lock(english).dayLabel, home(english, 1).dayLabel], ['Sat 24', 'Sat 24', 'Sun 25']);
++});
++
++test("on the month's last evening the next entry drops the budget figures", () => {
++  const evening = new Date('2026-10-31T13:00:00Z');
++  for (const spent of ['1336000', '1842000']) {
++    const snapshot = build({ now: evening, pace: pace('2026-10-31', spent) });
++    assert.deepEqual([home(snapshot).gaugeLabel, home(snapshot).gaugeText !== null], ['งบ ต.ค.', true], spent);
++    assert.equal(entry(snapshot, 1).day, '2026-11-01');
++    const face = home(snapshot, 1);
++    assert.deepEqual([face.dayLabel, face.sideLabel, face.side, face.over, face.gaugeLabel, face.gaugeText, face.gaugeFraction], ['อา. 1', null, null, false, 'งบ พ.ย.', null, null], spent);
++    assert.equal(face.spoken.gauge, 'ยังไม่ได้ตั้งงบ', spent);
++  }
++  // The last day's own figure: all of what is left, for one day.
++  assert.equal(home(build({ now: evening, pace: pace('2026-10-31', '1336000') })).side, '≈ ฿4,640');
++});
++
++test("a pace for another month draws no budget figures, so the 1st never shows last month's", () => {
++  // 00:30 on Sunday 1 November in Bangkok, before Home has moved its pace to November.
++  const snapshot = build({ now: new Date('2026-10-31T17:30:00Z'), pace: pace('2026-10-31', '1336000') });
++  assert.equal(entry(snapshot, 0).day, '2026-11-01');
++  for (const face of [home(snapshot), lock(snapshot), home(snapshot, 1)]) {
++    assert.deepEqual([face.sideLabel, face.side, face.gaugeLabel, face.gaugeText, face.gaugeFraction], [null, null, 'งบ พ.ย.', null, null]);
++  }
++});
++
++test('the second midnight asks to open Jotbun', () => {
++  const snapshot = build();
++  assert.equal(snapshot.entries.length, 3);
++  assert.deepEqual(entry(snapshot, 2), { from: Date.parse('2026-10-25T17:00:00Z'), day: '2026-10-26', kind: 'stale', home: null, lock: null, prompt: 'เปิด Jotbun เพื่อดูยอดวันนี้' });
++  assert.deepEqual([entry(snapshot, 0).from, entry(snapshot, 0).day, entry(snapshot, 0).kind, entry(snapshot, 0).prompt], [NOW.getTime(), '2026-10-24', 'today', null]);
++});
++
++test('nextBangkokMidnight is the next 00:00 in Bangkok, strictly after now', () => {
++  const next = (iso: string) => new Date(nextBangkokMidnight(Date.parse(iso))).toISOString();
++  assert.equal(next('2026-10-24T16:59:59.999Z'), '2026-10-24T17:00:00.000Z');
++  assert.equal(next('2026-10-24T17:00:00.000Z'), '2026-10-25T17:00:00.000Z');
++  assert.equal(next('2026-10-24T00:00:00.000Z'), '2026-10-24T17:00:00.000Z');
++  assert.equal(next('2026-12-31T20:00:00.000Z'), '2027-01-01T17:00:00.000Z');
++});
++
++test('entryAt picks the newest started entry, else the first', () => {
++  const snapshot = build();
++  const [first, second, third] = [entry(snapshot, 0), entry(snapshot, 1), entry(snapshot, 2)];
++  assert.equal(entryAt(snapshot, first.from - 60_000), first);
++  assert.equal(entryAt(snapshot, first.from), first);
++  assert.equal(entryAt(snapshot, second.from - 1), first);
++  assert.equal(entryAt(snapshot, second.from), second);
++  assert.equal(entryAt(snapshot, third.from - 1), second);
++  assert.equal(entryAt(snapshot, third.from), third);
++  assert.equal(entryAt(snapshot, third.from + 7 * 86_400_000), third);
++});
++
++test('faceFor gives system families the home face and accessory families the lock face', () => {
++  const now = entry(build({ lockOn: true }), 0);
++  assert.ok(now.home !== null && now.lock !== null && now.home.masked !== now.lock.masked);
++  for (const family of ['systemSmall', 'systemMedium'] as const) assert.equal(faceFor(now, family), now.home, family);
++  for (const family of ['accessoryInline', 'accessoryCircular', 'accessoryRectangular'] as const) assert.equal(faceFor(now, family), now.lock, family);
++  assert.equal(faceFor(entry(build(), 2), 'systemSmall'), null);
++});
++
++test('Vietnamese reads the English lines', () => {
++  const face = home(build({ locale: 'vi' }));
++  assert.deepEqual([face.outLabel, face.gaugeLabel, face.count, face.today, face.sideLabel, face.dayLabel], ['Spent today', 'Oct budget', '3 records', 'Today · 3 records', 'Left today', 'Sat 24']);
++  assert.equal(face.spoken.gauge, '74 percent of the October budget used');
++  assert.equal(entry(build({ locale: 'vi' }), 2).prompt, "Open Jotbun to see today's spending");
++});
++
++test('a signed-out snapshot has no figures', () => {
++  const snapshot = signedOutSnapshot(NOW, LINKS, tableT(OUTSIDE_DRAFT, 'th'));
++  assert.deepEqual(snapshot.entries, [{ from: NOW.getTime(), day: '2026-10-24', kind: 'signed_out', home: null, lock: null, prompt: 'เปิด Jotbun เพื่อเริ่มจด' }]);
++  assert.deepEqual([snapshot.v, Object.keys(snapshot)], [1, ['v', 'links', 'labels', 'entries']]);
++  assert.equal(JSON.stringify(snapshot).includes('฿'), false);
++});
++
++test("sameSnapshot ignores only the first entry's time", () => {
++  const at = (iso: string, input: Build = {}) => build({ now: new Date(iso), ...input });
++  const eight = at('2026-10-24T13:00:00Z');
++  assert.equal(sameSnapshot(eight, at('2026-10-24T13:30:00Z')), true);
++  assert.equal(sameSnapshot(eight, eight), true);
++  assert.equal(sameSnapshot(eight, at('2026-10-24T13:00:00Z', { todayCount: 4 })), false);
++  assert.equal(sameSnapshot(eight, at('2026-10-24T13:00:00Z', { lockOn: true })), false);
++  assert.equal(sameSnapshot(eight, at('2026-10-24T13:00:00Z', { links: { ...LINKS, scan: 'gogospend://outside/scan' } })), false);
++  // The next morning's snapshot starts its later entries a day on.
++  assert.equal(sameSnapshot(eight, at('2026-10-25T01:00:00Z', { pace: pace('2026-10-25', '1336000') })), false);
++  const later = { ...eight, entries: eight.entries.map((one, index) => (index === 1 ? { ...one, from: one.from + 1 } : one)) };
++  assert.equal(sameSnapshot(eight, later), false);
++});
++
++test("both snapshots carry the link words in the person's language", () => {
++  const thai = { record: 'จดรายจ่าย', scan: 'สแกนสลิป', log: 'จด' };
++  const english = { record: 'Add spending', scan: 'Scan a slip', log: 'Add' };
++  for (const [locale, words] of [['th', thai], ['en', english], ['vi', english]] as const) {
++    assert.deepEqual(build({ locale }).labels, words, locale);
++    assert.deepEqual(signedOutSnapshot(NOW, LINKS, tableT(OUTSIDE_DRAFT, locale)).labels, words, `${locale} signed out`);
++  }
++  // The links are kept by name: nothing else the object carries is written.
++  const carried = { ...LINKS, session: 'not a link' } as WidgetLinks;
++  assert.deepEqual(build({ links: carried }).links, LINKS);
++  assert.deepEqual(signedOutSnapshot(NOW, carried, tableT(OUTSIDE_DRAFT, 'th')).links, LINKS);
++});
+--- /dev/null
++++ b/apps/app/src/wallet/outside/widgetSnapshot.ts
+@@ -0,0 +1,247 @@
++// The widget snapshot (P6A-T2; X2, X3; ox-widget-home, ox-widget-lock; D41,
++// B21): what Home writes for the home-screen and lock-screen widgets. Every
++// string is ready to draw, since a widget never formats money, reads copy or
++// works out a day (P6A-T8 draws it).
++// - Faces (X2): `home` for the system families, `lock` for the accessory
++//   ones. Private mode masks both; the Face ID lock masks the lock face
++//   (B21; default pending owner Q9). A masked face shows HIDDEN_AMOUNT for
++//   every amount, keeps the words and the count, and has no gauge figure.
++//   Nothing the person wrote (a note, a payee, a category name) is ever in
++//   the snapshot, so masking the amounts hides all of it (R114).
++// - Entries (X3), each from the start of the Bangkok date in its `day`: now;
++//   the next Bangkok midnight, a new day with nothing logged; the midnight
++//   after, a prompt to open Jotbun.
++// - Budget figures come from budgetPace's limit and estimated spending, and
++//   only for a face whose day is in the pace's month: a new month starts
++//   with none, and so does a pace Home has not yet moved past midnight on
++//   the 1st (Review Focus 2). The left-a-day figure is worked out for each
++//   face's own day.
++// - Money (§4) is satang through BigInt and P2-T10's money text, never a JS
++//   number. The gauge's fraction is the one number: thousandths, capped at
++//   1000 while still a BigInt, as the budget rows' permille is.
++// Pure: a Node test reads it.
++import { bangkokDate } from '@gogospend/contracts';
++import type { Minor } from '@gogospend/contracts';
++
++import type { BudgetPace } from '../../spend/v1/redesign/budgetPace.ts';
++import { daysBetween, daysInMonth } from '../../spend/v1/redesign/shared.ts';
++import { monthName, shortDayName, stepDate } from '../../ui/dateStep.ts';
++import type { WalletT } from '../copy/draftText.ts';
++import { HIDDEN_AMOUNT, perDayText, walletMoneyText } from '../money/walletMoney.ts';
++
++export type WidgetFacts = {
++  now: Date;
++  /** Home's rows today: records and drafts. */
++  todayCount: number;
++  /** Money out today, in satang. */
++  todayOutMinor: Minor;
++  /** This month's pace (Home's); null with no budget. */
++  pace: BudgetPace | null;
++  /** Private mode (D41). */
++  hidden: boolean;
++  /** The Face ID lock (B21). */
++  lockOn: boolean;
++  locale: 'th' | 'en' | 'vi';
++};
++
++/** One widget face, every string ready to draw. */
++export type WidgetFace = {
++  masked: boolean;
++  /** The face's day: ส. 24, Sat 24. */
++  dayLabel: string;
++  /** ใช้วันนี้ */
++  outLabel: string;
++  /** ฿132, or ฿•••• masked. */
++  out: string;
++  /** 3 รายการ */
++  count: string;
++  /** วันนี้ · 3 รายการ */
++  today: string;
++  /** เหลือวันนี้ or เกินงบไป; null without budget figures. */
++  sideLabel: string | null;
++  /** ≈ ฿580 or ฿420, or ฿•••• masked; null without budget figures. */
++  side: string | null;
++  /** The side line says how far over. */
++  over: boolean;
++  /** งบ ต.ค.: the face's month, with figures or without. */
++  gaugeLabel: string;
++  /** 74%; null when masked or without budget figures. */
++  gaugeText: string | null;
++  /** 0 to 1, three decimals; null when masked or without budget figures. */
++  gaugeFraction: number | null;
++  /** What VoiceOver says for each family (฿ read as บาท). */
++  spoken: { small: string; inline: string; gauge: string; rectangular: string };
++};
++
++export type WidgetLinks = { record: string; today: string; scan: string | null };
++/** The link words, since a widget layout cannot read copy (P6A-T8). */
++export type WidgetLabels = { record: string; scan: string; log: string };
++export type WidgetEntry = { from: number; day: string; kind: 'today' | 'stale' | 'signed_out'; home: WidgetFace | null; lock: WidgetFace | null; prompt: string | null };
++export type WidgetSnapshot = { v: 1; links: WidgetLinks; labels: WidgetLabels; entries: WidgetEntry[] };
++export type WidgetFamily = 'systemSmall' | 'systemMedium' | 'accessoryInline' | 'accessoryCircular' | 'accessoryRectangular';
++
++const DAY_MS = 86_400_000;
++/** Asia/Bangkok is UTC+7 all year: no daylight saving. */
++const BANGKOK_OFFSET_MS = 7 * 3_600_000;
++
++type Say = { t: WalletT; spoken: (minor: Minor) => string; words: 'th' | 'en' };
++
++/** The month's limit and estimated spending, as budgetPace counts them. */
++type Budget = { limit: bigint; spent: bigint };
++
++/** What one entry's faces show: the day, what it has logged, and its month's budget. */
++type DayFigures = { day: string; count: number; outMinor: Minor; budget: Budget | null };
++
++/** The line beside today's spending, and the amount VoiceOver says for it. */
++type Side = { over: boolean; label: string; text: string; said: { key: string; minor: Minor } };
++
++type Gauge = { percent: string; fraction: number };
++
++/** The pace's figures for a face on `day`: none with no budget, a limit of zero, or a pace for another month. */
++function budgetOn(pace: BudgetPace | null, day: string): Budget | null {
++  if (pace === null || pace.limitMinor === null || pace.month !== day.slice(0, 7)) return null;
++  const limit = BigInt(pace.limitMinor);
++  return limit > 0n ? { limit, spent: BigInt(pace.spent.estimatedMinor) } : null;
++}
++
++/** Days left in the month from `day`, that day included: budgetPace's daysLeft on that day. */
++function daysLeftOn(day: string): bigint {
++  const month = day.slice(0, 7);
++  return BigInt(daysInMonth(month) - daysBetween(`${month}-01`, day));
++}
++
++/** A per-day figure as the face shows it: whole baht, rounded down (W9). */
++function wholeBaht(minor: bigint): Minor {
++  return ((minor / 100n) * 100n).toString();
++}
++
++/** How far over, or about how much is left a day from `day` on, today included. */
++function sideLine(budget: Budget, day: string, t: WalletT): Side {
++  const left = budget.limit - budget.spent;
++  if (left < 0n) {
++    const overBy = (-left).toString();
++    return { over: true, label: t('outside.overBy'), text: walletMoneyText(overBy), said: { key: 'outside.spokenOver', minor: overBy } };
++  }
++  const perDay = left / daysLeftOn(day);
++  // The face shows whole baht, so VoiceOver says whole baht too.
++  return { over: false, label: t('outside.leftToday'), text: t('outside.about', { amount: perDayText(perDay.toString()) }), said: { key: 'outside.spokenLeft', minor: wholeBaht(perDay) } };
++}
++
++/** Spent as a share of the limit: the percent rounded down, and the fraction in thousandths, at most 1. */
++function gaugeOf({ limit, spent }: Budget): Gauge {
++  const thousandths = (spent * 1000n) / limit;
++  return { percent: ((spent * 100n) / limit).toString(), fraction: Number(thousandths > 1000n ? 1000n : thousandths) / 1000 };
++}
++
++function shownWords(figures: DayFigures, side: Side | null, gauge: Gauge | null, { t, spoken, words }: Say): WidgetFace['spoken'] {
++  const today = t('outside.spokenToday', { amount: spoken(figures.outMinor), count: figures.count });
++  const line = side === null ? null : t(side.said.key, { amount: spoken(side.said.minor) });
++  const both = line === null ? today : `${today} ${line}`;
++  const month = monthName(figures.day.slice(0, 7), words, 'long');
++  return {
++    small: both,
++    inline: line ?? today,
++    gauge: gauge === null ? t('outside.noBudget') : t('outside.spokenGauge', { month, percent: gauge.percent }),
++    rectangular: both,
++  };
++}
++
++function hiddenWords(count: number, t: WalletT): WidgetFace['spoken'] {
++  const line = t('outside.spokenHidden', { count });
++  return { small: line, inline: line, gauge: t('outside.spokenGaugeHidden'), rectangular: line };
++}
++
++function face(figures: DayFigures, masked: boolean, say: Say): WidgetFace {
++  const { t, words } = say;
++  const { day, count, outMinor, budget } = figures;
++  const side = budget === null ? null : sideLine(budget, day, t);
++  const gauge = budget === null ? null : gaugeOf(budget);
++  return {
++    masked,
++    dayLabel: shortDayName(day, words),
++    outLabel: t('outside.spentToday'),
++    out: masked ? HIDDEN_AMOUNT : walletMoneyText(outMinor),
++    count: t('outside.count', { count }),
++    today: t('outside.today', { count }),
++    sideLabel: side === null ? null : side.label,
++    side: side === null ? null : masked ? HIDDEN_AMOUNT : side.text,
++    over: side !== null && side.over,
++    gaugeLabel: t('outside.budgetMonth', { month: monthName(day.slice(0, 7), words, 'short') }),
++    gaugeText: gauge === null || masked ? null : t('outside.percent', { percent: gauge.percent }),
++    gaugeFraction: gauge === null || masked ? null : gauge.fraction,
++    spoken: masked ? hiddenWords(count, t) : shownWords(figures, side, gauge, say),
++  };
++}
++
++/** The links by name, so nothing else the object carries reaches the app group. */
++function linksOf(links: WidgetLinks): WidgetLinks {
++  return { record: links.record, today: links.today, scan: links.scan };
++}
++
++function labelsOf(t: WalletT): WidgetLabels {
++  return { record: t('outside.record'), scan: t('outside.scan'), log: t('outside.log') };
++}
++
++/** The next 00:00 in Asia/Bangkok strictly after `nowMs`. */
++export function nextBangkokMidnight(nowMs: number): number {
++  return (Math.floor((nowMs + BANGKOK_OFFSET_MS) / DAY_MS) + 1) * DAY_MS - BANGKOK_OFFSET_MS;
++}
++
++/**
++ * Three entries (X3): now; the next Bangkok midnight, with nothing logged
++ * and the same month's budget worked out again for that day; the midnight
++ * after, stale. `t` reads the outside lines (useOutsideCopy); `spoken` says
++ * an amount in words (spokenMoney over P2's common lines).
++ */
++export function buildWidgetSnapshot(facts: WidgetFacts, links: WidgetLinks, t: WalletT, spoken: (minor: Minor) => string): WidgetSnapshot {
++  // Thai words for th; English for en and vi, as the lines are (X2).
++  const say: Say = { t, spoken, words: facts.locale === 'th' ? 'th' : 'en' };
++  const faces = (figures: DayFigures) => ({
++    home: face(figures, facts.hidden, say),
++    lock: face(figures, facts.hidden || facts.lockOn, say),
++  });
++  const nowMs = facts.now.getTime();
++  const today = bangkokDate(facts.now);
++  const tomorrow = stepDate(today, 1);
++  const tomorrowFrom = nextBangkokMidnight(nowMs);
++  return {
++    v: 1,
++    links: linksOf(links),
++    labels: labelsOf(t),
++    entries: [
++      { from: nowMs, day: today, kind: 'today', ...faces({ day: today, count: facts.todayCount, outMinor: facts.todayOutMinor, budget: budgetOn(facts.pace, today) }), prompt: null },
++      { from: tomorrowFrom, day: tomorrow, kind: 'today', ...faces({ day: tomorrow, count: 0, outMinor: '0', budget: budgetOn(facts.pace, tomorrow) }), prompt: null },
++      { from: nextBangkokMidnight(tomorrowFrom), day: stepDate(tomorrow, 1), kind: 'stale', home: null, lock: null, prompt: t('outside.stale') },
++    ],
++  };
++}
++
++/** What the widgets show signed out, or while the `outside` area is off (X1): one prompt and no figures. */
++export function signedOutSnapshot(now: Date, links: WidgetLinks, t: WalletT): WidgetSnapshot {
++  return {
++    v: 1,
++    links: linksOf(links),
++    labels: labelsOf(t),
++    entries: [{ from: now.getTime(), day: bangkokDate(now), kind: 'signed_out', home: null, lock: null, prompt: t('outside.signedOut') }],
++  };
++}
++
++/** The newest entry that has started (entries run oldest first), else the first. */
++export function entryAt(snapshot: WidgetSnapshot, nowMs: number): WidgetEntry {
++  let chosen = snapshot.entries[0];
++  for (const entry of snapshot.entries) {
++    if (entry.from <= nowMs) chosen = entry;
++  }
++  return chosen;
++}
++
++/** The home face for the system families, the lock face for the accessory ones (and any other). */
++export function faceFor(entry: WidgetEntry, family: WidgetFamily): WidgetFace | null {
++  return family.startsWith('system') ? entry.home : entry.lock;
++}
++
++/** Equal apart from `entries[0].from`, so Home writes only when what a widget shows changes. */
++export function sameSnapshot(a: WidgetSnapshot, b: WidgetSnapshot): boolean {
++  const comparable = (snapshot: WidgetSnapshot) => JSON.stringify({ ...snapshot, entries: snapshot.entries.map((entry, index) => (index === 0 ? { ...entry, from: 0 } : entry)) });
++  return comparable(a) === comparable(b);
++}
+--- /dev/null
++++ b/docs/implementation/receipts/P6A-T2.md
+@@ -0,0 +1,57 @@
++# P6A-T2: The widget snapshot
++
++- **Status:** built and verified locally on `p6a/t2-widget-snapshot` (`.claude/worktrees/p6a-t2`), from `7a29bc70`. Not pushed. Under R87 this receipt is its own file; `premium-progress.md` is not edited. Under R100 whole suites are CI's. No route, app entry, config or screen changed, so `typecheck:routes` and `export:web` are not in the local gate.
++- **Delivers:** the plan's X2 and X3 as pure functions. `buildWidgetSnapshot` turns Home's facts into three timed entries of display-ready faces: now; the next Bangkok midnight, a new day with nothing logged; the midnight after, a prompt to open Jotbun. A widget only draws strings: it never formats money, reads copy or works out a day. `signedOutSnapshot` is the one-prompt snapshot for a signed-out phone or the `outside` area off. `entryAt`, `faceFor`, `nextBangkokMidnight` and `sameSnapshot` are for P6A-T3a and P6A-T8. Nothing is written or wired yet: P6A-T3a's bridge writes the snapshot from Home.
++- **Files:**
++  - New:
++    - `apps/app/src/wallet/outside/widgetSnapshot.ts`: the snapshot (pure; Node test).
++    - `apps/app/src/wallet/outside/outsideCopy.draft.ts`: `OUTSIDE_DRAFT`, the plan's 21 `outside.*` lines, Thai and English, drafts until E2.
++    - `apps/app/src/wallet/outside/useOutsideCopy.ts`: `useOutsideCopy()` (`useDraftCopy(OUTSIDE_DRAFT)`) and `outsideT(locale)` (`tableT(OUTSIDE_DRAFT, locale)`).
++    - `apps/app/src/wallet/outside/widgetSnapshot.test.ts` (17 cases: the plan's 16 and the planner's month case).
++    - `apps/app/src/wallet/outside/outsideCopy.test.ts` (1 case).
++    - `docs/implementation/receipts/P6A-T2.md` (this receipt).
++  - Modified (shared):
++    - `apps/app/src/ui/dateStep.ts`: `monthName(month, locale, form)` and `shortDayName(date, locale)`, with a private `monthIndex` that checks a month as `monthShortLabel` does. Appended after P2-T31's `shortDateLabel`; nothing else moved.
++    - `apps/app/src/ui/dateStep.test.ts`: the import line gains `monthName` and `shortDayName` in its alphabetical order; two cases at the end.
++- **What a face holds** (ox-widget-home, ox-widget-lock): the day (`ส. 24`, `Sat 24`), ใช้วันนี้ and today's money out (`฿132`), the count (`3 รายการ`, `วันนี้ · 3 รายการ`), the side line (`เหลือวันนี้ ≈ ฿580`, or `เกินงบไป ฿420`), the gauge (`งบ ต.ค.`, `74%` and `0.742`), and what VoiceOver says for each family (`วันนี้ใช้ 132 บาท 3 รายการ เหลือวันนี้ประมาณ 580 บาท`, `งบเดือนตุลาคม ใช้ไป 74 เปอร์เซ็นต์`). Money is P2-T10's text over BigInt satang. The side figure is worked out for the face's own day: the estimated amount left divided by the days left from that day, today included. VoiceOver says the whole baht the face shows. The percent is rounded down in BigInt, and the fraction is capped at 1 before it becomes a number.
++- **Masking (D41, B21, R114):** private mode masks both faces. The Face ID lock masks the lock-screen faces in every entry (default pending owner Q9). A masked face shows `฿••••` for today's money and the side figure, keeps the words, the day and the count, has no gauge figure, and says only `วันนี้ 3 รายการ ยอดเงินซ่อนอยู่` and `งบเดือนนี้ ซ่อนอยู่`. Nothing the person wrote (a note, a payee, a category or wallet name) is ever in the snapshot.
++- **The entries (X3):** entry 1 starts at the next Bangkok midnight with nothing logged. In the same month it keeps the gauge, stays over by the same amount, or shares what is left among one day fewer (`≈ ฿662` on the 25th). A new month's entry has no side line and no gauge figure, under the new month's name (`งบ พ.ย.`). So does any face whose day is not in the pace's month, such as 00:30 on the 1st before Home's pace moves on. Entry 2 has no faces and says `เปิด Jotbun เพื่อดูยอดวันนี้`.
++- **RED to GREEN** (`node scripts/test-unit.mjs src/wallet/outside/widgetSnapshot.test.ts src/wallet/outside/outsideCopy.test.ts src/ui/dateStep.test.ts`, from `apps/app`):
++  - RED, with the planner's typed stubs (`widgetSnapshot.ts`, `outsideCopy.draft.ts` with an empty table, `dateStep.ts` with the two functions answering `''`): `npm run typecheck:app` passed. `ℹ tests 32`, `ℹ pass 12`, `ℹ fail 20`. The 12 passing are `dateStep.test.ts`'s existing cases. All 20 failures are `AssertionError`s, through asserting lookups (`no entry 0`) or value checks. No load or type error.
++  - GREEN: `npm run typecheck:app` passed; `ℹ tests 32`, `ℹ pass 32`, `ℹ fail 0`.
++- **Mutation check:** `mutants.py` (the planner's runner), 51 of 51 killed. Every kill fails on an `AssertionError` in the case named for it, and each file was restored byte for byte. The plan's five: P1, the lock face masked only in private mode (the B21 case); P2, tomorrow's faces worked out on today's day (the midnight case, `≈ ฿580`); P3, VoiceOver handed the per-day satang (`66285`); P4, the budget figures kept across a month end (the last-evening case and the planner's month case); P5, the link words in Thai whatever the language. Masking: W1 to W8. The side line and the gauge: W9 to W16, among them W10, spent to the satang counted as over, and W14, a zero limit divided by. VoiceOver: W17 to W20. The entries, the clock and the helpers: W21 to W31. `dateStep.ts`: D1 to D9. The copy checks: C1 to C6.
++- **Fast local gate (R100):**
++  - `npm run typecheck:app`: passed.
++  - The three focused files: RED to GREEN as above.
++  - `npm run test:app`: passed. `npm run test:unit`: passed, with the Hermes guard (`no app code reaches for the Web Crypto global`) and P2-T3's `draftText.test.ts`.
++  - The four routes tests (`SpendRoutes`, `account/AccountRoutes`, `insights/InsightsRoutes`, `planning/PlanningRoutes` `.render.test.tsx`): passed, 4 files. Route screens load `dateStep.ts`.
++  - `git diff --check`: clean.
++- **CI (R100):** the full render suite and sections 1 to 3, `export:web` and the iOS export, `test:edge:workers`, the database suites (Docker is stopped locally) and `test:ops`.
++- **SKIPPED:** device checks. Nothing native draws the snapshot until P6A-T8, which waits on owner Q1.
++- **Deviations:** the brief's planner rulings P1 to P20 (`.claude/controller/briefs/P6A-T2.md`), as accepted by the controller. In short:
++  - The side figure is worked out for each face's own day. It equals the pace's own figures whenever Home's pace is for today, and never divides by zero (P4).
++  - A pace for another month, or a zero limit, draws no budget figures (P5, P6).
++  - `vi` faces read the English lines and English day words (P2).
++  - The English lines are drafts (P9).
++  - `useOutsideCopy` is P2-T3's memoised hook, and neither reader has its own test (P10).
++  - The links are written by name (P12).
++  - The planner's month case and the extra assertions (P16).
++- **Notes for later tasks:**
++  - **P6A-T3a (the bridge):**
++    - `WidgetFacts` carries no day of its own: `now` names entry 0's day. Build the facts from a Home model made for `now`'s Bangkok date, or skip the write until Home has reloaded after midnight. Otherwise entry 0 shows yesterday's count and spending under today's name. The budget figures are already safe: another month's pace draws none.
++    - Wait for private mode's `ready` before writing `hidden` (followups, P2-T10's review).
++    - `spoken` is `(minor) => spokenMoney(minor, commonT)` with `commonT = useDraftCopy(COMMON_COPY)`.
++    - `useOutsideCopy()` is stable across renders, so it can go in an effect's dependencies.
++    - `sameSnapshot` ignores only `entries[0].from`, so a write that changes nothing but the time is skipped.
++  - **P6A-T3b:** `outsideT` lives in `useOutsideCopy.ts`, which imports P2-T3's hook, so a Node test cannot load it. `eraseOutside`'s tests are render tests, which can. A pure module that needs the lines takes a `WalletT`, as `buildWidgetSnapshot` does.
++  - **P6A-T4:** `shortDayName(day, 'th')` gives the quick action's `ส. 24`. Add the new `outside.*` lines to `outsideCopy.draft.ts`. `outsideCopy.test.ts` checks this task's 21 keys as a subset, so later lines need no change there.
++  - **P6A-T8:**
++    - `faceFor` gives the home face to the system families and the lock face to everything else.
++    - `entryAt` picks the entry a timeline shows at a time.
++    - `gaugeFraction` is 0 to 1 with three decimals.
++    - Mark home amounts privacy-sensitive (Q9).
++    - The spoken lines are the faces' accessibility labels.
++  - **P6A-T13 and E2:**
++    - Every English line is a draft. `{count} records` reads `1 records` for one record; P2-T31's `insights.entries` does the same.
++    - A new month's entry says `ยังไม่ได้ตั้งงบ` for its gauge until Jotbun opens, since the widget does not know the new month's budget.
++    - The money text is P2-T10's baht text; once phase 5's home-currency text exists, the faces follow it.

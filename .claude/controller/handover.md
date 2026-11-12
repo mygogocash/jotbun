@@ -49,6 +49,11 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **20:45: P6A-T2 brief READY (Opus); its implementer is building (Haiku).**
+  - Size M: `widgetSnapshot.ts`, `outsideCopy.draft.ts`, `useOutsideCopy.ts` and their tests (new), and `dateStep.ts` plus its test (shared; three functions appended after P2-T31's). RED 20 of 32 on assertions, GREEN 32, 51 of 51 mutants; a dry run of the brief on a fresh copy of the head.
+  - `check_kit.sh` at `88f14203`: 24 of 24 sums, `orig/` 2 of 2; no code change since its base `7a29bc70`. **P1 to P20 accepted.** P17: with the Face ID lock on, every lock-screen face shows ฿•••• and no gauge figure; home-screen faces follow private mode only, and masking them under the lock is the owner's Q9.
+  - Worktree `p6a-t2` on `p6a/t2-widget-snapshot` at `88f14203`, installed. Implementer `mcp:launch:100b5a534576c8646c453f2683233c58bdf8d106b96b324fcb3c6ec915e35c31`. The planner thread is archived.
+  - **Reviews when it is done:** Opus (xhigh) and a Sonnet second review (the snapshot leaves the app: money and privacy).
 - **20:40: #440 (P3-T14) opened; Opus and Sonnet reviews and CI running.**
   - The implementer reported DONE at `1247404f` on `2dec12ea` (RED 2 of 16 Node and 27 of 104 render on assertions; GREEN 16 and 104; 74 of 74 mutants; gate `typecheck:app`, `typecheck:routes`, `test:app` 36, `test:unit` 1052, catalogue 56, routes 16, kit eight 141, `export:web`). All 22 `real/` files byte-identical. PR body `pr-p3-t14.md`, issue #198. The consent lines stay drafts until counsel answers Q11.
   - Reviews (notes `scratch/dispatch/P3-T14-review-notes.md`): Opus xhigh `mcp:launch:0a80e83071e3e845c989029752a96be7bd872829cbe844e2cc638bae86ca8389`; Sonnet high `mcp:launch:0d57842bdc7e390e75392fffa9cbe019cceea8264cc889a6da0e3d31910025e5`.

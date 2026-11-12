@@ -1,0 +1,189 @@
+(node:15380) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/ui/dateStep.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15380) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/packages/contracts/package.json.
+✔ steps one day across month and year ends (0.81675ms)
+✔ leap days follow the Gregorian rules (0.12325ms)
+✔ only real YYYY-MM-DD dates are accepted (0.208583ms)
+✔ never steps into the future (0.103666ms)
+✔ never steps before the earliest date (the wallet tracking start, or 1970) (0.068125ms)
+✔ Today and Yesterday in English, Thai and Vietnamese (0.379958ms)
+✔ other days are written out, with the year only when it is not this year (0.195875ms)
+✔ Thai dates show Buddhist-era years (0.193625ms)
+✔ full dates and month names in English and Vietnamese keep the Gregorian year (0.135208ms)
+✔ weekday initials run Sunday first in each language (0.109042ms)
+✔ a month's short name has no year, in each language (0.17975ms)
+✔ a short date is written out for today and yesterday too, with the year only when it is not this year (0.102208ms)
+✔ monthName gives short and long names in Thai and English (0.163208ms)
+✔ shortDayName gives ส. 24 and Sat 24 (0.082666ms)
+(node:15381) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/wallet/outside/outsideCopy.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ every outside line has Thai and English with the same placeholders, no emoji and no dash punctuation, under an outside. key (1.271209ms)
+(node:15382) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/wallet/outside/widgetSnapshot.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15382) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/packages/contracts/package.json.
+✔ the home face reads as ox-widget-home (2.388833ms)
+✔ with the Face ID lock on, the lock face holds no amount, private mode or not (0.356333ms)
+✔ private mode masks both faces and keeps the count (0.143959ms)
+✔ over budget says เกินงบไป ฿420 and, masked, keeps the words (0.218792ms)
+✔ no budget has no side line and no gauge figure (0.242125ms)
+✔ after midnight the widget shows a new day with nothing logged (0.173458ms)
+✔ each face names its day (0.14625ms)
+✔ on the month's last evening the next entry drops the budget figures (0.162084ms)
+✔ a pace for another month draws no budget figures, so the 1st never shows last month's (0.087667ms)
+✖ the second midnight asks to open Jotbun (0.735375ms)
+✖ nextBangkokMidnight is the next 00:00 in Bangkok, strictly after now (0.196417ms)
+✖ entryAt picks the newest started entry, else the first (0.573584ms)
+✔ faceFor gives system families the home face and accessory families the lock face (0.242125ms)
+✔ Vietnamese reads the English lines (0.142458ms)
+✔ a signed-out snapshot has no figures (0.088625ms)
+✔ sameSnapshot ignores only the first entry's time (0.794042ms)
+✔ both snapshots carry the link words in the person's language (0.436458ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 29
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 189.665791
+
+✖ failing tests:
+
+test at src/wallet/outside/widgetSnapshot.test.ts:198:1
+✖ the second midnight asks to open Jotbun (0.735375ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+      day: '2026-10-26',
+  +   from: 1792861200000,
+  -   from: 1792947600000,
+      home: null,
+      kind: 'stale',
+      lock: null,
+      prompt: 'เปิด Jotbun เพื่อดูยอดวันนี้'
+    }
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/wallet/outside/widgetSnapshot.test.ts:201:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { from: 1792861200000, day: '2026-10-26', kind: 'stale', home: null, lock: null, prompt: 'เปิด Jotbun เพื่อดูยอดวันนี้' },
+    expected: { from: 1792947600000, day: '2026-10-26', kind: 'stale', home: null, lock: null, prompt: 'เปิด Jotbun เพื่อดูยอดวันนี้' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/wallet/outside/widgetSnapshot.test.ts:205:1
+✖ nextBangkokMidnight is the next 00:00 in Bangkok, strictly after now (0.196417ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '2026-10-24T17:00:00.000Z'
+  - '2026-10-25T17:00:00.000Z'
+              ^
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/wallet/outside/widgetSnapshot.test.ts:208:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '2026-10-24T17:00:00.000Z',
+    expected: '2026-10-25T17:00:00.000Z',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/wallet/outside/widgetSnapshot.test.ts:213:1
+✖ entryAt picks the newest started entry, else the first (0.573584ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be reference-equal to "expected":
+  + actual - expected
+  
+    {
+  +   day: '2026-10-26',
+  -   day: '2026-10-25',
+      from: 1792861200000,
+  +   home: null,
+  +   kind: 'stale',
+  +   lock: null,
+  +   prompt: 'เปิด Jotbun เพื่อดูยอดวันนี้'
+  -   home: {
+  -     count: '0 รายการ',
+  -     dayLabel: 'อา. 25',
+  -     gaugeFraction: 0.742,
+  -     gaugeLabel: 'งบ ต.ค.',
+  -     gaugeText: '74%',
+  -     masked: false,
+  -     out: '฿0',
+  -     outLabel: 'ใช้วันนี้',
+  -     over: false,
+  -     side: '≈ ฿662',
+  -     sideLabel: 'เหลือวันนี้',
+  -     spoken: {
+  -       gauge: 'งบเดือนตุลาคม ใช้ไป 74 เปอร์เซ็นต์',
+  -       inline: 'เหลือวันนี้ประมาณ 662 บาท',
+  -       rectangular: 'วันนี้ใช้ 0 บาท 0 รายการ เหลือวันนี้ประมาณ 662 บาท',
+  -       small: 'วันนี้ใช้ 0 บาท 0 รายการ เหลือวันนี้ประมาณ 662 บาท'
+  -     },
+  -     today: 'วันนี้ · 0 รายการ'
+  -   },
+  -   kind: 'today',
+  -   lock: {
+  -     count: '0 รายการ',
+  -     dayLabel: 'อา. 25',
+  -     gaugeFraction: 0.742,
+  -     gaugeLabel: 'งบ ต.ค.',
+  -     gaugeText: '74%',
+  -     masked: false,
+  -     out: '฿0',
+  -     outLabel: 'ใช้วันนี้',
+  -     over: false,
+  -     side: '≈ ฿662',
+  -     sideLabel: 'เหลือวันนี้',
+  -     spoken: {
+  -       gauge: 'งบเดือนตุลาคม ใช้ไป 74 เปอร์เซ็นต์',
+  -       inline: 'เหลือวันนี้ประมาณ 662 บาท',
+  -       rectangular: 'วันนี้ใช้ 0 บาท 0 รายการ เหลือวันนี้ประมาณ 662 บาท',
+  -       small: 'วันนี้ใช้ 0 บาท 0 รายการ เหลือวันนี้ประมาณ 662 บาท'
+  -     },
+  -     today: 'วันนี้ · 0 รายการ'
+  -   },
+  -   prompt: null
+    }
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/wallet/outside/widgetSnapshot.test.ts:219:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { from: 1792861200000, day: '2026-10-26', kind: 'stale', home: null, lock: null, prompt: 'เปิด Jotbun เพื่อดูยอดวันนี้' },
+    expected: { from: 1792861200000, day: '2026-10-25', kind: 'today', home: { masked: false, dayLabel: 'อา. 25', outLabel: 'ใช้วันนี้', out: '฿0', count: '0 รายการ', today: 'วันนี้ · 0 รายการ', sideLabel: 'เหลือวันนี้', side: '≈ ฿662', over: false, gaugeLabel: 'งบ ต.ค.', gaugeText: '74%', gaugeFraction: 0.742, spoken: [Object] }, lock: { masked: false, dayLabel: 'อา. 25', outLabel: 'ใช้วันนี้', out: '฿0', count: '0 รายการ', today: 'วันนี้ · 0 รายการ', sideLabel: 'เหลือวันนี้', side: '≈ ฿662', over: false, gaugeLabel: 'งบ ต.ค.', gaugeText: '74%', gaugeFraction: 0.742, spoken: [Object] }, prompt: null },
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

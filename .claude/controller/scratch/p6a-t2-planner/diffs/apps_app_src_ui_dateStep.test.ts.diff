@@ -1,0 +1,32 @@
+--- a/apps/app/src/ui/dateStep.test.ts
++++ b/apps/app/src/ui/dateStep.test.ts
+@@ -1,7 +1,7 @@
+ import assert from 'node:assert/strict';
+ import { test } from 'node:test';
+ 
+-import { canStepBack, canStepForward, dayLabel, displayYear, fullDateLabel, isCalendarDate, monthLabel, monthShortLabel, shortDateLabel, stepDate, stepDay, weekdayInitials } from './dateStep.ts';
++import { canStepBack, canStepForward, dayLabel, displayYear, fullDateLabel, isCalendarDate, monthLabel, monthName, monthShortLabel, shortDateLabel, shortDayName, stepDate, stepDay, weekdayInitials } from './dateStep.ts';
+ 
+ test('steps one day across month and year ends', () => {
+   assert.equal(stepDate('2026-10-17', 1), '2026-10-18');
+@@ -131,3 +131,20 @@
+   assert.equal(shortDateLabel('2025-12-31', today, 'en'), 'Wed 31 Dec 2025');
+   assert.throws(() => shortDateLabel('2026-02-30', today, 'en'), TypeError);
+ });
++
++test('monthName gives short and long names in Thai and English', () => {
++  assert.deepEqual([monthName('2026-10', 'th', 'short'), monthName('2026-10', 'th', 'long')], ['ต.ค.', 'ตุลาคม']);
++  assert.deepEqual([monthName('2026-10', 'en', 'short'), monthName('2026-10', 'en', 'long')], ['Oct', 'October']);
++  assert.deepEqual([monthName('2026-11', 'th', 'short'), monthName('2027-01', 'th', 'long'), monthName('2026-12', 'en', 'short')], ['พ.ย.', 'มกราคม', 'Dec']);
++  assert.deepEqual([monthName('2026-10', 'vi', 'short'), monthName('2026-10', 'vi', 'long')], ['thg 10', 'tháng 10']);
++  for (const bad of ['2026-13', '2026-00', '0000-10', '2026-10-01']) {
++    assert.throws(() => monthName(bad, 'en', 'long'), { name: 'TypeError', message: `Expected a YYYY-MM month, got ${bad}.` }, bad);
++  }
++});
++
++test('shortDayName gives ส. 24 and Sat 24', () => {
++  assert.deepEqual(['2026-10-24', '2026-10-25', '2026-10-29', '2026-11-01'].map((date) => shortDayName(date, 'th')), ['ส. 24', 'อา. 25', 'พฤ. 29', 'อา. 1']);
++  assert.deepEqual(['2026-10-24', '2026-10-25', '2026-11-01'].map((date) => shortDayName(date, 'en')), ['Sat 24', 'Sun 25', 'Sun 1']);
++  assert.deepEqual(['2026-10-24', '2026-10-25'].map((date) => shortDayName(date, 'vi')), ['T7, 24', 'CN, 25']);
++  assert.throws(() => shortDayName('2026-02-30', 'th'), TypeError);
++});

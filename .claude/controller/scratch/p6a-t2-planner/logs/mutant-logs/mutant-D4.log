@@ -1,0 +1,79 @@
+(node:15946) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/ui/dateStep.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15946) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/packages/contracts/package.json.
+✔ steps one day across month and year ends (0.551417ms)
+✔ leap days follow the Gregorian rules (0.123209ms)
+✔ only real YYYY-MM-DD dates are accepted (0.578792ms)
+✔ never steps into the future (0.109375ms)
+✔ never steps before the earliest date (the wallet tracking start, or 1970) (0.091792ms)
+✔ Today and Yesterday in English, Thai and Vietnamese (0.334167ms)
+✔ other days are written out, with the year only when it is not this year (0.125084ms)
+✔ Thai dates show Buddhist-era years (0.182875ms)
+✔ full dates and month names in English and Vietnamese keep the Gregorian year (0.085083ms)
+✔ weekday initials run Sunday first in each language (0.098375ms)
+✔ a month's short name has no year, in each language (0.090333ms)
+✔ a short date is written out for today and yesterday too, with the year only when it is not this year (0.0675ms)
+✖ monthName gives short and long names in Thai and English (0.379375ms)
+✔ shortDayName gives ส. 24 and Sat 24 (0.075375ms)
+(node:15947) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/wallet/outside/outsideCopy.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ every outside line has Thai and English with the same placeholders, no emoji and no dash punctuation, under an outside. key (1.100042ms)
+(node:15948) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/wallet/outside/widgetSnapshot.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15948) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/packages/contracts/package.json.
+✔ the home face reads as ox-widget-home (2.146833ms)
+✔ with the Face ID lock on, the lock face holds no amount, private mode or not (0.344042ms)
+✔ private mode masks both faces and keeps the count (0.175625ms)
+✔ over budget says เกินงบไป ฿420 and, masked, keeps the words (0.316917ms)
+✔ no budget has no side line and no gauge figure (0.266667ms)
+✔ after midnight the widget shows a new day with nothing logged (0.199791ms)
+✔ each face names its day (0.143375ms)
+✔ on the month's last evening the next entry drops the budget figures (0.163584ms)
+✔ a pace for another month draws no budget figures, so the 1st never shows last month's (0.101417ms)
+✔ the second midnight asks to open Jotbun (0.128583ms)
+✔ nextBangkokMidnight is the next 00:00 in Bangkok, strictly after now (0.0595ms)
+✔ entryAt picks the newest started entry, else the first (0.100041ms)
+✔ faceFor gives system families the home face and accessory families the lock face (0.119291ms)
+✔ Vietnamese reads the English lines (0.218417ms)
+✔ a signed-out snapshot has no figures (0.080584ms)
+✔ sameSnapshot ignores only the first entry's time (0.462875ms)
+✔ both snapshots carry the link words in the person's language (0.527041ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 31
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 212.508959
+
+✖ failing tests:
+
+test at src/ui/dateStep.test.ts:135:1
+✖ monthName gives short and long names in Thai and English (0.379375ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception (TypeError): 2026-00
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/ui/dateStep.test.ts:141:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: { name: 'TypeError', message: 'Expected a YYYY-MM month, got 2026-00.' },
+    operator: 'throws',
+    diff: 'simple'
+  }
