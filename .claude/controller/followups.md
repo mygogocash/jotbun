@@ -670,3 +670,12 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - n4: a past month keeps the early state;
     - n5: on a 360 dp Android phone the calendar is 8 dp wider than the page (7 × 44 + 6 × 4 > 324).
 - **Owner, at E2-B, from #429's review (P2-T21 m3, 12 Nov):** in the wallet area a wallet's tracking start (เริ่มจด) cannot be changed anywhere. The new-wallet flow shows it as text, and today's screen with its date chip is not reachable while the `wallet` area is on. So a wallet made through the flow starts today, and earlier dates cannot be logged to it (the server refuses with `DATE_BEFORE_TRACKING_START`). The board (`wc-wallet-edit.dc.html:69`) draws it as a link. Decide: a date tray under today's `validateTrackingStart` rules, or text with the consequence stated (R115 keeps it as text for now).
+- P2-T15 (#427, merged 12 Nov as 9860750 at 334847d3, after the R114 fix round; promotion #432). The reviews are `reviews/P2-T15.md` (Opus), `reviews/P2-T15-second.md` (Sonnet) and the confirming `reviews/P2-T15-confirm.md` (Opus, approved: m1, n1, n2). Carried:
+  - **P2-T16 (the add tray's host), m1, a pin gap in private mode; the code is right today:**
+    - In P2-T16's host test, cover Tell Bun with `amount_unclear` (no amount read, the person types it) in private mode, and assert the Bun line is exactly the hidden words.
+    - Or add to `AddSteps.render.test.tsx`'s private-mode case one mount with a sentence and a typed amount (no `filled`). That kills the confirm's R3 (`ConfirmStep.tsx:108` `hidden` swapped for `masked`).
+  - **P2-T16, R114.2:** `TransferFooter` takes a required `wallets` prop. P2-T16 must pass the same wallets as `TransferStep`.
+  - **The next task that edits `AddSteps.render.test.tsx`:**
+    - n1: a mount with the same archived wallet on both sides, expecting no `transfer-problem` (kills R1);
+    - n2: a move whose `walletId` differs from `fromWalletId`, so the from row draws the from wallet's material (kills R4).
+  - **P2-T37:** the sweep must check that free text quoting the person is not drawn in private mode (R114), not just that it has no digits.
