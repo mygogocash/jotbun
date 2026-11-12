@@ -25,7 +25,7 @@
   - the four routes tests: 17;
   - `test:app` 36 and `test:unit` 1063;
   - `git diff --check`.
-- [ ] CI on this pull request is green: the nine jobs, including the full render suite.
+- [x] CI at `78f91ca5`: 9 of 9, including the full render suite.
 - [ ] Independent review (Opus), and a second review: privacy (what each event carries) and the bus guard.
 - [ ] SKIPPED: device checks (events on a real PostHog EU project, for 1D-T15's two-phone run).
 
