@@ -481,7 +481,7 @@ test('a load problem says so in today\'s words, and Try again reads the wallets 
 test("the wallets list's sections come right after the add tray's, and each opens in its state on the catalogue's own account", async () => {
   const ids = WALLET_SECTIONS.map((section) => section.id);
   const at = ids.indexOf('bw-wallets');
-  expect(ids.slice(at - 1, at + 3)).toEqual(['bw-tray-income', 'bw-wallets', 'bw-wallets-archived', 'bw-wallets-reorder']);
+  expect(ids.slice(at - 1, at + 3)).toEqual(['bw-tray-pick-category', 'bw-wallets', 'bw-wallets-archived', 'bw-wallets-reorder']);
   for (const sectionId of ['bw-wallets', 'bw-wallets-archived', 'bw-wallets-reorder']) {
     const section = WALLET_SECTIONS.find((each) => each.id === sectionId);
     const view = mountWallet(<>{section?.render()}</>);
