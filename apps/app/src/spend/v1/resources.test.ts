@@ -183,6 +183,22 @@ test('history builds its query from the filter; a month without a budget is null
   assert.equal(await resources().budget('2026-09'), null);
 });
 
+test('totals may name their currency', async () => {
+  const page = { items: [], next_cursor: null, as_of_revision: '3', refresh_suggested: false };
+  const totals = { income_minor: '0', expense_minor: '106814', balance_minor: '-106814', by_wallet: { [WALLET.id]: '-106814' }, count: 1 };
+  const read = async (summary: unknown) => {
+    replies.push({ status: 200, body: { ...page, summary } });
+    try {
+      return (await resources().history({ from: '2026-11-01', through: '2026-11-30', sort: 'date_desc' })).summary;
+    } catch (error) {
+      if (error instanceof V1Error) return error.outcome;
+      throw error;
+    }
+  };
+  const named = { ...totals, currency: 'JPY' };
+  assert.deepEqual([await read(named), await read({ ...totals, currency: 'jpy' }), await read(totals)], [named, 'invalid_response', totals]);
+});
+
 test('recently deleted pages by cursor and accepts only deleted records in the record shape', async () => {
   const deleted = {
     id: ACK.entity_id, type: 'expense', amount_minor: '6500', occurred_on: '2026-09-20', wallet_id: WALLET.id, category_id: '1d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f5a',

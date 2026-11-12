@@ -96,6 +96,16 @@ export type ClientVersion = {
   version: string;
 };
 
+/**
+ * The oldest app build that reads phase 5's contract (C5, X20): currencies,
+ * looks, icons and pack keys on wallets, categories, records and totals
+ * (P5-T2). An older build's exact-key validators refuse those keys, so P6C
+ * raises the server's minimum client versions (`config:v1`'s
+ * `client_versions`) to at least this before the phase 5 server serves
+ * phones, and the app's own version (app.json `expo.version`) is never below it.
+ */
+export const CURRENCY_MIN_CLIENT_VERSION = "0.3.0";
+
 /** Value for the `x-gogospend-client` header. */
 export function formatClientHeader(client: ClientVersion): string {
   return `${client.platform}/${client.version}`;
