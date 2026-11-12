@@ -200,9 +200,13 @@ describe('Tell Bun', () => {
     expect(await body(res)).toEqual({
       source: 'ai',
       drafts: [{ type: 'expense', amount_minor: '5000', occurred_on: today, category_id: food, wallet_id: cash, merchant: 'ข้าวมันไก่', note: null, confidence: 'high', flags: [] }],
+      model: 'claude-haiku-5-5',
+      escalated: false,
     })
     const [sent] = model.calls
-    expect(sent).toMatchObject({ model: 'claude-opus-5-5', fallbacks: 'default', betas: ['server-side-fallback-2026-07-01'], output_config: { effort: 'low', format: { type: 'json_schema' } } })
+    // Haiku's base (P3-T6, H2): no server-side fallback beta and no fallbacks.
+    expect(sent).toMatchObject({ model: 'claude-haiku-5-5', output_config: { effort: 'low', format: { type: 'json_schema' } } })
+    for (const key of ['betas', 'fallbacks']) expect(sent, key).not.toHaveProperty(key)
     // Only the sentence, the date and names to choose from; never who the person is (the account, the session, the vault) or a balance.
     const wire = JSON.stringify(sent)
     for (const secret of [user.sub, user.sid, vaultIdOf(user), '100000']) expect(wire).not.toContain(secret)
@@ -569,7 +573,8 @@ describe('Ask Bun', () => {
 })
 
 describe('the AI routes on the vault', () => {
-  it('with no model given, the env decides: AI needs AI_ENABLED and an API key, and AI_MODEL names the model', async () => {
+  // P3-T6 (H1): AI_MODEL retires and the models are fixed in code; ai-routing.test.ts pins Haiku on every route.
+  it('with no model given, the env decides: AI needs AI_ENABLED and an API key', async () => {
     const user = await member(client)
     const available = async (options: Parameters<typeof startV1>[1]) => (await body(await (await startV1(undefined, options)).as(user).get('/v1/me/ai-preferences'))).available
     // The Worker's own var keeps AI off (wrangler.jsonc: AI_ENABLED "false").
@@ -582,11 +587,6 @@ describe('the AI routes on the vault', () => {
     expect(await available({ transport: null, env: { AI_ENABLED: 'true', ANTHROPIC_API_KEY: 'synthetic-key' } })).toBe(false)
     const configured = await startV1(undefined, { env: { AI_ENABLED: 'true', ANTHROPIC_API_KEY: 'synthetic-key' } })
     expect(await body(await configured.as(user).put('/v1/me/ai-preferences', { companion: true, notice_version: 1 }))).toMatchObject({ companion: true, available: true })
-    // AI_MODEL names the model; without it, DEFAULT_AI_MODEL (`turns a sentence into a grounded draft ...`).
-    const named = await startV1(undefined, { transport: model.transport, env: { AI_MODEL: 'synthetic-model' } })
-    model.push(json({ drafts: [] }))
-    expect((await named.as(user).post('/v1/ai/parse', { text: 'กาแฟ 65', today, locale: 'th' })).status).toBe(200)
-    expect(model.calls[0].model).toBe('synthetic-model')
   })
 
   it('every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked', async () => {
