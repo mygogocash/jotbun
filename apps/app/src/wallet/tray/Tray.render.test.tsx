@@ -794,6 +794,26 @@ test('on iOS a tray with no onClosed closes, its dismissal ends, and it opens ag
   expect(screen.queryByTestId('tray'), 'open again').not.toBeNull();
 });
 
+test('on iOS the end calls the onClosed given while the dismissal was under way, once, and never the earlier one', async () => {
+  phoneFocus();
+  dismissals.late = true;
+  const earlier = vi.fn();
+  const view = mountWallet(tray({ visible: false, onClosed: earlier }));
+  await settle();
+  platform('ios');
+  view.rerender(tray({ onClosed: earlier }));
+  await settle();
+  vi.useFakeTimers();
+  view.rerender(tray({ visible: false, onClosed: earlier }));
+  act(() => { vi.advanceTimersByTime(220); });
+  expect([screen.queryByTestId('tray'), dismissals.held]).toEqual([null, 1]);
+  // A host that passes a new onClosed on every render (P2-T16's) renders again while UIKit's dismissal is under way.
+  const latest = vi.fn();
+  view.rerender(tray({ visible: false, onClosed: latest }));
+  endDismissal();
+  expect([latest.mock.calls.length, earlier.mock.calls.length]).toEqual([1, 0]);
+});
+
 test('a text link is at least 44 pt, violet by default or ink, and says its words', async () => {
   for (const [mode, colors] of MODES) {
     const onPress = vi.fn();
