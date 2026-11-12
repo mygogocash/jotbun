@@ -1,0 +1,58 @@
+diff --git a/apps/edge/test/workers/currency-migration.test.ts b/apps/edge/test/workers/currency-migration.test.ts
+index 88020cba98410528296882b5c58c73fc828df284..38c3294c057156bee5459e590064de68b6975c25 100644
+--- a/apps/edge/test/workers/currency-migration.test.ts
++++ b/apps/edge/test/workers/currency-migration.test.ts
+@@ -17,6 +17,9 @@ const CAP = 99999999999
+ const USER_TABLES = "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE '\\_cf\\_%' ESCAPE '\\' AND name NOT LIKE 'sqlite\\_%' ESCAPE '\\' AND name <> '__drizzle_migrations' ORDER BY name"
+ const NAMING_WALLETS = "SELECT type, name, tbl_name, sql FROM sqlite_master WHERE type IN ('trigger', 'view') AND sql LIKE '%wallets%' ORDER BY name"
+ const WALLET_COLUMNS = ['id', 'name', 'currency', 'opening_minor', 'tracking_start', 'archived', 'version', 'created_at', 'updated_at']
++// A record's columns from 1A (but its id, amount, date, wallet and category, which the case sets), and the eight this migration adds.
++const RECORD_1A_COLUMNS = ['type', 'source_wallet_id', 'destination_wallet_id', 'note', 'merchant', 'version', 'deleted_at', 'created_at', 'updated_at']
++const RECORD_MONEY_COLUMNS = ['currency', 'rate', 'rate_source', 'rate_date', 'home_amount_minor', 'wallet_amount_minor', 'to_amount_minor', 'trip_id']
+ const WALLET_ROWS = 'SELECT *, CAST(opening_minor AS TEXT) AS opening_text FROM wallets ORDER BY id'
+ // Every reference to a wallet, and how many name no wallet (a join, not a pragma).
+ const DANGLING = `SELECT count(*) AS refs, coalesce(sum(w.id IS NULL), 0) AS missing FROM (
+@@ -103,7 +106,7 @@ it('every table that references wallets keeps its rows', () =>
+       rows(state, USER_TABLES).flatMap(({ name }) =>
+         rows(state, `PRAGMA foreign_key_list(${String(name)})`)
+           .filter((key) => key.table === 'wallets')
+-          .map((key) => ({ table: String(name), column: String(key.from), to: key.to })),
++          .map((key) => ({ table: String(name), column: String(key.from), to: key.to, on_delete: key.on_delete })),
+       )
+     const held = (refs: ReturnType<typeof references>) =>
+       refs.map(({ table, column }) => ({
+@@ -113,14 +116,21 @@ it('every table that references wallets keeps its rows', () =>
+         values: rows(state, `SELECT ${column} AS v FROM ${table} ORDER BY rowid`).map((row) => row.v),
+       }))
+     const before = references()
++    // DROP TABLE wallets fires each child's ON DELETE action, deferred keys or not: SET NULL or CASCADE would change or lose rows.
++    expect(before.filter((key) => key.on_delete !== 'NO ACTION')).toEqual([])
+     const was = held(before)
++    // A referencing table with no row here would pass the comparison below without checking anything: seed one in seedToday.
++    expect(was.filter(({ count }) => count === 0).map(({ table, column }) => `${table}.${column}`)).toEqual([])
+     await upgrade(state)
+     expect(columnsOf(state, 'wallets')).toEqual([...WALLET_COLUMNS, 'type', 'material', 'bun_face'])
+     expect(before.map(({ table, column }) => `${table}.${column}`)).toEqual(
+       expect.arrayContaining(['import_selection_rows.wallet_id', 'transactions.destination_wallet_id', 'transactions.source_wallet_id', 'transactions.wallet_id']),
+     )
+-    expect(references()).toEqual(before)
++    // Only the tables that existed before: a later migration may add its own (P4's slip_accounts).
++    expect(references()).toEqual(expect.arrayContaining(before))
+     expect(held(before)).toEqual(was)
++    // Every key to wallets, a later migration's too, stays NO ACTION, so a later rebuild keeps their rows as well.
++    expect(references().filter((key) => key.on_delete !== 'NO ACTION')).toEqual([])
+   }))
+ 
+ it('older records gain THB money fields', () =>
+@@ -283,8 +293,9 @@ it('a record, wallet or category the previous release writes after the migration
+     // 1A's own statements (src/vault/domain/transactions.ts, wallets.ts and categories.ts), column for column.
+     const id = uuid()
+     run(state, 'INSERT INTO transactions (id, type, amount_minor, occurred_on, wallet_id, category_id, source_wallet_id, destination_wallet_id, note, merchant, version, created_at, updated_at) VALUES (?, ?, CAST(? AS INTEGER), ?, ?, ?, ?, ?, ?, ?, 1, ?, ?) ON CONFLICT DO NOTHING', id, 'expense', '120', '2026-10-22', s.cash, s.food, null, null, null, null, AT, AT)
+-    const [row] = rows(state, 'SELECT * FROM transactions WHERE id = ?', id)
+-    expect({ ...row, id: undefined, amount_minor: undefined, occurred_on: undefined, wallet_id: undefined, category_id: undefined }).toEqual({
++    // 1A's columns and this migration's eight only: later migrations add their own (P3-T2's source).
++    const [row] = rows(state, `SELECT ${[...RECORD_1A_COLUMNS, ...RECORD_MONEY_COLUMNS].join(', ')} FROM transactions WHERE id = ?`, id)
++    expect(row).toEqual({
+       type: 'expense', source_wallet_id: null, destination_wallet_id: null, note: null, merchant: null, version: 1, deleted_at: null, created_at: AT, updated_at: AT,
+       currency: 'THB', rate: '1', rate_source: 'reference', rate_date: null, home_amount_minor: null, wallet_amount_minor: null, to_amount_minor: null, trip_id: null,
+     })

@@ -36,10 +36,30 @@
 - **Metro's printed module count on a warm cache.** A web export that ends in well under a second can print a short count, such as 4604 for 4788, while its bundles are byte-identical. Seen on P2-T10's gate, 9 Nov. Rule it a flake when a re-run prints the expected count and the bundle hashes match. Briefs that need an exact count can pass `--clear`.
 - **R-B flake.** `attachments.integration.spec.ts` "two records retaining one image at once keep one receipt, made by one copy" (expected 1 write, got 2) is a known race in frozen `apps/api` (migration 0017's two-statement check; owner decision R-B pending). Rerun the failed job once: `gh run rerun <run> --failed`.
 - **The retry_after edge.** The same file's case "copying is bounded › serializes reservations: five at once from one account reserve exactly four" can fail `expect(limited.retry_after).toBeLessThanOrEqual(180)` with 181. It was seen on #396's SQL job, 11 Nov, run 42992817954, and passed on a rerun. It is frozen `apps/api`, so rule it a flake for any PR that does not touch `apps/api`, and rerun the failed job once.
+- **Claude Code's 5-hour limit stops everything on it, the controller included (12 Nov, 01:15 to 03:10).**
+  - **What happened:** with about six Opus xhigh agents running at once plus the controller, the window ran out about three hours after it started.
+  - Every Claude Code thread paused with "Claude usage limit reached ... resets 3:10am", and the controller's own session ended.
+  - At the reset, T3 resumed every paused thread at once. That included threads that had already finished (a confirming review whose PR had merged, a DONE builder), and those reruns spend the new window on nothing.
+  - **On waking:**
+    1. List the threads.
+    2. Stop each resumed thread that has no work left, with `t3_thread_interrupt` and `stop: true`.
+    3. Check CI and merge whatever went green while you were down.
+  - **Routing when the Opus budget is the limit:**
+    - Keep Opus for first reviews, confirming reviews and the money and privacy planners.
+    - Plan UI tasks on Gemini 3.8 Flash, with the checklist in `scratch/dispatch/flash-ui-planner-checklist-20261112.md`, then give each brief an Opus brief review before any build. That costs less Opus than an Opus plan, and catches the gaps the 11 Nov Flash UI plans had.
+    - Builders go to Flash or Haiku, and second reviews to Flash.
 - **Candidate flake, the shared write budget (12 Nov).** `shared-rate-limit.integration.spec.ts`, "two API replicas share one write budget per binding" (Expected false, Received true).
   - It failed on #408's SQL job (run 43043193178, head `31c5c5ed`, 14:59 UTC), while the Mac was under heavy load.
   - That head changes nothing in `apps/api` over its base, so the controller reran it once.
+  - The rerun passed: 9 of 9 at `31c5c5ed` (checked 12 Nov, 06:30).
   - If it fails again on a head that doesn't touch the rate limiter, record it as a known flake beside R-B.
+- **Candidate flake, hermesc SIGSEGV in the iOS export (12 Nov).** "Exports (web and iOS bundles)" failed on #416 at `f6a2b681`: `hermesc -emit-binary ... exited with signal: SIGSEGV` (run 43094481395, 03:37 Bangkok, Mac under thermal load).
+  - The same job had passed at `4eb15b3e`, and the only change between them was the catalogue's `index.ts`. One `gh run rerun --failed` (`C/rerun_then_wait.sh`) passed.
+  - If it happens again on a head whose bundle input is unchanged, record it as a known flake (memory pressure in the Colima VM, which runs two runners and dind).
+- **Routes tests load the real wallet screens (12 Nov, #412 and #411).** `app/spend/deleted.tsx` and `app/spend/recap/[month].tsx` import `WalletDeletedScreen` and `WalletRecapScreen` directly. Once a fix round gave those screens an import that cannot load in vitest (`react-native-safe-area-context`, the router's internals), `SpendRoutes` and `InsightsRoutes` failed to load ("SyntaxError: Unexpected token 'typeof'"), and R100's fast gate never ran them.
+  - #412 went red in CI; the controller caught #411 before the push by running all four routes tests.
+  - The fix is a stub for the screen, the way the file stubs its other screens (the routes tests check only the routes' rules).
+  - make_prompt's RULES now put the four routes tests in the fast gate whenever a screen a route imports changes. In zsh, name each file: an unquoted `$VAR` holding several paths is not split, and vitest then runs none of them.
 - **The Mac sleeps after one minute idle, which takes the local CI and the agents down (11 to 12 Nov, 23:08 to 00:31).**
   - **Signs:**
     - both runners are `offline` on GitHub while their containers say `Up`;
@@ -99,6 +119,10 @@
 
 - **After a machine move, GitHub is the state, not the local folder.** On 9 Nov a Super Engineering session read this machine's day-old `.claude/controller` (gh auth had failed), restarted three agents and redid merged work. Fetch first, read the handover from `origin/claude/p1a-vault-core`, and prove the old controller is dead by GitHub activity. Move a stale local folder aside, then `git archive` the committed state into place.
 - **Measure, don't hand-adjust, totals after a moved base.** On 9 Nov the earlier controller's adjusted 1D-T6 totals were off by 2 (unit) and 1 (web, iOS). One baseline run at the head (unit, app, full render, web and iOS exports), plus each brief's delta, gave four agents exact Expected lines; none stopped on a count.
+- **A kit can hold a nested git repository (P3-T2, 12 Nov).** The planner's `proof/applycheck/make` had its own `.git`, so `git add -f` committed it as a gitlink with no `.gitmodules`. The 13 files under it vanished from the kit, and a gitlink without `.gitmodules` can trip the checkout's submodule steps.
+  - Its SHA256SUMS also covered 125 files inside the nested `.git` folders. Git never tracks those, so they can never verify elsewhere.
+  - `sync_state.sh` now strips nested `.git` folders from kit copies. It and `check_kit.sh` skip `/.git/` lines when they verify.
+  - Fixed on the integration branch by storing the tree as plain files.
 - **Kits lose gitignored files in the commit.** `*.log` is ignored, so the 1B-T6 kit arrived without its 8 proof logs, and its SHA256SUMS failed on another machine. `sync_state.sh` now force-adds each kit it is given. For an older kit, check the sums with the log lines removed.
 - **Prove a brief's grep checks on the real head.** 1B-T6's "no PostgreSQL code in the bundle" counted the word `node-postgres`, and #352 then added a doc comment that says it (R95). Check for driver markers (`pg-protocol`, `pg-pool`, `drizzle-orm/node-postgres`, ...), not prose words that comments can carry.
 - **zsh's `status` is read-only.** An agent's `cmd; status=$?; rmdir <lock>` aborts before the rmdir and leaves the heavy lock held. Agents keep exit codes in `rc`; make_prompt's lock text says so.
@@ -115,6 +139,11 @@
   - A planner's proof tree heals itself when its run script copies `real/` over the tree first, as 1B-T8's `run-final.sh` does.
 - **A failure on a usage limit is a cutoff, not a finish.** Its last notice is `failed` with "error type rate_limit, HTTP 429". `inflight_agents.py` now lists such agents; before the 9 Nov fix it missed the P4-T12 and P4-T13 planners.
 - **A killed run can leave the heavy lock held.** Once `ps` shows no test process, `rmdir` it at takeover.
+- **Claude Code's weekly limit stops every Claude thread for days (12 Nov, 03:24 until 14 Nov 03:00).** The notice reads "You've hit your weekly limit · resets <date>"; T3 marks each thread `failed` and snoozes it until the reset, and it will resume their paused turns then, as it did at the 5-hour reset.
+  - Move nearly finished work to Antigravity with the resume template (one `<task>-resume-<date>.md` per agent: the assignment, `tail_transcript.py` on the old jsonl, its scratch kit, what it was doing).
+  - `t3_thread_interrupt stop:true` on such a thread returns `no_active_run`, so archive the old thread (`t3_thread_organize archive`), and at the reset check that none resumed. A resumed duplicate would overwrite the new agent's brief.
+  - Find an old agent's jsonl by grepping `~/.claude/projects/-Users-kunanonjarat-Developer-jotbun/*.jsonl` for a line from its last message.
+  - Money and privacy PRs still wait for their Opus review (owner's 10 Nov routing); Gemini plans, builds and gives the first look meanwhile.
 - **When agents look stalled, check for thermal sleep first.** On 10 Nov, from 03:11 to 06:05, the owner's Mac slept about 15 minutes in every 20 (`pmset -g log`: "Entering Sleep state due to 'Dark Wake Thermal Emergency'"), with the display off and five or six agents running.
   - Everything slowed down: a two-lens review took about 3 hours, and a six-minute whole-file render run never finished cleanly (R103).
   - `pmset -g log | grep -i thermal` shows it at once.

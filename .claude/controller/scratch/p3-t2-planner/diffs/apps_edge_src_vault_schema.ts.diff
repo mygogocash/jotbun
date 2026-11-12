@@ -1,0 +1,13 @@
+diff --git a/apps/edge/src/vault/schema.ts b/apps/edge/src/vault/schema.ts
+index 9d7ba67b8c2160875bc7ef2230b81ff48ba88b64..802b0ac54581a8deca2e35ecb46bb1e8fbe3baab 100644
+--- a/apps/edge/src/vault/schema.ts
++++ b/apps/edge/src/vault/schema.ts
+@@ -94,6 +94,8 @@ export const transactions = sqliteTable('transactions', {
+   walletAmountMinor: integer('wallet_amount_minor'),
+   toAmountMinor: integer('to_amount_minor'),
+   tripId: text('trip_id'),
++  // How the record was made (0005_transaction_source.sql, P3-T2): set only at create, null when none was named.
++  source: text('source'),
+ })
+ 
+ export const monthlyBudgets = sqliteTable('monthly_budgets', {

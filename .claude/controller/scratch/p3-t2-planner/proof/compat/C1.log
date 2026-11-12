@@ -1,0 +1,64 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/currency-migration-base.test.ts > the rebuilt wallets keep every row and every reference to them 26ms
+ ✓ test/workers/currency-migration-base.test.ts > every table that references wallets keeps its rows 21ms
+ ✓ test/workers/currency-migration-base.test.ts > older records gain THB money fields 20ms
+ ✓ test/workers/currency-migration-base.test.ts > a wallet takes any ISO-shaped currency and never changes it 22ms
+ ✓ test/workers/currency-migration-base.test.ts > the new columns keep their rules 21ms
+ ✓ test/workers/currency-migration-base.test.ts > the triggers and views naming wallets are the same after the rebuild 20ms
+ ✓ test/workers/currency-migration-base.test.ts > the new columns take what phase 5 writes and refuse every shape outside their rules 23ms
+ ✓ test/workers/currency-migration-base.test.ts > the trip indexes cover live tagged records and live trips 21ms
+ × test/workers/currency-migration-base.test.ts > a record, wallet or category the previous release writes after the migration is in baht with no look, icon or pack key 26ms
+   → expected { id: undefined, …(22) } to deeply equal { type: 'expense', …(16) }
+ ✓ test/workers/currency-migration-base.test.ts > an upgrade that fails part way leaves the vault as it was, and the next wake applies it 27ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/currency-migration-base.test.ts > a record, wallet or category the previous release writes after the migration is in baht with no look, icon or pack key
+AssertionError: expected { id: undefined, …(22) } to deeply equal { type: 'expense', …(16) }
+
+- Expected
++ Received
+
+  {
++   "amount_minor": undefined,
++   "category_id": undefined,
+    "created_at": "2026-10-25T00:00:00.000Z",
+    "currency": "THB",
+    "deleted_at": null,
+    "destination_wallet_id": null,
+    "home_amount_minor": null,
++   "id": undefined,
+    "merchant": null,
+    "note": null,
++   "occurred_on": undefined,
+    "rate": "1",
+    "rate_date": null,
+    "rate_source": "reference",
++   "source": null,
+    "source_wallet_id": null,
+    "to_amount_minor": null,
+    "trip_id": null,
+    "type": "expense",
+    "updated_at": "2026-10-25T00:00:00.000Z",
+    "version": 1,
+    "wallet_amount_minor": null,
++   "wallet_id": undefined,
+  }
+
+ ❯ test/workers/currency-migration-base.test.ts:287:134
+
+ ❯ test/workers/currency-migration-base.test.ts:76:5
+ ❯ maybeHandleRunRequest Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:157:18
+ ❯ DurableObject.Wrapper.fetch Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:552:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+   Start at  03:23:53
+   Duration  2.68s (transform 936ms, setup 1.82s, import 12ms, tests 228ms, environment 0ms)
+

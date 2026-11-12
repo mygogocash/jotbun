@@ -1,0 +1,20 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/currency-migration.test.ts > the rebuilt wallets keep every row and every reference to them 24ms
+ ✓ test/workers/currency-migration.test.ts > every table that references wallets keeps its rows 22ms
+ ✓ test/workers/currency-migration.test.ts > older records gain THB money fields 21ms
+ ✓ test/workers/currency-migration.test.ts > a wallet takes any ISO-shaped currency and never changes it 21ms
+ ✓ test/workers/currency-migration.test.ts > the new columns keep their rules 20ms
+ ✓ test/workers/currency-migration.test.ts > the triggers and views naming wallets are the same after the rebuild 20ms
+ ✓ test/workers/currency-migration.test.ts > the new columns take what phase 5 writes and refuse every shape outside their rules 22ms
+ ✓ test/workers/currency-migration.test.ts > the trip indexes cover live tagged records and live trips 20ms
+ ✓ test/workers/currency-migration.test.ts > a record, wallet or category the previous release writes after the migration is in baht with no look, icon or pack key 21ms
+ ✓ test/workers/currency-migration.test.ts > an upgrade that fails part way leaves the vault as it was, and the next wake applies it 34ms
+
+ Test Files  1 passed (1)
+      Tests  10 passed (10)
+   Start at  03:23:56
+   Duration  2.31s (transform 721ms, setup 1.56s, import 13ms, tests 225ms, environment 0ms)
+

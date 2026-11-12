@@ -23,7 +23,8 @@ bad=0
 
 if [ -f "$kit/SHA256SUMS" ]; then
   logs=$(grep -c '\.log$' "$kit/SHA256SUMS")
-  res=$(cd "$kit" && grep -v '\.log$' SHA256SUMS | shasum -a 256 -c - 2>&1)
+  # Also skip lines inside a nested repository's .git: git's own files, which never travel with the kit (12 Nov).
+  res=$(cd "$kit" && grep -v '\.log$' SHA256SUMS | grep -v '/\.git/' | shasum -a 256 -c - 2>&1)
   ok=$(printf '%s\n' "$res" | grep -c ': OK$'); nok=$(printf '%s\n' "$res" | grep -c ': FAILED')
   echo "kit sums: $ok OK, $nok not OK ($logs log lines skipped)"
   [ "$nok" = 0 ] || { printf '%s\n' "$res" | grep ': FAILED' | head -10; bad=1; }

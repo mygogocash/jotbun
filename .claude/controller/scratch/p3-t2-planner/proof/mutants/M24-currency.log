@@ -1,0 +1,48 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/currency-migration.test.ts > the rebuilt wallets keep every row and every reference to them 30ms
+ × test/workers/currency-migration.test.ts > every table that references wallets keeps its rows 25ms
+   → expected [ 'wallet_notes_probe.wallet_id' ] to deeply equal []
+ ✓ test/workers/currency-migration.test.ts > older records gain THB money fields 26ms
+ ✓ test/workers/currency-migration.test.ts > a wallet takes any ISO-shaped currency and never changes it 23ms
+ ✓ test/workers/currency-migration.test.ts > the new columns keep their rules 25ms
+ ✓ test/workers/currency-migration.test.ts > the triggers and views naming wallets are the same after the rebuild 22ms
+ ✓ test/workers/currency-migration.test.ts > the new columns take what phase 5 writes and refuse every shape outside their rules 25ms
+ ✓ test/workers/currency-migration.test.ts > the trip indexes cover live tagged records and live trips 22ms
+ ✓ test/workers/currency-migration.test.ts > a record, wallet or category the previous release writes after the migration is in baht with no look, icon or pack key 22ms
+ ✓ test/workers/currency-migration.test.ts > an upgrade that fails part way leaves the vault as it was, and the next wake applies it 30ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/currency-migration.test.ts > every table that references wallets keeps its rows
+AssertionError: expected [ 'wallet_notes_probe.wallet_id' ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "wallet_notes_probe.wallet_id",
++ ]
+
+ ❯ test/workers/currency-migration.test.ts:123:101
+    121|     const was = held(before)
+    122|     // A referencing table with no row here would pass the comparison …
+    123|     expect(was.filter(({ count }) => count === 0).map(({ table, column…
+       |                                                                                                     ^
+    124|     await upgrade(state)
+    125|     expect(columnsOf(state, 'wallets')).toEqual([...WALLET_COLUMNS, 't…
+ ❯ test/workers/currency-migration.test.ts:79:11
+ ❯ maybeHandleRunRequest Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:157:18
+ ❯ DurableObject.Wrapper.fetch Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:552:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+   Start at  03:20:17
+   Duration  2.57s (transform 837ms, setup 1.78s, import 15ms, tests 251ms, environment 0ms)
+

@@ -1,0 +1,13 @@
+diff --git a/apps/app/src/analytics/events.ts b/apps/app/src/analytics/events.ts
+index c77c27c5df161be48cc9d92e9e2b2e00d522b329..01e3fd042cc94d4f1ef3715b2a6bff1310f06c60 100644
+--- a/apps/app/src/analytics/events.ts
++++ b/apps/app/src/analytics/events.ts
+@@ -3,7 +3,7 @@
+ import { trackClientEvent } from './bus.ts';
+ 
+ export type RecordKind = 'expense' | 'income' | 'transfer';
+-export type RecordSource = 'typed' | 'tell_bun';
++export type RecordSource = import('@gogospend/contracts').TransactionSource;
+ export type SignInMethodName = 'apple' | 'google' | 'email' | 'passkey';
+ 
+ function emit(name: string, properties?: Record<string, unknown>): void {

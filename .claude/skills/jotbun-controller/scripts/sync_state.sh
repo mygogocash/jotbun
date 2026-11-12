@@ -15,7 +15,8 @@ I=$ROOT/.claude/worktrees/p1a-vault-core
 for kit in "$@"; do
   src=$C/scratch/$kit
   [ -f "$src/SHA256SUMS" ] || { echo "no SHA256SUMS in $src"; exit 1; }
-  bad=$(cd "$src" && shasum -a 256 -c SHA256SUMS 2>&1 | grep -vc ': OK$' || true)
+  # Lines inside a nested repository's .git are git's own files: git never tracks them, so they cannot travel (12 Nov).
+  bad=$(cd "$src" && grep -v '/\.git/' SHA256SUMS | shasum -a 256 -c - 2>&1 | grep -vc ': OK$' || true)
   [ "$bad" = 0 ] || { echo "$kit: $bad not OK at the source; nothing copied"; exit 1; }
 done
 cd "$I"
@@ -33,8 +34,11 @@ for kit in "$@"; do
   mkdir -p "$dst"
   # top-level entries named in the checksums, every SHA256SUMS* and any runner script beside them
   for top in $(awk '{print $2}' "$src/SHA256SUMS" | cut -d/ -f1 | sort -u); do cp -R "$src/$top" "$dst/"; done
+  # A planner's proof tree can hold its own git repository (P3-T2's applycheck, 12 Nov). Committed as is, it becomes a
+  # gitlink with no .gitmodules: the files under it vanish from the kit and the checkout's submodule steps can trip.
+  find "$dst" -mindepth 2 -name .git -prune -exec rm -rf {} +
   for f in "$src"/SHA256SUMS* "$src"/*.py "$src"/*.patch "$src"/*.diff "$src"/files-*.txt; do [ -e "$f" ] && cp "$f" "$dst/"; done
-  (cd "$dst" && bad=$(shasum -a 256 -c SHA256SUMS 2>&1 | grep -vc ': OK$' || true); echo "$kit: $bad not OK"; [ "$bad" = 0 ])
+  (cd "$dst" && bad=$(grep -v '/\.git/' SHA256SUMS | shasum -a 256 -c - 2>&1 | grep -vc ': OK$' || true); echo "$kit: $bad not OK"; [ "$bad" = 0 ])
 done
 /usr/bin/git add -A .claude
 # A kit's proof logs (*.log) are gitignored, so `add -A` skips them; force-add each kit so its SHA256SUMS still verifies elsewhere.

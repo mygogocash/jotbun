@@ -574,7 +574,7 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - `bw-tray-income` with the Thai keyboard up on a 667 pt phone (n1);
     - the name field on an iPad with the keyboard floated (n2);
     - "Add spending" wrapping at AX5 on a 375 pt phone.
-- P2-T33 (#406): the confirming review is Approved (`reviews/P2-T33-confirm.md`: m1, n1 to n3). Carried, whenever #406 merges:
+- P2-T33 (#406, merged 12 Nov as a00fff7 at c07be421, after the R107 fix round; promotion #417). The confirming review is `reviews/P2-T33-confirm.md` (m1, n1 to n3). Carried:
   - **P2-T34:**
     - `availability()` must answer at a cold start, or no opening asks by itself for the whole session (n2).
     - Return `method: null` explicitly for a phone that cannot lock, and count a reading with no `method` as unreadable.

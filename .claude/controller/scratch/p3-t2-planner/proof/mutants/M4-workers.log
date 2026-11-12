@@ -1,0 +1,110 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+ ✓ test/workers/vault-schema.test.ts > a new vault has every core table, migrated once 16ms
+ ✓ test/workers/vault-schema.test.ts > a vault keeps its rows and does not migrate again after it sleeps 17ms
+ ✓ test/workers/vault-schema.test.ts > the Drizzle schema matches the migrated tables column for column 34ms
+ ✓ test/workers/vault-schema.test.ts > foreign keys hold: a transaction naming an unknown wallet is refused 14ms
+ ✓ test/workers/vault-schema.test.ts > command log rows must use the current revision, and entity heads only move forward 15ms
+ ✓ test/workers/vault-schema.test.ts > a primary key cannot be NULL 14ms
+ × test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it 40ms
+   → expected 500 to be 201 // Object.is equality
+ ✓ test/workers/transaction-source.test.ts > a record source > a record made without a source, or with null, reads without the key 37ms
+ ✓ test/workers/currency-migration.test.ts > the rebuilt wallets keep every row and every reference to them 29ms
+ ✓ test/workers/currency-migration.test.ts > every table that references wallets keeps its rows 28ms
+ ✓ test/workers/currency-migration.test.ts > older records gain THB money fields 29ms
+ ✓ test/workers/currency-migration.test.ts > a wallet takes any ISO-shaped currency and never changes it 31ms
+stderr | test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+stderr | test/workers/transaction-source.test.ts > a record source > an edit cannot set the source
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+ ✓ test/workers/vault-schema.test.ts > a category's type and built-in key never change 16ms
+ ✓ test/workers/vault-schema.test.ts > a category id never changes 20ms
+ ✓ test/workers/vault-schema.test.ts > a replace that reuses another category's built-in key is refused, and the other category survives 17ms
+ ✓ test/workers/vault-schema.test.ts > INSERT OR REPLACE cannot flip a category in use, but an identical ON CONFLICT DO NOTHING insert is allowed 15ms
+ ✓ test/workers/vault-schema.test.ts > a category is never deleted 16ms
+ ✓ test/workers/vault-schema.test.ts > a category has a label or a built-in key 13ms
+ ✓ test/workers/transaction-source.test.ts > a record source > an unknown source is 422 VALIDATION_FAILED on source, and nothing is written 38ms
+ × test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH 30ms
+   → expected 500 to be 201 // Object.is equality
+ ✓ test/workers/transaction-source.test.ts > a record source > a create without a source is digested as the release before gave it, so a command queued then still replays 28ms
+ × test/workers/transaction-source.test.ts > a record source > an edit cannot set the source 24ms
+   → expected 500 to be 201 // Object.is equality
+ ✓ test/workers/currency-migration.test.ts > the new columns keep their rules 32ms
+ ✓ test/workers/currency-migration.test.ts > the triggers and views naming wallets are the same after the rebuild 32ms
+ ✓ test/workers/currency-migration.test.ts > the new columns take what phase 5 writes and refuse every shape outside their rules 31ms
+ ✓ test/workers/currency-migration.test.ts > the trip indexes cover live tagged records and live trips 27ms
+ ✓ test/workers/vault-schema.test.ts > a receipt can drop its digest pair, but never just one half 29ms
+ ✓ test/workers/vault-schema.test.ts > a record can hold only a retained receipt, and letting go of the last holder releases it and makes its object due 22ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a row without a source reads as before, with its receipt link 29ms
+ ✓ test/workers/transaction-source.test.ts > the source column > takes each of the seven sources or NULL, and refuses anything else 34ms
+ ✓ test/workers/transaction-source.test.ts > the source column > a vault the previous release wrote gains the column in place: every record, receipt link and import link keeps its row 23ms
+ ✓ test/workers/currency-migration.test.ts > a record, wallet or category the previous release writes after the migration is in baht with no look, icon or pack key 27ms
+ ✓ test/workers/currency-migration.test.ts > an upgrade that fails part way leaves the vault as it was, and the next wake applies it 31ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it
+AssertionError: expected 500 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 500
+
+ ❯ test/workers/transaction-source.test.ts:58:78
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH
+AssertionError: expected 500 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 500
+
+ ❯ test/workers/transaction-source.test.ts:105:26
+    103|     const lunch = s.expense({ source: 'tell_bun' })
+    104|     const first = await client.as(s.user).post('/v1/transactions', lun…
+    105|     expect(first.status).toBe(201)
+       |                          ^
+    106|     const sameAgain = await client.as(s.user).post('/v1/transactions',…
+    107|     expect(await sameAgain.json()).toEqual(await first.json())
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  test/workers/transaction-source.test.ts > a record source > an edit cannot set the source
+AssertionError: expected 500 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 500
+
+ ❯ test/workers/transaction-source.test.ts:140:78
+    138|     const s = await setup()
+    139|     const lunch = s.expense({ source: 'typed' })
+    140|     expect((await client.as(s.user).post('/v1/transactions', lunch)).s…
+       |                                                                              ^
+    141|     const res = await client.as(s.user).patch(`/v1/transactions/${Stri…
+    142|     expect([res.status, await res.json()]).toEqual([422, expect.object…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  3 failed | 30 passed (33)
+   Start at  03:19:16
+   Duration  3.48s (transform 3.58s, setup 7.46s, import 71ms, tests 843ms, environment 0ms)
+

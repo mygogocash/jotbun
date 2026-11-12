@@ -1,0 +1,94 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/vault-schema.test.ts > a new vault has every core table, migrated once 20ms
+ ✓ test/workers/vault-schema.test.ts > a vault keeps its rows and does not migrate again after it sleeps 21ms
+ ✓ test/workers/vault-schema.test.ts > the Drizzle schema matches the migrated tables column for column 40ms
+ ✓ test/workers/vault-schema.test.ts > foreign keys hold: a transaction naming an unknown wallet is refused 15ms
+ ✓ test/workers/currency-migration.test.ts > the rebuilt wallets keep every row and every reference to them 32ms
+ ✓ test/workers/currency-migration.test.ts > every table that references wallets keeps its rows 28ms
+ ✓ test/workers/currency-migration.test.ts > older records gain THB money fields 25ms
+ ✓ test/workers/currency-migration.test.ts > a wallet takes any ISO-shaped currency and never changes it 30ms
+ × test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it 42ms
+   → expected { …(10) } to deeply equal { …(11) }
+ ✓ test/workers/transaction-source.test.ts > a record source > a record made without a source, or with null, reads without the key 43ms
+ ✓ test/workers/vault-schema.test.ts > command log rows must use the current revision, and entity heads only move forward 18ms
+ ✓ test/workers/vault-schema.test.ts > a primary key cannot be NULL 14ms
+ ✓ test/workers/vault-schema.test.ts > a category's type and built-in key never change 18ms
+ ✓ test/workers/vault-schema.test.ts > a category id never changes 18ms
+ ✓ test/workers/vault-schema.test.ts > a replace that reuses another category's built-in key is refused, and the other category survives 17ms
+ ✓ test/workers/vault-schema.test.ts > INSERT OR REPLACE cannot flip a category in use, but an identical ON CONFLICT DO NOTHING insert is allowed 19ms
+ ✓ test/workers/transaction-source.test.ts > a record source > an unknown source is 422 VALIDATION_FAILED on source, and nothing is written 40ms
+ ✓ test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH 42ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a create without a source is digested as the release before gave it, so a command queued then still replays 32ms
+ ✓ test/workers/currency-migration.test.ts > the new columns keep their rules 32ms
+ ✓ test/workers/currency-migration.test.ts > the triggers and views naming wallets are the same after the rebuild 30ms
+ ✓ test/workers/currency-migration.test.ts > the new columns take what phase 5 writes and refuse every shape outside their rules 37ms
+ ✓ test/workers/currency-migration.test.ts > the trip indexes cover live tagged records and live trips 32ms
+ ✓ test/workers/vault-schema.test.ts > a category is never deleted 18ms
+ ✓ test/workers/vault-schema.test.ts > a category has a label or a built-in key 15ms
+ ✓ test/workers/vault-schema.test.ts > a receipt can drop its digest pair, but never just one half 33ms
+ ✓ test/workers/vault-schema.test.ts > a record can hold only a retained receipt, and letting go of the last holder releases it and makes its object due 26ms
+ ✓ test/workers/currency-migration.test.ts > a record, wallet or category the previous release writes after the migration is in baht with no look, icon or pack key 34ms
+ ✓ test/workers/currency-migration.test.ts > an upgrade that fails part way leaves the vault as it was, and the next wake applies it 43ms
+ × test/workers/transaction-source.test.ts > a record source > an edit cannot set the source 38ms
+   → expected { …(10) } to match object { version: 1, source: 'typed' }
+(9 matching properties omitted from actual)
+ ✓ test/workers/transaction-source.test.ts > a record source > a row without a source reads as before, with its receipt link 32ms
+ ✓ test/workers/transaction-source.test.ts > the source column > takes each of the seven sources or NULL, and refuses anything else 42ms
+ ✓ test/workers/transaction-source.test.ts > the source column > a vault the previous release wrote gains the column in place: every record, receipt link and import link keeps its row 34ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it
+AssertionError: expected { …(10) } to deeply equal { …(11) }
+
+- Expected
++ Received
+
+@@ -4,10 +4,9 @@
+    "deleted_at": null,
+    "id": "e275e162-df7c-4155-b0a9-1ab4a5e83811",
+    "merchant": null,
+    "note": null,
+    "occurred_on": "2026-09-20",
+-   "source": "tell_bun",
+    "type": "expense",
+    "version": 1,
+    "wallet_id": "caa66a92-516d-4813-b211-c916856bb2e3",
+  }
+
+ ❯ test/workers/transaction-source.test.ts:60:17
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/transaction-source.test.ts > a record source > an edit cannot set the source
+AssertionError: expected { …(10) } to match object { version: 1, source: 'typed' }
+(9 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "source": "typed",
+    "version": 1,
+  }
+
+ ❯ test/workers/transaction-source.test.ts:143:39
+    141|     const res = await client.as(s.user).patch(`/v1/transactions/${Stri…
+    142|     expect([res.status, await res.json()]).toEqual([422, expect.object…
+    143|     expect(await record(s, lunch.id)).toMatchObject({ version: 1, sour…
+       |                                       ^
+    144|   })
+    145|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  2 failed | 31 passed (33)
+   Start at  03:20:06
+   Duration  3.78s (transform 3.92s, setup 8.21s, import 81ms, tests 965ms, environment 0ms)
+

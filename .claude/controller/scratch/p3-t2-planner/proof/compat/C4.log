@@ -1,0 +1,60 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ↓ test/workers/currency-migration-base.test.ts > the rebuilt wallets keep every row and every reference to them
+ × test/workers/currency-migration-base.test.ts > every table that references wallets keeps its rows 26ms
+   → expected [ { …(3) }, { …(3) }, { …(3) }, …(2) ] to deeply equal [ { …(3) }, …(3) ]
+ ↓ test/workers/currency-migration-base.test.ts > older records gain THB money fields
+ ↓ test/workers/currency-migration-base.test.ts > a wallet takes any ISO-shaped currency and never changes it
+ ↓ test/workers/currency-migration-base.test.ts > the new columns keep their rules
+ ↓ test/workers/currency-migration-base.test.ts > the triggers and views naming wallets are the same after the rebuild
+ ↓ test/workers/currency-migration-base.test.ts > the new columns take what phase 5 writes and refuse every shape outside their rules
+ ↓ test/workers/currency-migration-base.test.ts > the trip indexes cover live tagged records and live trips
+ ↓ test/workers/currency-migration-base.test.ts > a record, wallet or category the previous release writes after the migration is in baht with no look, icon or pack key
+ ↓ test/workers/currency-migration-base.test.ts > an upgrade that fails part way leaves the vault as it was, and the next wake applies it
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/currency-migration-base.test.ts > every table that references wallets keeps its rows
+AssertionError: expected [ { …(3) }, { …(3) }, { …(3) }, …(2) ] to deeply equal [ { …(3) }, …(3) ]
+
+- Expected
++ Received
+
+@@ -3,10 +3,15 @@
+      "column": "wallet_id",
+      "table": "import_selection_rows",
+      "to": "id",
+    },
+    {
++     "column": "wallet_id",
++     "table": "slip_accounts_probe",
++     "to": "id",
++   },
++   {
+      "column": "destination_wallet_id",
+      "table": "transactions",
+      "to": "id",
+    },
+    {
+
+ ❯ test/workers/currency-migration-base.test.ts:122:26
+    120|       expect.arrayContaining(['import_selection_rows.wallet_id', 'tran…
+    121|     )
+    122|     expect(references()).toEqual(before)
+       |                          ^
+    123|     expect(held(before)).toEqual(was)
+    124|   }))
+ ❯ test/workers/currency-migration-base.test.ts:76:5
+ ❯ maybeHandleRunRequest Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:157:18
+ ❯ DurableObject.Wrapper.fetch Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:552:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 skipped (10)
+   Start at  03:24:02
+   Duration  2.09s (transform 718ms, setup 1.55s, import 12ms, tests 27ms, environment 0ms)
+

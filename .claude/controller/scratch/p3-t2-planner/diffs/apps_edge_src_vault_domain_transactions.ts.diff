@@ -1,0 +1,110 @@
+diff --git a/apps/edge/src/vault/domain/transactions.ts b/apps/edge/src/vault/domain/transactions.ts
+index 10e341afc9807aeb7533b9bb9057e1540574f024..02eaaa9dd7933e360b2b1851f0bef9d494dbb29a 100644
+--- a/apps/edge/src/vault/domain/transactions.ts
++++ b/apps/edge/src/vault/domain/transactions.ts
+@@ -18,9 +18,10 @@ import {
+   normalizeMerchant,
+   normalizeNote,
+   parseMinor,
++  parseTransactionSource,
+   validateOccurredOn,
+ } from '@gogospend/contracts'
+-import type { CommandAck, TransactionDto, TransactionType } from '@gogospend/contracts'
++import type { CommandAck, TransactionDto, TransactionSource, TransactionType } from '@gogospend/contracts'
+ 
+ import { routeId, stateProblem } from '@api/commands/versioned-entity'
+ import { ProblemException } from '@api/common/api-problem.filter'
+@@ -56,23 +57,29 @@ export type TransactionRow = {
+   version: number
+   /** The receipt the record holds (1B-T9), or null. */
+   attachment_id?: string | null
++  /** How the record was made (P3-T2), or null when its create named none. */
++  source?: TransactionSource | null
+ }
+ 
+-/** The record's editable state, before it is written. */
+-type Draft = Omit<TransactionRow, 'deleted_at' | 'version' | 'attachment_id'>
++/** The record's editable state, before it is written. `source` is not part of it: only a create sets it. */
++type Draft = Omit<TransactionRow, 'deleted_at' | 'version' | 'attachment_id' | 'source'>
+ 
+ // Money as text: the SQL API would otherwise return INTEGER as a JavaScript number.
+-// History and Recently deleted read rows with these columns too (reads/history.ts).
++// History and Recently deleted read rows with these columns too (reads/history.ts and
++// reads/deleted-history.ts), so they carry `source` (P3-T2) without a list of their own.
+ // attachment_id is the receipt the record holds (1B-T9, the API's RECORD_COLUMNS):
+ // transaction_attachments has no `id`, so the subquery's `id` is the outer row's,
+ // whatever the transactions table is aliased as.
+ export const COLUMNS = `id, type, CAST(amount_minor AS TEXT) AS amount_minor, occurred_on, wallet_id, category_id,
+-  source_wallet_id, destination_wallet_id, note, merchant, deleted_at, version,
++  source_wallet_id, destination_wallet_id, note, merchant, deleted_at, version, source,
+   (SELECT ta.attachment_id FROM transaction_attachments ta WHERE ta.transaction_id = id) AS attachment_id`
+ 
+ const refsOf = (type: TransactionType): readonly RefField[] => (type === 'transfer' ? TRANSFER_REFS : ENTRY_REFS)
+ 
+-/** The persisted record, with `attachment_id` only while it holds a receipt (1B-T9), as the API's toDto. */
++/**
++ * The persisted record, with `attachment_id` only while it holds a receipt (1B-T9), as the API's toDto,
++ * and `source` only when its create named one (P3-T2).
++ */
+ export function toDto(row: TransactionRow): TransactionDto {
+   const common = {
+     id: row.id,
+@@ -83,6 +90,7 @@ export function toDto(row: TransactionRow): TransactionDto {
+     deleted_at: row.deleted_at,
+     version: row.version,
+     ...(row.attachment_id ? { attachment_id: row.attachment_id } : {}),
++    ...(row.source ? { source: row.source } : {}),
+   }
+   return row.type === 'transfer'
+     ? { ...common, type: 'transfer', source_wallet_id: row.source_wallet_id as string, destination_wallet_id: row.destination_wallet_id as string }
+@@ -166,12 +174,12 @@ function checkReferences(c: VaultContext, draft: Draft, newlyReferenced: Readonl
+   }
+ }
+ 
+-function insertRow(c: VaultContext, draft: Draft): TransactionRow | undefined {
++function insertRow(c: VaultContext, draft: Draft, source: TransactionSource | null): TransactionRow | undefined {
+   const now = c.now.toISOString()
+   return c.sql
+     .exec<TransactionRow>(
+-      `INSERT INTO transactions (id, type, amount_minor, occurred_on, wallet_id, category_id, source_wallet_id, destination_wallet_id, note, merchant, version, created_at, updated_at)
+-       VALUES (?, ?, CAST(? AS INTEGER), ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
++      `INSERT INTO transactions (id, type, amount_minor, occurred_on, wallet_id, category_id, source_wallet_id, destination_wallet_id, note, merchant, source, version, created_at, updated_at)
++       VALUES (?, ?, CAST(? AS INTEGER), ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+        ON CONFLICT DO NOTHING RETURNING ${COLUMNS}`,
+       draft.id,
+       draft.type,
+@@ -183,6 +191,7 @@ function insertRow(c: VaultContext, draft: Draft): TransactionRow | undefined {
+       draft.destination_wallet_id,
+       draft.note,
+       draft.merchant,
++      source,
+       now,
+       now,
+     )
+@@ -227,7 +236,7 @@ export function createTransaction(c: VaultContext, call: VaultCall): CommandAck
+     throw new ContractValidationError('VALIDATION_FAILED', 'type must be expense, income or transfer.', 'type')
+   }
+   const refs = refsOf(type as TransactionType)
+-  const input = assertKnownFields(call.body, ['id', 'type', ...COMMON_FIELDS, ...refs])
++  const input = assertKnownFields(call.body, ['id', 'type', ...COMMON_FIELDS, ...refs, 'source'])
+   const today = bangkokDate(c.now)
+   const draft: Draft = {
+     id: uuidField(input.id, 'id'),
+@@ -242,12 +251,15 @@ export function createTransaction(c: VaultContext, call: VaultCall): CommandAck
+     merchant: normalizeMerchant(input.merchant),
+   }
+   for (const ref of refs) draft[ref] = uuidField(input[ref], ref)
++  // How the record was made (P3-T2), set only here. It joins the digested payload only when one is
++  // sent, so a create the phone queued before this field existed keeps its digest and still replays.
++  const source = parseTransactionSource(input.source)
+   sameWallet(draft)
+-  return runCommand(c, { ...command, payload: draft }, () => {
++  return runCommand(c, { ...command, payload: source === null ? draft : { ...draft, source } }, () => {
+     // A purged record leaves no row but keeps its head: its id is spent.
+     if (entityHead(c, ENTITY, draft.id)?.state === 'purged') throw new ProblemException(410, 'ENTITY_PURGED')
+     checkReferences(c, draft, new Set(refs))
+-    const row = insertRow(c, draft)
++    const row = insertRow(c, draft, source)
+     if (!row) {
+       const existing = transactionRow(c, draft.id)
+       throw new ProblemException(409, 'VERSION_CONFLICT', { current: existing ? toDto(existing) : undefined })

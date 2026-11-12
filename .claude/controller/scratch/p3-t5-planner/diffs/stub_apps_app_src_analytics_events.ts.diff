@@ -1,0 +1,33 @@
+diff --git a/apps/app/src/analytics/events.ts b/apps/app/src/analytics/events.ts
+index c77c27c5df161be48cc9d92e9e2b2e00d522b329..2fd272f1da3227ca53e9fdb790d98413ffd81afc 100644
+--- a/apps/app/src/analytics/events.ts
++++ b/apps/app/src/analytics/events.ts
+@@ -24,7 +24,7 @@ export function trackRecordStarted(p: { kind?: RecordKind; source: RecordSource
+   emit('record_started', { ...(p.kind === undefined ? {} : { kind: p.kind }), source: p.source });
+ }
+ 
+-export function trackRecordSaved(p: { kind: RecordKind; source: RecordSource; categoryKey: string | null; offline: boolean; secondsToSave: number }): void {
++export function trackRecordSaved(p: { kind: RecordKind; source: RecordSource; categoryKey: string | null; offline: boolean; secondsToSave: number; hasPhoto?: boolean }): void {
+   emit('record_saved', {
+     kind: p.kind,
+     source: p.source,
+@@ -118,3 +118,19 @@ export function trackSignedUp(p: { method: SignInMethodName }): void {
+ export function trackSignedOut(p: { method?: SignInMethodName }): void {
+   emit('signed_out', p.method === undefined ? {} : { method: p.method });
+ }
++
++// RED stub (P3-T5): the plan's Bun AI emitters, with no behaviour yet.
++export type AiModelName = 'claude-haiku-5-5' | 'claude-opus-5-5' | 'rules';
++export type DraftOutcome = 'kept' | 'edited' | 'dropped';
++
++export function trackAiConsentChanged(): void {}
++
++export function trackTellBunSent(_p: { model: AiModelName; escalated: boolean }): void {}
++
++export function trackAiDraftReviewed(_p: { outcome: DraftOutcome; fieldsEdited: number; model: AiModelName; escalated: boolean }): void {}
++
++export function trackAskBunAsked(_p: { model: AiModelName; escalated: boolean }): void {}
++
++export function trackAskBunRated(_p: { helpful: boolean; model: AiModelName; escalated: boolean }): void {}
++
++export function trackAiUnavailable(_p: { reasonCode: string; screen: string }): void {}

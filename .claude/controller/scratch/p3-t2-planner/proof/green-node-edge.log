@@ -1,0 +1,12 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/tree/apps/edge
+
+ ✓ test/contracts-source.test.ts > a record source > the sources are the spec's seven, in order 1ms
+ ✓ test/contracts-source.test.ts > a record source > a record snapshot accepts each source or none, and refuses anything else 0ms
+ ✓ test/contracts-source.test.ts > a record source > parseTransactionSource reads absent and null as none and refuses other values on source 0ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  01:13:32
+   Duration  195ms (transform 58ms, setup 0ms, import 75ms, tests 2ms, environment 0ms)
+
