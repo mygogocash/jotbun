@@ -49,6 +49,30 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **07:30: #416 (P2-T20) MERGED as `0bfd58a`; the head is `0bfd58a`.**
+  - Opus approved at `4eb15b3e` (m1 to m3, n1). Flash's second review approved, and CI was green at `f6a2b681`.
+  - Issue #166 is closed, the worktree and branch are removed, and it is promoted as **#419** (stack #379 holds 22).
+  - followups.md has R111 for m1: the held line shows only when it reconciles (P2-T24). The pins PA, PB and PF go to P2-T24.
+  - **Next for #412 and #411:** each now conflicts in `index.ts` (LIST is on the head). After each confirming review approves, the controller merges the head into the branch.
+    - #412's resolution is ADD, LIST, RECORD, LOCK; check it against Appendix B of `briefs/P2-T25-fix.md`.
+    - #411's is ADD, LIST, RECAP, LOCK; check it against `scratch/p2-t32-fix-planner/logs/merge-proofs.log`.
+    - Then CI, then merge with the merge commit as the head (as #416 was).
+- **07:25: P2-T31 brief reworked and building.**
+  - The Flash planner fixed B1 and M1: `InsightsRoutes` stubs `WalletInsightsScreen`, and there is a wallet-flag case.
+  - The controller checked it: kit sums 44 of 44, and the merge with #411's `9add4415` is clean both ways (`f4e1b70f…`).
+  - The worktree `p2-t31` was fast-forwarded from `36830ebb` to `fae273e5`; the lockfile is unchanged. P1 to P11 accepted.
+  - Implementer (Flash): `mcp:launch:904824422d85d7a97dbd0aeb5ccb72b3f9676a679ce2097e71e90da2cdfe9298`.
+  - The P2-T29 rework is still running on its planner `11bf3529…`.
+- **07:20: CLAUDE IS BACK.** The owner said "Credit already reset"; the resumed #416 reviewer ran, which confirms it. None of the archived Opus planners resumed. The SPREAD routing applies again: Opus for first and confirming reviews, Flash for builds and second reviews.
+  - **#416 (P2-T20):** the Opus reviewer `c782b7d9…` resumed with its context, run 3. It was told CI is green and to add the routes tests. It had X1, X2, X3, X7 and X7r surviving among its own mutants. Writes `reviews/P2-T20.md`.
+  - **#418 (P3-T5, new):** opened from `9a6722c3`. The controller checked it: all 8 `real/` files are byte-identical.
+    - Opus reviewer `mcp:launch:54fa02e388e7c24995fef27b9f553bd0d55b42e19de51cfdaffdcbb9c81729e5` writes `reviews/P3-T5.md`.
+    - Flash second reviewer `mcp:launch:bf5a4e3d2bab40fcb9085d869cdecd167932a6b9ebf4eda364ebcc8da8d6bf1f` writes `reviews/P3-T5-second.md`.
+  - **#412 confirming review (Opus):** `mcp:launch:b4d281284fb77de1442b6cfddacc53585b681922a1c9b0c5d10a13c4d81b890b`, at `272aa84b`. Writes `reviews/P2-T25-confirm.md`.
+  - **#411 confirming review (Opus):** `mcp:launch:11dd823100b91dbaec2b4dbbf2ec7387ac549d183047e61f5bde8a488c0e0c65`, at `9add4415`. Writes `reviews/P2-T32-confirm.md`.
+  - Each confirming review checks the controller's routes-test stub commit independently.
+- **07:15: #411 green 9 of 9 at `9add4415`, and #412 green 9 of 9 at `272aa84b`.** Both wait only for their Opus confirming reviews (14 Nov from 03:00), as does #416's first review.
+  - The P3-T2 kit's two nested repositories had been committed as gitlinks. They are now plain files (`15a32561`), and `sync_state` and `check_kit` skip nested `.git` sums (lessons.md).
 - **07:10: two builders on Flash, two Flash briefs back with their planners.**
   - **P3-T5 built:** brief READY (21 of 21 sums, P1 to P8 accepted). Worktree `p3-t5` (`p3/t5-draft-review`) is new at `e8de291d`. Implementer `mcp:launch:ac24bb4fba73b7eb7efbf6c5250f4d862ad9ada2eb9ab26c9cb7020e1adcb8b1`.
   - **P3-T2 built:** brief READY (224 of 224 sums, P1 to P9 accepted). Worktree `p3-t2` (`p3/t2-transaction-source`) has `install-edge`. Implementer `mcp:launch:999ef88c17e1038764bf0574381259d14a12621076fb1cb7c26758f9641961d5`, `--lock`.
