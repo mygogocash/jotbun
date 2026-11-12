@@ -125,11 +125,13 @@ function clientFor(raw: (request: Request) => Promise<Response>, user: TestUser,
  * is the AI routes' model call (P3-T4): a fake, or null for AI that is not
  * configured; without it the env decides, and the vault Worker's AI is off.
  * `aiDeadlines` shortens AI routes' deadlines (P3-T6), so a model that never
- * answers is waited out in a test's time.
+ * answers is waited out in a test's time. `analytics` is the server's PostHog
+ * client (1D-T11): without it the env decides, and with no analytics secret in
+ * the Workers config nothing is sent; a test gives one with a fake port.
  */
 export async function startV1(
   config: EdgeConfigJson | 'absent' | 'malformed' = DEFAULT_CONFIG,
-  options?: { env?: Partial<V1Env>; fetchCatalogue?: typeof fetch; startWork?: 'auto' | 'manual'; transport?: ModelTransport | null; aiDeadlines?: Partial<Record<AiFeature, number>> },
+  options?: { env?: Partial<V1Env>; fetchCatalogue?: typeof fetch; startWork?: 'auto' | 'manual'; transport?: ModelTransport | null; aiDeadlines?: Partial<Record<AiFeature, number>>; analytics?: V1Deps['analytics'] },
 ): Promise<V1Client> {
   if (config === 'absent') await env.CONFIG.delete(EDGE_CONFIG_KEY)
   else if (config === 'malformed') await env.CONFIG.put(EDGE_CONFIG_KEY, JSON.stringify({ gates: 'nope' }))
@@ -142,6 +144,7 @@ export async function startV1(
     fetchCatalogue: options?.fetchCatalogue,
     transport: options?.transport,
     aiDeadlines: options?.aiDeadlines,
+    analytics: options?.analytics,
     waitUntil: (promise) => {
       pending.push(promise)
     },
