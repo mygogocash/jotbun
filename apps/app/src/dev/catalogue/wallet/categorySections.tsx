@@ -1,0 +1,146 @@
+// The Bun Wallet's categories in the catalogue (P2-T29, development only),
+// each drawn by the real WalletCategoriesScreen on fakes (R72), in the
+// catalogue's own language and theme:
+// - bw-categories: wc-categories' month: six built-ins with their spending,
+//   one of them over its limit, two of the person's own (one a C3 item, so
+//   the pack card names the rest), and the new tile;
+// - bw-category-new: the category tray for a new category, named, with an
+//   icon and a colour picked (wc-category-edit);
+// - bw-category-limit: the tray for อาหาร, whose limit shows with the month's
+//   total;
+// - bw-thai-pack: the Thai pack tray with three items picked and the one the
+//   person has marked มีแล้ว (wc-thai-pack).
+// Their own list, spread after the wallets list's in ./index.ts.
+//
+// - The kept icons belong to a catalogue account of its own, never the
+//   person's: each time a section opens, its fake diary opens that account and
+//   the board's icon for ครอบครัว is written before the screen mounts, so
+//   every opening starts from the board.
+// - The screen is loaded when a section opens, not when this list is read: it
+//   reaches the category commands' keys (screens/v1/parts.tsx loads
+//   expo-crypto) and expo-router, which the kit's suites that read the
+//   wallet's list do not stand in for (the catalogue's own suites do).
+// - A section never imports the wallet test harness, which loads vitest.
+import type { BudgetDto, CategoryDto, MonthSummary } from '@gogospend/contracts';
+import { lazy, Suspense } from 'react';
+
+import type { SpendV1Resources } from '@mobile/spend/v1/resources';
+import { createFakeDiary } from '@mobile/spend/v1/testing/fakeDiary';
+import { BUILTINS, createFakeResources } from '@mobile/spend/v1/testing/fakeResources';
+import { CATEGORY_ICONS_NAME, WalletLooksProvider } from '@mobile/wallet/looks/WalletLooksProvider';
+import { walletAccountStore } from '@mobile/wallet/store/deviceWalletStore';
+import type { CatalogueSection } from '../registry';
+import { CATALOGUE_NOW } from '../screenFixtures';
+import { screenSection } from '../screenSection';
+import type { ScreenFixture, ScriptStep } from '../screenSection';
+
+const WalletCategoriesScreen = lazy(() => import('@mobile/wallet/categories/WalletCategoriesScreen').then((module) => ({ default: module.WalletCategoriesScreen })));
+
+/** The catalogue's own account: its kept icons are never the person's. */
+const CATALOGUE_ACCOUNT = '0000000c-0000-4000-8000-00000000ca7b';
+
+const [FOOD, TRAVEL, BILLS, SALARY, GIFT] = BUILTINS as [CategoryDto, CategoryDto, CategoryDto, CategoryDto, CategoryDto];
+const builtin = (n: string, key: 'household' | 'shopping' | 'fun', color: string): CategoryDto => ({
+  id: `0000000c-0000-4000-8000-0000000000b${n}`, type: 'expense', builtin_key: key, label: null, color, archived: false, version: 1,
+});
+const HOUSEHOLD = builtin('1', 'household', '#B49BE8');
+const SHOPPING = builtin('2', 'shopping', '#F291C4');
+const FUN = builtin('3', 'fun', '#F2CE5C');
+const custom = (n: string, label: string, color: string): CategoryDto => ({
+  id: `0000000c-0000-4000-8000-0000000000c${n}`, type: 'expense', builtin_key: null, label, color, archived: false, version: 1,
+});
+/** wc-categories' two of the person's own: ครอบครัว (its heart is kept) and ทำบุญ (C3's merit, so its lotus comes from the pack). */
+const FAMILY = custom('1', 'ครอบครัว', '#F291C4');
+const MERIT = custom('2', 'ทำบุญ', '#F2CE5C');
+
+/** wc-categories' month: ฿18,000, with อาหาร ฿6,000, เดินทาง ฿2,500 and ช้อปปิ้ง ฿2,000. */
+const BUDGET: BudgetDto = {
+  id: '0000000d-0000-4000-8000-0000000000c1',
+  month: '2026-09',
+  overall_limit_minor: '1800000',
+  category_limits: [
+    { category_id: FOOD.id, limit_minor: '600000' },
+    { category_id: TRAVEL.id, limit_minor: '250000' },
+    { category_id: SHOPPING.id, limit_minor: '200000' },
+  ],
+  version: 1,
+};
+
+/** wc-categories' spending this month; ช้อปปิ้ง is ฿310 over. */
+const TOTALS: MonthSummary['categories'] = [
+  { category_id: FOOD.id, type: 'expense', total_minor: '462000' },
+  { category_id: TRAVEL.id, type: 'expense', total_minor: '198000' },
+  { category_id: SHOPPING.id, type: 'expense', total_minor: '231000' },
+  { category_id: BILLS.id, type: 'expense', total_minor: '27000' },
+  { category_id: FAMILY.id, type: 'expense', total_minor: '300000' },
+  { category_id: MERIT.id, type: 'expense', total_minor: '30000' },
+  { category_id: SALARY.id, type: 'income', total_minor: '2800000' },
+];
+
+/** The fakes' summary keeps no per-category totals; this month's are the board's. */
+function withTotals(resources: SpendV1Resources): SpendV1Resources {
+  return { ...resources, summary: async (month: string) => ({ ...(await resources.summary(month)), categories: TOTALS }) };
+}
+
+function fixture(): ScreenFixture {
+  return {
+    resources: withTotals(createFakeResources({ categories: [FOOD, TRAVEL, HOUSEHOLD, BILLS, SHOPPING, FUN, FAMILY, MERIT, SALARY, GIFT], budgets: [BUDGET] }).resources),
+    diary: createFakeDiary({ accountId: CATALOGUE_ACCOUNT }).diary,
+    // The board's icon for ครอบครัว, written afresh each time the section opens.
+    prepare: async () => {
+      await walletAccountStore(CATALOGUE_ACCOUNT).set(CATEGORY_ICONS_NAME, JSON.stringify({ [FAMILY.id]: 'heart' }));
+    },
+  };
+}
+
+function Stage() {
+  return (
+    <WalletLooksProvider>
+      <Suspense fallback={null}>
+        <WalletCategoriesScreen now={CATALOGUE_NOW} />
+      </Suspense>
+    </WalletLooksProvider>
+  );
+}
+
+/** The grid is drawn once the built-ins show. */
+const LISTED: ScriptStep = { waitFor: 'categories-builtins' };
+const press = (testID: string): ScriptStep => ({ call: 'onPress', on: { testID } });
+
+export const WALLET_CATEGORY_SECTIONS: readonly CatalogueSection[] = [
+  screenSection({
+    id: 'bw-categories',
+    title: 'Bun Wallet: categories',
+    fixture,
+    script: () => [LISTED],
+    render: () => <Stage />,
+  }),
+  screenSection({
+    id: 'bw-category-new',
+    title: 'Bun Wallet: category tray, new',
+    fixture,
+    script: () => [
+      LISTED,
+      press('categories-new-tile'),
+      { waitFor: 'category-name' },
+      { call: 'onChangeText', on: { testID: 'category-name' }, args: ['สัตว์เลี้ยง'] },
+      press('category-glyph-paw'),
+      press('category-swatch-1'),
+    ],
+    render: () => <Stage />,
+  }),
+  screenSection({
+    id: 'bw-category-limit',
+    title: 'Bun Wallet: category tray, a limit',
+    fixture,
+    script: () => [LISTED, press(`category-tile-${FOOD.id}`), { waitFor: 'category-limit-total' }],
+    render: () => <Stage />,
+  }),
+  screenSection({
+    id: 'bw-thai-pack',
+    title: 'Bun Wallet: Thai pack tray',
+    fixture,
+    script: () => [LISTED, press('categories-pack'), { waitFor: 'thai-pack-items' }, press('thai-pack-family_out'), press('thai-pack-delivery'), press('thai-pack-motorbike_rail')],
+    render: () => <Stage />,
+  }),
+];
