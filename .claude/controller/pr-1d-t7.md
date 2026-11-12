@@ -35,7 +35,18 @@
   - Planned on Claude Opus, built on Claude Haiku 5.5.
 - [x] The controller merged the integration head (with #441) as `d8d7364a`, with no conflicts. On the merged tree: `typecheck:app` 0; `test:unit` 1085; `test:app` 36; the task's render files 422; the eight kit files and the four routes tests 158; `git diff --check` on the range.
 - [x] CI at `d8d7364a`: 9 of 9.
-- [ ] Confirming review (Opus) of the fix round.
+- [x] Confirming review (Opus): **Needs fixes** on `d8d7364a` (`.claude/controller/reviews/1D-T7-confirm.md`). CM1: a sign-out before the app has named the account (an offline launch with a restored session) kept what was held under R119's rule, so the next account's yes could send it, even over the first person's stored no (U1, new with the round; U2, its older twin).
+- [x] **Second fix round** (`b76116c0`, brief `.claude/controller/briefs/1D-T7-fix2.md`; ruling R120 with the planner's P34 to P47):
+  - a session that ends after one was seen drops what is held, whether or not its account was named (`setAccount(null, { signedOut: true })`, an optional flag on 1D-T1's interface);
+  - an account switch with no sign-out between (`A` to `B`) drops it too (P38, closing U3);
+  - a launch with no session seen yet still keeps it, so onboarding's first step still arrives (R119);
+  - Quick add's privacy scan also checks the plain typed amounts;
+  - the round-2 receipt's line and the controller comment now say what holds.
+  - The proofs: RED 2 of 40 Node and 3 of 99 render, all assertions; GREEN 40 and 99; **89 of 89 mutants killed** (QE equivalent); `test:unit` 1087, `test:app` 36, routes 17. All 7 kit files are byte-identical.
+  - Planned on Claude Opus, built on Claude Haiku 5.5.
+- [x] The controller merged the integration head as `bf79af59` (controller state only; no code change since the last merge).
+- [ ] CI on this pull request is green at `bf79af59`.
+- [ ] Second confirming review (Opus).
 - [ ] SKIPPED: device checks (events on a real PostHog EU project, for 1D-T15's two-phone run).
 
 Closes #138 once merged (closed by hand, since the base is not the default branch).
