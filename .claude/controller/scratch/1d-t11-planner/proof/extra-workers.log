@@ -1,0 +1,11 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+An RPC result was not disposed properly. One of the RPC calls you made expects you to call dispose() on the return value, but you didn't do so. You cannot rely on the garbage collector for this because it may take arbitrarily long before actually collecting unreachable objects.
+
+ Test Files  7 passed (7)
+      Tests  238 passed | 1 todo (239)
+   Start at  01:48:21
+   Duration  8.54s (transform 8.50s, setup 19.02s, import 515ms, tests 14.66s, environment 0ms)
+

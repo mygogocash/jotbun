@@ -1,0 +1,44 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (19 tests | 1 failed) 662ms
+     × without the key the analytics id is null, and nothing is sent under the person 31ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > the analytics answer: GET /v1/me/analytics > without the key the analytics id is null, and nothing is sent under the person
+AssertionError: expected { status: 503, body: { …(3) } } to deeply equal { status: 200, body: { …(3) } }
+
+- Expected
++ Received
+
+  {
+    "body": {
+-     "analytics_id": null,
+-     "consent": "unasked",
+-     "weeks_since_signup": 0,
++     "code": "SERVICE_UNAVAILABLE",
++     "message_key": "errors.service_unavailable",
++     "request_id": "4708bb65-3f82-405a-b636-2897f9d721d5",
+    },
+-   "status": 200,
++   "status": 503,
+  }
+
+ ❯ test/workers/server-events.test.ts:173:71
+    171|     const client = await frontDoor(r, CONFIG, { POSTHOG_PROJECT_TOKEN:…
+    172|     const { user, wallet } = await ledger(client)
+    173|     expect(await json(await client.as(user).get('/v1/me/analytics'))).…
+       |                                                                       ^
+    174|     await answer(client, user, true)
+    175|     await saved(client, user, wallet)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 passed (19)
+   Start at  01:56:25
+   Duration  3.49s (transform 1.08s, setup 2.13s, import 45ms, tests 662ms, environment 0ms)
+

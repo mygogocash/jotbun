@@ -1,0 +1,74 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (19 tests | 2 failed) 504ms
+     × nothing is sent for a person who said no, or while their phone says off 38ms
+     × a vault that holds another account reads no consent: the failure is counted, and nothing is sent under the person 21ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > nothing is sent for a person who said no, or while their phone says off
+AssertionError: expected [ { …(3) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "distinctId": "49438a01a8c4d4643c0325a9a85ce5b810a34732b1397668e36cb12d2cfa465d",
++     "event": "record_saved",
++     "properties": {
++       "category_key": "food",
++       "kind": "expense",
++       "origin": "server",
++     },
++   },
++ ]
+
+ ❯ test/workers/server-events.test.ts:270:20
+    268|     await saved(client, user, wallet, { 'x-gogospend-analytics': 'OFF'…
+    269|     await r.settled()
+    270|     expect(r.sent).toEqual([])
+       |                    ^
+    271|     // The same person, once a request is not marked off: one record_s…
+    272|     await saved(client, user, wallet)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a vault that holds another account reads no consent: the failure is counted, and nothing is sent under the person
+AssertionError: expected [ [ '$exception', …(2) ], …(1) ] to deeply equal [ [ '$exception', …(2) ] ]
+
+- Expected
++ Received
+
+@@ -2,6 +2,11 @@
+    [
+      "$exception",
+      "transactions.create",
+      "VaultOwnerMismatch",
+    ],
++   [
++     "sync_failed",
++     undefined,
++     undefined,
++   ],
+  ]
+
+ ❯ test/workers/server-events.test.ts:443:162
+    441|     })
+    442|     await r.settled()
+    443|     expect(r.sent.map((message) => [message.event, message.properties.…
+       |                                                                                                                                                                  ^
+    444|       ['$exception', 'transactions.create', 'VaultOwnerMismatch'],
+    445|     ])
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 17 passed (19)
+   Start at  01:56:21
+   Duration  3.05s (transform 1.00s, setup 1.97s, import 39ms, tests 504ms, environment 0ms)
+

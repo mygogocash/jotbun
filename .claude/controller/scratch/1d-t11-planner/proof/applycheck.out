@@ -1,0 +1,11 @@
+rebuilt: apps/edge/src/v1/protocol.ts
+rebuilt: apps/edge/src/v1/env.ts
+rebuilt: apps/edge/src/v1/routes.ts
+rebuilt: apps/edge/src/v1/handler.ts
+rebuilt: apps/edge/src/vault/user-vault.ts
+rebuilt: apps/edge/src/vault/routes.ts
+rebuilt: apps/edge/test/workers/support/v1-client.ts
+rebuilt: apps/edge/test/workers/live.test.ts
+rebuilt: apps/edge/test/route-coverage.test.ts
+rebuilt: apps/edge/README.md
+applycheck: ok

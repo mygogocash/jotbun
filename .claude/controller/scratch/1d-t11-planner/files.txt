@@ -1,0 +1,18 @@
+# 1D-T11's files. Column 1: M (modified) or A (added). Column 2: what RED holds
+# (stub = stubs/, real = real/, base = left as the base has it, later = the
+# receipt, copied at the end). GREEN holds real/ for every line. Shared files
+# are marked in the brief's Scope table. The base is the integration head with
+# P3-T7 merged: routes.ts, protocol.ts and vault/routes.ts as P3-T7's kit has them.
+M real apps/edge/src/v1/protocol.ts
+M real apps/edge/src/v1/env.ts
+M base apps/edge/src/v1/routes.ts
+M stub apps/edge/src/v1/handler.ts
+A stub apps/edge/src/vault/analytics.ts
+M stub apps/edge/src/vault/user-vault.ts
+M real apps/edge/src/vault/routes.ts
+M real apps/edge/test/workers/support/v1-client.ts
+A real apps/edge/test/workers/server-events.test.ts
+M real apps/edge/test/workers/live.test.ts
+M real apps/edge/test/route-coverage.test.ts
+M base apps/edge/README.md
+A later docs/implementation/receipts/1D-T11.md

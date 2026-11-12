@@ -1,0 +1,289 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (19 tests | 10 failed) 511ms
+     × without the key the analytics id is null, and nothing is sent under the person 43ms
+     × a record saved by a person who said yes sends one record_saved with kind and category only 24ms
+     × a transfer sends its kind only, and a record in a category of its own is sent as custom 37ms
+     × a resent command sends no second event 24ms
+     × nothing is sent for a person who said no, or while their phone says off 39ms
+     × an edit, a delete or an import is not a record_saved 24ms
+     × a stale cursor sends resync_required 21ms
+     × a vault failure on the outbox's routes sends sync_failed, beside its anonymous count 23ms
+     × a failed analytics read never changes the reply, and is logged by its class name only 25ms
+     × callWithAnalytics answers call()'s reply, with the consent read after the block and no failure for a refusal 21ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 10 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > the analytics answer: GET /v1/me/analytics > without the key the analytics id is null, and nothing is sent under the person
+AssertionError: expected [] to deeply equal [ [ 'record_saved', …(1) ] ]
+
+- Expected
++ Received
+
+- [
+-   [
+-     "record_saved",
+-     "38eac7a26cbe2b206407c7ffbd46ceee86cc97a63acd562f130ecdc1279a5997",
+-   ],
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:183:74
+    181|     await saved(keyed, user, wallet)
+    182|     await r.settled()
+    183|     expect(r.sent.map((message) => [message.event, message.distinctId]…
+       |                                                                          ^
+    184|   })
+    185|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/10]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a record saved by a person who said yes sends one record_saved with kind and category only
+AssertionError: expected [] to deeply equal [ { …(3) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "distinctId": "c0c78cd35416b23b99e6a5268cf8af65dc9394986b1e916fcf7504bdb2337813",
+-     "event": "record_saved",
+-     "properties": {
+-       "category_key": "food",
+-       "kind": "expense",
+-       "origin": "server",
+-     },
+-   },
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:218:20
+    216|     expect((await record(client, user, body)).status).toBe(201)
+    217|     await r.settled()
+    218|     expect(r.sent).toEqual([{ distinctId: await hmacOf(user.sub), even…
+       |                    ^
+    219|     const text = JSON.stringify(r.sent)
+    220|     for (const value of [user.sub, String(body.id), wallet, '6500', 'ร…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/10]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a transfer sends its kind only, and a record in a category of its own is sent as custom
+AssertionError: expected [] to deeply equal [ { …(3) }, { …(3) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "distinctId": "40aea2d341f700b138be6b9b411c9bae65afcf4e74a4edaab6850defd2fecf5f",
+-     "event": "record_saved",
+-     "properties": {
+-       "kind": "transfer",
+-       "origin": "server",
+-     },
+-   },
+-   {
+-     "distinctId": "40aea2d341f700b138be6b9b411c9bae65afcf4e74a4edaab6850defd2fecf5f",
+-     "event": "record_saved",
+-     "properties": {
+-       "category_key": "custom",
+-       "kind": "expense",
+-       "origin": "server",
+-     },
+-   },
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:236:20
+    234|     await r.settled()
+    235|     const id = await hmacOf(user.sub)
+    236|     expect(r.sent).toEqual([
+       |                    ^
+    237|       { distinctId: id, event: 'record_saved', properties: { kind: 'tr…
+    238|       { distinctId: id, event: 'record_saved', properties: { kind: 'ex…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/10]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a resent command sends no second event
+AssertionError: expected [] to deeply equal [ 'record_saved' ]
+
+- Expected
++ Received
+
+- [
+-   "record_saved",
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:255:52
+    253|     expect(again).toEqual(first)
+    254|     await r.settled()
+    255|     expect(r.sent.map((message) => message.event)).toEqual(['record_sa…
+       |                                                    ^
+    256|   })
+    257|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/10]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > nothing is sent for a person who said no, or while their phone says off
+AssertionError: expected [] to deeply equal [ 'record_saved' ]
+
+- Expected
++ Received
+
+- [
+-   "record_saved",
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:274:52
+    272|     await saved(client, user, wallet)
+    273|     await r.settled()
+    274|     expect(r.sent.map((message) => message.event)).toEqual(['record_sa…
+       |                                                    ^
+    275|   })
+    276|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/10]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > an edit, a delete or an import is not a record_saved
+AssertionError: expected [] to deeply equal [ 'record_saved' ]
+
+- Expected
++ Received
+
+- [
+-   "record_saved",
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:285:52
+    283|     expect((await record(client, user, body)).status).toBe(201)
+    284|     await r.settled()
+    285|     expect(r.sent.map((message) => message.event)).toEqual(['record_sa…
+       |                                                    ^
+    286|     const path = `/v1/transactions/${String(body.id)}`
+    287|     expect((await client.as(user).patch(path, { amount_minor: '7000' }…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/10]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a stale cursor sends resync_required
+AssertionError: expected [] to deeply equal [ { …(3) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "distinctId": "bb682da8bc21f185432198ba2688710d023c23ca2d9fbf42cd14e05f32b8da59",
+-     "event": "resync_required",
+-     "properties": {
+-       "origin": "server",
+-       "reason_code": "RESYNC_REQUIRED",
+-     },
+-   },
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:306:20
+    304|     expect(stale).toMatchObject({ status: 410, body: { code: 'RESYNC_R…
+    305|     await r.settled()
+    306|     expect(r.sent).toEqual([{ distinctId: await hmacOf(user.sub), even…
+       |                    ^
+    307|   })
+    308|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/10]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a vault failure on the outbox's routes sends sync_failed, beside its anonymous count
+AssertionError: expected [] to deeply equal [ { …(3) }, { …(3) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "distinctId": "2d9534c836bae975252a7795620ce77abd869550d7b3b6a92fefde826067bf8c",
+-     "event": "sync_failed",
+-     "properties": {
+-       "origin": "server",
+-       "reason_code": "INTERNAL_ERROR",
+-     },
+-   },
+-   {
+-     "distinctId": "2d9534c836bae975252a7795620ce77abd869550d7b3b6a92fefde826067bf8c",
+-     "event": "sync_failed",
+-     "properties": {
+-       "origin": "server",
+-       "reason_code": "INTERNAL_ERROR",
+-     },
+-   },
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:331:73
+    329|     await r.settled()
+    330|     const id = await hmacOf(user.sub)
+    331|     expect(r.sent.filter((message) => message.event === 'sync_failed')…
+       |                                                                         ^
+    332|       { distinctId: id, event: 'sync_failed', properties: { reason_cod…
+    333|       { distinctId: id, event: 'sync_failed', properties: { reason_cod…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/10]⎯
+
+ FAIL  test/workers/server-events.test.ts > the vault half > a failed analytics read never changes the reply, and is logged by its class name only
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "{\"level\":\"error\",\"event\":\"vault_analytics_failed\",\"failure\":\"Error\"}",
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:484:87
+    482|       expect((await client.as(user).get('/v1/wallets')).status).toBe(2…
+    483|     })
+    484|     expect(lines.filter((line) => line.includes('"event":"vault_analyt…
+       |                                                                                       ^
+    485|     expect(lines.join('\n')).not.toContain('consents')
+    486|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/10]⎯
+
+ FAIL  test/workers/server-events.test.ts > the vault half > callWithAnalytics answers call()'s reply, with the consent read after the block and no failure for a refusal
+AssertionError: expected { Object (reply, analytics) } to deeply equal { reply: { ok: false, …(3) }, …(1) }
+
+- Expected
++ Received
+
+@@ -1,8 +1,8 @@
+  {
+    "analytics": {
+-     "consent": "yes",
++     "consent": "unasked",
+      "events": [],
+      "failure": null,
+    },
+    "reply": {
+      "code": "VALIDATION_FAILED",
+
+ ❯ test/workers/server-events.test.ts:504:22
+    502|     }
+    503|     const answered = await vaultOf(user).callWithAnalytics(refused)
+    504|     expect(answered).toEqual({
+       |                      ^
+    505|       reply: { ok: false, status: 422, code: 'VALIDATION_FAILED', prob…
+    506|       analytics: { consent: 'yes', events: [], failure: null },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/10]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  10 failed | 9 passed (19)
+   Start at  01:56:09
+   Duration  3.26s (transform 1.12s, setup 2.17s, import 43ms, tests 511ms, environment 0ms)
+

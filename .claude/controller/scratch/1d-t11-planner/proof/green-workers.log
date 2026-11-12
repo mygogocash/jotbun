@@ -1,0 +1,54 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/server-events.test.ts > the analytics answer: GET /v1/me/analytics > the analytics id is the HMAC of the caller's id, with the weeks and the consent 23ms
+ ✓ test/workers/server-events.test.ts > the analytics answer: GET /v1/me/analytics > without the key the analytics id is null, and nothing is sent under the person 26ms
+ ✓ test/workers/server-events.test.ts > the analytics answer: GET /v1/me/analytics > an ended session cannot read it 15ms
+ ✓ test/workers/server-events.test.ts > the analytics answer: GET /v1/me/analytics > the weeks since sign-up are whole weeks on the vault clock, from 0 to 1040 18ms
+ ✓ test/workers/live.test.ts > pokes > the other phone hears the new revision, and the saving phone hears nothing 26ms
+ ✓ test/workers/live.test.ts > pokes > the revision is compared as a whole number, so 9 to 10 is a poke 17ms
+ ✓ test/workers/live.test.ts > pokes > a poke reaches a phone whose socket hibernated 19ms
+ ✓ test/workers/live.test.ts > pokes > sockets never carry record data 25ms
+ ✓ test/workers/server-events.test.ts > server events > a record saved by a person who said yes sends one record_saved with kind and category only 20ms
+ ✓ test/workers/server-events.test.ts > server events > a transfer sends its kind only, and a record in a category of its own is sent as custom 23ms
+ ✓ test/workers/server-events.test.ts > server events > a resent command sends no second event 18ms
+ ✓ test/workers/server-events.test.ts > server events > nothing is sent for a person who said no, or while their phone says off 26ms
+ ✓ test/workers/server-events.test.ts > server events > an edit, a delete or an import is not a record_saved 31ms
+ ✓ test/workers/live.test.ts > pokes > a retention purge pokes every phone 26ms
+ ✓ test/workers/live.test.ts > pokes > a send to a socket that is already closing is skipped, and the others still get the poke 16ms
+ ✓ test/workers/live.test.ts > pokes > a commit whose pokes fail still answers, and its revision moves: the work after a call never throws 16ms
+ ✓ test/workers/live.test.ts > keepalive and messages > ping is answered, even after the vault sleeps, without waking it 14ms
+ ✓ test/workers/live.test.ts > keepalive and messages > a phone's own close is answered, and the vault no longer holds its socket 14ms
+ ✓ test/workers/live.test.ts > keepalive and messages > a message other than ping closes the socket with 1008 17ms
+ ✓ test/workers/live.test.ts > sessions > signing out closes that phone's socket with 4401 and leaves the other open 14ms
+ ✓ test/workers/server-events.test.ts > server events > a stale cursor sends resync_required 20ms
+ ✓ test/workers/server-events.test.ts > server events > a vault failure on the outbox's routes sends sync_failed, beside its anonymous count 20ms
+ ✓ test/workers/server-events.test.ts > server events > a deliberate refusal is never an error count 37ms
+ ✓ test/workers/server-events.test.ts > server events > an unexpected failure sends its class name only, without the person 27ms
+stdout | test/workers/server-events.test.ts > server events > an unexpected exception in the Worker is counted as the Worker's, by its class name only
+{"level":"error","request_id":"7be30e37-e728-4c57-9cfd-ef5298a0e2bf","route":"GET /v1/bridge/gogocash/catalogue","status":500,"error":"RangeError"}
+
+ ✓ test/workers/live.test.ts > sessions > a refused call still closes the sockets it ended: a raised not_before 15ms
+ ✓ test/workers/live.test.ts > sessions > a refused call still closes the sockets it ended: an account being deleted 16ms
+ ✓ test/workers/live.test.ts > sessions > an erased vault closes every socket when asked (closeEndedSessions with erased) 15ms
+ ✓ test/workers/live.test.ts > sessions > an ended session cannot open a socket 14ms
+ ✓ test/workers/live.test.ts > sessions > an erased vault cannot open a socket, and nothing is re-created 27ms
+ ✓ test/workers/live.test.ts > sessions > a session's second socket replaces its first 22ms
+ ✓ test/workers/server-events.test.ts > server events > an unexpected exception in the Worker is counted as the Worker's, by its class name only 3ms
+ ✓ test/workers/server-events.test.ts > server events > a vault that holds another account reads no consent: the failure is counted, and nothing is sent under the person 18ms
+ ✓ test/workers/server-events.test.ts > server events > the reply sent to the phone never carries analytics fields 22ms
+ ✓ test/workers/server-events.test.ts > the vault half > a failed analytics read never changes the reply, and is logged by its class name only 18ms
+ ✓ test/workers/server-events.test.ts > the vault half > callWithAnalytics answers call()'s reply, with the consent read after the block and no failure for a refusal 13ms
+ ✓ test/workers/server-events.test.ts > the vault half > the change log counts a create once, by its first version, inside the revision range only 27ms
+ ✓ test/workers/live.test.ts > the front door and the vault > without a token it is 401, an outdated client 426, and a plain GET 400 15ms
+ ✓ test/workers/live.test.ts > the front door and the vault > the vault answers only the Worker's live request, and checks every claim 13ms
+ ✓ test/workers/live.test.ts > limits > only open sockets count toward 20 39ms
+ ✓ test/workers/live.test.ts > limits > a socket that is closing does not count toward 20 34ms
+ ✓ test/workers/live.test.ts > limits > opening a socket spends the session's read budget: past 120 a minute it is 429 and nothing upgrades 116ms
+
+ Test Files  2 passed (2)
+      Tests  41 passed (41)
+   Start at  01:52:29
+   Duration  2.81s (transform 1.66s, setup 3.38s, import 54ms, tests 937ms, environment 0ms)
+
