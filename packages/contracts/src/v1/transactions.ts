@@ -11,6 +11,14 @@ export const TRANSACTION_TYPES = ["expense", "income", "transfer"] as const;
 export type TransactionType = (typeof TRANSACTION_TYPES)[number];
 export type EntryType = Exclude<TransactionType, "transfer">;
 
+/**
+ * How a record was made (B2, spec 6.6): typed, read by Bun from a photo, a slip
+ * import, a Tell Bun draft, a statement, the share extension or Siri. Set once,
+ * when the record is created; records made before phase 3 have none.
+ */
+export const TRANSACTION_SOURCES = ["typed", "photo", "slip_import", "tell_bun", "statement", "share_extension", "siri"] as const;
+export type TransactionSource = (typeof TRANSACTION_SOURCES)[number];
+
 export const NOTE_MAX_CHARS = 500;
 export const MERCHANT_MAX_CHARS = 120;
 /** A deleted record can be restored for this long. */
@@ -31,6 +39,11 @@ type RecordFields = {
    * it, and both shapes stay valid.
    */
   attachment_id?: string;
+  /**
+   * P3-T2: how the record was made. Present only when its create named one;
+   * records made before phase 3 never carry it, and both shapes stay valid.
+   */
+  source?: TransactionSource;
 };
 
 export type EntryDto = RecordFields & { type: EntryType; wallet_id: string; category_id: string };
@@ -38,7 +51,8 @@ export type TransferDto = RecordFields & { type: "transfer"; source_wallet_id: s
 /** The persisted record (also the change-log snapshot). */
 export type TransactionDto = EntryDto | TransferDto;
 
-type RecordInput = { id: string; amount_minor: Minor; occurred_on: string; note?: string | null; merchant?: string | null };
+/** `source` is how the record was made; absent or null means none. Only a create sets it. */
+type RecordInput = { id: string; amount_minor: Minor; occurred_on: string; note?: string | null; merchant?: string | null; source?: TransactionSource | null };
 /** POST /v1/transactions: a discriminated union on `type`. */
 export type CreateTransactionRequest =
   | (RecordInput & { type: EntryType; wallet_id: string; category_id: string })
@@ -84,6 +98,17 @@ export function normalizeMerchant(value: unknown, field = "merchant"): string | 
   return optionalText(value, field, MERCHANT_MAX_CHARS, false);
 }
 
+const isTransactionSource = (value: unknown): value is TransactionSource => (TRANSACTION_SOURCES as readonly unknown[]).includes(value);
+
+/** A create's `source`: absent or null is none (null); anything else must be one of TRANSACTION_SOURCES. */
+export function parseTransactionSource(value: unknown, field = "source"): TransactionSource | null {
+  if (value === undefined || value === null) return null;
+  if (!isTransactionSource(value)) {
+    throw new ContractValidationError("VALIDATION_FAILED", `Expected one of ${TRANSACTION_SOURCES.join(", ")}.`, field);
+  }
+  return value;
+}
+
 const ENTRY_KEYS = ["amount_minor", "category_id", "deleted_at", "id", "merchant", "note", "occurred_on", "type", "version", "wallet_id"].join(",");
 const TRANSFER_KEYS = ["amount_minor", "deleted_at", "destination_wallet_id", "id", "merchant", "note", "occurred_on", "source_wallet_id", "type", "version"].join(",");
 const AMOUNT = /^[1-9][0-9]{0,10}$/;
@@ -91,13 +116,15 @@ const DATE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
 
 /**
  * True for exactly the persisted record shape of its type: with or without
- * `attachment_id` (P2c), which when present is a lower-case UUID.
+ * `attachment_id` (P2c), which when present is a lower-case UUID, and with or
+ * without `source` (P3-T2), which when present is one of TRANSACTION_SOURCES.
  */
 export function isTransactionSnapshot(value: unknown): value is TransactionDto {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
   const record = value as Record<string, unknown>;
   if ("attachment_id" in record && !isUuid(record.attachment_id)) return false;
-  const keys = Object.keys(record).filter((key) => key !== "attachment_id").sort().join(",");
+  if ("source" in record && !isTransactionSource(record.source)) return false;
+  const keys = Object.keys(record).filter((key) => key !== "attachment_id" && key !== "source").sort().join(",");
   const shape =
     record.type === "transfer"
       ? keys === TRANSFER_KEYS && typeof record.source_wallet_id === "string" && typeof record.destination_wallet_id === "string" && record.source_wallet_id !== record.destination_wallet_id
