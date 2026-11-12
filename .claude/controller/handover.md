@@ -49,6 +49,14 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **19:20: #435 (P3-T7) and #436 (P5-T2) opened; four reviews and CI running.**
+  - P3-T7: the implementer reported DONE at `088b346a` (RED 2 of 10 Node and 10 of 62 workers, all assertions; GREEN 10 and 62; 35 of 35 mutants; `test:edge` 196; all 12 `real/` files byte-identical). PR body `pr-p3-t7.md`, issue #191.
+  - P5-T2: DONE at `f4041406` (RED 9 of 9 and 2, all assertions; GREEN; the API contract spec 95; 57 of 57 mutants; `test:edge` 204, `test:app` 36, `test:unit` 1049, the routes tests; 14 of 15 `real/` files byte-identical, the receipt differing only in its base SHA `54e889b5`). PR body `pr-p5-t2.md`, issue #235.
+  - Reviews (notes `scratch/dispatch/P3-T7-review-notes.md` and `P5-T2-review-notes.md`):
+    - P3-T7 Opus xhigh `mcp:launch:7dcf75a7f1e9dc736f49abf0306d6ba098a96e05cd31d18d9c063eaeea434c43`; Sonnet high `mcp:launch:0f28e064fb0947cad941e338005f4c4d8440da9913bbcbc2b20b565fe3ef80d5`.
+    - P5-T2 Opus xhigh `mcp:launch:5045ae39d7fda101002e18a8ff27564e8160bfc13de44915270e4edbc1980567`; Sonnet high `mcp:launch:976e93424e3099f790bb845261ec64262b0e998a35aa08b19281a52324ad73eb`.
+  - Watchers: CI `br0i27tc5` (`ci_watch.sh 115 435 436`, exits on the first to finish); verdicts and the three planners' kits `b85mh7vzf`.
+  - The implementer threads are archived.
 - **19:15: two more Opus planners started** (common notes `scratch/dispatch/planner-common-notes-20261112d.md`, head `27256cba`):
   - P3-T14, AI consent and settings in the Bun Wallet look (depth 9, App): `mcp:launch:f1aeaa9d8dbec3da51b62c5e5e19ee71c01815a2dfb50b11ced4142ca7b91ea7`, WT `p3-t14` on `p3/t14-ai-consent-settings`.
   - 1D-T11, server events and the analytics id (depth 8, Server): `mcp:launch:51bcdaff8cfb191a6cb11997a097b7f8d56ff29bfc4ddb8a2f1a51833e7c927b`, WT `p1-1d-t11` on `p1/1d-t11-server-events`. It shares `vault/routes.ts`, `v1/protocol.ts` and `v1/routes.ts` with P3-T7, so it plans on P3-T7's `real/` files and builds only after P3-T7 merges.
