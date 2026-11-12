@@ -14,11 +14,11 @@ import { translateCopy } from '@mobile/i18n/messages';
 import { installBrowserStorage } from '@mobile/mascot/mascotTestHarness';
 import type { SpendDiary } from '@mobile/spend/v1/spendDiary';
 import { createFakeDiary } from '@mobile/spend/v1/testing/fakeDiary';
-import { createFakeResources, goldenSeed } from '@mobile/spend/v1/testing/fakeResources';
+import { BUILTINS, createFakeResources, goldenSeed } from '@mobile/spend/v1/testing/fakeResources';
 import type { PendingChoice } from '@mobile/storage/types';
 import { fullDateLabel } from '@mobile/ui/dateStep';
 import { RecordScreen } from './RecordScreen';
-import { DIARY_REFERENCES, FOOD_ID, MATRIX, MOVE, NOW, RENT, leading, mountScreen, outboxCommand, pendingExpense, rgb } from './HistoryTestHarness';
+import { DIARY_REFERENCES, FOOD_ID, MATRIX, MOVE, NOW, RENT, SALARY_ID, leading, mountScreen, outboxCommand, pendingExpense, rgb } from './HistoryTestHarness';
 
 beforeAll(() => { installBrowserStorage(); });
 beforeEach(() => {
@@ -1033,6 +1033,46 @@ test('an acknowledged "use yours" records one record_edited; the refused edit be
     expect(await screen.findByLabelText('Amount, Expense ฿12,000.00')).toBeTruthy();
     expect(captures(recorded.sent)).toEqual([shown, { name: 'record_edited', properties: { kind: 'expense', category_key: 'bills', origin: 'app' } }]);
     sendsNothingOfTheRent(recorded.sent);
+  } finally {
+    recorded.restore();
+  }
+});
+
+// The fix round (R119): "Use yours" reports the record as it now stands, and an income's Restore says income.
+
+test("an acknowledged \"use yours\" reports the category of the server's copy when another phone moved the entry", async () => {
+  conflictArea();
+  const recorded = await recordAnalytics();
+  try {
+    const diary = createFakeDiary({ ...DIARY_REFERENCES });
+    const fake = await editRent(diary.diary);
+    // Another phone moved the rent to Food; this phone changes only the amount, on the version it read.
+    changeRent(fake, { category_id: BUILTINS[0].id, version: 2 });
+    press('Clear', '1', '2', '0', '0', '0');
+    save();
+    await screen.findByTestId('choice-panel');
+    fireEvent.click(screen.getByRole('button', { name: 'Use yours' }));
+    expect(await screen.findByLabelText('Amount, Expense ฿12,000.00')).toBeTruthy();
+    expect(fake.records.get(RENT)).toMatchObject({ category_id: BUILTINS[0].id, amount_minor: '1200000', version: 3 });
+    const edited = captures(recorded.sent).filter((event) => event.name === 'record_edited');
+    expect(edited).toEqual([{ name: 'record_edited', properties: { kind: 'expense', category_key: 'food', origin: 'app' } }]);
+  } finally {
+    recorded.restore();
+  }
+});
+
+test('Restore of an income records record_restored with kind income', async () => {
+  const recorded = await recordAnalytics();
+  try {
+    // The September salary was deleted yesterday, on another phone.
+    const salary = goldenSeed().records.find((record) => record.id === SALARY_ID) as TransactionDto;
+    const fake = mountRecord(SALARY_ID, { patch: (records) => { records.set(SALARY_ID, { ...salary, deleted_at: '2026-09-28T03:00:00.000Z', version: 2 } as TransactionDto); } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Restore' }));
+    expect(await screen.findByRole('button', { name: 'Edit' })).toBeTruthy();
+    expect(fake.callsOf('restoreTransaction')).toHaveLength(1);
+    expect(captures(recorded.sent)).toEqual([{ name: 'record_restored', properties: { kind: 'income', origin: 'app' } }]);
+    const json = JSON.stringify(recorded.sent);
+    for (const secret of ['2800000', '28,000', 'September salary', 'Daily account']) expect(json).not.toContain(secret);
   } finally {
     recorded.restore();
   }

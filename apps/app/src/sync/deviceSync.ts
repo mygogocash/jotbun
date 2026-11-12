@@ -26,17 +26,19 @@ type HeadersWebSocket = new (url: string, protocols: undefined, options: { heade
  * Every run's outcome, handed on to the diary, with its reliability events
  * (1D-T7): sync_failed once on entering the failure set and resync_required
  * once on entering resync_pending, through the typed emitters. One per open
- * diary, so a diary opened again starts counting again.
+ * diary, so a diary opened again starts counting again. The diary hears the
+ * outcome first (it locks on signed_out), so nothing it does waits behind
+ * analytics (the fix round, R119).
  */
 function reportingSyncEvents(report: DeviceSyncReport['outcome']): DeviceSyncReport['outcome'] {
   let previous: SyncOutcome | null = null;
   return (outcome) => {
+    report(outcome);
     for (const event of syncEvents(previous, outcome)) {
       if (event.name === 'sync_failed') trackSyncFailed({ reasonCode: event.properties.reason_code });
       else trackResyncRequired();
     }
     previous = outcome;
-    report(outcome);
   };
 }
 

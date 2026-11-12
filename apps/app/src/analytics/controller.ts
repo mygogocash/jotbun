@@ -205,7 +205,10 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
   return {
     async setAccount(id) {
       if (id === accountId) return;
-      const keepHeld = (accountId === undefined || accountId === null) && id !== null;
+      // What is held comes from the onboarding and the sign-in that led here (L4). The
+      // launch's first answer keeps it, also when no one is signed in yet, and so does
+      // signing in; a sign-out (an account to null) and a switch (A to B) drop it (R119).
+      const keepHeld = accountId === undefined || (accountId === null && id !== null);
       accountId = id;
       generation += 1;
       const token = generation;

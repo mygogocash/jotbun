@@ -581,3 +581,23 @@ test('a delete from History records record_deleted, and its undo undo_used, each
     recorded.restore();
   }
 });
+
+test('a move deleted from History, and its undo, record kind transfer with no category (the fix round, R119)', async () => {
+  const recorded = await recordAnalytics();
+  try {
+    await golden();
+    rowAction(ROWS.move, 'Delete');
+    await screen.findByText('Entry deleted');
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(await screen.findByRole('button', { name: ROWS.move })).toBeTruthy();
+    const captures = recorded.sent.filter((event) => event.kind === 'capture').map(({ name, properties }) => ({ name, properties }));
+    expect(captures).toEqual([
+      { name: 'record_deleted', properties: { kind: 'transfer', origin: 'app' } },
+      { name: 'undo_used', properties: { kind: 'transfer', origin: 'app' } },
+    ]);
+    const json = JSON.stringify(recorded.sent);
+    for (const secret of ['150000', '1,500', 'Cash', 'Daily account']) expect(json).not.toContain(secret);
+  } finally {
+    recorded.restore();
+  }
+});

@@ -16,7 +16,7 @@ import type { SpendV1Resources } from '@mobile/spend/v1/resources';
 import { createFakeDiary } from '@mobile/spend/v1/testing/fakeDiary';
 import { createFakeResources, goldenSeed } from '@mobile/spend/v1/testing/fakeResources';
 import { RecentlyDeletedScreen } from './RecentlyDeletedScreen';
-import { DIARY_REFERENCES, FOOD_ID, MATRIX, NOW, RENT, SALARY_ID, extraRecords, hiddenFromScreenReaders, leading, mountScreen, rgb } from './HistoryTestHarness';
+import { DIARY_REFERENCES, FOOD_ID, MATRIX, MOVE, NOW, RENT, SALARY_ID, extraRecords, hiddenFromScreenReaders, leading, mountScreen, rgb } from './HistoryTestHarness';
 
 beforeAll(() => { installBrowserStorage(); });
 beforeEach(() => {
@@ -276,6 +276,23 @@ test('a restore records record_restored once Jotbun has it, with the kind only',
     expect(captures()).toEqual([{ name: 'record_restored', properties: { kind: 'expense', origin: 'app' } }]);
     const json = JSON.stringify(recorded.sent);
     for (const secret of ['1226800', '12,268', 'Rent', 'Daily account', 'Bills']) expect(json).not.toContain(secret);
+  } finally {
+    recorded.restore();
+  }
+});
+
+test('a restored move records record_restored with kind transfer (the fix round, R119)', async () => {
+  const recorded = await recordAnalytics();
+  try {
+    // Only the move between the two wallets was deleted, yesterday.
+    const records = goldenSeed().records.map((record) => (record.id === MOVE ? { ...record, deleted_at: '2026-09-28T05:00:00.000Z', version: 2 } : record));
+    const fake = await mount({ records });
+    fireEvent.click(await screen.findByRole('button', { name: /^Restore Transfer, Transfer ฿1,500\.00/ }));
+    await waitFor(() => expect(fake.callsOf('restoreTransaction')).toHaveLength(1));
+    const captures = () => recorded.sent.filter((event) => event.kind === 'capture').map(({ name, properties }) => ({ name, properties }));
+    await waitFor(() => expect(captures()).toEqual([{ name: 'record_restored', properties: { kind: 'transfer', origin: 'app' } }]));
+    const json = JSON.stringify(recorded.sent);
+    for (const secret of ['150000', '1,500', 'Cash', 'Daily account']) expect(json).not.toContain(secret);
   } finally {
     recorded.restore();
   }

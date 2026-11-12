@@ -38,3 +38,20 @@ test('a device sync hands every outcome to the diary, and reports a failing run 
     recorded.restore();
   }
 });
+
+test("the diary hears each outcome before that outcome's events go out", async () => {
+  const recorded = await recordAnalytics();
+  try {
+    runs.outcomes = [outcome('waiting', 'NETWORK_ERROR'), outcome('signed_out')];
+    // What the recorder had sent when the diary heard each outcome.
+    const heard: (readonly [SyncStatus, number])[] = [];
+    const { scheduler } = createDeviceSync({} as DiaryStore, { accountId: ACCOUNT, epoch: 1 }, { outcome: (next) => { heard.push([next.status, recorded.sent.length]); }, progress: () => undefined });
+    await scheduler.manual();
+    await scheduler.manual();
+    scheduler.stop();
+    expect(heard).toEqual([['waiting', 0], ['signed_out', 1]]);
+    expect(recorded.sent.map(({ name }) => name)).toEqual(['sync_failed']);
+  } finally {
+    recorded.restore();
+  }
+});

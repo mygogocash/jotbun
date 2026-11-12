@@ -1162,3 +1162,25 @@ test('Add another starts a new entry: one more record_started, and its seconds c
     clock.mockRestore();
   }
 });
+
+test('an income records kind income with its category key, and a move kind transfer with none (the fix round, R119)', async () => {
+  const recorded = await recordAnalytics();
+  try {
+    await open();
+    choose('Income');
+    typeAmount('28000');
+    save();
+    expect(await screen.findByText('Saved')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Add another' }));
+    expect(await screen.findByLabelText('Income ฿0.00')).toBeTruthy();
+    choose('Move');
+    typeAmount('1500');
+    save();
+    expect(await screen.findByText('Saved')).toBeTruthy();
+    expect(savedEvents(recorded.sent).map((event) => [event.properties.kind, event.properties.category_key ?? null])).toEqual([['income', 'salary'], ['transfer', null]]);
+    const json = JSON.stringify(recorded.sent);
+    for (const secret of ['2800000', '28,000', '150000', '1,500']) expect(json).not.toContain(secret);
+  } finally {
+    recorded.restore();
+  }
+});

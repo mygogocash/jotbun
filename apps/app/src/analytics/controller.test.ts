@@ -172,6 +172,28 @@ test('held events are dropped when another account signs in, and on no', async (
   assert.equal(h.captures().length, 0);
 });
 
+// R119 (1D-T7's fix round, from both reviews' M1): the launch's first answer keeps what is held, whatever it says.
+test("what was held before the launch's first answer survives it, also when no one is signed in, and is sent after a sign-in and a yes", async () => {
+  const h = harness({ consent: 'yes' });
+  h.analytics.track('onboarding_step_viewed', { step: 'coffee' });
+  await h.analytics.setAccount(null);
+  assert.equal(h.analytics.status(), 'signed_out');
+  h.analytics.track('onboarding_step_viewed', { step: 'private' });
+  assert.equal(h.captures().length, 0);
+  await h.analytics.setAccount(ACCOUNT_A);
+  assert.deepEqual(h.captures().map((event) => event.properties.step), ['coffee', 'private']);
+});
+
+test('signing out still drops what was held, so the next sign-in starts with nothing (P14, L4)', async () => {
+  const h = harness({ consent: 'unasked' });
+  await h.analytics.setAccount(ACCOUNT_A);
+  h.analytics.track('onboarding_step_viewed', { step: 'coffee' });
+  await h.analytics.setAccount(null);
+  await h.analytics.setAccount(ACCOUNT_A);
+  await h.analytics.answer('yes');
+  assert.equal(h.captures().length, 0);
+});
+
 test('the server\'s yes sends at once, identifies with the analytics id and starts replay', async () => {
   const h = harness({ consent: 'yes', weeks: 3 });
   h.analytics.setCommon({ app_version: '1.2.3', platform: 'ios', language: 'th', home_currency: 'THB' });
