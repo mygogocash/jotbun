@@ -18,6 +18,10 @@
 // - An unconfirmed create offers Try again, which sends the same command; a
 //   refusal says why, on its field when it names one; one that waits on an
 //   update holds เพิ่มกระเป๋า.
+// - Step 2's back is held only while a create is out. Once its answer is
+//   unknown, a blocked resend's too, back leaves the flow, as step 1's does,
+//   and keeps no look (R115): the list reads again on return, so it shows the
+//   wallet if the create committed.
 // - With no account open no look could be kept (W7): the face and material
 //   are not offered, and the preview and the ceremony draw the look the
 //   wallet will have, the one derived from its id.
@@ -206,8 +210,11 @@ export function NewWalletFlow({ returnTo, now }: { returnTo?: NewWalletReturn; n
       <PrimaryButton testID="new-wallet-add" label={t('wallets.add')} busy={sending.phase === 'saving'} busyLabel={tc('Saving…')} disabled={locked || stuck} onPress={add} />
     </View>
   );
+  // Back is held only while the create is out. With its answer unknown (Try again, or a blocked resend) it leaves the
+  // flow, as step 1's does: back on the kinds could change the look under the pending command (R115, M1).
+  const back = unconfirmed === null ? () => setStep(1) : leave;
   return (
-    <FlowPage back={{ label: t('common.back'), onPress: () => setStep(1), disabled: locked }} step={2} footer={footer}>
+    <FlowPage back={{ label: t('common.back'), onPress: back, disabled: sending.phase === 'saving' }} step={2} footer={footer}>
       <WalletText role="h1" accessibilityRole="header">{look.kind === null ? '' : t(KIND_WORDS[look.kind].name)}</WalletText>
       <WalletFields
         form={current}
@@ -371,11 +378,17 @@ function Added({ input, look, onDone }: { input: CreateWalletRequest; look: Wall
         <IconButton label={t('common.close')} onPress={onDone}>
           <Glyph name="close" size={16} color={colors.ink} />
         </IconButton>
-        <Animated.View testID="new-wallet-card" entering={entering}>
-          <View accessible accessibilityRole="image" accessibilityLabel={walletCardWords(card, look, hidden, t).spoken}>
-            <WalletCard wallet={card} look={look} variant="full" />
-          </View>
-        </Animated.View>
+        {/* The drop's originY is in its parent's coordinates (Reanimated animates it to targetOriginY), so the card
+            enters at the origin of a place of its own: it falls 200 pt, about one card's height, and the bouncy spring
+            overshoots by about 44 pt (R115, n1). A view with a test id is never flattened away on Fabric
+            (ViewShadowNode), so on a phone too the place stays the card's parent. */}
+        <View testID="new-wallet-card-place">
+          <Animated.View testID="new-wallet-card" entering={entering}>
+            <View accessible accessibilityRole="image" accessibilityLabel={walletCardWords(card, look, hidden, t).spoken}>
+              <WalletCard wallet={card} look={look} variant="full" />
+            </View>
+          </Animated.View>
+        </View>
         <View testID="new-wallet-added" {...POLITE_LIVE_REGION} style={{ gap: 2 }}>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
             <WalletText role="h1" accessibilityRole="header">{t('wallets.added')}</WalletText>

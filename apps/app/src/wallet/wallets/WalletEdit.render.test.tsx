@@ -9,6 +9,12 @@
 // as Tray.render.test.tsx does. expo-router is the catalogue's recorded
 // router. The wallets' and the entries' reads, and the commands, are the
 // case's own fake.
+//
+// The fix round (R115) adds the cases for #429's review: no navigation once
+// the person has left (m1, the probe PR1), a cleared opening balance sent as
+// ฿0 (PR4, the survivor Y7), Try again held by the ref (PR7, Y4), archive held
+// while a save's answer is unknown (Y6), the notice cleared by the next save
+// (Y9), and the refused archive's ฿0 in private mode (n2, PR5).
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
 
@@ -275,16 +281,29 @@ test('archive is offered only at ฿0; otherwise the screen says why', async () 
   }
 });
 
-test('nothing changed goes back with nothing sent, and two presses on บันทึก send one update', async () => {
+test('nothing changed goes back once with nothing sent, and two presses on บันทึก send one update', async () => {
   const fake = board();
   mountWallet(<WalletEditScreen walletId={W.main} now={NOW} />, { resources: fake.resources, account: KEPT });
   await settle();
-  fireEvent.click(named('button', 'บันทึก'));
+  // Two presses before React draws again leave once (R115, m1).
+  const unchanged = named('button', 'บันทึก');
+  act(() => {
+    fireEvent.click(unchanged);
+    fireEvent.click(unchanged);
+  });
   expect([updates(fake), router.back.mock.calls.length]).toEqual([[], 1]);
+  cleanup();
+  // With nothing to go back to, it goes to the list.
   router.canGoBack.mockReturnValue(false);
+  mountWallet(<WalletEditScreen walletId={W.main} now={NOW} />, { resources: fake.resources, account: KEPT });
+  await settle();
   fireEvent.click(named('button', 'บันทึก'));
   expect(router.replace.mock.calls).toEqual([['/spend/wallets']]);
+  cleanup();
   router.canGoBack.mockReturnValue(true);
+  router.back.mockReset();
+  mountWallet(<WalletEditScreen walletId={W.main} now={NOW} />, { resources: fake.resources, account: KEPT });
+  await settle();
   fireEvent.change(named('textbox', 'ชื่อกระเป๋า'), { target: { value: 'บัญชีเงินเดือน' } });
   const save = named('button', 'บันทึก');
   act(() => {
@@ -292,7 +311,7 @@ test('nothing changed goes back with nothing sent, and two presses on บัน�
     fireEvent.click(save);
   });
   await settle();
-  expect(updates(fake)).toEqual([[W.main, 1, { name: 'บัญชีเงินเดือน' }]]);
+  expect([updates(fake), router.back.mock.calls.length]).toEqual([[[W.main, 1, { name: 'บัญชีเงินเดือน' }]], 1]);
   // A name it cannot save says so on its field, and sends nothing.
   cleanup();
   const blank = board();
@@ -400,6 +419,151 @@ test('a save whose answer is lost offers Try again under the same key; a wallet 
   expect(spentMeanwhile.callsOf('wallets')).toHaveLength(2);
   expect(found('wallet-archive-later').textContent).toBe('เก็บได้เมื่อยอดเหลือ ฿0 ตอนนี้มี ฿20 โอนไปกระเป๋าอื่นก่อนนะ');
   expect(router.dismissTo.mock.calls).toEqual([]);
+});
+
+test('once the person has left, a save or an archive that lands takes them nowhere more', async () => {
+  // Back while a save is out goes back once; the save that lands after it goes nowhere.
+  const out = board();
+  const release = out.hold('updateWallet');
+  mountWallet(<WalletEditScreen walletId={W.main} now={NOW} />, { resources: out.resources, account: KEPT });
+  await settle();
+  fireEvent.change(named('textbox', 'ชื่อกระเป๋า'), { target: { value: 'บัญชีเงินเดือน' } });
+  fireEvent.click(named('button', 'บันทึก'));
+  await settle();
+  fireEvent.click(named('button', 'กลับ'));
+  await act(async () => { release(); });
+  await settle();
+  expect([updates(out), router.back.mock.calls.length]).toEqual([[[W.main, 1, { name: 'บัญชีเงินเดือน' }]], 1]);
+  cleanup();
+  router.back.mockReset();
+
+  // The review's PR1: the spend layout's Slot unmounts the screen on back, then the save lands. Back once in all.
+  const slot = board();
+  const later = slot.hold('updateWallet');
+  const view = mountWallet(<WalletEditScreen walletId={W.main} now={NOW} />, { resources: slot.resources, account: KEPT });
+  await settle();
+  fireEvent.change(named('textbox', 'ชื่อกระเป๋า'), { target: { value: 'บัญชีเงินเดือน' } });
+  fireEvent.click(named('button', 'บันทึก'));
+  await settle();
+  fireEvent.click(named('button', 'กลับ'));
+  view.unmount();
+  await act(async () => { later(); });
+  await settle();
+  expect(router.back.mock.calls.length).toBe(1);
+  router.back.mockReset();
+
+  // The screen went away another way (the system back) while its save was out: the save lands and takes no one anywhere.
+  const gone = board();
+  const landing = gone.hold('updateWallet');
+  const away = mountWallet(<WalletEditScreen walletId={W.main} now={NOW} />, { resources: gone.resources, account: KEPT });
+  await settle();
+  fireEvent.change(named('textbox', 'ชื่อกระเป๋า'), { target: { value: 'บัญชีเงินเดือน' } });
+  fireEvent.click(named('button', 'บันทึก'));
+  await settle();
+  away.unmount();
+  await act(async () => { landing(); });
+  await settle();
+  expect([updates(gone).length, router.back.mock.calls.length, router.replace.mock.calls]).toEqual([1, 0, []]);
+
+  // An archive that lands after back goes nowhere either.
+  const archiving = board();
+  const archived = archiving.hold('archiveWallet');
+  mountWallet(<WalletEditScreen walletId={W.zero} now={NOW} />, { resources: archiving.resources, account: KEPT });
+  await settle();
+  fireEvent.click(named('button', 'เก็บกระเป๋านี้ถาวร'));
+  await settle();
+  fireEvent.click(named('button', 'กลับ'));
+  await act(async () => { archived(); });
+  await settle();
+  expect([archiving.callsOf('archiveWallet').length, router.back.mock.calls.length, router.dismissTo.mock.calls]).toEqual([1, 1, []]);
+});
+
+test('delete on the stored opening balance clears it to ฿0, and ฿0 is what is sent, with its reason', async () => {
+  const fake = board();
+  mountWallet(<WalletEditScreen walletId={W.main} now={NOW} />, { resources: fake.resources, account: KEPT });
+  await settle();
+  press('ลบตัวเลข');
+  // The review's PR4: the screen says ฿0, and the card what ฿0 less the ฿5,140 spent leaves.
+  expect([found('wallet-opening').textContent, found('wallet-opening').getAttribute('aria-label'), found('wallet-preview').getAttribute('aria-label')]).toEqual(['฿0', 'ยอดเริ่มต้น 0 บาท', 'ตัวอย่างการ์ด บัญชีหลัก ยอด ติดลบ 5,140 บาท']);
+  fireEvent.click(named('button', 'บันทึก'));
+  await settle();
+  startAnimations();
+  fireEvent.click(named('button', REASONS[0]));
+  await settle();
+  expect(updates(fake)).toEqual([[W.main, 1, { opening_minor: '0', correction_reason: 'entry_error' }]]);
+});
+
+test('two presses on Try again resend once, and the save that lands goes back once', async () => {
+  // The review's PR7.
+  const lost = board();
+  lost.loseResponse('updateWallet');
+  mountWallet(<WalletEditScreen walletId={W.main} now={NOW} />, { resources: lost.resources, account: KEPT });
+  await settle();
+  fireEvent.change(named('textbox', 'ชื่อกระเป๋า'), { target: { value: 'บัญชีเงินเดือน' } });
+  fireEvent.click(named('button', 'บันทึก'));
+  await settle();
+  const tryAgain = named('button', 'ลองอีกครั้ง');
+  act(() => {
+    fireEvent.click(tryAgain);
+    fireEvent.click(tryAgain);
+  });
+  await settle();
+  expect([lost.callsOf('updateWallet').length, router.back.mock.calls.length]).toEqual([2, 1]);
+});
+
+test("while a save's answer is unknown archive is held, and a press on it sends nothing", async () => {
+  const lost = board();
+  lost.loseResponse('updateWallet');
+  mountWallet(<WalletEditScreen walletId={W.zero} now={NOW} />, { resources: lost.resources, account: KEPT });
+  await settle();
+  fireEvent.change(named('textbox', 'ชื่อกระเป๋า'), { target: { value: 'บัตรใหม่' } });
+  fireEvent.click(named('button', 'บันทึก'));
+  await settle();
+  const archive = named('button', 'เก็บกระเป๋านี้ถาวร');
+  expect(archive.getAttribute('aria-disabled')).toBe('true');
+  fireEvent.click(archive);
+  await settle();
+  // Nothing was archived, and the update whose answer is unknown keeps its Try again.
+  expect([lost.callsOf('archiveWallet'), screen.queryByRole('button', { name: 'ลองอีกครั้ง' }) !== null]).toEqual([[], true]);
+});
+
+test("the next save clears the notice that the wallet changed on another device, so it never sits beside that save's answer", async () => {
+  const moved = board();
+  mountWallet(<WalletEditScreen walletId={W.main} now={NOW} />, { resources: moved.resources, account: KEPT });
+  await settle();
+  const main = moved.wallets.get(W.main) as WalletSnapshot;
+  moved.wallets.set(W.main, { ...main, opening_minor: '3500000', version: 2 });
+  fireEvent.change(named('textbox', 'ชื่อกระเป๋า'), { target: { value: 'บัญชีเงินเดือน' } });
+  fireEvent.click(named('button', 'บันทึก'));
+  await settle();
+  expect(found('wallet-edit-notice').textContent).toBe(translateCopy('This wallet changed on another device.', 'th'));
+  // Saved again on the newer version, and its answer lost: the notice is gone, and that save's own words show.
+  moved.loseResponse('updateWallet');
+  fireEvent.change(named('textbox', 'ชื่อกระเป๋า'), { target: { value: 'บัญชีเงินเดือน' } });
+  fireEvent.click(named('button', 'บันทึก'));
+  await settle();
+  expect([screen.queryByTestId('wallet-edit-notice'), within(found('wallet-edit-problem')).getByRole('alert').textContent]).toEqual([null, translateCopy('Not confirmed yet. Your entry is kept; try again.', 'th')]);
+});
+
+test('an archive refused because the balance moved says its ฿0 in words, and in private mode masks it as the line below does', async () => {
+  for (const locale of LOCALES) {
+    for (const hidden of [false, true]) {
+      const at = `${locale}${hidden ? ' private' : ''}`;
+      const fake = board();
+      mountWallet(<WalletEditScreen walletId={W.zero} now={NOW} />, { resources: fake.resources, account: KEPT, locale, device: hidden ? { [PRIVATE_MODE_NAME]: '1' } : {} });
+      await settle();
+      fake.records.set('0000000b-0000-4000-8000-000000000003', { ...spent('0000000b-0000-4000-8000-000000000003', W.zero, '2000'), type: 'income' } as TransactionDto);
+      fireEvent.click(named('button', WORDS[locale].archive));
+      await settle();
+      const line = (zero: string) => translateCopy("{name} wasn't archived: its balance is no longer {zero}.", locale, { name: 'บัตรเก่า', zero });
+      const said = hidden ? (locale === 'th' ? 'ซ่อนยอดเงินอยู่' : 'Amount hidden') : (locale === 'th' ? '0 บาท' : '0 baht');
+      const refused = found('wallet-archive-refused');
+      expect([refused.textContent, refused.getAttribute('aria-label')], at).toEqual([line(hidden ? '฿••••' : '฿0'), line(said)]);
+      // In private mode no digit of an amount is left on the archive's lines (the review's PR5).
+      expect(/[0-9]/.test(`${refused.textContent} ${found('wallet-archive-later').textContent}`), at).toBe(!hidden);
+      cleanup();
+    }
+  }
 });
 
 test('private mode hides every amount on the edit screen, and the opening balance until a key is pressed', async () => {
